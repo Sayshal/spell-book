@@ -43,6 +43,32 @@
 				{{#if selectedSpellList}}
 					<div class="selected-list-header">
 						<h2>{{selectedSpellList.name}}</h2>
+						{{#unless isEditing}}
+							<button type="button" class="edit-button" data-action="editSpellList"
+								data-uuid="{{selectedSpellList.uuid}}">
+								<i class="fas fa-edit"></i> Edit
+							</button>
+						{{else}}
+							{{#if isCustomList}}
+								<div class="custom-list-controls">
+									{{#if compareInfo.hasOriginalChanged}}
+										<span class="update-notice">Original has been updated</span>
+									{{/if}}
+									<button type="button" class="restore-button" data-action="restoreOriginal"
+										data-uuid="{{selectedSpellList.uuid}}">
+										<i class="fas fa-sync"></i> Restore from Source
+									</button>
+									<button type="button" class="delete-button" data-action="deleteCustomList"
+										data-uuid="{{selectedSpellList.uuid}}">
+										<i class="fas fa-trash"></i> Delete Custom Version
+									</button>
+								</div>
+							{{/if}}
+							<button type="button" class="save-button" data-action="saveCustomList"
+								data-uuid="{{selectedSpellList.uuid}}">
+								<i class="fas fa-save"></i> Save
+							</button>
+						{{/unless}}
 					</div>
 					<div class="selected-list-content">
 						{{#if selectedSpellList.isLoadingSpells}}
@@ -63,12 +89,18 @@
 										<div class="spell-meta">
 											<span class="spell-level">{{lookup @root.spellLevels spell.level}}</span>
 											<span class="spell-school">{{lookup (lookup @root.spellSchools spell.school) 'label'}}</span>
+											{{#if @root.isEditing}}
+												<button type="button" class="remove-spell" data-action="removeSpell" data-uuid="{{spell.uuid}}">
+													<i class="fas fa-times"></i>
+												</button>
+											{{/if}}
 										</div>
 									</li>
 								{{/each}}
 							</ul>
 						{{else}}
-							<p class="no-spells">No spells in this list.</p>
+							<p class="no-spells">{{#if isEditing}}Add spells from the right panel.{{else}}No spells in this
+									list.{{/if}}</p>
 						{{/if}}
 					</div>
 				{{else}}
@@ -78,33 +110,50 @@
 				{{/if}}
 			</div>
 
-			<!-- Column 3: Available spells (placeholder for Phase 2) -->
+			<!-- Column 3: Available spells for adding -->
 			<div class="available-spells-column">
 				<h2>Available Spells</h2>
 				<div class="spell-filters">
-					<input type="text" name="spell-search" placeholder="Search spells...">
+					<input type="text" name="spell-search" placeholder="Search spells..." value="{{filterState.name}}">
 					<select name="spell-level">
 						<option value="">All Levels</option>
-						<option value="0">Cantrip</option>
-						<option value="1">1st Level</option>
-						<option value="2">2nd Level</option>
-						<option value="3">3rd Level</option>
-						<option value="4">4th Level</option>
-						<option value="5">5th Level</option>
-						<option value="6">6th Level</option>
-						<option value="7">7th Level</option>
-						<option value="8">8th Level</option>
-						<option value="9">9th Level</option>
+						{{#each spellLevels as |label level|}}
+							<option value="{{level}}" {{#if (eq ../filterState.level level)}}selected{{/if}}>{{label}}</option>
+						{{/each}}
 					</select>
 					<select name="spell-school">
 						<option value="">All Schools</option>
 						{{#each spellSchools as |school key|}}
-							<option value="{{key}}">{{school.label}}</option>
+							<option value="{{key}}" {{#if (eq ../filterState.school key)}}selected{{/if}}>{{school.label}}</option>
 						{{/each}}
 					</select>
 				</div>
 				<div class="available-spells-list">
-					<p class="phase-notice">Spell browser will be implemented in Phase 2.</p>
+					{{#if isEditing}}
+						{{#if filteredSpells.length}}
+							<ul class="spell-list-items">
+								{{#each filteredSpells as |spell|}}
+									<li class="spell-item available" data-uuid="{{spell.uuid}}">
+										<div class="spell-name">
+											<img src="{{spell.img}}" class="spell-icon" alt="{{spell.name}} icon">
+											<span class="name">{{spell.name}}</span>
+										</div>
+										<div class="spell-meta">
+											<span class="spell-level">{{lookup @root.spellLevels spell.level}}</span>
+											<span class="spell-school">{{lookup (lookup @root.spellSchools spell.school) 'label'}}</span>
+											<button type="button" class="add-spell" data-action="addSpell" data-uuid="{{spell.uuid}}">
+												<i class="fas fa-plus"></i>
+											</button>
+										</div>
+									</li>
+								{{/each}}
+							</ul>
+						{{else}}
+							<p class="no-spells">No spells match your filters or all matching spells are already in the list.</p>
+						{{/if}}
+					{{else}}
+						<p class="phase-notice">Select a spell list and click "Edit" to customize it.</p>
+					{{/if}}
 				</div>
 			</div>
 		</div>
