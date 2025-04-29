@@ -43,6 +43,35 @@ Hooks.once('init', async function () {
       openSpellListManager: () => new GMSpellListManager().render(true)
     };
 
+    // Register Handlebars helpers for pagination
+    Handlebars.registerHelper('add', function (a, b) {
+      return Number(a) + Number(b);
+    });
+
+    Handlebars.registerHelper('subtract', function (a, b) {
+      return Number(a) - Number(b);
+    });
+
+    Handlebars.registerHelper('multiply', function (a, b) {
+      return Number(a) * Number(b);
+    });
+
+    Handlebars.registerHelper('min', function (a, b) {
+      return Math.min(Number(a), Number(b));
+    });
+
+    Handlebars.registerHelper('max', function (a, b) {
+      return Math.max(Number(a), Number(b));
+    });
+
+    Handlebars.registerHelper('eq', function (a, b) {
+      return a === b;
+    });
+
+    Handlebars.registerHelper('gt', function (a, b) {
+      return Number(a) > Number(b);
+    });
+
     log(3, 'Module initialization complete');
   } catch (error) {
     console.error(`${MODULE.ID} | Error initializing module:`, error);

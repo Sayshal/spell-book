@@ -76,6 +76,21 @@ export function registerSettings() {
       default: {}
     });
 
+    // Spell manager page size setting
+    game.settings.register(MODULE.ID, 'spellManagerPageSize', {
+      name: 'Spell Manager Page Size',
+      hint: 'Number of spells to show per page in the GM Spell List Manager',
+      scope: 'client',
+      config: true,
+      type: Number,
+      range: {
+        min: 25,
+        max: 500,
+        step: 25
+      },
+      default: 100
+    });
+
     log(3, 'Module settings registered');
   } catch (error) {
     log(1, 'Error registering settings:', error);

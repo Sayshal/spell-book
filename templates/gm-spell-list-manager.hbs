@@ -130,9 +130,9 @@
 				</div>
 				<div class="available-spells-list">
 					{{#if isEditing}}
-						{{#if filteredSpells.length}}
+						{{#if filteredSpells.spells.length}}
 							<ul class="spell-list-items">
-								{{#each filteredSpells as |spell|}}
+								{{#each filteredSpells.spells as |spell|}}
 									<li class="spell-item available" data-uuid="{{spell.uuid}}">
 										<div class="spell-name">
 											<img src="{{spell.img}}" class="spell-icon" alt="{{spell.name}} icon">
@@ -148,6 +148,43 @@
 									</li>
 								{{/each}}
 							</ul>
+
+							{{#if filteredSpells.totalItems}}
+								<div class="pagination-controls">
+									<div class="pagination-status">
+										Showing
+										{{add (multiply paginationState.currentPage paginationState.pageSize) 1}}-{{min (add (multiply paginationState.currentPage paginationState.pageSize) paginationState.pageSize) filteredSpells.totalFiltered}}
+										of {{filteredSpells.totalFiltered}} spells
+									</div>
+									<div class="pagination-buttons">
+										<button type="button" class="pagination-button" data-action="pageNavigation"
+											data-page-action="first-page" {{#if (eq paginationState.currentPage 0)}}disabled{{/if}}>
+											<i class="fas fa-angle-double-left"></i>
+										</button>
+										<button type="button" class="pagination-button" data-action="pageNavigation"
+											data-page-action="prev-page" {{#if (eq paginationState.currentPage 0)}}disabled{{/if}}>
+											<i class="fas fa-angle-left"></i>
+										</button>
+
+										{{#if (gt paginationState.totalPages 1)}}
+											<span class="pagination-pages">
+												Page {{add paginationState.currentPage 1}} of {{paginationState.totalPages}}
+											</span>
+										{{/if}}
+
+										<button type="button" class="pagination-button" data-action="pageNavigation"
+											data-page-action="next-page"
+											{{#if (eq paginationState.currentPage (subtract paginationState.totalPages 1))}}disabled{{/if}}>
+											<i class="fas fa-angle-right"></i>
+										</button>
+										<button type="button" class="pagination-button" data-action="pageNavigation"
+											data-page-action="last-page"
+											{{#if (eq paginationState.currentPage (subtract paginationState.totalPages 1))}}disabled{{/if}}>
+											<i class="fas fa-angle-double-right"></i>
+										</button>
+									</div>
+								</div>
+							{{/if}}
 						{{else}}
 							<p class="no-spells">No spells match your filters or all matching spells are already in the list.</p>
 						{{/if}}
@@ -160,6 +197,9 @@
 
 		<!-- Footer with actions -->
 		<div class="manager-footer">
+			<button type="button" class="help-button" data-action="showDocumentation">
+				<i class="fas fa-question-circle"></i> Help
+			</button>
 			<button type="button" class="close-button" data-action="closeSpellManager">
 				<i class="fas fa-times"></i> Close
 			</button>

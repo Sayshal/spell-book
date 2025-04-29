@@ -276,18 +276,18 @@
 
 .edit-button:hover,
 .save-button:hover {
-  background-color: #4caf50;
   color: #fff;
+  background-color: #4caf50;
 }
 
 .restore-button:hover {
-  background-color: #2196f3;
   color: #fff;
+  background-color: #2196f3;
 }
 
 .delete-button:hover {
-  background-color: #f44336;
   color: #fff;
+  background-color: #f44336;
 }
 
 /* Customized list indicator */
@@ -296,23 +296,23 @@
   margin-left: 0.5rem;
   padding: 0.1rem 0.35rem;
   border-radius: 3px;
+  color: #fff;
   font-size: 0.8rem;
   background-color: var(--manager-custom-color);
-  color: #fff;
 }
 
 /* Custom list controls */
 .custom-list-controls {
-  display: flex;
   gap: 0.5rem;
+  display: flex;
 }
 
 .update-notice {
   padding: 0.25rem 0.5rem;
   border-radius: 3px;
-  background-color: #ffc107;
   color: #000;
   font-size: 0.8rem;
+  background-color: #ffc107;
 }
 
 /* Available spell styling */
@@ -331,4 +331,61 @@
 
 .gm-spell-list-manager.editing .selected-list-column {
   border-color: var(--manager-custom-color);
+}
+
+/* Pagination controls */
+.pagination-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--manager-border-color);
+}
+
+.pagination-status {
+  margin-bottom: 0.5rem;
+  color: var(--color-text-dark-secondary);
+  font-size: 0.8rem;
+}
+
+.pagination-buttons {
+  gap: 0.25rem;
+  display: flex;
+  align-items: center;
+}
+
+.pagination-button {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--manager-border-color);
+  border-radius: 3px;
+  cursor: pointer;
+  background-color: #0000000d;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background-color: #0000001a;
+}
+
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-pages {
+  margin: 0 0.5rem;
+  font-size: 0.9rem;
+}
+
+.help-button {
+  padding: 0.25rem 0.5rem;
+  margin-right: auto;
+  border: 1px solid var(--manager-border-color);
+  border-radius: 3px;
+  cursor: pointer;
+  background-color: #0000000d;
+}
+
+.help-button:hover {
+  background-color: #0000001a;
 }

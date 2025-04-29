@@ -32,7 +32,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       filterSpells: GMSpellListManager.handleFilterSpells,
       saveCustomList: GMSpellListManager.handleSaveCustomList,
       deleteCustomList: GMSpellListManager.handleDeleteCustomList,
-      restoreOriginal: GMSpellListManager.handleRestoreOriginal
+      restoreOriginal: GMSpellListManager.handleRestoreOriginal,
+      showDocumentation: GMSpellListManager.handleShowDocumentation
     },
     classes: ['gm-spell-list-manager'],
     window: {
@@ -109,6 +110,16 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   isEditing = false;
 
+  /**
+   * Pagination state for available spells
+   * @type {Object}
+   */
+  paginationState = {
+    currentPage: 0,
+    pageSize: 100,
+    totalPages: 1
+  };
+
   /* -------------------------------------------- */
   /*  Constructor                                 */
   /* -------------------------------------------- */
@@ -118,6 +129,17 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   constructor(options = {}) {
     super(options);
+  }
+
+  /**
+   * Initialize the application and set up pagination
+   * @override
+   */
+  _initialize() {
+    super._initialize();
+
+    // Get page size from settings
+    this.paginationState.pageSize = game.settings.get(MODULE.ID, 'spellManagerPageSize');
   }
 
   /* -------------------------------------------- */
@@ -139,14 +161,15 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       spellLevels: CONFIG.DND5E.spellLevels,
       isEditing: this.isEditing,
       availableSpells: this.availableSpells,
-      filterState: this.filterState
+      filterState: this.filterState,
+      paginationState: this.paginationState
     };
 
     if (this.isLoading) {
       return context;
     }
 
-    // If we have available spells, apply filters
+    // If we have available spells, apply filters and pagination
     if (this.availableSpells.length > 0) {
       context.filteredSpells = this._filterAvailableSpells();
     }
@@ -222,14 +245,15 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Filter available spells based on the current filter state
-   * @returns {Array} Filtered array of spells
+   * Apply filters and pagination to available spells
+   * @returns {Array} Filtered and paginated array of spells
    * @private
    */
   _filterAvailableSpells() {
     const { name, level, school } = this.filterState;
 
-    return this.availableSpells.filter((spell) => {
+    // First, filter the entire list
+    const filteredSpells = this.availableSpells.filter((spell) => {
       // Filter by name
       if (name && !spell.name.toLowerCase().includes(name.toLowerCase())) {
         return false;
@@ -253,6 +277,97 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       return true;
     });
+
+    // Calculate pagination
+    const pageSize = this.paginationState.pageSize;
+    const totalItems = filteredSpells.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+    // Update pagination state
+    this.paginationState.totalPages = totalPages;
+
+    // Ensure current page is valid
+    if (this.paginationState.currentPage >= totalPages) {
+      this.paginationState.currentPage = Math.max(0, totalPages - 1);
+    }
+
+    // Calculate start and end indices for the current page
+    const startIndex = this.paginationState.currentPage * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, totalItems);
+
+    // Return the paginated subset of the filtered spells
+    return {
+      spells: filteredSpells.slice(startIndex, endIndex),
+      totalItems,
+      totalFiltered: filteredSpells.length
+    };
+  }
+
+  /**
+   * Handle changing the page
+   * @param {number} page - The page to change to
+   * @private
+   */
+  _changePage(page) {
+    if (page < 0 || page >= this.paginationState.totalPages) return;
+
+    this.paginationState.currentPage = page;
+    this.render(false);
+  }
+
+  /* Add static method to class */
+  /**
+   * Handle page navigation
+   * @param {Event} event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
+   */
+  static handlePageNavigation(event, _form) {
+    const button = event.currentTarget;
+    const action = button.dataset.action;
+    const page = parseInt(button.dataset.page, 10);
+
+    const appId = `gm-spell-list-manager-${MODULE.ID}`;
+    const instance = foundry.applications.instances.get(appId);
+
+    if (!instance) {
+      log(1, 'Could not find GMSpellListManager instance');
+      return;
+    }
+
+    switch (action) {
+      case 'first-page':
+        instance._changePage(0);
+        break;
+      case 'prev-page':
+        instance._changePage(instance.paginationState.currentPage - 1);
+        break;
+      case 'next-page':
+        instance._changePage(instance.paginationState.currentPage + 1);
+        break;
+      case 'last-page':
+        instance._changePage(instance.paginationState.totalPages - 1);
+        break;
+      case 'specific-page':
+        instance._changePage(page);
+        break;
+    }
+  }
+
+  /**
+   * Handle showing documentation
+   * @static
+   */
+  static handleShowDocumentation(_event, _form) {
+    const appId = `gm-spell-list-manager-${MODULE.ID}`;
+    const instance = foundry.applications.instances.get(appId);
+
+    if (!instance) {
+      log(1, 'Could not find GMSpellListManager instance');
+      return;
+    }
+
+    instance.showDocumentation();
   }
 
   /**
@@ -336,6 +451,50 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       this.selectedSpellList.hasError = true;
       this.render(false);
     }
+  }
+
+  /**
+   * Create a confirmation dialog with standardized template
+   * @param {Object} options - Dialog options
+   * @param {string} options.title - Dialog title
+   * @param {string} options.content - Dialog content
+   * @param {string} options.confirmLabel - Confirm button label
+   * @param {string} options.confirmIcon - Confirm button icon
+   * @param {string} options.cancelLabel - Cancel button label
+   * @param {string} options.cancelIcon - Cancel button icon
+   * @param {string} options.confirmCssClass - CSS class for confirm button
+   * @returns {Promise<boolean>} True if confirmed, false otherwise
+   */
+  async _confirmDialog({
+    title = 'Confirm Action',
+    content = 'Are you sure you want to proceed?',
+    confirmLabel = 'Confirm',
+    confirmIcon = 'fas fa-check',
+    cancelLabel = 'Cancel',
+    cancelIcon = 'fas fa-times',
+    confirmCssClass = ''
+  }) {
+    return new Promise((resolve) => {
+      new foundry.applications.DialogV2({
+        title,
+        content: `<p>${content}</p>`,
+        buttons: {
+          confirm: {
+            icon: `<i class="${confirmIcon}"></i>`,
+            label: confirmLabel,
+            className: `dialog-button ${confirmCssClass}`,
+            callback: () => resolve(true)
+          },
+          cancel: {
+            icon: `<i class="${cancelIcon}"></i>`,
+            label: cancelLabel,
+            className: 'dialog-button',
+            callback: () => resolve(false)
+          }
+        },
+        default: 'cancel'
+      }).render(true);
+    });
   }
 
   /* -------------------------------------------- */
@@ -536,13 +695,15 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (!this.selectedSpellList) return;
 
     const uuid = this.selectedSpellList.uuid;
+    const listName = this.selectedSpellList.name;
 
-    // Confirm deletion
-    const confirmed = await Dialog.confirm({
+    // Confirm deletion with our enhanced dialog
+    const confirmed = await this._confirmDialog({
       title: 'Delete Custom Spell List',
-      content: '<p>Are you sure you want to delete this custom spell list? This cannot be undone.</p>',
-      yes: () => true,
-      no: () => false
+      content: `Are you sure you want to delete the custom version of <strong>${listName}</strong>? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      confirmIcon: 'fas fa-trash',
+      confirmCssClass: 'dialog-button-danger'
     });
 
     if (!confirmed) return;
@@ -558,7 +719,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       // Re-render
       this.render(false);
 
-      ui.notifications.info('Custom spell list deleted.');
+      ui.notifications.info(`Custom spell list "${listName}" deleted.`);
     } catch (error) {
       log(1, 'Error deleting custom spell list:', error);
       ui.notifications.error('Failed to delete custom spell list.');
@@ -575,12 +736,15 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     const originalUuid = this.selectedSpellList.document.flags?.[MODULE.ID]?.originalUuid;
     if (!originalUuid) return;
 
-    // Confirm restoration
-    const confirmed = await Dialog.confirm({
+    const listName = this.selectedSpellList.name;
+
+    // Confirm restoration with our enhanced dialog
+    const confirmed = await this._confirmDialog({
       title: 'Restore from Original',
-      content: '<p>Are you sure you want to restore this spell list from the original? Your customizations will be lost.</p>',
-      yes: () => true,
-      no: () => false
+      content: `Are you sure you want to restore <strong>${listName}</strong> from the original source? Your customizations will be lost.`,
+      confirmLabel: 'Restore',
+      confirmIcon: 'fas fa-sync',
+      confirmCssClass: 'dialog-button-warning'
     });
 
     if (!confirmed) return;
@@ -613,11 +777,120 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       // Re-render
       this.render(false);
 
-      ui.notifications.info('Spell list restored from original.');
+      ui.notifications.info(`Spell list "${listName}" restored from original.`);
     } catch (error) {
       log(1, 'Error restoring from original:', error);
       ui.notifications.error('Failed to restore from original.');
     }
+  }
+
+  // Add a new method for removing multiple spells
+  /**
+   * Remove multiple spells from the selected spell list
+   * @param {string[]} spellUuids - Array of spell UUIDs to remove
+   * @returns {Promise<void>}
+   */
+  async removeMultipleSpells(spellUuids) {
+    if (!this.selectedSpellList || !this.isEditing || !spellUuids.length) return;
+
+    // Confirm multi-removal
+    const confirmed = await this._confirmDialog({
+      title: 'Remove Multiple Spells',
+      content: `Are you sure you want to remove ${spellUuids.length} spells from this list?`,
+      confirmLabel: 'Remove',
+      confirmIcon: 'fas fa-trash',
+      confirmCssClass: 'dialog-button-danger'
+    });
+
+    if (!confirmed) return;
+
+    try {
+      // Get current spells
+      let spells = new Set(this.selectedSpellList.document.system.spells || []);
+
+      // Remove the specified spells
+      for (const uuid of spellUuids) {
+        spells.delete(uuid);
+      }
+
+      // Update the spell list
+      await this.selectedSpellList.document.update({
+        'system.spells': Array.from(spells)
+      });
+
+      // Update our data
+      this.selectedSpellList.spells = this.selectedSpellList.spells.filter((s) => !spellUuids.includes(s.uuid));
+      this.selectedSpellList.spellUuids = Array.from(spells);
+
+      // Re-render
+      this.render(false);
+
+      ui.notifications.info(`Removed ${spellUuids.length} spells from list.`);
+    } catch (error) {
+      log(1, 'Error removing multiple spells:', error);
+      ui.notifications.error('Failed to remove spells from list.');
+    }
+  }
+
+  /**
+   * Show the documentation dialog
+   * @returns {Promise<void>}
+   */
+  async showDocumentation() {
+    const content = `
+    <h2>GM Spell List Manager Documentation</h2>
+
+    <h3>Overview</h3>
+    <p>The GM Spell List Manager allows you to browse, duplicate, and customize spell lists from compendiums.
+    These customized lists can then be used by players in their Spell Book.</p>
+
+    <h3>Creating Custom Spell Lists</h3>
+    <ol>
+      <li>Select a spell list from the left column.</li>
+      <li>Click the "Edit" button to create a custom copy.</li>
+      <li>Add or remove spells using the right panel.</li>
+      <li>Click "Save" when you're done.</li>
+    </ol>
+
+    <h3>Modifying Existing Lists</h3>
+    <p>Custom lists will show additional controls:</p>
+    <ul>
+      <li><strong>Restore from Source</strong>: Reset the list to match the original.</li>
+      <li><strong>Delete Custom Version</strong>: Remove your custom version.</li>
+    </ul>
+    <p>If the original list has been updated since your customization, you'll see a notification.</p>
+
+    <h3>Integration with Player Spell Books</h3>
+    <p>When a player opens their Spell Book, the system will:</p>
+    <ol>
+      <li>Check if a custom version of their class spell list exists.</li>
+      <li>Use your custom version if available.</li>
+      <li>Fall back to the original list if no custom version exists.</li>
+    </ol>
+
+    <h3>Best Practices</h3>
+    <ul>
+      <li>Create custom lists before your players create characters.</li>
+      <li>Test custom lists with dummy characters before using them in your game.</li>
+      <li>Keep a backup of important custom lists by exporting them.</li>
+      <li>Consider communicating list changes to players before making major modifications.</li>
+    </ul>
+  `;
+
+    // Use a larger dialog for documentation
+    new Dialog({
+      title: 'GM Spell List Manager Documentation',
+      content,
+      buttons: {
+        close: {
+          icon: '<i class="fas fa-check"></i>',
+          label: 'Close'
+        }
+      },
+      default: 'close',
+      width: 600,
+      height: 700
+    }).render(true);
   }
 
   /* -------------------------------------------- */
