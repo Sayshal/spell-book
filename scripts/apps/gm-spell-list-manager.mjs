@@ -33,7 +33,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       saveCustomList: GMSpellListManager.handleSaveCustomList,
       deleteCustomList: GMSpellListManager.handleDeleteCustomList,
       restoreOriginal: GMSpellListManager.handleRestoreOriginal,
-      showDocumentation: GMSpellListManager.handleShowDocumentation
+      showDocumentation: GMSpellListManager.handleShowDocumentation,
+      toggleListsColumn: GMSpellListManager.handleToggleListsColumn
     },
     classes: ['gm-spell-list-manager'],
     window: {
@@ -44,8 +45,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       minimizable: true
     },
     position: {
-      height: 800,
-      width: 1200
+      top: 150,
+      left: 150,
+      width: Math.max(800, window.innerWidth - 300),
+      height: Math.max(600, window.innerHeight - 300)
     }
   };
 
@@ -140,6 +143,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
     // Get page size from settings
     this.paginationState.pageSize = game.settings.get(MODULE.ID, 'spellManagerPageSize');
+
+    // Set position to fill most of the screen
+    this.position.width = Math.max(800, window.innerWidth - 300);
+    this.position.height = Math.max(600, window.innerHeight - 300);
   }
 
   /* -------------------------------------------- */
@@ -466,35 +473,35 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @returns {Promise<boolean>} True if confirmed, false otherwise
    */
   async _confirmDialog({
-    title = 'Confirm Action',
-    content = 'Are you sure you want to proceed?',
-    confirmLabel = 'Confirm',
+    title = game.i18n.localize('SPELLMANAGER.Confirm.Title'),
+    content = game.i18n.localize('SPELLMANAGER.Confirm.Content'),
+    confirmLabel = game.i18n.localize('SPELLMANAGER.Confirm.Confirm'),
     confirmIcon = 'fas fa-check',
-    cancelLabel = 'Cancel',
+    cancelLabel = game.i18n.localize('SPELLMANAGER.Confirm.Cancel'),
     cancelIcon = 'fas fa-times',
     confirmCssClass = ''
   }) {
-    return new Promise((resolve) => {
-      new foundry.applications.DialogV2({
-        title,
-        content: `<p>${content}</p>`,
-        buttons: {
-          confirm: {
-            icon: `<i class="${confirmIcon}"></i>`,
-            label: confirmLabel,
-            className: `dialog-button ${confirmCssClass}`,
-            callback: () => resolve(true)
-          },
-          cancel: {
-            icon: `<i class="${cancelIcon}"></i>`,
-            label: cancelLabel,
-            className: 'dialog-button',
-            callback: () => resolve(false)
-          }
+    const result = await foundry.applications.api.DialogV2.wait({
+      title,
+      content: `<p>${content}</p>`,
+      buttons: [
+        {
+          icon: `<i class="${confirmIcon}"></i>`,
+          label: confirmLabel,
+          action: 'confirm',
+          className: `dialog-button ${confirmCssClass}`
         },
-        default: 'cancel'
-      }).render(true);
+        {
+          icon: `<i class="${cancelIcon}"></i>`,
+          label: cancelLabel,
+          action: 'cancel',
+          className: 'dialog-button'
+        }
+      ],
+      default: 'cancel'
     });
+
+    return result === 'confirm';
   }
 
   /* -------------------------------------------- */
@@ -699,9 +706,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
     // Confirm deletion with our enhanced dialog
     const confirmed = await this._confirmDialog({
-      title: 'Delete Custom Spell List',
-      content: `Are you sure you want to delete the custom version of <strong>${listName}</strong>? This cannot be undone.`,
-      confirmLabel: 'Delete',
+      title: game.i18n.localize('SPELLMANAGER.Confirm.DeleteTitle'),
+      content: game.i18n.format('SPELLMANAGER.Confirm.DeleteContent', { name: listName }),
+      confirmLabel: game.i18n.localize('SPELLMANAGER.Confirm.DeleteButton'),
       confirmIcon: 'fas fa-trash',
       confirmCssClass: 'dialog-button-danger'
     });
@@ -719,10 +726,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       // Re-render
       this.render(false);
 
-      ui.notifications.info(`Custom spell list "${listName}" deleted.`);
+      ui.notifications.info(game.i18n.format('SPELLMANAGER.Notifications.ListDeleted', { name: listName }));
     } catch (error) {
       log(1, 'Error deleting custom spell list:', error);
-      ui.notifications.error('Failed to delete custom spell list.');
+      ui.notifications.error(game.i18n.localize('SPELLMANAGER.Notifications.ListDeleteError'));
     }
   }
 
@@ -838,59 +845,58 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   async showDocumentation() {
     const content = `
-    <h2>GM Spell List Manager Documentation</h2>
+    <h2>${game.i18n.localize('SPELLMANAGER.Documentation.Title')}</h2>
 
-    <h3>Overview</h3>
-    <p>The GM Spell List Manager allows you to browse, duplicate, and customize spell lists from compendiums.
-    These customized lists can then be used by players in their Spell Book.</p>
+    <h3>${game.i18n.localize('SPELLMANAGER.Documentation.Overview.Title')}</h3>
+    <p>${game.i18n.localize('SPELLMANAGER.Documentation.Overview.Content')}</p>
 
-    <h3>Creating Custom Spell Lists</h3>
+    <h3>${game.i18n.localize('SPELLMANAGER.Documentation.Creation.Title')}</h3>
     <ol>
-      <li>Select a spell list from the left column.</li>
-      <li>Click the "Edit" button to create a custom copy.</li>
-      <li>Add or remove spells using the right panel.</li>
-      <li>Click "Save" when you're done.</li>
+      <li>${game.i18n.localize('SPELLMANAGER.Documentation.Creation.Step1')}</li>
+      <li>${game.i18n.localize('SPELLMANAGER.Documentation.Creation.Step2')}</li>
+      <li>${game.i18n.localize('SPELLMANAGER.Documentation.Creation.Step3')}</li>
+      <li>${game.i18n.localize('SPELLMANAGER.Documentation.Creation.Step4')}</li>
     </ol>
 
-    <h3>Modifying Existing Lists</h3>
-    <p>Custom lists will show additional controls:</p>
+    <h3>${game.i18n.localize('SPELLMANAGER.Documentation.Modifying.Title')}</h3>
+    <p>${game.i18n.localize('SPELLMANAGER.Documentation.Modifying.Content')}</p>
     <ul>
-      <li><strong>Restore from Source</strong>: Reset the list to match the original.</li>
-      <li><strong>Delete Custom Version</strong>: Remove your custom version.</li>
+      <li><strong>${game.i18n.localize('SPELLMANAGER.Documentation.Modifying.Control1')}</strong></li>
+      <li><strong>${game.i18n.localize('SPELLMANAGER.Documentation.Modifying.Control2')}</strong></li>
     </ul>
-    <p>If the original list has been updated since your customization, you'll see a notification.</p>
+    <p>${game.i18n.localize('SPELLMANAGER.Documentation.Modifying.Note')}</p>
 
-    <h3>Integration with Player Spell Books</h3>
-    <p>When a player opens their Spell Book, the system will:</p>
+    <h3>${game.i18n.localize('SPELLMANAGER.Documentation.Integration.Title')}</h3>
+    <p>${game.i18n.localize('SPELLMANAGER.Documentation.Integration.Intro')}</p>
     <ol>
-      <li>Check if a custom version of their class spell list exists.</li>
-      <li>Use your custom version if available.</li>
-      <li>Fall back to the original list if no custom version exists.</li>
+      <li>${game.i18n.localize('SPELLMANAGER.Documentation.Integration.Step1')}</li>
+      <li>${game.i18n.localize('SPELLMANAGER.Documentation.Integration.Step2')}</li>
+      <li>${game.i18n.localize('SPELLMANAGER.Documentation.Integration.Step3')}</li>
     </ol>
 
-    <h3>Best Practices</h3>
+    <h3>${game.i18n.localize('SPELLMANAGER.Documentation.Practices.Title')}</h3>
     <ul>
-      <li>Create custom lists before your players create characters.</li>
-      <li>Test custom lists with dummy characters before using them in your game.</li>
-      <li>Keep a backup of important custom lists by exporting them.</li>
-      <li>Consider communicating list changes to players before making major modifications.</li>
+      <li>${game.i18n.localize('SPELLMANAGER.Documentation.Practices.Item1')}</li>
+      <li>${game.i18n.localize('SPELLMANAGER.Documentation.Practices.Item2')}</li>
+      <li>${game.i18n.localize('SPELLMANAGER.Documentation.Practices.Item3')}</li>
+      <li>${game.i18n.localize('SPELLMANAGER.Documentation.Practices.Item4')}</li>
     </ul>
   `;
 
-    // Use a larger dialog for documentation
-    new Dialog({
-      title: 'GM Spell List Manager Documentation',
-      content,
-      buttons: {
-        close: {
+    const dialog = await foundry.applications.api.DialogV2.wait({
+      title: game.i18n.localize('SPELLMANAGER.Documentation.Title'),
+      content: content,
+      buttons: [
+        {
           icon: '<i class="fas fa-check"></i>',
-          label: 'Close'
+          label: game.i18n.localize('SPELLMANAGER.Buttons.Close'),
+          action: 'close'
         }
-      },
-      default: 'close',
-      width: 600,
-      height: 700
-    }).render(true);
+      ],
+      default: 'close'
+    });
+
+    return dialog;
   }
 
   /* -------------------------------------------- */
@@ -1082,6 +1088,26 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
 
     instance.close();
+  }
+
+  static handleToggleListsColumn(event, _form) {
+    const appId = `gm-spell-list-manager-${MODULE.ID}`;
+    const instance = foundry.applications.instances.get(appId);
+
+    if (!instance) {
+      log(1, 'Could not find GMSpellListManager instance');
+      return;
+    }
+
+    const isHidden = instance.element.classList.contains('editing');
+
+    if (isHidden) {
+      instance.element.classList.remove('editing');
+      event.currentTarget.innerHTML = `<i class="fas fa-columns"></i> ${game.i18n.localize('SPELLMANAGER.Buttons.HideLists')}`;
+    } else {
+      instance.element.classList.add('editing');
+      event.currentTarget.innerHTML = `<i class="fas fa-columns"></i> ${game.i18n.localize('SPELLMANAGER.Buttons.ShowLists')}`;
+    }
   }
 
   /**

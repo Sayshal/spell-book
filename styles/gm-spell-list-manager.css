@@ -389,3 +389,58 @@
 .help-button:hover {
   background-color: #0000001a;
 }
+
+/* Column management for editing mode */
+.gm-spell-list-manager {
+  --normal-grid: 1fr 1fr 1fr;
+  --editing-grid: 0fr 1.65fr 1fr;
+  --lists-toggle-offset: 10px;
+}
+
+/* Normal three-column grid layout */
+.manager-columns {
+  display: grid;
+  grid-template-columns: var(--normal-grid);
+  gap: var(--manager-column-gap);
+  flex: 1;
+  height: calc(100% - 40px);
+  overflow: hidden;
+  transition: grid-template-columns 0.3s ease;
+}
+
+/* Editing mode - hide first column, expand second */
+.gm-spell-list-manager.editing .manager-columns {
+  grid-template-columns: var(--editing-grid);
+}
+
+.gm-spell-list-manager.editing .spell-lists-column {
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  border: none;
+  opacity: 0;
+  max-width: 0;
+  visibility: hidden;
+}
+
+/* Column toggle button */
+.lists-column-toggle {
+  position: absolute;
+  top: 10px;
+  left: var(--lists-toggle-offset);
+  z-index: 100;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--manager-border-color);
+  border-radius: 3px;
+  cursor: pointer;
+  background-color: var(--manager-item-bg);
+  transition: left 0.3s ease;
+}
+
+.lists-column-toggle:hover {
+  background-color: var(--manager-item-hover-bg);
+}
+
+.gm-spell-list-manager:not(.editing) .lists-column-toggle {
+  display: none;
+}
