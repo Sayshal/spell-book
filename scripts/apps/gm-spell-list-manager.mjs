@@ -1,4 +1,5 @@
 import { MODULE } from '../constants.mjs';
+import * as actorSpellUtils from '../helpers/actor-spells.mjs';
 import * as managerHelpers from '../helpers/spell-management.mjs';
 import { log } from '../logger.mjs';
 
@@ -17,17 +18,22 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   static DEFAULT_OPTIONS = {
     id: `gm-spell-list-manager-${MODULE.ID}`,
     tag: 'form',
+    form: {
+      handler: GMSpellListManager.formHandler,
+      closeOnSubmit: false,
+      submitOnChange: false
+    },
+    actions: {
+      selectSpellList: GMSpellListManager.handleSelectSpellList,
+      closeSpellManager: GMSpellListManager.handleClose
+    },
+    classes: ['gm-spell-list-manager'],
     window: {
       title: 'GM Spell List Manager',
       width: 1200,
       height: 800,
       resizable: true,
       minimizable: true
-    },
-    classes: ['gm-spell-list-manager'],
-    actions: {
-      selectSpellList: GMSpellListManager.handleSelectSpellList,
-      closeSpellManager: GMSpellListManager.handleClose
     },
     position: {
       height: 800,
@@ -100,7 +106,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       errorMessage: this.errorMessage,
       availableSpellLists: this.availableSpellLists,
       selectedSpellList: this.selectedSpellList,
-      spellSchools: CONFIG.DND5E.spellSchools
+      spellSchools: CONFIG.DND5E.spellSchools,
+      spellLevels: CONFIG.DND5E.spellLevels
     };
 
     if (this.isLoading) {
@@ -152,6 +159,56 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Load spell details for the selected spell list
+   * @param {Array} spellUuids - Array of spell UUIDs
+   * @private
+   */
+  async _loadSpellDetails(spellUuids) {
+    if (!this.selectedSpellList) return;
+
+    try {
+      // Update UI to show loading state
+      this.selectedSpellList.isLoadingSpells = true;
+      this.render(false);
+
+      // Use the fetchSpellDocuments helper from actor-spells
+      // This will be faster and more consistent with the rest of the module
+      const spellDocs = await actorSpellUtils.fetchSpellDocuments(new Set(spellUuids), 9); // Get all levels
+
+      // Format the spell documents into a simpler structure
+      const spells = spellDocs.map((spell) => {
+        return {
+          uuid: spell.compendiumUuid || spell.uuid,
+          name: spell.name,
+          img: spell.img,
+          level: spell.system.level,
+          school: spell.system.school
+        };
+      });
+
+      // Sort by level and then name
+      spells.sort((a, b) => {
+        if (a.level !== b.level) return a.level - b.level;
+        return a.name.localeCompare(b.name);
+      });
+
+      // Update the selected spell list
+      this.selectedSpellList.spells = spells;
+      this.selectedSpellList.isLoadingSpells = false;
+
+      // Render the updated view
+      this.render(false);
+
+      log(3, `Loaded ${spells.length} spells for selected spell list`);
+    } catch (error) {
+      log(1, 'Error loading spell details:', error);
+      this.selectedSpellList.isLoadingSpells = false;
+      this.selectedSpellList.hasError = true;
+      this.render(false);
+    }
+  }
+
   /* -------------------------------------------- */
   /*  Event Handlers                              */
   /* -------------------------------------------- */
@@ -163,31 +220,39 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @static
    */
   static async handleSelectSpellList(event, _form) {
-    // Find the closest element with a uuid data attribute
+    // Find the closest element with a UUID data attribute
     const element = event.target.closest('[data-uuid]');
     if (!element) return;
 
     const uuid = element.dataset.uuid;
     log(3, `Selecting spell list: ${uuid}`);
 
-    // Get the spell list document
     try {
+      // Get the spell list
       const spellList = await fromUuid(uuid);
       if (!spellList) {
         ui.notifications.error('Spell list not found.');
         return;
       }
 
-      // Update the selected spell list
+      // Extract the spell UUIDs
+      const spellUuids = Array.from(spellList.system.spells || []);
+
+      // Set up the selected spell list with loading state
       this.selectedSpellList = {
         document: spellList,
         uuid: spellList.uuid,
         name: spellList.name,
-        spells: Array.from(spellList.system.spells || [])
+        spellUuids: spellUuids,
+        spells: [],
+        isLoadingSpells: true
       };
 
-      // Re-render
+      // Render to show loading state
       this.render(false);
+
+      // Load the spell details
+      await this._loadSpellDetails(spellUuids);
     } catch (error) {
       log(1, 'Error selecting spell list:', error);
       ui.notifications.error('Failed to load spell list.');
@@ -196,11 +261,23 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Handle closing the manager
-   * @param {Event} event - The click event
+   * @param {Event} _event - The click event
    * @param {HTMLElement} _form - The form element
    * @static
    */
-  static handleClose(event, _form) {
+  static handleClose(_event, _form) {
     this.close();
+  }
+
+  /**
+   * Form handler (for future implementation of saving/editing)
+   * @param {Event} event - The submit event
+   * @param {HTMLFormElement} form - The form element
+   * @param {FormDataExtended} formData - The form data
+   * @static
+   */
+  static async formHandler(event, form, formData) {
+    event.preventDefault();
+    // This will be used in Phase 2 for saving customized spell lists
   }
 }

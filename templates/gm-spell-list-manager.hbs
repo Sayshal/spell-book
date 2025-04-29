@@ -45,11 +45,25 @@
 						<h2>{{selectedSpellList.name}}</h2>
 					</div>
 					<div class="selected-list-content">
-						{{#if selectedSpellList.spells.length}}
+						{{#if selectedSpellList.isLoadingSpells}}
+							<div class="spell-loading">
+								<i class="fas fa-spinner fa-spin fa-2x"></i>
+								<p>Loading spells...</p>
+							</div>
+						{{else if selectedSpellList.hasError}}
+							<p class="spell-error">Error loading spells.</p>
+						{{else if selectedSpellList.spells.length}}
 							<ul class="selected-spells">
-								{{#each selectedSpellList.spells as |spellUuid|}}
-									<li class="spell-item" data-uuid="{{spellUuid}}">
-										<div class="spell-name">{{spellUuid}}</div>
+								{{#each selectedSpellList.spells as |spell|}}
+									<li class="spell-item" data-uuid="{{spell.uuid}}">
+										<div class="spell-name">
+											<img src="{{spell.img}}" class="spell-icon" alt="{{spell.name}} icon">
+											<span class="name">{{spell.name}}</span>
+										</div>
+										<div class="spell-meta">
+											<span class="spell-level">{{lookup @root.spellLevels spell.level}}</span>
+											<span class="spell-school">{{lookup (lookup @root.spellSchools spell.school) 'label'}}</span>
+										</div>
 									</li>
 								{{/each}}
 							</ul>

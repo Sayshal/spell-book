@@ -203,3 +203,41 @@
   font-style: italic;
   text-align: center;
 }
+
+.spell-loading {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  text-align: center;
+}
+
+.spell-error {
+  padding: 1rem;
+  color: var(--color-level-error);
+  text-align: center;
+}
+
+/* Spell item styling */
+.spell-item .spell-name {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+}
+
+.spell-item .spell-icon {
+  object-fit: cover;
+  width: 32px;
+  height: 32px;
+  margin-right: 0.5rem;
+  border: 1px solid var(--color-border-light);
+  border-radius: 3px;
+}
+
+.spell-item .spell-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 0.8rem;
+}
