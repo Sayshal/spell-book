@@ -101,6 +101,9 @@ export async function getClassSpellList(className, classUuid) {
 
   log(3, `Searching ${journalPacks.length} journal packs`);
 
+  // Get mappings for custom spell lists
+  const customMappings = game.settings.get(MODULE.ID, 'customSpellListMappings') || {};
+
   for (const pack of journalPacks) {
     try {
       // Just get the basic index first
@@ -129,7 +132,24 @@ export async function getClassSpellList(className, classUuid) {
             if (isNameMatch && isUuidMatch) {
               log(3, `Found matching spell list: ${page.name}`);
 
-              // Direct check for spells array
+              // Check for custom version
+              if (customMappings[page.uuid]) {
+                try {
+                  log(3, `Found custom mapping for ${page.name}, checking custom version`);
+                  const customList = await fromUuid(customMappings[page.uuid]);
+                  if (customList && customList.system.spells.size > 0) {
+                    log(3, `Using custom spell list with ${customList.system.spells.size} spells`);
+                    return customList.system.spells;
+                  } else {
+                    log(2, `Custom spell list not found or empty, falling back to original`);
+                  }
+                } catch (error) {
+                  log(2, `Error retrieving custom spell list: ${error.message}`);
+                  // Fall back to original
+                }
+              }
+
+              // Direct check for spells array (original list)
               if (page.system.spells.size > 0) {
                 log(3, `Found ${page.system.spells.size} spells`);
                 return page.system.spells;

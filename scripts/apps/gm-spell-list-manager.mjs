@@ -303,7 +303,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       this.render(false);
 
       // Use the fetchSpellDocuments helper from actor-spells
-      // This will be faster and more consistent with the rest of the module
       const spellDocs = await actorSpellUtils.fetchSpellDocuments(new Set(spellUuids), 9); // Get all levels
 
       // Format the spell documents into a simpler structure
@@ -340,31 +339,25 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /* -------------------------------------------- */
-  /*  Event Handlers                              */
+  /*  Event Handler Helper Methods                */
   /* -------------------------------------------- */
 
   /**
-   * Handle selecting a spell list
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Select a spell list
+   * @param {string} uuid - UUID of the spell list
+   * @returns {Promise<void>}
    */
-  static async handleSelectSpellList(event, _form) {
-    // Find the closest element with a UUID data attribute
-    const element = event.target.closest('[data-uuid]');
-    if (!element) return;
-
-    const uuid = element.dataset.uuid;
-    log(3, `Selecting spell list: ${uuid}`);
-
+  async selectSpellList(uuid) {
     try {
+      log(3, `Selecting spell list: ${uuid}`);
+
       // First check if we have a custom version of this spell list
       const duplicate = await managerHelpers.findDuplicateSpellList(uuid);
 
       // If a duplicate exists and we're not the duplicate, select the duplicate instead
       if (duplicate && duplicate.uuid !== uuid) {
         log(3, `Found custom version of spell list, selecting that instead: ${duplicate.uuid}`);
-        return this.handleSelectSpellList({ target: { closest: () => ({ dataset: { uuid: duplicate.uuid } }) } }, _form);
+        return this.selectSpellList(duplicate.uuid);
       }
 
       // Get the spell list
@@ -402,14 +395,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Handle clicking the edit button for a spell list
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Enter edit mode for a spell list
+   * @param {string} uuid - UUID of the spell list
+   * @returns {Promise<void>}
    */
-  static async handleEditSpellList(event, _form) {
-    const uuid = event.target.closest('[data-uuid]')?.dataset.uuid;
-    if (!uuid || !this.selectedSpellList) return;
+  async editSpellList(uuid) {
+    if (!this.selectedSpellList) return;
 
     try {
       log(3, `Editing spell list: ${uuid}`);
@@ -447,19 +438,16 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Handle removing a spell from a spell list
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Remove a spell from the selected spell list
+   * @param {string} spellUuid - UUID of the spell to remove
+   * @returns {Promise<void>}
    */
-  static async handleRemoveSpell(event, _form) {
-    const spellItem = event.target.closest('[data-uuid]');
-    if (!spellItem || !this.selectedSpellList || !this.isEditing) return;
-
-    const spellUuid = spellItem.dataset.uuid;
-    log(3, `Removing spell: ${spellUuid}`);
+  async removeSpell(spellUuid) {
+    if (!this.selectedSpellList || !this.isEditing) return;
 
     try {
+      log(3, `Removing spell: ${spellUuid}`);
+
       // Remove the spell from the list
       await managerHelpers.removeSpellFromList(this.selectedSpellList.document, spellUuid);
 
@@ -478,19 +466,16 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Handle adding a spell to a spell list
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Add a spell to the selected spell list
+   * @param {string} spellUuid - UUID of the spell to add
+   * @returns {Promise<void>}
    */
-  static async handleAddSpell(event, _form) {
-    const spellItem = event.target.closest('[data-uuid]');
-    if (!spellItem || !this.selectedSpellList || !this.isEditing) return;
-
-    const spellUuid = spellItem.dataset.uuid;
-    log(3, `Adding spell: ${spellUuid}`);
+  async addSpell(spellUuid) {
+    if (!this.selectedSpellList || !this.isEditing) return;
 
     try {
+      log(3, `Adding spell: ${spellUuid}`);
+
       // Add the spell to the list
       await managerHelpers.addSpellToList(this.selectedSpellList.document, spellUuid);
 
@@ -520,26 +505,20 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Handle filtering available spells
-   * @param {Event} event - The change event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Update a filter state
+   * @param {string} filterType - Type of filter to update
+   * @param {string} value - New filter value
    */
-  static handleFilterSpells(event, _form) {
-    const input = event.target;
-    const filterType = input.name.replace('spell-', '');
-
-    this.filterState[filterType] = input.value;
+  updateFilter(filterType, value) {
+    this.filterState[filterType] = value;
     this.render(false);
   }
 
   /**
-   * Handle saving the custom spell list
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Save the custom spell list
+   * @returns {Promise<void>}
    */
-  static async handleSaveCustomList(event, _form) {
+  async saveCustomList() {
     if (!this.selectedSpellList || !this.isEditing) return;
 
     // Just exit edit mode - changes are saved automatically
@@ -550,12 +529,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Handle deleting the custom spell list
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Delete the current custom spell list
+   * @returns {Promise<void>}
    */
-  static async handleDeleteCustomList(event, _form) {
+  async deleteCustomList() {
     if (!this.selectedSpellList) return;
 
     const uuid = this.selectedSpellList.uuid;
@@ -589,12 +566,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Handle restoring from the original spell list
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Restore a custom spell list from its original
+   * @returns {Promise<void>}
    */
-  static async handleRestoreOriginal(event, _form) {
+  async restoreOriginal() {
     if (!this.selectedSpellList) return;
 
     const originalUuid = this.selectedSpellList.document.flags?.[MODULE.ID]?.originalUuid;
@@ -645,18 +620,199 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /* -------------------------------------------- */
+  /*  Static Handler Methods                      */
+  /* -------------------------------------------- */
+
   /**
-   * Handle closing the manager
+   * Handle selecting a spell list (static entry point)
+   * @param {Event} event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
+   */
+  static async handleSelectSpellList(event, _form) {
+    const element = event.target.closest('[data-uuid]');
+    if (!element) return;
+
+    const uuid = element.dataset.uuid;
+
+    // Get the application instance directly from foundry
+    const appId = `gm-spell-list-manager-${MODULE.ID}`;
+    const instance = foundry.applications.instances.get(appId);
+
+    if (!instance) {
+      log(1, 'Could not find GMSpellListManager instance');
+      return;
+    }
+
+    await instance.selectSpellList(uuid);
+  }
+
+  /**
+   * Handle clicking the edit button (static entry point)
+   * @param {Event} event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
+   */
+  static async handleEditSpellList(event, _form) {
+    const element = event.target.closest('[data-uuid]');
+    if (!element) return;
+
+    const uuid = element.dataset.uuid;
+
+    const appId = `gm-spell-list-manager-${MODULE.ID}`;
+    const instance = foundry.applications.instances.get(appId);
+
+    if (!instance) {
+      log(1, 'Could not find GMSpellListManager instance');
+      return;
+    }
+
+    await instance.editSpellList(uuid);
+  }
+
+  /**
+   * Handle removing a spell (static entry point)
+   * @param {Event} event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
+   */
+  static async handleRemoveSpell(event, _form) {
+    const element = event.target.closest('[data-uuid]');
+    if (!element) return;
+
+    const uuid = element.dataset.uuid;
+
+    const appId = `gm-spell-list-manager-${MODULE.ID}`;
+    const instance = foundry.applications.instances.get(appId);
+
+    if (!instance) {
+      log(1, 'Could not find GMSpellListManager instance');
+      return;
+    }
+
+    await instance.removeSpell(uuid);
+  }
+
+  /**
+   * Handle adding a spell (static entry point)
+   * @param {Event} event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
+   */
+  static async handleAddSpell(event, _form) {
+    const element = event.target.closest('[data-uuid]');
+    if (!element) return;
+
+    const uuid = element.dataset.uuid;
+
+    const appId = `gm-spell-list-manager-${MODULE.ID}`;
+    const instance = foundry.applications.instances.get(appId);
+
+    if (!instance) {
+      log(1, 'Could not find GMSpellListManager instance');
+      return;
+    }
+
+    await instance.addSpell(uuid);
+  }
+
+  /**
+   * Handle filtering spells (static entry point)
+   * @param {Event} event - The change event
+   * @param {HTMLElement} _form - The form element
+   * @static
+   */
+  static handleFilterSpells(event, _form) {
+    const input = event.target;
+    const filterType = input.name.replace('spell-', '');
+    const value = input.value;
+
+    const appId = `gm-spell-list-manager-${MODULE.ID}`;
+    const instance = foundry.applications.instances.get(appId);
+
+    if (!instance) {
+      log(1, 'Could not find GMSpellListManager instance');
+      return;
+    }
+
+    instance.updateFilter(filterType, value);
+  }
+
+  /**
+   * Handle saving a custom list (static entry point)
+   * @param {Event} event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
+   */
+  static async handleSaveCustomList(event, _form) {
+    const appId = `gm-spell-list-manager-${MODULE.ID}`;
+    const instance = foundry.applications.instances.get(appId);
+
+    if (!instance) {
+      log(1, 'Could not find GMSpellListManager instance');
+      return;
+    }
+
+    await instance.saveCustomList();
+  }
+
+  /**
+   * Handle deleting a custom list (static entry point)
+   * @param {Event} event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
+   */
+  static async handleDeleteCustomList(event, _form) {
+    const appId = `gm-spell-list-manager-${MODULE.ID}`;
+    const instance = foundry.applications.instances.get(appId);
+
+    if (!instance) {
+      log(1, 'Could not find GMSpellListManager instance');
+      return;
+    }
+
+    await instance.deleteCustomList();
+  }
+
+  /**
+   * Handle restoring from original (static entry point)
+   * @param {Event} event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
+   */
+  static async handleRestoreOriginal(event, _form) {
+    const appId = `gm-spell-list-manager-${MODULE.ID}`;
+    const instance = foundry.applications.instances.get(appId);
+
+    if (!instance) {
+      log(1, 'Could not find GMSpellListManager instance');
+      return;
+    }
+
+    await instance.restoreOriginal();
+  }
+
+  /**
+   * Handle closing the manager (static entry point)
    * @param {Event} _event - The click event
    * @param {HTMLElement} _form - The form element
    * @static
    */
   static handleClose(_event, _form) {
-    this.close();
+    const appId = `gm-spell-list-manager-${MODULE.ID}`;
+    const instance = foundry.applications.instances.get(appId);
+
+    if (!instance) {
+      log(1, 'Could not find GMSpellListManager instance');
+      return;
+    }
+
+    instance.close();
   }
 
   /**
-   * Form handler (for future implementation of saving/editing)
+   * Form handler (static entry point)
    * @param {Event} event - The submit event
    * @param {HTMLFormElement} form - The form element
    * @param {FormDataExtended} formData - The form data
@@ -664,6 +820,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   static async formHandler(event, form, formData) {
     event.preventDefault();
-    // This will be used in Phase 2 for saving customized spell lists
+    // This will be used for saving customized spell lists
   }
 }
