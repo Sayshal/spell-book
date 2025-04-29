@@ -66,6 +66,16 @@ export function registerSettings() {
       default: DEFAULT_FILTER_CONFIG
     });
 
+    // Custom spell list mappings
+    game.settings.register(MODULE.ID, 'customSpellListMappings', {
+      name: 'Custom Spell List Mappings',
+      hint: 'Mappings between original and custom spell lists',
+      scope: 'world',
+      config: false,
+      type: Object,
+      default: {}
+    });
+
     log(3, 'Module settings registered');
   } catch (error) {
     log(1, 'Error registering settings:', error);

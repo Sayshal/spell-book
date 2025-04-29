@@ -68,7 +68,7 @@
       "packs": ["custom-spell-lists"]
     }
   ],
-  "styles": ["styles/spell-book.css"],
+  "styles": ["styles/spell-book.css", "styles/gm-spell-list-manager.css"],
   "url": "https://github.com/Sayshal/spell-book",
   "hasStorage": true
 }

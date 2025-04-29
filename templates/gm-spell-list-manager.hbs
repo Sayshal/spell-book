@@ -1,0 +1,105 @@
+<div class="gm-spell-list-manager-container">
+	{{#if isLoading}}
+		<div class="manager-loading">
+			<i class="fas fa-spinner fa-spin fa-3x"></i>
+			<p>Loading spell lists...</p>
+		</div>
+	{{else if hasError}}
+		<div class="manager-error">
+			<p class="error-message">{{errorMessage}}</p>
+		</div>
+	{{else}}
+		<!-- Three-column layout -->
+		<div class="manager-columns">
+			<!-- Column 1: Available spell lists -->
+			<div class="spell-lists-column">
+				<h2>Available Spell Lists</h2>
+				<div class="list-container">
+					{{#if availableSpellLists.length}}
+						<ul class="spell-list-items">
+							{{#each availableSpellLists as |list|}}
+								<li class="spell-list-item" data-uuid="{{list.uuid}}">
+									<div class="list-item-header" data-action="selectSpellList" data-uuid="{{list.uuid}}">
+										<div class="list-name">
+											<i class="fas fa-book"></i>
+											<span>{{list.name}}</span>
+										</div>
+										<div class="list-meta">
+											<span class="spell-count">{{list.spellCount}} spells</span>
+											<span class="source">{{list.pack}}</span>
+										</div>
+									</div>
+								</li>
+							{{/each}}
+						</ul>
+					{{else}}
+						<p class="no-lists">No spell lists found.</p>
+					{{/if}}
+				</div>
+			</div>
+
+			<!-- Column 2: Selected spell list content -->
+			<div class="selected-list-column">
+				{{#if selectedSpellList}}
+					<div class="selected-list-header">
+						<h2>{{selectedSpellList.name}}</h2>
+					</div>
+					<div class="selected-list-content">
+						{{#if selectedSpellList.spells.length}}
+							<ul class="selected-spells">
+								{{#each selectedSpellList.spells as |spellUuid|}}
+									<li class="spell-item" data-uuid="{{spellUuid}}">
+										<div class="spell-name">{{spellUuid}}</div>
+									</li>
+								{{/each}}
+							</ul>
+						{{else}}
+							<p class="no-spells">No spells in this list.</p>
+						{{/if}}
+					</div>
+				{{else}}
+					<div class="no-selection">
+						<p>Select a spell list from the left column to view its contents.</p>
+					</div>
+				{{/if}}
+			</div>
+
+			<!-- Column 3: Available spells (placeholder for Phase 2) -->
+			<div class="available-spells-column">
+				<h2>Available Spells</h2>
+				<div class="spell-filters">
+					<input type="text" name="spell-search" placeholder="Search spells...">
+					<select name="spell-level">
+						<option value="">All Levels</option>
+						<option value="0">Cantrip</option>
+						<option value="1">1st Level</option>
+						<option value="2">2nd Level</option>
+						<option value="3">3rd Level</option>
+						<option value="4">4th Level</option>
+						<option value="5">5th Level</option>
+						<option value="6">6th Level</option>
+						<option value="7">7th Level</option>
+						<option value="8">8th Level</option>
+						<option value="9">9th Level</option>
+					</select>
+					<select name="spell-school">
+						<option value="">All Schools</option>
+						{{#each spellSchools as |school key|}}
+							<option value="{{key}}">{{school.label}}</option>
+						{{/each}}
+					</select>
+				</div>
+				<div class="available-spells-list">
+					<p class="phase-notice">Spell browser will be implemented in Phase 2.</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- Footer with actions -->
+		<div class="manager-footer">
+			<button type="button" class="close-button" data-action="closeSpellManager">
+				<i class="fas fa-times"></i> Close
+			</button>
+		</div>
+	{{/if}}
+</div>

@@ -4,6 +4,7 @@
  * @module spell-book
  */
 
+import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
 import { PlayerSpellBook } from './apps/player-spell-book.mjs';
 import { MODULE } from './constants.mjs';
 import * as discoveryUtils from './helpers/spell-discovery.mjs';
@@ -37,7 +38,9 @@ Hooks.once('init', async function () {
     // Register module API
     game.modules.get(MODULE.ID).api = {
       PlayerSpellBook,
-      openSpellBookForActor: (actor) => new PlayerSpellBook(actor).render(true)
+      GMSpellListManager,
+      openSpellBookForActor: (actor) => new PlayerSpellBook(actor).render(true),
+      openSpellListManager: () => new GMSpellListManager().render(true)
     };
 
     log(3, 'Module initialization complete');

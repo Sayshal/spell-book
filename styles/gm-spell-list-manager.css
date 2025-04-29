@@ -1,0 +1,205 @@
+/* ----------------------------------------- */
+
+/*  GM Spell List Manager - Main CSS         */
+
+/* ----------------------------------------- */
+
+.gm-spell-list-manager {
+  --manager-border-color: var(--color-border-light-tertiary);
+  --manager-column-gap: 1rem;
+  --manager-column-width: calc((100% - (var(--manager-column-gap) * 2)) / 3);
+  --manager-custom-color: #3fc6c1;
+  --manager-item-bg: #0000000d;
+  --manager-item-hover-bg: #0000001a;
+}
+
+/* Main container */
+.gm-spell-list-manager .window-content {
+  padding: 0;
+  overflow: hidden;
+}
+
+.gm-spell-list-manager-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0.5rem;
+  overflow: hidden;
+}
+
+/* Loading and error states */
+.manager-loading,
+.manager-error {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  text-align: center;
+}
+
+.manager-error .error-message {
+  color: var(--color-level-error);
+}
+
+/* Columns layout */
+.manager-columns {
+  gap: var(--manager-column-gap);
+  display: flex;
+  flex: 1;
+  height: calc(100% - 40px);
+  overflow: hidden;
+}
+
+.spell-lists-column,
+.selected-list-column,
+.available-spells-column {
+  display: flex;
+  flex-direction: column;
+  width: var(--manager-column-width);
+  height: 100%;
+  border: 1px solid var(--manager-border-color);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.spell-lists-column h2,
+.selected-list-column h2,
+.available-spells-column h2 {
+  margin: 0;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--manager-border-color);
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+/* List containers */
+.list-container,
+.selected-list-content,
+.available-spells-list {
+  flex: 1;
+  padding: 0.5rem;
+  overflow-y: auto;
+}
+
+/* Spell list items */
+.spell-list-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spell-list-item {
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--manager-border-color);
+  border-radius: 3px;
+  background: var(--manager-item-bg);
+}
+
+.spell-list-item:hover {
+  background: var(--manager-item-hover-bg);
+}
+
+.list-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.list-name {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+}
+
+.list-name i {
+  margin-right: 0.5rem;
+}
+
+.list-meta {
+  display: flex;
+  opacity: 0.7;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 0.8rem;
+}
+
+/* Selected list header */
+.selected-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--manager-border-color);
+}
+
+.selected-list-header h2 {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+/* Selected spell list */
+.selected-spells {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spell-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+  padding: 0.5rem;
+  border: 1px solid var(--manager-border-color);
+  border-radius: 3px;
+  background: var(--manager-item-bg);
+}
+
+.spell-item:hover {
+  background: var(--manager-item-hover-bg);
+}
+
+/* Available spells column */
+.spell-filters {
+  gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--manager-border-color);
+}
+
+.spell-filters input,
+.spell-filters select {
+  width: 100%;
+}
+
+.phase-notice {
+  padding: 1rem;
+  color: var(--color-text-dark-secondary);
+  font-style: italic;
+  text-align: center;
+}
+
+/* Footer */
+.manager-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.5rem 0;
+}
+
+/* Placeholder/empty states */
+.no-lists,
+.no-spells,
+.no-selection {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: var(--color-text-dark-secondary);
+  font-style: italic;
+  text-align: center;
+}
