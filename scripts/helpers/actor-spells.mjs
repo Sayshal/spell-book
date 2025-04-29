@@ -55,7 +55,7 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
 
   // Log errors in bulk rather than one by one
   if (errors.length > 0) {
-    log(2, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`);
+    log(2, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`), { errors: errors };
 
     if (errors.length === spellUuids.size) {
       log(1, 'All spells failed to load, possible system or compendium issue');

@@ -166,16 +166,6 @@ export async function duplicateSpellList(originalSpellList) {
     // Create a copy of the original spell list data
     const pageData = originalSpellList.toObject();
 
-    // Create a new journal entry in the custom pack
-    const journalName = `${originalSpellList.parent.name} - ${originalSpellList.name}`;
-    let journal = await JournalEntry.create(
-      {
-        name: journalName,
-        pages: []
-      },
-      { pack: customPack.collection }
-    );
-
     // Add flags to track the original
     pageData.flags = pageData.flags || {};
     pageData.flags[MODULE.ID] = {
@@ -186,11 +176,27 @@ export async function duplicateSpellList(originalSpellList) {
       isDuplicate: true
     };
 
-    // Create the page in the journal
-    const page = await journal.createPage({
-      ...pageData,
-      name: originalSpellList.name
-    });
+    // Create a new journal entry with the page already included
+    const journalName = `${originalSpellList.parent.name} - ${originalSpellList.name}`;
+
+    // Create journal with pages array that includes our spell list
+    const journalData = {
+      name: journalName,
+      pages: [
+        {
+          name: originalSpellList.name,
+          type: 'spells',
+          flags: pageData.flags,
+          system: pageData.system
+        }
+      ]
+    };
+
+    // Create the journal in the custom pack
+    const journal = await JournalEntry.create(journalData, { pack: customPack.collection });
+
+    // Get the first page which is our spell list
+    const page = journal.pages.contents[0];
 
     // Update mapping settings
     await updateSpellListMapping(originalSpellList.uuid, page.uuid);
