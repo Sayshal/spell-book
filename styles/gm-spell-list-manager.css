@@ -113,12 +113,6 @@
   transform: rotate(180deg);
 }
 
-/* Keep collapser visible when sidebar is collapsed */
-.gm-spell-list-manager.sidebar-collapsed .sidebar-collapser {
-  right: auto;
-  left: 0;
-}
-
 /* Sidebar header */
 .gm-spell-list-manager .spell-lists-sidebar h2 {
   z-index: 3;
