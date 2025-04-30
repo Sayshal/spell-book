@@ -11,13 +11,14 @@
 	{{else}}
 		<!-- Three-column layout -->
 		<div class="manager-columns">
-			{{#if isEditing}}
-				<button type="button" class="lists-column-toggle" data-action="toggleListsColumn">
-					<i class="fas fa-columns"></i> {{localize 'SPELLMANAGER.Buttons.ShowLists'}}
-				</button>
-			{{/if}}
 			<!-- Column 1: Available spell lists -->
 			<div class="spell-lists-column">
+				<!-- Add sidebar collapser button -->
+				<button type="button" class="sidebar-collapser collapser vertical" data-action="toggleSidebar"
+					aria-label="Toggle Sidebar">
+					<i class="fas fa-caret-left"></i>
+				</button>
+
 				<h2>Available Spell Lists</h2>
 				<div class="list-container">
 					{{#if availableSpellLists.length}}
@@ -30,7 +31,8 @@
 											<span>{{list.name}}</span>
 										</div>
 										<div class="list-meta">
-											<span class="spell-count">{{list.spellCount}} spells</span>
+											<span class="spell-count">{{list.spellCount}} Spells</span>
+											<span class="meta-separator">•</span>
 											<span class="source">{{list.pack}}</span>
 										</div>
 									</div>

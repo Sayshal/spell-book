@@ -34,7 +34,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       deleteCustomList: GMSpellListManager.handleDeleteCustomList,
       restoreOriginal: GMSpellListManager.handleRestoreOriginal,
       showDocumentation: GMSpellListManager.handleShowDocumentation,
-      toggleListsColumn: GMSpellListManager.handleToggleListsColumn
+      toggleSidebar: GMSpellListManager.handleToggleSideba
     },
     classes: ['gm-spell-list-manager'],
     window: {
@@ -1090,7 +1090,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     instance.close();
   }
 
-  static handleToggleListsColumn(event, _form) {
+  /**
+   * Handle toggling the sidebar
+   * @static
+   */
+  static handleToggleSidebar(event, _form) {
     const appId = `gm-spell-list-manager-${MODULE.ID}`;
     const instance = foundry.applications.instances.get(appId);
 
@@ -1099,15 +1103,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       return;
     }
 
-    const isHidden = instance.element.classList.contains('editing');
-
-    if (isHidden) {
-      instance.element.classList.remove('editing');
-      event.currentTarget.innerHTML = `<i class="fas fa-columns"></i> ${game.i18n.localize('SPELLMANAGER.Buttons.HideLists')}`;
-    } else {
-      instance.element.classList.add('editing');
-      event.currentTarget.innerHTML = `<i class="fas fa-columns"></i> ${game.i18n.localize('SPELLMANAGER.Buttons.ShowLists')}`;
-    }
+    // Toggle the sidebar-collapsed class
+    instance.element.classList.toggle('sidebar-collapsed');
   }
 
   /**
