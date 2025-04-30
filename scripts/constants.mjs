@@ -79,7 +79,12 @@ export const MODULE = {
      * Filter configuration template
      * @type {string}
      */
-    FILTER_CONFIG: 'modules/spell-book/templates/player-filter-configuration.hbs'
+    FILTER_CONFIG: 'modules/spell-book/templates/player-filter-configuration.hbs',
+    GM_SPELL_LIST_MANAGER: 'modules/spell-book/templates/gm-spell-list-manager.hbs',
+    GM_SPELL_LIST_MANAGER_LEFT: 'modules/spell-book/templates/gm-spell-list-manager-left.hbs',
+    GM_SPELL_LIST_MANAGER_MIDDLE: 'modules/spell-book/templates/gm-spell-list-manager-middle.hbs',
+    GM_SPELL_LIST_MANAGER_RIGHT: 'modules/spell-book/templates/gm-spell-list-manager-right.hbs',
+    GM_SPELL_LIST_MANAGER_FOOTER: 'modules/spell-book/templates/gm-spell-list-manager-footer.hbs'
   },
 
   /**

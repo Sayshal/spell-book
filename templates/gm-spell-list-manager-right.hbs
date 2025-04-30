@@ -1,16 +1,17 @@
 <!-- Right Sidebar: Available spells -->
 <div class="available-spells-sidebar">
-	<h2>Available Spells</h2>
+	<h2>{{localize "SPELLMANAGER.Columns.AvailableSpells"}}</h2>
 	<div class="spell-filters">
-		<input type="text" name="spell-search" placeholder="Search spells..." value="{{filterState.name}}">
+		<input type="text" name="spell-search" placeholder="{{localize "SPELLMANAGER.Filters.SearchPlaceholder"}}"
+			value="{{filterState.name}}">
 		<select name="spell-level">
-			<option value="">All Levels</option>
+			<option value="">{{localize "SPELLMANAGER.Filters.AllLevels"}}</option>
 			{{#each spellLevels as |label level|}}
 				<option value="{{level}}" {{#if (eq ../filterState.level level)}}selected{{/if}}>{{label}}</option>
 			{{/each}}
 		</select>
 		<select name="spell-school">
-			<option value="">All Schools</option>
+			<option value="">{{localize "SPELLMANAGER.Filters.AllSchools"}}</option>
 			{{#each spellSchools as |school key|}}
 				<option value="{{key}}" {{#if (eq ../filterState.school key)}}selected{{/if}}>{{school.label}}</option>
 			{{/each}}
@@ -40,9 +41,10 @@
 				{{#if filteredSpells.totalItems}}
 					<div class="pagination-controls">
 						<div class="pagination-status">
-							Showing
+							{{localize "SPELLMANAGER.Filters.Showing"}}
 							{{add (multiply paginationState.currentPage paginationState.pageSize) 1}}-{{min (add (multiply paginationState.currentPage paginationState.pageSize) paginationState.pageSize) filteredSpells.totalFiltered}}
-							of {{filteredSpells.totalFiltered}} spells
+							{{localize "SPELLMANAGER.Filters.Of"}} {{filteredSpells.totalFiltered}}
+							{{localize "SPELLMANAGER.Filters.Spells"}}
 						</div>
 						<div class="pagination-buttons">
 							<button type="button" class="pagination-button" data-action="pageNavigation" data-page-action="first-page"
@@ -56,7 +58,8 @@
 
 							{{#if (gt paginationState.totalPages 1)}}
 								<span class="pagination-pages">
-									Page {{add paginationState.currentPage 1}} of {{paginationState.totalPages}}
+									{{localize "SPELLMANAGER.Filters.Page"}} {{add paginationState.currentPage 1}}
+									{{localize "SPELLMANAGER.Filters.Of"}} {{paginationState.totalPages}}
 								</span>
 							{{/if}}
 
@@ -72,10 +75,10 @@
 					</div>
 				{{/if}}
 			{{else}}
-				<p class="no-spells">No spells match your filters or all matching spells are already in the list.</p>
+				<p class="no-spells">{{localize "SPELLMANAGER.Columns.NoMatchingSpells"}}</p>
 			{{/if}}
 		{{else}}
-			<p class="phase-notice">Select a spell list and click "Edit" to customize it.</p>
+			<p class="phase-notice">{{localize "SPELLMANAGER.Columns.EditPrompt"}}</p>
 		{{/if}}
 	</div>
 </div>

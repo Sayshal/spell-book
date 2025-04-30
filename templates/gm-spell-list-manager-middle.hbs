@@ -8,26 +8,26 @@
 			<div class="header-buttons">
 				{{#unless isEditing}}
 					<button type="button" class="edit-button" data-action="editSpellList" data-uuid="{{selectedSpellList.uuid}}">
-						<i class="fas fa-edit"></i> Edit
+						<i class="fas fa-edit"></i> {{localize "SPELLMANAGER.Buttons.Edit"}}
 					</button>
 				{{else}}
 					{{#if isCustomList}}
 						<div class="custom-list-controls">
 							{{#if compareInfo.hasOriginalChanged}}
-								<span class="update-notice">Original has been updated</span>
+								<span class="update-notice">{{localize "SPELLMANAGER.Status.UpdateNotice"}}</span>
 							{{/if}}
 							<button type="button" class="restore-button" data-action="restoreOriginal"
 								data-uuid="{{selectedSpellList.uuid}}">
-								<i class="fas fa-sync"></i> Restore from Source
+								<i class="fas fa-sync"></i> {{localize "SPELLMANAGER.Buttons.Restore"}}
 							</button>
 							<button type="button" class="delete-button" data-action="deleteCustomList"
 								data-uuid="{{selectedSpellList.uuid}}">
-								<i class="fas fa-trash"></i> Delete Custom Version
+								<i class="fas fa-trash"></i> {{localize "SPELLMANAGER.Buttons.Delete"}}
 							</button>
 
 							<button type="button" class="save-button" data-action="saveCustomList"
 								data-uuid="{{selectedSpellList.uuid}}">
-								<i class="fas fa-save"></i> Save
+								<i class="fas fa-save"></i> {{localize "SPELLMANAGER.Buttons.Save"}}
 							</button>
 						</div>
 					{{/if}}
@@ -39,10 +39,10 @@
 			{{#if selectedSpellList.isLoadingSpells}}
 				<div class="spell-loading">
 					<i class="fas fa-spinner fa-spin fa-2x"></i>
-					<p>Loading spells...</p>
+					<p>{{localize "SPELLMANAGER.Application.LoadingSpells"}}</p>
 				</div>
 			{{else if selectedSpellList.hasError}}
-				<p class="spell-error">Error loading spells.</p>
+				<p class="spell-error">{{localize "SPELLMANAGER.Application.SpellsError"}}</p>
 			{{else if selectedSpellList.spells.length}}
 				<ul class="selected-spells">
 					{{#each selectedSpellList.spells as |spell|}}
@@ -64,13 +64,14 @@
 					{{/each}}
 				</ul>
 			{{else}}
-				<p class="no-spells">{{#if isEditing}}Add spells from the right panel.{{else}}No spells in this
-						list.{{/if}}</p>
+				<p class="no-spells">
+					{{#if isEditing}}{{localize "SPELLMANAGER.Columns.AddSpellsPrompt"}}{{else}}{{localize "SPELLMANAGER.Columns.NoSpells"}}{{/if}}
+				</p>
 			{{/if}}
 		</div>
 	{{else}}
 		<div class="no-selection">
-			<p>Select a spell list from the left sidebar to view its contents.</p>
+			<p>{{localize "SPELLMANAGER.Columns.NoListSelected"}}</p>
 		</div>
 	{{/if}}
 </section>

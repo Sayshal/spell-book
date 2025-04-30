@@ -9,7 +9,7 @@
   --available-spells-sidebar-width: 250px;
   --manager-border-color: var(--color-border-light-tertiary);
   --manager-column-gap: 0.75rem;
-  --manager-custom-color: #3fc6c1;
+  --manager-custom-color: #79d7d4;
   --manager-item-bg: #0000000d;
   --manager-item-hover-bg: #0000001a;
   --spell-book-bg-primary: #1b1d24e6;
@@ -24,8 +24,8 @@
 /* Main container */
 .gm-spell-list-manager .window-content {
   height: auto;
-  max-height: 100%;
   min-height: 500px;
+  max-height: 100%;
   padding: 0;
 }
 
@@ -38,8 +38,8 @@
   grid-template-columns: var(--spell-lists-sidebar-width) minmax(0, 1fr) var(--available-spells-sidebar-width);
   display: grid;
   position: relative;
-  height: 100%;
-  max-height: 100%;
+  height: calc(100% - 60px);
+  max-height: calc(100% - 60px);
   overflow: hidden;
   transition: var(--spell-book-transition-slow);
 }
@@ -176,6 +176,11 @@
   color: var(--dnd5e-color-gold);
 }
 
+.gm-spell-list-manager .spell-list-item .list-name i.has-custom-version {
+  color: var(--manager-custom-color);
+  text-shadow: 0 0 3px #3fc6c180;
+}
+
 .gm-spell-list-manager .list-meta {
   display: flex;
   opacity: 0.8;
@@ -207,8 +212,9 @@
   flex: 1;
   flex-direction: column;
   padding: 0.5rem;
+  height: 100%;
+  max-height: 100%;
   overflow: hidden;
-  min-height: 100%;
 }
 
 /* Selected list header with column layout */
@@ -237,11 +243,11 @@
 
 /* Buttons section */
 .gm-spell-list-manager .header-buttons {
-  margin-top: -20px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
+  margin-top: -20px;
 }
 
 /* Elegant button styling */
@@ -272,20 +278,20 @@
 /* Button color highlights */
 .gm-spell-list-manager .selected-list-header .edit-button:hover,
 .gm-spell-list-manager .selected-list-header .save-button:hover {
-  text-shadow: 0 0 8px #4caf50;
   border: none;
+  text-shadow: 0 0 8px #4caf50;
   box-shadow: none;
 }
 
 .gm-spell-list-manager .selected-list-header .restore-button:hover {
-  text-shadow: 0 0 8px #2196f3;
   border: none;
+  text-shadow: 0 0 8px #2196f3;
   box-shadow: none;
 }
 
 .gm-spell-list-manager .selected-list-header .delete-button:hover {
-  text-shadow: 0 0 8px #f44336;
   border: none;
+  text-shadow: 0 0 8px #f44336;
   box-shadow: none;
 }
 
@@ -437,13 +443,16 @@
 
 /* Footer */
 .gm-spell-list-manager .manager-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
   gap: 0.5rem;
   min-height: 0;
   height: 60px;
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: center;
-  margin-top: auto;
   padding: 0.5rem;
   border-top: 1px solid var(--manager-border-color);
   background: #0000000d;
@@ -529,6 +538,15 @@
   color: var(--color-text-dark-secondary);
   font-style: italic;
   text-align: center;
+}
+
+.application.dialog.gm-spell-list-manager-helper .dialog-content {
+  gap: 0;
+  overflow-y: auto;
+}
+
+.application.dialog.gm-spell-list-manager-helper .dialog-form {
+  overflow-y: auto;
 }
 
 /* Responsive adjustments */

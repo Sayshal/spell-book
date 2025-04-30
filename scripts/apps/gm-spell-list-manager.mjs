@@ -55,14 +55,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /** @override */
   static PARTS = {
     form: {
-      template: 'modules/spell-book/templates/gm-spell-list-manager.hbs',
-      templates: [
-        'modules/spell-book/templates/gm-spell-list-manager-left.hbs',
-        'modules/spell-book/templates/gm-spell-list-manager-middle.hbs',
-        'modules/spell-book/templates/gm-spell-list-manager-right.hbs'
-      ]
+      template: MODULE.TEMPLATES.GM_SPELL_LIST_MANAGER,
+      templates: [MODULE.TEMPLATES.GM_SPELL_LIST_MANAGER_LEFT, MODULE.TEMPLATES.GM_SPELL_LIST_MANAGER_MIDDLE, MODULE.TEMPLATES.GM_SPELL_LIST_MANAGER_RIGHT]
     },
-    footer: { template: 'modules/spell-book/templates/gm-spell-list-manager-footer.hbs' }
+    footer: { template: MODULE.TEMPLATES.GM_SPELL_LIST_MANAGER_FOOTER }
   };
 
   /* -------------------------------------------- */
@@ -183,6 +179,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (this.isLoading) {
       return context;
     }
+
+    // Get mappings to determine which lists have custom versions
+    const customMappings = game.settings.get(MODULE.ID, 'customSpellListMappings') || {};
+    context.customListMap = customMappings;
 
     // If we have available spells, apply filters and pagination
     if (this.availableSpells.length > 0) {
@@ -894,13 +894,20 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     const dialog = await foundry.applications.api.DialogV2.wait({
       title: game.i18n.localize('SPELLMANAGER.Documentation.Title'),
       content: content,
+      classes: ['gm-spell-list-manager-helper'],
       buttons: [
         {
-          icon: '<i class="fas fa-check"></i>',
+          icon: 'fas fa-check',
           label: game.i18n.localize('SPELLMANAGER.Buttons.Close'),
           action: 'close'
         }
       ],
+      position: {
+        top: 150,
+        left: 150,
+        width: 600,
+        height: 800
+      },
       default: 'close'
     });
 
