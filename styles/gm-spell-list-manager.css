@@ -217,23 +217,20 @@
 }
 
 .gm-spell-list-manager .selected-list-header h2 {
-  margin: 0.5rem 0;
   padding: 0;
   overflow: hidden;
   color: var(--color-text-light-highlight);
-  font-size: 1.6rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 /* Buttons section */
 .gm-spell-list-manager .header-buttons {
-  gap: 0.75rem;
+  margin-top: -20px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  margin-top: 0.5rem;
 }
 
 /* Elegant button styling */
@@ -264,23 +261,28 @@
 /* Button color highlights */
 .gm-spell-list-manager .selected-list-header .edit-button:hover,
 .gm-spell-list-manager .selected-list-header .save-button:hover {
-  color: #4caf50;
+  text-shadow: 0 0 8px #4caf50;
   border: none;
+  box-shadow: none;
 }
 
 .gm-spell-list-manager .selected-list-header .restore-button:hover {
-  color: #2196f3;
+  text-shadow: 0 0 8px #2196f3;
+  border: none;
+  box-shadow: none;
 }
 
 .gm-spell-list-manager .selected-list-header .delete-button:hover {
-  color: #f44336;
+  text-shadow: 0 0 8px #f44336;
+  border: none;
+  box-shadow: none;
 }
 
 /* Custom list controls */
 .gm-spell-list-manager .custom-list-controls {
-  gap: 1rem;
   display: flex;
   align-items: center;
+  white-space: nowrap;
 }
 
 .gm-spell-list-manager .update-notice {

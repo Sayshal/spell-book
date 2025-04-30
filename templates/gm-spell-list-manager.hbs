@@ -70,12 +70,14 @@
 										data-uuid="{{selectedSpellList.uuid}}">
 										<i class="fas fa-trash"></i> Delete Custom Version
 									</button>
+
+									<button type="button" class="save-button" data-action="saveCustomList"
+										data-uuid="{{selectedSpellList.uuid}}">
+										<i class="fas fa-save"></i> Save
+									</button>
 								</div>
 							{{/if}}
-							<button type="button" class="save-button" data-action="saveCustomList"
-								data-uuid="{{selectedSpellList.uuid}}">
-								<i class="fas fa-save"></i> Save
-							</button>
+
 						{{/unless}}
 					</div>
 				</div>
