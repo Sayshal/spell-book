@@ -54,7 +54,15 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
   /** @override */
   static PARTS = {
-    form: { template: 'modules/spell-book/templates/gm-spell-list-manager.hbs' }
+    form: {
+      template: 'modules/spell-book/templates/gm-spell-list-manager.hbs',
+      templates: [
+        'modules/spell-book/templates/gm-spell-list-manager-left.hbs',
+        'modules/spell-book/templates/gm-spell-list-manager-middle.hbs',
+        'modules/spell-book/templates/gm-spell-list-manager-right.hbs'
+      ]
+    },
+    footer: { template: 'modules/spell-book/templates/gm-spell-list-manager-footer.hbs' }
   };
 
   /* -------------------------------------------- */

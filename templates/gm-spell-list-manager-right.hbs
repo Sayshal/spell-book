@@ -1,0 +1,81 @@
+<!-- Right Sidebar: Available spells -->
+<div class="available-spells-sidebar">
+	<h2>Available Spells</h2>
+	<div class="spell-filters">
+		<input type="text" name="spell-search" placeholder="Search spells..." value="{{filterState.name}}">
+		<select name="spell-level">
+			<option value="">All Levels</option>
+			{{#each spellLevels as |label level|}}
+				<option value="{{level}}" {{#if (eq ../filterState.level level)}}selected{{/if}}>{{label}}</option>
+			{{/each}}
+		</select>
+		<select name="spell-school">
+			<option value="">All Schools</option>
+			{{#each spellSchools as |school key|}}
+				<option value="{{key}}" {{#if (eq ../filterState.school key)}}selected{{/if}}>{{school.label}}</option>
+			{{/each}}
+		</select>
+	</div>
+	<div class="available-spells-list">
+		{{#if isEditing}}
+			{{#if filteredSpells.spells.length}}
+				<ul class="available-spells">
+					{{#each filteredSpells.spells as |spell|}}
+						<li class="spell-item available" data-uuid="{{spell.uuid}}">
+							<div class="spell-name">
+								<img src="{{spell.img}}" class="spell-icon" alt="{{spell.name}} icon">
+								<span class="name">{{spell.name}}</span>
+							</div>
+							<div class="spell-meta">
+								<span class="spell-level">{{lookup @root.spellLevels spell.level}}</span>
+								<span class="spell-school">{{lookup (lookup @root.spellSchools spell.school) 'label'}}</span>
+								<button type="button" class="add-spell" data-action="addSpell" data-uuid="{{spell.uuid}}">
+									<i class="fas fa-plus"></i>
+								</button>
+							</div>
+						</li>
+					{{/each}}
+				</ul>
+
+				{{#if filteredSpells.totalItems}}
+					<div class="pagination-controls">
+						<div class="pagination-status">
+							Showing
+							{{add (multiply paginationState.currentPage paginationState.pageSize) 1}}-{{min (add (multiply paginationState.currentPage paginationState.pageSize) paginationState.pageSize) filteredSpells.totalFiltered}}
+							of {{filteredSpells.totalFiltered}} spells
+						</div>
+						<div class="pagination-buttons">
+							<button type="button" class="pagination-button" data-action="pageNavigation" data-page-action="first-page"
+								{{#if (eq paginationState.currentPage 0)}}disabled{{/if}}>
+								<i class="fas fa-angle-double-left"></i>
+							</button>
+							<button type="button" class="pagination-button" data-action="pageNavigation" data-page-action="prev-page"
+								{{#if (eq paginationState.currentPage 0)}}disabled{{/if}}>
+								<i class="fas fa-angle-left"></i>
+							</button>
+
+							{{#if (gt paginationState.totalPages 1)}}
+								<span class="pagination-pages">
+									Page {{add paginationState.currentPage 1}} of {{paginationState.totalPages}}
+								</span>
+							{{/if}}
+
+							<button type="button" class="pagination-button" data-action="pageNavigation" data-page-action="next-page"
+								{{#if (eq paginationState.currentPage (subtract paginationState.totalPages 1))}}disabled{{/if}}>
+								<i class="fas fa-angle-right"></i>
+							</button>
+							<button type="button" class="pagination-button" data-action="pageNavigation" data-page-action="last-page"
+								{{#if (eq paginationState.currentPage (subtract paginationState.totalPages 1))}}disabled{{/if}}>
+								<i class="fas fa-angle-double-right"></i>
+							</button>
+						</div>
+					</div>
+				{{/if}}
+			{{else}}
+				<p class="no-spells">No spells match your filters or all matching spells are already in the list.</p>
+			{{/if}}
+		{{else}}
+			<p class="phase-notice">Select a spell list and click "Edit" to customize it.</p>
+		{{/if}}
+	</div>
+</div>

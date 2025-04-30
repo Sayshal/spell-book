@@ -1,0 +1,33 @@
+<!-- Left Sidebar: Available spell lists -->
+<div class="spell-lists-sidebar card">
+	<!-- Collapser Button -->
+	<button type="button" class="sidebar-collapser collapser vertical" data-action="toggleSidebar"
+		aria-label="Toggle Sidebar">
+		<i class="fas fa-caret-left"></i>
+	</button>
+
+	<h2>Available Spell Lists</h2>
+	<div class="lists-container">
+		{{#if availableSpellLists.length}}
+			<ul class="spell-list-items">
+				{{#each availableSpellLists as |list|}}
+					<li class="spell-list-item" data-uuid="{{list.uuid}}">
+						<div class="list-item-header" data-action="selectSpellList" data-uuid="{{list.uuid}}">
+							<div class="list-name">
+								<i class="fas fa-book"></i>
+								<span>{{list.name}}</span>
+							</div>
+							<div class="list-meta">
+								<span class="spell-count">{{list.spellCount}} Spells</span>
+								<span class="meta-separator">•</span>
+								<span class="source">{{list.pack}}</span>
+							</div>
+						</div>
+					</li>
+				{{/each}}
+			</ul>
+		{{else}}
+			<p class="no-lists">No spell lists found.</p>
+		{{/if}}
+	</div>
+</div>

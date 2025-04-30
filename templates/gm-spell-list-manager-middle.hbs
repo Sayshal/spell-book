@@ -1,0 +1,76 @@
+<!-- Middle Content: Selected spell list -->
+<section class="selected-list-content">
+	{{#if selectedSpellList}}
+		<div class="selected-list-header">
+			<div class="header-title">
+				<h2>{{selectedSpellList.name}}</h2>
+			</div>
+			<div class="header-buttons">
+				{{#unless isEditing}}
+					<button type="button" class="edit-button" data-action="editSpellList" data-uuid="{{selectedSpellList.uuid}}">
+						<i class="fas fa-edit"></i> Edit
+					</button>
+				{{else}}
+					{{#if isCustomList}}
+						<div class="custom-list-controls">
+							{{#if compareInfo.hasOriginalChanged}}
+								<span class="update-notice">Original has been updated</span>
+							{{/if}}
+							<button type="button" class="restore-button" data-action="restoreOriginal"
+								data-uuid="{{selectedSpellList.uuid}}">
+								<i class="fas fa-sync"></i> Restore from Source
+							</button>
+							<button type="button" class="delete-button" data-action="deleteCustomList"
+								data-uuid="{{selectedSpellList.uuid}}">
+								<i class="fas fa-trash"></i> Delete Custom Version
+							</button>
+
+							<button type="button" class="save-button" data-action="saveCustomList"
+								data-uuid="{{selectedSpellList.uuid}}">
+								<i class="fas fa-save"></i> Save
+							</button>
+						</div>
+					{{/if}}
+
+				{{/unless}}
+			</div>
+		</div>
+		<div class="selected-list-spells">
+			{{#if selectedSpellList.isLoadingSpells}}
+				<div class="spell-loading">
+					<i class="fas fa-spinner fa-spin fa-2x"></i>
+					<p>Loading spells...</p>
+				</div>
+			{{else if selectedSpellList.hasError}}
+				<p class="spell-error">Error loading spells.</p>
+			{{else if selectedSpellList.spells.length}}
+				<ul class="selected-spells">
+					{{#each selectedSpellList.spells as |spell|}}
+						<li class="spell-item" data-uuid="{{spell.uuid}}">
+							<div class="spell-name">
+								<img src="{{spell.img}}" class="spell-icon" alt="{{spell.name}} icon">
+								<span class="name">{{spell.name}}</span>
+							</div>
+							<div class="spell-meta">
+								<span class="spell-level">{{lookup @root.spellLevels spell.level}}</span>
+								<span class="spell-school">{{lookup (lookup @root.spellSchools spell.school) 'label'}}</span>
+								{{#if @root.isEditing}}
+									<button type="button" class="remove-spell" data-action="removeSpell" data-uuid="{{spell.uuid}}">
+										<i class="fas fa-times"></i>
+									</button>
+								{{/if}}
+							</div>
+						</li>
+					{{/each}}
+				</ul>
+			{{else}}
+				<p class="no-spells">{{#if isEditing}}Add spells from the right panel.{{else}}No spells in this
+						list.{{/if}}</p>
+			{{/if}}
+		</div>
+	{{else}}
+		<div class="no-selection">
+			<p>Select a spell list from the left sidebar to view its contents.</p>
+		</div>
+	{{/if}}
+</section>

@@ -25,6 +25,7 @@
 .gm-spell-list-manager .window-content {
   height: auto;
   max-height: 100%;
+  min-height: 500px;
   padding: 0;
 }
 
@@ -37,22 +38,31 @@
   grid-template-columns: var(--spell-lists-sidebar-width) minmax(0, 1fr) var(--available-spells-sidebar-width);
   display: grid;
   position: relative;
-  height: auto;
+  height: 100%;
   max-height: 100%;
   overflow: hidden;
   transition: var(--spell-book-transition-slow);
 }
 
+.gm-spell-list-manager-container.loading-state,
+.gm-spell-list-manager-container.error-state {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
 /* Loading and error states */
 .gm-spell-list-manager .manager-loading,
 .gm-spell-list-manager .manager-error {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  grid-column: 1 / -1;
   width: 100%;
-  height: 100%;
-  text-align: center;
+  margin: 0 auto;
+}
+
+.manager-loading i,
+.manager-error i {
+  margin-bottom: 1rem;
 }
 
 /* Sidebar collapsed state */
@@ -198,6 +208,7 @@
   flex-direction: column;
   padding: 0.5rem;
   overflow: hidden;
+  min-height: 100%;
 }
 
 /* Selected list header with column layout */
@@ -305,6 +316,7 @@
   justify-content: center;
   align-items: center;
   height: 100%;
+  min-height: 400px;
   color: var(--color-text-dark-secondary);
   font-style: italic;
 }
@@ -426,13 +438,19 @@
 /* Footer */
 .gm-spell-list-manager .manager-footer {
   gap: 0.5rem;
+  min-height: 0;
+  height: 60px;
   grid-column: 1 / -1;
   display: flex;
-  justify-content: flex-end;
-  margin-top: 0.5rem;
+  justify-content: center;
+  margin-top: auto;
   padding: 0.5rem;
   border-top: 1px solid var(--manager-border-color);
   background: #0000000d;
+}
+
+.gm-spell-list-manager .manager-footer button {
+  width: auto;
 }
 
 /* Pagination controls */
