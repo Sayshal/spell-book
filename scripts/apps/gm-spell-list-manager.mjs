@@ -34,7 +34,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       deleteCustomList: GMSpellListManager.handleDeleteCustomList,
       restoreOriginal: GMSpellListManager.handleRestoreOriginal,
       showDocumentation: GMSpellListManager.handleShowDocumentation,
-      toggleSidebar: GMSpellListManager.handleToggleSideba
+      toggleSidebar: GMSpellListManager.handleToggleSidebar
     },
     classes: ['gm-spell-list-manager'],
     window: {

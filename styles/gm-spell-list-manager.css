@@ -1,9 +1,8 @@
+/* stylelint-disable comment-empty-line-before */
 /* stylelint-disable declaration-block-no-redundant-longhand-properties */
 
 /* ----------------------------------------- */
-
 /*  GM Spell List Manager - Main CSS         */
-
 /* ----------------------------------------- */
 
 .gm-spell-list-manager {
@@ -60,7 +59,7 @@
   grid-template-columns: 0 minmax(0, 1fr) var(--available-spells-sidebar-width);
 }
 
-/* Left sidebar: Spell Lists */
+/* Left sidebar: Spell Lists - PRESERVE THESE PROPERTIES EXACTLY */
 .gm-spell-list-manager .spell-lists-sidebar {
   transform-style: preserve-3d;
   display: flex;
@@ -76,7 +75,6 @@
   box-shadow: 0 0 0.375rem var(--color-shadow-dark);
   transition: margin-left 450ms ease;
   transform: translateZ(0);
-  overflow: hidden; /* Keep this hidden to prevent scrollbar conflicts with collapser */
 }
 
 .gm-spell-list-manager.sidebar-collapsed .spell-lists-sidebar {
@@ -84,7 +82,7 @@
   border: none;
 }
 
-/* Sidebar collapser button */
+/* Sidebar collapser button - PRESERVE THESE PROPERTIES EXACTLY */
 .gm-spell-list-manager .sidebar-collapser {
   place-content: center;
   display: grid;
@@ -104,7 +102,7 @@
   transform: translateZ(-1px);
 }
 
-.gm-spell-list-manager .spell-lists-sidebar .sidebar-collapser i {
+.gm-spell-list-manager .sidebar-collapser i {
   margin-left: 0.375rem;
   color: var(--color-text-light-highlight);
   font-size: 0.75rem;
@@ -114,30 +112,28 @@
   transform: rotate(180deg);
 }
 
-/* Keep collapser visible when sidebar is collapsed */
-.gm-spell-list-manager.sidebar-collapsed .sidebar-collapser {
-  right: auto;
-  left: 0;
-}
-
-/* Sidebar headings */
-.gm-spell-list-manager .spell-lists-sidebar h2,
-.gm-spell-list-manager .available-spells-sidebar h2 {
-  margin: 0.5rem;
+/* Sidebar header and scrolling content container */
+.gm-spell-list-manager .spell-lists-sidebar h2 {
+  margin: 0.5rem 0;
   padding: 0.5rem;
   color: var(--color-text-light-highlight);
   font-size: 1.2rem;
   text-align: center;
 }
 
-/* Fix for lists container to allow scrolling */
+/* Fixed height for the header area */
+.gm-spell-list-manager .lists-header {
+  flex: 0 0 auto;
+  height: auto;
+}
+
+/* THIS IS THE KEY - Make the lists container scrollable while preserving 3D context */
 .gm-spell-list-manager .lists-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: calc(100% - 50px); /* Adjust based on header height */
-  overflow-y: auto; /* This allows scrolling within the container */
-  padding: 0 0.5rem;
+  flex: 1 1 auto;
+  height: 0; /* Forces flex to calculate height automatically */
+  margin-right: 2px;
+  padding: 0 0.5rem; /* Prevent scrollbar from touching collapser */
+  overflow-y: auto; /* Enable vertical scrolling */
 }
 
 .gm-spell-list-manager .spell-list-items {
@@ -243,6 +239,14 @@
   padding: 0.5rem;
   border-left: 1px solid var(--manager-border-color);
   background: #00000008;
+}
+
+.gm-spell-list-manager .available-spells-sidebar h2 {
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  color: var(--color-text-light-highlight);
+  font-size: 1.2rem;
+  text-align: center;
 }
 
 .gm-spell-list-manager .spell-filters {
