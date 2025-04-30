@@ -6,7 +6,6 @@
 /* ----------------------------------------- */
 
 .gm-spell-list-manager {
-  /* Core variables */
   --available-spells-sidebar-width: 250px;
   --manager-border-color: var(--color-border-light-tertiary);
   --manager-column-gap: 0.75rem;
@@ -14,8 +13,6 @@
   --manager-item-bg: #0000000d;
   --manager-item-hover-bg: #0000001a;
   --spell-book-bg-primary: #1b1d24e6;
-
-  /* Reuse spell-book variables */
   --spell-book-border-light: #c9c7b82a;
   --spell-book-border-radius: 3px;
   --spell-book-control-width: 16px;
@@ -31,6 +28,10 @@
   padding: 0;
 }
 
+.gm-spell-list-manager h2 {
+  border-bottom: none;
+}
+
 .gm-spell-list-manager-container {
   gap: var(--manager-column-gap);
   grid-template-columns: var(--spell-lists-sidebar-width) minmax(0, 1fr) var(--available-spells-sidebar-width);
@@ -42,7 +43,7 @@
   transition: var(--spell-book-transition-slow);
 }
 
-/* Loading and error states - full screen */
+/* Loading and error states */
 .gm-spell-list-manager .manager-loading,
 .gm-spell-list-manager .manager-error {
   display: flex;
@@ -59,7 +60,7 @@
   grid-template-columns: 0 minmax(0, 1fr) var(--available-spells-sidebar-width);
 }
 
-/* Left sidebar: Spell Lists - PRESERVE THESE PROPERTIES EXACTLY */
+/* Left sidebar: Spell Lists */
 .gm-spell-list-manager .spell-lists-sidebar {
   transform-style: preserve-3d;
   display: flex;
@@ -82,7 +83,7 @@
   border: none;
 }
 
-/* Sidebar collapser button - PRESERVE THESE PROPERTIES EXACTLY */
+/* Sidebar collapser button */
 .gm-spell-list-manager .sidebar-collapser {
   place-content: center;
   display: grid;
@@ -112,28 +113,32 @@
   transform: rotate(180deg);
 }
 
-/* Sidebar header and scrolling content container */
+/* Keep collapser visible when sidebar is collapsed */
+.gm-spell-list-manager.sidebar-collapsed .sidebar-collapser {
+  right: auto;
+  left: 0;
+}
+
+/* Sidebar header */
 .gm-spell-list-manager .spell-lists-sidebar h2 {
-  margin: 0.5rem 0;
-  padding: 0.5rem;
+  z-index: 3;
+  position: relative;
+  margin: 0;
+  padding: 0.75rem 0.5rem;
   color: var(--color-text-light-highlight);
   font-size: 1.2rem;
   text-align: center;
+  background-color: #0003;
+  box-shadow: 0 4px 6px -2px #0000004d;
 }
 
-/* Fixed height for the header area */
-.gm-spell-list-manager .lists-header {
-  flex: 0 0 auto;
-  height: auto;
-}
-
-/* THIS IS THE KEY - Make the lists container scrollable while preserving 3D context */
+/* Scrollable lists container */
 .gm-spell-list-manager .lists-container {
   flex: 1 1 auto;
-  height: 0; /* Forces flex to calculate height automatically */
+  height: 0;
   margin-right: 2px;
-  padding: 0 0.5rem; /* Prevent scrollbar from touching collapser */
-  overflow-y: auto; /* Enable vertical scrolling */
+  padding: 0 0.5rem;
+  overflow-y: auto;
 }
 
 .gm-spell-list-manager .spell-list-items {
@@ -201,19 +206,95 @@
   overflow: hidden;
 }
 
+/* Selected list header with row layout */
 .gm-spell-list-manager .selected-list-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--manager-border-color);
+  border-bottom: 1px solid #ffffff1a;
+}
+
+/* Title section */
+.gm-spell-list-manager .header-title {
+  flex: 1;
 }
 
 .gm-spell-list-manager .selected-list-header h2 {
   margin: 0;
   padding: 0;
-  font-size: 1.25rem;
+  overflow: hidden;
+  color: var(--color-text-light-highlight);
+  font-size: 1.6rem;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Buttons section */
+.gm-spell-list-manager .header-buttons {
+  gap: 0.75rem;
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* Elegant button styling */
+.gm-spell-list-manager .selected-list-header .edit-button,
+.gm-spell-list-manager .selected-list-header .save-button,
+.gm-spell-list-manager .selected-list-header .restore-button,
+.gm-spell-list-manager .selected-list-header .delete-button {
+  padding: 0.25rem 0.5rem;
+  border: none;
+  color: var(--color-text-light-0);
+  font-size: var(--font-size-14);
+  cursor: pointer;
+  background: none;
+  transition:
+    text-shadow 250ms ease,
+    color 250ms ease;
+}
+
+.gm-spell-list-manager .selected-list-header .edit-button:hover,
+.gm-spell-list-manager .selected-list-header .save-button:hover,
+.gm-spell-list-manager .selected-list-header .restore-button:hover,
+.gm-spell-list-manager .selected-list-header .delete-button:hover {
+  color: var(--color-text-light-highlight);
+  text-shadow: 0 0 8px var(--color-shadow-highlight);
+  background: none;
+}
+
+/* Button color highlights */
+.gm-spell-list-manager .selected-list-header .edit-button:hover,
+.gm-spell-list-manager .selected-list-header .save-button:hover {
+  color: #4caf50;
+}
+
+.gm-spell-list-manager .selected-list-header .restore-button:hover {
+  color: #2196f3;
+}
+
+.gm-spell-list-manager .selected-list-header .delete-button:hover {
+  color: #f44336;
+}
+
+/* Custom list controls */
+.gm-spell-list-manager .custom-list-controls {
+  gap: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.gm-spell-list-manager .update-notice {
+  margin-right: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  color: #000;
+  font-size: 0.8rem;
+  background-color: #ffc107;
 }
 
 .gm-spell-list-manager .selected-list-spells {
@@ -242,11 +323,13 @@
 }
 
 .gm-spell-list-manager .available-spells-sidebar h2 {
-  margin: 0.5rem 0;
-  padding: 0.5rem;
+  margin: 0;
+  padding: 0.75rem 0.5rem;
   color: var(--color-text-light-highlight);
   font-size: 1.2rem;
   text-align: center;
+  background-color: #0000001a;
+  box-shadow: 0 4px 6px -2px #00000026;
 }
 
 .gm-spell-list-manager .spell-filters {
@@ -399,11 +482,7 @@
   font-size: 0.9rem;
 }
 
-/* Edit buttons and controls */
-.gm-spell-list-manager .edit-button,
-.gm-spell-list-manager .save-button,
-.gm-spell-list-manager .restore-button,
-.gm-spell-list-manager .delete-button,
+/* Footer buttons */
 .gm-spell-list-manager .help-button,
 .gm-spell-list-manager .close-button {
   padding: 0.25rem 0.5rem;
@@ -411,36 +490,6 @@
   border-radius: 3px;
   cursor: pointer;
   background-color: #0000000d;
-}
-
-.gm-spell-list-manager .edit-button:hover,
-.gm-spell-list-manager .save-button:hover {
-  color: #fff;
-  background-color: #4caf50;
-}
-
-.gm-spell-list-manager .restore-button:hover {
-  color: #fff;
-  background-color: #2196f3;
-}
-
-.gm-spell-list-manager .delete-button:hover {
-  color: #fff;
-  background-color: #f44336;
-}
-
-/* Status indicators */
-.gm-spell-list-manager .custom-list-controls {
-  gap: 0.5rem;
-  display: flex;
-}
-
-.gm-spell-list-manager .update-notice {
-  padding: 0.25rem 0.5rem;
-  border-radius: 3px;
-  color: #000;
-  font-size: 0.8rem;
-  background-color: #ffc107;
 }
 
 /* Loading and message states */
