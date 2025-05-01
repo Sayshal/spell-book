@@ -16,27 +16,37 @@
 				<option value="{{key}}" {{#if (eq ../filterState.school key)}}selected{{/if}}>{{school.label}}</option>
 			{{/each}}
 		</select>
+		<select name="spell-source">
+			<option value="">{{localize "SPELLMANAGER.Filters.AllSources"}}</option>
+			{{#each spellSources as |source|}}
+				<option value="{{source.id}}" {{#if (eq ../filterState.source source.id)}}selected{{/if}}>
+					{{source.label}}
+				</option>
+			{{/each}}
+		</select>
 	</div>
 	<div class="available-spells-list">
 		{{#if isEditing}}
 			{{#if filteredSpells.spells.length}}
-				<ul class="available-spells">
-					{{#each filteredSpells.spells as |spell|}}
-						<li class="spell-item available" data-uuid="{{spell.uuid}}">
-							<div class="spell-name">
-								<img src="{{spell.img}}" class="spell-icon" alt="{{spell.name}} icon">
-								<span class="name">{{spell.name}}</span>
-							</div>
-							<div class="spell-meta">
-								<span class="spell-level">{{lookup @root.spellLevels spell.level}}</span>
-								<span class="spell-school">{{lookup (lookup @root.spellSchools spell.school) 'label'}}</span>
-								<button type="button" class="add-spell" data-action="addSpell" data-uuid="{{spell.uuid}}">
-									<i class="fas fa-plus"></i>
-								</button>
-							</div>
-						</li>
-					{{/each}}
-				</ul>
+				<div class="available-spells-wrapper">
+					<ul class="available-spells">
+						{{#each filteredSpells.spells as |spell|}}
+							<li class="spell-item available" data-uuid="{{spell.uuid}}">
+								<div class="spell-name">
+									<img src="{{spell.img}}" class="spell-icon" alt="{{spell.name}} icon">
+									<span class="name">{{spell.name}}</span>
+								</div>
+								<div class="spell-meta">
+									<span class="spell-level">{{lookup @root.spellLevels spell.level}}</span>
+									<span class="spell-school">{{lookup (lookup @root.spellSchools spell.school) 'label'}}</span>
+									<button type="button" class="add-spell" data-action="addSpell" data-uuid="{{spell.uuid}}">
+										<i class="fas fa-plus"></i>
+									</button>
+								</div>
+							</li>
+						{{/each}}
+					</ul>
+				</div>
 
 				{{#if filteredSpells.totalItems}}
 					<div class="pagination-controls">

@@ -109,7 +109,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   filterState = {
     name: '',
     level: '',
-    school: ''
+    school: '',
+    source: ''
   };
 
   /**
@@ -187,6 +188,16 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
     // If we have available spells, apply filters and pagination
     if (this.availableSpells.length > 0) {
+      const sourceMap = new Map();
+      this.availableSpells.forEach((spell) => {
+        if (spell.packName && !sourceMap.has(spell.sourceId)) {
+          sourceMap.set(spell.sourceId, {
+            id: spell.sourceId,
+            label: spell.packName
+          });
+        }
+      });
+      context.spellSources = Array.from(sourceMap.values()).sort((a, b) => a.label.localeCompare(b.label));
       context.filteredSpells = this._filterAvailableSpells();
     }
 
@@ -269,7 +280,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @private
    */
   _filterAvailableSpells() {
-    const { name, level, school } = this.filterState;
+    const { name, level, school, source } = this.filterState;
 
     // First, filter the entire list
     const filteredSpells = this.availableSpells.filter((spell) => {
@@ -285,6 +296,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Filter by school
       if (school && spell.school !== school) {
+        return false;
+      }
+
+      // Filter by source
+      if (this.filterState.source && spell.sourceId !== this.filterState.source) {
         return false;
       }
 
@@ -400,6 +416,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     const nameInput = this.element.querySelector('input[name="spell-search"]');
     const levelSelect = this.element.querySelector('select[name="spell-level"]');
     const schoolSelect = this.element.querySelector('select[name="spell-school"]');
+    const sourceSelect = this.element.querySelector('select[name="spell-source"]');
 
     if (nameInput) {
       nameInput.addEventListener('input', (evt) => {
@@ -418,6 +435,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (schoolSelect) {
       schoolSelect.addEventListener('change', (evt) => {
         this.filterState.school = evt.target.value;
+        this.render(false);
+      });
+    }
+
+    if (sourceSelect) {
+      sourceSelect.addEventListener('change', (evt) => {
+        this.filterState.source = evt.target.value;
         this.render(false);
       });
     }
@@ -547,6 +571,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         spells: [],
         isLoadingSpells: true
       };
+
+      // If we can find the sourceId in the selected spell list, set it
+      log(1, 'Trying to selectedSpellList', this.selectedSpellList);
+      const packId = this.selectedSpellList.document?.pack?.split('.').slice(0, 2).join('.');
+      if (packId) {
+        this.filterState.source = packId;
+      }
 
       // Render to show loading state
       this.render(false);

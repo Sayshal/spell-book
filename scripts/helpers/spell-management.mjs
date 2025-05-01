@@ -384,7 +384,9 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
             name: entry.name,
             img: entry.img,
             level: entry.system?.level || 0,
-            school: entry.system?.school || ''
+            school: entry.system?.school || '',
+            sourceId: pack.collection,
+            packName: pack.folder?.folder?.name || pack.folder?.name || pack.metadata.label
           });
         }
       } catch (error) {
@@ -404,4 +406,35 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
     log(1, `Error fetching compendium spells: ${error.message}`);
     throw error;
   }
+}
+
+export async function createNewSpellList(name, identifier, source = 'Custom') {
+  // Create an empty journal entry with proper spell list structure
+  const journalData = {
+    name: `${source} - ${name}`,
+    pages: [
+      {
+        name: name,
+        type: 'spells',
+        flags: {
+          [MODULE.ID]: {
+            isCustom: true,
+            isNewList: true,
+            creationDate: Date.now()
+          }
+        },
+        system: {
+          identifier: identifier.toLowerCase(),
+          description: `Custom spell list for ${identifier}`,
+          spells: []
+        }
+      }
+    ]
+  };
+
+  // Create in custom pack and return the page
+  const journal = await JournalEntry.create(journalData, {
+    pack: `${MODULE.ID}.custom-spell-lists`
+  });
+  return journal.pages.contents[0];
 }

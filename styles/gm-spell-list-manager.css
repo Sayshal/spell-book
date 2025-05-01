@@ -331,6 +331,7 @@
 .gm-spell-list-manager .available-spells-sidebar {
   display: flex;
   flex-direction: column;
+  height: 100%;
   width: var(--available-spells-sidebar-width);
   padding: 0.5rem;
   border-left: 1px solid var(--manager-border-color);
@@ -358,8 +359,28 @@
 }
 
 .gm-spell-list-manager .available-spells-list {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.gm-spell-list-manager .available-spells-wrapper {
   flex: 1;
   overflow-y: auto;
+}
+
+.gm-spell-list-manager .pagination-controls {
+  position: sticky;
+  bottom: 0;
+  background: #ffffffe6;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--manager-border-color);
 }
 
 /* Spell items styling */
@@ -472,16 +493,6 @@
 
 .gm-spell-list-manager .manager-footer button {
   width: auto;
-}
-
-/* Pagination controls */
-.gm-spell-list-manager .pagination-controls {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 1rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--manager-border-color);
 }
 
 .gm-spell-list-manager .pagination-status {
@@ -650,6 +661,25 @@
 .gm-spell-list-manager .spell-preparation .remove-spell:hover {
   color: var(--color-text-light-highlight);
   text-shadow: 0 0 8px #f44336;
+}
+
+.gm-spell-list-manager .list-controls {
+  margin-top: 1rem;
+  padding: 0.5rem;
+  text-align: center;
+  border-top: 1px solid var(--spell-book-border-light);
+}
+
+.gm-spell-list-manager .create-new-button {
+  width: 100%;
+  padding: 0.5rem;
+  background: #0000000d;
+  transition: background-color 0.2s ease;
+}
+
+.gm-spell-list-manager .create-new-button:hover {
+  background: #0000001a;
+  text-shadow: 0 0 8px var(--color-shadow-highlight);
 }
 
 /* Responsive adjustments */
