@@ -44,25 +44,37 @@
 			{{else if selectedSpellList.hasError}}
 				<p class="spell-error">{{localize "SPELLMANAGER.Application.SpellsError"}}</p>
 			{{else if selectedSpellList.spells.length}}
-				<ul class="selected-spells">
-					{{#each selectedSpellList.spells as |spell|}}
-						<li class="spell-item" data-uuid="{{spell.uuid}}">
-							<div class="spell-name">
-								<img src="{{spell.img}}" class="spell-icon" alt="{{spell.name}} icon">
-								<span class="name">{{spell.name}}</span>
-							</div>
-							<div class="spell-meta">
-								<span class="spell-level">{{lookup @root.spellLevels spell.level}}</span>
-								<span class="spell-school">{{lookup (lookup @root.spellSchools spell.school) 'label'}}</span>
-								{{#if @root.isEditing}}
-									<button type="button" class="remove-spell" data-action="removeSpell" data-uuid="{{spell.uuid}}">
-										<i class="fas fa-times"></i>
-									</button>
-								{{/if}}
-							</div>
-						</li>
+				<div class="spells-container">
+					{{#each selectedSpellList.spellsByLevel as |levelData|}}
+						<div class="spell-level" data-level="{{levelData.level}}">
+							<h3 class="spell-level-heading" data-action="toggleSpellLevel">
+								<i class="fas fa-caret-down collapse-indicator"></i>
+								{{levelData.levelName}}
+								<span class="spell-count">({{levelData.spells.length}})</span>
+							</h3>
+							<ul class="spell-list">
+								{{#each levelData.spells as |spell|}}
+									<li class="spell-item" data-uuid="{{spell.uuid}}">
+										<div class="spell-name">
+											<img src="{{spell.img}}" class="spell-icon" alt="{{spell.name}} icon">
+											<div class="name-stacked">
+												<span class="title">{{spell.name}}</span>
+												<span class="subtitle">{{spell.formattedDetails}}</span>
+											</div>
+										</div>
+										{{#if @root.isEditing}}
+											<div class="spell-preparation">
+												<button type="button" class="remove-spell" data-action="removeSpell" data-uuid="{{spell.uuid}}">
+													<i class="fas fa-times"></i>
+												</button>
+											</div>
+										{{/if}}
+									</li>
+								{{/each}}
+							</ul>
+						</div>
 					{{/each}}
-				</ul>
+				</div>
 			{{else}}
 				<p class="no-spells">
 					{{#if isEditing}}{{localize "SPELLMANAGER.Columns.AddSpellsPrompt"}}{{else}}{{localize "SPELLMANAGER.Columns.NoSpells"}}{{/if}}

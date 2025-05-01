@@ -34,7 +34,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       deleteCustomList: GMSpellListManager.handleDeleteCustomList,
       restoreOriginal: GMSpellListManager.handleRestoreOriginal,
       showDocumentation: GMSpellListManager.handleShowDocumentation,
-      toggleSidebar: GMSpellListManager.handleToggleSidebar
+      toggleSidebar: GMSpellListManager.handleToggleSidebar,
+      toggleSpellLevel: GMSpellListManager.handleToggleSpellLevel
     },
     classes: ['gm-spell-list-manager'],
     window: {
@@ -433,33 +434,20 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       this.render(false);
 
       // Use the fetchSpellDocuments helper from actor-spells
-      const spellDocs = await actorSpellUtils.fetchSpellDocuments(new Set(spellUuids), 9); // Get all levels
+      const spellDocs = await actorSpellUtils.fetchSpellDocuments(new Set(spellUuids), 9);
 
-      // Format the spell documents into a simpler structure
-      const spells = spellDocs.map((spell) => {
-        return {
-          uuid: spell.compendiumUuid || spell.uuid,
-          name: spell.name,
-          img: spell.img,
-          level: spell.system.level,
-          school: spell.system.school
-        };
-      });
+      // Organize spells by level using the modified helper (passing null for actor)
+      const spellLevels = await actorSpellUtils.organizeSpellsByLevel(spellDocs, null);
 
-      // Sort by level and then name
-      spells.sort((a, b) => {
-        if (a.level !== b.level) return a.level - b.level;
-        return a.name.localeCompare(b.name);
-      });
-
-      // Update the selected spell list
-      this.selectedSpellList.spells = spells;
+      // Store both the flat list and the organized levels
+      this.selectedSpellList.spells = spellDocs;
+      this.selectedSpellList.spellsByLevel = spellLevels;
       this.selectedSpellList.isLoadingSpells = false;
 
       // Render the updated view
       this.render(false);
 
-      log(3, `Loaded ${spells.length} spells for selected spell list`);
+      log(3, `Loaded ${spellDocs.length} spells for selected spell list`);
     } catch (error) {
       log(1, 'Error loading spell details:', error);
       this.selectedSpellList.isLoadingSpells = false;
@@ -1120,6 +1108,38 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
     // Toggle the sidebar-collapsed class
     instance.element.classList.toggle('sidebar-collapsed');
+  }
+
+  /**
+   * Handle spell level toggle action
+   * @param {Event} event - The click event
+   * @param {HTMLElement} form - The form element
+   * @static
+   */
+  static handleToggleSpellLevel(event, form) {
+    // Find the parent spell-level container
+    const levelContainer = event.currentTarget.closest('.spell-level');
+
+    if (!levelContainer || !levelContainer.classList.contains('spell-level')) {
+      return;
+    }
+
+    const levelId = levelContainer.dataset.level;
+
+    // Toggle collapsed state
+    levelContainer.classList.toggle('collapsed');
+
+    // Save state to user flags
+    const collapsedLevels = game.user.getFlag(MODULE.ID, 'gmCollapsedSpellLevels') || [];
+    const isCollapsed = levelContainer.classList.contains('collapsed');
+
+    if (isCollapsed && !collapsedLevels.includes(levelId)) {
+      collapsedLevels.push(levelId);
+    } else if (!isCollapsed && collapsedLevels.includes(levelId)) {
+      collapsedLevels.splice(collapsedLevels.indexOf(levelId), 1);
+    }
+
+    game.user.setFlag(MODULE.ID, 'gmCollapsedSpellLevels', collapsedLevels);
   }
 
   /**

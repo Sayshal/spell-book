@@ -69,19 +69,19 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
 /**
  * Organize spells by level for display with preparation info
  * @param {Array} spellItems - Array of spell documents
- * @param {Actor5e} actor - The actor to check preparation status against
+ * @param {Actor5e|null} actor - The actor to check preparation status against (optional)
  * @returns {Array} - Array of spell levels with formatted data for templates
  */
-export async function organizeSpellsByLevel(spellItems, actor) {
-  log(3, `Organizing ${spellItems.length} spells by level for ${actor.name}`);
+export async function organizeSpellsByLevel(spellItems, actor = null) {
+  log(3, `Organizing ${spellItems.length} spells by level${actor ? ` for ${actor.name}` : ''}`);
 
   // Organize spells by level
   const spellsByLevel = {};
   const processedSpellIds = new Set(); // Track spells by ID
   const processedSpellNames = new Set(); // Track spells by name (lowercase)
 
-  // First, add all spells from the class spell list
-  log(3, 'Adding spells from class spell list');
+  // First, add all spells from the spell list
+  log(3, 'Adding spells from spell list');
   for (const spell of spellItems) {
     if (spell?.system?.level === undefined) continue;
 
@@ -92,56 +92,63 @@ export async function organizeSpellsByLevel(spellItems, actor) {
       spellsByLevel[level] = [];
     }
 
-    // Add preparation status information to each spell
-    const prepStatus = preparationUtils.getSpellPreparationStatus(actor, spell);
+    // Prepare the spell data object
+    let spellData = { ...spell };
+
+    // Add preparation status information if an actor is provided
+    if (actor) {
+      const prepStatus = preparationUtils.getSpellPreparationStatus(actor, spell);
+      spellData.preparation = prepStatus;
+    }
 
     // Add additional data for filtering
     const filterData = formattingUtils.extractSpellFilterData(spell);
+    spellData.filterData = filterData;
 
-    const spellData = {
-      ...spell,
-      preparation: prepStatus,
-      filterData
-    };
+    // Add formatted details
+    spellData.formattedDetails = formattingUtils.formatSpellDetails(spell);
 
     spellsByLevel[level].push(spellData);
     processedSpellIds.add(spell.id || spell.compendiumUuid || spell.uuid);
     processedSpellNames.add(spellName);
   }
 
-  // Next, add any additional spells directly from the actor
-  log(3, 'Adding additional spells from actor');
-  const actorSpells = await findActorSpells(actor, processedSpellIds, processedSpellNames);
+  // Next, add any additional spells directly from the actor (only if actor is provided)
+  if (actor) {
+    log(3, 'Adding additional spells from actor');
+    const actorSpells = await findActorSpells(actor, processedSpellIds, processedSpellNames);
 
-  for (const { spell, source } of actorSpells) {
-    if (spell?.system?.level === undefined) continue;
+    for (const { spell, source } of actorSpells) {
+      if (spell?.system?.level === undefined) continue;
 
-    const level = spell.system.level;
-    log(3, `Adding actor spell: ${spell.name} (level ${level}, source: ${source?.name || 'unknown'})`);
+      const level = spell.system.level;
+      log(3, `Adding actor spell: ${spell.name} (level ${level}, source: ${source?.name || 'unknown'})`);
 
-    if (!spellsByLevel[level]) {
-      spellsByLevel[level] = [];
+      if (!spellsByLevel[level]) {
+        spellsByLevel[level] = [];
+      }
+
+      // Pass the actual spell object directly
+      const prepStatus = preparationUtils.getSpellPreparationStatus(actor, spell);
+      const filterData = formattingUtils.extractSpellFilterData(spell);
+      const formattedDetails = formattingUtils.formatSpellDetails(spell);
+
+      const spellData = {
+        ...spell,
+        preparation: prepStatus,
+        filterData,
+        formattedDetails
+      };
+
+      spellsByLevel[level].push(spellData);
+      processedSpellIds.add(spell.id || spell.uuid);
+      processedSpellNames.add(spell.name.toLowerCase());
     }
-
-    // Pass the actual spell object directly
-    const prepStatus = preparationUtils.getSpellPreparationStatus(actor, spell);
-
-    const filterData = formattingUtils.extractSpellFilterData(spell);
-
-    const spellData = {
-      ...spell,
-      preparation: prepStatus,
-      filterData
-    };
-
-    spellsByLevel[level].push(spellData);
-    processedSpellIds.add(spell.id || spell.uuid);
-    processedSpellNames.add(spell.name.toLowerCase());
   }
 
   // Convert to sorted array for handlebars
   const result = Object.entries(spellsByLevel)
-    .sort((a, b) => Number(a[0]) - Number(b[0]))
+    .sort(([a, b]) => Number(a[0]) - Number(b[0]))
     .map(([level, spells]) => ({
       level: level,
       levelName: CONFIG.DND5E.spellLevels[level],
