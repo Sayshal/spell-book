@@ -226,6 +226,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
     // Set up event listeners for spell filter inputs
     this._setupFilterListeners();
+
+    // Apply saved collapsed states
+    this._applyCollapsedLevels();
   }
 
   /* -------------------------------------------- */
@@ -902,6 +905,21 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     return dialog;
   }
 
+  /**
+   * Apply saved collapsed states after rendering
+   * @private
+   */
+  _applyCollapsedLevels() {
+    const collapsedLevels = game.user.getFlag(MODULE.ID, 'gmCollapsedSpellLevels') || [];
+
+    for (const levelId of collapsedLevels) {
+      const levelContainer = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
+      if (levelContainer) {
+        levelContainer.classList.add('collapsed');
+      }
+    }
+  }
+
   /* -------------------------------------------- */
   /*  Static Handler Methods                      */
   /* -------------------------------------------- */
@@ -1118,7 +1136,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   static handleToggleSpellLevel(event, form) {
     // Find the parent spell-level container
-    const levelContainer = event.currentTarget.closest('.spell-level');
+    const levelContainer = form.parentElement;
 
     if (!levelContainer || !levelContainer.classList.contains('spell-level')) {
       return;
@@ -1132,7 +1150,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     // Save state to user flags
     const collapsedLevels = game.user.getFlag(MODULE.ID, 'gmCollapsedSpellLevels') || [];
     const isCollapsed = levelContainer.classList.contains('collapsed');
-
     if (isCollapsed && !collapsedLevels.includes(levelId)) {
       collapsedLevels.push(levelId);
     } else if (!isCollapsed && collapsedLevels.includes(levelId)) {
