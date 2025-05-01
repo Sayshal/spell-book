@@ -393,8 +393,8 @@
 
 .gm-spell-list-manager .spell-item .spell-icon {
   object-fit: cover;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   margin-right: 0.5rem;
   border: 2px solid var(--dnd5e-color-gold);
   border-radius: 0.25rem;

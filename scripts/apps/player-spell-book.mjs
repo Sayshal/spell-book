@@ -280,6 +280,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           this.className = cachedData.className;
           this.spellPreparation = cachedData.spellPreparation;
 
+          // This step creates the enrichedIcon and formattedDetails for each spell
+          log(3, 'Enriching cached spell data with icons and details');
+          await this._enrichSpellData(this.spellLevels);
+
           // Complete loading and return early
           this.isLoading = false;
           this.render(false);
