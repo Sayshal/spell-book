@@ -368,9 +368,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   static handlePageNavigation(event, form) {
     log(1, { event, form });
-    const button = event.target;
+    const button = event.target.closest('[data-page-action]'); // Get the button or closest ancestor with the attribute
+    if (!button) return;
+
     const action = button.dataset.pageAction;
-    const page = parseInt(button.dataset.page, 10);
 
     const appId = `gm-spell-list-manager-${MODULE.ID}`;
     const instance = foundry.applications.instances.get(appId);
@@ -392,9 +393,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         break;
       case 'last-page':
         instance._changePage(instance.paginationState.totalPages - 1);
-        break;
-      case 'specific-page':
-        instance._changePage(page);
         break;
     }
   }
