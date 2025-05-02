@@ -299,9 +299,18 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         return false;
       }
 
-      // Filter by source
-      if (this.filterState.source && spell.sourceId !== this.filterState.source) {
-        return false;
+      // Filter by source - handle the different formats of sourceId
+      if (source && spell.sourceId) {
+        // Extract just the package and pack name for comparison
+        const spellSourceParts = spell.sourceId.split('.');
+        if (spellSourceParts.length >= 2) {
+          const spellSource = `${spellSourceParts[0]}.${spellSourceParts[1]}`;
+          if (spellSource !== source) {
+            return false;
+          }
+        } else if (spell.sourceId !== source) {
+          return false;
+        }
       }
 
       // Check if spell is already in the list
@@ -572,11 +581,38 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         isLoadingSpells: true
       };
 
-      // If we can find the sourceId in the selected spell list, set it
-      log(1, 'Trying to selectedSpellList', this.selectedSpellList);
-      const packId = this.selectedSpellList.document?.pack?.split('.').slice(0, 2).join('.');
-      if (packId) {
-        this.filterState.source = packId;
+      // Try to determine the appropriate source filter
+      log(3, 'Determining source filter for spell list');
+      let sourceFilter = '';
+
+      // Check if this is a custom spell list
+      const isCustomList = !!spellList.flags?.[MODULE.ID]?.isDuplicate;
+      if (isCustomList) {
+        // Get the original UUID and extract the pack
+        const originalUuid = spellList.flags?.[MODULE.ID]?.originalUuid;
+        if (originalUuid) {
+          try {
+            const parsedUuid = foundry.utils.parseUuid(originalUuid);
+            sourceFilter = `${parsedUuid.collection.metadata.package}.${parsedUuid.collection.metadata.name}`;
+            log(3, `Using original source from flag: ${sourceFilter}`);
+          } catch (e) {
+            log(2, `Error parsing original UUID: ${e.message}`);
+          }
+        }
+      } else if (spellList.pack) {
+        // Use the current pack
+        const [packageName, packName] = spellList.pack.split('.');
+        sourceFilter = `${packageName}.${packName}`;
+        log(3, `Using current pack source: ${sourceFilter}`);
+      }
+
+      // Only set the filter if we found a valid source
+      if (sourceFilter) {
+        this.filterState.source = sourceFilter;
+      } else {
+        // Clear the source filter if we couldn't determine a valid source
+        this.filterState.source = '';
+        log(3, 'No valid source found, clearing source filter');
       }
 
       // Render to show loading state
@@ -608,6 +644,14 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         // This is an original list, so we need to duplicate it first
         ui.notifications.info('Creating a custom copy of this spell list...');
 
+        // Store the original source before duplicating
+        let originalSource = '';
+        if (this.selectedSpellList.document.pack) {
+          const [packageName, packName] = this.selectedSpellList.document.pack.split('.');
+          originalSource = `${packageName}.${packName}`;
+          log(3, `Stored original source: ${originalSource}`);
+        }
+
         // Duplicate the spell list
         const duplicateList = await managerHelpers.duplicateSpellList(this.selectedSpellList.document);
 
@@ -620,6 +664,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           spells: this.selectedSpellList.spells, // Keep the loaded spells
           isLoadingSpells: false
         };
+
+        // Preserve the original source for filtering
+        if (originalSource) {
+          this.filterState.source = originalSource;
+          log(3, `Preserved original source for filtering: ${originalSource}`);
+        }
 
         ui.notifications.info('Custom copy created. You are now editing your custom version.');
       }

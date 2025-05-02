@@ -27,7 +27,9 @@
 	</div>
 	<div class="available-spells-list">
 		{{#if isEditing}}
+					{{log filteredSpells}}
 			{{#if filteredSpells.spells.length}}
+
 				<div class="available-spells-wrapper">
 					<ul class="available-spells">
 						{{#each filteredSpells.spells as |spell|}}
