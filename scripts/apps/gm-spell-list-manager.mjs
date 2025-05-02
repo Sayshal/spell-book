@@ -35,7 +35,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       restoreOriginal: GMSpellListManager.handleRestoreOriginal,
       showDocumentation: GMSpellListManager.handleShowDocumentation,
       toggleSidebar: GMSpellListManager.handleToggleSidebar,
-      toggleSpellLevel: GMSpellListManager.handleToggleSpellLevel
+      toggleSpellLevel: GMSpellListManager.handleToggleSpellLevel,
+      pageNavigation: GMSpellListManager.handlePageNavigation
     },
     classes: ['gm-spell-list-manager'],
     window: {
@@ -362,12 +363,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /**
    * Handle page navigation
    * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
+   * @param {HTMLElement} form - The form element
    * @static
    */
-  static handlePageNavigation(event, _form) {
-    const button = event.currentTarget;
-    const action = button.dataset.action;
+  static handlePageNavigation(event, form) {
+    log(1, { event, form });
+    const button = event.target;
+    const action = button.dataset.pageAction;
     const page = parseInt(button.dataset.page, 10);
 
     const appId = `gm-spell-list-manager-${MODULE.ID}`;

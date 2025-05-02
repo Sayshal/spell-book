@@ -27,9 +27,8 @@
 	</div>
 	<div class="available-spells-list">
 		{{#if isEditing}}
-					{{log filteredSpells}}
+			{{log filteredSpells}}
 			{{#if filteredSpells.spells.length}}
-
 				<div class="available-spells-wrapper">
 					<ul class="available-spells">
 						{{#each filteredSpells.spells as |spell|}}
@@ -49,7 +48,6 @@
 						{{/each}}
 					</ul>
 				</div>
-
 				{{#if filteredSpells.totalItems}}
 					<div class="pagination-controls">
 						<div class="pagination-status">
@@ -67,14 +65,6 @@
 								{{#if (eq paginationState.currentPage 0)}}disabled{{/if}}>
 								<i class="fas fa-angle-left"></i>
 							</button>
-
-							{{#if (gt paginationState.totalPages 1)}}
-								<span class="pagination-pages">
-									{{localize "SPELLMANAGER.Filters.Page"}} {{add paginationState.currentPage 1}}
-									{{localize "SPELLMANAGER.Filters.Of"}} {{paginationState.totalPages}}
-								</span>
-							{{/if}}
-
 							<button type="button" class="pagination-button" data-action="pageNavigation" data-page-action="next-page"
 								{{#if (eq paginationState.currentPage (subtract paginationState.totalPages 1))}}disabled{{/if}}>
 								<i class="fas fa-angle-right"></i>
@@ -84,6 +74,12 @@
 								<i class="fas fa-angle-double-right"></i>
 							</button>
 						</div>
+						{{#if (gt paginationState.totalPages 1)}}
+							<span class="pagination-pages">
+								{{localize "SPELLMANAGER.Filters.Page"}} {{add paginationState.currentPage 1}}
+								{{localize "SPELLMANAGER.Filters.Of"}} {{paginationState.totalPages}}
+							</span>
+						{{/if}}
 					</div>
 				{{/if}}
 			{{else}}

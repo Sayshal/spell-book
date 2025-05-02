@@ -6,7 +6,7 @@
 /* ----------------------------------------- */
 
 .gm-spell-list-manager {
-  --available-spells-sidebar-width: 350px;
+  --available-spells-sidebar-width: 400px;
   --manager-border-color: var(--color-border-light-tertiary);
   --manager-column-gap: 0.75rem;
   --manager-custom-color: #79d7d4;
@@ -18,7 +18,7 @@
   --spell-book-control-width: 16px;
   --spell-book-transition-normal: all 250ms ease;
   --spell-book-transition-slow: all 450ms ease;
-  --spell-lists-sidebar-width: 225px;
+  --spell-lists-sidebar-width: 250px;
 }
 
 /* Main container */
@@ -406,7 +406,6 @@
   padding: 0.5rem;
   border-bottom: 1px solid var(--spell-book-border-light);
   border-radius: var(--spell-book-border-radius);
-  background: var(--manager-item-bg);
 }
 
 .gm-spell-list-manager .spell-item:hover {
@@ -454,31 +453,25 @@
   color: var(--color-text-light-5);
 }
 
-.gm-spell-list-manager .spell-item.available {
-  background-color: #0064000d;
-}
-
-.gm-spell-list-manager .spell-item.available:hover {
-  background-color: #0064001a;
-}
-
 .gm-spell-list-manager .spell-item .add-spell,
 .gm-spell-list-manager .spell-item .remove-spell {
   padding: 0.25rem 0.5rem;
   border: none;
   border-radius: 3px;
   cursor: pointer;
-  background-color: #0000001a;
+  background: none;
 }
 
 .gm-spell-list-manager .spell-item .add-spell:hover {
-  color: #fff;
-  background-color: #4caf50;
+  border: none;
+  text-shadow: 0 0 8px #4caf50;
+  box-shadow: none;
 }
 
 .gm-spell-list-manager .spell-item .remove-spell:hover {
-  color: #fff;
-  background-color: #f44336;
+  border: none;
+  text-shadow: 0 0 8px #f44336;
+  box-shadow: none;
 }
 
 /* Footer */
@@ -503,7 +496,6 @@
 
 .gm-spell-list-manager .pagination-status {
   margin-bottom: 0.5rem;
-  color: var(--color-text-dark-secondary);
   font-size: 0.8rem;
 }
 
