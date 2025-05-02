@@ -40,15 +40,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     classes: ['gm-spell-list-manager'],
     window: {
       title: 'GM Spell List Manager',
-      width: 1200,
-      height: 800,
       resizable: true,
       minimizable: true
     },
     position: {
       top: 150,
       left: 150,
-      width: Math.max(800, window.innerWidth - 300),
+      width: 1000,
       height: Math.max(600, window.innerHeight - 300)
     }
   };
