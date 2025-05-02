@@ -227,6 +227,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @override
    */
   _onRender(context, options) {
+    log(1, 'Render Called');
     super._onRender?.(context, options);
 
     // If we're loading, start the loading process
@@ -299,10 +300,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         return false;
       }
 
-      // Filter by source - handle the different formats of sourceId
-      if (source && spell.sourceId) {
+      // Filter by source - only apply if source is not empty
+      if (source && source.trim() !== '') {
+        log(1, { source: source, spellSource: spell.sourceId });
         // Extract just the package and pack name for comparison
-        const spellSourceParts = spell.sourceId.split('.');
+        const spellSourceParts = spell.sourceId?.split('.') || [];
         if (spellSourceParts.length >= 2) {
           const spellSource = `${spellSourceParts[0]}.${spellSourceParts[1]}`;
           if (spellSource !== source) {
@@ -593,8 +595,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         if (originalUuid) {
           try {
             const parsedUuid = foundry.utils.parseUuid(originalUuid);
-            sourceFilter = `${parsedUuid.collection.metadata.package}.${parsedUuid.collection.metadata.name}`;
-            log(3, `Using original source from flag: ${sourceFilter}`);
+            sourceFilter = parsedUuid.collection.metadata.packageName;
+            log(3, `Using original source from flag: ${sourceFilter}`, { originalUuid, parsedUuid, sourceFilter });
           } catch (e) {
             log(2, `Error parsing original UUID: ${e.message}`);
           }

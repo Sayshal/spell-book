@@ -385,7 +385,7 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
             img: entry.img,
             level: entry.system?.level || 0,
             school: entry.system?.school || '',
-            sourceId: pack.collection,
+            sourceId: pack.metadata.packageName,
             packName: pack.folder?.folder?.name || pack.folder?.name || pack.metadata.label
           });
         }
