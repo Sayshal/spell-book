@@ -300,7 +300,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Filter by source - only apply if source is not empty
       if (source && source.trim() !== '') {
-        log(1, { source: source, spellSource: spell.sourceId });
         // Extract just the package and pack name for comparison
         const spellSourceParts = spell.sourceId?.split('.') || [];
         if (spellSourceParts.length >= 2) {
