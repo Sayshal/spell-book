@@ -352,12 +352,12 @@
 }
 
 .gm-spell-list-manager .spell-filters {
-  gap: 0.5rem;
+  gap: 0.75rem;
   display: flex;
   flex: 0 0 auto;
   flex-direction: column;
   margin-bottom: 0.5rem;
-  padding: 0.5rem;
+  padding: 0.75rem;
   border-radius: var(--spell-book-border-radius);
   background: #0000000d;
 }
@@ -705,6 +705,103 @@
   background: none !important;
 }
 
+/* Full width search */
+.gm-spell-list-manager .filter-search {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.gm-spell-list-manager .filter-search input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--manager-border-color);
+  border-radius: 3px;
+}
+
+/* Grid layout for the middle filters */
+.gm-spell-list-manager .filter-grid {
+  gap: 0.5rem;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, auto);
+  display: grid;
+  margin-bottom: 0.5rem;
+}
+
+.gm-spell-list-manager .filter-grid .filter-item {
+  min-width: 0;
+}
+
+.gm-spell-list-manager .filter-grid select {
+  width: 100%;
+  min-width: 0;
+  padding: 0.35rem;
+  border: 1px solid var(--manager-border-color);
+  border-radius: 3px;
+  font-size: var(--font-size-11);
+}
+
+/* Checkbox filters styling */
+.gm-spell-list-manager .checkbox-filter {
+  display: flex;
+  align-items: center;
+}
+
+.gm-spell-list-manager .checkbox-filter label {
+  gap: 0.25rem;
+  display: flex;
+  align-items: center;
+  font-size: var(--font-size-11);
+  white-space: nowrap;
+}
+
+/* Range filter (full width) */
+.gm-spell-list-manager .filter-range {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.gm-spell-list-manager .filter-range label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: bold;
+  font-size: var(--font-size-11);
+}
+
+.gm-spell-list-manager .range-inputs {
+  gap: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.gm-spell-list-manager .range-inputs input {
+  flex: 1;
+  padding: 0.35rem;
+  border: 1px solid var(--manager-border-color);
+  border-radius: 3px;
+  font-size: var(--font-size-11);
+}
+
+.gm-spell-list-manager .range-separator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 1rem;
+}
+
+/* Responsive tweaks for smaller screens */
+@media (width <= 1200px) {
+  .gm-spell-list-manager .filter-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(5, auto);
+  }
+}
+
+@media (width <= 960px) {
+  .gm-spell-list-manager .filter-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+}
 /* Responsive adjustments */
 @media (width <= 960px) {
   .gm-spell-list-manager {

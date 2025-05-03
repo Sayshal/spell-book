@@ -110,7 +110,16 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     name: '',
     level: '',
     school: '',
-    source: ''
+    source: '',
+    castingTime: '',
+    minRange: '',
+    maxRange: '',
+    damageType: '',
+    condition: '',
+    requiresSave: '',
+    concentration: '',
+    prepared: false,
+    ritual: false
   };
 
   /**
@@ -308,7 +317,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @private
    */
   _filterAvailableSpells() {
-    const { name, level, school, source } = this.filterState;
+    const { name, level, school, source, castingTime, minRange, maxRange, damageType, condition, requiresSave, concentration, prepared, ritual } = this.filterState;
 
     // First, filter the entire list
     const filteredSpells = this.availableSpells.filter((spell) => {
@@ -339,6 +348,105 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         } else if (spell.sourceId !== source) {
           return false;
         }
+      }
+
+      // Filter by casting time
+      if (castingTime) {
+        const [filterType, filterValue] = castingTime.split(':');
+        const spellCastingType = spell.system?.activation?.type || '';
+        const spellCastingValue = spell.system?.activation?.value || '1';
+
+        if (spellCastingType !== filterType || spellCastingValue !== filterValue) {
+          return false;
+        }
+      }
+
+      // Filter by range
+      if ((minRange || maxRange) && spell.system?.range) {
+        // Get range value and units
+        const rangeValue = parseInt(spell.system.range.value || 0);
+        const rangeUnits = spell.system.range.units || '';
+
+        // Convert to standard units for comparison
+        let standardizedRange = rangeValue;
+
+        // Convert feet, miles, etc. to standard unit
+        if (rangeUnits === 'mi') {
+          standardizedRange = rangeValue * 5280; // Miles to feet
+        } else if (rangeUnits === 'spec') {
+          standardizedRange = 0; // Special cases like "Self" or "Touch"
+        }
+
+        // Check if within range
+        const minRangeVal = minRange ? parseInt(minRange) : 0;
+        const maxRangeVal = maxRange ? parseInt(maxRange) : Infinity;
+
+        if (standardizedRange < minRangeVal || standardizedRange > maxRangeVal) {
+          return false;
+        }
+      }
+
+      // Filter by damage type
+      if (damageType && spell.system?.damage) {
+        // Check damage parts
+        const damageParts = spell.system.damage.parts || [];
+        let hasDamageType = false;
+
+        for (const part of damageParts) {
+          if (part[1] === damageType) {
+            hasDamageType = true;
+            break;
+          }
+        }
+
+        if (!hasDamageType) {
+          return false;
+        }
+      }
+
+      // Filter by condition
+      if (condition) {
+        // Check if spell applies condition (need to analyze description for this)
+        const description = spell.system?.description?.value || '';
+        const conditionRegex = new RegExp(`\\b${condition}\\b`, 'i');
+
+        if (!conditionRegex.test(description)) {
+          return false;
+        }
+      }
+
+      // Filter by requires save
+      if (requiresSave) {
+        const spellRequiresSave = this._doesSpellRequireSave(spell);
+
+        if (requiresSave === 'true' && !spellRequiresSave) {
+          return false;
+        } else if (requiresSave === 'false' && spellRequiresSave) {
+          return false;
+        }
+      }
+
+      // Filter by concentration
+      if (concentration) {
+        const requiresConcentration = spell.system?.duration?.concentration || false;
+
+        if (concentration === 'true' && !requiresConcentration) {
+          return false;
+        } else if (concentration === 'false' && requiresConcentration) {
+          return false;
+        }
+      }
+
+      // Filter by prepared (only applicable in certain contexts)
+      if (prepared) {
+        // This filter might not apply directly to available spells
+        // but keeping for future compatibility
+        return false;
+      }
+
+      // Filter by ritual
+      if (ritual && !(spell.system?.components?.ritual || false)) {
+        return false;
       }
 
       // Check if spell is already in the list
@@ -373,6 +481,25 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       totalItems,
       totalFiltered: filteredSpells.length
     };
+  }
+
+  /**
+   * Helper function to determine if a spell requires a saving throw
+   * @param {Object} spell - The spell object
+   * @returns {boolean} - Whether the spell requires a save
+   * @private
+   */
+  _doesSpellRequireSave(spell) {
+    // Check save details
+    if (spell.system?.save?.ability) {
+      return true;
+    }
+
+    // Check description for saving throw text
+    const description = spell.system?.description?.value || '';
+    const saveRegex = /saving throw|save dc|must make a|makes a/i;
+
+    return saveRegex.test(description);
   }
 
   /**
@@ -449,38 +576,83 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     // Only set up listeners if we're in the editing state
     if (!this.isEditing) return;
 
+    // Name input
     const nameInput = this.element.querySelector('input[name="spell-search"]');
-    const levelSelect = this.element.querySelector('select[name="spell-level"]');
-    const schoolSelect = this.element.querySelector('select[name="spell-school"]');
-    const sourceSelect = this.element.querySelector('select[name="spell-source"]');
-
     if (nameInput) {
       nameInput.addEventListener('input', (evt) => {
         this.filterState.name = evt.target.value;
+        this._applyDebounce();
+      });
+    }
+
+    // Dropdown selects
+    const dropdownSelectors = [
+      { selector: 'select[name="spell-level"]', property: 'level' },
+      { selector: 'select[name="spell-school"]', property: 'school' },
+      { selector: 'select[name="spell-source"]', property: 'source' },
+      { selector: 'select[name="spell-castingTime"]', property: 'castingTime' },
+      { selector: 'select[name="spell-damageType"]', property: 'damageType' },
+      { selector: 'select[name="spell-condition"]', property: 'condition' },
+      { selector: 'select[name="spell-requiresSave"]', property: 'requiresSave' },
+      { selector: 'select[name="spell-concentration"]', property: 'concentration' }
+    ];
+
+    for (const { selector, property } of dropdownSelectors) {
+      const element = this.element.querySelector(selector);
+      if (element) {
+        element.addEventListener('change', (evt) => {
+          this.filterState[property] = evt.target.value;
+          this.render(false);
+        });
+      }
+    }
+
+    // Range inputs
+    const minRangeInput = this.element.querySelector('input[name="spell-min-range"]');
+    if (minRangeInput) {
+      minRangeInput.addEventListener('input', (evt) => {
+        this.filterState.minRange = evt.target.value;
+        this._applyDebounce();
+      });
+    }
+
+    const maxRangeInput = this.element.querySelector('input[name="spell-max-range"]');
+    if (maxRangeInput) {
+      maxRangeInput.addEventListener('input', (evt) => {
+        this.filterState.maxRange = evt.target.value;
+        this._applyDebounce();
+      });
+    }
+
+    // Checkbox inputs
+    const preparedCheckbox = this.element.querySelector('input[name="spell-prepared"]');
+    if (preparedCheckbox) {
+      preparedCheckbox.addEventListener('change', (evt) => {
+        this.filterState.prepared = evt.target.checked;
         this.render(false);
       });
     }
 
-    if (levelSelect) {
-      levelSelect.addEventListener('change', (evt) => {
-        this.filterState.level = evt.target.value;
+    const ritualCheckbox = this.element.querySelector('input[name="spell-ritual"]');
+    if (ritualCheckbox) {
+      ritualCheckbox.addEventListener('change', (evt) => {
+        this.filterState.ritual = evt.target.checked;
         this.render(false);
       });
     }
+  }
 
-    if (schoolSelect) {
-      schoolSelect.addEventListener('change', (evt) => {
-        this.filterState.school = evt.target.value;
+  /**
+   * Apply debounced filter updates for text inputs
+   * @private
+   */
+  _applyDebounce() {
+    if (!this._debouncedRender) {
+      this._debouncedRender = foundry.utils.debounce(() => {
         this.render(false);
-      });
+      }, 300);
     }
-
-    if (sourceSelect) {
-      sourceSelect.addEventListener('change', (evt) => {
-        this.filterState.source = evt.target.value;
-        this.render(false);
-      });
-    }
+    this._debouncedRender();
   }
 
   /**
@@ -1134,15 +1306,14 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Handle filtering spells (static entry point)
-   * @param {Event} event - The change event
-   * @param {HTMLElement} _form - The form element
+   * Handle filter changes
+   * @param {Event} event - The input/change event
    * @static
    */
-  static handleFilterSpells(event, _form) {
+  static handleFilterSpells(event, form) {
     const input = event.target;
     const filterType = input.name.replace('spell-', '');
-    const value = input.value;
+    const value = input.type === 'checkbox' ? input.checked : input.value;
 
     const appId = `gm-spell-list-manager-${MODULE.ID}`;
     const instance = foundry.applications.instances.get(appId);
@@ -1152,7 +1323,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       return;
     }
 
-    instance.updateFilter(filterType, value);
+    instance.filterState[filterType] = value;
+    instance.render(false);
   }
 
   /**

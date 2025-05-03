@@ -2,29 +2,114 @@
 <div class="available-spells-sidebar">
 	<h2>{{localize "SPELLMANAGER.Columns.AvailableSpells"}}</h2>
 	<div class="spell-filters">
-		<input type="text" name="spell-search" placeholder="{{localize "SPELLMANAGER.Filters.SearchPlaceholder"}}"
-			value="{{filterState.name}}">
-		<select name="spell-level">
-			<option value="">{{localize "SPELLMANAGER.Filters.AllLevels"}}</option>
-			{{#each spellLevels as |label level|}}
-				<option value="{{level}}" {{#if (eq ../filterState.level level)}}selected{{/if}}>{{label}}</option>
-			{{/each}}
-		</select>
-		<select name="spell-school">
-			<option value="">{{localize "SPELLMANAGER.Filters.AllSchools"}}</option>
-			{{#each spellSchools as |school key|}}
-				<option value="{{key}}" {{#if (eq ../filterState.school key)}}selected{{/if}}>{{school.label}}</option>
-			{{/each}}
-		</select>
-		<select name="spell-source">
-			<option value="">{{localize "SPELLMANAGER.Filters.AllSources"}}</option>
-			{{#each spellSources as |source|}}
-				<option value="{{source.id}}" {{#if (eq ../filterState.source source.id)}}selected{{/if}}>
-					{{source.label}}
-				</option>
-			{{/each}}
-		</select>
+		<!-- Full width search bar -->
+		<div class="filter-search">
+			<input type="text" name="spell-search" placeholder="{{localize "SPELLMANAGER.Filters.SearchPlaceholder"}}"
+				value="{{filterState.name}}" data-action="filterSpells">
+		</div>
+
+		<!-- Grid layout for filters -->
+		<div class="filter-grid">
+			<!-- Row 1 -->
+			<div class="filter-item">
+				<select name="spell-level" data-action="filterSpells">
+					<option value="">{{localize "SPELLMANAGER.Filters.AllLevels"}}</option>
+					{{#each spellLevels as |label level|}}
+						<option value="{{level}}" {{#if (eq ../filterState.level level)}}selected{{/if}}>{{label}}</option>
+					{{/each}}
+				</select>
+			</div>
+
+			<div class="filter-item">
+				<select name="spell-school" data-action="filterSpells">
+					<option value="">{{localize "SPELLMANAGER.Filters.AllSchools"}}</option>
+					{{#each spellSchools as |school key|}}
+						<option value="{{key}}" {{#if (eq ../filterState.school key)}}selected{{/if}}>{{school.label}}</option>
+					{{/each}}
+				</select>
+			</div>
+
+			<div class="filter-item">
+				<select name="spell-castingTime" data-action="filterSpells">
+					<option value="">{{localize "SPELLMANAGER.Filters.AllCastingTimes"}}</option>
+					<!-- Casting time options would be populated from JS -->
+				</select>
+			</div>
+
+			<!-- Row 2 -->
+			<div class="filter-item">
+				<select name="spell-damageType" data-action="filterSpells">
+					<option value="">{{localize "SPELLMANAGER.Filters.AllDamageTypes"}}</option>
+					<!-- Damage type options would be populated from JS -->
+				</select>
+			</div>
+
+			<div class="filter-item">
+				<select name="spell-condition" data-action="filterSpells">
+					<option value="">{{localize "SPELLMANAGER.Filters.AllConditions"}}</option>
+					<!-- Condition options would be populated from JS -->
+				</select>
+			</div>
+
+			<div class="filter-item">
+				<select name="spell-requiresSave" data-action="filterSpells">
+					<option value="">{{localize "SPELLMANAGER.Filters.AllSaves"}}</option>
+					<option value="true">{{localize "SPELLMANAGER.Filters.True"}}</option>
+					<option value="false">{{localize "SPELLMANAGER.Filters.False"}}</option>
+				</select>
+			</div>
+
+			<!-- Row 3 -->
+			<div class="filter-item">
+				<select name="spell-concentration" data-action="filterSpells">
+					<option value="">{{localize "SPELLMANAGER.Filters.AllConcentration"}}</option>
+					<option value="true">{{localize "SPELLMANAGER.Filters.True"}}</option>
+					<option value="false">{{localize "SPELLMANAGER.Filters.False"}}</option>
+				</select>
+			</div>
+
+			<div class="filter-item checkbox-filter">
+				<label>
+					<input type="checkbox" name="spell-prepared" {{#if filterState.prepared}}checked{{/if}}
+						data-action="filterSpells">
+					{{localize "SPELLMANAGER.Filters.PreparedOnly"}}
+				</label>
+			</div>
+
+			<div class="filter-item checkbox-filter">
+				<label>
+					<input type="checkbox" name="spell-ritual" {{#if filterState.ritual}}checked{{/if}}
+						data-action="filterSpells">
+					{{localize "SPELLMANAGER.Filters.RitualOnly"}}
+				</label>
+			</div>
+		</div>
+
+		<!-- Range filter (full width) -->
+		<div class="filter-range">
+			<label>{{localize "SPELLMANAGER.Filters.Range"}}</label>
+			<div class="range-inputs">
+				<input type="number" name="spell-min-range" placeholder="{{localize "SPELLMANAGER.Filters.RangeMin"}}"
+					value="{{filterState.minRange}}" data-action="filterSpells">
+				<div class="range-separator">-</div>
+				<input type="number" name="spell-max-range" placeholder="{{localize "SPELLMANAGER.Filters.RangeMax"}}"
+					value="{{filterState.maxRange}}" data-action="filterSpells">
+			</div>
+		</div>
+
+		<!-- Source filter is moved to the bottom -->
+		<div class="filter-item">
+			<select name="spell-source" data-action="filterSpells">
+				<option value="">{{localize "SPELLMANAGER.Filters.AllSources"}}</option>
+				{{#each spellSources as |source|}}
+					<option value="{{source.id}}" {{#if (eq ../filterState.source source.id)}}selected{{/if}}>
+						{{source.label}}
+					</option>
+				{{/each}}
+			</select>
+		</div>
 	</div>
+
 	<div class="available-spells-list">
 		{{#if isEditing}}
 			{{log filteredSpells}}
