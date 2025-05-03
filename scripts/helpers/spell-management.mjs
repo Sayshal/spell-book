@@ -375,13 +375,16 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
     // Process each pack
     for (const pack of itemPacks) {
       try {
-        // Request additional fields for formatting the details
+        // Request additional fields for filtering
         const index = await pack.getIndex({
-          fields: ['type', 'system.level', 'system.school', 'system.components', 'system.activation.type', 'system.activation.value']
+          fields: ['type', 'system.level', 'system.school', 'system.components', 'system.activation', 'system.range', 'system.damage', 'system.duration', 'system.save', 'system.description.value']
         });
         const spellEntries = index.filter((e) => e.type === 'spell' && (!maxLevel || e.system?.level <= maxLevel));
 
         for (const entry of spellEntries) {
+          // Extract condition data from description
+          const appliedConditions = extractConditionsFromDescription(entry.system?.description?.value || '');
+
           // Format details directly
           const details = [];
 
@@ -440,7 +443,9 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
             school: entry.system?.school || '',
             sourceId: pack.metadata.packageName,
             packName: pack.folder?.folder?.name || pack.folder?.name || pack.metadata.label,
-            formattedDetails: formattedDetails // Add the formatted details
+            formattedDetails: formattedDetails,
+            system: entry.system || {},
+            appliedConditions
           });
         }
       } catch (error) {
@@ -460,6 +465,29 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
     log(1, `Error fetching compendium spells: ${error.message}`);
     throw error;
   }
+}
+
+/**
+ * Extract conditions that might be applied by a spell
+ * @param {string} description - The spell description
+ * @returns {string[]} - Array of condition keys
+ */
+function extractConditionsFromDescription(description) {
+  const conditions = [];
+
+  if (!description) return conditions;
+
+  // Convert to lowercase for case-insensitive matching
+  const lowerDesc = description.toLowerCase();
+
+  // Check for each condition
+  for (const [key, condition] of Object.entries(CONFIG.DND5E.conditionTypes)) {
+    if (lowerDesc.includes(condition.label.toLowerCase())) {
+      conditions.push(key);
+    }
+  }
+
+  return conditions;
 }
 
 export async function createNewSpellList(name, identifier, source = 'Custom') {
@@ -491,4 +519,131 @@ export async function createNewSpellList(name, identifier, source = 'Custom') {
     pack: `${MODULE.ID}.custom-spell-lists`
   });
   return journal.pages.contents[0];
+}
+
+/**
+ * Prepare dropdown options for casting time filter
+ * @param {Array} availableSpells - The available spells array
+ * @param {Object} filterState - Current filter state
+ * @returns {Array} Array of options for the dropdown
+ */
+export function prepareCastingTimeOptions(availableSpells, filterState) {
+  const uniqueActivationTypes = new Map();
+
+  // First, collect all unique combinations
+  for (const spell of availableSpells) {
+    const activationType = spell.system?.activation?.type;
+    const activationValue = spell.system?.activation?.value || 1; // treat null as 1
+
+    if (activationType) {
+      const key = `${activationType}:${activationValue}`;
+      uniqueActivationTypes.set(key, {
+        type: activationType,
+        value: activationValue
+      });
+    }
+  }
+
+  // Define a priority order for activation types
+  const typeOrder = {
+    action: 1,
+    bonus: 2,
+    reaction: 3,
+    minute: 4,
+    hour: 5,
+    day: 6,
+    legendary: 7,
+    mythic: 8,
+    lair: 9,
+    crew: 10,
+    special: 11,
+    none: 12
+  };
+
+  // Convert to array for sorting
+  const sortableTypes = Array.from(uniqueActivationTypes.entries()).map(([key, data]) => {
+    return {
+      key: key,
+      type: data.type,
+      value: data.value
+    };
+  });
+
+  // Sort by type priority then by value
+  sortableTypes.sort((a, b) => {
+    const typePriorityA = typeOrder[a.type] || 999;
+    const typePriorityB = typeOrder[b.type] || 999;
+    if (typePriorityA !== typePriorityB) {
+      return typePriorityA - typePriorityB;
+    }
+    return a.value - b.value;
+  });
+
+  // Create the options in the sorted order
+  const options = [];
+  for (const entry of sortableTypes) {
+    const typeLabel = CONFIG.DND5E.abilityActivationTypes[entry.type] || entry.type;
+    let label;
+    if (entry.value === 1) {
+      label = typeLabel;
+    } else {
+      label = `${entry.value} ${typeLabel}${entry.value !== 1 ? 's' : ''}`;
+    }
+
+    options.push({
+      value: entry.key,
+      label: label,
+      selected: filterState.castingTime === entry.key
+    });
+  }
+
+  return options;
+}
+
+/**
+ * Prepare dropdown options for damage type filter
+ * @returns {Array} Array of options for the dropdown
+ */
+export function prepareDamageTypeOptions(filterState) {
+  const options = [];
+
+  // Create a combined damage types object including healing
+  const damageTypesWithHealing = {
+    ...CONFIG.DND5E.damageTypes,
+    healing: { label: game.i18n.localize('DND5E.Healing') }
+  };
+
+  // Add options for each damage type in alphabetical order by label
+  Object.entries(damageTypesWithHealing)
+    .sort((a, b) => a[1].label.localeCompare(b[1].label))
+    .forEach(([key, damageType]) => {
+      options.push({
+        value: key,
+        label: damageType.label,
+        selected: filterState.damageType === key
+      });
+    });
+
+  return options;
+}
+
+/**
+ * Prepare dropdown options for condition filter
+ * @returns {Array} Array of options for the dropdown
+ */
+export function prepareConditionOptions(filterState) {
+  const options = [];
+
+  // Add options for each condition type
+  Object.entries(CONFIG.DND5E.conditionTypes)
+    .filter(([_key, condition]) => !condition.pseudo) // Skip pseudo conditions
+    .forEach(([key, condition]) => {
+      options.push({
+        value: key,
+        label: condition.label,
+        selected: filterState.condition === key
+      });
+    });
+
+  return options;
 }

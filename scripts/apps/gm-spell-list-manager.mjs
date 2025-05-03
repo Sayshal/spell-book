@@ -153,8 +153,29 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * Initialize the application and set up pagination
    * @override
    */
+  /**
+   * Initialize the application and set up pagination
+   * @override
+   */
   _initialize() {
     super._initialize();
+
+    // Initialize filter state
+    this.filterState = {
+      name: '',
+      level: '',
+      school: '',
+      source: '',
+      castingTime: '',
+      minRange: '',
+      maxRange: '',
+      damageType: '',
+      condition: '',
+      requiresSave: '',
+      concentration: '',
+      prepared: false,
+      ritual: false
+    };
 
     // Get page size from settings
     this.paginationState.pageSize = game.settings.get(MODULE.ID, 'spellManagerPageSize');
@@ -207,6 +228,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         }
       });
       context.spellSources = Array.from(sourceMap.values()).sort((a, b) => a.label.localeCompare(b.label));
+
+      // Prepare filter options
+      context.castingTimeOptions = managerHelpers.prepareCastingTimeOptions(this.availableSpells, this.filterState);
+      context.damageTypeOptions = managerHelpers.prepareDamageTypeOptions(this.filterState);
+      context.conditionOptions = managerHelpers.prepareConditionOptions(this.filterState);
+
       context.filteredSpells = this._filterAvailableSpells();
     }
 
@@ -250,6 +277,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
     // Apply saved collapsed states
     this._applyCollapsedLevels();
+
+    // Apply initial filters
+    if (this.isEditing) {
+      this._applyFilters();
+    }
   }
 
   /* -------------------------------------------- */
@@ -538,16 +570,16 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
     switch (action) {
       case 'first-page':
-        instance._changePage(0);
+        this._changePage(0);
         break;
       case 'prev-page':
-        instance._changePage(instance.paginationState.currentPage - 1);
+        this._changePage(instance.paginationState.currentPage - 1);
         break;
       case 'next-page':
-        instance._changePage(instance.paginationState.currentPage + 1);
+        this._changePage(instance.paginationState.currentPage + 1);
         break;
       case 'last-page':
-        instance._changePage(instance.paginationState.totalPages - 1);
+        this._changePage(instance.paginationState.totalPages - 1);
         break;
     }
   }
@@ -581,7 +613,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (nameInput) {
       nameInput.addEventListener('input', (evt) => {
         this.filterState.name = evt.target.value;
-        this._applyDebounce();
+        if (!this._debouncedApplyFilters) {
+          this._debouncedApplyFilters = foundry.utils.debounce(() => {
+            this._applyFilters();
+          }, 200);
+        }
+        this._debouncedApplyFilters();
       });
     }
 
@@ -602,7 +639,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       if (element) {
         element.addEventListener('change', (evt) => {
           this.filterState[property] = evt.target.value;
-          this.render(false);
+          this._applyFilters();
         });
       }
     }
@@ -612,7 +649,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (minRangeInput) {
       minRangeInput.addEventListener('input', (evt) => {
         this.filterState.minRange = evt.target.value;
-        this._applyDebounce();
+
+        if (!this._debouncedRangeFilters) {
+          this._debouncedRangeFilters = foundry.utils.debounce(() => {
+            this._applyFilters();
+          }, 200);
+        }
+        this._debouncedRangeFilters();
       });
     }
 
@@ -620,7 +663,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (maxRangeInput) {
       maxRangeInput.addEventListener('input', (evt) => {
         this.filterState.maxRange = evt.target.value;
-        this._applyDebounce();
+
+        if (!this._debouncedRangeFilters) {
+          this._debouncedRangeFilters = foundry.utils.debounce(() => {
+            this._applyFilters();
+          }, 200);
+        }
+        this._debouncedRangeFilters();
       });
     }
 
@@ -629,7 +678,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (preparedCheckbox) {
       preparedCheckbox.addEventListener('change', (evt) => {
         this.filterState.prepared = evt.target.checked;
-        this.render(false);
+        this._applyFilters();
       });
     }
 
@@ -637,22 +686,146 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (ritualCheckbox) {
       ritualCheckbox.addEventListener('change', (evt) => {
         this.filterState.ritual = evt.target.checked;
-        this.render(false);
+        this._applyFilters();
       });
     }
   }
 
   /**
-   * Apply debounced filter updates for text inputs
+   * Apply all current filters to the spell list
    * @private
    */
-  _applyDebounce() {
-    if (!this._debouncedRender) {
-      this._debouncedRender = foundry.utils.debounce(() => {
-        this.render(false);
-      }, 300);
+  _applyFilters() {
+    try {
+      const filters = this.filterState;
+      log(3, 'Applying filters to available spells');
+
+      const spellItems = this.element.querySelectorAll('.available-spells .spell-item');
+      let visibleCount = 0;
+
+      for (const item of spellItems) {
+        // Extract data from the DOM attributes
+        const name = item.querySelector('.spell-name .title')?.textContent.toLowerCase() || '';
+        const level = item.dataset.spellLevel;
+        const school = item.dataset.spellSchool;
+        const castingTimeType = item.dataset.castingTimeType || '';
+        const castingTimeValue = item.dataset.castingTimeValue || '';
+        const rangeUnits = item.dataset.rangeUnits || '';
+        const rangeValue = item.dataset.rangeValue || '0';
+        const damageTypes = (item.dataset.damageTypes || '').split(',');
+        const ritual = item.dataset.ritual === 'true';
+        const concentration = item.dataset.concentration === 'true';
+        const requiresSave = item.dataset.requiresSave ? true : false;
+        const conditions = (item.dataset.conditions || '').split(',').filter(Boolean);
+
+        // Check all filter conditions
+        let visible = true;
+
+        // Text search
+        if (filters.name && !name.includes(filters.name.toLowerCase())) {
+          visible = false;
+        }
+
+        // Level filter
+        if (filters.level && level !== filters.level) {
+          visible = false;
+        }
+
+        // School filter
+        if (filters.school && school !== filters.school) {
+          visible = false;
+        }
+
+        // Casting Time filter
+        if (filters.castingTime) {
+          const [filterType, filterValue] = filters.castingTime.split(':');
+          if (castingTimeType !== filterType || castingTimeValue !== filterValue) {
+            visible = false;
+          }
+        }
+
+        // Range filter
+        if ((filters.minRange || filters.maxRange) && rangeUnits) {
+          // Convert to standard units for comparison
+          let standardizedRange = parseInt(rangeValue || 0);
+
+          // Convert feet, miles, etc. to standard unit
+          if (rangeUnits === 'mi') {
+            standardizedRange = standardizedRange * 5280; // Miles to feet
+          } else if (rangeUnits === 'spec') {
+            standardizedRange = 0; // Special cases like "Self" or "Touch"
+          }
+
+          // Check if within range
+          const minRangeVal = filters.minRange ? parseInt(filters.minRange) : 0;
+          const maxRangeVal = filters.maxRange ? parseInt(filters.maxRange) : Infinity;
+
+          if (standardizedRange < minRangeVal || standardizedRange > maxRangeVal) {
+            visible = false;
+          }
+        }
+
+        // Damage Type filter
+        if (filters.damageType && !damageTypes.includes(filters.damageType)) {
+          visible = false;
+        }
+
+        // Condition filter
+        if (filters.condition && !conditions.includes(filters.condition)) {
+          visible = false;
+        }
+
+        // Requires Save filter
+        if (filters.requiresSave) {
+          if (filters.requiresSave === 'true' && !requiresSave) {
+            visible = false;
+          } else if (filters.requiresSave === 'false' && requiresSave) {
+            visible = false;
+          }
+        }
+
+        // Concentration filter
+        if (filters.concentration) {
+          if (filters.concentration === 'true' && !concentration) {
+            visible = false;
+          } else if (filters.concentration === 'false' && concentration) {
+            visible = false;
+          }
+        }
+
+        // Ritual filter
+        if (filters.ritual && !ritual) {
+          visible = false;
+        }
+
+        // Check if spell is already in the list (if we have a selected spell list)
+        if (this.selectedSpellList?.spells) {
+          const uuid = item.dataset.uuid;
+          const isInList = this.selectedSpellList.spells.some((s) => s.uuid === uuid);
+          if (isInList) visible = false;
+        }
+
+        // Update visibility
+        item.style.display = visible ? '' : 'none';
+        if (visible) {
+          visibleCount++;
+        }
+      }
+
+      // Show/hide no results message
+      const noResults = this.element.querySelector('.no-spells');
+      if (noResults) {
+        noResults.style.display = visibleCount > 0 ? 'none' : 'block';
+      }
+
+      // Update count display
+      const countDisplay = this.element.querySelector('.pagination-status');
+      if (countDisplay) {
+        countDisplay.textContent = `${game.i18n.localize('SPELLMANAGER.Filters.Showing')} ${visibleCount} ${game.i18n.localize('SPELLMANAGER.Filters.Of')} ${spellItems.length} ${game.i18n.localize('SPELLMANAGER.Filters.Spells')}`;
+      }
+    } catch (error) {
+      log(1, 'Error applying filters:', error);
     }
-    this._debouncedRender();
   }
 
   /**
@@ -1306,15 +1479,18 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Handle filter changes
+   * Handle filter changes - static entry point
    * @param {Event} event - The input/change event
+   * @param {HTMLFormElement} form - The form element
    * @static
    */
   static handleFilterSpells(event, form) {
-    const input = event.target;
-    const filterType = input.name.replace('spell-', '');
-    const value = input.type === 'checkbox' ? input.checked : input.value;
+    // Prevent default to avoid form submission
+    event.preventDefault();
 
+    const input = event.target;
+
+    // Get the application instance
     const appId = `gm-spell-list-manager-${MODULE.ID}`;
     const instance = foundry.applications.instances.get(appId);
 
@@ -1323,8 +1499,27 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       return;
     }
 
-    instance.filterState[filterType] = value;
-    instance.render(false);
+    // Get the property name from the input name
+    const property = input.name.replace('spell-', '');
+
+    // Get the value based on input type
+    const value = input.type === 'checkbox' ? input.checked : input.value;
+
+    // Update the filter state
+    instance.filterState[property] = value;
+
+    // Apply filters
+    if (input.type === 'checkbox' || input.tagName === 'SELECT') {
+      instance._applyFilters();
+    } else {
+      // For text inputs, use debounced filter application
+      if (!instance._debouncedApplyFilters) {
+        instance._debouncedApplyFilters = foundry.utils.debounce(() => {
+          instance._applyFilters();
+        }, 200);
+      }
+      instance._debouncedApplyFilters();
+    }
   }
 
   /**

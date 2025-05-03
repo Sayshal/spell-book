@@ -4,15 +4,18 @@
 	<div class="spell-filters">
 		<!-- Full width search bar -->
 		<div class="filter-search">
-			<input type="text" name="spell-search" placeholder="{{localize "SPELLMANAGER.Filters.SearchPlaceholder"}}"
-				value="{{filterState.name}}" data-action="filterSpells">
+			<label for="spell-search">{{localize "SPELLBOOK.Filters.SearchPlaceholder"}}</label>
+			<input type="text" name="spell-search" id="spell-search"
+				placeholder="{{localize "SPELLMANAGER.Filters.SearchPlaceholder"}}" value="{{filterState.name}}"
+				data-action="filterSpells">
 		</div>
 
 		<!-- Grid layout for filters -->
 		<div class="filter-grid">
 			<!-- Row 1 -->
 			<div class="filter-item">
-				<select name="spell-level" data-action="filterSpells">
+				<label for="spell-level">{{localize "SPELLBOOK.Filters.Level"}}</label>
+				<select name="spell-level" id="spell-level" data-action="filterSpells">
 					<option value="">{{localize "SPELLMANAGER.Filters.AllLevels"}}</option>
 					{{#each spellLevels as |label level|}}
 						<option value="{{level}}" {{#if (eq ../filterState.level level)}}selected{{/if}}>{{label}}</option>
@@ -21,7 +24,8 @@
 			</div>
 
 			<div class="filter-item">
-				<select name="spell-school" data-action="filterSpells">
+				<label for="spell-school">{{localize "SPELLBOOK.Filters.School"}}</label>
+				<select name="spell-school" id="spell-school" data-action="filterSpells">
 					<option value="">{{localize "SPELLMANAGER.Filters.AllSchools"}}</option>
 					{{#each spellSchools as |school key|}}
 						<option value="{{key}}" {{#if (eq ../filterState.school key)}}selected{{/if}}>{{school.label}}</option>
@@ -30,41 +34,60 @@
 			</div>
 
 			<div class="filter-item">
-				<select name="spell-castingTime" data-action="filterSpells">
-					<option value="">{{localize "SPELLMANAGER.Filters.AllCastingTimes"}}</option>
-					<!-- Casting time options would be populated from JS -->
+				<label for="spell-castingTime">{{localize "SPELLBOOK.Filters.CastingTime"}}</label>
+				<select name="spell-castingTime" id="spell-castingTime" data-action="filterSpells">
+					<option value="">{{localize "SPELLBOOK.Filters.All"}}</option>
+					{{#each castingTimeOptions as |option|}}
+						<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
+					{{/each}}
 				</select>
 			</div>
 
 			<!-- Row 2 -->
 			<div class="filter-item">
-				<select name="spell-damageType" data-action="filterSpells">
-					<option value="">{{localize "SPELLMANAGER.Filters.AllDamageTypes"}}</option>
-					<!-- Damage type options would be populated from JS -->
+				<label for="spell-damageType">{{localize "SPELLBOOK.Filters.DamageType"}}</label>
+				<select name="spell-damageType" id="spell-damageType" data-action="filterSpells">
+					<option value="">{{localize "SPELLBOOK.Filters.All"}}</option>
+					{{#each damageTypeOptions as |option|}}
+						<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
+					{{/each}}
 				</select>
 			</div>
 
 			<div class="filter-item">
-				<select name="spell-condition" data-action="filterSpells">
-					<option value="">{{localize "SPELLMANAGER.Filters.AllConditions"}}</option>
-					<!-- Condition options would be populated from JS -->
+				<label for="spell-condition">{{localize "SPELLBOOK.Filters.Condition"}}</label>
+				<select name="spell-condition" id="spell-condition" data-action="filterSpells">
+					<option value="">{{localize "SPELLBOOK.Filters.All"}}</option>
+					{{#each conditionOptions as |option|}}
+						<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
+					{{/each}}
 				</select>
 			</div>
 
 			<div class="filter-item">
-				<select name="spell-requiresSave" data-action="filterSpells">
-					<option value="">{{localize "SPELLMANAGER.Filters.AllSaves"}}</option>
-					<option value="true">{{localize "SPELLMANAGER.Filters.True"}}</option>
-					<option value="false">{{localize "SPELLMANAGER.Filters.False"}}</option>
+				<label for="spell-requiresSave">{{localize "SPELLBOOK.Filters.RequiresSave"}}</label>
+				<select name="spell-requiresSave" id="spell-requiresSave" data-action="filterSpells">
+					<option value="">{{localize "SPELLBOOK.Filters.All"}}</option>
+					<option value="true" {{#if (eq filterState.requiresSave "true")}}selected{{/if}}>
+						{{localize "SPELLBOOK.Filters.True"}}
+					</option>
+					<option value="false" {{#if (eq filterState.requiresSave "false")}}selected{{/if}}>
+						{{localize "SPELLBOOK.Filters.False"}}
+					</option>
 				</select>
 			</div>
 
 			<!-- Row 3 -->
 			<div class="filter-item">
-				<select name="spell-concentration" data-action="filterSpells">
-					<option value="">{{localize "SPELLMANAGER.Filters.AllConcentration"}}</option>
-					<option value="true">{{localize "SPELLMANAGER.Filters.True"}}</option>
-					<option value="false">{{localize "SPELLMANAGER.Filters.False"}}</option>
+				<label for="spell-concentration">{{localize "SPELLBOOK.Filters.RequiresConcentration"}}</label>
+				<select name="spell-concentration" id="spell-concentration" data-action="filterSpells">
+					<option value="">{{localize "SPELLBOOK.Filters.All"}}</option>
+					<option value="true" {{#if (eq filterState.concentration "true")}}selected{{/if}}>
+						{{localize "SPELLBOOK.Filters.True"}}
+					</option>
+					<option value="false" {{#if (eq filterState.concentration "false")}}selected{{/if}}>
+						{{localize "SPELLBOOK.Filters.False"}}
+					</option>
 				</select>
 			</div>
 
@@ -72,7 +95,7 @@
 				<label>
 					<input type="checkbox" name="spell-prepared" {{#if filterState.prepared}}checked{{/if}}
 						data-action="filterSpells">
-					{{localize "SPELLMANAGER.Filters.PreparedOnly"}}
+					{{localize "SPELLBOOK.Filters.PreparedOnly"}}
 				</label>
 			</div>
 
@@ -80,26 +103,27 @@
 				<label>
 					<input type="checkbox" name="spell-ritual" {{#if filterState.ritual}}checked{{/if}}
 						data-action="filterSpells">
-					{{localize "SPELLMANAGER.Filters.RitualOnly"}}
+					{{localize "SPELLBOOK.Filters.RitualOnly"}}
 				</label>
 			</div>
 		</div>
 
 		<!-- Range filter (full width) -->
 		<div class="filter-range">
-			<label>{{localize "SPELLMANAGER.Filters.Range"}}</label>
+			<label>{{localize "SPELLBOOK.Filters.Range"}}</label>
 			<div class="range-inputs">
-				<input type="number" name="spell-min-range" placeholder="{{localize "SPELLMANAGER.Filters.RangeMin"}}"
+				<input type="number" name="spell-min-range" placeholder="{{localize "SPELLBOOK.Filters.RangeMin"}}"
 					value="{{filterState.minRange}}" data-action="filterSpells">
 				<div class="range-separator">-</div>
-				<input type="number" name="spell-max-range" placeholder="{{localize "SPELLMANAGER.Filters.RangeMax"}}"
+				<input type="number" name="spell-max-range" placeholder="{{localize "SPELLBOOK.Filters.RangeMax"}}"
 					value="{{filterState.maxRange}}" data-action="filterSpells">
 			</div>
 		</div>
 
 		<!-- Source filter is moved to the bottom -->
 		<div class="filter-item">
-			<select name="spell-source" data-action="filterSpells">
+			<label for="spell-source">{{localize "SPELLMANAGER.Filters.Source"}}</label>
+			<select name="spell-source" id="spell-source" data-action="filterSpells">
 				<option value="">{{localize "SPELLMANAGER.Filters.AllSources"}}</option>
 				{{#each spellSources as |source|}}
 					<option value="{{source.id}}" {{#if (eq ../filterState.source source.id)}}selected{{/if}}>
@@ -112,12 +136,19 @@
 
 	<div class="available-spells-list">
 		{{#if isEditing}}
-			{{log filteredSpells}}
 			{{#if filteredSpells.spells.length}}
 				<div class="available-spells-wrapper">
 					<ul class="available-spells">
 						{{#each filteredSpells.spells as |spell|}}
-							<li class="spell-item available" data-uuid="{{spell.uuid}}">
+							<li class="spell-item available" data-uuid="{{spell.uuid}}" data-spell-level="{{spell.level}}"
+								data-spell-school="{{spell.school}}" data-casting-time-type="{{spell.system.activation.type}}"
+								data-casting-time-value="{{spell.system.activation.value}}"
+								data-range-units="{{spell.system.range.units}}" data-range-value="{{spell.system.range.value}}"
+								data-damage-types="{{#each spell.system.damage.parts}}{{this.[1]}}{{#unless @last}},{{/unless}}{{/each}}"
+								data-ritual="{{spell.system.components.ritual}}"
+								data-concentration="{{spell.system.duration.concentration}}"
+								data-requires-save="{{spell.system.save.ability}}"
+								data-conditions="{{#each spell.appliedConditions}}{{this}}{{#unless @last}},{{/unless}}{{/each}}">
 								<div class="spell-name">
 									{{{spell.enrichedIcon}}}
 									<div class="name-stacked">
