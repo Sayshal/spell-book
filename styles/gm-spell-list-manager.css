@@ -680,6 +680,34 @@
   background: #0000001a;
 }
 
+/* Spell Content Links */
+.gm-spell-list-manager .spell-name .content-link {
+  display: inline-flex;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  color: inherit !important;
+  font-weight: inherit !important;
+  font-size: inherit !important;
+  text-decoration: none;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+.gm-spell-list-manager .spell-name .content-link i {
+  color: inherit;
+}
+
+.gm-spell-list-manager .spell-name .content-link i::before {
+  margin-right: 0.25em !important;
+  content: '\f72b' !important;
+}
+
+.gm-spell-list-manager .spell-name .content-link.broken {
+  border: none !important;
+  background: none !important;
+}
+
 /* Responsive adjustments */
 @media (width <= 960px) {
   .gm-spell-list-manager {

@@ -1,5 +1,6 @@
 import { MODULE } from '../constants.mjs';
 import * as actorSpellUtils from '../helpers/actor-spells.mjs';
+import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import * as managerHelpers from '../helpers/spell-management.mjs';
 import { log } from '../logger.mjs';
 
@@ -47,7 +48,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     position: {
       top: 150,
       left: 150,
-      width: 1000,
+      width: 1100,
       height: Math.max(600, window.innerHeight - 300)
     }
   };
@@ -262,6 +263,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Pre-fetch all available spells as well for column 3
       this.availableSpells = await managerHelpers.fetchAllCompendiumSpells();
+      await this._enrichAvailableSpells();
 
       this.isLoading = false;
       this.render(false);
@@ -272,6 +274,32 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       this.isLoading = false;
       this.render(false);
     }
+  }
+
+  async _enrichAvailableSpells() {
+    if (!this.availableSpells.length) return;
+
+    log(3, 'Enriching available spells with icons');
+
+    // Process in batches to avoid performance issues
+    const batchSize = 50;
+    for (let i = 0; i < this.availableSpells.length; i += batchSize) {
+      const batch = this.availableSpells.slice(i, i + batchSize);
+
+      // Process batch in parallel
+      await Promise.all(
+        batch.map(async (spell) => {
+          spell.enrichedIcon = await formattingUtils.createEnrichedSpellIcon(spell);
+        })
+      );
+
+      // Allow UI updates if needed
+      if ((i + batchSize) % 200 === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    }
+
+    log(3, 'Completed enriching available spells');
   }
 
   /**
@@ -473,6 +501,14 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Organize spells by level using the modified helper (passing null for actor)
       const spellLevels = await actorSpellUtils.organizeSpellsByLevel(spellDocs, null);
+
+      // Enrich the icons and details for each spell
+      for (const level of spellLevels) {
+        for (const spell of level.spells) {
+          // Use the shared helper for icon enrichment
+          spell.enrichedIcon = await formattingUtils.createEnrichedSpellIcon(spell);
+        }
+      }
 
       // Store both the flat list and the organized levels
       this.selectedSpellList.spells = spellDocs;

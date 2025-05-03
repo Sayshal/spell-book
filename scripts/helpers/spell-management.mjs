@@ -375,10 +375,63 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
     // Process each pack
     for (const pack of itemPacks) {
       try {
-        const index = await pack.getIndex({ fields: ['type', 'system.level', 'system.school'] });
+        // Request additional fields for formatting the details
+        const index = await pack.getIndex({
+          fields: ['type', 'system.level', 'system.school', 'system.components', 'system.activation.type', 'system.activation.value']
+        });
         const spellEntries = index.filter((e) => e.type === 'spell' && (!maxLevel || e.system?.level <= maxLevel));
 
         for (const entry of spellEntries) {
+          // Format details directly
+          const details = [];
+
+          // Add level for the subtitle
+          if (entry.system?.level !== undefined) {
+            const levelName = CONFIG.DND5E.spellLevels[entry.system.level];
+            if (levelName) details.push(levelName);
+          }
+
+          // Add components if available
+          if (entry.system?.components) {
+            const components = [];
+            if (entry.system.components.verbal) components.push('V');
+            if (entry.system.components.somatic) components.push('S');
+            if (entry.system.components.material) components.push('M');
+
+            if (components.length > 0) {
+              details.push(components.join(''));
+            }
+          }
+
+          // Add casting time
+          if (entry.system?.activation) {
+            const activationType = entry.system.activation.type;
+            const activationValue = entry.system.activation.value || 1;
+
+            if (activationType) {
+              const typeLabel = CONFIG.DND5E.abilityActivationTypes[activationType] || activationType;
+              let activationLabel;
+
+              if (activationValue === 1) {
+                activationLabel = typeLabel;
+              } else {
+                activationLabel = `${activationValue} ${typeLabel}${activationValue !== 1 ? 's' : ''}`;
+              }
+
+              details.push(activationLabel);
+            }
+          }
+
+          // Add school
+          if (entry.system?.school) {
+            const schoolKey = entry.system.school;
+            const schoolLabel = CONFIG.DND5E.spellSchools[schoolKey]?.label || schoolKey;
+            details.push(schoolLabel);
+          }
+
+          // Join with bullet points
+          const formattedDetails = details.filter(Boolean).join(' • ');
+
           spells.push({
             uuid: `Compendium.${pack.collection}.${entry._id}`,
             name: entry.name,
@@ -386,7 +439,8 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
             level: entry.system?.level || 0,
             school: entry.system?.school || '',
             sourceId: pack.metadata.packageName,
-            packName: pack.folder?.folder?.name || pack.folder?.name || pack.metadata.label
+            packName: pack.folder?.folder?.name || pack.folder?.name || pack.metadata.label,
+            formattedDetails: formattedDetails // Add the formatted details
           });
         }
       } catch (error) {

@@ -449,27 +449,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const level of spellLevels) {
       let failedUUIDs = [];
       for (const spell of level.spells) {
-        const uuid = spell.compendiumUuid || spell.uuid || spell?._stats?.compendiumSource;
-        if (!uuid) {
+        try {
+          // Use the shared helper for icon enrichment
+          spell.enrichedIcon = await formattingUtils.createEnrichedSpellIcon(spell);
+          spell.formattedDetails = formattingUtils.formatSpellDetails(spell);
+        } catch (error) {
           failedUUIDs.push(spell);
-          continue;
+          log(2, `Failed to enrich spell: ${spell.name}`, error);
         }
-
-        let enrichedHTML = await TextEditor.enrichHTML(`@UUID[${uuid}]{${spell.name}}`, { async: true });
-
-        const iconImg = `<img src="${spell.img}" class="spell-icon" alt="${spell.name} icon">`;
-        const linkMatch = enrichedHTML.match(/<a[^>]*>(.*?)<\/a>/);
-        let enrichedIcon = '';
-
-        if (linkMatch) {
-          const linkOpenTag = enrichedHTML.match(/<a[^>]*>/)[0];
-          enrichedIcon = `${linkOpenTag}${iconImg}</a>`;
-        } else {
-          enrichedIcon = `<a class="content-link" data-uuid="${uuid}">${iconImg}</a>`;
-        }
-
-        spell.enrichedIcon = enrichedIcon;
-        spell.formattedDetails = formattingUtils.formatSpellDetails(spell);
       }
       if (failedUUIDs.length > 0) {
         log(2, 'Some spells failed UUID check:', failedUUIDs);

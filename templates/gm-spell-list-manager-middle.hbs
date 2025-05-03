@@ -55,7 +55,7 @@
 								{{#each levelData.spells as |spell|}}
 									<li class="spell-item" data-uuid="{{spell.uuid}}">
 										<div class="spell-name">
-											<img src="{{spell.img}}" class="spell-icon" alt="{{spell.name}} icon">
+											{{{spell.enrichedIcon}}}
 											<div class="name-stacked">
 												<span class="title">{{spell.name}}</span>
 												<span class="subtitle">{{spell.formattedDetails}}</span>
