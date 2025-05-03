@@ -385,7 +385,6 @@
   flex: 0 0 auto;
   flex-direction: column;
   align-items: center;
-  margin-top: 1rem;
   padding-top: 0.5rem;
   border-top: 1px solid var(--manager-border-color);
 }
@@ -434,7 +433,6 @@
   object-fit: cover;
   width: 32px;
   height: 32px;
-  margin-right: 0.5rem;
   border: 2px solid var(--dnd5e-color-gold);
   border-radius: 0.25rem;
   vertical-align: middle;
@@ -680,7 +678,6 @@
   background: #0000001a;
 }
 
-/* Spell Content Links */
 .gm-spell-list-manager .spell-name .content-link {
   display: inline-flex;
   margin: 0 !important;
