@@ -526,7 +526,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Apply all current filters to the spell list without re-rendering
+   * Apply all current filters to the spell list - DOM manipulation for efficiency
    * @param {boolean} resetPagination - Whether to reset to first page
    * @private
    */
@@ -539,50 +539,62 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         this.paginationState.currentPage = 0;
       }
 
-      // Create a list of filtered spells
-      const filteredSpells = this._getFilteredSpells();
+      // Calculate filtered results
+      const filteredData = this._filterAvailableSpells();
 
-      // Calculate pagination
-      const pageSize = this.paginationState.pageSize;
-      const totalItems = filteredSpells.length;
-      const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+      // Create a set of visible UUIDs for this page for quick lookup
+      const visibleUUIDs = new Set(filteredData.spells.map((spell) => spell.uuid));
 
-      // Update pagination state
-      this.paginationState.totalPages = totalPages;
-
-      // Ensure current page is valid
-      if (this.paginationState.currentPage >= totalPages) {
-        this.paginationState.currentPage = Math.max(0, totalPages - 1);
-      }
-
-      // Calculate start and end indices for the current page
-      const startIndex = this.paginationState.currentPage * pageSize;
-      const endIndex = Math.min(startIndex + pageSize, totalItems);
-
-      // Get visible spells for this page
-      const visibleSpells = filteredSpells.slice(startIndex, endIndex);
-      const visibleUUIDs = new Set(visibleSpells.map((spell) => spell.uuid));
-
-      // Update visibility of spell items in the DOM
+      // Update visibility in the DOM
       const spellItems = this.element.querySelectorAll('.available-spells .spell-item');
       let visibleCount = 0;
 
       for (const item of spellItems) {
         const uuid = item.dataset.uuid;
         const isVisible = visibleUUIDs.has(uuid);
-
         item.style.display = isVisible ? '' : 'none';
         if (isVisible) visibleCount++;
       }
 
       // Show/hide no results message
-      const noSpells = this.element.querySelector('.no-spells');
-      if (noSpells) {
-        noSpells.style.display = visibleCount > 0 ? 'none' : 'block';
+      const noResults = this.element.querySelector('.no-spells');
+      if (noResults) {
+        noResults.style.display = visibleCount > 0 ? 'none' : 'block';
       }
 
-      // Update pagination display
-      this._updatePaginationDisplay(filteredSpells.length);
+      // Update pagination status text with accurate counts
+      const statusElem = this.element.querySelector('.pagination-status');
+      if (statusElem) {
+        const currentPage = this.paginationState.currentPage;
+        const pageSize = this.paginationState.pageSize;
+        const start = currentPage * pageSize + 1;
+        const end = Math.min((currentPage + 1) * pageSize, filteredData.totalFiltered);
+
+        statusElem.textContent = game.i18n.format('SPELLMANAGER.Filters.Showing', { start, end, total: filteredData.totalFiltered });
+
+        // Handle case when no spells match
+        if (filteredData.totalFiltered === 0) {
+          statusElem.textContent = game.i18n.localize('SPELLMANAGER.Filters.NoResults');
+        }
+      }
+
+      // Update page indicator
+      const pagesElem = this.element.querySelector('.pagination-pages');
+      if (pagesElem) {
+        if (this.paginationState.totalPages > 1) {
+          pagesElem.textContent = `${game.i18n.localize('SPELLMANAGER.Filters.Page')} ${this.paginationState.currentPage + 1} ${game.i18n.localize('SPELLMANAGER.Filters.Of')} ${this.paginationState.totalPages}`;
+          pagesElem.style.display = '';
+        } else {
+          pagesElem.style.display = 'none';
+        }
+      }
+
+      // Update button states for pagination
+      const prevButtons = this.element.querySelectorAll('[data-page-action="first-page"], [data-page-action="prev-page"]');
+      const nextButtons = this.element.querySelectorAll('[data-page-action="next-page"], [data-page-action="last-page"]');
+
+      prevButtons.forEach((btn) => (btn.disabled = this.paginationState.currentPage === 0));
+      nextButtons.forEach((btn) => (btn.disabled = this.paginationState.currentPage >= this.paginationState.totalPages - 1));
     } catch (error) {
       log(1, 'Error applying filters:', error);
     }
@@ -1079,7 +1091,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Remove a spell from the selected spell list
+   * Remove a spell from the selected spell list with proper UI updates
    * @param {string} spellUuid - UUID of the spell to remove
    * @returns {Promise<void>}
    */
@@ -1089,14 +1101,17 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     try {
       log(3, `Removing spell: ${spellUuid}`);
 
-      // Remove the spell from the list
+      // Remove the spell from the list in the data model
       await managerHelpers.removeSpellFromList(this.selectedSpellList.document, spellUuid);
 
       // Update our data
       this.selectedSpellList.spells = this.selectedSpellList.spells.filter((s) => s.uuid !== spellUuid);
       this.selectedSpellList.spellUuids = this.selectedSpellList.spellUuids.filter((u) => u !== spellUuid);
 
-      // Re-render
+      // Re-organize spell levels
+      this.selectedSpellList.spellsByLevel = await actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
+
+      // For add/remove operations, we need to re-render to ensure both lists are synchronized
       this.render(false);
 
       ui.notifications.info('Spell removed from list.');
@@ -1107,7 +1122,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Add a spell to the selected spell list
+   * Add a spell to the selected spell list with proper UI updates
    * @param {string} spellUuid - UUID of the spell to add
    * @returns {Promise<void>}
    */
@@ -1117,7 +1132,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     try {
       log(3, `Adding spell: ${spellUuid}`);
 
-      // Add the spell to the list
+      // Add the spell to the list in the data model
       await managerHelpers.addSpellToList(this.selectedSpellList.document, spellUuid);
 
       // Get the spell details
@@ -1133,9 +1148,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           if (a.level !== b.level) return a.level - b.level;
           return a.name.localeCompare(b.name);
         });
+
+        // Re-organize spell levels
+        this.selectedSpellList.spellsByLevel = await actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
       }
 
-      // Re-render
+      // For add/remove operations, we need to re-render to ensure both lists are synchronized
+      // This will rebuild both lists with the updated data
       this.render(false);
 
       ui.notifications.info('Spell added to list.');
