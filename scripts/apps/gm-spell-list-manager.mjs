@@ -153,10 +153,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * Initialize the application and set up pagination
    * @override
    */
-  /**
-   * Initialize the application and set up pagination
-   * @override
-   */
   _initialize() {
     super._initialize();
 
@@ -280,11 +276,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
     // Apply saved collapsed states
     this._applyCollapsedLevels();
-
-    // Apply initial filters
-    if (this.isEditing) {
-      this._applyFilters();
-    }
   }
 
   /* -------------------------------------------- */
@@ -320,6 +311,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Enrich available spells with icons
+   * @returns {Promise<void>}
+   * @private
+   */
   async _enrichAvailableSpells() {
     if (!this.availableSpells.length) return;
 
@@ -348,7 +344,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Apply filters and pagination to available spells
-   * @returns {Array} Filtered and paginated array of spells
+   * @returns {Object} Filtered and paginated array of spells with pagination data
    * @private
    */
   _filterAvailableSpells() {
@@ -530,22 +526,210 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Helper function to determine if a spell requires a saving throw
-   * @param {Object} spell - The spell object
-   * @returns {boolean} - Whether the spell requires a save
+   * Apply all current filters to the spell list without re-rendering
+   * @param {boolean} resetPagination - Whether to reset to first page
    * @private
    */
-  _doesSpellRequireSave(spell) {
-    // Check save details
-    if (spell.system?.save?.ability) {
-      return true;
+  _applyFilters(resetPagination = true) {
+    try {
+      log(3, 'Applying filters to available spells');
+
+      // If we're resetting pagination, go back to first page
+      if (resetPagination) {
+        this.paginationState.currentPage = 0;
+      }
+
+      // Create a list of filtered spells
+      const filteredSpells = this._getFilteredSpells();
+
+      // Calculate pagination
+      const pageSize = this.paginationState.pageSize;
+      const totalItems = filteredSpells.length;
+      const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+      // Update pagination state
+      this.paginationState.totalPages = totalPages;
+
+      // Ensure current page is valid
+      if (this.paginationState.currentPage >= totalPages) {
+        this.paginationState.currentPage = Math.max(0, totalPages - 1);
+      }
+
+      // Calculate start and end indices for the current page
+      const startIndex = this.paginationState.currentPage * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, totalItems);
+
+      // Get visible spells for this page
+      const visibleSpells = filteredSpells.slice(startIndex, endIndex);
+      const visibleUUIDs = new Set(visibleSpells.map((spell) => spell.uuid));
+
+      // Update visibility of spell items in the DOM
+      const spellItems = this.element.querySelectorAll('.available-spells .spell-item');
+      let visibleCount = 0;
+
+      for (const item of spellItems) {
+        const uuid = item.dataset.uuid;
+        const isVisible = visibleUUIDs.has(uuid);
+
+        item.style.display = isVisible ? '' : 'none';
+        if (isVisible) visibleCount++;
+      }
+
+      // Show/hide no results message
+      const noSpells = this.element.querySelector('.no-spells');
+      if (noSpells) {
+        noSpells.style.display = visibleCount > 0 ? 'none' : 'block';
+      }
+
+      // Update pagination display
+      this._updatePaginationDisplay(filteredSpells.length);
+    } catch (error) {
+      log(1, 'Error applying filters:', error);
+    }
+  }
+
+  /**
+   * Get filtered spells based on current filter state
+   * @returns {Array} Array of filtered spell objects
+   * @private
+   */
+  _getFilteredSpells() {
+    const { name, level, school, source, castingTime, minRange, maxRange, damageType, condition, requiresSave, concentration, ritual } = this.filterState;
+
+    // Create a Set of normalized UUIDs for quick lookup
+    const selectedSpellUUIDs = new Set();
+    if (this.selectedSpellList?.spells) {
+      for (const spell of this.selectedSpellList.spells) {
+        if (spell.uuid) {
+          selectedSpellUUIDs.add(spell.uuid);
+          const idPart = spell.uuid.split('.').pop();
+          if (idPart) selectedSpellUUIDs.add(idPart);
+        }
+      }
     }
 
-    // Check description for saving throw text
-    const description = spell.system?.description?.value || '';
-    const saveRegex = /saving throw|save dc|must make a|makes a/i;
+    // Filter the available spells based on criteria
+    return this.availableSpells.filter((spell) => {
+      // Check if already in list
+      if (selectedSpellUUIDs.has(spell.uuid)) return false;
+      const spellIdPart = spell.uuid.split('.').pop();
+      if (selectedSpellUUIDs.has(spellIdPart)) return false;
 
-    return saveRegex.test(description);
+      // Name filter
+      if (name && !spell.name.toLowerCase().includes(name.toLowerCase())) return false;
+
+      // Level filter
+      if (level && spell.level !== parseInt(level)) return false;
+
+      // School filter
+      if (school && spell.school !== school) return false;
+
+      // Source filter
+      if (source && source.trim() !== '') {
+        const spellSourceParts = spell.sourceId?.split('.') || [];
+        if (spellSourceParts.length >= 2) {
+          const spellSource = `${spellSourceParts[0]}.${spellSourceParts[1]}`;
+          if (spellSource !== source) return false;
+        } else if (spell.sourceId !== source) return false;
+      }
+
+      // Casting time filter
+      if (castingTime) {
+        const [filterType, filterValue] = castingTime.split(':');
+        const spellCastingType = spell.filterData?.castingTime?.type || spell.system?.activation?.type || '';
+        const spellCastingValue = spell.filterData?.castingTime?.value || spell.system?.activation?.value || '1';
+
+        if (spellCastingType !== filterType || spellCastingValue !== filterValue) return false;
+      }
+
+      // Range filter
+      if ((minRange || maxRange) && (spell.filterData?.range?.units || spell.system?.range)) {
+        const rangeUnits = spell.filterData?.range?.units || spell.system?.range?.units || '';
+        const rangeValue = parseInt(spell.system?.range?.value || 0);
+
+        let standardizedRange = rangeValue;
+        if (rangeUnits === 'mi') {
+          standardizedRange = rangeValue * 5280; // Miles to feet
+        } else if (rangeUnits === 'spec') {
+          standardizedRange = 0; // Special cases like "Self" or "Touch"
+        }
+
+        const minRangeVal = minRange ? parseInt(minRange) : 0;
+        const maxRangeVal = maxRange ? parseInt(maxRange) : Infinity;
+
+        if (standardizedRange < minRangeVal || standardizedRange > maxRangeVal) return false;
+      }
+
+      // Damage type filter
+      if (damageType) {
+        const spellDamageTypes = spell.filterData?.damageTypes || spell.system?.damage?.parts?.map((part) => part[1] || '').filter(Boolean) || [];
+
+        if (spellDamageTypes.length === 0 || !spellDamageTypes.includes(damageType)) return false;
+      }
+
+      // Condition filter
+      if (condition) {
+        const spellConditions = spell.filterData?.conditions || [];
+        if (!spellConditions.includes(condition)) return false;
+      }
+
+      // Save filter
+      if (requiresSave) {
+        const spellRequiresSave = spell.filterData?.requiresSave || !!spell.system?.save?.ability || false;
+        if (requiresSave === 'true' && !spellRequiresSave) return false;
+        else if (requiresSave === 'false' && spellRequiresSave) return false;
+      }
+
+      // Concentration filter
+      if (concentration) {
+        const requiresConcentration = spell.filterData?.concentration || spell.system?.duration?.concentration || false;
+        if (concentration === 'true' && !requiresConcentration) return false;
+        else if (concentration === 'false' && requiresConcentration) return false;
+      }
+
+      // Ritual filter
+      if (ritual) {
+        const isRitual = spell.filterData?.isRitual || spell.system?.components?.ritual || false;
+        if (!isRitual) return false;
+      }
+
+      return true;
+    });
+  }
+
+  /**
+   * Update pagination display elements
+   * @param {number} totalFiltered - Total number of filtered spells
+   * @private
+   */
+  _updatePaginationDisplay(totalFiltered) {
+    // Update pagination status text
+    const statusElem = this.element.querySelector('.pagination-status');
+    if (statusElem) {
+      const currentPage = this.paginationState.currentPage;
+      const pageSize = this.paginationState.pageSize;
+      const start = currentPage * pageSize + 1;
+      const end = Math.min((currentPage + 1) * pageSize, totalFiltered);
+
+      // Use the same format as in the template
+      statusElem.innerHTML = `${game.i18n.localize('SPELLMANAGER.Filters.Showing')} ${start}-${end} ${game.i18n.localize('SPELLMANAGER.Filters.Of')} ${totalFiltered} ${game.i18n.localize('SPELLMANAGER.Filters.Spells')}`;
+    }
+
+    // Update page indicator
+    const pagesElem = this.element.querySelector('.pagination-pages');
+    if (pagesElem) {
+      pagesElem.innerHTML = `${game.i18n.localize('SPELLMANAGER.Filters.Page')} ${this.paginationState.currentPage + 1} ${game.i18n.localize('SPELLMANAGER.Filters.Of')} ${this.paginationState.totalPages}`;
+
+      // Show or hide based on total pages
+      pagesElem.style.display = this.paginationState.totalPages > 1 ? '' : 'none';
+    }
+
+    // Update button states for pagination
+    const prevButtons = this.element.querySelectorAll('[data-page-action="first-page"], [data-page-action="prev-page"]');
+    const nextButtons = this.element.querySelectorAll('[data-page-action="next-page"], [data-page-action="last-page"]');
+
+    prevButtons.forEach((btn) => (btn.disabled = this.paginationState.currentPage === 0));
+    nextButtons.forEach((btn) => (btn.disabled = this.paginationState.currentPage >= this.paginationState.totalPages - 1));
   }
 
   /**
@@ -557,62 +741,14 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (page < 0 || page >= this.paginationState.totalPages) return;
 
     this.paginationState.currentPage = page;
-    this.render(false);
+
+    // Apply filters without resetting pagination
+    this._applyFilters(false);
   }
 
-  /* Add static method to class */
-  /**
-   * Handle page navigation
-   * @param {Event} event - The click event
-   * @param {HTMLElement} form - The form element
-   * @static
-   */
-  static handlePageNavigation(event, form) {
-    log(1, { event, form });
-    const button = event.target.closest('[data-page-action]'); // Get the button or closest ancestor with the attribute
-    if (!button) return;
-
-    const action = button.dataset.pageAction;
-
-    const appId = `gm-spell-list-manager-${MODULE.ID}`;
-    const instance = foundry.applications.instances.get(appId);
-
-    if (!instance) {
-      log(1, 'Could not find GMSpellListManager instance');
-      return;
-    }
-
-    switch (action) {
-      case 'first-page':
-        this._changePage(0);
-        break;
-      case 'prev-page':
-        this._changePage(instance.paginationState.currentPage - 1);
-        break;
-      case 'next-page':
-        this._changePage(instance.paginationState.currentPage + 1);
-        break;
-      case 'last-page':
-        this._changePage(instance.paginationState.totalPages - 1);
-        break;
-    }
-  }
-
-  /**
-   * Handle showing documentation
-   * @static
-   */
-  static handleShowDocumentation(_event, _form) {
-    const appId = `gm-spell-list-manager-${MODULE.ID}`;
-    const instance = foundry.applications.instances.get(appId);
-
-    if (!instance) {
-      log(1, 'Could not find GMSpellListManager instance');
-      return;
-    }
-
-    instance.showDocumentation();
-  }
+  /* -------------------------------------------- */
+  /*  Filter Setup & Event Handlers               */
+  /* -------------------------------------------- */
 
   /**
    * Set up listeners for filter inputs
@@ -629,7 +765,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         this.filterState.name = evt.target.value;
         if (!this._debouncedApplyFilters) {
           this._debouncedApplyFilters = foundry.utils.debounce(() => {
-            this._applyFilters();
+            this._applyFilters(true);
           }, 200);
         }
         this._debouncedApplyFilters();
@@ -653,199 +789,62 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       if (element) {
         element.addEventListener('change', (evt) => {
           this.filterState[property] = evt.target.value;
-          this._applyFilters();
+          this._applyFilters(true);
         });
       }
     }
 
     // Range inputs
-    const minRangeInput = this.element.querySelector('input[name="spell-min-range"]');
-    if (minRangeInput) {
-      minRangeInput.addEventListener('input', (evt) => {
-        this.filterState.minRange = evt.target.value;
+    const rangeInputs = ['input[name="spell-min-range"]', 'input[name="spell-max-range"]'];
+    rangeInputs.forEach((selector) => {
+      const input = this.element.querySelector(selector);
+      if (input) {
+        input.addEventListener('input', (evt) => {
+          const property = evt.target.name === 'spell-min-range' ? 'minRange' : 'maxRange';
+          this.filterState[property] = evt.target.value;
 
-        if (!this._debouncedRangeFilters) {
-          this._debouncedRangeFilters = foundry.utils.debounce(() => {
-            this._applyFilters();
-          }, 200);
-        }
-        this._debouncedRangeFilters();
-      });
-    }
-
-    const maxRangeInput = this.element.querySelector('input[name="spell-max-range"]');
-    if (maxRangeInput) {
-      maxRangeInput.addEventListener('input', (evt) => {
-        this.filterState.maxRange = evt.target.value;
-
-        if (!this._debouncedRangeFilters) {
-          this._debouncedRangeFilters = foundry.utils.debounce(() => {
-            this._applyFilters();
-          }, 200);
-        }
-        this._debouncedRangeFilters();
-      });
-    }
+          if (!this._debouncedRangeFilters) {
+            this._debouncedRangeFilters = foundry.utils.debounce(() => {
+              this._applyFilters(true);
+            }, 200);
+          }
+          this._debouncedRangeFilters();
+        });
+      }
+    });
 
     // Checkbox inputs
-    const preparedCheckbox = this.element.querySelector('input[name="spell-prepared"]');
-    if (preparedCheckbox) {
-      preparedCheckbox.addEventListener('change', (evt) => {
-        this.filterState.prepared = evt.target.checked;
-        this._applyFilters();
-      });
-    }
+    const checkboxSelectors = [{ selector: 'input[name="spell-ritual"]', property: 'ritual' }];
 
-    const ritualCheckbox = this.element.querySelector('input[name="spell-ritual"]');
-    if (ritualCheckbox) {
-      ritualCheckbox.addEventListener('change', (evt) => {
-        this.filterState.ritual = evt.target.checked;
-        this._applyFilters();
-      });
+    for (const { selector, property } of checkboxSelectors) {
+      const element = this.element.querySelector(selector);
+      if (element) {
+        element.addEventListener('change', (evt) => {
+          this.filterState[property] = evt.target.checked;
+          this._applyFilters(true);
+        });
+      }
     }
   }
 
   /**
-   * Apply all current filters to the spell list
+   * Apply saved collapsed states after rendering
    * @private
    */
-  _applyFilters() {
-    try {
-      const filters = this.filterState;
-      log(3, 'Applying filters to available spells');
+  _applyCollapsedLevels() {
+    const collapsedLevels = game.user.getFlag(MODULE.ID, 'gmCollapsedSpellLevels') || [];
 
-      const spellItems = this.element.querySelectorAll('.available-spells .spell-item');
-      let visibleCount = 0;
-
-      for (const item of spellItems) {
-        // Extract data from the DOM attributes
-        const name = item.querySelector('.spell-name .title')?.textContent.toLowerCase() || '';
-        const level = item.dataset.spellLevel;
-        const school = item.dataset.spellSchool;
-        const castingTimeType = item.dataset.castingTimeType || '';
-        const castingTimeValue = item.dataset.castingTimeValue || '';
-        const rangeUnits = item.dataset.rangeUnits || '';
-        const rangeValue = item.dataset.rangeValue || '0';
-        const damageTypes = (item.dataset.damageTypes || '').split(',').filter(Boolean);
-        const ritual = item.dataset.ritual === 'true';
-        const concentration = item.dataset.concentration === 'true';
-        const requiresSave = item.dataset.requiresSave === 'true';
-        const conditions = (item.dataset.conditions || '').split(',').filter(Boolean);
-        const uuid = item.dataset.uuid;
-
-        // Check all filter conditions
-        let visible = true;
-
-        // Check if spell is already in the list (if we have a selected spell list)
-        if (this.selectedSpellList?.spells) {
-          const isInList = this.selectedSpellList.spells.some((s) => s.uuid === uuid);
-          if (isInList) {
-            visible = false;
-          }
-        }
-
-        // Continue checking other filters only if still visible
-        if (visible) {
-          // Text search
-          if (filters.name && !name.includes(filters.name.toLowerCase())) {
-            visible = false;
-          }
-
-          // Level filter
-          if (filters.level && level !== filters.level) {
-            visible = false;
-          }
-
-          // School filter
-          if (filters.school && school !== filters.school) {
-            visible = false;
-          }
-
-          // Casting Time filter
-          if (filters.castingTime) {
-            const [filterType, filterValue] = filters.castingTime.split(':');
-            if (castingTimeType !== filterType || castingTimeValue !== filterValue) {
-              visible = false;
-            }
-          }
-
-          // Range filter
-          if ((filters.minRange || filters.maxRange) && rangeUnits) {
-            // Convert to standard units for comparison
-            let standardizedRange = parseInt(rangeValue || 0);
-
-            // Convert feet, miles, etc. to standard unit
-            if (rangeUnits === 'mi') {
-              standardizedRange = standardizedRange * 5280; // Miles to feet
-            } else if (rangeUnits === 'spec') {
-              standardizedRange = 0; // Special cases like "Self" or "Touch"
-            }
-
-            // Check if within range
-            const minRangeVal = filters.minRange ? parseInt(filters.minRange) : 0;
-            const maxRangeVal = filters.maxRange ? parseInt(filters.maxRange) : Infinity;
-
-            if (standardizedRange < minRangeVal || standardizedRange > maxRangeVal) {
-              visible = false;
-            }
-          }
-
-          // Damage Type filter
-          if (filters.damageType && damageTypes.length > 0 && !damageTypes.includes(filters.damageType)) {
-            visible = false;
-          }
-
-          // Condition filter
-          if (filters.condition && !conditions.includes(filters.condition)) {
-            visible = false;
-          }
-
-          // Requires Save filter
-          if (filters.requiresSave) {
-            if (filters.requiresSave === 'true' && !requiresSave) {
-              visible = false;
-            } else if (filters.requiresSave === 'false' && requiresSave) {
-              visible = false;
-            }
-          }
-
-          // Concentration filter
-          if (filters.concentration) {
-            if (filters.concentration === 'true' && !concentration) {
-              visible = false;
-            } else if (filters.concentration === 'false' && concentration) {
-              visible = false;
-            }
-          }
-
-          // Ritual filter
-          if (filters.ritual && !ritual) {
-            visible = false;
-          }
-        }
-
-        // Update visibility
-        item.style.display = visible ? '' : 'none';
-        if (visible) {
-          visibleCount++;
-        }
+    for (const levelId of collapsedLevels) {
+      const levelContainer = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
+      if (levelContainer) {
+        levelContainer.classList.add('collapsed');
       }
-
-      // Show/hide no results message
-      const noResults = this.element.querySelector('.no-spells');
-      if (noResults) {
-        noResults.style.display = visibleCount > 0 ? 'none' : 'block';
-      }
-
-      // Update count display
-      const countDisplay = this.element.querySelector('.pagination-status');
-      if (countDisplay) {
-        countDisplay.textContent = `${game.i18n.localize('SPELLMANAGER.Filters.Showing')} ${visibleCount} ${game.i18n.localize('SPELLMANAGER.Filters.Of')} ${spellItems.length} ${game.i18n.localize('SPELLMANAGER.Filters.Spells')}`;
-      }
-    } catch (error) {
-      log(1, 'Error applying filters:', error);
     }
   }
+
+  /* -------------------------------------------- */
+  /*  Spell List Operations                       */
+  /* -------------------------------------------- */
 
   /**
    * Load spell details for the selected spell list
@@ -894,13 +893,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /**
    * Create a confirmation dialog with standardized template
    * @param {Object} options - Dialog options
-   * @param {string} options.title - Dialog title
-   * @param {string} options.content - Dialog content
-   * @param {string} options.confirmLabel - Confirm button label
-   * @param {string} options.confirmIcon - Confirm button icon
-   * @param {string} options.cancelLabel - Cancel button label
-   * @param {string} options.cancelIcon - Cancel button icon
-   * @param {string} options.confirmCssClass - CSS class for confirm button
    * @returns {Promise<boolean>} True if confirmed, false otherwise
    */
   async _confirmDialog({
@@ -936,7 +928,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /* -------------------------------------------- */
-  /*  Event Handler Helper Methods                */
+  /*  Event Handler Action Methods                */
   /* -------------------------------------------- */
 
   /**
@@ -993,7 +985,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           try {
             const parsedUuid = foundry.utils.parseUuid(originalUuid);
             sourceFilter = parsedUuid.collection.metadata.packageName;
-            log(3, `Using original source from flag: ${sourceFilter}`, { originalUuid, parsedUuid, sourceFilter });
+            log(3, `Using original source from flag: ${sourceFilter}`);
           } catch (e) {
             log(2, `Error parsing original UUID: ${e.message}`);
           }
@@ -1075,6 +1067,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Enter editing mode
       this.isEditing = true;
+
+      // Reset pagination when entering edit mode
+      this.paginationState.currentPage = 0;
+
       this.render(false);
     } catch (error) {
       log(1, 'Error entering edit mode:', error);
@@ -1147,16 +1143,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       log(1, 'Error adding spell:', error);
       ui.notifications.error('Failed to add spell to list.');
     }
-  }
-
-  /**
-   * Update a filter state
-   * @param {string} filterType - Type of filter to update
-   * @param {string} value - New filter value
-   */
-  updateFilter(filterType, value) {
-    this.filterState[filterType] = value;
-    this.render(false);
   }
 
   /**
@@ -1270,54 +1256,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  // Add a new method for removing multiple spells
-  /**
-   * Remove multiple spells from the selected spell list
-   * @param {string[]} spellUuids - Array of spell UUIDs to remove
-   * @returns {Promise<void>}
-   */
-  async removeMultipleSpells(spellUuids) {
-    if (!this.selectedSpellList || !this.isEditing || !spellUuids.length) return;
-
-    // Confirm multi-removal
-    const confirmed = await this._confirmDialog({
-      title: 'Remove Multiple Spells',
-      content: `Are you sure you want to remove ${spellUuids.length} spells from this list?`,
-      confirmLabel: 'Remove',
-      confirmIcon: 'fas fa-trash',
-      confirmCssClass: 'dialog-button-danger'
-    });
-
-    if (!confirmed) return;
-
-    try {
-      // Get current spells
-      let spells = new Set(this.selectedSpellList.document.system.spells || []);
-
-      // Remove the specified spells
-      for (const uuid of spellUuids) {
-        spells.delete(uuid);
-      }
-
-      // Update the spell list
-      await this.selectedSpellList.document.update({
-        'system.spells': Array.from(spells)
-      });
-
-      // Update our data
-      this.selectedSpellList.spells = this.selectedSpellList.spells.filter((s) => !spellUuids.includes(s.uuid));
-      this.selectedSpellList.spellUuids = Array.from(spells);
-
-      // Re-render
-      this.render(false);
-
-      ui.notifications.info(`Removed ${spellUuids.length} spells from list.`);
-    } catch (error) {
-      log(1, 'Error removing multiple spells:', error);
-      ui.notifications.error('Failed to remove spells from list.');
-    }
-  }
-
   /**
    * Show the documentation dialog
    * @returns {Promise<void>}
@@ -1383,21 +1321,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     });
 
     return dialog;
-  }
-
-  /**
-   * Apply saved collapsed states after rendering
-   * @private
-   */
-  _applyCollapsedLevels() {
-    const collapsedLevels = game.user.getFlag(MODULE.ID, 'gmCollapsedSpellLevels') || [];
-
-    for (const levelId of collapsedLevels) {
-      const levelContainer = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
-      if (levelContainer) {
-        levelContainer.classList.add('collapsed');
-      }
-    }
   }
 
   /* -------------------------------------------- */
@@ -1508,6 +1431,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     event.preventDefault();
 
     const input = event.target;
+    const property = input.name.replace('spell-', '');
+    const value = input.type === 'checkbox' ? input.checked : input.value;
 
     // Get the application instance
     const appId = `gm-spell-list-manager-${MODULE.ID}`;
@@ -1518,26 +1443,22 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       return;
     }
 
-    // Get the property name from the input name
-    const property = input.name.replace('spell-', '');
-
-    // Get the value based on input type
-    const value = input.type === 'checkbox' ? input.checked : input.value;
-
     // Update the filter state
     instance.filterState[property] = value;
 
-    // Apply filters
-    if (input.type === 'checkbox' || input.tagName === 'SELECT') {
-      instance._applyFilters();
-    } else {
-      // For text inputs, use debounced filter application
+    // For all filter types, use a consistent approach:
+    // - For text inputs: use debounced filtering
+    // - For dropdowns/checkboxes: apply immediately but with full re-render
+    if (input.type === 'text' || input.type === 'number') {
       if (!instance._debouncedApplyFilters) {
         instance._debouncedApplyFilters = foundry.utils.debounce(() => {
-          instance._applyFilters();
+          instance._applyFilters(true); // Reset pagination and re-render
         }, 200);
       }
       instance._debouncedApplyFilters();
+    } else {
+      // Dropdown or checkbox, apply immediately with full re-render
+      instance._applyFilters(true);
     }
   }
 
@@ -1614,7 +1535,27 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
+   * Handle showing documentation
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
+   */
+  static handleShowDocumentation(_event, _form) {
+    const appId = `gm-spell-list-manager-${MODULE.ID}`;
+    const instance = foundry.applications.instances.get(appId);
+
+    if (!instance) {
+      log(1, 'Could not find GMSpellListManager instance');
+      return;
+    }
+
+    instance.showDocumentation();
+  }
+
+  /**
    * Handle toggling the sidebar
+   * @param {Event} event - The click event
+   * @param {HTMLElement} _form - The form element
    * @static
    */
   static handleToggleSidebar(event, _form) {
@@ -1633,12 +1574,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /**
    * Handle spell level toggle action
    * @param {Event} event - The click event
-   * @param {HTMLElement} form - The form element
+   * @param {HTMLElement} _form - The form element
    * @static
    */
-  static handleToggleSpellLevel(event, form) {
+  static handleToggleSpellLevel(event, _form) {
     // Find the parent spell-level container
-    const levelContainer = form.parentElement;
+    const levelContainer = event.target.closest('.spell-level');
 
     if (!levelContainer || !levelContainer.classList.contains('spell-level')) {
       return;
@@ -1659,6 +1600,42 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
 
     game.user.setFlag(MODULE.ID, 'gmCollapsedSpellLevels', collapsedLevels);
+  }
+
+  /**
+   * Handle page navigation
+   * @param {Event} event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
+   */
+  static handlePageNavigation(event, _form) {
+    const button = event.target.closest('[data-page-action]');
+    if (!button) return;
+
+    const action = button.dataset.pageAction;
+
+    const appId = `gm-spell-list-manager-${MODULE.ID}`;
+    const instance = foundry.applications.instances.get(appId);
+
+    if (!instance) {
+      log(1, 'Could not find GMSpellListManager instance');
+      return;
+    }
+
+    switch (action) {
+      case 'first-page':
+        instance._changePage(0);
+        break;
+      case 'prev-page':
+        instance._changePage(instance.paginationState.currentPage - 1);
+        break;
+      case 'next-page':
+        instance._changePage(instance.paginationState.currentPage + 1);
+        break;
+      case 'last-page':
+        instance._changePage(instance.paginationState.totalPages - 1);
+        break;
+    }
   }
 
   /**

@@ -112,15 +112,6 @@ export function extractSpellFilterData(spell) {
     }
   }
 
-  // Check direct system.damage.parts if available (for backward compatibility)
-  if (spell.system.damage?.parts?.length) {
-    for (const part of spell.system.damage.parts) {
-      if (part[1] && !damageTypes.includes(part[1])) {
-        damageTypes.push(part[1]);
-      }
-    }
-  }
-
   // Check for ritual
   const isRitual = spell.labels?.components?.tags?.includes(game.i18n.localize('DND5E.Item.Property.Ritual')) || spell.system.components?.ritual || false;
 
