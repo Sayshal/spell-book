@@ -8,7 +8,7 @@
 					<div class="drag-handle">
 						{{#if filter.sortable}}<i class="fas fa-grip-lines"></i>{{else}}<i class="fas fa-lock"></i>{{/if}}
 					</div>
-					<input type="checkbox" name="enabled-{{filter.id}}" {{#if filter.enabled}}checked{{/if}}>
+					<input type="checkbox" name="enabled-{{filter.id}}" {{checked filter.enabled}}>
 					<span class="filter-name">{{localize filter.label}}</span>
 					{{#unless filter.sortable}}
 						<span class="fixed-position-note">{{localize "SPELLBOOK.Settings.FixedPosition"}}</span>
@@ -24,7 +24,7 @@
 		<div class="footer-buttons">
 			{{#each buttons as |button|}}
 				<button type="{{button.type}}" {{#if button.name}}name="{{button.name}}" {{/if}} class="{{button.cssClass}}"
-					{{#if button.action}}data-action="{{button.action}}" {{/if}} {{#if button.disabled}}disabled{{/if}}>
+					{{#if button.action}}data-action="{{button.action}}" {{/if}} {{disabled button.disabled}}>
 					{{#if button.icon}}<i class="{{button.icon}}"></i>{{/if}}
 					{{localize button.label}}
 				</button>

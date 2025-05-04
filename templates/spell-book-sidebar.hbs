@@ -33,7 +33,7 @@
 		{{#if (eq filter.type "checkbox")}}
 			<div class="filter-toggles" data-filter-id="{{filter.id}}">
 				<label>
-					<input type="checkbox" name="{{filter.name}}" {{#if filter.checked}}checked{{/if}}>
+					<input type="checkbox" name="{{filter.name}}" {{checked filter.checked}}>
 					{{filter.label}}
 				</label>
 			</div>

@@ -32,18 +32,14 @@ Hooks.once('init', async function () {
     // Initialize the logger with settings
     initializeLogger();
 
-    // Expose the PlayerSpellBook class for other modules
-    MODULE.PlayerSpellBook = PlayerSpellBook;
-
     // Register module API
-    game.modules.get(MODULE.ID).api = {
+    globalThis.SPELLBOOK = {
       PlayerSpellBook,
       GMSpellListManager,
       openSpellBookForActor: (actor) => new PlayerSpellBook(actor).render(true),
       openSpellListManager: () => new GMSpellListManager().render(true)
     };
 
-    // Register Handlebars helpers for pagination
     Handlebars.registerHelper('add', function (a, b) {
       return Number(a) + Number(b);
     });
@@ -62,14 +58,6 @@ Hooks.once('init', async function () {
 
     Handlebars.registerHelper('max', function (a, b) {
       return Math.max(Number(a), Number(b));
-    });
-
-    Handlebars.registerHelper('eq', function (a, b) {
-      return a === b;
-    });
-
-    Handlebars.registerHelper('gt', function (a, b) {
-      return Number(a) > Number(b);
     });
 
     log(3, 'Module initialization complete');

@@ -57,8 +57,7 @@
 									<input type="checkbox" name="spellPreparation.{{spell.compendiumUuid}}" value="1"
 										data-uuid="{{spell.compendiumUuid}}" data-name="{{spell.name}}"
 										data-ritual="{{spell.filterData.isRitual}}" data-was-prepared="{{spell.preparation.prepared}}"
-										{{#if spell.preparation.prepared}}checked{{/if}}
-										{{#if spell.preparation.disabled}}disabled{{/if}} />
+										{{checked spell.preparation.prepared}} {{disabled spell.preparation.disabled}} />
 								</div>
 							</li>
 						{{/each}}

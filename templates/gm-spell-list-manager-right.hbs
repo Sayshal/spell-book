@@ -93,16 +93,14 @@
 
 			<div class="filter-item checkbox-filter">
 				<label>
-					<input type="checkbox" name="spell-prepared" {{#if filterState.prepared}}checked{{/if}}
-						data-action="filterSpells">
+					<input type="checkbox" name="spell-prepared" {{checked filterState.prepared}} data-action="filterSpells">
 					{{localize "SPELLBOOK.Filters.PreparedOnly"}}
 				</label>
 			</div>
 
 			<div class="filter-item checkbox-filter">
 				<label>
-					<input type="checkbox" name="spell-ritual" {{#if filterState.ritual}}checked{{/if}}
-						data-action="filterSpells">
+					<input type="checkbox" name="spell-ritual" {{checked filterState.ritual}} data-action="filterSpells">
 					{{localize "SPELLBOOK.Filters.RitualOnly"}}
 				</label>
 			</div>
@@ -175,19 +173,19 @@
 						</div>
 						<div class="pagination-buttons">
 							<button type="button" class="pagination-button" data-action="pageNavigation" data-page-action="first-page"
-								{{#if (eq paginationState.currentPage 0)}}disabled{{/if}}>
+								{{disabled (eq paginationState.currentPage 0)}}>
 								<i class="fas fa-angle-double-left"></i>
 							</button>
 							<button type="button" class="pagination-button" data-action="pageNavigation" data-page-action="prev-page"
-								{{#if (eq paginationState.currentPage 0)}}disabled{{/if}}>
+								{{disabled (eq paginationState.currentPage 0)}}>
 								<i class="fas fa-angle-left"></i>
 							</button>
 							<button type="button" class="pagination-button" data-action="pageNavigation" data-page-action="next-page"
-								{{#if (eq paginationState.currentPage (subtract paginationState.totalPages 1))}}disabled{{/if}}>
+								{{disabled (eq paginationState.currentPage (subtract paginationState.totalPages 1))}}>
 								<i class="fas fa-angle-right"></i>
 							</button>
 							<button type="button" class="pagination-button" data-action="pageNavigation" data-page-action="last-page"
-								{{#if (eq paginationState.currentPage (subtract paginationState.totalPages 1))}}disabled{{/if}}>
+								{{disabled (eq paginationState.currentPage (subtract paginationState.totalPages 1))}}>
 								<i class="fas fa-angle-double-right"></i>
 							</button>
 						</div>

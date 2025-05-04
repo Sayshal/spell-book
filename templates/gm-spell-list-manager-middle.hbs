@@ -76,7 +76,7 @@
 				</div>
 			{{else}}
 				<p class="no-spells">
-					{{#if isEditing}}{{localize "SPELLMANAGER.Columns.AddSpellsPrompt"}}{{else}}{{localize "SPELLMANAGER.Columns.NoSpells"}}{{/if}}
+					{{ifThen isEditing (localize "SPELLMANAGER.Columns.AddSpellsPrompt") (localize "SPELLMANAGER.Columns.NoSpells")}}
 				</p>
 			{{/if}}
 		</div>
