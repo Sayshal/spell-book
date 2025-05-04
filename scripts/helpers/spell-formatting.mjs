@@ -6,35 +6,69 @@
 
 /**
  * Format spell details for display
- * @param {Object} spell - The spell object with labels
+ * @param {Object} spell - The spell object with or without labels
  * @returns {string} - Formatted spell details string
  */
 export function formatSpellDetails(spell) {
   const components = [];
   const details = [];
 
+  // Handle components
   if (spell.labels?.components?.all) {
     for (const c of spell.labels.components.all) {
       components.push(c.abbr);
+    }
+  } else if (spell.system?.properties?.length) {
+    const componentMap = {
+      vocal: 'V',
+      somatic: 'S',
+      material: 'M',
+      concentration: 'C',
+      ritual: 'R'
+    };
+
+    for (const prop of spell.system.properties) {
+      if (componentMap[prop]) {
+        components.push(componentMap[prop]);
+      }
     }
   }
 
   // Format components with commas between them
   const componentsStr = components.length > 0 ? components.join(', ') : '';
-
-  // Add components if there are any
   if (componentsStr) {
     details.push(componentsStr);
   }
 
-  // Add activation
+  // Handle activation
   if (spell.labels?.activation) {
     details.push(spell.labels.activation);
+  } else if (spell.system?.activation?.type) {
+    const activationType = spell.system.activation.type;
+    const activationValue = spell.system.activation.value || 1;
+
+    // Get activation type label directly from config
+    const typeLabel = CONFIG.DND5E.abilityActivationTypes[activationType];
+
+    // Format activation string
+    let activationStr;
+    if (activationValue === 1 || activationValue === null) {
+      activationStr = typeLabel;
+    } else {
+      // Pluralize for values > 1
+      activationStr = `${activationValue} ${typeLabel}s`;
+    }
+
+    details.push(activationStr);
   }
 
-  // Add school
+  // Handle school
   if (spell.labels?.school) {
     details.push(spell.labels.school);
+  } else if (spell.system?.school) {
+    // Get school label from config
+    const schoolLabel = CONFIG.DND5E.spellSchools[spell.system.school].label;
+    details.push(schoolLabel);
   }
 
   // Join with bullet points

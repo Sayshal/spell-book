@@ -375,18 +375,16 @@
   min-height: 0;
   margin-bottom: 5px;
   overflow-y: auto;
+  max-height: calc(100vh - 500px);
 }
 
-.gm-spell-list-manager .pagination-controls {
-  display: flex;
-  z-index: 2;
-  position: sticky;
-  bottom: 0;
-  flex: 0 0 auto;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 0.5rem;
+.gm-spell-list-manager .filter-count-display {
+  padding: 8px;
+  text-align: center;
   border-top: 1px solid var(--manager-border-color);
+  font-size: 0.9rem;
+  color: var(--color-text-light-5);
+  background-color: #0000000d;
 }
 
 /* Spell items styling */
@@ -490,39 +488,6 @@
 
 .gm-spell-list-manager .manager-footer button {
   width: auto;
-}
-
-.gm-spell-list-manager .pagination-status {
-  margin-bottom: 0.5rem;
-  font-size: 0.8rem;
-}
-
-.gm-spell-list-manager .pagination-buttons {
-  gap: 0.25rem;
-  display: flex;
-  align-items: center;
-}
-
-.gm-spell-list-manager .pagination-button {
-  padding: 0.25rem 0.5rem;
-  border: 1px solid var(--manager-border-color);
-  border-radius: 3px;
-  cursor: pointer;
-  background-color: #0000000d;
-}
-
-.gm-spell-list-manager .pagination-button:hover:not(:disabled) {
-  background-color: #0000001a;
-}
-
-.gm-spell-list-manager .pagination-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.gm-spell-list-manager .pagination-pages {
-  margin: 0 0.5rem;
-  font-size: 0.9rem;
 }
 
 /* Footer buttons */

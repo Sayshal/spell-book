@@ -6,8 +6,7 @@
 		<div class="filter-search">
 			<label for="spell-search">{{localize "SPELLBOOK.Filters.SearchPlaceholder"}}</label>
 			<input type="text" name="spell-search" id="spell-search"
-				placeholder="{{localize "SPELLMANAGER.Filters.SearchPlaceholder"}}" value="{{filterState.name}}"
-				data-action="filterSpells">
+				placeholder="{{localize "SPELLMANAGER.Filters.SearchPlaceholder"}}" value="{{filterState.name}}">
 		</div>
 
 		<!-- Grid layout for filters -->
@@ -15,7 +14,7 @@
 			<!-- Row 1 -->
 			<div class="filter-item">
 				<label for="spell-level">{{localize "SPELLBOOK.Filters.Level"}}</label>
-				<select name="spell-level" id="spell-level" data-action="filterSpells">
+				<select name="spell-level" id="spell-level">
 					<option value="">{{localize "SPELLMANAGER.Filters.AllLevels"}}</option>
 					{{#each spellLevels as |label level|}}
 						<option value="{{level}}" {{#if (eq ../filterState.level level)}}selected{{/if}}>{{label}}</option>
@@ -25,7 +24,7 @@
 
 			<div class="filter-item">
 				<label for="spell-school">{{localize "SPELLBOOK.Filters.School"}}</label>
-				<select name="spell-school" id="spell-school" data-action="filterSpells">
+				<select name="spell-school" id="spell-school">
 					<option value="">{{localize "SPELLMANAGER.Filters.AllSchools"}}</option>
 					{{#each spellSchools as |school key|}}
 						<option value="{{key}}" {{#if (eq ../filterState.school key)}}selected{{/if}}>{{school.label}}</option>
@@ -35,7 +34,7 @@
 
 			<div class="filter-item">
 				<label for="spell-castingTime">{{localize "SPELLBOOK.Filters.CastingTime"}}</label>
-				<select name="spell-castingTime" id="spell-castingTime" data-action="filterSpells">
+				<select name="spell-castingTime" id="spell-castingTime">
 					<option value="">{{localize "SPELLBOOK.Filters.All"}}</option>
 					{{#each castingTimeOptions as |option|}}
 						<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
@@ -46,7 +45,7 @@
 			<!-- Row 2 -->
 			<div class="filter-item">
 				<label for="spell-damageType">{{localize "SPELLBOOK.Filters.DamageType"}}</label>
-				<select name="spell-damageType" id="spell-damageType" data-action="filterSpells">
+				<select name="spell-damageType" id="spell-damageType">
 					<option value="">{{localize "SPELLBOOK.Filters.All"}}</option>
 					{{#each damageTypeOptions as |option|}}
 						<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
@@ -56,7 +55,7 @@
 
 			<div class="filter-item">
 				<label for="spell-condition">{{localize "SPELLBOOK.Filters.Condition"}}</label>
-				<select name="spell-condition" id="spell-condition" data-action="filterSpells">
+				<select name="spell-condition" id="spell-condition">
 					<option value="">{{localize "SPELLBOOK.Filters.All"}}</option>
 					{{#each conditionOptions as |option|}}
 						<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
@@ -66,7 +65,7 @@
 
 			<div class="filter-item">
 				<label for="spell-requiresSave">{{localize "SPELLBOOK.Filters.RequiresSave"}}</label>
-				<select name="spell-requiresSave" id="spell-requiresSave" data-action="filterSpells">
+				<select name="spell-requiresSave" id="spell-requiresSave">
 					<option value="">{{localize "SPELLBOOK.Filters.All"}}</option>
 					<option value="true" {{#if (eq filterState.requiresSave "true")}}selected{{/if}}>
 						{{localize "SPELLBOOK.Filters.True"}}
@@ -80,7 +79,7 @@
 			<!-- Row 3 -->
 			<div class="filter-item">
 				<label for="spell-concentration">{{localize "SPELLBOOK.Filters.RequiresConcentration"}}</label>
-				<select name="spell-concentration" id="spell-concentration" data-action="filterSpells">
+				<select name="spell-concentration" id="spell-concentration">
 					<option value="">{{localize "SPELLBOOK.Filters.All"}}</option>
 					<option value="true" {{#if (eq filterState.concentration "true")}}selected{{/if}}>
 						{{localize "SPELLBOOK.Filters.True"}}
@@ -93,7 +92,7 @@
 
 			<div class="filter-item checkbox-filter">
 				<label>
-					<input type="checkbox" name="spell-ritual" {{checked filterState.ritual}} data-action="filterSpells">
+					<input type="checkbox" name="spell-ritual" {{checked filterState.ritual}}>
 					{{localize "SPELLBOOK.Filters.RitualOnly"}}
 				</label>
 			</div>
@@ -105,17 +104,17 @@
 				({{#if (eq (lookup @root.settings "distanceUnit") "meters")}}{{localize "SPELLBOOK.Settings.DistanceUnit.Meters"}}{{else}}{{localize "SPELLBOOK.Settings.DistanceUnit.Feet"}}{{/if}})</label>
 			<div class="range-inputs">
 				<input type="number" name="spell-min-range" placeholder="{{localize "SPELLBOOK.Filters.RangeMin"}}"
-					value="{{filterState.minRange}}" data-action="filterSpells">
+					value="{{filterState.minRange}}">
 				<div class="range-separator">-</div>
 				<input type="number" name="spell-max-range" placeholder="{{localize "SPELLBOOK.Filters.RangeMax"}}"
-					value="{{filterState.maxRange}}" data-action="filterSpells">
+					value="{{filterState.maxRange}}">
 			</div>
 		</div>
 
 		<!-- Source filter is moved to the bottom -->
 		<div class="filter-item">
 			<label for="spell-source">{{localize "SPELLMANAGER.Filters.Source"}}</label>
-			<select name="spell-source" id="spell-source" data-action="filterSpells">
+			<select name="spell-source" id="spell-source">
 				<option value="">{{localize "SPELLMANAGER.Filters.AllSources"}}</option>
 				{{#each spellSources as |source|}}
 					<option value="{{source.id}}" {{#if (eq ../filterState.source source.id)}}selected{{/if}}>
@@ -156,40 +155,10 @@
 						{{/each}}
 					</ul>
 				</div>
-				{{#if filteredSpells.totalItems}}
-					<div class="pagination-controls">
-						<div class="pagination-status">
-							{{localize "SPELLMANAGER.Filters.Showing"}}
-							{{add (multiply paginationState.currentPage paginationState.pageSize) 1}}-{{min (add (multiply paginationState.currentPage paginationState.pageSize) paginationState.pageSize) filteredSpells.totalFiltered}}
-							{{localize "SPELLMANAGER.Filters.Of"}} {{filteredSpells.totalFiltered}}
-							{{localize "SPELLMANAGER.Filters.Spells"}}
-						</div>
-						<div class="pagination-buttons">
-							<button type="button" class="pagination-button" data-action="pageNavigation" data-page-action="first-page"
-								{{disabled (eq paginationState.currentPage 0)}}>
-								<i class="fas fa-angle-double-left"></i>
-							</button>
-							<button type="button" class="pagination-button" data-action="pageNavigation" data-page-action="prev-page"
-								{{disabled (eq paginationState.currentPage 0)}}>
-								<i class="fas fa-angle-left"></i>
-							</button>
-							<button type="button" class="pagination-button" data-action="pageNavigation" data-page-action="next-page"
-								{{disabled (eq paginationState.currentPage (subtract paginationState.totalPages 1))}}>
-								<i class="fas fa-angle-right"></i>
-							</button>
-							<button type="button" class="pagination-button" data-action="pageNavigation" data-page-action="last-page"
-								{{disabled (eq paginationState.currentPage (subtract paginationState.totalPages 1))}}>
-								<i class="fas fa-angle-double-right"></i>
-							</button>
-						</div>
-						{{#if (gt paginationState.totalPages 1)}}
-							<span class="pagination-pages">
-								{{localize "SPELLMANAGER.Filters.Page"}} {{add paginationState.currentPage 1}}
-								{{localize "SPELLMANAGER.Filters.Of"}} {{paginationState.totalPages}}
-							</span>
-						{{/if}}
-					</div>
-				{{/if}}
+				<div class="filter-count-display">
+					<span
+						class="filter-count">{{localize "SPELLMANAGER.Filters.FilteredSpellCount" count=filteredSpells.totalFiltered}}</span>
+				</div>
 			{{else}}
 				<p class="no-spells">{{localize "SPELLMANAGER.Columns.NoMatchingSpells"}}</p>
 			{{/if}}

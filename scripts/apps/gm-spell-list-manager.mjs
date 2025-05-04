@@ -30,14 +30,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       editSpellList: GMSpellListManager.handleEditSpellList,
       removeSpell: GMSpellListManager.handleRemoveSpell,
       addSpell: GMSpellListManager.handleAddSpell,
-      filterSpells: GMSpellListManager.handleFilterSpells,
       saveCustomList: GMSpellListManager.handleSaveCustomList,
       deleteCustomList: GMSpellListManager.handleDeleteCustomList,
       restoreOriginal: GMSpellListManager.handleRestoreOriginal,
       showDocumentation: GMSpellListManager.handleShowDocumentation,
       toggleSidebar: GMSpellListManager.handleToggleSidebar,
-      toggleSpellLevel: GMSpellListManager.handleToggleSpellLevel,
-      pageNavigation: GMSpellListManager.handlePageNavigation
+      toggleSpellLevel: GMSpellListManager.handleToggleSpellLevel
     },
     classes: ['gm-spell-list-manager'],
     window: {
@@ -128,16 +126,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   isEditing = false;
 
-  /**
-   * Pagination state for available spells
-   * @type {Object}
-   */
-  paginationState = {
-    currentPage: 0,
-    pageSize: 100,
-    totalPages: 1
-  };
-
   /* -------------------------------------------- */
   /*  Constructor                                 */
   /* -------------------------------------------- */
@@ -150,7 +138,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Initialize the application and set up pagination
+   * Initialize the application
    * @override
    */
   _initialize() {
@@ -172,9 +160,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       prepared: false,
       ritual: false
     };
-
-    // Get page size from settings
-    this.paginationState.pageSize = game.settings.get(MODULE.ID, 'spellManagerPageSize');
 
     // Set position to fill most of the screen
     this.position.width = Math.max(800, window.innerWidth - 300);
@@ -201,7 +186,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       isEditing: this.isEditing,
       availableSpells: this.availableSpells,
       filterState: this.filterState,
-      paginationState: this.paginationState,
       settings: {
         distanceUnit: game.settings.get(MODULE.ID, 'distanceUnit')
       }
@@ -215,7 +199,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     const customMappings = game.settings.get(MODULE.ID, 'customSpellListMappings') || {};
     context.customListMap = customMappings;
 
-    // If we have available spells, apply filters and pagination
+    // If we have available spells, apply filters
     if (this.availableSpells.length > 0) {
       const sourceMap = new Map();
       this.availableSpells.forEach((spell) => {
@@ -343,8 +327,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Apply filters and pagination to available spells
-   * @returns {Object} Filtered and paginated array of spells with pagination data
+   * Filter available spells
+   * @returns {Object} Filtered spells with additional metadata
    * @private
    */
   _filterAvailableSpells() {
@@ -500,49 +484,25 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       return true;
     });
 
-    // Calculate pagination
-    const pageSize = this.paginationState.pageSize;
-    const totalItems = filteredSpells.length;
-    const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-
-    // Update pagination state
-    this.paginationState.totalPages = totalPages;
-
-    // Ensure current page is valid
-    if (this.paginationState.currentPage >= totalPages) {
-      this.paginationState.currentPage = Math.max(0, totalPages - 1);
-    }
-
-    // Calculate start and end indices for the current page
-    const startIndex = this.paginationState.currentPage * pageSize;
-    const endIndex = Math.min(startIndex + pageSize, totalItems);
-
-    // Return the paginated subset of the filtered spells
+    // Return all filtered spells and count for UI
     return {
-      spells: filteredSpells.slice(startIndex, endIndex),
-      totalItems,
+      spells: filteredSpells,
       totalFiltered: filteredSpells.length
     };
   }
 
   /**
    * Apply all current filters to the spell list - DOM manipulation for efficiency
-   * @param {boolean} resetPagination - Whether to reset to first page
    * @private
    */
-  _applyFilters(resetPagination = true) {
+  _applyFilters() {
     try {
       log(3, 'Applying filters to available spells');
-
-      // If we're resetting pagination, go back to first page
-      if (resetPagination) {
-        this.paginationState.currentPage = 0;
-      }
 
       // Calculate filtered results
       const filteredData = this._filterAvailableSpells();
 
-      // Create a set of visible UUIDs for this page for quick lookup
+      // Create a set of visible UUIDs for quick lookup
       const visibleUUIDs = new Set(filteredData.spells.map((spell) => spell.uuid));
 
       // Update visibility in the DOM
@@ -562,200 +522,14 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         noResults.style.display = visibleCount > 0 ? 'none' : 'block';
       }
 
-      // Update pagination status text with accurate counts
-      const statusElem = this.element.querySelector('.pagination-status');
-      if (statusElem) {
-        const currentPage = this.paginationState.currentPage;
-        const pageSize = this.paginationState.pageSize;
-        const start = currentPage * pageSize + 1;
-        const end = Math.min((currentPage + 1) * pageSize, filteredData.totalFiltered);
-
-        statusElem.textContent = game.i18n.format('SPELLMANAGER.Filters.Showing', { start, end, total: filteredData.totalFiltered });
-
-        // Handle case when no spells match
-        if (filteredData.totalFiltered === 0) {
-          statusElem.textContent = game.i18n.localize('SPELLMANAGER.Filters.NoResults');
-        }
+      // Update filter count display
+      const countDisplay = this.element.querySelector('.filter-count');
+      if (countDisplay) {
+        countDisplay.textContent = `${visibleCount} spells`;
       }
-
-      // Update page indicator
-      const pagesElem = this.element.querySelector('.pagination-pages');
-      if (pagesElem) {
-        if (this.paginationState.totalPages > 1) {
-          pagesElem.textContent = `${game.i18n.localize('SPELLMANAGER.Filters.Page')} ${this.paginationState.currentPage + 1} ${game.i18n.localize('SPELLMANAGER.Filters.Of')} ${this.paginationState.totalPages}`;
-          pagesElem.style.display = '';
-        } else {
-          pagesElem.style.display = 'none';
-        }
-      }
-
-      // Update button states for pagination
-      const prevButtons = this.element.querySelectorAll('[data-page-action="first-page"], [data-page-action="prev-page"]');
-      const nextButtons = this.element.querySelectorAll('[data-page-action="next-page"], [data-page-action="last-page"]');
-
-      prevButtons.forEach((btn) => (btn.disabled = this.paginationState.currentPage === 0));
-      nextButtons.forEach((btn) => (btn.disabled = this.paginationState.currentPage >= this.paginationState.totalPages - 1));
     } catch (error) {
       log(1, 'Error applying filters:', error);
     }
-  }
-
-  /**
-   * Get filtered spells based on current filter state
-   * @returns {Array} Array of filtered spell objects
-   * @private
-   */
-  _getFilteredSpells() {
-    const { name, level, school, source, castingTime, minRange, maxRange, damageType, condition, requiresSave, concentration, ritual } = this.filterState;
-
-    // Create a Set of normalized UUIDs for quick lookup
-    const selectedSpellUUIDs = new Set();
-    if (this.selectedSpellList?.spells) {
-      for (const spell of this.selectedSpellList.spells) {
-        if (spell.uuid) {
-          selectedSpellUUIDs.add(spell.uuid);
-          const idPart = spell.uuid.split('.').pop();
-          if (idPart) selectedSpellUUIDs.add(idPart);
-        }
-      }
-    }
-
-    // Filter the available spells based on criteria
-    return this.availableSpells.filter((spell) => {
-      // Check if already in list
-      if (selectedSpellUUIDs.has(spell.uuid)) return false;
-      const spellIdPart = spell.uuid.split('.').pop();
-      if (selectedSpellUUIDs.has(spellIdPart)) return false;
-
-      // Name filter
-      if (name && !spell.name.toLowerCase().includes(name.toLowerCase())) return false;
-
-      // Level filter
-      if (level && spell.level !== parseInt(level)) return false;
-
-      // School filter
-      if (school && spell.school !== school) return false;
-
-      // Source filter
-      if (source && source.trim() !== '') {
-        const spellSourceParts = spell.sourceId?.split('.') || [];
-        if (spellSourceParts.length >= 2) {
-          const spellSource = `${spellSourceParts[0]}.${spellSourceParts[1]}`;
-          if (spellSource !== source) return false;
-        } else if (spell.sourceId !== source) return false;
-      }
-
-      // Casting time filter
-      if (castingTime) {
-        const [filterType, filterValue] = castingTime.split(':');
-        const spellCastingType = spell.filterData?.castingTime?.type || spell.system?.activation?.type || '';
-        const spellCastingValue = spell.filterData?.castingTime?.value || spell.system?.activation?.value || '1';
-
-        if (spellCastingType !== filterType || spellCastingValue !== filterValue) return false;
-      }
-
-      // Range filter
-      if ((minRange || maxRange) && (spell.filterData?.range?.units || spell.system?.range)) {
-        const rangeUnits = spell.filterData?.range?.units || spell.system?.range?.units || '';
-        const rangeValue = parseInt(spell.system?.range?.value || 0);
-
-        let standardizedRange = rangeValue;
-        if (rangeUnits === 'mi') {
-          standardizedRange = rangeValue * 5280; // Miles to feet
-        } else if (rangeUnits === 'spec') {
-          standardizedRange = 0; // Special cases like "Self" or "Touch"
-        }
-
-        const minRangeVal = minRange ? parseInt(minRange) : 0;
-        const maxRangeVal = maxRange ? parseInt(maxRange) : Infinity;
-
-        if (standardizedRange < minRangeVal || standardizedRange > maxRangeVal) return false;
-      }
-
-      // Damage type filter
-      if (damageType) {
-        const spellDamageTypes = spell.filterData?.damageTypes || spell.system?.damage?.parts?.map((part) => part[1] || '').filter(Boolean) || [];
-
-        if (spellDamageTypes.length === 0 || !spellDamageTypes.includes(damageType)) return false;
-      }
-
-      // Condition filter
-      if (condition) {
-        const spellConditions = spell.filterData?.conditions || [];
-        if (!spellConditions.includes(condition)) return false;
-      }
-
-      // Save filter
-      if (requiresSave) {
-        const spellRequiresSave = spell.filterData?.requiresSave || !!spell.system?.save?.ability || false;
-        if (requiresSave === 'true' && !spellRequiresSave) return false;
-        else if (requiresSave === 'false' && spellRequiresSave) return false;
-      }
-
-      // Concentration filter
-      if (concentration) {
-        const requiresConcentration = spell.filterData?.concentration || spell.system?.duration?.concentration || false;
-        if (concentration === 'true' && !requiresConcentration) return false;
-        else if (concentration === 'false' && requiresConcentration) return false;
-      }
-
-      // Ritual filter
-      if (ritual) {
-        const isRitual = spell.filterData?.isRitual || spell.system?.components?.ritual || false;
-        if (!isRitual) return false;
-      }
-
-      return true;
-    });
-  }
-
-  /**
-   * Update pagination display elements
-   * @param {number} totalFiltered - Total number of filtered spells
-   * @private
-   */
-  _updatePaginationDisplay(totalFiltered) {
-    // Update pagination status text
-    const statusElem = this.element.querySelector('.pagination-status');
-    if (statusElem) {
-      const currentPage = this.paginationState.currentPage;
-      const pageSize = this.paginationState.pageSize;
-      const start = currentPage * pageSize + 1;
-      const end = Math.min((currentPage + 1) * pageSize, totalFiltered);
-
-      // Use the same format as in the template
-      statusElem.innerHTML = `${game.i18n.localize('SPELLMANAGER.Filters.Showing')} ${start}-${end} ${game.i18n.localize('SPELLMANAGER.Filters.Of')} ${totalFiltered} ${game.i18n.localize('SPELLMANAGER.Filters.Spells')}`;
-    }
-
-    // Update page indicator
-    const pagesElem = this.element.querySelector('.pagination-pages');
-    if (pagesElem) {
-      pagesElem.innerHTML = `${game.i18n.localize('SPELLMANAGER.Filters.Page')} ${this.paginationState.currentPage + 1} ${game.i18n.localize('SPELLMANAGER.Filters.Of')} ${this.paginationState.totalPages}`;
-
-      // Show or hide based on total pages
-      pagesElem.style.display = this.paginationState.totalPages > 1 ? '' : 'none';
-    }
-
-    // Update button states for pagination
-    const prevButtons = this.element.querySelectorAll('[data-page-action="first-page"], [data-page-action="prev-page"]');
-    const nextButtons = this.element.querySelectorAll('[data-page-action="next-page"], [data-page-action="last-page"]');
-
-    prevButtons.forEach((btn) => (btn.disabled = this.paginationState.currentPage === 0));
-    nextButtons.forEach((btn) => (btn.disabled = this.paginationState.currentPage >= this.paginationState.totalPages - 1));
-  }
-
-  /**
-   * Handle changing the page
-   * @param {number} page - The page to change to
-   * @private
-   */
-  _changePage(page) {
-    if (page < 0 || page >= this.paginationState.totalPages) return;
-
-    this.paginationState.currentPage = page;
-
-    // Apply filters without resetting pagination
-    this._applyFilters(false);
   }
 
   /* -------------------------------------------- */
@@ -777,14 +551,14 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         this.filterState.name = evt.target.value;
         if (!this._debouncedApplyFilters) {
           this._debouncedApplyFilters = foundry.utils.debounce(() => {
-            this._applyFilters(true);
+            this._applyFilters();
           }, 200);
         }
         this._debouncedApplyFilters();
       });
     }
 
-    // Dropdown selects
+    // Dropdown selects - using more specific change event handlers
     const dropdownSelectors = [
       { selector: 'select[name="spell-level"]', property: 'level' },
       { selector: 'select[name="spell-school"]', property: 'school' },
@@ -799,9 +573,16 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     for (const { selector, property } of dropdownSelectors) {
       const element = this.element.querySelector(selector);
       if (element) {
+        // The change event only fires when a selection is made and value actually changes
         element.addEventListener('change', (evt) => {
-          this.filterState[property] = evt.target.value;
-          this._applyFilters(true);
+          const oldValue = this.filterState[property];
+          const newValue = evt.target.value;
+
+          // Only update and filter if the value actually changed
+          if (oldValue !== newValue) {
+            this.filterState[property] = newValue;
+            this._applyFilters();
+          }
         });
       }
     }
@@ -813,14 +594,20 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       if (input) {
         input.addEventListener('input', (evt) => {
           const property = evt.target.name === 'spell-min-range' ? 'minRange' : 'maxRange';
-          this.filterState[property] = evt.target.value;
+          const oldValue = this.filterState[property];
+          const newValue = evt.target.value;
 
-          if (!this._debouncedRangeFilters) {
-            this._debouncedRangeFilters = foundry.utils.debounce(() => {
-              this._applyFilters(true);
-            }, 200);
+          // Only update if value changed
+          if (oldValue !== newValue) {
+            this.filterState[property] = newValue;
+
+            if (!this._debouncedRangeFilters) {
+              this._debouncedRangeFilters = foundry.utils.debounce(() => {
+                this._applyFilters();
+              }, 200);
+            }
+            this._debouncedRangeFilters();
           }
-          this._debouncedRangeFilters();
         });
       }
     });
@@ -832,8 +619,14 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       const element = this.element.querySelector(selector);
       if (element) {
         element.addEventListener('change', (evt) => {
-          this.filterState[property] = evt.target.checked;
-          this._applyFilters(true);
+          const oldValue = this.filterState[property];
+          const newValue = evt.target.checked;
+
+          // Only update if value changed
+          if (oldValue !== newValue) {
+            this.filterState[property] = newValue;
+            this._applyFilters();
+          }
         });
       }
     }
@@ -1079,9 +872,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Enter editing mode
       this.isEditing = true;
-
-      // Reset pagination when entering edit mode
-      this.paginationState.currentPage = 0;
 
       this.render(false);
     } catch (error) {
@@ -1440,48 +1230,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Handle filter changes - static entry point
-   * @param {Event} event - The input/change event
-   * @param {HTMLFormElement} form - The form element
-   * @static
-   */
-  static handleFilterSpells(event, form) {
-    // Prevent default to avoid form submission
-    event.preventDefault();
-
-    const input = event.target;
-    const property = input.name.replace('spell-', '');
-    const value = input.type === 'checkbox' ? input.checked : input.value;
-
-    // Get the application instance
-    const appId = `gm-spell-list-manager-${MODULE.ID}`;
-    const instance = foundry.applications.instances.get(appId);
-
-    if (!instance) {
-      log(1, 'Could not find GMSpellListManager instance');
-      return;
-    }
-
-    // Update the filter state
-    instance.filterState[property] = value;
-
-    // For all filter types, use a consistent approach:
-    // - For text inputs: use debounced filtering
-    // - For dropdowns/checkboxes: apply immediately but with full re-render
-    if (input.type === 'text' || input.type === 'number') {
-      if (!instance._debouncedApplyFilters) {
-        instance._debouncedApplyFilters = foundry.utils.debounce(() => {
-          instance._applyFilters(true); // Reset pagination and re-render
-        }, 200);
-      }
-      instance._debouncedApplyFilters();
-    } else {
-      // Dropdown or checkbox, apply immediately with full re-render
-      instance._applyFilters(true);
-    }
-  }
-
-  /**
    * Handle saving a custom list (static entry point)
    * @param {Event} event - The click event
    * @param {HTMLElement} _form - The form element
@@ -1619,42 +1367,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
 
     game.user.setFlag(MODULE.ID, 'gmCollapsedSpellLevels', collapsedLevels);
-  }
-
-  /**
-   * Handle page navigation
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
-   */
-  static handlePageNavigation(event, _form) {
-    const button = event.target.closest('[data-page-action]');
-    if (!button) return;
-
-    const action = button.dataset.pageAction;
-
-    const appId = `gm-spell-list-manager-${MODULE.ID}`;
-    const instance = foundry.applications.instances.get(appId);
-
-    if (!instance) {
-      log(1, 'Could not find GMSpellListManager instance');
-      return;
-    }
-
-    switch (action) {
-      case 'first-page':
-        instance._changePage(0);
-        break;
-      case 'prev-page':
-        instance._changePage(instance.paginationState.currentPage - 1);
-        break;
-      case 'next-page':
-        instance._changePage(instance.paginationState.currentPage + 1);
-        break;
-      case 'last-page':
-        instance._changePage(instance.paginationState.totalPages - 1);
-        break;
-    }
   }
 
   /**

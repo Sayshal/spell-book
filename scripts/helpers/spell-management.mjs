@@ -4,6 +4,7 @@
  */
 
 import { MODULE } from '../constants.mjs';
+import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -369,9 +370,6 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
     log(3, 'Fetching all compendium spells');
     const spells = [];
 
-    // Import helper functions
-    const { formatSpellDetails, extractSpellFilterData } = await import('./spell-formatting.mjs');
-
     // Get all item packs
     const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
 
@@ -380,20 +378,7 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
       try {
         // Request additional fields for filtering
         const index = await pack.getIndex({
-          fields: [
-            'type',
-            'system.level',
-            'system.school',
-            'system.components',
-            'system.activation',
-            'system.range',
-            'system.damage',
-            'system.duration',
-            'system.activities',
-            'system.save',
-            'system.description.value',
-            'labels'
-          ]
+          fields: ['type', 'system', 'labels']
         });
         const spellEntries = index.filter((e) => e.type === 'spell' && (!maxLevel || e.system?.level <= maxLevel));
 
@@ -415,10 +400,8 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
           // Format details using the existing helper
           let formattedDetails;
           try {
-            formattedDetails = formatSpellDetails(entry);
+            formattedDetails = formattingUtils.formatSpellDetails(entry);
           } catch (err) {
-            // Fallback for formatting errors
-            formattedDetails = `Level ${entry.system?.level || 0} • ${entry.system?.school || ''}`;
             log(2, `Error formatting spell details for ${entry.name}: ${err.message}`);
           }
 
@@ -437,7 +420,7 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
           };
 
           // Add filterData using the enhanced helper
-          spell.filterData = extractSpellFilterData(spell);
+          spell.filterData = formattingUtils.extractSpellFilterData(spell);
 
           spells.push(spell);
         }
