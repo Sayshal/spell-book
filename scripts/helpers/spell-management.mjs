@@ -398,7 +398,6 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
         const spellEntries = index.filter((e) => e.type === 'spell' && (!maxLevel || e.system?.level <= maxLevel));
 
         for (const entry of spellEntries) {
-          log(1, 'ENTRY:', entry);
           // Ensure we have a labels property (might be missing from index)
           if (!entry.labels) {
             entry.labels = {};
@@ -459,29 +458,6 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
     log(1, `Error fetching compendium spells: ${error.message}`);
     throw error;
   }
-}
-
-/**
- * Extract conditions that might be applied by a spell
- * @param {string} description - The spell description
- * @returns {string[]} - Array of condition keys
- */
-function extractConditionsFromDescription(description) {
-  const conditions = [];
-
-  if (!description) return conditions;
-
-  // Convert to lowercase for case-insensitive matching
-  const lowerDesc = description.toLowerCase();
-
-  // Check for each condition
-  for (const [key, condition] of Object.entries(CONFIG.DND5E.conditionTypes)) {
-    if (lowerDesc.includes(condition.label.toLowerCase())) {
-      conditions.push(key);
-    }
-  }
-
-  return conditions;
 }
 
 export async function createNewSpellList(name, identifier, source = 'Custom') {
