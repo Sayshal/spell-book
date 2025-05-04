@@ -53,7 +53,7 @@
 							</h3>
 							<ul class="spell-list">
 								{{#each levelData.spells as |spell|}}
-									<li class="spell-item" data-uuid="{{spell.uuid}}">
+									<li class="spell-item" data-uuid="{{spell.compendiumUuid}}">
 										<div class="spell-name">
 											{{{spell.enrichedIcon}}}
 											<div class="name-stacked">
@@ -63,7 +63,7 @@
 										</div>
 										{{#if @root.isEditing}}
 											<div class="spell-preparation">
-												<button type="button" class="remove-spell" data-action="removeSpell" data-uuid="{{spell.uuid}}">
+												<button type="button" class="remove-spell" data-action="removeSpell" data-uuid="{{spell.compendiumUuid}}">
 													<i class="fas fa-trash"></i>
 												</button>
 											</div>

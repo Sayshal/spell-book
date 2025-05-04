@@ -93,13 +93,6 @@
 
 			<div class="filter-item checkbox-filter">
 				<label>
-					<input type="checkbox" name="spell-prepared" {{checked filterState.prepared}} data-action="filterSpells">
-					{{localize "SPELLBOOK.Filters.PreparedOnly"}}
-				</label>
-			</div>
-
-			<div class="filter-item checkbox-filter">
-				<label>
 					<input type="checkbox" name="spell-ritual" {{checked filterState.ritual}} data-action="filterSpells">
 					{{localize "SPELLBOOK.Filters.RitualOnly"}}
 				</label>
@@ -108,7 +101,8 @@
 
 		<!-- Range filter (full width) -->
 		<div class="filter-range">
-			<label>{{localize "SPELLBOOK.Filters.Range"}}</label>
+			<label>{{localize "SPELLBOOK.Filters.Range"}}
+				({{#if (eq (lookup @root.settings "distanceUnit") "meters")}}{{localize "SPELLBOOK.Settings.DistanceUnit.Meters"}}{{else}}{{localize "SPELLBOOK.Settings.DistanceUnit.Feet"}}{{/if}})</label>
 			<div class="range-inputs">
 				<input type="number" name="spell-min-range" placeholder="{{localize "SPELLBOOK.Filters.RangeMin"}}"
 					value="{{filterState.minRange}}" data-action="filterSpells">
@@ -138,15 +132,15 @@
 				<div class="available-spells-wrapper">
 					<ul class="available-spells">
 						{{#each filteredSpells.spells as |spell|}}
+						{{log spell}}
 							<li class="spell-item available" data-uuid="{{spell.uuid}}" data-spell-level="{{spell.level}}"
-								data-spell-school="{{spell.school}}" data-casting-time-type="{{spell.system.activation.type}}"
-								data-casting-time-value="{{spell.system.activation.value}}"
-								data-range-units="{{spell.system.range.units}}" data-range-value="{{spell.system.range.value}}"
-								data-damage-types="{{#each spell.system.damage.parts}}{{this.[1]}}{{#unless @last}},{{/unless}}{{/each}}"
-								data-ritual="{{spell.system.components.ritual}}"
-								data-concentration="{{spell.system.duration.concentration}}"
-								data-requires-save="{{spell.system.save.ability}}"
-								data-conditions="{{#each spell.appliedConditions}}{{this}}{{#unless @last}},{{/unless}}{{/each}}">
+								data-spell-school="{{spell.school}}" data-casting-time-type="{{spell.filterData.castingTime.type}}"
+								data-casting-time-value="{{spell.filterData.castingTime.value}}"
+								data-range-units="{{spell.filterData.range.units}}" data-range-value="{{spell.system.range.value}}"
+								data-damage-types="{{spell.filterData.damageTypes}}" data-ritual="{{spell.filterData.isRitual}}"
+								data-concentration="{{spell.filterData.concentration}}"
+								data-requires-save="{{spell.filterData.requiresSave}}"
+								data-conditions="{{spell.filterData.conditions}}">
 								<div class="spell-name">
 									{{{spell.enrichedIcon}}}
 									<div class="name-stacked">

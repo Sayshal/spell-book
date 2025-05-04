@@ -205,7 +205,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       isEditing: this.isEditing,
       availableSpells: this.availableSpells,
       filterState: this.filterState,
-      paginationState: this.paginationState
+      paginationState: this.paginationState,
+      settings: {
+        distanceUnit: game.settings.get(MODULE.ID, 'distanceUnit')
+      }
     };
 
     if (this.isLoading) {
@@ -349,10 +352,33 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @private
    */
   _filterAvailableSpells() {
-    const { name, level, school, source, castingTime, minRange, maxRange, damageType, condition, requiresSave, concentration, prepared, ritual } = this.filterState;
+    const { name, level, school, source, castingTime, minRange, maxRange, damageType, condition, requiresSave, concentration, ritual } = this.filterState;
+
+    // Create a Set of normalized UUIDs for quick lookup
+    const selectedSpellUUIDs = new Set();
+    if (this.selectedSpellList?.spells) {
+      for (const spell of this.selectedSpellList.spells) {
+        // Store both the full UUID and just the ID part
+        if (spell.uuid) {
+          selectedSpellUUIDs.add(spell.uuid);
+          // Also add just the ID part (last segment)
+          const idPart = spell.uuid.split('.').pop();
+          if (idPart) selectedSpellUUIDs.add(idPart);
+        }
+      }
+    }
 
     // First, filter the entire list
     const filteredSpells = this.availableSpells.filter((spell) => {
+      // Check if spell is already in the list using our improved Set lookup
+      if (selectedSpellUUIDs.size > 0) {
+        if (selectedSpellUUIDs.has(spell.uuid)) return false;
+
+        // Also check just the ID part
+        const spellIdPart = spell.uuid.split('.').pop();
+        if (selectedSpellUUIDs.has(spellIdPart)) return false;
+      }
+
       // Filter by name
       if (name && !spell.name.toLowerCase().includes(name.toLowerCase())) {
         return false;
@@ -385,8 +411,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       // Filter by casting time
       if (castingTime) {
         const [filterType, filterValue] = castingTime.split(':');
-        const spellCastingType = spell.system?.activation?.type || '';
-        const spellCastingValue = spell.system?.activation?.value || '1';
+        const spellCastingType = spell.filterData?.castingTime?.type || spell.system?.activation?.type || '';
+        const spellCastingValue = spell.filterData?.castingTime?.value || spell.system?.activation?.value || '1';
 
         if (spellCastingType !== filterType || spellCastingValue !== filterValue) {
           return false;
@@ -394,10 +420,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       }
 
       // Filter by range
-      if ((minRange || maxRange) && spell.system?.range) {
+      if ((minRange || maxRange) && (spell.filterData?.range?.units || spell.system?.range)) {
         // Get range value and units
-        const rangeValue = parseInt(spell.system.range.value || 0);
-        const rangeUnits = spell.system.range.units || '';
+        const rangeUnits = spell.filterData?.range?.units || spell.system?.range?.units || '';
+        const rangeValue = parseInt(spell.system?.range?.value || 0);
 
         // Convert to standard units for comparison
         let standardizedRange = rangeValue;
@@ -419,37 +445,33 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       }
 
       // Filter by damage type
-      if (damageType && spell.system?.damage) {
-        // Check damage parts
-        const damageParts = spell.system.damage.parts || [];
-        let hasDamageType = false;
+      if (damageType) {
+        // Use the extracted damageTypes array from filterData or look in system
+        const spellDamageTypes = spell.filterData?.damageTypes || spell.system?.damage?.parts?.map((part) => part[1] || '').filter(Boolean) || [];
 
-        for (const part of damageParts) {
-          if (part[1] === damageType) {
-            hasDamageType = true;
-            break;
-          }
+        // If no damage types found and filter is active, exclude this spell
+        if (spellDamageTypes.length === 0) {
+          return false;
         }
 
-        if (!hasDamageType) {
+        if (!spellDamageTypes.includes(damageType)) {
           return false;
         }
       }
 
       // Filter by condition
       if (condition) {
-        // Check if spell applies condition (need to analyze description for this)
-        const description = spell.system?.description?.value || '';
-        const conditionRegex = new RegExp(`\\b${condition}\\b`, 'i');
-
-        if (!conditionRegex.test(description)) {
+        // Check if spell applies condition
+        const spellConditions = spell.filterData?.conditions || [];
+        if (!spellConditions.includes(condition)) {
           return false;
         }
       }
 
       // Filter by requires save
       if (requiresSave) {
-        const spellRequiresSave = this._doesSpellRequireSave(spell);
+        // Use the extracted requiresSave boolean
+        const spellRequiresSave = spell.filterData?.requiresSave || !!spell.system?.save?.ability || false;
 
         if (requiresSave === 'true' && !spellRequiresSave) {
           return false;
@@ -460,7 +482,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Filter by concentration
       if (concentration) {
-        const requiresConcentration = spell.system?.duration?.concentration || false;
+        // Use the extracted concentration boolean
+        const requiresConcentration = spell.filterData?.concentration || spell.system?.duration?.concentration || false;
 
         if (concentration === 'true' && !requiresConcentration) {
           return false;
@@ -469,22 +492,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         }
       }
 
-      // Filter by prepared (only applicable in certain contexts)
-      if (prepared) {
-        // This filter might not apply directly to available spells
-        // but keeping for future compatibility
-        return false;
-      }
-
       // Filter by ritual
-      if (ritual && !(spell.system?.components?.ritual || false)) {
-        return false;
-      }
+      if (ritual) {
+        const isRitual = spell.filterData?.isRitual || spell.system?.components?.ritual || false;
 
-      // Check if spell is already in the list
-      if (this.selectedSpellList?.spells) {
-        const isInList = this.selectedSpellList.spells.some((s) => s.uuid === spell.uuid);
-        if (isInList) return false;
+        if (!isRitual) {
+          return false;
+        }
       }
 
       return true;
@@ -712,97 +726,102 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         const castingTimeValue = item.dataset.castingTimeValue || '';
         const rangeUnits = item.dataset.rangeUnits || '';
         const rangeValue = item.dataset.rangeValue || '0';
-        const damageTypes = (item.dataset.damageTypes || '').split(',');
+        const damageTypes = (item.dataset.damageTypes || '').split(',').filter(Boolean);
         const ritual = item.dataset.ritual === 'true';
         const concentration = item.dataset.concentration === 'true';
-        const requiresSave = item.dataset.requiresSave ? true : false;
+        const requiresSave = item.dataset.requiresSave === 'true';
         const conditions = (item.dataset.conditions || '').split(',').filter(Boolean);
+        const uuid = item.dataset.uuid;
 
         // Check all filter conditions
         let visible = true;
 
-        // Text search
-        if (filters.name && !name.includes(filters.name.toLowerCase())) {
-          visible = false;
-        }
-
-        // Level filter
-        if (filters.level && level !== filters.level) {
-          visible = false;
-        }
-
-        // School filter
-        if (filters.school && school !== filters.school) {
-          visible = false;
-        }
-
-        // Casting Time filter
-        if (filters.castingTime) {
-          const [filterType, filterValue] = filters.castingTime.split(':');
-          if (castingTimeType !== filterType || castingTimeValue !== filterValue) {
-            visible = false;
-          }
-        }
-
-        // Range filter
-        if ((filters.minRange || filters.maxRange) && rangeUnits) {
-          // Convert to standard units for comparison
-          let standardizedRange = parseInt(rangeValue || 0);
-
-          // Convert feet, miles, etc. to standard unit
-          if (rangeUnits === 'mi') {
-            standardizedRange = standardizedRange * 5280; // Miles to feet
-          } else if (rangeUnits === 'spec') {
-            standardizedRange = 0; // Special cases like "Self" or "Touch"
-          }
-
-          // Check if within range
-          const minRangeVal = filters.minRange ? parseInt(filters.minRange) : 0;
-          const maxRangeVal = filters.maxRange ? parseInt(filters.maxRange) : Infinity;
-
-          if (standardizedRange < minRangeVal || standardizedRange > maxRangeVal) {
-            visible = false;
-          }
-        }
-
-        // Damage Type filter
-        if (filters.damageType && !damageTypes.includes(filters.damageType)) {
-          visible = false;
-        }
-
-        // Condition filter
-        if (filters.condition && !conditions.includes(filters.condition)) {
-          visible = false;
-        }
-
-        // Requires Save filter
-        if (filters.requiresSave) {
-          if (filters.requiresSave === 'true' && !requiresSave) {
-            visible = false;
-          } else if (filters.requiresSave === 'false' && requiresSave) {
-            visible = false;
-          }
-        }
-
-        // Concentration filter
-        if (filters.concentration) {
-          if (filters.concentration === 'true' && !concentration) {
-            visible = false;
-          } else if (filters.concentration === 'false' && concentration) {
-            visible = false;
-          }
-        }
-
-        // Ritual filter
-        if (filters.ritual && !ritual) {
-          visible = false;
-        }
-
         // Check if spell is already in the list (if we have a selected spell list)
         if (this.selectedSpellList?.spells) {
-          const uuid = item.dataset.uuid;
           const isInList = this.selectedSpellList.spells.some((s) => s.uuid === uuid);
-          if (isInList) visible = false;
+          if (isInList) {
+            visible = false;
+          }
+        }
+
+        // Continue checking other filters only if still visible
+        if (visible) {
+          // Text search
+          if (filters.name && !name.includes(filters.name.toLowerCase())) {
+            visible = false;
+          }
+
+          // Level filter
+          if (filters.level && level !== filters.level) {
+            visible = false;
+          }
+
+          // School filter
+          if (filters.school && school !== filters.school) {
+            visible = false;
+          }
+
+          // Casting Time filter
+          if (filters.castingTime) {
+            const [filterType, filterValue] = filters.castingTime.split(':');
+            if (castingTimeType !== filterType || castingTimeValue !== filterValue) {
+              visible = false;
+            }
+          }
+
+          // Range filter
+          if ((filters.minRange || filters.maxRange) && rangeUnits) {
+            // Convert to standard units for comparison
+            let standardizedRange = parseInt(rangeValue || 0);
+
+            // Convert feet, miles, etc. to standard unit
+            if (rangeUnits === 'mi') {
+              standardizedRange = standardizedRange * 5280; // Miles to feet
+            } else if (rangeUnits === 'spec') {
+              standardizedRange = 0; // Special cases like "Self" or "Touch"
+            }
+
+            // Check if within range
+            const minRangeVal = filters.minRange ? parseInt(filters.minRange) : 0;
+            const maxRangeVal = filters.maxRange ? parseInt(filters.maxRange) : Infinity;
+
+            if (standardizedRange < minRangeVal || standardizedRange > maxRangeVal) {
+              visible = false;
+            }
+          }
+
+          // Damage Type filter
+          if (filters.damageType && damageTypes.length > 0 && !damageTypes.includes(filters.damageType)) {
+            visible = false;
+          }
+
+          // Condition filter
+          if (filters.condition && !conditions.includes(filters.condition)) {
+            visible = false;
+          }
+
+          // Requires Save filter
+          if (filters.requiresSave) {
+            if (filters.requiresSave === 'true' && !requiresSave) {
+              visible = false;
+            } else if (filters.requiresSave === 'false' && requiresSave) {
+              visible = false;
+            }
+          }
+
+          // Concentration filter
+          if (filters.concentration) {
+            if (filters.concentration === 'true' && !concentration) {
+              visible = false;
+            } else if (filters.concentration === 'false' && concentration) {
+              visible = false;
+            }
+          }
+
+          // Ritual filter
+          if (filters.ritual && !ritual) {
+            visible = false;
+          }
         }
 
         // Update visibility

@@ -369,6 +369,9 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
     log(3, 'Fetching all compendium spells');
     const spells = [];
 
+    // Import helper functions
+    const { formatSpellDetails, extractSpellFilterData } = await import('./spell-formatting.mjs');
+
     // Get all item packs
     const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
 
@@ -377,65 +380,51 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
       try {
         // Request additional fields for filtering
         const index = await pack.getIndex({
-          fields: ['type', 'system.level', 'system.school', 'system.components', 'system.activation', 'system.range', 'system.damage', 'system.duration', 'system.save', 'system.description.value']
+          fields: [
+            'type',
+            'system.level',
+            'system.school',
+            'system.components',
+            'system.activation',
+            'system.range',
+            'system.damage',
+            'system.duration',
+            'system.activities',
+            'system.save',
+            'system.description.value',
+            'labels'
+          ]
         });
         const spellEntries = index.filter((e) => e.type === 'spell' && (!maxLevel || e.system?.level <= maxLevel));
 
         for (const entry of spellEntries) {
-          // Extract condition data from description
-          const appliedConditions = extractConditionsFromDescription(entry.system?.description?.value || '');
+          log(1, 'ENTRY:', entry);
+          // Ensure we have a labels property (might be missing from index)
+          if (!entry.labels) {
+            entry.labels = {};
 
-          // Format details directly
-          const details = [];
+            // Potentially generate basic labels if needed
+            if (entry.system?.level !== undefined) {
+              entry.labels.level = CONFIG.DND5E.spellLevels[entry.system.level];
+            }
 
-          // Add level for the subtitle
-          if (entry.system?.level !== undefined) {
-            const levelName = CONFIG.DND5E.spellLevels[entry.system.level];
-            if (levelName) details.push(levelName);
-          }
-
-          // Add components if available
-          if (entry.system?.components) {
-            const components = [];
-            if (entry.system.components.verbal) components.push('V');
-            if (entry.system.components.somatic) components.push('S');
-            if (entry.system.components.material) components.push('M');
-
-            if (components.length > 0) {
-              details.push(components.join(''));
+            if (entry.system?.school) {
+              entry.labels.school = CONFIG.DND5E.spellSchools[entry.system.school]?.label || entry.system.school;
             }
           }
 
-          // Add casting time
-          if (entry.system?.activation) {
-            const activationType = entry.system.activation.type;
-            const activationValue = entry.system.activation.value || 1;
-
-            if (activationType) {
-              const typeLabel = CONFIG.DND5E.abilityActivationTypes[activationType] || activationType;
-              let activationLabel;
-
-              if (activationValue === 1) {
-                activationLabel = typeLabel;
-              } else {
-                activationLabel = `${activationValue} ${typeLabel}${activationValue !== 1 ? 's' : ''}`;
-              }
-
-              details.push(activationLabel);
-            }
+          // Format details using the existing helper
+          let formattedDetails;
+          try {
+            formattedDetails = formatSpellDetails(entry);
+          } catch (err) {
+            // Fallback for formatting errors
+            formattedDetails = `Level ${entry.system?.level || 0} • ${entry.system?.school || ''}`;
+            log(2, `Error formatting spell details for ${entry.name}: ${err.message}`);
           }
 
-          // Add school
-          if (entry.system?.school) {
-            const schoolKey = entry.system.school;
-            const schoolLabel = CONFIG.DND5E.spellSchools[schoolKey]?.label || schoolKey;
-            details.push(schoolLabel);
-          }
-
-          // Join with bullet points
-          const formattedDetails = details.filter(Boolean).join(' • ');
-
-          spells.push({
+          // Create the spell object
+          const spell = {
             uuid: `Compendium.${pack.collection}.${entry._id}`,
             name: entry.name,
             img: entry.img,
@@ -445,8 +434,13 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
             packName: pack.folder?.folder?.name || pack.folder?.name || pack.metadata.label,
             formattedDetails: formattedDetails,
             system: entry.system || {},
-            appliedConditions
-          });
+            labels: entry.labels
+          };
+
+          // Add filterData using the enhanced helper
+          spell.filterData = extractSpellFilterData(spell);
+
+          spells.push(spell);
         }
       } catch (error) {
         log(2, `Error processing pack ${pack.metadata.label}: ${error.message}`);

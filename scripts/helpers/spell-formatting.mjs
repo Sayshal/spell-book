@@ -79,6 +79,8 @@ export function extractSpellFilterData(spell) {
 
   // Extract damage types
   const damageTypes = [];
+
+  // Extract from labels if available
   if (spell.labels?.damages?.length) {
     for (const damage of spell.labels.damages) {
       if (damage.damageType && !damageTypes.includes(damage.damageType)) {
@@ -87,8 +89,32 @@ export function extractSpellFilterData(spell) {
     }
   }
 
+  // Extract from system.activities damage parts
+  if (spell.system.activities) {
+    for (const [_key, activity] of Object.entries(spell.system.activities)) {
+      // Check if the activity has damage parts
+      if (activity.damage?.parts?.length) {
+        for (const part of activity.damage.parts) {
+          // Check if there are types in this damage part
+          if (part[1] && !damageTypes.includes(part[1])) {
+            damageTypes.push(part[1]);
+          }
+        }
+      }
+
+      // Also check activity.damage.types if it exists (it's an object)
+      if (activity.damage?.types && typeof activity.damage.types === 'object') {
+        for (const type in activity.damage.types) {
+          if (!damageTypes.includes(type)) {
+            damageTypes.push(type);
+          }
+        }
+      }
+    }
+  }
+
   // Check for ritual
-  const isRitual = spell.labels?.components?.tags?.includes(game.i18n.localize('DND5E.Item.Property.Ritual')) || false;
+  const isRitual = spell.labels?.components?.tags?.includes(game.i18n.localize('DND5E.Item.Property.Ritual')) || spell.system.components?.ritual || false;
 
   // Check for concentration
   const concentration = spell.system.duration?.concentration || false;
