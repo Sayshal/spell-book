@@ -40,15 +40,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     },
     classes: ['gm-spell-list-manager'],
     window: {
-      title: 'GM Spell List Manager',
+      icon: 'fas fa-bars-progress',
       resizable: true,
       minimizable: true
     },
     position: {
-      top: 150,
-      left: 150,
       width: 1100,
-      height: Math.max(600, window.innerHeight - 300)
+      height: Math.max(600, window.innerHeight - 200)
     }
   };
 
@@ -133,6 +131,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @private
    */
   _uuidCache = new Map();
+
+  get title() {
+    return game.i18n.localize('SPELLMANAGER.Application.Title');
+  }
 
   /* -------------------------------------------- */
   /*  Constructor                                 */

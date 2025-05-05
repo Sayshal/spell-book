@@ -341,25 +341,28 @@
 }
 
 .gm-spell-list-manager .available-spells-sidebar h2 {
-  flex: 0 0 auto;
+  z-index: 3;
+  position: relative;
   margin: 0;
   padding: 0.75rem 0.5rem;
   color: var(--color-text-light-highlight);
   font-size: 1.2rem;
   text-align: center;
-  background-color: #0000001a;
-  box-shadow: 0 4px 6px -2px #00000026;
+  background-color: #0003;
+  box-shadow: 0 4px 6px -2px #0000004d;
 }
 
 .gm-spell-list-manager .spell-filters {
-  gap: 0.75rem;
   display: flex;
   flex: 0 0 auto;
   flex-direction: column;
   margin-bottom: 0.5rem;
   padding: 0.75rem;
   border-radius: var(--spell-book-border-radius);
-  background: #0000000d;
+}
+
+.gm-spell-list-manager .spell-filters label {
+  color: var(--color-text-light-highlight);
 }
 
 .gm-spell-list-manager .available-spells-list {
@@ -379,12 +382,11 @@
 }
 
 .gm-spell-list-manager .filter-count-display {
-  padding: 8px;
+  padding: 0.5rem;
   text-align: center;
   border-top: 1px solid var(--manager-border-color);
   font-size: 0.9rem;
   color: var(--color-text-light-5);
-  background-color: #0000000d;
 }
 
 /* Spell items styling */
@@ -679,8 +681,6 @@
 .gm-spell-list-manager .filter-search input {
   width: 100%;
   padding: 0.5rem;
-  border: 1px solid var(--manager-border-color);
-  border-radius: 3px;
 }
 
 /* Grid layout for the middle filters */
@@ -700,8 +700,6 @@
   width: 100%;
   min-width: 0;
   padding: 0.35rem;
-  border: 1px solid var(--manager-border-color);
-  border-radius: 3px;
   font-size: var(--font-size-11);
 }
 
@@ -711,17 +709,16 @@
   align-items: center;
 }
 
-.gm-spell-list-manager .checkbox-filter label {
+.gm-spell-list-manager .filter-item.checkbox-filter label {
   gap: 0.25rem;
   display: flex;
   align-items: center;
   font-size: var(--font-size-11);
   white-space: nowrap;
+  text-transform: initial;
 }
 
-/* Range filter (full width) */
 .gm-spell-list-manager .filter-range {
-  width: 100%;
   margin-bottom: 0.5rem;
 }
 
@@ -730,6 +727,7 @@
   margin-bottom: 0.25rem;
   font-weight: bold;
   font-size: var(--font-size-11);
+  text-transform: uppercase;
 }
 
 .gm-spell-list-manager .range-inputs {
@@ -741,8 +739,6 @@
 .gm-spell-list-manager .range-inputs input {
   flex: 1;
   padding: 0.35rem;
-  border: 1px solid var(--manager-border-color);
-  border-radius: 3px;
   font-size: var(--font-size-11);
 }
 
@@ -757,31 +753,12 @@
 .gm-spell-list-manager .filter-item label {
   display: block;
   margin-bottom: 0.25rem;
-  color: var(--color-text-light-highlight);
   font-weight: bold;
   font-size: var(--font-size-11);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.gm-spell-list-manager .filter-search label {
-  display: block;
-  margin-bottom: 0.25rem;
-  color: var(--color-text-light-highlight);
-  font-weight: bold;
-  font-size: var(--font-size-11);
-}
-
-/* Enhanced dropdown styling */
-.gm-spell-list-manager .filter-item select,
-.gm-spell-list-manager .filter-search input {
-  width: 100%;
-  border: 1px solid var(--color-border-light-tertiary);
-  border-radius: var(--spell-book-border-radius);
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
+  text-transform: uppercase;
 }
 
 .gm-spell-list-manager .filter-item select:focus,
