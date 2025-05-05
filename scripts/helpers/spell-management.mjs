@@ -337,17 +337,68 @@ export async function removeSpellFromList(spellList, spellUuid) {
   try {
     // Get current spells
     const spells = new Set(spellList.system.spells || []);
+    log(3, `Removing spell ${spellUuid} from list with ${spells.size} spells`);
 
     // Check if spell exists in the list
-    if (!spells.has(spellUuid)) {
-      log(3, `Spell ${spellUuid} not found in list`);
+    let found = false;
+
+    if (spells.has(spellUuid)) {
+      spells.delete(spellUuid);
+      found = true;
+      log(3, `Spell ${spellUuid} found and removed directly`);
+    } else {
+      // Try to find a variant of the UUID
+      log(3, `Spell ${spellUuid} not found directly, trying to match variants`);
+
+      // Try parsing the UUID to match with or without "Item" in the path
+      try {
+        const parsedUuid = foundry.utils.parseUuid(spellUuid);
+        log(3, `Parsed UUID to look for matches:`, parsedUuid);
+
+        // Check each spell in the list for a match
+        for (const existingUuid of spells) {
+          try {
+            const existingParsed = foundry.utils.parseUuid(existingUuid);
+
+            // Check if they refer to the same document
+            if (parsedUuid.id === existingParsed.id && parsedUuid.collection?.collection === existingParsed.collection?.collection) {
+              log(3, `Found matching variant: ${existingUuid}`);
+              spells.delete(existingUuid);
+              found = true;
+              break;
+            }
+          } catch (e) {
+            log(2, `Error parsing existing UUID ${existingUuid}: ${e.message}`);
+          }
+        }
+      } catch (e) {
+        log(2, `Error parsing target UUID ${spellUuid}: ${e.message}`);
+      }
+
+      // If still not found, try a simple ID match as last resort
+      if (!found) {
+        const idPart = spellUuid.split('.').pop();
+        log(3, `Trying to match by ID part: ${idPart}`);
+
+        for (const existingUuid of spells) {
+          const existingIdPart = existingUuid.split('.').pop();
+          if (existingIdPart === idPart) {
+            log(3, `Found matching ID part: ${existingUuid}`);
+            spells.delete(existingUuid);
+            found = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!found) {
+      log(2, `Spell ${spellUuid} not found in list`);
       return spellList;
     }
 
-    // Remove the spell
-    spells.delete(spellUuid);
-
     // Update the spell list
+    log(3, `Updating spell list with ${spells.size} spells`);
     const updated = await spellList.update({
       'system.spells': Array.from(spells)
     });

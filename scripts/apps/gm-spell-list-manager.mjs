@@ -728,12 +728,21 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       const spellLevels = await actorSpellUtils.organizeSpellsByLevel(spellDocs, null);
 
       // Enrich the icons and details for each spell
+      const enrichmentPromises = [];
+
       for (const level of spellLevels) {
         for (const spell of level.spells) {
-          // Use the shared helper for icon enrichment
-          spell.enrichedIcon = await formattingUtils.createEnrichedSpellIcon(spell);
+          // Create a promise for each icon enrichment
+          enrichmentPromises.push(
+            formattingUtils.createEnrichedSpellIcon(spell).then((icon) => {
+              spell.enrichedIcon = icon;
+            })
+          );
         }
       }
+
+      // Wait for all icon enrichments to complete
+      await Promise.all(enrichmentPromises);
 
       // Store both the flat list and the organized levels
       this.selectedSpellList.spells = spellDocs;
@@ -946,20 +955,44 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (!this.selectedSpellList || !this.isEditing) return;
 
     try {
-      log(3, `Removing spell: ${spellUuid}`);
+      log(3, `Attempting to remove spell: ${spellUuid}`);
+
+      // Find the spell object to get its name for logging
+      const spellToRemove = this.selectedSpellList.spells.find((s) => s.uuid === spellUuid || s.compendiumUuid === spellUuid);
+      if (spellToRemove) {
+        log(3, `Found spell to remove: ${spellToRemove.name}`);
+      } else {
+        log(2, `Could not find spell with UUID ${spellUuid} in selected list`);
+      }
 
       // Remove the spell from the list in the data model
       await managerHelpers.removeSpellFromList(this.selectedSpellList.document, spellUuid);
+      log(3, `Backend removal complete for UUID: ${spellUuid}`);
 
-      // Update our data
-      this.selectedSpellList.spells = this.selectedSpellList.spells.filter((s) => s.uuid !== spellUuid);
-      this.selectedSpellList.spellUuids = this.selectedSpellList.spellUuids.filter((u) => u !== spellUuid);
+      // Refresh the document to ensure we have the latest data
+      const updatedDocument = await fromUuid(this.selectedSpellList.document.uuid);
+      if (!updatedDocument) {
+        log(2, 'Could not retrieve updated document');
+        return;
+      }
 
-      // Re-organize spell levels
-      this.selectedSpellList.spellsByLevel = await actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
+      // Update our reference to the document
+      this.selectedSpellList.document = updatedDocument;
+
+      // Get the fresh spell UUIDs from the updated document
+      const updatedSpellUuids = Array.from(updatedDocument.system.spells || []);
+      this.selectedSpellList.spellUuids = updatedSpellUuids;
+
+      log(3, `Retrieved updated document with ${updatedSpellUuids.length} spells`);
+
+      // Reload all spell details
+      await this._loadSpellDetails(updatedSpellUuids);
 
       // For add/remove operations, we need to re-render to ensure both lists are synchronized
-      this.render(false);
+      log(3, 'Rendering updated UI');
+
+      // Reset the filter state to ensure removed spell can appear in available spells
+      this._applyFilters();
 
       ui.notifications.info('Spell removed from list.');
     } catch (error) {
@@ -981,28 +1014,32 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Add the spell to the list in the data model
       await managerHelpers.addSpellToList(this.selectedSpellList.document, spellUuid);
+      log(3, `Backend addition complete for UUID: ${spellUuid}`);
 
-      // Get the spell details
-      const spell = this.availableSpells.find((s) => s.uuid === spellUuid);
-
-      if (spell) {
-        // Add to our data
-        this.selectedSpellList.spells.push(spell);
-        this.selectedSpellList.spellUuids.push(spellUuid);
-
-        // Sort the spells
-        this.selectedSpellList.spells.sort((a, b) => {
-          if (a.level !== b.level) return a.level - b.level;
-          return a.name.localeCompare(b.name);
-        });
-
-        // Re-organize spell levels
-        this.selectedSpellList.spellsByLevel = await actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
+      // Refresh the document to ensure we have the latest data
+      const updatedDocument = await fromUuid(this.selectedSpellList.document.uuid);
+      if (!updatedDocument) {
+        log(2, 'Could not retrieve updated document after adding spell');
+        return;
       }
 
+      // Update our reference to the document
+      this.selectedSpellList.document = updatedDocument;
+
+      // Get the fresh spell UUIDs from the updated document
+      const updatedSpellUuids = Array.from(updatedDocument.system.spells || []);
+      this.selectedSpellList.spellUuids = updatedSpellUuids;
+
+      log(3, `Retrieved updated document with ${updatedSpellUuids.length} spells after addition`);
+
+      // Reload all spell details
+      await this._loadSpellDetails(updatedSpellUuids);
+
       // For add/remove operations, we need to re-render to ensure both lists are synchronized
-      // This will rebuild both lists with the updated data
-      this.render(false);
+      log(3, 'Rendering updated UI after adding spell');
+
+      // Apply filters to update available spells list
+      this._applyFilters();
 
       ui.notifications.info('Spell added to list.');
     } catch (error) {

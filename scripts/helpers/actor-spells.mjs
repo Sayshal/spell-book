@@ -146,13 +146,20 @@ export async function organizeSpellsByLevel(spellItems, actor = null) {
     }
   }
 
+  // Sort spells alphabetically within each level
+  for (const level in spellsByLevel) {
+    if (spellsByLevel.hasOwnProperty(level)) {
+      spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
+    }
+  }
+
   // Convert to sorted array for handlebars
   const result = Object.entries(spellsByLevel)
-    .sort(([a, b]) => Number(a[0]) - Number(b[0]))
+    .sort(([a, b]) => Number(a) - Number(b))
     .map(([level, spells]) => ({
       level: level,
       levelName: CONFIG.DND5E.spellLevels[level],
-      spells: spells
+      spells: spells // These are now pre-sorted alphabetically
     }));
 
   log(3, `Final organized spell levels: ${result.length}`);
