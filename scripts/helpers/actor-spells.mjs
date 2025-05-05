@@ -15,14 +15,9 @@ import * as preparationUtils from './spell-preparation.mjs';
  * @returns {Promise<Array>} - Array of spell documents
  */
 export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
-  const start = performance.now();
-  const timing = (label) => log(3, `${label}: ${(performance.now() - start).toFixed(2)}ms`);
-
   const spellItems = [];
   const errors = [];
   const promises = [];
-
-  timing('Start fetchSpellDocuments');
 
   // Create a batch of promises for parallel fetching
   for (const uuid of spellUuids) {
@@ -47,15 +42,13 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
 
     promises.push(promise);
   }
-  timing('Prepared all spell fetch promises');
 
   // Wait for all promises to resolve
   await Promise.allSettled(promises);
-  timing('Completed all spell fetch promises');
 
   // Log errors in bulk rather than one by one
   if (errors.length > 0) {
-    log(2, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`), { errors: errors };
+    log(2, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`);
 
     if (errors.length === spellUuids.size) {
       log(1, 'All spells failed to load, possible system or compendium issue');
@@ -81,7 +74,6 @@ export async function organizeSpellsByLevel(spellItems, actor = null) {
   const processedSpellNames = new Set(); // Track spells by name (lowercase)
 
   // First, add all spells from the spell list
-  log(3, 'Adding spells from spell list');
   for (const spell of spellItems) {
     if (spell?.system?.level === undefined) continue;
 
@@ -115,14 +107,12 @@ export async function organizeSpellsByLevel(spellItems, actor = null) {
 
   // Next, add any additional spells directly from the actor (only if actor is provided)
   if (actor) {
-    log(3, 'Adding additional spells from actor');
     const actorSpells = await findActorSpells(actor, processedSpellIds, processedSpellNames);
 
     for (const { spell, source } of actorSpells) {
       if (spell?.system?.level === undefined) continue;
 
       const level = spell.system.level;
-      log(3, `Adding actor spell: ${spell.name} (level ${level}, source: ${source?.name || 'unknown'})`);
 
       if (!spellsByLevel[level]) {
         spellsByLevel[level] = [];
@@ -163,8 +153,6 @@ export async function organizeSpellsByLevel(spellItems, actor = null) {
     }));
 
   log(3, `Final organized spell levels: ${result.length}`);
-  log(3, `Total spells after organization: ${result.reduce((sum, level) => sum + level.spells.length, 0)}`);
-
   return result;
 }
 

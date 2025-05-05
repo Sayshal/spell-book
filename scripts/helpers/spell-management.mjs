@@ -7,11 +7,19 @@ import { MODULE } from '../constants.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { log } from '../logger.mjs';
 
+// Cache for compendium spell lists
+const spellListCache = new Map();
+
 /**
  * Scan compendiums for spell lists
  * @returns {Promise<Array>} Array of spell list objects with metadata
  */
 export async function findCompendiumSpellLists() {
+  // Check if we have a cached result
+  if (spellListCache.has('allSpellLists')) {
+    return spellListCache.get('allSpellLists');
+  }
+
   const spellLists = [];
 
   // Get all journal-type compendium packs
@@ -23,7 +31,6 @@ export async function findCompendiumSpellLists() {
     try {
       // Skip our own custom spell lists pack
       if (pack.metadata.id === `${MODULE.ID}.custom-spell-lists`) {
-        log(3, 'Skipping custom spell lists pack');
         continue;
       }
 
@@ -55,8 +62,6 @@ export async function findCompendiumSpellLists() {
               spellCount: page.system.spells?.size || 0,
               identifier: page.system.identifier
             });
-
-            log(3, `Found spell list: ${page.name} in ${journal.name} (${page.system.spells?.size || 0} spells)`);
           }
         } catch (innerError) {
           log(2, `Error processing journal ${journalData.name}:`, innerError);
@@ -69,7 +74,19 @@ export async function findCompendiumSpellLists() {
   }
 
   log(3, `Found ${spellLists.length} total spell lists`);
+
+  // Cache the result
+  spellListCache.set('allSpellLists', spellLists);
+
   return spellLists;
+}
+
+/**
+ * Clear the spell list cache
+ * Call this when compendium content may have changed
+ */
+export function clearSpellListCache() {
+  spellListCache.clear();
 }
 
 /**
@@ -202,6 +219,9 @@ export async function duplicateSpellList(originalSpellList) {
     // Update mapping settings
     await updateSpellListMapping(originalSpellList.uuid, page.uuid);
 
+    // Clear the cache
+    clearSpellListCache();
+
     log(3, `Successfully duplicated spell list: ${originalSpellList.name} to ${page.uuid}`);
     return page;
   } catch (error) {
@@ -210,12 +230,20 @@ export async function duplicateSpellList(originalSpellList) {
   }
 }
 
+// Cache for duplicate lookup
+const duplicateCache = new Map();
+
 /**
  * Find a duplicate spell list in the custom pack
  * @param {string} originalUuid - UUID of the original spell list
  * @returns {Promise<JournalEntryPage|null>} The duplicate spell list or null
  */
 export async function findDuplicateSpellList(originalUuid) {
+  // Check cache first
+  if (duplicateCache.has(originalUuid)) {
+    return duplicateCache.get(originalUuid);
+  }
+
   try {
     const customPack = game.packs.get(`${MODULE.ID}.custom-spell-lists`);
     if (!customPack) return null;
@@ -228,16 +256,27 @@ export async function findDuplicateSpellList(originalUuid) {
       for (const page of journal.pages) {
         const flags = page.flags?.[MODULE.ID] || {};
         if (flags.originalUuid === originalUuid) {
+          // Cache the result
+          duplicateCache.set(originalUuid, page);
           return page;
         }
       }
     }
 
+    // Cache the null result too
+    duplicateCache.set(originalUuid, null);
     return null;
   } catch (error) {
     log(1, `Error finding duplicate spell list: ${error.message}`);
     return null;
   }
+}
+
+/**
+ * Clear the duplicate cache
+ */
+export function clearDuplicateCache() {
+  duplicateCache.clear();
 }
 
 /**
@@ -255,6 +294,9 @@ export async function updateSpellListMapping(originalUuid, duplicateUuid) {
 
     // Save to settings
     await game.settings.set(MODULE.ID, 'customSpellListMappings', mappings);
+
+    // Clear caches
+    clearDuplicateCache();
 
     log(3, `Updated spell list mapping: ${originalUuid} -> ${duplicateUuid}`);
   } catch (error) {
@@ -281,10 +323,16 @@ export async function removeCustomSpellList(duplicateUuid) {
       const mappings = game.settings.get(MODULE.ID, 'customSpellListMappings') || {};
       delete mappings[originalUuid];
       await game.settings.set(MODULE.ID, 'customSpellListMappings', mappings);
+
+      // Clear caches
+      clearDuplicateCache();
     }
 
     // Delete the page
     await duplicate.delete();
+
+    // Clear spell list cache
+    clearSpellListCache();
 
     log(3, `Successfully removed custom spell list: ${duplicateUuid}`);
     return true;
@@ -328,6 +376,34 @@ export async function addSpellToList(spellList, spellUuid) {
 }
 
 /**
+ * Normalize a UUID for comparison
+ * @param {string} uuid - The UUID to normalize
+ * @returns {string[]} Array of normalized forms
+ * @private
+ */
+function _normalizeUuid(uuid) {
+  const normalized = [uuid];
+
+  try {
+    // Parse the UUID
+    const parsed = foundry.utils.parseUuid(uuid);
+
+    // Add ID-only form
+    const idPart = uuid.split('.').pop();
+    if (idPart) normalized.push(idPart);
+
+    // Add normalized form if applicable
+    if (parsed.collection) {
+      normalized.push(`Compendium.${parsed.collection.collection}.${parsed.id}`);
+    }
+  } catch (e) {
+    // Just return the original if parsing fails
+  }
+
+  return normalized;
+}
+
+/**
  * Remove a spell from a spell list
  * @param {JournalEntryPage} spellList - The spell list to remove from
  * @param {string} spellUuid - UUID of the spell to remove
@@ -339,55 +415,34 @@ export async function removeSpellFromList(spellList, spellUuid) {
     const spells = new Set(spellList.system.spells || []);
     log(3, `Removing spell ${spellUuid} from list with ${spells.size} spells`);
 
-    // Check if spell exists in the list
+    // Get normalized forms of the UUID to remove
+    const normalizedForms = _normalizeUuid(spellUuid);
+
+    // Try each form against the list
     let found = false;
 
-    if (spells.has(spellUuid)) {
-      spells.delete(spellUuid);
-      found = true;
-      log(3, `Spell ${spellUuid} found and removed directly`);
-    } else {
-      // Try to find a variant of the UUID
-      log(3, `Spell ${spellUuid} not found directly, trying to match variants`);
-
-      // Try parsing the UUID to match with or without "Item" in the path
-      try {
-        const parsedUuid = foundry.utils.parseUuid(spellUuid);
-        log(3, `Parsed UUID to look for matches:`, parsedUuid);
-
-        // Check each spell in the list for a match
-        for (const existingUuid of spells) {
-          try {
-            const existingParsed = foundry.utils.parseUuid(existingUuid);
-
-            // Check if they refer to the same document
-            if (parsedUuid.id === existingParsed.id && parsedUuid.collection?.collection === existingParsed.collection?.collection) {
-              log(3, `Found matching variant: ${existingUuid}`);
-              spells.delete(existingUuid);
-              found = true;
-              break;
-            }
-          } catch (e) {
-            log(2, `Error parsing existing UUID ${existingUuid}: ${e.message}`);
-          }
-        }
-      } catch (e) {
-        log(2, `Error parsing target UUID ${spellUuid}: ${e.message}`);
+    for (const form of normalizedForms) {
+      if (spells.has(form)) {
+        spells.delete(form);
+        found = true;
+        log(3, `Removed spell with form: ${form}`);
+        break;
       }
+    }
 
-      // If still not found, try a simple ID match as last resort
-      if (!found) {
-        const idPart = spellUuid.split('.').pop();
-        log(3, `Trying to match by ID part: ${idPart}`);
+    // If still not found, check each spell in the list against our normalized forms
+    if (!found) {
+      for (const existingUuid of spells) {
+        const existingForms = _normalizeUuid(existingUuid);
 
-        for (const existingUuid of spells) {
-          const existingIdPart = existingUuid.split('.').pop();
-          if (existingIdPart === idPart) {
-            log(3, `Found matching ID part: ${existingUuid}`);
-            spells.delete(existingUuid);
-            found = true;
-            break;
-          }
+        // Check if any of our forms match any of the existing forms
+        const match = normalizedForms.some((form) => existingForms.includes(form));
+
+        if (match) {
+          spells.delete(existingUuid);
+          found = true;
+          log(3, `Removed spell with matching normalized form: ${existingUuid}`);
+          break;
         }
       }
     }
@@ -411,12 +466,20 @@ export async function removeSpellFromList(spellList, spellUuid) {
   }
 }
 
+// Cache for all compendium spells
+let allSpellsCache = null;
+
 /**
  * Fetch all compendium spells
  * @param {number} [maxLevel=9] - Maximum spell level to include
  * @returns {Promise<Array>} Array of spell items
  */
 export async function fetchAllCompendiumSpells(maxLevel = 9) {
+  // Check cache first
+  if (allSpellsCache) {
+    return allSpellsCache;
+  }
+
   try {
     log(3, 'Fetching all compendium spells');
     const spells = [];
@@ -487,6 +550,10 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
     });
 
     log(3, `Fetched ${spells.length} compendium spells`);
+
+    // Cache the results
+    allSpellsCache = spells;
+
     return spells;
   } catch (error) {
     log(1, `Error fetching compendium spells: ${error.message}`);
@@ -494,6 +561,22 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
   }
 }
 
+/**
+ * Clear the compendium spells cache
+ */
+export function clearCompendiumSpellsCache() {
+  allSpellsCache = null;
+  // Also clear icon cache in formatting module
+  formattingUtils.clearIconCache();
+}
+
+/**
+ * Create a new spell list
+ * @param {string} name - The name of the spell list
+ * @param {string} identifier - The identifier (typically class name)
+ * @param {string} source - The source description
+ * @returns {Promise<JournalEntryPage>} The created spell list
+ */
 export async function createNewSpellList(name, identifier, source = 'Custom') {
   // Create an empty journal entry with proper spell list structure
   const journalData = {
@@ -522,9 +605,12 @@ export async function createNewSpellList(name, identifier, source = 'Custom') {
   const journal = await JournalEntry.create(journalData, {
     pack: `${MODULE.ID}.custom-spell-lists`
   });
+
+  // Clear caches
+  clearSpellListCache();
+
   return journal.pages.contents[0];
 }
-
 /**
  * Prepare dropdown options for casting time filter
  * @param {Array} availableSpells - The available spells array
@@ -534,10 +620,10 @@ export async function createNewSpellList(name, identifier, source = 'Custom') {
 export function prepareCastingTimeOptions(availableSpells, filterState) {
   const uniqueActivationTypes = new Map();
 
-  // First, collect all unique combinations
+  // Collect unique combinations without excessive logging
   for (const spell of availableSpells) {
     const activationType = spell.system?.activation?.type;
-    const activationValue = spell.system?.activation?.value || 1; // treat null as 1
+    const activationValue = spell.system?.activation?.value || 1;
 
     if (activationType) {
       const key = `${activationType}:${activationValue}`;
@@ -548,7 +634,7 @@ export function prepareCastingTimeOptions(availableSpells, filterState) {
     }
   }
 
-  // Define a priority order for activation types
+  // Define priority order for activation types
   const typeOrder = {
     action: 1,
     bonus: 2,
@@ -564,39 +650,35 @@ export function prepareCastingTimeOptions(availableSpells, filterState) {
     none: 12
   };
 
-  // Convert to array for sorting
-  const sortableTypes = Array.from(uniqueActivationTypes.entries()).map(([key, data]) => {
-    return {
-      key: key,
+  // Convert to array and sort
+  const sortableTypes = Array.from(uniqueActivationTypes.entries())
+    .map(([key, data]) => ({
+      key,
       type: data.type,
       value: data.value
-    };
-  });
+    }))
+    .sort((a, b) => {
+      const typePriorityA = typeOrder[a.type] || 999;
+      const typePriorityB = typeOrder[b.type] || 999;
+      return typePriorityA !== typePriorityB ? typePriorityA - typePriorityB : a.value - b.value;
+    });
 
-  // Sort by type priority then by value
-  sortableTypes.sort((a, b) => {
-    const typePriorityA = typeOrder[a.type] || 999;
-    const typePriorityB = typeOrder[b.type] || 999;
-    if (typePriorityA !== typePriorityB) {
-      return typePriorityA - typePriorityB;
+  // Create options with "All" as first option
+  const options = [
+    {
+      value: '',
+      label: game.i18n.localize('SPELLBOOK.Filters.All'),
+      selected: !filterState.castingTime
     }
-    return a.value - b.value;
-  });
+  ];
 
-  // Create the options in the sorted order
-  const options = [];
   for (const entry of sortableTypes) {
     const typeLabel = CONFIG.DND5E.abilityActivationTypes[entry.type] || entry.type;
-    let label;
-    if (entry.value === 1) {
-      label = typeLabel;
-    } else {
-      label = `${entry.value} ${typeLabel}${entry.value !== 1 ? 's' : ''}`;
-    }
+    const label = entry.value === 1 ? typeLabel : `${entry.value} ${typeLabel}${entry.value !== 1 ? 's' : ''}`;
 
     options.push({
       value: entry.key,
-      label: label,
+      label,
       selected: filterState.castingTime === entry.key
     });
   }
@@ -606,10 +688,17 @@ export function prepareCastingTimeOptions(availableSpells, filterState) {
 
 /**
  * Prepare dropdown options for damage type filter
+ * @param {Object} filterState - Current filter state
  * @returns {Array} Array of options for the dropdown
  */
 export function prepareDamageTypeOptions(filterState) {
-  const options = [];
+  const options = [
+    {
+      value: '',
+      label: game.i18n.localize('SPELLBOOK.Filters.All'),
+      selected: !filterState.damageType
+    }
+  ];
 
   // Create a combined damage types object including healing
   const damageTypesWithHealing = {
@@ -617,7 +706,7 @@ export function prepareDamageTypeOptions(filterState) {
     healing: { label: game.i18n.localize('DND5E.Healing') }
   };
 
-  // Add options for each damage type in alphabetical order by label
+  // Add options in alphabetical order
   Object.entries(damageTypesWithHealing)
     .sort((a, b) => a[1].label.localeCompare(b[1].label))
     .forEach(([key, damageType]) => {
@@ -633,14 +722,22 @@ export function prepareDamageTypeOptions(filterState) {
 
 /**
  * Prepare dropdown options for condition filter
+ * @param {Object} filterState - Current filter state
  * @returns {Array} Array of options for the dropdown
  */
 export function prepareConditionOptions(filterState) {
-  const options = [];
+  const options = [
+    {
+      value: '',
+      label: game.i18n.localize('SPELLBOOK.Filters.All'),
+      selected: !filterState.condition
+    }
+  ];
 
-  // Add options for each condition type
+  // Add options in alphabetical order
   Object.entries(CONFIG.DND5E.conditionTypes)
-    .filter(([_key, condition]) => !condition.pseudo) // Skip pseudo conditions
+    .filter(([_key, condition]) => !condition.pseudo)
+    .sort((a, b) => a[1].label.localeCompare(b[1].label))
     .forEach(([key, condition]) => {
       options.push({
         value: key,

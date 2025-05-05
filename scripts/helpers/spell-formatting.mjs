@@ -226,6 +226,9 @@ function extractSpellConditions(spell) {
   return conditions;
 }
 
+// Icon cache to avoid repeated enrichment of the same spell
+const iconCache = new Map();
+
 /**
  * Create an enriched icon with a clickable UUID link
  * @param {Object} spell - The spell data object
@@ -239,23 +242,46 @@ export async function createEnrichedSpellIcon(spell) {
     return `<img src="${spell.img}" class="spell-icon" alt="${spell.name} icon">`;
   }
 
-  // Create enriched HTML with the UUID link
-  let enrichedHTML = await TextEditor.enrichHTML(`@UUID[${uuid}]{${spell.name}}`, { async: true });
-
-  // Extract the icon image
-  const iconImg = `<img src="${spell.img}" class="spell-icon" alt="${spell.name} icon">`;
-
-  // Find and replace the link content with our icon
-  const linkMatch = enrichedHTML.match(/<a[^>]*>(.*?)<\/a>/);
-  let enrichedIcon = '';
-
-  if (linkMatch) {
-    const linkOpenTag = enrichedHTML.match(/<a[^>]*>/)[0];
-    enrichedIcon = `${linkOpenTag}${iconImg}</a>`;
-  } else {
-    // Fallback if enrichHTML doesn't return a proper link
-    enrichedIcon = `<a class="content-link" data-uuid="${uuid}">${iconImg}</a>`;
+  // Check cache first
+  const cacheKey = `${uuid}|${spell.img}`;
+  if (iconCache.has(cacheKey)) {
+    return iconCache.get(cacheKey);
   }
 
-  return enrichedIcon;
+  try {
+    // Create enriched HTML with the UUID link
+    let enrichedHTML = await TextEditor.enrichHTML(`@UUID[${uuid}]{${spell.name}}`, { async: true });
+
+    // Extract the icon image
+    const iconImg = `<img src="${spell.img}" class="spell-icon" alt="${spell.name} icon">`;
+
+    // Find and replace the link content with our icon
+    const linkMatch = enrichedHTML.match(/<a[^>]*>(.*?)<\/a>/);
+    let enrichedIcon = '';
+
+    if (linkMatch) {
+      const linkOpenTag = enrichedHTML.match(/<a[^>]*>/)[0];
+      enrichedIcon = `${linkOpenTag}${iconImg}</a>`;
+    } else {
+      // Fallback if enrichHTML doesn't return a proper link
+      enrichedIcon = `<a class="content-link" data-uuid="${uuid}">${iconImg}</a>`;
+    }
+
+    // Store in cache
+    iconCache.set(cacheKey, enrichedIcon);
+
+    return enrichedIcon;
+  } catch (error) {
+    console.error(`Error enriching spell icon for ${spell.name}:`, error);
+    // Return a simple icon as fallback
+    return `<img src="${spell.img}" class="spell-icon" alt="${spell.name} icon">`;
+  }
+}
+
+/**
+ * Clear the icon cache
+ * Call this when the system changes or when needed to refresh icons
+ */
+export function clearIconCache() {
+  iconCache.clear();
 }

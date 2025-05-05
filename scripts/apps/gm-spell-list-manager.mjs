@@ -9,6 +9,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 /**
  * Application for GM management of spell lists
  * Allows browsing, duplicating, and customizing spell lists from compendiums
+ * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */
 export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
@@ -126,6 +127,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   isEditing = false;
 
+  /**
+   * Cache for normalized UUIDs to improve comparison performance
+   * @type {Map<string, Set<string>>}
+   * @private
+   */
+  _uuidCache = new Map();
+
   /* -------------------------------------------- */
   /*  Constructor                                 */
   /* -------------------------------------------- */
@@ -140,6 +148,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /**
    * Initialize the application
    * @override
+   * @private
    */
   _initialize() {
     super._initialize();
@@ -171,7 +180,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /* -------------------------------------------- */
 
   /**
+   * Prepare the application context data
+   * @param {Object} options - Application options
+   * @returns {Promise<Object>} The prepared context
    * @override
+   * @private
    */
   async _prepareContext(options) {
     // Get basic context
@@ -243,7 +256,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
+   * Handle rendering the application
+   * @param {Object} context - The template context
+   * @param {Object} options - The rendering options
    * @override
+   * @private
    */
   _onRender(context, options) {
     log(1, 'Render Called');
@@ -334,84 +351,29 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   _filterAvailableSpells() {
     const { name, level, school, source, castingTime, minRange, maxRange, damageType, condition, requiresSave, concentration, ritual } = this.filterState;
 
-    // Create a normalized set of UUIDs for more robust comparison
-    const selectedSpellUUIDs = new Set();
+    // Normalize selected spell UUIDs - only do this once per selected spell list
+    const selectedSpellUUIDs = this._getNormalizedSelectedSpellUUIDs();
 
-    log(3, `Starting UUID normalization for ${this.selectedSpellList?.spells?.length || 0} spells`);
-
-    if (this.selectedSpellList?.spells) {
-      for (const spell of this.selectedSpellList.spells) {
-        if (spell.compendiumUuid) {
-          log(3, `Processing spell: ${spell.name}, UUID: ${spell.compendiumUuid}`);
-          try {
-            // Parse UUID to get core components for comparison
-            const parsedUuid = foundry.utils.parseUuid(spell.compendiumUuid);
-            log(2, `Parsed UUID for ${spell.name}:`, parsedUuid);
-
-            // Create a normalized reference that ignores "Item" inclusion
-            if (parsedUuid.collection) {
-              const normalizedId = `Compendium.${parsedUuid.collection.collection}.${parsedUuid.id}`;
-              log(3, `Generated normalized ID: ${normalizedId}`);
-              selectedSpellUUIDs.add(normalizedId);
-            } else {
-              log(2, `No collection found in parsed UUID for ${spell.name}`);
-            }
-
-            // Also add the original UUID
-            selectedSpellUUIDs.add(spell.compendiumUuid);
-            log(3, `Added original UUID: ${spell.compendiumUuid}`);
-
-            // Also add just the ID part (last segment)
-            const idPart = spell.compendiumUuid.split('.').pop();
-            if (idPart) {
-              log(3, `Added ID part: ${idPart}`);
-              selectedSpellUUIDs.add(idPart);
-            }
-          } catch (e) {
-            log(1, `Error parsing UUID for ${spell.name}:`, e);
-          }
-        } else {
-          log(2, `No UUID found for spell: ${spell.name}`, spell);
-        }
-      }
-    }
-
-    log(3, `Completed UUID normalization. Selected spell UUIDs set has ${selectedSpellUUIDs.size} entries`);
-
-    // First, filter the entire list
+    // Filter the entire list
     const filteredSpells = this.availableSpells.filter((spell) => {
-      // Check if spell is already in the list using our normalized UUID comparison
+      // Check if spell is already in the list using normalized UUID comparison
       if (selectedSpellUUIDs.size > 0) {
         // Direct UUID match
-        if (selectedSpellUUIDs.has(spell.uuid)) {
-          log(3, `Filtering out ${spell.name} - direct UUID match: ${spell.uuid}`);
-          return false;
-        }
+        if (selectedSpellUUIDs.has(spell.uuid)) return false;
 
         // ID part match
         const spellIdPart = spell.uuid.split('.').pop();
-        if (selectedSpellUUIDs.has(spellIdPart)) {
-          log(3, `Filtering out ${spell.name} - ID part match: ${spellIdPart}`);
-          return false;
-        }
+        if (selectedSpellUUIDs.has(spellIdPart)) return false;
 
         // Try normalized comparison
         try {
           const parsedUuid = foundry.utils.parseUuid(spell.uuid);
-          log(3, `Checking normalized UUID for ${spell.name}`);
-
           if (parsedUuid.collection) {
             const normalizedId = `Compendium.${parsedUuid.collection.collection}.${parsedUuid.id}`;
-            log(3, `Generated normalized ID for comparison: ${normalizedId}`);
-
-            if (selectedSpellUUIDs.has(normalizedId)) {
-              log(3, `Filtering out ${spell.name} - normalized UUID match: ${normalizedId}`);
-              return false;
-            }
+            if (selectedSpellUUIDs.has(normalizedId)) return false;
           }
         } catch (e) {
           // Continue with filtering if parsing fails
-          log(2, `Error parsing UUID for comparison - ${spell.name}: ${e.message}`);
         }
       }
 
@@ -430,15 +392,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         return false;
       }
 
-      // Filter by source - only apply if source is not empty
+      // Filter by source
       if (source && source.trim() !== '') {
-        // Extract just the package and pack name for comparison
         const spellSourceParts = spell.sourceId?.split('.') || [];
         if (spellSourceParts.length >= 2) {
           const spellSource = `${spellSourceParts[0]}.${spellSourceParts[1]}`;
-          if (spellSource !== source) {
-            return false;
-          }
+          if (spellSource !== source) return false;
         } else if (spell.sourceId !== source) {
           return false;
         }
@@ -457,21 +416,17 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Filter by range
       if ((minRange || maxRange) && (spell.filterData?.range?.units || spell.system?.range)) {
-        // Get range value and units
         const rangeUnits = spell.filterData?.range?.units || spell.system?.range?.units || '';
         const rangeValue = parseInt(spell.system?.range?.value || 0);
 
         // Convert to standard units for comparison
         let standardizedRange = rangeValue;
-
-        // Convert feet, miles, etc. to standard unit
         if (rangeUnits === 'mi') {
           standardizedRange = rangeValue * 5280; // Miles to feet
         } else if (rangeUnits === 'spec') {
           standardizedRange = 0; // Special cases like "Self" or "Touch"
         }
 
-        // Check if within range
         const minRangeVal = minRange ? parseInt(minRange) : 0;
         const maxRangeVal = maxRange ? parseInt(maxRange) : Infinity;
 
@@ -482,70 +437,95 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Filter by damage type
       if (damageType) {
-        // Use the extracted damageTypes array from filterData or look in system
         const spellDamageTypes = spell.filterData?.damageTypes || spell.system?.damage?.parts?.map((part) => part[1] || '').filter(Boolean) || [];
-
-        // If no damage types found and filter is active, exclude this spell
-        if (spellDamageTypes.length === 0) {
-          return false;
-        }
-
-        if (!spellDamageTypes.includes(damageType)) {
-          return false;
-        }
+        if (spellDamageTypes.length === 0) return false;
+        if (!spellDamageTypes.includes(damageType)) return false;
       }
 
       // Filter by condition
       if (condition) {
-        // Check if spell applies condition
         const spellConditions = spell.filterData?.conditions || [];
-        if (!spellConditions.includes(condition)) {
-          return false;
-        }
+        if (!spellConditions.includes(condition)) return false;
       }
 
       // Filter by requires save
       if (requiresSave) {
-        // Use the extracted requiresSave boolean
         const spellRequiresSave = spell.filterData?.requiresSave || !!spell.system?.save?.ability || false;
-
-        if (requiresSave === 'true' && !spellRequiresSave) {
-          return false;
-        } else if (requiresSave === 'false' && spellRequiresSave) {
-          return false;
-        }
+        if (requiresSave === 'true' && !spellRequiresSave) return false;
+        if (requiresSave === 'false' && spellRequiresSave) return false;
       }
 
       // Filter by concentration
       if (concentration) {
-        // Use the extracted concentration boolean
         const requiresConcentration = spell.filterData?.concentration || spell.system?.duration?.concentration || false;
-
-        if (concentration === 'true' && !requiresConcentration) {
-          return false;
-        } else if (concentration === 'false' && requiresConcentration) {
-          return false;
-        }
+        if (concentration === 'true' && !requiresConcentration) return false;
+        if (concentration === 'false' && requiresConcentration) return false;
       }
 
       // Filter by ritual
       if (ritual) {
         const isRitual = spell.filterData?.isRitual || false;
-        if (!isRitual) {
-          return false;
-        }
+        if (!isRitual) return false;
       }
 
       return true;
     });
-
-    log(3, `Filtered spells: ${filteredSpells.length} out of ${this.availableSpells.length}`);
 
     // Return all filtered spells and count for UI
     return {
       spells: filteredSpells,
       totalFiltered: filteredSpells.length
     };
+  }
+
+  /**
+   * Get normalized UUIDs for the selected spell list
+   * @returns {Set<string>} Set of normalized UUIDs
+   * @private
+   */
+  _getNormalizedSelectedSpellUUIDs() {
+    // If no selected spell list, return empty set
+    if (!this.selectedSpellList?.spells) return new Set();
+
+    // Check if we have cached UUIDs for this spell list
+    const cacheKey = this.selectedSpellList.uuid;
+    if (this._uuidCache.has(cacheKey)) {
+      return this._uuidCache.get(cacheKey);
+    }
+
+    // Create a new set for normalization
+    const selectedSpellUUIDs = new Set();
+
+    for (const spell of this.selectedSpellList.spells) {
+      if (spell.compendiumUuid) {
+        try {
+          // Parse UUID to get core components for comparison
+          const parsedUuid = foundry.utils.parseUuid(spell.compendiumUuid);
+
+          // Create a normalized reference that ignores "Item" inclusion
+          if (parsedUuid.collection) {
+            const normalizedId = `Compendium.${parsedUuid.collection.collection}.${parsedUuid.id}`;
+            selectedSpellUUIDs.add(normalizedId);
+          }
+
+          // Also add the original UUID
+          selectedSpellUUIDs.add(spell.compendiumUuid);
+
+          // Also add just the ID part (last segment)
+          const idPart = spell.compendiumUuid.split('.').pop();
+          if (idPart) {
+            selectedSpellUUIDs.add(idPart);
+          }
+        } catch (e) {
+          log(1, `Error parsing UUID for ${spell.name}:`, e);
+        }
+      }
+    }
+
+    // Cache the result
+    this._uuidCache.set(cacheKey, selectedSpellUUIDs);
+
+    return selectedSpellUUIDs;
   }
 
   /**
@@ -630,7 +610,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     for (const { selector, property } of dropdownSelectors) {
       const element = this.element.querySelector(selector);
       if (element) {
-        // The change event only fires when a selection is made and value actually changes
         element.addEventListener('change', (evt) => {
           const oldValue = this.filterState[property];
           const newValue = evt.target.value;
@@ -752,6 +731,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       // Render the updated view
       this.render(false);
 
+      // Clear the UUID cache for this spell list
+      this._uuidCache.delete(this.selectedSpellList.uuid);
+
       log(3, `Loaded ${spellDocs.length} spells for selected spell list`);
     } catch (error) {
       log(1, 'Error loading spell details:', error);
@@ -765,6 +747,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * Create a confirmation dialog with standardized template
    * @param {Object} options - Dialog options
    * @returns {Promise<boolean>} True if confirmed, false otherwise
+   * @private
    */
   async _confirmDialog({
     title = game.i18n.localize('SPELLMANAGER.Confirm.Title'),
@@ -957,17 +940,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     try {
       log(3, `Attempting to remove spell: ${spellUuid}`);
 
-      // Find the spell object to get its name for logging
-      const spellToRemove = this.selectedSpellList.spells.find((s) => s.uuid === spellUuid || s.compendiumUuid === spellUuid);
-      if (spellToRemove) {
-        log(3, `Found spell to remove: ${spellToRemove.name}`);
-      } else {
-        log(2, `Could not find spell with UUID ${spellUuid} in selected list`);
-      }
-
       // Remove the spell from the list in the data model
       await managerHelpers.removeSpellFromList(this.selectedSpellList.document, spellUuid);
-      log(3, `Backend removal complete for UUID: ${spellUuid}`);
 
       // Refresh the document to ensure we have the latest data
       const updatedDocument = await fromUuid(this.selectedSpellList.document.uuid);
@@ -983,14 +957,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       const updatedSpellUuids = Array.from(updatedDocument.system.spells || []);
       this.selectedSpellList.spellUuids = updatedSpellUuids;
 
-      log(3, `Retrieved updated document with ${updatedSpellUuids.length} spells`);
+      // Clear the UUID cache for this spell list
+      this._uuidCache.delete(this.selectedSpellList.uuid);
 
       // Reload all spell details
       await this._loadSpellDetails(updatedSpellUuids);
 
-      // For add/remove operations, we need to re-render to ensure both lists are synchronized
-      log(3, 'Rendering updated UI');
-
+      // For add/remove operations, re-render to ensure both lists are synchronized
       // Reset the filter state to ensure removed spell can appear in available spells
       this._applyFilters();
 
@@ -1014,7 +987,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Add the spell to the list in the data model
       await managerHelpers.addSpellToList(this.selectedSpellList.document, spellUuid);
-      log(3, `Backend addition complete for UUID: ${spellUuid}`);
 
       // Refresh the document to ensure we have the latest data
       const updatedDocument = await fromUuid(this.selectedSpellList.document.uuid);
@@ -1030,13 +1002,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       const updatedSpellUuids = Array.from(updatedDocument.system.spells || []);
       this.selectedSpellList.spellUuids = updatedSpellUuids;
 
-      log(3, `Retrieved updated document with ${updatedSpellUuids.length} spells after addition`);
+      // Clear the UUID cache for this spell list
+      this._uuidCache.delete(this.selectedSpellList.uuid);
 
       // Reload all spell details
       await this._loadSpellDetails(updatedSpellUuids);
-
-      // For add/remove operations, we need to re-render to ensure both lists are synchronized
-      log(3, 'Rendering updated UI after adding spell');
 
       // Apply filters to update available spells list
       this._applyFilters();
@@ -1091,6 +1061,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       this.selectedSpellList = null;
       this.isEditing = false;
 
+      // Clear the UUID cache
+      this._uuidCache.clear();
+
       // Re-render
       this.render(false);
 
@@ -1141,6 +1114,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         [`flags.${MODULE.ID}.originalModTime`]: originalList._stats?.modifiedTime || 0,
         [`flags.${MODULE.ID}.originalVersion`]: originalList._stats?.systemVersion || game.system.version
       });
+
+      // Clear the UUID cache for this spell list
+      this._uuidCache.delete(this.selectedSpellList.uuid);
 
       // Update our data and reload spell details
       this.selectedSpellList.spellUuids = originalSpells;
