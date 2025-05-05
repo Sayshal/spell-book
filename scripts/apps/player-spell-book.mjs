@@ -451,7 +451,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       for (const spell of level.spells) {
         try {
           // Use the shared helper for icon enrichment
-          spell.enrichedIcon = await formattingUtils.createEnrichedSpellIcon(spell);
+          spell.enrichedIcon = await formattingUtils.createSpellIconLink(spell);
           spell.formattedDetails = formattingUtils.formatSpellDetails(spell);
         } catch (error) {
           failedUUIDs.push(spell);

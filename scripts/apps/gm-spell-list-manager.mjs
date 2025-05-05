@@ -263,7 +263,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @private
    */
   _onRender(context, options) {
-    log(1, 'Render Called');
     super._onRender?.(context, options);
 
     // If we're loading, start the loading process
@@ -330,7 +329,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       // Process batch in parallel
       await Promise.all(
         batch.map(async (spell) => {
-          spell.enrichedIcon = await formattingUtils.createEnrichedSpellIcon(spell);
+          spell.enrichedIcon = await formattingUtils.createSpellIconLink(spell);
         })
       );
 
@@ -706,22 +705,30 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       // Organize spells by level using the modified helper (passing null for actor)
       const spellLevels = await actorSpellUtils.organizeSpellsByLevel(spellDocs, null);
 
-      // Enrich the icons and details for each spell
-      const enrichmentPromises = [];
+      // Process in batches to avoid UI freezing with large lists
+      const batchSize = 50;
+      let processedCount = 0;
+      const totalSpells = spellLevels.reduce((sum, level) => sum + level.spells.length, 0);
 
+      // Process each level of spells
       for (const level of spellLevels) {
-        for (const spell of level.spells) {
-          // Create a promise for each icon enrichment
-          enrichmentPromises.push(
-            formattingUtils.createEnrichedSpellIcon(spell).then((icon) => {
-              spell.enrichedIcon = icon;
-            })
-          );
+        // Process spells in this level in batches
+        for (let i = 0; i < level.spells.length; i += batchSize) {
+          const batch = level.spells.slice(i, Math.min(i + batchSize, level.spells.length));
+
+          // Enrich all icons in this batch
+          for (const spell of batch) {
+            // Direct assignment since this is now synchronous
+            spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
+            processedCount++;
+          }
+
+          // Allow UI to update by yielding to the event loop if we have many spells
+          if (totalSpells > 100) {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+          }
         }
       }
-
-      // Wait for all icon enrichments to complete
-      await Promise.all(enrichmentPromises);
 
       // Store both the flat list and the organized levels
       this.selectedSpellList.spells = spellDocs;
