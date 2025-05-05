@@ -147,7 +147,12 @@ export function extractSpellFilterData(spell) {
   }
 
   // Check for ritual
-  const isRitual = spell.labels?.components?.tags?.includes(game.i18n.localize('DND5E.Item.Property.Ritual')) || spell.system.components?.ritual || false;
+  const isRitual = Boolean(
+    spell.labels?.components?.tags?.includes(game.i18n.localize('DND5E.Item.Property.Ritual')) ||
+      (spell.system.properties && Array.isArray(spell.system.properties) && spell.system.properties.includes('ritual')) ||
+      spell.system.components?.ritual ||
+      false
+  );
 
   // Check for concentration
   const concentration = spell.system.duration?.concentration || false;

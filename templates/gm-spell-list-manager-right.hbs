@@ -131,6 +131,7 @@
 				<div class="available-spells-wrapper">
 					<ul class="available-spells">
 						{{#each filteredSpells.spells as |spell|}}
+						{{!-- {{log spell}} --}}
 							<li class="spell-item available" data-uuid="{{spell.uuid}}" data-spell-level="{{spell.level}}"
 								data-spell-school="{{spell.school}}" data-casting-time-type="{{spell.filterData.castingTime.type}}"
 								data-casting-time-value="{{spell.filterData.castingTime.value}}"

@@ -474,8 +474,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Filter by ritual
       if (ritual) {
-        const isRitual = spell.filterData?.isRitual || spell.system?.components?.ritual || false;
-
+        const isRitual = spell.filterData?.isRitual || false;
+        log(1, spell, isRitual);
         if (!isRitual) {
           return false;
         }
