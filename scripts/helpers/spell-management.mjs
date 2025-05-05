@@ -1,14 +1,21 @@
 /**
  * Helper functions for GM Spell List Manager
- * @module spell-book/helpers/spell-manager-helpers
+ * Provides organized utility methods for finding, comparing, and managing spell lists
+ * @module spell-book/helpers/spell-management
  */
 
 import { MODULE } from '../constants.mjs';
-import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { log } from '../logger.mjs';
+import * as formattingUtils from './spell-formatting.mjs';
 
 // Cache for compendium spell lists
-const spellListCache = new Map();
+const _spellListCache = new Map();
+
+// Cache for compendium spells
+let _allSpellsCache = null;
+
+// Cache for duplicate lookup
+const _duplicateCache = new Map();
 
 /**
  * Scan compendiums for spell lists
@@ -16,8 +23,8 @@ const spellListCache = new Map();
  */
 export async function findCompendiumSpellLists() {
   // Check if we have a cached result
-  if (spellListCache.has('allSpellLists')) {
-    return spellListCache.get('allSpellLists');
+  if (_spellListCache.has('allSpellLists')) {
+    return _spellListCache.get('allSpellLists');
   }
 
   const spellLists = [];
@@ -36,8 +43,6 @@ export async function findCompendiumSpellLists() {
 
       // Get the basic index
       const index = await pack.getIndex();
-
-      // Convert to array for easier processing
       const entries = Array.from(index.values());
 
       // Process each journal in the pack
@@ -76,17 +81,110 @@ export async function findCompendiumSpellLists() {
   log(3, `Found ${spellLists.length} total spell lists`);
 
   // Cache the result
-  spellListCache.set('allSpellLists', spellLists);
+  _spellListCache.set('allSpellLists', spellLists);
 
   return spellLists;
 }
 
 /**
- * Clear the spell list cache
- * Call this when compendium content may have changed
+ * Fetch and filter spell documents from UUIDs based on maximum spell level
+ * @param {Set<string>} spellUuids - Set of spell UUIDs
+ * @param {number} maxSpellLevel - Maximum spell level to include
+ * @returns {Promise<Array>} - Array of spell documents
  */
-export function clearSpellListCache() {
-  spellListCache.clear();
+export async function fetchSpellDocuments(spellUuids, maxSpellLevel = 9) {
+  const spellItems = [];
+  const errors = [];
+  const promises = [];
+
+  // Create a batch of promises for parallel fetching
+  for (const uuid of spellUuids) {
+    const promise = fromUuid(uuid)
+      .then((spell) => {
+        if (spell && spell.type === 'spell') {
+          if (spell.system.level <= maxSpellLevel) {
+            spellItems.push({
+              ...spell,
+              compendiumUuid: uuid
+            });
+          }
+        } else if (spell) {
+          errors.push({ uuid, reason: 'Not a valid spell document' });
+        } else {
+          errors.push({ uuid, reason: 'Document not found' });
+        }
+      })
+      .catch((error) => {
+        errors.push({ uuid, reason: error.message || 'Unknown error' });
+      });
+
+    promises.push(promise);
+  }
+
+  // Wait for all promises to resolve
+  await Promise.allSettled(promises);
+
+  // Log errors in bulk rather than one by one
+  if (errors.length > 0) {
+    log(2, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`);
+
+    if (errors.length === spellUuids.size) {
+      log(1, 'All spells failed to load, possible system or compendium issue');
+    }
+  }
+
+  log(3, `Successfully fetched ${spellItems.length}/${spellUuids.size} spells`);
+  return spellItems;
+}
+
+/**
+ * Organize spells by level for display with preparation info
+ * @param {Array} spellItems - Array of spell documents
+ * @returns {Array} - Array of spell levels with formatted data for templates
+ */
+export async function organizeSpellsByLevel(spellItems) {
+  log(3, `Organizing ${spellItems.length} spells by level`);
+
+  // Group spells by level
+  const spellsByLevel = {};
+
+  for (const spell of spellItems) {
+    if (spell?.system?.level === undefined) continue;
+
+    const level = spell.system.level;
+
+    if (!spellsByLevel[level]) {
+      spellsByLevel[level] = [];
+    }
+
+    const filterData = formattingUtils.extractSpellFilterData(spell);
+    const formattedDetails = formattingUtils.formatSpellDetails(spell);
+
+    spellsByLevel[level].push({
+      ...spell,
+      filterData,
+      formattedDetails
+    });
+  }
+
+  // Sort spells alphabetically within each level
+  for (const level in spellsByLevel) {
+    if (spellsByLevel.hasOwnProperty(level)) {
+      spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
+    }
+  }
+
+  // Convert to sorted array for handlebars
+  const result = Object.entries(spellsByLevel)
+    .sort(([a, b]) => Number(a) - Number(b))
+    .map(([level, spells]) => ({
+      level: level,
+      levelName: CONFIG.DND5E.spellLevels[level],
+      spells: spells
+    }));
+
+  log(3, `Final organized spell levels: ${result.length}`);
+  return result;
 }
 
 /**
@@ -220,7 +318,7 @@ export async function duplicateSpellList(originalSpellList) {
     await updateSpellListMapping(originalSpellList.uuid, page.uuid);
 
     // Clear the cache
-    clearSpellListCache();
+    clearCache();
 
     log(3, `Successfully duplicated spell list: ${originalSpellList.name} to ${page.uuid}`);
     return page;
@@ -230,9 +328,6 @@ export async function duplicateSpellList(originalSpellList) {
   }
 }
 
-// Cache for duplicate lookup
-const duplicateCache = new Map();
-
 /**
  * Find a duplicate spell list in the custom pack
  * @param {string} originalUuid - UUID of the original spell list
@@ -240,8 +335,8 @@ const duplicateCache = new Map();
  */
 export async function findDuplicateSpellList(originalUuid) {
   // Check cache first
-  if (duplicateCache.has(originalUuid)) {
-    return duplicateCache.get(originalUuid);
+  if (_duplicateCache.has(originalUuid)) {
+    return _duplicateCache.get(originalUuid);
   }
 
   try {
@@ -257,26 +352,19 @@ export async function findDuplicateSpellList(originalUuid) {
         const flags = page.flags?.[MODULE.ID] || {};
         if (flags.originalUuid === originalUuid) {
           // Cache the result
-          duplicateCache.set(originalUuid, page);
+          _duplicateCache.set(originalUuid, page);
           return page;
         }
       }
     }
 
     // Cache the null result too
-    duplicateCache.set(originalUuid, null);
+    _duplicateCache.set(originalUuid, null);
     return null;
   } catch (error) {
     log(1, `Error finding duplicate spell list: ${error.message}`);
     return null;
   }
-}
-
-/**
- * Clear the duplicate cache
- */
-export function clearDuplicateCache() {
-  duplicateCache.clear();
 }
 
 /**
@@ -296,7 +384,7 @@ export async function updateSpellListMapping(originalUuid, duplicateUuid) {
     await game.settings.set(MODULE.ID, 'customSpellListMappings', mappings);
 
     // Clear caches
-    clearDuplicateCache();
+    clearCache();
 
     log(3, `Updated spell list mapping: ${originalUuid} -> ${duplicateUuid}`);
   } catch (error) {
@@ -330,16 +418,13 @@ export async function removeCustomSpellList(duplicateUuid) {
       const mappings = game.settings.get(MODULE.ID, 'customSpellListMappings') || {};
       delete mappings[originalUuid];
       await game.settings.set(MODULE.ID, 'customSpellListMappings', mappings);
-
-      // Clear caches
-      clearDuplicateCache();
     }
 
     // Delete the entire journal (which will delete all contained pages)
     await journal.delete();
 
-    // Clear spell list cache
-    clearSpellListCache();
+    // Clear caches
+    clearCache();
 
     log(3, `Successfully removed custom spell list journal: ${journal.name}`);
     return true;
@@ -380,34 +465,6 @@ export async function addSpellToList(spellList, spellUuid) {
     log(1, `Error adding spell to list: ${error.message}`);
     throw error;
   }
-}
-
-/**
- * Normalize a UUID for comparison
- * @param {string} uuid - The UUID to normalize
- * @returns {string[]} Array of normalized forms
- * @private
- */
-function _normalizeUuid(uuid) {
-  const normalized = [uuid];
-
-  try {
-    // Parse the UUID
-    const parsed = foundry.utils.parseUuid(uuid);
-
-    // Add ID-only form
-    const idPart = uuid.split('.').pop();
-    if (idPart) normalized.push(idPart);
-
-    // Add normalized form if applicable
-    if (parsed.collection) {
-      normalized.push(`Compendium.${parsed.collection.collection}.${parsed.id}`);
-    }
-  } catch (e) {
-    // Just return the original if parsing fails
-  }
-
-  return normalized;
 }
 
 /**
@@ -473,9 +530,6 @@ export async function removeSpellFromList(spellList, spellUuid) {
   }
 }
 
-// Cache for all compendium spells
-let allSpellsCache = null;
-
 /**
  * Fetch all compendium spells
  * @param {number} [maxLevel=9] - Maximum spell level to include
@@ -483,8 +537,8 @@ let allSpellsCache = null;
  */
 export async function fetchAllCompendiumSpells(maxLevel = 9) {
   // Check cache first
-  if (allSpellsCache) {
-    return allSpellsCache;
+  if (_allSpellsCache) {
+    return _allSpellsCache;
   }
 
   try {
@@ -559,22 +613,13 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
     log(3, `Fetched ${spells.length} compendium spells`);
 
     // Cache the results
-    allSpellsCache = spells;
+    _allSpellsCache = spells;
 
     return spells;
   } catch (error) {
     log(1, `Error fetching compendium spells: ${error.message}`);
     throw error;
   }
-}
-
-/**
- * Clear the compendium spells cache
- */
-export function clearCompendiumSpellsCache() {
-  allSpellsCache = null;
-  // Also clear icon cache in formatting module
-  formattingUtils.clearIconCache();
 }
 
 /**
@@ -614,10 +659,11 @@ export async function createNewSpellList(name, identifier, source = 'Custom') {
   });
 
   // Clear caches
-  clearSpellListCache();
+  clearCache();
 
   return journal.pages.contents[0];
 }
+
 /**
  * Prepare dropdown options for casting time filter
  * @param {Array} availableSpells - The available spells array
@@ -754,4 +800,42 @@ export function prepareConditionOptions(filterState) {
     });
 
   return options;
+}
+
+/**
+ * Clear all caches
+ */
+export function clearCache() {
+  _spellListCache.clear();
+  _duplicateCache.clear();
+  _allSpellsCache = null;
+  formattingUtils.clearIconCache();
+}
+
+/**
+ * Normalize a UUID for comparison
+ * @param {string} uuid - The UUID to normalize
+ * @returns {string[]} Array of normalized forms
+ * @private
+ */
+function _normalizeUuid(uuid) {
+  const normalized = [uuid];
+
+  try {
+    // Parse the UUID
+    const parsed = foundry.utils.parseUuid(uuid);
+
+    // Add ID-only form
+    const idPart = uuid.split('.').pop();
+    if (idPart) normalized.push(idPart);
+
+    // Add normalized form if applicable
+    if (parsed.collection) {
+      normalized.push(`Compendium.${parsed.collection.collection}.${parsed.id}`);
+    }
+  } catch (e) {
+    // Just return the original if parsing fails
+  }
+
+  return normalized;
 }
