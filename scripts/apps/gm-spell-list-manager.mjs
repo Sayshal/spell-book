@@ -940,6 +940,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     try {
       log(3, `Attempting to remove spell: ${spellUuid}`);
 
+      // Find the spell in the available spells to have a reference for updates
+      const spellToRemove = this.availableSpells.find((s) => s.uuid === spellUuid);
+
       // Remove the spell from the list in the data model
       await managerHelpers.removeSpellFromList(this.selectedSpellList.document, spellUuid);
 
@@ -963,8 +966,21 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       // Reload all spell details
       await this._loadSpellDetails(updatedSpellUuids);
 
-      // For add/remove operations, re-render to ensure both lists are synchronized
-      // Reset the filter state to ensure removed spell can appear in available spells
+      // Force showing the removed spell in the available spells list
+      if (spellToRemove) {
+        const spellItem = this.element.querySelector(`.available-spells .spell-item[data-uuid="${spellUuid}"]`);
+        if (spellItem) {
+          spellItem.style.display = ''; // Make it visible
+        } else {
+          // The spell may not be in the current DOM, force a re-render of the available spells
+          this.render(false);
+        }
+      } else {
+        // If we can't find the spell in availableSpells, do a full re-render
+        this.render(false);
+      }
+
+      // Apply filters to ensure the list is correctly updated
       this._applyFilters();
 
       ui.notifications.info('Spell removed from list.');
@@ -1008,7 +1024,16 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       // Reload all spell details
       await this._loadSpellDetails(updatedSpellUuids);
 
-      // Apply filters to update available spells list
+      // Immediately hide the added spell in the available spells list
+      const spellItem = this.element.querySelector(`.available-spells .spell-item[data-uuid="${spellUuid}"]`);
+      if (spellItem) {
+        spellItem.style.display = 'none'; // Hide it directly
+      } else {
+        // If we can't find the spell in the DOM, do a full re-render
+        this.render(false);
+      }
+
+      // Apply filters to ensure everything is consistent
       this._applyFilters();
 
       ui.notifications.info('Spell added to list.');
