@@ -334,29 +334,85 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   _filterAvailableSpells() {
     const { name, level, school, source, castingTime, minRange, maxRange, damageType, condition, requiresSave, concentration, ritual } = this.filterState;
 
-    // Create a Set of normalized UUIDs for quick lookup
+    // Create a normalized set of UUIDs for more robust comparison
     const selectedSpellUUIDs = new Set();
+
+    log(3, `Starting UUID normalization for ${this.selectedSpellList?.spells?.length || 0} spells`);
+
     if (this.selectedSpellList?.spells) {
       for (const spell of this.selectedSpellList.spells) {
-        // Store both the full UUID and just the ID part
-        if (spell.uuid) {
-          selectedSpellUUIDs.add(spell.uuid);
-          // Also add just the ID part (last segment)
-          const idPart = spell.uuid.split('.').pop();
-          if (idPart) selectedSpellUUIDs.add(idPart);
+        if (spell.compendiumUuid) {
+          log(3, `Processing spell: ${spell.name}, UUID: ${spell.compendiumUuid}`);
+          try {
+            // Parse UUID to get core components for comparison
+            const parsedUuid = foundry.utils.parseUuid(spell.compendiumUuid);
+            log(2, `Parsed UUID for ${spell.name}:`, parsedUuid);
+
+            // Create a normalized reference that ignores "Item" inclusion
+            if (parsedUuid.collection) {
+              const normalizedId = `Compendium.${parsedUuid.collection.collection}.${parsedUuid.id}`;
+              log(3, `Generated normalized ID: ${normalizedId}`);
+              selectedSpellUUIDs.add(normalizedId);
+            } else {
+              log(2, `No collection found in parsed UUID for ${spell.name}`);
+            }
+
+            // Also add the original UUID
+            selectedSpellUUIDs.add(spell.compendiumUuid);
+            log(3, `Added original UUID: ${spell.compendiumUuid}`);
+
+            // Also add just the ID part (last segment)
+            const idPart = spell.compendiumUuid.split('.').pop();
+            if (idPart) {
+              log(3, `Added ID part: ${idPart}`);
+              selectedSpellUUIDs.add(idPart);
+            }
+          } catch (e) {
+            log(1, `Error parsing UUID for ${spell.name}:`, e);
+          }
+        } else {
+          log(2, `No UUID found for spell: ${spell.name}`, spell);
         }
       }
     }
 
+    log(3, `Completed UUID normalization. Selected spell UUIDs set has ${selectedSpellUUIDs.size} entries`);
+
     // First, filter the entire list
     const filteredSpells = this.availableSpells.filter((spell) => {
-      // Check if spell is already in the list using our improved Set lookup
+      // Check if spell is already in the list using our normalized UUID comparison
       if (selectedSpellUUIDs.size > 0) {
-        if (selectedSpellUUIDs.has(spell.uuid)) return false;
+        // Direct UUID match
+        if (selectedSpellUUIDs.has(spell.uuid)) {
+          log(3, `Filtering out ${spell.name} - direct UUID match: ${spell.uuid}`);
+          return false;
+        }
 
-        // Also check just the ID part
+        // ID part match
         const spellIdPart = spell.uuid.split('.').pop();
-        if (selectedSpellUUIDs.has(spellIdPart)) return false;
+        if (selectedSpellUUIDs.has(spellIdPart)) {
+          log(3, `Filtering out ${spell.name} - ID part match: ${spellIdPart}`);
+          return false;
+        }
+
+        // Try normalized comparison
+        try {
+          const parsedUuid = foundry.utils.parseUuid(spell.uuid);
+          log(3, `Checking normalized UUID for ${spell.name}`);
+
+          if (parsedUuid.collection) {
+            const normalizedId = `Compendium.${parsedUuid.collection.collection}.${parsedUuid.id}`;
+            log(3, `Generated normalized ID for comparison: ${normalizedId}`);
+
+            if (selectedSpellUUIDs.has(normalizedId)) {
+              log(3, `Filtering out ${spell.name} - normalized UUID match: ${normalizedId}`);
+              return false;
+            }
+          }
+        } catch (e) {
+          // Continue with filtering if parsing fails
+          log(2, `Error parsing UUID for comparison - ${spell.name}: ${e.message}`);
+        }
       }
 
       // Filter by name
@@ -475,7 +531,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       // Filter by ritual
       if (ritual) {
         const isRitual = spell.filterData?.isRitual || false;
-        log(1, spell, isRitual);
         if (!isRitual) {
           return false;
         }
@@ -483,6 +538,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       return true;
     });
+
+    log(3, `Filtered spells: ${filteredSpells.length} out of ${this.availableSpells.length}`);
 
     // Return all filtered spells and count for UI
     return {
