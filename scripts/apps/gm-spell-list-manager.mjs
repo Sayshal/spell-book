@@ -770,13 +770,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       content: `<p>${content}</p>`,
       buttons: [
         {
-          icon: `<i class="${confirmIcon}"></i>`,
+          icon: `${confirmIcon}`,
           label: confirmLabel,
           action: 'confirm',
           className: `dialog-button ${confirmCssClass}`
         },
         {
-          icon: `<i class="${cancelIcon}"></i>`,
+          icon: `${cancelIcon}`,
           label: cancelLabel,
           action: 'cancel',
           className: 'dialog-button'
