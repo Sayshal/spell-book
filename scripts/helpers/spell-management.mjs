@@ -311,12 +311,19 @@ export async function updateSpellListMapping(originalUuid, duplicateUuid) {
  */
 export async function removeCustomSpellList(duplicateUuid) {
   try {
-    // Get the duplicate
-    const duplicate = await fromUuid(duplicateUuid);
-    if (!duplicate) return false;
+    // Get the duplicate page
+    const duplicatePage = await fromUuid(duplicateUuid);
+    if (!duplicatePage) return false;
+
+    // Get the parent journal
+    const journal = duplicatePage.parent;
+    if (!journal) {
+      log(2, `Could not find parent journal for page: ${duplicateUuid}`);
+      return false;
+    }
 
     // Get the original UUID from flags
-    const originalUuid = duplicate.flags?.[MODULE.ID]?.originalUuid;
+    const originalUuid = duplicatePage.flags?.[MODULE.ID]?.originalUuid;
 
     // Remove the mapping if original UUID exists
     if (originalUuid) {
@@ -328,13 +335,13 @@ export async function removeCustomSpellList(duplicateUuid) {
       clearDuplicateCache();
     }
 
-    // Delete the page
-    await duplicate.delete();
+    // Delete the entire journal (which will delete all contained pages)
+    await journal.delete();
 
     // Clear spell list cache
     clearSpellListCache();
 
-    log(3, `Successfully removed custom spell list: ${duplicateUuid}`);
+    log(3, `Successfully removed custom spell list journal: ${journal.name}`);
     return true;
   } catch (error) {
     log(1, `Error removing custom spell list: ${error.message}`);
