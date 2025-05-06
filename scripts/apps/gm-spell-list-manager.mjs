@@ -1606,6 +1606,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       // Get class identifiers
       const classIdentifiers = await this.findClassIdentifiers();
       const identifierOptions = Object.entries(classIdentifiers)
+        .sort(([, nameA], [, nameB]) => nameA.localeCompare(nameB)) // Sort alphabetically
         .map(([id, name]) => `<option value="${id}">${name}</option>`)
         .join('');
 
@@ -1628,49 +1629,66 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         <input type="text" id="custom-identifier" name="customIdentifier">
       </div>
     </form>
-    <script>
-      // Show custom field when "Custom..." is selected
-      document.getElementById('class-identifier').addEventListener('change', (e) => {
-        const customField = document.querySelector('.custom-id-group');
-        if (e.target.value === 'custom') {
-          customField.style.display = 'block';
-        } else {
-          customField.style.display = 'none';
-        }
-      });
-    </script>
     `;
 
-      // Fix dialog buttons
-      const dialog = new Dialog({
+      // Store form data
+      let formData = null;
+
+      // Use DialogV2
+      const dialogResult = await foundry.applications.api.DialogV2.wait({
         title: game.i18n.localize('SPELLMANAGER.Buttons.CreateNew'),
-        content,
-        buttons: {
-          create: {
-            icon: '<i class="fas fa-check"></i>',
+        content: content,
+        buttons: [
+          {
             label: game.i18n.localize('SPELLMANAGER.Buttons.CreateNew'),
-            callback: (html) => {
-              const form = html.querySelector('form');
-              const name = form.querySelector('[name="name"]').value;
+            icon: 'fas fa-check',
+            action: 'create',
+            callback: (event, target, form) => {
+              // Capture form data
+              const nameInput = form.querySelector('[name="name"]');
               const identifierSelect = form.querySelector('[name="identifier"]');
               const customIdentifierInput = form.querySelector('[name="customIdentifier"]');
 
-              const identifier = identifierSelect.value === 'custom' ? customIdentifierInput.value : identifierSelect.value;
+              if (!nameInput || !identifierSelect) return false;
 
-              if (name && identifier) {
-                this._createNewListCallback(name, identifier);
-              }
+              const name = nameInput.value;
+              const identifier = identifierSelect.value === 'custom' ? customIdentifierInput?.value || '' : identifierSelect.value;
+
+              if (!name || !identifier) return false;
+
+              formData = { name, identifier };
+              return 'create';
             }
           },
-          cancel: {
-            icon: '<i class="fas fa-times"></i>',
-            label: game.i18n.localize('SPELLMANAGER.Confirm.Cancel')
+          {
+            label: game.i18n.localize('SPELLMANAGER.Confirm.Cancel'),
+            icon: 'fas fa-times',
+            action: 'cancel'
           }
-        },
-        default: 'cancel'
-      });
+        ],
+        default: 'cancel',
+        render: (event, target, form) => {
+          // Show custom field when "Custom..." is selected
+          const identifierSelect = target.querySelector('#class-identifier');
+          const customField = target.querySelector('.custom-id-group');
 
-      dialog.render(true);
+          if (identifierSelect) {
+            identifierSelect.addEventListener('change', (e) => {
+              if (e.target.value === 'custom') {
+                customField.style.display = 'block';
+              } else {
+                customField.style.display = 'none';
+              }
+            });
+          }
+        }
+      });
+      log(1, 'Result!', dialogResult);
+      // Process the captured form data
+      if (dialogResult === 'create' && formData) {
+        log(1, 'Create!', dialogResult);
+        await this._createNewListCallback(formData.name, formData.identifier);
+      }
     } catch (error) {
       log(1, 'Error creating new list:', error);
       ui.notifications.error('Failed to create new spell list');
