@@ -1,4 +1,4 @@
-import { DEFAULT_FILTER_CONFIG, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import { DEFAULT_FILTER_CONFIG, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as actorSpellUtils from '../helpers/actor-spells.mjs';
 import * as filterUtils from '../helpers/filters.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
@@ -217,7 +217,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _setSidebarState() {
-    const sidebarCollapsed = game.user.getFlag(MODULE.ID, SIDEBAR_COLLAPSED);
+    const sidebarCollapsed = game.user.getFlag(MODULE.ID, FLAGS.SIDEBAR_COLLAPSED);
     if (sidebarCollapsed) {
       this.element.classList.add('sidebar-collapsed');
     }
@@ -1037,7 +1037,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _applyCollapsedLevels() {
     try {
-      const collapsedLevels = game.user.getFlag(MODULE.ID, COLLAPSED_LEVELS) || [];
+      const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
 
       for (const levelId of collapsedLevels) {
         const levelContainer = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
@@ -1100,7 +1100,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       this._positionFooter();
 
       // Store user preference
-      game.user.setFlag(MODULE.ID, SIDEBAR_COLLAPSED, isCollapsing);
+      game.user.setFlag(MODULE.ID, FLAGS.SIDEBAR_COLLAPSED, isCollapsing);
     } catch (error) {
       log(1, 'Error toggling sidebar:', error);
     }
@@ -1180,7 +1180,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       levelContainer.classList.toggle('collapsed');
 
       // Save state to user flags
-      const collapsedLevels = game.user.getFlag(MODULE.ID, COLLAPSED_LEVELS) || [];
+      const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
       const isCollapsed = levelContainer.classList.contains('collapsed');
 
       if (isCollapsed && !collapsedLevels.includes(levelId)) {
@@ -1189,7 +1189,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         collapsedLevels.splice(collapsedLevels.indexOf(levelId), 1);
       }
 
-      game.user.setFlag(MODULE.ID, COLLAPSED_LEVELS, collapsedLevels);
+      game.user.setFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS, collapsedLevels);
     } catch (error) {
       log(1, 'Error toggling spell level:', error);
     }

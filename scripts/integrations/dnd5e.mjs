@@ -22,9 +22,6 @@ export function registerDnD5eIntegration() {
       log(3, 'Registered rest completion hook');
     }
 
-    // Register class advancement hook for spell list updates
-    Hooks.on('dnd5e.advancementManagerComplete', onAdvancementComplete);
-
     // Register item creation hooks for spell acquisition
     Hooks.on('createItem', onItemCreated);
   } catch (error) {
@@ -138,65 +135,6 @@ function openSpellBookForActor(actor) {
   } catch (error) {
     log(1, 'Failed to open spell book:', error);
     ui.notifications?.error(game.i18n.format('Failed to open spell book for {name}', { name: actor.name }));
-  }
-}
-
-/**
- * Handler for advancement completion
- * Updates spell preparation when character gains levels
- * @param {Actor5e} actor - The actor completing advancement
- * @param {Item5e} item - The item being advanced
- * @param {Object} advancementData - Advancement data
- */
-function onAdvancementComplete(actor, item, advancementData) {
-  try {
-    // Only handle class advancements that could affect spellcasting
-    if (item.type !== 'class' || !discoveryUtils.canCastSpells(actor)) return;
-
-    // Check if this advancement affects spellcasting
-    const affectsSpellcasting = Boolean(item.system?.spellcasting?.progression && item.system?.spellcasting?.progression !== 'none');
-
-    if (!affectsSpellcasting) return;
-
-    log(3, `Character advancement affecting spellcasting detected for ${actor.name}`);
-
-    // If auto-prompt is enabled, show dialog
-    if (game.settings.get(MODULE.ID, SETTINGS.ENABLE_REST_PROMPT)) {
-      showAdvancementSpellDialog(actor, item);
-    }
-  } catch (error) {
-    log(1, 'Error handling advancement completion:', error);
-  }
-}
-
-/**
- * Shows dialog for spell updates after character advancement
- * @param {Actor5e} actor - The actor who completed advancement
- * @param {Item5e} classItem - The class item that was advanced
- */
-function showAdvancementSpellDialog(actor, classItem) {
-  try {
-    new Dialog({
-      title: game.i18n.localize('SPELLBOOK.Advancement.DialogTitle'),
-      content: `<p>${game.i18n.format('SPELLBOOK.Advancement.UpdateSpells', {
-        name: actor.name,
-        class: classItem.name
-      })}</p>`,
-      buttons: {
-        yes: {
-          icon: '<i class="fas fa-book-open"></i>',
-          label: game.i18n.localize('SPELLBOOK.Advancement.OpenSpellbook'),
-          callback: () => openSpellBookForActor(actor)
-        },
-        no: {
-          icon: '<i class="fas fa-times"></i>',
-          label: game.i18n.localize('SPELLBOOK.Advancement.Later')
-        }
-      },
-      default: 'yes'
-    }).render(true);
-  } catch (error) {
-    log(1, 'Error showing advancement spell dialog:', error);
   }
 }
 
