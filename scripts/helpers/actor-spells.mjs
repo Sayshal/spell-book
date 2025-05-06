@@ -23,26 +23,54 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
     try {
       const spell = await fromUuid(uuid);
 
-      if (spell && spell.type === 'spell') {
-        if (spell.system.level <= maxSpellLevel) {
-          spellItems.push({
-            ...spell,
-            compendiumUuid: uuid
-          });
-        }
-      } else if (spell) {
-        errors.push({ uuid, reason: 'Not a valid spell document' });
+      if (!spell) {
+        errors.push({
+          uuid,
+          reason: 'Document not found',
+          details: 'The UUID does not resolve to any document'
+        });
+        continue;
+      }
+
+      if (spell.type !== 'spell') {
+        errors.push({
+          uuid,
+          reason: 'Not a valid spell document',
+          details: `Document type is "${spell.type}" instead of "spell"`
+        });
+        continue;
+      }
+
+      if (spell.system.level <= maxSpellLevel) {
+        spellItems.push({
+          ...spell,
+          compendiumUuid: uuid
+        });
       } else {
-        errors.push({ uuid, reason: 'Document not found' });
+        // Not an error, just filtered out
+        log(3, `Spell "${spell.name}" (level ${spell.system.level}) exceeds max level ${maxSpellLevel}`);
       }
     } catch (error) {
-      errors.push({ uuid, reason: error.message || 'Unknown error' });
+      errors.push({
+        uuid,
+        reason: error.message || 'Unknown error',
+        details: error.stack || 'No stack trace available'
+      });
     }
   }
 
-  // Log errors
+  // Log errors with more detail
   if (errors.length > 0) {
     log(2, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`);
+
+    // Log each error individually with more detail
+    errors.forEach((err) => {
+      log(2, `Error fetching spell ${err.uuid}: ${err.reason}`, {
+        uuid: err.uuid,
+        reason: err.reason,
+        details: err.details
+      });
+    });
 
     if (errors.length === spellUuids.size) {
       log(1, 'All spells failed to load, possible system or compendium issue');

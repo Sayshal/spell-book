@@ -36,7 +36,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       restoreOriginal: GMSpellListManager.handleRestoreOriginal,
       showDocumentation: GMSpellListManager.handleShowDocumentation,
       toggleSidebar: GMSpellListManager.handleToggleSidebar,
-      toggleSpellLevel: GMSpellListManager.handleToggleSpellLevel
+      toggleSpellLevel: GMSpellListManager.handleToggleSpellLevel,
+      createNewList: GMSpellListManager.handleCreateNewList
     },
     classes: ['gm-spell-list-manager'],
     window: {
@@ -101,6 +102,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /** Editing state */
   isEditing = false;
 
+  /** Pending changes to apply on save */
+  pendingChanges = {
+    added: new Set(),
+    removed: new Set()
+  };
+
   /** Window title getter */
   get title() {
     return game.i18n.localize('SPELLMANAGER.Application.Title');
@@ -115,17 +122,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   constructor(options = {}) {
     super(options);
-  }
 
-  /**
-   * Initialize the application
-   * @override
-   * @private
-   */
-  _initialize() {
-    super._initialize();
-
-    // Initialize filter state
     this.filterState = {
       name: '',
       level: '',
@@ -141,10 +138,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       prepared: false,
       ritual: false
     };
-
-    // Set position to fill most of the screen
-    this.position.width = Math.max(800, window.innerWidth - 300);
-    this.position.height = Math.max(600, window.innerHeight - 300);
   }
 
   /* -------------------------------------------- */
@@ -153,10 +146,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Prepare the application context data
-   * @param {Object} options - Application options
-   * @returns {Promise<Object>} The prepared context
    * @override
-   * @private
    */
   async _prepareContext(options) {
     try {
@@ -240,10 +230,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Handle rendering the application
-   * @param {Object} context - The template context
-   * @param {Object} options - The rendering options
    * @override
-   * @private
    */
   _onRender(context, options) {
     super._onRender?.(context, options);
@@ -275,6 +262,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   async loadData() {
     try {
       log(3, 'Loading spell lists for GM manager');
+
+      // Clean up invalid mappings first
+      await managerHelpers.getValidCustomListMappings();
 
       // Get all available spell lists from compendiums
       this.availableSpellLists = await managerHelpers.findCompendiumSpellLists();
@@ -349,26 +339,26 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         }
 
         if (source && source.trim() !== '') {
-          const spellSourceParts = spell.sourceId?.split('.') || [];
-          if (spellSourceParts.length >= 2) {
-            const spellSource = `${spellSourceParts[0]}.${spellSourceParts[1]}`;
-            if (spellSource !== source) return false;
-          } else if (spell.sourceId !== source) {
-            return false;
-          }
+          // More flexible source matching
+          const spellSource = spell.sourceId || '';
+          const packName = spell.packName || '';
+
+          const sourceMatch = spellSource === source || spellSource.startsWith(source) || packName.includes(source);
+
+          if (!sourceMatch) return false;
         }
 
         if (castingTime) {
           const [filterType, filterValue] = castingTime.split(':');
           const spellCastingType = spell.filterData?.castingTime?.type || spell.system?.activation?.type || '';
-          const spellCastingValue = spell.filterData?.castingTime?.value || spell.system?.activation?.value || '1';
+          const spellCastingValue = String(spell.filterData?.castingTime?.value || spell.system?.activation?.value || '1');
 
           if (spellCastingType !== filterType || spellCastingValue !== filterValue) {
             return false;
           }
         }
 
-        if ((minRange || maxRange) && (spell.filterData?.range?.units || spell.system?.range)) {
+        if ((minRange || maxRange) && (spell.filterData?.range?.units || spell.system?.range?.units)) {
           const rangeUnits = spell.filterData?.range?.units || spell.system?.range?.units || '';
           const rangeValue = parseInt(spell.system?.range?.value || 0);
 
@@ -389,30 +379,41 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         }
 
         if (damageType) {
-          const spellDamageTypes = spell.filterData?.damageTypes || spell.system?.damage?.parts?.map((part) => part[1] || '').filter(Boolean) || [];
-          if (spellDamageTypes.length === 0) return false;
+          const spellDamageTypes = Array.isArray(spell.filterData?.damageTypes) ? spell.filterData.damageTypes : [];
+          if (!spellDamageTypes.length) return false;
           if (!spellDamageTypes.includes(damageType)) return false;
         }
 
         if (condition) {
-          const spellConditions = spell.filterData?.conditions || [];
+          const spellConditions = Array.isArray(spell.filterData?.conditions) ? spell.filterData.conditions : [];
           if (!spellConditions.includes(condition)) return false;
         }
 
         if (requiresSave) {
-          const spellRequiresSave = spell.filterData?.requiresSave || !!spell.system?.save?.ability || false;
+          const spellRequiresSave = spell.filterData?.requiresSave || false;
           if (requiresSave === 'true' && !spellRequiresSave) return false;
           if (requiresSave === 'false' && spellRequiresSave) return false;
         }
 
         if (concentration) {
-          const requiresConcentration = spell.filterData?.concentration || spell.system?.duration?.concentration || false;
+          // Fix concentration filter - explicitly check both paths
+          let requiresConcentration = false;
+
+          // Check filterData first
+          if (spell.filterData?.concentration !== undefined) {
+            requiresConcentration = !!spell.filterData.concentration;
+          }
+          // Then check system data if not found
+          else if (spell.system?.duration?.concentration !== undefined) {
+            requiresConcentration = !!spell.system.duration.concentration;
+          }
+
           if (concentration === 'true' && !requiresConcentration) return false;
           if (concentration === 'false' && requiresConcentration) return false;
         }
 
         if (ritual) {
-          const isRitual = spell.filterData?.isRitual || false;
+          const isRitual = !!spell.filterData?.isRitual;
           if (!isRitual) return false;
         }
 
@@ -669,6 +670,45 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Find all class identifiers from class items in compendiums
+   * @returns {Promise<Object>} Object mapping class identifiers to names
+   */
+  async findClassIdentifiers() {
+    try {
+      const identifiers = {};
+
+      // Get all item packs
+      const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
+
+      for (const pack of itemPacks) {
+        try {
+          // Get index with identifier field for class items
+          const index = await pack.getIndex({
+            fields: ['type', 'system.identifier', 'name']
+          });
+
+          // Filter for class items
+          const classItems = index.filter((e) => e.type === 'class');
+
+          for (const cls of classItems) {
+            const identifier = cls.system?.identifier?.toLowerCase();
+            if (identifier) {
+              identifiers[identifier] = cls.name;
+            }
+          }
+        } catch (error) {
+          log(2, `Error processing pack ${pack.metadata.label} for class identifiers: ${error.message}`);
+        }
+      }
+
+      return identifiers;
+    } catch (error) {
+      log(1, `Error finding class identifiers: ${error.message}`);
+      return {};
+    }
+  }
+
   /* -------------------------------------------- */
   /*  Spell List Operations                       */
   /* -------------------------------------------- */
@@ -871,12 +911,18 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     try {
       log(3, `Editing spell list: ${uuid}`);
 
+      // Reset pending changes
+      this.pendingChanges = {
+        added: new Set(),
+        removed: new Set()
+      };
+
       // Check if already a custom list
       const isCustom = !!this.selectedSpellList.document.flags?.[MODULE.ID]?.isDuplicate;
 
       if (!isCustom) {
         // Need to duplicate it first
-        ui.notifications.info('Creating a custom copy of this spell list...');
+        ui.notifications.info(game.i18n.localize('SPELLMANAGER.Notifications.Creating'));
 
         // Store original source
         let originalSource = '';
@@ -889,13 +935,18 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         // Duplicate the list
         const duplicateList = await managerHelpers.duplicateSpellList(this.selectedSpellList.document);
 
-        // Switch to the duplicate
+        // Switch to the duplicate while preserving spell data
+        const spells = this.selectedSpellList.spells;
+        const spellsByLevel = this.selectedSpellList.spellsByLevel;
+        const spellUuids = this.selectedSpellList.spellUuids;
+
         this.selectedSpellList = {
           document: duplicateList,
           uuid: duplicateList.uuid,
           name: duplicateList.name,
-          spellUuids: Array.from(duplicateList.system.spells || []),
-          spells: this.selectedSpellList.spells,
+          spellUuids: spellUuids,
+          spells: spells,
+          spellsByLevel: spellsByLevel,
           isLoadingSpells: false
         };
 
@@ -905,15 +956,23 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           log(3, `Preserved source for filtering: ${originalSource}`);
         }
 
-        ui.notifications.info('Custom copy created. You are now editing your custom version.');
+        ui.notifications.info(game.i18n.localize('SPELLMANAGER.Notifications.Created'));
       }
 
       // Enter editing mode
       this.isEditing = true;
+
+      // First render to update UI state
       this.render(false);
+
+      // Explicitly update available spells - important to do this AFTER render
+      // This forces a full refilter with proper state
+      setTimeout(() => {
+        this.applyFilters();
+      }, 100);
     } catch (error) {
       log(1, 'Error entering edit mode:', error);
-      ui.notifications.error('Failed to enter edit mode.');
+      ui.notifications.error(game.i18n.localize('SPELLMANAGER.Notifications.EditError'));
     }
   }
 
@@ -926,35 +985,50 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (!this.selectedSpellList || !this.isEditing) return;
 
     try {
-      log(3, `Removing spell: ${spellUuid}`);
+      log(3, `Removing spell: ${spellUuid} in pending changes`);
 
-      // Remove the spell from the data model
-      await managerHelpers.removeSpellFromList(this.selectedSpellList.document, spellUuid);
+      // Add to removed list
+      this.pendingChanges.removed.add(spellUuid);
 
-      // Refresh the document
-      const updatedDocument = await fromUuid(this.selectedSpellList.document.uuid);
-      if (!updatedDocument) {
-        log(2, 'Could not retrieve updated document');
-        return;
+      // Remove from added if it was there
+      this.pendingChanges.added.delete(spellUuid);
+
+      // Find all forms of the UUID for proper matching
+      const normalizedForms = managerHelpers.normalizeUuid(spellUuid);
+
+      // Remove from the spellUuids array
+      this.selectedSpellList.spellUuids = this.selectedSpellList.spellUuids.filter((uuid) => !normalizedForms.includes(uuid));
+
+      // Remove from spells array - match by any normalized form
+      this.selectedSpellList.spells = this.selectedSpellList.spells.filter((spell) => {
+        const spellUuids = [spell.uuid, spell.compendiumUuid, ...(spell._id ? [spell._id] : [])];
+
+        // Keep the spell if none of its IDs match any normalized form
+        return !spellUuids.some((id) => normalizedForms.includes(id));
+      });
+
+      // Re-organize spells by level
+      this.selectedSpellList.spellsByLevel = await actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
+
+      // For all spells in spellsByLevel, ensure they have icons
+      for (const level of this.selectedSpellList.spellsByLevel) {
+        for (const s of level.spells) {
+          if (!s.enrichedIcon) {
+            s.enrichedIcon = formattingUtils.createSpellIconLink(s);
+          }
+        }
       }
 
-      // Update our reference
-      this.selectedSpellList.document = updatedDocument;
+      // Re-render to show changes
+      this.render(false);
 
-      // Get fresh spell UUIDs
-      const updatedSpellUuids = Array.from(updatedDocument.system.spells || []);
-      this.selectedSpellList.spellUuids = updatedSpellUuids;
-
-      // Reload all spell details
-      await this.loadSpellDetails(updatedSpellUuids);
-
-      // Apply filters to show removed spell in available spells
+      // Apply filters to show the removed spell in available spells
       this.applyFilters();
 
-      ui.notifications.info('Spell removed from list.');
+      ui.notifications.info(game.i18n.localize('SPELLMANAGER.Notifications.SpellRemoved'));
     } catch (error) {
       log(1, 'Error removing spell:', error);
-      ui.notifications.error('Failed to remove spell from list.');
+      ui.notifications.error(game.i18n.localize('SPELLMANAGER.Notifications.SpellRemoveError'));
     }
   }
 
@@ -967,35 +1041,53 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (!this.selectedSpellList || !this.isEditing) return;
 
     try {
-      log(3, `Adding spell: ${spellUuid}`);
+      log(3, `Adding spell: ${spellUuid} to pending changes`);
 
-      // Add the spell to the data model
-      await managerHelpers.addSpellToList(this.selectedSpellList.document, spellUuid);
+      // Add to pending changes
+      this.pendingChanges.added.add(spellUuid);
 
-      // Refresh the document
-      const updatedDocument = await fromUuid(this.selectedSpellList.document.uuid);
-      if (!updatedDocument) {
-        log(2, 'Could not retrieve updated document');
-        return;
+      // Remove from removed if it was there
+      this.pendingChanges.removed.delete(spellUuid);
+
+      // Find the spell in availableSpells
+      const spell = this.availableSpells.find((s) => s.uuid === spellUuid);
+
+      if (spell) {
+        // Create a copy to avoid reference issues
+        const spellCopy = foundry.utils.deepClone(spell);
+
+        // Ensure it has enrichedIcon
+        if (!spellCopy.enrichedIcon) {
+          spellCopy.enrichedIcon = formattingUtils.createSpellIconLink(spellCopy);
+        }
+
+        // Add to the display (but not to the document yet)
+        this.selectedSpellList.spellUuids.push(spellUuid);
+        this.selectedSpellList.spells.push(spellCopy);
+
+        // Re-organize spells by level preserving icons
+        this.selectedSpellList.spellsByLevel = await actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
+
+        // For all spells in spellsByLevel, ensure they have icons
+        for (const level of this.selectedSpellList.spellsByLevel) {
+          for (const s of level.spells) {
+            if (!s.enrichedIcon) {
+              s.enrichedIcon = formattingUtils.createSpellIconLink(s);
+            }
+          }
+        }
+
+        // Re-render to show changes
+        this.render(false);
+
+        // Apply filters to hide the added spell from available spells
+        this.applyFilters();
       }
 
-      // Update our reference
-      this.selectedSpellList.document = updatedDocument;
-
-      // Get fresh spell UUIDs
-      const updatedSpellUuids = Array.from(updatedDocument.system.spells || []);
-      this.selectedSpellList.spellUuids = updatedSpellUuids;
-
-      // Reload all spell details
-      await this.loadSpellDetails(updatedSpellUuids);
-
-      // Apply filters to hide added spell from available spells
-      this.applyFilters();
-
-      ui.notifications.info('Spell added to list.');
+      ui.notifications.info(game.i18n.localize('SPELLMANAGER.Notifications.SpellAdded'));
     } catch (error) {
       log(1, 'Error adding spell:', error);
-      ui.notifications.error('Failed to add spell to list.');
+      ui.notifications.error(game.i18n.localize('SPELLMANAGER.Notifications.SpellAddError'));
     }
   }
 
@@ -1006,11 +1098,57 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   async saveCustomList() {
     if (!this.selectedSpellList || !this.isEditing) return;
 
-    // Exit edit mode - changes are saved automatically
-    this.isEditing = false;
-    this.render(false);
+    try {
+      log(3, 'Saving custom spell list with pending changes');
 
-    ui.notifications.info('Custom spell list saved.');
+      // Get the current spell list
+      const document = this.selectedSpellList.document;
+      const currentSpells = new Set(document.system.spells || []);
+
+      // Process removals first
+      log(3, `Processing ${this.pendingChanges.removed.size} spell removals`);
+      for (const spellUuid of this.pendingChanges.removed) {
+        // Normalize the UUID for matching
+        const normalizedForms = managerHelpers.normalizeUuid(spellUuid);
+
+        // Check each spell in the list against all normalized forms
+        for (const existingUuid of currentSpells) {
+          if (normalizedForms.includes(existingUuid)) {
+            currentSpells.delete(existingUuid);
+            log(3, `Removed spell ${existingUuid} from list`);
+          }
+        }
+      }
+
+      // Process additions
+      log(3, `Processing ${this.pendingChanges.added.size} spell additions`);
+      for (const spellUuid of this.pendingChanges.added) {
+        currentSpells.add(spellUuid);
+        log(3, `Added spell ${spellUuid} to list`);
+      }
+
+      // Update the document
+      await document.update({
+        'system.spells': Array.from(currentSpells)
+      });
+
+      // Reset pending changes
+      this.pendingChanges = {
+        added: new Set(),
+        removed: new Set()
+      };
+
+      // Exit edit mode
+      this.isEditing = false;
+
+      // Refresh the spell list to ensure everything is up to date
+      await this.selectSpellList(document.uuid);
+
+      ui.notifications.info(game.i18n.localize('SPELLMANAGER.Notifications.ListSaved'));
+    } catch (error) {
+      log(1, 'Error saving spell list:', error);
+      ui.notifications.error('Failed to save spell list');
+    }
   }
 
   /**
@@ -1457,6 +1595,124 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       game.user.setFlag(MODULE.ID, 'gmCollapsedSpellLevels', collapsedLevels);
     } catch (error) {
       log(1, 'Error handling toggle spell level:', error);
+    }
+  }
+
+  /**
+   * Handle creating a new spell list
+   */
+  async createNewList() {
+    try {
+      // Get class identifiers
+      const classIdentifiers = await this.findClassIdentifiers();
+      const identifierOptions = Object.entries(classIdentifiers)
+        .map(([id, name]) => `<option value="${id}">${name}</option>`)
+        .join('');
+
+      // Create dialog content
+      const content = `
+    <form>
+      <div class="form-group">
+        <label for="list-name">List Name:</label>
+        <input type="text" id="list-name" name="name" required>
+      </div>
+      <div class="form-group">
+        <label for="class-identifier">Class:</label>
+        <select id="class-identifier" name="identifier">
+          ${identifierOptions}
+          <option value="custom">Custom...</option>
+        </select>
+      </div>
+      <div class="form-group custom-id-group" style="display:none;">
+        <label for="custom-identifier">Custom Identifier:</label>
+        <input type="text" id="custom-identifier" name="customIdentifier">
+      </div>
+    </form>
+    <script>
+      // Show custom field when "Custom..." is selected
+      document.getElementById('class-identifier').addEventListener('change', (e) => {
+        const customField = document.querySelector('.custom-id-group');
+        if (e.target.value === 'custom') {
+          customField.style.display = 'block';
+        } else {
+          customField.style.display = 'none';
+        }
+      });
+    </script>
+    `;
+
+      // Fix dialog buttons
+      const dialog = new Dialog({
+        title: game.i18n.localize('SPELLMANAGER.Buttons.CreateNew'),
+        content,
+        buttons: {
+          create: {
+            icon: '<i class="fas fa-check"></i>',
+            label: game.i18n.localize('SPELLMANAGER.Buttons.CreateNew'),
+            callback: (html) => {
+              const form = html.querySelector('form');
+              const name = form.querySelector('[name="name"]').value;
+              const identifierSelect = form.querySelector('[name="identifier"]');
+              const customIdentifierInput = form.querySelector('[name="customIdentifier"]');
+
+              const identifier = identifierSelect.value === 'custom' ? customIdentifierInput.value : identifierSelect.value;
+
+              if (name && identifier) {
+                this._createNewListCallback(name, identifier);
+              }
+            }
+          },
+          cancel: {
+            icon: '<i class="fas fa-times"></i>',
+            label: game.i18n.localize('SPELLMANAGER.Confirm.Cancel')
+          }
+        },
+        default: 'cancel'
+      });
+
+      dialog.render(true);
+    } catch (error) {
+      log(1, 'Error creating new list:', error);
+      ui.notifications.error('Failed to create new spell list');
+    }
+  }
+
+  /**
+   * Callback to actually create the new list after dialog
+   */
+  async _createNewListCallback(name, identifier) {
+    try {
+      const newList = await managerHelpers.createNewSpellList(name, identifier, 'Custom');
+
+      if (newList) {
+        ui.notifications.info(game.i18n.format('SPELLMANAGER.Notifications.ListCreated', { name }));
+
+        // Reload lists
+        await this.loadData();
+
+        // Select the new list
+        await this.selectSpellList(newList.uuid);
+      }
+    } catch (error) {
+      log(1, `Error creating list: ${error.message}`);
+      ui.notifications.error('Failed to create new spell list');
+    }
+  }
+
+  // Fixed handler function
+  static async handleCreateNewList(event, _form) {
+    try {
+      const appId = `gm-spell-list-manager-${MODULE.ID}`;
+      const instance = foundry.applications.instances.get(appId);
+
+      if (!instance) {
+        log(1, 'Could not find GMSpellListManager instance');
+        return;
+      }
+
+      await instance.createNewList();
+    } catch (error) {
+      log(1, 'Error handling create new list:', error);
     }
   }
 

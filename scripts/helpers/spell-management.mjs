@@ -34,8 +34,8 @@ export async function findCompendiumSpellLists() {
           const journal = await pack.getDocument(journalData._id);
 
           for (const page of journal.pages) {
-            // Skip non-spell list pages
-            if (page.type !== 'spells') continue;
+            // Skip non-spell list pages and pages of type "other"
+            if (page.type !== 'spells' || page.system?.type === 'other') continue;
 
             spellLists.push({
               uuid: page.uuid,
@@ -128,8 +128,33 @@ export async function compareListVersions(originalUuid, customUuid) {
  * Get mappings between original and custom spell lists
  * @returns {Object} Mapping data
  */
-export function getCustomListMappings() {
-  return game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
+export async function getValidCustomListMappings() {
+  // Get the mappings
+  const mappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
+  const validMappings = {};
+
+  // Check each mapping for validity
+  for (const [originalUuid, customUuid] of Object.entries(mappings)) {
+    try {
+      // Check if custom list still exists
+      const customDoc = await fromUuid(customUuid);
+      if (customDoc) {
+        validMappings[originalUuid] = customUuid;
+      } else {
+        log(2, `Custom list ${customUuid} no longer exists, removing mapping`);
+      }
+    } catch (error) {
+      log(2, `Error checking custom list ${customUuid}: ${error.message}`);
+    }
+  }
+
+  // Update settings if we found invalid mappings
+  if (Object.keys(validMappings).length !== Object.keys(mappings).length) {
+    await game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, validMappings);
+    log(2, 'Updated spell list mappings, removed invalid entries');
+  }
+
+  return validMappings;
 }
 
 /**
@@ -327,7 +352,9 @@ export async function addSpellToList(spellList, spellUuid) {
  * @param {string} uuid - The UUID to normalize
  * @returns {string[]} Array of normalized forms
  */
-function normalizeUuid(uuid) {
+export function normalizeUuid(uuid) {
+  if (!uuid) return [];
+
   const normalized = [uuid];
 
   try {
@@ -340,10 +367,20 @@ function normalizeUuid(uuid) {
 
     // Add normalized form
     if (parsed.collection) {
-      normalized.push(`Compendium.${parsed.collection.collection}.${parsed.id}`);
+      const compendiumId = `Compendium.${parsed.collection.collection}.${parsed.id}`;
+      if (!normalized.includes(compendiumId)) {
+        normalized.push(compendiumId);
+      }
+
+      // Also add version without Compendium prefix
+      const shortId = `${parsed.collection.collection}.${parsed.id}`;
+      if (!normalized.includes(shortId)) {
+        normalized.push(shortId);
+      }
     }
   } catch (e) {
     // Return original if parsing fails
+    log(2, `Error normalizing UUID ${uuid}: ${e.message}`);
   }
 
   return normalized;

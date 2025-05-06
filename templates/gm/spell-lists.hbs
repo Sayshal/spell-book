@@ -6,7 +6,13 @@
 		<i class="fas fa-caret-left" aria-hidden="true"></i>
 	</button>
 
-	<h2 id="available-lists-heading">{{localize "SPELLMANAGER.Columns.AvailableLists"}}</h2>
+  <div class="lists-header">
+    <h2 id="available-lists-heading">{{localize "SPELLMANAGER.Columns.AvailableLists"}}</h2>
+    <button type="button" class="create-new-button" data-action="createNewList"
+      aria-label="{{localize 'SPELLMANAGER.Buttons.CreateNew'}}">
+      <i class="fas fa-plus" aria-hidden="true"></i>
+    </button>
+  </div>
 
 	<div class="lists-container" role="list" aria-labelledby="available-lists-heading">
 		{{#if availableSpellLists.length}}
@@ -32,12 +38,5 @@
 		{{else}}
 			{{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLMANAGER.Columns.NoLists")}}
 		{{/if}}
-
-		<div class="list-controls">
-			<button type="button" class="create-new-button" data-action="createNewList"
-				aria-label="{{localize 'SPELLMANAGER.Buttons.CreateNew'}}">
-				<i class="fas fa-plus" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.CreateNew"}}
-			</button>
-		</div>
 	</div>
 </div>
