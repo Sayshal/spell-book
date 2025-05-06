@@ -9,7 +9,7 @@ import * as formattingUtils from './spell-formatting.mjs';
 import * as preparationUtils from './spell-preparation.mjs';
 
 /**
- * Fetch and filter spell documents from UUIDs based on maximum spell level
+ * Fetch spell documents from UUIDs based on maximum spell level
  * @param {Set<string>} spellUuids - Set of spell UUIDs
  * @param {number} maxSpellLevel - Maximum spell level to include
  * @returns {Promise<Array>} - Array of spell documents
@@ -17,36 +17,30 @@ import * as preparationUtils from './spell-preparation.mjs';
 export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
   const spellItems = [];
   const errors = [];
-  const promises = [];
 
-  // Create a batch of promises for parallel fetching
+  // Process each UUID one at a time for simplicity
   for (const uuid of spellUuids) {
-    const promise = fromUuid(uuid)
-      .then((spell) => {
-        if (spell && spell.type === 'spell') {
-          if (spell.system.level <= maxSpellLevel) {
-            spellItems.push({
-              ...spell,
-              compendiumUuid: uuid
-            });
-          }
-        } else if (spell) {
-          errors.push({ uuid, reason: 'Not a valid spell document' });
-        } else {
-          errors.push({ uuid, reason: 'Document not found' });
-        }
-      })
-      .catch((error) => {
-        errors.push({ uuid, reason: error.message || 'Unknown error' });
-      });
+    try {
+      const spell = await fromUuid(uuid);
 
-    promises.push(promise);
+      if (spell && spell.type === 'spell') {
+        if (spell.system.level <= maxSpellLevel) {
+          spellItems.push({
+            ...spell,
+            compendiumUuid: uuid
+          });
+        }
+      } else if (spell) {
+        errors.push({ uuid, reason: 'Not a valid spell document' });
+      } else {
+        errors.push({ uuid, reason: 'Document not found' });
+      }
+    } catch (error) {
+      errors.push({ uuid, reason: error.message || 'Unknown error' });
+    }
   }
 
-  // Wait for all promises to resolve
-  await Promise.allSettled(promises);
-
-  // Log errors in bulk rather than one by one
+  // Log errors
   if (errors.length > 0) {
     log(2, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`);
 
@@ -62,18 +56,18 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
 /**
  * Organize spells by level for display with preparation info
  * @param {Array} spellItems - Array of spell documents
- * @param {Actor5e|null} actor - The actor to check preparation status against (optional)
- * @returns {Array} - Array of spell levels with formatted data for templates
+ * @param {Actor5e|null} actor - The actor to check preparation status against
+ * @returns {Array} - Array of spell levels with formatted data
  */
 export async function organizeSpellsByLevel(spellItems, actor = null) {
   log(3, `Organizing ${spellItems.length} spells by level${actor ? ` for ${actor.name}` : ''}`);
 
   // Organize spells by level
   const spellsByLevel = {};
-  const processedSpellIds = new Set(); // Track spells by ID
-  const processedSpellNames = new Set(); // Track spells by name (lowercase)
+  const processedSpellIds = new Set();
+  const processedSpellNames = new Set();
 
-  // First, add all spells from the spell list
+  // Process all spells from the spell list
   for (const spell of spellItems) {
     if (spell?.system?.level === undefined) continue;
 
@@ -84,20 +78,16 @@ export async function organizeSpellsByLevel(spellItems, actor = null) {
       spellsByLevel[level] = [];
     }
 
-    // Prepare the spell data object
-    let spellData = { ...spell };
+    // Prepare the spell data
+    const spellData = { ...spell };
 
-    // Add preparation status information if an actor is provided
+    // Add preparation status if an actor is provided
     if (actor) {
-      const prepStatus = preparationUtils.getSpellPreparationStatus(actor, spell);
-      spellData.preparation = prepStatus;
+      spellData.preparation = preparationUtils.getSpellPreparationStatus(actor, spell);
     }
 
-    // Add additional data for filtering
-    const filterData = formattingUtils.extractSpellFilterData(spell);
-    spellData.filterData = filterData;
-
-    // Add formatted details
+    // Add filter data and formatted details
+    spellData.filterData = formattingUtils.extractSpellFilterData(spell);
     spellData.formattedDetails = formattingUtils.formatSpellDetails(spell);
 
     spellsByLevel[level].push(spellData);
@@ -105,7 +95,7 @@ export async function organizeSpellsByLevel(spellItems, actor = null) {
     processedSpellNames.add(spellName);
   }
 
-  // Next, add any additional spells directly from the actor (only if actor is provided)
+  // Add actor's spells if an actor is provided
   if (actor) {
     const actorSpells = await findActorSpells(actor, processedSpellIds, processedSpellNames);
 
@@ -118,21 +108,15 @@ export async function organizeSpellsByLevel(spellItems, actor = null) {
         spellsByLevel[level] = [];
       }
 
-      // Pass the actual spell object directly
-      const prepStatus = preparationUtils.getSpellPreparationStatus(actor, spell);
-      const filterData = formattingUtils.extractSpellFilterData(spell);
-      const formattedDetails = formattingUtils.formatSpellDetails(spell);
-
+      // Process actor's spell
       const spellData = {
         ...spell,
-        preparation: prepStatus,
-        filterData,
-        formattedDetails
+        preparation: preparationUtils.getSpellPreparationStatus(actor, spell),
+        filterData: formattingUtils.extractSpellFilterData(spell),
+        formattedDetails: formattingUtils.formatSpellDetails(spell)
       };
 
       spellsByLevel[level].push(spellData);
-      processedSpellIds.add(spell.id || spell.uuid);
-      processedSpellNames.add(spell.name.toLowerCase());
     }
   }
 
@@ -143,13 +127,13 @@ export async function organizeSpellsByLevel(spellItems, actor = null) {
     }
   }
 
-  // Convert to sorted array for handlebars
+  // Convert to sorted array for templates
   const result = Object.entries(spellsByLevel)
     .sort(([a, b]) => Number(a) - Number(b))
     .map(([level, spells]) => ({
       level: level,
       levelName: CONFIG.DND5E.spellLevels[level],
-      spells: spells // These are now pre-sorted alphabetically
+      spells: spells
     }));
 
   log(3, `Final organized spell levels: ${result.length}`);
@@ -177,11 +161,7 @@ export async function findActorSpells(actor, processedSpellIds, processedSpellNa
     }
 
     const source = preparationUtils.determineSpellSource(actor, spell);
-
-    newSpells.push({
-      spell,
-      source
-    });
+    newSpells.push({ spell, source });
   }
 
   return newSpells;

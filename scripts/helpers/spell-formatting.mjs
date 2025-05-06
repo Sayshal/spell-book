@@ -6,7 +6,7 @@
 
 /**
  * Format spell details for display
- * @param {Object} spell - The spell object with or without labels
+ * @param {Object} spell - The spell object
  * @returns {string} - Formatted spell details string
  */
 export function formatSpellDetails(spell) {
@@ -34,7 +34,7 @@ export function formatSpellDetails(spell) {
     }
   }
 
-  // Format components with commas between them
+  // Format components
   const componentsStr = components.length > 0 ? components.join(', ') : '';
   if (componentsStr) {
     details.push(componentsStr);
@@ -46,8 +46,6 @@ export function formatSpellDetails(spell) {
   } else if (spell.system?.activation?.type) {
     const activationType = spell.system.activation.type;
     const activationValue = spell.system.activation.value || 1;
-
-    // Get activation type label directly from config
     const typeLabel = CONFIG.DND5E.abilityActivationTypes[activationType];
 
     // Format activation string
@@ -55,7 +53,6 @@ export function formatSpellDetails(spell) {
     if (activationValue === 1 || activationValue === null) {
       activationStr = typeLabel;
     } else {
-      // Pluralize for values > 1
       activationStr = `${activationValue} ${typeLabel}s`;
     }
 
@@ -66,7 +63,6 @@ export function formatSpellDetails(spell) {
   if (spell.labels?.school) {
     details.push(spell.labels.school);
   } else if (spell.system?.school) {
-    // Get school label from config
     const schoolLabel = CONFIG.DND5E.spellSchools[spell.system.school].label;
     details.push(schoolLabel);
   }
@@ -83,12 +79,12 @@ export function formatSpellDetails(spell) {
 export function getLocalizedPreparationMode(mode) {
   if (!mode) return '';
 
-  // Check if this mode exists in the system configuration
+  // Use system configuration if available
   if (CONFIG.DND5E.spellPreparationModes[mode]?.label) {
     return CONFIG.DND5E.spellPreparationModes[mode].label;
   }
 
-  // Fallback: capitalize first letter if not found in config
+  // Fallback: capitalize first letter
   return mode.charAt(0).toUpperCase() + mode.slice(1);
 }
 
@@ -126,10 +122,9 @@ export function extractSpellFilterData(spell) {
   // Extract from system.activities damage parts
   if (spell.system?.activities) {
     for (const [_key, activity] of Object.entries(spell.system.activities)) {
-      // Check if the activity has damage parts
       if (activity.damage?.parts?.length) {
         for (const part of activity.damage.parts) {
-          // Check for types array in the damage part (new structure)
+          // Check for types array (new structure)
           if (part.types && Array.isArray(part.types) && part.types.length) {
             for (const type of part.types) {
               if (!damageTypes.includes(type)) {
@@ -137,7 +132,7 @@ export function extractSpellFilterData(spell) {
               }
             }
           }
-          // Check for traditional damage type as second element
+          // Check for traditional damage type
           else if (part[1] && !damageTypes.includes(part[1])) {
             damageTypes.push(part[1]);
           }
@@ -158,9 +153,9 @@ export function extractSpellFilterData(spell) {
   const concentration = spell.system.duration?.concentration || false;
 
   // Check for saving throws
-  let requiresSave = checkSpellRequiresSave(spell);
+  const requiresSave = checkSpellRequiresSave(spell);
 
-  // Extract conditions applied by scanning description
+  // Extract conditions
   const conditions = extractSpellConditions(spell);
 
   return {
@@ -178,10 +173,9 @@ export function extractSpellFilterData(spell) {
  * Check if a spell requires a saving throw
  * @param {Object} spell - The spell document
  * @returns {boolean} - Whether the spell requires a save
- * @private
  */
 function checkSpellRequiresSave(spell) {
-  // First check activities
+  // Check activities
   if (spell.system.activities) {
     for (const [_key, activity] of Object.entries(spell.system.activities)) {
       if (activity.value?.type === 'save') {
@@ -190,7 +184,7 @@ function checkSpellRequiresSave(spell) {
     }
   }
 
-  // If no saving throw detected in activities, check description
+  // Check description for saving throw text
   if (spell.system.description?.value) {
     const saveText = game.i18n.localize('SPELLBOOK.Filters.SavingThrow').toLowerCase();
     if (spell.system.description.value.toLowerCase().includes(saveText)) {
@@ -205,14 +199,12 @@ function checkSpellRequiresSave(spell) {
  * Extract conditions that might be applied by a spell
  * @param {Object} spell - The spell document
  * @returns {string[]} - Array of condition keys
- * @private
  */
 function extractSpellConditions(spell) {
   const conditions = [];
   const description = spell.system.description?.value || '';
 
   if (description) {
-    // Convert to lowercase for case-insensitive matching
     const lowerDesc = description.toLowerCase();
 
     // Check for each condition
@@ -226,64 +218,42 @@ function extractSpellConditions(spell) {
   return conditions;
 }
 
-// Icon cache to avoid repeated creation of the same spell icon
-const iconCache = new Map();
-
 /**
- * Create a spell icon link directly without using TextEditor.enrichHTML
+ * Create a spell icon link
  * @param {Object} spell - The spell data object
- * @returns {string} - HTML string with directly created icon link
+ * @returns {string} - HTML string with icon link
  */
 export function createSpellIconLink(spell) {
-  // Get the uuid, ensuring we have a valid reference
+  // Get the uuid
   const uuid = spell.compendiumUuid || spell.uuid || spell?._stats?.compendiumSource;
   if (!uuid) {
     // Fallback for spells without UUID
     return `<img src="${spell.img}" class="spell-icon" alt="${spell.name} icon">`;
   }
 
-  // Check cache first
-  const cacheKey = `${uuid}|${spell.img}`;
-  if (iconCache.has(cacheKey)) {
-    return iconCache.get(cacheKey);
-  }
-
   try {
     const parsed = foundry.utils.parseUuid(uuid);
 
-    // Extract the needed components
+    // Extract components
     const itemId = parsed.id || '';
     const entityType = parsed.type || 'Item';
-
-    // For compendium items, get the pack ID
     let packId = '';
+
     if (parsed.collection) {
       packId = parsed.collection.collection || '';
     }
 
-    // Create the HTML directly with all needed attributes
-    const iconHTML = `<a class="content-link" draggable="true" data-link=""
+    // Create HTML directly
+    return `<a class="content-link" draggable="true" data-link=""
       data-uuid="${uuid}" data-id="${itemId}" data-type="${entityType}"
       data-pack="${packId}" data-tooltip="${spell.name}">
       <img src="${spell.img}" class="spell-icon" alt="${spell.name} icon">
     </a>`
       .replace(/\s+/g, ' ')
       .trim();
-
-    // Store in cache
-    iconCache.set(cacheKey, iconHTML);
-
-    return iconHTML;
   } catch (error) {
     console.error(`Error creating spell icon link for ${spell.name}:`, error);
-    // Fallback to simple image
+    // Fallback
     return `<img src="${spell.img}" class="spell-icon" alt="${spell.name} icon">`;
   }
-}
-
-/**
- * Clear the icon cache
- */
-export function clearIconCache() {
-  iconCache.clear();
 }

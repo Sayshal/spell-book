@@ -1,0 +1,10 @@
+<div class="filter-item range-filter" data-filter-id="{{id}}">
+	<label id="{{id}}-label">{{label}}</label>
+	<div class="range-inputs" role="group" aria-labelledby="{{id}}-label">
+		<input type="number" name="{{minName}}" id="{{minId}}" min="0" max="1000" placeholder="{{minPlaceholder}}"
+			value="{{minValue}}" aria-label="{{minLabel}}">
+		<div class="range-separator" aria-hidden="true">-</div>
+		<input type="number" name="{{maxName}}" id="{{maxId}}" min="0" max="1000" placeholder="{{maxPlaceholder}}"
+			value="{{maxValue}}" aria-label="{{maxLabel}}">
+	</div>
+</div>

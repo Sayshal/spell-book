@@ -3,6 +3,10 @@
  * @module spell-book/constants
  */
 
+//-----------------------------------------------------------------------------
+// CORE MODULE IDENTIFICATION
+//-----------------------------------------------------------------------------
+
 /**
  * Core module identification and configuration constants
  * @type {Object}
@@ -11,132 +15,137 @@ export const MODULE = {
   /**
    * Unique identifier for the module
    * @type {string}
-   * @example 'spell-book'
    */
   ID: 'spell-book',
 
   /**
    * Display name of the module
    * @type {string}
-   * @example 'Spell Book'
    */
   NAME: 'Spell Book',
-
-  /**
-   * Flags used for data storage and state tracking
-   * @type {Object}
-   */
-  FLAGS: {
-    /**
-     * Flag name for storing prepared spells on an actor
-     * @type {string}
-     */
-    PREPARED_SPELLS: 'preparedSpells',
-
-    /**
-     * Flag name for storing collapsed spell levels in UI
-     * @type {string}
-     */
-    COLLAPSED_LEVELS: 'collapsedSpellLevels',
-
-    /**
-     * Flag name for sidebar collapsed state
-     * @type {string}
-     */
-    SIDEBAR_COLLAPSED: 'sidebarCollapsed'
-  },
-
-  /**
-   * Handlebars template paths used by the module
-   * @type {Object}
-   */
-  TEMPLATES: {
-    /**
-     * Main spell book content template
-     * @type {string}
-     */
-    SPELL_BOOK_CONTENT: 'modules/spell-book/templates/spell-book.hbs',
-
-    /**
-     * Sidebar template for filters
-     * @type {string}
-     */
-    SPELL_BOOK_SIDEBAR: 'modules/spell-book/templates/spell-book-sidebar.hbs',
-
-    /**
-     * Spell list template
-     * @type {string}
-     */
-    SPELL_BOOK_LIST: 'modules/spell-book/templates/spell-book-list.hbs',
-
-    /**
-     * Footer template with action buttons
-     * @type {string}
-     */
-    SPELL_BOOK_FOOTER: 'modules/spell-book/templates/spell-book-footer.hbs',
-
-    /**
-     * Filter configuration template
-     * @type {string}
-     */
-    FILTER_CONFIG: 'modules/spell-book/templates/player-filter-configuration.hbs',
-    GM_SPELL_LIST_MANAGER: 'modules/spell-book/templates/gm-spell-list-manager.hbs',
-    GM_SPELL_LIST_MANAGER_LEFT: 'modules/spell-book/templates/gm-spell-list-manager-left.hbs',
-    GM_SPELL_LIST_MANAGER_MIDDLE: 'modules/spell-book/templates/gm-spell-list-manager-middle.hbs',
-    GM_SPELL_LIST_MANAGER_RIGHT: 'modules/spell-book/templates/gm-spell-list-manager-right.hbs',
-    GM_SPELL_LIST_MANAGER_FOOTER: 'modules/spell-book/templates/gm-spell-list-manager-footer.hbs'
-  },
 
   /**
    * Logging level for the module
    * 0 = none, 1 = errors, 2 = warnings, 3 = verbose
    * @type {number}
    */
-  LOG_LEVEL: 0,
+  LOG_LEVEL: 0
+};
+
+//-----------------------------------------------------------------------------
+// FLAGS
+//-----------------------------------------------------------------------------
+
+/**
+ * Flags used for data storage and state tracking
+ * @type {Object}
+ */
+export const FLAGS = {
+  /**
+   * Flag name for storing prepared spells on an actor
+   * @type {string}
+   */
+  PREPARED_SPELLS: 'preparedSpells',
 
   /**
-   * Collections of spellcasting classes categorized by type
-   * Populated during initialization
-   * @type {Object}
+   * Flag name for storing collapsed spell levels in UI
+   * @type {string}
    */
-  SPELLCASTING_CLASSES: {
-    /**
-     * Classes with "known" spell progression
-     * @type {Array}
-     */
-    KNOWN: [],
+  COLLAPSED_LEVELS: 'collapsedSpellLevels',
 
-    /**
-     * Classes with "pact" spell progression
-     * @type {Array}
-     */
-    PACT: []
+  /**
+   * Flag name for sidebar collapsed state
+   * @type {string}
+   */
+  SIDEBAR_COLLAPSED: 'sidebarCollapsed'
+};
+
+// Add flags to MODULE object for backward compatibility
+MODULE.FLAGS = FLAGS;
+
+//-----------------------------------------------------------------------------
+// TEMPLATE PATHS
+//-----------------------------------------------------------------------------
+
+/**
+ * Handlebars template paths used by the module
+ * @type {Object}
+ */
+export const TEMPLATES = {
+  PLAYER: {
+    MAIN: 'modules/spell-book/templates/player/spell-book.hbs',
+    SIDEBAR: 'modules/spell-book/templates/player/sidebar.hbs',
+    SPELL_LIST: 'modules/spell-book/templates/player/spell-list.hbs',
+    FOOTER: 'modules/spell-book/templates/player/footer.hbs'
+  },
+
+  GM: {
+    MAIN: 'modules/spell-book/templates/gm/manager.hbs',
+    SPELL_LISTS: 'modules/spell-book/templates/gm/spell-lists.hbs',
+    LIST_CONTENT: 'modules/spell-book/templates/gm/list-content.hbs',
+    AVAILABLE_SPELLS: 'modules/spell-book/templates/gm/available-spells.hbs',
+    FOOTER: 'modules/spell-book/templates/gm/footer.hbs'
+  },
+
+  COMPONENTS: {
+    LOADING: 'modules/spell-book/templates/components/loading-spinner.hbs',
+    ERROR: 'modules/spell-book/templates/components/error-message.hbs',
+    EMPTY: 'modules/spell-book/templates/components/empty-state.hbs',
+    SPELL_LEVEL: 'modules/spell-book/templates/components/spell-level.hbs',
+    SPELL_ITEM: 'modules/spell-book/templates/components/spell-item.hbs',
+    FILTERS: {
+      SEARCH: 'modules/spell-book/templates/components/filter-fields/search.hbs',
+      DROPDOWN: 'modules/spell-book/templates/components/filter-fields/dropdown.hbs',
+      RANGE: 'modules/spell-book/templates/components/filter-fields/range.hbs',
+      CHECKBOX: 'modules/spell-book/templates/components/filter-fields/checkbox.hbs'
+    }
   },
 
   /**
-   * Cache for storing frequently accessed data
+   * Dialog templates
    * @type {Object}
    */
-  CACHE: {
+  DIALOGS: {
     /**
-     * Cached spell data by actor/level
-     * @type {Object}
+     * Filter configuration dialog
+     * @type {string}
      */
-    spellData: {},
-
-    /**
-     * Timestamp of when spell data was cached
-     * @type {Object}
-     */
-    spellDataTime: {},
-
-    /**
-     * Fully processed spell data ready for display
-     * @type {Object}
-     */
-    processedData: {}
+    FILTER_CONFIG: 'modules/spell-book/templates/dialogs/filter-configuration.hbs'
   }
 };
+
+// Add templates to MODULE object for backward compatibility
+MODULE.TEMPLATES = TEMPLATES;
+
+//-----------------------------------------------------------------------------
+// SPELLCASTING CLASSES
+//-----------------------------------------------------------------------------
+
+/**
+ * Collections of spellcasting classes categorized by type
+ * Populated during initialization
+ * @type {Object}
+ */
+export const SPELLCASTING_CLASSES = {
+  /**
+   * Classes with "known" spell progression
+   * @type {Array}
+   */
+  KNOWN: [],
+
+  /**
+   * Classes with "pact" spell progression
+   * @type {Array}
+   */
+  PACT: []
+};
+
+// Add spellcasting classes to MODULE object for backward compatibility
+MODULE.SPELLCASTING_CLASSES = SPELLCASTING_CLASSES;
+
+//-----------------------------------------------------------------------------
+// SETTINGS
+//-----------------------------------------------------------------------------
 
 /**
  * Settings keys used by the module
@@ -165,8 +174,24 @@ export const SETTINGS_KEYS = {
    * Filter configuration setting key
    * @type {string}
    */
-  FILTER_CONFIGURATION: 'filterConfiguration'
+  FILTER_CONFIGURATION: 'filterConfiguration',
+
+  /**
+   * Custom spell list mappings setting key
+   * @type {string}
+   */
+  CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',
+
+  /**
+   * Spell manager page size setting key
+   * @type {string}
+   */
+  SPELL_MANAGER_PAGE_SIZE: 'spellManagerPageSize'
 };
+
+//-----------------------------------------------------------------------------
+// FILTER CONFIGURATION
+//-----------------------------------------------------------------------------
 
 /**
  * Filter types used in configuration
@@ -196,14 +221,17 @@ export const SORT_BY = {
  * @type {Array}
  */
 export const DEFAULT_FILTER_CONFIG = [
+  // Search filter (always at top)
   {
     id: 'name',
     type: FILTER_TYPES.SEARCH,
     enabled: true,
     order: 10,
     label: 'SPELLBOOK.Filters.SearchPlaceholder',
-    sortable: false // Keep search at the top
+    sortable: false
   },
+
+  // Dropdown filters (middle)
   {
     id: 'level',
     type: FILTER_TYPES.DROPDOWN,
@@ -268,21 +296,25 @@ export const DEFAULT_FILTER_CONFIG = [
     label: 'SPELLBOOK.Filters.RequiresConcentration',
     sortable: true
   },
+
+  // Sort options (always at bottom)
   {
     id: 'sortBy',
     type: FILTER_TYPES.DROPDOWN,
     enabled: true,
     order: 1000,
     label: 'SPELLBOOK.Filters.SortBy',
-    sortable: false // Keep sort option at the bottom
+    sortable: false
   },
+
+  // Checkbox filters (always at bottom)
   {
     id: 'prepared',
     type: FILTER_TYPES.CHECKBOX,
     enabled: true,
     order: 2000,
     label: 'SPELLBOOK.Filters.PreparedOnly',
-    sortable: false // Keep checkboxes at the bottom
+    sortable: false
   },
   {
     id: 'ritual',
@@ -290,18 +322,6 @@ export const DEFAULT_FILTER_CONFIG = [
     enabled: true,
     order: 3000,
     label: 'SPELLBOOK.Filters.RitualOnly',
-    sortable: false // Keep checkboxes at the bottom
+    sortable: false
   }
 ];
-
-/**
- * Cache settings
- * @type {Object}
- */
-export const CACHE_CONFIG = {
-  /**
-   * How long to keep cached data in milliseconds (5 minutes)
-   * @type {number}
-   */
-  TTL: 5 * 60 * 1000
-};

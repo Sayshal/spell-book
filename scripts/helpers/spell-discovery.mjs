@@ -49,7 +49,7 @@ export async function discoverSpellcastingClasses() {
             uuid: classItem.uuid
           };
 
-          // Categorize by type first
+          // Categorize by type
           const spellcastingType = classItem.system?.spellcasting?.type;
           if (spellcastingType === 'pact') {
             if (!MODULE.SPELLCASTING_CLASSES.PACT.some((c) => c.name === className && c.source === sourceId)) {
@@ -74,7 +74,7 @@ export async function discoverSpellcastingClasses() {
  * Get a class's spell list from compendium journals
  * @param {string} className - The name of the class
  * @param {string} [classUuid] - Optional UUID of the class item
- * @returns {Promise<Set<string>>} - Set of spell UUIDs or empty set if none found
+ * @returns {Promise<Set<string>>} - Set of spell UUIDs
  */
 export async function getClassSpellList(className, classUuid) {
   log(3, `Getting spell list for ${className}`);
@@ -82,7 +82,7 @@ export async function getClassSpellList(className, classUuid) {
   // Normalize the class name for comparison
   const normalizedClassName = className.toLowerCase();
 
-  // If classUuid is provided, first extract its source
+  // Extract source compendium if classUuid is provided
   let sourceCompendium = null;
   if (classUuid) {
     try {
@@ -94,37 +94,33 @@ export async function getClassSpellList(className, classUuid) {
     }
   }
 
-  // Filter for journal-type compendium packs that match the source
+  // Get journal packs that match the source
   const journalPacks = Array.from(game.packs)
     .filter((p) => p.metadata.type === 'JournalEntry')
     .filter((p) => !sourceCompendium || p.metadata.packageName === sourceCompendium.split('.')[1]);
 
   log(3, `Searching ${journalPacks.length} journal packs`);
 
-  // Get mappings for custom spell lists
+  // Get custom mappings
   const customMappings = game.settings.get(MODULE.ID, 'customSpellListMappings') || {};
 
+  // Search each pack
   for (const pack of journalPacks) {
     try {
-      // Just get the basic index first
       const index = await pack.getIndex();
-
-      // Convert to array for easier processing
       const entries = Array.from(index.values());
 
-      // Process each journal in the pack
       for (const journalData of entries) {
         try {
-          // Load the full document
           const journal = await pack.getDocument(journalData._id);
 
-          // Check each page in the journal
           for (const page of journal.pages) {
-            // Skip pages that aren't spell lists
+            // Skip non-spell list pages
             if (page.type !== 'spells') continue;
 
             const pageName = page.name?.toLowerCase() || '';
             const pageIdentifier = page.system?.identifier?.toLowerCase() || '';
+
             const isNameMatch = pageIdentifier === normalizedClassName || pageName.includes(`${normalizedClassName} spell`) || pageName.includes(`${normalizedClassName}'s spell`);
 
             const isUuidMatch = !sourceCompendium || sourceCompendium.split('.').slice(0, 2).join('.') === journal.uuid.split('.').slice(0, 2).join('.');
@@ -135,7 +131,7 @@ export async function getClassSpellList(className, classUuid) {
               // Check for custom version
               if (customMappings[page.uuid]) {
                 try {
-                  log(3, `Found custom mapping for ${page.name}, checking custom version`);
+                  log(3, `Found custom mapping, checking custom version`);
                   const customList = await fromUuid(customMappings[page.uuid]);
                   if (customList && customList.system.spells.size > 0) {
                     log(3, `Using custom spell list with ${customList.system.spells.size} spells`);
@@ -145,11 +141,10 @@ export async function getClassSpellList(className, classUuid) {
                   }
                 } catch (error) {
                   log(2, `Error retrieving custom spell list: ${error.message}`);
-                  // Fall back to original
                 }
               }
 
-              // Direct check for spells array (original list)
+              // Use original list
               if (page.system.spells.size > 0) {
                 log(3, `Found ${page.system.spells.size} spells`);
                 return page.system.spells;
@@ -167,7 +162,7 @@ export async function getClassSpellList(className, classUuid) {
   }
 
   log(2, `No spell list found for ${className}`);
-  return new Set(); // Return empty set instead of null for consistency
+  return new Set(); // Return empty set
 }
 
 /**
@@ -180,16 +175,16 @@ export function findSpellcastingClass(actor) {
 }
 
 /**
- * Calculate the maximum spell level available to a character based on class and level
+ * Calculate the maximum spell level available to a character
  * @param {number} actorLevel - The actor's level
- * @param {object} spellcasting - The spellcasting configuration from the class
+ * @param {object} spellcasting - The spellcasting configuration
  * @returns {number} - The maximum spell level (0 for cantrips only)
  */
 export function calculateMaxSpellLevel(actorLevel, spellcasting) {
   let maxSpellLevel = 0; // Default to cantrips
 
   if (spellcasting && spellcasting.progression !== 'none') {
-    // Adjust index to be 0-based and clamped
+    // Adjust index and get spell slots
     const levelIndex = Math.min(Math.max(actorLevel - 1, 0), CONFIG.DND5E.SPELL_SLOT_TABLE.length - 1);
     const spellSlots = CONFIG.DND5E.SPELL_SLOT_TABLE[levelIndex];
 

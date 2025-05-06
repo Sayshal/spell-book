@@ -1,0 +1,40 @@
+<div class="filter-config-form">
+	<p>{{localize "SPELLBOOK.Settings.FilterInstructions"}}</p>
+	<ul class="filter-config-list" role="list" aria-label="{{localize 'SPELLBOOK.Settings.FilterConfigListLabel'}}">
+		{{#each filterConfig as |filter index|}}
+			<li data-filter-id="{{filter.id}}" data-index="{{index}}"
+				class="filter-item {{#unless filter.sortable}}not-sortable{{/unless}}" role="listitem"
+				aria-label="{{localize filter.label}}" {{#if filter.sortable}}aria-grabbed="false" aria-dropeffect="move"
+				{{/if}}>
+				<div class="filter-config-item">
+					<div class="drag-handle" aria-hidden="true">
+						{{#if filter.sortable}}<i class="fas fa-grip-lines"></i>{{else}}<i class="fas fa-lock"></i>{{/if}}
+					</div>
+					<input type="checkbox" name="enabled-{{filter.id}}" id="enabled-{{filter.id}}" {{checked filter.enabled}}
+						aria-label="{{localize 'SPELLBOOK.Settings.EnableFilter' name=(localize filter.label)}}">
+					<span class="filter-name">{{localize filter.label}}</span>
+					{{#unless filter.sortable}}
+						<span class="fixed-position-note" aria-label="{{localize 'SPELLBOOK.Settings.FixedPositionDesc'}}">
+							{{localize "SPELLBOOK.Settings.FixedPosition"}}
+						</span>
+					{{/unless}}
+				</div>
+				<input type="hidden" name="order-{{filter.id}}" value="{{filter.order}}">
+				<input type="hidden" name="sortable-{{filter.id}}" value="{{filter.sortable}}">
+			</li>
+		{{/each}}
+	</ul>
+
+	<footer class="filter-config-footer">
+		<div class="footer-buttons" role="toolbar" aria-label="{{localize 'SPELLBOOK.Settings.FilterConfigActions'}}">
+			{{#each buttons as |button|}}
+				<button type="{{button.type}}" {{#if button.name}}name="{{button.name}}" {{/if}} class="{{button.cssClass}}"
+					{{#if button.action}}data-action="{{button.action}}" {{/if}} {{disabled button.disabled}}
+					aria-label="{{localize button.label}}">
+					{{#if button.icon}}<i class="{{button.icon}}" aria-hidden="true"></i>{{/if}}
+					{{localize button.label}}
+				</button>
+			{{/each}}
+		</div>
+	</footer>
+</div>

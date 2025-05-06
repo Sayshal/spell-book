@@ -1,0 +1,14 @@
+<div class="spell-level" data-level="{{level}}">
+	<h3 class="spell-level-heading" data-action="toggleSpellLevel" role="button" aria-expanded="true"
+		aria-controls="spell-list-{{level}}">
+		<i class="fas fa-caret-down collapse-indicator" aria-hidden="true"></i>
+		{{levelName}}
+		<span class="spell-count"
+			aria-label="{{localize 'SPELLBOOK.UI.SpellCount' count=spells.length}}">({{spells.length}})</span>
+	</h3>
+	<ul id="spell-list-{{level}}" class="spell-list" role="list">
+		{{#each spells as |spell|}}
+			{{> @partial-block spell}}
+		{{/each}}
+	</ul>
+</div>

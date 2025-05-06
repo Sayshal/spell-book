@@ -1,0 +1,32 @@
+<div class="spell-book-container">
+	<!-- Sidebar section -->
+	<div class="sidebar card" role="complementary" aria-label="{{localize 'SPELLBOOK.UI.FilterControls'}}">
+		<!-- Filter Configuration Button -->
+		<button type="button" class="filter-config-button unbutton interface-only" data-action="configureFilters"
+			data-tooltip="{{localize 'SPELLBOOK.Settings.ConfigureFilters'}}"
+			aria-label="{{localize 'SPELLBOOK.Settings.ConfigureFilters'}}">
+			<i class="fas fa-cog" aria-hidden="true"></i>
+		</button>
+
+		<!-- Sidebar Collapse Button -->
+		<button type="button" class="sidebar-collapser collapser vertical unbutton interface-only"
+			data-action="toggleSidebar" data-tooltip="{{localize 'SPELLBOOK.UI.ToggleSidebar'}}"
+			aria-label="{{localize 'SPELLBOOK.UI.ToggleSidebar'}}" aria-expanded="true">
+			<i class="fas fa-caret-left" aria-hidden="true"></i>
+		</button>
+
+		{{> "modules/spell-book/templates/player/sidebar.hbs"}}
+
+		<!-- Footer container for open sidebar -->
+		<div class="sidebar-footer-container"></div>
+	</div>
+
+	<!-- Main content -->
+	<section class="spell-book-content" role="main" aria-label="{{localize 'SPELLBOOK.UI.SpellList'}}">
+		{{> "modules/spell-book/templates/player/spell-list.hbs"}}
+	</section>
+
+	<!-- Footer container for collapsed sidebar -->
+	<div class="collapsed-footer hidden" role="complementary" aria-label="{{localize 'SPELLBOOK.UI.SpellPreparation'}}">
+	</div>
+</div>

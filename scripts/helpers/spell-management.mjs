@@ -7,19 +7,11 @@ import { MODULE } from '../constants.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { log } from '../logger.mjs';
 
-// Cache for compendium spell lists
-const spellListCache = new Map();
-
 /**
  * Scan compendiums for spell lists
  * @returns {Promise<Array>} Array of spell list objects with metadata
  */
 export async function findCompendiumSpellLists() {
-  // Check if we have a cached result
-  if (spellListCache.has('allSpellLists')) {
-    return spellListCache.get('allSpellLists');
-  }
-
   const spellLists = [];
 
   // Get all journal-type compendium packs
@@ -29,29 +21,22 @@ export async function findCompendiumSpellLists() {
 
   for (const pack of journalPacks) {
     try {
-      // Skip our own custom spell lists pack
+      // Skip custom spell lists pack
       if (pack.metadata.id === `${MODULE.ID}.custom-spell-lists`) {
         continue;
       }
 
-      // Get the basic index
       const index = await pack.getIndex();
-
-      // Convert to array for easier processing
       const entries = Array.from(index.values());
 
-      // Process each journal in the pack
       for (const journalData of entries) {
         try {
-          // Load the full document
           const journal = await pack.getDocument(journalData._id);
 
-          // Check each page in the journal
           for (const page of journal.pages) {
-            // Skip pages that aren't spell lists
+            // Skip non-spell list pages
             if (page.type !== 'spells') continue;
 
-            // This is a spell list, add to our results
             spellLists.push({
               uuid: page.uuid,
               name: page.name,
@@ -74,19 +59,7 @@ export async function findCompendiumSpellLists() {
   }
 
   log(3, `Found ${spellLists.length} total spell lists`);
-
-  // Cache the result
-  spellListCache.set('allSpellLists', spellLists);
-
   return spellLists;
-}
-
-/**
- * Clear the spell list cache
- * Call this when compendium content may have changed
- */
-export function clearSpellListCache() {
-  spellListCache.clear();
 }
 
 /**
@@ -107,17 +80,17 @@ export async function compareListVersions(originalUuid, customUuid) {
       };
     }
 
-    // Get modification times for both
+    // Get modification times
     const originalModTime = original._stats?.modifiedTime || 0;
     const customModTime = custom._stats?.modifiedTime || 0;
     const originalVersion = original._stats?.systemVersion || '';
     const customVersion = custom._stats?.systemVersion || '';
 
-    // Get stats saved when custom version was created
+    // Get saved stats
     const savedOriginalModTime = custom.flags?.[MODULE.ID]?.originalModTime || 0;
     const savedOriginalVersion = custom.flags?.[MODULE.ID]?.originalVersion || '';
 
-    // Check if original has been updated
+    // Check if original has changed
     const hasOriginalChanged = originalModTime > savedOriginalModTime || originalVersion !== savedOriginalVersion;
 
     // Compare spell lists
@@ -177,11 +150,11 @@ export async function duplicateSpellList(originalSpellList) {
     // Check if a duplicate already exists
     const existingDuplicate = await findDuplicateSpellList(originalSpellList.uuid);
     if (existingDuplicate) {
-      log(3, `Duplicate already exists, returning existing duplicate: ${existingDuplicate.name}`);
+      log(3, `Duplicate already exists: ${existingDuplicate.name}`);
       return existingDuplicate;
     }
 
-    // Create a copy of the original spell list data
+    // Create a copy of the original data
     const pageData = originalSpellList.toObject();
 
     // Add flags to track the original
@@ -194,10 +167,10 @@ export async function duplicateSpellList(originalSpellList) {
       isDuplicate: true
     };
 
-    // Create a new journal entry with the page already included
+    // Create journal name
     const journalName = `${originalSpellList.parent.name} - ${originalSpellList.name}`;
 
-    // Create journal with pages array that includes our spell list
+    // Create journal with pages
     const journalData = {
       name: journalName,
       pages: [
@@ -210,19 +183,14 @@ export async function duplicateSpellList(originalSpellList) {
       ]
     };
 
-    // Create the journal in the custom pack
+    // Create the journal
     const journal = await JournalEntry.create(journalData, { pack: customPack.collection });
-
-    // Get the first page which is our spell list
     const page = journal.pages.contents[0];
 
-    // Update mapping settings
+    // Update mapping
     await updateSpellListMapping(originalSpellList.uuid, page.uuid);
 
-    // Clear the cache
-    clearSpellListCache();
-
-    log(3, `Successfully duplicated spell list: ${originalSpellList.name} to ${page.uuid}`);
+    log(3, `Successfully duplicated spell list to ${page.uuid}`);
     return page;
   } catch (error) {
     log(1, `Error duplicating spell list: ${error.message}`);
@@ -230,53 +198,34 @@ export async function duplicateSpellList(originalSpellList) {
   }
 }
 
-// Cache for duplicate lookup
-const duplicateCache = new Map();
-
 /**
  * Find a duplicate spell list in the custom pack
  * @param {string} originalUuid - UUID of the original spell list
- * @returns {Promise<JournalEntryPage|null>} The duplicate spell list or null
+ * @returns {Promise<JournalEntryPage|null>} The duplicate or null
  */
 export async function findDuplicateSpellList(originalUuid) {
-  // Check cache first
-  if (duplicateCache.has(originalUuid)) {
-    return duplicateCache.get(originalUuid);
-  }
-
   try {
     const customPack = game.packs.get(`${MODULE.ID}.custom-spell-lists`);
     if (!customPack) return null;
 
-    // Get all journal entries in the custom pack
+    // Get all journals
     const journals = await customPack.getDocuments();
 
-    // Search through all pages in all journals
+    // Search through all pages
     for (const journal of journals) {
       for (const page of journal.pages) {
         const flags = page.flags?.[MODULE.ID] || {};
         if (flags.originalUuid === originalUuid) {
-          // Cache the result
-          duplicateCache.set(originalUuid, page);
           return page;
         }
       }
     }
 
-    // Cache the null result too
-    duplicateCache.set(originalUuid, null);
     return null;
   } catch (error) {
     log(1, `Error finding duplicate spell list: ${error.message}`);
     return null;
   }
-}
-
-/**
- * Clear the duplicate cache
- */
-export function clearDuplicateCache() {
-  duplicateCache.clear();
 }
 
 /**
@@ -289,14 +238,11 @@ export async function updateSpellListMapping(originalUuid, duplicateUuid) {
   try {
     const mappings = game.settings.get(MODULE.ID, 'customSpellListMappings') || {};
 
-    // Add or update the mapping
+    // Add or update mapping
     mappings[originalUuid] = duplicateUuid;
 
     // Save to settings
     await game.settings.set(MODULE.ID, 'customSpellListMappings', mappings);
-
-    // Clear caches
-    clearDuplicateCache();
 
     log(3, `Updated spell list mapping: ${originalUuid} -> ${duplicateUuid}`);
   } catch (error) {
@@ -307,7 +253,7 @@ export async function updateSpellListMapping(originalUuid, duplicateUuid) {
 /**
  * Remove a custom spell list and its mapping
  * @param {string} duplicateUuid - UUID of the duplicate spell list
- * @returns {Promise<boolean>} Whether the removal was successful
+ * @returns {Promise<boolean>} Whether removal was successful
  */
 export async function removeCustomSpellList(duplicateUuid) {
   try {
@@ -330,16 +276,10 @@ export async function removeCustomSpellList(duplicateUuid) {
       const mappings = game.settings.get(MODULE.ID, 'customSpellListMappings') || {};
       delete mappings[originalUuid];
       await game.settings.set(MODULE.ID, 'customSpellListMappings', mappings);
-
-      // Clear caches
-      clearDuplicateCache();
     }
 
-    // Delete the entire journal (which will delete all contained pages)
+    // Delete the journal
     await journal.delete();
-
-    // Clear spell list cache
-    clearSpellListCache();
 
     log(3, `Successfully removed custom spell list journal: ${journal.name}`);
     return true;
@@ -366,10 +306,10 @@ export async function addSpellToList(spellList, spellUuid) {
       return spellList;
     }
 
-    // Add the new spell
+    // Add the spell
     spells.add(spellUuid);
 
-    // Update the spell list
+    // Update the list
     const updated = await spellList.update({
       'system.spells': Array.from(spells)
     });
@@ -386,9 +326,8 @@ export async function addSpellToList(spellList, spellUuid) {
  * Normalize a UUID for comparison
  * @param {string} uuid - The UUID to normalize
  * @returns {string[]} Array of normalized forms
- * @private
  */
-function _normalizeUuid(uuid) {
+function normalizeUuid(uuid) {
   const normalized = [uuid];
 
   try {
@@ -399,12 +338,12 @@ function _normalizeUuid(uuid) {
     const idPart = uuid.split('.').pop();
     if (idPart) normalized.push(idPart);
 
-    // Add normalized form if applicable
+    // Add normalized form
     if (parsed.collection) {
       normalized.push(`Compendium.${parsed.collection.collection}.${parsed.id}`);
     }
   } catch (e) {
-    // Just return the original if parsing fails
+    // Return original if parsing fails
   }
 
   return normalized;
@@ -412,7 +351,7 @@ function _normalizeUuid(uuid) {
 
 /**
  * Remove a spell from a spell list
- * @param {JournalEntryPage} spellList - The spell list to remove from
+ * @param {JournalEntryPage} spellList - The spell list
  * @param {string} spellUuid - UUID of the spell to remove
  * @returns {Promise<JournalEntryPage>} The updated spell list
  */
@@ -422,8 +361,8 @@ export async function removeSpellFromList(spellList, spellUuid) {
     const spells = new Set(spellList.system.spells || []);
     log(3, `Removing spell ${spellUuid} from list with ${spells.size} spells`);
 
-    // Get normalized forms of the UUID to remove
-    const normalizedForms = _normalizeUuid(spellUuid);
+    // Get normalized forms
+    const normalizedForms = normalizeUuid(spellUuid);
 
     // Try each form against the list
     let found = false;
@@ -437,18 +376,18 @@ export async function removeSpellFromList(spellList, spellUuid) {
       }
     }
 
-    // If still not found, check each spell in the list against our normalized forms
+    // If not found, check all spells
     if (!found) {
       for (const existingUuid of spells) {
-        const existingForms = _normalizeUuid(existingUuid);
+        const existingForms = normalizeUuid(existingUuid);
 
-        // Check if any of our forms match any of the existing forms
+        // Check for matches
         const match = normalizedForms.some((form) => existingForms.includes(form));
 
         if (match) {
           spells.delete(existingUuid);
           found = true;
-          log(3, `Removed spell with matching normalized form: ${existingUuid}`);
+          log(3, `Removed spell with matching form: ${existingUuid}`);
           break;
         }
       }
@@ -459,7 +398,7 @@ export async function removeSpellFromList(spellList, spellUuid) {
       return spellList;
     }
 
-    // Update the spell list
+    // Update the list
     log(3, `Updating spell list with ${spells.size} spells`);
     const updated = await spellList.update({
       'system.spells': Array.from(spells)
@@ -473,20 +412,12 @@ export async function removeSpellFromList(spellList, spellUuid) {
   }
 }
 
-// Cache for all compendium spells
-let allSpellsCache = null;
-
 /**
  * Fetch all compendium spells
  * @param {number} [maxLevel=9] - Maximum spell level to include
  * @returns {Promise<Array>} Array of spell items
  */
 export async function fetchAllCompendiumSpells(maxLevel = 9) {
-  // Check cache first
-  if (allSpellsCache) {
-    return allSpellsCache;
-  }
-
   try {
     log(3, 'Fetching all compendium spells');
     const spells = [];
@@ -497,18 +428,18 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
     // Process each pack
     for (const pack of itemPacks) {
       try {
-        // Request additional fields for filtering
+        // Get index with additional fields
         const index = await pack.getIndex({
           fields: ['type', 'system', 'labels']
         });
+
         const spellEntries = index.filter((e) => e.type === 'spell' && (!maxLevel || e.system?.level <= maxLevel));
 
         for (const entry of spellEntries) {
-          // Ensure we have a labels property (might be missing from index)
+          // Ensure we have a labels property
           if (!entry.labels) {
             entry.labels = {};
 
-            // Potentially generate basic labels if needed
             if (entry.system?.level !== undefined) {
               entry.labels.level = CONFIG.DND5E.spellLevels[entry.system.level];
             }
@@ -518,7 +449,7 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
             }
           }
 
-          // Format details using the existing helper
+          // Format details
           let formattedDetails;
           try {
             formattedDetails = formattingUtils.formatSpellDetails(entry);
@@ -540,7 +471,7 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
             labels: entry.labels
           };
 
-          // Add filterData using the enhanced helper
+          // Add filter data
           spell.filterData = formattingUtils.extractSpellFilterData(spell);
 
           spells.push(spell);
@@ -550,31 +481,18 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
       }
     }
 
-    // Sort spells by level and name
+    // Sort spells
     spells.sort((a, b) => {
       if (a.level !== b.level) return a.level - b.level;
       return a.name.localeCompare(b.name);
     });
 
     log(3, `Fetched ${spells.length} compendium spells`);
-
-    // Cache the results
-    allSpellsCache = spells;
-
     return spells;
   } catch (error) {
     log(1, `Error fetching compendium spells: ${error.message}`);
     throw error;
   }
-}
-
-/**
- * Clear the compendium spells cache
- */
-export function clearCompendiumSpellsCache() {
-  allSpellsCache = null;
-  // Also clear icon cache in formatting module
-  formattingUtils.clearIconCache();
 }
 
 /**
@@ -585,7 +503,7 @@ export function clearCompendiumSpellsCache() {
  * @returns {Promise<JournalEntryPage>} The created spell list
  */
 export async function createNewSpellList(name, identifier, source = 'Custom') {
-  // Create an empty journal entry with proper spell list structure
+  // Create journal data
   const journalData = {
     name: `${source} - ${name}`,
     pages: [
@@ -608,16 +526,14 @@ export async function createNewSpellList(name, identifier, source = 'Custom') {
     ]
   };
 
-  // Create in custom pack and return the page
+  // Create in custom pack
   const journal = await JournalEntry.create(journalData, {
     pack: `${MODULE.ID}.custom-spell-lists`
   });
 
-  // Clear caches
-  clearSpellListCache();
-
   return journal.pages.contents[0];
 }
+
 /**
  * Prepare dropdown options for casting time filter
  * @param {Array} availableSpells - The available spells array
@@ -627,7 +543,7 @@ export async function createNewSpellList(name, identifier, source = 'Custom') {
 export function prepareCastingTimeOptions(availableSpells, filterState) {
   const uniqueActivationTypes = new Map();
 
-  // Collect unique combinations without excessive logging
+  // Collect unique combinations
   for (const spell of availableSpells) {
     const activationType = spell.system?.activation?.type;
     const activationValue = spell.system?.activation?.value || 1;
@@ -641,7 +557,7 @@ export function prepareCastingTimeOptions(availableSpells, filterState) {
     }
   }
 
-  // Define priority order for activation types
+  // Define priority order
   const typeOrder = {
     action: 1,
     bonus: 2,
@@ -657,7 +573,7 @@ export function prepareCastingTimeOptions(availableSpells, filterState) {
     none: 12
   };
 
-  // Convert to array and sort
+  // Convert and sort
   const sortableTypes = Array.from(uniqueActivationTypes.entries())
     .map(([key, data]) => ({
       key,
@@ -670,7 +586,7 @@ export function prepareCastingTimeOptions(availableSpells, filterState) {
       return typePriorityA !== typePriorityB ? typePriorityA - typePriorityB : a.value - b.value;
     });
 
-  // Create options with "All" as first option
+  // Create options
   const options = [
     {
       value: '',
@@ -707,7 +623,7 @@ export function prepareDamageTypeOptions(filterState) {
     }
   ];
 
-  // Create a combined damage types object including healing
+  // Create damage types including healing
   const damageTypesWithHealing = {
     ...CONFIG.DND5E.damageTypes,
     healing: { label: game.i18n.localize('DND5E.Healing') }

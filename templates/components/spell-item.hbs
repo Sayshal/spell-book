@@ -1,0 +1,18 @@
+<li class="spell-item{{#if extraClasses}} {{extraClasses}}{{/if}}" data-uuid="{{uuid}}"
+	{{#if extraAttributes}}{{extraAttributes}}{{/if}} role="listitem">
+	<div class="spell-name">
+		{{{enrichedIcon}}}
+		<div class="name-stacked">
+			<span class="title">{{name}}
+				{{#if tag}}
+					<span class="{{tagClass}}" data-tooltip="{{tagTooltip}}">
+						{{tag}}
+					</span>
+				{{/if}}
+			</span>
+			<span class="subtitle">{{formattedDetails}}</span>
+		</div>
+	</div>
+
+	{{> @partial-block}}
+</li>

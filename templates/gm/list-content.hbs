@@ -1,0 +1,79 @@
+<section class="selected-list-content" role="main" aria-label="{{localize 'SPELLMANAGER.UI.SelectedList'}}">
+	{{#if selectedSpellList}}
+		<div class="selected-list-header">
+			<div class="header-title">
+				<h2 id="selected-list-title">{{selectedSpellList.name}}</h2>
+			</div>
+
+			<div class="header-buttons" role="toolbar" aria-label="{{localize 'SPELLMANAGER.UI.ListActions'}}">
+				{{#unless isEditing}}
+					<button type="button" class="edit-button action-button" data-action="editSpellList"
+						data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Edit'}}">
+						<i class="fas fa-edit" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Edit"}}
+					</button>
+				{{else}}
+					{{#if isCustomList}}
+						<div class="custom-list-controls">
+							{{#if compareInfo.hasOriginalChanged}}
+								<span class="update-notice" role="status">{{localize "SPELLMANAGER.Status.UpdateNotice"}}</span>
+							{{/if}}
+
+							<button type="button" class="restore-button action-button" data-action="restoreOriginal"
+								data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Restore'}}">
+								<i class="fas fa-sync" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Restore"}}
+							</button>
+
+							<button type="button" class="delete-button action-button" data-action="deleteCustomList"
+								data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Delete'}}">
+								<i class="fas fa-trash" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Delete"}}
+							</button>
+
+							<button type="button" class="save-button action-button" data-action="saveCustomList"
+								data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Save'}}">
+								<i class="fas fa-save" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Save"}}
+							</button>
+						</div>
+					{{/if}}
+				{{/unless}}
+			</div>
+		</div>
+
+		<div class="selected-list-spells" aria-labelledby="selected-list-title">
+			{{#if selectedSpellList.isLoadingSpells}}
+				{{> "modules/spell-book/templates/components/loading-spinner.hbs" size=2 message=(localize "SPELLMANAGER.Application.LoadingSpells")}}
+			{{else if selectedSpellList.hasError}}
+				{{> "modules/spell-book/templates/components/error-message.hbs" message=(localize "SPELLMANAGER.Application.SpellsError")}}
+			{{else if selectedSpellList.spells.length}}
+				<div class="spells-container">
+					{{#each selectedSpellList.spellsByLevel as |levelData|}}
+						{{#> "modules/spell-book/templates/components/spell-level.hbs" level=levelData.level levelName=levelData.levelName spells=levelData.spells}}
+							<li class="spell-item" data-uuid="{{compendiumUuid}}" role="listitem">
+								<div class="spell-name">
+									{{{enrichedIcon}}}
+									<div class="name-stacked">
+										<span class="title">{{name}}</span>
+										<span class="subtitle">{{formattedDetails}}</span>
+									</div>
+								</div>
+								{{#if @root.isEditing}}
+									<div class="spell-preparation">
+										<button type="button" class="remove-spell" data-action="removeSpell" data-uuid="{{compendiumUuid}}"
+											aria-label="{{localize 'SPELLMANAGER.Buttons.RemoveSpell' name=name}}">
+											<i class="fas fa-trash" aria-hidden="true"></i>
+										</button>
+									</div>
+								{{/if}}
+							</li>
+							{{/modules/spell-book/templates/components/spell-level.hbs}}
+					{{/each}}
+				</div>
+			{{else}}
+				{{> "modules/spell-book/templates/components/empty-state.hbs" message=(ifThen isEditing (localize "SPELLMANAGER.Columns.AddSpellsPrompt") (localize "SPELLMANAGER.Columns.NoSpells"))}}
+			{{/if}}
+		</div>
+	{{else}}
+		<div class="no-selection">
+			<p>{{localize "SPELLMANAGER.Columns.NoListSelected"}}</p>
+		</div>
+	{{/if}}
+</section>

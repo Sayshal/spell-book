@@ -1,0 +1,44 @@
+<div class="spell-filters" role="search" aria-label="{{localize 'SPELLBOOK.UI.SpellFilters'}}">
+	{{#each filters as |filter|}}
+		{{#if (eq filter.type "search")}}
+			{{> "modules/spell-book/templates/components/filter-fields/search.hbs"
+          id=filter.id
+          name=filter.name
+          label=filter.label
+          placeholder=filter.label
+          value=filter.value}}
+		{{/if}}
+
+		{{#if (eq filter.type "dropdown")}}
+			{{> "modules/spell-book/templates/components/filter-fields/dropdown.hbs"
+          id=filter.id
+          name=filter.name
+          label=filter.label
+          options=filter.options}}
+		{{/if}}
+
+		{{#if (eq filter.type "range")}}
+			{{> "modules/spell-book/templates/components/filter-fields/range.hbs"
+          id=filter.id
+          label=filter.label
+          minName=filter.minName
+          maxName=filter.maxName
+          minId=(concat filter.id "-min")
+          maxId=(concat filter.id "-max")
+          minValue=filter.minValue
+          maxValue=filter.maxValue
+          minPlaceholder=(localize 'SPELLBOOK.Filters.RangeMin')
+          maxPlaceholder=(localize 'SPELLBOOK.Filters.RangeMax')
+          minLabel=(localize 'SPELLBOOK.Filters.RangeMinLabel')
+          maxLabel=(localize 'SPELLBOOK.Filters.RangeMaxLabel')}}
+		{{/if}}
+
+		{{#if (eq filter.type "checkbox")}}
+			{{> "modules/spell-book/templates/components/filter-fields/checkbox.hbs"
+          id=filter.id
+          name=filter.name
+          label=filter.label
+          checked=filter.checked}}
+		{{/if}}
+	{{/each}}
+</div>

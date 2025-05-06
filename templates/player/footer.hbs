@@ -1,0 +1,20 @@
+<footer role="contentinfo">
+	<div class="spell-prep-tracking {{#if isAtMax}}at-max{{/if}}" aria-live="polite">
+		<span class="current-count"
+			aria-label="{{localize 'SPELLBOOK.Footer.PreparedCount'}}">{{spellPreparation.current}}</span>/
+		<span class="max-count"
+			aria-label="{{localize 'SPELLBOOK.Footer.MaximumCount'}}">{{spellPreparation.maximum}}</span>
+		{{localize 'SPELLBOOK.Footer.PreparedLabel'}}
+	</div>
+
+	<div class="footer-buttons" role="toolbar" aria-label="{{localize 'SPELLBOOK.Footer.Actions'}}">
+		{{#each buttons as |button|}}
+			<button type="{{button.type}}" {{#if button.name}}name="{{button.name}}" {{/if}} class="{{button.cssClass}}"
+				{{#if button.action}}data-action="{{button.action}}" {{/if}} {{disabled button.disabled}}
+				aria-label="{{#if button.ariaLabel}}{{button.ariaLabel}}{{else}}{{localize button.label}}{{/if}}">
+				{{#if button.icon}}<i class="{{button.icon}}" aria-hidden="true"></i>{{/if}}
+				{{#if button.label}}<span>{{localize button.label}}</span>{{/if}}
+			</button>
+		{{/each}}
+	</div>
+</footer>

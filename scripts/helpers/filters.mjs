@@ -26,11 +26,10 @@ export function convertRangeToStandardUnit(units, value) {
       inFeet = value * 5280;
       break;
     case 'spec':
-      // Special range like "Self" or "Touch" - treat as 0
+      // Special range like "Self" or "Touch"
       inFeet = 0;
       break;
     default:
-      // Default to the raw value if unknown unit
       inFeet = value;
   }
 
@@ -43,129 +42,7 @@ export function convertRangeToStandardUnit(units, value) {
 }
 
 /**
- * Prepare dropdown options for casting time filter
- * @param {Array} options - The options array to populate
- * @param {Object} filterState - Current filter state
- * @param {Array} spellLevels - Spell level data
- */
-export function prepareCastingTimeOptions(options, filterState, spellLevels) {
-  if (!spellLevels) return;
-
-  const uniqueActivationTypes = new Set();
-
-  // First, collect all unique combinations
-  spellLevels.forEach((level) => {
-    level.spells.forEach((spell) => {
-      const activationType = spell.system?.activation?.type;
-      const activationValue = spell.system?.activation?.value || 1; // treat null as 1
-
-      if (activationType) {
-        uniqueActivationTypes.add(`${activationType}:${activationValue}`);
-      }
-    });
-  });
-
-  // Define a priority order for activation types
-  const typeOrder = {
-    action: 1,
-    bonus: 2,
-    reaction: 3,
-    minute: 4,
-    hour: 5,
-    day: 6,
-    legendary: 7,
-    mythic: 8,
-    lair: 9,
-    crew: 10,
-    special: 11,
-    none: 12
-  };
-
-  // Convert to array of [type:value, type, value] for sorting
-  const sortableTypes = Array.from(uniqueActivationTypes).map((combo) => {
-    const [type, value] = combo.split(':');
-    return [combo, type, parseInt(value) || 1];
-  });
-
-  // Sort by type priority then by value
-  sortableTypes.sort((a, b) => {
-    const [, typeA, valueA] = a;
-    const [, typeB, valueB] = b;
-
-    // First compare by type priority
-    const typePriorityA = typeOrder[typeA] || 999;
-    const typePriorityB = typeOrder[typeB] || 999;
-    if (typePriorityA !== typePriorityB) {
-      return typePriorityA - typePriorityB;
-    }
-
-    // Then by value
-    return valueA - valueB;
-  });
-
-  // Create the options in the sorted order
-  sortableTypes.forEach(([combo, type, value]) => {
-    const typeLabel = CONFIG.DND5E.abilityActivationTypes[type] || type;
-
-    let label;
-    if (value === 1) {
-      label = typeLabel;
-    } else {
-      label = `${value} ${typeLabel}${value !== 1 ? 's' : ''}`;
-    }
-
-    options.push({
-      value: combo,
-      label: label,
-      selected: filterState.castingTime === combo
-    });
-  });
-}
-
-/**
- * Prepare dropdown options for damage type filter
- * @param {Array} options - The options array to populate
- * @param {Object} filterState - Current filter state
- */
-export function prepareDamageTypeOptions(options, filterState) {
-  // Create a combined damage types object including healing
-  const damageTypesWithHealing = {
-    ...CONFIG.DND5E.damageTypes,
-    healing: { label: game.i18n.localize('DND5E.Healing') }
-  };
-
-  // Add options for each damage type in alphabetical order by label
-  Object.entries(damageTypesWithHealing)
-    .sort((a, b) => a[1].label.localeCompare(b[1].label))
-    .forEach(([key, damageType]) => {
-      options.push({
-        value: key,
-        label: damageType.label,
-        selected: filterState.damageType === key
-      });
-    });
-}
-
-/**
- * Prepare dropdown options for condition filter
- * @param {Array} options - The options array to populate
- * @param {Object} filterState - Current filter state
- */
-export function prepareConditionOptions(options, filterState) {
-  // Add options for each condition type
-  Object.entries(CONFIG.DND5E.conditionTypes)
-    .filter(([_key, condition]) => !condition.pseudo) // Skip pseudo conditions
-    .forEach(([key, condition]) => {
-      options.push({
-        value: key,
-        label: condition.label,
-        selected: filterState.condition === key
-      });
-    });
-}
-
-/**
- * Get options for a specific dropdown filter
+ * Prepare filter options based on filter type
  * @param {string} filterId - The filter ID
  * @param {Object} filterState - Current filter state
  * @param {Array} spellLevels - Spell level data
@@ -176,7 +53,6 @@ export function getOptionsForFilter(filterId, filterState, spellLevels) {
 
   switch (filterId) {
     case 'level':
-      // Add options for each spell level found
       if (spellLevels) {
         spellLevels.forEach((level) => {
           options.push({
@@ -189,7 +65,6 @@ export function getOptionsForFilter(filterId, filterState, spellLevels) {
       break;
 
     case 'school':
-      // Add options for each spell school
       Object.entries(CONFIG.DND5E.spellSchools).forEach(([key, school]) => {
         options.push({
           value: key,
@@ -200,15 +75,91 @@ export function getOptionsForFilter(filterId, filterState, spellLevels) {
       break;
 
     case 'castingTime':
-      prepareCastingTimeOptions(options, filterState, spellLevels);
+      if (spellLevels) {
+        // Collect unique casting times
+        const uniqueActivationTypes = new Set();
+        spellLevels.forEach((level) => {
+          level.spells.forEach((spell) => {
+            const activationType = spell.system?.activation?.type;
+            const activationValue = spell.system?.activation?.value || 1;
+            if (activationType) {
+              uniqueActivationTypes.add(`${activationType}:${activationValue}`);
+            }
+          });
+        });
+
+        // Define priority order
+        const typeOrder = {
+          action: 1,
+          bonus: 2,
+          reaction: 3,
+          minute: 4,
+          hour: 5,
+          day: 6,
+          legendary: 7,
+          mythic: 8,
+          lair: 9,
+          crew: 10,
+          special: 11,
+          none: 12
+        };
+
+        // Convert and sort
+        const sortableTypes = Array.from(uniqueActivationTypes)
+          .map((combo) => {
+            const [type, value] = combo.split(':');
+            return [combo, type, parseInt(value) || 1];
+          })
+          .sort((a, b) => {
+            const [, typeA, valueA] = a;
+            const [, typeB, valueB] = b;
+            const typePriorityA = typeOrder[typeA] || 999;
+            const typePriorityB = typeOrder[typeB] || 999;
+            return typePriorityA !== typePriorityB ? typePriorityA - typePriorityB : valueA - valueB;
+          });
+
+        // Create options
+        sortableTypes.forEach(([combo, type, value]) => {
+          const typeLabel = CONFIG.DND5E.abilityActivationTypes[type] || type;
+          const label = value === 1 ? typeLabel : `${value} ${typeLabel}${value !== 1 ? 's' : ''}`;
+
+          options.push({
+            value: combo,
+            label: label,
+            selected: filterState.castingTime === combo
+          });
+        });
+      }
       break;
 
     case 'damageType':
-      prepareDamageTypeOptions(options, filterState);
+      // Create damage types including healing
+      const damageTypesWithHealing = {
+        ...CONFIG.DND5E.damageTypes,
+        healing: { label: game.i18n.localize('DND5E.Healing') }
+      };
+
+      Object.entries(damageTypesWithHealing)
+        .sort((a, b) => a[1].label.localeCompare(b[1].label))
+        .forEach(([key, damageType]) => {
+          options.push({
+            value: key,
+            label: damageType.label,
+            selected: filterState.damageType === key
+          });
+        });
       break;
 
     case 'condition':
-      prepareConditionOptions(options, filterState);
+      Object.entries(CONFIG.DND5E.conditionTypes)
+        .filter(([_key, condition]) => !condition.pseudo)
+        .forEach(([key, condition]) => {
+          options.push({
+            value: key,
+            label: condition.label,
+            selected: filterState.condition === key
+          });
+        });
       break;
 
     case 'requiresSave':
