@@ -968,8 +968,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         removed: new Set()
       };
 
-      // Check if already a custom list
-      const isCustom = !!this.selectedSpellList.document.flags?.[MODULE.ID]?.isDuplicate;
+      // Get flags for this list
+      const flags = this.selectedSpellList.document.flags?.[MODULE.ID] || {};
+
+      // Check if this is already any type of custom list:
+      // - Either a duplicate (isDuplicate=true)
+      // - OR a true custom list (isCustom=true or isNewList=true)
+      const isCustom = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList;
 
       if (!isCustom) {
         // Need to duplicate it first
@@ -1008,10 +1013,16 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         }
 
         ui.notifications.info(game.i18n.localize('SPELLMANAGER.Notifications.Created'));
+      } else {
+        log(3, `List is already custom (${flags.isDuplicate ? 'duplicate' : 'new'}), proceeding with edit directly`);
       }
 
       // Enter editing mode
       this.isEditing = true;
+
+      // Reset source filter to "all" to ensure spells are visible
+      this.filterState.source = 'all';
+      log(3, 'Reset source filter to "all" for editing');
 
       // First render to update UI state
       this.render(false);

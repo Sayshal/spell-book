@@ -270,7 +270,10 @@
 
         &.has-custom-version {
           color: var(--manager-custom-color);
-          text-shadow: 0 0 3px #3fc6c180;
+        }
+
+        &.is-custom-list {
+          color: #ffc919;
         }
       }
     }
@@ -293,16 +296,6 @@
 
       .source {
         font-style: italic;
-      }
-    }
-
-    .custom-list {
-      border-left: 3px solid var(--manager-custom-color);
-      background-color: #39c5bb1a;
-
-      list-name i.is-custom-list {
-        color: var(--manager-custom-color);
-        text-shadow: 0 0 3px #3fc6c180;
       }
     }
   }
