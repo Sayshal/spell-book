@@ -397,6 +397,21 @@
     align-items: center;
     height: 200px;
   }
+
+  .loading-spinner {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    margin: 2rem 0;
+    text-align: center;
+  }
+
+  .loading-spinner i {
+    margin-bottom: 1rem;
+  }
 }
 
 /* ----------------------------------------- */

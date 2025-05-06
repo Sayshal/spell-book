@@ -311,6 +311,9 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       const li = event.currentTarget.closest('li');
       if (!li || li.classList.contains('not-sortable')) return false;
 
+      // Capture current form state
+      this._formState = this._captureFormState();
+
       // Set data transfer
       const filterIndex = li.dataset.index;
       event.dataTransfer.setData(
@@ -436,6 +439,15 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       // Update order numbers
       this.updateFilterOrder();
 
+      // Update enabled states from captured form state
+      if (this._formState) {
+        for (const filter of this.config) {
+          if (this._formState.hasOwnProperty(filter.id)) {
+            filter.enabled = this._formState[filter.id];
+          }
+        }
+      }
+
       // Re-render
       this.render(false);
 
@@ -446,6 +458,8 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       return false;
     } finally {
       this.cleanupDragElements();
+      // Clean up the stored form state
+      delete this._formState;
     }
   }
 
@@ -591,6 +605,25 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   }
 
   /**
+   * Capture the current form state
+   * @returns {Object} Object mapping filter IDs to their enabled states
+   * @private
+   */
+  _captureFormState() {
+    const state = {};
+    try {
+      const checkboxes = this.element.querySelectorAll('input[type="checkbox"][name^="enabled-"]');
+      checkboxes.forEach((checkbox) => {
+        const filterId = checkbox.name.replace('enabled-', '');
+        state[filterId] = checkbox.checked;
+      });
+    } catch (error) {
+      log(1, 'Error capturing form state:', error);
+    }
+    return state;
+  }
+
+  /**
    * Handle form submission
    * @param {Event} event - The form submission event
    * @param {HTMLFormElement} form - The form element
@@ -617,12 +650,12 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
       // Combine filters with non-sortable ones in the right positions
       const updatedConfig = [
-        // Name filter at the top
-        ...nonSortableFilters.filter((f) => f.id === 'name'),
+        // Name filter at the top - make sure it has order = 10
+        ...nonSortableFilters.filter((f) => f.id === 'name').map((f) => ({ ...f, order: 10 })),
         // Sortable filters in their sorted order
         ...sortedFilters,
-        // Controls at the bottom (checkboxes and sort options)
-        ...nonSortableFilters.filter((f) => f.id !== 'name')
+        // Controls at the bottom (checkboxes and sort options) - ensure they have higher order values
+        ...nonSortableFilters.filter((f) => f.id !== 'name').map((f, idx) => ({ ...f, order: 1000 + idx * 10 }))
       ];
 
       log(3, 'Saving updated configuration');

@@ -1152,6 +1152,21 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           }
         });
 
+        // Uncollapse all spell levels
+        const collapsedLevels = this.element.querySelectorAll('.spell-level.collapsed');
+        collapsedLevels.forEach((level) => {
+          level.classList.remove('collapsed');
+
+          // Update the aria-expanded attribute
+          const heading = level.querySelector('.spell-level-heading');
+          if (heading) {
+            heading.setAttribute('aria-expanded', 'true');
+          }
+        });
+
+        // Clear the collapsed levels in user flags
+        game.user.setFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS, []);
+
         // Reapply filters
         this._applyFilters();
 
