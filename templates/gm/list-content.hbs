@@ -12,43 +12,35 @@
 						<i class="fas fa-edit" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Edit"}}
 					</button>
 				{{else}}
-					<!-- Get the flags -->
-					{{#with selectedSpellList.document.flags}}
-						{{#if (lookup . (lookup @root 'MODULE.ID'))}}
-							{{#with (lookup . (lookup @root 'MODULE.ID'))}}
-								<!-- Check for duplicate OR custom status -->
-								{{#if (or isDuplicate isCustom isNewList)}}
-									<div class="custom-list-controls">
-										<!-- Only show restore and update notice for duplicates, not for truly new custom lists -->
-										{{#if isDuplicate}}
-											{{#if @root.compareInfo.hasOriginalChanged}}
-												<span class="update-notice" role="status">{{localize "SPELLMANAGER.Status.UpdateNotice"}}</span>
-											{{/if}}
-											<button type="button" class="restore-button action-button" data-action="restoreOriginal"
-												data-uuid="{{@root.selectedSpellList.uuid}}"
-												aria-label="{{localize 'SPELLMANAGER.Buttons.Restore'}}">
-												<i class="fas fa-sync" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Restore"}}
-											</button>
-										{{/if}}
+					<div class="custom-list-controls">
+						<!-- Only show restore button for duplicates of existing lists -->
+						{{#if (and
+             selectedSpellList.document.flags
+             selectedSpellList.document.flags.[spell-book]
+             selectedSpellList.document.flags.[spell-book].isDuplicate
+             selectedSpellList.document.flags.[spell-book].originalUuid)}}
 
-										<!-- Always show delete for any custom list -->
-										<button type="button" class="delete-button action-button" data-action="deleteCustomList"
-											data-uuid="{{@root.selectedSpellList.uuid}}"
-											aria-label="{{localize 'SPELLMANAGER.Buttons.Delete'}}">
-											<i class="fas fa-trash" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Delete"}}
-										</button>
+							{{#if compareInfo.hasOriginalChanged}}
+								<span class="update-notice" role="status">{{localize "SPELLMANAGER.Status.UpdateNotice"}}</span>
+							{{/if}}
 
-										<!-- Always show save for any custom list -->
-										<button type="button" class="save-button action-button" data-action="saveCustomList"
-											data-uuid="{{@root.selectedSpellList.uuid}}"
-											aria-label="{{localize 'SPELLMANAGER.Buttons.Save'}}">
-											<i class="fas fa-save" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Save"}}
-										</button>
-									</div>
-								{{/if}}
-							{{/with}}
+							<button type="button" class="restore-button action-button" data-action="restoreOriginal"
+								data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Restore'}}">
+								<i class="fas fa-sync" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Restore"}}
+							</button>
 						{{/if}}
-					{{/with}}
+
+						<!-- Always show delete and save buttons in edit mode -->
+						<button type="button" class="delete-button action-button" data-action="deleteCustomList"
+							data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Delete'}}">
+							<i class="fas fa-trash" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Delete"}}
+						</button>
+
+						<button type="button" class="save-button action-button" data-action="saveCustomList"
+							data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Save'}}">
+							<i class="fas fa-save" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Save"}}
+						</button>
+					</div>
 				{{/unless}}
 			</div>
 		</div>
