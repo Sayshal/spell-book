@@ -4,7 +4,7 @@
  * @module spell-book/helpers/spell-preparation
  */
 
-import { MODULE } from '../constants.mjs';
+import { FLAGS, MODULE } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import * as formattingUtils from './spell-formatting.mjs';
 
@@ -23,7 +23,7 @@ export async function saveActorPreparedSpells(actor, spellData) {
     .map(([uuid]) => uuid);
 
   // Save to actor flags
-  await actor.setFlag(MODULE.ID, MODULE.FLAGS.PREPARED_SPELLS, preparedUuids);
+  await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS, preparedUuids);
 
   // Process each spell
   for (const [uuid, data] of Object.entries(spellData)) {

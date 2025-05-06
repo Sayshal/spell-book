@@ -1,4 +1,4 @@
-import { MODULE } from '../constants.mjs';
+import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as actorSpellUtils from '../helpers/actor-spells.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import * as managerHelpers from '../helpers/spell-management.mjs';
@@ -53,10 +53,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /** @override */
   static PARTS = {
     form: {
-      template: MODULE.TEMPLATES.GM.MAIN,
-      templates: [MODULE.TEMPLATES.GM.SPELL_LISTS, MODULE.TEMPLATES.GM.LIST_CONTENT, MODULE.TEMPLATES.GM.AVAILABLE_SPELLS]
+      template: TEMPLATES.GM.MAIN,
+      templates: [TEMPLATES.GM.SPELL_LISTS, TEMPLATES.GM.LIST_CONTENT, TEMPLATES.GM.AVAILABLE_SPELLS]
     },
-    footer: { template: MODULE.TEMPLATES.GM.FOOTER }
+    footer: { template: TEMPLATES.GM.FOOTER }
   };
 
   /* -------------------------------------------- */
@@ -173,7 +173,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         availableSpells: this.availableSpells,
         filterState: this.filterState,
         settings: {
-          distanceUnit: game.settings.get(MODULE.ID, 'distanceUnit')
+          distanceUnit: game.settings.get(MODULE.ID, SETTINGS.DISTANCE_UNIT)
         }
       };
 
@@ -182,7 +182,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       }
 
       // Get mappings for custom lists
-      const customMappings = game.settings.get(MODULE.ID, 'customSpellListMappings') || {};
+      const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
       context.customListMap = customMappings;
 
       // If we have available spells, prepare filter options

@@ -4,71 +4,8 @@
  * @module spell-book/helpers/spell-discovery
  */
 
-import { MODULE } from '../constants.mjs';
+import { MODULE, SETTINGS } from '../constants.mjs';
 import { log } from '../logger.mjs';
-
-/**
- * Discover all spellcasting classes by examining compendium content
- * Populates MODULE.SPELLCASTING_CLASSES with discovered classes
- * @returns {Promise<void>}
- */
-export async function discoverSpellcastingClasses() {
-  log(3, 'Discovering spellcasting classes...');
-
-  // Reset the arrays
-  MODULE.SPELLCASTING_CLASSES.KNOWN = [];
-  MODULE.SPELLCASTING_CLASSES.PACT = [];
-
-  // Get all item compendiums
-  const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
-
-  for (const pack of itemPacks) {
-    try {
-      // Get the index
-      const index = await pack.getIndex();
-
-      // Filter for class entries
-      const classEntries = index.filter((entry) => entry.type === 'class');
-
-      // Process each class
-      for (const entry of classEntries) {
-        try {
-          // Get the actual document
-          const classItem = await pack.getDocument(entry._id);
-
-          // Skip if this doesn't have spellcasting
-          if (!classItem.system?.spellcasting?.progression || classItem.system.spellcasting.progression === 'none') {
-            continue;
-          }
-
-          const className = classItem.name.toLowerCase();
-          const sourceId = classItem.system?.source?.value || pack.metadata.label;
-          const classIdentifier = {
-            name: className,
-            source: sourceId,
-            uuid: classItem.uuid
-          };
-
-          // Categorize by type
-          const spellcastingType = classItem.system?.spellcasting?.type;
-          if (spellcastingType === 'pact') {
-            if (!MODULE.SPELLCASTING_CLASSES.PACT.some((c) => c.name === className && c.source === sourceId)) {
-              MODULE.SPELLCASTING_CLASSES.PACT.push(classIdentifier);
-            }
-          } else if (!MODULE.SPELLCASTING_CLASSES.KNOWN.some((c) => c.name === className && c.source === sourceId)) {
-            MODULE.SPELLCASTING_CLASSES.KNOWN.push(classIdentifier);
-          }
-        } catch (error) {
-          log(2, `Error processing class ${entry.name}:`, error);
-        }
-      }
-    } catch (error) {
-      log(2, `Error processing pack ${pack.metadata.label}:`, error);
-    }
-  }
-
-  log(3, `Discovered ${MODULE.SPELLCASTING_CLASSES.KNOWN.length} standard and ${MODULE.SPELLCASTING_CLASSES.PACT.length} pact spellcasting classes`);
-}
 
 /**
  * Get a class's spell list from compendium journals
@@ -102,7 +39,7 @@ export async function getClassSpellList(className, classUuid) {
   log(3, `Searching ${journalPacks.length} journal packs`);
 
   // Get custom mappings
-  const customMappings = game.settings.get(MODULE.ID, 'customSpellListMappings') || {};
+  const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
 
   // Search each pack
   for (const pack of journalPacks) {

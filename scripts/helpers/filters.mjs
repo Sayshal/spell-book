@@ -3,7 +3,7 @@
  * @module spell-book/helpers/filters
  */
 
-import { MODULE } from '../constants.mjs';
+import { MODULE, SETTINGS } from '../constants.mjs';
 
 /**
  * Convert a spell range to feet (or meters based on settings)
@@ -14,7 +14,7 @@ import { MODULE } from '../constants.mjs';
 export function convertRangeToStandardUnit(units, value) {
   if (!units || !value) return 0;
 
-  const targetUnit = game.settings.get(MODULE.ID, 'distanceUnit');
+  const targetUnit = game.settings.get(MODULE.ID, SETTINGS.DISTANCE_UNIT);
   let inFeet = 0;
 
   // Convert to feet first

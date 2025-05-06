@@ -1,4 +1,4 @@
-import { DEFAULT_FILTER_CONFIG, MODULE } from '../constants.mjs';
+import { DEFAULT_FILTER_CONFIG, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -42,7 +42,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /** @override */
   static PARTS = {
-    form: { template: MODULE.TEMPLATES.DIALOGS.FILTER_CONFIG }
+    form: { template: TEMPLATES.DIALOGS.FILTER_CONFIG }
   };
 
   /* -------------------------------------------- */
@@ -79,7 +79,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   initializeConfig() {
     try {
       log(3, 'Initializing filter configuration');
-      let config = game.settings.get(MODULE.ID, 'filterConfiguration');
+      let config = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
 
       // Validate the configuration
       if (!config || !Array.isArray(config) || config.length === 0) {
@@ -121,7 +121,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
    */
   static getValidConfiguration() {
     try {
-      const config = game.settings.get(MODULE.ID, 'filterConfiguration');
+      const config = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
       if (!config || !Array.isArray(config) || config.length === 0) {
         log(2, 'No valid configuration found in settings, using defaults');
         return foundry.utils.deepClone(DEFAULT_FILTER_CONFIG);
@@ -628,7 +628,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       log(3, 'Saving updated configuration');
 
       // Save to settings
-      await game.settings.set(MODULE.ID, 'filterConfiguration', updatedConfig);
+      await game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, updatedConfig);
 
       // Show success notification
       ui.notifications?.info('Filter configuration saved.');

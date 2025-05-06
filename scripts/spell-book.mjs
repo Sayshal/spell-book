@@ -8,7 +8,6 @@ import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
 import { PlayerSpellBook } from './apps/player-spell-book.mjs';
 import { MODULE } from './constants.mjs';
 import { registerHandlebarsHelpers } from './helpers/handlebars-helpers.mjs';
-import * as discoveryUtils from './helpers/spell-discovery.mjs';
 import { registerHooks } from './hooks.mjs';
 import { initializeLogger, log } from './logger.mjs';
 import { registerSettings } from './settings.mjs';
@@ -27,16 +26,6 @@ Hooks.once('init', async function () {
     log(3, 'Module initialization complete');
   } catch (error) {
     console.error(`${MODULE.ID} | Error initializing module:`, error);
-  }
-});
-
-// Ready hook for post-initialization tasks
-Hooks.once('ready', async function () {
-  try {
-    // Discover available spell data
-    await loadSpellcastingData();
-  } catch (error) {
-    log(1, 'Error during module ready hook:', error);
   }
 });
 
@@ -74,19 +63,6 @@ async function initializeModuleComponents() {
   } catch (error) {
     log(1, 'Error initializing module components:', error);
     throw error; // Re-throw as this is critical
-  }
-}
-
-/**
- * Load spellcasting data during ready hook
- */
-async function loadSpellcastingData() {
-  try {
-    // Initialize spell data
-    await discoveryUtils.discoverSpellcastingClasses();
-    log(3, 'Spell classes discovery complete');
-  } catch (error) {
-    log(1, 'Error loading spellcasting data:', error);
   }
 }
 

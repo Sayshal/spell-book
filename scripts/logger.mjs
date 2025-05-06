@@ -4,7 +4,7 @@
  * @module spell-book/logger
  */
 
-import { MODULE, SETTINGS_KEYS } from './constants.mjs';
+import { MODULE, SETTINGS } from './constants.mjs';
 
 /**
  * Custom logger with caller context information
@@ -80,7 +80,7 @@ export function log(level, ...args) {
  */
 export function initializeLogger() {
   try {
-    const logLevel = game.settings.get(MODULE.ID, SETTINGS_KEYS.LOGGING_LEVEL);
+    const logLevel = game.settings.get(MODULE.ID, SETTINGS.LOGGING_LEVEL);
     MODULE.LOG_LEVEL = parseInt(logLevel) || 0;
     log(3, `Logger initialized with level ${MODULE.LOG_LEVEL}`);
   } catch (error) {

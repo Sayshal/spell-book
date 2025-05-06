@@ -4,11 +4,10 @@
  */
 
 import { PlayerSpellBook } from './apps/player-spell-book.mjs';
-import { MODULE } from './constants.mjs';
+import { TEMPLATES } from './constants.mjs';
 import * as discoveryUtils from './helpers/spell-discovery.mjs';
 import { registerDnD5eIntegration } from './integrations/dnd5e.mjs';
 import { log } from './logger.mjs';
-
 /**
  * Register all module hooks
  * Sets up UI elements and system integrations
@@ -167,7 +166,7 @@ async function preloadTemplates() {
   }
 
   // Get all template paths as an array
-  const templatePaths = flattenTemplateObject(MODULE.TEMPLATES);
+  const templatePaths = flattenTemplateObject(TEMPLATES);
 
   log(3, `Preloading ${templatePaths.length} templates`);
 

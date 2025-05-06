@@ -60,9 +60,6 @@ export const FLAGS = {
   SIDEBAR_COLLAPSED: 'sidebarCollapsed'
 };
 
-// Add flags to MODULE object for backward compatibility
-MODULE.FLAGS = FLAGS;
-
 //-----------------------------------------------------------------------------
 // TEMPLATE PATHS
 //-----------------------------------------------------------------------------
@@ -114,35 +111,6 @@ export const TEMPLATES = {
   }
 };
 
-// Add templates to MODULE object for backward compatibility
-MODULE.TEMPLATES = TEMPLATES;
-
-//-----------------------------------------------------------------------------
-// SPELLCASTING CLASSES
-//-----------------------------------------------------------------------------
-
-/**
- * Collections of spellcasting classes categorized by type
- * Populated during initialization
- * @type {Object}
- */
-export const SPELLCASTING_CLASSES = {
-  /**
-   * Classes with "known" spell progression
-   * @type {Array}
-   */
-  KNOWN: [],
-
-  /**
-   * Classes with "pact" spell progression
-   * @type {Array}
-   */
-  PACT: []
-};
-
-// Add spellcasting classes to MODULE object for backward compatibility
-MODULE.SPELLCASTING_CLASSES = SPELLCASTING_CLASSES;
-
 //-----------------------------------------------------------------------------
 // SETTINGS
 //-----------------------------------------------------------------------------
@@ -151,7 +119,7 @@ MODULE.SPELLCASTING_CLASSES = SPELLCASTING_CLASSES;
  * Settings keys used by the module
  * @type {Object}
  */
-export const SETTINGS_KEYS = {
+export const SETTINGS = {
   /**
    * Logging level setting key
    * @type {string}
@@ -180,13 +148,7 @@ export const SETTINGS_KEYS = {
    * Custom spell list mappings setting key
    * @type {string}
    */
-  CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',
-
-  /**
-   * Spell manager page size setting key
-   * @type {string}
-   */
-  SPELL_MANAGER_PAGE_SIZE: 'spellManagerPageSize'
+  CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings'
 };
 
 //-----------------------------------------------------------------------------

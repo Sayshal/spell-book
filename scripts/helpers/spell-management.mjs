@@ -3,7 +3,7 @@
  * @module spell-book/helpers/spell-manager-helpers
  */
 
-import { MODULE } from '../constants.mjs';
+import { MODULE, SETTINGS } from '../constants.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { log } from '../logger.mjs';
 
@@ -129,7 +129,7 @@ export async function compareListVersions(originalUuid, customUuid) {
  * @returns {Object} Mapping data
  */
 export function getCustomListMappings() {
-  return game.settings.get(MODULE.ID, 'customSpellListMappings') || {};
+  return game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
 }
 
 /**
@@ -236,13 +236,13 @@ export async function findDuplicateSpellList(originalUuid) {
  */
 export async function updateSpellListMapping(originalUuid, duplicateUuid) {
   try {
-    const mappings = game.settings.get(MODULE.ID, 'customSpellListMappings') || {};
+    const mappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
 
     // Add or update mapping
     mappings[originalUuid] = duplicateUuid;
 
     // Save to settings
-    await game.settings.set(MODULE.ID, 'customSpellListMappings', mappings);
+    await game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, mappings);
 
     log(3, `Updated spell list mapping: ${originalUuid} -> ${duplicateUuid}`);
   } catch (error) {
@@ -273,9 +273,9 @@ export async function removeCustomSpellList(duplicateUuid) {
 
     // Remove the mapping if original UUID exists
     if (originalUuid) {
-      const mappings = game.settings.get(MODULE.ID, 'customSpellListMappings') || {};
+      const mappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
       delete mappings[originalUuid];
-      await game.settings.set(MODULE.ID, 'customSpellListMappings', mappings);
+      await game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, mappings);
     }
 
     // Delete the journal

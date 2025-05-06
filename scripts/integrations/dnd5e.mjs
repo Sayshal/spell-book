@@ -4,7 +4,7 @@
  * @module spell-book/integrations/dnd5e
  */
 
-import { MODULE, SETTINGS_KEYS } from '../constants.mjs';
+import { MODULE, SETTINGS } from '../constants.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
 import { log } from '../logger.mjs';
 
@@ -17,7 +17,7 @@ export function registerDnD5eIntegration() {
     log(3, 'Registering DnD5e system integration');
 
     // Register rest completion hook if enabled
-    if (game.settings.get(MODULE.ID, SETTINGS_KEYS.ENABLE_REST_PROMPT)) {
+    if (game.settings.get(MODULE.ID, SETTINGS.ENABLE_REST_PROMPT)) {
       Hooks.on('dnd5e.restCompleted', onRestCompleted);
       log(3, 'Registered rest completion hook');
     }
@@ -161,7 +161,7 @@ function onAdvancementComplete(actor, item, advancementData) {
     log(3, `Character advancement affecting spellcasting detected for ${actor.name}`);
 
     // If auto-prompt is enabled, show dialog
-    if (game.settings.get(MODULE.ID, SETTINGS_KEYS.ENABLE_REST_PROMPT)) {
+    if (game.settings.get(MODULE.ID, SETTINGS.ENABLE_REST_PROMPT)) {
       showAdvancementSpellDialog(actor, item);
     }
   } catch (error) {

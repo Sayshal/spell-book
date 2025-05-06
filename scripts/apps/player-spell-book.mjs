@@ -1,4 +1,4 @@
-import { DEFAULT_FILTER_CONFIG, MODULE } from '../constants.mjs';
+import { DEFAULT_FILTER_CONFIG, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as actorSpellUtils from '../helpers/actor-spells.mjs';
 import * as filterUtils from '../helpers/filters.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
@@ -51,8 +51,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @override */
   static PARTS = {
-    form: { template: MODULE.TEMPLATES.PLAYER.MAIN, templates: [MODULE.TEMPLATES.PLAYER.SIDEBAR, MODULE.TEMPLATES.PLAYER.SPELL_LIST] },
-    footer: { template: MODULE.TEMPLATES.PLAYER.FOOTER }
+    form: { template: TEMPLATES.PLAYER.MAIN, templates: [TEMPLATES.PLAYER.SIDEBAR, TEMPLATES.PLAYER.SPELL_LIST] },
+    footer: { template: TEMPLATES.PLAYER.FOOTER }
   };
 
   /* -------------------------------------------- */
@@ -133,7 +133,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _createBaseContext() {
     // Get filter configuration
-    let filterConfig = game.settings.get(MODULE.ID, 'filterConfiguration');
+    let filterConfig = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
     if (!Array.isArray(filterConfig) || !filterConfig.length) {
       filterConfig = DEFAULT_FILTER_CONFIG;
     }
@@ -171,7 +171,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       ],
       actorId: this.actor.id,
-      TEMPLATES: MODULE.TEMPLATES,
+      TEMPLATES: TEMPLATES,
       spellPreparation: this.spellPreparation || { current: 0, maximum: 0 }
     };
   }
@@ -217,7 +217,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _setSidebarState() {
-    const sidebarCollapsed = game.user.getFlag(MODULE.ID, 'sidebarCollapsed');
+    const sidebarCollapsed = game.user.getFlag(MODULE.ID, SIDEBAR_COLLAPSED);
     if (sidebarCollapsed) {
       this.element.classList.add('sidebar-collapsed');
     }
@@ -498,7 +498,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   _prepareFilters() {
     try {
       // Get the filter configuration
-      let filterConfig = game.settings.get(MODULE.ID, 'filterConfiguration');
+      let filterConfig = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
       if (!Array.isArray(filterConfig) || !filterConfig.length) {
         filterConfig = DEFAULT_FILTER_CONFIG;
       }
@@ -536,7 +536,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             result.maxName = `filter-max-range`;
             result.minValue = filterState.minRange || '';
             result.maxValue = filterState.maxRange || '';
-            result.unit = game.settings.get(MODULE.ID, 'distanceUnit');
+            result.unit = game.settings.get(MODULE.ID, SETTINGS.DISTANCE_UNIT);
             break;
         }
 
@@ -1037,7 +1037,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _applyCollapsedLevels() {
     try {
-      const collapsedLevels = game.user.getFlag(MODULE.ID, 'collapsedSpellLevels') || [];
+      const collapsedLevels = game.user.getFlag(MODULE.ID, COLLAPSED_LEVELS) || [];
 
       for (const levelId of collapsedLevels) {
         const levelContainer = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
@@ -1100,7 +1100,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       this._positionFooter();
 
       // Store user preference
-      game.user.setFlag(MODULE.ID, 'sidebarCollapsed', isCollapsing);
+      game.user.setFlag(MODULE.ID, SIDEBAR_COLLAPSED, isCollapsing);
     } catch (error) {
       log(1, 'Error toggling sidebar:', error);
     }
@@ -1180,7 +1180,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       levelContainer.classList.toggle('collapsed');
 
       // Save state to user flags
-      const collapsedLevels = game.user.getFlag(MODULE.ID, 'collapsedSpellLevels') || [];
+      const collapsedLevels = game.user.getFlag(MODULE.ID, COLLAPSED_LEVELS) || [];
       const isCollapsed = levelContainer.classList.contains('collapsed');
 
       if (isCollapsed && !collapsedLevels.includes(levelId)) {
@@ -1189,7 +1189,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         collapsedLevels.splice(collapsedLevels.indexOf(levelId), 1);
       }
 
-      game.user.setFlag(MODULE.ID, 'collapsedSpellLevels', collapsedLevels);
+      game.user.setFlag(MODULE.ID, COLLAPSED_LEVELS, collapsedLevels);
     } catch (error) {
       log(1, 'Error toggling spell level:', error);
     }
