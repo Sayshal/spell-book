@@ -179,15 +179,32 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       if (this.availableSpells.length > 0) {
         // Get unique sources
         const sourceMap = new Map();
+        sourceMap.set('all', {
+          id: 'all',
+          label: game.i18n.localize('SPELLMANAGER.Filters.AllSources')
+        });
+
+        // Add each unique source from available spells
         this.availableSpells.forEach((spell) => {
-          if (spell.packName && !sourceMap.has(spell.sourceId)) {
-            sourceMap.set(spell.sourceId, {
-              id: spell.sourceId,
-              label: spell.packName
-            });
+          if (spell.sourceId) {
+            // Extract just the package name
+            const sourceId = spell.sourceId.split('.')[0];
+            if (!sourceMap.has(sourceId)) {
+              sourceMap.set(sourceId, {
+                id: sourceId,
+                label: spell.packName?.split(' - ')[0] || sourceId
+              });
+            }
           }
         });
-        context.spellSources = Array.from(sourceMap.values()).sort((a, b) => a.label.localeCompare(b.label));
+
+        // Convert to array and sort
+        context.spellSources = Array.from(sourceMap.values()).sort((a, b) => {
+          // Always keep "all" at the top
+          if (a.id === 'all') return -1;
+          if (b.id === 'all') return 1;
+          return a.label.localeCompare(b.label);
+        });
 
         // Prepare filter options
         context.castingTimeOptions = managerHelpers.prepareCastingTimeOptions(this.availableSpells, this.filterState);
@@ -317,113 +334,147 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Get selected spell UUIDs to avoid showing spells already in the list
       const selectedSpellUUIDs = this.getSelectedSpellUUIDs();
+      log(1, 'Beginning Filtering:', selectedSpellUUIDs.size, 'selected spells out of', this.availableSpells.length, 'total available');
 
-      // Filter the spells
-      const filteredSpells = this.availableSpells.filter((spell) => {
-        // Check if spell is already in the list
-        if (this.isSpellInSelectedList(spell, selectedSpellUUIDs)) {
-          return false;
-        }
+      let remainingSpells = [...this.availableSpells];
 
-        // Apply each filter
-        if (name && !spell.name.toLowerCase().includes(name.toLowerCase())) {
-          return false;
-        }
+      // Filter: Already in list
+      remainingSpells = remainingSpells.filter((spell) => !this.isSpellInSelectedList(spell, selectedSpellUUIDs));
+      log(1, 'After in-list filter:', remainingSpells.length, 'spells remaining');
 
-        if (level && spell.level !== parseInt(level)) {
-          return false;
-        }
+      // Filter: Name
+      if (name) {
+        remainingSpells = remainingSpells.filter((spell) => spell.name.toLowerCase().includes(name.toLowerCase()));
+        log(1, 'After name filter:', remainingSpells.length, 'spells remaining');
+      }
 
-        if (school && spell.school !== school) {
-          return false;
-        }
+      // Filter: Level
+      if (level) {
+        remainingSpells = remainingSpells.filter((spell) => spell.level === parseInt(level));
+        log(1, 'After level filter:', remainingSpells.length, 'spells remaining');
+      }
 
-        if (source && source.trim() !== '') {
-          // More flexible source matching
-          const spellSource = spell.sourceId || '';
+      // Filter: School
+      if (school) {
+        remainingSpells = remainingSpells.filter((spell) => spell.school === school);
+        log(1, 'After school filter:', remainingSpells.length, 'spells remaining');
+      }
+
+      // Filter: Source
+      if (source && source.trim() !== '' && source !== 'all') {
+        const beforeCount = remainingSpells.length;
+        remainingSpells = remainingSpells.filter((spell) => {
+          const spellSource = (spell.sourceId || '').split('.')[0]; // Get just the package name
           const packName = spell.packName || '';
 
-          const sourceMatch = spellSource === source || spellSource.startsWith(source) || packName.includes(source);
+          // More flexible source matching
+          const sourceMatch = spellSource.includes(source) || spellSource === source || packName.toLowerCase().includes(source.toLowerCase());
 
-          if (!sourceMatch) return false;
+          return sourceMatch;
+        });
+
+        // If no spells remain after filtering by source, reset to all spells
+        if (remainingSpells.length === 0 && beforeCount > 0) {
+          log(1, `Source '${source}' filtered out all spells, resetting to show all sources`);
+          remainingSpells = [...this.availableSpells].filter((spell) => !this.isSpellInSelectedList(spell, selectedSpellUUIDs));
+          this.filterState.source = 'all'; // Reset source filter
+        } else {
+          log(1, `After source filter: ${remainingSpells.length} spells remaining. Source filter: ${source}`);
         }
+      } else {
+        // "all" is selected or empty - don't filter by source
+        log(1, 'Source filter is unset or "all", showing all sources');
+      }
 
-        if (castingTime) {
+      // Filter: Casting Time
+      if (castingTime) {
+        remainingSpells = remainingSpells.filter((spell) => {
           const [filterType, filterValue] = castingTime.split(':');
           const spellCastingType = spell.filterData?.castingTime?.type || spell.system?.activation?.type || '';
           const spellCastingValue = String(spell.filterData?.castingTime?.value || spell.system?.activation?.value || '1');
+          return spellCastingType === filterType && spellCastingValue === filterValue;
+        });
+        log(1, 'After casting time filter:', remainingSpells.length, 'spells remaining');
+      }
 
-          if (spellCastingType !== filterType || spellCastingValue !== filterValue) {
-            return false;
-          }
-        }
+      // Filter: Range
+      if (minRange || maxRange) {
+        remainingSpells = remainingSpells.filter((spell) => {
+          if (!(spell.filterData?.range?.units || spell.system?.range?.units)) return true;
 
-        if ((minRange || maxRange) && (spell.filterData?.range?.units || spell.system?.range?.units)) {
           const rangeUnits = spell.filterData?.range?.units || spell.system?.range?.units || '';
           const rangeValue = parseInt(spell.system?.range?.value || 0);
 
-          // Convert to standardized units
           let standardizedRange = rangeValue;
           if (rangeUnits === 'mi') {
-            standardizedRange = rangeValue * 5280; // Miles to feet
+            standardizedRange = rangeValue * 5280;
           } else if (rangeUnits === 'spec') {
-            standardizedRange = 0; // Special cases like "Self" or "Touch"
+            standardizedRange = 0;
           }
 
           const minRangeVal = minRange ? parseInt(minRange) : 0;
           const maxRangeVal = maxRange ? parseInt(maxRange) : Infinity;
 
-          if (standardizedRange < minRangeVal || standardizedRange > maxRangeVal) {
-            return false;
-          }
-        }
+          return standardizedRange >= minRangeVal && standardizedRange <= maxRangeVal;
+        });
+        log(1, 'After range filter:', remainingSpells.length, 'spells remaining');
+      }
 
-        if (damageType) {
+      // Filter: Damage Type
+      if (damageType) {
+        remainingSpells = remainingSpells.filter((spell) => {
           const spellDamageTypes = Array.isArray(spell.filterData?.damageTypes) ? spell.filterData.damageTypes : [];
-          if (!spellDamageTypes.length) return false;
-          if (!spellDamageTypes.includes(damageType)) return false;
-        }
+          return spellDamageTypes.length > 0 && spellDamageTypes.includes(damageType);
+        });
+        log(1, 'After damage type filter:', remainingSpells.length, 'spells remaining');
+      }
 
-        if (condition) {
+      // Filter: Condition
+      if (condition) {
+        remainingSpells = remainingSpells.filter((spell) => {
           const spellConditions = Array.isArray(spell.filterData?.conditions) ? spell.filterData.conditions : [];
-          if (!spellConditions.includes(condition)) return false;
-        }
+          return spellConditions.includes(condition);
+        });
+        log(1, 'After condition filter:', remainingSpells.length, 'spells remaining');
+      }
 
-        if (requiresSave) {
+      // Filter: Requires Save
+      if (requiresSave) {
+        remainingSpells = remainingSpells.filter((spell) => {
           const spellRequiresSave = spell.filterData?.requiresSave || false;
-          if (requiresSave === 'true' && !spellRequiresSave) return false;
-          if (requiresSave === 'false' && spellRequiresSave) return false;
-        }
+          return (requiresSave === 'true' && spellRequiresSave) || (requiresSave === 'false' && !spellRequiresSave);
+        });
+        log(1, 'After save filter:', remainingSpells.length, 'spells remaining');
+      }
 
-        if (concentration) {
-          // Fix concentration filter - explicitly check both paths
+      // Filter: Concentration
+      if (concentration) {
+        remainingSpells = remainingSpells.filter((spell) => {
           let requiresConcentration = false;
-
-          // Check filterData first
           if (spell.filterData?.concentration !== undefined) {
             requiresConcentration = !!spell.filterData.concentration;
-          }
-          // Then check system data if not found
-          else if (spell.system?.duration?.concentration !== undefined) {
+          } else if (spell.system?.duration?.concentration !== undefined) {
             requiresConcentration = !!spell.system.duration.concentration;
           }
+          return (concentration === 'true' && requiresConcentration) || (concentration === 'false' && !requiresConcentration);
+        });
+        log(1, 'After concentration filter:', remainingSpells.length, 'spells remaining');
+      }
 
-          if (concentration === 'true' && !requiresConcentration) return false;
-          if (concentration === 'false' && requiresConcentration) return false;
-        }
+      // Filter: Ritual
+      if (ritual) {
+        remainingSpells = remainingSpells.filter((spell) => {
+          return !!spell.filterData?.isRitual;
+        });
+        log(1, 'After ritual filter:', remainingSpells.length, 'spells remaining');
+      }
 
-        if (ritual) {
-          const isRitual = !!spell.filterData?.isRitual;
-          if (!isRitual) return false;
-        }
-
-        return true;
-      });
+      log(1, 'Final spells count:', remainingSpells.length);
 
       // Return filtered spells and count
       return {
-        spells: filteredSpells,
-        totalFiltered: filteredSpells.length
+        spells: remainingSpells,
+        totalFiltered: remainingSpells.length
       };
     } catch (error) {
       log(1, 'Error filtering available spells:', error);
@@ -863,7 +914,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   determineSourceFilter(spellList) {
     try {
       log(3, 'Determining source filter for spell list');
-      let sourceFilter = '';
+
+      // Default to "all" - show all sources
+      let sourceFilter = 'all';
 
       // Check if this is a custom list
       const isCustomList = !!spellList.flags?.[MODULE.ID]?.isDuplicate;
@@ -874,29 +927,27 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         if (originalUuid) {
           try {
             const parsedUuid = foundry.utils.parseUuid(originalUuid);
-            sourceFilter = parsedUuid.collection.metadata.packageName;
+            // Extract just the package name (first part before the dot)
+            const packageName = parsedUuid.collection.metadata.packageName.split('.')[0];
+            sourceFilter = packageName;
             log(3, `Using original source: ${sourceFilter}`);
           } catch (e) {
             log(2, `Error parsing original UUID: ${e.message}`);
           }
         }
       } else if (spellList.pack) {
-        // Use the current pack
-        const [packageName, packName] = spellList.pack.split('.');
-        sourceFilter = `${packageName}.${packName}`;
+        // Extract just the package name (first part before the dot)
+        const packageName = spellList.pack.split('.')[0];
+        sourceFilter = packageName;
         log(3, `Using current pack source: ${sourceFilter}`);
       }
 
-      // Set the filter if we found a valid source
-      if (sourceFilter) {
-        this.filterState.source = sourceFilter;
-      } else {
-        this.filterState.source = '';
-        log(3, 'No valid source found, clearing source filter');
-      }
+      // Set the filter
+      this.filterState.source = sourceFilter;
+      log(3, `Set source filter to: ${sourceFilter}`);
     } catch (error) {
       log(1, 'Error determining source filter:', error);
-      this.filterState.source = '';
+      this.filterState.source = 'all'; // Default to all on error
     }
   }
 
@@ -924,11 +975,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         // Need to duplicate it first
         ui.notifications.info(game.i18n.localize('SPELLMANAGER.Notifications.Creating'));
 
-        // Store original source
+        // Store original source - just take the package name (first part before any dots)
         let originalSource = '';
         if (this.selectedSpellList.document.pack) {
-          const [packageName, packName] = this.selectedSpellList.document.pack.split('.');
-          originalSource = `${packageName}.${packName}`;
+          // Extract just the first part of the pack name, removing any .xyz suffixes
+          originalSource = this.selectedSpellList.document.pack.split('.')[0];
           log(3, `Stored original source: ${originalSource}`);
         }
 
@@ -950,7 +1001,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           isLoadingSpells: false
         };
 
-        // Preserve original source
+        // Preserve original source without suffixes
         if (originalSource) {
           this.filterState.source = originalSource;
           log(3, `Preserved source for filtering: ${originalSource}`);

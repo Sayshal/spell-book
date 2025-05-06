@@ -19,9 +19,10 @@ export async function findCompendiumSpellLists() {
 
   log(3, `Searching ${journalPacks.length} journal packs for spell lists`);
 
+  // Process standard packs first
   for (const pack of journalPacks) {
     try {
-      // Skip custom spell lists pack
+      // Skip custom spell lists pack - we'll process it separately
       if (pack.metadata.id === `${MODULE.ID}.custom-spell-lists`) {
         continue;
       }
@@ -56,6 +57,54 @@ export async function findCompendiumSpellLists() {
     } catch (error) {
       log(2, `Error processing pack ${pack.metadata.label}:`, error);
     }
+  }
+
+  // Now add only truly new custom spell lists from our module's pack
+  try {
+    const customPack = game.packs.get(`${MODULE.ID}.custom-spell-lists`);
+    if (customPack) {
+      const index = await customPack.getIndex();
+      const entries = Array.from(index.values());
+
+      for (const journalData of entries) {
+        try {
+          const journal = await customPack.getDocument(journalData._id);
+
+          for (const page of journal.pages) {
+            // Skip non-spell list pages
+            if (page.type !== 'spells') continue;
+
+            // Check if this is a duplicate spell list
+            const flags = page.flags?.[MODULE.ID] || {};
+            const isDuplicate = flags.isDuplicate === true;
+            const hasOriginalUuid = !!flags.originalUuid;
+
+            // Skip duplicates of existing lists
+            if (isDuplicate || hasOriginalUuid) {
+              continue;
+            }
+
+            // Add truly new custom list
+            spellLists.push({
+              uuid: page.uuid,
+              name: page.name,
+              journal: journal.name,
+              pack: customPack.metadata.label,
+              packageName: customPack.metadata.packageName,
+              system: page.system,
+              spellCount: page.system.spells?.size || 0,
+              identifier: page.system.identifier,
+              isCustom: true // Flag to mark as custom list
+            });
+          }
+        } catch (innerError) {
+          log(2, `Error processing custom journal ${journalData.name}:`, innerError);
+          continue;
+        }
+      }
+    }
+  } catch (error) {
+    log(2, `Error processing custom spell lists pack:`, error);
   }
 
   log(3, `Found ${spellLists.length} total spell lists`);
@@ -551,6 +600,7 @@ export async function createNewSpellList(name, identifier, source = 'Custom') {
           [MODULE.ID]: {
             isCustom: true,
             isNewList: true,
+            isDuplicate: false,
             creationDate: Date.now()
           }
         },

@@ -124,7 +124,8 @@
 		<div class="filter-item">
 			<label for="spell-source">{{localize "SPELLMANAGER.Filters.Source"}}</label>
 			<select name="spell-source" id="spell-source" aria-label="{{localize 'SPELLMANAGER.Filters.Source'}}">
-				<option value="">{{localize "SPELLMANAGER.Filters.AllSources"}}</option>
+				<option value="all" {{#if (or (not filterState.source) (eq filterState.source 'all'))}}selected{{/if}}>
+					{{localize "SPELLMANAGER.Filters.AllSources"}}</option>
 				{{#each spellSources as |source|}}
 					<option value="{{source.id}}" {{#if (eq ../filterState.source source.id)}}selected{{/if}}>
 						{{source.label}}

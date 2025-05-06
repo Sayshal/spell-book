@@ -6,30 +6,30 @@
 		<i class="fas fa-caret-left" aria-hidden="true"></i>
 	</button>
 
-  <div class="lists-header">
-    <h2 id="available-lists-heading">{{localize "SPELLMANAGER.Columns.AvailableLists"}}</h2>
-    <button type="button" class="create-new-button" data-action="createNewList"
-      aria-label="{{localize 'SPELLMANAGER.Buttons.CreateNew'}}">
-      <i class="fas fa-plus" aria-hidden="true"></i>
-    </button>
-  </div>
+	<div class="lists-header">
+		<h2 id="available-lists-heading">{{localize "SPELLMANAGER.Columns.AvailableLists"}}</h2>
+		<button type="button" class="create-new-button" data-action="createNewList"
+			aria-label="{{localize 'SPELLMANAGER.Buttons.CreateNew'}}">
+			<i class="fas fa-plus" aria-hidden="true"></i>
+		</button>
+	</div>
 
 	<div class="lists-container" role="list" aria-labelledby="available-lists-heading">
 		{{#if availableSpellLists.length}}
 			<ul class="spell-list-items">
 				{{#each availableSpellLists as |list|}}
-					<li class="spell-list-item" data-uuid="{{list.uuid}}" role="listitem"
+					<li class="spell-list-item {{#if list.isCustom}}custom-list{{/if}}" data-uuid="{{list.uuid}}" role="listitem"
 						aria-label="{{list.name}} - {{localize 'SPELLMANAGER.Status.SpellCount' count=list.spellCount}} - {{list.pack}}">
 						<div class="list-item-header" data-action="selectSpellList" data-uuid="{{list.uuid}}">
 							<div class="list-name">
-								<i class="fas fa-book {{#if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
+								<i class="fas fa-book {{#if list.isCustom}}is-custom-list{{else if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
 									aria-hidden="true"></i>
 								<span>{{list.name}}</span>
 							</div>
 							<div class="list-meta">
 								<span class="spell-count">{{localize "SPELLMANAGER.Status.SpellCount" count=list.spellCount}}</span>
 								<span class="meta-separator" aria-hidden="true">•</span>
-								<span class="source">{{list.pack}}</span>
+								<span class="source">{{#if list.isCustom}}Custom{{else}}{{list.pack}}{{/if}}</span>
 							</div>
 						</div>
 					</li>
