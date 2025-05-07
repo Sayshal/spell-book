@@ -14,7 +14,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /** @override */
   static DEFAULT_OPTIONS = {
-    id: `${MODULE.ID}-player-filter-config`,
+    id: `filter-config-${MODULE.ID}`,
     tag: 'form',
     window: {
       title: 'SPELLBOOK.Settings.ConfigureFilters',
@@ -30,10 +30,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       submitOnChange: false
     },
     position: {
-      top: 75
-    },
-    actions: {
-      reset: PlayerFilterConfiguration.handleReset
+      top: 100
     },
     dragDrop: [
       {
@@ -144,7 +141,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
    * Prepare the application context data
    * @override
    */
-  _prepareContext(_options) {
+  _prepareContext(options) {
     try {
       // Ensure valid configuration
       if (!Array.isArray(this.config) || this.config.length === 0) {
@@ -201,10 +198,19 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
    * Setup after rendering
    * @override
    */
-  _onRender(_context, _options) {
+  _onRender(context, options) {
     try {
+      // Set draggable attributes
       this.setDraggableAttributes();
+
+      // Bind drag & drop handlers
       this.setupDragDrop();
+
+      // Add reset button handler
+      const resetBtn = this.element.querySelector('button[data-action="reset"]');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', this.onReset.bind(this));
+      }
     } catch (error) {
       log(1, 'Error in _onRender:', error);
     }
@@ -237,6 +243,21 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       log(3, 'Drag and drop handlers set up');
     } catch (error) {
       log(1, 'Error setting up drag and drop:', error);
+    }
+  }
+
+  /**
+   * Handle reset button click
+   * @param {Event} event - The click event
+   */
+  onReset(event) {
+    try {
+      event.preventDefault();
+      log(3, 'Reset button clicked, restoring defaults');
+      this.config = foundry.utils.deepClone(DEFAULT_FILTER_CONFIG);
+      this.render(false);
+    } catch (error) {
+      log(1, 'Error handling reset:', error);
     }
   }
 
@@ -600,22 +621,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       log(1, 'Error capturing form state:', error);
     }
     return state;
-  }
-
-  /**
-   * Handle reset button click (static method for actions system)
-   * @param {Event} event - The click event
-   * @static
-   */
-  static handleReset(event, _form) {
-    try {
-      event.preventDefault();
-      log(3, 'Reset button clicked, restoring defaults');
-      this.config = foundry.utils.deepClone(DEFAULT_FILTER_CONFIG);
-      this.render(false);
-    } catch (error) {
-      log(1, 'Error handling reset:', error);
-    }
   }
 
   /**

@@ -364,6 +364,39 @@ export async function removeCustomSpellList(duplicateUuid) {
 }
 
 /**
+ * Add a spell to a spell list
+ * @param {JournalEntryPage} spellList - The spell list to add to
+ * @param {string} spellUuid - UUID of the spell to add
+ * @returns {Promise<JournalEntryPage>} The updated spell list
+ */
+export async function addSpellToList(spellList, spellUuid) {
+  try {
+    // Get current spells
+    const spells = new Set(spellList.system.spells || []);
+
+    // Check if spell already exists
+    if (spells.has(spellUuid)) {
+      log(3, `Spell ${spellUuid} already in list`);
+      return spellList;
+    }
+
+    // Add the spell
+    spells.add(spellUuid);
+
+    // Update the list
+    const updated = await spellList.update({
+      'system.spells': Array.from(spells)
+    });
+
+    log(3, `Added spell ${spellUuid} to list ${spellList.name}`);
+    return updated;
+  } catch (error) {
+    log(1, `Error adding spell to list: ${error.message}`);
+    throw error;
+  }
+}
+
+/**
  * Normalize a UUID for comparison
  * @param {string} uuid - The UUID to normalize
  * @returns {string[]} Array of normalized forms
@@ -400,6 +433,69 @@ export function normalizeUuid(uuid) {
   }
 
   return normalized;
+}
+
+/**
+ * Remove a spell from a spell list
+ * @param {JournalEntryPage} spellList - The spell list
+ * @param {string} spellUuid - UUID of the spell to remove
+ * @returns {Promise<JournalEntryPage>} The updated spell list
+ */
+export async function removeSpellFromList(spellList, spellUuid) {
+  try {
+    // Get current spells
+    const spells = new Set(spellList.system.spells || []);
+    log(3, `Removing spell ${spellUuid} from list with ${spells.size} spells`);
+
+    // Get normalized forms
+    const normalizedForms = normalizeUuid(spellUuid);
+
+    // Try each form against the list
+    let found = false;
+
+    for (const form of normalizedForms) {
+      if (spells.has(form)) {
+        spells.delete(form);
+        found = true;
+        log(3, `Removed spell with form: ${form}`);
+        break;
+      }
+    }
+
+    // If not found, check all spells
+    if (!found) {
+      for (const existingUuid of spells) {
+        const existingForms = normalizeUuid(existingUuid);
+
+        // Check for matches
+        const match = normalizedForms.some((form) => existingForms.includes(form));
+
+        if (match) {
+          spells.delete(existingUuid);
+          found = true;
+          log(3, `Removed spell with matching form: ${existingUuid}`);
+          break;
+        }
+      }
+    }
+
+    if (!found) {
+      log(2, `Spell ${spellUuid} not found in list`);
+      return spellList;
+    }
+
+    // Update the list
+    log(3, `Updating spell list with ${spells.size} spells`);
+    const updated = await spellList.update({
+      'system.spells': Array.from(spells)
+    });
+
+    log(3, `Removed spell ${spellUuid} from list ${spellList.name}`);
+    return updated;
+  } catch (error) {
+    log(1, `Error removing spell from list: ${error.message}`);
+    throw error;
+  }
 }
 
 /**
@@ -663,51 +759,4 @@ export function prepareConditionOptions(filterState) {
     });
 
   return options;
-}
-
-/**
- * Find all class identifiers from class items in compendiums
- * @returns {Promise<Object>} Object mapping class identifiers to names
- */
-export async function findClassIdentifiers() {
-  try {
-    const identifiers = {};
-
-    // Get all item packs
-    const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
-
-    for (const pack of itemPacks) {
-      try {
-        // Get index with identifier field for class items
-        const index = await pack.getIndex({
-          fields: ['type', 'system.identifier', 'name']
-        });
-
-        // Filter for class items
-        const classItems = index.filter((e) => e.type === 'class');
-
-        // Get pack display name
-        const packDisplayName = pack.metadata.label;
-
-        for (const cls of classItems) {
-          const identifier = cls.system?.identifier?.toLowerCase();
-          if (identifier) {
-            identifiers[identifier] = {
-              name: cls.name,
-              source: packDisplayName || 'Unknown',
-              fullDisplay: `${cls.name} [${packDisplayName}]`,
-              id: identifier
-            };
-          }
-        }
-      } catch (error) {
-        log(1, `Error processing pack ${pack.metadata.label} for class identifiers: ${error.message}`);
-      }
-    }
-
-    return identifiers;
-  } catch (error) {
-    log(1, `Error finding class identifiers: ${error.message}`);
-    return {};
-  }
 }
