@@ -12,9 +12,6 @@ import { log } from '../logger.mjs';
  */
 export function registerTidy5eIntegration() {
   try {
-    log(3, 'Registering Tidy5e sheet integration');
-
-    // Register the Tidy5e-specific render hook
     Hooks.on('tidy5e-sheet.renderActorSheet', onTidy5eRender);
 
     log(3, 'Registered Tidy5e sheet integration');
@@ -42,7 +39,7 @@ function onTidy5eRender(sheet, element, data) {
     // Find the spells tab section
     const spellsTab = element.querySelector('.spellbook');
     if (!spellsTab) {
-      log(3, `Spells tab not found in ${actor.name}'s sheet`);
+      log(2, `Spells tab not found in ${actor.name}'s sheet`);
       return;
     }
 
@@ -69,7 +66,7 @@ function onTidy5eRender(sheet, element, data) {
     const buttonHtml = `
       <button type="button" class="inline-icon-button spell-book-button"
               title="${game.i18n.localize('SPELLBOOK.UI.OpenSpellBook')}" tabindex="-1">
-        <i class="fas fa-hat-wizard"></i>
+        <i class="fas fa-book-open"></i>
       </button>
     `;
 
