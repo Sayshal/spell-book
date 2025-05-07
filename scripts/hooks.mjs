@@ -7,6 +7,7 @@ import { PlayerSpellBook } from './apps/player-spell-book.mjs';
 import { TEMPLATES } from './constants.mjs';
 import * as discoveryUtils from './helpers/spell-discovery.mjs';
 import { registerDnD5eIntegration } from './integrations/dnd5e.mjs';
+import { registerTidy5eIntegration } from './integrations/tidy5e.mjs';
 import { log } from './logger.mjs';
 /**
  * Register all module hooks
@@ -30,8 +31,13 @@ export async function registerHooks() {
  */
 function registerSystemIntegrations() {
   try {
-    // Register system-specific integrations (e.g., DnD5e)
+    // 5e System Hook
     registerDnD5eIntegration();
+
+    // Tidy5e Classic Hook
+    if (game.modules.get('tidy5e-sheet')?.active) {
+      registerTidy5eIntegration();
+    }
     log(3, 'System integration hooks registered');
   } catch (error) {
     log(1, 'Error registering system integration hooks:', error);
@@ -63,7 +69,6 @@ function addSpellbookButton(app, html, data) {
 
     // Only add button for characters that can cast spells
     if (!canAddSpellbookButton(actor, html)) {
-      log(3, `Skipping spell book button for ${actor.name} (not a spellcaster or no spells tab)`);
       return;
     }
 

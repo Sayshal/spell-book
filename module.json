@@ -2,7 +2,7 @@
   "id": "spell-book",
   "title": "Spell Book",
   "description": "Enhanced spell management for DnD5e. Easily view, prepare, and customize spell lists.",
-  "version": "1.0.0",
+  "version": "",
   "bugs": "https://github.com/Sayshal/spell-book/issues",
   "changelog": "https://github.com/Sayshal/spell-book/releases",
   "license": "https://github.com/Sayshal/spell-book?tab=MIT-1-ov-file",
