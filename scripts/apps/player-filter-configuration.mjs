@@ -663,9 +663,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       // Save to settings
       await game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, updatedConfig);
 
-      // Show success notification
-      ui.notifications?.info('Filter configuration saved.');
-
       // Refresh parent application if available
       if (this.parentApp) {
         log(3, 'Refreshing parent application');
@@ -678,8 +675,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       return true;
     } catch (error) {
       log(1, 'Error saving filter configuration:', error);
-      console.error(error);
-      ui.notifications?.error('Failed to save filter configuration.');
       return false;
     }
   }

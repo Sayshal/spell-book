@@ -875,7 +875,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       // Get the spell list document
       const spellList = await fromUuid(uuid);
       if (!spellList) {
-        ui.notifications.error('Spell list not found.');
+        log(1, 'Spell list not found.');
         return;
       }
 
@@ -905,7 +905,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       await this.loadSpellDetails(spellUuids);
     } catch (error) {
       log(1, 'Error selecting spell list:', error);
-      ui.notifications.error('Failed to load spell list.');
     }
   }
 
@@ -979,9 +978,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       const isCustom = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList;
 
       if (!isCustom) {
-        // Need to duplicate it first
-        ui.notifications.info(game.i18n.localize('SPELLMANAGER.Notifications.Creating'));
-
         // Store original source - just take the package name (first part before any dots)
         let originalSource = '';
         if (this.selectedSpellList.document.pack) {
@@ -1013,8 +1009,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           this.filterState.source = originalSource;
           log(3, `Preserved source for filtering: ${originalSource}`);
         }
-
-        ui.notifications.info(game.i18n.localize('SPELLMANAGER.Notifications.Created'));
       } else {
         log(3, `List is already custom (${flags.isDuplicate ? 'duplicate' : 'new'}), proceeding with edit directly`);
       }
@@ -1036,7 +1030,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       }, 100);
     } catch (error) {
       log(1, 'Error entering edit mode:', error);
-      ui.notifications.error(game.i18n.localize('SPELLMANAGER.Notifications.EditError'));
     }
   }
 
@@ -1088,11 +1081,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Apply filters to show the removed spell in available spells
       this.applyFilters();
-
-      ui.notifications.info(game.i18n.localize('SPELLMANAGER.Notifications.SpellRemoved'));
     } catch (error) {
       log(1, 'Error removing spell:', error);
-      ui.notifications.error(game.i18n.localize('SPELLMANAGER.Notifications.SpellRemoveError'));
     }
   }
 
@@ -1147,11 +1137,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         // Apply filters to hide the added spell from available spells
         this.applyFilters();
       }
-
-      ui.notifications.info(game.i18n.localize('SPELLMANAGER.Notifications.SpellAdded'));
     } catch (error) {
       log(1, 'Error adding spell:', error);
-      ui.notifications.error(game.i18n.localize('SPELLMANAGER.Notifications.SpellAddError'));
     }
   }
 
@@ -1207,11 +1194,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Refresh the spell list to ensure everything is up to date
       await this.selectSpellList(document.uuid);
-
-      ui.notifications.info(game.i18n.localize('SPELLMANAGER.Notifications.ListSaved'));
     } catch (error) {
       log(1, 'Error saving spell list:', error);
-      ui.notifications.error('Failed to save spell list');
     }
   }
 
@@ -1246,11 +1230,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Re-render
       this.render(false);
-
-      ui.notifications.info(game.i18n.format('SPELLMANAGER.Notifications.ListDeleted', { name: listName }));
     } catch (error) {
       log(1, 'Error deleting custom spell list:', error);
-      ui.notifications.error(game.i18n.localize('SPELLMANAGER.Notifications.ListDeleteError'));
     }
   }
 
@@ -1281,7 +1262,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       // Get the original list
       const originalList = await fromUuid(originalUuid);
       if (!originalList) {
-        ui.notifications.error('Original spell list not found.');
         return;
       }
 
@@ -1304,11 +1284,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Re-render
       this.render(false);
-
-      ui.notifications.info(`Spell list "${listName}" restored from original.`);
     } catch (error) {
       log(1, 'Error restoring from original:', error);
-      ui.notifications.error('Failed to restore from original.');
     }
   }
 
@@ -1819,7 +1796,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       }
     } catch (error) {
       log(1, 'Error creating new list:', error);
-      ui.notifications.error('Failed to create new spell list');
     }
   }
 
@@ -1832,17 +1808,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       const newList = await managerHelpers.createNewSpellList(name, identifier, source);
 
       if (newList) {
-        ui.notifications.info(game.i18n.format('SPELLMANAGER.Notifications.ListCreated', { name }));
-
-        // Reload lists
         await this.loadData();
-
-        // Select the new list
         await this.selectSpellList(newList.uuid);
       }
     } catch (error) {
       log(1, `Error creating list: ${error.message}`);
-      ui.notifications.error('Failed to create new spell list');
     }
   }
 

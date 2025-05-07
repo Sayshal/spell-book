@@ -1263,21 +1263,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       // Save to actor
       await preparationUtils.saveActorPreparedSpells(actor, spellData);
 
-      ui.notifications.info(
-        game.i18n.format('SPELLBOOK.Notifications.SpellsUpdated', {
-          name: actor.name
-        })
-      );
-
-      // Re-render character sheet
       if (actor.sheet.rendered) {
         actor.sheet.render(true);
       }
-
       return actor;
     } catch (error) {
       log(1, 'Error handling form submission:', error);
-      ui.notifications.error(game.i18n.localize('SPELLBOOK.Notifications.UpdateFailed'));
       return null;
     }
   }

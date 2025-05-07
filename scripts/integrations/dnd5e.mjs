@@ -134,7 +134,6 @@ function openSpellBookForActor(actor) {
     }
   } catch (error) {
     log(1, 'Failed to open spell book:', error);
-    ui.notifications?.error(game.i18n.format('Failed to open spell book for {name}', { name: actor.name }));
   }
 }
 

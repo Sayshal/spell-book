@@ -144,7 +144,6 @@ function onSpellBookButtonClick(actor, ev) {
     spellBook.render(true);
   } catch (error) {
     log(1, `Error opening spell book: ${error.message}`);
-    ui.notifications?.error(game.i18n.format('SPELLBOOK.Notifications.FailedToOpen', { name: actor.name }));
   }
 }
 
