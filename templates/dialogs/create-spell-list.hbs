@@ -1,0 +1,23 @@
+<form>
+	<div class="form-group">
+		<label for="list-name">{{localize "SPELLMANAGER.CreateList.ListNameLabel"}}</label>
+		<input type="text" id="list-name" name="name" required>
+	</div>
+	<div class="form-group">
+		<label for="class-identifier">{{localize "SPELLMANAGER.CreateList.ClassLabel"}}</label>
+		<select id="class-identifier" name="identifier">
+			{{#each identifierOptions}}
+				<option value="{{id}}">{{name}}</option>
+			{{/each}}
+			<option value="custom">{{localize "SPELLMANAGER.CreateList.CustomOption"}}</option>
+		</select>
+	</div>
+	<div class="form-group custom-id-group" style="display:none;">
+		<label for="custom-identifier">{{localize "SPELLMANAGER.CreateList.CustomIdentifierLabel"}}</label>
+		<input type="text" id="custom-identifier" name="customIdentifier" pattern="[a-z0-9_-]+"
+			title="{{localize "SPELLMANAGER.CreateList.IdentifierNotes"}}">
+		<p class="notes">{{localize "SPELLMANAGER.CreateList.IdentifierNotes"}}</p>
+		<p class="validation-error" style="color: red; display: none;">
+			{{localize "SPELLMANAGER.CreateList.ValidationError"}}</p>
+	</div>
+</form>

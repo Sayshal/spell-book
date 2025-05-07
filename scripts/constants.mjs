@@ -98,16 +98,9 @@ export const TEMPLATES = {
     }
   },
 
-  /**
-   * Dialog templates
-   * @type {Object}
-   */
   DIALOGS: {
-    /**
-     * Filter configuration dialog
-     * @type {string}
-     */
-    FILTER_CONFIG: 'modules/spell-book/templates/dialogs/filter-configuration.hbs'
+    FILTER_CONFIG: 'modules/spell-book/templates/dialogs/filter-configuration.hbs',
+    CREATE_SPELL_LIST: 'modules/spell-book/templates/dialogs/create-spell-list.hbs'
   }
 };
 

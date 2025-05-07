@@ -1667,38 +1667,23 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     try {
       // Get class identifiers
       const classIdentifiers = await this.findClassIdentifiers();
-      const identifierOptions = Object.entries(classIdentifiers)
-        .sort(([, nameA], [, nameB]) => nameA.localeCompare(nameB)) // Sort alphabetically
-        .map(([id, name]) => `<option value="${id}">${name}</option>`)
-        .join('');
 
-      // Create dialog content
-      const content = `
-    <form>
-      <div class="form-group">
-        <label for="list-name">List Name:</label>
-        <input type="text" id="list-name" name="name" required>
-      </div>
-      <div class="form-group">
-        <label for="class-identifier">Class:</label>
-        <select id="class-identifier" name="identifier">
-          ${identifierOptions}
-          <option value="custom">Custom...</option>
-        </select>
-      </div>
-      <div class="form-group custom-id-group" style="display:none;">
-        <label for="custom-identifier">Custom Identifier:</label>
-        <input type="text" id="custom-identifier" name="customIdentifier">
-      </div>
-    </form>
-    `;
+      // Format identifiers for the template
+      const identifierOptions = Object.entries(classIdentifiers)
+        .sort(([, nameA], [, nameB]) => nameA.localeCompare(nameB))
+        .map(([id, name]) => ({ id, name }));
+
+      // Render template with data
+      const content = await renderTemplate(TEMPLATES.DIALOGS.CREATE_SPELL_LIST, {
+        identifierOptions
+      });
 
       // Store form data
       let formData = null;
 
       // Use DialogV2
       const dialogResult = await foundry.applications.api.DialogV2.wait({
-        title: game.i18n.localize('SPELLMANAGER.Buttons.CreateNew'),
+        window: { title: game.i18n.localize('SPELLMANAGER.Buttons.CreateNew'), icon: 'fas fa-star' },
         content: content,
         buttons: [
           {
@@ -1714,7 +1699,24 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
               if (!nameInput || !identifierSelect) return false;
 
               const name = nameInput.value;
-              const identifier = identifierSelect.value === 'custom' ? customIdentifierInput?.value || '' : identifierSelect.value;
+              let identifier = '';
+
+              // Check if using custom identifier
+              if (identifierSelect.value === 'custom') {
+                identifier = customIdentifierInput?.value || '';
+
+                // Validate custom identifier format
+                const identifierPattern = /^[a-z0-9_-]+$/;
+                if (!identifierPattern.test(identifier)) {
+                  // Show validation error
+                  const errorElement = form.querySelector('.validation-error');
+                  if (errorElement) errorElement.style.display = 'block';
+                  customIdentifierInput.focus();
+                  return false;
+                }
+              } else {
+                identifier = identifierSelect.value;
+              }
 
               if (!name || !identifier) return false;
 
@@ -1733,22 +1735,63 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           // Show custom field when "Custom..." is selected
           const identifierSelect = target.querySelector('#class-identifier');
           const customField = target.querySelector('.custom-id-group');
+          const customIdentifierInput = target.querySelector('#custom-identifier');
+          const createButton = target.querySelector('button[data-action="create"]');
 
-          if (identifierSelect) {
+          if (identifierSelect && customField && customIdentifierInput) {
+            // Initial setup
             identifierSelect.addEventListener('change', (e) => {
               if (e.target.value === 'custom') {
                 customField.style.display = 'block';
+
+                // Check initial validity when switching to custom
+                const isValid = /^[a-z0-9_-]+$/.test(customIdentifierInput.value);
+                createButton.disabled = customIdentifierInput.value !== '' && !isValid;
+
+                // Show validation error if needed
+                const errorElement = target.querySelector('.validation-error');
+                if (errorElement) {
+                  errorElement.style.display = customIdentifierInput.value !== '' && !isValid ? 'block' : 'none';
+                }
               } else {
                 customField.style.display = 'none';
+                // Enable button when using predefined identifiers
+                createButton.disabled = false;
+                // Hide any validation errors when switching away
+                const errorElement = target.querySelector('.validation-error');
+                if (errorElement) errorElement.style.display = 'none';
+              }
+            });
+
+            // Add real-time validation for custom identifier
+            customIdentifierInput.addEventListener('input', (e) => {
+              const value = e.target.value;
+              const isValid = /^[a-z0-9_-]+$/.test(value);
+              const errorElement = target.querySelector('.validation-error');
+
+              // Show/hide error message
+              if (errorElement) {
+                errorElement.style.display = isValid || value === '' ? 'none' : 'block';
+              }
+
+              // Enable/disable create button based on validation
+              createButton.disabled = value !== '' && !isValid;
+
+              // Visual feedback on the input
+              if (value !== '') {
+                customIdentifierInput.classList.toggle('error', !isValid);
+              } else {
+                customIdentifierInput.classList.remove('error');
+                // Empty is invalid, so disable button
+                createButton.disabled = true;
               }
             });
           }
         }
       });
-      log(1, 'Result!', dialogResult);
+
       // Process the captured form data
       if (dialogResult === 'create' && formData) {
-        log(1, 'Create!', dialogResult);
         await this._createNewListCallback(formData.name, formData.identifier);
       }
     } catch (error) {
