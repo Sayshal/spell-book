@@ -588,8 +588,10 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
  * @param {string} source - The source description
  * @returns {Promise<JournalEntryPage>} The created spell list
  */
-export async function createNewSpellList(name, identifier, source = 'Custom') {
-  // Create journal data
+export async function createNewSpellList(name, identifier, source) {
+  if (!source) {
+    source = game.i18n.localize('SPELLMANAGER.CreateList.Custom');
+  }
   const journalData = {
     name: `${source} - ${name}`,
     pages: [

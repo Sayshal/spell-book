@@ -1681,7 +1681,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         .sort(([, dataA], [, dataB]) => dataA.name.localeCompare(dataB.name))
         .map(([id, data]) => ({
           id: id,
-          name: data.fullDisplay
+          name: data.fullDisplay,
+          plainName: data.name
         }));
 
       // Render template with data
@@ -1707,10 +1708,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
               const identifierSelect = form.querySelector('[name="identifier"]');
               const customIdentifierInput = form.querySelector('[name="customIdentifier"]');
 
-              if (!nameInput || !identifierSelect) return false;
+              if (!identifierSelect) return false;
 
-              const name = nameInput.value;
+              // Get the name, or leave empty to use default
+              let name = nameInput.value.trim();
               let identifier = '';
+              let defaultClassName = '';
 
               // Check if using custom identifier
               if (identifierSelect.value === 'custom') {
@@ -1725,10 +1728,25 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
                   customIdentifierInput.focus();
                   return false;
                 }
+
+                // If name is empty, use identifier as default name (capitalized)
+                defaultClassName = identifier.charAt(0).toUpperCase() + identifier.slice(1);
               } else {
                 identifier = identifierSelect.value;
+
+                // Find the matching class data to get the plain name
+                const selectedOption = identifierOptions.find((opt) => opt.id === identifier);
+                if (selectedOption) {
+                  defaultClassName = selectedOption.plainName;
+                }
               }
 
+              // If name is empty, use the default class name
+              if (!name && defaultClassName) {
+                name = defaultClassName;
+              }
+
+              // Final validation - we must have both name and identifier
               if (!name || !identifier) return false;
 
               formData = { name, identifier };
@@ -1816,7 +1834,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   async _createNewListCallback(name, identifier) {
     try {
-      const newList = await managerHelpers.createNewSpellList(name, identifier, 'Custom');
+      const source = game.i18n.localize('SPELLMANAGER.CreateList.Custom');
+      const newList = await managerHelpers.createNewSpellList(name, identifier, source);
 
       if (newList) {
         ui.notifications.info(game.i18n.format('SPELLMANAGER.Notifications.ListCreated', { name }));

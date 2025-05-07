@@ -139,6 +139,7 @@
   "SPELLMANAGER.CreateList.ClassLabel": "Class:",
   "SPELLMANAGER.CreateList.CustomIdentifierLabel": "Custom Identifier:",
   "SPELLMANAGER.CreateList.CustomOption": "Custom...",
+  "SPELLMANAGER.CreateList.Custom": "Custom",
   "SPELLMANAGER.CreateList.IdentifierNotes": "An identifier can only contain lowercase letters (a-z), numbers (0-9), dashes (-), and underscores (_).",
   "SPELLMANAGER.CreateList.ListNameLabel": "List Name:",
   "SPELLMANAGER.CreateList.ValidationError": "Invalid identifier format. Please use only lowercase letters, numbers, dashes, and underscores.",
