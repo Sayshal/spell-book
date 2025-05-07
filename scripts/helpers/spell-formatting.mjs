@@ -150,7 +150,11 @@ export function extractSpellFilterData(spell) {
   );
 
   // Check for concentration
-  const concentration = spell.system.duration?.concentration || false;
+  let concentration = spell.system.duration?.concentration || false;
+  // Also check if it's in properties array
+  if (!concentration && spell.system.properties && Array.isArray(spell.system.properties)) {
+    concentration = spell.system.properties.includes('concentration');
+  }
 
   // Check for saving throws
   const requiresSave = checkSpellRequiresSave(spell);

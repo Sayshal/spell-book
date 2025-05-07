@@ -450,15 +450,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       // Filter: Concentration
       if (concentration) {
         remainingSpells = remainingSpells.filter((spell) => {
-          let requiresConcentration = false;
-          if (spell.filterData?.concentration !== undefined) {
-            requiresConcentration = !!spell.filterData.concentration;
-          } else if (spell.system?.duration?.concentration !== undefined) {
-            requiresConcentration = !!spell.system.duration.concentration;
-          }
+          const requiresConcentration = !!spell.filterData?.concentration;
           return (concentration === 'true' && requiresConcentration) || (concentration === 'false' && !requiresConcentration);
         });
-        log(1, 'After concentration filter:', remainingSpells.length, 'spells remaining');
       }
 
       // Filter: Ritual
