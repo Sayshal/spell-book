@@ -4,6 +4,7 @@
  * @module spell-book/settings
  */
 
+import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
 import { DEFAULT_FILTER_CONFIG, MODULE, SETTINGS } from './constants.mjs';
 import { log } from './logger.mjs';
 
@@ -123,6 +124,17 @@ function registerUISettings() {
         log(1, 'Error validating filter configuration:', error);
       }
     }
+  });
+
+  // Add Spell List Manager button
+  game.settings.registerMenu(MODULE.ID, SETTINGS.OPEN_SPELL_MANAGER, {
+    name: 'SPELLBOOK.Settings.OpenSpellListManager.Name',
+    hint: 'SPELLBOOK.Settings.OpenSpellListManager.Hint',
+    label: 'SPELLBOOK.Settings.OpenSpellListManager.Button',
+    icon: 'fas fa-hat-wizard',
+    scope: 'world',
+    type: GMSpellListManager,
+    restricted: true
   });
 }
 

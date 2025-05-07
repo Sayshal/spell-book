@@ -12,23 +12,8 @@
  * @type {Object}
  */
 export const MODULE = {
-  /**
-   * Unique identifier for the module
-   * @type {string}
-   */
   ID: 'spell-book',
-
-  /**
-   * Display name of the module
-   * @type {string}
-   */
   NAME: 'Spell Book',
-
-  /**
-   * Logging level for the module
-   * 0 = none, 1 = errors, 2 = warnings, 3 = verbose
-   * @type {number}
-   */
   LOG_LEVEL: 0
 };
 
@@ -41,22 +26,8 @@ export const MODULE = {
  * @type {Object}
  */
 export const FLAGS = {
-  /**
-   * Flag name for storing prepared spells on an actor
-   * @type {string}
-   */
   PREPARED_SPELLS: 'preparedSpells',
-
-  /**
-   * Flag name for storing collapsed spell levels in UI
-   * @type {string}
-   */
   COLLAPSED_LEVELS: 'collapsedSpellLevels',
-
-  /**
-   * Flag name for sidebar collapsed state
-   * @type {string}
-   */
   SIDEBAR_COLLAPSED: 'sidebarCollapsed'
 };
 
@@ -113,35 +84,12 @@ export const TEMPLATES = {
  * @type {Object}
  */
 export const SETTINGS = {
-  /**
-   * Logging level setting key
-   * @type {string}
-   */
   LOGGING_LEVEL: 'loggingLevel',
-
-  /**
-   * Rest prompt setting key
-   * @type {string}
-   */
   ENABLE_REST_PROMPT: 'enableRestPrompt',
-
-  /**
-   * Distance unit setting key
-   * @type {string}
-   */
   DISTANCE_UNIT: 'distanceUnit',
-
-  /**
-   * Filter configuration setting key
-   * @type {string}
-   */
   FILTER_CONFIGURATION: 'filterConfiguration',
-
-  /**
-   * Custom spell list mappings setting key
-   * @type {string}
-   */
-  CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings'
+  CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',
+  OPEN_SPELL_MANAGER: 'openSpellListManager'
 };
 
 //-----------------------------------------------------------------------------
@@ -176,7 +124,6 @@ export const SORT_BY = {
  * @type {Array}
  */
 export const DEFAULT_FILTER_CONFIG = [
-  // Search filter (always at top)
   {
     id: 'name',
     type: FILTER_TYPES.SEARCH,
@@ -185,8 +132,6 @@ export const DEFAULT_FILTER_CONFIG = [
     label: 'SPELLBOOK.Filters.SearchPlaceholder',
     sortable: false
   },
-
-  // Dropdown filters (middle)
   {
     id: 'level',
     type: FILTER_TYPES.DROPDOWN,
@@ -251,8 +196,6 @@ export const DEFAULT_FILTER_CONFIG = [
     label: 'SPELLBOOK.Filters.RequiresConcentration',
     sortable: true
   },
-
-  // Sort options (always at bottom)
   {
     id: 'sortBy',
     type: FILTER_TYPES.DROPDOWN,
@@ -261,8 +204,6 @@ export const DEFAULT_FILTER_CONFIG = [
     label: 'SPELLBOOK.Filters.SortBy',
     sortable: false
   },
-
-  // Checkbox filters (always at bottom)
   {
     id: 'prepared',
     type: FILTER_TYPES.CHECKBOX,
