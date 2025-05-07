@@ -742,10 +742,18 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           // Filter for class items
           const classItems = index.filter((e) => e.type === 'class');
 
+          // Get pack display name
+          const packDisplayName = pack.metadata.label;
+
           for (const cls of classItems) {
             const identifier = cls.system?.identifier?.toLowerCase();
             if (identifier) {
-              identifiers[identifier] = cls.name;
+              identifiers[identifier] = {
+                name: cls.name,
+                source: packDisplayName || 'Unknown',
+                fullDisplay: `${cls.name} [${packDisplayName}]`,
+                id: identifier
+              };
             }
           }
         } catch (error) {
@@ -1670,8 +1678,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Format identifiers for the template
       const identifierOptions = Object.entries(classIdentifiers)
-        .sort(([, nameA], [, nameB]) => nameA.localeCompare(nameB))
-        .map(([id, name]) => ({ id, name }));
+        .sort(([, dataA], [, dataB]) => dataA.name.localeCompare(dataB.name))
+        .map(([id, data]) => ({
+          id: id,
+          name: data.fullDisplay
+        }));
 
       // Render template with data
       const content = await renderTemplate(TEMPLATES.DIALOGS.CREATE_SPELL_LIST, {
