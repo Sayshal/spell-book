@@ -1,10 +1,10 @@
-import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as actorSpellUtils from '../helpers/actor-spells.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import * as managerHelpers from '../helpers/spell-management.mjs';
 import { log } from '../logger.mjs';
 
-const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
  * Application for GM management of spell lists
@@ -46,7 +46,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       minimizable: true
     },
     position: {
-      width: 1100,
+      width: Math.max(1100, window.innerWidth - 650),
       height: Math.max(600, window.innerHeight - 200)
     }
   };
@@ -66,12 +66,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
   /** Loading state */
   isLoading = true;
-
-  /** Error state tracking */
-  hasError = false;
-
-  /** Error message if loading failed */
-  errorMessage = '';
 
   /** Available spell lists */
   availableSpellLists = [];
@@ -148,13 +142,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * Prepare the application context data
    * @override
    */
-  async _prepareContext(options) {
+  async _prepareContext(_options) {
     try {
       // Get basic context
       const context = {
         isLoading: this.isLoading,
-        hasError: this.hasError,
-        errorMessage: this.errorMessage,
         availableSpellLists: this.availableSpellLists,
         selectedSpellList: this.selectedSpellList,
         spellSchools: CONFIG.DND5E.spellSchools,
@@ -238,9 +230,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     } catch (error) {
       log(1, 'Error preparing context:', error);
       return {
-        isLoading: true,
-        hasError: true,
-        errorMessage: 'Failed to prepare application context'
+        isLoading: true
       };
     }
   }
@@ -250,7 +240,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @override
    */
   _onRender(context, options) {
-    super._onRender?.(context, options);
+    super._onRender(context, options);
 
     try {
       // Start loading data if needed
@@ -292,13 +282,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       // Fetch all available spells for column 3
       this.availableSpells = await managerHelpers.fetchAllCompendiumSpells();
       await this.enrichAvailableSpells();
-
-      this.isLoading = false;
-      this.render(false);
     } catch (error) {
       log(1, 'Error loading spell lists:', error);
-      this.hasError = true;
-      this.errorMessage = 'Failed to load spell lists.';
+    } finally {
       this.isLoading = false;
       this.render(false);
     }
@@ -342,24 +328,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       remainingSpells = remainingSpells.filter((spell) => !this.isSpellInSelectedList(spell, selectedSpellUUIDs));
       log(3, 'After in-list filter:', remainingSpells.length, 'spells remaining');
 
-      // Filter: Name
-      if (name) {
-        remainingSpells = remainingSpells.filter((spell) => spell.name.toLowerCase().includes(name.toLowerCase()));
-        log(3, 'After name filter:', remainingSpells.length, 'spells remaining');
-      }
-
-      // Filter: Level
-      if (level) {
-        remainingSpells = remainingSpells.filter((spell) => spell.level === parseInt(level));
-        log(3, 'After level filter:', remainingSpells.length, 'spells remaining');
-      }
-
-      // Filter: School
-      if (school) {
-        remainingSpells = remainingSpells.filter((spell) => spell.school === school);
-        log(3, 'After school filter:', remainingSpells.length, 'spells remaining');
-      }
-
       // Filter: Source
       if (source && source.trim() !== '' && source !== 'all') {
         const beforeCount = remainingSpells.length;
@@ -377,13 +345,31 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         if (remainingSpells.length === 0 && beforeCount > 0) {
           log(3, `Source '${source}' filtered out all spells, resetting to show all sources`);
           remainingSpells = [...this.availableSpells].filter((spell) => !this.isSpellInSelectedList(spell, selectedSpellUUIDs));
-          this.filterState.source = 'all'; // Reset source filter
+          source = 'all'; // Reset source filter
         } else {
           log(3, `After source filter: ${remainingSpells.length} spells remaining. Source filter: ${source}`);
         }
       } else {
         // "all" is selected or empty - don't filter by source
         log(3, 'Source filter is unset or "all", showing all sources');
+      }
+
+      // Filter: Name
+      if (name) {
+        remainingSpells = remainingSpells.filter((spell) => spell.name.toLowerCase().includes(name.toLowerCase()));
+        log(3, 'After name filter:', remainingSpells.length, 'spells remaining');
+      }
+
+      // Filter: Level
+      if (level) {
+        remainingSpells = remainingSpells.filter((spell) => spell.level === parseInt(level));
+        log(3, 'After level filter:', remainingSpells.length, 'spells remaining');
+      }
+
+      // Filter: School
+      if (school) {
+        remainingSpells = remainingSpells.filter((spell) => spell.school === school);
+        log(3, 'After school filter:', remainingSpells.length, 'spells remaining');
       }
 
       // Filter: Casting Time
@@ -501,7 +487,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           if (selectedSpellUUIDs.has(normalizedId)) return true;
         }
       } catch (e) {
-        // Ignore parsing errors
+        log(2, 'Unable to Parse UUID.', spell.uuid, spellIdPart);
       }
 
       return false;
@@ -668,7 +654,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
               clearTimeout(this._rangeFilterTimer);
               this._rangeFilterTimer = setTimeout(() => {
                 this.applyFilters();
-              }, 200);
+              }, 20);
             }
           });
         }
@@ -702,7 +688,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   applyCollapsedLevels() {
     try {
-      const collapsedLevels = game.user.getFlag(MODULE.ID, 'gmCollapsedSpellLevels') || [];
+      const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS) || [];
 
       for (const levelId of collapsedLevels) {
         const levelContainer = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
@@ -712,53 +698,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       }
     } catch (error) {
       log(1, 'Error applying collapsed levels:', error);
-    }
-  }
-
-  /**
-   * Find all class identifiers from class items in compendiums
-   * @returns {Promise<Object>} Object mapping class identifiers to names
-   */
-  async findClassIdentifiers() {
-    try {
-      const identifiers = {};
-
-      // Get all item packs
-      const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
-
-      for (const pack of itemPacks) {
-        try {
-          // Get index with identifier field for class items
-          const index = await pack.getIndex({
-            fields: ['type', 'system.identifier', 'name']
-          });
-
-          // Filter for class items
-          const classItems = index.filter((e) => e.type === 'class');
-
-          // Get pack display name
-          const packDisplayName = pack.metadata.label;
-
-          for (const cls of classItems) {
-            const identifier = cls.system?.identifier?.toLowerCase();
-            if (identifier) {
-              identifiers[identifier] = {
-                name: cls.name,
-                source: packDisplayName || 'Unknown',
-                fullDisplay: `${cls.name} [${packDisplayName}]`,
-                id: identifier
-              };
-            }
-          }
-        } catch (error) {
-          log(1, `Error processing pack ${pack.metadata.label} for class identifiers: ${error.message}`);
-        }
-      }
-
-      return identifiers;
-    } catch (error) {
-      log(1, `Error finding class identifiers: ${error.message}`);
-      return {};
     }
   }
 
@@ -803,7 +742,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     } catch (error) {
       log(1, 'Error loading spell details:', error);
       this.selectedSpellList.isLoadingSpells = false;
-      this.selectedSpellList.hasError = true;
       this.render(false);
     }
   }
@@ -823,7 +761,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     confirmCssClass = ''
   }) {
     try {
-      const result = await foundry.applications.api.DialogV2.wait({
+      const result = await DialogV2.wait({
         title,
         content: `<p>${content}</p>`,
         buttons: [
@@ -1295,46 +1233,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   async showDocumentation() {
     try {
-      const content = `
-      <h2>${game.i18n.localize('SPELLMANAGER.Documentation.Title')}</h2>
+      log(3, 'Opening documentation dialog');
 
-      <h3>${game.i18n.localize('SPELLMANAGER.Documentation.Overview.Title')}</h3>
-      <p>${game.i18n.localize('SPELLMANAGER.Documentation.Overview.Content')}</p>
+      // Render the template with minimal context
+      const content = await renderTemplate(TEMPLATES.DIALOGS.MANAGER_DOCUMENTATION, {});
 
-      <h3>${game.i18n.localize('SPELLMANAGER.Documentation.Creation.Title')}</h3>
-      <ol>
-        <li>${game.i18n.localize('SPELLMANAGER.Documentation.Creation.Step1')}</li>
-        <li>${game.i18n.localize('SPELLMANAGER.Documentation.Creation.Step2')}</li>
-        <li>${game.i18n.localize('SPELLMANAGER.Documentation.Creation.Step3')}</li>
-        <li>${game.i18n.localize('SPELLMANAGER.Documentation.Creation.Step4')}</li>
-      </ol>
-
-      <h3>${game.i18n.localize('SPELLMANAGER.Documentation.Modifying.Title')}</h3>
-      <p>${game.i18n.localize('SPELLMANAGER.Documentation.Modifying.Content')}</p>
-      <ul>
-        <li><strong>${game.i18n.localize('SPELLMANAGER.Documentation.Modifying.Control1')}</strong></li>
-        <li><strong>${game.i18n.localize('SPELLMANAGER.Documentation.Modifying.Control2')}</strong></li>
-      </ul>
-      <p>${game.i18n.localize('SPELLMANAGER.Documentation.Modifying.Note')}</p>
-
-      <h3>${game.i18n.localize('SPELLMANAGER.Documentation.Integration.Title')}</h3>
-      <p>${game.i18n.localize('SPELLMANAGER.Documentation.Integration.Intro')}</p>
-      <ol>
-        <li>${game.i18n.localize('SPELLMANAGER.Documentation.Integration.Step1')}</li>
-        <li>${game.i18n.localize('SPELLMANAGER.Documentation.Integration.Step2')}</li>
-        <li>${game.i18n.localize('SPELLMANAGER.Documentation.Integration.Step3')}</li>
-      </ol>
-
-      <h3>${game.i18n.localize('SPELLMANAGER.Documentation.Practices.Title')}</h3>
-      <ul>
-        <li>${game.i18n.localize('SPELLMANAGER.Documentation.Practices.Item1')}</li>
-        <li>${game.i18n.localize('SPELLMANAGER.Documentation.Practices.Item2')}</li>
-        <li>${game.i18n.localize('SPELLMANAGER.Documentation.Practices.Item3')}</li>
-        <li>${game.i18n.localize('SPELLMANAGER.Documentation.Practices.Item4')}</li>
-      </ul>
-      `;
-
-      await foundry.applications.api.DialogV2.wait({
+      // Show the dialog with the rendered template
+      await DialogV2.wait({
         title: game.i18n.localize('SPELLMANAGER.Documentation.Title'),
         content: content,
         classes: ['gm-spell-list-manager-helper'],
@@ -1353,6 +1258,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         },
         default: 'close'
       });
+      log(3, 'Documentation dialog displayed');
     } catch (error) {
       log(1, 'Error showing documentation:', error);
     }
@@ -1625,7 +1531,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       levelContainer.classList.toggle('collapsed');
 
       // Save state to user flags
-      const collapsedLevels = game.user.getFlag(MODULE.ID, 'gmCollapsedSpellLevels') || [];
+      const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS) || [];
       const isCollapsed = levelContainer.classList.contains('collapsed');
       if (isCollapsed && !collapsedLevels.includes(levelId)) {
         collapsedLevels.push(levelId);
@@ -1633,7 +1539,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         collapsedLevels.splice(collapsedLevels.indexOf(levelId), 1);
       }
 
-      game.user.setFlag(MODULE.ID, 'gmCollapsedSpellLevels', collapsedLevels);
+      game.user.setFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS, collapsedLevels);
     } catch (error) {
       log(1, 'Error handling toggle spell level:', error);
     }
@@ -1645,7 +1551,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   async createNewList() {
     try {
       // Get class identifiers
-      const classIdentifiers = await this.findClassIdentifiers();
+      const classIdentifiers = await managerHelpers.findClassIdentifiers();
 
       // Format identifiers for the template
       const identifierOptions = Object.entries(classIdentifiers)
@@ -1665,7 +1571,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       let formData = null;
 
       // Use DialogV2
-      const dialogResult = await foundry.applications.api.DialogV2.wait({
+      const dialogResult = await DialogV2.wait({
         window: { title: game.i18n.localize('SPELLMANAGER.Buttons.CreateNew'), icon: 'fas fa-star' },
         content: content,
         buttons: [

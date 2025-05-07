@@ -28,7 +28,8 @@ export const MODULE = {
 export const FLAGS = {
   PREPARED_SPELLS: 'preparedSpells',
   COLLAPSED_LEVELS: 'collapsedSpellLevels',
-  SIDEBAR_COLLAPSED: 'sidebarCollapsed'
+  SIDEBAR_COLLAPSED: 'sidebarCollapsed',
+  GM_COLLAPSED_LEVELS: 'gmCollapsedSpellLevels'
 };
 
 //-----------------------------------------------------------------------------
@@ -71,7 +72,8 @@ export const TEMPLATES = {
 
   DIALOGS: {
     FILTER_CONFIG: 'modules/spell-book/templates/dialogs/filter-configuration.hbs',
-    CREATE_SPELL_LIST: 'modules/spell-book/templates/dialogs/create-spell-list.hbs'
+    CREATE_SPELL_LIST: 'modules/spell-book/templates/dialogs/create-spell-list.hbs',
+    MANAGER_DOCUMENTATION: 'modules/spell-book/templates/dialogs/spell-list-manager-documentation.hbs'
   }
 };
 

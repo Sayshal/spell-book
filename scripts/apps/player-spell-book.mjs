@@ -37,13 +37,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     },
     classes: ['spell-book'],
     window: {
-      icon: 'fas fa-hat-wizard',
+      icon: 'fas fa-book-open',
       resizable: true,
       minimizable: true,
       positioned: true
     },
     position: {
-      height: '780',
+      height: '800',
       width: '600',
       top: '75'
     }
@@ -64,12 +64,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** Loading state */
   isLoading = true;
-
-  /** Error state tracking */
-  hasError = false;
-
-  /** Error message if loading failed */
-  errorMessage = '';
 
   /** Spell levels data */
   spellLevels = [];
@@ -115,12 +109,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       return context;
     }
 
-    // Add spell data to context
     context.spellLevels = this.spellLevels;
-    context.className = this.className;
-    context.spellPreparation = this.spellPreparation;
-
-    // Prepare the filters
     context.filters = this._prepareFilters();
 
     return context;
@@ -149,8 +138,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     return {
       actor: this.actor,
       isLoading: this.isLoading,
-      hasError: this.hasError,
-      errorMessage: this.errorMessage,
       spellLevels: this.spellLevels || [],
       className: this.className || '',
       filters: this.isLoading ? emptyFilters : this._getFilterState(),
@@ -180,8 +167,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Sets up the form after rendering
    * @override
    */
-  _onRender(context, _options) {
-    super._onRender?.(context, _options);
+  _onRender(context, options) {
+    super._onRender?.(context, options);
 
     try {
       // Set sidebar state based on user preference
@@ -260,7 +247,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       log(3, `Completed loading spell data for ${this.actor.name}`);
     } catch (error) {
       log(1, 'Error loading spell data:', error);
-      this._setErrorState('An error occurred while loading spells.');
     } finally {
       this.isLoading = false;
       this.render(false);
@@ -276,7 +262,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       const classItem = discoveryUtils.findSpellcastingClass(this.actor);
       if (!classItem) {
-        this._setErrorState(game.i18n.format('SPELLBOOK.Errors.NoSpellsFound', { actor: this.actor.name }));
         return null;
       }
 
@@ -284,7 +269,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       return classItem;
     } catch (error) {
       log(1, 'Error finding spellcasting class:', error);
-      this._setErrorState('Error finding spellcasting class.');
       return null;
     }
   }
@@ -304,7 +288,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const spellUuids = await discoveryUtils.getClassSpellList(className, classUuid);
 
       if (!spellUuids || !spellUuids.size) {
-        this._setErrorState(game.i18n.format('SPELLBOOK.Errors.NoSpellsFound', { actor: this.actor.name }));
         return new Set();
       }
 
@@ -312,7 +295,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       return spellUuids;
     } catch (error) {
       log(1, 'Error loading spell list:', error);
-      this._setErrorState('Error loading spell list.');
       return new Set();
     }
   }
@@ -333,7 +315,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const spellItems = await actorSpellUtils.fetchSpellDocuments(spellUuids, maxSpellLevel);
 
       if (!spellItems || !spellItems.length) {
-        this._setErrorState(game.i18n.format('SPELLBOOK.Errors.NoSpellsFoundForLevel', { actor: this.actor.name }));
         return [];
       }
 
@@ -341,7 +322,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       return spellItems;
     } catch (error) {
       log(1, 'Error loading spell items:', error);
-      this._setErrorState('Error loading spell items.');
       return [];
     }
   }
@@ -379,7 +359,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       log(3, `Completed processing spell data for ${this.actor.name}`);
     } catch (error) {
       log(1, 'Error processing spell data:', error);
-      this._setErrorState('Error processing spell data.');
     }
   }
 
@@ -446,17 +425,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       log(1, 'Error calculating preparation stats:', error);
       return { current: 0, maximum: 0 };
     }
-  }
-
-  /**
-   * Set an error state
-   * @param {string} message - The error message
-   * @private
-   */
-  _setErrorState(message) {
-    this.hasError = true;
-    this.errorMessage = message;
-    this.isLoading = false;
   }
 
   /* -------------------------------------------- */

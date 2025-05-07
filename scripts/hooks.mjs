@@ -129,7 +129,7 @@ function createSpellBookButton(actor) {
   button.className = 'unbutton spell-book-button interface-only';
   button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.OpenSpellBook'));
   button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.OpenSpellBook'));
-  button.innerHTML = '<i class="fas fa-hat-wizard"></i>';
+  button.innerHTML = '<i class="fas fa-book-open"></i>';
 
   // Add click event listener
   button.addEventListener('click', onSpellBookButtonClick.bind(null, actor));

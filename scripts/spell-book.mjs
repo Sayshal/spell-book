@@ -41,7 +41,6 @@ function initializeFoundryConfiguration() {
     log(3, 'Foundry configuration extended');
   } catch (error) {
     log(1, 'Error configuring Foundry:', error);
-    throw error; // Re-throw as this is critical
   }
 }
 
@@ -62,7 +61,6 @@ async function initializeModuleComponents() {
     log(3, 'Module components initialized');
   } catch (error) {
     log(1, 'Error initializing module components:', error);
-    throw error; // Re-throw as this is critical
   }
 }
 
@@ -71,30 +69,11 @@ async function initializeModuleComponents() {
  */
 function registerModuleAPI() {
   try {
-    // Define API methods
     const api = {
-      /**
-       * Core applications
-       */
       apps: {
-        /**
-         * PlayerSpellBook class constructor
-         * @type {Class}
-         */
         PlayerSpellBook,
-
-        /**
-         * GMSpellListManager class constructor
-         * @type {Class}
-         */
         GMSpellListManager
       },
-
-      /**
-       * Open a spell book for a specific actor
-       * @param {Actor} actor - The actor to open a spell book for
-       * @returns {PlayerSpellBook} The created spell book instance
-       */
       openSpellBookForActor: (actor) => {
         if (!actor) {
           throw new Error('No actor provided');
@@ -103,27 +82,13 @@ function registerModuleAPI() {
         spellBook.render(true);
         return spellBook;
       },
-
-      /**
-       * Open the GM spell list manager
-       * @returns {GMSpellListManager} The created spell list manager instance
-       */
       openSpellListManager: () => {
         const manager = new GMSpellListManager();
         manager.render(true);
         return manager;
-      },
-
-      /**
-       * Get the module version
-       * @returns {string} The module version
-       */
-      getVersion: () => {
-        return game.modules.get(MODULE.ID)?.version || 'unknown';
       }
     };
 
-    // Register API in global scope
     globalThis.SPELLBOOK = api;
 
     log(3, 'Module API registered');
