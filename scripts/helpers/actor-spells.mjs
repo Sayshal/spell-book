@@ -61,11 +61,11 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
 
   // Log errors with more detail
   if (errors.length > 0) {
-    log(2, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`);
+    log(1, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`);
 
     // Log each error individually with more detail
     errors.forEach((err) => {
-      log(2, `Error fetching spell ${err.uuid}: ${err.reason}`, {
+      log(1, `Error fetching spell ${err.uuid}: ${err.reason}`, {
         uuid: err.uuid,
         reason: err.reason,
         details: err.details

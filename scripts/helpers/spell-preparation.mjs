@@ -193,7 +193,7 @@ export function determineSpellSource(actor, spell) {
         };
       }
     } catch (error) {
-      log(2, `Error resolving cached activity source for ${spell.name}:`, error);
+      log(1, `Error resolving cached activity source for ${spell.name}:`, error);
     }
   }
 

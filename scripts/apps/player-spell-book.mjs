@@ -398,7 +398,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
             spell.formattedDetails = formattingUtils.formatSpellDetails(spell);
           } catch (error) {
-            log(2, `Failed to enrich spell: ${spell.name}`, error);
+            log(1, `Failed to enrich spell: ${spell.name}`, error);
           }
         }
       }

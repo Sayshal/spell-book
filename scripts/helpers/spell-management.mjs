@@ -50,12 +50,12 @@ export async function findCompendiumSpellLists() {
             });
           }
         } catch (innerError) {
-          log(2, `Error processing journal ${journalData.name}:`, innerError);
+          log(1, `Error processing journal ${journalData.name}:`, innerError);
           continue;
         }
       }
     } catch (error) {
-      log(2, `Error processing pack ${pack.metadata.label}:`, error);
+      log(1, `Error processing pack ${pack.metadata.label}:`, error);
     }
   }
 
@@ -98,13 +98,13 @@ export async function findCompendiumSpellLists() {
             });
           }
         } catch (innerError) {
-          log(2, `Error processing custom journal ${journalData.name}:`, innerError);
+          log(1, `Error processing custom journal ${journalData.name}:`, innerError);
           continue;
         }
       }
     }
   } catch (error) {
-    log(2, `Error processing custom spell lists pack:`, error);
+    log(1, `Error processing custom spell lists pack:`, error);
   }
 
   log(3, `Found ${spellLists.length} total spell lists`);
@@ -193,7 +193,7 @@ export async function getValidCustomListMappings() {
         log(2, `Custom list ${customUuid} no longer exists, removing mapping`);
       }
     } catch (error) {
-      log(2, `Error checking custom list ${customUuid}: ${error.message}`);
+      log(1, `Error checking custom list ${customUuid}: ${error.message}`);
     }
   }
 
@@ -429,7 +429,7 @@ export function normalizeUuid(uuid) {
     }
   } catch (e) {
     // Return original if parsing fails
-    log(2, `Error normalizing UUID ${uuid}: ${e.message}`);
+    log(1, `Error normalizing UUID ${uuid}: ${e.message}`);
   }
 
   return normalized;
@@ -540,7 +540,7 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
           try {
             formattedDetails = formattingUtils.formatSpellDetails(entry);
           } catch (err) {
-            log(2, `Error formatting spell details for ${entry.name}: ${err.message}`);
+            log(1, `Error formatting spell details for ${entry.name}: ${err.message}`);
           }
 
           // Create the spell object
@@ -563,7 +563,7 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
           spells.push(spell);
         }
       } catch (error) {
-        log(2, `Error processing pack ${pack.metadata.label}: ${error.message}`);
+        log(1, `Error processing pack ${pack.metadata.label}: ${error.message}`);
       }
     }
 

@@ -30,7 +30,7 @@ export async function getClassSpellList(className, classUuid) {
 
       log(3, `Extracted class identifier: ${classIdentifier}`);
     } catch (error) {
-      log(2, `Error extracting identifier from classUuid: ${error.message}`);
+      log(1, `Error extracting identifier from classUuid: ${error.message}`);
       return new Set(); // Early return on error
     }
   } else {
@@ -102,7 +102,7 @@ async function findSpellListByIdentifier(identifier, customMappings) {
                     log(2, `Custom spell list not found or empty, falling back to original`);
                   }
                 } catch (error) {
-                  log(2, `Error retrieving custom spell list: ${error.message}`);
+                  log(1, `Error retrieving custom spell list: ${error.message}`);
                 }
               }
 
@@ -114,12 +114,12 @@ async function findSpellListByIdentifier(identifier, customMappings) {
             }
           }
         } catch (innerError) {
-          log(2, `Error processing journal ${journalData.name}:`, innerError);
+          log(1, `Error processing journal ${journalData.name}:`, innerError);
           continue;
         }
       }
     } catch (error) {
-      log(2, `Error processing pack ${pack.metadata.label}:`, error);
+      log(1, `Error processing pack ${pack.metadata.label}:`, error);
     }
   }
   return null;
@@ -163,14 +163,14 @@ async function findCustomSpellListByIdentifier(identifier) {
           }
         }
       } catch (innerError) {
-        log(2, `Error processing custom journal ${journalData.name}:`, innerError);
+        log(1, `Error processing custom journal ${journalData.name}:`, innerError);
         continue;
       }
     }
 
     log(3, `No custom spell list found with identifier: ${identifier}`);
   } catch (error) {
-    log(2, `Error searching custom spell lists: ${error.message}`);
+    log(1, `Error searching custom spell lists: ${error.message}`);
   }
   return null;
 }

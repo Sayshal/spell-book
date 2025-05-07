@@ -228,7 +228,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
               const compareResult = await managerHelpers.compareListVersions(originalUuid, this.selectedSpellList.document.uuid);
               context.compareInfo = compareResult;
             } catch (error) {
-              log(2, 'Error comparing versions:', error);
+              log(1, 'Error comparing versions:', error);
             }
           }
         }
@@ -317,7 +317,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       try {
         spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
       } catch (error) {
-        log(2, `Error enriching spell icon for ${spell.name}:`, error);
+        log(1, `Error enriching spell icon for ${spell.name}:`, error);
       }
     }
 
@@ -334,30 +334,30 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
       // Get selected spell UUIDs to avoid showing spells already in the list
       const selectedSpellUUIDs = this.getSelectedSpellUUIDs();
-      log(1, 'Beginning Filtering:', selectedSpellUUIDs.size, 'selected spells out of', this.availableSpells.length, 'total available');
+      log(3, 'Beginning Filtering:', selectedSpellUUIDs.size, 'selected spells out of', this.availableSpells.length, 'total available');
 
       let remainingSpells = [...this.availableSpells];
 
       // Filter: Already in list
       remainingSpells = remainingSpells.filter((spell) => !this.isSpellInSelectedList(spell, selectedSpellUUIDs));
-      log(1, 'After in-list filter:', remainingSpells.length, 'spells remaining');
+      log(3, 'After in-list filter:', remainingSpells.length, 'spells remaining');
 
       // Filter: Name
       if (name) {
         remainingSpells = remainingSpells.filter((spell) => spell.name.toLowerCase().includes(name.toLowerCase()));
-        log(1, 'After name filter:', remainingSpells.length, 'spells remaining');
+        log(3, 'After name filter:', remainingSpells.length, 'spells remaining');
       }
 
       // Filter: Level
       if (level) {
         remainingSpells = remainingSpells.filter((spell) => spell.level === parseInt(level));
-        log(1, 'After level filter:', remainingSpells.length, 'spells remaining');
+        log(3, 'After level filter:', remainingSpells.length, 'spells remaining');
       }
 
       // Filter: School
       if (school) {
         remainingSpells = remainingSpells.filter((spell) => spell.school === school);
-        log(1, 'After school filter:', remainingSpells.length, 'spells remaining');
+        log(3, 'After school filter:', remainingSpells.length, 'spells remaining');
       }
 
       // Filter: Source
@@ -375,15 +375,15 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
         // If no spells remain after filtering by source, reset to all spells
         if (remainingSpells.length === 0 && beforeCount > 0) {
-          log(1, `Source '${source}' filtered out all spells, resetting to show all sources`);
+          log(3, `Source '${source}' filtered out all spells, resetting to show all sources`);
           remainingSpells = [...this.availableSpells].filter((spell) => !this.isSpellInSelectedList(spell, selectedSpellUUIDs));
           this.filterState.source = 'all'; // Reset source filter
         } else {
-          log(1, `After source filter: ${remainingSpells.length} spells remaining. Source filter: ${source}`);
+          log(3, `After source filter: ${remainingSpells.length} spells remaining. Source filter: ${source}`);
         }
       } else {
         // "all" is selected or empty - don't filter by source
-        log(1, 'Source filter is unset or "all", showing all sources');
+        log(3, 'Source filter is unset or "all", showing all sources');
       }
 
       // Filter: Casting Time
@@ -394,7 +394,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           const spellCastingValue = String(spell.filterData?.castingTime?.value || spell.system?.activation?.value || '1');
           return spellCastingType === filterType && spellCastingValue === filterValue;
         });
-        log(1, 'After casting time filter:', remainingSpells.length, 'spells remaining');
+        log(3, 'After casting time filter:', remainingSpells.length, 'spells remaining');
       }
 
       // Filter: Range
@@ -417,7 +417,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
           return standardizedRange >= minRangeVal && standardizedRange <= maxRangeVal;
         });
-        log(1, 'After range filter:', remainingSpells.length, 'spells remaining');
+        log(3, 'After range filter:', remainingSpells.length, 'spells remaining');
       }
 
       // Filter: Damage Type
@@ -426,7 +426,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           const spellDamageTypes = Array.isArray(spell.filterData?.damageTypes) ? spell.filterData.damageTypes : [];
           return spellDamageTypes.length > 0 && spellDamageTypes.includes(damageType);
         });
-        log(1, 'After damage type filter:', remainingSpells.length, 'spells remaining');
+        log(3, 'After damage type filter:', remainingSpells.length, 'spells remaining');
       }
 
       // Filter: Condition
@@ -435,7 +435,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           const spellConditions = Array.isArray(spell.filterData?.conditions) ? spell.filterData.conditions : [];
           return spellConditions.includes(condition);
         });
-        log(1, 'After condition filter:', remainingSpells.length, 'spells remaining');
+        log(3, 'After condition filter:', remainingSpells.length, 'spells remaining');
       }
 
       // Filter: Requires Save
@@ -444,7 +444,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           const spellRequiresSave = spell.filterData?.requiresSave || false;
           return (requiresSave === 'true' && spellRequiresSave) || (requiresSave === 'false' && !spellRequiresSave);
         });
-        log(1, 'After save filter:', remainingSpells.length, 'spells remaining');
+        log(3, 'After save filter:', remainingSpells.length, 'spells remaining');
       }
 
       // Filter: Concentration
@@ -460,10 +460,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         remainingSpells = remainingSpells.filter((spell) => {
           return !!spell.filterData?.isRitual;
         });
-        log(1, 'After ritual filter:', remainingSpells.length, 'spells remaining');
+        log(3, 'After ritual filter:', remainingSpells.length, 'spells remaining');
       }
 
-      log(1, 'Final spells count:', remainingSpells.length);
+      log(3, 'Final spells count:', remainingSpells.length);
 
       // Return filtered spells and count
       return {
@@ -751,7 +751,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
             }
           }
         } catch (error) {
-          log(2, `Error processing pack ${pack.metadata.label} for class identifiers: ${error.message}`);
+          log(1, `Error processing pack ${pack.metadata.label} for class identifiers: ${error.message}`);
         }
       }
 
@@ -933,7 +933,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
             sourceFilter = packageName;
             log(3, `Using original source: ${sourceFilter}`);
           } catch (e) {
-            log(2, `Error parsing original UUID: ${e.message}`);
+            log(1, `Error parsing original UUID: ${e.message}`);
           }
         }
       } else if (spellList.pack) {
