@@ -1,4 +1,5 @@
-import { DEFAULT_FILTER_CONFIG, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import { CantripSettingsDialog } from '../apps/cantrip-settings-dialog.mjs';
+import { CANTRIP_CHANGE_BEHAVIOR, DEFAULT_FILTER_CONFIG, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as actorSpellUtils from '../helpers/actor-spells.mjs';
 import * as filterUtils from '../helpers/filters.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
@@ -33,7 +34,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       sortSpells: PlayerSpellBook.sortSpells,
       reset: PlayerSpellBook.handleReset,
       toggleSpellLevel: PlayerSpellBook.toggleSpellLevel,
-      configureFilters: PlayerSpellBook.configureFilters
+      configureFilters: PlayerSpellBook.configureFilters,
+      configureCantripSettings: PlayerSpellBook.configureCantripSettings
     },
     classes: ['spell-book'],
     window: {
@@ -116,7 +118,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Creates the base context object with minimal information
+   * Create the base context object with minimal information
    * @returns {Object} The base context
    * @private
    */
@@ -135,6 +137,34 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       range: null
     };
 
+    // Create buttons array with GM-only cantrip config
+    const buttons = [
+      {
+        type: 'submit',
+        icon: 'fas fa-save',
+        label: 'SPELLBOOK.UI.Save',
+        cssClass: 'submit-button'
+      },
+      {
+        type: 'reset',
+        action: 'reset',
+        icon: 'fas fa-undo',
+        label: 'SPELLBOOK.UI.Reset',
+        cssClass: 'reset-button'
+      }
+    ];
+
+    // Add cantrip config button if GM
+    if (game.user.isGM) {
+      buttons.push({
+        type: 'button',
+        action: 'configureCantripSettings',
+        icon: 'fas fa-magic',
+        label: 'SPELLBOOK.Cantrips.ConfigButton',
+        cssClass: 'cantrip-config-button'
+      });
+    }
+
     return {
       actor: this.actor,
       isLoading: this.isLoading,
@@ -142,24 +172,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       className: this.className || '',
       filters: this.isLoading ? emptyFilters : this._getFilterState(),
       spellSchools: CONFIG.DND5E.spellSchools,
-      buttons: [
-        {
-          type: 'submit',
-          icon: 'fas fa-save',
-          label: 'SPELLBOOK.UI.Save',
-          cssClass: 'submit-button'
-        },
-        {
-          type: 'reset',
-          action: 'reset',
-          icon: 'fas fa-undo',
-          label: 'SPELLBOOK.UI.Reset',
-          tooltip: 'SPELLBOOK.UI.ResetTooltip',
-          cssClass: 'reset-button'
-        }
-      ],
+      buttons: buttons,
       actorId: this.actor.id,
-      TEMPLATES: TEMPLATES,
       spellPreparation: this.spellPreparation || { current: 0, maximum: 0 }
     };
   }
@@ -195,6 +209,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       this._updateSpellCounts();
       this._applyFilters();
       this._updateSpellPreparationTracking();
+      this._setupCantripLocks();
     } catch (error) {
       log(1, 'Error in _onRender:', error);
     }
@@ -236,6 +251,15 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
       const classItem = await this._loadSpellcastingClass();
       if (!classItem) return;
+
+      // Check for cantrip level-up
+      const cantripLevelUp = preparationUtils.checkForCantripLevelUp(this.actor, classItem);
+      if (cantripLevelUp) {
+        const settings = preparationUtils.getCantripSettings(this.actor);
+        const message = settings.rules === CANTRIP_RULES.DEFAULT ? 'SPELLBOOK.Cantrips.LevelUpDefault' : 'SPELLBOOK.Cantrips.LevelUpModern';
+
+        ui.notifications.info(game.i18n.localize(message));
+      }
 
       const spellList = await this._loadSpellList(classItem);
       if (!spellList || !spellList.size) return;
@@ -884,9 +908,32 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const prepCheckboxes = this.element.querySelectorAll('input[type="checkbox"][data-uuid]:not([disabled])');
 
       prepCheckboxes.forEach((checkbox) => {
-        checkbox.addEventListener('change', (event) => {
-          // Update UI class
+        checkbox.addEventListener('change', async (event) => {
+          // Get spell item and level
           const spellItem = event.target.closest('.spell-item');
+          const uuid = event.target.dataset.uuid;
+          const spellLevel = spellItem?.dataset.spellLevel;
+
+          // Handle cantrip-specific logic
+          if (spellLevel === '0') {
+            // Fetch source spell
+            const sourceSpell = await fromUuid(uuid);
+            if (!sourceSpell) return;
+
+            // Check if change is allowed
+            const canChange = preparationUtils.canChangeCantrip(this.actor, sourceSpell);
+            if (!canChange.allowed) {
+              // Revert the change
+              event.target.checked = !event.target.checked;
+              ui.notifications.warn(game.i18n.localize(canChange.message));
+              return;
+            }
+
+            // Update cantrip lock UI if needed
+            this._setupCantripLocks();
+          }
+
+          // Update UI class
           if (spellItem) {
             if (event.target.checked) {
               spellItem.classList.add('prepared-spell');
@@ -898,6 +945,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           // Update tracking and counts
           this._updateSpellPreparationTracking();
           this._updateSpellCounts();
+          this._addCantripCounter();
         });
       });
     } catch (error) {
@@ -1048,6 +1096,126 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     } catch (error) {
       log(1, 'Error positioning footer:', error);
+    }
+  }
+
+  /**
+   * Set up cantrip lock UI elements
+   * @private
+   */
+  _setupCantripLocks() {
+    try {
+      log(3, 'Setting up cantrip locks');
+      const cantripItems = this.element.querySelectorAll('.spell-item[data-spell-level="0"]');
+
+      // Get settings
+      const settings = preparationUtils.getCantripSettings(this.actor);
+      const changeAllowed = this.actor.getFlag(MODULE.ID, FLAGS.CANTRIP_CHANGE_ALLOWED) || false;
+
+      // Skip if unrestricted
+      if (settings.behavior === CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED) {
+        return;
+      }
+
+      // Apply appropriate UI for cantrips
+      for (const item of cantripItems) {
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        if (!checkbox) continue;
+
+        // Skip already disabled checkboxes (from always prepared, etc.)
+        if (checkbox.disabled) continue;
+
+        const isChecked = checkbox.checked;
+        const nameElement = item.querySelector('.spell-name .title');
+
+        // Handle locked state
+        if (!changeAllowed) {
+          checkbox.disabled = true;
+          item.classList.add('cantrip-locked');
+
+          const lockReason = settings.rules === CANTRIP_RULES.DEFAULT ? game.i18n.localize('SPELLBOOK.Cantrips.LockedDefault') : game.i18n.localize('SPELLBOOK.Cantrips.LockedModern');
+
+          if (nameElement && !nameElement.querySelector('.cantrip-lock-icon')) {
+            const lockIcon = document.createElement('i');
+            lockIcon.className = 'fas fa-lock cantrip-lock-icon';
+            lockIcon.title = lockReason;
+            nameElement.appendChild(lockIcon);
+          }
+        }
+        // Handle "unlearn one" limit for Modern rules
+        else if (settings.rules === CANTRIP_RULES.MODERN) {
+          const unlearned = this.actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
+
+          // If already unlearned one cantrip, disable unchecked cantrips
+          if (unlearned >= 1 && !isChecked) {
+            checkbox.disabled = true;
+            item.classList.add('cantrip-locked');
+
+            if (nameElement && !nameElement.querySelector('.cantrip-lock-icon')) {
+              const lockIcon = document.createElement('i');
+              lockIcon.className = 'fas fa-lock cantrip-lock-icon';
+              lockIcon.title = game.i18n.localize('SPELLBOOK.Cantrips.CannotUnlearnMore');
+              nameElement.appendChild(lockIcon);
+            }
+          }
+        }
+      }
+
+      // Add cantrip counter if appropriate
+      if (settings.behavior !== CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED) {
+        this._addCantripCounter();
+      }
+    } catch (error) {
+      log(1, 'Error setting up cantrip locks:', error);
+    }
+  }
+
+  /**
+   * Add cantrip counter to the UI
+   * @private
+   */
+  _addCantripCounter() {
+    try {
+      // Find level 0 header
+      const cantripLevel = this.element.querySelector('.spell-level[data-level="0"]');
+      if (!cantripLevel) return;
+
+      // Find spellcasting class
+      const classItem = this.actor.items.find((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
+
+      // Get counts
+      const maxCantrips = preparationUtils.getMaxCantripsAllowed(this.actor, classItem);
+      const currentCount = preparationUtils.getCurrentCantripsCount(this.actor);
+
+      // Create counter element
+      const levelHeading = cantripLevel.querySelector('.spell-level-heading');
+      let counterElem = levelHeading.querySelector('.cantrip-counter');
+
+      if (!counterElem) {
+        counterElem = document.createElement('span');
+        counterElem.className = 'cantrip-counter';
+
+        // Insert after the spell count
+        const spellCount = levelHeading.querySelector('.spell-count');
+        if (spellCount) {
+          spellCount.after(counterElem);
+        } else {
+          levelHeading.appendChild(counterElem);
+        }
+      }
+
+      // Update counter content
+      counterElem.textContent = `[${currentCount}/${maxCantrips}]`;
+      counterElem.title = game.i18n.localize('SPELLBOOK.Cantrips.CounterTooltip');
+
+      // Highlight if at max
+      if (currentCount >= maxCantrips) {
+        counterElem.classList.add('at-max');
+      } else {
+        counterElem.classList.remove('at-max');
+      }
+    } catch (error) {
+      log(1, 'Error adding cantrip counter:', error);
     }
   }
 
@@ -1255,6 +1423,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       filterConfig.render(true);
     } catch (error) {
       log(1, 'Error configuring filters:', error);
+    }
+  }
+
+  /**
+   * Handle cantrip settings configuration
+   * @static
+   */
+  static configureCantripSettings(_event, _form) {
+    try {
+      log(3, 'Opening cantrip settings configuration');
+      const dialog = new CantripSettingsDialog(this.actor);
+      dialog.render(true);
+    } catch (error) {
+      log(1, 'Error configuring cantrip settings:', error);
     }
   }
 

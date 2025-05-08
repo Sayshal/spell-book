@@ -4,7 +4,7 @@
  * @module spell-book/helpers/spell-preparation
  */
 
-import { FLAGS, MODULE } from '../constants.mjs';
+import { CANTRIP_CHANGE_BEHAVIOR, CANTRIP_RULES, FLAGS, MODULE, SETTINGS } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import * as formattingUtils from './spell-formatting.mjs';
 
@@ -16,6 +16,9 @@ import * as formattingUtils from './spell-formatting.mjs';
  */
 export async function saveActorPreparedSpells(actor, spellData) {
   log(3, 'Saving prepared spells');
+
+  // Check for cantrip changes
+  const cantripChanges = trackCantripChanges(actor, spellData);
 
   // Extract prepared spell UUIDs
   const preparedUuids = Object.entries(spellData)
@@ -72,6 +75,231 @@ export async function saveActorPreparedSpells(actor, spellData) {
       }
     }
   }
+
+  // Notify GM of cantrip changes if needed
+  if (cantripChanges.hasChanges) {
+    await processCantripChanges(actor, cantripChanges);
+  }
+}
+
+/**
+ * Track changes in cantrip preparation
+ * @param {Actor5e} actor - The actor
+ * @param {Object} spellData - Object of spell data with preparation info
+ * @returns {Object} Information about cantrip changes
+ */
+function trackCantripChanges(actor, spellData) {
+  const changes = {
+    added: [],
+    removed: [],
+    hasChanges: false
+  };
+
+  // Get cantrip settings
+  const settings = getCantripSettings(actor);
+
+  // Skip tracking if unrestricted
+  if (settings.behavior === CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED) {
+    return changes;
+  }
+
+  // Find all cantrips on the actor
+  const actorCantrips = actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && !i.system.preparation?.alwaysPrepared);
+
+  // Track cantrips being removed
+  for (const cantrip of actorCantrips) {
+    const uuid = cantrip.flags?.core?.sourceId || cantrip.uuid;
+    if (uuid && spellData[uuid] && !spellData[uuid].isPrepared && spellData[uuid].wasPrepared) {
+      changes.removed.push({
+        name: cantrip.name,
+        uuid: uuid
+      });
+      changes.hasChanges = true;
+    }
+  }
+
+  // Track cantrips being added
+  for (const [uuid, data] of Object.entries(spellData)) {
+    if (!data.wasPrepared && data.isPrepared) {
+      // Find the spell to get its level
+      const spell = actor.items.find((i) => i.flags?.core?.sourceId === uuid || i.uuid === uuid);
+      if (spell && spell.system.level === 0) {
+        changes.added.push({
+          name: spell.name,
+          uuid: uuid
+        });
+        changes.hasChanges = true;
+      }
+    }
+  }
+
+  return changes;
+}
+
+/**
+ * Process cantrip changes based on actor settings
+ * @param {Actor5e} actor - The actor
+ * @param {Object} changes - Cantrip changes information
+ */
+async function processCantripChanges(actor, changes) {
+  const settings = getCantripSettings(actor);
+
+  // Send notification to GM if appropriate
+  if (settings.behavior === CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM) {
+    notifyGMOfCantripChanges(actor, changes);
+  }
+
+  // Update unlearned cantrips counter for modern rules
+  if (settings.rules === CANTRIP_RULES.MODERN) {
+    const unlearned = actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
+    await actor.setFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS, unlearned + changes.removed.length);
+  }
+}
+
+/**
+ * Notify GM about cantrip changes
+ * @param {Actor5e} actor - The actor
+ * @param {Object} changes - Information about changes
+ */
+function notifyGMOfCantripChanges(actor, changes) {
+  let content = `<h3>${game.i18n.format('SPELLBOOK.Cantrips.ChangeNotification', { name: actor.name })}</h3>`;
+
+  if (changes.removed.length > 0) {
+    content += `<p><strong>${game.i18n.localize('SPELLBOOK.Cantrips.Removed')}:</strong> ${changes.removed.map((c) => c.name).join(', ')}</p>`;
+  }
+
+  if (changes.added.length > 0) {
+    content += `<p><strong>${game.i18n.localize('SPELLBOOK.Cantrips.Added')}:</strong> ${changes.added.map((c) => c.name).join(', ')}</p>`;
+  }
+
+  ChatMessage.create({
+    content: content,
+    whisper: game.users.filter((u) => u.isGM).map((u) => u.id)
+  });
+}
+
+/**
+ * Get cantrip settings for an actor
+ * @param {Actor5e} actor - The actor to get settings for
+ * @returns {Object} Actor's cantrip settings
+ */
+export function getCantripSettings(actor) {
+  return {
+    rules: actor.getFlag(MODULE.ID, FLAGS.CANTRIP_RULES) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_CANTRIP_RULES),
+    behavior: actor.getFlag(MODULE.ID, FLAGS.CANTRIP_CHANGE_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_CANTRIP_BEHAVIOR)
+  };
+}
+
+/**
+ * Check if a cantrip can be changed
+ * @param {Actor5e} actor - The actor
+ * @param {Item5e} spell - The spell item
+ * @returns {Object} Status information about cantrip change
+ */
+export function canChangeCantrip(actor, spell) {
+  // Skip non-cantrips
+  if (spell.system.level !== 0) return { allowed: true };
+
+  const settings = getCantripSettings(actor);
+
+  // Always allow if unrestricted
+  if (settings.behavior === CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED) {
+    return { allowed: true };
+  }
+
+  // Check for unlock flags
+  const changeAllowed = actor.getFlag(MODULE.ID, FLAGS.CANTRIP_CHANGE_ALLOWED);
+  if (changeAllowed) {
+    // For modern rules, check unlearned count
+    if (settings.rules === CANTRIP_RULES.MODERN) {
+      const unlearned = actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
+      if (unlearned >= 1 && !spell.system.preparation?.prepared) {
+        return {
+          allowed: false,
+          message: 'SPELLBOOK.Cantrips.CannotUnlearnMore'
+        };
+      }
+    }
+    return {
+      allowed: true,
+      willCount: !spell.system.preparation?.prepared
+    };
+  }
+
+  // Not allowed to change
+  return {
+    allowed: false,
+    message: settings.rules === CANTRIP_RULES.DEFAULT ? 'SPELLBOOK.Cantrips.LockedDefault' : 'SPELLBOOK.Cantrips.LockedModern'
+  };
+}
+
+/**
+ * Calculate the maximum number of cantrips allowed for an actor
+ * @param {Actor5e} actor - The actor
+ * @param {Item5e} classItem - The spellcasting class item
+ * @returns {number} Maximum allowed cantrips
+ */
+export function getMaxCantripsAllowed(actor, classItem) {
+  if (!classItem) return 0;
+
+  // Get cantrips known from class spellcasting data
+  const spellcasting = classItem.system.spellcasting;
+  if (!spellcasting) return 0;
+
+  const scaleValues = spellcasting.scaleValues || {};
+  const cantripsKnown = scaleValues['cantrips-known']?.value;
+
+  if (cantripsKnown !== undefined) {
+    return cantripsKnown;
+  }
+
+  // If no specific value is set, default to 0 (no cantrips)
+  return 0;
+}
+
+/**
+ * Count the number of currently prepared cantrips
+ * @param {Actor5e} actor - The actor
+ * @returns {number} Currently prepared cantrips
+ */
+export function getCurrentCantripsCount(actor) {
+  return actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.preparation?.prepared && !i.system.preparation?.alwaysPrepared).length;
+}
+
+/**
+ * Check if actor has had a level up that affects cantrips
+ * @param {Actor5e} actor - The actor to check
+ * @param {Item5e} classItem - The spellcasting class
+ * @returns {boolean} Whether a level-up cantrip change is allowed
+ */
+export function checkForCantripLevelUp(actor, classItem) {
+  try {
+    // Get previous values
+    const previousLevel = actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL) || 0;
+    const previousMax = actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX) || 0;
+
+    // Get current values
+    const currentLevel = actor.system.details.level;
+    const currentMax = getMaxCantripsAllowed(actor, classItem);
+
+    // Update stored values if different
+    if (previousLevel !== currentLevel || previousMax !== currentMax) {
+      actor.setFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL, currentLevel);
+      actor.setFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX, currentMax);
+
+      // Mark cantrip change allowed if max increased
+      if (currentMax > previousMax && previousLevel > 0) {
+        actor.setFlag(MODULE.ID, FLAGS.CANTRIP_CHANGE_ALLOWED, true);
+        actor.setFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS, 0);
+        return true;
+      }
+    }
+
+    return actor.getFlag(MODULE.ID, FLAGS.CANTRIP_CHANGE_ALLOWED) || false;
+  } catch (error) {
+    log(1, 'Error checking for cantrip level up:', error);
+    return false;
+  }
 }
 
 /**
@@ -92,7 +320,8 @@ export function getSpellPreparationStatus(actor, spell) {
     alwaysPrepared: false,
     sourceItem: null,
     isGranted: false,
-    localizedPreparationMode: ''
+    localizedPreparationMode: '',
+    isCantripLocked: false
   };
 
   // If it's already an actor item
@@ -105,6 +334,12 @@ export function getSpellPreparationStatus(actor, spell) {
   const actorSpell = actor.items.find((item) => item.type === 'spell' && (item.name === spell.name || item.flags?.core?.sourceId === spell.compendiumUuid));
 
   if (!actorSpell) {
+    // If it's a cantrip, check if it should be locked
+    if (spell.system.level === 0) {
+      const cantripStatus = isCantripLocked(actor, spell);
+      defaultStatus.isCantripLocked = cantripStatus.locked;
+      defaultStatus.cantripLockReason = cantripStatus.reason;
+    }
     return defaultStatus;
   }
 
@@ -127,16 +362,70 @@ function getOwnedSpellPreparationStatus(actor, spell) {
   const sourceInfo = determineSpellSource(actor, spell);
   const isGranted = !!sourceInfo && spell.flags?.dnd5e?.cachedFor;
 
+  // Check if cantrip is locked
+  let isCantripLocked = false;
+  let cantripLockReason = '';
+
+  if (spell.system.level === 0 && !alwaysPrepared && !isGranted) {
+    const lockStatus = isCantripLocked(actor, spell);
+    isCantripLocked = lockStatus.locked;
+    cantripLockReason = lockStatus.reason;
+  }
+
   // Return status
   return {
     prepared: isGranted || spell.system.preparation?.prepared || alwaysPrepared,
     isOwned: true,
     preparationMode: preparationMode,
     localizedPreparationMode: localizedPreparationMode,
-    disabled: isGranted || alwaysPrepared || ['innate', 'pact', 'atwill', 'ritual'].includes(preparationMode),
+    disabled: isGranted || alwaysPrepared || ['innate', 'pact', 'atwill', 'ritual'].includes(preparationMode) || isCantripLocked,
     alwaysPrepared: alwaysPrepared,
     sourceItem: sourceInfo,
-    isGranted: isGranted
+    isGranted: isGranted,
+    isCantripLocked: isCantripLocked,
+    cantripLockReason: cantripLockReason
+  };
+}
+
+/**
+ * Check if a cantrip should be locked
+ * @param {Actor5e} actor - The actor
+ * @param {Item5e} spell - The spell item
+ * @returns {Object} Lock status
+ */
+function isCantripLocked(actor, spell) {
+  // Only applicable to cantrips
+  if (spell.system.level !== 0) {
+    return { locked: false };
+  }
+
+  const settings = getCantripSettings(actor);
+
+  // If unrestricted, never lock
+  if (settings.behavior === CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED) {
+    return { locked: false };
+  }
+
+  // If changes allowed, not locked
+  const changeAllowed = actor.getFlag(MODULE.ID, FLAGS.CANTRIP_CHANGE_ALLOWED);
+  if (changeAllowed) {
+    // For modern rules, check if we've already unlearned a cantrip
+    if (settings.rules === CANTRIP_RULES.MODERN && !spell.system.preparation?.prepared) {
+      const unlearned = actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
+      if (unlearned >= 1) {
+        return {
+          locked: true,
+          reason: 'SPELLBOOK.Cantrips.CannotUnlearnMore'
+        };
+      }
+    }
+    return { locked: false };
+  }
+
+  // Locked based on settings
+  return {
+    locked: true,
+    reason: settings.rules === CANTRIP_RULES.DEFAULT ? 'SPELLBOOK.Cantrips.LockedDefault' : 'SPELLBOOK.Cantrips.LockedModern'
   };
 }
 

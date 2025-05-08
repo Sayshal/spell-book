@@ -5,7 +5,7 @@
  */
 
 import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
-import { DEFAULT_FILTER_CONFIG, MODULE, SETTINGS } from './constants.mjs';
+import { CANTRIP_CHANGE_BEHAVIOR, CANTRIP_RULES, DEFAULT_FILTER_CONFIG, MODULE, SETTINGS } from './constants.mjs';
 import { log } from './logger.mjs';
 
 /**
@@ -110,6 +110,34 @@ export function registerSettings() {
       scope: 'world',
       type: GMSpellListManager,
       restricted: true
+    });
+
+    /* Cantrip Settings */
+    game.settings.register(MODULE.ID, SETTINGS.DEFAULT_CANTRIP_RULES, {
+      name: 'SPELLBOOK.Settings.DefaultCantripRules',
+      hint: 'SPELLBOOK.Settings.DefaultCantripRulesHint',
+      scope: 'world',
+      config: true,
+      type: String,
+      choices: {
+        [CANTRIP_RULES.DEFAULT]: 'SPELLBOOK.Cantrips.RulesDefault',
+        [CANTRIP_RULES.MODERN]: 'SPELLBOOK.Cantrips.RulesModern'
+      },
+      default: CANTRIP_RULES.DEFAULT
+    });
+
+    game.settings.register(MODULE.ID, SETTINGS.DEFAULT_CANTRIP_BEHAVIOR, {
+      name: 'SPELLBOOK.Settings.DefaultCantripBehavior',
+      hint: 'SPELLBOOK.Settings.DefaultCantripBehaviorHint',
+      scope: 'world',
+      config: true,
+      type: String,
+      choices: {
+        [CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED]: 'SPELLBOOK.Cantrips.BehaviorUnrestricted',
+        [CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM]: 'SPELLBOOK.Cantrips.BehaviorNotifyGM',
+        [CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX]: 'SPELLBOOK.Cantrips.BehaviorLockAfterMax'
+      },
+      default: CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED
     });
 
     log(3, 'Module settings registered');
