@@ -41,10 +41,10 @@
 	<div class="form-group">
 		<label>{{localize 'SPELLBOOK.Cantrips.OverrideLabel'}}</label>
 		<div class="form-fields override-buttons">
-			<button type="button" name="overrideUnlock" value="1" {{#if stats.changeAllowed}}disabled{{/if}}>
+			<button type="button" data-action="unlockCantrips" {{#if stats.changeAllowed}}disabled{{/if}}>
 				<i class="fas fa-unlock"></i> {{localize 'SPELLBOOK.Cantrips.UnlockButton'}}
 			</button>
-			<button type="button" name="overrideLock" value="1" {{#unless stats.changeAllowed}}disabled{{/unless}}>
+			<button type="button" data-action="lockCantrips" {{#unless stats.changeAllowed}}disabled{{/unless}}>
 				<i class="fas fa-lock"></i> {{localize 'SPELLBOOK.Cantrips.LockButton'}}
 			</button>
 		</div>

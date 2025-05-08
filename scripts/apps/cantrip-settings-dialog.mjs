@@ -27,6 +27,10 @@ export class CantripSettingsDialog extends HandlebarsApplicationMixin(Applicatio
       submitOnChange: false
     },
     classes: ['cantrip-settings-dialog'],
+    actions: {
+      unlockCantrips: CantripSettingsDialog.unlockCantrips,
+      lockCantrips: CantripSettingsDialog.lockCantrips
+    },
     window: {
       icon: 'fas fa-magic',
       resizable: true,
@@ -74,6 +78,13 @@ export class CantripSettingsDialog extends HandlebarsApplicationMixin(Applicatio
   /* -------------------------------------------- */
 
   /**
+   * Get window title - include actor name
+   */
+  get title() {
+    return `${game.i18n.localize('SPELLBOOK.Cantrips.ConfigTitle')}: ${this.actor.name}`;
+  }
+
+  /**
    * Prepare the application context data
    * @override
    */
@@ -91,6 +102,8 @@ export class CantripSettingsDialog extends HandlebarsApplicationMixin(Applicatio
     const currentCount = preparationUtils.getCurrentCantripsCount(this.actor);
     const changeAllowed = this.actor.getFlag(MODULE.ID, FLAGS.CANTRIP_CHANGE_ALLOWED) || false;
     const unlearned = this.actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
+
+    log(3, `Preparing cantrip settings context: Rules=${cantripRules}, Behavior=${behaviorSetting}, ChangeAllowed=${changeAllowed}`);
 
     return {
       actor: this.actor,
@@ -142,41 +155,108 @@ export class CantripSettingsDialog extends HandlebarsApplicationMixin(Applicatio
    */
   static async formHandler(_event, form, formData) {
     try {
-      log(3, 'Processing cantrip settings form submission');
+      log(3, 'Processing cantrip settings form submission', formData);
 
       const actor = this.actor;
 
       // Update actor flags with form data
-      await actor.setFlag(MODULE.ID, FLAGS.CANTRIP_RULES, formData.cantripRules);
-      await actor.setFlag(MODULE.ID, FLAGS.CANTRIP_CHANGE_BEHAVIOR, formData.cantripBehavior);
+      await actor.update({
+        [`flags.${MODULE.ID}.${FLAGS.CANTRIP_RULES}`]: formData.object.cantripRules,
+        [`flags.${MODULE.ID}.${FLAGS.CANTRIP_CHANGE_BEHAVIOR}`]: formData.object.cantripBehavior
+      });
 
-      // Handle unlock override
-      if (formData.overrideUnlock) {
-        await actor.setFlag(MODULE.ID, FLAGS.CANTRIP_CHANGE_ALLOWED, true);
-        await actor.setFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS, 0);
+      ui.notifications.info(
+        game.i18n.format('SPELLBOOK.Cantrips.SettingsSaved', {
+          name: actor.name
+        })
+      );
 
-        ui.notifications.info(
-          game.i18n.format('SPELLBOOK.Cantrips.UnlockedInfo', {
-            name: actor.name
-          })
-        );
-      }
+      // Find and re-render the actor's spell book if it's open
+      const spellBook = Object.values(foundry.applications.instances).find((w) => w instanceof PlayerSpellBook && w.actor.id === actor.id);
 
-      // Handle lock override
-      if (formData.overrideLock) {
-        await actor.setFlag(MODULE.ID, FLAGS.CANTRIP_CHANGE_ALLOWED, false);
-
-        ui.notifications.info(
-          game.i18n.format('SPELLBOOK.Cantrips.LockedInfo', {
-            name: actor.name
-          })
-        );
+      if (spellBook) {
+        spellBook.render(false);
       }
 
       return actor;
     } catch (error) {
       log(1, 'Error saving cantrip settings:', error);
       return null;
+    }
+  }
+
+  /**
+   * Handle unlock cantrips button
+   * @static
+   */
+  static async unlockCantrips(event, form) {
+    try {
+      const actor = this.actor;
+
+      // Update actor flags
+      await actor.update({
+        [`flags.${MODULE.ID}.${FLAGS.CANTRIP_CHANGE_ALLOWED}`]: true,
+        [`flags.${MODULE.ID}.${FLAGS.UNLEARNED_CANTRIPS}`]: 0
+      });
+
+      // Update button states in the DOM
+      const unlockBtn = form.querySelector('[data-action="unlockCantrips"]');
+      const lockBtn = form.querySelector('[data-action="lockCantrips"]');
+
+      if (unlockBtn) unlockBtn.disabled = true;
+      if (lockBtn) lockBtn.disabled = false;
+
+      ui.notifications.info(
+        game.i18n.format('SPELLBOOK.Cantrips.UnlockedInfo', {
+          name: actor.name
+        })
+      );
+
+      // Find and re-render the actor's spell book if it's open
+      const spellBook = Object.values(foundry.applications.instances).find((w) => w instanceof PlayerSpellBook && w.actor.id === actor.id);
+
+      if (spellBook) {
+        spellBook.render(false);
+      }
+    } catch (error) {
+      log(1, 'Error unlocking cantrips:', error);
+    }
+  }
+
+  /**
+   * Handle lock cantrips button
+   * @static
+   */
+  static async lockCantrips(event, form) {
+    try {
+      const actor = this.actor;
+
+      // Update actor flags
+      await actor.update({
+        [`flags.${MODULE.ID}.${FLAGS.CANTRIP_CHANGE_ALLOWED}`]: false
+      });
+
+      // Update button states in the DOM
+      const unlockBtn = form.querySelector('[data-action="unlockCantrips"]');
+      const lockBtn = form.querySelector('[data-action="lockCantrips"]');
+
+      if (unlockBtn) unlockBtn.disabled = false;
+      if (lockBtn) lockBtn.disabled = true;
+
+      ui.notifications.info(
+        game.i18n.format('SPELLBOOK.Cantrips.LockedInfo', {
+          name: actor.name
+        })
+      );
+
+      // Find and re-render the actor's spell book if it's open
+      const spellBook = Object.values(foundry.applications.instances).find((w) => w instanceof PlayerSpellBook && w.actor.id === actor.id);
+
+      if (spellBook) {
+        spellBook.render(false);
+      }
+    } catch (error) {
+      log(1, 'Error locking cantrips:', error);
     }
   }
 }

@@ -202,7 +202,7 @@ export function canChangeCantrip(actor, spell) {
 
   const settings = getCantripSettings(actor);
 
-  // Always allow if unrestricted
+  // Always allow if unrestricted - ignore lock status
   if (settings.behavior === CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED) {
     return { allowed: true };
   }

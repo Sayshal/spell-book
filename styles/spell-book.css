@@ -468,10 +468,15 @@
     transition: max-height 0.4s ease;
   }
 
+  .spell-level[data-level='0'] .spell-count {
+    display: none;
+  }
+
   .cantrip-counter {
     margin-left: 0.5rem;
     font-size: 0.8em;
-    opacity: 0.75;
+    opacity: 0.85;
+    font-weight: normal;
 
     &.at-max {
       color: var(--color-level-warning);
