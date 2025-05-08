@@ -240,20 +240,32 @@ export function canChangeCantrip(actor, spell) {
  * @returns {number} Maximum allowed cantrips
  */
 export function getMaxCantripsAllowed(actor, classItem) {
-  if (!classItem) return 0;
+  log(3, `Calculating max cantrips for ${actor.name}`);
 
-  // Get cantrips known from class spellcasting data
-  const spellcasting = classItem.system.spellcasting;
-  if (!spellcasting) return 0;
-
-  const scaleValues = spellcasting.scaleValues || {};
-  const cantripsKnown = scaleValues['cantrips-known']?.value;
-
-  if (cantripsKnown !== undefined) {
-    return cantripsKnown;
+  if (!classItem) {
+    log(2, 'No class item provided for cantrip calculation');
+    return 0;
   }
 
-  // If no specific value is set, default to 0 (no cantrips)
+  // Log class details
+  log(3, `Using class: ${classItem.name} (level: ${classItem.system.levels || actor.system.details.level})`);
+
+  // Check for scaleValues directly on the classItem (derived data)
+  if (classItem.scaleValues) {
+    log(3, `Class has scaleValues, checking for cantrips-known`);
+
+    // Look for cantrips-known in the scaleValues
+    const cantripsKnown = classItem.scaleValues['cantrips-known']?.value;
+    log(3, `cantrips-known value from scaleValues: ${cantripsKnown}`);
+
+    if (cantripsKnown !== undefined) {
+      log(3, `Found cantrips-known in scaleValues: ${cantripsKnown}`);
+      return cantripsKnown;
+    }
+  }
+
+  // If nothing works, default to 0
+  log(2, 'No cantrips-known value found, returning 0');
   return 0;
 }
 
@@ -302,6 +314,42 @@ export function checkForCantripLevelUp(actor, classItem) {
   }
 }
 
+export function getCantripLockStatus(actor, spell) {
+  // Only applicable to cantrips
+  if (spell.system.level !== 0) {
+    return { locked: false };
+  }
+
+  const settings = getCantripSettings(actor);
+
+  // If unrestricted, never lock
+  if (settings.behavior === CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED) {
+    return { locked: false };
+  }
+
+  // If changes allowed, not locked
+  const changeAllowed = actor.getFlag(MODULE.ID, FLAGS.CANTRIP_CHANGE_ALLOWED);
+  if (changeAllowed) {
+    // For modern rules, check if we've already unlearned a cantrip
+    if (settings.rules === CANTRIP_RULES.MODERN && !spell.system.preparation?.prepared) {
+      const unlearned = actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
+      if (unlearned >= 1) {
+        return {
+          locked: true,
+          reason: 'SPELLBOOK.Cantrips.CannotUnlearnMore'
+        };
+      }
+    }
+    return { locked: false };
+  }
+
+  // Locked based on settings
+  return {
+    locked: true,
+    reason: settings.rules === CANTRIP_RULES.DEFAULT ? 'SPELLBOOK.Cantrips.LockedDefault' : 'SPELLBOOK.Cantrips.LockedModern'
+  };
+}
+
 /**
  * Check if a spell is already prepared on an actor
  * @param {Actor5e} actor - The actor to check
@@ -336,7 +384,7 @@ export function getSpellPreparationStatus(actor, spell) {
   if (!actorSpell) {
     // If it's a cantrip, check if it should be locked
     if (spell.system.level === 0) {
-      const cantripStatus = isCantripLocked(actor, spell);
+      const cantripStatus = getCantripLockStatus(actor, spell);
       defaultStatus.isCantripLocked = cantripStatus.locked;
       defaultStatus.cantripLockReason = cantripStatus.reason;
     }
@@ -352,7 +400,7 @@ export function getSpellPreparationStatus(actor, spell) {
  * @param {Item5e} spell - The spell item
  * @returns {object} - Preparation status information
  */
-function getOwnedSpellPreparationStatus(actor, spell) {
+export function getOwnedSpellPreparationStatus(actor, spell) {
   // Get preparation information
   const preparationMode = spell.system.preparation?.mode || 'prepared';
   const alwaysPrepared = preparationMode === 'always';
@@ -367,7 +415,7 @@ function getOwnedSpellPreparationStatus(actor, spell) {
   let cantripLockReason = '';
 
   if (spell.system.level === 0 && !alwaysPrepared && !isGranted) {
-    const lockStatus = isCantripLocked(actor, spell);
+    const lockStatus = getCantripLockStatus(actor, spell);
     isCantripLocked = lockStatus.locked;
     cantripLockReason = lockStatus.reason;
   }
@@ -384,48 +432,6 @@ function getOwnedSpellPreparationStatus(actor, spell) {
     isGranted: isGranted,
     isCantripLocked: isCantripLocked,
     cantripLockReason: cantripLockReason
-  };
-}
-
-/**
- * Check if a cantrip should be locked
- * @param {Actor5e} actor - The actor
- * @param {Item5e} spell - The spell item
- * @returns {Object} Lock status
- */
-function isCantripLocked(actor, spell) {
-  // Only applicable to cantrips
-  if (spell.system.level !== 0) {
-    return { locked: false };
-  }
-
-  const settings = getCantripSettings(actor);
-
-  // If unrestricted, never lock
-  if (settings.behavior === CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED) {
-    return { locked: false };
-  }
-
-  // If changes allowed, not locked
-  const changeAllowed = actor.getFlag(MODULE.ID, FLAGS.CANTRIP_CHANGE_ALLOWED);
-  if (changeAllowed) {
-    // For modern rules, check if we've already unlearned a cantrip
-    if (settings.rules === CANTRIP_RULES.MODERN && !spell.system.preparation?.prepared) {
-      const unlearned = actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
-      if (unlearned >= 1) {
-        return {
-          locked: true,
-          reason: 'SPELLBOOK.Cantrips.CannotUnlearnMore'
-        };
-      }
-    }
-    return { locked: false };
-  }
-
-  // Locked based on settings
-  return {
-    locked: true,
-    reason: settings.rules === CANTRIP_RULES.DEFAULT ? 'SPELLBOOK.Cantrips.LockedDefault' : 'SPELLBOOK.Cantrips.LockedModern'
   };
 }
 

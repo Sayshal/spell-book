@@ -1,5 +1,5 @@
 import { CantripSettingsDialog } from '../apps/cantrip-settings-dialog.mjs';
-import { CANTRIP_CHANGE_BEHAVIOR, DEFAULT_FILTER_CONFIG, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import { CANTRIP_CHANGE_BEHAVIOR, CANTRIP_RULES, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as actorSpellUtils from '../helpers/actor-spells.mjs';
 import * as filterUtils from '../helpers/filters.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
