@@ -1207,9 +1207,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
       // Get settings
       const settings = preparationUtils.getCantripSettings(this.actor);
-      const changeAllowed = this.actor.getFlag(MODULE.ID, FLAGS.CANTRIP_CHANGE_ALLOWED) || false;
 
-      log(3, `Cantrip settings: rules=${settings.rules}, behavior=${settings.behavior}, changeAllowed=${changeAllowed}`);
+      log(3, `Cantrip settings: rules=${settings.rules}, behavior=${settings.behavior}`);
 
       // Always update the counter regardless of settings
       this._updateCantripCounter();
@@ -1236,7 +1235,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         return;
       }
 
-      // Apply UI changes based on settings for non-unrestricted behaviors
+      // For non-unrestricted behaviors, check if this is a level-up situation
+      const levelUpAllowed = this._canCantripsBeLeveledUp();
+
+      // Apply UI changes based on settings
       for (const item of cantripItems) {
         const checkbox = item.querySelector('input[type="checkbox"]');
         if (!checkbox) continue;
@@ -1257,9 +1259,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         checkbox.disabled = false;
         item.classList.remove('cantrip-locked');
 
-        // Case 1: Changes are locked (not allowed)
-        if (!changeAllowed) {
-          // For default rules: checked cantrips can never be unchecked
+        // If not during level-up, lock cantrips based on rules
+        if (!levelUpAllowed) {
+          // For default rules: all changes are locked
           if (settings.rules === CANTRIP_RULES.DEFAULT) {
             // Always lock the checkbox
             checkbox.disabled = true;
@@ -1273,7 +1275,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
               nameElement.appendChild(lockIcon);
             }
           }
-          // For modern rules: can only change during level up
+          // For modern rules: all changes are locked outside level-up
           else if (settings.rules === CANTRIP_RULES.MODERN) {
             // Always lock the checkbox
             checkbox.disabled = true;
@@ -1288,23 +1290,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             }
           }
         }
-        // Case 2: Changes are allowed but limited by rules
-        else {
-          // Modern rules: can only unlearn one cantrip per level
-          if (settings.rules === CANTRIP_RULES.MODERN) {
-            const unlearned = this.actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
+        // During level-up, modern rules have a limit on unlearning
+        else if (settings.rules === CANTRIP_RULES.MODERN) {
+          const unlearned = this.actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
 
-            // If already unlearned a cantrip, prevent unchecking more
-            if (unlearned >= 1 && !isChecked) {
-              checkbox.disabled = true;
-              item.classList.add('cantrip-locked');
+          // If already unlearned a cantrip, prevent unchecking more
+          if (unlearned >= 1 && !isChecked) {
+            checkbox.disabled = true;
+            item.classList.add('cantrip-locked');
 
-              if (nameElement && !lockIcon) {
-                lockIcon = document.createElement('i');
-                lockIcon.className = 'fas fa-lock cantrip-lock-icon';
-                lockIcon.title = game.i18n.localize('SPELLBOOK.Cantrips.CannotUnlearnMore');
-                nameElement.appendChild(lockIcon);
-              }
+            if (nameElement && !lockIcon) {
+              lockIcon = document.createElement('i');
+              lockIcon.className = 'fas fa-lock cantrip-lock-icon';
+              lockIcon.title = game.i18n.localize('SPELLBOOK.Cantrips.CannotUnlearnMore');
+              nameElement.appendChild(lockIcon);
             }
           }
         }
@@ -1312,6 +1311,25 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     } catch (error) {
       log(1, 'Error setting up cantrip locks:', error);
     }
+  }
+
+  /**
+   * Helper method to check if cantrips can be changed due to level-up
+   * @returns {boolean} Whether cantrips can be changed
+   * @private
+   */
+  _canCantripsBeLeveledUp() {
+    // During level-up with increased max cantrips, changes are allowed
+    const previousLevel = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL) || 0;
+    const previousMax = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX) || 0;
+
+    const classItem = this.actor.items.find((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
+
+    const currentLevel = this.actor.system.details.level;
+    const currentMax = preparationUtils.getMaxCantripsAllowed(this.actor, classItem);
+
+    // If max increased at level-up, cantrips can be changed
+    return (currentLevel > previousLevel || currentMax > previousMax) && previousLevel > 0;
   }
 
   /**

@@ -1,59 +1,37 @@
 <div class="cantrip-settings-form">
-	<p>{{localize 'SPELLBOOK.Cantrips.ConfigDescription' name=actor.name}}</p>
+  <p>{{localize 'SPELLBOOK.Cantrips.ConfigDescription' name=actor.name}}</p>
 
-	<div class="cantrip-stats">
-		<p>{{localize 'SPELLBOOK.Cantrips.ActorStats' name=actor.name count=stats.currentCount max=stats.maxCantrips}}</p>
+  <div class="cantrip-stats">
+    <p>{{localize 'SPELLBOOK.Cantrips.ActorStats' name=actor.name count=stats.currentCount max=stats.maxCantrips}}</p>
+  </div>
 
-		{{#if stats.changeAllowed}}
-			<p class="notice">{{localize 'SPELLBOOK.Cantrips.ChangesUnlocked'}}</p>
-			{{#if (gt stats.unlearned 0)}}
-				<p class="warning">{{localize 'SPELLBOOK.Cantrips.UnlearnedCount' count=stats.unlearned}}</p>
-			{{/if}}
-		{{else}}
-			<p class="notice">{{localize 'SPELLBOOK.Cantrips.ChangesLocked'}}</p>
-		{{/if}}
-	</div>
+  <div class="form-group">
+    <label>{{localize 'SPELLBOOK.Cantrips.RulesLabel'}}</label>
+    <div class="form-fields">
+      <select name="cantripRules">
+        {{#each ruleOptions as |option|}}
+          <option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+    <p class="hint">{{localize 'SPELLBOOK.Cantrips.RulesHint'}}</p>
+  </div>
 
-	<div class="form-group">
-		<label>{{localize 'SPELLBOOK.Cantrips.RulesLabel'}}</label>
-		<div class="form-fields">
-			<select name="cantripRules">
-				{{#each ruleOptions as |option|}}
-					<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
-				{{/each}}
-			</select>
-		</div>
-		<p class="hint">{{localize 'SPELLBOOK.Cantrips.RulesHint'}}</p>
-	</div>
+  <div class="form-group">
+    <label>{{localize 'SPELLBOOK.Cantrips.BehaviorLabel'}}</label>
+    <div class="form-fields">
+      <select name="cantripBehavior">
+        {{#each behaviorOptions as |option|}}
+          <option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
+        {{/each}}
+      </select>
+    </div>
+    <p class="hint">{{localize 'SPELLBOOK.Cantrips.BehaviorHint'}}</p>
+  </div>
 
-	<div class="form-group">
-		<label>{{localize 'SPELLBOOK.Cantrips.BehaviorLabel'}}</label>
-		<div class="form-fields">
-			<select name="cantripBehavior">
-				{{#each behaviorOptions as |option|}}
-					<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
-				{{/each}}
-			</select>
-		</div>
-		<p class="hint">{{localize 'SPELLBOOK.Cantrips.BehaviorHint'}}</p>
-	</div>
-
-	<div class="form-group">
-		<label>{{localize 'SPELLBOOK.Cantrips.OverrideLabel'}}</label>
-		<div class="form-fields override-buttons">
-			<button type="button" data-action="unlockCantrips" {{#if stats.changeAllowed}}disabled{{/if}}>
-				<i class="fas fa-unlock"></i> {{localize 'SPELLBOOK.Cantrips.UnlockButton'}}
-			</button>
-			<button type="button" data-action="lockCantrips" {{#unless stats.changeAllowed}}disabled{{/unless}}>
-				<i class="fas fa-lock"></i> {{localize 'SPELLBOOK.Cantrips.LockButton'}}
-			</button>
-		</div>
-		<p class="hint">{{localize 'SPELLBOOK.Cantrips.OverrideHint'}}</p>
-	</div>
-
-	<div class="form-group">
-		<button type="submit" name="submit" class="submit-button">
-			<i class="fas fa-save"></i> {{localize 'SPELLBOOK.Cantrips.SaveButton'}}
-		</button>
-	</div>
+  <div class="form-group">
+    <button type="submit" name="submit" class="submit-button">
+      <i class="fas fa-save"></i> {{localize 'SPELLBOOK.Cantrips.SaveButton'}}
+    </button>
+  </div>
 </div>

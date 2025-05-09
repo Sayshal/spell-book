@@ -30,13 +30,10 @@ export const FLAGS = {
   COLLAPSED_LEVELS: 'collapsedSpellLevels',
   SIDEBAR_COLLAPSED: 'sidebarCollapsed',
   GM_COLLAPSED_LEVELS: 'gmCollapsedSpellLevels',
-  // Cantrip-related flags
   CANTRIP_RULES: 'cantripRules',
   CANTRIP_CHANGE_BEHAVIOR: 'cantripBehavior',
   PREVIOUS_LEVEL: 'previousLevel',
-  PREVIOUS_CANTRIP_MAX: 'previousCantripMax',
-  CANTRIP_CHANGE_ALLOWED: 'cantripChangeAllowed',
-  UNLEARNED_CANTRIPS: 'unlearnedCantrips'
+  PREVIOUS_CANTRIP_MAX: 'previousCantripMax'
 };
 
 //-----------------------------------------------------------------------------
