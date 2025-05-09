@@ -10,8 +10,7 @@
 					<div class="drag-handle" aria-hidden="true">
 						{{#if filter.sortable}}<i class="fas fa-grip-lines"></i>{{else}}<i class="fas fa-lock"></i>{{/if}}
 					</div>
-					<input type="checkbox" name="enabled-{{filter.id}}" id="enabled-{{filter.id}}" {{checked filter.enabled}}
-						aria-label="{{localize 'SPELLBOOK.Settings.EnableFilter' name=(localize filter.label)}}">
+					{{{filter.checkboxHtml}}}
 					<span class="filter-name">{{localize filter.label}}</span>
 					{{#unless filter.sortable}}
 						<span class="fixed-position-note" aria-label="{{localize 'SPELLBOOK.Settings.FixedPositionDesc'}}">

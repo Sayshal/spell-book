@@ -135,18 +135,35 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
         this.initializeConfig();
       }
 
-      // Set sortable property for each filter
+      // Set sortable property for each filter and add DnD5e checkboxes
       this.config = this.config.map((filter) => {
         // Determine sortable status based on filter type
         const sortable = !(filter.id === 'name' || filter.id === 'prepared' || filter.id === 'ritual' || filter.id === 'sortBy');
 
+        // Create the dnd5e checkbox for the enabled state
+        const checkbox = document.createElement('dnd5e-checkbox');
+        checkbox.name = `enabled-${filter.id}`;
+        checkbox.id = `enabled-${filter.id}`;
+        if (filter.enabled) checkbox.checked = true;
+        checkbox.setAttribute(
+          'aria-label',
+          game.i18n.format('SPELLBOOK.Settings.EnableFilter', {
+            name: game.i18n.localize(filter.label)
+          })
+        );
+
+        // Convert to HTML string
+        const container = document.createElement('div');
+        container.appendChild(checkbox);
+
         return {
           ...filter,
-          sortable: filter.sortable !== undefined ? filter.sortable : sortable
+          sortable: filter.sortable !== undefined ? filter.sortable : sortable,
+          checkboxHtml: container.innerHTML
         };
       });
 
-      log(3, 'Prepared context with configuration');
+      log(3, 'Prepared context with configuration and DnD5e checkboxes');
 
       return {
         filterConfig: this.config,
@@ -541,7 +558,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   _captureFormState() {
     const state = {};
     try {
-      const checkboxes = this.element.querySelectorAll('input[type="checkbox"][name^="enabled-"]');
+      const checkboxes = this.element.querySelectorAll('dnd5e-checkbox[name^="enabled-"]');
       checkboxes.forEach((checkbox) => {
         const filterId = checkbox.name.replace('enabled-', '');
         state[filterId] = checkbox.checked;

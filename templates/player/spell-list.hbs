@@ -45,12 +45,11 @@
 							{{#if preparation.hideCheckbox}}
 								<!-- Lock icon instead of checkbox for locked cantrips -->
 								<i class="fas fa-lock cantrip-lock-icon" data-tooltip="{{localize preparation.cantripLockReason}}"></i>
+							{{else if preparation.isCantripLocked}}
+								<i class="fas fa-lock cantrip-lock-icon" data-tooltip="{{localize preparation.cantripLockReason}}"></i>
 							{{else}}
-								<input type="checkbox" name="spellPreparation.{{compendiumUuid}}" id="prep-{{compendiumUuid}}" value="1"
-									data-uuid="{{compendiumUuid}}" data-name="{{name}}" data-ritual="{{filterData.isRitual}}"
-									data-was-prepared="{{preparation.prepared}}" {{checked preparation.prepared}}
-									{{disabled preparation.disabled}}
-									aria-label="{{#if preparation.prepared}}{{localize 'SPELLBOOK.Preparation.Unprepare' name=name}}{{else}}{{localize 'SPELLBOOK.Preparation.Prepare' name=name}}{{/if}}" />
+								<!-- Use the pre-created DnD5e checkbox HTML -->
+								{{{preparationCheckboxHtml}}}
 							{{/if}}
 						</div>
 					</li>

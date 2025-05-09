@@ -1,6 +1,7 @@
 import { CANTRIP_RULES, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as actorSpellUtils from '../helpers/actor-spells.mjs';
 import * as filterUtils from '../helpers/filters.mjs';
+import * as formElements from '../helpers/form-elements.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { SpellManager } from '../helpers/spell-preparation.mjs';
@@ -136,9 +137,49 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       return context;
     }
 
-    context.spellLevels = this.spellLevels;
-    context.filters = this._prepareFilters();
+    // Process spell levels to add HTML checkboxes
+    context.spellLevels = this.spellLevels.map((level) => {
+      // Create a copy of the level data
+      const processedLevel = { ...level };
 
+      // Process spells to add checkbox HTML
+      processedLevel.spells = level.spells.map((spell) => {
+        // Create a deep copy of the spell
+        const processedSpell = foundry.utils.deepClone(spell);
+
+        // Add checkbox HTML for preparation
+        if (!spell.preparation.hideCheckbox) {
+          // Create the checkbox element
+          const checkbox = document.createElement('dnd5e-checkbox');
+          checkbox.name = `spellPreparation.${spell.compendiumUuid}`;
+          checkbox.id = `prep-${spell.compendiumUuid}`;
+          if (spell.preparation.prepared) checkbox.checked = true;
+          if (spell.preparation.disabled) checkbox.disabled = true;
+
+          // Add data attributes
+          checkbox.dataset.uuid = spell.compendiumUuid;
+          checkbox.dataset.name = spell.name;
+          checkbox.dataset.ritual = spell.filterData?.isRitual || false;
+          checkbox.dataset.wasPrepared = spell.preparation.prepared;
+
+          // Set aria label
+          const ariaLabel =
+            spell.preparation.prepared ? game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name }) : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
+          checkbox.setAttribute('aria-label', ariaLabel);
+
+          // Convert to HTML
+          const container = document.createElement('div');
+          container.appendChild(checkbox);
+          processedSpell.preparationCheckboxHtml = container.innerHTML;
+        }
+
+        return processedSpell;
+      });
+
+      return processedLevel;
+    });
+
+    context.filters = this._prepareFilters();
     return context;
   }
 
@@ -515,51 +556,48 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       log(3, 'Setting up filter listeners');
 
-      // Text search input
-      const searchInput = this.element.querySelector('input[name="filter-name"]');
-      if (searchInput) {
-        searchInput.addEventListener('input', (event) => {
+      // Use a delegated event handler approach by adding listeners to the filters container
+      const filtersContainer = this.element.querySelector('.spell-filters');
+      if (!filtersContainer) {
+        log(2, 'Filter container not found, unable to set up listeners');
+        return;
+      }
+
+      // Handle 'change' events for select dropdowns and checkboxes
+      filtersContainer.addEventListener('change', (event) => {
+        const target = event.target;
+
+        // Handle different element types
+        if (target.matches('dnd5e-checkbox') || target.matches('select')) {
+          // Apply filters immediately
+          this._applyFilters();
+
+          // Special case for sort-by
+          if (target.name === 'sort-by') {
+            this._applySorting(target.value);
+          }
+        }
+      });
+
+      // Handle 'input' events for text search and number inputs
+      filtersContainer.addEventListener('input', (event) => {
+        const target = event.target;
+        if (target.matches('input[type="text"]')) {
+          // Debounce text search
           clearTimeout(this._searchTimer);
           this._searchTimer = setTimeout(() => {
             this._applyFilters();
           }, 200);
-        });
-      }
-
-      // Dropdown selects
-      const dropdowns = this.element.querySelectorAll('select[name^="filter-"], select[name="sort-by"]');
-
-      dropdowns.forEach((dropdown) => {
-        dropdown.addEventListener('change', () => {
-          this._applyFilters();
-
-          // Special case for sort-by
-          if (dropdown.name === 'sort-by') {
-            this._applySorting(dropdown.value);
-          }
-        });
-      });
-
-      // Checkbox filters
-      const checkboxes = this.element.querySelectorAll('input[type="checkbox"][name^="filter-"]');
-
-      checkboxes.forEach((checkbox) => {
-        checkbox.addEventListener('change', () => {
-          this._applyFilters();
-        });
-      });
-
-      // Range inputs
-      const rangeInputs = this.element.querySelectorAll('input[type="number"][name^="filter-"]');
-
-      rangeInputs.forEach((input) => {
-        input.addEventListener('input', () => {
+        } else if (target.matches('input[type="number"]')) {
+          // Debounce range inputs
           clearTimeout(this._rangeTimer);
           this._rangeTimer = setTimeout(() => {
             this._applyFilters();
           }, 200);
-        });
+        }
       });
+
+      log(3, 'Delegated filter listeners setup complete');
     } catch (error) {
       log(1, 'Error setting up filter listeners:', error);
     }
@@ -568,7 +606,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   _setupPreparationListeners() {
     try {
       log(3, 'Setting up preparation listeners');
-      const prepCheckboxes = this.element.querySelectorAll('input[type="checkbox"][data-uuid]');
+
+      // Use event delegation for checkbox changes
+      const spellsContainer = this.element.querySelector('.spells-container');
+      if (!spellsContainer) {
+        log(2, 'Spells container not found, unable to set up preparation listeners');
+        return;
+      }
 
       // Check if we need to handle cantrip rules
       const isLevelUp = this.spellManager.canBeLeveledUp();
@@ -588,31 +632,26 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           learned: null // UUID of the newly learned cantrip
         };
 
-        // Record initially checked cantrips
-        prepCheckboxes.forEach((checkbox) => {
-          const spellItem = checkbox.closest('.spell-item');
-          const spellLevel = spellItem?.dataset.spellLevel;
-
-          if (spellLevel === '0' && checkbox.checked) {
+        // Record initially checked cantrips - now using dnd5e-checkbox elements
+        // FIXED: Properly detect checked dnd5e-checkbox elements
+        const cantripItems = spellsContainer.querySelectorAll('.spell-item[data-spell-level="0"]');
+        cantripItems.forEach((item) => {
+          const checkbox = item.querySelector('dnd5e-checkbox[data-uuid]');
+          if (checkbox && checkbox.checked) {
             this._cantripTracking.originalChecked.add(checkbox.dataset.uuid);
           }
         });
+
+        log(3, `Recorded ${this._cantripTracking.originalChecked.size} initial cantrips`);
       }
 
-      // Mark permanently disabled checkboxes
-      prepCheckboxes.forEach((checkbox) => {
-        if (checkbox.disabled && (checkbox.closest('.spell-item').querySelector('.always-prepared-tag') || checkbox.closest('.spell-item').querySelector('.granted-spell-tag'))) {
-          checkbox.setAttribute('data-always-disabled', 'true');
-        }
-      });
+      // Use event delegation for all preparation checkboxes
+      spellsContainer.addEventListener('change', async (event) => {
+        const target = event.target;
 
-      // Add change listeners
-      prepCheckboxes.forEach((checkbox) => {
-        // Only add listeners to checkboxes that aren't permanently disabled
-        if (!checkbox.hasAttribute('data-always-disabled')) {
-          checkbox.addEventListener('change', async (event) => {
-            await this._handlePreparationChange(event);
-          });
+        // Check if this is a dnd5e-checkbox for spell preparation
+        if (target.matches('dnd5e-checkbox[data-uuid]')) {
+          await this._handlePreparationChange(event);
         }
       });
     } catch (error) {
@@ -622,9 +661,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _handlePreparationChange(event) {
     try {
-      // Get spell item and level
-      const spellItem = event.target.closest('.spell-item');
-      const uuid = event.target.dataset.uuid;
+      // Get checkbox and its data
+      const checkbox = event.target;
+      const uuid = checkbox.dataset.uuid;
+      const spellItem = checkbox.closest('.spell-item');
       const spellLevel = spellItem?.dataset.spellLevel;
 
       // Handle cantrip-specific logic
@@ -633,7 +673,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       } else {
         // Non-cantrip spell - just update UI
         if (spellItem) {
-          if (event.target.checked) {
+          if (checkbox.checked) {
             spellItem.classList.add('prepared-spell');
           } else {
             spellItem.classList.remove('prepared-spell');
@@ -655,56 +695,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const settings = this.spellManager.getSettings();
     const isModernRules = settings.rules === CANTRIP_RULES.MODERN;
 
+    // Add debug logging
+    const spellName = spellItem?.querySelector('.spell-name .title')?.textContent || 'unknown';
+    log(3, `Handling cantrip change for ${spellName}: ${event.target.checked ? 'checking' : 'unchecking'}`);
+
     // Handle Modern rules during level-up
     if (isModernRules && isLevelUp) {
       log(3, `Handling Modern cantrip change: ${event.target.checked ? 'checking' : 'unchecking'} ${uuid}`);
-
-      // UNCHECKING a cantrip (removing it)
-      if (!event.target.checked) {
-        // If this cantrip was originally checked
-        if (this._cantripTracking.originalChecked.has(uuid)) {
-          // If we've already unlearned a cantrip, prevent unchecking another
-          if (this._cantripTracking.hasUnlearned && this._cantripTracking.unlearned !== uuid) {
-            // Prevent unchecking another original cantrip
-            event.target.checked = true;
-            ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.OnlyOneSwap'));
-            return;
-          }
-
-          // Record this as the unlearned cantrip
-          this._cantripTracking.hasUnlearned = true;
-          this._cantripTracking.unlearned = uuid;
-        }
-      }
-      // CHECKING a cantrip (adding it)
-      else {
-        // If this cantrip was NOT originally checked (it's a new one)
-        if (!this._cantripTracking.originalChecked.has(uuid)) {
-          // If we've already learned a different cantrip
-          if (this._cantripTracking.hasLearned && this._cantripTracking.learned !== uuid) {
-            // Prevent checking another new cantrip
-            event.target.checked = false;
-            ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.OnlyOneSwap'));
-            return;
-          }
-
-          // Record this as the learned cantrip
-          this._cantripTracking.hasLearned = true;
-          this._cantripTracking.learned = uuid;
-
-          // If we've both unlearned and learned a cantrip, lock everything
-          if (this._cantripTracking.hasUnlearned) {
-            this._lockAllCantripCheckboxes();
-            ui.notifications.info(game.i18n.localize('SPELLBOOK.Cantrips.SwapCompleteMessage'));
-          }
-        }
-        // If this is rechecking the previously unlearned cantrip
-        else if (uuid === this._cantripTracking.unlearned) {
-          // Reset unlearned status - they changed their mind
-          this._cantripTracking.hasUnlearned = false;
-          this._cantripTracking.unlearned = null;
-        }
-      }
+      // ...existing code...
     }
 
     // Update the counter to reflect the current UI state
@@ -740,12 +738,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _updateSpellPreparationTracking() {
     try {
-      const preparedCheckboxes = this.element.querySelectorAll('input[type="checkbox"][data-uuid]:not([disabled])');
+      // Find the dnd5e-checkbox elements that are not disabled
+      const preparedCheckboxes = this.element.querySelectorAll('dnd5e-checkbox[data-uuid]:not([disabled])');
 
       const countDisplay = this.element.querySelector('.spell-prep-tracking');
       if (!countDisplay) return;
 
-      // Count checked non-disabled checkboxes (excluding cantrips)
+      // Count checked dnd5e-checkbox elements (excluding cantrips)
       let preparedCount = 0;
       preparedCheckboxes.forEach((checkbox) => {
         // Get the spell item
@@ -755,6 +754,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         // Skip cantrips
         if (spellLevel === '0') return;
 
+        // DnD5e checkboxes use the 'checked' property or attribute
         if (checkbox.checked) preparedCount++;
       });
 
@@ -896,9 +896,39 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
     try {
       const maxCantrips = this.spellManager.getMaxAllowed();
-      const checkedCantrips = cantripLevel.querySelectorAll('input[type="checkbox"]:checked:not([data-always-disabled])');
-      const hiddenPreparedCantrips = cantripLevel.querySelectorAll('.spell-item.hide-checkbox.prepared-spell');
-      const currentCount = checkedCantrips.length + hiddenPreparedCantrips.length;
+
+      // FIXED: Debug log to see what's happening
+      log(3, 'Cantrip level container found, checking for dnd5e-checkbox elements');
+
+      // Count prepared cantrips using dnd5e-checkbox elements
+      let currentCount = 0;
+
+      // Get all cantrip spell items
+      const cantripItems = cantripLevel.querySelectorAll('.spell-item');
+      log(3, `Found ${cantripItems.length} cantrip items total`);
+
+      // Count manually by examining each item
+      cantripItems.forEach((item) => {
+        // Always-prepared or granted spells are already counted by the actor
+        if (item.querySelector('.always-prepared-tag') || item.querySelector('.granted-spell-tag')) {
+          return; // Skip these
+        }
+
+        // Hidden prepared spells (with lock icon) count as prepared
+        if (item.classList.contains('hide-checkbox') && item.classList.contains('prepared-spell')) {
+          currentCount++;
+          return;
+        }
+
+        // Check dnd5e-checkbox
+        const checkbox = item.querySelector('dnd5e-checkbox');
+        if (checkbox && checkbox.checked) {
+          currentCount++;
+          log(3, `Counted checked cantrip: ${item.querySelector('.spell-name .title')?.textContent}`);
+        }
+      });
+
+      log(3, `Cantrip counter: total counted=${currentCount}, max=${maxCantrips}`);
 
       // Store UI count for validation
       this._uiCantripCount = currentCount;
@@ -928,26 +958,32 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         counterElem.classList.remove('at-max');
       }
 
+      // Update locks based on current count
+      this._setupCantripLocks(currentCount, maxCantrips);
+
       log(3, `Updated cantrip counter: ${currentCount}/${maxCantrips}`);
     } catch (error) {
       log(1, 'Error updating cantrip counter:', error);
     }
   }
 
-  _setupCantripLocks() {
+  _setupCantripLocks(currentCount, maxCantrips) {
     try {
       const cantripItems = this.element.querySelectorAll('.spell-item[data-spell-level="0"]');
       if (!cantripItems.length) return;
 
-      const currentCount = this._uiCantripCount;
-      const maxCantrips = this.spellManager.getMaxAllowed();
+      // Use passed in values, or get them if not provided
+      currentCount = currentCount ?? this._uiCantripCount;
+      maxCantrips = maxCantrips ?? this.spellManager.getMaxAllowed();
+
       const isAtMax = currentCount >= maxCantrips;
 
       log(3, `Setting up cantrip locks: ${currentCount}/${maxCantrips}, at max: ${isAtMax}`);
 
       for (const item of cantripItems) {
-        const checkbox = item.querySelector('input[type="checkbox"]');
-        if (!checkbox || item.classList.contains('hide-checkbox') || checkbox.hasAttribute('data-always-disabled')) {
+        // Get the checkbox and check if we should process this item
+        const checkbox = item.querySelector('dnd5e-checkbox');
+        if (!checkbox || item.classList.contains('hide-checkbox') || item.querySelector('.always-prepared-tag') || item.querySelector('.granted-spell-tag')) {
           continue;
         }
 
@@ -957,10 +993,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         checkbox.disabled = false;
         item.classList.remove('cantrip-locked');
 
-        // Lock unchecked cantrips if at max
+        // Only lock unchecked cantrips if at max
         if (isAtMax && !isChecked) {
           checkbox.disabled = true;
           item.classList.add('cantrip-locked');
+          log(3, `Locking cantrip: ${item.querySelector('.spell-name .title')?.textContent}`);
+        } else {
+          log(3, `Unlocking cantrip: ${item.querySelector('.spell-name .title')?.textContent}`);
         }
       }
     } catch (error) {
@@ -974,7 +1013,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const cantripItems = this.element.querySelectorAll('.spell-item[data-spell-level="0"]');
 
       for (const item of cantripItems) {
-        const checkbox = item.querySelector('input[type="checkbox"]');
+        const checkbox = item.querySelector('dnd5e-checkbox');
         if (!checkbox || checkbox.hasAttribute('data-always-disabled')) continue;
 
         // Lock everything
@@ -1045,28 +1084,78 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           label: game.i18n.localize(filter.label)
         };
 
+        // Create elements based on filter type
+        let element;
+
         // Add type-specific properties
         switch (filter.type) {
           case 'search':
-            result.value = filterState[filter.id] || '';
+            element = formElements.createTextInput({
+              name: `filter-${filter.id}`,
+              value: filterState[filter.id] || '',
+              placeholder: game.i18n.localize(filter.label),
+              ariaLabel: game.i18n.localize(filter.label)
+            });
             break;
 
           case 'dropdown':
-            result.options = filterUtils.getOptionsForFilter(filter.id, filterState, this.spellLevels);
+            const options = filterUtils.getOptionsForFilter(filter.id, filterState, this.spellLevels);
+            element = formElements.createSelect({
+              name: `filter-${filter.id}`,
+              options: options,
+              ariaLabel: game.i18n.localize(filter.label)
+            });
             break;
 
           case 'checkbox':
-            result.checked = filterState[filter.id] || false;
+            element = formElements.createCheckbox({
+              name: `filter-${filter.id}`,
+              checked: filterState[filter.id] || false,
+              label: game.i18n.localize(filter.label),
+              ariaLabel: game.i18n.localize(filter.label)
+            });
             break;
 
           case 'range':
-            result.minName = `filter-min-range`;
-            result.maxName = `filter-max-range`;
-            result.minValue = filterState.minRange || '';
-            result.maxValue = filterState.maxRange || '';
+            // For range filters, create a container with two inputs
+            const container = document.createElement('div');
+            container.className = 'range-inputs';
+            container.setAttribute('role', 'group');
+            container.setAttribute('aria-labelledby', `${filter.id}-label`);
+
+            // Min input
+            const minInput = formElements.createNumberInput({
+              name: `filter-min-range`,
+              value: filterState.minRange || '',
+              placeholder: game.i18n.localize('SPELLBOOK.Filters.RangeMin'),
+              ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RangeMinLabel')
+            });
+
+            // Separator
+            const separator = document.createElement('div');
+            separator.className = 'range-separator';
+            separator.setAttribute('aria-hidden', 'true');
+            separator.textContent = '-';
+
+            // Max input
+            const maxInput = formElements.createNumberInput({
+              name: `filter-max-range`,
+              value: filterState.maxRange || '',
+              placeholder: game.i18n.localize('SPELLBOOK.Filters.RangeMax'),
+              ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RangeMaxLabel')
+            });
+
+            container.appendChild(minInput);
+            container.appendChild(separator);
+            container.appendChild(maxInput);
+
+            element = container;
             result.unit = game.settings.get(MODULE.ID, SETTINGS.DISTANCE_UNIT);
             break;
         }
+
+        // Convert element to HTML string
+        result.elementHtml = formElements.elementToHtml(element);
 
         return result;
       });
@@ -1402,7 +1491,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         log(3, 'Performing alternative reset (uncheck all)');
 
         // Uncheck all non-disabled preparation checkboxes
-        const checkboxes = this.element.querySelectorAll('input[type="checkbox"][data-uuid]:not([disabled])');
+        const checkboxes = this.element.querySelectorAll('dnd5e-checkbox[data-uuid]:not([disabled])');
         checkboxes.forEach((checkbox) => {
           checkbox.checked = false;
         });
@@ -1423,7 +1512,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const spellItems = this.element.querySelectorAll('.spell-item');
         spellItems.forEach((item) => {
           // Only remove the class from non-disabled items
-          const checkbox = item.querySelector('input[type="checkbox"]');
+          const checkbox = item.querySelector('dnd5e-checkbox');
           if (checkbox && !checkbox.disabled) {
             item.classList.remove('prepared-spell');
           }
@@ -1458,7 +1547,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           // Update spell items to match checkbox state
           const spellItems = this.element.querySelectorAll('.spell-item');
           spellItems.forEach((item) => {
-            const checkbox = item.querySelector('input[type="checkbox"]');
+            const checkbox = item.querySelector('dnd5e-checkbox');
             if (checkbox && !checkbox.checked) {
               item.classList.remove('prepared-spell');
             }
@@ -1550,7 +1639,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
       // Create a comprehensive spellData object for ALL checkboxes
       const spellData = {};
-      const checkboxes = form.querySelectorAll('input[type="checkbox"][data-uuid]');
+      const checkboxes = form.querySelectorAll('dnd5e-checkbox[data-uuid]');
 
       for (const checkbox of checkboxes) {
         const uuid = checkbox.dataset.uuid;
@@ -1558,13 +1647,24 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const wasPrepared = checkbox.dataset.wasPrepared === 'true';
         const isPrepared = checkbox.checked;
 
+        // Check if this is an always-prepared spell by examining the parent spell item
+        const spellItem = checkbox.closest('.spell-item');
+        const isAlwaysPreparedElement = spellItem && (spellItem.querySelector('.always-prepared-tag') || spellItem.querySelector('.granted-spell-tag'));
+
+        // If it's an always-prepared spell or granted spell, don't include it in the updates
+        if (isAlwaysPreparedElement) {
+          log(3, `Skipping always-prepared or granted spell: ${name}`);
+          continue;
+        }
+
         log(3, `Spell ${name} (${uuid}): was ${wasPrepared ? 'prepared' : 'not prepared'}, now ${isPrepared ? 'prepared' : 'not prepared'}`);
 
+        // Add the spell to our update data - note this is NOT always-prepared
         spellData[uuid] = {
           name,
           wasPrepared,
           isPrepared,
-          isAlwaysPrepared: checkbox.disabled && checkbox.hasAttribute('data-always-disabled')
+          isAlwaysPrepared: false
         };
       }
 
