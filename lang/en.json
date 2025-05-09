@@ -26,6 +26,9 @@
   "SPELLBOOK.Cantrips.RulesModern": "Modern (Can Change One Per Level)",
   "SPELLBOOK.Cantrips.SaveButton": "Save Settings",
   "SPELLBOOK.Cantrips.SettingsSaved": "Cantrip settings saved for {name}.",
+  "SPELLBOOK.Cantrips.OnlyOneSwap": "You can only swap one cantrip at a time with Modern rules",
+  "SPELLBOOK.Cantrips.SwapComplete": "Cantrip swap complete - changes are now locked",
+  "SPELLBOOK.Cantrips.SwapCompleteMessage": "Cantrip swap complete! You've used your level-up cantrip change.",
 
   "SPELLBOOK.Errors.NoSpellsFoundForLevel": "No spells found for {actor}'s level.",
 
