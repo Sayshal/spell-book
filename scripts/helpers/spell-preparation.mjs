@@ -240,9 +240,10 @@ export function getCantripSettings(actor) {
  * @param {Actor5e} actor - The actor
  * @param {Item5e} spell - The spell item
  * @param {number} [uiCount] - Current cantrip count from UI
+ * @param {boolean} [isUIChange] - Whether this change is from the UI (not yet saved)
  * @returns {Object} Status information about cantrip change
  */
-export function canChangeCantrip(actor, spell, uiCount) {
+export function canChangeCantrip(actor, spell, uiCount, isUIChange = false) {
   // Skip non-cantrips
   if (spell.system.level !== 0) return { allowed: true };
 
@@ -255,11 +256,18 @@ export function canChangeCantrip(actor, spell, uiCount) {
   const wouldExceedMax = !isChecked && currentCount >= maxCantrips;
   const unlearned = actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
 
+  // For UI changes, we're more permissive about unchecking just-checked cantrips
+  if (isUIChange && isChecked) {
+    // When checking a cantrip in the UI, we only need to enforce max limit
+    return wouldExceedMax ? { allowed: false, message: 'Maximum cantrips reached' } : { allowed: true };
+  }
+
   // Check for level-up situation
   const previousLevel = actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL) || 0;
   const previousMax = actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX) || 0;
   const currentLevel = actor.system.details.level;
   const isLevelUp = (currentLevel > previousLevel || maxCantrips > previousMax) && previousLevel > 0;
+
   log(1, 'canChangeCantrip?', {
     settings: settings,
     classItem: classItem,

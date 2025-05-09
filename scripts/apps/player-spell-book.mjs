@@ -993,8 +993,22 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
               uiSpell.system.preparation = uiSpell.system.preparation || {};
               uiSpell.system.preparation.prepared = event.target.checked;
 
+              // Get the "original" prepared state from the data attribute
+              const wasOriginallyPrepared = checkbox.dataset.wasPrepared === 'true';
+
               // Check if change is allowed with this UI state
-              const canChange = preparationUtils.canChangeCantrip(this.actor, uiSpell, this._uiCantripCount);
+              // Only apply the restriction for cantrips that were originally prepared
+              // Allow toggling of newly checked cantrips before saving
+              let canChange = { allowed: true };
+
+              if (event.target.checked) {
+                // When checking a cantrip, only check max limit
+                canChange = preparationUtils.canChangeCantrip(this.actor, uiSpell, this._uiCantripCount, true);
+              } else if (wasOriginallyPrepared) {
+                // Only enforce "no unchecking" rule for originally prepared cantrips
+                canChange = preparationUtils.canChangeCantrip(this.actor, uiSpell, this._uiCantripCount, false);
+              }
+
               if (!canChange.allowed) {
                 // Revert the change
                 event.target.checked = !event.target.checked;
@@ -1004,7 +1018,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
               }
 
               // If unchecking a cantrip (unlearning) with Modern rules
-              if (!event.target.checked && preparationUtils.getCantripSettings(this.actor).rules === CANTRIP_RULES.MODERN) {
+              if (!event.target.checked && wasOriginallyPrepared && preparationUtils.getCantripSettings(this.actor).rules === CANTRIP_RULES.MODERN) {
                 // Update unlearned counter
                 const unlearned = this.actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
                 await this.actor.setFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS, unlearned + 1);
@@ -1245,6 +1259,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         if (checkbox.hasAttribute('data-always-disabled')) continue;
 
         const isChecked = checkbox.checked;
+        // Check if this was originally prepared (before any UI changes)
+        const wasOriginallyPrepared = checkbox.dataset.wasPrepared === 'true';
+
         const nameElement = item.querySelector('.spell-name .title');
         let lockIcon = nameElement?.querySelector('.cantrip-lock-icon');
 
@@ -1305,7 +1322,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             } else if (settings.rules === CANTRIP_RULES.DEFAULT) {
               // Default rules during level-up:
               // - Never uncheck existing cantrips
-              if (isChecked) {
+              if (isChecked && wasOriginallyPrepared) {
+                // <-- IMPORTANT CHANGE HERE
                 checkbox.disabled = true;
                 item.classList.add('cantrip-locked');
 
@@ -1320,7 +1338,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             } else if (settings.rules === CANTRIP_RULES.MODERN) {
               // Modern rules during level-up:
               // - Can unlearn one cantrip when leveling up
-              if (isChecked && unlearned >= 1) {
+              if (isChecked && wasOriginallyPrepared && unlearned >= 1) {
+                // <-- IMPORTANT CHANGE HERE
                 // If already unlearned a cantrip, prevent unchecking more
                 checkbox.disabled = true;
                 item.classList.add('cantrip-locked');
