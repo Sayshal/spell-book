@@ -507,30 +507,53 @@ export function getOwnedSpellPreparationStatus(actor, spell) {
   // Check if it's a cantrip
   const isCantrip = spell.system.level === 0;
 
-  // Determine if this cantrip should have a checkbox (new approach)
+  // Default values
   let hideCheckbox = false;
   let isCantripLocked = false;
   let cantripLockReason = '';
 
+  // Handle cantrip-specific behavior based on settings
   if (isCantrip && !alwaysPrepared && !isGranted) {
-    // Check if cantrips can be changed at all
-    const canChange = canCantripsBeLeveledUp(actor);
+    const settings = getCantripSettings(actor);
+    const behavior = settings.behavior;
+    log(1, { settings: settings, behavior: behavior });
 
-    // Hide checkbox for existing cantrips that can't be changed
-    if (spell.system.preparation?.prepared && !canChange) {
-      hideCheckbox = true;
-      isCantripLocked = true;
-      cantripLockReason = getCantripSettings(actor).rules === CANTRIP_RULES.DEFAULT ? 'SPELLBOOK.Cantrips.LockedDefault' : 'SPELLBOOK.Cantrips.LockedModern';
-    }
+    switch (behavior) {
+      case CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED:
+      case CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM:
+        // Never hide checkboxes for these behaviors - always allow changes
+        // (max limit enforcement happens elsewhere)
+        break;
 
-    // For modern rules, check unlearned limit
-    if (canChange && spell.system.preparation?.prepared && getCantripSettings(actor).rules === CANTRIP_RULES.MODERN) {
-      const unlearned = actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
-      if (unlearned >= 1) {
-        hideCheckbox = true;
-        isCantripLocked = true;
-        cantripLockReason = 'SPELLBOOK.Cantrips.CannotUnlearnMore';
-      }
+      case CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX:
+        // Check if cantrips can be changed at all
+        const canChange = canCantripsBeLeveledUp(actor);
+
+        // Hide checkbox for existing cantrips that can't be changed
+        if (spell.system.preparation?.prepared && !canChange) {
+          hideCheckbox = true;
+          isCantripLocked = true;
+          cantripLockReason = settings.rules === CANTRIP_RULES.DEFAULT ? 'SPELLBOOK.Cantrips.LockedDefault' : 'SPELLBOOK.Cantrips.LockedModern';
+        }
+
+        // For modern rules, check unlearned limit
+        if (canChange && spell.system.preparation?.prepared && settings.rules === CANTRIP_RULES.MODERN) {
+          const unlearned = actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
+          if (unlearned >= 1) {
+            hideCheckbox = true;
+            isCantripLocked = true;
+            cantripLockReason = 'SPELLBOOK.Cantrips.CannotUnlearnMore';
+          }
+        }
+        break;
+
+      default:
+        // Unknown behavior, be safe and lock cantrips
+        if (spell.system.preparation?.prepared) {
+          hideCheckbox = true;
+          isCantripLocked = true;
+          cantripLockReason = 'SPELLBOOK.Cantrips.LockedDefault';
+        }
     }
   }
 

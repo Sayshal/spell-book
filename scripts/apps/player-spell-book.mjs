@@ -1226,7 +1226,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!checkbox) continue;
 
         // Skip if this checkbox should be hidden (handled in the template)
-        if (checkbox.closest('.spell-item').classList.contains('hide-checkbox')) continue;
+        if (item.classList.contains('hide-checkbox')) continue;
 
         // Skip already disabled checkboxes (from always prepared, etc.)
         if (checkbox.hasAttribute('data-always-disabled')) continue;
@@ -1246,14 +1246,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         if (isAtMax && !isChecked) {
           checkbox.disabled = true;
           item.classList.add('cantrip-locked');
-
-          // Add max reached message
-          if (nameElement && !lockIcon) {
-            lockIcon = document.createElement('i');
-            lockIcon.className = 'fas fa-lock cantrip-lock-icon';
-            lockIcon.title = game.i18n.localize('Maximum cantrips reached');
-            nameElement.appendChild(lockIcon);
-          }
         }
       }
 
