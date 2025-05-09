@@ -251,8 +251,8 @@ export function canChangeCantrip(actor, spell, uiCount) {
   const classItem = actor.items.find((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
   const currentCount = uiCount !== undefined ? uiCount : getCurrentCantripsCount(actor);
   const maxCantrips = getMaxCantripsAllowed(actor, classItem);
-  const wouldExceedMax = !isChecked && currentCount >= maxCantrips;
   const isChecked = spell.system.preparation?.prepared || false;
+  const wouldExceedMax = !isChecked && currentCount >= maxCantrips;
   const unlearned = actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
 
   // Check for level-up situation
@@ -293,15 +293,17 @@ export function canChangeCantrip(actor, spell, uiCount) {
 
     case CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX:
       // Special case: Allow checking new cantrips when not at max
-      if (!isChecked && !wouldExceedMax) {
+      if (!wouldExceedMax) {
+        log(1, 'Allowed!');
         return { allowed: true };
       }
 
       // If not during level-up, don't allow changes
       if (!isLevelUp) {
+        log(1, 'Disallowed (isLevelUp)');
         return {
           allowed: false,
-          message: settings.rules === CANTRIP_RULES.DEFAULT ? 'Squeeb 1' : 'SPELLBOOK.Cantrips.LockedModern'
+          message: settings.rules === CANTRIP_RULES.DEFAULT ? 'SPELLBOOK.Cantrips.LockedDefault' : 'SPELLBOOK.Cantrips.LockedModern'
         };
       }
 
@@ -309,9 +311,10 @@ export function canChangeCantrip(actor, spell, uiCount) {
       if (settings.rules === CANTRIP_RULES.DEFAULT) {
         // Never allow unchecking
         if (isChecked) {
+          log(1, 'Disallowed (isChecked)');
           return {
             allowed: false,
-            message: 'Squeeb 2'
+            message: 'SPELLBOOK.Cantrips.LockedDefault'
           };
         }
 
@@ -387,7 +390,7 @@ export function getCantripLockStatus(actor, spell) {
       if (!isLevelUp) {
         return {
           locked: true,
-          reason: settings.rules === CANTRIP_RULES.DEFAULT ? 'Squeeb 3' : 'SPELLBOOK.Cantrips.LockedModern'
+          reason: settings.rules === CANTRIP_RULES.DEFAULT ? 'SPELLBOOK.Cantrips.LockedDefault' : 'SPELLBOOK.Cantrips.LockedModern'
         };
       }
 
@@ -397,7 +400,7 @@ export function getCantripLockStatus(actor, spell) {
         if (isChecked) {
           return {
             locked: true,
-            reason: 'Squeeb 4'
+            reason: 'SPELLBOOK.Cantrips.LockedDefault'
           };
         }
 
