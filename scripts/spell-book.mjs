@@ -1,5 +1,4 @@
-import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
-import { PlayerSpellBook } from './apps/player-spell-book.mjs';
+import { createAPI } from './api.mjs';
 import { MODULE } from './constants.mjs';
 import { registerHandlebarsHelpers } from './helpers/handlebars-helpers.mjs';
 import { registerHooks } from './hooks.mjs';
@@ -14,7 +13,9 @@ Hooks.once('init', async function () {
     initializeFoundryConfiguration();
     await initializeModuleComponents();
     registerHandlebarsHelpers();
-    registerModuleAPI();
+
+    // Create and register the module API
+    createAPI();
 
     log(3, 'Module initialization complete');
   } catch (error) {
@@ -56,36 +57,6 @@ async function initializeModuleComponents() {
     log(3, 'Module components initialized');
   } catch (error) {
     log(1, 'Error initializing module components:', error);
-  }
-}
-
-function registerModuleAPI() {
-  try {
-    const api = {
-      apps: {
-        PlayerSpellBook,
-        GMSpellListManager
-      },
-      openSpellBookForActor: (actor) => {
-        if (!actor) {
-          throw new Error('No actor provided');
-        }
-        const spellBook = new PlayerSpellBook(actor);
-        spellBook.render(true);
-        return spellBook;
-      },
-      openSpellListManager: () => {
-        const manager = new GMSpellListManager();
-        manager.render(true);
-        return manager;
-      }
-    };
-
-    globalThis.SPELLBOOK = api;
-
-    log(3, 'Module API registered');
-  } catch (error) {
-    log(1, 'Error registering module API:', error);
   }
 }
 
