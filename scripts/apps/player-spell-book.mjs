@@ -980,16 +980,26 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
             // Handle cantrip-specific logic
             if (spellLevel === '0') {
-              // Fetch source spell
+              // First, update the counter to reflect the current UI state
+              this._updateCantripCounter();
+
+              // Then check if the change is allowed using UI state
               const sourceSpell = await fromUuid(uuid);
               if (!sourceSpell) return;
 
-              // Check if change is allowed
-              const canChange = preparationUtils.canChangeCantrip(this.actor, sourceSpell);
+              // Create a modified spell object with UI checked state
+              const uiSpell = duplicate(sourceSpell);
+              uiSpell.system = uiSpell.system || {};
+              uiSpell.system.preparation = uiSpell.system.preparation || {};
+              uiSpell.system.preparation.prepared = event.target.checked;
+
+              // Check if change is allowed with this UI state
+              const canChange = preparationUtils.canChangeCantrip(this.actor, uiSpell, this._uiCantripCount);
               if (!canChange.allowed) {
                 // Revert the change
                 event.target.checked = !event.target.checked;
                 ui.notifications.warn(game.i18n.localize(canChange.message));
+                this._updateCantripCounter(); // Update counter again after reverting
                 return;
               }
 
@@ -999,10 +1009,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
                 const unlearned = this.actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
                 await this.actor.setFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS, unlearned + 1);
               }
-
-              // Update cantrip lock UI
-              this._setupCantripLocks();
-              this._updateCantripCounter();
             }
 
             // Update UI class
@@ -1198,9 +1204,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Set up cantrip lock UI elements
+   * @param {number} [uiCurrentCount] - Current count from UI state
+   * @param {number} [uiMaxCantrips] - Maximum cantrips from UI state
    * @private
    */
-  _setupCantripLocks() {
+  _setupCantripLocks(uiCurrentCount, uiMaxCantrips) {
     try {
       log(3, 'Setting up cantrip locks');
       const cantripItems = this.element.querySelectorAll('.spell-item[data-spell-level="0"]');
@@ -1211,14 +1219,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
       // Get cantrip settings and counts
       const settings = preparationUtils.getCantripSettings(this.actor);
-      const currentCount = preparationUtils.getCurrentCantripsCount(this.actor);
-      const maxCantrips = preparationUtils.getMaxCantripsAllowed(this.actor, classItem);
+
+      // Use UI state if provided, otherwise use actor state
+      const currentCount = uiCurrentCount !== undefined ? uiCurrentCount : preparationUtils.getCurrentCantripsCount(this.actor);
+      const maxCantrips = uiMaxCantrips !== undefined ? uiMaxCantrips : preparationUtils.getMaxCantripsAllowed(this.actor, classItem);
       const isAtMax = currentCount >= maxCantrips;
 
       log(3, `Cantrip settings: rules=${settings.rules}, behavior=${settings.behavior}, count=${currentCount}/${maxCantrips}`);
-
-      // Always update the counter regardless of settings
-      this._updateCantripCounter();
 
       // Is this a level-up situation where cantrips can be changed?
       const levelUpAllowed = this._canCantripsBeLeveledUp();
@@ -1245,40 +1252,41 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         checkbox.disabled = false;
         item.classList.remove('cantrip-locked');
 
+        // *** ENFORCE MAXIMUM CANTRIPS FOR ALL BEHAVIOR TYPES ***
+        // If we're at maximum, lock all unchecked cantrips regardless of behavior
+        if (isAtMax && !isChecked) {
+          checkbox.disabled = true;
+          item.classList.add('cantrip-locked');
+
+          // Add max reached message
+          if (nameElement && !lockIcon) {
+            lockIcon = document.createElement('i');
+            lockIcon.className = 'fas fa-lock cantrip-lock-icon';
+            lockIcon.title = game.i18n.localize('Maximum cantrips reached');
+            nameElement.appendChild(lockIcon);
+          }
+
+          // Skip additional processing for this item
+          continue;
+        }
+
         // Handle based on behavior setting
         switch (settings.behavior) {
           case CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED:
-            // Always allow changes, no locking needed
+            // Always allow changes (except exceeding maximum which is handled above)
             break;
 
           case CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM:
-            // Always allow changes, no locking needed (notifications handled by form handler)
+            // Always allow changes (except exceeding maximum which is handled above)
             break;
 
           case CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX:
-            // Most complex case - handle combinations of rules and level-up status
-
-            // Check if we're at max and need to lock all unchecked cantrips
-            if (isAtMax && !isChecked) {
-              checkbox.disabled = true;
-              item.classList.add('cantrip-locked');
-
-              // Add max reached message
-              if (nameElement && !lockIcon) {
-                lockIcon = document.createElement('i');
-                lockIcon.className = 'fas fa-lock cantrip-lock-icon';
-                lockIcon.title = game.i18n.localize('Maximum cantrips reached');
-                nameElement.appendChild(lockIcon);
-              }
-              break; // Skip the rest of processing for this item if we're locking it due to max
-            }
-
+            // Additional lock rules for LOCK_AFTER_MAX behavior
             if (!levelUpAllowed) {
               // Outside level-up, lock all cantrips
               checkbox.disabled = true;
               item.classList.add('cantrip-locked');
 
-              // Add lock icon with appropriate message
               if (nameElement && !lockIcon) {
                 lockIcon = document.createElement('i');
                 lockIcon.className = 'fas fa-lock cantrip-lock-icon';
@@ -1288,9 +1296,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             } else if (settings.rules === CANTRIP_RULES.DEFAULT) {
               // Default rules during level-up:
               // - Never uncheck existing cantrips
-              // - Can check new ones up to max
               if (isChecked) {
-                // Lock checked cantrips
                 checkbox.disabled = true;
                 item.classList.add('cantrip-locked');
 
@@ -1300,23 +1306,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
                   lockIcon.title = game.i18n.localize('SPELLBOOK.Cantrips.LockedDefault');
                   nameElement.appendChild(lockIcon);
                 }
-              } else if (isAtMax) {
-                // Lock if at max cantrips
-                checkbox.disabled = true;
-                item.classList.add('cantrip-locked');
-
-                if (nameElement && !lockIcon) {
-                  lockIcon = document.createElement('i');
-                  lockIcon.className = 'fas fa-lock cantrip-lock-icon';
-                  lockIcon.title = game.i18n.localize('Maximum cantrips reached');
-                  nameElement.appendChild(lockIcon);
-                }
               }
-              // Otherwise allow checking new cantrips
+              // Note: Maximum is already enforced above
             } else if (settings.rules === CANTRIP_RULES.MODERN) {
               // Modern rules during level-up:
               // - Can unlearn one cantrip when leveling up
-              // - Can check new ones up to max
               if (isChecked && unlearned >= 1) {
                 // If already unlearned a cantrip, prevent unchecking more
                 checkbox.disabled = true;
@@ -1328,21 +1322,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
                   lockIcon.title = game.i18n.localize('SPELLBOOK.Cantrips.CannotUnlearnMore');
                   nameElement.appendChild(lockIcon);
                 }
-              } else if (!isChecked && isAtMax) {
-                // If at max cantrips, prevent checking more
-                checkbox.disabled = true;
-                item.classList.add('cantrip-locked');
-
-                if (nameElement && !lockIcon) {
-                  lockIcon = document.createElement('i');
-                  lockIcon.className = 'fas fa-lock cantrip-lock-icon';
-                  lockIcon.title = game.i18n.localize('Maximum cantrips reached');
-                  nameElement.appendChild(lockIcon);
-                }
               }
-              // Otherwise allow changes
+              // Note: Maximum is already enforced above
             }
             break;
+
           default:
             // Unknown behavior, apply safe locking
             checkbox.disabled = true;
@@ -1383,7 +1367,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Add or update cantrip counter in the UI
+   * Add or update cantrip counter in the UI and track UI state for cantrips
    * @param {HTMLElement} [cantripLevel] - Optional cantrip level container
    * @private
    */
@@ -1404,6 +1388,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       // Count checked cantrips in the UI (new approach to get live count)
       const cantripCheckboxes = cantripLevel.querySelectorAll('input[type="checkbox"]:checked:not([data-always-disabled])');
       const currentCount = cantripCheckboxes.length;
+
+      // Store UI state in a flag so other methods can access it
+      this._uiCantripCount = currentCount;
 
       // Create counter element
       const levelHeading = cantripLevel.querySelector('.spell-level-heading');
@@ -1433,6 +1420,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       } else {
         counterElem.classList.remove('at-max');
       }
+
+      // After updating the count, update the locks
+      this._setupCantripLocks(currentCount, maxCantrips);
     } catch (error) {
       log(1, 'Error updating cantrip counter:', error);
     }

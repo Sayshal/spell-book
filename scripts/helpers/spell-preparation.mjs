@@ -241,16 +241,17 @@ export function getCantripSettings(actor) {
  * Check if a cantrip can be changed
  * @param {Actor5e} actor - The actor
  * @param {Item5e} spell - The spell item
+ * @param {number} [uiCount] - Current cantrip count from UI
  * @returns {Object} Status information about cantrip change
  */
-export function canChangeCantrip(actor, spell) {
+export function canChangeCantrip(actor, spell, uiCount) {
   // Skip non-cantrips
   if (spell.system.level !== 0) return { allowed: true };
 
   // Get settings and current state
   const settings = getCantripSettings(actor);
   const classItem = actor.items.find((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
-  const currentCount = getCurrentCantripsCount(actor);
+  const currentCount = uiCount !== undefined ? uiCount : getCurrentCantripsCount(actor);
   const maxCantrips = getMaxCantripsAllowed(actor, classItem);
   const isAtMax = currentCount >= maxCantrips;
   const isChecked = spell.system.preparation?.prepared || false;
@@ -262,14 +263,23 @@ export function canChangeCantrip(actor, spell) {
   const currentLevel = actor.system.details.level;
   const isLevelUp = (currentLevel > previousLevel || maxCantrips > previousMax) && previousLevel > 0;
 
+  // *** ENFORCE MAXIMUM FOR ALL BEHAVIOR TYPES ***
+  // If trying to check a new cantrip and already at max, don't allow
+  if (!isChecked && isAtMax) {
+    return {
+      allowed: false,
+      message: 'Maximum cantrips reached'
+    };
+  }
+
   // Handle based on behavior
   switch (settings.behavior) {
     case CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED:
-      // Always allow changes
+      // Always allow changes (except exceeding maximum which is handled above)
       return { allowed: true };
 
     case CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM:
-      // Always allow changes (notification happens during save)
+      // Always allow changes (except exceeding maximum which is handled above)
       return { allowed: true };
 
     case CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX:
@@ -291,15 +301,7 @@ export function canChangeCantrip(actor, spell) {
           };
         }
 
-        // Don't allow checking if at max
-        if (!isChecked && isAtMax) {
-          return {
-            allowed: false,
-            message: 'Maximum cantrips reached'
-          };
-        }
-
-        // Allow checking new cantrips
+        // Allow checking new cantrips (max already checked above)
         return { allowed: true };
       }
 
@@ -313,15 +315,7 @@ export function canChangeCantrip(actor, spell) {
           };
         }
 
-        // If trying to check and already at max
-        if (!isChecked && isAtMax) {
-          return {
-            allowed: false,
-            message: 'Maximum cantrips reached'
-          };
-        }
-
-        // Otherwise allow the change
+        // Otherwise allow the change (max already checked above)
         return {
           allowed: true,
           willCount: isChecked // Will count as unlearning if unchecking
