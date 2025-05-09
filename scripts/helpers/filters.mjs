@@ -1,8 +1,3 @@
-/**
- * Filter helper functions for the Spell Book module
- * @module spell-book/helpers/filters
- */
-
 import { MODULE, SETTINGS } from '../constants.mjs';
 
 /**

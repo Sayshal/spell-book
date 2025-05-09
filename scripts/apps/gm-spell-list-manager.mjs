@@ -6,11 +6,6 @@ import { log } from '../logger.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-/**
- * Application for GM management of spell lists
- * Allows browsing, duplicating, and customizing spell lists from compendiums
- * @extends {HandlebarsApplicationMixin(ApplicationV2)}
- */
 export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
   /*  Static Properties                           */
@@ -102,7 +97,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     removed: new Set()
   };
 
-  /** Window title getter */
   get title() {
     return game.i18n.localize('SPELLMANAGER.Application.Title');
   }
@@ -111,9 +105,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /*  Constructor                                 */
   /* -------------------------------------------- */
 
-  /**
-   * @param {object} options - ApplicationV2 options
-   */
   constructor(options = {}) {
     super(options);
 
@@ -139,7 +130,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /* -------------------------------------------- */
 
   /**
-   * Prepare the application context data
    * @override
    */
   async _prepareContext(_options) {
@@ -236,7 +226,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Handle rendering the application
    * @override
    */
   _onRender(context, options) {
@@ -263,9 +252,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /*  Data Loading                                */
   /* -------------------------------------------- */
 
-  /**
-   * Load all required data
-   */
   async loadData() {
     try {
       log(3, 'Loading spell lists for GM manager');
@@ -290,10 +276,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Enrich available spells with icons
-   * @returns {Promise<void>}
-   */
   async enrichAvailableSpells() {
     if (!this.availableSpells.length) return;
 
@@ -310,10 +292,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     log(3, 'Completed enriching available spells');
   }
 
-  /**
-   * Filter available spells based on current filter state
-   * @returns {Object} Filtered spells with additional metadata
-   */
   filterAvailableSpells() {
     try {
       const { name, level, school, source, castingTime, minRange, maxRange, damageType, condition, requiresSave, concentration, ritual } = this.filterState;
@@ -462,12 +440,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Check if a spell is already in the selected spell list
-   * @param {Object} spell - The spell to check
-   * @param {Set<string>} selectedSpellUUIDs - Set of normalized selected spell UUIDs
-   * @returns {boolean} - Whether the spell is already in the selected list
-   */
   isSpellInSelectedList(spell, selectedSpellUUIDs) {
     try {
       if (!selectedSpellUUIDs.size) return false;
@@ -497,10 +469,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Get normalized UUIDs for the selected spell list
-   * @returns {Set<string>} Set of normalized UUIDs
-   */
   getSelectedSpellUUIDs() {
     try {
       // Return empty set if no selected spell list
@@ -542,9 +510,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Apply all current filters to the UI
-   */
   applyFilters() {
     try {
       log(3, 'Applying filters to available spells');
@@ -586,9 +551,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /*  Filter Setup & Event Handlers               */
   /* -------------------------------------------- */
 
-  /**
-   * Set up listeners for filter inputs
-   */
   setupFilterListeners() {
     try {
       // Only set up listeners if we're in the editing state
@@ -683,9 +645,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Apply saved collapsed levels state
-   */
   applyCollapsedLevels() {
     try {
       const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS) || [];
@@ -705,10 +664,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /*  Spell List Operations                       */
   /* -------------------------------------------- */
 
-  /**
-   * Load spell details for the selected spell list
-   * @param {Array} spellUuids - Array of spell UUIDs
-   */
   async loadSpellDetails(spellUuids) {
     if (!this.selectedSpellList) return;
 
@@ -746,11 +701,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Create a confirmation dialog with standardized template
-   * @param {Object} options - Dialog options
-   * @returns {Promise<boolean>} True if confirmed, false otherwise
-   */
   async confirmDialog({
     title = game.i18n.localize('SPELLMANAGER.Confirm.Title'),
     content = game.i18n.localize('SPELLMANAGER.Confirm.Content'),
@@ -792,11 +742,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /*  Action Methods                              */
   /* -------------------------------------------- */
 
-  /**
-   * Select a spell list
-   * @param {string} uuid - UUID of the spell list
-   * @returns {Promise<void>}
-   */
   async selectSpellList(uuid) {
     try {
       log(3, `Selecting spell list: ${uuid}`);
@@ -846,10 +791,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Determine appropriate source filter for a spell list
-   * @param {Object} spellList - The spell list document
-   */
   determineSourceFilter(spellList) {
     try {
       log(3, 'Determining source filter for spell list');
@@ -890,11 +831,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Enter edit mode for a spell list
-   * @param {string} uuid - UUID of the spell list
-   * @returns {Promise<void>}
-   */
   async editSpellList(uuid) {
     if (!this.selectedSpellList) return;
 
@@ -971,11 +907,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Remove a spell from the selected spell list
-   * @param {string} spellUuid - UUID of the spell to remove
-   * @returns {Promise<void>}
-   */
   async removeSpell(spellUuid) {
     if (!this.selectedSpellList || !this.isEditing) return;
 
@@ -1024,11 +955,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Add a spell to the selected spell list
-   * @param {string} spellUuid - UUID of the spell to add
-   * @returns {Promise<void>}
-   */
   async addSpell(spellUuid) {
     if (!this.selectedSpellList || !this.isEditing) return;
 
@@ -1080,10 +1006,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Save the custom spell list
-   * @returns {Promise<void>}
-   */
   async saveCustomList() {
     if (!this.selectedSpellList || !this.isEditing) return;
 
@@ -1137,10 +1059,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Delete the current custom spell list
-   * @returns {Promise<void>}
-   */
   async deleteCustomList() {
     if (!this.selectedSpellList) return;
 
@@ -1173,10 +1091,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Restore a custom spell list from its original
-   * @returns {Promise<void>}
-   */
   async restoreOriginal() {
     if (!this.selectedSpellList) return;
 
@@ -1227,10 +1141,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Show the documentation dialog
-   * @returns {Promise<void>}
-   */
   async showDocumentation() {
     try {
       log(3, 'Opening documentation dialog');
@@ -1268,12 +1178,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /*  Static Handler Methods                      */
   /* -------------------------------------------- */
 
-  /**
-   * Handle selecting a spell list
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
-   */
   static async handleSelectSpellList(event, _form) {
     try {
       const element = event.target.closest('[data-uuid]');
@@ -1296,12 +1200,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Handle clicking the edit button
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
-   */
   static async handleEditSpellList(event, _form) {
     try {
       const element = event.target.closest('[data-uuid]');
@@ -1323,12 +1221,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Handle removing a spell
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
-   */
   static async handleRemoveSpell(event, _form) {
     try {
       const element = event.target.closest('[data-uuid]');
@@ -1350,12 +1242,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Handle adding a spell
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
-   */
   static async handleAddSpell(event, _form) {
     try {
       const element = event.target.closest('[data-uuid]');
@@ -1377,12 +1263,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Handle saving a custom list
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
-   */
   static async handleSaveCustomList(event, _form) {
     try {
       const appId = `gm-spell-list-manager-${MODULE.ID}`;
@@ -1399,12 +1279,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Handle deleting a custom list
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
-   */
   static async handleDeleteCustomList(event, _form) {
     try {
       const appId = `gm-spell-list-manager-${MODULE.ID}`;
@@ -1421,12 +1295,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Handle restoring from original
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
-   */
   static async handleRestoreOriginal(event, _form) {
     try {
       const appId = `gm-spell-list-manager-${MODULE.ID}`;
@@ -1443,12 +1311,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Handle closing the manager
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
-   */
   static handleClose(_event, _form) {
     try {
       const appId = `gm-spell-list-manager-${MODULE.ID}`;
@@ -1465,12 +1327,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Handle showing documentation
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
-   */
   static handleShowDocumentation(_event, _form) {
     try {
       const appId = `gm-spell-list-manager-${MODULE.ID}`;
@@ -1487,12 +1343,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Handle toggling the sidebar
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
-   */
   static handleToggleSidebar(event, _form) {
     try {
       const appId = `gm-spell-list-manager-${MODULE.ID}`;
@@ -1510,12 +1360,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Handle spell level toggle action
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
-   */
   static handleToggleSpellLevel(event, _form) {
     try {
       // Find the parent spell-level container
@@ -1545,9 +1389,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Handle creating a new spell list
-   */
   async createNewList() {
     try {
       // Get class identifiers
@@ -1705,9 +1546,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Callback to actually create the new list after dialog
-   */
   async _createNewListCallback(name, identifier) {
     try {
       const source = game.i18n.localize('SPELLMANAGER.CreateList.Custom');
@@ -1722,7 +1560,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  // Fixed handler function
   static async handleCreateNewList(event, _form) {
     try {
       const appId = `gm-spell-list-manager-${MODULE.ID}`;
@@ -1739,13 +1576,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * Form handler
-   * @param {Event} event - The submit event
-   * @param {HTMLFormElement} form - The form element
-   * @param {FormDataExtended} formData - The form data
-   * @static
-   */
   static async formHandler(event, form, formData) {
     event.preventDefault();
     // This will be used for saving customized spell lists

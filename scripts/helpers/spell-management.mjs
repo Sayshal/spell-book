@@ -1,8 +1,3 @@
-/**
- * Helper functions for GM Spell List Manager
- * @module spell-book/helpers/spell-manager-helpers
- */
-
 import { MODULE, SETTINGS } from '../constants.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { log } from '../logger.mjs';

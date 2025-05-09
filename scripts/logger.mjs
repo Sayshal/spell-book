@@ -1,9 +1,3 @@
-/**
- * Custom logger with contextual information
- * Provides detailed logging with caller context and error handling
- * @module spell-book/logger
- */
-
 import { MODULE, SETTINGS } from './constants.mjs';
 
 /**

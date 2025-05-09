@@ -1,9 +1,3 @@
-/**
- * Helper functions for spell class discovery
- * Handles identification of spellcasting classes and spell lists
- * @module spell-book/helpers/spell-discovery
- */
-
 import { MODULE, SETTINGS } from '../constants.mjs';
 import { log } from '../logger.mjs';
 

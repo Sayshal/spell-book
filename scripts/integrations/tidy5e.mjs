@@ -1,8 +1,3 @@
-/**
- * Integration with the Tidy5e Sheet system
- * @module spell-book/integrations/tidy5e
- */
-
 import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
 import { log } from '../logger.mjs';
@@ -20,12 +15,6 @@ export function registerTidy5eIntegration() {
   }
 }
 
-/**
- * Handler for Tidy5e sheet render
- * @param {ActorSheet5e} sheet - The rendered Tidy5e actor sheet
- * @param {HTMLElement} element - The HTML of the actor sheet
- * @param {Object} data - The data used to render the sheet
- */
 function onTidy5eRender(sheet, element, data) {
   try {
     const actor = data.actor;

@@ -6,7 +6,7 @@
 
 import { log } from '../logger.mjs';
 import * as formattingUtils from './spell-formatting.mjs';
-import * as preparationUtils from './spell-preparation.mjs';
+import { SpellManager } from './spell-preparation.mjs'; // Renamed from CantripManager
 
 /**
  * Fetch spell documents from UUIDs based on maximum spell level
@@ -17,6 +17,8 @@ import * as preparationUtils from './spell-preparation.mjs';
 export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
   const spellItems = [];
   const errors = [];
+
+  log(3, `Fetching spell documents: ${spellUuids.size} spells, max level ${maxSpellLevel}`);
 
   // Process each UUID one at a time for simplicity
   for (const uuid of spellUuids) {
@@ -73,7 +75,7 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
     });
 
     if (errors.length === spellUuids.size) {
-      log(1, 'All spells failed to load, possible system or compendium issue');
+      log(3, 'All spells failed to load, possible system or compendium issue');
     }
   }
 
@@ -89,6 +91,9 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
  */
 export async function organizeSpellsByLevel(spellItems, actor = null) {
   log(3, `Organizing ${spellItems.length} spells by level${actor ? ` for ${actor.name}` : ''}`);
+
+  // Create SpellManager if actor is provided
+  const spellManager = actor ? new SpellManager(actor) : null;
 
   // Organize spells by level
   const spellsByLevel = {};
@@ -110,8 +115,8 @@ export async function organizeSpellsByLevel(spellItems, actor = null) {
     const spellData = { ...spell };
 
     // Add preparation status if an actor is provided
-    if (actor) {
-      spellData.preparation = preparationUtils.getSpellPreparationStatus(actor, spell);
+    if (spellManager) {
+      spellData.preparation = spellManager.getSpellPreparationStatus(spell);
     }
 
     // Add filter data and formatted details
@@ -139,7 +144,7 @@ export async function organizeSpellsByLevel(spellItems, actor = null) {
       // Process actor's spell
       const spellData = {
         ...spell,
-        preparation: preparationUtils.getSpellPreparationStatus(actor, spell),
+        preparation: spellManager.getSpellPreparationStatus(spell),
         filterData: formattingUtils.extractSpellFilterData(spell),
         formattedDetails: formattingUtils.formatSpellDetails(spell)
       };
@@ -178,6 +183,9 @@ export async function organizeSpellsByLevel(spellItems, actor = null) {
 export async function findActorSpells(actor, processedSpellIds, processedSpellNames) {
   const actorSpells = actor.items.filter((item) => item.type === 'spell');
   const newSpells = [];
+  const spellManager = new SpellManager(actor);
+
+  log(3, `Finding actor spells for ${actor.name} - ${actorSpells.length} total spells`);
 
   for (const spell of actorSpells) {
     const spellId = spell.id || spell.uuid;
@@ -188,9 +196,11 @@ export async function findActorSpells(actor, processedSpellIds, processedSpellNa
       continue;
     }
 
-    const source = preparationUtils.determineSpellSource(actor, spell);
+    // Use SpellManager to determine source
+    const source = spellManager._determineSpellSource(spell);
     newSpells.push({ spell, source });
   }
 
+  log(3, `Found ${newSpells.length} additional spells on actor ${actor.name}`);
   return newSpells;
 }

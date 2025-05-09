@@ -1,9 +1,3 @@
-/**
- * Main entry point for the Spell Book module
- * Initializes all module components and registers API
- * @module spell-book
- */
-
 import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
 import { PlayerSpellBook } from './apps/player-spell-book.mjs';
 import { MODULE } from './constants.mjs';
@@ -36,9 +30,6 @@ Hooks.once('ready', async function () {
   }
 });
 
-/**
- * Configure Foundry for module needs
- */
 function initializeFoundryConfiguration() {
   try {
     // Extend compendium indexes with needed fields
@@ -51,9 +42,6 @@ function initializeFoundryConfiguration() {
   }
 }
 
-/**
- * Initialize module components
- */
 async function initializeModuleComponents() {
   try {
     // Register module settings
@@ -71,9 +59,6 @@ async function initializeModuleComponents() {
   }
 }
 
-/**
- * Register the module API in the global scope
- */
 function registerModuleAPI() {
   try {
     const api = {
@@ -104,9 +89,6 @@ function registerModuleAPI() {
   }
 }
 
-/**
- * Check if the module's compendium is locked and unlock it if needed
- */
 async function unlockModuleCompendium() {
   try {
     // Find the module's compendium pack

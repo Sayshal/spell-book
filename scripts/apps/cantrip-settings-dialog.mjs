@@ -1,16 +1,9 @@
-/**
- * Dialog for configuring cantrip settings
- * @module spell-book/apps/cantrip-settings-dialog
- */
-
 import { CANTRIP_CHANGE_BEHAVIOR, CANTRIP_RULES, TEMPLATES } from '../constants.mjs';
-import * as preparationUtils from '../helpers/spell-preparation.mjs';
+import { SpellManager } from '../helpers/spell-preparation.mjs';
+import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-/**
- * Dialog for configuring cantrip settings for an actor
- */
 export class CantripSettingsDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
   /*  Static Properties                           */
@@ -50,44 +43,40 @@ export class CantripSettingsDialog extends HandlebarsApplicationMixin(Applicatio
   /** The actor these settings apply to */
   actor = null;
 
-  /** Window title getter */
-  get title() {
-    return game.i18n.localize('SPELLBOOK.Cantrips.ConfigTitle');
-  }
+  /**
+   * @type {SpellManager}
+   * Manager for handling cantrip operations
+   */
+  spellManager = null;
 
   /* -------------------------------------------- */
   /*  Constructor                                 */
   /* -------------------------------------------- */
 
-  /**
-   * @param {Actor5e} actor - The actor to configure settings for
-   * @param {object} options - Application options
-   */
   constructor(actor, options = {}) {
     super(options);
+    log(3, `Initializing CantripSettingsDialog for ${actor.name}`);
     this.actor = actor;
+    this.spellManager = new SpellManager(actor);
   }
 
   /* -------------------------------------------- */
   /*  Core Methods                                */
   /* -------------------------------------------- */
 
-  /**
-   * Get window title - include actor name
-   */
   get title() {
     return `${game.i18n.localize('SPELLBOOK.Cantrips.ConfigTitle')}: ${this.actor.name}`;
   }
 
-  /**
-   * Prepare the application context data
-   * @override
-   */
   async _prepareContext(options) {
-    const cantripManager = new preparationUtils.CantripManager(this.actor);
-    const settings = cantripManager.getSettings();
-    const maxCantrips = cantripManager.getMaxAllowed();
-    const currentCount = cantripManager.getCurrentCount();
+    log(3, 'Preparing CantripSettingsDialog context');
+
+    const settings = this.spellManager.getSettings();
+    const maxCantrips = this.spellManager.getMaxAllowed();
+    const currentCount = this.spellManager.getCurrentCount();
+
+    log(3, `Current cantrip settings: rules=${settings.rules}, behavior=${settings.behavior}`);
+    log(3, `Cantrip stats: ${currentCount}/${maxCantrips}`);
 
     return {
       actor: this.actor,
@@ -127,21 +116,17 @@ export class CantripSettingsDialog extends HandlebarsApplicationMixin(Applicatio
     };
   }
 
-  /* -------------------------------------------- */
-  /*  Static Handler Methods                      */
-  /* -------------------------------------------- */
-
-  /**
-   * Handle form submission
-   * @static
-   */
   static async formHandler(_event, form, formData) {
     try {
       const actor = this.actor;
-      const cantripManager = new preparationUtils.CantripManager(actor);
+      log(3, `Saving cantrip settings for ${actor.name}`);
+      log(3, `New settings: rules=${formData.object.cantripRules}, behavior=${formData.object.cantripBehavior}`);
 
-      await cantripManager.saveSettings(formData.object.cantripRules, formData.object.cantripBehavior);
+      // Initialize cantrip manager and save settings
+      const spellManager = new SpellManager(actor);
+      await spellManager.saveSettings(formData.object.cantripRules, formData.object.cantripBehavior);
 
+      // Show success notification
       ui.notifications.info(
         game.i18n.format('SPELLBOOK.Cantrips.SettingsSaved', {
           name: actor.name
@@ -152,14 +137,16 @@ export class CantripSettingsDialog extends HandlebarsApplicationMixin(Applicatio
       const spellBook = Object.values(foundry.applications.instances).find((w) => w instanceof PlayerSpellBook && w.actor.id === actor.id);
 
       if (spellBook) {
+        log(3, 'Refreshing open spell book with new settings');
         // Update cantrip manager and re-render
-        spellBook.cantripManager.refresh();
+        spellBook.spellManager.refresh();
         spellBook.render(false);
       }
 
       return actor;
     } catch (error) {
-      console.error('Error saving cantrip settings:', error);
+      log(1, 'Error saving cantrip settings:', error);
+      ui.notifications.error(game.i18n.localize('SPELLBOOK.Error.SettingsNotSaved'));
       return null;
     }
   }

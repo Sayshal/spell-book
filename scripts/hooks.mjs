@@ -1,14 +1,10 @@
-/**
- * Contains hook registrations for the Spell Book module
- * @module spell-book/hooks
- */
-
 import { PlayerSpellBook } from './apps/player-spell-book.mjs';
 import { TEMPLATES } from './constants.mjs';
 import * as discoveryUtils from './helpers/spell-discovery.mjs';
 import { registerDnD5eIntegration } from './integrations/dnd5e.mjs';
 import { registerTidy5eIntegration } from './integrations/tidy5e.mjs';
 import { log } from './logger.mjs';
+
 /**
  * Register all module hooks
  * Sets up UI elements and system integrations
@@ -26,9 +22,6 @@ export async function registerHooks() {
   }
 }
 
-/**
- * Register system-specific integration hooks
- */
 function registerSystemIntegrations() {
   try {
     // 5e System Hook
@@ -44,9 +37,6 @@ function registerSystemIntegrations() {
   }
 }
 
-/**
- * Register UI-related hooks
- */
 function registerUIHooks() {
   try {
     // Set up character sheet button integration
@@ -57,12 +47,6 @@ function registerUIHooks() {
   }
 }
 
-/**
- * Adds the Spell Book button to character sheets
- * @param {ActorSheet5e} app - The rendered actor sheet
- * @param {HTMLElement} html - The HTML of the actor sheet
- * @param {Object} data - The data used to render the sheet
- */
 function addSpellbookButton(app, html, data) {
   try {
     const actor = data.actor;
@@ -96,12 +80,6 @@ function addSpellbookButton(app, html, data) {
   }
 }
 
-/**
- * Check if we should add a spellbook button to this actor
- * @param {Actor5e} actor - The actor to check
- * @param {HTMLElement} html - The HTML of the actor sheet
- * @returns {boolean} - Whether to add the button
- */
 function canAddSpellbookButton(actor, html) {
   // Only add button for characters that can cast spells
   if (!discoveryUtils.canCastSpells(actor)) {
@@ -117,11 +95,6 @@ function canAddSpellbookButton(actor, html) {
   return true;
 }
 
-/**
- * Creates a spell book button element
- * @param {Actor5e} actor - The actor associated with the button
- * @returns {HTMLElement} - The created button
- */
 function createSpellBookButton(actor) {
   // Create the button
   const button = document.createElement('button');
@@ -137,11 +110,6 @@ function createSpellBookButton(actor) {
   return button;
 }
 
-/**
- * Handle spell book button click
- * @param {Actor5e} actor - The actor associated with the button
- * @param {Event} ev - The click event
- */
 function onSpellBookButtonClick(actor, ev) {
   ev.preventDefault();
   try {
@@ -152,10 +120,6 @@ function onSpellBookButtonClick(actor, ev) {
   }
 }
 
-/**
- * Preload all Handlebars templates used by the module
- * @returns {Promise} Promise that resolves when all templates are loaded
- */
 async function preloadTemplates() {
   // Helper function to flatten the templates object into an array of paths
   function flattenTemplateObject(obj, result = []) {

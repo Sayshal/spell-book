@@ -1,16 +1,7 @@
-/**
- * Module settings registration
- * Defines user-configurable settings for the Spell Book module
- * @module spell-book/settings
- */
-
 import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
 import { CANTRIP_CHANGE_BEHAVIOR, CANTRIP_RULES, DEFAULT_FILTER_CONFIG, MODULE, SETTINGS } from './constants.mjs';
 import { log } from './logger.mjs';
 
-/**
- * Register all module settings
- */
 export function registerSettings() {
   try {
     // Logging level setting

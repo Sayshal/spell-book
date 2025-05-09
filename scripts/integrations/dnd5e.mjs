@@ -1,9 +1,3 @@
-/**
- * Integration with the D&D5e system
- * Adds rest features and system-specific interactions
- * @module spell-book/integrations/dnd5e
- */
-
 import { log } from '../logger.mjs';
 
 /**

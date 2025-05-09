@@ -1,10 +1,4 @@
 /**
- * Helper functions for spell formatting
- * Prepares spell data for display
- * @module spell-book/helpers/spell-formatting
- */
-
-/**
  * Format spell details for display
  * @param {Object} spell - The spell object
  * @returns {string} - Formatted spell details string
