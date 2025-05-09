@@ -988,7 +988,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
               if (!sourceSpell) return;
 
               // Create a modified spell object with UI checked state
-              const uiSpell = duplicate(sourceSpell);
+              const uiSpell = foundry.utils.duplicate(sourceSpell);
               uiSpell.system = uiSpell.system || {};
               uiSpell.system.preparation = uiSpell.system.preparation || {};
               uiSpell.system.preparation.prepared = event.target.checked;

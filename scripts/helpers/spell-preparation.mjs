@@ -17,8 +17,24 @@ import * as formattingUtils from './spell-formatting.mjs';
 export async function saveActorPreparedSpells(actor, spellData) {
   log(3, 'Saving prepared spells');
 
-  // Check for cantrip changes
+  // Get actor and class data
+  const classItem = actor.items.find((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
+  const maxCantrips = getMaxCantripsAllowed(actor, classItem);
+
+  // Check for cantrip changes and validate max cantrips
   const cantripChanges = trackCantripChanges(actor, spellData);
+
+  // Count how many cantrips would be selected after this save
+  const currentCantrips = actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.preparation?.prepared && !i.system.preparation?.alwaysPrepared);
+  const wouldRemove = cantripChanges.removed.length;
+  const wouldAdd = cantripChanges.added.length;
+  const newCantripCount = currentCantrips.length - wouldRemove + wouldAdd;
+
+  // Check if this would exceed max cantrips
+  if (newCantripCount > maxCantrips) {
+    ui.notifications.error(`Cannot save: Would exceed maximum of ${maxCantrips} cantrips (${newCantripCount} selected)`);
+    return; // Stop the save process
+  }
 
   // Extract prepared spell UUIDs
   const preparedUuids = Object.entries(spellData)
@@ -28,7 +44,23 @@ export async function saveActorPreparedSpells(actor, spellData) {
   // Save to actor flags
   await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS, preparedUuids);
 
-  // Process each spell
+  // Log for debugging
+  log(3, `Saving changes: ${cantripChanges.removed.length} cantrips to remove, ${cantripChanges.added.length} to add`);
+
+  // Process removed spells first for accurate counting
+  for (const entry of cantripChanges.removed) {
+    const uuid = entry.uuid;
+    log(3, `Removing cantrip: ${entry.name}`);
+
+    // Find spell item to remove
+    const existingSpell = actor.items.find((i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid));
+    if (existingSpell) {
+      await actor.deleteEmbeddedDocuments('Item', [existingSpell.id]);
+      log(3, `Successfully removed cantrip: ${entry.name}`);
+    }
+  }
+
+  // Then process each spell in spell data
   for (const [uuid, data] of Object.entries(spellData)) {
     // Skip always prepared spells
     if (data.isAlwaysPrepared) continue;
@@ -63,21 +95,24 @@ export async function saveActorPreparedSpells(actor, spellData) {
             spellData.flags.core.sourceId = uuid;
 
             await actor.createEmbeddedDocuments('Item', [spellData]);
+            log(3, `Added new spell: ${sourceSpell.name}`);
           }
         } catch (error) {
           log(1, `Error fetching spell ${uuid}:`, error);
         }
       }
-    } else if (data.wasPrepared) {
-      // Remove spell that was prepared but now isn't
-      if (existingSpell && existingSpell.system.preparation?.mode === 'prepared' && !existingSpell.system.preparation?.alwaysPrepared) {
+    } else if (data.wasPrepared && existingSpell) {
+      // Remove non-cantrip spell that was prepared but now isn't
+      if (existingSpell.system.level !== 0 && existingSpell.system.preparation?.mode === 'prepared' && !existingSpell.system.preparation?.alwaysPrepared) {
         await actor.deleteEmbeddedDocuments('Item', [existingSpell.id]);
+        log(3, `Removed unprepared spell: ${existingSpell.name}`);
       }
     }
   }
 
   // Notify GM of cantrip changes if needed
   if (cantripChanges.hasChanges) {
+    log(3, 'Processing cantrip changes and sending notifications');
     await processCantripChanges(actor, cantripChanges);
   }
 }
@@ -97,70 +132,69 @@ function trackCantripChanges(actor, spellData) {
 
   // Get cantrip settings
   const settings = getCantripSettings(actor);
-
-  // Skip tracking if unrestricted
-  if (settings.behavior === CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED) {
-    return changes;
-  }
+  log(3, `Tracking cantrip changes for behavior: ${settings.behavior}`);
 
   // Get the actor's current cantrips
   const actorCantrips = actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && !i.system.preparation?.alwaysPrepared);
-  const currentCantrips = new Set(actorCantrips.map((c) => c.flags?.core?.sourceId || c.uuid));
 
-  // Build set of cantrips being prepared
-  const newCantrips = new Set();
+  // Build two sets for comparison
+  const currentCantrips = new Set(); // Currently on actor
+  const newCantrips = new Set(); // Will be on actor after save
+
+  // Fill current cantrips set
+  for (const cantrip of actorCantrips) {
+    const uuid = cantrip.flags?.core?.sourceId || cantrip.uuid;
+    if (uuid) {
+      currentCantrips.add({
+        uuid: uuid,
+        name: cantrip.name
+      });
+    }
+  }
+
+  // Fill new cantrips set from form data
   for (const [uuid, data] of Object.entries(spellData)) {
     if (data.isPrepared) {
-      // Check if it's a cantrip
-      const spell = actor.items.find((i) => i.flags?.core?.sourceId === uuid || i.uuid === uuid);
-      if (spell && spell.system.level === 0) {
-        newCantrips.add(uuid);
-      } else if (!spell) {
-        // It might be a new cantrip not yet on the actor - check from source
-        try {
-          fromUuid(uuid).then((sourceSpell) => {
-            if (sourceSpell && sourceSpell.system.level === 0) {
-              newCantrips.add(uuid);
-            }
-          });
-        } catch (e) {
-          log(1, `Error checking new spell ${uuid}:`, e);
-        }
-      }
-    }
-  }
+      // Find spell to check if it's a cantrip
+      const existingSpell = actor.items.find((i) => i.flags?.core?.sourceId === uuid || i.uuid === uuid);
 
-  // Find cantrips being added (in new set but not in current set)
-  for (const uuid of newCantrips) {
-    if (!currentCantrips.has(uuid)) {
-      // Find name from spell data
-      let name = 'Unknown Cantrip';
-      for (const [dataUuid, data] of Object.entries(spellData)) {
-        if (dataUuid === uuid) {
-          name = data.name;
-          break;
-        }
-      }
-
-      changes.added.push({
-        name: name,
-        uuid: uuid
-      });
-      changes.hasChanges = true;
-    }
-  }
-
-  // Find cantrips being removed (in current set but not in new set)
-  for (const uuid of currentCantrips) {
-    if (!newCantrips.has(uuid)) {
-      const cantrip = actorCantrips.find((c) => c.flags?.core?.sourceId === uuid || c.uuid === uuid);
-      if (cantrip) {
-        changes.removed.push({
-          name: cantrip.name,
-          uuid: uuid
+      if (existingSpell && existingSpell.system.level === 0) {
+        // It's a cantrip already on the actor
+        newCantrips.add({
+          uuid: uuid,
+          name: existingSpell.name
         });
-        changes.hasChanges = true;
+      } else if (!existingSpell) {
+        // It might be a new cantrip - look it up
+        fromUuid(uuid).then((sourceSpell) => {
+          if (sourceSpell && sourceSpell.system.level === 0) {
+            newCantrips.add({
+              uuid: uuid,
+              name: sourceSpell.name || data.name
+            });
+          }
+        });
       }
+    }
+  }
+
+  // Find removed cantrips (in current but not in new)
+  for (const cantrip of currentCantrips) {
+    const isInNew = Array.from(newCantrips).some((nc) => nc.uuid === cantrip.uuid);
+    if (!isInNew) {
+      changes.removed.push(cantrip);
+      changes.hasChanges = true;
+      log(3, `Cantrip removal detected: ${cantrip.name}`);
+    }
+  }
+
+  // Find added cantrips (in new but not in current)
+  for (const cantrip of newCantrips) {
+    const isInCurrent = Array.from(currentCantrips).some((cc) => cc.uuid === cantrip.uuid);
+    if (!isInCurrent) {
+      changes.added.push(cantrip);
+      changes.hasChanges = true;
+      log(3, `Cantrip addition detected: ${cantrip.name}`);
     }
   }
 
@@ -174,9 +208,11 @@ function trackCantripChanges(actor, spellData) {
  */
 async function processCantripChanges(actor, changes) {
   const settings = getCantripSettings(actor);
+  log(3, `Processing cantrip changes with behavior: ${settings.behavior}`);
 
   // Send notification to GM if appropriate
   if (settings.behavior === CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM) {
+    log(3, 'Sending GM notification about cantrip changes');
     notifyGMOfCantripChanges(actor, changes);
   }
 
