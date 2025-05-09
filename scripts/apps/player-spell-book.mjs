@@ -1233,6 +1233,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       // Get unlearned count for modern rules
       const unlearned = this.actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
 
+      // Special handling for lockAfterMax when not at max cantrips
+      const allowSelectingNewCantrips = settings.behavior === CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX && !isAtMax && currentCount < maxCantrips;
+
       // Apply UI changes based on settings
       for (const item of cantripItems) {
         const checkbox = item.querySelector('input[type="checkbox"]');
@@ -1251,6 +1254,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         // Default: unlock checkbox
         checkbox.disabled = false;
         item.classList.remove('cantrip-locked');
+
+        // *** SPECIAL CASE: Allow selecting new cantrips when not at max ***
+        if (allowSelectingNewCantrips && !isChecked) {
+          // Keep unchecked cantrips enabled when not at max
+          continue;
+        }
 
         // *** ENFORCE MAXIMUM CANTRIPS FOR ALL BEHAVIOR TYPES ***
         // If we're at maximum, lock all unchecked cantrips regardless of behavior

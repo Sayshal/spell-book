@@ -251,7 +251,7 @@ export function canChangeCantrip(actor, spell, uiCount) {
   const classItem = actor.items.find((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
   const currentCount = uiCount !== undefined ? uiCount : getCurrentCantripsCount(actor);
   const maxCantrips = getMaxCantripsAllowed(actor, classItem);
-  const isAtMax = currentCount >= maxCantrips;
+  const wouldExceedMax = !isChecked && currentCount >= maxCantrips;
   const isChecked = spell.system.preparation?.prepared || false;
   const unlearned = actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
 
@@ -260,10 +260,21 @@ export function canChangeCantrip(actor, spell, uiCount) {
   const previousMax = actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX) || 0;
   const currentLevel = actor.system.details.level;
   const isLevelUp = (currentLevel > previousLevel || maxCantrips > previousMax) && previousLevel > 0;
+  log(1, 'canChangeCantrip?', {
+    settings: settings,
+    classItem: classItem,
+    currentCount: currentCount,
+    maxCantrips: maxCantrips,
+    wouldExceedMax: wouldExceedMax,
+    isChecked: isChecked,
+    unlearned: unlearned,
+    previousLevel: previousLevel,
+    previousMax: previousMax,
+    currentLevel: currentLevel,
+    isLevelUp: isLevelUp
+  });
 
-  // *** ENFORCE MAXIMUM FOR ALL BEHAVIOR TYPES ***
-  // If trying to check a new cantrip and already at max, don't allow
-  if (!isChecked && isAtMax) {
+  if (!isChecked && wouldExceedMax) {
     return {
       allowed: false,
       message: 'Maximum cantrips reached'
@@ -281,11 +292,16 @@ export function canChangeCantrip(actor, spell, uiCount) {
       return { allowed: true };
 
     case CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX:
+      // Special case: Allow checking new cantrips when not at max
+      if (!isChecked && !wouldExceedMax) {
+        return { allowed: true };
+      }
+
       // If not during level-up, don't allow changes
       if (!isLevelUp) {
         return {
           allowed: false,
-          message: settings.rules === CANTRIP_RULES.DEFAULT ? 'SPELLBOOK.Cantrips.LockedDefault' : 'SPELLBOOK.Cantrips.LockedModern'
+          message: settings.rules === CANTRIP_RULES.DEFAULT ? 'Squeeb 1' : 'SPELLBOOK.Cantrips.LockedModern'
         };
       }
 
@@ -295,7 +311,7 @@ export function canChangeCantrip(actor, spell, uiCount) {
         if (isChecked) {
           return {
             allowed: false,
-            message: 'SPELLBOOK.Cantrips.LockedDefault'
+            message: 'Squeeb 2'
           };
         }
 
@@ -371,7 +387,7 @@ export function getCantripLockStatus(actor, spell) {
       if (!isLevelUp) {
         return {
           locked: true,
-          reason: settings.rules === CANTRIP_RULES.DEFAULT ? 'SPELLBOOK.Cantrips.LockedDefault' : 'SPELLBOOK.Cantrips.LockedModern'
+          reason: settings.rules === CANTRIP_RULES.DEFAULT ? 'Squeeb 3' : 'SPELLBOOK.Cantrips.LockedModern'
         };
       }
 
@@ -381,7 +397,7 @@ export function getCantripLockStatus(actor, spell) {
         if (isChecked) {
           return {
             locked: true,
-            reason: 'SPELLBOOK.Cantrips.LockedDefault'
+            reason: 'Squeeb 4'
           };
         }
 
