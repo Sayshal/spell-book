@@ -32,72 +32,107 @@ export async function saveActorPreparedSpells(actor, spellData) {
   // Save to actor flags
   await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS, preparedUuids);
 
-  // Process each spell
+  // Collect all spells to remove in one batch
+  const spellIdsToRemove = [];
+  const spellsToUpdate = [];
+  const spellsToCreate = [];
+
+  // First, handle all unprepared spells that were prepared
   for (const [uuid, data] of Object.entries(spellData)) {
     // Skip always prepared spells
     if (data.isAlwaysPrepared) continue;
 
+    // Skip if still prepared
+    if (data.isPrepared) continue;
+
+    // Only process if it was previously prepared
+    if (!data.wasPrepared) continue;
+
+    // Find existing spell on actor
+    const existingSpell = actor.items.find((i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid));
+    if (!existingSpell) continue;
+
+    // Add to removal list if it's a prepared spell
+    if (existingSpell.system.preparation?.mode === 'prepared' && !existingSpell.system.preparation?.alwaysPrepared) {
+      spellIdsToRemove.push(existingSpell.id);
+
+      // Track removed cantrip
+      if (existingSpell.system.level === 0) {
+        cantripChanges.removed.push({
+          name: existingSpell.name,
+          uuid: uuid
+        });
+        cantripChanges.hasChanges = true;
+        log(3, `Queueing cantrip for removal: ${existingSpell.name}`);
+      }
+    }
+  }
+
+  // Now handle all prepared spells
+  for (const [uuid, data] of Object.entries(spellData)) {
+    // Skip always prepared spells
+    if (data.isAlwaysPrepared) continue;
+
+    // Skip if not prepared
+    if (!data.isPrepared) continue;
+
     // Find existing spell on actor
     const existingSpell = actor.items.find((i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid));
 
-    if (data.isPrepared) {
-      // Spell should be prepared
-      if (existingSpell) {
-        // Update if needed
-        if (!existingSpell.system.preparation?.prepared) {
-          await actor.updateEmbeddedDocuments('Item', [
-            {
-              '_id': existingSpell.id,
-              'system.preparation.prepared': true
-            }
-          ]);
-        }
-      } else {
-        // Create the spell
-        try {
-          const sourceSpell = await fromUuid(uuid);
-          if (sourceSpell) {
-            const spellData = sourceSpell.toObject();
-            if (!spellData.system.preparation) {
-              spellData.system.preparation = {};
-            }
-            spellData.system.preparation.prepared = true;
-            spellData.flags = spellData.flags || {};
-            spellData.flags.core = spellData.flags.core || {};
-            spellData.flags.core.sourceId = uuid;
-
-            await actor.createEmbeddedDocuments('Item', [spellData]);
-
-            // Track new cantrip
-            if (sourceSpell.system.level === 0) {
-              cantripChanges.added.push({
-                name: sourceSpell.name,
-                uuid: uuid
-              });
-              cantripChanges.hasChanges = true;
-              log(3, `Added new cantrip: ${sourceSpell.name}`);
-            }
-          }
-        } catch (error) {
-          log(1, `Error fetching spell ${uuid}:`, error);
-        }
+    if (existingSpell) {
+      // Update if needed
+      if (!existingSpell.system.preparation?.prepared) {
+        spellsToUpdate.push({
+          '_id': existingSpell.id,
+          'system.preparation.prepared': true
+        });
       }
-    } else if (data.wasPrepared && existingSpell) {
-      // Spell was prepared but now isn't
-      if (existingSpell.system.preparation?.mode === 'prepared' && !existingSpell.system.preparation?.alwaysPrepared) {
-        await actor.deleteEmbeddedDocuments('Item', [existingSpell.id]);
+    } else {
+      // Queue for creation
+      try {
+        const sourceSpell = await fromUuid(uuid);
+        if (sourceSpell) {
+          const newSpellData = sourceSpell.toObject();
+          if (!newSpellData.system.preparation) {
+            newSpellData.system.preparation = {};
+          }
+          newSpellData.system.preparation.prepared = true;
+          newSpellData.flags = newSpellData.flags || {};
+          newSpellData.flags.core = newSpellData.flags.core || {};
+          newSpellData.flags.core.sourceId = uuid;
 
-        // Track removed cantrip
-        if (existingSpell.system.level === 0) {
-          cantripChanges.removed.push({
-            name: existingSpell.name,
-            uuid: uuid
-          });
-          cantripChanges.hasChanges = true;
-          log(3, `Removed cantrip: ${existingSpell.name}`);
+          spellsToCreate.push(newSpellData);
+
+          // Track new cantrip
+          if (sourceSpell.system.level === 0) {
+            cantripChanges.added.push({
+              name: sourceSpell.name,
+              uuid: uuid
+            });
+            cantripChanges.hasChanges = true;
+            log(3, `Queueing cantrip for creation: ${sourceSpell.name}`);
+          }
         }
+      } catch (error) {
+        log(1, `Error fetching spell ${uuid}:`, error);
       }
     }
+  }
+
+  // Process all changes in batches
+  if (spellIdsToRemove.length > 0) {
+    log(3, `Removing ${spellIdsToRemove.length} spells: ${spellIdsToRemove.join(', ')}`);
+    await actor.deleteEmbeddedDocuments('Item', spellIdsToRemove);
+  }
+
+  if (spellsToUpdate.length > 0) {
+    log(3, `Updating ${spellsToUpdate.length} spells`);
+    await actor.updateEmbeddedDocuments('Item', spellsToUpdate);
+  }
+
+  if (spellsToCreate.length > 0) {
+    log(3, `Creating ${spellsToCreate.length} spells`);
+    await actor.createEmbeddedDocuments('Item', spellsToCreate);
   }
 
   // Process cantrip changes if any
@@ -124,11 +159,45 @@ export async function saveActorPreparedSpells(actor, spellData) {
  * @param {Object} changes - Information about changes
  */
 function notifyGMOfCantripChanges(actor, changes) {
+  // Get original cantrips (before changes)
+  const currentCantrips = actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.preparation?.prepared && !i.system.preparation?.alwaysPrepared).map((i) => i.name);
+
+  // Create a set of cantrip names to avoid duplicates
+  const originalCantripsSet = new Set(currentCantrips);
+
+  // Add back any removed cantrips and remove any newly added ones
+  // to reconstruct the original state
+  for (const { name } of changes.removed) {
+    originalCantripsSet.add(name);
+  }
+
+  for (const { name } of changes.added) {
+    originalCantripsSet.delete(name);
+  }
+
+  // Convert to sorted array
+  const originalCantrips = Array.from(originalCantripsSet).sort();
+
+  // Calculate new cantrips list
+  const newCantripsSet = new Set(originalCantrips);
+
+  // Remove the removed cantrips
+  for (const { name } of changes.removed) {
+    newCantripsSet.delete(name);
+  }
+
+  // Add the new cantrips
+  for (const { name } of changes.added) {
+    newCantripsSet.add(name);
+  }
+
+  // Convert to sorted array
+  const newCantrips = Array.from(newCantripsSet).sort();
+
+  // Build the message content
   let content = `<h3>${game.i18n.format('SPELLBOOK.Cantrips.ChangeNotification', { name: actor.name })}</h3>`;
 
   // Display original cantrips
-  const originalCantrips = actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && !i.system.preparation?.alwaysPrepared).map((i) => i.name);
-
   if (originalCantrips.length > 0) {
     content += `<p><strong>Original Cantrips:</strong> ${originalCantrips.join(', ')}</p>`;
   }
@@ -143,10 +212,8 @@ function notifyGMOfCantripChanges(actor, changes) {
   }
 
   // Display new cantrip list
-  const newList = originalCantrips.filter((name) => !changes.removed.some((c) => c.name === name)).concat(changes.added.map((c) => c.name));
-
-  if (newList.length > 0) {
-    content += `<p><strong>New Cantrips:</strong> ${newList.join(', ')}</p>`;
+  if (newCantrips.length > 0) {
+    content += `<p><strong>New Cantrips:</strong> ${newCantrips.join(', ')}</p>`;
   }
 
   // Send to GM only

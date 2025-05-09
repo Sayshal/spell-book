@@ -1663,9 +1663,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       }
 
       // Extract prepared spells from form data
-      const spellPreparationData = formData.object.spellPreparation || {};
+      const formPreparationData = formData.object.spellPreparation || {};
 
-      // Gather spell information
+      // Create a comprehensive spellData object including ALL checkboxes, not just checked ones
       const spellData = {};
       const checkboxes = form.querySelectorAll('input[type="checkbox"][data-uuid]');
 
@@ -1674,14 +1674,17 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const name = checkbox.dataset.name;
         const wasPrepared = checkbox.dataset.wasPrepared === 'true';
 
-        // Get prepared status (handle disabled checkboxes)
-        const isPrepared = checkbox.disabled ? wasPrepared : !!spellPreparationData[uuid] || checkbox.checked;
+        // IMPORTANT: Get the current checked state directly from the DOM element
+        // This ensures we capture unchecked boxes too
+        const isPrepared = checkbox.checked;
+
+        log(3, `Spell ${name} (${uuid}): was ${wasPrepared ? 'prepared' : 'not prepared'}, now ${isPrepared ? 'prepared' : 'not prepared'}`);
 
         spellData[uuid] = {
           name,
           wasPrepared,
           isPrepared,
-          isAlwaysPrepared: checkbox.disabled
+          isAlwaysPrepared: checkbox.disabled && checkbox.hasAttribute('data-always-disabled')
         };
       }
 
