@@ -103,29 +103,60 @@ function trackCantripChanges(actor, spellData) {
     return changes;
   }
 
-  // Find all cantrips on the actor
+  // Get the actor's current cantrips
   const actorCantrips = actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && !i.system.preparation?.alwaysPrepared);
+  const currentCantrips = new Set(actorCantrips.map((c) => c.flags?.core?.sourceId || c.uuid));
 
-  // Track cantrips being removed
-  for (const cantrip of actorCantrips) {
-    const uuid = cantrip.flags?.core?.sourceId || cantrip.uuid;
-    if (uuid && spellData[uuid] && !spellData[uuid].isPrepared && spellData[uuid].wasPrepared) {
-      changes.removed.push({
-        name: cantrip.name,
+  // Build set of cantrips being prepared
+  const newCantrips = new Set();
+  for (const [uuid, data] of Object.entries(spellData)) {
+    if (data.isPrepared) {
+      // Check if it's a cantrip
+      const spell = actor.items.find((i) => i.flags?.core?.sourceId === uuid || i.uuid === uuid);
+      if (spell && spell.system.level === 0) {
+        newCantrips.add(uuid);
+      } else if (!spell) {
+        // It might be a new cantrip not yet on the actor - check from source
+        try {
+          fromUuid(uuid).then((sourceSpell) => {
+            if (sourceSpell && sourceSpell.system.level === 0) {
+              newCantrips.add(uuid);
+            }
+          });
+        } catch (e) {
+          log(1, `Error checking new spell ${uuid}:`, e);
+        }
+      }
+    }
+  }
+
+  // Find cantrips being added (in new set but not in current set)
+  for (const uuid of newCantrips) {
+    if (!currentCantrips.has(uuid)) {
+      // Find name from spell data
+      let name = 'Unknown Cantrip';
+      for (const [dataUuid, data] of Object.entries(spellData)) {
+        if (dataUuid === uuid) {
+          name = data.name;
+          break;
+        }
+      }
+
+      changes.added.push({
+        name: name,
         uuid: uuid
       });
       changes.hasChanges = true;
     }
   }
 
-  // Track cantrips being added
-  for (const [uuid, data] of Object.entries(spellData)) {
-    if (!data.wasPrepared && data.isPrepared) {
-      // Find the spell to get its level
-      const spell = actor.items.find((i) => i.flags?.core?.sourceId === uuid || i.uuid === uuid);
-      if (spell && spell.system.level === 0) {
-        changes.added.push({
-          name: spell.name,
+  // Find cantrips being removed (in current set but not in new set)
+  for (const uuid of currentCantrips) {
+    if (!newCantrips.has(uuid)) {
+      const cantrip = actorCantrips.find((c) => c.flags?.core?.sourceId === uuid || c.uuid === uuid);
+      if (cantrip) {
+        changes.removed.push({
+          name: cantrip.name,
           uuid: uuid
         });
         changes.hasChanges = true;
@@ -164,6 +195,14 @@ async function processCantripChanges(actor, changes) {
 function notifyGMOfCantripChanges(actor, changes) {
   let content = `<h3>${game.i18n.format('SPELLBOOK.Cantrips.ChangeNotification', { name: actor.name })}</h3>`;
 
+  // Display original cantrips
+  const originalCantrips = actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && !i.system.preparation?.alwaysPrepared).map((i) => i.name);
+
+  if (originalCantrips.length > 0) {
+    content += `<p><strong>Original Cantrips:</strong> ${originalCantrips.join(', ')}</p>`;
+  }
+
+  // Display changes
   if (changes.removed.length > 0) {
     content += `<p><strong>${game.i18n.localize('SPELLBOOK.Cantrips.Removed')}:</strong> ${changes.removed.map((c) => c.name).join(', ')}</p>`;
   }
@@ -172,6 +211,14 @@ function notifyGMOfCantripChanges(actor, changes) {
     content += `<p><strong>${game.i18n.localize('SPELLBOOK.Cantrips.Added')}:</strong> ${changes.added.map((c) => c.name).join(', ')}</p>`;
   }
 
+  // Display new cantrip list
+  const newList = originalCantrips.filter((name) => !changes.removed.some((c) => c.name === name)).concat(changes.added.map((c) => c.name));
+
+  if (newList.length > 0) {
+    content += `<p><strong>New Cantrips:</strong> ${newList.join(', ')}</p>`;
+  }
+
+  // Send to GM only
   ChatMessage.create({
     content: content,
     whisper: game.users.filter((u) => u.isGM).map((u) => u.id)

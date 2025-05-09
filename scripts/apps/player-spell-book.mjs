@@ -1002,6 +1002,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
               // Update cantrip lock UI
               this._setupCantripLocks();
+              this._updateCantripCounter();
             }
 
             // Update UI class
@@ -1016,7 +1017,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             // Update tracking and counts
             this._updateSpellPreparationTracking();
             this._updateSpellCounts();
-            this._updateCantripCounter();
           });
         }
       });
@@ -1257,6 +1257,22 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
           case CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX:
             // Most complex case - handle combinations of rules and level-up status
+
+            // Check if we're at max and need to lock all unchecked cantrips
+            if (isAtMax && !isChecked) {
+              checkbox.disabled = true;
+              item.classList.add('cantrip-locked');
+
+              // Add max reached message
+              if (nameElement && !lockIcon) {
+                lockIcon = document.createElement('i');
+                lockIcon.className = 'fas fa-lock cantrip-lock-icon';
+                lockIcon.title = game.i18n.localize('Maximum cantrips reached');
+                nameElement.appendChild(lockIcon);
+              }
+              break; // Skip the rest of processing for this item if we're locking it due to max
+            }
+
             if (!levelUpAllowed) {
               // Outside level-up, lock all cantrips
               checkbox.disabled = true;
@@ -1327,7 +1343,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
               // Otherwise allow changes
             }
             break;
-
           default:
             // Unknown behavior, apply safe locking
             checkbox.disabled = true;
@@ -1383,9 +1398,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       // Find spellcasting class
       const classItem = this.actor.items.find((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
 
-      // Get counts
+      // Get max cantrips allowed
       const maxCantrips = preparationUtils.getMaxCantripsAllowed(this.actor, classItem);
-      const currentCount = preparationUtils.getCurrentCantripsCount(this.actor);
+
+      // Count checked cantrips in the UI (new approach to get live count)
+      const cantripCheckboxes = cantripLevel.querySelectorAll('input[type="checkbox"]:checked:not([data-always-disabled])');
+      const currentCount = cantripCheckboxes.length;
 
       // Create counter element
       const levelHeading = cantripLevel.querySelector('.spell-level-heading');
