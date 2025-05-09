@@ -8,7 +8,7 @@
 			{{#each spellLevels as |levelData|}}
 				{{#> "modules/spell-book/templates/components/spell-level.hbs" level=levelData.level levelName=levelData.levelName spells=levelData.spells}}
 					<li
-						class="spell-item{{#if preparation.isOwned}} owned-spell{{/if}}{{#if preparation.prepared}} prepared-spell{{/if}}"
+						class="spell-item{{#if preparation.isOwned}} owned-spell{{/if}}{{#if preparation.prepared}} prepared-spell{{/if}}{{#if preparation.hideCheckbox}} hide-checkbox{{/if}}"
 						data-spell-uuid="{{compendiumUuid}}" data-spell-level="{{../level}}" data-spell-school="{{system.school}}"
 						data-casting-time-type="{{filterData.castingTime.type}}"
 						data-casting-time-value="{{filterData.castingTime.value}}" data-range-units="{{filterData.range.units}}"
@@ -42,11 +42,16 @@
 						</div>
 
 						<div class="spell-preparation">
-							<input type="checkbox" name="spellPreparation.{{compendiumUuid}}" id="prep-{{compendiumUuid}}" value="1"
-								data-uuid="{{compendiumUuid}}" data-name="{{name}}" data-ritual="{{filterData.isRitual}}"
-								data-was-prepared="{{preparation.prepared}}" {{checked preparation.prepared}}
-								{{disabled preparation.disabled}}
-								aria-label="{{#if preparation.prepared}}{{localize 'SPELLBOOK.Preparation.Unprepare' name=name}}{{else}}{{localize 'SPELLBOOK.Preparation.Prepare' name=name}}{{/if}}" />
+							{{#if preparation.hideCheckbox}}
+								<!-- Lock icon instead of checkbox for locked cantrips -->
+								<i class="fas fa-lock cantrip-lock-icon" data-tooltip="{{localize preparation.cantripLockReason}}"></i>
+							{{else}}
+								<input type="checkbox" name="spellPreparation.{{compendiumUuid}}" id="prep-{{compendiumUuid}}" value="1"
+									data-uuid="{{compendiumUuid}}" data-name="{{name}}" data-ritual="{{filterData.isRitual}}"
+									data-was-prepared="{{preparation.prepared}}" {{checked preparation.prepared}}
+									{{disabled preparation.disabled}}
+									aria-label="{{#if preparation.prepared}}{{localize 'SPELLBOOK.Preparation.Unprepare' name=name}}{{else}}{{localize 'SPELLBOOK.Preparation.Prepare' name=name}}{{/if}}" />
+							{{/if}}
 						</div>
 					</li>
 					{{/modules/spell-book/templates/components/spell-level.hbs}}

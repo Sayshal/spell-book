@@ -240,120 +240,28 @@ export function getCantripSettings(actor) {
  * @param {Actor5e} actor - The actor
  * @param {Item5e} spell - The spell item
  * @param {number} [uiCount] - Current cantrip count from UI
- * @param {boolean} [isUIChange] - Whether this change is from the UI (not yet saved)
  * @returns {Object} Status information about cantrip change
  */
-export function canChangeCantrip(actor, spell, uiCount, isUIChange = false) {
+export function canChangeCantrip(actor, spell, uiCount) {
   // Skip non-cantrips
   if (spell.system.level !== 0) return { allowed: true };
 
-  // Get settings and current state
-  const settings = getCantripSettings(actor);
+  // Get current count and max
   const classItem = actor.items.find((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
   const currentCount = uiCount !== undefined ? uiCount : getCurrentCantripsCount(actor);
   const maxCantrips = getMaxCantripsAllowed(actor, classItem);
+
+  // Block if would exceed max (for checking a cantrip)
   const isChecked = spell.system.preparation?.prepared || false;
-  const wouldExceedMax = !isChecked && currentCount >= maxCantrips;
-  const unlearned = actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
-
-  // For UI changes, we're more permissive about unchecking just-checked cantrips
-  if (isUIChange && isChecked) {
-    // When checking a cantrip in the UI, we only need to enforce max limit
-    return wouldExceedMax ? { allowed: false, message: 'Maximum cantrips reached' } : { allowed: true };
-  }
-
-  // Check for level-up situation
-  const previousLevel = actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL) || 0;
-  const previousMax = actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX) || 0;
-  const currentLevel = actor.system.details.level;
-  const isLevelUp = (currentLevel > previousLevel || maxCantrips > previousMax) && previousLevel > 0;
-
-  log(1, 'canChangeCantrip?', {
-    settings: settings,
-    classItem: classItem,
-    currentCount: currentCount,
-    maxCantrips: maxCantrips,
-    wouldExceedMax: wouldExceedMax,
-    isChecked: isChecked,
-    unlearned: unlearned,
-    previousLevel: previousLevel,
-    previousMax: previousMax,
-    currentLevel: currentLevel,
-    isLevelUp: isLevelUp
-  });
-
-  if (!isChecked && wouldExceedMax) {
+  if (!isChecked && currentCount >= maxCantrips) {
     return {
       allowed: false,
       message: 'Maximum cantrips reached'
     };
   }
 
-  // Handle based on behavior
-  switch (settings.behavior) {
-    case CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED:
-      // Always allow changes (except exceeding maximum which is handled above)
-      return { allowed: true };
-
-    case CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM:
-      // Always allow changes (except exceeding maximum which is handled above)
-      return { allowed: true };
-
-    case CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX:
-      // Special case: Allow checking new cantrips when not at max
-      if (!wouldExceedMax) {
-        log(1, 'Allowed!');
-        return { allowed: true };
-      }
-
-      // If not during level-up, don't allow changes
-      if (!isLevelUp) {
-        log(1, 'Disallowed (isLevelUp)');
-        return {
-          allowed: false,
-          message: settings.rules === CANTRIP_RULES.DEFAULT ? 'SPELLBOOK.Cantrips.LockedDefault' : 'SPELLBOOK.Cantrips.LockedModern'
-        };
-      }
-
-      // Default rules during level-up
-      if (settings.rules === CANTRIP_RULES.DEFAULT) {
-        // Never allow unchecking
-        if (isChecked) {
-          log(1, 'Disallowed (isChecked)');
-          return {
-            allowed: false,
-            message: 'SPELLBOOK.Cantrips.LockedDefault'
-          };
-        }
-
-        // Allow checking new cantrips (max already checked above)
-        return { allowed: true };
-      }
-
-      // Modern rules during level-up
-      if (settings.rules === CANTRIP_RULES.MODERN) {
-        // If trying to uncheck and already unlearned max amount
-        if (isChecked && unlearned >= 1) {
-          return {
-            allowed: false,
-            message: 'SPELLBOOK.Cantrips.CannotUnlearnMore'
-          };
-        }
-
-        // Otherwise allow the change (max already checked above)
-        return {
-          allowed: true,
-          willCount: isChecked // Will count as unlearning if unchecking
-        };
-      }
-      break;
-  }
-
-  // Default fallback - don't allow
-  return {
-    allowed: false,
-    message: 'Cantrip changes not allowed'
-  };
+  // If we got here, allow the change
+  return { allowed: true };
 }
 
 /**
@@ -596,14 +504,34 @@ export function getOwnedSpellPreparationStatus(actor, spell) {
   const sourceInfo = determineSpellSource(actor, spell);
   const isGranted = !!sourceInfo && spell.flags?.dnd5e?.cachedFor;
 
-  // Check if cantrip is locked
+  // Check if it's a cantrip
+  const isCantrip = spell.system.level === 0;
+
+  // Determine if this cantrip should have a checkbox (new approach)
+  let hideCheckbox = false;
   let isCantripLocked = false;
   let cantripLockReason = '';
 
-  if (spell.system.level === 0 && !alwaysPrepared && !isGranted) {
-    const lockStatus = getCantripLockStatus(actor, spell);
-    isCantripLocked = lockStatus.locked;
-    cantripLockReason = lockStatus.reason;
+  if (isCantrip && !alwaysPrepared && !isGranted) {
+    // Check if cantrips can be changed at all
+    const canChange = canCantripsBeLeveledUp(actor);
+
+    // Hide checkbox for existing cantrips that can't be changed
+    if (spell.system.preparation?.prepared && !canChange) {
+      hideCheckbox = true;
+      isCantripLocked = true;
+      cantripLockReason = getCantripSettings(actor).rules === CANTRIP_RULES.DEFAULT ? 'SPELLBOOK.Cantrips.LockedDefault' : 'SPELLBOOK.Cantrips.LockedModern';
+    }
+
+    // For modern rules, check unlearned limit
+    if (canChange && spell.system.preparation?.prepared && getCantripSettings(actor).rules === CANTRIP_RULES.MODERN) {
+      const unlearned = actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
+      if (unlearned >= 1) {
+        hideCheckbox = true;
+        isCantripLocked = true;
+        cantripLockReason = 'SPELLBOOK.Cantrips.CannotUnlearnMore';
+      }
+    }
   }
 
   // Return status
@@ -612,13 +540,33 @@ export function getOwnedSpellPreparationStatus(actor, spell) {
     isOwned: true,
     preparationMode: preparationMode,
     localizedPreparationMode: localizedPreparationMode,
-    disabled: isGranted || alwaysPrepared || ['innate', 'pact', 'atwill', 'ritual'].includes(preparationMode) || isCantripLocked,
+    disabled: isGranted || alwaysPrepared || ['innate', 'pact', 'atwill', 'ritual'].includes(preparationMode),
+    hideCheckbox: hideCheckbox,
     alwaysPrepared: alwaysPrepared,
     sourceItem: sourceInfo,
     isGranted: isGranted,
     isCantripLocked: isCantripLocked,
     cantripLockReason: cantripLockReason
   };
+}
+
+/**
+ * Check if cantrips can be changed (level-up situation)
+ * @param {Actor5e} actor - The actor to check
+ * @returns {boolean} - Whether cantrips can be changed
+ */
+export function canCantripsBeLeveledUp(actor) {
+  // Get previous values
+  const previousLevel = actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL) || 0;
+  const previousMax = actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX) || 0;
+
+  // Get current values
+  const classItem = actor.items.find((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
+  const currentLevel = actor.system.details.level;
+  const currentMax = getMaxCantripsAllowed(actor, classItem);
+
+  // Check if this is a level-up situation
+  return (currentLevel > previousLevel || currentMax > previousMax) && previousLevel > 0;
 }
 
 /**

@@ -521,6 +521,10 @@
         }
       }
     }
+
+    .hide-checkbox .spell-preparation {
+      visibility: hidden;
+    }
   }
 
   .spell-header {
@@ -618,17 +622,21 @@
         cursor: not-allowed;
       }
     }
+
+    .cantrip-lock-icon {
+      display: block;
+      text-align: center;
+      color: #888;
+      font-size: 1.2em;
+      width: 16px;
+      height: 16px;
+      margin: 0 auto;
+    }
   }
 
   .spell-item.cantrip-locked {
     opacity: 0.8;
     cursor: not-allowed;
-  }
-
-  .cantrip-lock-icon {
-    margin-left: 0.35rem;
-    font-size: 0.75rem;
-    color: var(--color-text-dark-inactive);
   }
 }
 

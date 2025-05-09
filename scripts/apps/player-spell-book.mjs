@@ -1,5 +1,5 @@
 import { CantripSettingsDialog } from '../apps/cantrip-settings-dialog.mjs';
-import { CANTRIP_CHANGE_BEHAVIOR, CANTRIP_RULES, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import { CANTRIP_RULES, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as actorSpellUtils from '../helpers/actor-spells.mjs';
 import * as filterUtils from '../helpers/filters.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
@@ -993,22 +993,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
               uiSpell.system.preparation = uiSpell.system.preparation || {};
               uiSpell.system.preparation.prepared = event.target.checked;
 
-              // Get the "original" prepared state from the data attribute
-              const wasOriginallyPrepared = checkbox.dataset.wasPrepared === 'true';
-
-              // Check if change is allowed with this UI state
-              // Only apply the restriction for cantrips that were originally prepared
-              // Allow toggling of newly checked cantrips before saving
-              let canChange = { allowed: true };
-
-              if (event.target.checked) {
-                // When checking a cantrip, only check max limit
-                canChange = preparationUtils.canChangeCantrip(this.actor, uiSpell, this._uiCantripCount, true);
-              } else if (wasOriginallyPrepared) {
-                // Only enforce "no unchecking" rule for originally prepared cantrips
-                canChange = preparationUtils.canChangeCantrip(this.actor, uiSpell, this._uiCantripCount, false);
-              }
-
+              // Only check max limit - we already filtered out cantrips that shouldn't be changeable
+              const canChange = preparationUtils.canChangeCantrip(this.actor, uiSpell, this._uiCantripCount);
               if (!canChange.allowed) {
                 // Revert the change
                 event.target.checked = !event.target.checked;
@@ -1017,12 +1003,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
                 return;
               }
 
-              // If unchecking a cantrip (unlearning) with Modern rules
-              if (!event.target.checked && wasOriginallyPrepared && preparationUtils.getCantripSettings(this.actor).rules === CANTRIP_RULES.MODERN) {
-                // Update unlearned counter
-                const unlearned = this.actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
-                await this.actor.setFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS, unlearned + 1);
-              }
+              // If unchecking a cantrip (unlearning) with Modern rules - but this should be
+              // impossible given our locking approach
             }
 
             // Update UI class
@@ -1231,37 +1213,25 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       // Find spellcasting class
       const classItem = this.actor.items.find((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
 
-      // Get cantrip settings and counts
-      const settings = preparationUtils.getCantripSettings(this.actor);
-
       // Use UI state if provided, otherwise use actor state
       const currentCount = uiCurrentCount !== undefined ? uiCurrentCount : preparationUtils.getCurrentCantripsCount(this.actor);
       const maxCantrips = uiMaxCantrips !== undefined ? uiMaxCantrips : preparationUtils.getMaxCantripsAllowed(this.actor, classItem);
       const isAtMax = currentCount >= maxCantrips;
 
-      log(3, `Cantrip settings: rules=${settings.rules}, behavior=${settings.behavior}, count=${currentCount}/${maxCantrips}`);
+      log(3, `Cantrip settings: count=${currentCount}/${maxCantrips}`);
 
-      // Is this a level-up situation where cantrips can be changed?
-      const levelUpAllowed = this._canCantripsBeLeveledUp();
-
-      // Get unlearned count for modern rules
-      const unlearned = this.actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
-
-      // Special handling for lockAfterMax when not at max cantrips
-      const allowSelectingNewCantrips = settings.behavior === CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX && !isAtMax && currentCount < maxCantrips;
-
-      // Apply UI changes based on settings
+      // Only handle unchecked cantrips - disable them if at max
       for (const item of cantripItems) {
         const checkbox = item.querySelector('input[type="checkbox"]');
         if (!checkbox) continue;
+
+        // Skip if this checkbox should be hidden (handled in the template)
+        if (checkbox.closest('.spell-item').classList.contains('hide-checkbox')) continue;
 
         // Skip already disabled checkboxes (from always prepared, etc.)
         if (checkbox.hasAttribute('data-always-disabled')) continue;
 
         const isChecked = checkbox.checked;
-        // Check if this was originally prepared (before any UI changes)
-        const wasOriginallyPrepared = checkbox.dataset.wasPrepared === 'true';
-
         const nameElement = item.querySelector('.spell-name .title');
         let lockIcon = nameElement?.querySelector('.cantrip-lock-icon');
 
@@ -1272,14 +1242,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         checkbox.disabled = false;
         item.classList.remove('cantrip-locked');
 
-        // *** SPECIAL CASE: Allow selecting new cantrips when not at max ***
-        if (allowSelectingNewCantrips && !isChecked) {
-          // Keep unchecked cantrips enabled when not at max
-          continue;
-        }
-
-        // *** ENFORCE MAXIMUM CANTRIPS FOR ALL BEHAVIOR TYPES ***
-        // If we're at maximum, lock all unchecked cantrips regardless of behavior
+        // If we're at maximum, lock all unchecked cantrips
         if (isAtMax && !isChecked) {
           checkbox.disabled = true;
           item.classList.add('cantrip-locked');
@@ -1291,81 +1254,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             lockIcon.title = game.i18n.localize('Maximum cantrips reached');
             nameElement.appendChild(lockIcon);
           }
-
-          // Skip additional processing for this item
-          continue;
-        }
-
-        // Handle based on behavior setting
-        switch (settings.behavior) {
-          case CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED:
-            // Always allow changes (except exceeding maximum which is handled above)
-            break;
-
-          case CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM:
-            // Always allow changes (except exceeding maximum which is handled above)
-            break;
-
-          case CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX:
-            // Additional lock rules for LOCK_AFTER_MAX behavior
-            if (!levelUpAllowed) {
-              // Outside level-up, lock all cantrips
-              checkbox.disabled = true;
-              item.classList.add('cantrip-locked');
-
-              if (nameElement && !lockIcon) {
-                lockIcon = document.createElement('i');
-                lockIcon.className = 'fas fa-lock cantrip-lock-icon';
-                lockIcon.title = game.i18n.localize(settings.rules === CANTRIP_RULES.DEFAULT ? 'SPELLBOOK.Cantrips.LockedDefault' : 'SPELLBOOK.Cantrips.LockedModern');
-                nameElement.appendChild(lockIcon);
-              }
-            } else if (settings.rules === CANTRIP_RULES.DEFAULT) {
-              // Default rules during level-up:
-              // - Never uncheck existing cantrips
-              if (isChecked && wasOriginallyPrepared) {
-                // <-- IMPORTANT CHANGE HERE
-                checkbox.disabled = true;
-                item.classList.add('cantrip-locked');
-
-                if (nameElement && !lockIcon) {
-                  lockIcon = document.createElement('i');
-                  lockIcon.className = 'fas fa-lock cantrip-lock-icon';
-                  lockIcon.title = game.i18n.localize('SPELLBOOK.Cantrips.LockedDefault');
-                  nameElement.appendChild(lockIcon);
-                }
-              }
-              // Note: Maximum is already enforced above
-            } else if (settings.rules === CANTRIP_RULES.MODERN) {
-              // Modern rules during level-up:
-              // - Can unlearn one cantrip when leveling up
-              if (isChecked && wasOriginallyPrepared && unlearned >= 1) {
-                // <-- IMPORTANT CHANGE HERE
-                // If already unlearned a cantrip, prevent unchecking more
-                checkbox.disabled = true;
-                item.classList.add('cantrip-locked');
-
-                if (nameElement && !lockIcon) {
-                  lockIcon = document.createElement('i');
-                  lockIcon.className = 'fas fa-lock cantrip-lock-icon';
-                  lockIcon.title = game.i18n.localize('SPELLBOOK.Cantrips.CannotUnlearnMore');
-                  nameElement.appendChild(lockIcon);
-                }
-              }
-              // Note: Maximum is already enforced above
-            }
-            break;
-
-          default:
-            // Unknown behavior, apply safe locking
-            checkbox.disabled = true;
-            item.classList.add('cantrip-locked');
-
-            if (nameElement && !lockIcon) {
-              lockIcon = document.createElement('i');
-              lockIcon.className = 'fas fa-lock cantrip-lock-icon';
-              lockIcon.title = game.i18n.localize('SPELLBOOK.Cantrips.LockedDefault');
-              nameElement.appendChild(lockIcon);
-            }
         }
       }
 
@@ -1413,9 +1301,15 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       // Get max cantrips allowed
       const maxCantrips = preparationUtils.getMaxCantripsAllowed(this.actor, classItem);
 
-      // Count checked cantrips in the UI (new approach to get live count)
-      const cantripCheckboxes = cantripLevel.querySelectorAll('input[type="checkbox"]:checked:not([data-always-disabled])');
-      const currentCount = cantripCheckboxes.length;
+      // Count both:
+      // 1. Checked cantrips in the UI with checkboxes
+      const checkedCantrips = cantripLevel.querySelectorAll('input[type="checkbox"]:checked:not([data-always-disabled])');
+
+      // 2. Hidden-checkbox cantrips that are prepared (locked cantrips)
+      const hiddenPreparedCantrips = cantripLevel.querySelectorAll('.spell-item.hide-checkbox.prepared-spell');
+
+      // Sum both counts
+      const currentCount = checkedCantrips.length + hiddenPreparedCantrips.length;
 
       // Store UI state in a flag so other methods can access it
       this._uiCantripCount = currentCount;
@@ -1451,6 +1345,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
       // After updating the count, update the locks
       this._setupCantripLocks(currentCount, maxCantrips);
+
+      log(3, `Updated cantrip counter: ${currentCount}/${maxCantrips} (${checkedCantrips.length} checked + ${hiddenPreparedCantrips.length} locked)`);
     } catch (error) {
       log(1, 'Error updating cantrip counter:', error);
     }
