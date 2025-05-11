@@ -439,6 +439,7 @@ export class SpellManager {
     const isChecked = spell.system.preparation?.prepared || false;
     const unlearned = this.actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
     const isLevelUp = this.canBeLeveledUp();
+    const isDefaultRules = this.settings.rules === CANTRIP_RULES.DEFAULT;
 
     // Handle based on behavior setting
     switch (this.settings.behavior) {
@@ -448,38 +449,21 @@ export class SpellManager {
         return { locked: false };
 
       case CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX:
-        // If not during level-up, lock all cantrips
-        if (!isLevelUp) {
-          return {
-            locked: true,
-            reason: this.settings.rules === CANTRIP_RULES.DEFAULT ? 'SPELLBOOK.Cantrips.LockedDefault' : 'SPELLBOOK.Cantrips.LockedModern'
-          };
-        }
-
-        // Default rules during level-up
-        if (this.settings.rules === CANTRIP_RULES.DEFAULT) {
-          // Always lock checked cantrips
-          if (isChecked) {
+        // For DEFAULT rules:
+        // - When not in level-up, only lock if at max OR if trying to get status for already prepared cantrip
+        if (isDefaultRules) {
+          if (isAtMax && !isChecked) {
             return {
               locked: true,
-              reason: 'SPELLBOOK.Cantrips.LockedDefault'
+              reason: 'SPELLBOOK.Cantrips.MaximumReached'
             };
           }
-
-          // Lock unchecked if at max
-          if (!isChecked && isAtMax) {
-            return {
-              locked: true,
-              reason: 'Maximum cantrips reached'
-            };
-          }
-
-          // Otherwise don't lock
+          // Don't lock unprepared cantrips when below max
           return { locked: false };
         }
 
-        // Modern rules during level-up
-        if (this.settings.rules === CANTRIP_RULES.MODERN) {
+        // For MODERN rules during level-up
+        if (!isDefaultRules && isLevelUp) {
           // If checked and already unlearned max
           if (isChecked && unlearned >= 1) {
             return {
@@ -499,7 +483,17 @@ export class SpellManager {
           // Otherwise don't lock
           return { locked: false };
         }
-        break;
+
+        // If not in level-up with MODERN rules, lock everything
+        if (!isDefaultRules && !isLevelUp) {
+          return {
+            locked: true,
+            reason: 'SPELLBOOK.Cantrips.LockedModern'
+          };
+        }
+
+        // Default case for this behavior
+        return { locked: false };
     }
 
     // Default fallback - lock to be safe
@@ -645,6 +639,7 @@ export class SpellManager {
     if (isCantrip && !alwaysPrepared && !isGranted) {
       const settings = this.getSettings();
       const behavior = settings.behavior;
+      const isDefaultRules = settings.rules === CANTRIP_RULES.DEFAULT;
 
       log(3, `Handling cantrip-specific behavior for ${spellName}, behavior=${behavior}`);
 
@@ -657,18 +652,19 @@ export class SpellManager {
 
         case CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX:
           // Check if cantrips can be changed at all
-          const canChange = this.canBeLeveledUp();
+          const isLevelUp = this.canBeLeveledUp();
 
-          // Hide checkbox for existing cantrips that can't be changed
-          if (spell.system.preparation?.prepared && !canChange) {
+          // For DEFAULT rules:
+          // - Hide checkbox only for already prepared cantrips when not in level-up
+          // - Leave unprepared cantrips selectable
+          if (isDefaultRules && spell.system.preparation?.prepared && !isLevelUp) {
             hideCheckbox = true;
             isCantripLocked = true;
-            cantripLockReason = settings.rules === CANTRIP_RULES.DEFAULT ? 'SPELLBOOK.Cantrips.LockedDefault' : 'SPELLBOOK.Cantrips.LockedModern';
+            cantripLockReason = 'SPELLBOOK.Cantrips.LockedDefault';
             log(3, `Cantrip ${spellName} is locked: ${cantripLockReason}`);
           }
-
-          // For modern rules, check unlearned limit
-          if (canChange && spell.system.preparation?.prepared && settings.rules === CANTRIP_RULES.MODERN) {
+          // For MODERN rules, check unlearned limit during level-up
+          else if (!isDefaultRules && isLevelUp && spell.system.preparation?.prepared) {
             const unlearned = this.actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
             if (unlearned >= 1) {
               hideCheckbox = true;

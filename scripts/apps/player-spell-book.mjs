@@ -616,29 +616,27 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
       // Check if we need to handle cantrip rules
       const isLevelUp = this.spellManager.canBeLeveledUp();
-      const settings = this.spellManager.getSettings();
-      const isModernRules = settings.rules === CANTRIP_RULES.MODERN;
 
-      // For Modern cantrip rules during level-up, set up tracking
-      if (isModernRules && isLevelUp) {
-        log(3, 'Setting up Modern cantrip rules tracking for level-up');
+      // We need to track original cantrips for level-ups with any rule type
+      if (isLevelUp) {
+        log(3, 'Setting up cantrip tracking for level-up');
 
         // Store the initial state of cantrips
         this._cantripTracking = {
-          originalChecked: new Set(), // Set of cantrip UUIDs initially checked
-          hasUnlearned: false, // Whether a cantrip has been unlearned
-          hasLearned: false, // Whether a new cantrip has been learned
-          unlearned: null, // UUID of the unlearned cantrip
-          learned: null // UUID of the newly learned cantrip
+          originalChecked: new Set(),
+          hasUnlearned: false,
+          hasLearned: false,
+          unlearned: null,
+          learned: null
         };
 
-        // Record initially checked cantrips - now using dnd5e-checkbox elements
-        // FIXED: Properly detect checked dnd5e-checkbox elements
+        // Record initially checked cantrips
         const cantripItems = spellsContainer.querySelectorAll('.spell-item[data-spell-level="0"]');
         cantripItems.forEach((item) => {
           const checkbox = item.querySelector('dnd5e-checkbox[data-uuid]');
           if (checkbox && checkbox.checked) {
             this._cantripTracking.originalChecked.add(checkbox.dataset.uuid);
+            log(3, `Recorded original cantrip: ${item.querySelector('.spell-name .title')?.textContent}`);
           }
         });
 
@@ -711,38 +709,38 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     // Create a duplicate for checking, but KEEP the ORIGINAL preparation state
     const uiSpell = foundry.utils.duplicate(sourceSpell);
 
-    // Get the current prepared state (before change)
+    // Get the current prepared state (before the change)
     const wasChecked = uiSpell.system?.preparation?.prepared || false;
 
-    // For DEFAULT rules during level-up:
-    // 1. Never allow unchecking existing cantrips
-    if (isLevelUp && isDefaultRules && wasChecked && !event.target.checked) {
-      // Revert the change - don't allow unchecking in DEFAULT rules
-      event.target.checked = true;
-      ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.LockedDefault'));
-      this._updateCantripCounter();
-      return;
-    }
+    // SPECIAL CASE: With DEFAULT rules during level-up, never allow unchecking original cantrips
+    if (isLevelUp && isDefaultRules) {
+      const wasOriginallyChecked = this._cantripTracking?.originalChecked?.has(uuid);
 
-    // 2. Check if we can add a new cantrip (only if we're checking a previously unchecked cantrip)
-    if (!wasChecked && event.target.checked) {
-      // Check if we're at max already
-      if (this._uiCantripCount > this.spellManager.maxCantrips) {
-        // Revert the change - can't exceed max
-        event.target.checked = false;
-        ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.MaximumReached'));
+      if (wasOriginallyChecked && !event.target.checked) {
+        // Revert the change - don't allow unchecking originally prepared cantrips
+        event.target.checked = true;
+        ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.LockedDefault'));
         this._updateCantripCounter();
         return;
       }
     }
 
-    // Now update the spell with the new state for additional checks
+    // For ALL cases: Check if exceeding max cantrips
+    if (!wasChecked && event.target.checked && this._uiCantripCount > this.spellManager.maxCantrips) {
+      // Revert the change - can't exceed max
+      event.target.checked = false;
+      ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.MaximumReached'));
+      this._updateCantripCounter();
+      return;
+    }
+
+    // Now update the spell state for additional checks (mainly for MODERN rules)
     uiSpell.system = uiSpell.system || {};
     uiSpell.system.preparation = uiSpell.system.preparation || {};
     uiSpell.system.preparation.prepared = event.target.checked;
 
-    // For MODERN rules or other special cases, still use canChange
-    if (isModernRules || (!isDefaultRules && !isLevelUp)) {
+    // For MODERN rules, use the SpellManager.canChange for more complex rules
+    if (isModernRules) {
       const canChange = this.spellManager.canChange(uiSpell, this._uiCantripCount);
       if (!canChange.allowed) {
         // Revert the change
@@ -1015,7 +1013,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         // Get the checkbox and check if we should process this item
         const checkbox = item.querySelector('dnd5e-checkbox');
         if (!checkbox || item.classList.contains('hide-checkbox') || item.querySelector('.always-prepared-tag') || item.querySelector('.granted-spell-tag')) {
-          continue;
+          continue; // These already have lock icons or are always prepared
         }
 
         const isChecked = checkbox.checked;
@@ -1024,21 +1022,32 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         checkbox.disabled = false;
         item.classList.remove('cantrip-locked');
 
-        // CRITICAL CHANGE: With DEFAULT rules, always lock checked cantrips
-        if (isDefaultRules && isChecked) {
+        // For DEFAULT rules outside of level-up, lock already prepared cantrips
+        if (isDefaultRules && !isLevelUp && isChecked) {
           checkbox.disabled = true;
           item.classList.add('cantrip-locked');
-          log(3, `Locking checked cantrip with DEFAULT rules: ${item.querySelector('.spell-name .title')?.textContent}`);
+          log(3, `Locking prepared cantrip with DEFAULT rules: ${item.querySelector('.spell-name .title')?.textContent}`);
           continue;
+        }
+
+        // For DEFAULT rules during level-up, lock original cantrips
+        if (isDefaultRules && isLevelUp && isChecked) {
+          const wasOriginallyChecked = this._cantripTracking?.originalChecked?.has(checkbox.dataset.uuid);
+          if (wasOriginallyChecked) {
+            checkbox.disabled = true;
+            item.classList.add('cantrip-locked');
+            log(3, `Locking original cantrip during level-up: ${item.querySelector('.spell-name .title')?.textContent}`);
+            continue;
+          }
         }
 
         // Only lock unchecked cantrips if at max
         if (isAtMax && !isChecked) {
           checkbox.disabled = true;
           item.classList.add('cantrip-locked');
-          log(3, `Locking cantrip: ${item.querySelector('.spell-name .title')?.textContent}`);
+          log(3, `Locking unchecked cantrip (at max): ${item.querySelector('.spell-name .title')?.textContent}`);
         } else {
-          log(3, `Unlocking cantrip: ${item.querySelector('.spell-name .title')?.textContent}`);
+          log(3, `Cantrip remains unlocked: ${item.querySelector('.spell-name .title')?.textContent}`);
         }
       }
     } catch (error) {
