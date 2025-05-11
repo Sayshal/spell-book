@@ -8,7 +8,6 @@
   "SPELLBOOK.Cantrips.BehaviorUnrestricted": "Unrestricted Changes (Even Outside Level-ups)",
   "SPELLBOOK.Cantrips.BehaviorNotifyGM": "Allow Changes & Notify GM",
   "SPELLBOOK.Cantrips.BehaviorLockAfterMax": "Lock After Maximum Reached",
-  "SPELLBOOK.Cantrips.CannotUnlearnMore": "You can only unlearn one cantrip per level",
   "SPELLBOOK.Cantrips.ChangeNotification": "Cantrip Changes for {name}",
   "SPELLBOOK.Cantrips.ConfigButton": "Cantrip Settings",
   "SPELLBOOK.Cantrips.ConfigDescription": "Configure cantrip handling rules for {name}.",
@@ -16,8 +15,6 @@
   "SPELLBOOK.Cantrips.CounterTooltip": "Current/Maximum Cantrips",
   "SPELLBOOK.Cantrips.LevelUpDefault": "You've gained new cantrips! Your cantrips have been unlocked for selection.",
   "SPELLBOOK.Cantrips.LevelUpModern": "You've leveled up! You can now learn new cantrips and unlearn one of your existing cantrips.",
-  "SPELLBOOK.Cantrips.LockedDefault": "Cantrips are permanent once selected",
-  "SPELLBOOK.Cantrips.LockedModern": "Cantrips can only be changed during level up",
   "SPELLBOOK.Cantrips.Removed": "Removed",
   "SPELLBOOK.Cantrips.RulesDefault": "Default (Permanent Cantrips)",
   "SPELLBOOK.Cantrips.RulesHint": "Default rules treat cantrips as permanent. Modern rules allow unlearning one cantrip when leveling up.",
@@ -26,7 +23,6 @@
   "SPELLBOOK.Cantrips.SaveButton": "Save Settings",
   "SPELLBOOK.Cantrips.SettingsSaved": "Cantrip settings saved for {name}.",
   "SPELLBOOK.Cantrips.OnlyOneSwap": "You can only swap one cantrip at a time with Modern rules",
-  "SPELLBOOK.Cantrips.SwapComplete": "Cantrip swap complete - changes are now locked",
   "SPELLBOOK.Cantrips.SwapCompleteMessage": "Cantrip swap complete! You've used your level-up cantrip change.",
   "SPELLBOOK.Errors.NoSpellsFoundForLevel": "No spells found for {actor}'s level.",
   "SPELLBOOK.Filters.All": "All",
@@ -62,7 +58,6 @@
   "SPELLBOOK.Footer.PreparedCount": "Current prepared spells",
   "SPELLBOOK.Footer.PreparedLabel": "Prepared Spells",
   "SPELLBOOK.Preparation.Always": "Always",
-  "SPELLBOOK.Preparation.AlwaysTooltip": "Always prepared",
   "SPELLBOOK.Preparation.Prepare": "Prepare {name}",
   "SPELLBOOK.Preparation.Unprepare": "Unprepare {name}",
   "SPELLBOOK.Rest.DialogTitle": "Prepare Spells After Rest",
@@ -205,9 +200,17 @@
   "SPELLMANAGER.UI.FilteredSpells": "Filtered Spells",
   "SPELLMANAGER.UI.ListActions": "List Actions",
   "SPELLMANAGER.UI.SelectedList": "Selected Spell List",
-  "SPELLBOOK": {
-    "Cantrips": {
-      "MaximumReached": "You have already selected the maximum number of cantrips based on your level."
-    }
-  }
+  "SPELLBOOK.SpellSource.GrantedTooltip": "This spell is granted by a feature or item and cannot be unprepared",
+  "SPELLBOOK.Preparation.AlwaysTooltip": "This spell is always prepared and doesn't count against your prepared spell limit",
+  "SPELLBOOK.Preparation.InnateTooltip": "This spell is innate and doesn't require preparation",
+  "SPELLBOOK.Preparation.PactTooltip": "This spell is part of your Pact Magic and doesn't require traditional preparation",
+  "SPELLBOOK.Preparation.AtWillTooltip": "This spell can be cast at will and doesn't require preparation",
+  "SPELLBOOK.Preparation.RitualTooltip": "This spell can be cast as a ritual and doesn't need to be prepared",
+  "SPELLBOOK.Preparation.AtMaximum": "You've reached your maximum number of prepared spells",
+  "SPELLBOOK.Preparation.Locked": "This spell cannot be changed",
+  "SPELLBOOK.Cantrips.LockedDefault": "Cantrips are permanent once selected under default rules",
+  "SPELLBOOK.Cantrips.MaximumReached": "You've reached your maximum number of cantrips",
+  "SPELLBOOK.Cantrips.LockedModern": "Cantrips can only be swapped during level-up",
+  "SPELLBOOK.Cantrips.CannotUnlearnMore": "You can only unlearn one cantrip per level-up",
+  "SPELLBOOK.Cantrips.SwapComplete": "Cantrip selection has been completed"
 }

@@ -162,14 +162,16 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           ariaLabel: ariaLabel
         });
 
+        // Add data attributes to the checkbox element
         checkbox.id = `prep-${spell.compendiumUuid}`;
         checkbox.dataset.uuid = spell.compendiumUuid;
         checkbox.dataset.name = spell.name;
         checkbox.dataset.ritual = spell.filterData?.isRitual || false;
         checkbox.dataset.wasPrepared = spell.preparation.prepared;
 
-        if (spell.preparation.cantripLockReason) {
-          checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.cantripLockReason);
+        // Add tooltip with reason for disabled state
+        if (spell.preparation.disabled && spell.preparation.disabledReason) {
+          checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
         }
 
         // Convert the checkbox to HTML using the helper
@@ -804,7 +806,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           this.element.classList.add('at-max-spells');
 
           // Disable unchecked checkboxes (excluding cantrips)
-          preparedCheckboxes.forEach((checkbox) => {
+          const allSpellCheckboxes = this.element.querySelectorAll('dnd5e-checkbox[data-uuid]');
+          allSpellCheckboxes.forEach((checkbox) => {
             const spellItem = checkbox.closest('.spell-item');
             const spellLevel = spellItem?.dataset.spellLevel;
 
@@ -813,6 +816,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
             if (!checkbox.checked) {
               checkbox.disabled = true;
+              checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Preparation.MaxPrepared');
               spellItem?.classList.add('max-prepared');
             }
           });
@@ -820,15 +824,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           // Remove max spells class
           this.element.classList.remove('at-max-spells');
 
-          // Re-enable all preparation checkboxes (excluding those that should be disabled)
-          preparedCheckboxes.forEach((checkbox) => {
+          // Re-enable all preparation checkboxes (excluding cantrips and special cases)
+          const allSpellCheckboxes = this.element.querySelectorAll('dnd5e-checkbox[data-uuid]');
+          allSpellCheckboxes.forEach((checkbox) => {
             const spellItem = checkbox.closest('.spell-item');
             const spellLevel = spellItem?.dataset.spellLevel;
 
             // Don't change cantrips
             if (spellLevel === '0') return;
 
+            // Skip items with special always-prepared or granted tags
+            if (spellItem.querySelector('.always-prepared-tag') || spellItem.querySelector('.granted-spell-tag')) return;
+
             checkbox.disabled = false;
+            delete checkbox.dataset.tooltip; // Remove the max prepared tooltip
             spellItem?.classList.remove('max-prepared');
           });
         }
@@ -1015,12 +1024,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
         // Clear existing lock state
         checkbox.disabled = false;
+        delete checkbox.dataset.tooltip;
         item.classList.remove('cantrip-locked');
 
         // For DEFAULT rules outside of level-up:
         // Lock only cantrips that were already prepared on the actor, not newly checked ones
         if (isDefaultRules && !isLevelUp && isChecked && !isNewlyChecked) {
           checkbox.disabled = true;
+          checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedDefault');
           item.classList.add('cantrip-locked');
           log(3, `Locking previously prepared cantrip: ${item.querySelector('.spell-name .title')?.textContent}`);
           continue;
@@ -1029,6 +1040,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         // Only lock unchecked cantrips if at max
         if (isAtMax && !isChecked) {
           checkbox.disabled = true;
+          checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.MaximumReached');
           item.classList.add('cantrip-locked');
           log(3, `Locking unchecked cantrip (at max): ${item.querySelector('.spell-name .title')?.textContent}`);
         } else {
@@ -1053,8 +1065,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const checkbox = item.querySelector('dnd5e-checkbox');
         if (!checkbox || checkbox.hasAttribute('data-always-disabled')) continue;
 
-        // Lock everything by setting disabled property
+        // Lock everything by setting disabled property and tooltip
         checkbox.disabled = true;
+        checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.SwapComplete');
         item.classList.add('cantrip-locked');
 
         // Remove existing lock icons if present

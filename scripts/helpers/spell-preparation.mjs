@@ -636,6 +636,22 @@ export class SpellManager {
 
     // Base disabled state - for spells that should always be disabled
     let isDisabled = isGranted || alwaysPrepared || ['innate', 'pact', 'atwill', 'ritual'].includes(preparationMode);
+    let disabledReason = '';
+
+    // Set reason for standard disabled spells
+    if (isGranted) {
+      disabledReason = 'SPELLBOOK.SpellSource.GrantedTooltip';
+    } else if (alwaysPrepared) {
+      disabledReason = 'SPELLBOOK.Preparation.AlwaysTooltip';
+    } else if (preparationMode === 'innate') {
+      disabledReason = 'SPELLBOOK.Preparation.InnateTooltip';
+    } else if (preparationMode === 'pact') {
+      disabledReason = 'SPELLBOOK.Preparation.PactTooltip';
+    } else if (preparationMode === 'atwill') {
+      disabledReason = 'SPELLBOOK.Preparation.AtWillTooltip';
+    } else if (preparationMode === 'ritual') {
+      disabledReason = 'SPELLBOOK.Preparation.RitualTooltip';
+    }
 
     // Handle cantrip-specific behavior based on settings
     if (isCantrip && !alwaysPrepared && !isGranted) {
@@ -691,6 +707,11 @@ export class SpellManager {
       }
     }
 
+    // If this cantrip is locked, override the disabled reason
+    if (isCantripLocked) {
+      disabledReason = cantripLockReason;
+    }
+
     // Return status
     return {
       prepared: isGranted || spell.system.preparation?.prepared || alwaysPrepared,
@@ -698,7 +719,7 @@ export class SpellManager {
       preparationMode: preparationMode,
       localizedPreparationMode: localizedPreparationMode,
       disabled: isDisabled,
-      hideCheckbox: false, // Never hide checkboxes anymore
+      disabledReason: disabledReason,
       alwaysPrepared: alwaysPrepared,
       sourceItem: sourceInfo,
       isGranted: isGranted,
