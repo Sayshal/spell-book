@@ -707,9 +707,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const sourceSpell = await fromUuid(uuid);
     if (!sourceSpell) return;
 
-    // Create a duplicate for checking
-    const uiSpell = foundry.utils.duplicate(sourceSpell);
-
     // Get the current prepared state on the actor
     const wasPreparedOnActor = sourceSpell.system?.preparation?.prepared || false;
 
@@ -722,69 +719,38 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       return;
     }
 
-    // MODERN rules during level-up: enforce ONE swap only
+    // THIS IS THE KEY PART - MODERN rules during level-up: track and restrict unlearned cantrips
     if (isModernRules && isLevelUp) {
-      // UNCHECKING a cantrip that was prepared on the actor (unlearning)
+      // Make sure tracking object is initialized
+      if (!this._cantripTracking) {
+        this._cantripTracking = {
+          originalChecked: new Set(),
+          hasUnlearned: false,
+          hasLearned: false,
+          unlearned: null,
+          learned: null
+        };
+      }
+
+      // If trying to UNCHECK a cantrip that was prepared on the actor
       if (!event.target.checked && wasPreparedOnActor) {
-        // Check if we've already unlearned a different cantrip
+        // If we've already unlearned a different cantrip
         if (this._cantripTracking.hasUnlearned && this._cantripTracking.unlearned !== uuid) {
-          // Block the change - only one unlearn allowed
-          event.target.checked = true; // Revert to checked
-          ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.OnlyOneUnlearn'));
-          log(3, `Blocked unlearning of ${spellName} - already unlearned another cantrip`);
+          // Block the change - only allow one cantrip to be unlearned
+          event.target.checked = true; // Revert the change
+          ui.notifications.warn('With modern rules, you can only unlearn one cantrip per level-up.');
           this._updateCantripCounter();
           return;
         }
 
-        // Track this as the unlearned cantrip
+        // Otherwise, record this as the unlearned cantrip
+        log(3, `Recording unlearned cantrip: ${spellName}`);
         this._cantripTracking.hasUnlearned = true;
         this._cantripTracking.unlearned = uuid;
-        log(3, `Tracked unlearned cantrip: ${spellName}`);
-      }
-
-      // CHECKING a cantrip that wasn't prepared on the actor (learning)
-      if (event.target.checked && !wasPreparedOnActor) {
-        // Check if this is a completely new cantrip (not in original set)
-        const isNewCantrip = !this._cantripTracking.originalChecked.has(uuid);
-
-        if (isNewCantrip) {
-          // If we already learned a different new cantrip
-          if (this._cantripTracking.hasLearned && this._cantripTracking.learned !== uuid) {
-            // Block the change - only one new learn allowed
-            event.target.checked = false; // Revert to unchecked
-            ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.OnlyOneLearn'));
-            log(3, `Blocked learning of ${spellName} - already learned new cantrip`);
-            this._updateCantripCounter();
-            return;
-          }
-
-          // Track this as the learned cantrip
-          this._cantripTracking.hasLearned = true;
-          this._cantripTracking.learned = uuid;
-          log(3, `Tracked newly learned cantrip: ${spellName}`);
-        }
-      }
-
-      // After a complete swap, lock everything
-      if (this._cantripTracking.hasUnlearned && this._cantripTracking.hasLearned) {
-        // Update UI to reflect locked state
-        this._updateCantripCounter();
-        this._setupCantripLocks();
       }
     }
 
-    // Track newly checked/unchecked cantrips for UI purposes
-    if (event.target.checked && !wasPreparedOnActor) {
-      // Add to newly checked set
-      this._newlyCheckedCantrips.add(uuid);
-      log(3, `Tracking newly checked cantrip: ${spellName}`);
-    } else if (!event.target.checked && this._newlyCheckedCantrips.has(uuid)) {
-      // Remove from newly checked set when unchecked
-      this._newlyCheckedCantrips.delete(uuid);
-      log(3, `Removed from newly checked cantrips: ${spellName}`);
-    }
-
-    // With DEFAULT rules, block unchecking of original cantrips
+    // Default rules handling remains the same
     if (isDefaultRules && !event.target.checked && wasPreparedOnActor) {
       // Revert the change - don't allow unchecking already prepared cantrips
       event.target.checked = true;
@@ -793,15 +759,23 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       return;
     }
 
-    // Update the counter to reflect the current UI state
+    // Track newly checked/unchecked cantrips for UI
+    if (event.target.checked && !wasPreparedOnActor) {
+      this._newlyCheckedCantrips.add(uuid);
+      log(3, `Tracking newly checked cantrip: ${spellName}`);
+    } else if (!event.target.checked && this._newlyCheckedCantrips.has(uuid)) {
+      this._newlyCheckedCantrips.delete(uuid);
+      log(3, `Removed from newly checked cantrips: ${spellName}`);
+    }
+
+    // Update UI state
     this._updateCantripCounter();
 
     // Check if adding a new cantrip would exceed max
     if (!wasPreparedOnActor && event.target.checked) {
       if (this._uiCantripCount > this.spellManager.maxCantrips) {
-        // Revert the change - can't exceed max
         event.target.checked = false;
-        this._newlyCheckedCantrips.delete(uuid); // Remove from tracking
+        this._newlyCheckedCantrips.delete(uuid);
         ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.MaximumReached'));
         this._updateCantripCounter();
         return;
