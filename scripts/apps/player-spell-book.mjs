@@ -713,7 +713,67 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     // Get the current prepared state on the actor
     const wasPreparedOnActor = sourceSpell.system?.preparation?.prepared || false;
 
-    // Track newly checked/unchecked cantrips
+    // For MODERN rules, block any changes when not in a level-up
+    if (isModernRules && !isLevelUp) {
+      // Revert the change - don't allow changing cantrips outside of level-up
+      event.target.checked = wasPreparedOnActor;
+      ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.LockedModern'));
+      this._updateCantripCounter();
+      return;
+    }
+
+    // MODERN rules during level-up: enforce ONE swap only
+    if (isModernRules && isLevelUp) {
+      // UNCHECKING a cantrip that was prepared on the actor (unlearning)
+      if (!event.target.checked && wasPreparedOnActor) {
+        // Check if we've already unlearned a different cantrip
+        if (this._cantripTracking.hasUnlearned && this._cantripTracking.unlearned !== uuid) {
+          // Block the change - only one unlearn allowed
+          event.target.checked = true; // Revert to checked
+          ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.OnlyOneUnlearn'));
+          log(3, `Blocked unlearning of ${spellName} - already unlearned another cantrip`);
+          this._updateCantripCounter();
+          return;
+        }
+
+        // Track this as the unlearned cantrip
+        this._cantripTracking.hasUnlearned = true;
+        this._cantripTracking.unlearned = uuid;
+        log(3, `Tracked unlearned cantrip: ${spellName}`);
+      }
+
+      // CHECKING a cantrip that wasn't prepared on the actor (learning)
+      if (event.target.checked && !wasPreparedOnActor) {
+        // Check if this is a completely new cantrip (not in original set)
+        const isNewCantrip = !this._cantripTracking.originalChecked.has(uuid);
+
+        if (isNewCantrip) {
+          // If we already learned a different new cantrip
+          if (this._cantripTracking.hasLearned && this._cantripTracking.learned !== uuid) {
+            // Block the change - only one new learn allowed
+            event.target.checked = false; // Revert to unchecked
+            ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.OnlyOneLearn'));
+            log(3, `Blocked learning of ${spellName} - already learned new cantrip`);
+            this._updateCantripCounter();
+            return;
+          }
+
+          // Track this as the learned cantrip
+          this._cantripTracking.hasLearned = true;
+          this._cantripTracking.learned = uuid;
+          log(3, `Tracked newly learned cantrip: ${spellName}`);
+        }
+      }
+
+      // After a complete swap, lock everything
+      if (this._cantripTracking.hasUnlearned && this._cantripTracking.hasLearned) {
+        // Update UI to reflect locked state
+        this._updateCantripCounter();
+        this._setupCantripLocks();
+      }
+    }
+
+    // Track newly checked/unchecked cantrips for UI purposes
     if (event.target.checked && !wasPreparedOnActor) {
       // Add to newly checked set
       this._newlyCheckedCantrips.add(uuid);
@@ -1034,6 +1094,25 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedDefault');
           item.classList.add('cantrip-locked');
           log(3, `Locking previously prepared cantrip: ${item.querySelector('.spell-name .title')?.textContent}`);
+          continue;
+        }
+
+        // For MODERN rules outside of level-up:
+        // Lock all cantrips when not in a level-up situation
+        if (!isDefaultRules && !isLevelUp) {
+          checkbox.disabled = true;
+          checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedModern');
+          item.classList.add('cantrip-locked');
+          log(3, `Locking cantrip (modern rules): ${item.querySelector('.spell-name .title')?.textContent}`);
+          continue;
+        }
+
+        // For MODERN rules level-up, lock everything after completing a swap
+        if (!isDefaultRules && isLevelUp && this._cantripTracking?.hasUnlearned && this._cantripTracking?.hasLearned) {
+          checkbox.disabled = true;
+          checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.SwapComplete');
+          item.classList.add('cantrip-locked');
+          log(3, `Locking cantrip (swap complete): ${item.querySelector('.spell-name .title')?.textContent}`);
           continue;
         }
 

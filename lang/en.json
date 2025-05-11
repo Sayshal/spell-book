@@ -212,5 +212,7 @@
   "SPELLBOOK.Cantrips.MaximumReached": "You've reached your maximum number of cantrips",
   "SPELLBOOK.Cantrips.LockedModern": "Cantrips can only be swapped during level-up",
   "SPELLBOOK.Cantrips.CannotUnlearnMore": "You can only unlearn one cantrip per level-up",
-  "SPELLBOOK.Cantrips.SwapComplete": "Cantrip selection has been completed"
+  "SPELLBOOK.Cantrips.OnlyOneUnlearn": "With modern rules, you can only unlearn one cantrip per level-up.",
+  "SPELLBOOK.Cantrips.OnlyOneLearn": "With modern rules, you can only learn one new cantrip per level-up.",
+  "SPELLBOOK.Cantrips.SwapComplete": "You've already swapped one cantrip during this level-up."
 }
