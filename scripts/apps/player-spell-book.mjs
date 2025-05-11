@@ -714,13 +714,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const sourceSpell = await fromUuid(uuid);
     if (!sourceSpell) return;
 
-    // THIS IS THE KEY FIX: Check if the cantrip was in our original set, not by checking actor preparation
-    const wasPreparedOnActor = this._cantripTracking.originalChecked.has(uuid);
-    log(1, `Was in original set: ${wasPreparedOnActor}`);
+    // Check if the cantrip was in our original set
+    const wasInOriginalSet = this._cantripTracking.originalChecked.has(uuid);
+    log(1, `Was in original set: ${wasInOriginalSet}`);
 
     // For MODERN rules, block any changes when not in a level-up
     if (isModernRules && !isLevelUp) {
-      event.target.checked = wasPreparedOnActor;
+      event.target.checked = wasInOriginalSet;
       ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.LockedModern'));
       this._updateCantripCounter();
       return;
@@ -728,8 +728,15 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
     // MODERN rules during level-up: enforce ONE swap only
     if (isModernRules && isLevelUp) {
-      // If UNCHECKING a cantrip that was in our original set (unlearning)
-      if (!event.target.checked && wasPreparedOnActor) {
+      // SPECIAL CASE: If CHECKING a cantrip that was previously UNLEARNED,
+      // reset the unlearned tracking since the user changed their mind
+      if (event.target.checked && wasInOriginalSet && this._cantripTracking.unlearned === uuid) {
+        log(1, `Resetting unlearned tracking - user changed mind about ${spellName}`);
+        this._cantripTracking.hasUnlearned = false;
+        this._cantripTracking.unlearned = null;
+      }
+      // If UNCHECKING a cantrip from the original set (unlearning)
+      else if (!event.target.checked && wasInOriginalSet) {
         log(1, `Unlearning cantrip: ${spellName}`);
 
         // If we've already unlearned a different cantrip
@@ -747,8 +754,15 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         log(1, `Tracking unlearned cantrip: ${spellName}`);
       }
 
-      // If CHECKING a cantrip that wasn't in our original set (learning new)
-      if (event.target.checked && !wasPreparedOnActor) {
+      // SPECIAL CASE: If UNCHECKING a cantrip that was previously LEARNED,
+      // reset the learned tracking since the user changed their mind
+      if (!event.target.checked && !wasInOriginalSet && this._cantripTracking.learned === uuid) {
+        log(1, `Resetting learned tracking - user changed mind about ${spellName}`);
+        this._cantripTracking.hasLearned = false;
+        this._cantripTracking.learned = null;
+      }
+      // If CHECKING a cantrip that wasn't in the original set (learning new)
+      else if (event.target.checked && !wasInOriginalSet) {
         log(1, `Learning new cantrip: ${spellName}`);
 
         // If already learned a different new cantrip
@@ -768,7 +782,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     // DEFAULT rules: can't uncheck original cantrips
-    if (isDefaultRules && !event.target.checked && wasPreparedOnActor) {
+    if (isDefaultRules && !event.target.checked && wasInOriginalSet) {
       event.target.checked = true;
       ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.LockedDefault'));
       this._updateCantripCounter();
@@ -776,7 +790,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     // Track newly checked/unchecked cantrips for UI
-    if (event.target.checked && !wasPreparedOnActor) {
+    if (event.target.checked && !wasInOriginalSet) {
       this._newlyCheckedCantrips.add(uuid);
       log(1, `Added to newly checked cantrips: ${spellName}`);
     } else if (!event.target.checked && this._newlyCheckedCantrips.has(uuid)) {
@@ -788,7 +802,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this._updateCantripCounter();
 
     // Check if adding a new cantrip would exceed max
-    if (!wasPreparedOnActor && event.target.checked) {
+    if (!wasInOriginalSet && event.target.checked) {
       if (this._uiCantripCount > this.spellManager.maxCantrips) {
         event.target.checked = false;
         this._newlyCheckedCantrips.delete(uuid);
