@@ -22,7 +22,6 @@
   "SPELLBOOK.Cantrips.RulesModern": "Modern (Can Change One Per Level)",
   "SPELLBOOK.Cantrips.SaveButton": "Save Settings",
   "SPELLBOOK.Cantrips.SettingsSaved": "Cantrip settings saved for {name}.",
-  "SPELLBOOK.Cantrips.OnlyOneSwap": "You can only swap one cantrip at a time with Modern rules",
   "SPELLBOOK.Cantrips.SwapCompleteMessage": "Cantrip swap complete! You've used your level-up cantrip change.",
   "SPELLBOOK.Errors.NoSpellsFoundForLevel": "No spells found for {actor}'s level.",
   "SPELLBOOK.Filters.All": "All",
@@ -208,11 +207,12 @@
   "SPELLBOOK.Preparation.RitualTooltip": "This spell can be cast as a ritual and doesn't need to be prepared",
   "SPELLBOOK.Preparation.AtMaximum": "You've reached your maximum number of prepared spells",
   "SPELLBOOK.Preparation.Locked": "This spell cannot be changed",
-  "SPELLBOOK.Cantrips.LockedDefault": "Cantrips are permanent once selected under default rules",
   "SPELLBOOK.Cantrips.MaximumReached": "You've reached your maximum number of cantrips",
-  "SPELLBOOK.Cantrips.LockedModern": "Cantrips can only be swapped during level-up",
   "SPELLBOOK.Cantrips.CannotUnlearnMore": "You can only unlearn one cantrip per level-up",
+  "SPELLBOOK.Cantrips.SwapComplete": "You've already swapped one cantrip during this level-up.",
   "SPELLBOOK.Cantrips.OnlyOneUnlearn": "With modern rules, you can only unlearn one cantrip per level-up.",
   "SPELLBOOK.Cantrips.OnlyOneLearn": "With modern rules, you can only learn one new cantrip per level-up.",
-  "SPELLBOOK.Cantrips.SwapComplete": "You've already swapped one cantrip during this level-up."
+  "SPELLBOOK.Cantrips.OnlyOneSwap": "You've already swapped one cantrip during this level-up.",
+  "SPELLBOOK.Cantrips.LockedModern": "Cantrips can only be changed during level-up with modern rules.",
+  "SPELLBOOK.Cantrips.LockedDefault": "Cantrips cannot be unlearned with default rules."
 }
