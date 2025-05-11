@@ -42,7 +42,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       positioned: true
     },
     position: {
-      height: '800',
+      height: '840',
       width: '600',
       top: '75'
     }
@@ -1666,6 +1666,15 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           isPrepared,
           isAlwaysPrepared: false
         };
+      }
+
+      // Use SpellManager to save prepared spells
+      await this.spellManager.saveActorPreparedSpells(spellData);
+
+      // Check if we need to finalize a cantrip level-up
+      if (this.spellManager.canBeLeveledUp()) {
+        await this.spellManager.completeCantripsLevelUp();
+        log(3, 'Finalized cantrip level-up selection');
       }
 
       // Use SpellManager to save prepared spells

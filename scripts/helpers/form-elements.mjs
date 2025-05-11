@@ -1,40 +1,36 @@
 /**
  * Helper functions for creating DnD5e-styled form elements
+ * These thin wrappers call the dnd5e form field creation methods directly
  */
 
 /**
  * Create a checkbox input using DnD5e styling
  * @param {Object} config - Configuration options
- * @param {string} config.name - Input name
- * @param {boolean} config.checked - Whether checkbox is checked
- * @param {string} config.label - Label text (optional)
- * @param {boolean} config.disabled - Whether checkbox is disabled
- * @param {string} config.ariaLabel - Accessibility label
- * @param {string} config.cssClass - Additional CSS classes
- * @param {Function} config.callback - Change event callback
  * @returns {HTMLElement} The created checkbox element
  */
 export function createCheckbox(config) {
-  const input = document.createElement('dnd5e-checkbox');
-  input.name = config.name;
-  if (config.checked) input.checked = true;
-  if (config.disabled) input.disabled = true;
-  if (config.ariaLabel) input.ariaLabel = config.ariaLabel;
-  if (config.cssClass) input.className = config.cssClass;
-  if (config.callback) input.addEventListener('change', config.callback);
+  const field = new foundry.data.fields.BooleanField();
+  const fieldConfig = {
+    name: config.name,
+    value: config.checked || false,
+    disabled: config.disabled,
+    ariaLabel: config.ariaLabel,
+    classes: config.cssClass
+  };
 
-  // If a label is provided, wrap the checkbox in a label element
+  const checkbox = dnd5e.applications.fields.createCheckboxInput(field, fieldConfig);
+
   if (config.label) {
     const label = document.createElement('label');
     label.classList.add('checkbox');
-    label.appendChild(input);
+    label.appendChild(checkbox);
     const span = document.createElement('span');
     span.textContent = config.label;
     label.appendChild(span);
     return label;
   }
 
-  return input;
+  return checkbox;
 }
 
 /**
@@ -43,22 +39,22 @@ export function createCheckbox(config) {
  * @returns {HTMLElement} The created number input
  */
 export function createNumberInput(config) {
-  // Use DnD5e's NumberField to create the input
-  const input = document.createElement('input');
-  input.type = 'number';
-  input.name = config.name;
-  input.value = config.value ?? '';
+  const field = new foundry.data.fields.NumberField({
+    min: config.min,
+    max: config.max,
+    step: config.step
+  });
 
-  if (config.min !== undefined) input.min = config.min;
-  if (config.max !== undefined) input.max = config.max;
-  if (config.step !== undefined) input.step = config.step;
-  if (config.placeholder) input.placeholder = config.placeholder;
-  if (config.ariaLabel) input.ariaLabel = config.ariaLabel;
-  if (config.disabled) input.disabled = true;
-  if (config.cssClass) input.className = config.cssClass;
+  const fieldConfig = {
+    name: config.name,
+    value: config.value,
+    placeholder: config.placeholder,
+    disabled: config.disabled,
+    ariaLabel: config.ariaLabel,
+    classes: config.cssClass
+  };
 
-  // Note: In a real implementation, we would use DnD5e's NumberField.toInput
-  return input;
+  return dnd5e.applications.fields.createNumberInput(field, fieldConfig);
 }
 
 /**
@@ -67,19 +63,18 @@ export function createNumberInput(config) {
  * @returns {HTMLElement} The created text input
  */
 export function createTextInput(config) {
-  // Use DnD5e's StringField to create the input
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.name = config.name;
-  input.value = config.value ?? '';
+  const field = new foundry.data.fields.StringField();
 
-  if (config.placeholder) input.placeholder = config.placeholder;
-  if (config.ariaLabel) input.ariaLabel = config.ariaLabel;
-  if (config.disabled) input.disabled = true;
-  if (config.cssClass) input.className = config.cssClass;
+  const fieldConfig = {
+    name: config.name,
+    value: config.value || '',
+    placeholder: config.placeholder,
+    disabled: config.disabled,
+    ariaLabel: config.ariaLabel,
+    classes: config.cssClass
+  };
 
-  // Note: In a real implementation, we would use DnD5e's StringField.toInput
-  return input;
+  return dnd5e.applications.fields.createTextInput(field, fieldConfig);
 }
 
 /**
@@ -91,7 +86,7 @@ export function createSelect(config) {
   const select = document.createElement('select');
   select.name = config.name;
 
-  if (config.ariaLabel) select.ariaLabel = config.ariaLabel;
+  if (config.ariaLabel) select.setAttribute('aria-label', config.ariaLabel);
   if (config.disabled) select.disabled = true;
   if (config.cssClass) select.className = config.cssClass;
 

@@ -520,20 +520,9 @@ export class SpellManager {
       const currentLevel = this.actor.system.details.level;
       const currentMax = this.getMaxAllowed();
 
-      log(3, `Checking for level up: previousLevel=${previousLevel}, currentLevel=${currentLevel}, previousMax=${previousMax}, currentMax=${currentMax}`);
-
-      // Update stored values if different
-      if (previousLevel !== currentLevel || previousMax !== currentMax) {
-        this.actor.setFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL, currentLevel);
-        this.actor.setFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX, currentMax);
-        log(3, 'Updated level and max cantrip flags');
-
-        // Reset unlearned count if max increased
-        if (currentMax > previousMax && previousLevel > 0) {
-          this.actor.setFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS, 0);
-          log(3, 'Reset unlearned cantrips count due to increased max');
-          return true;
-        }
+      // Check if unlearned cantrips should be reset
+      if (currentMax > previousMax && previousLevel > 0) {
+        this.actor.setFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS, 0);
       }
 
       // Check if this is a level-up situation
@@ -556,7 +545,13 @@ export class SpellManager {
     const currentLevel = this.actor.system.details.level;
     const currentMax = this.getMaxAllowed();
 
-    const canLevelUp = (currentLevel > previousLevel || currentMax > previousMax) && previousLevel > 0;
+    // Allow level-up for both new characters and regular level-ups
+    const canLevelUp =
+      // New character starting with cantrips
+      (previousLevel === 0 && currentLevel > 0) ||
+      // Regular level-up cases
+      ((currentLevel > previousLevel || currentMax > previousMax) && previousLevel > 0);
+
     log(3, `Can be leveled up: ${canLevelUp} (currentLevel=${currentLevel}, previousLevel=${previousLevel}, currentMax=${currentMax}, previousMax=${previousMax})`);
 
     return canLevelUp;
@@ -825,5 +820,16 @@ export class SpellManager {
    */
   async saveActorPreparedSpells(spellData) {
     await saveActorPreparedSpells(this.actor, spellData);
+  }
+
+  async completeCantripsLevelUp() {
+    const currentLevel = this.actor.system.details.level;
+    const currentMax = this.getMaxAllowed();
+
+    // Update the flags to complete the level-up process
+    await this.actor.setFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL, currentLevel);
+    await this.actor.setFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX, currentMax);
+    log(3, `Cantrip level-up complete: updated previous level to ${currentLevel}, previous max to ${currentMax}`);
+    return true;
   }
 }
