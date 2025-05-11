@@ -1,7 +1,6 @@
 {
   "SPELLBOOK.Application.ActorTitle": "{name}'s Spell Book",
   "SPELLBOOK.Application.Loading": "Loading spells...",
-
   "SPELLBOOK.Cantrips.ActorStats": "{name} knows {count}/{max} cantrips.",
   "SPELLBOOK.Cantrips.Added": "Added",
   "SPELLBOOK.Cantrips.BehaviorHint": "Controls how cantrip changes are handled when allowed.",
@@ -29,9 +28,7 @@
   "SPELLBOOK.Cantrips.OnlyOneSwap": "You can only swap one cantrip at a time with Modern rules",
   "SPELLBOOK.Cantrips.SwapComplete": "Cantrip swap complete - changes are now locked",
   "SPELLBOOK.Cantrips.SwapCompleteMessage": "Cantrip swap complete! You've used your level-up cantrip change.",
-
   "SPELLBOOK.Errors.NoSpellsFoundForLevel": "No spells found for {actor}'s level.",
-
   "SPELLBOOK.Filters.All": "All",
   "SPELLBOOK.Filters.AllLevels": "All Levels",
   "SPELLBOOK.Filters.AllSchools": "All Schools",
@@ -60,22 +57,18 @@
   "SPELLBOOK.Filters.SearchPlaceholder": "Search spells...",
   "SPELLBOOK.Filters.SortBy": "Sort By",
   "SPELLBOOK.Filters.True": "Yes",
-
   "SPELLBOOK.Footer.Actions": "Spell Book Actions",
   "SPELLBOOK.Footer.MaximumCount": "Maximum prepared spells",
   "SPELLBOOK.Footer.PreparedCount": "Current prepared spells",
   "SPELLBOOK.Footer.PreparedLabel": "Prepared Spells",
-
   "SPELLBOOK.Preparation.Always": "Always",
   "SPELLBOOK.Preparation.AlwaysTooltip": "Always prepared",
   "SPELLBOOK.Preparation.Prepare": "Prepare {name}",
   "SPELLBOOK.Preparation.Unprepare": "Unprepare {name}",
-
   "SPELLBOOK.Rest.DialogTitle": "Prepare Spells After Rest",
   "SPELLBOOK.Rest.KeepSpells": "Keep Current Spells",
   "SPELLBOOK.Rest.OpenSpellbook": "Open Spell Book",
   "SPELLBOOK.Rest.UpdateSpells": "{name} has completed a long rest. Would you like to change which spells are prepared?",
-
   "SPELLBOOK.Settings.ConfigureFilters": "Configure Filters",
   "SPELLBOOK.Settings.DefaultCantripBehavior": "Default Cantrip Change Behavior",
   "SPELLBOOK.Settings.DefaultCantripBehaviorHint": "How to handle cantrip changes by default. These can be overridden per character.",
@@ -104,14 +97,11 @@
   "SPELLBOOK.Settings.OpenSpellListManager.Name": "Open Spell List Manager",
   "SPELLBOOK.Settings.SpellManagerPageSize.Hint": "Number of spells to show per page in the GM Spell List Manager.",
   "SPELLBOOK.Settings.SpellManagerPageSize.Name": "Spell Manager Page Size",
-
   "SPELLBOOK.Sort.ByLevel": "Level",
   "SPELLBOOK.Sort.ByName": "Name",
   "SPELLBOOK.Sort.ByPrepared": "Prepared",
   "SPELLBOOK.Sort.BySchool": "School",
-
   "SPELLBOOK.SpellSource.Granted": "Granted",
-
   "SPELLBOOK.UI.Close": "Close",
   "SPELLBOOK.UI.ErrorOccurred": "An error occurred.",
   "SPELLBOOK.UI.FilterControls": "Filter Controls",
@@ -126,12 +116,10 @@
   "SPELLBOOK.UI.SpellList": "Spell List",
   "SPELLBOOK.UI.SpellPreparation": "Spell Preparation",
   "SPELLBOOK.UI.ToggleSidebar": "Toggle Sidebar",
-
   "SPELLMANAGER.Application.Loading": "Loading spell lists...",
   "SPELLMANAGER.Application.LoadingSpells": "Loading spells...",
   "SPELLMANAGER.Application.SpellsError": "Error loading spells.",
   "SPELLMANAGER.Application.Title": "GM Spell List Manager",
-
   "SPELLMANAGER.Buttons.AddSpell": "Add {name}",
   "SPELLMANAGER.Buttons.Close": "Close",
   "SPELLMANAGER.Buttons.CreateNew": "Create New List",
@@ -143,7 +131,6 @@
   "SPELLMANAGER.Buttons.Restore": "Restore from Source",
   "SPELLMANAGER.Buttons.Save": "Save",
   "SPELLMANAGER.Buttons.ShowLists": "Show Lists",
-
   "SPELLMANAGER.Columns.AddSpellsPrompt": "Add spells from the right panel.",
   "SPELLMANAGER.Columns.AvailableLists": "Available Spell Lists",
   "SPELLMANAGER.Columns.AvailableSpells": "Available Spells",
@@ -152,7 +139,6 @@
   "SPELLMANAGER.Columns.NoLists": "No spell lists found.",
   "SPELLMANAGER.Columns.NoMatchingSpells": "No spells match your filters or all matching spells are already in the list.",
   "SPELLMANAGER.Columns.NoSpells": "No spells in this list.",
-
   "SPELLMANAGER.Confirm.Cancel": "Cancel",
   "SPELLMANAGER.Confirm.Confirm": "Confirm",
   "SPELLMANAGER.Confirm.Content": "Are you sure you want to proceed?",
@@ -166,7 +152,6 @@
   "SPELLMANAGER.Confirm.RestoreContent": "Are you sure you want to restore <strong>{name}</strong> from the original source? Your customizations will be lost.",
   "SPELLMANAGER.Confirm.RestoreTitle": "Restore from Original",
   "SPELLMANAGER.Confirm.Title": "Confirm Action",
-
   "SPELLMANAGER.CreateList.ClassLabel": "Class:",
   "SPELLMANAGER.CreateList.Custom": "Custom",
   "SPELLMANAGER.CreateList.CustomIdentifierLabel": "Custom Identifier:",
@@ -174,7 +159,6 @@
   "SPELLMANAGER.CreateList.IdentifierNotes": "An identifier can only contain lowercase letters (a-z), numbers (0-9), dashes (-), and underscores (_).",
   "SPELLMANAGER.CreateList.ListNameLabel": "List Name:",
   "SPELLMANAGER.CreateList.ValidationError": "Invalid identifier format. Please use only lowercase letters, numbers, dashes, and underscores.",
-
   "SPELLMANAGER.Documentation.Creation.Content": "Select a spell list from the left column. Click the \"Edit\" button to create a custom copy. Add or remove spells using the right panel. Click \"Save\" when you're done.",
   "SPELLMANAGER.Documentation.Creation.Step1": "Select a spell list from the left column.",
   "SPELLMANAGER.Documentation.Creation.Step2": "Click the \"Edit\" button to create a custom copy.",
@@ -203,7 +187,6 @@
   "SPELLMANAGER.Documentation.Practices.Items": "Create custom lists before your players create characters. Test custom lists with dummy characters before using them in your game. Keep a backup of important custom lists by exporting them. Consider communicating list changes to players before making major modifications.",
   "SPELLMANAGER.Documentation.Practices.Title": "Best Practices",
   "SPELLMANAGER.Documentation.Title": "GM Spell List Manager Documentation",
-
   "SPELLMANAGER.Filters.AllLevels": "All Levels",
   "SPELLMANAGER.Filters.AllSchools": "All Schools",
   "SPELLMANAGER.Filters.AllSources": "All Sources",
@@ -213,15 +196,18 @@
   "SPELLMANAGER.Filters.Source": "Source",
   "SPELLMANAGER.Filters.SourcePlaceholder": "Filter by source...",
   "SPELLMANAGER.Filters.Spells": "spells",
-
   "SPELLMANAGER.Status.CustomList": "Custom List",
   "SPELLMANAGER.Status.NewList": "New List",
   "SPELLMANAGER.Status.Source": "Source: {source}",
   "SPELLMANAGER.Status.SpellCount": "{count} spells",
   "SPELLMANAGER.Status.UpdateNotice": "Original has been updated",
-
   "SPELLMANAGER.UI.ApplicationActions": "Spell Manager Actions",
   "SPELLMANAGER.UI.FilteredSpells": "Filtered Spells",
   "SPELLMANAGER.UI.ListActions": "List Actions",
-  "SPELLMANAGER.UI.SelectedList": "Selected Spell List"
+  "SPELLMANAGER.UI.SelectedList": "Selected Spell List",
+  "SPELLBOOK": {
+    "Cantrips": {
+      "MaximumReached": "You have already selected the maximum number of cantrips based on your level."
+    }
+  }
 }

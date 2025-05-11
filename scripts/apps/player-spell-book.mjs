@@ -150,31 +150,30 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         // Create a deep copy of the spell
         const processedSpell = foundry.utils.deepClone(spell);
 
-        // Add checkbox HTML for preparation
-        if (!spell.preparation.hideCheckbox) {
-          // Create the checkbox element
-          const checkbox = document.createElement('dnd5e-checkbox');
-          checkbox.name = `spellPreparation.${spell.compendiumUuid}`;
-          checkbox.id = `prep-${spell.compendiumUuid}`;
-          if (spell.preparation.prepared) checkbox.checked = true;
-          if (spell.preparation.disabled) checkbox.disabled = true;
+        // Set up checkbox configuration
+        const ariaLabel =
+          spell.preparation.prepared ? game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name }) : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
 
-          // Add data attributes
-          checkbox.dataset.uuid = spell.compendiumUuid;
-          checkbox.dataset.name = spell.name;
-          checkbox.dataset.ritual = spell.filterData?.isRitual || false;
-          checkbox.dataset.wasPrepared = spell.preparation.prepared;
+        // Use the form element helper to create the checkbox
+        const checkbox = formElements.createCheckbox({
+          name: `spellPreparation.${spell.compendiumUuid}`,
+          checked: spell.preparation.prepared,
+          disabled: spell.preparation.disabled,
+          ariaLabel: ariaLabel
+        });
 
-          // Set aria label
-          const ariaLabel =
-            spell.preparation.prepared ? game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name }) : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
-          checkbox.setAttribute('aria-label', ariaLabel);
+        checkbox.id = `prep-${spell.compendiumUuid}`;
+        checkbox.dataset.uuid = spell.compendiumUuid;
+        checkbox.dataset.name = spell.name;
+        checkbox.dataset.ritual = spell.filterData?.isRitual || false;
+        checkbox.dataset.wasPrepared = spell.preparation.prepared;
 
-          // Convert to HTML
-          const container = document.createElement('div');
-          container.appendChild(checkbox);
-          processedSpell.preparationCheckboxHtml = container.innerHTML;
+        if (spell.preparation.cantripLockReason) {
+          checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.cantripLockReason);
         }
+
+        // Convert the checkbox to HTML using the helper
+        processedSpell.preparationCheckboxHtml = formElements.elementToHtml(checkbox);
 
         return processedSpell;
       });
@@ -935,14 +934,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           return; // Skip these
         }
 
-        // Hidden prepared spells (with lock icon) count as prepared
-        if (item.classList.contains('hide-checkbox') && item.classList.contains('prepared-spell')) {
+        const checkbox = item.querySelector('dnd5e-checkbox');
+        if (checkbox && checkbox.disabled && checkbox.checked) {
           currentCount++;
           return;
         }
 
-        // Check dnd5e-checkbox
-        const checkbox = item.querySelector('dnd5e-checkbox');
         if (checkbox && checkbox.checked) {
           currentCount++;
           log(3, `Counted checked cantrip: ${item.querySelector('.spell-name .title')?.textContent}`);
@@ -1008,8 +1005,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       for (const item of cantripItems) {
         // Get the checkbox and check if we should process this item
         const checkbox = item.querySelector('dnd5e-checkbox');
-        if (!checkbox || item.classList.contains('hide-checkbox') || item.querySelector('.always-prepared-tag') || item.querySelector('.granted-spell-tag')) {
-          continue; // These already have lock icons or are always prepared
+        if (!checkbox || item.querySelector('.always-prepared-tag') || item.querySelector('.granted-spell-tag')) {
+          continue; // Skip always prepared or granted spells
         }
 
         const isChecked = checkbox.checked;
@@ -1037,6 +1034,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         } else {
           log(3, `Cantrip remains unlocked: ${item.querySelector('.spell-name .title')?.textContent}`);
         }
+
+        // Remove any old lock icons if they exist
+        const lockIcon = item.querySelector('.cantrip-lock-icon');
+        if (lockIcon) lockIcon.remove();
       }
     } catch (error) {
       log(1, 'Error setting up cantrip locks:', error);
@@ -1052,18 +1053,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const checkbox = item.querySelector('dnd5e-checkbox');
         if (!checkbox || checkbox.hasAttribute('data-always-disabled')) continue;
 
-        // Lock everything
+        // Lock everything by setting disabled property
         checkbox.disabled = true;
         item.classList.add('cantrip-locked');
 
-        // Add lock icon if not present
-        const nameElement = item.querySelector('.spell-name .title');
-        if (nameElement && !nameElement.querySelector('.cantrip-lock-icon')) {
-          const lockIcon = document.createElement('i');
-          lockIcon.className = 'fas fa-lock cantrip-lock-icon';
-          lockIcon.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.SwapComplete');
-          nameElement.appendChild(lockIcon);
-        }
+        // Remove existing lock icons if present
+        const lockIcon = item.querySelector('.cantrip-lock-icon');
+        if (lockIcon) lockIcon.remove();
       }
     } catch (error) {
       log(1, 'Error locking cantrip checkboxes:', error);

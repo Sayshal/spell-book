@@ -631,54 +631,60 @@ export class SpellManager {
     const isCantrip = spell.system.level === 0;
 
     // Default values
-    let hideCheckbox = false;
     let isCantripLocked = false;
     let cantripLockReason = '';
+
+    // Base disabled state - for spells that should always be disabled
+    let isDisabled = isGranted || alwaysPrepared || ['innate', 'pact', 'atwill', 'ritual'].includes(preparationMode);
 
     // Handle cantrip-specific behavior based on settings
     if (isCantrip && !alwaysPrepared && !isGranted) {
       const settings = this.getSettings();
       const behavior = settings.behavior;
       const isDefaultRules = settings.rules === CANTRIP_RULES.DEFAULT;
+      const isPrepared = spell.system.preparation?.prepared;
 
       log(3, `Handling cantrip-specific behavior for ${spellName}, behavior=${behavior}`);
 
       switch (behavior) {
         case CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED:
         case CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM:
-          // Never hide checkboxes for these behaviors - always allow changes
-          // (max limit enforcement happens elsewhere)
+          // Never disable checkboxes for these behaviors - always allow changes
           break;
 
         case CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX:
-          // Check if cantrips can be changed at all
           const isLevelUp = this.canBeLeveledUp();
 
           // For DEFAULT rules:
-          // - Hide checkbox only for already prepared cantrips when not in level-up
-          // - Leave unprepared cantrips selectable
-          if (isDefaultRules && spell.system.preparation?.prepared && !isLevelUp) {
-            hideCheckbox = true;
+          // - Disable already prepared cantrips when not in level-up
+          if (isDefaultRules && isPrepared && !isLevelUp) {
+            isDisabled = true;
             isCantripLocked = true;
             cantripLockReason = 'SPELLBOOK.Cantrips.LockedDefault';
             log(3, `Cantrip ${spellName} is locked: ${cantripLockReason}`);
           }
           // For MODERN rules, check unlearned limit during level-up
-          else if (!isDefaultRules && isLevelUp && spell.system.preparation?.prepared) {
+          else if (!isDefaultRules && isLevelUp && isPrepared) {
             const unlearned = this.actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
             if (unlearned >= 1) {
-              hideCheckbox = true;
+              isDisabled = true;
               isCantripLocked = true;
               cantripLockReason = 'SPELLBOOK.Cantrips.CannotUnlearnMore';
               log(3, `Cantrip ${spellName} is locked due to unlearned limit`);
             }
           }
+          // For non-level-up MODERN, lock all prepared cantrips
+          else if (!isDefaultRules && !isLevelUp && isPrepared) {
+            isDisabled = true;
+            isCantripLocked = true;
+            cantripLockReason = 'SPELLBOOK.Cantrips.LockedModern';
+          }
           break;
 
         default:
-          // Unknown behavior, be safe and lock cantrips
-          if (spell.system.preparation?.prepared) {
-            hideCheckbox = true;
+          // Unknown behavior, be safe and lock prepared cantrips
+          if (isPrepared) {
+            isDisabled = true;
             isCantripLocked = true;
             cantripLockReason = 'SPELLBOOK.Cantrips.LockedDefault';
           }
@@ -691,8 +697,8 @@ export class SpellManager {
       isOwned: true,
       preparationMode: preparationMode,
       localizedPreparationMode: localizedPreparationMode,
-      disabled: isGranted || alwaysPrepared || ['innate', 'pact', 'atwill', 'ritual'].includes(preparationMode),
-      hideCheckbox: hideCheckbox,
+      disabled: isDisabled,
+      hideCheckbox: false, // Never hide checkboxes anymore
       alwaysPrepared: alwaysPrepared,
       sourceItem: sourceInfo,
       isGranted: isGranted,
