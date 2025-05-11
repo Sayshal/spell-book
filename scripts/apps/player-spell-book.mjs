@@ -694,18 +694,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const isLevelUp = this.spellManager.canBeLeveledUp();
     const settings = this.spellManager.getSettings();
     const isModernRules = settings.rules === CANTRIP_RULES.MODERN;
-
-    // Add debug logging
     const spellName = spellItem?.querySelector('.spell-name .title')?.textContent || 'unknown';
-    log(3, `Handling cantrip change for ${spellName}: ${event.target.checked ? 'checking' : 'unchecking'}`);
 
-    // Handle Modern rules during level-up
-    if (isModernRules && isLevelUp) {
-      log(3, `Handling Modern cantrip change: ${event.target.checked ? 'checking' : 'unchecking'} ${uuid}`);
-      // ...existing code...
-    }
+    // Debug logging
+    const checkState = event.target.checked ? 'checking' : 'unchecking';
+    log(3, `Handling cantrip change for ${spellName}: ${checkState}`);
 
-    // Update the counter to reflect the current UI state
+    // First, update the counter to reflect the current UI state
     this._updateCantripCounter();
 
     // Check if the change is allowed via SpellManager
@@ -716,6 +711,17 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     uiSpell.system = uiSpell.system || {};
     uiSpell.system.preparation = uiSpell.system.preparation || {};
     uiSpell.system.preparation.prepared = event.target.checked;
+
+    // For DEFAULT rules during level-up:
+    // 1. Never allow unchecking existing cantrips
+    // 2. Allow checking new cantrips (up to max)
+    if (isLevelUp && !isModernRules && !event.target.checked) {
+      // Revert the change - don't allow unchecking in DEFAULT rules
+      event.target.checked = true;
+      ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.LockedDefault'));
+      this._updateCantripCounter();
+      return;
+    }
 
     const canChange = this.spellManager.canChange(uiSpell, this._uiCantripCount);
     if (!canChange.allowed) {
