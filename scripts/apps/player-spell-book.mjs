@@ -219,17 +219,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     ];
 
-    // Add cantrip config button if GM
-    if (game.user.isGM) {
-      buttons.push({
-        type: 'button',
-        action: 'configureCantripSettings',
-        icon: 'fas fa-magic',
-        label: 'SPELLBOOK.Cantrips.ConfigButton',
-        cssClass: 'cantrip-config-button'
-      });
-    }
-
     return {
       actor: this.actor,
       isLoading: this.isLoading,
@@ -239,7 +228,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       spellSchools: CONFIG.DND5E.spellSchools,
       buttons: buttons,
       actorId: this.actor.id,
-      spellPreparation: this.spellPreparation || { current: 0, maximum: 0 }
+      spellPreparation: this.spellPreparation || { current: 0, maximum: 0 },
+      isGM: game.user.isGM
     };
   }
 
@@ -1274,7 +1264,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             const separator = document.createElement('div');
             separator.className = 'range-separator';
             separator.setAttribute('aria-hidden', 'true');
-            separator.textContent = '-';
+            separator.innerHTML = '<dnd5e-icon src="systems/dnd5e/icons/svg/range-connector.svg"></dnd5e-icon>';
 
             // Max input
             const maxInput = formElements.createNumberInput({

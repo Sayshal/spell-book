@@ -1,19 +1,31 @@
 <div class="spell-book-container">
 	<!-- Sidebar section -->
 	<div class="sidebar card" role="complementary" aria-label="{{localize 'SPELLBOOK.UI.FilterControls'}}">
-		<!-- Filter Configuration Button -->
-		<button type="button" class="filter-config-button unbutton interface-only" data-action="configureFilters"
-			data-tooltip="{{localize 'SPELLBOOK.Settings.ConfigureFilters'}}"
-			aria-label="{{localize 'SPELLBOOK.Settings.ConfigureFilters'}}">
-			<i class="fas fa-cog" aria-hidden="true"></i>
-		</button>
+		<!-- Sidebar Controls Container -->
+		<div class="sidebar-controls">
+			<!-- Filter Configuration Button -->
+			<button type="button" class="filter-config-button unbutton interface-only" data-action="configureFilters"
+				data-tooltip="{{localize 'SPELLBOOK.Settings.ConfigureFilters'}}"
+				aria-label="{{localize 'SPELLBOOK.Settings.ConfigureFilters'}}">
+				<i class="fas fa-cog" aria-hidden="true"></i>
+			</button>
 
-		<!-- Sidebar Collapse Button -->
-		<button type="button" class="sidebar-collapser collapser vertical unbutton interface-only"
-			data-action="toggleSidebar" data-tooltip="{{localize 'SPELLBOOK.UI.ToggleSidebar'}}"
-			aria-label="{{localize 'SPELLBOOK.UI.ToggleSidebar'}}" aria-expanded="true">
-			<i class="fas fa-caret-left" aria-hidden="true"></i>
-		</button>
+			<!-- Cantrip Settings Button (GM Only) -->
+			{{#if isGM}}
+				<button type="button" class="cantrip-config-button unbutton interface-only"
+					data-action="configureCantripSettings" data-tooltip="{{localize 'SPELLBOOK.Cantrips.ConfigButton'}}"
+					aria-label="{{localize 'SPELLBOOK.Cantrips.ConfigButton'}}">
+					<i class="fas fa-magic" aria-hidden="true"></i>
+				</button>
+			{{/if}}
+
+			<!-- Sidebar Collapse Button -->
+			<button type="button" class="sidebar-collapser collapser vertical unbutton interface-only"
+				data-action="toggleSidebar" data-tooltip="{{localize 'SPELLBOOK.UI.ToggleSidebar'}}"
+				aria-label="{{localize 'SPELLBOOK.UI.ToggleSidebar'}}" aria-expanded="true">
+				<i class="fas fa-caret-left" aria-hidden="true"></i>
+			</button>
+		</div>
 
 		{{> "modules/spell-book/templates/player/sidebar.hbs"}}
 

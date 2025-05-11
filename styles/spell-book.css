@@ -181,60 +181,24 @@
     transform: translateZ(0);
   }
 
-  /* Shared control styles */
-  .sidebar-control {
-    place-content: center;
-    display: grid;
-    z-index: var(--spell-book-z-index-controls);
-    position: absolute;
-    border-color: var(--spell-book-border-light);
-    border-radius: 0 3px 3px 0;
-    outline: none;
-    cursor: pointer;
-    background: var(--spell-book-bg-primary);
-    box-shadow: var(--spell-book-shadow-normal);
-    transition: var(--spell-book-transition-normal);
-    transform: translateZ(-1px);
-
-    i {
-      margin-left: 0.375rem;
-      font-size: 0.75rem;
-    }
-  }
-
-  .sidebar-collapser {
-    place-content: center;
-    display: grid;
-    z-index: var(--spell-book-z-index-controls);
-    position: absolute;
-    top: 3rem;
-    right: -16px;
-    width: var(--spell-book-control-width);
-    height: 32px;
-    border-color: var(--spell-book-border-light);
-    border-radius: 0 3px 3px 0;
-    outline: none;
-    cursor: pointer;
-    background: var(--spell-book-bg-primary);
-    box-shadow: var(--spell-book-shadow-normal);
-    transition: var(--spell-book-transition-normal);
-    transform: translateZ(-1px);
-
-    i {
-      margin-left: 0.375rem;
-      font-size: 0.75rem;
-    }
-  }
-
-  .filter-config-button {
-    place-content: center;
-    display: grid;
+  /* Sidebar Controls Container */
+  .sidebar-controls {
+    gap: 0.5rem;
+    display: flex;
     z-index: var(--spell-book-z-index-controls);
     position: absolute;
     top: 0.5rem;
     right: -22px;
-    width: var(--spell-book-config-width);
-    height: 32px;
+    flex-direction: column;
+    transform: translateZ(-1px);
+  }
+
+  /* Base styles for control buttons */
+  .filter-config-button,
+  .cantrip-config-button,
+  .sidebar-collapser {
+    place-content: center;
+    display: grid;
     border-color: var(--spell-book-border-light);
     border-radius: 0 3px 3px 0;
     outline: none;
@@ -242,12 +206,23 @@
     background: var(--spell-book-bg-primary);
     box-shadow: var(--spell-book-shadow-normal);
     transition: var(--spell-book-transition-normal);
-    transform: translateZ(-1px);
 
     i {
       margin-left: 0.375rem;
       font-size: 0.75rem;
     }
+  }
+
+  /* Size differences between buttons */
+  .filter-config-button,
+  .cantrip-config-button {
+    width: var(--spell-book-config-width);
+    height: 32px;
+  }
+
+  .sidebar-collapser {
+    width: var(--spell-book-control-width);
+    height: 32px;
   }
 
   .sidebar-footer-container {
@@ -331,10 +306,11 @@
     }
   }
 
-  .range-filter {
+  .filter-range {
     .range-inputs {
       gap: 0.5rem;
       display: flex;
+      flex-wrap: nowrap;
       align-items: center;
       width: 100%;
     }
@@ -342,6 +318,7 @@
     input[type='number'] {
       box-sizing: border-box;
       width: 45%;
+      min-width: 0;
       padding: 0.25rem;
       font-size: var(--spell-book-font-sm);
       text-align: center;
@@ -355,8 +332,8 @@
       display: inline-grid;
       flex: none;
       width: 10%;
-      color: var(--spell-book-text-primary);
       height: var(--form-field-height);
+      color: var(--spell-book-text-primary);
     }
   }
 }
@@ -473,10 +450,10 @@
   }
 
   .cantrip-counter {
-    margin-left: 0.5rem;
-    font-size: 0.8em;
     opacity: 0.85;
+    margin-left: 0.5rem;
     font-weight: normal;
+    font-size: 0.8em;
 
     &.at-max {
       color: var(--color-level-warning);
@@ -625,12 +602,12 @@
 
     .cantrip-lock-icon {
       display: block;
-      text-align: center;
-      color: #888;
-      font-size: 1.2em;
       width: 16px;
       height: 16px;
       margin: 0 auto;
+      color: #888;
+      font-size: 1.2em;
+      text-align: center;
     }
   }
 
@@ -949,22 +926,22 @@
 /* ----------------------------------------- */
 .cantrip-settings-dialog {
   .cantrip-settings-form {
+    gap: 0.5rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
     padding: 0.5rem;
   }
 
   .cantrip-stats {
-    background: #0000000d;
+    margin-bottom: 0.5rem;
     padding: 0.5rem;
     border-radius: 3px;
-    margin-bottom: 0.5rem;
+    background: #0000000d;
   }
 
   .notice {
-    font-style: italic;
     color: var(--color-text-dark-secondary);
+    font-style: italic;
   }
 
   .warning {
@@ -973,8 +950,8 @@
   }
 
   .override-buttons {
-    display: flex;
     gap: 0.5rem;
+    display: flex;
   }
 
   button[disabled] {
@@ -1007,7 +984,8 @@
     }
 
     .sidebar-collapser,
-    .filter-config-button {
+    .filter-config-button,
+    .cantrip-config-button {
       background: #f4f4f4e6;
     }
 
@@ -1118,8 +1096,7 @@
       border-bottom: 1px solid var(--color-border-light);
     }
 
-    .sidebar-collapser,
-    .filter-config-button {
+    .sidebar-controls {
       display: none;
     }
 
