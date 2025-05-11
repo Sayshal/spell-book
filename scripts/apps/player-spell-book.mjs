@@ -694,28 +694,29 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const isLevelUp = this.spellManager.canBeLeveledUp();
     const settings = this.spellManager.getSettings();
     const isModernRules = settings.rules === CANTRIP_RULES.MODERN;
-    const spellName = spellItem?.querySelector('.spell-name .title')?.textContent || 'unknown';
+    const isDefaultRules = settings.rules === CANTRIP_RULES.DEFAULT;
 
-    // Debug logging
+    // Get spell name for logging
+    const spellName = spellItem?.querySelector('.spell-name .title')?.textContent || 'unknown';
     const checkState = event.target.checked ? 'checking' : 'unchecking';
     log(3, `Handling cantrip change for ${spellName}: ${checkState}`);
 
-    // First, update the counter to reflect the current UI state
+    // Update the counter to reflect the current UI state
     this._updateCantripCounter();
 
-    // Check if the change is allowed via SpellManager
+    // Get the source spell
     const sourceSpell = await fromUuid(uuid);
     if (!sourceSpell) return;
 
+    // Create a duplicate for checking, but KEEP the ORIGINAL preparation state
     const uiSpell = foundry.utils.duplicate(sourceSpell);
-    uiSpell.system = uiSpell.system || {};
-    uiSpell.system.preparation = uiSpell.system.preparation || {};
-    uiSpell.system.preparation.prepared = event.target.checked;
+
+    // Get the current prepared state (before change)
+    const wasChecked = uiSpell.system?.preparation?.prepared || false;
 
     // For DEFAULT rules during level-up:
     // 1. Never allow unchecking existing cantrips
-    // 2. Allow checking new cantrips (up to max)
-    if (isLevelUp && !isModernRules && !event.target.checked) {
+    if (isLevelUp && isDefaultRules && wasChecked && !event.target.checked) {
       // Revert the change - don't allow unchecking in DEFAULT rules
       event.target.checked = true;
       ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.LockedDefault'));
@@ -723,13 +724,33 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       return;
     }
 
-    const canChange = this.spellManager.canChange(uiSpell, this._uiCantripCount);
-    if (!canChange.allowed) {
-      // Revert the change
-      event.target.checked = !event.target.checked;
-      ui.notifications.warn(game.i18n.localize(canChange.message));
-      this._updateCantripCounter();
-      return;
+    // 2. Check if we can add a new cantrip (only if we're checking a previously unchecked cantrip)
+    if (!wasChecked && event.target.checked) {
+      // Check if we're at max already
+      if (this._uiCantripCount > this.spellManager.maxCantrips) {
+        // Revert the change - can't exceed max
+        event.target.checked = false;
+        ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.MaximumReached'));
+        this._updateCantripCounter();
+        return;
+      }
+    }
+
+    // Now update the spell with the new state for additional checks
+    uiSpell.system = uiSpell.system || {};
+    uiSpell.system.preparation = uiSpell.system.preparation || {};
+    uiSpell.system.preparation.prepared = event.target.checked;
+
+    // For MODERN rules or other special cases, still use canChange
+    if (isModernRules || (!isDefaultRules && !isLevelUp)) {
+      const canChange = this.spellManager.canChange(uiSpell, this._uiCantripCount);
+      if (!canChange.allowed) {
+        // Revert the change
+        event.target.checked = !event.target.checked;
+        ui.notifications.warn(game.i18n.localize(canChange.message));
+        this._updateCantripCounter();
+        return;
+      }
     }
 
     // Update UI class for spell item
@@ -982,9 +1003,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       currentCount = currentCount ?? this._uiCantripCount;
       maxCantrips = maxCantrips ?? this.spellManager.getMaxAllowed();
 
+      // Get settings
+      const settings = this.spellManager.getSettings();
+      const isDefaultRules = settings.rules === CANTRIP_RULES.DEFAULT;
+      const isLevelUp = this.spellManager.canBeLeveledUp();
       const isAtMax = currentCount >= maxCantrips;
 
-      log(3, `Setting up cantrip locks: ${currentCount}/${maxCantrips}, at max: ${isAtMax}`);
+      log(3, `Setting up cantrip locks: ${currentCount}/${maxCantrips}, at max: ${isAtMax}, rules: ${settings.rules}, levelUp: ${isLevelUp}`);
 
       for (const item of cantripItems) {
         // Get the checkbox and check if we should process this item
@@ -998,6 +1023,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         // Clear existing lock state
         checkbox.disabled = false;
         item.classList.remove('cantrip-locked');
+
+        // CRITICAL CHANGE: With DEFAULT rules, always lock checked cantrips
+        if (isDefaultRules && isChecked) {
+          checkbox.disabled = true;
+          item.classList.add('cantrip-locked');
+          log(3, `Locking checked cantrip with DEFAULT rules: ${item.querySelector('.spell-name .title')?.textContent}`);
+          continue;
+        }
 
         // Only lock unchecked cantrips if at max
         if (isAtMax && !isChecked) {
