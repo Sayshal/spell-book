@@ -1,5 +1,3 @@
-import { log } from '../logger.mjs';
-
 /**
  * Helper functions for creating DnD5e-styled form elements
  */
