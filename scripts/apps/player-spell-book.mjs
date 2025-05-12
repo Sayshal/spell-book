@@ -708,12 +708,21 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const wasInOriginalSet = this._cantripTracking.originalChecked.has(uuid);
     log(1, `Was in original set: ${wasInOriginalSet}`);
 
-    // For MODERN rules, block any changes when not in a level-up
+    // For MODERN rules outside level-up with exceptions
     if (isModernRules && !isLevelUp) {
-      event.target.checked = wasInOriginalSet;
-      ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.LockedModern'));
-      this._updateCantripCounter();
-      return;
+      // Allow toggling newly checked cantrips (added during current session)
+      if (this._newlyCheckedCantrips.has(uuid)) {
+        log(1, `Allowing toggle of newly checked cantrip: ${spellName}`);
+        // Continue processing - this cantrip can be toggled
+      }
+      // Block unchecking original cantrips
+      else if (wasInOriginalSet && !event.target.checked) {
+        event.target.checked = true; // Revert change
+        ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.LockedModern'));
+        this._updateCantripCounter();
+        return;
+      }
+      // Allow checking new cantrips
     }
 
     // MODERN rules during level-up: enforce ONE swap only
@@ -1098,13 +1107,19 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           continue;
         }
 
-        // For MODERN rules outside of level-up: lock ALL cantrips
-        if (isModernRules && !isLevelUp) {
-          checkbox.disabled = true;
-          checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedModern');
-          item.classList.add('cantrip-locked');
-          log(1, `Locking all cantrips outside level-up with modern rules: ${spellName}`);
-          continue;
+        // For MODERN rules outside of level-up: only lock original checked cantrips
+        if (isModernRules && !isLevelUp && isChecked) {
+          // Don't lock newly checked cantrips - allow users to change their minds
+          const isNewlyChecked = this._newlyCheckedCantrips.has(uuid);
+          if (!isNewlyChecked) {
+            checkbox.disabled = true;
+            checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedModern');
+            item.classList.add('cantrip-locked');
+            log(1, `Locking checked cantrip outside level-up with modern rules: ${spellName}`);
+            continue;
+          } else {
+            log(1, `Not locking newly checked cantrip: ${spellName}`);
+          }
         }
 
         // For MODERN rules during level-up, if already swapped, lock everything

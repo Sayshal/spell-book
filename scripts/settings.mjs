@@ -128,7 +128,7 @@ export function registerSettings() {
         [CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM]: 'SPELLBOOK.Cantrips.BehaviorNotifyGM',
         [CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX]: 'SPELLBOOK.Cantrips.BehaviorLockAfterMax'
       },
-      default: CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED
+      default: CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM
     });
 
     log(3, 'Module settings registered');
