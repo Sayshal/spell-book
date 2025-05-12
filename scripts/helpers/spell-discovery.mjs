@@ -19,34 +19,60 @@ export async function getClassSpellList(className, classUuid) {
 
       if (!classIdentifier) {
         log(2, `No identifier found in class item with UUID: ${classUuid}`);
-        return new Set(); // Early return if no identifier is found
+        return new Set();
       }
 
       log(3, `Extracted class identifier: ${classIdentifier}`);
     } catch (error) {
       log(1, `Error extracting identifier from classUuid: ${error.message}`);
-      return new Set(); // Early return on error
+      return new Set();
     }
   } else {
     log(2, `No classUuid provided, cannot extract identifier`);
-    return new Set(); // Early return if no classUuid is provided
+    return new Set();
   }
 
   // Get custom mappings
   const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
 
-  // First, check for exact identifier match in journal spell lists
-  const identifierMatch = await findSpellListByIdentifier(classIdentifier, customMappings);
-  if (identifierMatch && identifierMatch.size > 0) {
-    log(3, `Found spell list by identifier match for ${classIdentifier}`);
-    return identifierMatch;
+  // PRIORITY 1: First check if there's a direct mapping in customMappings that matches the identifier
+  try {
+    for (const [originalUuid, customUuid] of Object.entries(customMappings)) {
+      try {
+        // Get original spell list to check its identifier
+        const original = await fromUuid(originalUuid);
+        if (original?.system?.identifier?.toLowerCase() === classIdentifier) {
+          // Found a matching original, now try to load the custom version
+          log(3, `Found custom mapping for ${classIdentifier}, loading custom version from ${customUuid}`);
+          const customList = await fromUuid(customUuid);
+          if (customList && customList.system.spells.size > 0) {
+            log(3, `Successfully loaded custom spell list with ${customList.system.spells.size} spells from mapping`);
+            return customList.system.spells;
+          } else {
+            log(2, `Custom spell list not found or empty, will try fallbacks`);
+          }
+        }
+      } catch (err) {
+        log(1, `Error checking mapping ${originalUuid} -> ${customUuid}: ${err.message}`);
+        continue; // Continue checking other mappings
+      }
+    }
+  } catch (error) {
+    log(1, `Error checking custom mappings: ${error.message}`);
   }
 
-  // Next, check custom spell lists with isCustom flag
+  // PRIORITY 2: Check for a spell list in the custom compendium with matching identifier
   const customMatch = await findCustomSpellListByIdentifier(classIdentifier);
   if (customMatch && customMatch.size > 0) {
-    log(3, `Found custom spell list for identifier: ${classIdentifier}`);
+    log(3, `Found custom spell list by identifier ${classIdentifier} in custom compendium`);
     return customMatch;
+  }
+
+  // PRIORITY 3: Fall back to standard spell lists in all compendiums
+  const identifierMatch = await findSpellListByIdentifier(classIdentifier, customMappings);
+  if (identifierMatch && identifierMatch.size > 0) {
+    log(3, `Found spell list by identifier match for ${classIdentifier} in general compendiums`);
+    return identifierMatch;
   }
 
   log(2, `No spell list found for identifier: ${classIdentifier}`);
