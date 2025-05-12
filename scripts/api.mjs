@@ -19,52 +19,56 @@ import { log } from './logger.mjs';
  * @returns {Object} The API object
  */
 export function createAPI() {
-  const api = {
-    // Applications
-    apps: {
-      PlayerSpellBook,
-      GMSpellListManager,
-      CantripSettingsDialog,
-      PlayerFilterConfiguration
-    },
+  try {
+    const api = {
+      // Applications
+      apps: {
+        PlayerSpellBook,
+        GMSpellListManager,
+        CantripSettingsDialog,
+        PlayerFilterConfiguration
+      },
 
-    // Helper utilities - organized by category
-    utils: {
-      actor: { ...actorSpellUtils },
-      filters: { ...filterUtils },
-      discovery: { ...discoveryUtils },
-      formatting: { ...formattingUtils },
-      management: { ...managerHelpers },
-      SpellManager
-    },
+      // Helper utilities - organized by category
+      utils: {
+        actor: { ...actorSpellUtils },
+        filters: { ...filterUtils },
+        discovery: { ...discoveryUtils },
+        formatting: { ...formattingUtils },
+        management: { ...managerHelpers },
+        SpellManager
+      },
 
-    // Handlebars helpers
-    handlebars: { ...handlebarsHelpers },
+      // Handlebars helpers
+      handlebars: { ...handlebarsHelpers },
 
-    // Convenience methods
-    openSpellBookForActor: (actor) => {
-      if (!actor) {
-        throw new Error('No actor provided');
-      }
-      const spellBook = new PlayerSpellBook(actor);
-      spellBook.render(true);
-      return spellBook;
-    },
+      // Convenience methods
+      openSpellBookForActor: (actor) => {
+        if (!actor) {
+          throw new Error('No actor provided');
+        }
+        const spellBook = new PlayerSpellBook(actor);
+        spellBook.render(true);
+        return spellBook;
+      },
 
-    openSpellListManager: () => {
-      const manager = new GMSpellListManager();
-      manager.render(true);
-      return manager;
-    },
+      openSpellListManager: () => {
+        const manager = new GMSpellListManager();
+        manager.render(true);
+        return manager;
+      },
 
-    // Logging facility
-    log
-  };
+      // Logging facility
+      log
+    };
 
-  // Register API globally
-  globalThis.SPELLBOOK = api;
+    // Register API globally
+    globalThis.SPELLBOOK = api;
 
-  log(3, 'Module API registered');
+    log(3, 'Module API registered');
 
-  return api;
+    return api;
+  } catch (error) {
+    log(1, 'Error creating API:', error);
+  }
 }

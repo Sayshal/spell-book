@@ -2,6 +2,9 @@ import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
 import { CANTRIP_CHANGE_BEHAVIOR, CANTRIP_RULES, DEFAULT_FILTER_CONFIG, MODULE, SETTINGS } from './constants.mjs';
 import { log } from './logger.mjs';
 
+/**
+ * Register all module settings
+ */
 export function registerSettings() {
   try {
     // Logging level setting
@@ -20,7 +23,7 @@ export function registerSettings() {
       default: 2,
       onChange: (value) => {
         MODULE.LOG_LEVEL = parseInt(value);
-        log(2, `Logging level changed to ${MODULE.LOG_LEVEL}`);
+        log(3, `Logging level changed to ${MODULE.LOG_LEVEL}`);
       }
     });
 
@@ -134,5 +137,6 @@ export function registerSettings() {
     log(3, 'Module settings registered');
   } catch (error) {
     log(1, 'Error registering settings:', error);
+    log(1, `Fatal error registering settings:`, error);
   }
 }

@@ -19,7 +19,7 @@ Hooks.once('init', async function () {
 
     log(3, 'Module initialization complete');
   } catch (error) {
-    console.error(`${MODULE.ID} | Error initializing module:`, error);
+    log(1, `Error initializing module:`, error);
   }
 });
 

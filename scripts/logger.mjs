@@ -44,6 +44,12 @@ export function log(level, ...args) {
 
     // Initialize global log store if needed
     if (!window.console_logs) window.console_logs = [];
+
+    // Only keep the last 2000 logs to prevent memory issues
+    if (window.console_logs.length > 2000) {
+      window.console_logs.shift();
+    }
+
     window.console_logs.push(logEntry);
 
     // Check if we should output to console based on log level setting

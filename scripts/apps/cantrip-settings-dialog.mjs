@@ -4,6 +4,9 @@ import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
+/**
+ * Dialog for configuring cantrip settings for an actor
+ */
 export class CantripSettingsDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
   /*  Static Properties                           */
@@ -44,8 +47,8 @@ export class CantripSettingsDialog extends HandlebarsApplicationMixin(Applicatio
   actor = null;
 
   /**
-   * @type {SpellManager}
    * Manager for handling cantrip operations
+   * @type {SpellManager}
    */
   spellManager = null;
 
@@ -53,8 +56,17 @@ export class CantripSettingsDialog extends HandlebarsApplicationMixin(Applicatio
   /*  Constructor                                 */
   /* -------------------------------------------- */
 
+  /**
+   * @param {Actor5e} actor - The actor to configure settings for
+   * @param {Object} [options={}] - Additional application options
+   */
   constructor(actor, options = {}) {
     super(options);
+
+    if (!actor) {
+      throw new Error('Actor is required for CantripSettingsDialog');
+    }
+
     log(3, `Initializing CantripSettingsDialog for ${actor.name}`);
     this.actor = actor;
     this.spellManager = new SpellManager(actor);
@@ -64,61 +76,85 @@ export class CantripSettingsDialog extends HandlebarsApplicationMixin(Applicatio
   /*  Core Methods                                */
   /* -------------------------------------------- */
 
+  /** @override */
   get title() {
     return `${game.i18n.localize('SPELLBOOK.Cantrips.ConfigTitle')}: ${this.actor.name}`;
   }
 
+  /** @override */
   async _prepareContext(options) {
-    log(3, 'Preparing CantripSettingsDialog context');
+    try {
+      log(3, 'Preparing CantripSettingsDialog context');
 
-    const settings = this.spellManager.getSettings();
-    const maxCantrips = this.spellManager.getMaxAllowed();
-    const currentCount = this.spellManager.getCurrentCount();
+      const settings = this.spellManager.getSettings();
+      const maxCantrips = this.spellManager.getMaxAllowed();
+      const currentCount = this.spellManager.getCurrentCount();
 
-    log(3, `Current cantrip settings: rules=${settings.rules}, behavior=${settings.behavior}`);
-    log(3, `Cantrip stats: ${currentCount}/${maxCantrips}`);
+      log(3, `Current cantrip settings: rules=${settings.rules}, behavior=${settings.behavior}`);
+      log(3, `Cantrip stats: ${currentCount}/${maxCantrips}`);
 
-    return {
-      actor: this.actor,
-      ruleOptions: {
-        default: {
-          value: CANTRIP_RULES.DEFAULT,
-          label: game.i18n.localize('SPELLBOOK.Cantrips.RulesDefault'),
-          selected: settings.rules === CANTRIP_RULES.DEFAULT
+      return {
+        actor: this.actor,
+        ruleOptions: {
+          default: {
+            value: CANTRIP_RULES.DEFAULT,
+            label: game.i18n.localize('SPELLBOOK.Cantrips.RulesDefault'),
+            selected: settings.rules === CANTRIP_RULES.DEFAULT
+          },
+          modern: {
+            value: CANTRIP_RULES.MODERN,
+            label: game.i18n.localize('SPELLBOOK.Cantrips.RulesModern'),
+            selected: settings.rules === CANTRIP_RULES.MODERN
+          }
         },
-        modern: {
-          value: CANTRIP_RULES.MODERN,
-          label: game.i18n.localize('SPELLBOOK.Cantrips.RulesModern'),
-          selected: settings.rules === CANTRIP_RULES.MODERN
+        behaviorOptions: {
+          unrestricted: {
+            value: CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED,
+            label: game.i18n.localize('SPELLBOOK.Cantrips.BehaviorUnrestricted'),
+            selected: settings.behavior === CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED
+          },
+          notifyGM: {
+            value: CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM,
+            label: game.i18n.localize('SPELLBOOK.Cantrips.BehaviorNotifyGM'),
+            selected: settings.behavior === CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM
+          },
+          lockAfterMax: {
+            value: CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX,
+            label: game.i18n.localize('SPELLBOOK.Cantrips.BehaviorLockAfterMax'),
+            selected: settings.behavior === CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX
+          }
+        },
+        stats: {
+          maxCantrips,
+          currentCount
         }
-      },
-      behaviorOptions: {
-        unrestricted: {
-          value: CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED,
-          label: game.i18n.localize('SPELLBOOK.Cantrips.BehaviorUnrestricted'),
-          selected: settings.behavior === CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED
-        },
-        notifyGM: {
-          value: CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM,
-          label: game.i18n.localize('SPELLBOOK.Cantrips.BehaviorNotifyGM'),
-          selected: settings.behavior === CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM
-        },
-        lockAfterMax: {
-          value: CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX,
-          label: game.i18n.localize('SPELLBOOK.Cantrips.BehaviorLockAfterMax'),
-          selected: settings.behavior === CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX
-        }
-      },
-      stats: {
-        maxCantrips,
-        currentCount
-      }
-    };
+      };
+    } catch (error) {
+      log(1, 'Error preparing cantrip settings context:', error);
+      return {
+        actor: this.actor,
+        ruleOptions: {},
+        behaviorOptions: {},
+        stats: { maxCantrips: 0, currentCount: 0 }
+      };
+    }
   }
 
+  /**
+   * Form handler for saving cantrip settings
+   * @param {Event} _event - The form submission event
+   * @param {HTMLFormElement} form - The form element
+   * @param {Object} formData - The form data
+   * @returns {Promise<Actor5e|null>} The actor or null if error
+   */
   static async formHandler(_event, form, formData) {
     try {
       const actor = this.actor;
+      if (!actor) {
+        log(1, 'No actor found');
+        return null;
+      }
+
       log(3, `Saving cantrip settings for ${actor.name}`);
       log(3, `New settings: rules=${formData.object.cantripRules}, behavior=${formData.object.cantripBehavior}`);
 
