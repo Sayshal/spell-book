@@ -32,13 +32,19 @@
 		<!-- Footer container for open sidebar -->
 		<div class="sidebar-footer-container"></div>
 	</div>
+	<!-- Place the tab elements directly in the template -->
+	{{#> "modules/spell-book/templates/player/tab-navigation.hbs"}}{{/modules/spell-book/templates/player/tab-navigation.hbs}}
 
-	<!-- Main content -->
-	<section class="spell-book-content" role="main" aria-label="{{localize 'SPELLBOOK.UI.SpellList'}}">
-		<!-- Main content will be filled by tab templates -->
-	</section>
+		<!-- Main content -->
+		<section class="spell-book-content" role="main" aria-label="{{localize 'SPELLBOOK.UI.SpellList'}}">
+			<!-- Place tab content directly -->
+			{{#> "modules/spell-book/templates/player/tab-spells.hbs"}}{{/modules/spell-book/templates/player/tab-spells.hbs}}
+				{{#if isWizard}}
+					{{#> "modules/spell-book/templates/player/tab-wizard-spellbook.hbs"}}{{/modules/spell-book/templates/player/tab-wizard-spellbook.hbs}}
+				{{/if}}
+		</section>
 
-	<!-- Footer container for collapsed sidebar -->
-	<div class="collapsed-footer hidden" role="complementary" aria-label="{{localize 'SPELLBOOK.UI.SpellPreparation'}}">
-	</div>
+		<!-- Footer container for collapsed sidebar -->
+		<div class="collapsed-footer hidden" role="complementary" aria-label="{{localize 'SPELLBOOK.UI.SpellPreparation'}}">
+		</div>
 </div>

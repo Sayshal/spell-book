@@ -54,10 +54,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @override */
   static PARTS = {
-    form: { template: TEMPLATES.PLAYER.MAIN, templates: [TEMPLATES.PLAYER.SIDEBAR] },
-    tabs: { template: TEMPLATES.PLAYER.TAB_NAV },
-    spellstab: { template: TEMPLATES.PLAYER.TAB_SPELLS, classes: ['tab-content'] },
-    wizardtab: { template: TEMPLATES.PLAYER.TAB_WIZARD_SPELLBOOK, classes: ['tab-content'] },
+    form: {
+      template: TEMPLATES.PLAYER.MAIN,
+      templates: [TEMPLATES.PLAYER.SIDEBAR, TEMPLATES.PLAYER.TAB_NAV, TEMPLATES.PLAYER.TAB_SPELLS, TEMPLATES.PLAYER.TAB_WIZARD_SPELLBOOK]
+    },
     footer: { template: TEMPLATES.PLAYER.FOOTER }
   };
 
