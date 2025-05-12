@@ -223,16 +223,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     // Get active tab
     context.activeTab = this.tabGroups['spellbook-tabs'];
 
-    // Set up tab information
-    context.tabs = {
-      spellstab: {
-        id: 'spellstab',
-        label: game.i18n.localize('Prepared Spells'),
-        group: 'spellbook-tabs',
-        cssClass: this.tabGroups['spellbook-tabs'] === 'spellstab' ? 'active' : '',
-        icon: 'fa-solid fa-book-open'
-      }
-    };
+    // Set up tab information using the _getTabs method
+    context.tabs = this._getTabs();
 
     // Only add wizard tab if the actor is a wizard
     if (context.isWizard) {
@@ -371,6 +363,38 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /**
+   * Generate tabs for the spell book application
+   * @returns {object} Tab configuration
+   * @private
+   */
+  _getTabs() {
+    const tabGroup = 'spellbook-tabs';
+
+    // Define tabs - starting with spells tab
+    const tabs = {
+      spellstab: {
+        id: 'spellstab',
+        label: game.i18n.localize('SPELLBOOK.Tabs.Spells'),
+        group: tabGroup,
+        cssClass: this.tabGroups[tabGroup] === 'spellstab' ? 'active' : '',
+        icon: 'fa-solid fa-book-open'
+      }
+    };
+
+    // Add wizard tab if actor is a wizard
+    if (this.wizardManager && this.wizardManager.isWizard) {
+      tabs.wizardtab = {
+        id: 'wizardtab',
+        label: game.i18n.localize('SPELLBOOK.Tabs.WizardSpellbook'),
+        group: tabGroup,
+        cssClass: this.tabGroups[tabGroup] === 'wizardtab' ? 'active' : '',
+        icon: 'fa-solid fa-hat-wizard'
+      };
+    }
+
+    return tabs;
+  }
   /* -------------------------------------------- */
   /*  Data Loading Methods                        */
   /* -------------------------------------------- */
