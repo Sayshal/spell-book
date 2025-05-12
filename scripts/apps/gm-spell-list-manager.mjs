@@ -1,11 +1,16 @@
 import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as actorSpellUtils from '../helpers/actor-spells.mjs';
+import * as formElements from '../helpers/form-elements.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import * as managerHelpers from '../helpers/spell-management.mjs';
 import { log } from '../logger.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
+/**
+ * GM tool for managing spell lists and creating custom spell collections
+ * @extends {ApplicationV2}
+ */
 export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
   /*  Static Properties                           */
@@ -97,6 +102,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     removed: new Set()
   };
 
+  /** @override */
   get title() {
     return game.i18n.localize('SPELLMANAGER.Application.Title');
   }
@@ -105,6 +111,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /*  Constructor                                 */
   /* -------------------------------------------- */
 
+  /**
+   * @param {Object} [options] Application configuration options
+   */
   constructor(options = {}) {
     super(options);
 
@@ -131,8 +140,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * @override
+   * @param {Object} options - The options passed to the render method
+   * @returns {Promise<Object>} A Promise that resolves to the context object for rendering
    */
-  async _prepareContext(_options) {
+  async _prepareContext(options) {
     try {
       // Get basic context
       const context = {
@@ -227,6 +238,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * @override
+   * @param {Object} context - The render context
+   * @param {Object} options - The render options
    */
   _onRender(context, options) {
     super._onRender(context, options);
@@ -237,6 +250,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         this.loadData();
         return;
       }
+
+      // Replace regular HTML inputs with form-elements
+      this._setupFilterInputs();
 
       // Set up event listeners
       this.setupFilterListeners();
@@ -249,9 +265,242 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /* -------------------------------------------- */
+  /*  Form Element Setup                          */
+  /* -------------------------------------------- */
+
+  /**
+   * Replace standard HTML inputs with DnD5e form elements
+   * @private
+   */
+  _setupFilterInputs() {
+    try {
+      log(3, 'Setting up form elements for filters');
+
+      if (!this.isEditing) return;
+
+      // SEARCH INPUT
+      const searchContainer = this.element.querySelector('.filter-search');
+      if (searchContainer) {
+        const searchInput = formElements.createTextInput({
+          name: 'spell-search',
+          value: this.filterState.name || '',
+          placeholder: game.i18n.localize('SPELLMANAGER.Filters.SearchPlaceholder'),
+          ariaLabel: game.i18n.localize('SPELLMANAGER.Filters.SearchPlaceholder')
+        });
+
+        // Replace existing input
+        const oldInput = searchContainer.querySelector('input');
+        if (oldInput) {
+          searchContainer.replaceChild(searchInput, oldInput);
+        } else {
+          searchContainer.appendChild(searchInput);
+        }
+      }
+
+      // LEVEL DROPDOWN
+      this._setupDropdownFilter({
+        containerId: 'spell-level',
+        containerSelector: '.filter-item:has(select[name="spell-level"])',
+        labelText: game.i18n.localize('SPELLBOOK.Filters.Level'),
+        options: [{ value: '', label: game.i18n.localize('SPELLMANAGER.Filters.AllLevels'), selected: !this.filterState.level }].concat(
+          Object.entries(CONFIG.DND5E.spellLevels).map(([value, label]) => ({
+            value,
+            label,
+            selected: this.filterState.level === value
+          }))
+        )
+      });
+
+      // SCHOOL DROPDOWN
+      this._setupDropdownFilter({
+        containerId: 'spell-school',
+        containerSelector: '.filter-item:has(select[name="spell-school"])',
+        labelText: game.i18n.localize('SPELLBOOK.Filters.School'),
+        options: [{ value: '', label: game.i18n.localize('SPELLMANAGER.Filters.AllSchools'), selected: !this.filterState.school }].concat(
+          Object.entries(CONFIG.DND5E.spellSchools).map(([key, school]) => ({
+            value: key,
+            label: school.label,
+            selected: this.filterState.school === key
+          }))
+        )
+      });
+
+      // SOURCE DROPDOWN
+      if (this.context.spellSources) {
+        this._setupDropdownFilter({
+          containerId: 'spell-source',
+          containerSelector: '.filter-item:has(select[name="spell-source"])',
+          labelText: game.i18n.localize('SPELLMANAGER.Filters.Source'),
+          options: this.context.spellSources.map((source) => ({
+            value: source.id,
+            label: source.label,
+            selected: this.filterState.source === source.id
+          }))
+        });
+      }
+
+      // CASTING TIME DROPDOWN
+      if (this.context.castingTimeOptions) {
+        this._setupDropdownFilter({
+          containerId: 'spell-castingTime',
+          containerSelector: '.filter-item:has(select[name="spell-castingTime"])',
+          labelText: game.i18n.localize('SPELLBOOK.Filters.CastingTime'),
+          options: this.context.castingTimeOptions
+        });
+      }
+
+      // DAMAGE TYPE DROPDOWN
+      if (this.context.damageTypeOptions) {
+        this._setupDropdownFilter({
+          containerId: 'spell-damageType',
+          containerSelector: '.filter-item:has(select[name="spell-damageType"])',
+          labelText: game.i18n.localize('SPELLBOOK.Filters.DamageType'),
+          options: this.context.damageTypeOptions
+        });
+      }
+
+      // CONDITION DROPDOWN
+      if (this.context.conditionOptions) {
+        this._setupDropdownFilter({
+          containerId: 'spell-condition',
+          containerSelector: '.filter-item:has(select[name="spell-condition"])',
+          labelText: game.i18n.localize('SPELLBOOK.Filters.Condition'),
+          options: this.context.conditionOptions
+        });
+      }
+
+      // REQUIRES SAVE DROPDOWN
+      this._setupDropdownFilter({
+        containerId: 'spell-requiresSave',
+        containerSelector: '.filter-item:has(select[name="spell-requiresSave"])',
+        labelText: game.i18n.localize('SPELLBOOK.Filters.RequiresSave'),
+        options: [
+          { value: '', label: game.i18n.localize('SPELLBOOK.Filters.All'), selected: !this.filterState.requiresSave },
+          { value: 'true', label: game.i18n.localize('SPELLBOOK.Filters.True'), selected: this.filterState.requiresSave === 'true' },
+          { value: 'false', label: game.i18n.localize('SPELLBOOK.Filters.False'), selected: this.filterState.requiresSave === 'false' }
+        ]
+      });
+
+      // CONCENTRATION DROPDOWN
+      this._setupDropdownFilter({
+        containerId: 'spell-concentration',
+        containerSelector: '.filter-item:has(select[name="spell-concentration"])',
+        labelText: game.i18n.localize('SPELLBOOK.Filters.RequiresConcentration'),
+        options: [
+          { value: '', label: game.i18n.localize('SPELLBOOK.Filters.All'), selected: !this.filterState.concentration },
+          { value: 'true', label: game.i18n.localize('SPELLBOOK.Filters.True'), selected: this.filterState.concentration === 'true' },
+          { value: 'false', label: game.i18n.localize('SPELLBOOK.Filters.False'), selected: this.filterState.concentration === 'false' }
+        ]
+      });
+
+      // RITUAL CHECKBOX
+      const ritualContainer = this.element.querySelector('.checkbox-filter');
+      if (ritualContainer) {
+        const ritualCheckbox = formElements.createCheckbox({
+          name: 'spell-ritual',
+          checked: this.filterState.ritual || false,
+          label: game.i18n.localize('SPELLBOOK.Filters.RitualOnly'),
+          ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RitualOnly')
+        });
+
+        // Replace existing input
+        ritualContainer.innerHTML = '';
+        ritualContainer.appendChild(ritualCheckbox);
+      }
+
+      // RANGE INPUTS (MIN)
+      const minRangeContainer = this.element.querySelector('.range-inputs');
+      if (minRangeContainer) {
+        const inputContainer = document.createElement('div');
+        inputContainer.className = 'range-input-wrapper';
+
+        // Create min range input
+        const minRangeInput = formElements.createNumberInput({
+          name: 'spell-min-range',
+          value: this.filterState.minRange || '',
+          placeholder: game.i18n.localize('SPELLBOOK.Filters.RangeMin'),
+          ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RangeMinLabel'),
+          min: 0
+        });
+
+        // Create max range input
+        const maxRangeInput = formElements.createNumberInput({
+          name: 'spell-max-range',
+          value: this.filterState.maxRange || '',
+          placeholder: game.i18n.localize('SPELLBOOK.Filters.RangeMax'),
+          ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RangeMaxLabel'),
+          min: 0
+        });
+
+        // Create the separator
+        const separator = document.createElement('div');
+        separator.className = 'range-separator';
+        separator.setAttribute('aria-hidden', 'true');
+        separator.innerHTML = '<dnd5e-icon src="systems/dnd5e/icons/svg/range-connector.svg"></dnd5e-icon>';
+
+        // Replace current content
+        minRangeContainer.innerHTML = '';
+
+        // Add the new elements
+        minRangeContainer.appendChild(minRangeInput);
+        minRangeContainer.appendChild(separator);
+        minRangeContainer.appendChild(maxRangeInput);
+      }
+
+      log(3, 'All filter inputs have been replaced with DnD5e form elements');
+    } catch (error) {
+      log(1, 'Error setting up filter inputs:', error);
+    }
+  }
+
+  /**
+   * Helper to set up a dropdown filter with form-elements
+   * @param {Object} options - Configuration for the dropdown
+   * @param {string} options.containerId - The ID of the select element
+   * @param {string} options.containerSelector - Selector for the container
+   * @param {string} options.labelText - Text for the label
+   * @param {Array} options.options - Array of option objects
+   * @private
+   */
+  _setupDropdownFilter({ containerId, containerSelector, labelText, options }) {
+    try {
+      const container = this.element.querySelector(containerSelector);
+      if (!container) return;
+
+      // Create the new select element
+      const select = formElements.createSelect({
+        name: containerId,
+        options: options,
+        ariaLabel: labelText
+      });
+
+      // Get the label element (if it exists, keep it)
+      let label = container.querySelector('label');
+
+      // If no label exists, create one
+      if (!label) {
+        label = document.createElement('label');
+        label.setAttribute('for', containerId);
+        label.textContent = labelText;
+      }
+
+      // Clear the container and add the elements
+      container.innerHTML = '';
+      container.appendChild(label);
+      container.appendChild(select);
+    } catch (error) {
+      log(1, `Error setting up dropdown filter ${containerId}:`, error);
+    }
+  }
+
+  /* -------------------------------------------- */
   /*  Data Loading                                */
   /* -------------------------------------------- */
 
+  /**
+   * Load data for the spell list manager
+   * @returns {Promise<void>}
+   */
   async loadData() {
     try {
       log(3, 'Loading spell lists for GM manager');
@@ -276,6 +525,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Add icon enrichment to available spells
+   * @returns {Promise<void>}
+   * @private
+   */
   async enrichAvailableSpells() {
     if (!this.availableSpells.length) return;
 
@@ -292,6 +546,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     log(3, 'Completed enriching available spells');
   }
 
+  /**
+   * Filter available spells based on current filter state
+   * @returns {Object} Object with filtered spells and counts
+   */
   filterAvailableSpells() {
     try {
       const { name, level, school, source, castingTime, minRange, maxRange, damageType, condition, requiresSave, concentration, ritual } = this.filterState;
@@ -323,7 +581,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         if (remainingSpells.length === 0 && beforeCount > 0) {
           log(3, `Source '${source}' filtered out all spells, resetting to show all sources`);
           remainingSpells = [...this.availableSpells].filter((spell) => !this.isSpellInSelectedList(spell, selectedSpellUUIDs));
-          source = 'all'; // Reset source filter
+          this.filterState.source = 'all'; // Reset source filter
         } else {
           log(3, `After source filter: ${remainingSpells.length} spells remaining. Source filter: ${source}`);
         }
@@ -417,6 +675,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           const requiresConcentration = !!spell.filterData?.concentration;
           return (concentration === 'true' && requiresConcentration) || (concentration === 'false' && !requiresConcentration);
         });
+        log(3, 'After concentration filter:', remainingSpells.length, 'spells remaining');
       }
 
       // Filter: Ritual
@@ -440,6 +699,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Check if a spell is already in the selected list
+   * @param {Object} spell - The spell to check
+   * @param {Set} selectedSpellUUIDs - Set of UUIDs in the selected list
+   * @returns {boolean} Whether the spell is in the list
+   */
   isSpellInSelectedList(spell, selectedSpellUUIDs) {
     try {
       if (!selectedSpellUUIDs.size) return false;
@@ -469,6 +734,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Get a normalized set of UUIDs for selected spells
+   * @returns {Set<string>} Set of spell UUIDs
+   */
   getSelectedSpellUUIDs() {
     try {
       // Return empty set if no selected spell list
@@ -510,6 +779,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Apply the current filters to the UI
+   */
   applyFilters() {
     try {
       log(3, 'Applying filters to available spells');
@@ -551,6 +823,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /*  Filter Setup & Event Handlers               */
   /* -------------------------------------------- */
 
+  /**
+   * Set up listeners for filter elements
+   */
   setupFilterListeners() {
     try {
       // Only set up listeners if we're in the editing state
@@ -622,29 +897,29 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         }
       });
 
-      // Checkbox inputs
-      const checkboxSelectors = [{ selector: 'input[name="spell-ritual"]', property: 'ritual' }];
+      // Checkbox inputs - handle both standard and dnd5e-checkbox
+      const checkbox = this.element.querySelector('input[name="spell-ritual"], dnd5e-checkbox[name="spell-ritual"]');
+      if (checkbox) {
+        checkbox.addEventListener('change', (event) => {
+          const oldValue = this.filterState.ritual;
+          // Handle both standard checkbox and dnd5e-checkbox
+          const newValue = event.target.matches('dnd5e-checkbox') ? event.target.checked : event.target.checked;
 
-      for (const { selector, property } of checkboxSelectors) {
-        const element = this.element.querySelector(selector);
-        if (element) {
-          element.addEventListener('change', (event) => {
-            const oldValue = this.filterState[property];
-            const newValue = event.target.checked;
-
-            // Only update if value changed
-            if (oldValue !== newValue) {
-              this.filterState[property] = newValue;
-              this.applyFilters();
-            }
-          });
-        }
+          // Only update if value changed
+          if (oldValue !== newValue) {
+            this.filterState.ritual = newValue;
+            this.applyFilters();
+          }
+        });
       }
     } catch (error) {
       log(1, 'Error setting up filter listeners:', error);
     }
   }
 
+  /**
+   * Apply collapsed states to spell level sections
+   */
   applyCollapsedLevels() {
     try {
       const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS) || [];
@@ -664,6 +939,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /*  Spell List Operations                       */
   /* -------------------------------------------- */
 
+  /**
+   * Load spell details for the selected spell list
+   * @param {Array<string>} spellUuids - Array of spell UUIDs
+   * @returns {Promise<void>}
+   */
   async loadSpellDetails(spellUuids) {
     if (!this.selectedSpellList) return;
 
@@ -701,6 +981,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Show a confirmation dialog
+   * @param {Object} options - Dialog options
+   * @returns {Promise<boolean>} Whether the user confirmed
+   */
   async confirmDialog({
     title = game.i18n.localize('SPELLMANAGER.Confirm.Title'),
     content = game.i18n.localize('SPELLMANAGER.Confirm.Content'),
@@ -742,6 +1027,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /*  Action Methods                              */
   /* -------------------------------------------- */
 
+  /**
+   * Select a spell list by UUID
+   * @param {string} uuid - The spell list UUID
+   * @returns {Promise<void>}
+   */
   async selectSpellList(uuid) {
     try {
       log(3, `Selecting spell list: ${uuid}`);
@@ -791,6 +1081,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Determine the appropriate source filter for the selected spell list
+   * @param {Object} spellList - The spell list document
+   */
   determineSourceFilter(spellList) {
     try {
       log(3, 'Determining source filter for spell list');
@@ -831,6 +1125,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Enter edit mode for a spell list
+   * @param {string} uuid - The spell list UUID
+   * @returns {Promise<void>}
+   */
   async editSpellList(uuid) {
     if (!this.selectedSpellList) return;
 
@@ -907,6 +1206,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Remove a spell from the selected list
+   * @param {string} spellUuid - The spell UUID
+   * @returns {Promise<void>}
+   */
   async removeSpell(spellUuid) {
     if (!this.selectedSpellList || !this.isEditing) return;
 
@@ -955,6 +1259,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Add a spell to the selected list
+   * @param {string} spellUuid - The spell UUID
+   * @returns {Promise<void>}
+   */
   async addSpell(spellUuid) {
     if (!this.selectedSpellList || !this.isEditing) return;
 
@@ -1006,6 +1315,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Save changes to the custom spell list
+   * @returns {Promise<void>}
+   */
   async saveCustomList() {
     if (!this.selectedSpellList || !this.isEditing) return;
 
@@ -1059,6 +1372,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Delete the custom version of a spell list
+   * @returns {Promise<void>}
+   */
   async deleteCustomList() {
     if (!this.selectedSpellList) return;
 
@@ -1091,6 +1408,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Restore a custom spell list to its original state
+   * @returns {Promise<void>}
+   */
   async restoreOriginal() {
     if (!this.selectedSpellList) return;
 
@@ -1141,6 +1462,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Show documentation for the spell list manager
+   * @returns {Promise<void>}
+   */
   async showDocumentation() {
     try {
       log(3, 'Opening documentation dialog');
@@ -1174,221 +1499,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /* -------------------------------------------- */
-  /*  Static Handler Methods                      */
-  /* -------------------------------------------- */
-
-  static async handleSelectSpellList(event, _form) {
-    try {
-      const element = event.target.closest('[data-uuid]');
-      if (!element) return;
-
-      const uuid = element.dataset.uuid;
-
-      // Get the application instance
-      const appId = `gm-spell-list-manager-${MODULE.ID}`;
-      const instance = foundry.applications.instances.get(appId);
-
-      if (!instance) {
-        log(1, 'Could not find GMSpellListManager instance');
-        return;
-      }
-
-      await instance.selectSpellList(uuid);
-    } catch (error) {
-      log(1, 'Error handling select spell list:', error);
-    }
-  }
-
-  static async handleEditSpellList(event, _form) {
-    try {
-      const element = event.target.closest('[data-uuid]');
-      if (!element) return;
-
-      const uuid = element.dataset.uuid;
-
-      const appId = `gm-spell-list-manager-${MODULE.ID}`;
-      const instance = foundry.applications.instances.get(appId);
-
-      if (!instance) {
-        log(1, 'Could not find GMSpellListManager instance');
-        return;
-      }
-
-      await instance.editSpellList(uuid);
-    } catch (error) {
-      log(1, 'Error handling edit spell list:', error);
-    }
-  }
-
-  static async handleRemoveSpell(event, _form) {
-    try {
-      const element = event.target.closest('[data-uuid]');
-      if (!element) return;
-
-      const uuid = element.dataset.uuid;
-
-      const appId = `gm-spell-list-manager-${MODULE.ID}`;
-      const instance = foundry.applications.instances.get(appId);
-
-      if (!instance) {
-        log(1, 'Could not find GMSpellListManager instance');
-        return;
-      }
-
-      await instance.removeSpell(uuid);
-    } catch (error) {
-      log(1, 'Error handling remove spell:', error);
-    }
-  }
-
-  static async handleAddSpell(event, _form) {
-    try {
-      const element = event.target.closest('[data-uuid]');
-      if (!element) return;
-
-      const uuid = element.dataset.uuid;
-
-      const appId = `gm-spell-list-manager-${MODULE.ID}`;
-      const instance = foundry.applications.instances.get(appId);
-
-      if (!instance) {
-        log(1, 'Could not find GMSpellListManager instance');
-        return;
-      }
-
-      await instance.addSpell(uuid);
-    } catch (error) {
-      log(1, 'Error handling add spell:', error);
-    }
-  }
-
-  static async handleSaveCustomList(event, _form) {
-    try {
-      const appId = `gm-spell-list-manager-${MODULE.ID}`;
-      const instance = foundry.applications.instances.get(appId);
-
-      if (!instance) {
-        log(1, 'Could not find GMSpellListManager instance');
-        return;
-      }
-
-      await instance.saveCustomList();
-    } catch (error) {
-      log(1, 'Error handling save custom list:', error);
-    }
-  }
-
-  static async handleDeleteCustomList(event, _form) {
-    try {
-      const appId = `gm-spell-list-manager-${MODULE.ID}`;
-      const instance = foundry.applications.instances.get(appId);
-
-      if (!instance) {
-        log(1, 'Could not find GMSpellListManager instance');
-        return;
-      }
-
-      await instance.deleteCustomList();
-    } catch (error) {
-      log(1, 'Error handling delete custom list:', error);
-    }
-  }
-
-  static async handleRestoreOriginal(event, _form) {
-    try {
-      const appId = `gm-spell-list-manager-${MODULE.ID}`;
-      const instance = foundry.applications.instances.get(appId);
-
-      if (!instance) {
-        log(1, 'Could not find GMSpellListManager instance');
-        return;
-      }
-
-      await instance.restoreOriginal();
-    } catch (error) {
-      log(1, 'Error handling restore original:', error);
-    }
-  }
-
-  static handleClose(_event, _form) {
-    try {
-      const appId = `gm-spell-list-manager-${MODULE.ID}`;
-      const instance = foundry.applications.instances.get(appId);
-
-      if (!instance) {
-        log(1, 'Could not find GMSpellListManager instance');
-        return;
-      }
-
-      instance.close();
-    } catch (error) {
-      log(1, 'Error handling close:', error);
-    }
-  }
-
-  static handleShowDocumentation(_event, _form) {
-    try {
-      const appId = `gm-spell-list-manager-${MODULE.ID}`;
-      const instance = foundry.applications.instances.get(appId);
-
-      if (!instance) {
-        log(1, 'Could not find GMSpellListManager instance');
-        return;
-      }
-
-      instance.showDocumentation();
-    } catch (error) {
-      log(1, 'Error handling show documentation:', error);
-    }
-  }
-
-  static handleToggleSidebar(event, _form) {
-    try {
-      const appId = `gm-spell-list-manager-${MODULE.ID}`;
-      const instance = foundry.applications.instances.get(appId);
-
-      if (!instance) {
-        log(1, 'Could not find GMSpellListManager instance');
-        return;
-      }
-
-      // Toggle the sidebar-collapsed class
-      instance.element.classList.toggle('sidebar-collapsed');
-    } catch (error) {
-      log(1, 'Error handling toggle sidebar:', error);
-    }
-  }
-
-  static handleToggleSpellLevel(event, _form) {
-    try {
-      // Find the parent spell-level container
-      const levelContainer = event.target.closest('.spell-level');
-
-      if (!levelContainer || !levelContainer.classList.contains('spell-level')) {
-        return;
-      }
-
-      const levelId = levelContainer.dataset.level;
-
-      // Toggle collapsed state
-      levelContainer.classList.toggle('collapsed');
-
-      // Save state to user flags
-      const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS) || [];
-      const isCollapsed = levelContainer.classList.contains('collapsed');
-      if (isCollapsed && !collapsedLevels.includes(levelId)) {
-        collapsedLevels.push(levelId);
-      } else if (!isCollapsed && collapsedLevels.includes(levelId)) {
-        collapsedLevels.splice(collapsedLevels.indexOf(levelId), 1);
-      }
-
-      game.user.setFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS, collapsedLevels);
-    } catch (error) {
-      log(1, 'Error handling toggle spell level:', error);
-    }
-  }
-
+  /**
+   * Create a new custom spell list
+   * @returns {Promise<void>}
+   */
   async createNewList() {
     try {
       // Get class identifiers
@@ -1546,6 +1660,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Create new spell list from dialog data
+   * @param {string} name - The list name
+   * @param {string} identifier - The class identifier
+   * @returns {Promise<void>}
+   * @private
+   */
   async _createNewListCallback(name, identifier) {
     try {
       const source = game.i18n.localize('SPELLMANAGER.CreateList.Custom');
@@ -1560,6 +1681,305 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /* -------------------------------------------- */
+  /*  Static Handler Methods                      */
+  /* -------------------------------------------- */
+
+  /**
+   * Handle selecting a spell list
+   * @param {Event} event - The triggering event
+   * @param {HTMLFormElement} _form - The form element
+   * @returns {Promise<void>}
+   * @static
+   */
+  static async handleSelectSpellList(event, _form) {
+    try {
+      const element = event.target.closest('[data-uuid]');
+      if (!element) return;
+
+      const uuid = element.dataset.uuid;
+
+      // Get the application instance
+      const appId = `gm-spell-list-manager-${MODULE.ID}`;
+      const instance = foundry.applications.instances.get(appId);
+
+      if (!instance) {
+        log(1, 'Could not find GMSpellListManager instance');
+        return;
+      }
+
+      await instance.selectSpellList(uuid);
+    } catch (error) {
+      log(1, 'Error handling select spell list:', error);
+    }
+  }
+
+  /**
+   * Handle editing a spell list
+   * @param {Event} event - The triggering event
+   * @param {HTMLFormElement} _form - The form element
+   * @returns {Promise<void>}
+   * @static
+   */
+  static async handleEditSpellList(event, _form) {
+    try {
+      const element = event.target.closest('[data-uuid]');
+      if (!element) return;
+
+      const uuid = element.dataset.uuid;
+
+      const appId = `gm-spell-list-manager-${MODULE.ID}`;
+      const instance = foundry.applications.instances.get(appId);
+
+      if (!instance) {
+        log(1, 'Could not find GMSpellListManager instance');
+        return;
+      }
+
+      await instance.editSpellList(uuid);
+    } catch (error) {
+      log(1, 'Error handling edit spell list:', error);
+    }
+  }
+
+  /**
+   * Handle removing a spell
+   * @param {Event} event - The triggering event
+   * @param {HTMLFormElement} _form - The form element
+   * @returns {Promise<void>}
+   * @static
+   */
+  static async handleRemoveSpell(event, _form) {
+    try {
+      const element = event.target.closest('[data-uuid]');
+      if (!element) return;
+
+      const uuid = element.dataset.uuid;
+
+      const appId = `gm-spell-list-manager-${MODULE.ID}`;
+      const instance = foundry.applications.instances.get(appId);
+
+      if (!instance) {
+        log(1, 'Could not find GMSpellListManager instance');
+        return;
+      }
+
+      await instance.removeSpell(uuid);
+    } catch (error) {
+      log(1, 'Error handling remove spell:', error);
+    }
+  }
+
+  /**
+   * Handle adding a spell
+   * @param {Event} event - The triggering event
+   * @param {HTMLFormElement} _form - The form element
+   * @returns {Promise<void>}
+   * @static
+   */
+  static async handleAddSpell(event, _form) {
+    try {
+      const element = event.target.closest('[data-uuid]');
+      if (!element) return;
+
+      const uuid = element.dataset.uuid;
+
+      const appId = `gm-spell-list-manager-${MODULE.ID}`;
+      const instance = foundry.applications.instances.get(appId);
+
+      if (!instance) {
+        log(1, 'Could not find GMSpellListManager instance');
+        return;
+      }
+
+      await instance.addSpell(uuid);
+    } catch (error) {
+      log(1, 'Error handling add spell:', error);
+    }
+  }
+
+  /**
+   * Handle saving a custom list
+   * @param {Event} event - The triggering event
+   * @param {HTMLFormElement} _form - The form element
+   * @returns {Promise<void>}
+   * @static
+   */
+  static async handleSaveCustomList(event, _form) {
+    try {
+      const appId = `gm-spell-list-manager-${MODULE.ID}`;
+      const instance = foundry.applications.instances.get(appId);
+
+      if (!instance) {
+        log(1, 'Could not find GMSpellListManager instance');
+        return;
+      }
+
+      await instance.saveCustomList();
+    } catch (error) {
+      log(1, 'Error handling save custom list:', error);
+    }
+  }
+
+  /**
+   * Handle deleting a custom list
+   * @param {Event} event - The triggering event
+   * @param {HTMLFormElement} _form - The form element
+   * @returns {Promise<void>}
+   * @static
+   */
+  static async handleDeleteCustomList(event, _form) {
+    try {
+      const appId = `gm-spell-list-manager-${MODULE.ID}`;
+      const instance = foundry.applications.instances.get(appId);
+
+      if (!instance) {
+        log(1, 'Could not find GMSpellListManager instance');
+        return;
+      }
+
+      await instance.deleteCustomList();
+    } catch (error) {
+      log(1, 'Error handling delete custom list:', error);
+    }
+  }
+
+  /**
+   * Handle restoring a list to its original state
+   * @param {Event} event - The triggering event
+   * @param {HTMLFormElement} _form - The form element
+   * @returns {Promise<void>}
+   * @static
+   */
+  static async handleRestoreOriginal(event, _form) {
+    try {
+      const appId = `gm-spell-list-manager-${MODULE.ID}`;
+      const instance = foundry.applications.instances.get(appId);
+
+      if (!instance) {
+        log(1, 'Could not find GMSpellListManager instance');
+        return;
+      }
+
+      await instance.restoreOriginal();
+    } catch (error) {
+      log(1, 'Error handling restore original:', error);
+    }
+  }
+
+  /**
+   * Handle closing the manager
+   * @param {Event} _event - The triggering event
+   * @param {HTMLFormElement} _form - The form element
+   * @returns {void}
+   * @static
+   */
+  static handleClose(_event, _form) {
+    try {
+      const appId = `gm-spell-list-manager-${MODULE.ID}`;
+      const instance = foundry.applications.instances.get(appId);
+
+      if (!instance) {
+        log(1, 'Could not find GMSpellListManager instance');
+        return;
+      }
+
+      instance.close();
+    } catch (error) {
+      log(1, 'Error handling close:', error);
+    }
+  }
+
+  /**
+   * Handle showing documentation
+   * @param {Event} _event - The triggering event
+   * @param {HTMLFormElement} _form - The form element
+   * @returns {Promise<void>}
+   * @static
+   */
+  static handleShowDocumentation(_event, _form) {
+    try {
+      const appId = `gm-spell-list-manager-${MODULE.ID}`;
+      const instance = foundry.applications.instances.get(appId);
+
+      if (!instance) {
+        log(1, 'Could not find GMSpellListManager instance');
+        return;
+      }
+
+      instance.showDocumentation();
+    } catch (error) {
+      log(1, 'Error handling show documentation:', error);
+    }
+  }
+
+  /**
+   * Handle toggling the sidebar
+   * @param {Event} event - The triggering event
+   * @param {HTMLFormElement} _form - The form element
+   * @returns {void}
+   * @static
+   */
+  static handleToggleSidebar(event, _form) {
+    try {
+      const appId = `gm-spell-list-manager-${MODULE.ID}`;
+      const instance = foundry.applications.instances.get(appId);
+
+      if (!instance) {
+        log(1, 'Could not find GMSpellListManager instance');
+        return;
+      }
+
+      // Toggle the sidebar-collapsed class
+      instance.element.classList.toggle('sidebar-collapsed');
+    } catch (error) {
+      log(1, 'Error handling toggle sidebar:', error);
+    }
+  }
+
+  /**
+   * Handle toggling a spell level
+   * @param {Event} event - The triggering event
+   * @param {HTMLFormElement} _form - The form element
+   * @returns {void}
+   * @static
+   */
+  static handleToggleSpellLevel(event, _form) {
+    try {
+      // Find the parent spell-level container
+      const levelContainer = event.target.closest('.spell-level');
+
+      if (!levelContainer || !levelContainer.classList.contains('spell-level')) {
+        return;
+      }
+
+      const levelId = levelContainer.dataset.level;
+
+      // Toggle collapsed state
+      levelContainer.classList.toggle('collapsed');
+
+      // Save state to user flags
+      const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS) || [];
+      const isCollapsed = levelContainer.classList.contains('collapsed');
+      if (isCollapsed && !collapsedLevels.includes(levelId)) {
+        collapsedLevels.push(levelId);
+      } else if (!isCollapsed && collapsedLevels.includes(levelId)) {
+        collapsedLevels.splice(collapsedLevels.indexOf(levelId), 1);
+      }
+
+      game.user.setFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS, collapsedLevels);
+    } catch (error) {
+      log(1, 'Error handling toggle spell level:', error);
+    }
+  }
+
+  /**
+   * Handle creating a new list
+   * @param {Event} event - The triggering event
+   * @param {HTMLFormElement} _form - The form element
+   * @returns {Promise<void>}
+   * @static
+   */
   static async handleCreateNewList(event, _form) {
     try {
       const appId = `gm-spell-list-manager-${MODULE.ID}`;
@@ -1576,6 +1996,14 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Form handler for the spell list manager
+   * @param {Event} event - The form submission event
+   * @param {HTMLFormElement} form - The form element
+   * @param {Object} formData - The form data
+   * @returns {Promise<void>}
+   * @static
+   */
   static async formHandler(event, form, formData) {
     event.preventDefault();
     // This will be used for saving customized spell lists
