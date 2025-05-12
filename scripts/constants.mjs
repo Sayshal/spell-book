@@ -49,7 +49,9 @@ export const TEMPLATES = {
     SIDEBAR: 'modules/spell-book/templates/player/sidebar.hbs',
     SPELL_LIST: 'modules/spell-book/templates/player/spell-list.hbs',
     FOOTER: 'modules/spell-book/templates/player/footer.hbs',
-    WIZARD_SPELLBOOK: 'modules/spell-book/templates/player/tab-wizard-spellbook.hbs'
+    TAB_NAV: 'modules/spell-book/templates/player/tab-navigation.hbs',
+    TAB_WIZARD_SPELLBOOK: 'modules/spell-book/templates/player/tab-wizard-spellbook.hbs',
+    TAB_SPELLS: 'modules/spell-book/templates/player/tab-spells.hbs'
   },
 
   GM: {

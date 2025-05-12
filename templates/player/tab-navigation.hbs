@@ -1,0 +1,8 @@
+<nav class="tabs" data-group="spellbook-tabs">
+	{{#each tabs as |tab id|}}
+		<a class="item {{tab.cssClass}}" data-tab="{{tab.id}}" data-group="{{tab.group}}">
+			{{#if tab.icon}}<i class="{{tab.icon}}"></i>{{/if}}
+			<span>{{tab.label}}</span>
+		</a>
+	{{/each}}
+</nav>

@@ -33,19 +33,11 @@ export class WizardSpellbookManager {
   }
 
   /**
-   * Check if the actor is a wizard
-   * @returns {boolean} Whether the actor is a wizard
-   */
-  isWizard() {
-    return this.isWizard;
-  }
-
-  /**
    * Get the rules version for this wizard
    * @returns {string} The rules version ('modern' or 'legacy')
    */
   getRulesVersion() {
-    return this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_RULES_VERSION) || WIZARD_RULES.MODERN;
+    return this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_RULES_VERSION) || game.settings.get('dnd5e', 'rulesVersion') === 'modern' ? WIZARD_RULES.MODERN : WIZARD_RULES.LEGACY;
   }
 
   /**
@@ -222,16 +214,5 @@ export class WizardSpellbookManager {
     const level = spell.system.level || 0;
     // 2 hours per spell level
     return level === 0 ? 1 : level * 2;
-  }
-
-  /**
-   * Handle modern cantrip swapping on long rest
-   * @returns {Promise<boolean>} Success state
-   */
-  async handleCantrips() {
-    // This functionality is already covered by the existing
-    // SpellManager class with modern rules setting
-    // We will call that code here or remove this.
-    return true;
   }
 }

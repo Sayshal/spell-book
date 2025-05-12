@@ -54,7 +54,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @override */
   static PARTS = {
-    form: { template: TEMPLATES.PLAYER.MAIN, templates: [TEMPLATES.PLAYER.SIDEBAR, TEMPLATES.PLAYER.SPELL_LIST] },
+    form: { template: TEMPLATES.PLAYER.MAIN, templates: [TEMPLATES.PLAYER.SIDEBAR] },
+    tabs: { template: TEMPLATES.PLAYER.TAB_NAV },
+    spellstab: { template: TEMPLATES.PLAYER.TAB_SPELLS, classes: ['tab-content'] },
+    wizardtab: { template: TEMPLATES.PLAYER.TAB_WIZARD_SPELLBOOK, classes: ['tab-content'] },
     footer: { template: TEMPLATES.PLAYER.FOOTER }
   };
 
@@ -110,7 +113,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     log(3, `Initializing PlayerSpellBook for ${actor.name}`);
     this.actor = actor;
     this.spellManager = new SpellManager(actor);
+    this.wizardManager = null;
     this._newlyCheckedCantrips = new Set();
+
+    // Check if actor is a wizard
+    const wizardClass = actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard');
+    if (wizardClass) {
+      this.wizardManager = new WizardSpellbookManager(actor);
+      log(3, `Initialized wizard manager for ${actor.name}`);
+    }
+
+    // Initialize tab groups
+    if (!this.tabGroups['spellbook-tabs']) {
+      this.tabGroups['spellbook-tabs'] = 'spellstab';
+    }
 
     // Listen for flag changes to refresh the display
     this._flagChangeHook = Hooks.on('updateActor', (updatedActor, changes) => {
@@ -120,18 +136,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (changes.flags?.[MODULE.ID]) {
         const changedFlags = Object.keys(changes.flags[MODULE.ID]);
         const cantripFlagChanged = changedFlags.some((flag) => [FLAGS.CANTRIP_RULES, FLAGS.CANTRIP_CHANGE_BEHAVIOR, FLAGS.CANTRIP_CHANGE_ALLOWED].includes(flag));
+        const wizardFlagChanged = changedFlags.some((flag) => [FLAGS.WIZARD_SPELLBOOK, FLAGS.WIZARD_LEARNED_SPELLS, FLAGS.WIZARD_COPIED_SPELLS].includes(flag));
 
-        if (cantripFlagChanged && this.rendered) {
-          log(3, 'Cantrip flags changed, re-rendering spell book');
+        if ((cantripFlagChanged || wizardFlagChanged) && this.rendered) {
+          log(3, 'Wizard or cantrip flags changed, re-rendering spell book');
           this.render(false);
         }
       }
     });
-
-    if (this.spellManager.isWizard()) {
-      this.wizardManager = new WizardSpellbookManager(actor);
-      log(3, `Initialized wizard manager for ${actor.name}`);
-    }
   }
 
   /* -------------------------------------------- */
@@ -189,9 +201,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         // Convert the checkbox to HTML using the helper
         processedSpell.preparationCheckboxHtml = formElements.elementToHtml(checkbox);
 
-        // Add wizard spellbook indicator if applicable
+        // Add wizard-specific data if applicable
         if (this.wizardManager && this.wizardManager.isWizard) {
-          processedSpell.inWizardSpellbook = this.spellManager.isSpellInWizardBook(spell.compendiumUuid);
+          processedSpell.inWizardSpellbook = this.wizardManager.getSpellbookSpells().includes(spell.compendiumUuid);
         }
 
         return processedSpell;
@@ -200,10 +212,37 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       return processedLevel;
     });
 
+    // Add wizard-specific context
+    context.isWizard = false;
     if (this.wizardManager && this.wizardManager.isWizard) {
       context.isWizard = true;
       context.wizardSpellbookCount = this.wizardManager.getSpellbookSpells().length;
       context.wizardRulesVersion = this.wizardManager.getRulesVersion();
+    }
+
+    // Get active tab
+    context.activeTab = this.tabGroups['spellbook-tabs'];
+
+    // Set up tab information
+    context.tabs = {
+      spellstab: {
+        id: 'spellstab',
+        label: game.i18n.localize('Prepared Spells'),
+        group: 'spellbook-tabs',
+        cssClass: this.tabGroups['spellbook-tabs'] === 'spellstab' ? 'active' : '',
+        icon: 'fa-solid fa-book-open'
+      }
+    };
+
+    // Only add wizard tab if the actor is a wizard
+    if (context.isWizard) {
+      context.tabs.wizardtab = {
+        id: 'wizardtab',
+        label: game.i18n.localize('Wizard Spellbook'),
+        group: 'spellbook-tabs',
+        cssClass: this.tabGroups['spellbook-tabs'] === 'wizardtab' ? 'active' : '',
+        icon: 'fa-solid fa-book-spells'
+      };
     }
 
     context.filters = this._prepareFilters();
@@ -263,8 +302,22 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     super._onRender?.(context, options);
 
     try {
-      if (this.wizardManager && this.wizardManager.isWizard) {
-        this._setupWizardListeners();
+      // Setup wizard-specific elements if needed
+      if (this.wizardManager?.isWizard) {
+        // Add event listener for copy spell buttons
+        const wizardSpellbook = this.element.querySelector('.wizard-spellbook-tab');
+        if (wizardSpellbook) {
+          wizardSpellbook.addEventListener('click', async (event) => {
+            const copyBtn = event.target.closest('.copy-spell-btn');
+            if (copyBtn) {
+              event.preventDefault();
+              const uuid = copyBtn.dataset.uuid;
+              if (uuid) {
+                await this._handleCopySpell(uuid);
+              }
+            }
+          });
+        }
       }
 
       // Set sidebar state based on user preference

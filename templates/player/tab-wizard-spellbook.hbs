@@ -1,52 +1,58 @@
-<div class="wizard-spellbook-tab">
+<section class="tab {{#if (eq activeTab 'wizardtab')}}active{{/if}}" data-tab="wizardtab" data-group="spellbook-tabs">
 	{{#if isWizard}}
-		<h2>Wizard Spellbook</h2>
-		<div class="spellbook-info">
-			<p>Your spellbook contains {{wizardSpellbookCount}} spells.</p>
+		<div class="wizard-spellbook-tab">
+			<div class="spellbook-info">
+				<p>Your spellbook contains {{wizardSpellbookCount}} spells.</p>
 
-			<div class="spellbook-rules">
-				<h3>Preparing Spells</h3>
-				<p>You prepare the list of wizard spells that are available for you to cast. To do so, choose a number of wizard
-					spells from your spellbook equal to your Intelligence modifier + your wizard level (minimum of one spell).</p>
-				<p>You can change your list of prepared spells when you finish a long rest. Preparing a new list of wizard
-					spells requires time spent studying your spellbook and memorizing the incantations and gestures you must make
-					to cast the spell: at least 1 minute per spell level for each spell on your list.</p>
+				<div class="spellbook-rules">
+					<h3>Preparing Spells</h3>
+					<p>You prepare the list of wizard spells that are available for you to cast. To do so, choose a number of
+						wizard spells from your spellbook equal to your Intelligence modifier + your wizard level (minimum of one
+						spell).</p>
+					<p>You can change your list of prepared spells when you finish a long rest. Preparing a new list of wizard
+						spells requires time spent studying your spellbook and memorizing the incantations and gestures you must
+						make to cast the spell: at least 1 minute per spell level for each spell on your list.</p>
+				</div>
+
+				<div class="ritual-casting">
+					<h3>Ritual Casting</h3>
+					<p>You can cast a wizard spell as a ritual if that spell has the ritual tag and you have the spell in your
+						spellbook. You don't need to have the spell prepared.</p>
+				</div>
 			</div>
 
-			<div class="ritual-casting">
-				<h3>Ritual Casting</h3>
-				<p>You can cast a wizard spell as a ritual if that spell has the ritual tag and you have the spell in your
-					spellbook. You don't need to have the spell prepared.</p>
-			</div>
-		</div>
-
-		{{#each spellLevels as |levelData|}}
-			<div class="wizard-level-container" data-level="{{levelData.level}}">
-				<h3 class="wizard-level-header">{{levelData.levelName}}</h3>
-				<ul class="wizard-spell-list">
-					{{#each levelData.spells as |spell|}}
-						<li class="wizard-spell-item {{#if spell.inWizardSpellbook}}in-spellbook{{/if}}">
-							<div class="spell-name">
-								{{{spell.enrichedIcon}}}
-								<div class="name-stacked">
-									<span class="title">{{spell.name}}</span>
-									<span class="subtitle">{{{spell.formattedDetails}}}</span>
+			{{#each spellLevels as |levelData|}}
+				<div class="wizard-level-container" data-level="{{levelData.level}}">
+					<h3 class="wizard-level-header">{{levelData.levelName}}</h3>
+					<ul class="wizard-spell-list">
+						{{#each levelData.spells as |spell|}}
+							<li class="wizard-spell-item {{#if spell.inWizardSpellbook}}in-spellbook{{/if}}">
+								<div class="spell-name">
+									{{{spell.enrichedIcon}}}
+									<div class="name-stacked">
+										<span class="title">{{spell.name}}</span>
+										<span class="subtitle">{{{spell.formattedDetails}}}</span>
+									</div>
 								</div>
-							</div>
 
-							<div class="wizard-spell-status">
-								{{#if spell.inWizardSpellbook}}
-									<span class="in-spellbook-tag">In Spellbook</span>
-								{{else}}
-									<button class="copy-spell-btn" data-uuid="{{spell.compendiumUuid}}">
-										<i class="fas fa-book"></i> Add to Spellbook
-									</button>
-								{{/if}}
-							</div>
-						</li>
-					{{/each}}
-				</ul>
-			</div>
-		{{/each}}
+								<div class="wizard-spell-status">
+									{{#if spell.inWizardSpellbook}}
+										<span class="in-spellbook-tag">In Spellbook</span>
+									{{else}}
+										<button class="copy-spell-btn" data-uuid="{{spell.compendiumUuid}}" type="button">
+											<i class="fas fa-book"></i> Add to Spellbook
+										</button>
+									{{/if}}
+								</div>
+							</li>
+						{{/each}}
+					</ul>
+				</div>
+			{{/each}}
+		</div>
+	{{else}}
+		<div class="wizard-unavailable">
+			<p>The Wizard Spellbook is only available for characters with the Wizard class.</p>
+		</div>
 	{{/if}}
-</div>
+</section>
