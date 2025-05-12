@@ -74,13 +74,15 @@
 .application.spell-book {
   max-width: calc(100vw - 250px);
   max-height: calc(100vh - 150px);
+  overflow: visible;
+  box-shadow: none;
 
   .window-content {
     display: flex;
     flex-direction: column;
     min-height: 0;
     padding: 0;
-    overflow: hidden;
+    overflow: visible;
     transition: var(--spell-book-transition-slow);
 
     > form {
@@ -330,7 +332,7 @@
 
     .range-separator {
       --icon-fill: var(--color-text-light-6);
-      --icon-size: 16px;
+      --spell-book-nav-icon-size: 16px;
 
       place-content: center;
       display: inline-grid;
@@ -686,7 +688,7 @@
     }
 
     dnd5e-icon {
-      --icon-size: 1em;
+      --spell-book-nav-icon-size: 1em;
 
       display: inline-flex;
       position: relative;
@@ -808,32 +810,34 @@
 /* ----------------------------------------- */
 /*  Tab Navigation                           */
 /* ----------------------------------------- */
-.spell-book {
+.vertical-tabs {
   /* Vertical tab navigation - right side */
-  .tabs.tabs-right {
+  nav.tabs.tabs-right {
+    --tab-full-width: 44px;
+    --tab-inactive-width: 34px;
     --icon-fill: var(--dnd5e-color-gold);
-    --icon-size: 20px;
+    --icon-size: 16px;
 
     gap: 0.25rem;
     display: flex;
-    z-index: 20;
+    z-index: -1;
     position: absolute;
     top: 64px;
-    right: -44px;
+    left: 100%; /* Use left:100% instead of right:-34px */
     flex-direction: column;
     margin: 0;
     border: none;
   }
 
-  .tabs.tabs-right > .item {
-    margin-inline-start: calc((var(--spell-book-tab-full-width) - var(--spell-book-tab-inactive-width)) * -1);
-    padding-inline-end: 0.75rem;
+  nav.tabs.tabs-right > .item {
+    margin-inline-start: calc((var(--tab-full-width) - var(--tab-inactive-width)) * -1);
+    padding-inline-end: 12px; /* Changed from start to end for right side */
     display: flex;
     position: relative;
     flex: none;
-    justify-content: flex-end;
+    justify-content: flex-end; /* Changed from start to end for right side */
     align-items: center;
-    width: var(--spell-book-tab-full-width);
+    width: var(--tab-full-width);
     height: 40px;
     border: 1px solid transparent;
     border-radius: 0 8px 8px 0;
@@ -843,25 +847,26 @@
     transition: all 250ms ease;
   }
 
-  .tabs.tabs-right > .item.active,
-  .tabs.tabs-right > .item:hover {
+  nav.tabs.tabs-right > .item.active,
+  nav.tabs.tabs-right > .item:hover {
     margin: 0;
     border-color: var(--dnd5e-color-gold);
     text-shadow: none;
     box-shadow: 0 0 6px var(--dnd5e-color-gold);
   }
 
-  .tabs.tabs-right > .item:not([hidden]) {
+  nav.tabs.tabs-right > .item:not([hidden]) {
     display: flex;
   }
 
-  .tabs.tabs-right > .item i,
-  .tabs.tabs-right > .item dnd5e-icon {
-    margin-left: auto;
+  nav.tabs.tabs-right > .item i,
+  nav.tabs.tabs-right > .item dnd5e-icon {
+    margin-left: auto; /* Changed from right to left for right side */
+    font-size: var(--icon-size);
   }
 
   /* Hide labels but keep for accessibility */
-  .tabs.tabs-right > .item > span {
+  nav.tabs.tabs-right > .item > span {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -872,16 +877,16 @@
     overflow: hidden;
     white-space: nowrap;
   }
+}
 
-  /* Tab content */
-  .tab-content {
-    display: none;
-    width: 100%;
-  }
+/* Tab content - keep this part in .spell-book */
+.spell-book .tab-content {
+  display: none;
+  width: 100%;
+}
 
-  .tab-content.active {
-    display: block;
-  }
+.spell-book .tab-content.active {
+  display: block;
 }
 
 /* ----------------------------------------- */

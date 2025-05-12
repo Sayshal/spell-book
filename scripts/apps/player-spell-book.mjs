@@ -38,7 +38,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       configureFilters: PlayerSpellBook.configureFilters,
       configureCantripSettings: PlayerSpellBook.configureCantripSettings
     },
-    classes: ['spell-book'],
+    classes: ['spell-book', 'vertical-tabs'],
     window: {
       icon: 'fas fa-book-open',
       resizable: true,
