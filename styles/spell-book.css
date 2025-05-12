@@ -966,6 +966,102 @@
 }
 
 /* ----------------------------------------- */
+/*  Wizard Spellbook Tab                     */
+/* ----------------------------------------- */
+.wizard-spellbook-tab {
+  padding: 0.5rem;
+}
+
+.wizard-spellbook-tab h2 {
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border-light);
+  color: var(--spell-book-text-primary);
+  font-size: 1.5em;
+}
+
+.spellbook-info {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: var(--spell-book-border-radius);
+  background-color: var(--spell-book-bg-item);
+}
+
+.spellbook-info h3 {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--spell-book-text-primary);
+  font-size: 1.2em;
+}
+
+.spellbook-info p {
+  margin-bottom: 0.5rem;
+}
+
+.wizard-level-container {
+  margin-bottom: 1rem;
+}
+
+.wizard-level-header {
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--color-border-light);
+  color: var(--spell-book-text-primary);
+  font-size: 1.2em;
+}
+
+.wizard-spell-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wizard-spell-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2px;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--spell-book-border-light);
+  border-radius: var(--spell-book-border-radius);
+  background-color: var(--spell-book-bg-item);
+}
+
+.wizard-spell-item:hover {
+  background-color: var(--spell-book-bg-item-hover);
+}
+
+.wizard-spell-item.in-spellbook {
+  background-color: var(--spell-book-bg-prepared);
+}
+
+.wizard-spell-status {
+  margin-left: auto;
+}
+
+.in-spellbook-tag {
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--spell-book-border-radius);
+  color: #000;
+  font-weight: bold;
+  font-size: 0.8em;
+  background-color: #3fc6c1;
+}
+
+.copy-spell-btn {
+  padding: 0.2rem 0.5rem;
+  border: none;
+  border-radius: var(--spell-book-border-radius);
+  color: var(--color-text-button);
+  font-size: 0.8em;
+  cursor: pointer;
+  background-color: var(--color-button);
+}
+
+.copy-spell-btn:hover {
+  background-color: var(--color-button-hover);
+}
+
+/* ----------------------------------------- */
 /*  Theme Support                            */
 /* ----------------------------------------- */
 .theme-light {

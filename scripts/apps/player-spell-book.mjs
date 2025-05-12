@@ -5,6 +5,7 @@ import * as formElements from '../helpers/form-elements.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { SpellManager } from '../helpers/spell-preparation.mjs';
+import { WizardSpellbookManager } from '../helpers/wizard-spellbook.mjs';
 import { log } from '../logger.mjs';
 import { CantripSettingsDialog } from './cantrip-settings-dialog.mjs';
 import { PlayerFilterConfiguration } from './player-filter-configuration.mjs';
@@ -93,6 +94,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _newlyCheckedCantrips = new Set();
 
+  /** Wizard spellbook manager instance */
+  wizardManager = null;
+
   get title() {
     return game.i18n.format('SPELLBOOK.Application.ActorTitle', { name: this.actor.name });
   }
@@ -123,6 +127,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       }
     });
+
+    if (this.spellManager.isWizard()) {
+      this.wizardManager = new WizardSpellbookManager(actor);
+      log(3, `Initialized wizard manager for ${actor.name}`);
+    }
   }
 
   /* -------------------------------------------- */
@@ -180,11 +189,22 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         // Convert the checkbox to HTML using the helper
         processedSpell.preparationCheckboxHtml = formElements.elementToHtml(checkbox);
 
+        // Add wizard spellbook indicator if applicable
+        if (this.wizardManager && this.wizardManager.isWizard) {
+          processedSpell.inWizardSpellbook = this.spellManager.isSpellInWizardBook(spell.compendiumUuid);
+        }
+
         return processedSpell;
       });
 
       return processedLevel;
     });
+
+    if (this.wizardManager && this.wizardManager.isWizard) {
+      context.isWizard = true;
+      context.wizardSpellbookCount = this.wizardManager.getSpellbookSpells().length;
+      context.wizardRulesVersion = this.wizardManager.getRulesVersion();
+    }
 
     context.filters = this._prepareFilters();
     return context;
@@ -243,6 +263,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     super._onRender?.(context, options);
 
     try {
+      if (this.wizardManager && this.wizardManager.isWizard) {
+        this._setupWizardListeners();
+      }
+
       // Set sidebar state based on user preference
       this._setSidebarState();
 
@@ -654,6 +678,67 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     } catch (error) {
       log(1, 'Error setting up preparation listeners:', error);
+    }
+  }
+
+  /**
+   * Set up wizard-specific listeners
+   * @private
+   */
+  _setupWizardListeners() {
+    try {
+      log(3, 'Setting up wizard listeners');
+
+      // Use event delegation for spell copying buttons
+      const content = this.element.querySelector('.wizard-spellbook-tab');
+      if (!content) return;
+
+      content.addEventListener('click', async (event) => {
+        const copyButton = event.target.closest('.copy-spell-btn');
+        if (copyButton) {
+          const uuid = copyButton.dataset.uuid;
+          if (uuid) {
+            await this._handleCopySpell(uuid);
+          }
+        }
+      });
+    } catch (error) {
+      log(1, 'Error setting up wizard listeners:', error);
+    }
+  }
+
+  /**
+   * Handle copying a spell to the wizard's spellbook
+   * @param {string} uuid - The spell UUID
+   * @private
+   */
+  async _handleCopySpell(uuid) {
+    try {
+      if (!this.wizardManager) return;
+
+      // Load the spell
+      const spell = await fromUuid(uuid);
+      if (!spell) {
+        ui.notifications.error(`Could not find spell with UUID: ${uuid}`);
+        return;
+      }
+
+      const cost = this.wizardManager.getCopyingCost(spell);
+      const time = this.wizardManager.getCopyingTime(spell);
+
+      // For now, we'll add it directly without the dialog
+      // In a future version, we would show the dialog to confirm
+      const success = await this.wizardManager.copySpell(uuid, cost, time);
+
+      if (success) {
+        ui.notifications.info(`Added ${spell.name} to your spellbook.`);
+        this.render(false); // Re-render to update UI
+      } else {
+        ui.notifications.warn(`Could not add ${spell.name} to your spellbook.`);
+      }
+    } catch (error) {
+      log(1, `Error copying spell: ${error.message}`);
+      ui.notifications.error('Failed to copy spell to spellbook');
     }
   }
 

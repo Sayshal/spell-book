@@ -1,6 +1,7 @@
 import { CANTRIP_CHANGE_BEHAVIOR, CANTRIP_RULES, FLAGS, MODULE, SETTINGS } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import * as formattingUtils from './spell-formatting.mjs';
+import { WizardSpellbookManager } from './wizard-spellbook.mjs';
 
 /**
  * Save prepared spells for an actor
@@ -717,8 +718,8 @@ export class SpellManager {
       disabledReason = cantripLockReason;
     }
 
-    // Return status
-    return {
+    // Create the base result object
+    const result = {
       prepared: isGranted || spell.system.preparation?.prepared || alwaysPrepared,
       isOwned: true,
       preparationMode: preparationMode,
@@ -731,6 +732,29 @@ export class SpellManager {
       isCantripLocked: isCantripLocked,
       cantripLockReason: cantripLockReason
     };
+
+    // For wizards, check if spell is in spellbook
+    if (this.isWizard && this.isWizard()) {
+      const wizardManager = this.getWizardManager();
+      if (wizardManager) {
+        // Get the spell's UUID
+        const spellUuid = spell.flags?.core?.sourceId || spell.uuid;
+
+        // For non-cantrips, check if the spell can be prepared (in spellbook)
+        if (spell.system.level > 0 && preparationMode === 'prepared' && !isDisabled) {
+          const inSpellbook = wizardManager.canPrepareSpell(spellUuid);
+          if (!inSpellbook) {
+            result.disabled = true;
+            result.disabledReason = 'This spell is not in your spellbook';
+          }
+        }
+
+        // Add information about wizard spellbook
+        result.inWizardSpellbook = wizardManager.getSpellbookSpells().includes(spellUuid);
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -859,5 +883,43 @@ export class SpellManager {
     await this.actor.setFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX, currentMax);
     log(3, `Cantrip level-up complete: updated previous level to ${currentLevel}, previous max to ${currentMax}`);
     return true;
+  }
+
+  /**
+   * Check if the actor is a wizard
+   * @returns {boolean} Whether the actor is a wizard
+   */
+  isWizard() {
+    const wizardClass = this.actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard');
+
+    return wizardClass !== null;
+  }
+
+  /**
+   * Get the wizard spellbook manager if the actor is a wizard
+   * @returns {WizardSpellbookManager|null} The wizard spellbook manager or null
+   */
+  getWizardManager() {
+    if (!this._wizardManager) {
+      if (this.isWizard()) {
+        this._wizardManager = new WizardSpellbookManager(this.actor);
+      } else {
+        return null;
+      }
+    }
+    return this._wizardManager;
+  }
+
+  /**
+   * Check if a spell is in the wizard's spellbook
+   * @param {string} uuid - UUID of the spell to check
+   * @returns {boolean} Whether the spell is in the spellbook
+   */
+  isSpellInWizardBook(uuid) {
+    const wizardManager = this.getWizardManager();
+    if (!wizardManager) return false;
+
+    const spellbook = wizardManager.getSpellbookSpells();
+    return spellbook.includes(uuid);
   }
 }

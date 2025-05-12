@@ -28,7 +28,11 @@ export const FLAGS = {
   CANTRIP_RULES: 'cantripRules',
   CANTRIP_CHANGE_BEHAVIOR: 'cantripBehavior',
   PREVIOUS_LEVEL: 'previousLevel',
-  PREVIOUS_CANTRIP_MAX: 'previousCantripMax'
+  PREVIOUS_CANTRIP_MAX: 'previousCantripMax',
+  WIZARD_SPELLBOOK: 'wizardSpellbook',
+  WIZARD_LEARNED_SPELLS: 'wizardLearnedSpells',
+  WIZARD_COPIED_SPELLS: 'wizardCopiedSpells',
+  WIZARD_RULES_VERSION: 'wizardRulesVersion'
 };
 
 //-----------------------------------------------------------------------------
@@ -44,7 +48,8 @@ export const TEMPLATES = {
     MAIN: 'modules/spell-book/templates/player/spell-book.hbs',
     SIDEBAR: 'modules/spell-book/templates/player/sidebar.hbs',
     SPELL_LIST: 'modules/spell-book/templates/player/spell-list.hbs',
-    FOOTER: 'modules/spell-book/templates/player/footer.hbs'
+    FOOTER: 'modules/spell-book/templates/player/footer.hbs',
+    WIZARD_SPELLBOOK: 'modules/spell-book/templates/player/tab-wizard-spellbook.hbs'
   },
 
   GM: {
@@ -247,4 +252,27 @@ export const CANTRIP_CHANGE_BEHAVIOR = {
   UNRESTRICTED: 'unrestricted',
   NOTIFY_GM: 'notifyGM',
   LOCK_AFTER_MAX: 'lockAfterMax'
+};
+
+//-----------------------------------------------------------------------------
+// WIZARD CONFIGURATION
+//-----------------------------------------------------------------------------
+
+/**
+ * Wizard rules options
+ * @type {Object}
+ */
+export const WIZARD_RULES = {
+  MODERN: 'modern',
+  LEGACY: 'legacy'
+};
+
+/**
+ * Wizard spell source types
+ * @type {Object}
+ */
+export const WIZARD_SPELL_SOURCE = {
+  LEVEL_UP: 'levelUp',
+  COPIED: 'copied',
+  INITIAL: 'initial'
 };
