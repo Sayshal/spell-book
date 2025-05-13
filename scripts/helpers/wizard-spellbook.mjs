@@ -281,7 +281,7 @@ export class WizardSpellbookManager {
       if (!customPack) return null;
 
       // Get all journals
-      const journals = await customPack.getDocuments({ type: 'JournalEntry' });
+      const journals = await customPack.getDocuments();
 
       // Find journal with matching actor ID
       return journals.find((j) => j.flags?.[MODULE.ID]?.actorId === this.actor.id);
