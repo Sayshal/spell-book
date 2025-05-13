@@ -69,7 +69,34 @@ async function unlockModuleCompendium() {
       log(3, 'Unlocking custom spell lists compendium');
       await pack.configure({ locked: false });
     }
+    await createActorSpellbooksFolder(pack);
   } catch (error) {
     log(1, 'Error unlocking module compendium:', error);
+  }
+}
+
+async function createActorSpellbooksFolder(pack) {
+  try {
+    if (!pack) return;
+
+    // Check if folder already exists
+    const folders = await pack.folders;
+    const folder = folders.find((f) => f.name === 'Actor Spellbooks');
+
+    if (!folder) {
+      log(3, 'Creating Actor Spellbooks folder at module initialization');
+      await Folder.create(
+        {
+          name: 'Actor Spellbooks',
+          type: 'JournalEntry'
+        },
+        { pack: pack.collection }
+      );
+      log(3, 'Created Actor Spellbooks folder');
+    } else {
+      log(3, 'Actor Spellbooks folder already exists');
+    }
+  } catch (error) {
+    log(1, 'Error creating Actor Spellbooks folder:', error);
   }
 }
