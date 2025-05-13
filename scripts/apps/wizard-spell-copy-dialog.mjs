@@ -1,25 +1,31 @@
+import { log } from '../logger.mjs';
+
 /**
  * Dialog for confirming spell copying to wizard spellbook
  */
-export class WizardSpellCopyDialog extends foundry.applications.api.DialogV2 {
-  /** @override */
-  static DEFAULT_OPTIONS = foundry.utils.mergeObject(foundry.applications.api.DialogV2.DEFAULT_OPTIONS, {
-    window: {
-      title: 'Copy Spell',
-      width: 400
-    }
-  });
-
-  /** @override */
+export class WizardSpellCopyDialog {
+  /**
+   * Create a dialog for copying a spell to a wizard's spellbook
+   * @param {Item5e} spell - The spell to copy
+   * @param {WizardSpellbookManager} wizardManager - The wizard spellbook manager
+   */
   constructor(spell, wizardManager) {
-    const cost = wizardManager.getCopyingCost(spell);
-    const time = wizardManager.getCopyingTime(spell);
+    this.spell = spell;
+    this.wizardManager = wizardManager;
+  }
 
-    super({
-      title: `Copy Spell: ${spell.name}`,
-      content: `
+  /**
+   * Show the dialog and get the result
+   * @returns {Promise<Object>} Dialog result
+   */
+  async getResult() {
+    try {
+      const cost = this.wizardManager.getCopyingCost(this.spell);
+      const time = this.wizardManager.getCopyingTime(this.spell);
+
+      const content = `
         <form class="wizard-copy-form">
-          <p>Do you want to copy <strong>${spell.name}</strong> to your spellbook?</p>
+          <p>Do you want to copy <strong>${this.spell.name}</strong> to your spellbook?</p>
           <div class="copy-details">
             <div class="form-group">
               <label>Cost:</label>
@@ -31,32 +37,38 @@ export class WizardSpellCopyDialog extends foundry.applications.api.DialogV2 {
             </div>
           </div>
         </form>
-      `,
-      buttons: {
-        confirm: {
-          icon: 'fas fa-book',
-          label: 'Copy Spell',
-          callback: () => (this._confirmed = true)
-        },
-        cancel: {
-          icon: 'fas fa-times',
-          label: 'Cancel'
-        }
-      },
-      defaultButton: 'confirm'
-    });
+      `;
 
-    this._spell = spell;
-    this._wizardManager = wizardManager;
-    this._confirmed = false;
-  }
+      const result = await foundry.applications.api.DialogV2.wait({
+        title: `Copy Spell: ${this.spell.name}`,
+        content: content,
+        buttons: [
+          {
+            icon: 'fas fa-book',
+            label: 'Copy Spell',
+            action: 'confirm',
+            className: 'dialog-button'
+          },
+          {
+            icon: 'fas fa-times',
+            label: 'Cancel',
+            action: 'cancel',
+            className: 'dialog-button'
+          }
+        ],
+        default: 'confirm'
+      });
 
-  /** @override */
-  async getResult() {
-    await this.wait();
-    return {
-      confirmed: this._confirmed,
-      spell: this._spell
-    };
+      return {
+        confirmed: result === 'confirm',
+        spell: this.spell
+      };
+    } catch (error) {
+      log(1, `Error showing spell copy dialog: ${error.message}`);
+      return {
+        confirmed: false,
+        spell: this.spell
+      };
+    }
   }
 }
