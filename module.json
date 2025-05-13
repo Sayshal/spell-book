@@ -69,6 +69,5 @@
     }
   ],
   "styles": ["styles/spell-book.css", "styles/gm-spell-list-manager.css"],
-  "url": "https://github.com/Sayshal/spell-book",
-  "hasStorage": true
+  "url": "https://github.com/Sayshal/spell-book"
 }

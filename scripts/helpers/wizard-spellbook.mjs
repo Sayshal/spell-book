@@ -9,6 +9,11 @@ export class WizardSpellbookManager {
    * Create a new WizardSpellbookManager for an actor
    * @param {Actor5e} actor - The actor to manage wizard spellbook for
    */
+
+  // Static locks to prevent duplicate creation
+  static _folderCreationLock = false;
+  static _journalCreationLocks = new Map();
+
   constructor(actor) {
     this.actor = actor;
     log(3, `Creating WizardSpellbookManager for ${actor.name}`);
@@ -278,12 +283,44 @@ export class WizardSpellbookManager {
         return null;
       }
 
-      // Look for existing folder
-      const folders = await customPack.getDocuments({ type: 'Folder' });
-      let folder = folders.find((f) => f.name === 'Actor Spellbooks');
+      // Simple lock to prevent multiple simultaneous creations
+      if (WizardSpellbookManager._folderCreationLock) {
+        log(3, 'Folder creation already in progress, waiting...');
+        // Wait for existing creation to finish
+        await new Promise((resolve) => {
+          const checkInterval = setInterval(() => {
+            if (!WizardSpellbookManager._folderCreationLock) {
+              clearInterval(checkInterval);
+              resolve();
+            }
+          }, 100);
+        });
+      }
 
-      // Create folder if it doesn't exist
-      if (!folder) {
+      // Check for existing folder first (after any pending creation completes)
+      // Get all folders
+      const allFolders = await customPack.getDocuments({ type: 'Folder' });
+      let folder = allFolders.find((f) => f.name === 'Actor Spellbooks');
+
+      // If we found a folder, return it
+      if (folder) {
+        log(3, `Found existing Actor Spellbooks folder: ${folder.id}`);
+        return folder;
+      }
+
+      // Set the lock before creating
+      WizardSpellbookManager._folderCreationLock = true;
+
+      try {
+        // Double-check once more before creating (in case another thread just created it)
+        const freshFolders = await customPack.getDocuments({ type: 'Folder' });
+        folder = freshFolders.find((f) => f.name === 'Actor Spellbooks');
+        if (folder) {
+          log(3, `Found existing Actor Spellbooks folder in final check: ${folder.id}`);
+          return folder;
+        }
+
+        // Create folder if still not found
         log(3, 'Creating Actor Spellbooks folder');
         folder = await Folder.create(
           {
@@ -292,12 +329,16 @@ export class WizardSpellbookManager {
           },
           { pack: customPack.collection }
         );
-
+        WizardSpellbookManager._folderCreationLock = false;
         log(3, `Created Actor Spellbooks folder: ${folder.id}`);
+        return folder;
+      } finally {
+        // Always release the lock
+        WizardSpellbookManager._folderCreationLock = false;
       }
-
-      return folder;
     } catch (error) {
+      // Make sure to release the lock on error
+      WizardSpellbookManager._folderCreationLock = false;
       log(1, `Error getting or creating Actor Spellbooks folder: ${error.message}`);
       return null;
     }
@@ -316,13 +357,26 @@ export class WizardSpellbookManager {
         return null;
       }
 
-      // Get all journals in the pack
+      // Get all journals
       const journals = await customPack.getDocuments({ type: 'JournalEntry' });
 
-      // Look for a journal with the actor's ID in flags
-      const journal = journals.find((j) => j.flags?.[MODULE.ID]?.actorId === this.actor.id);
+      // First try exact actor ID match in flags
+      let journal = journals.find((j) => j.flags?.[MODULE.ID]?.actorId === this.actor.id);
 
-      return journal || null;
+      if (journal) {
+        log(3, `Found journal by actor ID for ${this.actor.name}`);
+        return journal;
+      }
+
+      // Next try by exact name match
+      journal = journals.find((j) => j.name === this.actor.name);
+
+      // Also check for journals with the actor name in any page names
+      if (!journal) {
+        journal = journals.find((j) => j.pages.some((p) => p.name.includes(this.actor.name) && p.type === 'spells'));
+      }
+
+      return journal;
     } catch (error) {
       log(1, `Error finding spellbook journal: ${error.message}`);
       return null;
@@ -335,6 +389,24 @@ export class WizardSpellbookManager {
    */
   async createSpellbookJournal() {
     try {
+      // Check if we're already creating a journal
+      if (this._creatingJournal) {
+        log(3, 'Journal creation already in progress, waiting...');
+        // Wait for the existing creation to finish
+        await new Promise((resolve) => {
+          const checkInterval = setInterval(() => {
+            if (!this._creatingJournal) {
+              clearInterval(checkInterval);
+              resolve();
+            }
+          }, 100);
+        });
+
+        // Once creation is done, try finding it again
+        const journal = await this.findSpellbookJournal();
+        if (journal) return journal;
+      }
+
       // Get the custom spell lists pack
       const customPack = game.packs.get(`${MODULE.ID}.custom-spell-lists`);
       if (!customPack) {
@@ -348,7 +420,6 @@ export class WizardSpellbookManager {
       const journalData = {
         name: this.actor.name,
         folder: folder ? folder.id : null,
-        parent: folder ? folder.id : null,
         flags: {
           [MODULE.ID]: {
             actorId: this.actor.id,
@@ -375,12 +446,20 @@ export class WizardSpellbookManager {
         ]
       };
 
-      // Create the journal in the pack
-      const journal = await JournalEntry.create(journalData, { pack: customPack.collection });
-      log(3, `Created new spellbook journal for ${this.actor.name}: ${journal.uuid}`);
+      // Mark that we're creating a journal
+      this._creatingJournal = true;
 
-      return journal;
+      try {
+        // Create the journal in the pack
+        const journal = await JournalEntry.create(journalData, { pack: customPack.collection });
+        log(3, `Created new spellbook journal for ${this.actor.name}: ${journal.uuid}`);
+        return journal;
+      } finally {
+        // Make sure to clear the flag when done
+        this._creatingJournal = false;
+      }
     } catch (error) {
+      this._creatingJournal = false;
       log(1, `Error creating spellbook journal: ${error.message}`);
       throw error;
     }
@@ -392,6 +471,29 @@ export class WizardSpellbookManager {
    */
   async getOrCreateSpellbookJournal() {
     try {
+      // Use a static creation lock map keyed by actor ID
+      WizardSpellbookManager._journalCreationLocks = WizardSpellbookManager._journalCreationLocks || new Map();
+
+      // If we already have a creation in progress for this actor, wait for it
+      if (WizardSpellbookManager._journalCreationLocks.get(this.actor.id)) {
+        log(3, `Journal creation for ${this.actor.name} already in progress, waiting...`);
+        await new Promise((resolve) => {
+          const checkInterval = setInterval(() => {
+            if (!WizardSpellbookManager._journalCreationLocks.get(this.actor.id)) {
+              clearInterval(checkInterval);
+              resolve();
+            }
+          }, 100);
+        });
+
+        // After waiting, check if the journal now exists
+        const journal = await this.findSpellbookJournal();
+        if (journal) {
+          log(3, `Found journal for ${this.actor.name} after waiting`);
+          return journal;
+        }
+      }
+
       // Check if the actor already has a spellbook journal
       const existingJournal = await this.findSpellbookJournal();
       if (existingJournal) {
@@ -399,10 +501,27 @@ export class WizardSpellbookManager {
         return existingJournal;
       }
 
-      // If not, create a new one
-      log(3, `Creating new spellbook journal for ${this.actor.name}`);
-      return await this.createSpellbookJournal();
+      // Set the lock before creating
+      WizardSpellbookManager._journalCreationLocks.set(this.actor.id, true);
+
+      try {
+        // Double-check once more before creating
+        const doubleCheckJournal = await this.findSpellbookJournal();
+        if (doubleCheckJournal) {
+          log(3, `Found journal for ${this.actor.name} in final check`);
+          return doubleCheckJournal;
+        }
+
+        // If not, create a new one
+        log(3, `Creating new spellbook journal for ${this.actor.name}`);
+        return await this.createSpellbookJournal();
+      } finally {
+        // Always release the lock
+        WizardSpellbookManager._journalCreationLocks.set(this.actor.id, false);
+      }
     } catch (error) {
+      // Make sure to release the lock on error
+      WizardSpellbookManager._journalCreationLocks.set(this.actor.id, false);
       log(1, `Error getting or creating spellbook journal: ${error.message}`);
       throw error;
     }

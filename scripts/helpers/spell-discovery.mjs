@@ -7,18 +7,20 @@ import { WizardSpellbookManager } from './wizard-spellbook.mjs';
  * @param {string} className - The name of the class (used only for logging)
  * @param {string} [classUuid] - UUID of the class item
  * @param {Actor5e} [actor] - The actor (for wizard spellbook)
+ * @param {WizardSpellbookManager} [wizardManager] - Existing wizard manager instance
  * @returns {Promise<Set<string>>} - Set of spell UUIDs
  */
-export async function getClassSpellList(className, classUuid, actor) {
+export async function getClassSpellList(className, classUuid, actor, wizardManager) {
   log(3, `Getting spell list for ${className}`);
 
   // Special handling for wizards with custom spellbooks
   if (actor) {
     try {
-      const wizardManager = new WizardSpellbookManager(actor);
-      if (wizardManager.isWizard) {
+      const manager = wizardManager || (actor && new WizardSpellbookManager(actor));
+
+      if (manager.isWizard) {
         // Try to get the actor's custom spellbook
-        const page = await wizardManager.getSpellbookPage();
+        const page = await manager.getSpellbookPage();
         if (page && page.system?.spells?.size > 0) {
           log(3, `Using actor's custom wizard spellbook with ${page.system.spells.size} spells`);
           return page.system.spells;

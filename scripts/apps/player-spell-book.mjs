@@ -486,8 +486,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const classUuid = classItem.uuid;
 
       log(3, `Loading spell list for ${className}`);
-      // Pass actor to getClassSpellList
-      const spellUuids = await discoveryUtils.getClassSpellList(className, classUuid, this.actor);
+      // Pass the wizardManager to avoid creating multiple instances
+      const spellUuids = await discoveryUtils.getClassSpellList(className, classUuid, this.actor, this.wizardManager);
 
       if (!spellUuids || !spellUuids.size) {
         log(1, 'No spells found in class spell list');
@@ -526,8 +526,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       log(3, 'Processing and organizing spells');
 
-      // Organize spells by level
-      const spellLevels = await actorSpellUtils.organizeSpellsByLevel(spellItems, this.actor);
+      // Organize spells by level, passing both managers
+      const spellLevels = await actorSpellUtils.organizeSpellsByLevel(spellItems, this.actor, this.spellManager);
       log(3, `Organized spells into ${spellLevels.length} levels`);
 
       // Sort spells within each level
