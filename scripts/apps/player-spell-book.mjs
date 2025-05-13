@@ -9,6 +9,7 @@ import { WizardSpellbookManager } from '../helpers/wizard-spellbook.mjs';
 import { log } from '../logger.mjs';
 import { CantripSettingsDialog } from './cantrip-settings-dialog.mjs';
 import { PlayerFilterConfiguration } from './player-filter-configuration.mjs';
+import { WizardSpellCopyDialog } from './wizard-spell-copy-dialog.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -115,6 +116,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.spellManager = new SpellManager(actor);
     this.wizardManager = null;
     this._newlyCheckedCantrips = new Set();
+
+    // Flag to ensure we only initialize the wizard spellbook once
+    this._wizardInitialized = false;
 
     // Check if actor is a wizard
     const wizardClass = actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard');
@@ -296,6 +300,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       // Setup wizard-specific elements if needed
       if (this.wizardManager?.isWizard) {
+        // Initialize the journal only once
+        if (!this._wizardInitialized) {
+          this._wizardInitialized = true;
+          this.wizardManager.getOrCreateSpellbookJournal().catch((err) => {
+            log(1, `Error initializing wizard spellbook journal: ${err.message}`);
+          });
+        }
+
         // Add event listener for copy spell buttons
         const wizardSpellbook = this.element.querySelector('.wizard-spellbook-tab');
         if (wizardSpellbook) {
@@ -474,7 +486,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const classUuid = classItem.uuid;
 
       log(3, `Loading spell list for ${className}`);
-      const spellUuids = await discoveryUtils.getClassSpellList(className, classUuid);
+      // Pass actor to getClassSpellList
+      const spellUuids = await discoveryUtils.getClassSpellList(className, classUuid, this.actor);
 
       if (!spellUuids || !spellUuids.size) {
         log(1, 'No spells found in class spell list');
@@ -800,18 +813,22 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         return;
       }
 
-      const cost = this.wizardManager.getCopyingCost(spell);
-      const time = this.wizardManager.getCopyingTime(spell);
+      // Show confirmation dialog
+      const dialog = new WizardSpellCopyDialog(spell, this.wizardManager);
+      const result = await dialog.getResult();
 
-      // For now, we'll add it directly without the dialog
-      // In a future version, we would show the dialog to confirm
-      const success = await this.wizardManager.copySpell(uuid, cost, time);
+      if (result.confirmed) {
+        const cost = this.wizardManager.getCopyingCost(spell);
+        const time = this.wizardManager.getCopyingTime(spell);
 
-      if (success) {
-        ui.notifications.info(`Added ${spell.name} to your spellbook.`);
-        this.render(false); // Re-render to update UI
-      } else {
-        ui.notifications.warn(`Could not add ${spell.name} to your spellbook.`);
+        const success = await this.wizardManager.copySpell(uuid, cost, time);
+
+        if (success) {
+          ui.notifications.info(`Added ${spell.name} to your spellbook.`);
+          this.render(false); // Re-render to update UI
+        } else {
+          ui.notifications.warn(`Could not add ${spell.name} to your spellbook.`);
+        }
       }
     } catch (error) {
       log(1, `Error copying spell: ${error.message}`);

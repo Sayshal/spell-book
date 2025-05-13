@@ -89,60 +89,6 @@ export class WizardSpellbookManager {
   }
 
   /**
-   * Add a spell to the wizard's spellbook
-   * @param {string} spellUuid - UUID of the spell to add
-   * @param {string} source - Source of the spell (levelUp, copied, initial)
-   * @param {Object} metadata - Additional metadata for the spell
-   * @returns {Promise<boolean>} Success state
-   */
-  async addSpellToSpellbook(spellUuid, source, metadata = {}) {
-    try {
-      // Get current spellbook
-      const spellbook = this.getSpellbookSpells();
-
-      // Check if spell is already in spellbook
-      if (spellbook.includes(spellUuid)) {
-        log(3, `Spell ${spellUuid} already in spellbook`);
-        return false;
-      }
-
-      // Add spell to spellbook
-      const updatedSpellbook = [...spellbook, spellUuid];
-
-      // Add to learned spells with source
-      const learnedSpells = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_LEARNED_SPELLS) || {};
-      learnedSpells[spellUuid] = {
-        source: source || WIZARD_SPELL_SOURCE.COPIED,
-        dateAdded: Date.now(),
-        ...metadata
-      };
-
-      // If this is a copied spell, add detailed metadata
-      if (source === WIZARD_SPELL_SOURCE.COPIED && metadata.cost && metadata.timeSpent) {
-        const copiedSpells = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_COPIED_SPELLS) || [];
-        copiedSpells.push({
-          spellUuid,
-          dateCopied: Date.now(),
-          cost: metadata.cost,
-          timeSpent: metadata.timeSpent
-        });
-
-        await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_COPIED_SPELLS, copiedSpells);
-      }
-
-      // Update flags
-      await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_SPELLBOOK, updatedSpellbook);
-      await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_LEARNED_SPELLS, learnedSpells);
-
-      log(3, `Added spell ${spellUuid} to wizard spellbook`);
-      return true;
-    } catch (error) {
-      log(1, `Error adding spell to spellbook: ${error.message}`);
-      return false;
-    }
-  }
-
-  /**
    * Copy a spell to the wizard's spellbook with associated cost and time
    * @param {string} spellUuid - UUID of the spell to copy
    * @param {number} cost - Cost in gold to copy the spell
@@ -214,5 +160,229 @@ export class WizardSpellbookManager {
     const level = spell.system.level || 0;
     // 2 hours per spell level
     return level === 0 ? 1 : level * 2;
+  }
+
+  /**
+   * Add a spell to the wizard's spellbook
+   * @param {string} spellUuid - UUID of the spell to add
+   * @param {string} source - Source of the spell (levelUp, copied, initial)
+   * @param {Object} metadata - Additional metadata for the spell
+   * @returns {Promise<boolean>} Success state
+   */
+  async addSpellToSpellbook(spellUuid, source, metadata = {}) {
+    try {
+      // Get current spellbook
+      const spellbook = this.getSpellbookSpells();
+
+      // Check if spell is already in spellbook
+      if (spellbook.includes(spellUuid)) {
+        log(3, `Spell ${spellUuid} already in spellbook`);
+        return false;
+      }
+
+      // Add spell to spellbook
+      const updatedSpellbook = [...spellbook, spellUuid];
+
+      // Add to learned spells with source
+      const learnedSpells = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_LEARNED_SPELLS) || {};
+      learnedSpells[spellUuid] = {
+        source: source || WIZARD_SPELL_SOURCE.COPIED,
+        dateAdded: Date.now(),
+        ...metadata
+      };
+
+      // If this is a copied spell, add detailed metadata
+      if (source === WIZARD_SPELL_SOURCE.COPIED && metadata.cost && metadata.timeSpent) {
+        const copiedSpells = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_COPIED_SPELLS) || [];
+        copiedSpells.push({
+          spellUuid,
+          dateCopied: Date.now(),
+          cost: metadata.cost,
+          timeSpent: metadata.timeSpent
+        });
+
+        await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_COPIED_SPELLS, copiedSpells);
+      }
+
+      // Update flags
+      await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_SPELLBOOK, updatedSpellbook);
+      await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_LEARNED_SPELLS, learnedSpells);
+
+      // Sync with journal
+      await this.syncJournalWithFlags();
+
+      log(3, `Added spell ${spellUuid} to wizard spellbook`);
+      return true;
+    } catch (error) {
+      log(1, `Error adding spell to spellbook: ${error.message}`);
+      return false;
+    }
+  }
+
+  /**
+   * Get the spellbook journal page
+   * @returns {Promise<JournalEntryPage|null>} The spellbook journal page
+   */
+  async getSpellbookPage() {
+    try {
+      const journal = await this.getOrCreateSpellbookJournal();
+      if (!journal) return null;
+
+      // Get the spellbook page
+      const page = journal.pages.find((p) => p.type === 'spells');
+      return page || null;
+    } catch (error) {
+      log(1, `Error getting spellbook page: ${error.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Synchronize the actor's flags with the journal
+   * @returns {Promise<boolean>} Success state
+   */
+  async syncJournalWithFlags() {
+    try {
+      // Get current flags
+      const spellbookSpells = this.getSpellbookSpells();
+
+      // Get or create the journal
+      const page = await this.getSpellbookPage();
+      if (!page) {
+        log(2, 'Failed to get spellbook page');
+        return false;
+      }
+
+      // Update the journal with the current spells
+      await page.update({
+        'system.spells': new Set(spellbookSpells)
+      });
+
+      log(3, `Synchronized ${spellbookSpells.length} spells to journal for ${this.actor.name}`);
+      return true;
+    } catch (error) {
+      log(1, `Error syncing journal with flags: ${error.message}`);
+      return false;
+    }
+  }
+
+  /**
+   * Get or create the Actor Spellbooks folder in the custom spellbooks pack
+   * @returns {Promise<Folder|null>} The folder or null if creation failed
+   */
+  async getOrCreateSpellbooksFolder() {
+    try {
+      const customPack = game.packs.get(`${MODULE.ID}.custom-spell-lists`);
+      if (!customPack) {
+        log(2, 'Custom spell lists pack not found');
+        return null;
+      }
+
+      // Look for existing folder
+      const folders = await customPack.getDocuments({ type: 'Folder' });
+      let folder = folders.find((f) => f.name === 'Actor Spellbooks');
+
+      // Create folder if it doesn't exist
+      if (!folder) {
+        log(3, 'Creating Actor Spellbooks folder');
+        folder = await Folder.create(
+          {
+            name: 'Actor Spellbooks',
+            type: 'JournalEntry'
+          },
+          { pack: customPack.collection }
+        );
+
+        log(3, `Created Actor Spellbooks folder: ${folder.id}`);
+      }
+
+      return folder;
+    } catch (error) {
+      log(1, `Error getting or creating Actor Spellbooks folder: ${error.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Find the actor's spellbook journal
+   * @returns {Promise<JournalEntry|null>} The actor's spellbook journal or null if not found
+   */
+  async findSpellbookJournal() {
+    try {
+      // Get the custom spell lists pack
+      const customPack = game.packs.get(`${MODULE.ID}.custom-spell-lists`);
+      if (!customPack) {
+        log(2, 'Custom spell lists pack not found');
+        return null;
+      }
+
+      // Get all journals in the pack
+      const journals = await customPack.getDocuments({ type: 'JournalEntry' });
+
+      // Look for a journal with the actor's ID in flags
+      const journal = journals.find((j) => j.flags?.[MODULE.ID]?.actorId === this.actor.id);
+
+      return journal || null;
+    } catch (error) {
+      log(1, `Error finding spellbook journal: ${error.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Create a new spellbook journal for the actor
+   * @returns {Promise<JournalEntry>} The created journal
+   */
+  async createSpellbookJournal() {
+    try {
+      // Get the custom spell lists pack
+      const customPack = game.packs.get(`${MODULE.ID}.custom-spell-lists`);
+      if (!customPack) {
+        throw new Error('Custom spell lists pack not found');
+      }
+
+      // Get or create the folder
+      const folder = await this.getOrCreateSpellbooksFolder();
+
+      // Create journal data
+      const journalData = {
+        name: this.actor.name,
+        folder: folder ? folder.id : null,
+        parent: folder ? folder.id : null,
+        flags: {
+          [MODULE.ID]: {
+            actorId: this.actor.id,
+            isActorSpellbook: true,
+            creationDate: Date.now()
+          }
+        },
+        pages: [
+          {
+            name: `${this.actor.name}'s Spell Book`,
+            type: 'spells',
+            flags: {
+              [MODULE.ID]: {
+                isActorSpellbook: true,
+                actorId: this.actor.id
+              }
+            },
+            system: {
+              identifier: `${this.actor.id}-${MODULE.ID}`,
+              description: `Spellbook for ${this.actor.name}`,
+              spells: new Set(this.getSpellbookSpells())
+            }
+          }
+        ]
+      };
+
+      // Create the journal in the pack
+      const journal = await JournalEntry.create(journalData, { pack: customPack.collection });
+      log(3, `Created new spellbook journal for ${this.actor.name}: ${journal.uuid}`);
+
+      return journal;
+    } catch (error) {
+      log(1, `Error creating spellbook journal: ${error.message}`);
+      throw error;
+    }
   }
 }
