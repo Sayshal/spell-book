@@ -385,4 +385,26 @@ export class WizardSpellbookManager {
       throw error;
     }
   }
+
+  /**
+   * Get or create the actor's spellbook journal
+   * @returns {Promise<JournalEntry>} The actor's spellbook journal
+   */
+  async getOrCreateSpellbookJournal() {
+    try {
+      // Check if the actor already has a spellbook journal
+      const existingJournal = await this.findSpellbookJournal();
+      if (existingJournal) {
+        log(3, `Found existing spellbook journal for ${this.actor.name}`);
+        return existingJournal;
+      }
+
+      // If not, create a new one
+      log(3, `Creating new spellbook journal for ${this.actor.name}`);
+      return await this.createSpellbookJournal();
+    } catch (error) {
+      log(1, `Error getting or creating spellbook journal: ${error.message}`);
+      throw error;
+    }
+  }
 }
