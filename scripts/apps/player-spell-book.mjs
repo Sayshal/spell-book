@@ -155,9 +155,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /*  Core Application Methods                    */
   /* -------------------------------------------- */
 
-  /**
-   * @override
-   */
+  /** @override */
   async _prepareContext(options) {
     log(3, 'Preparing PlayerSpellBook context');
 
@@ -294,9 +292,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
 
-  /**
-   * @override
-   */
+  /** @override */
   _onRender(context, options) {
     super._onRender?.(context, options);
 
@@ -346,9 +342,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  /**
-   * @override
-   */
+  /** @override */
   _onClose() {
     try {
       // Remove the flag change hook
@@ -385,13 +379,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     return tabs;
   }
 
-  /**
-   * Override the changeTab method to update spell data
-   * @param {string} tabName - The name of the tab to activate
-   * @param {string} groupName - The name of the tab group to activate
-   * @param {object} options - Additional options
-   * @override
-   */
+  /** @override */
   changeTab(tabName, groupName, options = {}) {
     // First, let the parent method handle the basic tab switching
     super.changeTab(tabName, groupName, options);
