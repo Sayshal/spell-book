@@ -404,6 +404,31 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
     return tabs;
   }
+
+  /**
+   * Override the changeTab method to update spell data
+   * @param {string} tabName - The name of the tab to activate
+   * @param {string} groupName - The name of the tab group to activate
+   * @param {object} options - Additional options
+   * @override
+   */
+  changeTab(tabName, groupName, options = {}) {
+    // First, let the parent method handle the basic tab switching
+    super.changeTab(tabName, groupName, options);
+
+    // If we're a wizard and have pre-processed tab data, update the content
+    if (this.wizardManager?.isWizard && this._tabData && this._tabData[tabName]) {
+      log(3, `Switching to wizard tab: ${tabName}`);
+
+      // Update the spell data for the selected tab
+      this.spellLevels = this._tabData[tabName].spellLevels;
+      this.spellPreparation = this._tabData[tabName].spellPreparation;
+
+      // Re-render the application to display the new data
+      this.render(false);
+    }
+  }
+
   /* -------------------------------------------- */
   /*  Data Loading Methods                        */
   /* -------------------------------------------- */
@@ -434,24 +459,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         log(3, `Cantrip level-up detected, using rules: ${settings.rules}`);
       }
 
-      // Continue loading spells
-      const spellList = await this._loadSpellList(classItem);
-      if (!spellList || !spellList.size) {
-        log(1, 'No spells found in spell list');
-        this.isLoading = false;
-        this.render(false);
-        return;
+      // For wizards, we need to load two different spell sources
+      if (this.wizardManager?.isWizard) {
+        await this._loadWizardSpellData(classItem);
+      } else {
+        // Non-wizard characters - just load the class spell list
+        await this._loadRegularSpellData(classItem);
       }
-
-      const spellItems = await this._loadSpellItems(spellList, classItem);
-      if (!spellItems || !spellItems.length) {
-        log(1, 'No spell items could be loaded');
-        this.isLoading = false;
-        this.render(false);
-        return;
-      }
-
-      await this._processAndOrganizeSpells(spellItems, classItem);
 
       log(3, `Completed loading spell data for ${this.actor.name}`);
     } catch (error) {
@@ -459,6 +473,165 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     } finally {
       this.isLoading = false;
       this.render(false);
+    }
+  }
+
+  async _loadWizardSpellData(classItem) {
+    try {
+      log(3, `Loading wizard-specific spell data for ${this.actor.name}`);
+      const className = classItem.name.toLowerCase();
+      const classUuid = classItem.uuid;
+      const actorLevel = this.actor.system.details.level;
+      const maxSpellLevel = discoveryUtils.calculateMaxSpellLevel(actorLevel, classItem.system.spellcasting);
+
+      // 1. Get the full class spell list from compendium source
+      log(3, `Loading full wizard class spell list`);
+      const fullSpellList = await discoveryUtils.getClassSpellList(className, classUuid, null); // Pass null for actor to avoid getting the personal spellbook
+      if (!fullSpellList || !fullSpellList.size) {
+        log(1, 'No spells found in class spell list');
+        return;
+      }
+      log(3, `Found ${fullSpellList.size} spells in full class spell list`);
+
+      // 2. Get the wizard's personal spellbook from their journal
+      log(3, `Loading wizard's personal spellbook`);
+      const personalSpellbook = await this.wizardManager.getSpellbookSpells();
+      log(3, `Found ${personalSpellbook.length} spells in wizard's personal spellbook`);
+
+      // 3. Load all spells from both sources
+      const allUuids = new Set([...fullSpellList, ...personalSpellbook]);
+      log(3, `Loading ${allUuids.size} total unique spells`);
+
+      // Load up to max level for learned spells, but allow seeing 1st level spells for new characters
+      const effectiveMaxLevel = Math.max(1, maxSpellLevel);
+      const spellItems = await actorSpellUtils.fetchSpellDocuments(allUuids, effectiveMaxLevel);
+
+      if (!spellItems || !spellItems.length) {
+        log(1, 'No spell items could be loaded');
+        return;
+      }
+      log(3, `Loaded ${spellItems.length} spell items up to level ${effectiveMaxLevel}`);
+
+      // 4. Process the spells for both tabs
+      await this._processWizardSpells(spellItems, classItem, personalSpellbook);
+    } catch (error) {
+      log(1, 'Error loading wizard spell data:', error);
+    }
+  }
+
+  async _loadRegularSpellData(classItem) {
+    try {
+      const className = classItem.name.toLowerCase();
+      const classUuid = classItem.uuid;
+
+      // Load spell list as normal
+      const spellList = await discoveryUtils.getClassSpellList(className, classUuid, this.actor);
+      if (!spellList || !spellList.size) {
+        log(1, 'No spells found in spell list');
+        return;
+      }
+      log(3, `Found ${spellList.size} spells for class ${className}`);
+
+      const actorLevel = this.actor.system.details.level;
+      const maxSpellLevel = discoveryUtils.calculateMaxSpellLevel(actorLevel, classItem.system.spellcasting);
+
+      const spellItems = await actorSpellUtils.fetchSpellDocuments(spellList, maxSpellLevel);
+      if (!spellItems || !spellItems.length) {
+        log(1, 'No spell items could be loaded');
+        return;
+      }
+      log(3, `Loaded ${spellItems.length} spell items`);
+
+      await this._processAndOrganizeSpells(spellItems, classItem);
+    } catch (error) {
+      log(1, 'Error loading regular spell data:', error);
+    }
+  }
+
+  async _processWizardSpells(allSpellItems, classItem, personalSpellbook) {
+    try {
+      log(3, 'Processing wizard spells for both tabs');
+
+      // Prepare data for both tabs
+      const activeTab = this.tabGroups['spellbook-tabs'];
+
+      // Create an object to hold data for both tabs
+      const tabData = {
+        spellstab: {
+          // Preparation tab - only spells in spellbook and cantrips
+          spellLevels: [],
+          spellPreparation: { current: 0, maximum: 0 }
+        },
+        wizardtab: {
+          // Spellbook tab - all class spells
+          spellLevels: [],
+          spellPreparation: { current: 0, maximum: 0 }
+        }
+      };
+
+      // Split spells for each tab
+      const prepTabSpells = allSpellItems.filter(
+        (spell) =>
+          spell.system.level === 0 || // Include all cantrips
+          personalSpellbook.includes(spell.compendiumUuid) // Include spells in personal spellbook
+      );
+
+      const spellbookTabSpells = allSpellItems; // All spells
+
+      // Process spells for each tab
+      const prepLevels = await actorSpellUtils.organizeSpellsByLevel(prepTabSpells, this.actor, this.spellManager);
+      const spellbookLevels = await actorSpellUtils.organizeSpellsByLevel(spellbookTabSpells, this.actor, this.spellManager);
+
+      // Sort spells
+      const sortBy = this._getFilterState().sortBy || 'level';
+      for (const level of prepLevels) {
+        level.spells = this._sortSpells(level.spells, sortBy);
+      }
+      for (const level of spellbookLevels) {
+        level.spells = this._sortSpells(level.spells, sortBy);
+      }
+
+      // Enrich all spells with wizard-specific data
+      for (const level of prepLevels) {
+        for (const spell of level.spells) {
+          spell.isWizardClass = true;
+          spell.inWizardSpellbook = personalSpellbook.includes(spell.compendiumUuid);
+          spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
+          spell.formattedDetails = formattingUtils.formatSpellDetails(spell);
+        }
+      }
+
+      for (const level of spellbookLevels) {
+        for (const spell of level.spells) {
+          spell.isWizardClass = true;
+          spell.inWizardSpellbook = personalSpellbook.includes(spell.compendiumUuid);
+          spell.canAddToSpellbook = !spell.inWizardSpellbook && spell.system.level > 0;
+          spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
+          spell.formattedDetails = formattingUtils.formatSpellDetails(spell);
+        }
+      }
+
+      // Calculate preparation stats
+      const prepStats = this._calculatePreparationStats(prepLevels, classItem);
+
+      // Store data based on active tab
+      tabData.spellstab.spellLevels = prepLevels;
+      tabData.spellstab.spellPreparation = prepStats;
+      tabData.wizardtab.spellLevels = spellbookLevels;
+      tabData.wizardtab.spellPreparation = prepStats; // Same stats for both tabs
+
+      // Set the appropriate data based on active tab
+      this.spellLevels = tabData[activeTab].spellLevels;
+      this.spellPreparation = tabData[activeTab].spellPreparation;
+      this.className = classItem.name;
+
+      // Store tab data for quick tab switching without reloading
+      this._tabData = tabData;
+
+      log(3, `Processed ${prepLevels.length} spell levels for preparation tab and ${spellbookLevels.length} for spellbook tab`);
+      log(3, `Preparation statistics: ${prepStats.current}/${prepStats.maximum}`);
+    } catch (error) {
+      log(1, 'Error processing wizard spells:', error);
     }
   }
 
@@ -531,19 +704,23 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
       if (this.wizardManager?.isWizard) {
         const spellbookSpells = this.wizardManager.getSpellbookSpells();
+        log(3, `Wizard has ${spellbookSpells.length} spells in their spellbook`);
 
         // For the spells tab (preparation), only show spells in the wizard's spellbook plus cantrips
         if (activeTab === 'spellstab') {
+          // For preparation tab, only show cantrips and spells in their spellbook
           filteredSpellItems = spellItems.filter(
             (spell) =>
               spell.system.level === 0 || // Always show cantrips
               spellbookSpells.includes(spell.compendiumUuid) // Only show spells in their spellbook
           );
-          log(3, `Filtered to ${filteredSpellItems.length} spells in wizard's spellbook`);
+          log(3, `Preparation tab: showing ${filteredSpellItems.length} spells in wizard's spellbook`);
         }
-
         // For wizard spellbook tab, we show all available class spells
-        // (This is the full class list, so we don't filter)
+        else if (activeTab === 'wizardtab') {
+          // No filtering for the wizard spellbook tab - show all available spells
+          log(3, `Wizard spellbook tab: showing all ${spellItems.length} available class spells`);
+        }
       }
 
       // Organize spells by level
@@ -569,7 +746,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             // Only non-cantrip spells not already in spellbook can be learned
             spell.canAddToSpellbook = !spell.inWizardSpellbook && spell.system.level > 0;
 
-            // For spells not in spellbook, disable preparation
+            // For spells not in spellbook on the preparation tab, disable preparation
             if (activeTab === 'spellstab' && spell.system.level > 0 && !spell.inWizardSpellbook) {
               if (spell.preparation) {
                 spell.preparation.disabled = true;
@@ -597,12 +774,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  /**
-   * Enrich spell data with icons and formatted details
-   * @param {Array} spellLevels - Array of spell level data
-   * @returns {Promise<void>}
-   * @private
-   */
   async _enrichSpellData(spellLevels) {
     try {
       log(3, 'Enriching spell data with icons and details');
@@ -812,32 +983,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     } catch (error) {
       log(1, 'Error setting up preparation listeners:', error);
-    }
-  }
-
-  /**
-   * Set up wizard-specific listeners
-   * @private
-   */
-  _setupWizardListeners() {
-    try {
-      log(3, 'Setting up wizard listeners');
-
-      // Use event delegation for spell copying buttons
-      const content = this.element.querySelector('.wizard-spellbook-tab');
-      if (!content) return;
-
-      content.addEventListener('click', async (event) => {
-        const copyButton = event.target.closest('.copy-spell-btn');
-        if (copyButton) {
-          const uuid = copyButton.dataset.uuid;
-          if (uuid) {
-            await this._handleCopySpell(uuid);
-          }
-        }
-      });
-    } catch (error) {
-      log(1, 'Error setting up wizard listeners:', error);
     }
   }
 
