@@ -308,7 +308,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           });
         }
 
-        // Add event listener for copy spell buttons on both tabs
+        // Add event listener for Learn Spell buttons across both tabs
         this.element.addEventListener('click', async (event) => {
           const copyBtn = event.target.closest('.copy-spell-btn');
           if (copyBtn) {
@@ -319,21 +319,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             }
           }
         });
-
-        // Add event listener for copy spell buttons
-        const wizardSpellbook = this.element.querySelector('.wizard-spellbook-tab');
-        if (wizardSpellbook) {
-          wizardSpellbook.addEventListener('click', async (event) => {
-            const copyBtn = event.target.closest('.copy-spell-btn');
-            if (copyBtn) {
-              event.preventDefault();
-              const uuid = copyBtn.dataset.uuid;
-              if (uuid) {
-                await this._handleCopySpell(uuid);
-              }
-            }
-          });
-        }
       }
 
       // Set sidebar state based on user preference
@@ -538,8 +523,31 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       log(3, 'Processing and organizing spells');
 
-      // Organize spells by level, passing both managers
-      const spellLevels = await actorSpellUtils.organizeSpellsByLevel(spellItems, this.actor, this.spellManager);
+      // Get current active tab
+      const activeTab = this.tabGroups['spellbook-tabs'];
+
+      // For wizards, separate spell list from spellbook
+      let filteredSpellItems = [...spellItems];
+
+      if (this.wizardManager?.isWizard) {
+        const spellbookSpells = this.wizardManager.getSpellbookSpells();
+
+        // For the spells tab (preparation), only show spells in the wizard's spellbook plus cantrips
+        if (activeTab === 'spellstab') {
+          filteredSpellItems = spellItems.filter(
+            (spell) =>
+              spell.system.level === 0 || // Always show cantrips
+              spellbookSpells.includes(spell.compendiumUuid) // Only show spells in their spellbook
+          );
+          log(3, `Filtered to ${filteredSpellItems.length} spells in wizard's spellbook`);
+        }
+
+        // For wizard spellbook tab, we show all available class spells
+        // (This is the full class list, so we don't filter)
+      }
+
+      // Organize spells by level
+      const spellLevels = await actorSpellUtils.organizeSpellsByLevel(filteredSpellItems, this.actor, this.spellManager);
       log(3, `Organized spells into ${spellLevels.length} levels`);
 
       // Sort spells within each level
@@ -554,9 +562,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
         for (const level of spellLevels) {
           for (const spell of level.spells) {
+            // Mark which spells are in the wizard's spellbook
             spell.isWizardClass = true;
             spell.inWizardSpellbook = spellbookSpells.includes(spell.compendiumUuid);
+
+            // Only non-cantrip spells not already in spellbook can be learned
             spell.canAddToSpellbook = !spell.inWizardSpellbook && spell.system.level > 0;
+
+            // For spells not in spellbook, disable preparation
+            if (activeTab === 'spellstab' && spell.system.level > 0 && !spell.inWizardSpellbook) {
+              if (spell.preparation) {
+                spell.preparation.disabled = true;
+                spell.preparation.disabledReason = 'SPELLBOOK.Wizard.NotInSpellbook';
+              }
+            }
           }
         }
       }
@@ -849,15 +868,15 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const success = await this.wizardManager.copySpell(uuid, cost, time);
 
         if (success) {
-          ui.notifications.info(`Added ${spell.name} to your spellbook.`);
+          ui.notifications.info(`Learned ${spell.name} and added it to your spellbook.`);
           this.render(false); // Re-render to update UI
         } else {
-          ui.notifications.warn(`Could not add ${spell.name} to your spellbook.`);
+          ui.notifications.warn(`Could not learn ${spell.name}.`);
         }
       }
     } catch (error) {
-      log(1, `Error copying spell: ${error.message}`);
-      ui.notifications.error('Failed to copy spell to spellbook');
+      log(1, `Error learning spell: ${error.message}`);
+      ui.notifications.error('Failed to learn spell');
     }
   }
 

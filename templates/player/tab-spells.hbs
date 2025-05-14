@@ -5,11 +5,19 @@
 		{{else if hasError}}
 			{{> "modules/spell-book/templates/components/error-message.hbs" message=errorMessage}}
 		{{else}}
+			{{#if isWizard}}
+				<div class="wizard-spellbook-info">
+					<p>You prepare the list of wizard spells that are available for you to cast. To do so, choose a number of
+						wizard spells from your spellbook equal to your Intelligence modifier + your wizard level (minimum of one
+						spell).</p>
+				</div>
+			{{/if}}
+
 			{{#if spellLevels.length}}
 				{{#each spellLevels as |levelData|}}
 					{{#> "modules/spell-book/templates/components/spell-level.hbs" level=levelData.level levelName=levelData.levelName spells=levelData.spells}}
 						<li
-							class="spell-item{{#if preparation.isOwned}} owned-spell{{/if}}{{#if preparation.prepared}} prepared-spell{{/if}}"
+							class="spell-item{{#if preparation.isOwned}} owned-spell{{/if}}{{#if preparation.prepared}} prepared-spell{{/if}}{{#if inWizardSpellbook}} in-wizard-spellbook{{/if}}"
 							data-spell-uuid="{{compendiumUuid}}" data-spell-level="{{../level}}" data-spell-school="{{system.school}}"
 							data-casting-time-type="{{filterData.castingTime.type}}"
 							data-casting-time-value="{{filterData.castingTime.value}}" data-range-units="{{filterData.range.units}}"
@@ -43,16 +51,7 @@
 							</div>
 
 							<div class="spell-preparation dnd5e2">
-								{{#if isWizardClass}}
-									{{#unless inWizardSpellbook}}
-										{{#if canAddToSpellbook}}
-											<button class="copy-spell-btn" data-uuid="{{compendiumUuid}}"
-												title="{{localize 'SPELLBOOK.Wizard.AddToSpellbook'}}">
-												<i class="fas fa-book-medical"></i>
-											</button>
-										{{/if}}
-									{{/unless}}
-								{{/if}}
+								{{{preparationCheckboxHtml}}}
 							</div>
 						</li>
 						{{/modules/spell-book/templates/components/spell-level.hbs}}

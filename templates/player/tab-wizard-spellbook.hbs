@@ -5,13 +5,12 @@
 				<p>Your spellbook contains {{wizardSpellbookCount}} spells.</p>
 
 				<div class="spellbook-rules">
-					<h3>Preparing Spells</h3>
-					<p>You prepare the list of wizard spells that are available for you to cast. To do so, choose a number of
-						wizard spells from your spellbook equal to your Intelligence modifier + your wizard level (minimum of one
-						spell).</p>
-					<p>You can change your list of prepared spells when you finish a long rest. Preparing a new list of wizard
-						spells requires time spent studying your spellbook and memorizing the incantations and gestures you must
-						make to cast the spell: at least 1 minute per spell level for each spell on your list.</p>
+					<h3>Learning New Spells</h3>
+					<p>When you find a wizard spell of 1st level or higher, you can add it to your spellbook if it is of a level
+						for which you have spell slots and if you can spare the time to decipher and copy it.</p>
+					<p>For each level of the spell, the process takes 2 hours and costs 50 gp. The cost represents material
+						components you expend as you experiment with the spell to master it, as well as the fine inks you need to
+						record it.</p>
 				</div>
 
 				<div class="ritual-casting">
@@ -37,11 +36,13 @@
 
 								<div class="wizard-spell-status">
 									{{#if spell.inWizardSpellbook}}
-										<span class="in-spellbook-tag">In Spellbook</span>
+										<span class="in-spellbook-tag">Already Learned</span>
 									{{else}}
-										<button class="copy-spell-btn" data-uuid="{{spell.compendiumUuid}}" type="button">
-											<i class="fas fa-book"></i> Add to Spellbook
-										</button>
+										{{#if (gt spell.system.level 0)}}
+											<button class="copy-spell-btn" data-uuid="{{spell.compendiumUuid}}" type="button">
+												<i class="fas fa-book"></i> Learn Spell
+											</button>
+										{{/if}}
 									{{/if}}
 								</div>
 							</li>

@@ -25,7 +25,7 @@ export class WizardSpellCopyDialog {
 
       const content = `
         <form class="wizard-copy-form">
-          <p>Do you want to copy <strong>${this.spell.name}</strong> to your spellbook?</p>
+          <p>Do you want to learn <strong>${this.spell.name}</strong> and add it to your spellbook?</p>
           <div class="copy-details">
             <div class="form-group">
               <label>Cost:</label>
@@ -40,12 +40,12 @@ export class WizardSpellCopyDialog {
       `;
 
       const result = await foundry.applications.api.DialogV2.wait({
-        title: `Copy Spell: ${this.spell.name}`,
+        title: `Learn Spell: ${this.spell.name}`,
         content: content,
         buttons: [
           {
             icon: 'fas fa-book',
-            label: 'Copy Spell',
+            label: 'Learn Spell',
             action: 'confirm',
             className: 'dialog-button'
           },
@@ -64,7 +64,7 @@ export class WizardSpellCopyDialog {
         spell: this.spell
       };
     } catch (error) {
-      log(1, `Error showing spell copy dialog: ${error.message}`);
+      log(1, `Error showing spell learn dialog: ${error.message}`);
       return {
         confirmed: false,
         spell: this.spell
