@@ -534,7 +534,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           spellPreparation: { current: 0, maximum: 0 }
         },
         wizardtab: {
-          // Spellbook tab - all class spells
           spellLevels: [],
           spellPreparation: { current: 0, maximum: 0 }
         }
@@ -547,7 +546,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           personalSpellbook.includes(spell.compendiumUuid) // Include spells in personal spellbook
       );
 
-      const spellbookTabSpells = allSpellItems; // All spells
+      // For wizard tab, EXCLUDE ALL cantrips (level 0 spells) regardless of source
+      const spellbookTabSpells = allSpellItems.filter((spell) => {
+        return spell.system.level > 0;
+      });
+
+      log(3, `Filtered out cantrips for wizard spellbook tab, showing ${spellbookTabSpells.length} spells`);
 
       // Process spells for each tab
       const prepLevels = await actorSpellUtils.organizeSpellsByLevel(prepTabSpells, this.actor, this.spellManager);
