@@ -7,24 +7,19 @@
 		{{else}}
 			{{#if isWizard}}
 				<div class="spellbook-info">
-					<h3>Your Wizard Spellbook</h3>
-					<p>Your spellbook contains {{wizardSpellbookCount}} spells.</p>
-					<p>You prepare the list of wizard spells that are available for you to cast. Choose a number of wizard spells
-						from your spellbook equal to your Intelligence modifier + your wizard level (minimum of one spell).</p>
+					<h3>{{localize 'SPELLBOOK.Wizard.Title'}}</h3>
+					<p>{{localize 'SPELLBOOK.Wizard.SpellCount' count=wizardSpellbookCount}}</p>
+					<p>{{localize 'SPELLBOOK.Wizard.PrepareInfo'}}</p>
 
 					<div class="ritual-casting">
-						<h3>Ritual Casting</h3>
-						<p>You can cast a wizard spell as a ritual if that spell has the ritual tag and you have the spell in your
-							spellbook. You don't need to have the spell prepared.</p>
+						<h3>{{localize 'SPELLBOOK.Wizard.RitualTitle'}}</h3>
+						<p>{{localize 'SPELLBOOK.Wizard.RitualInfo'}}</p>
 					</div>
 
 					<div class="spellbook-rules">
-						<h3>Learning New Spells</h3>
-						<p>When you find a wizard spell of 1st level or higher, you can add it to your spellbook if it is of a level
-							for which you have spell slots and if you can spare the time to decipher and copy it.</p>
-						<p>For each level of the spell, the process takes 2 hours and costs 50 gp. The cost represents material
-							components you expend as you experiment with the spell to master it, as well as the fine inks you need to
-							record it.</p>
+						<h3>{{localize 'SPELLBOOK.Wizard.NewSpellsTitle'}}</h3>
+						<p>{{localize 'SPELLBOOK.Wizard.NewSpellsInfo1'}}</p>
+						<p>{{localize 'SPELLBOOK.Wizard.NewSpellsInfo2'}}</p>
 					</div>
 				</div>
 
@@ -71,7 +66,7 @@
 				{{/if}}
 			{{else}}
 				<div class="wizard-unavailable">
-					<p>The Wizard Spellbook is only available for characters with the Wizard class.</p>
+					<p>{{localize 'SPELLBOOK.Wizard.Unavailable'}}</p>
 				</div>
 			{{/if}}
 
