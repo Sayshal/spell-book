@@ -235,7 +235,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (context.isWizard) {
       context.tabs.wizardtab = {
         id: 'wizardtab',
-        label: game.i18n.localize('SPELLBOOK.Tabs.WizardSpells'),
+        label: game.i18n.format('SPELLBOOK.Tabs.WizardSpells', { class: this.className }),
         group: 'spellbook-tabs',
         cssClass: this.tabGroups['spellbook-tabs'] === 'wizardtab' ? 'active' : '',
         icon: 'fa-solid fa-book-spells'
@@ -375,7 +375,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const tabs = {
       spellstab: {
         id: 'spellstab',
-        label: game.i18n.localize('SPELLBOOK.Tabs.Spells'),
+        label: game.i18n.format('SPELLBOOK.Tabs.Spells', { name: this.actor.name }),
         group: tabGroup,
         cssClass: this.tabGroups[tabGroup] === 'spellstab' ? 'active' : '',
         icon: 'fa-solid fa-book-open'
