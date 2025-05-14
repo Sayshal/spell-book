@@ -1,0 +1,86 @@
+<div class="spellbook-settings-form">
+  <h2>{{localize 'SPELLBOOK.Settings.Title' name=actor.name}}</h2>
+
+  {{!-- Character Stats --}}
+  <div class="spellbook-stats">
+    <p>{{localize 'SPELLBOOK.Cantrips.ActorStats' name=actor.name count=stats.currentCount max=stats.maxCantrips}}</p>
+  </div>
+
+  {{!-- Cantrip Settings --}}
+  <div class="settings-section cantrip-settings">
+    <h3>{{localize 'SPELLBOOK.Cantrips.SectionTitle'}}</h3>
+
+    <div class="form-group">
+      <label>{{localize 'SPELLBOOK.Cantrips.RulesLabel'}}</label>
+      <div class="form-fields">
+        <select name="cantripRules">
+          {{#each cantripOptions.rules as |option|}}
+            <option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <p class="hint">{{localize 'SPELLBOOK.Cantrips.RulesHint'}}</p>
+    </div>
+
+    <div class="form-group">
+      <label>{{localize 'SPELLBOOK.Cantrips.BehaviorLabel'}}</label>
+      <div class="form-fields">
+        <select name="cantripBehavior">
+          {{#each cantripOptions.behavior as |option|}}
+            <option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <p class="hint">{{localize 'SPELLBOOK.Cantrips.BehaviorHint'}}</p>
+    </div>
+  </div>
+
+  {{!-- Wizard Settings (only show if actor is a wizard) --}}
+  {{#if isWizard}}
+    <div class="settings-section wizard-settings">
+      <h3>{{localize 'SPELLBOOK.Wizard.SectionTitle'}}</h3>
+
+      <div class="form-group">
+        <label>{{localize 'SPELLBOOK.Wizard.RulesVersionLabel'}}</label>
+        <div class="form-fields">
+          <select name="wizardRulesVersion">
+            {{#each wizardOptions.rules as |option|}}
+              <option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <p class="hint">{{localize 'SPELLBOOK.Wizard.RulesVersionHint'}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize 'SPELLBOOK.Wizard.StartingSpellsLabel'}}</label>
+        <div class="form-fields">
+          <input type="number" name="wizardStartingSpells" value="{{wizardSettings.startingSpells}}" min="0" max="20">
+        </div>
+        <p class="hint">{{localize 'SPELLBOOK.Wizard.StartingSpellsHint'}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize 'SPELLBOOK.Wizard.SpellsPerLevelLabel'}}</label>
+        <div class="form-fields">
+          <input type="number" name="wizardSpellsPerLevel" value="{{wizardSettings.spellsPerLevel}}" min="0" max="10">
+        </div>
+        <p class="hint">{{localize 'SPELLBOOK.Wizard.SpellsPerLevelHint'}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize 'SPELLBOOK.Wizard.RitualCastingLabel'}}</label>
+        <div class="form-fields">
+          <input type="checkbox" name="wizardRitualCasting" {{#if wizardSettings.ritualCasting}}checked{{/if}}>
+        </div>
+        <p class="hint">{{localize 'SPELLBOOK.Wizard.RitualCastingHint'}}</p>
+      </div>
+    </div>
+  {{/if}}
+
+  <div class="form-group">
+    <button type="submit" name="submit" class="submit-button">
+      <i class="fas fa-save"></i> {{localize 'SPELLBOOK.Settings.SaveButton'}}
+    </button>
+  </div>
+</div>

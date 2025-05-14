@@ -7,8 +7,8 @@ import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { SpellManager } from '../helpers/spell-preparation.mjs';
 import { WizardSpellbookManager } from '../helpers/wizard-spellbook.mjs';
 import { log } from '../logger.mjs';
-import { CantripSettingsDialog } from './cantrip-settings-dialog.mjs';
 import { PlayerFilterConfiguration } from './player-filter-configuration.mjs';
+import { SpellbookSettingsDialog } from './spellbook-settings-dialog.mjs';
 import { WizardSpellCopyDialog } from './wizard-spell-copy-dialog.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -1947,7 +1947,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   static configureCantripSettings(_event, _form) {
     try {
       log(3, 'Opening cantrip settings configuration');
-      const dialog = new CantripSettingsDialog(this.actor);
+      const dialog = new SpellbookSettingsDialog(this.actor);
       dialog.render(true);
     } catch (error) {
       log(1, 'Error configuring cantrip settings:', error);

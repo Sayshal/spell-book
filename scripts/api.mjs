@@ -1,7 +1,7 @@
-import { CantripSettingsDialog } from './apps/cantrip-settings-dialog.mjs';
 import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
 import { PlayerFilterConfiguration } from './apps/player-filter-configuration.mjs';
 import { PlayerSpellBook } from './apps/player-spell-book.mjs';
+import { SpellbookSettingsDialog } from './apps/spellbook-settings-dialog.mjs';
 
 // Import all helper functions
 import * as actorSpellUtils from './helpers/actor-spells.mjs';
@@ -25,7 +25,7 @@ export function createAPI() {
       apps: {
         PlayerSpellBook,
         GMSpellListManager,
-        CantripSettingsDialog,
+        SpellbookSettingsDialog,
         PlayerFilterConfiguration
       },
 

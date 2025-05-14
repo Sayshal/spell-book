@@ -1099,21 +1099,35 @@
 }
 
 /* ----------------------------------------- */
-/*  Cantrip Settings Dialog                  */
+/*  Spellbook Settings Dialog                */
 /* ----------------------------------------- */
-.cantrip-settings-dialog {
-  .cantrip-settings-form {
+.spellbook-settings-dialog {
+  .spellbook-settings-form {
     gap: 0.5rem;
     display: flex;
     flex-direction: column;
     padding: 0.5rem;
   }
 
-  .cantrip-stats {
+  .spellbook-stats {
     margin-bottom: 0.5rem;
     padding: 0.5rem;
     border-radius: 3px;
     background: #0000000d;
+  }
+
+  .settings-section {
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    border-radius: 3px;
+    background: #0000000d;
+  }
+
+  .settings-section h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid var(--color-border-light-tertiary);
   }
 
   .notice {
@@ -1124,16 +1138,6 @@
   .warning {
     color: var(--color-level-warning);
     font-weight: bold;
-  }
-
-  .override-buttons {
-    gap: 0.5rem;
-    display: flex;
-  }
-
-  button[disabled] {
-    opacity: 0.5;
-    cursor: not-allowed;
   }
 
   .submit-button {

@@ -80,7 +80,7 @@ export const TEMPLATES = {
     FILTER_CONFIG: 'modules/spell-book/templates/dialogs/filter-configuration.hbs',
     CREATE_SPELL_LIST: 'modules/spell-book/templates/dialogs/create-spell-list.hbs',
     MANAGER_DOCUMENTATION: 'modules/spell-book/templates/dialogs/spell-list-manager-documentation.hbs',
-    CANTRIP_SETTINGS: 'modules/spell-book/templates/dialogs/cantrip-settings.hbs'
+    SPELLBOOK_SETTINGS: 'modules/spell-book/templates/dialogs/spellbook-settings.hbs'
   }
 };
 
@@ -267,6 +267,12 @@ export const CANTRIP_CHANGE_BEHAVIOR = {
 export const WIZARD_RULES = {
   MODERN: 'modern',
   LEGACY: 'legacy'
+};
+
+export const WIZARD_DEFAULTS = {
+  STARTING_SPELLS: 6,
+  SPELLS_PER_LEVEL: 2,
+  RITUAL_CASTING: true
 };
 
 /**
