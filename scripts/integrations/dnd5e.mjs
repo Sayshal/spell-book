@@ -1,5 +1,6 @@
 import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
+import { WizardSpellbookManager } from '../helpers/wizard-spellbook.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -11,9 +12,57 @@ export function registerDnD5eIntegration() {
     // Set up character sheet button integration for standard 5e sheets
     Hooks.on('renderActorSheet5e', addSpellbookButton);
 
+    // Add long rest integration for wizard cantrip swapping
+    Hooks.on('dnd5e.restCompleted', handleRestCompleted);
+
     log(3, 'Registering DnD5e system integration');
   } catch (error) {
     log(1, 'Error registering DnD5e integration:', error);
+  }
+}
+
+async function handleRestCompleted(actor, result, config) {
+  try {
+    // Only proceed if this was a long rest
+    if (!result.longRest) return;
+
+    // Check if the actor is a wizard
+    const wizardClass = actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard');
+    if (!wizardClass) return;
+
+    log(3, `Long rest completed for wizard ${actor.name}, showing cantrip swap dialog`);
+
+    // Get the wizard's rules version to determine prompt text
+    const wizardManager = new WizardSpellbookManager(actor);
+    const rulesVersion = wizardManager.getRulesVersion();
+
+    // If using legacy rules, no cantrip swapping allowed
+    if (rulesVersion !== 'modern') {
+      log(3, `Wizard ${actor.name} uses legacy rules, skipping cantrip swap prompt`);
+      return;
+    }
+
+    // Show dialog asking if they want to swap cantrips
+    const content = `<p>${game.i18n.localize('SPELLBOOK.Wizard.SwapCantripPrompt')}</p>`;
+
+    const confirmed = await Dialog.confirm({
+      title: game.i18n.localize('SPELLBOOK.Wizard.SwapCantripTitle'),
+      content: content,
+      yes: () => true,
+      no: () => false,
+      defaultYes: false
+    });
+
+    if (confirmed) {
+      // Open spellbook with long rest context
+      const spellBook = new PlayerSpellBook(actor);
+
+      // Set long rest context before rendering
+      spellBook.setLongRestContext(true);
+      spellBook.render(true);
+    }
+  } catch (error) {
+    log(1, `Error in long rest completed hook: ${error.message}`);
   }
 }
 

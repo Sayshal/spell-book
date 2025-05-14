@@ -78,6 +78,18 @@ export class WizardSpellbookManager {
   }
 
   /**
+   * Determine if wizard can swap cantrips on long rest based on rules version
+   * @param {boolean} isLongRest - Whether this is being called during a long rest
+   * @returns {boolean} - Whether cantrip swapping is allowed
+   */
+  canSwapCantripsOnLongRest(isLongRest) {
+    if (!isLongRest) return true; // Not relevant outside long rest context
+
+    const rulesVersion = this.getRulesVersion();
+    return rulesVersion === WIZARD_RULES.MODERN;
+  }
+
+  /**
    * Get the actor's spellbook journal page
    * @returns {JournalEntryPage|null} The actor's spellbook journal page
    */

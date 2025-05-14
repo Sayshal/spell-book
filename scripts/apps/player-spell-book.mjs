@@ -1,4 +1,4 @@
-import { CANTRIP_RULES, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import { CANTRIP_RULES, FLAGS, MODULE, SETTINGS, TEMPLATES, WIZARD_RULES } from '../constants.mjs';
 import * as actorSpellUtils from '../helpers/actor-spells.mjs';
 import * as filterUtils from '../helpers/filters.mjs';
 import * as formElements from '../helpers/form-elements.mjs';
@@ -119,6 +119,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.spellManager = new SpellManager(actor);
     this.wizardManager = null;
     this._newlyCheckedCantrips = new Set();
+    this._isLongRest = false;
 
     // Flag to ensure we only initialize the wizard spellbook once
     this._wizardInitialized = false;
@@ -1011,11 +1012,32 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     // Get spell name for logging
     const spellName = spellItem?.querySelector('.spell-name .title')?.textContent || 'unknown';
     const checkState = event.target.checked ? 'checking' : 'unchecking';
+    const wasPrepared = event.target.dataset.wasPrepared === 'true';
 
     log(3, `======== CANTRIP CHANGE ========`);
     log(3, `Cantrip: ${spellName}, Action: ${checkState}`);
     log(3, `Modern rules: ${isModernRules}, Level up: ${isLevelUp}`);
     log(3, `Current tracking: hasUnlearned=${this._cantripTracking.hasUnlearned}, unlearned=${this._cantripTracking.unlearned}`);
+
+    // Check wizard-specific rules
+    if (this.wizardManager?.isWizard) {
+      // If this is a long rest context, apply wizard-specific rules
+      if (this._isLongRest) {
+        const canSwapOnLongRest = this.wizardManager.canSwapCantripsOnLongRest(true);
+
+        // For Legacy rules - block all cantrip changes during long rest
+        if (!canSwapOnLongRest && event.target.checked !== wasPrepared) {
+          event.target.checked = wasPrepared; // Revert change
+          ui.notifications.warn(game.i18n.localize('SPELLBOOK.Wizard.NoCantripsOnLongRest'));
+          this._updateCantripCounter();
+          return;
+        }
+
+        // For Modern rules - respect the one-swap limit
+        // Modern rule will be handled by existing cantrip tracking logic
+        log(3, `Applying wizard ${canSwapOnLongRest ? 'modern' : 'legacy'} rules during long rest`);
+      }
+    }
 
     // Get the source spell
     const sourceSpell = await fromUuid(uuid);
@@ -1344,6 +1366,31 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       // Update counters and locks
       this._updateCantripCounter(cantripLevel);
       this._setupCantripLocks();
+
+      // Add wizard rules indicator if applicable
+      if (this.wizardManager?.isWizard && this._isLongRest) {
+        const rulesVersion = this.wizardManager.getRulesVersion();
+
+        // Remove any existing rules info
+        const existingInfo = cantripLevel.querySelector('.wizard-rules-info');
+        if (existingInfo) existingInfo.remove();
+
+        // Create new rules info element
+        const infoElement = document.createElement('div');
+        infoElement.className = 'wizard-rules-info';
+
+        if (rulesVersion === WIZARD_RULES.MODERN) {
+          infoElement.innerHTML = `<i class="fas fa-info-circle"></i> ${game.i18n.localize('SPELLBOOK.Wizard.ModernCantripRules')}`;
+        } else {
+          infoElement.innerHTML = `<i class="fas fa-info-circle"></i> ${game.i18n.localize('SPELLBOOK.Wizard.LegacyCantripRules')}`;
+        }
+
+        // Add to the heading
+        const levelHeading = cantripLevel.querySelector('.spell-level-heading');
+        if (levelHeading) {
+          levelHeading.appendChild(infoElement);
+        }
+      }
     } catch (error) {
       log(1, 'Error setting up cantrip UI:', error);
     }
@@ -1527,6 +1574,16 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     } catch (error) {
       log(1, 'Error locking cantrip checkboxes:', error);
     }
+  }
+
+  /**
+   * Set whether this spellbook is being used during a long rest
+   * @param {boolean} isLongRest - Whether this is being used during long rest
+   */
+  setLongRestContext(isLongRest) {
+    this._isLongRest = !!isLongRest;
+    log(3, `Long rest context set to: ${this._isLongRest}`);
+    this.render(false); // Re-render with new context
   }
 
   /* -------------------------------------------- */
