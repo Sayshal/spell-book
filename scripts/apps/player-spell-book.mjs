@@ -534,35 +534,36 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           spellPreparation: { current: 0, maximum: 0 }
         },
         wizardtab: {
+          // Spellbook tab - all class spells EXCEPT cantrips
           spellLevels: [],
           spellPreparation: { current: 0, maximum: 0 }
         }
       };
 
-      // Split spells for each tab
+      // Split spells for preparation tab - include cantrips and spellbook spells
       const prepTabSpells = allSpellItems.filter(
         (spell) =>
           spell.system.level === 0 || // Include all cantrips
           personalSpellbook.includes(spell.compendiumUuid) // Include spells in personal spellbook
       );
 
-      // For wizard tab, EXCLUDE ALL cantrips (level 0 spells) regardless of source
-      const spellbookTabSpells = allSpellItems.filter((spell) => {
-        return spell.system.level > 0;
-      });
-
-      log(3, `Filtered out cantrips for wizard spellbook tab, showing ${spellbookTabSpells.length} spells`);
-
-      // Process spells for each tab
+      // Process spells for both tabs without filtering yet
       const prepLevels = await actorSpellUtils.organizeSpellsByLevel(prepTabSpells, this.actor, this.spellManager);
-      const spellbookLevels = await actorSpellUtils.organizeSpellsByLevel(spellbookTabSpells, this.actor, this.spellManager);
 
-      // Sort spells
+      // For wizard tab, process all spells but then filter out the cantrip level
+      const spellbookLevels = await actorSpellUtils.organizeSpellsByLevel(allSpellItems, this.actor, this.spellManager);
+
+      // Remove level 0 (cantrips) entirely from the wizard spellbook tab
+      const filteredSpellbookLevels = spellbookLevels.filter((levelGroup) => levelGroup.level !== '0' && levelGroup.level !== 0);
+
+      log(3, `Removed cantrip level from wizard tab, now has ${filteredSpellbookLevels.length} spell levels`);
+
+      // Sort spells within each level
       const sortBy = this._getFilterState().sortBy || 'level';
       for (const level of prepLevels) {
         level.spells = this._sortSpells(level.spells, sortBy);
       }
-      for (const level of spellbookLevels) {
+      for (const level of filteredSpellbookLevels) {
         level.spells = this._sortSpells(level.spells, sortBy);
       }
 
@@ -576,7 +577,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       }
 
-      for (const level of spellbookLevels) {
+      for (const level of filteredSpellbookLevels) {
         for (const spell of level.spells) {
           spell.isWizardClass = true;
           spell.inWizardSpellbook = personalSpellbook.includes(spell.compendiumUuid);
@@ -592,7 +593,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       // Store data based on active tab
       tabData.spellstab.spellLevels = prepLevels;
       tabData.spellstab.spellPreparation = prepStats;
-      tabData.wizardtab.spellLevels = spellbookLevels;
+      tabData.wizardtab.spellLevels = filteredSpellbookLevels; // Use the filtered levels!
       tabData.wizardtab.spellPreparation = prepStats; // Same stats for both tabs
 
       // Set the appropriate data based on active tab
@@ -603,7 +604,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       // Store tab data for quick tab switching without reloading
       this._tabData = tabData;
 
-      log(3, `Processed ${prepLevels.length} spell levels for preparation tab and ${spellbookLevels.length} for spellbook tab`);
+      log(3, `Processed ${prepLevels.length} spell levels for preparation tab and ${filteredSpellbookLevels.length} for spellbook tab`);
       log(3, `Preparation statistics: ${prepStats.current}/${prepStats.maximum}`);
     } catch (error) {
       log(1, 'Error processing wizard spells:', error);
