@@ -235,7 +235,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (context.isWizard) {
       context.tabs.wizardtab = {
         id: 'wizardtab',
-        label: game.i18n.localize('Wizard Spellbook'),
+        label: game.i18n.localize('SPELLBOOK.Tabs.WizardSpells'),
         group: 'spellbook-tabs',
         cssClass: this.tabGroups['spellbook-tabs'] === 'wizardtab' ? 'active' : '',
         icon: 'fa-solid fa-book-spells'
@@ -267,6 +267,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         type: 'submit',
         icon: 'fas fa-save',
         label: 'SPELLBOOK.UI.Save',
+        tooltip: 'SPELLBOOK.UI.SaveTooltip',
         cssClass: 'submit-button'
       },
       {
@@ -274,6 +275,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         action: 'reset',
         icon: 'fas fa-undo',
         label: 'SPELLBOOK.UI.Reset',
+        tooltip: 'SPELLBOOK.UI.ResetTooltip',
         cssClass: 'reset-button'
       }
     ];
@@ -379,17 +381,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         icon: 'fa-solid fa-book-open'
       }
     };
-
-    // Add wizard tab if actor is a wizard
-    if (this.wizardManager && this.wizardManager.isWizard) {
-      tabs.wizardtab = {
-        id: 'wizardtab',
-        label: game.i18n.localize('SPELLBOOK.Tabs.WizardSpellbook'),
-        group: tabGroup,
-        cssClass: this.tabGroups[tabGroup] === 'wizardtab' ? 'active' : '',
-        icon: 'fa-solid fa-hat-wizard'
-      };
-    }
 
     return tabs;
   }
@@ -975,45 +966,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     } catch (error) {
       log(1, 'Error setting up preparation listeners:', error);
-    }
-  }
-
-  /**
-   * Handle copying a spell to the wizard's spellbook
-   * @param {string} uuid - The spell UUID
-   * @private
-   */
-  async _handleCopySpell(uuid) {
-    try {
-      if (!this.wizardManager) return;
-
-      // Load the spell
-      const spell = await fromUuid(uuid);
-      if (!spell) {
-        ui.notifications.error(`Could not find spell with UUID: ${uuid}`);
-        return;
-      }
-
-      // Show confirmation dialog
-      const dialog = new WizardSpellCopyDialog(spell, this.wizardManager);
-      const result = await dialog.getResult();
-
-      if (result.confirmed) {
-        const cost = this.wizardManager.getCopyingCost(spell);
-        const time = this.wizardManager.getCopyingTime(spell);
-
-        const success = await this.wizardManager.copySpell(uuid, cost, time);
-
-        if (success) {
-          ui.notifications.info(`Learned ${spell.name} and added it to your spellbook.`);
-          this.render(false); // Re-render to update UI
-        } else {
-          ui.notifications.warn(`Could not learn ${spell.name}.`);
-        }
-      }
-    } catch (error) {
-      log(1, `Error learning spell: ${error.message}`);
-      ui.notifications.error('Failed to learn spell');
     }
   }
 
@@ -2122,9 +2074,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  static async learnSpell(event, html) {
+  static async learnSpell(event) {
+    log(1, 'Click');
     try {
-      const spellUuid = event.currentTarget.dataset.uuid;
+      const spellUuid = event.target.dataset.uuid;
       if (!spellUuid) return;
 
       // Load the spell
