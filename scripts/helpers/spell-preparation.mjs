@@ -309,6 +309,28 @@ export class SpellManager {
   }
 
   /**
+   * Calculate maximum prepared spells for the actor
+   * @returns {number} Maximum allowed prepared spells
+   */
+  getMaxPrepared() {
+    if (!this.classItem) return 0;
+
+    // Check for max-prepared in scaleValues
+    if (this.classItem.scaleValues) {
+      const maxPrepared = this.classItem.scaleValues['max-prepared']?.value;
+      if (maxPrepared !== undefined) return maxPrepared;
+    }
+
+    // Fallback to standard calculation
+    const spellcastingAbility = this.classItem.system.spellcasting?.ability;
+    if (!spellcastingAbility) return 0;
+
+    const abilityMod = this.actor.system.abilities[spellcastingAbility]?.mod || 0;
+    const classLevel = this.classItem.system.levels || this.actor.system.details.level;
+    return Math.max(1, classLevel + abilityMod);
+  }
+
+  /**
    * Get the current count of prepared cantrips
    * @returns {number} Currently prepared cantrips count
    */

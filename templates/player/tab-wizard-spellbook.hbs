@@ -39,7 +39,7 @@
 										<span class="in-spellbook-tag">Already Learned</span>
 									{{else}}
 										{{#if (gt spell.system.level 0)}}
-											<button class="copy-spell-btn" data-uuid="{{spell.compendiumUuid}}" type="button">
+											<button class="copy-spell-btn" data-action="learnSpell" data-uuid="{{spell.compendiumUuid}}" type="button">
 												<i class="fas fa-book"></i> Learn Spell
 											</button>
 										{{/if}}

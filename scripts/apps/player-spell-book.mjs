@@ -37,7 +37,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       reset: PlayerSpellBook.handleReset,
       toggleSpellLevel: PlayerSpellBook.toggleSpellLevel,
       configureFilters: PlayerSpellBook.configureFilters,
-      configureCantripSettings: PlayerSpellBook.configureCantripSettings
+      configureCantripSettings: PlayerSpellBook.configureCantripSettings,
+      learnSpell: PlayerSpellBook.learnSpell
     },
     classes: ['spell-book', 'vertical-tabs'],
     window: {
@@ -307,18 +308,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             log(1, `Error initializing wizard spellbook journal: ${err.message}`);
           });
         }
-
-        // Add event listener for Learn Spell buttons across both tabs
-        this.element.addEventListener('click', async (event) => {
-          const copyBtn = event.target.closest('.copy-spell-btn');
-          if (copyBtn) {
-            event.preventDefault();
-            const uuid = copyBtn.dataset.uuid;
-            if (uuid) {
-              await this._handleCopySpell(uuid);
-            }
-          }
-        });
       }
 
       // Set sidebar state based on user preference
@@ -797,8 +786,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       let preparedCount = 0;
       let maxPrepared = 0;
 
-      // Calculate maximum prepared spells
-      if (classItem) {
+      // Calculate maximum prepared spells using the new method
+      if (this.spellManager) {
+        maxPrepared = this.spellManager.getMaxPrepared();
+      } else if (classItem) {
+        // Legacy calculation as fallback
         const spellcastingAbility = classItem.system.spellcasting?.ability;
         if (spellcastingAbility) {
           const abilityMod = this.actor.system.abilities[spellcastingAbility]?.mod || 0;
@@ -2127,6 +2119,41 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       dialog.render(true);
     } catch (error) {
       log(1, 'Error configuring cantrip settings:', error);
+    }
+  }
+
+  static async learnSpell(event, html) {
+    try {
+      const spellUuid = event.currentTarget.dataset.uuid;
+      if (!spellUuid) return;
+
+      // Load the spell
+      const spell = await fromUuid(spellUuid);
+      if (!spell) {
+        ui.notifications.error(`Could not find spell with UUID: ${spellUuid}`);
+        return;
+      }
+
+      // Show confirmation dialog
+      const dialog = new WizardSpellCopyDialog(spell, this.wizardManager);
+      const result = await dialog.getResult();
+
+      if (result.confirmed) {
+        const cost = this.wizardManager.getCopyingCost(spell);
+        const time = this.wizardManager.getCopyingTime(spell);
+
+        const success = await this.wizardManager.copySpell(spellUuid, cost, time);
+
+        if (success) {
+          ui.notifications.info(`Learned ${spell.name} and added it to your spellbook.`);
+          this.render(false); // Re-render to update UI
+        } else {
+          ui.notifications.warn(`Could not learn ${spell.name}.`);
+        }
+      }
+    } catch (error) {
+      log(1, `Error learning spell: ${error.message}`);
+      ui.notifications.error('Failed to learn spell');
     }
   }
 
