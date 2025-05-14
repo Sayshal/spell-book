@@ -1446,9 +1446,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const isLevelUp = this.spellManager.canBeLeveledUp();
       const isAtMax = currentCount >= maxCantrips;
 
-      log(3, `Setting up cantrip locks: ${currentCount}/${maxCantrips}, at max: ${isAtMax}, rules: ${isModernRules ? 'modern' : 'default'}, levelUp: ${isLevelUp}`);
-      log(3, `Tracking state: hasUnlearned=${this._cantripTracking.hasUnlearned}, unlearned=${this._cantripTracking.unlearned}`);
-
       for (const item of cantripItems) {
         // Get the checkbox and check if we should process this item
         const checkbox = item.querySelector('dnd5e-checkbox');
@@ -1461,8 +1458,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const uuid = checkbox.dataset.uuid;
         const isNewlyChecked = this._newlyCheckedCantrips.has(uuid);
 
-        log(3, `Processing lock for cantrip: ${spellName}, checked: ${isChecked}, newly checked: ${isNewlyChecked}`);
-
         // Clear existing lock state
         checkbox.disabled = false;
         delete checkbox.dataset.tooltip;
@@ -1474,7 +1469,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           checkbox.disabled = true;
           checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedDefault');
           item.classList.add('cantrip-locked');
-          log(3, `Locking already prepared cantrip with default rules: ${spellName}`);
           continue;
         }
 
@@ -1486,10 +1480,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             checkbox.disabled = true;
             checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedModern');
             item.classList.add('cantrip-locked');
-            log(3, `Locking checked cantrip outside level-up with modern rules: ${spellName}`);
             continue;
-          } else {
-            log(3, `Not locking newly checked cantrip: ${spellName}`);
           }
         }
 
@@ -1502,7 +1493,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             checkbox.disabled = true;
             checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.OnlyOneSwap');
             item.classList.add('cantrip-locked');
-            log(3, `Locking checked cantrip, already using swap: ${spellName}`);
             continue;
           }
         }
@@ -1512,9 +1502,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           checkbox.disabled = true;
           checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.MaximumReached');
           item.classList.add('cantrip-locked');
-          log(3, `Locking unchecked cantrip at max: ${spellName}`);
-        } else {
-          log(3, `Cantrip remains unlocked: ${spellName}`);
         }
 
         // Remove any old lock icons if they exist

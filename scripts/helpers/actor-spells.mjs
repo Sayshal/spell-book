@@ -17,6 +17,7 @@ import { SpellManager } from './spell-preparation.mjs'; // Renamed from CantripM
 export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
   const spellItems = [];
   const errors = [];
+  const filteredOut = [];
 
   log(3, `Fetching spell documents: ${spellUuids.size} spells, max level ${maxSpellLevel}`);
 
@@ -49,8 +50,10 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
           compendiumUuid: uuid
         });
       } else {
-        // Not an error, just filtered out
-        log(3, `Spell "${spell.name}" (level ${spell.system.level}) exceeds max level ${maxSpellLevel}`);
+        filteredOut.push({
+          ...spell,
+          compendiumUuid: uuid
+        });
       }
     } catch (error) {
       errors.push({
@@ -61,6 +64,10 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
     }
   }
 
+  // Log filtered spells
+  if (filteredOut.length > 0) {
+    log(3, `Filtered out ${filteredOut.length} spells.`, { spells: filteredOut });
+  }
   // Log errors with more detail
   if (errors.length > 0) {
     log(1, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`);
