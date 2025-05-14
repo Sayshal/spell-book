@@ -329,12 +329,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       this._setupFilterListeners();
       this._setupPreparationListeners();
       this._applyCollapsedLevels();
-      this._updateSpellCounts();
       this._applyFilters();
       this._updateSpellPreparationTracking();
-
-      // Setup cantrip UI elements
       this._setupCantripUI();
+      this._updateSpellCounts();
     } catch (error) {
       log(1, 'Error in _onRender:', error);
     }
@@ -1218,38 +1216,85 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _updateSpellCounts() {
     try {
-      const spellLevels = this.element.querySelectorAll('.spell-level');
+      // Get the active tab
+      const activeTab = this.tabGroups['spellbook-tabs'];
+      const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
+      if (!activeTabContent) return;
+
+      // Handle wizard tab - remove spell counts completely
+      if (activeTab === 'wizardtab') {
+        const countDisplays = activeTabContent.querySelectorAll('.spell-count');
+        countDisplays.forEach((countDisplay) => {
+          countDisplay.remove();
+        });
+        return;
+      }
+
+      // Process the main spellstab
+      const spellLevels = activeTabContent.querySelectorAll('.spell-level');
 
       spellLevels.forEach((levelContainer) => {
         const levelId = levelContainer.dataset.level;
-        const spellItems = levelContainer.querySelectorAll('.spell-item');
-        const countDisplay = levelContainer.querySelector('.spell-count');
 
-        // For cantrips (level 0), hide the regular spell count
+        // Skip cantrips
         if (levelId === '0') {
+          const countDisplay = levelContainer.querySelector('.spell-count');
           if (countDisplay) {
-            countDisplay.style.display = 'none';
+            countDisplay.remove();
           }
           return;
         }
 
-        // Count only spells that are not granted or always prepared
-        const countableSpells = Array.from(spellItems).filter((item) => !item.querySelector('.granted-spell-tag') && !item.querySelector('.always-prepared-tag'));
+        // Count spells at this level
+        const spellItems = levelContainer.querySelectorAll('.spell-item');
 
-        // Count prepared spells among the countable ones
-        const preparedCount = countableSpells.filter((item) => item.classList.contains('prepared-spell')).length;
+        // Identify countable spells (not always prepared/granted)
+        const countableSpells = [];
+        const preparedSpells = [];
+
+        spellItems.forEach((item) => {
+          const hasAlwaysPrepared = !!item.querySelector('.always-prepared-tag');
+          const hasGranted = !!item.querySelector('.granted-spell-tag');
+          const isPrepared = item.classList.contains('prepared-spell');
+
+          if (!hasAlwaysPrepared && !hasGranted) {
+            countableSpells.push(item);
+
+            if (isPrepared) {
+              preparedSpells.push(item);
+            }
+          }
+        });
+
+        const preparedCount = preparedSpells.length;
         const totalAvailable = countableSpells.length;
 
-        // Update the count display
-        if (countDisplay && totalAvailable > 0) {
-          countDisplay.textContent = `(${preparedCount}/${totalAvailable})`;
-          countDisplay.style.display = ''; // Ensure it's visible for non-cantrip levels
-        } else if (countDisplay) {
-          countDisplay.textContent = '';
+        // Update or create count display
+        const countDisplay = levelContainer.querySelector('.spell-count');
+        if (countDisplay) {
+          if (totalAvailable > 0) {
+            countDisplay.textContent = `(${preparedCount}/${totalAvailable})`;
+          } else {
+            countDisplay.textContent = '';
+          }
+        } else if (totalAvailable > 0) {
+          // Create a new count element
+          const newCount = document.createElement('span');
+          newCount.className = 'spell-count';
+          newCount.setAttribute('aria-label', 'SPELLBOOK.UI.SpellCount');
+          newCount.textContent = `(${preparedCount}/${totalAvailable})`;
+
+          const levelHeading = levelContainer.querySelector('.spell-level-heading');
+          if (levelHeading) {
+            const cantripCounter = levelHeading.querySelector('.cantrip-counter');
+            if (cantripCounter) {
+              levelHeading.insertBefore(newCount, cantripCounter);
+            } else {
+              levelHeading.appendChild(newCount);
+            }
+          }
         }
       });
-
-      log(3, 'Updated spell counts for all levels');
     } catch (error) {
       log(1, 'Error updating spell counts:', error);
     }

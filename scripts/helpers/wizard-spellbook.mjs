@@ -90,7 +90,67 @@ export class WizardSpellbookManager {
    * @returns {Array<string>} Array of spell UUIDs
    */
   getSpellbookSpells() {
-    return this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_SPELLBOOK) || [];
+    // Get spells from flags
+    const flagSpells = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_SPELLBOOK) || [];
+
+    // Trigger journal synchronization in the background without awaiting it
+    this._syncSpellsWithJournal().catch((err) => {
+      log(1, `Background journal sync error: ${err.message}`);
+    });
+
+    return flagSpells;
+  }
+
+  /**
+   * Background process to sync journal and flags
+   * @private
+   */
+  async _syncSpellsWithJournal() {
+    try {
+      // Try to get spells from the journal
+      const page = await this.getSpellbookPage();
+      if (page && page.system?.spells?.size > 0) {
+        const spellsFromJournal = Array.from(page.system.spells);
+        log(3, `Found ${spellsFromJournal.length} spells in journal`);
+
+        // Get current flags
+        const flagSpells = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_SPELLBOOK) || [];
+
+        // If journal has spells that aren't in flags, update flags
+        if (!this._arraysEqual(spellsFromJournal, flagSpells)) {
+          log(3, `Updating flags with ${spellsFromJournal.length} journal spells`);
+          await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_SPELLBOOK, spellsFromJournal);
+        }
+      } else {
+        // If journal doesn't have spells but flags do, update journal
+        const flagSpells = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_SPELLBOOK) || [];
+        if (flagSpells.length > 0 && page) {
+          log(3, `Updating journal with ${flagSpells.length} flag spells`);
+          await page.update({
+            'system.spells': new Set(flagSpells)
+          });
+        }
+      }
+    } catch (error) {
+      log(1, `Error syncing journal/flags: ${error.message}`);
+    }
+  }
+
+  /**
+   * Helper method to compare arrays for equality
+   * @param {Array} a - First array
+   * @param {Array} b - Second array
+   * @returns {boolean} Whether arrays are equal
+   * @private
+   */
+  _arraysEqual(a, b) {
+    if (a.length !== b.length) return false;
+    const sortedA = [...a].sort();
+    const sortedB = [...b].sort();
+    for (let i = 0; i < sortedA.length; i++) {
+      if (sortedA[i] !== sortedB[i]) return false;
+    }
+    return true;
   }
 
   /**
