@@ -143,14 +143,21 @@
     }
   }
 
-  &.loading .spell-book-content {
-    position: relative;
+  &.loading {
+    .spell-book-content {
+      display: flex;
+      position: relative;
+      justify-content: center;
+      align-items: center;
+      min-height: 200px;
+    }
 
-    &::after {
-      inset: 0;
-      position: absolute;
-      pointer-events: none;
-      content: '';
+    .tab {
+      display: none;
+    }
+
+    .loading-spinner {
+      display: flex !important;
     }
   }
 
@@ -375,14 +382,6 @@
 
   .error-message {
     color: var(--color-level-error);
-  }
-
-  .spell-book-loading {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 200px;
   }
 
   .loading-spinner {

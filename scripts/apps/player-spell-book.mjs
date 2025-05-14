@@ -297,17 +297,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     super._onRender?.(context, options);
 
     try {
-      // Setup wizard-specific elements if needed
-      if (this.wizardManager?.isWizard) {
-        // Initialize the journal only once
-        if (!this._wizardInitialized) {
-          this._wizardInitialized = true;
-          this.wizardManager.getOrCreateSpellbookJournal().catch((err) => {
-            log(1, `Error initializing wizard spellbook journal: ${err.message}`);
-          });
-        }
-      }
-
       // Set sidebar state based on user preference
       this._setSidebarState();
 
@@ -319,12 +308,21 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
         // Start loading data
         this._loadSpellData();
-        return;
+        return; // Return early to avoid additional setup
       } else {
         this.element.classList.remove('loading');
       }
 
-      log(3, 'Setting up UI elements for loaded spell book');
+      // Setup wizard-specific elements if needed
+      if (this.wizardManager?.isWizard) {
+        // Initialize the journal only once
+        if (!this._wizardInitialized) {
+          this._wizardInitialized = true;
+          this.wizardManager.getOrCreateSpellbookJournal().catch((err) => {
+            log(1, `Error initializing wizard spellbook journal: ${err.message}`);
+          });
+        }
+      }
 
       // Set up UI elements
       this._positionFooter();
@@ -1187,7 +1185,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
             if (!checkbox.checked) {
               checkbox.disabled = true;
-              checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Preparation.MaxPrepared');
+              checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Preparation.AtMaximum');
               spellItem?.classList.add('max-prepared');
             }
           });

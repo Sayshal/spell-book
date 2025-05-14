@@ -37,11 +37,15 @@
 
 		<!-- Main content -->
 		<section class="spell-book-content" role="main" aria-label="{{localize 'SPELLBOOK.UI.SpellList'}}">
-			<!-- Place tab content directly -->
-			{{#> "modules/spell-book/templates/player/tab-spells.hbs"}}{{/modules/spell-book/templates/player/tab-spells.hbs}}
-				{{#if isWizard}}
-					{{#> "modules/spell-book/templates/player/tab-wizard-spellbook.hbs"}}{{/modules/spell-book/templates/player/tab-wizard-spellbook.hbs}}
-				{{/if}}
+			{{#if isLoading}}
+				{{> "modules/spell-book/templates/components/loading-spinner.hbs" size=3 message=(localize 'SPELLBOOK.Application.Loading')}}
+			{{else}}
+				<!-- Place tab content directly -->
+				{{#> "modules/spell-book/templates/player/tab-spells.hbs"}}{{/modules/spell-book/templates/player/tab-spells.hbs}}
+					{{#if isWizard}}
+						{{#> "modules/spell-book/templates/player/tab-wizard-spellbook.hbs"}}{{/modules/spell-book/templates/player/tab-wizard-spellbook.hbs}}
+					{{/if}}
+			{{/if}}
 		</section>
 
 		<!-- Footer container for collapsed sidebar -->
