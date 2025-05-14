@@ -102,6 +102,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** Wizard spellbook manager instance */
   wizardManager = null;
 
+  wizardSpellbookCache = null;
+
   get title() {
     return game.i18n.format('SPELLBOOK.Application.ActorTitle', { name: this.actor.name });
   }
@@ -206,7 +208,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
         // Add wizard-specific data if applicable
         if (this.wizardManager && this.wizardManager.isWizard) {
-          processedSpell.inWizardSpellbook = this.wizardManager.getSpellbookSpells().includes(spell.compendiumUuid);
+          processedSpell.inWizardSpellbook = this.wizardSpellbookCache?.includes(spell.compendiumUuid) || false;
         }
 
         return processedSpell;
@@ -219,7 +221,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     context.isWizard = false;
     if (this.wizardManager && this.wizardManager.isWizard) {
       context.isWizard = true;
-      context.wizardSpellbookCount = this.wizardManager.getSpellbookSpells().length;
+      context.wizardSpellbookCount = this.wizardSpellbookCache?.length || 0;
       context.wizardRulesVersion = this.wizardManager.getRulesVersion();
     }
 
@@ -403,6 +405,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
       // Initialize cantrip manager and flags
       await this.spellManager.initializeFlags();
+
+      // Cache wizard spellbook data if needed
+      if (this.wizardManager?.isWizard) {
+        await this._cacheWizardSpellbook();
+      }
 
       // Load spellcasting class
       const classItem = await this._loadSpellcastingClass();
@@ -796,6 +803,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  async _cacheWizardSpellbook() {
+    if (this.wizardManager && this.wizardManager.isWizard) {
+      this.wizardSpellbookCache = await this.wizardManager.getSpellbookSpells();
+      log(3, `Cached ${this.wizardSpellbookCache.length} spells for wizard spellbook`);
+    }
+  }
   /* -------------------------------------------- */
   /*  UI Setup & Management                       */
   /* -------------------------------------------- */

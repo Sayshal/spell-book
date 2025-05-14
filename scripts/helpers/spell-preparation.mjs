@@ -244,6 +244,7 @@ export class SpellManager {
     this.settings = this.getSettings();
     this.maxCantrips = this.getMaxAllowed();
     this.currentCount = this.getCurrentCount();
+    this._wizardSpellbookCache = null;
 
     log(3, `SpellManager initialized: max=${this.maxCantrips}, current=${this.currentCount}`);
   }
@@ -588,15 +589,16 @@ export class SpellManager {
     this.settings = this.getSettings();
     this.maxCantrips = this.getMaxAllowed();
     this.currentCount = this.getCurrentCount();
+    this._wizardSpellbookCache = null;
     log(3, `Refreshed state: max=${this.maxCantrips}, current=${this.currentCount}`);
   }
 
   /**
    * Get preparation status for a spell
    * @param {Item5e} spell - The spell to check
-   * @returns {Object} Preparation status information
+   * @returns {Promise<Object>} Preparation status information
    */
-  getSpellPreparationStatus(spell) {
+  async getSpellPreparationStatus(spell) {
     const spellName = spell.name || 'unnamed spell';
     log(3, `Getting preparation status for ${spellName}`);
 
@@ -639,10 +641,10 @@ export class SpellManager {
   /**
    * Get preparation status for a spell that's on the actor
    * @param {Item5e} spell - The spell item
-   * @returns {object} - Preparation status information
+   * @returns {Promise<object>} - Preparation status information
    * @private
    */
-  _getOwnedSpellPreparationStatus(spell) {
+  async _getOwnedSpellPreparationStatus(spell) {
     const spellName = spell.name || 'unnamed spell';
     log(3, `Getting owned spell preparation status for ${spellName}`);
 
@@ -757,23 +759,30 @@ export class SpellManager {
 
     // For wizards, check if spell is in spellbook
     if (this.isWizard()) {
-      const wizardManager = this.getWizardManager();
-      if (wizardManager) {
-        // Get the spell's UUID
-        const spellUuid = spell.flags?.core?.sourceId || spell.uuid;
+      // Get the spell's UUID
+      const spellUuid = spell.flags?.core?.sourceId || spell.uuid;
 
-        // For non-cantrips, check if the spell can be prepared (in spellbook)
-        if (spell.system.level > 0 && preparationMode === 'prepared' && !isDisabled) {
-          const inSpellbook = wizardManager.canPrepareSpell(spellUuid);
-          if (!inSpellbook) {
-            result.disabled = true;
-            result.disabledReason = 'SPELLBOOK.Wizard.NotInSpellbook';
-          }
+      // Cache wizard spellbook to avoid repeated async calls
+      if (!this._wizardSpellbookCache) {
+        const wizardManager = this.getWizardManager();
+        if (wizardManager) {
+          this._wizardSpellbookCache = await wizardManager.getSpellbookSpells();
+        } else {
+          this._wizardSpellbookCache = [];
         }
-
-        // Add information about wizard spellbook
-        result.inWizardSpellbook = wizardManager.getSpellbookSpells().includes(spellUuid);
       }
+
+      // For non-cantrips, check if the spell can be prepared (in spellbook)
+      if (spell.system.level > 0 && preparationMode === 'prepared' && !isDisabled) {
+        const inSpellbook = this._wizardSpellbookCache.includes(spellUuid);
+        if (!inSpellbook) {
+          result.disabled = true;
+          result.disabledReason = 'SPELLBOOK.Wizard.NotInSpellbook';
+        }
+      }
+
+      // Add information about wizard spellbook
+      result.inWizardSpellbook = this._wizardSpellbookCache.includes(spellUuid);
     }
 
     return result;
@@ -935,13 +944,17 @@ export class SpellManager {
   /**
    * Check if a spell is in the wizard's spellbook
    * @param {string} uuid - UUID of the spell to check
-   * @returns {boolean} Whether the spell is in the spellbook
+   * @returns {Promise<boolean>} Whether the spell is in the spellbook
    */
-  isSpellInWizardBook(uuid) {
+  async isSpellInWizardBook(uuid) {
     const wizardManager = this.getWizardManager();
     if (!wizardManager) return false;
 
-    const spellbook = wizardManager.getSpellbookSpells();
-    return spellbook.includes(uuid);
+    // Cache wizard spellbook to avoid repeated async calls
+    if (!this._wizardSpellbookCache) {
+      this._wizardSpellbookCache = await wizardManager.getSpellbookSpells();
+    }
+
+    return this._wizardSpellbookCache.includes(uuid);
   }
 }

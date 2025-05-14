@@ -55,15 +55,7 @@ export class WizardSpellbookManager {
       const updateData = {};
       const flags = this.actor.flags?.[MODULE.ID] || {};
 
-      // Initialize wizard-specific flags if they don't exist
-      if (!flags[FLAGS.WIZARD_SPELLBOOK]) {
-        updateData[`flags.${MODULE.ID}.${FLAGS.WIZARD_SPELLBOOK}`] = [];
-      }
-
-      if (!flags[FLAGS.WIZARD_LEARNED_SPELLS]) {
-        updateData[`flags.${MODULE.ID}.${FLAGS.WIZARD_LEARNED_SPELLS}`] = {};
-      }
-
+      // Initialize only necessary wizard-specific flags
       if (!flags[FLAGS.WIZARD_COPIED_SPELLS]) {
         updateData[`flags.${MODULE.ID}.${FLAGS.WIZARD_COPIED_SPELLS}`] = [];
       }
@@ -86,71 +78,44 @@ export class WizardSpellbookManager {
   }
 
   /**
+   * Get the actor's spellbook journal page
+   * @returns {JournalEntryPage|null} The actor's spellbook journal page
+   */
+  async getActorSpellJournal() {
+    try {
+      const journal = await this.getOrCreateSpellbookJournal();
+      if (!journal) return null;
+
+      // Get the spellbook page
+      const page = journal.pages.find((p) => p.type === 'spells');
+      return page || null;
+    } catch (error) {
+      log(1, `Error getting spellbook journal page: ${error.message}`);
+      return null;
+    }
+  }
+
+  /**
    * Get all spells in the wizard's spellbook
    * @returns {Array<string>} Array of spell UUIDs
    */
-  getSpellbookSpells() {
-    // Get spells from flags
-    const flagSpells = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_SPELLBOOK) || [];
+  async getSpellbookSpells() {
+    const journalPage = await this.getActorSpellJournal();
+    if (!journalPage) return [];
 
-    // Trigger journal synchronization in the background without awaiting it
-    this._syncSpellsWithJournal().catch((err) => {
-      log(1, `Background journal sync error: ${err.message}`);
-    });
-
-    return flagSpells;
+    return Array.from(journalPage.system.spells || []);
   }
 
   /**
-   * Background process to sync journal and flags
-   * @private
+   * Check if a spell is in the wizard's spellbook
+   * @param {string} spellUuid - UUID of the spell
+   * @returns {Promise<boolean>} Whether the spell is in the spellbook
    */
-  async _syncSpellsWithJournal() {
-    try {
-      // Try to get spells from the journal
-      const page = await this.getSpellbookPage();
-      if (page && page.system?.spells?.size > 0) {
-        const spellsFromJournal = Array.from(page.system.spells);
-        log(3, `Found ${spellsFromJournal.length} spells in journal`);
+  async isSpellInSpellbook(spellUuid) {
+    const journalPage = await this.getActorSpellJournal();
+    if (!journalPage) return false;
 
-        // Get current flags
-        const flagSpells = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_SPELLBOOK) || [];
-
-        // If journal has spells that aren't in flags, update flags
-        if (!this._arraysEqual(spellsFromJournal, flagSpells)) {
-          log(3, `Updating flags with ${spellsFromJournal.length} journal spells`);
-          await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_SPELLBOOK, spellsFromJournal);
-        }
-      } else {
-        // If journal doesn't have spells but flags do, update journal
-        const flagSpells = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_SPELLBOOK) || [];
-        if (flagSpells.length > 0 && page) {
-          log(3, `Updating journal with ${flagSpells.length} flag spells`);
-          await page.update({
-            'system.spells': new Set(flagSpells)
-          });
-        }
-      }
-    } catch (error) {
-      log(1, `Error syncing journal/flags: ${error.message}`);
-    }
-  }
-
-  /**
-   * Helper method to compare arrays for equality
-   * @param {Array} a - First array
-   * @param {Array} b - Second array
-   * @returns {boolean} Whether arrays are equal
-   * @private
-   */
-  _arraysEqual(a, b) {
-    if (a.length !== b.length) return false;
-    const sortedA = [...a].sort();
-    const sortedB = [...b].sort();
-    for (let i = 0; i < sortedA.length; i++) {
-      if (sortedA[i] !== sortedB[i]) return false;
-    }
-    return true;
+    return journalPage.system.spells.has(spellUuid);
   }
 
   /**
@@ -170,12 +135,11 @@ export class WizardSpellbookManager {
   /**
    * Check if a spell can be prepared by the wizard
    * @param {string} spellUuid - UUID of the spell
-   * @returns {boolean} Whether the spell can be prepared
+   * @returns {Promise<boolean>} Whether the spell can be prepared
    */
-  canPrepareSpell(spellUuid) {
+  async canPrepareSpell(spellUuid) {
     // Wizard can only prepare spells in their spellbook
-    const spellbook = this.getSpellbookSpells();
-    return spellbook.includes(spellUuid);
+    return this.isSpellInSpellbook(spellUuid);
   }
 
   /**
@@ -184,10 +148,10 @@ export class WizardSpellbookManager {
    */
   async getRitualSpells() {
     try {
-      const spellbook = this.getSpellbookSpells();
+      const spellbookSpells = await this.getSpellbookSpells();
       const ritualSpells = [];
 
-      for (const uuid of spellbook) {
+      for (const uuid of spellbookSpells) {
         try {
           const spell = await fromUuid(uuid);
           if (spell && spell.system.components?.ritual) {
@@ -234,99 +198,42 @@ export class WizardSpellbookManager {
    * @param {Object} metadata - Additional metadata for the spell
    * @returns {Promise<boolean>} Success state
    */
-  async addSpellToSpellbook(spellUuid, source, metadata = {}) {
+  async addSpellToSpellbook(spellUuid, source, metadata) {
     try {
-      // Get current spellbook
-      const spellbook = this.getSpellbookSpells();
-
-      // Check if spell is already in spellbook
-      if (spellbook.includes(spellUuid)) {
-        log(3, `Spell ${spellUuid} already in spellbook`);
+      // Get the journal page
+      const journalPage = await this.getActorSpellJournal();
+      if (!journalPage) {
+        log(2, 'Failed to get spellbook journal page');
         return false;
       }
 
-      // Add spell to spellbook
-      const updatedSpellbook = [...spellbook, spellUuid];
+      // Add spell to the journal page
+      const spells = journalPage.system.spells || new Set();
+      spells.add(spellUuid);
 
-      // Add to learned spells with source
-      const learnedSpells = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_LEARNED_SPELLS) || {};
-      learnedSpells[spellUuid] = {
-        source: source || WIZARD_SPELL_SOURCE.COPIED,
-        dateAdded: Date.now(),
-        ...metadata
-      };
+      await journalPage.update({
+        'system.spells': spells
+      });
 
-      // If this is a copied spell, add detailed metadata
-      if (source === WIZARD_SPELL_SOURCE.COPIED && metadata.cost && metadata.timeSpent) {
-        const copiedSpells = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_COPIED_SPELLS) || [];
-        copiedSpells.push({
+      // Only store metadata for copied spells
+      if (source === WIZARD_SPELL_SOURCE.COPIED) {
+        const metadataObj = {
           spellUuid,
           dateCopied: Date.now(),
-          cost: metadata.cost,
-          timeSpent: metadata.timeSpent
-        });
+          cost: metadata?.cost || 0,
+          timeSpent: metadata?.timeSpent || 0
+        };
 
+        // Update just the metadata flag
+        const copiedSpells = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_COPIED_SPELLS) || [];
+        copiedSpells.push(metadataObj);
         await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_COPIED_SPELLS, copiedSpells);
       }
 
-      // Update flags
-      await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_SPELLBOOK, updatedSpellbook);
-      await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_LEARNED_SPELLS, learnedSpells);
-
-      // Sync with journal
-      await this.syncJournalWithFlags();
-
-      log(3, `Added spell ${spellUuid} to wizard spellbook`);
+      log(3, `Added spell ${spellUuid} to ${this.actor.name}'s spellbook`);
       return true;
     } catch (error) {
       log(1, `Error adding spell to spellbook: ${error.message}`);
-      return false;
-    }
-  }
-
-  /**
-   * Get the spellbook journal page
-   * @returns {Promise<JournalEntryPage|null>} The spellbook journal page
-   */
-  async getSpellbookPage() {
-    try {
-      const journal = await this.getOrCreateSpellbookJournal();
-      if (!journal) return null;
-
-      // Get the spellbook page
-      const page = journal.pages.find((p) => p.type === 'spells');
-      return page || null;
-    } catch (error) {
-      log(1, `Error getting spellbook page: ${error.message}`);
-      return null;
-    }
-  }
-
-  /**
-   * Synchronize the actor's flags with the journal
-   * @returns {Promise<boolean>} Success state
-   */
-  async syncJournalWithFlags() {
-    try {
-      // Get current flags
-      const spellbookSpells = this.getSpellbookSpells();
-
-      // Get or create the journal
-      const page = await this.getSpellbookPage();
-      if (!page) {
-        log(2, 'Failed to get spellbook page');
-        return false;
-      }
-
-      // Update the journal with the current spells
-      await page.update({
-        'system.spells': new Set(spellbookSpells)
-      });
-
-      log(3, `Synchronized ${spellbookSpells.length} spells to journal for ${this.actor.name}`);
-      return true;
-    } catch (error) {
-      log(1, `Error syncing journal with flags: ${error.message}`);
       return false;
     }
   }
@@ -389,7 +296,7 @@ export class WizardSpellbookManager {
             system: {
               identifier: `${this.actor.id}-${MODULE.ID}`,
               description: `Spellbook for ${this.actor.name}`,
-              spells: new Set(this.getSpellbookSpells())
+              spells: new Set()
             }
           }
         ]
