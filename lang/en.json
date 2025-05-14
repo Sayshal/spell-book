@@ -130,6 +130,8 @@
   "SPELLBOOK.UI.SpellList": "Spell List",
   "SPELLBOOK.UI.SpellPreparation": "Spell Preparation",
   "SPELLBOOK.UI.ToggleSidebar": "Toggle Sidebar",
+  "SPELLBOOK.Wizard.InSpellbook": "Already Learned",
+  "SPELLBOOK.Wizard.LearnSpell": "Learn Spell",
   "SPELLBOOK.Wizard.RitualCastingHint": "Enable casting ritual spells directly from your spellbook without preparing them",
   "SPELLBOOK.Wizard.RitualCastingLabel": "Ritual Casting From Spellbook",
   "SPELLBOOK.Wizard.RulesLegacy": "Legacy",
