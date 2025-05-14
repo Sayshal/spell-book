@@ -401,14 +401,8 @@
 
   .wizard-rules-info {
     display: inline-block;
-    margin-top: 4px;
-    margin-left: 8px;
     padding: 2px 6px;
-    border-radius: 4px;
-    color: var(--color-text-dark-secondary);
-    font-style: italic;
     font-size: 0.9em;
-    background: var(--color-border-light-tertiary);
   }
 
   .wizard-rules-info i {

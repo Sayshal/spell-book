@@ -94,6 +94,8 @@ export async function saveActorPreparedSpells(actor, spellData) {
             if (!newSpellData.system.preparation) {
               newSpellData.system.preparation = {};
             }
+
+            newSpellData.system.preparation.mode = 'prepared';
             newSpellData.system.preparation.prepared = true;
             newSpellData.flags = newSpellData.flags || {};
             newSpellData.flags.core = newSpellData.flags.core || {};

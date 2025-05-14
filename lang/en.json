@@ -126,6 +126,8 @@
   "SPELLBOOK.Wizard.NewSpellsInfo2": "For each level of the spell, the process takes 2 hours and costs 50 gp. The cost represents material components you expend as you experiment with the spell to master it, as well as the fine inks you need to record it.",
   "SPELLBOOK.Wizard.NewSpellsTitle": "Learning New Spells",
   "SPELLBOOK.Wizard.NoCantripsOnLongRest": "Wizard cantrips cannot be changed during a long rest under legacy rules.",
+  "SPELLBOOK.Wizard.OneSwapLimit": "You can only swap one cantrip during a long rest.",
+  "SPELLBOOK.Wizard.MustUnlearnFirst": "You must unlearn a cantrip before learning a new one.",
   "SPELLBOOK.Wizard.PrepareInfo": "You prepare the list of wizard spells that are available for you to cast. Choose a number of wizard spells from your spellbook equal to your Intelligence modifier + your wizard level (minimum of one spell).",
   "SPELLBOOK.Wizard.PrepareInfoTab": "You prepare the list of wizard spells that are available for you to cast. To do so, choose a number of wizard spells from your spellbook equal to your Intelligence modifier + your wizard level (minimum of one spell).",
   "SPELLBOOK.Wizard.RitualCastingHint": "Enable casting ritual spells directly from your spellbook without preparing them",
