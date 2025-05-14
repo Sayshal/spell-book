@@ -43,7 +43,16 @@
 							</div>
 
 							<div class="spell-preparation dnd5e2">
-								{{{preparationCheckboxHtml}}}
+								{{#if isWizardClass}}
+									{{#unless inWizardSpellbook}}
+										{{#if canAddToSpellbook}}
+											<button class="copy-spell-btn" data-uuid="{{compendiumUuid}}"
+												title="{{localize 'SPELLBOOK.Wizard.AddToSpellbook'}}">
+												<i class="fas fa-book-medical"></i>
+											</button>
+										{{/if}}
+									{{/unless}}
+								{{/if}}
 							</div>
 						</li>
 						{{/modules/spell-book/templates/components/spell-level.hbs}}

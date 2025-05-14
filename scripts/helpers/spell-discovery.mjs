@@ -4,7 +4,7 @@ import { WizardSpellbookManager } from './wizard-spellbook.mjs';
 
 /**
  * Get a class's spell list from compendium journals
- * @param {string} className - The name of the class (used only for logging)
+ * @param {string} className - The name of the class
  * @param {string} [classUuid] - UUID of the class item
  * @param {Actor5e} [actor] - The actor (for wizard spellbook)
  * @param {WizardSpellbookManager} [wizardManager] - Existing wizard manager instance
@@ -18,7 +18,7 @@ export async function getClassSpellList(className, classUuid, actor, wizardManag
     try {
       const manager = wizardManager || (actor && new WizardSpellbookManager(actor));
 
-      if (manager.isWizard) {
+      if (manager?.isWizard) {
         // Try to get the actor's custom spellbook
         const page = await manager.getSpellbookPage();
         if (page && page.system?.spells?.size > 0) {
@@ -31,20 +31,27 @@ export async function getClassSpellList(className, classUuid, actor, wizardManag
     }
   }
 
+  // Extract identifier and pack source
   let classIdentifier = null;
+  let packSource = null;
+
   if (classUuid) {
     try {
       const classItem = await fromUuid(classUuid);
       classIdentifier = classItem?.system?.identifier?.toLowerCase();
 
-      if (!classIdentifier) {
-        log(2, `No identifier found in class item with UUID: ${classUuid}`);
+      // Extract pack source from compendium source
+      const compendiumSource = classItem?._stats?.compendiumSource;
+      packSource = extractPackFromSource(compendiumSource);
+
+      log(3, `Extracted class identifier: ${classIdentifier}, packSource: ${packSource}`);
+
+      if (!classIdentifier && !packSource) {
+        log(2, `No identifier or pack source found for class UUID: ${classUuid}`);
         return new Set();
       }
-
-      log(3, `Extracted class identifier: ${classIdentifier}`);
     } catch (error) {
-      log(1, `Error extracting identifier from classUuid: ${error.message}`);
+      log(1, `Error extracting info from classUuid: ${error.message}`);
       return new Set();
     }
   } else {
@@ -55,30 +62,17 @@ export async function getClassSpellList(className, classUuid, actor, wizardManag
   // Get custom mappings
   const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
 
-  // PRIORITY 1: First check if there's a direct mapping in customMappings that matches the identifier
-  try {
-    for (const [originalUuid, customUuid] of Object.entries(customMappings)) {
-      try {
-        // Get original spell list to check its identifier
-        const original = await fromUuid(originalUuid);
-        if (original?.system?.identifier?.toLowerCase() === classIdentifier) {
-          // Found a matching original, now try to load the custom version
-          log(3, `Found custom mapping for ${classIdentifier}, loading custom version from ${customUuid}`);
-          const customList = await fromUuid(customUuid);
-          if (customList && customList.system.spells.size > 0) {
-            log(3, `Successfully loaded custom spell list with ${customList.system.spells.size} spells from mapping`);
-            return customList.system.spells;
-          } else {
-            log(2, `Custom spell list not found or empty, will try fallbacks`);
-          }
-        }
-      } catch (err) {
-        log(1, `Error checking mapping ${originalUuid} -> ${customUuid}: ${err.message}`);
-        continue; // Continue checking other mappings
+  // PRIORITY 1: Check for spell list in same pack as class source
+  if (packSource) {
+    try {
+      const packMatch = await findSpellListByPack(packSource, classIdentifier, customMappings);
+      if (packMatch && packMatch.size > 0) {
+        log(3, `Found spell list matching pack source ${packSource}`);
+        return packMatch;
       }
+    } catch (error) {
+      log(1, `Error finding spell list by pack: ${error.message}`);
     }
-  } catch (error) {
-    log(1, `Error checking custom mappings: ${error.message}`);
   }
 
   // PRIORITY 2: Check for a spell list in the custom compendium with matching identifier
@@ -97,6 +91,81 @@ export async function getClassSpellList(className, classUuid, actor, wizardManag
 
   log(2, `No spell list found for identifier: ${classIdentifier}`);
   return new Set(); // Return empty set
+}
+
+/**
+ * Extract compendium pack name from a compendium source string
+ * @param {string} compendiumSource - The compendium source string
+ * @returns {string|null} The pack name or null if not found
+ */
+function extractPackFromSource(compendiumSource) {
+  if (!compendiumSource) return null;
+
+  const match = compendiumSource.match(/Compendium\.([\w-]+)\./);
+  return match ? match[1] : null;
+}
+
+/**
+ * Find a spell list by pack and identifier match
+ * @param {string} packName - The pack name to search
+ * @param {string} identifier - The class identifier
+ * @param {Object} customMappings - Custom spell list mappings
+ * @returns {Promise<Set<string>|null>} - The matched spell list or null
+ */
+async function findSpellListByPack(packName, identifier, customMappings) {
+  // Get all journal packs
+  const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry' && p.collection.includes(packName));
+
+  log(3, `Searching for spell list with pack: ${packName} and identifier: ${identifier}`);
+
+  for (const pack of journalPacks) {
+    try {
+      const index = await pack.getIndex();
+      const entries = Array.from(index.values());
+
+      for (const journalData of entries) {
+        try {
+          const journal = await pack.getDocument(journalData._id);
+
+          for (const page of journal.pages) {
+            // Skip non-spell list pages
+            if (page.type !== 'spells') continue;
+
+            // Check for identifier match if provided
+            if (identifier) {
+              const pageIdentifier = page.system?.identifier?.toLowerCase() || '';
+              if (pageIdentifier !== identifier) continue;
+            }
+
+            log(3, `Found matching spell list by pack and identifier: ${page.name}`);
+
+            // Check for custom version
+            if (customMappings[page.uuid]) {
+              try {
+                log(3, `Found custom mapping, checking custom version`);
+                const customList = await fromUuid(customMappings[page.uuid]);
+                if (customList && customList.system.spells.size > 0) {
+                  return customList.system.spells;
+                }
+              } catch (error) {
+                log(1, `Error retrieving custom spell list: ${error.message}`);
+              }
+            }
+
+            // Use original list
+            if (page.system.spells.size > 0) {
+              return page.system.spells;
+            }
+          }
+        } catch (innerError) {
+          log(1, `Error processing journal ${journalData.name}:`, innerError);
+        }
+      }
+    } catch (error) {
+      log(1, `Error processing pack ${pack.metadata.label}:`, error);
+    }
+  }
+  return null;
 }
 
 /**

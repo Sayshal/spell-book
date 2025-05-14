@@ -734,7 +734,7 @@ export class SpellManager {
     };
 
     // For wizards, check if spell is in spellbook
-    if (this.isWizard && this.isWizard()) {
+    if (this.isWizard()) {
       const wizardManager = this.getWizardManager();
       if (wizardManager) {
         // Get the spell's UUID
@@ -745,7 +745,7 @@ export class SpellManager {
           const inSpellbook = wizardManager.canPrepareSpell(spellUuid);
           if (!inSpellbook) {
             result.disabled = true;
-            result.disabledReason = 'This spell is not in your spellbook';
+            result.disabledReason = 'SPELLBOOK.Wizard.NotInSpellbook';
           }
         }
 

@@ -308,6 +308,18 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           });
         }
 
+        // Add event listener for copy spell buttons on both tabs
+        this.element.addEventListener('click', async (event) => {
+          const copyBtn = event.target.closest('.copy-spell-btn');
+          if (copyBtn) {
+            event.preventDefault();
+            const uuid = copyBtn.dataset.uuid;
+            if (uuid) {
+              await this._handleCopySpell(uuid);
+            }
+          }
+        });
+
         // Add event listener for copy spell buttons
         const wizardSpellbook = this.element.querySelector('.wizard-spellbook-tab');
         if (wizardSpellbook) {
@@ -534,6 +546,19 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const sortBy = this._getFilterState().sortBy || 'level';
       for (const level of spellLevels) {
         level.spells = this._sortSpells(level.spells, sortBy);
+      }
+
+      // Add wizard-specific data to each spell
+      if (this.wizardManager?.isWizard) {
+        const spellbookSpells = this.wizardManager.getSpellbookSpells();
+
+        for (const level of spellLevels) {
+          for (const spell of level.spells) {
+            spell.isWizardClass = true;
+            spell.inWizardSpellbook = spellbookSpells.includes(spell.compendiumUuid);
+            spell.canAddToSpellbook = !spell.inWizardSpellbook && spell.system.level > 0;
+          }
+        }
       }
 
       // Enrich spell data with icons and details
