@@ -344,6 +344,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @override */
   _onClose() {
     try {
+      // Clean up any temporary flags
+      if (this._isLongRest) {
+        this.actor.unsetFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST);
+      }
+
       // Remove the flag change hook
       if (this._flagChangeHook) {
         Hooks.off('updateActor', this._flagChangeHook);
@@ -1572,6 +1577,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const isLevelUp = this.spellManager.canBeLeveledUp();
       const isAtMax = currentCount >= maxCantrips;
 
+      // Wizard long rest context takes precedence over regular cantrip rules
+      const isWizardLongRest = this.wizardManager?.isWizard && this._isLongRest;
+      const canSwapOnLongRest = isWizardLongRest ? this.wizardManager.canSwapCantripsOnLongRest(true) : false;
+
       for (const item of cantripItems) {
         // Get the checkbox and check if we should process this item
         const checkbox = item.querySelector('dnd5e-checkbox');
@@ -1588,6 +1597,51 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         checkbox.disabled = false;
         delete checkbox.dataset.tooltip;
         item.classList.remove('cantrip-locked');
+
+        // PRIORITY CHECK: Wizard long rest special case takes precedence
+        if (isWizardLongRest) {
+          // For legacy wizard rules - lock all cantrips
+          if (!canSwapOnLongRest) {
+            checkbox.disabled = true;
+            checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Wizard.NoCantripsOnLongRest');
+            item.classList.add('cantrip-locked');
+            continue;
+          }
+
+          // For modern wizard rules during long rest
+          if (canSwapOnLongRest) {
+            // If we're tracking a swap, apply specific locks
+            if (this._longRestSwapTracking) {
+              const wasInOriginalSet = this._longRestSwapTracking.originalChecked.has(uuid);
+
+              // If we've already unlearned a cantrip
+              if (this._longRestSwapTracking.hasUnlearned) {
+                // Only allow checking the unlearned cantrip or a new cantrip
+                const isUnlearnedCantrip = this._longRestSwapTracking.unlearned === uuid;
+
+                // Lock original cantrips that aren't the one we unlearned
+                if (wasInOriginalSet && !isUnlearnedCantrip) {
+                  checkbox.disabled = true;
+                  checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Wizard.OneSwapLimit');
+                  item.classList.add('cantrip-locked');
+                  continue;
+                }
+
+                // Lock new cantrips if we've already learned one
+                if (!wasInOriginalSet && this._longRestSwapTracking.hasLearned && this._longRestSwapTracking.learned !== uuid) {
+                  checkbox.disabled = true;
+                  checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Wizard.OneSwapLimit');
+                  item.classList.add('cantrip-locked');
+                  continue;
+                }
+              }
+              // If we haven't unlearned a cantrip yet, no special locks needed for modern wizard rules
+            }
+
+            // We don't need additional locks for the modern wizard rules case
+            continue;
+          }
+        }
 
         // For DEFAULT rules outside of level-up:
         // Lock only cantrips that were already prepared on the actor, not newly checked ones
@@ -1662,14 +1716,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  /**
-   * Set whether this spellbook is being used during a long rest
-   * @param {boolean} isLongRest - Whether this is being used during long rest
-   */
   setLongRestContext(isLongRest) {
     this._isLongRest = !!isLongRest;
     log(3, `Long rest context set to: ${this._isLongRest}`);
-    this.render(false); // Re-render with new context
+
+    // Also set a temporary flag on the actor for UI preparation functions
+    if (this._isLongRest) {
+      this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST, true).then(() => {
+        this.render(false); // Re-render with new context
+      });
+    } else {
+      this.actor.unsetFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST).then(() => {
+        this.render(false); // Re-render with new context
+      });
+    }
   }
 
   /* -------------------------------------------- */

@@ -32,7 +32,8 @@ export const FLAGS = {
   WIZARD_SPELLBOOK: 'wizardSpellbook',
   WIZARD_LEARNED_SPELLS: 'wizardLearnedSpells',
   WIZARD_COPIED_SPELLS: 'wizardCopiedSpells',
-  WIZARD_RULES_VERSION: 'wizardRulesVersion'
+  WIZARD_RULES_VERSION: 'wizardRulesVersion',
+  WIZARD_LONG_REST: 'temporaryLongRestCheck'
 };
 
 //-----------------------------------------------------------------------------

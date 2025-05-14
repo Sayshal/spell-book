@@ -1,4 +1,4 @@
-import { CANTRIP_CHANGE_BEHAVIOR, CANTRIP_RULES, FLAGS, MODULE, SETTINGS } from '../constants.mjs';
+import { CANTRIP_CHANGE_BEHAVIOR, CANTRIP_RULES, FLAGS, MODULE, SETTINGS, WIZARD_RULES } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import * as formattingUtils from './spell-formatting.mjs';
 import { WizardSpellbookManager } from './wizard-spellbook.mjs';
@@ -685,8 +685,45 @@ export class SpellManager {
       disabledReason = 'SPELLBOOK.Preparation.RitualTooltip';
     }
 
+    // Create the base result object early so we can return it
+    const result = {
+      prepared: isGranted || spell.system.preparation?.prepared || alwaysPrepared,
+      isOwned: true,
+      preparationMode: preparationMode,
+      localizedPreparationMode: localizedPreparationMode,
+      disabled: isDisabled,
+      disabledReason: disabledReason,
+      alwaysPrepared: alwaysPrepared,
+      sourceItem: sourceInfo,
+      isGranted: isGranted,
+      isCantripLocked: isCantripLocked,
+      cantripLockReason: cantripLockReason
+    };
+
     // Handle cantrip-specific behavior based on settings
     if (isCantrip && !alwaysPrepared && !isGranted) {
+      // Check for wizard long rest case first (takes precedence)
+      if (spell.parent?.items) {
+        // Make sure it's an actor
+        const wizardClass = spell.parent.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard');
+        if (wizardClass) {
+          // Check if we're in a long rest state from the application
+          // We can't access the application directly, but we can check for a flag
+          const isLongRest = spell.parent.getFlag(MODULE.ID, 'TEMP_LONG_REST_MODE') === true;
+          if (isLongRest) {
+            // Get wizard rules version
+            const rulesVersion = spell.parent.getFlag(MODULE.ID, FLAGS.WIZARD_RULES_VERSION) || (game.settings.get('dnd5e', 'rulesVersion') === 'modern' ? WIZARD_RULES.MODERN : WIZARD_RULES.LEGACY);
+
+            // Modern wizard rules during long rest - don't lock cantrips
+            if (rulesVersion === WIZARD_RULES.MODERN) {
+              // Don't lock cantrips for modern wizard rules during long rest
+              // Return the result without locking anything
+              return result;
+            }
+          }
+        }
+      }
+
       const settings = this.getSettings();
       const behavior = settings.behavior;
       const isDefaultRules = settings.rules === CANTRIP_RULES.DEFAULT;
@@ -706,58 +743,43 @@ export class SpellManager {
           // For DEFAULT rules:
           // - Disable already prepared cantrips when not in level-up
           if (isDefaultRules && isPrepared && !isLevelUp) {
-            isDisabled = true;
-            isCantripLocked = true;
-            cantripLockReason = 'SPELLBOOK.Cantrips.LockedDefault';
-            log(3, `Cantrip ${spellName} is locked: ${cantripLockReason}`);
+            result.disabled = true;
+            result.isCantripLocked = true;
+            result.cantripLockReason = 'SPELLBOOK.Cantrips.LockedDefault';
+            log(3, `Cantrip ${spellName} is locked: ${result.cantripLockReason}`);
           }
           // For MODERN rules, check unlearned limit during level-up
           else if (!isDefaultRules && isLevelUp && isPrepared) {
             const unlearned = this.actor.getFlag(MODULE.ID, FLAGS.UNLEARNED_CANTRIPS) || 0;
             if (unlearned >= 1) {
-              isDisabled = true;
-              isCantripLocked = true;
-              cantripLockReason = 'SPELLBOOK.Cantrips.CannotUnlearnMore';
+              result.disabled = true;
+              result.isCantripLocked = true;
+              result.cantripLockReason = 'SPELLBOOK.Cantrips.CannotUnlearnMore';
               log(3, `Cantrip ${spellName} is locked due to unlearned limit`);
             }
           }
           // For non-level-up MODERN, lock all prepared cantrips
           else if (!isDefaultRules && !isLevelUp && isPrepared) {
-            isDisabled = true;
-            isCantripLocked = true;
-            cantripLockReason = 'SPELLBOOK.Cantrips.LockedModern';
+            result.disabled = true;
+            result.isCantripLocked = true;
+            result.cantripLockReason = 'SPELLBOOK.Cantrips.LockedModern';
           }
           break;
 
         default:
           // Unknown behavior, be safe and lock prepared cantrips
           if (isPrepared) {
-            isDisabled = true;
-            isCantripLocked = true;
-            cantripLockReason = 'SPELLBOOK.Cantrips.LockedDefault';
+            result.disabled = true;
+            result.isCantripLocked = true;
+            result.cantripLockReason = 'SPELLBOOK.Cantrips.LockedDefault';
           }
       }
     }
 
     // If this cantrip is locked, override the disabled reason
-    if (isCantripLocked) {
-      disabledReason = cantripLockReason;
+    if (result.isCantripLocked) {
+      result.disabledReason = result.cantripLockReason;
     }
-
-    // Create the base result object
-    const result = {
-      prepared: isGranted || spell.system.preparation?.prepared || alwaysPrepared,
-      isOwned: true,
-      preparationMode: preparationMode,
-      localizedPreparationMode: localizedPreparationMode,
-      disabled: isDisabled,
-      disabledReason: disabledReason,
-      alwaysPrepared: alwaysPrepared,
-      sourceItem: sourceInfo,
-      isGranted: isGranted,
-      isCantripLocked: isCantripLocked,
-      cantripLockReason: cantripLockReason
-    };
 
     // For wizards, check if spell is in spellbook
     if (this.isWizard()) {
@@ -775,7 +797,7 @@ export class SpellManager {
       }
 
       // For non-cantrips, check if the spell can be prepared (in spellbook)
-      if (spell.system.level > 0 && preparationMode === 'prepared' && !isDisabled) {
+      if (spell.system.level > 0 && preparationMode === 'prepared' && !result.disabled) {
         const inSpellbook = this._wizardSpellbookCache.includes(spellUuid);
         if (!inSpellbook) {
           result.disabled = true;
