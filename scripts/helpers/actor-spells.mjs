@@ -1,3 +1,4 @@
+import { FLAGS, MODULE } from '../constants.mjs';
 /**
  * Helper functions for actor spells
  * Retrieves and organizes spells for actors
@@ -96,11 +97,17 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
  * @param {Actor5e|null} actor - The actor to check preparation status against
  * @returns {Array} - Array of spell levels with formatted data
  */
-export async function organizeSpellsByLevel(spellItems, actor = null) {
+export async function organizeSpellsByLevel(spellItems, actor = null, spellManager = null) {
   log(3, `Organizing ${spellItems.length} spells by level${actor ? ` for ${actor.name}` : ''}`);
 
-  // Create SpellManager if actor is provided
-  const spellManager = actor ? new SpellManager(actor) : null;
+  // Create SpellManager if actor is provided but spellManager isn't
+  if (actor && !spellManager) {
+    spellManager = new SpellManager(actor);
+  }
+
+  // Get the prepared spells flag if we have an actor
+  const preparedSpells = actor ? actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS) || [] : [];
+  log(3, `Actor has ${preparedSpells.length} prepared spells in flags`);
 
   // Organize spells by level
   const spellsByLevel = {};
@@ -123,7 +130,15 @@ export async function organizeSpellsByLevel(spellItems, actor = null) {
 
     // Add preparation status if an actor is provided
     if (spellManager) {
-      spellData.preparation = spellManager.getSpellPreparationStatus(spell);
+      spellData.preparation = await spellManager.getSpellPreparationStatus(spell);
+
+      // Check if this spell is in the prepared list from flags
+      if (preparedSpells.includes(spell.compendiumUuid)) {
+        // Make sure it's marked as prepared if it's not always prepared or granted
+        if (!spellData.preparation.alwaysPrepared && !spellData.preparation.isGranted) {
+          spellData.preparation.prepared = true;
+        }
+      }
     }
 
     // Add filter data and formatted details
