@@ -76,9 +76,9 @@ function addSpellbookButton(app, html, data) {
     }
 
     // Find the spells tab and controls list
-    const spellsTab = html.find('.tab.spells');
-    const controlsList = spellsTab.find('ul.controls');
-    if (!controlsList.length) {
+    const spellsTab = html[0].querySelector('.tab.spells');
+    const controlsList = spellsTab.querySelector('ul.controls');
+    if (!controlsList) {
       log(2, `No controls list found in ${actor.name}'s character sheet`);
       return;
     }
@@ -91,7 +91,7 @@ function addSpellbookButton(app, html, data) {
     listItem.appendChild(button);
 
     // Append to the sheet controls
-    controlsList.append(listItem);
+    controlsList.appendChild(listItem);
 
     log(3, `Added spell book button to ${actor.name}'s character sheet`);
   } catch (error) {
@@ -106,8 +106,8 @@ function canAddSpellbookButton(actor, html) {
   }
 
   // Only target sheets with a spells tab
-  const spellsTab = html.find('.tab.spells');
-  if (!spellsTab.length) {
+  const spellsTab = html[0].querySelector('.tab.spells');
+  if (!spellsTab) {
     return false;
   }
 
