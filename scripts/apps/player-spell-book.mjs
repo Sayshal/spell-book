@@ -1169,7 +1169,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             if (spellLevel === '0') return;
 
             // Skip items with special always-prepared or granted tags
-            if (spellItem.querySelector('.always-prepared-tag') || spellItem.querySelector('.granted-spell-tag')) return;
+            if (spellItem.querySelector('.tag.always-prepared') || spellItem.querySelector('.tag.granted')) return;
 
             checkbox.disabled = false;
             delete checkbox.dataset.tooltip; // Remove the max prepared tooltip
@@ -1221,8 +1221,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const preparedSpells = [];
 
         spellItems.forEach((item) => {
-          const hasAlwaysPrepared = !!item.querySelector('.always-prepared-tag');
-          const hasGranted = !!item.querySelector('.granted-spell-tag');
+          const hasAlwaysPrepared = !!item.querySelector('.tag.always-prepared');
+          const hasGranted = !!item.querySelector('.tag.granted');
           const isPrepared = item.classList.contains('prepared-spell');
 
           if (!hasAlwaysPrepared && !hasGranted) {
@@ -1347,7 +1347,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const spellName = item.querySelector('.spell-name .title')?.textContent || 'unknown';
 
         // Always-prepared or granted spells are already counted by the actor
-        if (item.querySelector('.always-prepared-tag') || item.querySelector('.granted-spell-tag')) {
+        if (item.querySelector('.tag.always-prepared') || item.querySelector('.tag.granted')) {
           log(3, `Skipping always-prepared/granted cantrip: ${spellName}`);
           return;
         }
@@ -1614,8 +1614,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const conditions = (item.dataset.conditions || '').split(',');
 
         // Special preparation statuses
-        const isGranted = !!item.querySelector('.granted-spell-tag');
-        const isAlwaysPrepared = !!item.querySelector('.always-prepared-tag');
+        const isGranted = !!item.querySelector('.tag.granted');
+        const isAlwaysPrepared = !!item.querySelector('.tag.always-prepared');
         const isCountable = !isGranted && !isAlwaysPrepared;
 
         // Apply each filter as a separate condition
@@ -2104,8 +2104,18 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
         // Check if this is an always-prepared spell by examining the parent spell item
         const spellItem = checkbox.closest('.spell-item');
-        const isAlwaysPreparedElement = spellItem && (spellItem.querySelector('.always-prepared-tag') || spellItem.querySelector('.granted-spell-tag'));
+        const isAlwaysPreparedElement = spellItem && (spellItem.querySelector('.tag.always-prepared') || spellItem.querySelector('.tag.granted'));
 
+        log(1, {
+          checkboxes: checkboxes,
+          checkbox: checkbox,
+          uuid: uuid,
+          name: name,
+          wasPrepared: wasPrepared,
+          isPrepared: isPrepared,
+          spellItem: spellItem,
+          isAlwaysPreparedElement: isAlwaysPreparedElement
+        });
         // If it's an always-prepared spell or granted spell, don't include it in the updates
         if (isAlwaysPreparedElement) {
           log(3, `Skipping always-prepared or granted spell: ${name}`);
@@ -2131,9 +2141,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         await this.spellManager.completeCantripsLevelUp();
         log(3, 'Finalized cantrip level-up selection');
       }
-
-      // Use SpellManager to save prepared spells
-      await this.spellManager.saveActorPreparedSpells(spellData);
 
       // Clear tracking of newly checked cantrips
       this._newlyCheckedCantrips.clear();

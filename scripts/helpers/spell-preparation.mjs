@@ -633,7 +633,7 @@ export class SpellManager {
       if (!checkbox) continue;
 
       // Skip always prepared or granted spells
-      if (item.querySelector('.always-prepared-tag') || item.querySelector('.granted-spell-tag')) {
+      if (item.querySelector('.tag.always-prepared') || item.querySelector('.tag.granted')) {
         continue;
       }
 

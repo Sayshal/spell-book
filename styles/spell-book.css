@@ -509,11 +509,6 @@
 
       .name-stacked .title {
         text-shadow: 0 0 3px var(--color-shadow-highlight);
-
-        .always-prepared-tag,
-        .preparation-mode-tag {
-          text-shadow: none;
-        }
       }
     }
 
