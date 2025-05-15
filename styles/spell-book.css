@@ -679,6 +679,16 @@
     background-color: var(--spell-book-tag-granted);
   }
 
+  .prepared-spell-tag {
+    margin-left: 0.35rem;
+    padding: 0 0.35rem;
+    border-radius: var(--spell-book-border-radius);
+    color: #000;
+    font-weight: 600;
+    font-size: 0.75rem;
+    background-color: #4caf50; /* Green color for prepared spells */
+  }
+
   .spell-details {
     width: 100%;
     margin-top: 0.25rem;

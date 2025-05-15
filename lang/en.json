@@ -58,6 +58,7 @@
   "SPELLBOOK.Footer.PreparedCount": "Current prepared spells",
   "SPELLBOOK.Footer.PreparedLabel": "Prepared Spells",
   "SPELLBOOK.Preparation.Always": "Always",
+  "SPELLBOOK.Preparation.Prepared": "Prepared",
   "SPELLBOOK.Preparation.AlwaysTooltip": "This spell is always prepared and doesn't count against your prepared spell limit",
   "SPELLBOOK.Preparation.AtMaximum": "You've reached your maximum number of prepared spells",
   "SPELLBOOK.Preparation.AtWillTooltip": "This spell can be cast at will and doesn't require preparation",

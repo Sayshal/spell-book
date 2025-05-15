@@ -23,6 +23,9 @@
 							data-ritual="{{filterData.isRitual}}" data-concentration="{{filterData.concentration}}"
 							data-requires-save="{{filterData.requiresSave}}" data-conditions="{{filterData.conditions}}"
 							role="listitem">
+							{{log 'DEBUG'}}
+							{{log name}}
+							{{log preparation}}
 							<div class="spell-name">
 								{{{enrichedIcon}}}
 								<div class="name-stacked">
@@ -37,10 +40,14 @@
 												data-tooltip="{{#if preparation.sourceItem.name}}{{preparation.sourceItem.name}}{{else}}{{localize 'SPELLBOOK.Preparation.AlwaysTooltip'}}{{/if}}">
 												{{localize 'SPELLBOOK.Preparation.Always'}}
 											</span>
-										{{else if system.preparation.prepared}}
+										{{else if (ne preparation.preparationMode 'prepared')}}
 											<span class="preparation-mode-tag"
 												data-tooltip="{{#if preparation.sourceItem.name}}{{preparation.sourceItem.name}}{{/if}}">
 												{{preparation.localizedPreparationMode}}
+											</span>
+										{{else if preparation.prepared}}
+											<span class="prepared-spell-tag">
+												{{localize 'SPELLBOOK.Preparation.Prepared'}}
 											</span>
 										{{/if}}
 									</span>

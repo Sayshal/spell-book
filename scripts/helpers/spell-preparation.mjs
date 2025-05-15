@@ -959,9 +959,8 @@ export class SpellManager {
   /**
    * Get preparation status for a spell
    * @param {Item5e} spell - The spell to check
-   * @returns {Promise<Object>} Preparation status information
    */
-  async getSpellPreparationStatus(spell) {
+  getSpellPreparationStatus(spell) {
     const spellName = spell.name || 'unnamed spell';
     log(3, `Getting preparation status for ${spellName}`);
 

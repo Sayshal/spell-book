@@ -97,7 +97,7 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
  * @param {Actor5e|null} actor - The actor to check preparation status against
  * @returns {Array} - Array of spell levels with formatted data
  */
-export async function organizeSpellsByLevel(spellItems, actor = null, spellManager = null) {
+export function organizeSpellsByLevel(spellItems, actor = null, spellManager = null) {
   log(3, `Organizing ${spellItems.length} spells by level${actor ? ` for ${actor.name}` : ''}`);
 
   // Create SpellManager if actor is provided but spellManager isn't
@@ -130,7 +130,7 @@ export async function organizeSpellsByLevel(spellItems, actor = null, spellManag
 
     // Add preparation status if an actor is provided
     if (spellManager) {
-      spellData.preparation = await spellManager.getSpellPreparationStatus(spell);
+      spellData.preparation = spellManager.getSpellPreparationStatus(spell);
 
       // Check if this spell is in the prepared list from flags
       if (preparedSpells.includes(spell.compendiumUuid)) {
@@ -152,7 +152,7 @@ export async function organizeSpellsByLevel(spellItems, actor = null, spellManag
 
   // Add actor's spells if an actor is provided
   if (actor) {
-    const actorSpells = await findActorSpells(actor, processedSpellIds, processedSpellNames);
+    const actorSpells = findActorSpells(actor, processedSpellIds, processedSpellNames);
 
     for (const { spell, source } of actorSpells) {
       if (spell?.system?.level === undefined) continue;
@@ -200,9 +200,8 @@ export async function organizeSpellsByLevel(spellItems, actor = null, spellManag
  * @param {Actor5e} actor - The actor to check
  * @param {Set<string>} processedSpellIds - Set of already processed spell IDs
  * @param {Set<string>} processedSpellNames - Set of already processed spell names
- * @returns {Promise<Array>} - Array of actor spells with source information
  */
-export async function findActorSpells(actor, processedSpellIds, processedSpellNames) {
+export function findActorSpells(actor, processedSpellIds, processedSpellNames) {
   const actorSpells = actor.items.filter((item) => item.type === 'spell');
   const newSpells = [];
   const spellManager = new SpellManager(actor);

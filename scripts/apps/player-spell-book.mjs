@@ -296,7 +296,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /** @override */
-  _onRender(context, options) {
+  async _onRender(context, options) {
     super._onRender?.(context, options);
 
     try {
@@ -310,7 +310,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         this._positionFooter();
 
         // Start loading data
-        this._loadSpellData();
+        await this._loadSpellData();
         return; // Return early to avoid additional setup
       } else {
         this.element.classList.remove('loading');
@@ -546,11 +546,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       };
 
-      // Split spells for preparation tab - include cantrips and spellbook spells
+      // Identify granted spells on the actor
+      const grantedSpells = this.actor.items
+        .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.preparation?.mode && ['pact', 'innate', 'atwill'].includes(i.system.preparation.mode))))
+        .map((i) => i.flags?.core?.sourceId || i.uuid)
+        .filter(Boolean);
+
+      log(3, `Found ${grantedSpells.length} granted spells on actor`);
+
+      // Split spells for preparation tab - include cantrips, spellbook spells, and granted spells
       const prepTabSpells = allSpellItems.filter(
         (spell) =>
           spell.system.level === 0 || // Include all cantrips
-          personalSpellbook.includes(spell.compendiumUuid) // Include spells in personal spellbook
+          personalSpellbook.includes(spell.compendiumUuid) || // Include spells in personal spellbook
+          grantedSpells.includes(spell.compendiumUuid) // Include granted spells
       );
 
       // Process spells for both tabs without filtering yet
