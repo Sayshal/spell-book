@@ -14,13 +14,16 @@
       <label>{{localize 'SPELLBOOK.Cantrips.RulesLabel'}}</label>
       <div class="form-fields">
         <select name="cantripRules">
-          <option value="legacy" {{#if (eq cantripSettings.rules "legacy")}}selected{{/if}}>
+          <option value="{{CANTRIP_RULES.LEGACY}}"
+            {{#if (eq cantripSettings.rules CANTRIP_RULES.LEGACY)}}selected{{/if}}>
             {{localize 'SPELLBOOK.Cantrips.RulesLegacy'}}
           </option>
-          <option value="levelUp" {{#if (eq cantripSettings.rules "levelUp")}}selected{{/if}}>
+          <option value="{{CANTRIP_RULES.MODERN_LEVEL_UP}}"
+            {{#if (eq cantripSettings.rules CANTRIP_RULES.MODERN_LEVEL_UP)}}selected{{/if}}>
             {{localize 'SPELLBOOK.Cantrips.RulesModernLevelUp'}}
           </option>
-          <option value="longRest" {{#if (eq cantripSettings.rules "longRest")}}selected{{/if}}
+          <option value="{{CANTRIP_RULES.MODERN_LONG_REST}}"
+            {{#if (eq cantripSettings.rules CANTRIP_RULES.MODERN_LONG_REST)}}selected{{/if}}
             {{#unless isWizard}}disabled{{/unless}}>
             {{localize 'SPELLBOOK.Cantrips.RulesModernLongRest'}}
             {{#unless isWizard}}({{localize 'SPELLBOOK.Cantrips.WizardOnly'}}){{/unless}}
@@ -34,13 +37,16 @@
       <label>{{localize 'SPELLBOOK.Cantrips.EnforcementLabel'}}</label>
       <div class="form-fields">
         <select name="enforcementBehavior">
-          <option value="unenforced" {{#if (eq cantripSettings.behavior "unenforced")}}selected{{/if}}>
+          <option value="{{ENFORCEMENT_BEHAVIOR.UNENFORCED}}"
+            {{#if (eq cantripSettings.behavior ENFORCEMENT_BEHAVIOR.UNENFORCED)}}selected{{/if}}>
             {{localize 'SPELLBOOK.Cantrips.BehaviorUnenforced'}}
           </option>
-          <option value="notifyGM" {{#if (eq cantripSettings.behavior "notifyGM")}}selected{{/if}}>
+          <option value="{{ENFORCEMENT_BEHAVIOR.NOTIFY_GM}}"
+            {{#if (eq cantripSettings.behavior ENFORCEMENT_BEHAVIOR.NOTIFY_GM)}}selected{{/if}}>
             {{localize 'SPELLBOOK.Cantrips.BehaviorNotifyGM'}}
           </option>
-          <option value="enforced" {{#if (eq cantripSettings.behavior "enforced")}}selected{{/if}}>
+          <option value="{{ENFORCEMENT_BEHAVIOR.ENFORCED}}"
+            {{#if (eq cantripSettings.behavior ENFORCEMENT_BEHAVIOR.ENFORCED)}}selected{{/if}}>
             {{localize 'SPELLBOOK.Cantrips.BehaviorEnforced'}}
           </option>
         </select>

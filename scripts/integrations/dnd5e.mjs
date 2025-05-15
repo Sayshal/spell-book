@@ -34,7 +34,7 @@ async function handleRestCompleted(actor, result, config) {
 
     // Get the wizard's rules version to determine prompt text
     const wizardManager = new WizardSpellbookManager(actor);
-    const rulesVersion = wizardManager.getRulesVersion();
+    const rulesVersion = spellManager.getSettings().rules;
 
     // If using legacy rules, no cantrip swapping allowed
     if (rulesVersion !== 'modern') {

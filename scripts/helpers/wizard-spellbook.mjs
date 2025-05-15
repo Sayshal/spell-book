@@ -1,4 +1,4 @@
-import { FLAGS, MODULE, WIZARD_RULES, WIZARD_SPELL_SOURCE } from '../constants.mjs';
+import { CANTRIP_RULES, FLAGS, MODULE, WIZARD_SPELL_SOURCE } from '../constants.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -33,18 +33,15 @@ export class WizardSpellbookManager {
    */
   _findWizardClass() {
     const wizardClass = this.actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard');
-
     return wizardClass || null;
   }
 
   /**
-   * Get the rules version for this wizard
-   * @returns {string} The rules version ('modern' or 'legacy')
+   * Get the rules for this wizard from cantrip settings
+   * @returns {string} The current cantrip rules setting
    */
-  getRulesVersion() {
-    const flagValue = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_RULES_VERSION);
-    if (flagValue) return flagValue;
-    return game.settings.get('dnd5e', 'rulesVersion') === 'modern' ? WIZARD_RULES.MODERN : WIZARD_RULES.LEGACY;
+  getCantripRules() {
+    return this.actor.getFlag(MODULE.ID, FLAGS.CANTRIP_RULES) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_CANTRIP_RULES) || CANTRIP_RULES.LEGACY;
   }
 
   /**
@@ -62,10 +59,6 @@ export class WizardSpellbookManager {
         updateData[`flags.${MODULE.ID}.${FLAGS.WIZARD_COPIED_SPELLS}`] = [];
       }
 
-      if (!flags[FLAGS.WIZARD_RULES_VERSION]) {
-        updateData[`flags.${MODULE.ID}.${FLAGS.WIZARD_RULES_VERSION}`] = game.settings.get('dnd5e', 'rulesVersion') === 'modern' ? WIZARD_RULES.MODERN : WIZARD_RULES.LEGACY;
-      }
-
       // Apply updates if needed
       if (Object.keys(updateData).length > 0) {
         log(3, 'Initializing wizard flags', updateData);
@@ -80,15 +73,16 @@ export class WizardSpellbookManager {
   }
 
   /**
-   * Determine if wizard can swap cantrips on long rest based on rules version
+   * Determine if wizard can swap cantrips on long rest
    * @param {boolean} isLongRest - Whether this is being called during a long rest
    * @returns {boolean} - Whether cantrip swapping is allowed
    */
   canSwapCantripsOnLongRest(isLongRest) {
     if (!isLongRest) return true; // Not relevant outside long rest context
 
-    const rulesVersion = this.getRulesVersion();
-    return rulesVersion === WIZARD_RULES.MODERN;
+    // Use the cantrip rules directly - only allow on long rest if that's the selected rule
+    const rules = this.getCantripRules();
+    return rules === CANTRIP_RULES.MODERN_LONG_REST;
   }
 
   /**

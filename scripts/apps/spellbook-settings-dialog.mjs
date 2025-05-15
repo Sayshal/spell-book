@@ -1,4 +1,4 @@
-import { CANTRIP_RULES, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, TEMPLATES, WIZARD_DEFAULTS, WIZARD_RULES } from '../constants.mjs';
+import { CANTRIP_RULES, ENFORCEMENT_BEHAVIOR, MODULE, TEMPLATES, WIZARD_DEFAULTS } from '../constants.mjs';
 import { SpellManager } from '../helpers/spell-preparation.mjs';
 import { WizardSpellbookManager } from '../helpers/wizard-spellbook.mjs';
 import { log } from '../logger.mjs';
@@ -113,7 +113,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
       if (isWizard) {
         wizardSettings = {
-          rulesVersion: this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_RULES_VERSION) || (game.settings.get('dnd5e', 'rulesVersion') === 'modern' ? WIZARD_RULES.MODERN : WIZARD_RULES.LEGACY),
           startingSpells: this.actor.getFlag(MODULE.ID, 'wizardStartingSpells') || WIZARD_DEFAULTS.STARTING_SPELLS,
           spellsPerLevel: this.actor.getFlag(MODULE.ID, 'wizardSpellsPerLevel') || WIZARD_DEFAULTS.SPELLS_PER_LEVEL,
           ritualCasting: this.actor.getFlag(MODULE.ID, 'wizardRitualCasting') !== false // Default to true if not set
@@ -128,62 +127,21 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
           maxCantrips,
           currentCount
         },
-        cantripOptions: {
-          rules: {
-            default: {
-              value: CANTRIP_RULES.DEFAULT,
-              label: game.i18n.localize('SPELLBOOK.Cantrips.RulesDefault'),
-              selected: cantripSettings.rules === CANTRIP_RULES.DEFAULT
-            },
-            modern: {
-              value: CANTRIP_RULES.MODERN,
-              label: game.i18n.localize('SPELLBOOK.Cantrips.RulesModern'),
-              selected: cantripSettings.rules === CANTRIP_RULES.MODERN
-            }
-          },
-          behavior: {
-            unrestricted: {
-              value: ENFORCEMENT_BEHAVIOR.UNRESTRICTED,
-              label: game.i18n.localize('SPELLBOOK.Cantrips.BehaviorUnrestricted'),
-              selected: cantripSettings.behavior === ENFORCEMENT_BEHAVIOR.UNRESTRICTED
-            },
-            notifyGM: {
-              value: ENFORCEMENT_BEHAVIOR.NOTIFY_GM,
-              label: game.i18n.localize('SPELLBOOK.Cantrips.BehaviorNotifyGM'),
-              selected: cantripSettings.behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM
-            },
-            lockAfterMax: {
-              value: ENFORCEMENT_BEHAVIOR.LOCK_AFTER_MAX,
-              label: game.i18n.localize('SPELLBOOK.Cantrips.BehaviorLockAfterMax'),
-              selected: cantripSettings.behavior === ENFORCEMENT_BEHAVIOR.LOCK_AFTER_MAX
-            }
-          }
-        },
-        wizardSettings,
-        wizardOptions:
-          isWizard ?
-            {
-              rules: {
-                modern: {
-                  value: WIZARD_RULES.MODERN,
-                  label: game.i18n.localize('SPELLBOOK.Wizard.RulesModern'),
-                  selected: wizardSettings.rulesVersion === WIZARD_RULES.MODERN
-                },
-                legacy: {
-                  value: WIZARD_RULES.LEGACY,
-                  label: game.i18n.localize('SPELLBOOK.Wizard.RulesLegacy'),
-                  selected: wizardSettings.rulesVersion === WIZARD_RULES.LEGACY
-                }
-              }
-            }
-          : {}
+        cantripSettings, // Pass the raw settings directly for simpler template
+        CANTRIP_RULES, // Pass constants to template for comparisons
+        ENFORCEMENT_BEHAVIOR, // Pass constants to template for comparisons
+        wizardSettings
       };
     } catch (error) {
       log(1, 'Error preparing spellbook settings context:', error);
       return {
         actor: this.actor,
-        cantripOptions: {},
-        wizardOptions: {},
+        cantripSettings: {
+          rules: CANTRIP_RULES.LEGACY,
+          behavior: ENFORCEMENT_BEHAVIOR.NOTIFY_GM
+        },
+        CANTRIP_RULES,
+        ENFORCEMENT_BEHAVIOR,
         stats: { maxCantrips: 0, currentCount: 0 }
       };
     }
@@ -207,18 +165,18 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       log(3, `Saving spellbook settings for ${actor.name}`);
 
       // Extract form data
-      const { cantripRules, cantripBehavior, wizardRulesVersion, wizardStartingSpells, wizardSpellsPerLevel, wizardRitualCasting } = formData.object;
+      const { cantripRules, enforcementBehavior, wizardStartingSpells, wizardSpellsPerLevel, wizardRitualCasting } = formData.object;
 
-      log(3, `New cantrip settings: rules=${cantripRules}, behavior=${cantripBehavior}`);
+      log(3, `New cantrip settings: rules=${cantripRules}, behavior=${enforcementBehavior}`);
 
       // Save cantrip settings
       const spellManager = new SpellManager(actor);
-      await spellManager.saveSettings(cantripRules, cantripBehavior);
+      await spellManager.saveSettings(cantripRules, enforcementBehavior);
 
       // Save wizard settings if applicable
-      if (wizardRulesVersion) {
+      const isWizard = !!actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard');
+      if (isWizard) {
         const updateData = {
-          [`flags.${MODULE.ID}.${FLAGS.WIZARD_RULES_VERSION}`]: wizardRulesVersion,
           [`flags.${MODULE.ID}.wizardStartingSpells`]: parseInt(wizardStartingSpells) || WIZARD_DEFAULTS.STARTING_SPELLS,
           [`flags.${MODULE.ID}.wizardSpellsPerLevel`]: parseInt(wizardSpellsPerLevel) || WIZARD_DEFAULTS.SPELLS_PER_LEVEL,
           [`flags.${MODULE.ID}.wizardRitualCasting`]: !!wizardRitualCasting
@@ -240,11 +198,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
       if (spellBook) {
         log(3, 'Refreshing open spell book with new settings');
-        // Update managers and re-render
         spellBook.spellManager.refresh();
-        if (spellBook.wizardManager) {
-          // No need to refresh the wizard manager, as it just reads flags directly
-        }
         spellBook.render(false);
       }
 

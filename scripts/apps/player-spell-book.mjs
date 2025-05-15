@@ -1,4 +1,4 @@
-import { CANTRIP_RULES, FLAGS, MODULE, SETTINGS, TEMPLATES, WIZARD_RULES } from '../constants.mjs';
+import { CANTRIP_RULES, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as actorSpellUtils from '../helpers/actor-spells.mjs';
 import * as filterUtils from '../helpers/filters.mjs';
 import * as formElements from '../helpers/form-elements.mjs';
@@ -223,7 +223,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this.wizardManager && this.wizardManager.isWizard) {
       context.isWizard = true;
       context.wizardSpellbookCount = this.wizardSpellbookCache?.length || 0;
-      context.wizardRulesVersion = this.wizardManager.getRulesVersion();
+      context.wizardRulesVersion = this.spellManager.getSettings().rules;
     }
 
     // Get active tab
@@ -1288,7 +1288,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
       // Add wizard rules indicator if applicable
       if (this.wizardManager?.isWizard && this._isLongRest) {
-        const rulesVersion = this.wizardManager.getRulesVersion();
+        // Get cantrip rules
+        const cantripRules = this.spellManager.getSettings().rules;
 
         // Remove any existing rules info
         const existingInfo = cantripLevel.querySelector('.wizard-rules-info');
@@ -1298,7 +1299,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const infoElement = document.createElement('div');
         infoElement.className = 'wizard-rules-info';
 
-        if (rulesVersion === WIZARD_RULES.MODERN) {
+        if (cantripRules === CANTRIP_RULES.MODERN_LONG_REST) {
           infoElement.innerHTML = `<i class="fas fa-info-circle"></i> ${game.i18n.localize('SPELLBOOK.Wizard.ModernCantripRules')}`;
         } else {
           infoElement.innerHTML = `<i class="fas fa-info-circle"></i> ${game.i18n.localize('SPELLBOOK.Wizard.LegacyCantripRules')}`;

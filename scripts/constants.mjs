@@ -255,15 +255,6 @@ export const ENFORCEMENT_BEHAVIOR = {
 // WIZARD CONFIGURATION
 //-----------------------------------------------------------------------------
 
-/**
- * Wizard rules options
- * @type {Object}
- */
-export const WIZARD_RULES = {
-  MODERN: 'modern',
-  LEGACY: 'legacy'
-};
-
 export const WIZARD_DEFAULTS = {
   STARTING_SPELLS: 6,
   SPELLS_PER_LEVEL: 2,
