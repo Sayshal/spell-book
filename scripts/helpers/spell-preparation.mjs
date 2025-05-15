@@ -1011,23 +1011,16 @@ export class SpellManager {
     const spellName = spell.name || 'unnamed spell';
     log(3, `Getting owned spell preparation status for ${spellName}`);
 
-    // Get preparation information
-    const preparationMode = spell.system.preparation?.mode || 'prepared';
+    const preparationMode = spell.system.preparation?.mode;
     const alwaysPrepared = preparationMode === 'always';
     const localizedPreparationMode = formattingUtils.getLocalizedPreparationMode(preparationMode);
-
-    // Get source
     const sourceInfo = this._determineSpellSource(spell);
-    const isGranted = !!sourceInfo && spell.flags?.dnd5e?.cachedFor;
-
-    // Check if it's a cantrip
+    const isGranted = !!sourceInfo && !!spell.flags?.dnd5e?.cachedFor;
     const isCantrip = spell.system.level === 0;
 
     // Default values
     let isCantripLocked = false;
     let cantripLockReason = '';
-
-    // Base disabled state - for spells that should always be disabled
     let isDisabled = isGranted || alwaysPrepared || ['innate', 'pact', 'atwill', 'ritual'].includes(preparationMode);
     let disabledReason = '';
 
@@ -1048,16 +1041,16 @@ export class SpellManager {
 
     // Create the base result object early so we can return it
     const result = {
-      prepared: isGranted || spell.system.preparation?.prepared || alwaysPrepared,
+      prepared: !!(isGranted || spell.system.preparation?.prepared || alwaysPrepared),
       isOwned: true,
       preparationMode: preparationMode,
       localizedPreparationMode: localizedPreparationMode,
-      disabled: isDisabled,
+      disabled: !!isDisabled,
       disabledReason: disabledReason,
-      alwaysPrepared: alwaysPrepared,
+      alwaysPrepared: !!alwaysPrepared,
       sourceItem: sourceInfo,
-      isGranted: isGranted,
-      isCantripLocked: isCantripLocked,
+      isGranted: !!isGranted,
+      isCantripLocked: !!isCantripLocked,
       cantripLockReason: cantripLockReason
     };
 
