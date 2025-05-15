@@ -42,7 +42,9 @@ export class WizardSpellbookManager {
    * @returns {string} The rules version ('modern' or 'legacy')
    */
   getRulesVersion() {
-    return this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_RULES_VERSION) || game.settings.get('dnd5e', 'rulesVersion') === 'modern' ? WIZARD_RULES.MODERN : WIZARD_RULES.LEGACY;
+    const flagValue = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_RULES_VERSION);
+    if (flagValue) return flagValue;
+    return game.settings.get('dnd5e', 'rulesVersion') === 'modern' ? WIZARD_RULES.MODERN : WIZARD_RULES.LEGACY;
   }
 
   /**
