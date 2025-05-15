@@ -6,7 +6,6 @@ import { SpellbookSettingsDialog } from './apps/spellbook-settings-dialog.mjs';
 // Import all helper functions
 import * as actorSpellUtils from './helpers/actor-spells.mjs';
 import * as filterUtils from './helpers/filters.mjs';
-import * as handlebarsHelpers from './helpers/handlebars-helpers.mjs';
 import * as discoveryUtils from './helpers/spell-discovery.mjs';
 import * as formattingUtils from './helpers/spell-formatting.mjs';
 import * as managerHelpers from './helpers/spell-management.mjs';
@@ -38,9 +37,6 @@ export function createAPI() {
         management: { ...managerHelpers },
         SpellManager
       },
-
-      // Handlebars helpers
-      handlebars: { ...handlebarsHelpers },
 
       // Convenience methods
       openSpellBookForActor: (actor) => {

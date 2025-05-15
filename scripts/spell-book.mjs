@@ -1,6 +1,5 @@
 import { createAPI } from './api.mjs';
 import { MODULE } from './constants.mjs';
-import { registerHandlebarsHelpers } from './helpers/handlebars-helpers.mjs';
 import { registerHooks } from './hooks.mjs';
 import { initializeLogger, log } from './logger.mjs';
 import { registerSettings } from './settings.mjs';
@@ -12,7 +11,6 @@ Hooks.once('init', async function () {
     // Initialize module components
     initializeFoundryConfiguration();
     await initializeModuleComponents();
-    registerHandlebarsHelpers();
 
     // Create and register the module API
     createAPI();
