@@ -24,52 +24,52 @@
 							data-requires-save="{{filterData.requiresSave}}" data-conditions="{{filterData.conditions}}"
 							role="listitem">
 							<div class="spell-name">
+								{{log 'DEBUG' name preparation}}
 								{{{enrichedIcon}}}
 								<div class="name-stacked">
 									<span class="title">{{name}}
 										{{#if preparation.alwaysPrepared}}
-											<span class="always-prepared-tag"
+											<span class="tag always-prepared"
 												data-tooltip="{{#if preparation.sourceItem.name}}{{preparation.sourceItem.name}}{{else}}{{localize 'SPELLBOOK.Preparation.AlwaysTooltip'}}{{/if}}">
 												{{localize 'SPELLBOOK.Preparation.Always'}}
 											</span>
 										{{else if preparation.isGranted}}
-											<span class="granted-spell-tag"
+											<span class="tag granted"
 												data-tooltip="{{#if preparation.sourceItem.name}}{{preparation.sourceItem.name}}{{/if}}">
 												{{localize 'SPELLBOOK.SpellSource.Granted'}}
 											</span>
 										{{else if (eq preparation.preparationMode 'pact')}}
-											<span class="preparation-mode-tag"
+											<span class="tag pact"
 												data-tooltip="{{#if preparation.sourceItem.name}}{{preparation.sourceItem.name}}{{/if}}">
 												{{preparation.localizedPreparationMode}}
 											</span>
 										{{else if (eq preparation.preparationMode 'innate')}}
-											<span class="preparation-mode-tag"
+											<span class="tag innate"
 												data-tooltip="{{#if preparation.sourceItem.name}}{{preparation.sourceItem.name}}{{/if}}">
 												{{preparation.localizedPreparationMode}}
 											</span>
 										{{else if (eq preparation.preparationMode 'ritual')}}
-											<span class="preparation-mode-tag"
+											<span class="tag ritual"
 												data-tooltip="{{#if preparation.sourceItem.name}}{{preparation.sourceItem.name}}{{/if}}">
 												{{preparation.localizedPreparationMode}}
 											</span>
 										{{else if (eq preparation.preparationMode 'atwill')}}
-											<span class="preparation-mode-tag"
+											<span class="tag atwill"
 												data-tooltip="{{#if preparation.sourceItem.name}}{{preparation.sourceItem.name}}{{/if}}">
 												{{preparation.localizedPreparationMode}}
 											</span>
 										{{else if (and (eq preparation.preparationMode 'prepared') preparation.prepared)}}
-											<span class="prepared-spell-tag">
+											<span class="tag prepared">
 												{{localize 'SPELLBOOK.Preparation.Prepared'}}
 											</span>
 										{{/if}}
 									</span>
 									<span class="subtitle">{{{formattedDetails}}}</span>
 								</div>
-							</div>
 
-							<div class="spell-preparation dnd5e2">
-								{{{preparationCheckboxHtml}}}
-							</div>
+								<div class="spell-preparation dnd5e2">
+									{{{preparationCheckboxHtml}}}
+								</div>
 						</li>
 						{{/modules/spell-book/templates/components/spell-level.hbs}}
 				{{/each}}

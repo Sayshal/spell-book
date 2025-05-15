@@ -649,44 +649,42 @@
     font-size: 0.75rem;
   }
 
-  .always-prepared-tag {
+  .tag {
     margin-left: 0.35rem;
     padding: 0 0.35rem;
     border-radius: var(--spell-book-border-radius);
     color: #000;
     font-weight: 600;
     font-size: 0.75rem;
-    background-color: var(--spell-book-tag-always);
-  }
 
-  .preparation-mode-tag {
-    margin-left: 0.35rem;
-    padding: 0 0.35rem;
-    border-radius: var(--spell-book-border-radius);
-    color: #000;
-    font-weight: 600;
-    font-size: 0.75rem;
-    background-color: var(--spell-book-tag-mode);
-  }
+    /* Specific tag types */
+    &.always-prepared {
+      background-color: var(--spell-book-tag-always, #3fc6c1); /* Teal */
+    }
 
-  .granted-spell-tag {
-    margin-left: 0.35rem;
-    padding: 0 0.35rem;
-    border-radius: var(--spell-book-border-radius);
-    color: #000;
-    font-weight: 600;
-    font-size: 0.75rem;
-    background-color: var(--spell-book-tag-granted);
-  }
+    &.granted {
+      background-color: var(--spell-book-tag-granted, #f59f70); /* Light orange */
+    }
 
-  .prepared-spell-tag {
-    margin-left: 0.35rem;
-    padding: 0 0.35rem;
-    border-radius: var(--spell-book-border-radius);
-    color: #000;
-    font-weight: 600;
-    font-size: 0.75rem;
-    background-color: #4caf50; /* Green color for prepared spells */
+    &.pact {
+      background-color: #9b59b6; /* Purple */
+    }
+
+    &.innate {
+      background-color: #3498db; /* Blue */
+    }
+
+    &.ritual {
+      background-color: #f1c40f; /* Yellow */
+    }
+
+    &.atwill {
+      background-color: #e67e22; /* Orange */
+    }
+
+    &.prepared {
+      background-color: #4caf50; /* Green */
+    }
   }
 
   .spell-details {
