@@ -1,8 +1,0 @@
-<div class="filter-item" data-filter-id="{{id}}">
-	<label for="{{id}}">{{label}}</label>
-	<select name="{{name}}" id="{{id}}" aria-label="{{label}}">
-		{{#each options as |option|}}
-			<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
-		{{/each}}
-	</select>
-</div>

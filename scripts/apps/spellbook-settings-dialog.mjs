@@ -1,4 +1,4 @@
-import { CANTRIP_CHANGE_BEHAVIOR, CANTRIP_RULES, FLAGS, MODULE, TEMPLATES, WIZARD_DEFAULTS, WIZARD_RULES } from '../constants.mjs';
+import { CANTRIP_RULES, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, TEMPLATES, WIZARD_DEFAULTS, WIZARD_RULES } from '../constants.mjs';
 import { SpellManager } from '../helpers/spell-preparation.mjs';
 import { WizardSpellbookManager } from '../helpers/wizard-spellbook.mjs';
 import { log } from '../logger.mjs';
@@ -143,19 +143,19 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
           },
           behavior: {
             unrestricted: {
-              value: CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED,
+              value: ENFORCEMENT_BEHAVIOR.UNRESTRICTED,
               label: game.i18n.localize('SPELLBOOK.Cantrips.BehaviorUnrestricted'),
-              selected: cantripSettings.behavior === CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED
+              selected: cantripSettings.behavior === ENFORCEMENT_BEHAVIOR.UNRESTRICTED
             },
             notifyGM: {
-              value: CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM,
+              value: ENFORCEMENT_BEHAVIOR.NOTIFY_GM,
               label: game.i18n.localize('SPELLBOOK.Cantrips.BehaviorNotifyGM'),
-              selected: cantripSettings.behavior === CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM
+              selected: cantripSettings.behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM
             },
             lockAfterMax: {
-              value: CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX,
+              value: ENFORCEMENT_BEHAVIOR.LOCK_AFTER_MAX,
               label: game.i18n.localize('SPELLBOOK.Cantrips.BehaviorLockAfterMax'),
-              selected: cantripSettings.behavior === CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX
+              selected: cantripSettings.behavior === ENFORCEMENT_BEHAVIOR.LOCK_AFTER_MAX
             }
           }
         },

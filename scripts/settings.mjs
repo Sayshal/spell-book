@@ -1,5 +1,5 @@
 import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
-import { CANTRIP_CHANGE_BEHAVIOR, CANTRIP_RULES, DEFAULT_FILTER_CONFIG, MODULE, SETTINGS } from './constants.mjs';
+import { CANTRIP_RULES, DEFAULT_FILTER_CONFIG, ENFORCEMENT_BEHAVIOR, MODULE, SETTINGS } from './constants.mjs';
 import { log } from './logger.mjs';
 
 /**
@@ -114,24 +114,26 @@ export function registerSettings() {
       config: true,
       type: String,
       choices: {
-        [CANTRIP_RULES.DEFAULT]: 'SPELLBOOK.Cantrips.RulesDefault',
-        [CANTRIP_RULES.MODERN]: 'SPELLBOOK.Cantrips.RulesModern'
+        [CANTRIP_RULES.LEGACY]: 'SPELLBOOK.Cantrips.RulesLegacy',
+        [CANTRIP_RULES.MODERN_LEVEL_UP]: 'SPELLBOOK.Cantrips.RulesModernLevelUp',
+        [CANTRIP_RULES.MODERN_LONG_REST]: 'SPELLBOOK.Cantrips.RulesModernLongRest'
       },
-      default: CANTRIP_RULES.DEFAULT
+      default: CANTRIP_RULES.LEGACY
     });
 
-    game.settings.register(MODULE.ID, SETTINGS.DEFAULT_CANTRIP_BEHAVIOR, {
-      name: 'SPELLBOOK.Settings.DefaultCantripBehavior',
-      hint: 'SPELLBOOK.Settings.DefaultCantripBehaviorHint',
+    log(1, 'SETTINGS ARE BEING REGISTERED!');
+    game.settings.register(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR, {
+      name: 'SPELLBOOK.Settings.DefaultEnforcementBehavior',
+      hint: 'SPELLBOOK.Settings.DefaultEnforcementBehaviorHint',
       scope: 'world',
       config: true,
       type: String,
       choices: {
-        [CANTRIP_CHANGE_BEHAVIOR.UNRESTRICTED]: 'SPELLBOOK.Cantrips.BehaviorUnrestricted',
-        [CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM]: 'SPELLBOOK.Cantrips.BehaviorNotifyGM',
-        [CANTRIP_CHANGE_BEHAVIOR.LOCK_AFTER_MAX]: 'SPELLBOOK.Cantrips.BehaviorLockAfterMax'
+        [ENFORCEMENT_BEHAVIOR.UNENFORCED]: 'SPELLBOOK.Cantrips.BehaviorUnenforced',
+        [ENFORCEMENT_BEHAVIOR.NOTIFY_GM]: 'SPELLBOOK.Cantrips.BehaviorNotifyGM',
+        [ENFORCEMENT_BEHAVIOR.ENFORCED]: 'SPELLBOOK.Cantrips.BehaviorEnforced'
       },
-      default: CANTRIP_CHANGE_BEHAVIOR.NOTIFY_GM
+      default: ENFORCEMENT_BEHAVIOR.NOTIFY_GM
     });
 
     log(3, 'Module settings registered');

@@ -143,7 +143,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       // Check for spell book related flag changes
       if (changes.flags?.[MODULE.ID]) {
         const changedFlags = Object.keys(changes.flags[MODULE.ID]);
-        const cantripFlagChanged = changedFlags.some((flag) => [FLAGS.CANTRIP_RULES, FLAGS.CANTRIP_CHANGE_BEHAVIOR, FLAGS.CANTRIP_CHANGE_ALLOWED].includes(flag));
+        const cantripFlagChanged = changedFlags.some((flag) => [FLAGS.CANTRIP_RULES, FLAGS.ENFORCEMENT_BEHAVIOR].includes(flag));
         const wizardFlagChanged = changedFlags.some((flag) => [FLAGS.WIZARD_SPELLBOOK, FLAGS.WIZARD_LEARNED_SPELLS, FLAGS.WIZARD_COPIED_SPELLS].includes(flag));
 
         if ((cantripFlagChanged || wizardFlagChanged) && this.rendered) {
@@ -1008,282 +1008,80 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _handleCantripPreparationChange(event, uuid, spellItem) {
-    // Get settings and level-up status
-    const isLevelUp = this.spellManager.canBeLeveledUp();
-    const settings = this.spellManager.getSettings();
-    const isModernRules = settings.rules === CANTRIP_RULES.MODERN;
-    const isDefaultRules = settings.rules === CANTRIP_RULES.DEFAULT;
+    try {
+      // Get checkbox and its state
+      const checkbox = event.target;
+      const isChecked = checkbox.checked;
+      const wasPrepared = checkbox.dataset.wasPrepared === 'true';
 
-    // Get spell name for logging
-    const spellName = spellItem?.querySelector('.spell-name .title')?.textContent || 'unknown';
-    const checkState = event.target.checked ? 'checking' : 'unchecking';
-    const wasPrepared = event.target.dataset.wasPrepared === 'true';
+      // Get spell name for logging
+      const spellName = spellItem?.querySelector('.spell-name .title')?.textContent || 'unknown';
 
-    log(3, `======== CANTRIP CHANGE ========`);
-    log(3, `Cantrip: ${spellName}, Action: ${checkState}`);
-    log(3, `Modern rules: ${isModernRules}, Level up: ${isLevelUp}`);
-    log(3, `Current tracking: hasUnlearned=${this._cantripTracking.hasUnlearned}, unlearned=${this._cantripTracking.unlearned}`);
+      log(3, `======== CANTRIP CHANGE ========`);
+      log(3, `Cantrip: ${spellName}, Action: ${isChecked ? 'checking' : 'unchecking'}`);
 
-    // PRIORITY CHECK: Wizard during long rest takes precedence
-    if (this.wizardManager?.isWizard && this._isLongRest) {
-      // Get wizard-specific rule
-      const canSwapOnLongRest = this.wizardManager.canSwapCantripsOnLongRest(true);
-      log(3, `Wizard long rest context - can swap: ${canSwapOnLongRest}`);
+      // Get context information
+      const isLevelUp = this.spellManager.canBeLeveledUp();
+      const isLongRest = this._isLongRest;
 
-      // Legacy wizard rules - block ALL cantrip changes
-      if (!canSwapOnLongRest && event.target.checked !== wasPrepared) {
-        event.target.checked = wasPrepared; // Revert change
-        ui.notifications.warn(game.i18n.localize('SPELLBOOK.Wizard.NoCantripsOnLongRest'));
-        this._updateCantripCounter();
-        return;
-      }
+      log(3, `Context: isLevelUp=${isLevelUp}, isLongRest=${isLongRest}`);
 
-      // For modern wizard rules during long rest
-      if (canSwapOnLongRest) {
-        // Get tracking data from actor flags for persistence
-        let trackingData = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING);
-
-        // Initialize if not set
-        if (!trackingData) {
-          // Collect original checked cantrips
-          const originalChecked = [];
-          const cantripItems = this.element.querySelectorAll('.spell-item[data-spell-level="0"]');
-          cantripItems.forEach((item) => {
-            const checkbox = item.querySelector('dnd5e-checkbox[data-uuid]');
-            if (checkbox && checkbox.checked) {
-              originalChecked.push(checkbox.dataset.uuid);
-            }
-          });
-
-          // Initial tracking data
-          trackingData = {
-            originalChecked,
-            hasUnlearned: false,
-            hasLearned: false,
-            unlearned: null,
-            learned: null
-          };
-
-          // Save to actor flags
-          await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, trackingData);
-          log(3, `Recorded ${originalChecked.length} initial cantrips for long rest swap`);
-        }
-
-        // Check if this cantrip was in the original set
-        const wasInOriginalSet = trackingData.originalChecked.includes(uuid);
-
-        // CASE 1: Unchecking an original cantrip (unlearning)
-        if (!event.target.checked && wasInOriginalSet) {
-          // If already unlearned a different cantrip, block this change
-          if (trackingData.hasUnlearned && trackingData.unlearned !== uuid) {
-            event.target.checked = true; // Revert change
-            ui.notifications.warn(game.i18n.localize('SPELLBOOK.Wizard.OneSwapLimit'));
-            this._updateCantripCounter();
-            return;
-          }
-
-          // Track this as the unlearned cantrip
-          trackingData.hasUnlearned = true;
-          trackingData.unlearned = uuid;
-          await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, trackingData);
-          log(3, `Long rest swap: unlearning cantrip ${spellName}`);
-        }
-        // CASE 2: Re-checking a cantrip that was previously unlearned
-        else if (event.target.checked && wasInOriginalSet && trackingData.unlearned === uuid) {
-          // Reset unlearned tracking
-          trackingData.hasUnlearned = false;
-          trackingData.unlearned = null;
-          await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, trackingData);
-          log(3, `Long rest swap: changed mind about unlearning ${spellName}`);
-        }
-        // CASE 3: Checking a new cantrip (learning)
-        else if (event.target.checked && !wasInOriginalSet) {
-          // If already learned a different cantrip, block this change
-          if (trackingData.hasLearned && trackingData.learned !== uuid) {
-            event.target.checked = false; // Revert change
-            ui.notifications.warn(game.i18n.localize('SPELLBOOK.Wizard.OneSwapLimit'));
-            this._updateCantripCounter();
-            return;
-          }
-
-          // Block learning a new cantrip if we haven't unlearned one first
-          if (!trackingData.hasUnlearned) {
-            event.target.checked = false; // Revert change
-            ui.notifications.warn(game.i18n.localize('SPELLBOOK.Wizard.MustUnlearnFirst'));
-            this._updateCantripCounter();
-            return;
-          }
-
-          // Track this as the learned cantrip
-          trackingData.hasLearned = true;
-          trackingData.learned = uuid;
-          await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, trackingData);
-          log(3, `Long rest swap: learning cantrip ${spellName}`);
-        }
-        // CASE 4: Unchecking a newly learned cantrip
-        else if (!event.target.checked && !wasInOriginalSet && trackingData.learned === uuid) {
-          // Reset learned tracking
-          trackingData.hasLearned = false;
-          trackingData.learned = null;
-          await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, trackingData);
-          log(3, `Long rest swap: changed mind about learning ${spellName}`);
-        }
-        // CASE 5: Trying to uncheck a different original cantrip when one is already unlearned
-        else if (!event.target.checked && wasInOriginalSet && trackingData.hasUnlearned) {
-          event.target.checked = true; // Revert change
-          ui.notifications.warn(game.i18n.localize('SPELLBOOK.Wizard.OneSwapLimit'));
-          this._updateCantripCounter();
-          return;
-        }
-
-        // Proceed with UI updates
-        this._updateCantripCounter();
-
-        // Update UI class for spell item
-        if (spellItem) {
-          if (event.target.checked) {
-            spellItem.classList.add('prepared-spell');
-          } else {
-            spellItem.classList.remove('prepared-spell');
-          }
-        }
-
-        // Always update locks after changes
-        this._setupCantripLocks();
-
-        log(3, `Cantrip change completed successfully`);
-        return;
-      }
-    }
-    // Handle regular scenarios (non-wizard or not during long rest)
-    else {
       // Get the source spell
       const sourceSpell = await fromUuid(uuid);
-      if (!sourceSpell) return;
-
-      // Check if the cantrip was in our original set
-      const wasInOriginalSet = this._cantripTracking.originalChecked.has(uuid);
-      log(3, `Was in original set: ${wasInOriginalSet}`);
-
-      // For MODERN rules outside level-up with exceptions
-      if (isModernRules && !isLevelUp) {
-        // Allow toggling newly checked cantrips (added during current session)
-        if (this._newlyCheckedCantrips.has(uuid)) {
-          log(3, `Allowing toggle of newly checked cantrip: ${spellName}`);
-          // Continue processing - this cantrip can be toggled
-        }
-        // Block unchecking original cantrips
-        else if (wasInOriginalSet && !event.target.checked) {
-          event.target.checked = true; // Revert change
-          ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.LockedModern'));
-          this._updateCantripCounter();
-          return;
-        }
-        // Allow checking new cantrips
+      if (!sourceSpell) {
+        log(1, `Could not find source spell for UUID: ${uuid}`);
+        return;
       }
 
-      // MODERN rules during level-up: enforce ONE swap only
-      if (isModernRules && isLevelUp) {
-        // SPECIAL CASE: If CHECKING a cantrip that was previously UNLEARNED,
-        // reset the unlearned tracking since the user changed their mind
-        if (event.target.checked && wasInOriginalSet && this._cantripTracking.unlearned === uuid) {
-          log(3, `Resetting unlearned tracking - user changed mind about ${spellName}`);
-          this._cantripTracking.hasUnlearned = false;
-          this._cantripTracking.unlearned = null;
-        }
-        // If UNCHECKING a cantrip from the original set (unlearning)
-        else if (!event.target.checked && wasInOriginalSet) {
-          log(3, `Unlearning cantrip: ${spellName}`);
+      // Check if the change is allowed
+      const canChange = this.spellManager.canChangeCantripStatus(sourceSpell, isChecked, isLevelUp, isLongRest);
 
-          // If we've already unlearned a different cantrip
-          if (this._cantripTracking.hasUnlearned && this._cantripTracking.unlearned !== uuid) {
-            log(3, `Blocking unlearn - already unlearned ${this._cantripTracking.unlearned}`);
-            event.target.checked = true; // Revert change
-            ui.notifications.warn('With modern rules, you can only unlearn one cantrip per level-up.');
-            this._updateCantripCounter();
-            return;
-          }
+      // If change is not allowed, revert and notify
+      if (!canChange.allowed) {
+        // Revert the change
+        checkbox.checked = !isChecked;
 
-          // Track this as the unlearned cantrip
-          this._cantripTracking.hasUnlearned = true;
-          this._cantripTracking.unlearned = uuid;
-          log(3, `Tracking unlearned cantrip: ${spellName}`);
+        // Show notification if provided
+        if (canChange.message) {
+          ui.notifications.warn(game.i18n.localize(canChange.message));
         }
 
-        // SPECIAL CASE: If UNCHECKING a cantrip that was previously LEARNED,
-        // reset the learned tracking since the user changed their mind
-        if (!event.target.checked && !wasInOriginalSet && this._cantripTracking.learned === uuid) {
-          log(3, `Resetting learned tracking - user changed mind about ${spellName}`);
-          this._cantripTracking.hasLearned = false;
-          this._cantripTracking.learned = null;
-        }
-        // If CHECKING a cantrip that wasn't in the original set (learning new)
-        else if (event.target.checked && !wasInOriginalSet) {
-          log(3, `Learning new cantrip: ${spellName}`);
-
-          // If already learned a different new cantrip
-          if (this._cantripTracking.hasLearned && this._cantripTracking.learned !== uuid) {
-            log(3, `Blocking learning - already learned ${this._cantripTracking.learned}`);
-            event.target.checked = false; // Revert change
-            ui.notifications.warn('With modern rules, you can only learn one new cantrip per level-up.');
-            this._updateCantripCounter();
-            return;
-          }
-
-          // Track this as the learned cantrip
-          this._cantripTracking.hasLearned = true;
-          this._cantripTracking.learned = uuid;
-          log(3, `Tracking learned cantrip: ${spellName}`);
-        }
-      }
-
-      // DEFAULT rules: can't uncheck original cantrips
-      if (isDefaultRules && !event.target.checked && wasInOriginalSet) {
-        event.target.checked = true;
-        ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.LockedDefault'));
+        // Update counter display
         this._updateCantripCounter();
         return;
       }
-    }
 
-    // Common processing for both wizard long rest and regular scenarios
+      // Track the change for swap management
+      await this.spellManager.trackCantripChange(sourceSpell, isChecked, isLevelUp, isLongRest);
 
-    // Track newly checked/unchecked cantrips for UI
-    if (event.target.checked && !this._cantripTracking.originalChecked.has(uuid)) {
-      this._newlyCheckedCantrips.add(uuid);
-      log(3, `Added to newly checked cantrips: ${spellName}`);
-    } else if (!event.target.checked && this._newlyCheckedCantrips.has(uuid)) {
-      this._newlyCheckedCantrips.delete(uuid);
-      log(3, `Removed from newly checked cantrips: ${spellName}`);
-    }
-
-    // Update UI
-    this._updateCantripCounter();
-
-    // Check if adding a new cantrip would exceed max
-    if (!this._cantripTracking.originalChecked.has(uuid) && event.target.checked) {
-      if (this._uiCantripCount > this.spellManager.maxCantrips) {
-        event.target.checked = false;
+      // Track newly checked cantrips for UI
+      if (isChecked && !wasPrepared) {
+        this._newlyCheckedCantrips.add(uuid);
+        log(3, `Added to newly checked cantrips: ${spellName}`);
+      } else if (!isChecked && this._newlyCheckedCantrips.has(uuid)) {
         this._newlyCheckedCantrips.delete(uuid);
-        ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.MaximumReached'));
-        this._updateCantripCounter();
-        return;
+        log(3, `Removed from newly checked cantrips: ${spellName}`);
       }
-    }
 
-    // Update UI class for spell item
-    if (spellItem) {
-      if (event.target.checked) {
-        spellItem.classList.add('prepared-spell');
-      } else {
-        spellItem.classList.remove('prepared-spell');
+      // Update UI
+      this._updateCantripCounter();
+
+      // Update UI class for spell item
+      if (spellItem) {
+        if (isChecked) {
+          spellItem.classList.add('prepared-spell');
+        } else {
+          spellItem.classList.remove('prepared-spell');
+        }
       }
+
+      // Update locks for all cantrips
+      this._setupCantripLocks();
+
+      log(3, `Cantrip change completed successfully`);
+    } catch (error) {
+      log(1, `Error handling cantrip preparation change: ${error.message}`);
     }
-
-    // Always update locks after changes
-    this._setupCantripLocks();
-
-    log(3, `Cantrip change completed successfully`);
   }
 
   _updateSpellPreparationTracking() {
@@ -1591,133 +1389,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  _setupCantripLocks(currentCount, maxCantrips) {
+  _setupCantripLocks() {
     try {
       const cantripItems = this.element.querySelectorAll('.spell-item[data-spell-level="0"]');
       if (!cantripItems.length) return;
 
-      // Use passed in values, or get them if not provided
-      currentCount = currentCount ?? this._uiCantripCount;
-      maxCantrips = maxCantrips ?? this.spellManager.getMaxAllowed();
-
-      // Get settings
-      const settings = this.spellManager.getSettings();
-      const isModernRules = settings.rules === CANTRIP_RULES.MODERN;
-      const isDefaultRules = settings.rules === CANTRIP_RULES.DEFAULT;
+      // Get context information
       const isLevelUp = this.spellManager.canBeLeveledUp();
-      const isAtMax = currentCount >= maxCantrips;
+      const isLongRest = this._isLongRest;
+      const currentCount = this._uiCantripCount;
 
-      // Wizard long rest context takes precedence over regular cantrip rules
-      const isWizardLongRest = this.wizardManager?.isWizard && this._isLongRest;
-      const canSwapOnLongRest = isWizardLongRest ? this.wizardManager.canSwapCantripsOnLongRest(true) : false;
+      // Use the centralized lock management in SpellManager
+      this.spellManager.lockCantripCheckboxes(cantripItems, isLevelUp, isLongRest, currentCount);
 
-      for (const item of cantripItems) {
-        // Get the checkbox and check if we should process this item
-        const checkbox = item.querySelector('dnd5e-checkbox');
-        if (!checkbox || item.querySelector('.always-prepared-tag') || item.querySelector('.granted-spell-tag')) {
-          continue; // Skip always prepared or granted spells
-        }
-
-        const spellName = item.querySelector('.spell-name .title')?.textContent || 'unknown';
-        const isChecked = checkbox.checked;
-        const uuid = checkbox.dataset.uuid;
-        const isNewlyChecked = this._newlyCheckedCantrips.has(uuid);
-
-        // Clear existing lock state
-        checkbox.disabled = false;
-        delete checkbox.dataset.tooltip;
-        item.classList.remove('cantrip-locked');
-
-        // PRIORITY CHECK: Wizard long rest special case takes precedence
-        if (isWizardLongRest) {
-          // For legacy wizard rules - lock all cantrips
-          if (!canSwapOnLongRest) {
-            checkbox.disabled = true;
-            checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Wizard.NoCantripsOnLongRest');
-            item.classList.add('cantrip-locked');
-            continue;
-          }
-
-          // For modern wizard rules during long rest
-          if (canSwapOnLongRest) {
-            // If we're tracking a swap, apply specific locks
-            if (this._longRestSwapTracking) {
-              const wasInOriginalSet = this._longRestSwapTracking.originalChecked.has(uuid);
-
-              // If we've already unlearned a cantrip
-              if (this._longRestSwapTracking.hasUnlearned) {
-                // Only allow checking the unlearned cantrip or a new cantrip
-                const isUnlearnedCantrip = this._longRestSwapTracking.unlearned === uuid;
-
-                // Lock original cantrips that aren't the one we unlearned
-                if (wasInOriginalSet && !isUnlearnedCantrip) {
-                  checkbox.disabled = true;
-                  checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Wizard.OneSwapLimit');
-                  item.classList.add('cantrip-locked');
-                  continue;
-                }
-
-                // Lock new cantrips if we've already learned one
-                if (!wasInOriginalSet && this._longRestSwapTracking.hasLearned && this._longRestSwapTracking.learned !== uuid) {
-                  checkbox.disabled = true;
-                  checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Wizard.OneSwapLimit');
-                  item.classList.add('cantrip-locked');
-                  continue;
-                }
-              }
-              // If we haven't unlearned a cantrip yet, no special locks needed for modern wizard rules
-            }
-
-            // We don't need additional locks for the modern wizard rules case
-            continue;
-          }
-        }
-
-        // For DEFAULT rules outside of level-up:
-        // Lock only cantrips that were already prepared on the actor, not newly checked ones
-        if (isDefaultRules && !isLevelUp && isChecked && !isNewlyChecked) {
-          checkbox.disabled = true;
-          checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedDefault');
-          item.classList.add('cantrip-locked');
-          continue;
-        }
-
-        // For MODERN rules outside of level-up: only lock original checked cantrips
-        if (isModernRules && !isLevelUp && isChecked) {
-          // Don't lock newly checked cantrips - allow users to change their minds
-          const isNewlyChecked = this._newlyCheckedCantrips.has(uuid);
-          if (!isNewlyChecked) {
-            checkbox.disabled = true;
-            checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedModern');
-            item.classList.add('cantrip-locked');
-            continue;
-          }
-        }
-
-        // For MODERN rules during level-up, if already swapped, lock everything
-        if (isModernRules && isLevelUp && this._cantripTracking.hasUnlearned) {
-          const isUnlearnedCantrip = this._cantripTracking.unlearned === uuid;
-
-          // Only allow checking/unchecking the currently unlearned cantrip or learning one new cantrip
-          if (!isUnlearnedCantrip && isChecked && this._cantripTracking.hasLearned && this._cantripTracking.learned !== uuid) {
-            checkbox.disabled = true;
-            checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.OnlyOneSwap');
-            item.classList.add('cantrip-locked');
-            continue;
-          }
-        }
-
-        // Lock unchecked cantrips if at max
-        if (isAtMax && !isChecked) {
-          checkbox.disabled = true;
-          checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.MaximumReached');
-          item.classList.add('cantrip-locked');
-        }
-
-        // Remove any old lock icons if they exist
-        const lockIcon = item.querySelector('.cantrip-lock-icon');
-        if (lockIcon) lockIcon.remove();
-      }
+      log(3, 'Cantrip locks updated');
     } catch (error) {
       log(1, `Error setting up cantrip locks: ${error.message}`);
     }

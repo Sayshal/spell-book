@@ -26,14 +26,13 @@ export const FLAGS = {
   SIDEBAR_COLLAPSED: 'sidebarCollapsed',
   GM_COLLAPSED_LEVELS: 'gmCollapsedSpellLevels',
   CANTRIP_RULES: 'cantripRules',
-  CANTRIP_CHANGE_BEHAVIOR: 'cantripBehavior',
+  ENFORCEMENT_BEHAVIOR: 'enforcementBehavior',
   PREVIOUS_LEVEL: 'previousLevel',
   PREVIOUS_CANTRIP_MAX: 'previousCantripMax',
+  CANTRIP_SWAP_TRACKING: 'cantripSwapTracking',
   WIZARD_SPELLBOOK: 'wizardSpellbook',
   WIZARD_LEARNED_SPELLS: 'wizardLearnedSpells',
-  WIZARD_COPIED_SPELLS: 'wizardCopiedSpells',
-  WIZARD_RULES_VERSION: 'wizardRulesVersion',
-  WIZARD_LONG_REST_TRACKING: 'wizardLRTracking'
+  WIZARD_COPIED_SPELLS: 'wizardCopiedSpells'
 };
 
 //-----------------------------------------------------------------------------
@@ -68,13 +67,7 @@ export const TEMPLATES = {
     ERROR: 'modules/spell-book/templates/components/error-message.hbs',
     EMPTY: 'modules/spell-book/templates/components/empty-state.hbs',
     SPELL_LEVEL: 'modules/spell-book/templates/components/spell-level.hbs',
-    SPELL_ITEM: 'modules/spell-book/templates/components/spell-item.hbs',
-    FILTERS: {
-      SEARCH: 'modules/spell-book/templates/components/filter-fields/search.hbs',
-      DROPDOWN: 'modules/spell-book/templates/components/filter-fields/dropdown.hbs',
-      RANGE: 'modules/spell-book/templates/components/filter-fields/range.hbs',
-      CHECKBOX: 'modules/spell-book/templates/components/filter-fields/checkbox.hbs'
-    }
+    SPELL_ITEM: 'modules/spell-book/templates/components/spell-item.hbs'
   },
 
   DIALOGS: {
@@ -101,7 +94,7 @@ export const SETTINGS = {
   CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',
   OPEN_SPELL_MANAGER: 'openSpellListManager',
   DEFAULT_CANTRIP_RULES: 'defaultCantripRules',
-  DEFAULT_CANTRIP_BEHAVIOR: 'defaultCantripBehavior'
+  DEFAULT_ENFORCEMENT_BEHAVIOR: 'defaultEnforcementBehavior'
 };
 
 //-----------------------------------------------------------------------------
@@ -243,18 +236,19 @@ export const DEFAULT_FILTER_CONFIG = [
  * @type {Object}
  */
 export const CANTRIP_RULES = {
-  DEFAULT: 'default',
-  MODERN: 'modern'
+  LEGACY: 'legacy',
+  MODERN_LEVEL_UP: 'levelUp',
+  MODERN_LONG_REST: 'longRest'
 };
 
 /**
  * Cantrip change behavior options
  * @type {Object}
  */
-export const CANTRIP_CHANGE_BEHAVIOR = {
-  UNRESTRICTED: 'unrestricted',
+export const ENFORCEMENT_BEHAVIOR = {
+  UNENFORCED: 'unenforced',
   NOTIFY_GM: 'notifyGM',
-  LOCK_AFTER_MAX: 'lockAfterMax'
+  ENFORCED: 'enforced'
 };
 
 //-----------------------------------------------------------------------------
