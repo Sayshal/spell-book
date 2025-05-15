@@ -277,9 +277,10 @@ export class SpellManager {
    * @param {boolean} isChecked - Whether the spell is being checked (true) or unchecked (false)
    * @param {boolean} isLevelUp - Whether this is during level-up
    * @param {boolean} isLongRest - Whether this is during a long rest
+   * @param {number} uiCantripCount - Number of checked cantrip boxes in the ui currently
    * @returns {Object} Status object with allowed and message properties
    */
-  canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest) {
+  canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest, uiCantripCount = null) {
     // Skip non-cantrips
     if (spell.system.level !== 0) return { allowed: true };
 
@@ -290,10 +291,28 @@ export class SpellManager {
     log(3, `  - isChecked: ${isChecked}, isLevelUp: ${isLevelUp}, isLongRest: ${isLongRest}`);
     log(3, `  - rules: ${rules}, behavior: ${behavior}, isWizard: ${this.isWizard}`);
 
-    // GLOBAL MAX CHECK: Always validate against maximum count if trying to add
-    // This check applies regardless of behavior setting - it's a hard constraint
+    // Check enforcement behavior first
+    if (behavior === ENFORCEMENT_BEHAVIOR.UNENFORCED || behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
+      // For "notify" behavior with checks, we'll still show max warnings but allow the change
+      if (behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM && isChecked) {
+        // Use UI count if provided, otherwise get from actor
+        const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount();
+        if (currentCount >= this.maxCantrips) {
+          // If in notify mode, log the warning but don't block
+          log(3, `Warning but allowing - maximum cantrips reached (${currentCount}/${this.maxCantrips})`);
+          // We'll still show the notification, but return allowed=true
+          ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.MaximumReached'));
+        }
+      }
+
+      log(3, `Allowing change - behavior is not enforced`);
+      return { allowed: true };
+    }
+
+    // For enforced behavior, now check max constraint
     if (isChecked) {
-      const currentCount = this.getCurrentCount();
+      // Use UI count if provided, otherwise get from actor
+      const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount();
       if (currentCount >= this.maxCantrips) {
         log(3, `Blocking check - maximum cantrips reached (${currentCount}/${this.maxCantrips})`);
         return {
