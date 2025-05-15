@@ -487,15 +487,14 @@ export class SpellManager {
    * @param {boolean} isChecked - Whether the spell is being checked (true) or unchecked (false)
    * @param {boolean} isLevelUp - Whether this is during level-up
    * @param {boolean} isLongRest - Whether this is during a long rest
-   * @returns {Promise<void>}
    */
-  async trackCantripChange(spell, isChecked, isLevelUp, isLongRest) {
+  trackCantripChange(spell, isChecked, isLevelUp, isLongRest) {
     // Skip non-cantrips
     if (spell.system.level !== 0) return;
 
     const spellName = spell.name || 'unknown cantrip';
     const { rules, behavior } = this.settings;
-    const spellUuid = spell.uuid || spell.flags?.core?.sourceId;
+    const spellUuid = spell.flags?.core?.sourceId || spell.uuid;
 
     log(3, `Tracking cantrip change: ${spellName}, isChecked=${isChecked}`);
 
@@ -525,8 +524,8 @@ export class SpellManager {
 
     // Initialize tracking if it doesn't exist
     if (!tracking) {
-      // Get all currently prepared cantrips
-      const preparedCantrips = this.actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.preparation?.prepared).map((i) => i.uuid || i.flags?.core?.sourceId);
+      // Get source UUIDs of prepared cantrips using flags.core.sourceId
+      const preparedCantrips = this.actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.preparation?.prepared).map((i) => i.flags?.core?.sourceId || i.uuid);
 
       tracking = {
         hasUnlearned: false,
@@ -536,9 +535,15 @@ export class SpellManager {
         originalChecked: preparedCantrips
       };
 
-      await this.actor.setFlag(MODULE.ID, flagName, tracking);
+      this.actor.setFlag(MODULE.ID, flagName, tracking);
       log(3, `Initialized cantrip swap tracking with ${preparedCantrips.length} original cantrips`);
+      log(3, `Original cantrips: ${preparedCantrips.join(', ')}`);
     }
+
+    // Log current state and check details
+    log(3, `Current tracking state - hasUnlearned: ${tracking.hasUnlearned}, unlearned: ${tracking.unlearned}, hasLearned: ${tracking.hasLearned}, learned: ${tracking.learned}`);
+    log(3, `Action: ${isChecked ? 'checking' : 'unchecking'} cantrip ${spellName} (${spellUuid})`);
+    log(3, `Is in original cantrips: ${tracking.originalChecked.includes(spellUuid)}`);
 
     // CASE 1: Unchecking a cantrip that was originally checked (unlearning)
     if (!isChecked && tracking.originalChecked.includes(spellUuid)) {
@@ -572,7 +577,14 @@ export class SpellManager {
       }
     }
 
-    // CASE 3: Re-checking a cantrip that was unlearned
+    // CASE 3: Unchecking a newly learned cantrip (changing your mind)
+    else if (!isChecked && tracking.learned === spellUuid) {
+      tracking.hasLearned = false;
+      tracking.learned = null;
+      log(3, `Cantrip ${spellName} was newly learned but is being unchecked`);
+    }
+
+    // CASE 4: Re-checking a cantrip that was unlearned (changing your mind)
     else if (isChecked && tracking.unlearned === spellUuid) {
       tracking.hasUnlearned = false;
       tracking.unlearned = null;
@@ -580,7 +592,10 @@ export class SpellManager {
     }
 
     // Save the updated tracking
-    await this.actor.setFlag(MODULE.ID, flagName, tracking);
+    this.actor.setFlag(MODULE.ID, flagName, tracking);
+
+    // Log updated state
+    log(3, `Updated tracking: hasUnlearned=${tracking.hasUnlearned}, unlearned=${tracking.unlearned}, hasLearned=${tracking.hasLearned}, learned=${tracking.learned}`);
   }
 
   /**

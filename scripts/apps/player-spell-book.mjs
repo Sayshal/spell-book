@@ -1042,6 +1042,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         return;
       }
 
+      // Ensure we're using the source UUID consistently
+      const sourceUuid = sourceSpell.flags?.core?.sourceId || sourceSpell.uuid;
+      log(3, `Source UUID: ${sourceUuid}`);
+
       // Check if the change is allowed
       const canChange = this.spellManager.canChangeCantripStatus(sourceSpell, isChecked, isLevelUp, isLongRest, this._uiCantripCount);
 
@@ -1061,7 +1065,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       }
 
       // Track the change for swap management
-      await this.spellManager.trackCantripChange(sourceSpell, isChecked, isLevelUp, isLongRest);
+      this.spellManager.trackCantripChange(sourceSpell, isChecked, isLevelUp, isLongRest);
 
       // Track newly checked cantrips for UI
       if (isChecked && !wasPrepared) {
