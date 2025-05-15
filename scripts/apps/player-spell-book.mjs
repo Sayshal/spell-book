@@ -344,9 +344,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @override */
   _onClose() {
     try {
-      // Clean up any temporary flags
+      // Clean up any long rest flags
       if (this._isLongRest) {
-        this.actor.unsetFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST);
+        this.actor.unsetFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING);
       }
 
       // Remove the flag change hook
@@ -1024,13 +1024,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     log(3, `Modern rules: ${isModernRules}, Level up: ${isLevelUp}`);
     log(3, `Current tracking: hasUnlearned=${this._cantripTracking.hasUnlearned}, unlearned=${this._cantripTracking.unlearned}`);
 
-    // PRIORITY CHECK: Wizard during long rest takes precedence over general cantrip rules
+    // PRIORITY CHECK: Wizard during long rest takes precedence
     if (this.wizardManager?.isWizard && this._isLongRest) {
       // Get wizard-specific rule
       const canSwapOnLongRest = this.wizardManager.canSwapCantripsOnLongRest(true);
       log(3, `Wizard long rest context - can swap: ${canSwapOnLongRest}`);
 
-      // Legacy wizard rules - block ALL cantrip changes during long rest
+      // Legacy wizard rules - block ALL cantrip changes
       if (!canSwapOnLongRest && event.target.checked !== wasPrepared) {
         event.target.checked = wasPrepared; // Revert change
         ui.notifications.warn(game.i18n.localize('SPELLBOOK.Wizard.NoCantripsOnLongRest'));
@@ -1038,36 +1038,44 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         return;
       }
 
-      // For Modern rules during long rest - we need specialized tracking
+      // For modern wizard rules during long rest
       if (canSwapOnLongRest) {
-        // Initialize long rest swap tracking if not already done
-        if (!this._longRestSwapTracking) {
-          this._longRestSwapTracking = {
-            originalChecked: new Set(),
+        // Get tracking data from actor flags for persistence
+        let trackingData = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING);
+
+        // Initialize if not set
+        if (!trackingData) {
+          // Collect original checked cantrips
+          const originalChecked = [];
+          const cantripItems = this.element.querySelectorAll('.spell-item[data-spell-level="0"]');
+          cantripItems.forEach((item) => {
+            const checkbox = item.querySelector('dnd5e-checkbox[data-uuid]');
+            if (checkbox && checkbox.checked) {
+              originalChecked.push(checkbox.dataset.uuid);
+            }
+          });
+
+          // Initial tracking data
+          trackingData = {
+            originalChecked,
             hasUnlearned: false,
             hasLearned: false,
             unlearned: null,
             learned: null
           };
 
-          // Record initial cantrips
-          const cantripItems = this.element.querySelectorAll('.spell-item[data-spell-level="0"]');
-          cantripItems.forEach((item) => {
-            const checkbox = item.querySelector('dnd5e-checkbox[data-uuid]');
-            if (checkbox && checkbox.checked) {
-              this._longRestSwapTracking.originalChecked.add(checkbox.dataset.uuid);
-            }
-          });
-          log(3, `Recorded ${this._longRestSwapTracking.originalChecked.size} initial cantrips for long rest swap`);
+          // Save to actor flags
+          await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, trackingData);
+          log(3, `Recorded ${originalChecked.length} initial cantrips for long rest swap`);
         }
 
         // Check if this cantrip was in the original set
-        const wasInOriginalSet = this._longRestSwapTracking.originalChecked.has(uuid);
+        const wasInOriginalSet = trackingData.originalChecked.includes(uuid);
 
         // CASE 1: Unchecking an original cantrip (unlearning)
         if (!event.target.checked && wasInOriginalSet) {
           // If already unlearned a different cantrip, block this change
-          if (this._longRestSwapTracking.hasUnlearned && this._longRestSwapTracking.unlearned !== uuid) {
+          if (trackingData.hasUnlearned && trackingData.unlearned !== uuid) {
             event.target.checked = true; // Revert change
             ui.notifications.warn(game.i18n.localize('SPELLBOOK.Wizard.OneSwapLimit'));
             this._updateCantripCounter();
@@ -1075,21 +1083,23 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           }
 
           // Track this as the unlearned cantrip
-          this._longRestSwapTracking.hasUnlearned = true;
-          this._longRestSwapTracking.unlearned = uuid;
+          trackingData.hasUnlearned = true;
+          trackingData.unlearned = uuid;
+          await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, trackingData);
           log(3, `Long rest swap: unlearning cantrip ${spellName}`);
         }
         // CASE 2: Re-checking a cantrip that was previously unlearned
-        else if (event.target.checked && wasInOriginalSet && this._longRestSwapTracking.unlearned === uuid) {
+        else if (event.target.checked && wasInOriginalSet && trackingData.unlearned === uuid) {
           // Reset unlearned tracking
-          this._longRestSwapTracking.hasUnlearned = false;
-          this._longRestSwapTracking.unlearned = null;
+          trackingData.hasUnlearned = false;
+          trackingData.unlearned = null;
+          await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, trackingData);
           log(3, `Long rest swap: changed mind about unlearning ${spellName}`);
         }
         // CASE 3: Checking a new cantrip (learning)
         else if (event.target.checked && !wasInOriginalSet) {
           // If already learned a different cantrip, block this change
-          if (this._longRestSwapTracking.hasLearned && this._longRestSwapTracking.learned !== uuid) {
+          if (trackingData.hasLearned && trackingData.learned !== uuid) {
             event.target.checked = false; // Revert change
             ui.notifications.warn(game.i18n.localize('SPELLBOOK.Wizard.OneSwapLimit'));
             this._updateCantripCounter();
@@ -1097,7 +1107,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           }
 
           // Block learning a new cantrip if we haven't unlearned one first
-          if (!this._longRestSwapTracking.hasUnlearned) {
+          if (!trackingData.hasUnlearned) {
             event.target.checked = false; // Revert change
             ui.notifications.warn(game.i18n.localize('SPELLBOOK.Wizard.MustUnlearnFirst'));
             this._updateCantripCounter();
@@ -1105,24 +1115,44 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           }
 
           // Track this as the learned cantrip
-          this._longRestSwapTracking.hasLearned = true;
-          this._longRestSwapTracking.learned = uuid;
+          trackingData.hasLearned = true;
+          trackingData.learned = uuid;
+          await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, trackingData);
           log(3, `Long rest swap: learning cantrip ${spellName}`);
         }
         // CASE 4: Unchecking a newly learned cantrip
-        else if (!event.target.checked && !wasInOriginalSet && this._longRestSwapTracking.learned === uuid) {
+        else if (!event.target.checked && !wasInOriginalSet && trackingData.learned === uuid) {
           // Reset learned tracking
-          this._longRestSwapTracking.hasLearned = false;
-          this._longRestSwapTracking.learned = null;
+          trackingData.hasLearned = false;
+          trackingData.learned = null;
+          await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, trackingData);
           log(3, `Long rest swap: changed mind about learning ${spellName}`);
         }
         // CASE 5: Trying to uncheck a different original cantrip when one is already unlearned
-        else if (!event.target.checked && wasInOriginalSet && this._longRestSwapTracking.hasUnlearned) {
+        else if (!event.target.checked && wasInOriginalSet && trackingData.hasUnlearned) {
           event.target.checked = true; // Revert change
           ui.notifications.warn(game.i18n.localize('SPELLBOOK.Wizard.OneSwapLimit'));
           this._updateCantripCounter();
           return;
         }
+
+        // Proceed with UI updates
+        this._updateCantripCounter();
+
+        // Update UI class for spell item
+        if (spellItem) {
+          if (event.target.checked) {
+            spellItem.classList.add('prepared-spell');
+          } else {
+            spellItem.classList.remove('prepared-spell');
+          }
+        }
+
+        // Always update locks after changes
+        this._setupCantripLocks();
+
+        log(3, `Cantrip change completed successfully`);
+        return;
       }
     }
     // Handle regular scenarios (non-wizard or not during long rest)
@@ -1720,16 +1750,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this._isLongRest = !!isLongRest;
     log(3, `Long rest context set to: ${this._isLongRest}`);
 
-    // Also set a temporary flag on the actor for UI preparation functions
-    if (this._isLongRest) {
-      this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST, true).then(() => {
-        this.render(false); // Re-render with new context
-      });
-    } else {
-      this.actor.unsetFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST).then(() => {
-        this.render(false); // Re-render with new context
-      });
+    if (isLongRest) {
+      // Clear any existing tracking
+      this.actor.unsetFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING);
     }
+
+    this.render(false); // Re-render with new context
   }
 
   /* -------------------------------------------- */

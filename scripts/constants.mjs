@@ -33,7 +33,7 @@ export const FLAGS = {
   WIZARD_LEARNED_SPELLS: 'wizardLearnedSpells',
   WIZARD_COPIED_SPELLS: 'wizardCopiedSpells',
   WIZARD_RULES_VERSION: 'wizardRulesVersion',
-  WIZARD_LONG_REST: 'temporaryLongRestCheck'
+  WIZARD_LONG_REST_TRACKING: 'wizardLRTracking'
 };
 
 //-----------------------------------------------------------------------------
