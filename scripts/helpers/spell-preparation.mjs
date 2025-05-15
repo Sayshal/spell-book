@@ -959,6 +959,7 @@ export class SpellManager {
   /**
    * Get preparation status for a spell
    * @param {Item5e} spell - The spell to check
+   * @returns {Object} Preparation status information
    */
   getSpellPreparationStatus(spell) {
     const spellName = spell.name || 'unnamed spell';
@@ -1003,10 +1004,10 @@ export class SpellManager {
   /**
    * Get preparation status for a spell that's on the actor
    * @param {Item5e} spell - The spell item
-   * @returns {Promise<object>} - Preparation status information
+   * @returns {Object} - Preparation status information
    * @private
    */
-  async _getOwnedSpellPreparationStatus(spell) {
+  _getOwnedSpellPreparationStatus(spell) {
     const spellName = spell.name || 'unnamed spell';
     log(3, `Getting owned spell preparation status for ${spellName}`);
 
@@ -1097,7 +1098,7 @@ export class SpellManager {
 
     // For wizards, check if spell is in spellbook
     if (this.isWizard && spell.system.level > 0 && preparationMode === 'prepared' && !result.disabled) {
-      // Get wizard manager
+      // Get wizard manager if needed - should be cached
       if (!this._wizardManager) {
         this._wizardManager = new WizardSpellbookManager(this.actor);
       }
@@ -1105,21 +1106,16 @@ export class SpellManager {
       // Get the spell's UUID
       const spellUuid = spell.flags?.core?.sourceId || spell.uuid;
 
-      // Cache wizard spellbook to avoid repeated async calls
-      if (!this._wizardSpellbookCache) {
-        this._wizardSpellbookCache = await this._wizardManager.getSpellbookSpells();
+      // We should already have the cache from earlier in the process flow
+      if (this._wizardSpellbookCache) {
+        const inSpellbook = this._wizardSpellbookCache.includes(spellUuid);
+        if (!inSpellbook) {
+          result.disabled = true;
+          result.disabledReason = 'SPELLBOOK.Wizard.NotInSpellbook';
+          log(3, `Spell ${spellName} disabled: not in wizard's spellbook`);
+        }
+        result.inWizardSpellbook = inSpellbook;
       }
-
-      // Check if the spell can be prepared (in spellbook)
-      const inSpellbook = this._wizardSpellbookCache.includes(spellUuid);
-      if (!inSpellbook) {
-        result.disabled = true;
-        result.disabledReason = 'SPELLBOOK.Wizard.NotInSpellbook';
-        log(3, `Spell ${spellName} disabled: not in wizard's spellbook`);
-      }
-
-      // Add information about wizard spellbook
-      result.inWizardSpellbook = inSpellbook;
     }
 
     return result;
