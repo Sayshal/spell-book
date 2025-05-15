@@ -290,7 +290,20 @@ export class SpellManager {
     log(3, `  - isChecked: ${isChecked}, isLevelUp: ${isLevelUp}, isLongRest: ${isLongRest}`);
     log(3, `  - rules: ${rules}, behavior: ${behavior}, isWizard: ${this.isWizard}`);
 
-    // If behavior is unenforced, always allow changes
+    // GLOBAL MAX CHECK: Always validate against maximum count if trying to add
+    // This check applies regardless of behavior setting - it's a hard constraint
+    if (isChecked) {
+      const currentCount = this.getCurrentCount();
+      if (currentCount >= this.maxCantrips) {
+        log(3, `Blocking check - maximum cantrips reached (${currentCount}/${this.maxCantrips})`);
+        return {
+          allowed: false,
+          message: 'SPELLBOOK.Cantrips.MaximumReached'
+        };
+      }
+    }
+
+    // If behavior is unenforced, allow other changes beyond the max constraint
     if (behavior === ENFORCEMENT_BEHAVIOR.UNENFORCED || behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
       log(3, `Allowing change - behavior is not enforced`);
       return { allowed: true };
@@ -320,7 +333,7 @@ export class SpellManager {
       }
 
       // During long rest with enforcement, check swap limits
-      if (isLongRest && behavior === ENFORCEMENT_BEHAVIOR.ENFORCED) {
+      if (isLongRest) {
         // Check if trying to unlearn a different cantrip when one is already unlearned
         if (!isChecked && trackingData.hasUnlearned && trackingData.unlearned !== spell.uuid && trackingData.originalChecked.includes(spell.uuid)) {
           log(3, `Blocking uncheck - already unlearned a different cantrip`);
@@ -362,7 +375,7 @@ export class SpellManager {
       }
 
       // During level up with enforcement, check swap limits
-      if (isLevelUp && behavior === ENFORCEMENT_BEHAVIOR.ENFORCED) {
+      if (isLevelUp) {
         // Check if trying to unlearn a different cantrip when one is already unlearned
         if (!isChecked && trackingData.hasUnlearned && trackingData.unlearned !== spell.uuid && trackingData.originalChecked.includes(spell.uuid)) {
           log(3, `Blocking uncheck - already unlearned a different cantrip`);
@@ -395,23 +408,11 @@ export class SpellManager {
     // RULE CHECK: Legacy
     else if (rules === CANTRIP_RULES.LEGACY) {
       // With legacy rules, can't uncheck prepared cantrips at all
-      if (!isChecked && behavior === ENFORCEMENT_BEHAVIOR.ENFORCED) {
+      if (!isChecked) {
         log(3, `Blocking uncheck - Legacy rules don't allow unchecking cantrips`);
         return {
           allowed: false,
           message: 'SPELLBOOK.Cantrips.LockedLegacy'
-        };
-      }
-    }
-
-    // MAX CHECK: Always validate against maximum count if trying to add
-    if (isChecked) {
-      const currentCount = this.getCurrentCount();
-      if (currentCount >= this.maxCantrips) {
-        log(3, `Blocking check - maximum cantrips reached (${currentCount}/${this.maxCantrips})`);
-        return {
-          allowed: false,
-          message: 'SPELLBOOK.Cantrips.MaximumReached'
         };
       }
     }
@@ -599,15 +600,10 @@ export class SpellManager {
    */
   lockCantripCheckboxes(cantripItems, isLevelUp, isLongRest, currentCount) {
     const { rules, behavior } = this.settings;
+    const isAtMax = currentCount >= this.maxCantrips;
 
     log(3, `Locking cantrips based on rules=${rules}, behavior=${behavior}`);
-    log(3, `Context: isLevelUp=${isLevelUp}, isLongRest=${isLongRest}, count=${currentCount}/${this.maxCantrips}`);
-
-    // If not enforced, don't lock anything
-    if (behavior !== ENFORCEMENT_BEHAVIOR.ENFORCED) {
-      log(3, `Skipping locks - enforcement is not set to enforced`);
-      return;
-    }
+    log(3, `Context: isLevelUp=${isLevelUp}, isLongRest=${isLongRest}, count=${currentCount}/${this.maxCantrips}, isAtMax=${isAtMax}`);
 
     // Get tracking data if in a swap context
     const trackingData = this._getSwapTrackingData(isLevelUp, isLongRest);
@@ -633,7 +629,23 @@ export class SpellManager {
 
       log(3, `Processing cantrip lock for ${spellName}, isChecked=${isChecked}`);
 
-      // Handle based on rules and context
+      // GLOBAL MAX CHECK: Always lock unchecked cantrips if at maximum
+      // This applies regardless of behavior setting - it's a hard constraint
+      if (isAtMax && !isChecked) {
+        checkbox.disabled = true;
+        checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.MaximumReached');
+        item.classList.add('cantrip-locked');
+        log(3, `Locking unchecked cantrip ${spellName} - at maximum count (${currentCount}/${this.maxCantrips})`);
+        continue; // Skip remaining checks since we've already locked this
+      }
+
+      // Skip rule-based locks if not enforced
+      if (behavior !== ENFORCEMENT_BEHAVIOR.ENFORCED) {
+        log(3, `Skipping rule-based locks - behavior is ${behavior}`);
+        continue;
+      }
+
+      // Handle based on rules and context - only apply these if enforced
       switch (rules) {
         case CANTRIP_RULES.LEGACY:
           // Always lock checked cantrips
@@ -709,14 +721,6 @@ export class SpellManager {
             log(3, `Locking checked cantrip ${spellName} - outside long rest`);
           }
           break;
-      }
-
-      // Always lock unchecked cantrips if at maximum
-      if (currentCount >= this.maxCantrips && !isChecked) {
-        checkbox.disabled = true;
-        checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.MaximumReached');
-        item.classList.add('cantrip-locked');
-        log(3, `Locking unchecked cantrip ${spellName} - at maximum count`);
       }
     }
   }
