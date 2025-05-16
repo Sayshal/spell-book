@@ -48,9 +48,6 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
       // Get the proper source UUID for the spell
       // If it's an actor item, use its sourceId, otherwise use the provided UUID
       const sourceUuid = spell.parent && spell.flags?.core?.sourceId ? spell.flags.core.sourceId : uuid;
-
-      log(3, `Spell ${spell.name}: using sourceUuid=${sourceUuid}, (original uuid=${uuid})`);
-
       if (spell.system.level <= maxSpellLevel) {
         spellItems.push({
           ...spell,

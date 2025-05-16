@@ -1,5 +1,5 @@
 import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
-import { CANTRIP_RULES, FLAGS, MODULE } from '../constants.mjs';
+import { CANTRIP_RULES, FLAGS, MODULE, SETTINGS } from '../constants.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
 import { SpellManager } from '../helpers/spell-preparation.mjs';
 import { log } from '../logger.mjs';
@@ -62,12 +62,9 @@ async function handleRestCompleted(actor, result, config) {
       return;
     }
 
-    // Show dialog asking if they want to swap cantrips
-    const content = `<p>${game.i18n.localize('SPELLBOOK.Wizard.SwapCantripPrompt')}</p>`;
-
     const dialogResult = await foundry.applications.api.DialogV2.wait({
       title: game.i18n.localize('SPELLBOOK.Wizard.SwapCantripTitle'),
-      content: content,
+      content: `<p>${game.i18n.localize('SPELLBOOK.Wizard.SwapCantripPrompt')}</p>`,
       buttons: [
         {
           icon: 'fas fa-book-spells',
@@ -174,8 +171,8 @@ async function onSpellBookButtonClick(actor, ev) {
 
       // If using long rest rules, check if we need to set the swap flag
       if (rulesVersion === CANTRIP_RULES.MODERN_LONG_REST) {
-        // Only set the flag if it's not already set
-        const hasLongRestFlag = actor.getFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING);
+        // Check the exact value of the long rest flag
+        const longRestFlagValue = actor.getFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING);
 
         // Check if there's existing swap data that might block a new swap
         const swapData = actor.getFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING)?.longRest;
@@ -187,10 +184,13 @@ async function onSpellBookButtonClick(actor, ev) {
           log(3, `Cleared completed swap data for ${actor.name}`);
         }
 
-        // Set the long rest flag if not already set
-        if (!hasLongRestFlag) {
+        // ONLY set the flag if it's undefined or null, NOT if it's explicitly false
+        if (longRestFlagValue === undefined || longRestFlagValue === null) {
           await actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, true);
           log(3, `Setting long rest flag for ${actor.name} when opening spellbook`);
+        } else {
+          // Log the current value for debugging
+          log(3, `Not changing long rest flag for ${actor.name}, current value: ${longRestFlagValue}`);
         }
       }
     }
