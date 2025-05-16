@@ -1,4 +1,4 @@
-import { CANTRIP_RULES, ENFORCEMENT_BEHAVIOR, MODULE, TEMPLATES, WIZARD_DEFAULTS } from '../constants.mjs';
+import { CANTRIP_RULES, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, TEMPLATES, WIZARD_DEFAULTS } from '../constants.mjs';
 import { SpellManager } from '../helpers/spell-preparation.mjs';
 import { WizardSpellbookManager } from '../helpers/wizard-spellbook.mjs';
 import { log } from '../logger.mjs';
@@ -78,9 +78,11 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     this.actor = actor;
     this.spellManager = new SpellManager(actor);
 
-    // Check if actor is a wizard
+    // Check if actor is a wizard or has force wizard mode enabled
+    const forceWizardMode = actor.getFlag(MODULE.ID, FLAGS.FORCE_WIZARD_MODE);
     const wizardClass = actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard');
-    if (wizardClass) {
+
+    if (wizardClass || forceWizardMode) {
       this.wizardManager = new WizardSpellbookManager(actor);
     }
   }
@@ -109,6 +111,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
       // Get wizard settings if applicable
       const isWizard = !!this.wizardManager?.isWizard;
+      const forceWizardMode = this.actor.getFlag(MODULE.ID, FLAGS.FORCE_WIZARD_MODE) || false;
+
       let wizardSettings = {};
 
       if (isWizard) {
@@ -123,6 +127,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       return {
         actor: this.actor,
         isWizard,
+        forceWizardMode,
         stats: {
           maxCantrips,
           currentCount
@@ -165,16 +170,21 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       log(3, `Saving spellbook settings for ${actor.name}`);
 
       // Extract form data
-      const { cantripRules, enforcementBehavior, wizardStartingSpells, wizardSpellsPerLevel, wizardRitualCasting } = formData.object;
+      const { cantripRules, enforcementBehavior, wizardStartingSpells, wizardSpellsPerLevel, wizardRitualCasting, forceWizardMode } = formData.object;
 
       log(3, `New cantrip settings: rules=${cantripRules}, behavior=${enforcementBehavior}`);
+      log(3, `Force wizard mode: ${forceWizardMode}`);
 
       // Save cantrip settings
       const spellManager = new SpellManager(actor);
       await spellManager.saveSettings(cantripRules, enforcementBehavior);
 
-      // Save wizard settings if applicable
-      const isWizard = !!actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard');
+      // Save force wizard mode setting
+      await actor.setFlag(MODULE.ID, FLAGS.FORCE_WIZARD_MODE, !!forceWizardMode);
+
+      // Check if actor is a wizard or has force wizard mode enabled
+      const isWizard = !!actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard') || !!forceWizardMode;
+
       if (isWizard) {
         const updateData = {
           [`flags.${MODULE.ID}.wizardStartingSpells`]: parseInt(wizardStartingSpells) || WIZARD_DEFAULTS.STARTING_SPELLS,

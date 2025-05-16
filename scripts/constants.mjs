@@ -26,6 +26,7 @@ export const FLAGS = {
   CANTRIP_SWAP_TRACKING: 'cantripSwapTracking',
   COLLAPSED_LEVELS: 'collapsedSpellLevels',
   ENFORCEMENT_BEHAVIOR: 'enforcementBehavior',
+  FORCE_WIZARD_MODE: 'forceWizardMode',
   GM_COLLAPSED_LEVELS: 'gmCollapsedSpellLevels',
   PREPARED_SPELLS: 'preparedSpells',
   PREVIOUS_CANTRIP_MAX: 'previousCantripMax',

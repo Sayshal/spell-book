@@ -55,6 +55,19 @@
     </div>
   </div>
 
+  {{!-- Always show this option, even if not currently detected as wizard --}}
+  <div class="settings-section class-settings">
+    <h3>{{localize 'SPELLBOOK.Settings.ClassSettingsTitle'}}</h3>
+
+    <div class="form-group">
+      <label>{{localize 'SPELLBOOK.Settings.ForceWizardMode'}}</label>
+      <div class="form-fields">
+        <input type="checkbox" name="forceWizardMode" {{#if forceWizardMode}}checked{{/if}}>
+      </div>
+      <p class="hint">{{localize 'SPELLBOOK.Settings.ForceWizardModeHint'}}</p>
+    </div>
+  </div>
+
   {{!-- Wizard Settings (only show if actor is a wizard) --}}
   {{#if isWizard}}
     <div class="settings-section wizard-settings">

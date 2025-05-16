@@ -183,10 +183,17 @@ export class SpellManager {
 
   /**
    * Check if the actor is a wizard
-   * @returns {boolean} True if actor has a wizard class
+   * @returns {boolean} True if actor has a wizard class or force wizard mode is enabled
    * @private
    */
   _isWizard() {
+    // Check for force wizard mode flag first
+    if (this.actor.getFlag(MODULE.ID, FLAGS.FORCE_WIZARD_MODE)) {
+      log(3, `${this.actor.name} treated as wizard via force wizard mode flag`);
+      return true;
+    }
+
+    // Regular class check as fallback
     return !!this.actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard');
   }
 

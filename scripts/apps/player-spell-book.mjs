@@ -125,11 +125,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     // Flag to ensure we only initialize the wizard spellbook once
     this._wizardInitialized = false;
 
-    // Check if actor is a wizard
+    // Check if actor is a wizard by class name or has force wizard mode enabled
     const wizardClass = actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard');
-    if (wizardClass) {
+    const forceWizardMode = actor.getFlag(MODULE.ID, FLAGS.FORCE_WIZARD_MODE);
+
+    if (wizardClass || forceWizardMode) {
       this.wizardManager = new WizardSpellbookManager(actor);
-      log(3, `Initialized wizard manager for ${actor.name}`);
+      log(3, `Initialized wizard manager for ${actor.name} - ${wizardClass ? 'Has wizard class' : 'Force wizard mode enabled'}`);
     }
 
     // Check for long rest flag - persisted between sessions
@@ -153,7 +155,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       // Check for spell book related flag changes
       if (changes.flags?.[MODULE.ID]) {
         const changedFlags = Object.keys(changes.flags[MODULE.ID]);
-        const cantripFlagChanged = changedFlags.some((flag) => [FLAGS.CANTRIP_RULES, FLAGS.ENFORCEMENT_BEHAVIOR].includes(flag));
+        const cantripFlagChanged = changedFlags.some((flag) => [FLAGS.CANTRIP_RULES, FLAGS.ENFORCEMENT_BEHAVIOR, FLAGS.FORCE_WIZARD_MODE].includes(flag));
         const wizardFlagChanged = changedFlags.some((flag) => [FLAGS.WIZARD_SPELLBOOK, FLAGS.WIZARD_LEARNED_SPELLS, FLAGS.WIZARD_COPIED_SPELLS].includes(flag));
 
         if ((cantripFlagChanged || wizardFlagChanged) && this.rendered) {

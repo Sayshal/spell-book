@@ -32,8 +32,21 @@ export class WizardSpellbookManager {
    * @private
    */
   _findWizardClass() {
+    // First check normal wizard class
     const wizardClass = this.actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard');
-    return wizardClass || null;
+    if (wizardClass) return wizardClass;
+
+    // If force wizard mode is enabled, use any spellcasting class
+    if (this.actor.getFlag(MODULE.ID, FLAGS.FORCE_WIZARD_MODE)) {
+      const spellcastingClass = this.actor.items.find((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
+
+      if (spellcastingClass) {
+        log(3, `Using ${spellcastingClass.name} as wizard class via force wizard mode flag`);
+        return spellcastingClass;
+      }
+    }
+
+    return null;
   }
 
   /**
