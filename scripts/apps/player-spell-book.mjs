@@ -58,7 +58,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   static PARTS = {
     form: {
       template: TEMPLATES.PLAYER.MAIN,
-      templates: [TEMPLATES.PLAYER.SIDEBAR, TEMPLATES.PLAYER.TAB_NAV, TEMPLATES.PLAYER.TAB_SPELLS, TEMPLATES.PLAYER.TAB_WIZARD_SPELLBOOK]
+      templates: [TEMPLATES.PLAYER.SIDEBAR, TEMPLATES.PLAYER.TAB_NAV, TEMPLATES.PLAYER.TAB_SPELLS, TEMPLATES.PLAYER.TAB_WIZARD_SPELLBOOK],
+      scrollable: ['']
     },
     footer: { template: TEMPLATES.PLAYER.FOOTER }
   };
@@ -2101,11 +2102,16 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  // In player-spell-book.mjs, modify the static learnSpell method
   static async learnSpell(event) {
     try {
       const spellUuid = event.target.dataset.uuid;
       if (!spellUuid) return;
+
+      // Store collapsed levels
+      const collapsedLevels = Array.from(this.element.querySelectorAll('.spell-level.collapsed')).map((el) => el.dataset.level);
+
+      // Remember active tab
+      const activeTab = this.tabGroups['spellbook-tabs'];
 
       // Load the spell
       const spell = await fromUuid(spellUuid);
@@ -2135,7 +2141,51 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
         if (success) {
           ui.notifications.info(`Learned ${spell.name} and added it to your spellbook.`);
-          this.render(false); // Re-render to update UI
+
+          // Update the local cache
+          if (this.wizardSpellbookCache) {
+            this.wizardSpellbookCache.push(spellUuid);
+          }
+
+          // Update the UI immediately for feedback
+          const spellItem = this.element.querySelector(`.spell-item[data-spell-uuid="${spellUuid}"]`);
+          if (spellItem) {
+            // Change button to 'In Spellbook' tag
+            const buttonContainer = spellItem.querySelector('.wizard-spell-status');
+            if (buttonContainer) {
+              buttonContainer.innerHTML = `
+                <span class="in-spellbook-tag" aria-label="Spell is in your spellbook">
+                  ${game.i18n.localize('SPELLBOOK.Wizard.InSpellbook')}
+                </span>
+              `;
+            }
+
+            // Add classes for visual feedback
+            spellItem.classList.add('in-wizard-spellbook', 'prepared-spell');
+          }
+
+          // Re-render is still needed to update preparation tab and counters
+          this.render(false);
+
+          // After render, restore UI state
+          setTimeout(() => {
+            // Restore active tab if needed
+            if (activeTab && this.tabGroups['spellbook-tabs'] !== activeTab) {
+              this.changeTab(activeTab, 'spellbook-tabs');
+            }
+
+            // Re-collapse levels
+            collapsedLevels.forEach((levelId) => {
+              const levelEl = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
+              if (levelEl) {
+                levelEl.classList.add('collapsed');
+
+                // Update ARIA state
+                const heading = levelEl.querySelector('.spell-level-heading');
+                if (heading) heading.setAttribute('aria-expanded', 'false');
+              }
+            });
+          }, 50); // Small delay to ensure render is complete
         } else {
           ui.notifications.warn(`Could not learn ${spell.name}.`);
         }
