@@ -59,7 +59,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     form: {
       template: TEMPLATES.PLAYER.MAIN,
       templates: [TEMPLATES.PLAYER.SIDEBAR, TEMPLATES.PLAYER.TAB_NAV, TEMPLATES.PLAYER.TAB_SPELLS, TEMPLATES.PLAYER.TAB_WIZARD_SPELLBOOK],
-      scrollable: ['']
+      scrollable: ['.spell-book-container .spell-book-content .scrollthistab']
     },
     footer: { template: TEMPLATES.PLAYER.FOOTER }
   };
@@ -340,7 +340,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         // Initialize the journal only once
         if (!this._wizardInitialized) {
           this._wizardInitialized = true;
-          this.wizardManager.getOrCreateSpellbookJournal().catch((err) => {
+          await this.wizardManager.getOrCreateSpellbookJournal().catch((err) => {
             log(1, `Error initializing wizard spellbook journal: ${err.message}`);
           });
         }
@@ -406,6 +406,38 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   changeTab(tabName, groupName, options = {}) {
     // First, let the parent method handle the basic tab switching
     super.changeTab(tabName, groupName, options);
+
+    // If switching to spell tab and we need to reload (because we learned a new spell)
+    if (tabName === 'spellstab' && this._spellsTabNeedsReload && this.wizardManager?.isWizard) {
+      log(3, `Reloading spells tab data after learning new spells`);
+
+      // Reset flag
+      this._spellsTabNeedsReload = false;
+
+      // If we have pre-processed tab data, reload the prep tab from cached wizard data
+      if (this._tabData) {
+        // Store the current UI state we want to preserve
+        const collapsedLevels = Array.from(this.element.querySelectorAll('.spell-level.collapsed')).map((el) => el.dataset.level);
+
+        // Reload the spell data for the prep tab
+        this._loadSpellData().then(() => {
+          // After loading, restore collapsed levels
+          setTimeout(() => {
+            collapsedLevels.forEach((levelId) => {
+              const levelEl = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
+              if (levelEl) {
+                levelEl.classList.add('collapsed');
+
+                // Update ARIA state
+                const heading = levelEl.querySelector('.spell-level-heading');
+                if (heading) heading.setAttribute('aria-expanded', 'false');
+              }
+            });
+          }, 50);
+        });
+        return;
+      }
+    }
 
     // If we're a wizard and have pre-processed tab data, update the content
     if (this.wizardManager?.isWizard && this._tabData && this._tabData[tabName]) {
@@ -2147,6 +2179,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             this.wizardSpellbookCache.push(spellUuid);
           }
 
+          // Check if we're now at max spells after adding this one
+          const newCount = this.wizardSpellbookCache?.length || 0;
+          const isNowAtMax = newCount >= maxAllowed;
+
           // Update the UI immediately for feedback
           const spellItem = this.element.querySelector(`.spell-item[data-spell-uuid="${spellUuid}"]`);
           if (spellItem) {
@@ -2163,6 +2199,27 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             // Add classes for visual feedback
             spellItem.classList.add('in-wizard-spellbook', 'prepared-spell');
           }
+
+          // If we're now at max spells, disable all remaining Learn Spell buttons
+          if (isNowAtMax) {
+            const allLearnButtons = this.element.querySelectorAll('.copy-spell-btn');
+            allLearnButtons.forEach((button) => {
+              button.disabled = true;
+              button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.Wizard.AtMaximumSpells'));
+            });
+
+            // Add warning banner at top
+            const spellbookInfo = this.element.querySelector('.spellbook-info');
+            if (spellbookInfo && !spellbookInfo.querySelector('.warning')) {
+              const warning = document.createElement('p');
+              warning.className = 'warning';
+              warning.textContent = game.i18n.localize('SPELLBOOK.Wizard.AtMaximumSpells');
+              spellbookInfo.prepend(warning);
+            }
+          }
+
+          // Set flag to indicate spells tab needs updating if we switch to it
+          this._spellsTabNeedsReload = true;
 
           // Re-render is still needed to update preparation tab and counters
           this.render(false);

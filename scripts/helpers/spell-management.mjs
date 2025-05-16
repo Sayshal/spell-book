@@ -18,7 +18,7 @@ export async function findCompendiumSpellLists() {
   for (const pack of journalPacks) {
     try {
       // Skip custom spell lists pack - we'll process it separately
-      if (pack.metadata.id === `${MODULE.ID}.custom-spell-lists`) {
+      if (pack.metadata.id === MODULE.PACK) {
         continue;
       }
 
@@ -56,7 +56,7 @@ export async function findCompendiumSpellLists() {
 
   // Now add only truly new custom spell lists from our module's pack
   try {
-    const customPack = game.packs.get(`${MODULE.ID}.custom-spell-lists`);
+    const customPack = game.packs.get(MODULE.PACK);
     if (customPack) {
       const index = await customPack.getIndex();
       const entries = Array.from(index.values());
@@ -211,7 +211,7 @@ export async function duplicateSpellList(originalSpellList) {
     log(3, `Duplicating spell list: ${originalSpellList.name}`);
 
     // Get the custom spell list pack
-    const customPack = game.packs.get(`${MODULE.ID}.custom-spell-lists`);
+    const customPack = game.packs.get(MODULE.PACK);
     if (!customPack) {
       throw new Error('Custom spell lists pack not found');
     }
@@ -274,7 +274,7 @@ export async function duplicateSpellList(originalSpellList) {
  */
 export async function findDuplicateSpellList(originalUuid) {
   try {
-    const customPack = game.packs.get(`${MODULE.ID}.custom-spell-lists`);
+    const customPack = game.packs.get(MODULE.PACK);
     if (!customPack) return null;
 
     // Get all journals
@@ -516,7 +516,7 @@ export async function createNewSpellList(name, identifier, source) {
 
   // Create in custom pack
   const journal = await JournalEntry.create(journalData, {
-    pack: `${MODULE.ID}.custom-spell-lists`
+    pack: MODULE.PACK
   });
 
   return journal.pages.contents[0];

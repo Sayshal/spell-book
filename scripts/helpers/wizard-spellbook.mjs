@@ -248,23 +248,50 @@ export class WizardSpellbookManager {
 
   /**
    * Find the actor's spellbook journal
-   * @returns {JournalEntry|null} The actor's spellbook journal or null if not found
+   * @returns {Promise<JournalEntry|null>} The actor's spellbook journal or null if not found
    */
-  findSpellbookJournal() {
-    try {
-      const customPack = game.packs.get(`${MODULE.ID}.custom-spell-lists`);
-      if (!customPack) return null;
+  async findSpellbookJournal() {
+    log(1, `Starting findSpellbookJournal() for actor: ${this.actor.name} (${this.actor.id})`);
 
-      // Directly iterate through the compendium entries
-      for (const entry of customPack) {
+    try {
+      log(1, `Looking for compendium pack: ${MODULE.PACK}`);
+      const customPack = game.packs.get(MODULE.PACK);
+
+      if (!customPack) {
+        log(1, `Compendium pack not found: ${MODULE.PACK}`);
+        return null;
+      }
+
+      log(1, `Found compendium pack: ${customPack.metadata.label}`);
+
+      // Get the index with flags included
+      log(1, `Retrieving index with flags...`);
+      const index = await customPack.getIndex({
+        fields: ['flags']
+      });
+
+      log(1, `Got index with ${index.size} entries`);
+
+      // Search through the index for matching actorId
+      for (const entry of index) {
+        log(1, `Checking entry: ${entry.name} (${entry._id})`);
+
+        // Check if this entry has our module flags and matching actorId
         if (entry.flags?.[MODULE.ID]?.actorId === this.actor.id) {
-          return entry;
+          log(1, `Found matching entry in index for actor ${this.actor.id}`);
+
+          // Retrieve the full document
+          const document = await customPack.getDocument(entry._id);
+          log(1, `Retrieved full document: ${document.name}`);
+          return document;
         }
       }
 
+      log(1, `No matching spellbook found for actor ${this.actor.id}`);
       return null;
     } catch (error) {
       log(1, `Error finding spellbook journal: ${error.message}`);
+      log(1, `Error stack: ${error.stack}`);
       return null;
     }
   }
@@ -275,7 +302,7 @@ export class WizardSpellbookManager {
    */
   async createSpellbookJournal() {
     try {
-      const customPack = game.packs.get(`${MODULE.ID}.custom-spell-lists`);
+      const customPack = game.packs.get(MODULE.PACK);
       if (!customPack) {
         throw new Error('Custom spell lists pack not found');
       }
@@ -339,7 +366,7 @@ export class WizardSpellbookManager {
 
       try {
         // Check if the actor already has a spellbook journal
-        const existingJournal = this.findSpellbookJournal();
+        const existingJournal = await this.findSpellbookJournal();
         if (existingJournal) {
           log(3, `Found existing spellbook journal for ${this.actor.name}`);
           return existingJournal;
@@ -364,7 +391,7 @@ export class WizardSpellbookManager {
    */
   getSpellbooksFolder() {
     try {
-      const customPack = game.packs.get(`${MODULE.ID}.custom-spell-lists`);
+      const customPack = game.packs.get(MODULE.PACK);
       if (!customPack) {
         log(2, 'Custom spell lists pack not found');
         return null;

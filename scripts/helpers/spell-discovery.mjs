@@ -241,7 +241,7 @@ async function findSpellListByIdentifier(identifier, customMappings) {
  */
 async function findCustomSpellListByIdentifier(identifier) {
   try {
-    const customPack = game.packs.get(`${MODULE.ID}.custom-spell-lists`);
+    const customPack = game.packs.get(MODULE.PACK);
     if (!customPack) return null;
 
     log(3, `Checking custom spell lists pack for identifier: ${identifier}`);

@@ -9,6 +9,7 @@
 export const MODULE = {
   ID: 'spell-book',
   NAME: 'Spell Book',
+  PACK: 'spell-book.custom-spell-lists',
   LOG_LEVEL: 0
 };
 
