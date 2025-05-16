@@ -125,8 +125,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     // Flag to ensure we only initialize the wizard spellbook once
     this._wizardInitialized = false;
 
-    // Check if actor is a wizard by class name or has force wizard mode enabled
-    const wizardClass = actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard');
+    const localizedWizardName = game.i18n.localize('SPELLBOOK.Classes.Wizard').toLowerCase();
+    const wizardClass = actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === localizedWizardName);
     const forceWizardMode = actor.getFlag(MODULE.ID, FLAGS.FORCE_WIZARD_MODE);
 
     if (wizardClass || forceWizardMode) {

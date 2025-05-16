@@ -229,5 +229,6 @@
   "SPELLMANAGER.UI.ApplicationActions": "Spell Manager Actions",
   "SPELLMANAGER.UI.FilteredSpells": "Filtered Spells",
   "SPELLMANAGER.UI.ListActions": "List Actions",
-  "SPELLMANAGER.UI.SelectedList": "Selected Spell List"
+  "SPELLMANAGER.UI.SelectedList": "Selected Spell List",
+  "SPELLBOOK.Classes.Wizard": "Wizard"
 }

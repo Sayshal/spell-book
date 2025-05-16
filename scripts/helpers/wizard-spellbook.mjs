@@ -32,8 +32,8 @@ export class WizardSpellbookManager {
    * @private
    */
   _findWizardClass() {
-    // First check normal wizard class
-    const wizardClass = this.actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard');
+    const localizedWizardName = game.i18n.localize('SPELLBOOK.Classes.Wizard').toLowerCase();
+    const wizardClass = actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === localizedWizardName);
     if (wizardClass) return wizardClass;
 
     // If force wizard mode is enabled, use any spellcasting class
