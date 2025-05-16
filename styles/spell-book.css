@@ -77,17 +77,27 @@
   overflow: visible;
   box-shadow: none;
 
+  /* Window content - base styles */
   .window-content {
     display: flex;
     position: relative;
     flex-direction: column;
     min-height: 0;
     padding: 0;
-    overflow: visible;
-    transition: var(--spell-book-transition-slow); /* Added for absolute positioning of parts */
+    overflow: visible !important; /* Important to allow tabs visibility */
+    transition: var(--spell-book-transition-slow);
   }
 
-  /* New: Basic styles for all direct parts */
+  /* New content wrapper to control overflow */
+  .content-wrapper {
+    inset: 0;
+    display: flex;
+    position: absolute;
+    flex-direction: column;
+    overflow: hidden; /* Hide sidebar when it slides out */
+  }
+
+  /* Basic styles for all direct parts */
   .window-content > * {
     transition: var(--spell-book-transition-slow);
   }
@@ -105,6 +115,13 @@
     position: absolute;
     top: 20px;
     left: 100%;
+    transform: translateZ(0); /* Create stacking context */
+  }
+
+  /* Ensure sidebar controls remain accessible */
+  .sidebar-controls {
+    z-index: calc(var(--spell-book-z-index-sidebar) + 1);
+    transform: translateZ(0); /* Create stacking context */
   }
 
   /* Position footer */
@@ -875,6 +892,7 @@
 }
 
 .window-content > .tabs.tabs-right > .item {
+  transform-style: preserve-3d;
   display: flex;
   position: relative;
   flex: none;
@@ -888,14 +906,16 @@
   color: var(--dnd5e-color-gold);
   cursor: pointer;
   background: var(--dnd5e-color-black);
+  box-shadow: var(--spell-book-shadow-normal);
   transition: all 250ms ease;
+  transform: translateZ(-1px);
 }
 
 .window-content > .tabs.tabs-right > .item.active,
 .window-content > .tabs.tabs-right > .item:hover {
-  border-color: var(--dnd5e-color-gold);
+  border: 0;
   text-shadow: none;
-  box-shadow: 0 0 6px var(--dnd5e-color-gold);
+  box-shadow: none;
 }
 
 .window-content > .tabs.tabs-right > .item i,

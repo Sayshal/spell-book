@@ -305,6 +305,30 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   async _onRender(context, options) {
     super._onRender?.(context, options);
 
+    if (!this.element.querySelector('.content-wrapper')) {
+      // Select all direct children except the tabs
+      const tabsNav = this.element.querySelector('.window-content > nav.tabs.tabs-right');
+
+      // Create wrapper and move elements inside
+      const wrapper = document.createElement('div');
+      wrapper.className = 'content-wrapper';
+
+      // Find elements to wrap
+      const elementsToWrap = [this.element.querySelector('.sidebar'), this.element.querySelector('.spell-book-container'), this.element.querySelector('.window-content > footer')].filter((el) => el); // Filter out any null elements
+
+      // Insert wrapper before the first element to move
+      if (elementsToWrap.length && elementsToWrap[0].parentNode) {
+        elementsToWrap[0].parentNode.insertBefore(wrapper, elementsToWrap[0]);
+
+        // Move elements into wrapper
+        elementsToWrap.forEach((el) => wrapper.appendChild(el));
+
+        // Ensure tabs stay outside the wrapper
+        if (tabsNav && tabsNav.parentNode === wrapper) {
+          this.element.querySelector('.window-content').appendChild(tabsNav);
+        }
+      }
+    }
     try {
       // Set sidebar state based on user preference
       this._setSidebarState();
