@@ -729,7 +729,8 @@
 /*  Footer Components                        */
 /* ----------------------------------------- */
 .spell-book {
-  .spell-prep-tracking {
+  .spell-prep-tracking,
+  .spell-book-tracking {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -785,7 +786,8 @@
       display: none;
     }
 
-    .spell-prep-tracking {
+    .spell-prep-tracking,
+    .spell-book-tracking {
       margin-bottom: 0.25rem;
       font-size: var(--spell-book-font-xl);
     }
@@ -1168,7 +1170,8 @@
       color: inherit;
     }
 
-    .spell-prep-tracking {
+    .spell-prep-tracking,
+    .spell-book-tracking {
       color: inherit;
     }
 

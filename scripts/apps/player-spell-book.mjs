@@ -222,6 +222,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         // Add wizard-specific data if applicable
         if (this.wizardManager && this.wizardManager.isWizard) {
           processedSpell.inWizardSpellbook = this.wizardSpellbookCache?.includes(spell.compendiumUuid) || false;
+
+          if (this._tabData) {
+            context.wizardSpellbookCount = this._tabData.wizardtab?.wizardSpellbookCount || 0;
+            context.wizardMaxSpellbookCount = this._tabData.wizardtab?.wizardMaxSpellbookCount || 0;
+            context.wizardIsAtMax = this._tabData.wizardtab?.wizardIsAtMax || false;
+          }
         }
 
         return processedSpell;
@@ -583,6 +589,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       // Remove level 0 (cantrips) entirely from the wizard spellbook tab
       const filteredSpellbookLevels = spellbookLevels.filter((levelGroup) => levelGroup.level !== '0' && levelGroup.level !== 0);
 
+      // Calculate maximum allowed spells and track if at maximum
+      const maxSpellsAllowed = this.wizardManager.getMaxSpellsAllowed();
+      const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
+
+      // Add to the wizard tab data
+      tabData.wizardtab.wizardMaxSpellbookCount = maxSpellsAllowed;
+      tabData.wizardtab.wizardIsAtMax = isAtMaxSpells;
+
       log(3, `Removed cantrip level from wizard tab, now has ${filteredSpellbookLevels.length} spell levels`);
 
       // Sort spells within each level
@@ -611,6 +625,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           spell.canAddToSpellbook = !spell.inWizardSpellbook && spell.system.level > 0;
           spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
           spell.formattedDetails = formattingUtils.formatSpellDetails(spell);
+          spell.isAtMaxSpells = isAtMaxSpells;
         }
       }
 
@@ -2077,8 +2092,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  // In player-spell-book.mjs, modify the static learnSpell method
   static async learnSpell(event) {
-    log(1, 'Click');
     try {
       const spellUuid = event.target.dataset.uuid;
       if (!spellUuid) return;
@@ -2087,6 +2102,15 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const spell = await fromUuid(spellUuid);
       if (!spell) {
         ui.notifications.error(`Could not find spell with UUID: ${spellUuid}`);
+        return;
+      }
+
+      // Check if at maximum spells
+      const currentCount = this.wizardSpellbookCache?.length || 0;
+      const maxAllowed = this.wizardManager.getMaxSpellsAllowed();
+
+      if (currentCount >= maxAllowed) {
+        ui.notifications.warn(game.i18n.localize('SPELLBOOK.Wizard.AtMaximumSpells'));
         return;
       }
 

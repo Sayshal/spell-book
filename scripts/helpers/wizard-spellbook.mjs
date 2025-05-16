@@ -1,4 +1,4 @@
-import { CANTRIP_RULES, FLAGS, MODULE, WIZARD_SPELL_SOURCE } from '../constants.mjs';
+import { CANTRIP_RULES, FLAGS, MODULE, WIZARD_DEFAULTS, WIZARD_SPELL_SOURCE } from '../constants.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -384,5 +384,26 @@ export class WizardSpellbookManager {
       log(1, 'Error getting Actor Spellbooks folder:', error);
       return null;
     }
+  }
+
+  /**
+   * Calculate the maximum number of spells allowed in the wizard's spellbook
+   * @returns {number} The maximum number of spells allowed
+   */
+  getMaxSpellsAllowed() {
+    if (!this.isWizard) return 0;
+
+    // Get the wizard's level
+    const wizardLevel = this.classItem.system.levels || 1;
+
+    // Get configured values or use defaults from constants
+    const startingSpells = WIZARD_DEFAULTS.STARTING_SPELLS;
+    const spellsPerLevel = WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
+
+    // Calculate total: Starting spells + (level-1) * spellsPerLevel
+    const maxSpells = startingSpells + Math.max(0, wizardLevel - 1) * spellsPerLevel;
+
+    log(3, `Maximum wizard spells: ${maxSpells} (level ${wizardLevel})`);
+    return maxSpells;
   }
 }

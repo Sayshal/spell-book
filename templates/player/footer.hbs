@@ -1,11 +1,25 @@
 <footer role="contentinfo">
-	<div class="spell-prep-tracking {{#if isAtMax}}at-max{{/if}}" aria-live="polite">
-		<span class="current-count"
-			aria-label="{{localize 'SPELLBOOK.Footer.PreparedCount'}}">{{spellPreparation.current}}</span>/
-		<span class="max-count"
-			aria-label="{{localize 'SPELLBOOK.Footer.MaximumCount'}}">{{spellPreparation.maximum}}</span>
-		{{localize 'SPELLBOOK.Footer.PreparedLabel'}}
-	</div>
+	{{#if (eq activeTab 'wizardtab')}}
+	{{log 'wizardTab'}}
+		<!-- Wizard Spellbook tab - show learned spells count -->
+		<div class="spell-book-tracking {{#if wizardIsAtMax}}at-max{{/if}}" aria-live="polite">
+			<span class="current-count"
+				aria-label="{{localize 'SPELLBOOK.Footer.LearnedCount'}}">{{wizardSpellbookCount}}</span>/
+			<span class="max-count"
+				aria-label="{{localize 'SPELLBOOK.Footer.MaximumAllowed'}}">{{wizardMaxSpellbookCount}}</span>
+			{{localize 'SPELLBOOK.Footer.LearnedLabel'}}
+		</div>
+	{{else}}
+	{{log 'Not wizardTab'}}
+		<!-- Standard spells tab - show prepared spells count -->
+		<div class="spell-prep-tracking {{#if isAtMax}}at-max{{/if}}" aria-live="polite">
+			<span class="current-count"
+				aria-label="{{localize 'SPELLBOOK.Footer.PreparedCount'}}">{{spellPreparation.current}}</span>/
+			<span class="max-count"
+				aria-label="{{localize 'SPELLBOOK.Footer.MaximumCount'}}">{{spellPreparation.maximum}}</span>
+			{{localize 'SPELLBOOK.Footer.PreparedLabel'}}
+		</div>
+	{{/if}}
 
 	<div class="footer-buttons" role="toolbar" aria-label="{{localize 'SPELLBOOK.Footer.Actions'}}">
 		{{#each buttons as |button|}}

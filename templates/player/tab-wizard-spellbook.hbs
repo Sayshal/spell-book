@@ -8,7 +8,11 @@
 			{{#if isWizard}}
 				<div class="spellbook-info">
 					<h3>{{localize 'SPELLBOOK.Wizard.Title'}}</h3>
-					<p>{{localize 'SPELLBOOK.Wizard.SpellCount' count=wizardSpellbookCount}}</p>
+
+					{{#if wizardIsAtMax}}
+						<p class="warning">{{localize 'SPELLBOOK.Wizard.AtMaximumSpells'}}</p>
+					{{/if}}
+
 					<p>{{localize 'SPELLBOOK.Wizard.PrepareInfo'}}</p>
 
 					<div class="ritual-casting">
@@ -51,7 +55,8 @@
 										{{else}}
 											{{#if (gt system.level 0)}}
 												<button class="copy-spell-btn" data-action="learnSpell" data-uuid="{{compendiumUuid}}"
-													type="button">
+													{{#if isAtMaxSpells}} data-tooltip="{{localize 'SPELLBOOK.Wizard.AtMaximumSpells'}}" disabled
+													{{/if}} type="button">
 													<i class="fas fa-book"></i> {{localize 'SPELLBOOK.Wizard.LearnSpell'}}
 												</button>
 											{{/if}}
