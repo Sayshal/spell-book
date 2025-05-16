@@ -676,7 +676,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       const spellDocs = await actorSpellUtils.fetchSpellDocuments(new Set(spellUuids), 9);
 
       // Organize spells by level
-      const spellLevels = await actorSpellUtils.organizeSpellsByLevel(spellDocs, null);
+      const spellLevels = actorSpellUtils.organizeSpellsByLevel(spellDocs, null);
 
       // Create icons for each spell
       for (const level of spellLevels) {
@@ -907,7 +907,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  async removeSpell(spellUuid) {
+  removeSpell(spellUuid) {
     if (!this.selectedSpellList || !this.isEditing) return;
 
     try {
@@ -934,7 +934,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       });
 
       // Re-organize spells by level
-      this.selectedSpellList.spellsByLevel = await actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
+      this.selectedSpellList.spellsByLevel = actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
 
       // For all spells in spellsByLevel, ensure they have icons
       for (const level of this.selectedSpellList.spellsByLevel) {
@@ -955,7 +955,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  async addSpell(spellUuid) {
+  addSpell(spellUuid) {
     if (!this.selectedSpellList || !this.isEditing) return;
 
     try {
@@ -984,7 +984,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         this.selectedSpellList.spells.push(spellCopy);
 
         // Re-organize spells by level preserving icons
-        this.selectedSpellList.spellsByLevel = await actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
+        this.selectedSpellList.spellsByLevel = actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
 
         // For all spells in spellsByLevel, ensure they have icons
         for (const level of this.selectedSpellList.spellsByLevel) {
@@ -1221,7 +1221,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  static async handleRemoveSpell(event, _form) {
+  static handleRemoveSpell(event, _form) {
     try {
       const element = event.target.closest('[data-uuid]');
       if (!element) return;
@@ -1236,13 +1236,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         return;
       }
 
-      await instance.removeSpell(uuid);
+      instance.removeSpell(uuid);
     } catch (error) {
       log(1, 'Error handling remove spell:', error);
     }
   }
 
-  static async handleAddSpell(event, _form) {
+  static handleAddSpell(event, _form) {
     try {
       const element = event.target.closest('[data-uuid]');
       if (!element) return;
@@ -1257,7 +1257,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         return;
       }
 
-      await instance.addSpell(uuid);
+      instance.addSpell(uuid);
     } catch (error) {
       log(1, 'Error handling add spell:', error);
     }
