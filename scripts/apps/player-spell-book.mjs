@@ -131,6 +131,15 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       log(3, `Initialized wizard manager for ${actor.name}`);
     }
 
+    // Check for long rest flag - persisted between sessions
+    this._isLongRest = actor.getFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING) || false;
+    log(3, `Long rest flag for ${actor.name}: ${this._isLongRest ? 'ACTIVE' : 'NOT SET'}`);
+    log(3, `All actor flags: ${JSON.stringify(actor.flags[MODULE.ID])}`);
+
+    if (this._isLongRest) {
+      log(3, `Long rest cantrip swap mode active for ${actor.name}`);
+    }
+
     // Initialize tab groups
     if (!this.tabGroups['spellbook-tabs']) {
       this.tabGroups['spellbook-tabs'] = 'spellstab';
@@ -1449,15 +1458,29 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   setLongRestContext(isLongRest) {
+    // Convert to boolean and log
+    const wasLongRest = this._isLongRest;
     this._isLongRest = !!isLongRest;
-    log(3, `Long rest context set to: ${this._isLongRest}`);
 
-    if (isLongRest) {
-      // Clear any existing tracking
-      this.actor.unsetFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING);
+    log(3, `Long rest context changed from ${wasLongRest} to ${this._isLongRest}`);
+
+    // Only update if there's an actual change
+    if (wasLongRest !== this._isLongRest) {
+      if (this._isLongRest) {
+        // Set the flag when activating long rest mode
+        log(3, `Setting long rest flag on actor ${this.actor.name}`);
+        this.actor
+          .setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, true)
+          .then(() => {
+            log(3, `Long rest flag successfully set for ${this.actor.name}`);
+          })
+          .catch((err) => {
+            log(1, `Error setting long rest flag: ${err.message}`);
+          });
+      }
+
+      this.render(false); // Re-render with new context
     }
-
-    this.render(false); // Re-render with new context
   }
 
   /* -------------------------------------------- */
@@ -2147,6 +2170,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (this.spellManager.canBeLeveledUp()) {
         await this.spellManager.completeCantripsLevelUp();
         log(3, 'Finalized cantrip level-up selection');
+      }
+
+      // If we were in long rest mode, clear all tracking data
+      if (this._isLongRest) {
+        log(3, 'Clearing long rest cantrip swap flags');
+
+        // Reset all swap tracking data
+        await this.spellManager.resetSwapTracking();
+
+        // Set the long rest tracking flag to FALSE instead of removing it
+        await actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, false);
+        log(3, 'Set wizardLongRestTracking flag to FALSE');
+
+        this._isLongRest = false;
       }
 
       // Clear tracking of newly checked cantrips

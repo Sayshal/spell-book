@@ -1,6 +1,7 @@
 import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
+import { CANTRIP_RULES, FLAGS, MODULE } from '../constants.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
-import { WizardSpellbookManager } from '../helpers/wizard-spellbook.mjs';
+import { SpellManager } from '../helpers/spell-preparation.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -30,35 +31,66 @@ async function handleRestCompleted(actor, result, config) {
     const wizardClass = actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard');
     if (!wizardClass) return;
 
-    log(3, `Long rest completed for wizard ${actor.name}, showing cantrip swap dialog`);
+    log(3, `Long rest completed for wizard ${actor.name}, checking cantrip rules`);
 
-    // Get the wizard's rules version to determine prompt text
-    const wizardManager = new WizardSpellbookManager(actor);
+    // Create spell manager to check rules
+    const spellManager = new SpellManager(actor);
+
+    // Get the rules version
     const rulesVersion = spellManager.getSettings().rules;
 
-    // If using legacy rules, no cantrip swapping allowed
-    if (rulesVersion !== 'modern') {
-      log(3, `Wizard ${actor.name} uses legacy rules, skipping cantrip swap prompt`);
+    // If not using long rest swap rules, skip prompt
+    if (rulesVersion !== CANTRIP_RULES.MODERN_LONG_REST) {
+      log(3, `Wizard ${actor.name} uses ${rulesVersion} rules, skipping cantrip swap prompt`);
+      return;
+    }
+
+    // Reset any previous cantrip swap tracking data
+    await spellManager.resetSwapTracking();
+    log(3, 'Reset swap tracking data before prompting for new swap');
+
+    // Check if the swap prompt is disabled by user preference
+    const isPromptDisabled = game.settings.get(MODULE.ID, SETTINGS.DISABLE_CANTRIP_SWAP_PROMPT);
+
+    // If prompt is disabled, silently set the flag and exit
+    if (isPromptDisabled) {
+      log(3, `Cantrip swap prompt disabled by user preference for ${actor.name}, setting flag silently`);
+      await actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, true);
+
+      // Optionally show a brief notification that swap is available
+      ui.notifications.info(game.i18n.format('SPELLBOOK.Cantrips.SwapAvailableNotification', { name: actor.name }));
       return;
     }
 
     // Show dialog asking if they want to swap cantrips
     const content = `<p>${game.i18n.localize('SPELLBOOK.Wizard.SwapCantripPrompt')}</p>`;
 
-    const confirmed = await Dialog.confirm({
+    const dialogResult = await foundry.applications.api.DialogV2.wait({
       title: game.i18n.localize('SPELLBOOK.Wizard.SwapCantripTitle'),
       content: content,
-      yes: () => true,
-      no: () => false,
-      defaultYes: false
+      buttons: [
+        {
+          icon: 'fas fa-book-spells',
+          label: game.i18n.localize('SPELLBOOK.Wizard.SwapCantripConfirm'),
+          action: 'confirm',
+          className: 'dialog-button'
+        },
+        {
+          icon: 'fas fa-times',
+          label: game.i18n.localize('SPELLBOOK.Wizard.SwapCantripCancel'),
+          action: 'cancel',
+          className: 'dialog-button'
+        }
+      ],
+      default: 'cancel'
     });
 
-    if (confirmed) {
-      // Open spellbook with long rest context
-      const spellBook = new PlayerSpellBook(actor);
+    if (dialogResult === 'confirm') {
+      // Set flag to indicate long rest state for cantrip swapping
+      await actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, true);
 
-      // Set long rest context before rendering
-      spellBook.setLongRestContext(true);
+      // Open spellbook (it will detect the flag)
+      const spellBook = new PlayerSpellBook(actor);
       spellBook.render(true);
     }
   } catch (error) {
@@ -129,9 +161,41 @@ function createSpellBookButton(actor) {
   return button;
 }
 
-function onSpellBookButtonClick(actor, ev) {
+async function onSpellBookButtonClick(actor, ev) {
   ev.preventDefault();
   try {
+    // Check if actor is a wizard with the longRest rule and can swap cantrips
+    const wizardClass = actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard');
+
+    if (wizardClass) {
+      // Create a spell manager to check if this is a wizard using longRest rules
+      const spellManager = new SpellManager(actor);
+      const rulesVersion = spellManager.getSettings().rules;
+
+      // If using long rest rules, check if we need to set the swap flag
+      if (rulesVersion === CANTRIP_RULES.MODERN_LONG_REST) {
+        // Only set the flag if it's not already set
+        const hasLongRestFlag = actor.getFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING);
+
+        // Check if there's existing swap data that might block a new swap
+        const swapData = actor.getFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING)?.longRest;
+        const hasCompletedSwap = swapData && swapData.hasLearned && swapData.hasUnlearned;
+
+        // If there's swap data but it represents a completed swap, clear it
+        if (hasCompletedSwap) {
+          await spellManager.resetSwapTracking();
+          log(3, `Cleared completed swap data for ${actor.name}`);
+        }
+
+        // Set the long rest flag if not already set
+        if (!hasLongRestFlag) {
+          await actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, true);
+          log(3, `Setting long rest flag for ${actor.name} when opening spellbook`);
+        }
+      }
+    }
+
+    // Open the spellbook
     const spellBook = new PlayerSpellBook(actor);
     spellBook.render(true);
   } catch (error) {

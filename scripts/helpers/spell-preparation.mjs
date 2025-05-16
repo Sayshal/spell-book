@@ -1295,4 +1295,30 @@ export class SpellManager {
 
     return this._wizardSpellbookCache.includes(uuid);
   }
+
+  /**
+   * Reset all cantrip swap tracking data
+   * @returns {Promise<void>}
+   */
+  async resetSwapTracking() {
+    log(3, `Resetting all cantrip swap tracking data for ${this.actor.name}`);
+
+    // Get current tracking data
+    const allTracking = this.actor.getFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING) || {};
+
+    // Clear longRest tracking if it exists
+    if (allTracking.longRest) {
+      delete allTracking.longRest;
+      log(3, 'Cleared long rest cantrip swap tracking');
+    }
+
+    // Save updated tracking (or empty object if all was cleared)
+    if (Object.keys(allTracking).length === 0) {
+      await this.actor.unsetFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING);
+      log(3, 'Removed empty cantrip swap tracking flag');
+    } else {
+      await this.actor.setFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING, allTracking);
+      log(3, 'Updated cantrip swap tracking with cleared data');
+    }
+  }
 }

@@ -121,7 +121,6 @@ export function registerSettings() {
       default: CANTRIP_RULES.LEGACY
     });
 
-    log(1, 'SETTINGS ARE BEING REGISTERED!');
     game.settings.register(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR, {
       name: 'SPELLBOOK.Settings.DefaultEnforcementBehavior',
       hint: 'SPELLBOOK.Settings.DefaultEnforcementBehaviorHint',
@@ -134,6 +133,15 @@ export function registerSettings() {
         [ENFORCEMENT_BEHAVIOR.ENFORCED]: 'SPELLBOOK.Cantrips.BehaviorEnforced'
       },
       default: ENFORCEMENT_BEHAVIOR.NOTIFY_GM
+    });
+
+    game.settings.register(MODULE.ID, SETTINGS.DISABLE_CANTRIP_SWAP_PROMPT, {
+      name: 'SPELLBOOK.Settings.DisableCantripSwapPrompt.Name',
+      hint: 'SPELLBOOK.Settings.DisableCantripSwapPrompt.Hint',
+      scope: 'client',
+      config: true,
+      type: Boolean,
+      default: false
     });
 
     log(3, 'Module settings registered');

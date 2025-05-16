@@ -21,18 +21,19 @@ export const MODULE = {
  * @type {Object}
  */
 export const FLAGS = {
-  PREPARED_SPELLS: 'preparedSpells',
-  COLLAPSED_LEVELS: 'collapsedSpellLevels',
-  SIDEBAR_COLLAPSED: 'sidebarCollapsed',
-  GM_COLLAPSED_LEVELS: 'gmCollapsedSpellLevels',
   CANTRIP_RULES: 'cantripRules',
-  ENFORCEMENT_BEHAVIOR: 'enforcementBehavior',
-  PREVIOUS_LEVEL: 'previousLevel',
-  PREVIOUS_CANTRIP_MAX: 'previousCantripMax',
   CANTRIP_SWAP_TRACKING: 'cantripSwapTracking',
-  WIZARD_SPELLBOOK: 'wizardSpellbook',
+  COLLAPSED_LEVELS: 'collapsedSpellLevels',
+  ENFORCEMENT_BEHAVIOR: 'enforcementBehavior',
+  GM_COLLAPSED_LEVELS: 'gmCollapsedSpellLevels',
+  PREPARED_SPELLS: 'preparedSpells',
+  PREVIOUS_CANTRIP_MAX: 'previousCantripMax',
+  PREVIOUS_LEVEL: 'previousLevel',
+  SIDEBAR_COLLAPSED: 'sidebarCollapsed',
+  WIZARD_COPIED_SPELLS: 'wizardCopiedSpells',
   WIZARD_LEARNED_SPELLS: 'wizardLearnedSpells',
-  WIZARD_COPIED_SPELLS: 'wizardCopiedSpells'
+  WIZARD_LONG_REST_TRACKING: 'wizardLongRestTracking',
+  WIZARD_SPELLBOOK: 'wizardSpellbook'
 };
 
 //-----------------------------------------------------------------------------
@@ -45,33 +46,33 @@ export const FLAGS = {
  */
 export const TEMPLATES = {
   PLAYER: {
+    FOOTER: 'modules/spell-book/templates/player/footer.hbs',
     MAIN: 'modules/spell-book/templates/player/spell-book.hbs',
     SIDEBAR: 'modules/spell-book/templates/player/sidebar.hbs',
-    FOOTER: 'modules/spell-book/templates/player/footer.hbs',
     TAB_NAV: 'modules/spell-book/templates/player/tab-navigation.hbs',
-    TAB_WIZARD_SPELLBOOK: 'modules/spell-book/templates/player/tab-wizard-spellbook.hbs',
-    TAB_SPELLS: 'modules/spell-book/templates/player/tab-spells.hbs'
+    TAB_SPELLS: 'modules/spell-book/templates/player/tab-spells.hbs',
+    TAB_WIZARD_SPELLBOOK: 'modules/spell-book/templates/player/tab-wizard-spellbook.hbs'
   },
 
   GM: {
-    MAIN: 'modules/spell-book/templates/gm/manager.hbs',
-    SPELL_LISTS: 'modules/spell-book/templates/gm/spell-lists.hbs',
-    LIST_CONTENT: 'modules/spell-book/templates/gm/list-content.hbs',
     AVAILABLE_SPELLS: 'modules/spell-book/templates/gm/available-spells.hbs',
-    FOOTER: 'modules/spell-book/templates/gm/footer.hbs'
+    FOOTER: 'modules/spell-book/templates/gm/footer.hbs',
+    LIST_CONTENT: 'modules/spell-book/templates/gm/list-content.hbs',
+    MAIN: 'modules/spell-book/templates/gm/manager.hbs',
+    SPELL_LISTS: 'modules/spell-book/templates/gm/spell-lists.hbs'
   },
 
   COMPONENTS: {
-    LOADING: 'modules/spell-book/templates/components/loading-spinner.hbs',
-    ERROR: 'modules/spell-book/templates/components/error-message.hbs',
     EMPTY: 'modules/spell-book/templates/components/empty-state.hbs',
-    SPELL_LEVEL: 'modules/spell-book/templates/components/spell-level.hbs',
-    SPELL_ITEM: 'modules/spell-book/templates/components/spell-item.hbs'
+    ERROR: 'modules/spell-book/templates/components/error-message.hbs',
+    LOADING: 'modules/spell-book/templates/components/loading-spinner.hbs',
+    SPELL_ITEM: 'modules/spell-book/templates/components/spell-item.hbs',
+    SPELL_LEVEL: 'modules/spell-book/templates/components/spell-level.hbs'
   },
 
   DIALOGS: {
-    FILTER_CONFIG: 'modules/spell-book/templates/dialogs/filter-configuration.hbs',
     CREATE_SPELL_LIST: 'modules/spell-book/templates/dialogs/create-spell-list.hbs',
+    FILTER_CONFIG: 'modules/spell-book/templates/dialogs/filter-configuration.hbs',
     MANAGER_DOCUMENTATION: 'modules/spell-book/templates/dialogs/spell-list-manager-documentation.hbs',
     SPELLBOOK_SETTINGS: 'modules/spell-book/templates/dialogs/spellbook-settings.hbs'
   }
@@ -86,14 +87,15 @@ export const TEMPLATES = {
  * @type {Object}
  */
 export const SETTINGS = {
-  LOGGING_LEVEL: 'loggingLevel',
-  ENABLE_REST_PROMPT: 'enableRestPrompt',
-  DISTANCE_UNIT: 'distanceUnit',
-  FILTER_CONFIGURATION: 'filterConfiguration',
   CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',
-  OPEN_SPELL_MANAGER: 'openSpellListManager',
   DEFAULT_CANTRIP_RULES: 'defaultCantripRules',
-  DEFAULT_ENFORCEMENT_BEHAVIOR: 'defaultEnforcementBehavior'
+  DEFAULT_ENFORCEMENT_BEHAVIOR: 'defaultEnforcementBehavior',
+  DISABLE_CANTRIP_SWAP_PROMPT: 'disableCantripSwapPrompt',
+  DISTANCE_UNIT: 'distanceUnit',
+  ENABLE_REST_PROMPT: 'enableRestPrompt',
+  FILTER_CONFIGURATION: 'filterConfiguration',
+  LOGGING_LEVEL: 'loggingLevel',
+  OPEN_SPELL_MANAGER: 'openSpellListManager'
 };
 
 //-----------------------------------------------------------------------------
@@ -105,10 +107,10 @@ export const SETTINGS = {
  * @type {Object}
  */
 export const FILTER_TYPES = {
-  SEARCH: 'search',
-  DROPDOWN: 'dropdown',
   CHECKBOX: 'checkbox',
-  RANGE: 'range'
+  DROPDOWN: 'dropdown',
+  RANGE: 'range',
+  SEARCH: 'search'
 };
 
 /**
@@ -118,8 +120,8 @@ export const FILTER_TYPES = {
 export const SORT_BY = {
   LEVEL: 'level',
   NAME: 'name',
-  SCHOOL: 'school',
-  PREPARED: 'prepared'
+  PREPARED: 'prepared',
+  SCHOOL: 'school'
 };
 
 /**
