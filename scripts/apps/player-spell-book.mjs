@@ -244,6 +244,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         icon: 'fa-solid fa-book-spells'
       };
     }
+    context.hasMultipleTabs = false;
+    if (context.tabs) {
+      const tabCount = Object.keys(context.tabs).length;
+      context.hasMultipleTabs = tabCount > 1;
+    }
     context.filters = this._prepareFilters();
     return context;
   }

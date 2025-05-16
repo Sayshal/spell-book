@@ -7,27 +7,10 @@
 			{{> "modules/spell-book/templates/components/error-message.hbs" message=errorMessage}}
 		{{else}}
 			{{#if isWizard}}
-				<div class="spellbook-info">
-					<h3>{{localize 'SPELLBOOK.Wizard.Title'}}</h3>
-
-					{{#if wizardHasFreeSpells}}
-						<p class="info">{{localize 'SPELLBOOK.Wizard.FreeSpellsRemaining' count=wizardRemainingFreeSpells}}</p>
-					{{else}}
-						<p class="info">{{localize 'SPELLBOOK.Wizard.NoFreeSpellsRemaining'}}</p>
-					{{/if}}
-
-					<p>{{localize 'SPELLBOOK.Wizard.PrepareInfo'}}</p>
-
-					<div class="ritual-casting">
-						<h3>{{localize 'SPELLBOOK.Wizard.RitualTitle'}}</h3>
-						<p>{{localize 'SPELLBOOK.Wizard.RitualInfo'}}</p>
-					</div>
-
-					<div class="spellbook-rules">
-						<h3>{{localize 'SPELLBOOK.Wizard.NewSpellsTitle'}}</h3>
-						<p>{{localize 'SPELLBOOK.Wizard.NewSpellsInfo1'}}</p>
-						<p>{{localize 'SPELLBOOK.Wizard.NewSpellsInfo2'}}</p>
-					</div>
+				<div class="spellbook-rules">
+					<h3>{{localize 'SPELLBOOK.Wizard.NewSpellsTitle'}}</h3>
+					<p>{{localize 'SPELLBOOK.Wizard.NewSpellsInfo1'}}</p>
+					<p>{{localize 'SPELLBOOK.Wizard.NewSpellsInfo2'}}</p>
 				</div>
 
 				{{#if spellLevels.length}}

@@ -5,12 +5,6 @@
 		{{else if hasError}}
 			{{> "modules/spell-book/templates/components/error-message.hbs" message=errorMessage}}
 		{{else}}
-			{{#if isWizard}}
-				<div class="wizard-spellbook-info">
-					<p>{{localize 'SPELLBOOK.Wizard.PrepareInfoTab'}}</p>
-				</div>
-			{{/if}}
-
 			{{#if spellLevels.length}}
 				{{#each spellLevels as |levelData|}}
 					{{#> "modules/spell-book/templates/components/spell-level.hbs" level=levelData.level levelName=levelData.levelName spells=levelData.spells}}

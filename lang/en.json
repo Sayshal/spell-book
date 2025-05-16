@@ -151,7 +151,6 @@
   "SPELLBOOK.Wizard.NoFreeSpellsRemaining": "You have used all your free spells. Additional spells cost gold to copy.",
   "SPELLBOOK.Wizard.OneSwapLimit": "You can only swap one cantrip during a long rest.",
   "SPELLBOOK.Wizard.PrepareInfo": "You prepare the list of wizard spells that are available for you to cast. Choose a number of wizard spells from your spellbook equal to your Intelligence modifier + your wizard level (minimum of one spell).",
-  "SPELLBOOK.Wizard.PrepareInfoTab": "You prepare the list of wizard spells that are available for you to cast. To do so, choose a number of wizard spells from your spellbook equal to your Intelligence modifier + your wizard level (minimum of one spell).",
   "SPELLBOOK.Wizard.RitualCastingHint": "Enable casting ritual spells directly from your spellbook without preparing them",
   "SPELLBOOK.Wizard.RitualCastingLabel": "Ritual Casting From Spellbook",
   "SPELLBOOK.Wizard.RitualInfo": "You can cast a wizard spell as a ritual if that spell has the ritual tag and you have the spell in your spellbook. You don't need to have the spell prepared.",
