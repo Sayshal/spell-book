@@ -29,92 +29,124 @@ export async function saveActorPreparedSpells(actor, spellData) {
     await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS, preparedUuids);
     log(3, `Saved ${preparedUuids.length} prepared spells to actor flags`);
 
-    // Collect all spells to remove in one batch
+    // Collect all spells to remove, update, or create
     const spellIdsToRemove = [];
     const spellsToUpdate = [];
     const spellsToCreate = [];
 
-    // First, handle all unprepared spells that were prepared
+    // Get wizard manager to check ritual settings
+    const isWizard = actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard') || actor.getFlag(MODULE.ID, FLAGS.FORCE_WIZARD_MODE);
+    const wizardManager = isWizard ? new WizardSpellbookManager(actor) : null;
+    const ritualCastingEnabled =
+      wizardManager ?
+        actor.getFlag(MODULE.ID, 'wizardRitualCasting') !== false // Default to true if not set
+      : false;
+
+    // Process all spells by their status
     for (const [uuid, data] of Object.entries(spellData)) {
       // Skip always prepared spells
       if (data.isAlwaysPrepared) continue;
 
-      // Skip if still prepared
-      if (data.isPrepared) continue;
-
-      // Only process if it was previously prepared
-      if (!data.wasPrepared) continue;
+      const isRitual = data.isRitual || false;
 
       // Find existing spell on actor
       const existingSpell = actor.items.find((i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid));
 
-      if (!existingSpell) continue;
+      // CASE 1: UNPREPARED SPELLS
+      if (!data.isPrepared) {
+        // If it was previously prepared, handle unpreparing
+        if (data.wasPrepared && existingSpell) {
+          // For ritual spells on a wizard with ritual casting, convert to ritual mode
+          if (isRitual && isWizard && ritualCastingEnabled) {
+            spellsToUpdate.push({
+              '_id': existingSpell.id,
+              'system.preparation.mode': 'ritual',
+              'system.preparation.prepared': false
+            });
+            log(3, `Converting unprepared ritual spell ${existingSpell.name} to ritual mode`);
+          }
+          // For non-ritual spells (or when ritual casting disabled), remove
+          else if (existingSpell.system.preparation?.mode === 'prepared' && !existingSpell.system.preparation?.alwaysPrepared) {
+            spellIdsToRemove.push(existingSpell.id);
 
-      // Add to removal list if it's a prepared spell
-      if (existingSpell.system.preparation?.mode === 'prepared' && !existingSpell.system.preparation?.alwaysPrepared) {
-        spellIdsToRemove.push(existingSpell.id);
-
-        // Track removed cantrip
-        if (existingSpell.system.level === 0) {
-          cantripChanges.removed.push({
-            name: existingSpell.name,
-            uuid: uuid
-          });
-          cantripChanges.hasChanges = true;
-          log(3, `Tracking removed cantrip: ${existingSpell.name}`);
-        }
-      }
-    }
-
-    // Now handle all prepared spells
-    for (const [uuid, data] of Object.entries(spellData)) {
-      // Skip always prepared spells
-      if (data.isAlwaysPrepared) continue;
-
-      // Skip if not prepared
-      if (!data.isPrepared) continue;
-
-      // Find existing spell on actor
-      const existingSpell = actor.items.find((i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid));
-
-      if (existingSpell) {
-        // Update if needed
-        if (!existingSpell.system.preparation?.prepared) {
-          spellsToUpdate.push({
-            '_id': existingSpell.id,
-            'system.preparation.prepared': true
-          });
-        }
-      } else {
-        // Queue for creation
-        try {
-          const sourceSpell = await fromUuid(uuid);
-          if (sourceSpell) {
-            const newSpellData = sourceSpell.toObject();
-            if (!newSpellData.system.preparation) {
-              newSpellData.system.preparation = {};
-            }
-
-            newSpellData.system.preparation.mode = 'prepared';
-            newSpellData.system.preparation.prepared = true;
-            newSpellData.flags = newSpellData.flags || {};
-            newSpellData.flags.core = newSpellData.flags.core || {};
-            newSpellData.flags.core.sourceId = uuid;
-
-            spellsToCreate.push(newSpellData);
-
-            // Track new cantrip
-            if (sourceSpell.system.level === 0) {
-              cantripChanges.added.push({
-                name: sourceSpell.name,
+            // Track removed cantrip
+            if (existingSpell.system.level === 0) {
+              cantripChanges.removed.push({
+                name: existingSpell.name,
                 uuid: uuid
               });
               cantripChanges.hasChanges = true;
-              log(3, `Tracking added cantrip: ${sourceSpell.name}`);
+              log(3, `Tracking removed cantrip: ${existingSpell.name}`);
             }
           }
-        } catch (error) {
-          log(1, `Error fetching spell ${uuid}:`, error);
+        }
+        // If it was not previously prepared but is a ritual spell, add in ritual mode
+        else if (isRitual && isWizard && ritualCastingEnabled && !existingSpell) {
+          try {
+            const sourceSpell = await fromUuid(uuid);
+            if (sourceSpell) {
+              const newSpellData = sourceSpell.toObject();
+              if (!newSpellData.system.preparation) {
+                newSpellData.system.preparation = {};
+              }
+
+              newSpellData.system.preparation.mode = 'ritual';
+              newSpellData.system.preparation.prepared = false;
+              newSpellData.flags = newSpellData.flags || {};
+              newSpellData.flags.core = newSpellData.flags.core || {};
+              newSpellData.flags.core.sourceId = uuid;
+
+              spellsToCreate.push(newSpellData);
+              log(3, `Adding new ritual spell ${sourceSpell.name} in ritual mode`);
+            }
+          } catch (error) {
+            log(1, `Error fetching ritual spell ${uuid}:`, error);
+          }
+        }
+      }
+      // CASE 2: PREPARED SPELLS
+      else {
+        if (existingSpell) {
+          // If it's already on the actor but not prepared, update it
+          if (!existingSpell.system.preparation?.prepared || existingSpell.system.preparation?.mode !== 'prepared') {
+            spellsToUpdate.push({
+              '_id': existingSpell.id,
+              'system.preparation.mode': 'prepared',
+              'system.preparation.prepared': true
+            });
+            log(3, `Updating spell ${existingSpell.name} to prepared mode`);
+          }
+        } else {
+          // Create new prepared spell
+          try {
+            const sourceSpell = await fromUuid(uuid);
+            if (sourceSpell) {
+              const newSpellData = sourceSpell.toObject();
+              if (!newSpellData.system.preparation) {
+                newSpellData.system.preparation = {};
+              }
+
+              newSpellData.system.preparation.mode = 'prepared';
+              newSpellData.system.preparation.prepared = true;
+              newSpellData.flags = newSpellData.flags || {};
+              newSpellData.flags.core = newSpellData.flags.core || {};
+              newSpellData.flags.core.sourceId = uuid;
+
+              spellsToCreate.push(newSpellData);
+
+              // Track new cantrip
+              if (sourceSpell.system.level === 0) {
+                cantripChanges.added.push({
+                  name: sourceSpell.name,
+                  uuid: uuid
+                });
+                cantripChanges.hasChanges = true;
+                log(3, `Tracking added cantrip: ${sourceSpell.name}`);
+              }
+            }
+          } catch (error) {
+            log(1, `Error fetching spell ${uuid}:`, error);
+          }
         }
       }
     }

@@ -2273,35 +2273,27 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const name = checkbox.dataset.name;
         const wasPrepared = checkbox.dataset.wasPrepared === 'true';
         const isPrepared = checkbox.checked;
+        const isRitual = checkbox.dataset.ritual === 'true'; // Add ritual status
 
-        // Check if this is an always-prepared spell by examining the parent spell item
+        // Check if this is an always-prepared spell
         const spellItem = checkbox.closest('.spell-item');
         const isAlwaysPreparedElement = spellItem && (spellItem.querySelector('.tag.always-prepared') || spellItem.querySelector('.tag.granted'));
 
-        log(1, {
-          checkboxes: checkboxes,
-          checkbox: checkbox,
-          uuid: uuid,
-          name: name,
-          wasPrepared: wasPrepared,
-          isPrepared: isPrepared,
-          spellItem: spellItem,
-          isAlwaysPreparedElement: isAlwaysPreparedElement
-        });
         // If it's an always-prepared spell or granted spell, don't include it in the updates
         if (isAlwaysPreparedElement) {
           log(3, `Skipping always-prepared or granted spell: ${name}`);
           continue;
         }
 
-        log(3, `Spell ${name} (${uuid}): was ${wasPrepared ? 'prepared' : 'not prepared'}, now ${isPrepared ? 'prepared' : 'not prepared'}`);
+        log(3, `Spell ${name} (${uuid}): was ${wasPrepared ? 'prepared' : 'not prepared'}, now ${isPrepared ? 'prepared' : 'not prepared'}, ritual: ${isRitual}`);
 
-        // Add the spell to our update data - note this is NOT always-prepared
+        // Add the spell to our update data - include ritual status
         spellData[uuid] = {
           name,
           wasPrepared,
           isPrepared,
-          isAlwaysPrepared: false
+          isAlwaysPrepared: false,
+          isRitual // Add ritual status
         };
       }
 
