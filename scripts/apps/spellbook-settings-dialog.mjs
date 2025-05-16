@@ -186,6 +186,9 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       const isWizard = !!actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard') || !!forceWizardMode;
 
       if (isWizard) {
+        // Get previous ritual casting setting before updating
+        const previousRitualCasting = actor.getFlag(MODULE.ID, 'wizardRitualCasting') !== false; // Default true
+
         const updateData = {
           [`flags.${MODULE.ID}.wizardStartingSpells`]: parseInt(wizardStartingSpells) || WIZARD_DEFAULTS.STARTING_SPELLS,
           [`flags.${MODULE.ID}.wizardSpellsPerLevel`]: parseInt(wizardSpellsPerLevel) || WIZARD_DEFAULTS.SPELLS_PER_LEVEL,
@@ -194,6 +197,21 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
         log(3, `New wizard settings:`, updateData);
         await actor.update(updateData);
+
+        // Check if ritual casting is being disabled
+        if (previousRitualCasting && !wizardRitualCasting) {
+          // Find ritual spells in ritual mode
+          const ritualModeSpells = actor.items.filter((i) => i.type === 'spell' && i.system.preparation?.mode === 'ritual');
+
+          if (ritualModeSpells.length > 0) {
+            log(3, `Removing ${ritualModeSpells.length} ritual spells due to disabled ritual casting`);
+            await actor.deleteEmbeddedDocuments(
+              'Item',
+              ritualModeSpells.map((s) => s.id)
+            );
+            ui.notifications.info(`Removed ${ritualModeSpells.length} ritual spell(s) from character sheet.`);
+          }
+        }
       }
 
       // Show success notification
