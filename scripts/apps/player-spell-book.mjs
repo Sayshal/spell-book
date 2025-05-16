@@ -56,12 +56,26 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @override */
   static PARTS = {
-    form: {
-      template: TEMPLATES.PLAYER.MAIN,
-      templates: [TEMPLATES.PLAYER.SIDEBAR, TEMPLATES.PLAYER.TAB_NAV, TEMPLATES.PLAYER.TAB_SPELLS, TEMPLATES.PLAYER.TAB_WIZARD_SPELLBOOK],
-      scrollable: ['.spell-book-container .spell-book-content .scrollthistab']
+    container: {
+      template: TEMPLATES.PLAYER.CONTAINER
     },
-    footer: { template: TEMPLATES.PLAYER.FOOTER }
+    sidebar: {
+      template: TEMPLATES.PLAYER.SIDEBAR
+    },
+    navigation: {
+      template: TEMPLATES.PLAYER.TAB_NAV
+    },
+    spellsTab: {
+      template: TEMPLATES.PLAYER.TAB_SPELLS,
+      scrollable: ['']
+    },
+    wizardTab: {
+      template: TEMPLATES.PLAYER.TAB_WIZARD_SPELLBOOK,
+      scrollable: ['']
+    },
+    footer: {
+      template: TEMPLATES.PLAYER.FOOTER
+    }
   };
 
   /* -------------------------------------------- */
@@ -417,6 +431,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
       // Re-render the application to display the new data
       this.render(false);
+    }
+  }
+
+  /** @override */
+  _configureRenderOptions(options) {
+    // Get default parts configuration
+    super._configureRenderOptions(options);
+
+    // Start with the basic UI parts
+    options.parts = ['container', 'sidebar', 'navigation', 'spellsTab', 'footer'];
+
+    // Add wizard tab only if the actor is a wizard
+    if (this.wizardManager?.isWizard) {
+      options.parts.push('wizardTab');
     }
   }
 

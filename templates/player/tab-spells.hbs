@@ -1,4 +1,4 @@
-<div class="tab {{#if (eq activeTab 'spellstab')}}active{{/if}} scrollthistab" data-tab="spellstab" data-group="spellbook-tabs">
+<div class="spellstab tab {{#if (eq activeTab 'spellstab')}}active{{/if}}" data-tab="spellstab" data-group="spellbook-tabs">
 	<div class="spells-container">
 		{{#if isLoading}}
 			{{> "modules/spell-book/templates/components/loading-spinner.hbs" size=3 message=(localize 'SPELLBOOK.Application.Loading')}}

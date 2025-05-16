@@ -1,0 +1,12 @@
+<div class="spell-book-container">
+	<!-- This will just be a container for other parts -->
+	<section class="spell-book-content" role="main" aria-label="{{localize 'SPELLBOOK.UI.SpellList'}}">
+		{{#if isLoading}}
+			{{> "modules/spell-book/templates/components/loading-spinner.hbs" size=3 message=(localize 'SPELLBOOK.Application.Loading')}}
+		{{/if}}
+	</section>
+
+	<!-- Footer container for collapsed sidebar -->
+	<div class="collapsed-footer hidden" role="complementary" aria-label="{{localize 'SPELLBOOK.UI.SpellPreparation'}}">
+	</div>
+</div>

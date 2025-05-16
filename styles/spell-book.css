@@ -3,8 +3,7 @@
 
 /* ----------------------------------------- */
 /*  Spell Book Module - Main CSS             */
-/*  Organized with nesting, variables, and   */
-/*  improved responsive design               */
+/*  Updated for flat parts structure         */
 /* ----------------------------------------- */
 
 /* ----------------------------------------- */
@@ -80,37 +79,71 @@
 
   .window-content {
     display: flex;
+    position: relative;
     flex-direction: column;
     min-height: 0;
     padding: 0;
     overflow: visible;
-    transition: var(--spell-book-transition-slow);
-
-    > form {
-      display: flex;
-      flex: 1 1 auto;
-      flex-direction: column;
-      height: auto;
-      min-height: 0;
-    }
+    transition: var(--spell-book-transition-slow); /* Added for absolute positioning of parts */
   }
 
+  /* New: Basic styles for all direct parts */
+  .window-content > * {
+    transition: var(--spell-book-transition-slow);
+  }
+
+  /* Main container */
   .spell-book-container {
-    gap: 0.75rem;
-    grid-template-columns: var(--spell-book-sidebar-width) 1fr;
-    display: grid;
-    position: relative;
-    flex: 1 1 auto;
-    width: auto;
-    min-height: 0;
-    max-height: none;
-    overflow: visible; /* Changed from hidden to visible */
-    transition: var(--spell-book-transition-slow);
+    inset: 0 0 0 var(--spell-book-sidebar-width);
+    position: absolute;
+    overflow: visible;
   }
 
+  /* Position tabs */
+  .window-content > nav.tabs.tabs-right {
+    z-index: var(--spell-book-z-index-tabs);
+    position: absolute;
+    top: 20px;
+    left: 100%;
+  }
+
+  /* Position footer */
+  .window-content > footer {
+    z-index: var(--spell-book-z-index-footer);
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: var(--spell-book-sidebar-width);
+    padding: 0.5rem;
+    border-top: 1px solid var(--color-border-light-tertiary);
+    background: var(--spell-book-bg-primary);
+  }
+
+  /* Position tab content */
+  .window-content > .tab {
+    inset: 0 0 50px var(--spell-book-sidebar-width);
+    display: none; /* Leave space for footer */
+    position: absolute;
+    padding: 0.6rem 0.6rem 0.6rem 1.25rem;
+    overflow-y: auto;
+  }
+
+  .window-content > .tab.active {
+    display: block;
+  }
+
+  /* Collapsed sidebar styles */
   &.sidebar-collapsed {
     .spell-book-container {
-      grid-template-columns: 0 1fr;
+      left: 0;
+    }
+
+    .window-content > .tab {
+      left: 0;
+    }
+
+    .window-content > footer {
+      left: 0;
     }
 
     .sidebar {
@@ -135,11 +168,9 @@
     }
 
     .spell-book-content {
-      flex: 1 1 auto;
       height: calc(100% - 100px);
       margin-bottom: 0;
       padding-bottom: 0;
-      overflow-y: auto;
     }
   }
 
@@ -182,9 +213,12 @@
     transform-style: preserve-3d;
     display: flex;
     z-index: var(--spell-book-z-index-sidebar);
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
     flex-direction: column;
     width: var(--spell-book-sidebar-width);
+    height: 100%;
     margin-left: 0;
     padding: 0.5rem 1rem;
     border-right: 1px solid var(--color-border-light);
@@ -358,7 +392,7 @@
 .spell-book {
   .spell-book-content {
     position: relative;
-    flex: 1 1 auto;
+    height: 100%;
     min-height: 100px;
     padding: 0.6rem 0.6rem 0.6rem 1.25rem;
     overflow: auto;
@@ -826,8 +860,8 @@
 /* ----------------------------------------- */
 /*  Tab Navigation                           */
 /* ----------------------------------------- */
-/* Updated tab navigation styles to properly position tabs */
-.spell-book-container .tabs.tabs-right {
+/* Styles for tab navigation as a direct child of .window-content */
+.window-content > .tabs.tabs-right {
   --icon-fill: var(--dnd5e-color-gold);
   --icon-size: 16px;
   --tab-full-width: 44px;
@@ -835,15 +869,12 @@
 
   gap: 0.25rem;
   display: flex;
-  z-index: -1;
-  position: absolute;
-  left: 100%;
   flex-direction: column;
   margin: 0;
   border: none;
 }
 
-.spell-book-container .tabs.tabs-right > .item {
+.window-content > .tabs.tabs-right > .item {
   display: flex;
   position: relative;
   flex: none;
@@ -860,20 +891,20 @@
   transition: all 250ms ease;
 }
 
-.spell-book-container .tabs.tabs-right > .item.active,
-.spell-book-container .tabs.tabs-right > .item:hover {
+.window-content > .tabs.tabs-right > .item.active,
+.window-content > .tabs.tabs-right > .item:hover {
   border-color: var(--dnd5e-color-gold);
   text-shadow: none;
   box-shadow: 0 0 6px var(--dnd5e-color-gold);
 }
 
-.spell-book-container .tabs.tabs-right > .item i,
-.spell-book-container .tabs.tabs-right > .item dnd5e-icon {
+.window-content > .tabs.tabs-right > .item i,
+.window-content > .tabs.tabs-right > .item dnd5e-icon {
   font-size: var(--icon-size);
 }
 
 /* Hide labels but keep for accessibility */
-.spell-book-container .tabs.tabs-right > .item > span {
+.window-content > .tabs.tabs-right > .item > span {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -883,16 +914,6 @@
   clip: rect(0, 0, 0, 0);
   overflow: hidden;
   white-space: nowrap;
-}
-
-/* Tab content display control */
-.spell-book .tab {
-  display: none;
-  width: 100%;
-}
-
-.spell-book .tab.active {
-  display: block;
 }
 
 /* ----------------------------------------- */

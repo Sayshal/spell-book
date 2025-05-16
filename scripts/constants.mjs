@@ -48,8 +48,8 @@ export const FLAGS = {
  */
 export const TEMPLATES = {
   PLAYER: {
+    CONTAINER: 'modules/spell-book/templates/player/spell-container.hbs',
     FOOTER: 'modules/spell-book/templates/player/footer.hbs',
-    MAIN: 'modules/spell-book/templates/player/spell-book.hbs',
     SIDEBAR: 'modules/spell-book/templates/player/sidebar.hbs',
     TAB_NAV: 'modules/spell-book/templates/player/tab-navigation.hbs',
     TAB_SPELLS: 'modules/spell-book/templates/player/tab-spells.hbs',

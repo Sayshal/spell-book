@@ -1,11 +1,40 @@
-<div class="spell-filters" role="search" aria-label="{{localize 'SPELLBOOK.UI.SpellFilters'}}">
-     {{#each filters as |filter|}}
-          <div class="filter-item filter-{{filter.type}}" data-filter-id="{{filter.id}}">
-               {{#if (ne filter.type "checkbox")}}
-                    <label for="{{filter.id}}">{{filter.label}}</label>
-               {{/if}}
+<div class="sidebar card" role="complementary">
+  <!-- Sidebar Controls Container -->
+  <div class="sidebar-controls">
+    <!-- Filter Configuration Button -->
+    <button type="button" class="filter-config-button unbutton interface-only" data-action="configureFilters"
+      data-tooltip="{{localize 'SPELLBOOK.UI.FilterControls'}}" aria-label="{{localize 'SPELLBOOK.UI.FilterControls'}}">
+      <i class="fas fa-cog" aria-hidden="true"></i>
+    </button>
 
-               {{{filter.elementHtml}}}
-          </div>
-     {{/each}}
+    <!-- Cantrip Settings Button (GM Only) -->
+    {{#if isGM}}
+      <button type="button" class="cantrip-config-button unbutton interface-only" data-action="configureCantripSettings"
+        data-tooltip="{{localize 'SPELLBOOK.UI.SpellSettings'}}" aria-label="{{localize 'SPELLBOOK.UI.SpellSettings'}}">
+        <i class="fas fa-magic" aria-hidden="true"></i>
+      </button>
+    {{/if}}
+
+    <!-- Sidebar Collapse Button -->
+    <button type="button" class="sidebar-collapser collapser vertical unbutton interface-only"
+      data-action="toggleSidebar" data-tooltip="{{localize 'SPELLBOOK.UI.ToggleSidebar'}}"
+      aria-label="{{localize 'SPELLBOOK.UI.ToggleSidebar'}}" aria-expanded="true">
+      <i class="fas fa-caret-left" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <div class="spell-filters" role="search" aria-label="{{localize 'SPELLBOOK.UI.SpellFilters'}}">
+    {{#each filters as |filter|}}
+      <div class="filter-item filter-{{filter.type}}" data-filter-id="{{filter.id}}">
+        {{#if (ne filter.type "checkbox")}}
+          <label for="{{filter.id}}">{{filter.label}}</label>
+        {{/if}}
+
+        {{{filter.elementHtml}}}
+      </div>
+    {{/each}}
+  </div>
+
+  <!-- Footer container for open sidebar -->
+  <div class="sidebar-footer-container"></div>
 </div>
