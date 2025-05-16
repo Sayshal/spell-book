@@ -144,13 +144,20 @@ export class WizardSpellbookManager {
    * @param {string} spellUuid - UUID of the spell to copy
    * @param {number} cost - Cost in gold to copy the spell
    * @param {number} time - Time in hours to copy the spell
+   * @param {boolean} isFree - Whether this is a free spell
    * @returns {Promise<boolean>} Success state
    */
-  async copySpell(spellUuid, cost, time) {
-    return this.addSpellToSpellbook(spellUuid, WIZARD_SPELL_SOURCE.COPIED, {
-      cost,
-      timeSpent: time
-    });
+  async copySpell(spellUuid, cost, time, isFree = false) {
+    // Only track metadata for paid spells
+    if (!isFree) {
+      return this.addSpellToSpellbook(spellUuid, WIZARD_SPELL_SOURCE.COPIED, {
+        cost,
+        timeSpent: time
+      });
+    } else {
+      // For free spells, don't record cost metadata
+      return this.addSpellToSpellbook(spellUuid, WIZARD_SPELL_SOURCE.FREE, null);
+    }
   }
 
   /**
@@ -445,5 +452,71 @@ export class WizardSpellbookManager {
 
     log(3, `Maximum wizard spells: ${maxSpells} (level ${wizardLevel})`);
     return maxSpells;
+  }
+
+  /**
+   * Get the number of free spells the wizard should have at current level
+   * @returns {number} The number of free spells
+   */
+  getTotalFreeSpells() {
+    if (!this.isWizard) return 0;
+
+    // Get the wizard's level
+    const wizardLevel = this.classItem.system.levels || 1;
+
+    // Calculate: Starting spells (6) + (level-1) * spellsPerLevel (2)
+    return WIZARD_DEFAULTS.STARTING_SPELLS + Math.max(0, wizardLevel - 1) * WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
+  }
+
+  /**
+   * Get the number of free spells the wizard has already used
+   * @returns {Promise<number>} The number of free spells used
+   */
+  async getUsedFreeSpells() {
+    // Get all spells in the spellbook
+    const allSpells = await this.getSpellbookSpells();
+
+    // Get the metadata for spells that were explicitly paid for
+    const copiedSpells = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_COPIED_SPELLS) || [];
+    const paidUuids = new Set(copiedSpells.map((s) => s.spellUuid));
+
+    // For existing characters: any spell not explicitly marked as "paid"
+    // is considered to be using a free slot
+    const freeSpellsUsed = allSpells.filter((uuid) => !paidUuids.has(uuid)).length;
+
+    log(3, `Used free spells: ${freeSpellsUsed} (total: ${allSpells.length}, paid: ${paidUuids.size})`);
+    return freeSpellsUsed;
+  }
+
+  /**
+   * Get the number of free spells the wizard has remaining
+   * @returns {Promise<number>} The number of free spells remaining
+   */
+  async getRemainingFreeSpells() {
+    const totalFree = this.getTotalFreeSpells();
+    const usedFree = await this.getUsedFreeSpells();
+
+    return Math.max(0, totalFree - usedFree);
+  }
+
+  /**
+   * Calculate cost to copy a spell, accounting for free spells
+   * @param {Item5e} spell - The spell to copy
+   * @returns {Promise<{cost: number, isFree: boolean}>} Cost in gold pieces and if it's free
+   */
+  async getCopyingCostWithFree(spell) {
+    // Cantrips are always free
+    if (spell.system.level === 0) return { cost: 0, isFree: true };
+
+    // Check if we have free spells remaining
+    const remainingFree = await this.getRemainingFreeSpells();
+
+    if (remainingFree > 0) {
+      return { cost: 0, isFree: true };
+    }
+
+    // If no free spells left, calculate regular cost
+    const cost = this.getCopyingCost(spell);
+    return { cost, isFree: false };
   }
 }

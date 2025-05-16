@@ -1,16 +1,14 @@
 <footer role="contentinfo">
 	{{#if (eq activeTab 'wizardtab')}}
-	{{log 'wizardTab'}}
-		<!-- Wizard Spellbook tab - show learned spells count -->
-		<div class="spell-book-tracking {{#if wizardIsAtMax}}at-max{{/if}}" aria-live="polite">
-			<span class="current-count"
-				aria-label="{{localize 'SPELLBOOK.Footer.LearnedCount'}}">{{wizardSpellbookCount}}</span>/
-			<span class="max-count"
-				aria-label="{{localize 'SPELLBOOK.Footer.MaximumAllowed'}}">{{wizardMaxSpellbookCount}}</span>
-			{{localize 'SPELLBOOK.Footer.LearnedLabel'}}
+		<!-- Wizard Spellbook tab - show free spells remaining or total count -->
+		<div class="spell-book-tracking" aria-live="polite">
+			{{#if wizardHasFreeSpells}}
+				{{localize 'SPELLBOOK.Footer.FreeSpellsRemaining' count=wizardRemainingFreeSpells}}
+			{{else}}
+				{{localize 'SPELLBOOK.Footer.LearnedSpells' count=wizardTotalSpellbookCount}}
+			{{/if}}
 		</div>
 	{{else}}
-	{{log 'Not wizardTab'}}
 		<!-- Standard spells tab - show prepared spells count -->
 		<div class="spell-prep-tracking {{#if isAtMax}}at-max{{/if}}" aria-live="polite">
 			<span class="current-count"

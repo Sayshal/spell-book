@@ -271,5 +271,6 @@ export const WIZARD_DEFAULTS = {
 export const WIZARD_SPELL_SOURCE = {
   LEVEL_UP: 'levelUp',
   COPIED: 'copied',
-  INITIAL: 'initial'
+  INITIAL: 'initial',
+  FREE: 'free'
 };

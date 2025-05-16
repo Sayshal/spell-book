@@ -8,10 +8,14 @@ export class WizardSpellCopyDialog {
    * Create a dialog for copying a spell to a wizard's spellbook
    * @param {Item5e} spell - The spell to copy
    * @param {WizardSpellbookManager} wizardManager - The wizard spellbook manager
+   * @param {Object} costInfo - Cost information including if it's free
+   * @param {number} time - Time required to copy
    */
-  constructor(spell, wizardManager) {
+  constructor(spell, wizardManager, costInfo, time) {
     this.spell = spell;
     this.wizardManager = wizardManager;
+    this.costInfo = costInfo;
+    this.time = time;
   }
 
   /**
@@ -20,20 +24,17 @@ export class WizardSpellCopyDialog {
    */
   async getResult() {
     try {
-      const cost = this.wizardManager.getCopyingCost(this.spell);
-      const time = this.wizardManager.getCopyingTime(this.spell);
-
       const content = `
         <form class="wizard-copy-form">
           <p>Do you want to learn <strong>${this.spell.name}</strong> and add it to your spellbook?</p>
           <div class="copy-details">
             <div class="form-group">
               <label>Cost:</label>
-              <span>${cost} gp</span>
+              <span>${this.costInfo.isFree ? 'Free' : `${this.costInfo.cost} gp`}</span>
             </div>
             <div class="form-group">
               <label>Time Required:</label>
-              <span>${time} hours</span>
+              <span>${this.time} hours</span>
             </div>
           </div>
         </form>

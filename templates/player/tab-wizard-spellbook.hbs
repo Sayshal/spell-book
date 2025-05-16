@@ -1,4 +1,5 @@
-<div class="tab {{#if (eq activeTab 'wizardtab')}}active{{/if}} scrollthistab" data-tab="wizardtab" data-group="spellbook-tabs">
+<div class="tab {{#if (eq activeTab 'wizardtab')}}active{{/if}} scrollthistab" data-tab="wizardtab"
+	data-group="spellbook-tabs">
 	<div class="spells-container">
 		{{#if isLoading}}
 			{{> "modules/spell-book/templates/components/loading-spinner.hbs" size=3 message=(localize 'SPELLBOOK.Application.Loading')}}
@@ -9,8 +10,10 @@
 				<div class="spellbook-info">
 					<h3>{{localize 'SPELLBOOK.Wizard.Title'}}</h3>
 
-					{{#if wizardIsAtMax}}
-						<p class="warning">{{localize 'SPELLBOOK.Wizard.AtMaximumSpells'}}</p>
+					{{#if wizardHasFreeSpells}}
+						<p class="info">{{localize 'SPELLBOOK.Wizard.FreeSpellsRemaining' count=wizardRemainingFreeSpells}}</p>
+					{{else}}
+						<p class="info">{{localize 'SPELLBOOK.Wizard.NoFreeSpellsRemaining'}}</p>
 					{{/if}}
 
 					<p>{{localize 'SPELLBOOK.Wizard.PrepareInfo'}}</p>
@@ -55,8 +58,7 @@
 										{{else}}
 											{{#if (gt system.level 0)}}
 												<button class="copy-spell-btn" data-action="learnSpell" data-uuid="{{compendiumUuid}}"
-													{{#if isAtMaxSpells}} data-tooltip="{{localize 'SPELLBOOK.Wizard.AtMaximumSpells'}}" disabled
-													{{/if}} type="button">
+													type="button">
 													<i class="fas fa-book"></i> {{localize 'SPELLBOOK.Wizard.LearnSpell'}}
 												</button>
 											{{/if}}

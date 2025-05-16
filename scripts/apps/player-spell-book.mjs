@@ -173,87 +173,54 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @override */
   async _prepareContext(options) {
     log(3, 'Preparing PlayerSpellBook context');
-
-    // Create basic context with loading state
     const context = this._createBaseContext();
-
-    // Skip detailed preparation if we're still loading
-    if (this.isLoading) {
-      return context;
-    }
-
-    // Process spell levels to add HTML checkboxes
+    if (this.isLoading) return context;
     context.spellLevels = this.spellLevels.map((level) => {
-      // Create a copy of the level data
       const processedLevel = { ...level };
-
-      // Process spells to add checkbox HTML
       processedLevel.spells = level.spells.map((spell) => {
-        // Create a deep copy of the spell
         const processedSpell = foundry.utils.deepClone(spell);
         if (!spell.compendiumUuid) {
           log(2, 'No uuid for:', { spell: spell, coreId: spell.flags?.core?.sourceId, dndId: spell.flags?.dnd5e?.sourceId, itemId: spell.system?.parent?._source._stats.compendiumSource });
           spell.compendiumUuid = spell.flags?.core?.sourceId || spell.flags?.dnd5e?.sourceId || spell.system?.parent?._source._stats.compendiumSource || '';
         }
-        // Set up checkbox configuration
         const ariaLabel =
           spell.preparation.prepared ? game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name }) : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
-
-        // Use the form element helper to create the checkbox
         const checkbox = formElements.createCheckbox({
           name: `spellPreparation.${spell.compendiumUuid}`,
           checked: spell.preparation.prepared,
           disabled: spell.preparation.disabled,
           ariaLabel: ariaLabel
         });
-
-        // Add data attributes to the checkbox element
         checkbox.id = `prep-${spell.compendiumUuid}`;
         checkbox.dataset.uuid = spell.compendiumUuid;
         checkbox.dataset.name = spell.name;
         checkbox.dataset.ritual = spell.filterData?.isRitual || false;
         checkbox.dataset.wasPrepared = spell.preparation.prepared;
-
-        // Add tooltip with reason for disabled state
         if (spell.preparation.disabled && spell.preparation.disabledReason) {
           checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
         }
-
-        // Convert the checkbox to HTML using the helper
         processedSpell.preparationCheckboxHtml = formElements.elementToHtml(checkbox);
-
-        // Add wizard-specific data if applicable
         if (this.wizardManager && this.wizardManager.isWizard) {
           processedSpell.inWizardSpellbook = this.wizardSpellbookCache?.includes(spell.compendiumUuid) || false;
-
-          if (this._tabData) {
-            context.wizardSpellbookCount = this._tabData.wizardtab?.wizardSpellbookCount || 0;
-            context.wizardMaxSpellbookCount = this._tabData.wizardtab?.wizardMaxSpellbookCount || 0;
-            context.wizardIsAtMax = this._tabData.wizardtab?.wizardIsAtMax || false;
-          }
         }
-
         return processedSpell;
       });
-
       return processedLevel;
     });
-
-    // Add wizard-specific context
     context.isWizard = false;
     if (this.wizardManager && this.wizardManager.isWizard) {
       context.isWizard = true;
       context.wizardSpellbookCount = this.wizardSpellbookCache?.length || 0;
       context.wizardRulesVersion = this.spellManager.getSettings().rules;
+      if (this._tabData && this._tabData.wizardtab) {
+        context.wizardTotalSpellbookCount = this._tabData.wizardtab.wizardTotalSpellbookCount || 0;
+        context.wizardFreeSpellbookCount = this._tabData.wizardtab.wizardFreeSpellbookCount || 0;
+        context.wizardRemainingFreeSpells = this._tabData.wizardtab.wizardRemainingFreeSpells || 0;
+        context.wizardHasFreeSpells = this._tabData.wizardtab.wizardHasFreeSpells || false;
+      }
     }
-
-    // Get active tab
     context.activeTab = this.tabGroups['spellbook-tabs'];
-
-    // Set up tab information using the _getTabs method
     context.tabs = this._getTabs();
-
-    // Only add wizard tab if the actor is a wizard
     if (context.isWizard) {
       context.tabs.wizardtab = {
         id: 'wizardtab',
@@ -263,7 +230,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         icon: 'fa-solid fa-book-spells'
       };
     }
-
     context.filters = this._prepareFilters();
     return context;
   }
@@ -546,7 +512,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       log(3, `Loaded ${spellItems.length} spell items up to level ${effectiveMaxLevel}`);
 
       // 4. Process the spells for both tabs
-      this._processWizardSpells(spellItems, classItem, personalSpellbook);
+      await this._processWizardSpells(spellItems, classItem, personalSpellbook);
     } catch (error) {
       log(1, 'Error loading wizard spell data:', error);
     }
@@ -581,7 +547,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  _processWizardSpells(allSpellItems, classItem, personalSpellbook) {
+  async _processWizardSpells(allSpellItems, classItem, personalSpellbook) {
     try {
       log(3, 'Processing wizard spells for both tabs');
 
@@ -601,6 +567,18 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           spellPreparation: { current: 0, maximum: 0 }
         }
       };
+
+      // Calculate free spells info
+      const totalFreeSpells = this.wizardManager.getTotalFreeSpells();
+      const usedFreeSpells = await this.wizardManager.getUsedFreeSpells();
+      const remainingFreeSpells = Math.max(0, totalFreeSpells - usedFreeSpells);
+      const totalSpells = personalSpellbook.length;
+      log(1, 'Math time:', { totalFree: totalFreeSpells, usedFree: usedFreeSpells, remaining: remainingFreeSpells, totalSpells: totalSpells });
+      // Add to the wizard tab data
+      tabData.wizardtab.wizardTotalSpellbookCount = totalSpells;
+      tabData.wizardtab.wizardFreeSpellbookCount = totalFreeSpells;
+      tabData.wizardtab.wizardRemainingFreeSpells = remainingFreeSpells;
+      tabData.wizardtab.wizardHasFreeSpells = remainingFreeSpells > 0;
 
       // Identify granted spells on the actor
       const grantedSpells = this.actor.items
@@ -2141,110 +2119,79 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const spellUuid = event.target.dataset.uuid;
       if (!spellUuid) return;
 
-      // Store collapsed levels
+      // Store UI state
       const collapsedLevels = Array.from(this.element.querySelectorAll('.spell-level.collapsed')).map((el) => el.dataset.level);
-
-      // Remember active tab
       const activeTab = this.tabGroups['spellbook-tabs'];
 
-      // Load the spell
+      // Load spell
       const spell = await fromUuid(spellUuid);
       if (!spell) {
         ui.notifications.error(`Could not find spell with UUID: ${spellUuid}`);
         return;
       }
 
-      // Check if at maximum spells
-      const currentCount = this.wizardSpellbookCache?.length || 0;
-      const maxAllowed = this.wizardManager.getMaxSpellsAllowed();
-
-      if (currentCount >= maxAllowed) {
-        ui.notifications.warn(game.i18n.localize('SPELLBOOK.Wizard.AtMaximumSpells'));
-        return;
-      }
+      // Get cost information
+      const costInfo = await this.wizardManager.getCopyingCostWithFree(spell);
+      const time = this.wizardManager.getCopyingTime(spell);
 
       // Show confirmation dialog
-      const dialog = new WizardSpellCopyDialog(spell, this.wizardManager);
+      const dialog = new WizardSpellCopyDialog(spell, this.wizardManager, costInfo, time);
       const result = await dialog.getResult();
 
       if (result.confirmed) {
-        const cost = this.wizardManager.getCopyingCost(spell);
-        const time = this.wizardManager.getCopyingTime(spell);
-
-        const success = await this.wizardManager.copySpell(spellUuid, cost, time);
+        const success = await this.wizardManager.copySpell(spellUuid, costInfo.cost, time, costInfo.isFree);
 
         if (success) {
           ui.notifications.info(`Learned ${spell.name} and added it to your spellbook.`);
 
-          // Update the local cache
+          // Update local cache
           if (this.wizardSpellbookCache) {
             this.wizardSpellbookCache.push(spellUuid);
           }
 
-          // Check if we're now at max spells after adding this one
-          const newCount = this.wizardSpellbookCache?.length || 0;
-          const isNowAtMax = newCount >= maxAllowed;
+          // Update wizard counts in tabData immediately
+          if (this._tabData && this._tabData.wizardtab) {
+            this._tabData.wizardtab.wizardTotalSpellbookCount = (this._tabData.wizardtab.wizardTotalSpellbookCount || 0) + 1;
 
-          // Update the UI immediately for feedback
+            if (costInfo.isFree) {
+              this._tabData.wizardtab.wizardRemainingFreeSpells = Math.max(0, (this._tabData.wizardtab.wizardRemainingFreeSpells || 0) - 1);
+              this._tabData.wizardtab.wizardHasFreeSpells = this._tabData.wizardtab.wizardRemainingFreeSpells > 0;
+            }
+          }
+
+          // Update UI: Mark spell as in spellbook
           const spellItem = this.element.querySelector(`.spell-item[data-spell-uuid="${spellUuid}"]`);
           if (spellItem) {
-            // Change button to 'In Spellbook' tag
             const buttonContainer = spellItem.querySelector('.wizard-spell-status');
             if (buttonContainer) {
-              buttonContainer.innerHTML = `
-                <span class="in-spellbook-tag" aria-label="Spell is in your spellbook">
-                  ${game.i18n.localize('SPELLBOOK.Wizard.InSpellbook')}
-                </span>
-              `;
+              buttonContainer.innerHTML = `<span class="in-spellbook-tag" aria-label="Spell is in your spellbook">${game.i18n.localize('SPELLBOOK.Wizard.InSpellbook')}</span>`;
             }
-
-            // Add classes for visual feedback
             spellItem.classList.add('in-wizard-spellbook', 'prepared-spell');
           }
 
-          // If we're now at max spells, disable all remaining Learn Spell buttons
-          if (isNowAtMax) {
-            const allLearnButtons = this.element.querySelectorAll('.copy-spell-btn');
-            allLearnButtons.forEach((button) => {
-              button.disabled = true;
-              button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.Wizard.AtMaximumSpells'));
-            });
-
-            // Add warning banner at top
-            const spellbookInfo = this.element.querySelector('.spellbook-info');
-            if (spellbookInfo && !spellbookInfo.querySelector('.warning')) {
-              const warning = document.createElement('p');
-              warning.className = 'warning';
-              warning.textContent = game.i18n.localize('SPELLBOOK.Wizard.AtMaximumSpells');
-              spellbookInfo.prepend(warning);
-            }
-          }
-
-          // Set flag to indicate spells tab needs updating if we switch to it
+          // Flag for prep tab updating
           this._spellsTabNeedsReload = true;
 
-          // Re-render is still needed to update preparation tab and counters
+          // Full re-render (needed for template updates)
           this.render(false);
 
-          // After render, restore UI state
+          // Restore UI state after render
           setTimeout(() => {
-            // Restore active tab if needed
+            // Restore active tab
             if (activeTab && this.tabGroups['spellbook-tabs'] !== activeTab) {
               this.changeTab(activeTab, 'spellbook-tabs');
             }
 
-            // Re-collapse levels
+            // Restore collapsed levels
             collapsedLevels.forEach((levelId) => {
               const levelEl = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
               if (levelEl) {
                 levelEl.classList.add('collapsed');
-
-                // Update ARIA state
                 const heading = levelEl.querySelector('.spell-level-heading');
                 if (heading) heading.setAttribute('aria-expanded', 'false');
               }
             });
-          }, 50); // Small delay to ensure render is complete
+          }, 50);
         } else {
           ui.notifications.warn(`Could not learn ${spell.name}.`);
         }

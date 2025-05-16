@@ -33,6 +33,7 @@
   "SPELLBOOK.Cantrips.SwapAvailableNotification": "{name} can now swap one cantrip in the spellbook.",
   "SPELLBOOK.Cantrips.WizardOnly": "Wizard Only",
   "SPELLBOOK.Cantrips.WizardRuleOnly": "This rule is only available for Wizard characters",
+  "SPELLBOOK.Classes.Wizard": "Wizard",
   "SPELLBOOK.Filters.All": "All",
   "SPELLBOOK.Filters.CastingTime": "Casting Time",
   "SPELLBOOK.Filters.Condition": "Condition",
@@ -55,8 +56,10 @@
   "SPELLBOOK.Filters.SortBy": "Sort By",
   "SPELLBOOK.Filters.True": "Yes",
   "SPELLBOOK.Footer.Actions": "Spell Book Actions",
+  "SPELLBOOK.Footer.FreeSpellsRemaining": "{count} Free Spells Remaining",
   "SPELLBOOK.Footer.LearnedCount": "Learned spells count",
   "SPELLBOOK.Footer.LearnedLabel": "Learned Spells",
+  "SPELLBOOK.Footer.LearnedSpells": "{count} Learned Spells",
   "SPELLBOOK.Footer.MaximumAllowed": "Maximum allowed spells",
   "SPELLBOOK.Footer.MaximumCount": "Maximum prepared spells",
   "SPELLBOOK.Footer.PreparedCount": "Current prepared spells",
@@ -135,6 +138,7 @@
   "SPELLBOOK.UI.SpellSettings": "Spell Book Settings",
   "SPELLBOOK.UI.ToggleSidebar": "Toggle Sidebar",
   "SPELLBOOK.Wizard.AtMaximumSpells": "You have reached the maximum number of spells in your spellbook.",
+  "SPELLBOOK.Wizard.FreeSpellsRemaining": "You have {count} free spells remaining to learn.",
   "SPELLBOOK.Wizard.InSpellbook": "Already Learned",
   "SPELLBOOK.Wizard.LearnSpell": "Learn Spell",
   "SPELLBOOK.Wizard.LegacyCantripRules": "Legacy Rules: Cantrips cannot be changed during a long rest.",
@@ -144,6 +148,7 @@
   "SPELLBOOK.Wizard.NewSpellsInfo2": "For each level of the spell, the process takes 2 hours and costs 50 gp. The cost represents material components you expend as you experiment with the spell to master it, as well as the fine inks you need to record it.",
   "SPELLBOOK.Wizard.NewSpellsTitle": "Learning New Spells",
   "SPELLBOOK.Wizard.NoCantripsOnLongRest": "Wizard cantrips cannot be changed during a long rest under legacy rules.",
+  "SPELLBOOK.Wizard.NoFreeSpellsRemaining": "You have used all your free spells. Additional spells cost gold to copy.",
   "SPELLBOOK.Wizard.OneSwapLimit": "You can only swap one cantrip during a long rest.",
   "SPELLBOOK.Wizard.PrepareInfo": "You prepare the list of wizard spells that are available for you to cast. Choose a number of wizard spells from your spellbook equal to your Intelligence modifier + your wizard level (minimum of one spell).",
   "SPELLBOOK.Wizard.PrepareInfoTab": "You prepare the list of wizard spells that are available for you to cast. To do so, choose a number of wizard spells from your spellbook equal to your Intelligence modifier + your wizard level (minimum of one spell).",
@@ -229,6 +234,5 @@
   "SPELLMANAGER.UI.ApplicationActions": "Spell Manager Actions",
   "SPELLMANAGER.UI.FilteredSpells": "Filtered Spells",
   "SPELLMANAGER.UI.ListActions": "List Actions",
-  "SPELLMANAGER.UI.SelectedList": "Selected Spell List",
-  "SPELLBOOK.Classes.Wizard": "Wizard"
+  "SPELLMANAGER.UI.SelectedList": "Selected Spell List"
 }
