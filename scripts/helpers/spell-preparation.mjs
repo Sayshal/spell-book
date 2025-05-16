@@ -494,7 +494,7 @@ export class SpellManager {
 
     const spellName = spell.name || 'unknown cantrip';
     const { rules, behavior } = this.settings;
-    const spellUuid = spell.flags?.core?.sourceId || spell.uuid;
+    const spellUuid = spell.flags?.core?.sourceId || spell.flags?.dnd5e?.sourceId || spell.system?.parent?._source._stats.compendiumSource || spell.uuid;
 
     log(3, `Tracking cantrip change: ${spellName}, isChecked=${isChecked}`);
 
@@ -1112,7 +1112,7 @@ export class SpellManager {
       }
 
       // Get the spell's UUID
-      const spellUuid = spell.flags?.core?.sourceId || spell.uuid;
+      const spellUuid = spell.flags?.core?.sourceId || spell.flags?.dnd5e?.sourceId || spell.system?.parent?._source._stats.compendiumSource || spell.uuid;
 
       // We should already have the cache from earlier in the process flow
       if (this._wizardSpellbookCache) {

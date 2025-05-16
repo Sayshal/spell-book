@@ -179,7 +179,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       processedLevel.spells = level.spells.map((spell) => {
         // Create a deep copy of the spell
         const processedSpell = foundry.utils.deepClone(spell);
-
+        if (!spell.compendiumUuid) {
+          log(2, 'No uuid for:', { spell: spell, coreId: spell.flags?.core?.sourceId, dndId: spell.flags?.dnd5e?.sourceId, itemId: spell.system?.parent?._source._stats.compendiumSource });
+          spell.compendiumUuid = spell.flags?.core?.sourceId || spell.flags?.dnd5e?.sourceId || spell.system?.parent?._source._stats.compendiumSource || '';
+        }
         // Set up checkbox configuration
         const ariaLabel =
           spell.preparation.prepared ? game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name }) : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
@@ -715,7 +718,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       }
 
       // Organize spells by level
-      const spellLevels = await actorSpellUtils.organizeSpellsByLevel(filteredSpellItems, this.actor, this.spellManager);
+      const spellLevels = actorSpellUtils.organizeSpellsByLevel(filteredSpellItems, this.actor, this.spellManager);
       log(3, `Organized spells into ${spellLevels.length} levels`);
 
       // Sort spells within each level

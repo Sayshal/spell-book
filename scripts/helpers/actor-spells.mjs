@@ -45,15 +45,21 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
         continue;
       }
 
+      // Get the proper source UUID for the spell
+      // If it's an actor item, use its sourceId, otherwise use the provided UUID
+      const sourceUuid = spell.parent && spell.flags?.core?.sourceId ? spell.flags.core.sourceId : uuid;
+
+      log(3, `Spell ${spell.name}: using sourceUuid=${sourceUuid}, (original uuid=${uuid})`);
+
       if (spell.system.level <= maxSpellLevel) {
         spellItems.push({
           ...spell,
-          compendiumUuid: uuid
+          compendiumUuid: sourceUuid // Always use the source UUID
         });
       } else {
         filteredOut.push({
           ...spell,
-          compendiumUuid: uuid
+          compendiumUuid: sourceUuid // Always use the source UUID
         });
       }
     } catch (error) {
