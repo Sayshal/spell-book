@@ -1,16 +1,30 @@
 import { FLAGS, MODULE } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
 
+/**
+ * Helper class for UI-related functionality in the spellbook application
+ */
 export class SpellbookUI {
+  /**
+   * Create a new UI helper
+   * @param {PlayerSpellBook} app - The parent application
+   */
   constructor(app) {
     this.app = app;
     this.actor = app.actor;
   }
 
+  /**
+   * Get the application's element
+   * @returns {HTMLElement|null} The application element
+   */
   get element() {
     return this.app.element;
   }
 
+  /**
+   * Set up all UI components
+   */
   setupUI() {
     this.setSidebarState();
     this.positionFooter();
@@ -20,11 +34,17 @@ export class SpellbookUI {
     this.setupCantripUI();
   }
 
+  /**
+   * Disable inputs while the application is loading
+   */
   disableInputsWhileLoading() {
     const inputs = this.element.querySelectorAll('.spell-filters input, .spell-filters select, .spell-filters button');
     inputs.forEach((input) => (input.disabled = true));
   }
 
+  /**
+   * Set sidebar expanded/collapsed state from user flags
+   */
   setSidebarState() {
     try {
       const sidebarCollapsed = game.user.getFlag(MODULE.ID, FLAGS.SIDEBAR_COLLAPSED);
@@ -34,15 +54,16 @@ export class SpellbookUI {
     }
   }
 
+  /**
+   * Position the footer based on sidebar state
+   */
   positionFooter() {
     try {
       const footer = this.element.querySelector('footer');
       if (!footer) return;
-
       const isSidebarCollapsed = this.element.classList.contains('sidebar-collapsed');
       const sidebarFooterContainer = this.element.querySelector('.sidebar-footer-container');
       const collapsedFooter = this.element.querySelector('.collapsed-footer');
-
       if (isSidebarCollapsed && collapsedFooter) {
         collapsedFooter.appendChild(footer);
         collapsedFooter.classList.remove('hidden');
@@ -55,6 +76,9 @@ export class SpellbookUI {
     }
   }
 
+  /**
+   * Set up event listeners for filter controls
+   */
   setupFilterListeners() {
     try {
       const filtersContainer = this.element.querySelector('.spell-filters');
@@ -83,13 +107,14 @@ export class SpellbookUI {
     }
   }
 
+  /**
+   * Set up event listeners for spell preparation checkboxes
+   */
   setupPreparationListeners() {
     try {
       const spellsContainer = this.element.querySelector('.spells-container');
       if (!spellsContainer) return;
-
       const isLevelUp = this.app.spellManager.canBeLeveledUp();
-
       if (isLevelUp) {
         this.app._cantripTracking = {
           originalChecked: new Set(),
@@ -119,12 +144,14 @@ export class SpellbookUI {
     }
   }
 
+  /**
+   * Update spell preparation tracking display
+   */
   updateSpellPreparationTracking() {
     try {
       const preparedCheckboxes = this.element.querySelectorAll('dnd5e-checkbox[data-uuid]:not([disabled])');
       const countDisplay = this.element.querySelector('.spell-prep-tracking');
       if (!countDisplay) return;
-
       let preparedCount = 0;
       preparedCheckboxes.forEach((checkbox) => {
         const spellItem = checkbox.closest('.spell-item');
@@ -136,10 +163,8 @@ export class SpellbookUI {
       const maxPrepared = this.app.spellPreparation?.maximum || 0;
       const currentCountEl = countDisplay.querySelector('.current-count');
       const maxCountEl = countDisplay.querySelector('.max-count');
-
       if (currentCountEl) currentCountEl.textContent = preparedCount;
       if (maxCountEl) maxCountEl.textContent = maxPrepared;
-
       if (preparedCount >= maxPrepared) {
         countDisplay.classList.add('at-max');
       } else {
@@ -160,6 +185,10 @@ export class SpellbookUI {
     }
   }
 
+  /**
+   * Disable unprepared spell checkboxes when at max prepared spells
+   * @private
+   */
   _disableUnpreparedSpells() {
     const allSpellCheckboxes = this.element.querySelectorAll('dnd5e-checkbox[data-uuid]');
     allSpellCheckboxes.forEach((checkbox) => {
@@ -174,6 +203,10 @@ export class SpellbookUI {
     });
   }
 
+  /**
+   * Enable all spell checkboxes when not at max prepared spells
+   * @private
+   */
   _enableAllSpells() {
     const allSpellCheckboxes = this.element.querySelectorAll('dnd5e-checkbox[data-uuid]');
     allSpellCheckboxes.forEach((checkbox) => {
@@ -181,19 +214,20 @@ export class SpellbookUI {
       const spellLevel = spellItem?.dataset.spellLevel;
       if (spellLevel === '0') return;
       if (spellItem.querySelector('.tag.always-prepared') || spellItem.querySelector('.tag.granted')) return;
-
       checkbox.disabled = false;
       delete checkbox.dataset.tooltip;
       spellItem?.classList.remove('max-prepared');
     });
   }
 
+  /**
+   * Update spell counts in level headings
+   */
   updateSpellCounts() {
     try {
       const activeTab = this.app.tabGroups['spellbook-tabs'];
       const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
       if (!activeTabContent) return;
-
       if (activeTab === 'wizardtab') {
         const countDisplays = activeTabContent.querySelectorAll('.spell-count');
         countDisplays.forEach((countDisplay) => countDisplay.remove());
@@ -212,7 +246,6 @@ export class SpellbookUI {
         const spellItems = levelContainer.querySelectorAll('.spell-item');
         const countableSpells = [];
         const preparedSpells = [];
-
         spellItems.forEach((item) => {
           const hasAlwaysPrepared = !!item.querySelector('.tag.always-prepared');
           const hasGranted = !!item.querySelector('.tag.granted');
@@ -235,7 +268,6 @@ export class SpellbookUI {
           newCount.className = 'spell-count';
           newCount.setAttribute('aria-label', 'SPELLBOOK.UI.SpellCount');
           newCount.textContent = `(${preparedCount}/${totalAvailable})`;
-
           const levelHeading = levelContainer.querySelector('.spell-level-heading');
           if (levelHeading) {
             const cantripCounter = levelHeading.querySelector('.cantrip-counter');
@@ -252,6 +284,9 @@ export class SpellbookUI {
     }
   }
 
+  /**
+   * Apply collapsed state to spell levels from user flags
+   */
   applyCollapsedLevels() {
     try {
       const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
@@ -265,6 +300,9 @@ export class SpellbookUI {
     }
   }
 
+  /**
+   * Set up cantrip-specific UI elements
+   */
   setupCantripUI() {
     try {
       const cantripLevel = this.element.querySelector('.spell-level[data-level="0"]');
@@ -280,11 +318,8 @@ export class SpellbookUI {
 
         const infoElement = document.createElement('div');
         infoElement.className = 'wizard-rules-info';
-
         const ruleKey = cantripRules === CANTRIP_RULES.MODERN_LONG_REST ? 'SPELLBOOK.Wizard.ModernCantripRules' : 'SPELLBOOK.Wizard.LegacyCantripRules';
-
         infoElement.innerHTML = `<i class="fas fa-info-circle"></i> ${game.i18n.localize(ruleKey)}`;
-
         const levelHeading = cantripLevel.querySelector('.spell-level-heading');
         if (levelHeading) levelHeading.appendChild(infoElement);
       }
@@ -293,6 +328,11 @@ export class SpellbookUI {
     }
   }
 
+  /**
+   * Update cantrip counter display
+   * @param {HTMLElement} [cantripLevel] - The cantrip level container
+   * @returns {Object} Counter state with current and max values
+   */
   updateCantripCounter(cantripLevel) {
     if (!cantripLevel) {
       cantripLevel = this.element.querySelector('.spell-level[data-level="0"]');
@@ -303,19 +343,14 @@ export class SpellbookUI {
       const maxCantrips = this.app.spellManager.getMaxAllowed();
       let currentCount = 0;
       const cantripItems = cantripLevel.querySelectorAll('.spell-item');
-
       cantripItems.forEach((item) => {
         if (item.querySelector('.tag.always-prepared') || item.querySelector('.tag.granted')) return;
-
         const checkbox = item.querySelector('dnd5e-checkbox');
         if (checkbox && checkbox.checked) currentCount++;
       });
-
       this.app._uiCantripCount = currentCount;
-
       const levelHeading = cantripLevel.querySelector('.spell-level-heading');
       let counterElem = levelHeading.querySelector('.cantrip-counter');
-
       if (!counterElem) {
         counterElem = document.createElement('span');
         counterElem.className = 'cantrip-counter';
@@ -326,13 +361,10 @@ export class SpellbookUI {
           levelHeading.appendChild(counterElem);
         }
       }
-
       counterElem.textContent = `[${currentCount}/${maxCantrips}]`;
       counterElem.title = game.i18n.localize('SPELLBOOK.Cantrips.CounterTooltip');
       counterElem.style.display = '';
-
       counterElem.classList.toggle('at-max', currentCount >= maxCantrips);
-
       return { current: currentCount, max: maxCantrips };
     } catch (error) {
       log(1, 'Error updating cantrip counter:', error);
@@ -340,21 +372,25 @@ export class SpellbookUI {
     }
   }
 
+  /**
+   * Set up cantrip lock states based on selection rules
+   */
   setupCantripLocks() {
     try {
       const cantripItems = this.element.querySelectorAll('.spell-item[data-spell-level="0"]');
       if (!cantripItems.length) return;
-
       const isLevelUp = this.app.spellManager.canBeLeveledUp();
       const isLongRest = this.app._isLongRest;
       const currentCount = this.app._uiCantripCount;
-
       this.app.spellManager.lockCantripCheckboxes(cantripItems, isLevelUp, isLongRest, currentCount);
     } catch (error) {
       log(1, 'Error setting up cantrip locks:', error);
     }
   }
 
+  /**
+   * Lock all cantrip checkboxes (e.g., after swap completed)
+   */
   lockAllCantripCheckboxes() {
     try {
       const cantripItems = this.element.querySelectorAll('.spell-item[data-spell-level="0"]');
@@ -362,11 +398,9 @@ export class SpellbookUI {
       for (const item of cantripItems) {
         const checkbox = item.querySelector('dnd5e-checkbox');
         if (!checkbox || checkbox.hasAttribute('data-always-disabled')) continue;
-
         checkbox.disabled = true;
         checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.SwapComplete');
         item.classList.add('cantrip-locked');
-
         const lockIcon = item.querySelector('.cantrip-lock-icon');
         if (lockIcon) lockIcon.remove();
       }

@@ -59,22 +59,27 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     footer: { template: TEMPLATES.PLAYER.FOOTER }
   };
 
+  /**
+   * Get the window title for this application
+   * @returns {string} The formatted title including actor name
+   */
   get title() {
     return game.i18n.format('SPELLBOOK.Application.ActorTitle', { name: this.actor.name });
   }
 
+  /**
+   * Create a new PlayerSpellBook application
+   * @param {Actor} actor - The actor whose spells to display
+   * @param {Object} options - Application options
+   */
   constructor(actor, options = {}) {
     super(options);
     this.actor = actor;
     this.spellManager = new SpellManager(actor);
     this.wizardManager = genericUtils.isWizard(actor) ? new WizardSpellbookManager(actor) : null;
-
-    // Initialize helpers
     this._stateManager = new SpellbookState(this);
     this.ui = new SpellbookUI(this);
     this.filterHelper = new SpellbookFilterHelper(this);
-
-    // Set up state properties
     this.isLoading = true;
     this.spellLevels = [];
     this.className = '';
@@ -82,11 +87,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this._newlyCheckedCantrips = new Set();
     this._isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING) || false;
     this._wizardInitialized = false;
-
-    // Initialize tab groups
     if (!this.tabGroups['spellbook-tabs']) this.tabGroups['spellbook-tabs'] = 'spellstab';
-
-    // Register flag change hook
     this._flagChangeHook = Hooks.on('updateActor', (updatedActor, changes) => {
       if (updatedActor.id !== this.actor.id) return;
       if (changes.flags?.[MODULE.ID]) {
@@ -101,6 +102,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     });
   }
 
+  /** @inheritdoc */
   async _prepareContext(options) {
     const context = this._createBaseContext();
     if (this.isLoading) return context;
@@ -120,6 +122,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     return context;
   }
 
+  /**
+   * Create the base context for the application
+   * @returns {Object} The base context
+   * @private
+   */
   _createBaseContext() {
     const buttons = [
       {
@@ -153,6 +160,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
 
+  /**
+   * Process a spell for display in the UI
+   * @param {Object} spell - The spell to process
+   * @returns {Object} The processed spell with UI elements
+   * @private
+   */
   _processSpellForDisplay(spell) {
     const processedSpell = foundry.utils.deepClone(spell);
 
@@ -188,6 +201,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     return processedSpell;
   }
 
+  /**
+   * Add wizard-specific data to the context
+   * @param {Object} context - The context object to modify
+   * @private
+   */
   _addWizardContextData(context) {
     context.wizardSpellbookCount = this._stateManager.wizardSpellbookCache?.length || 0;
     context.wizardRulesVersion = this.spellManager.getSettings().rules;
@@ -210,6 +228,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /** @inheritdoc */
   async _onRender(context, options) {
     super._onRender?.(context, options);
     this._setupContentWrapper();
@@ -249,6 +268,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /**
+   * Set up the content wrapper element for proper layout
+   * @private
+   */
   _setupContentWrapper() {
     if (!this.element.querySelector('.content-wrapper')) {
       const tabsNav = this.element.querySelector('.window-content > nav.tabs.tabs-right');
@@ -268,6 +291,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /** @inheritdoc */
   _onClose() {
     try {
       if (this._isLongRest) {
@@ -284,6 +308,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /**
+   * Get available tabs for the application
+   * @returns {Object} The tab configuration
+   * @private
+   */
   _getTabs() {
     const tabGroup = 'spellbook-tabs';
 
@@ -298,6 +327,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
 
+  /**
+   * Change the active tab and handle related state updates
+   * @param {string} tabName - The name of the tab to activate
+   * @param {string} groupName - The tab group name
+   * @param {Object} options - Additional options
+   * @override
+   */
   changeTab(tabName, groupName, options = {}) {
     super.changeTab(tabName, groupName, options);
 
@@ -330,6 +366,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /** @inheritdoc */
   _configureRenderOptions(options) {
     super._configureRenderOptions(options);
 
@@ -340,6 +377,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /**
+   * Load spell data from the state manager
+   * @returns {Promise<void>}
+   * @private
+   * @async
+   */
   async _loadSpellData() {
     try {
       await this._stateManager.initialize();
@@ -356,6 +399,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /**
+   * Prepare filter data for the UI
+   * @returns {Array} The prepared filters
+   * @private
+   */
   _prepareFilters() {
     try {
       let filterConfig = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
@@ -419,10 +467,24 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /**
+   * Get options for a filter dropdown
+   * @param {string} filterId - The filter identifier
+   * @param {Object} filterState - The current filter state
+   * @returns {Array} The filter options
+   * @private
+   */
   _getFilterOptions(filterId, filterState) {
     return filterUtils.getOptionsForFilter(filterId, filterState, this.spellLevels);
   }
 
+  /**
+   * Create a range filter element
+   * @param {string} filterId - The filter identifier
+   * @param {Object} filterState - The current filter state
+   * @returns {HTMLElement} The created range filter element
+   * @private
+   */
   _createRangeFilterElement(filterId, filterState) {
     const container = document.createElement('div');
     container.className = 'range-inputs';
@@ -455,10 +517,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     return container;
   }
 
+  /**
+   * Apply filters to spells
+   * @private
+   */
   _applyFilters() {
     this.filterHelper.applyFilters();
   }
 
+  /**
+   * Handle preparation checkbox change
+   * @param {Event} event - The change event
+   * @returns {Promise<void>}
+   * @async
+   */
   async _handlePreparationChange(event) {
     try {
       const checkbox = event.target;
@@ -479,6 +551,15 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /**
+   * Handle cantrip preparation change
+   * @param {Event} event - The change event
+   * @param {string} uuid - The spell UUID
+   * @param {HTMLElement} spellItem - The spell item element
+   * @returns {Promise<void>}
+   * @private
+   * @async
+   */
   async _handleCantripPreparationChange(event, uuid, spellItem) {
     try {
       const checkbox = event.target;
@@ -526,10 +607,31 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /**
+   * Update wizard tab data after learning a spell
+   * @param {boolean} isFree - Whether the spell was learned for free
+   */
+  _updateWizardTabDataAfterSpellLearning(isFree) {
+    if (this._stateManager.tabData && this._stateManager.tabData.wizardtab) {
+      this._stateManager.tabData.wizardtab.wizardTotalSpellbookCount = (this._stateManager.tabData.wizardtab.wizardTotalSpellbookCount || 0) + 1;
+
+      if (isFree) {
+        this._stateManager.tabData.wizardtab.wizardRemainingFreeSpells = Math.max(0, (this._stateManager.tabData.wizardtab.wizardRemainingFreeSpells || 0) - 1);
+        this._stateManager.tabData.wizardtab.wizardHasFreeSpells = this._stateManager.tabData.wizardtab.wizardRemainingFreeSpells > 0;
+      }
+    }
+  }
+
   /* -------------------------------------------- */
   /*  Static Handler Methods                      */
   /* -------------------------------------------- */
 
+  /**
+   * Toggle sidebar visibility
+   * @param {Event} event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
+   */
   static toggleSidebar(event, _form) {
     try {
       const isCollapsing = !this.element.classList.contains('sidebar-collapsed');
@@ -547,10 +649,22 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /**
+   * Apply filters to spells
+   * @param {Event} _event - The event
+   * @param {HTMLElement} _form - The form element
+   * @static
+   */
   static filterSpells(_event, _form) {
     this._applyFilters();
   }
 
+  /**
+   * Apply sorting to spells
+   * @param {Event} event - The change event
+   * @param {HTMLElement} _form - The form element
+   * @static
+   */
   static sortSpells(event, _form) {
     try {
       const sortBy = event.target.value;
@@ -560,6 +674,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /**
+   * Handle reset button click
+   * @param {Event} event - The click event
+   * @param {HTMLElement} form - The form element
+   * @static
+   */
   static handleReset(event, form) {
     try {
       const isShiftReset = event.shiftKey;
@@ -622,6 +742,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /**
+   * Toggle spell level expansion/collapse
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} form - The form element
+   * @static
+   */
   static toggleSpellLevel(_event, form) {
     try {
       const levelContainer = form.parentElement;
@@ -645,6 +771,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /**
+   * Open filter configuration dialog
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
+   */
   static configureFilters(_event, _form) {
     try {
       const filterConfig = new PlayerFilterConfiguration(this);
@@ -654,6 +786,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /**
+   * Open cantrip settings dialog
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
+   */
   static configureCantripSettings(_event, _form) {
     try {
       const dialog = new SpellbookSettingsDialog(this.actor);
@@ -663,6 +801,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /**
+   * Handle learn spell button click
+   * @param {Event} event - The click event
+   * @returns {Promise<void>}
+   * @static
+   * @async
+   */
   static async learnSpell(event) {
     try {
       const spellUuid = event.target.dataset.uuid;
@@ -731,17 +876,15 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  _updateWizardTabDataAfterSpellLearning(isFree) {
-    if (this._stateManager.tabData && this._stateManager.tabData.wizardtab) {
-      this._stateManager.tabData.wizardtab.wizardTotalSpellbookCount = (this._stateManager.tabData.wizardtab.wizardTotalSpellbookCount || 0) + 1;
-
-      if (isFree) {
-        this._stateManager.tabData.wizardtab.wizardRemainingFreeSpells = Math.max(0, (this._stateManager.tabData.wizardtab.wizardRemainingFreeSpells || 0) - 1);
-        this._stateManager.tabData.wizardtab.wizardHasFreeSpells = this._stateManager.tabData.wizardtab.wizardRemainingFreeSpells > 0;
-      }
-    }
-  }
-
+  /**
+   * Handle form submission
+   * @param {Event} _event - The submit event
+   * @param {HTMLElement} form - The form element
+   * @param {Object} formData - The form data
+   * @returns {Promise<Actor|null>} The updated actor or null
+   * @static
+   * @async
+   */
   static async formHandler(_event, form, formData) {
     try {
       const actor = this.actor;

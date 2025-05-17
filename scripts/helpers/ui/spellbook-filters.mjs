@@ -1,16 +1,31 @@
 import { log } from '../../logger.mjs';
 import * as filterUtils from '../filters.mjs';
 
+/**
+ * Helper class for filtering spells in the spellbook application
+ */
 export class SpellbookFilterHelper {
+  /**
+   * Create a new filter helper
+   * @param {PlayerSpellBook} app - The parent application
+   */
   constructor(app) {
     this.app = app;
     this.actor = app.actor;
   }
 
+  /**
+   * Get the application's element
+   * @returns {HTMLElement|null} The application element
+   */
   get element() {
     return this.app.element;
   }
 
+  /**
+   * Get the current filter state from the UI
+   * @returns {Object} The filter state
+   */
   getFilterState() {
     if (!this.element) return filterUtils.getDefaultFilterState();
 
@@ -31,6 +46,9 @@ export class SpellbookFilterHelper {
     };
   }
 
+  /**
+   * Apply filters to the spell list
+   */
   applyFilters() {
     try {
       const filters = this.getFilterState();
@@ -54,7 +72,6 @@ export class SpellbookFilterHelper {
         const isGranted = !!item.querySelector('.tag.granted');
         const isAlwaysPrepared = !!item.querySelector('.tag.always-prepared');
         const isCountable = !isGranted && !isAlwaysPrepared;
-
         const visible = this._checkSpellVisibility(filters, {
           name,
           isPrepared,
@@ -108,18 +125,23 @@ export class SpellbookFilterHelper {
     }
   }
 
+  /**
+   * Check if a spell matches the current filters
+   * @param {Object} filters - The current filter state
+   * @param {Object} spell - The spell to check
+   * @returns {boolean} Whether the spell should be visible
+   * @private
+   */
   _checkSpellVisibility(filters, spell) {
     if (filters.name && !spell.name.includes(filters.name.toLowerCase())) return false;
     if (filters.level && spell.level !== filters.level) return false;
     if (filters.school && spell.school !== filters.school) return false;
-
     if (filters.castingTime) {
       const [filterType, filterValue] = filters.castingTime.split(':');
       const itemType = spell.castingTimeType;
       const itemValue = spell.castingTimeValue === '' || spell.castingTimeValue === null ? '1' : spell.castingTimeValue;
       if (itemType !== filterType || itemValue !== filterValue) return false;
     }
-
     if ((filters.minRange || filters.maxRange) && spell.rangeUnits) {
       const rangeValue = parseInt(spell.rangeValue, 10);
       const convertedRange = filterUtils.convertRangeToStandardUnit(spell.rangeUnits, rangeValue);
@@ -127,18 +149,14 @@ export class SpellbookFilterHelper {
       const maxRange = filters.maxRange ? parseInt(filters.maxRange, 10) : Infinity;
       if (convertedRange < minRange || convertedRange > maxRange) return false;
     }
-
     if (filters.damageType && !spell.damageTypes.includes(filters.damageType)) return false;
     if (filters.condition && !spell.conditions.includes(filters.condition)) return false;
-
     if (filters.requiresSave) {
       if (filters.requiresSave === 'true' && !spell.requiresSave) return false;
       if (filters.requiresSave === 'false' && spell.requiresSave) return false;
     }
-
     if (filters.prepared && !spell.isPrepared) return false;
     if (filters.ritual && !spell.isRitual) return false;
-
     if (filters.concentration) {
       if (filters.concentration === 'true' && !spell.isConcentration) return false;
       if (filters.concentration === 'false' && spell.isConcentration) return false;
@@ -147,6 +165,12 @@ export class SpellbookFilterHelper {
     return true;
   }
 
+  /**
+   * Sort spells according to criteria
+   * @param {Array} spells - Spells to sort
+   * @param {string} sortBy - Sort criteria
+   * @returns {Array} Sorted spells
+   */
   sortSpells(spells, sortBy) {
     return [...spells].sort((a, b) => {
       switch (sortBy) {
@@ -167,16 +191,17 @@ export class SpellbookFilterHelper {
     });
   }
 
+  /**
+   * Apply sorting to spells in the DOM
+   * @param {string} sortBy - Sort criteria
+   */
   applySorting(sortBy) {
     try {
       const levelContainers = this.element.querySelectorAll('.spell-level');
-
       for (const levelContainer of levelContainers) {
         const list = levelContainer.querySelector('.spell-list');
         if (!list) continue;
-
         const items = Array.from(list.children);
-
         items.sort((a, b) => {
           switch (sortBy) {
             case 'name':
@@ -203,6 +228,11 @@ export class SpellbookFilterHelper {
     }
   }
 
+  /**
+   * Update level container visibility and counts
+   * @param {Map} levelVisibilityMap - Map of level visibility data
+   * @private
+   */
   _updateLevelContainers(levelVisibilityMap) {
     try {
       const levelContainers = this.element.querySelectorAll('.spell-level');
@@ -217,7 +247,6 @@ export class SpellbookFilterHelper {
         };
 
         container.style.display = levelStats.visible > 0 ? '' : 'none';
-
         const countDisplay = container.querySelector('.spell-count');
         if (countDisplay && levelStats.countable > 0) {
           countDisplay.textContent = `(${levelStats.countablePrepared}/${levelStats.countable})`;
