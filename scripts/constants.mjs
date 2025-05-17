@@ -274,3 +274,14 @@ export const WIZARD_SPELL_SOURCE = {
   INITIAL: 'initial',
   FREE: 'free'
 };
+
+export const CLASS_IDENTIFIERS = {
+  WIZARD: 'wizard',
+  BARD: 'bard',
+  CLERIC: 'cleric',
+  DRUID: 'druid',
+  SORCERER: 'sorcerer',
+  WARLOCK: 'warlock',
+  RANGER: 'ranger',
+  ARTIFICER: 'artificer'
+};

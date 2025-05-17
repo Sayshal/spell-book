@@ -10,7 +10,6 @@ export class WizardSpellbookManager {
    * Create a new WizardSpellbookManager for an actor
    * @param {Actor5e} actor - The actor to manage wizard spellbook for
    */
-
   static _folderCreationLock = false;
   static _journalCreationLocks = new Map();
 
@@ -356,14 +355,25 @@ export class WizardSpellbookManager {
   }
 
   /**
+   * Check if a spell would be free to copy
+   * @param {Item5e} spell - The spell to check
+   * @returns {Promise<boolean>} Whether the spell would be free
+   */
+  async isSpellFree(spell) {
+    if (spell.system.level === 0) return true;
+    const remainingFree = await this.getRemainingFreeSpells();
+    return remainingFree > 0;
+  }
+
+  /**
    * Calculate cost to copy a spell, accounting for free spells
    * @param {Item5e} spell - The spell to copy
    * @returns {Promise<{cost: number, isFree: boolean}>} Cost in gold pieces and if it's free
    */
   async getCopyingCostWithFree(spell) {
-    if (spell.system.level === 0) return { cost: 0, isFree: true };
-    const remainingFree = await this.getRemainingFreeSpells();
-    if (remainingFree > 0) return { cost: 0, isFree: true };
+    const isFree = await this.isSpellFree(spell);
+    if (isFree) return { cost: 0, isFree: true };
+
     const cost = this.getCopyingCost(spell);
     return { cost, isFree: false };
   }
