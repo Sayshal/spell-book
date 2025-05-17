@@ -69,19 +69,10 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    */
   constructor(actor, options = {}) {
     super(options);
-
-    if (!actor) {
-      throw new Error('Actor is required for SpellbookSettingsDialog');
-    }
-
-    log(3, `Initializing SpellbookSettingsDialog for ${actor.name}`);
     this.actor = actor;
     this.spellManager = new SpellManager(actor);
-
-    // Check if actor is a wizard or has force wizard mode enabled
     const forceWizardMode = actor.getFlag(MODULE.ID, FLAGS.FORCE_WIZARD_MODE);
     const wizardClass = actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === 'wizard');
-
     if (wizardClass || forceWizardMode) {
       this.wizardManager = new WizardSpellbookManager(actor);
     }
@@ -98,68 +89,65 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
   /** @override */
   async _prepareContext(options) {
+    const context = super._prepareContext(options);
     try {
       log(3, 'Preparing SpellbookSettingsDialog context');
 
       // Get cantrip settings
-      const cantripSettings = this.spellManager.getSettings();
-      const maxCantrips = this.spellManager.getMaxAllowed();
-      const currentCount = this.spellManager.getCurrentCount();
+      context.cantripSettings = this.spellManager.getSettings();
+      context.stats = {
+        maxCantrips: this.spellManager.getMaxAllowed(),
+        currentCount: this.spellManager.getCurrentCount()
+      };
 
-      log(3, `Current cantrip settings: rules=${cantripSettings.rules}, behavior=${cantripSettings.behavior}`);
-      log(3, `Cantrip stats: ${currentCount}/${maxCantrips}`);
+      log(3, `Current cantrip settings: rules=${context.cantripSettings.rules}, behavior=${context.cantripSettings.behavior}`);
+      log(3, `Cantrip stats: ${context.stats.currentCount}/${context.stats.maxCantrips}`);
 
-      // Get wizard settings if applicable
-      const isWizard = !!this.wizardManager?.isWizard;
-      const forceWizardMode = this.actor.getFlag(MODULE.ID, FLAGS.FORCE_WIZARD_MODE) || false;
+      // Wizard settings
+      context.isWizard = !!this.wizardManager?.isWizard;
+      context.forceWizardMode = this.actor.getFlag(MODULE.ID, FLAGS.FORCE_WIZARD_MODE) || false;
 
-      let wizardSettings = {};
+      context.wizardSettings = {};
 
-      if (isWizard) {
-        wizardSettings = {
+      if (context.isWizard) {
+        context.wizardSettings = {
           startingSpells: this.actor.getFlag(MODULE.ID, 'wizardStartingSpells') || WIZARD_DEFAULTS.STARTING_SPELLS,
           spellsPerLevel: this.actor.getFlag(MODULE.ID, 'wizardSpellsPerLevel') || WIZARD_DEFAULTS.SPELLS_PER_LEVEL,
-          ritualCasting: this.actor.getFlag(MODULE.ID, 'wizardRitualCasting') !== false // Default to true if not set
+          ritualCasting: this.actor.getFlag(MODULE.ID, 'wizardRitualCasting') !== false
         };
-        log(3, `Current wizard settings:`, wizardSettings);
+        log(3, `Current wizard settings:`, context.wizardSettings);
       }
 
-      return {
-        actor: this.actor,
-        isWizard,
-        forceWizardMode,
-        stats: {
-          maxCantrips,
-          currentCount
-        },
-        cantripSettings, // Pass the raw settings directly for simpler template
-        CANTRIP_RULES, // Pass constants to template for comparisons
-        ENFORCEMENT_BEHAVIOR, // Pass constants to template for comparisons
-        wizardSettings
-      };
+      // Include constants
+      context.CANTRIP_RULES = CANTRIP_RULES;
+      context.ENFORCEMENT_BEHAVIOR = ENFORCEMENT_BEHAVIOR;
+      context.actor = this.actor;
+
+      return context;
     } catch (error) {
       log(1, 'Error preparing spellbook settings context:', error);
-      return {
-        actor: this.actor,
-        cantripSettings: {
-          rules: CANTRIP_RULES.LEGACY,
-          behavior: ENFORCEMENT_BEHAVIOR.NOTIFY_GM
-        },
-        CANTRIP_RULES,
-        ENFORCEMENT_BEHAVIOR,
-        stats: { maxCantrips: 0, currentCount: 0 }
+
+      context.actor = this.actor;
+      context.cantripSettings = {
+        rules: CANTRIP_RULES.LEGACY,
+        behavior: ENFORCEMENT_BEHAVIOR.NOTIFY_GM
       };
+      context.CANTRIP_RULES = CANTRIP_RULES;
+      context.ENFORCEMENT_BEHAVIOR = ENFORCEMENT_BEHAVIOR;
+      context.stats = { maxCantrips: 0, currentCount: 0 };
+
+      return context;
     }
   }
 
   /**
    * Form handler for saving spellbook settings
    * @param {Event} _event - The form submission event
-   * @param {HTMLFormElement} form - The form element
+   * @param {HTMLFormElement} _form - The form element
    * @param {Object} formData - The form data
    * @returns {Promise<Actor5e|null>} The actor or null if error
    */
-  static async formHandler(_event, form, formData) {
+  static async formHandler(_event, _form, formData) {
     try {
       const actor = this.actor;
       if (!actor) {

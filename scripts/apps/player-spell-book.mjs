@@ -230,7 +230,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @inheritdoc */
   async _onRender(context, options) {
-    super._onRender?.(context, options);
+    super._onRender(context, options);
     this._setupContentWrapper();
 
     try {
@@ -302,7 +302,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         Hooks.off('updateActor', this._flagChangeHook);
       }
 
-      super._onClose?.();
+      super._onClose();
     } catch (error) {
       log(1, 'Error in _onClose:', error);
     }
