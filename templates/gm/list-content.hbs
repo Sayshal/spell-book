@@ -82,8 +82,10 @@
 			{{/if}}
 		</div>
 	{{else}}
-		<div class="no-selection">
-			<p>{{localize "SPELLMANAGER.Columns.NoListSelected"}}</p>
-		</div>
+		{{#unless isLoading}}
+			<div class="no-selection">
+				<p>{{localize "SPELLMANAGER.Columns.NoListSelected"}}</p>
+			</div>
+		{{/unless}}
 	{{/if}}
 </section>

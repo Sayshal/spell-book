@@ -49,10 +49,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
   /** @override */
   static PARTS = {
-    form: {
-      template: TEMPLATES.GM.MAIN,
-      templates: [TEMPLATES.GM.SPELL_LISTS, TEMPLATES.GM.LIST_CONTENT, TEMPLATES.GM.AVAILABLE_SPELLS]
-    },
+    container: { template: TEMPLATES.GM.MAIN },
+    spellLists: { template: TEMPLATES.GM.SPELL_LISTS, scrollable: ['.lists-container'] },
+    listContent: { template: TEMPLATES.GM.LIST_CONTENT, scrollable: ['.selected-list-spells'] },
+    availableSpells: { template: TEMPLATES.GM.AVAILABLE_SPELLS, scrollable: ['.available-spells-wrapper'] },
     footer: { template: TEMPLATES.GM.FOOTER }
   };
 
@@ -261,6 +261,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     this.setupFilterListeners();
     this.applyCollapsedLevels();
     this.applyCollapsedFolders();
+  }
+
+  /** @override */
+  _configureRenderOptions(options) {
+    super._configureRenderOptions(options);
+    options.parts = ['container', 'spellLists', 'listContent', 'availableSpells', 'footer'];
   }
 
   /* -------------------------------------------- */

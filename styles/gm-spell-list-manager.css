@@ -59,6 +59,7 @@
 .gm-spell-list-manager {
   .window-content {
     display: flex;
+    position: relative;
     flex-direction: column;
     height: 100%;
     max-height: 100%;
@@ -70,16 +71,11 @@
     border-bottom: none;
   }
 
+  /* Container part */
   .gm-spell-list-manager-container {
-    gap: var(--spell-book-manager-column-gap);
-    grid-template-columns: var(--spell-book-manager-sidebar-width) minmax(0, 1fr) var(--spell-book-manager-spells-sidebar-width);
-    display: grid;
-    position: relative;
-    height: calc(100% - 60px);
-    max-height: calc(100% - 60px);
-    padding-bottom: 0;
+    inset: 0;
+    position: absolute;
     overflow: hidden;
-    transition: var(--spell-book-manager-transition-slow);
 
     &.loading-state,
     &.error-state {
@@ -92,7 +88,6 @@
 
   .manager-loading,
   .manager-error {
-    grid-column: 1 / -1;
     width: 100%;
     margin: 0 auto;
 
@@ -103,8 +98,8 @@
 
   /* Sidebar collapsed state */
   &.sidebar-collapsed {
-    .gm-spell-list-manager-container {
-      grid-template-columns: 0 minmax(0, 1fr) var(--spell-book-manager-spells-sidebar-width);
+    .selected-list-content {
+      left: 0;
     }
 
     .spell-lists-sidebar {
@@ -126,16 +121,17 @@
     transform-style: preserve-3d;
     display: flex;
     z-index: var(--spell-book-manager-z-sidebar);
-    position: relative;
+    position: absolute;
+    inset: 0 0 60px;
     flex-direction: column;
     width: var(--spell-book-manager-sidebar-width);
-    height: 100%;
+    height: auto;
     margin-left: 0;
     padding: 0;
     border-right: 1px solid var(--color-border-light);
     background: var(--spell-book-manager-bg-primary);
     box-shadow: var(--spell-book-manager-sidebar-shadow);
-    transition: margin-left 450ms ease;
+    transition: all 450ms ease;
     transform: translateZ(0);
 
     h2 {
@@ -191,7 +187,7 @@
 
         .collapse-indicator {
           margin-right: 0.5rem;
-          transition: transform 0.2s ease;
+          transition: all 0.2s ease;
         }
 
         .folder-icon {
@@ -206,7 +202,7 @@
       .folder-content {
         max-height: inherit;
         overflow: hidden;
-        transition: max-height 0.3s ease;
+        transition: all 0.3s ease;
       }
     }
 
@@ -287,7 +283,7 @@
       font-size: 1rem;
       cursor: pointer;
       background: none;
-      transition: text-shadow 0.2s ease;
+      transition: all 0.2s ease;
 
       i {
         margin-right: 0;
@@ -348,7 +344,7 @@
     padding: 0.5rem;
     border-bottom: 1px solid var(--spell-book-border-light);
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
 
     &:hover {
       background: var(--spell-book-manager-bg-item-hover);
@@ -381,34 +377,34 @@
     .list-meta {
       display: flex;
       opacity: 0.8;
+      flex-wrap: nowrap;
       align-items: center;
+      width: 100%;
       margin-top: 0.25rem;
+      overflow: hidden;
       color: var(--spell-book-manager-text-secondary);
       font-size: var(--spell-book-manager-font-sm);
-      flex-wrap: nowrap;
-      width: 100%;
-      overflow: hidden;
     }
 
     .spell-count {
+      flex-shrink: 0;
       font-weight: 600;
       white-space: nowrap;
-      flex-shrink: 0;
     }
 
     .meta-separator {
+      flex-shrink: 0;
       margin: 0 0.25rem;
       white-space: nowrap;
-      flex-shrink: 0;
     }
 
     .source {
-      font-style: italic;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      min-width: 0;
       flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      font-style: italic;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 
@@ -426,11 +422,13 @@
 /* ----------------------------------------- */
 .gm-spell-list-manager {
   .selected-list-content {
+    inset: 0 var(--spell-book-manager-spells-sidebar-width) 60px var(--spell-book-manager-sidebar-width);
+    padding-left: 1.25rem;
     display: flex;
+    position: absolute;
     flex-direction: column;
-    height: 100%;
-    max-height: 100%;
     overflow: hidden;
+    transition: all var(--spell-book-manager-transition-slow);
   }
 
   /* Selected list header */
@@ -457,10 +455,10 @@
 
     .header-buttons {
       display: flex;
-      white-space: nowrap;
       justify-content: center;
       align-items: center;
       margin-top: -20px;
+      white-space: nowrap;
     }
 
     /* Action buttons */
@@ -482,9 +480,9 @@
       }
 
       &:focus {
+        border: none;
         outline: none;
         box-shadow: none;
-        border: none;
       }
     }
 
@@ -574,11 +572,11 @@
   }
 
   .empty-state {
-    text-align: center;
     max-width: 80%;
     padding: 2rem;
     color: var(--spell-book-manager-text-tertiary);
     font-style: italic;
+    text-align: center;
 
     p {
       margin: 0;
@@ -627,7 +625,7 @@
 
     .collapse-indicator {
       margin-right: 0.5rem;
-      transition: transform 0.2s ease;
+      transition: all 0.2s ease;
     }
   }
 
@@ -637,7 +635,7 @@
     padding: 0;
     overflow: hidden;
     list-style: none;
-    transition: max-height 0.4s ease;
+    transition: all 0.4s ease;
   }
 }
 
@@ -656,8 +654,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.25rem;
     margin-bottom: 0;
+    padding: 0.25rem;
     border-bottom: 1px solid var(--spell-book-border-light);
     border-radius: var(--spell-book-border-radius);
 
@@ -762,7 +760,7 @@
       font-family: var(--dnd5e-font-roboto-slab, serif);
       text-overflow: ellipsis;
       white-space: nowrap;
-      transition: text-shadow 250ms ease;
+      transition: all 250ms ease;
     }
 
     .subtitle {
@@ -803,9 +801,12 @@
 .gm-spell-list-manager {
   .available-spells-sidebar {
     display: flex;
-    flex-direction: column;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 60px;
+    flex-direction: column; /* Account for footer height */
     width: var(--spell-book-manager-spells-sidebar-width);
-    height: 100%;
     border-left: 1px solid var(--spell-book-manager-border-color);
     overflow: hidden;
 
@@ -974,10 +975,10 @@
     display: flex;
     z-index: var(--spell-book-manager-z-footer);
     position: absolute;
+    right: 0;
     bottom: 0;
     left: 0;
     justify-content: center;
-    width: 100%;
     height: 60px;
     padding: 0.5rem;
     border-top: 1px solid var(--spell-book-manager-border-color);
