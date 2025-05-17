@@ -113,7 +113,9 @@
 				<input type="number" name="spell-min-range" id="spell-min-range"
 					placeholder="{{localize 'SPELLBOOK.Filters.RangeMin'}}" value="{{filterState.minRange}}"
 					aria-label="{{localize 'SPELLBOOK.Filters.RangeMinLabel'}}">
-				<div class="range-separator" aria-hidden="true">-</div>
+				<div class="range-separator" aria-hidden="true">
+					<dnd5e-icon src="systems/dnd5e/icons/svg/range-connector.svg"></dnd5e-icon>
+				</div>
 				<input type="number" name="spell-max-range" id="spell-max-range"
 					placeholder="{{localize 'SPELLBOOK.Filters.RangeMax'}}" value="{{filterState.maxRange}}"
 					aria-label="{{localize 'SPELLBOOK.Filters.RangeMaxLabel'}}">

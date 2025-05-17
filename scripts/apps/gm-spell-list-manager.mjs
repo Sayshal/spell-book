@@ -1150,7 +1150,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       this.pendingChanges = { added: new Set(), removed: new Set() };
       const flags = this.selectedSpellList.document.flags?.[MODULE.ID] || {};
       const isCustom = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList;
-      if (!isCustom) await this._duplicateForEditing();
+      const isActorSpellbook = !!flags.isActorSpellbook;
+      log(1, 'editSpellList:', { flags: flags, isCustom: isCustom, isActorSpellbook: isActorSpellbook });
+      if (!isCustom && !isActorSpellbook) await this._duplicateForEditing();
       this.isEditing = true;
       this.filterState.source = 'all';
       this.render(false);

@@ -962,6 +962,8 @@
       justify-content: center;
       align-items: center;
       width: 1rem;
+
+      --icon-fill: var(--color-text-light-6);
     }
   }
 }
