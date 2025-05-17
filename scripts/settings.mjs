@@ -133,6 +133,18 @@ export function registerSettings() {
       default: false
     });
 
+    game.settings.register(MODULE.ID, SETTINGS.ENABLE_JOURNAL_BUTTON, {
+      name: 'SPELLBOOK.Settings.EnableJournalButton.Name',
+      hint: 'SPELLBOOK.Settings.EnableJournalButton.Hint',
+      scope: 'world',
+      config: true,
+      type: Boolean,
+      default: false,
+      onChange: () => {
+        if (game.user.isGM) ui.sidebar.render(true);
+      }
+    });
+
     log(3, 'Module settings registered');
   } catch (error) {
     log(1, 'Error registering settings:', error);

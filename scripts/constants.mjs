@@ -76,6 +76,7 @@ export const SETTINGS = {
   DEFAULT_ENFORCEMENT_BEHAVIOR: 'defaultEnforcementBehavior',
   DISABLE_CANTRIP_SWAP_PROMPT: 'disableCantripSwapPrompt',
   DISTANCE_UNIT: 'distanceUnit',
+  ENABLE_JOURNAL_BUTTON: 'enableJournalButton',
   ENABLE_REST_PROMPT: 'enableRestPrompt',
   FILTER_CONFIGURATION: 'filterConfiguration',
   LOGGING_LEVEL: 'loggingLevel',
