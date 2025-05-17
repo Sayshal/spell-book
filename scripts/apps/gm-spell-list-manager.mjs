@@ -30,6 +30,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       showDocumentation: GMSpellListManager.handleShowDocumentation,
       toggleSidebar: GMSpellListManager.handleToggleSidebar,
       toggleSpellLevel: GMSpellListManager.handleToggleSpellLevel,
+      toggleFolder: GMSpellListManager.handleToggleFolder,
+      openActor: GMSpellListManager.handleOpenActor,
+      openClass: GMSpellListManager.handleOpenClass,
       createNewList: GMSpellListManager.handleCreateNewList
     },
     classes: ['gm-spell-list-manager'],
@@ -144,6 +147,27 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     context.availableSpells = this.availableSpells;
     context.filterState = this.filterState;
     context.settings = { distanceUnit: game.settings.get(MODULE.ID, SETTINGS.DISTANCE_UNIT) };
+
+    if (!this.isLoading && this.availableSpellLists?.length) {
+      const actorOwnedLists = this.availableSpellLists.filter((list) => list.isActorOwned);
+      const customLists = this.availableSpellLists.filter((list) => !list.isActorOwned && (list.isCustom || list.document?.flags?.[MODULE.ID]?.isNewList));
+      const standardLists = this.availableSpellLists.filter((list) => !list.isActorOwned && !customLists.includes(list));
+      actorOwnedLists.sort((a, b) => {
+        if (a.actorName && b.actorName) return a.actorName.localeCompare(b.actorName);
+        if (a.actorName) return -1;
+        if (b.actorName) return 1;
+        return a.name.localeCompare(b.name);
+      });
+      customLists.sort((a, b) => a.name.localeCompare(b.name));
+      standardLists.sort((a, b) => a.name.localeCompare(b.name));
+      context.actorOwnedLists = actorOwnedLists;
+      context.customLists = customLists;
+      context.standardLists = standardLists;
+      context.hasActorOwnedLists = actorOwnedLists.length > 0;
+      context.hasCustomLists = customLists.length > 0;
+      context.hasStandardLists = standardLists.length > 0;
+    }
+
     if (this.isLoading) return context;
     const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
     context.customListMap = customMappings;
@@ -236,6 +260,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
     this.setupFilterListeners();
     this.applyCollapsedLevels();
+    this.applyCollapsedFolders();
   }
 
   /* -------------------------------------------- */
@@ -292,6 +317,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     processed.isCustomList = !!spellList.document.flags?.[MODULE.ID]?.isDuplicate;
     processed.canRestore = !!(processed.isCustomList && spellList.document.flags?.[MODULE.ID]?.originalUuid);
     processed.originalUuid = spellList.document.flags?.[MODULE.ID]?.originalUuid;
+    processed.actorId = spellList.document.flags?.[MODULE.ID]?.actorId;
+    processed.isPlayerSpellbook = !!processed.actorId;
+    processed.identifier = spellList.document.system?.identifier;
+    processed.isClassSpellList = !processed.isCustomList && !processed.isPlayerSpellbook && !!processed.identifier;
 
     if (spellList.spellsByLevel?.length) {
       processed.spellsByLevel = spellList.spellsByLevel.map((level) => ({
@@ -1288,6 +1317,21 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Apply saved collapsed folder states from user flags
+   */
+  applyCollapsedFolders() {
+    try {
+      const collapsedFolders = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_FOLDERS) || [];
+      for (const folderId of collapsedFolders) {
+        const folderContainer = this.element.querySelector(`.list-folder[data-folder-id="${folderId}"]`);
+        if (folderContainer) folderContainer.classList.add('collapsed');
+      }
+    } catch (error) {
+      log(1, 'Error applying collapsed folders:', error);
+    }
+  }
+
   /* -------------------------------------------- */
   /*  Static Handler Methods                      */
   /* -------------------------------------------- */
@@ -1503,6 +1547,119 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       game.user.setFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS, collapsedLevels);
     } catch (error) {
       log(1, 'Error handling toggle spell level:', error);
+    }
+  }
+
+  /**
+   * Handle toggling a folder's collapsed state
+   * @static
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} _form - The form element
+   */
+  static handleToggleFolder(event, _form) {
+    try {
+      const folderContainer = event.target.closest('.list-folder');
+      if (!folderContainer) return;
+      const folderId = folderContainer.dataset.folderId;
+      if (!folderId) return;
+      folderContainer.classList.toggle('collapsed');
+      const collapsedFolders = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_FOLDERS) || [];
+      const isCollapsed = folderContainer.classList.contains('collapsed');
+      if (isCollapsed && !collapsedFolders.includes(folderId)) collapsedFolders.push(folderId);
+      else if (!isCollapsed && collapsedFolders.includes(folderId)) collapsedFolders.splice(collapsedFolders.indexOf(folderId), 1);
+      game.user.setFlag(MODULE.ID, FLAGS.COLLAPSED_FOLDERS, collapsedFolders);
+    } catch (error) {
+      log(1, 'Error handling toggle folder:', error);
+    }
+  }
+
+  /**
+   * Handle opening an actor sheet
+   * @static
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} _form - The form element
+   */
+  static async handleOpenActor(event, _form) {
+    try {
+      const appId = `gm-spell-list-manager-${MODULE.ID}`;
+      const instance = foundry.applications.instances.get(appId);
+      if (!instance || !instance.selectedSpellList) return;
+      const document = instance.selectedSpellList.document;
+      const actorId = document.flags?.[MODULE.ID]?.actorId;
+
+      if (!actorId) {
+        ui.notifications.warn(game.i18n.localize('SPELLMANAGER.Warnings.NoActorFound'));
+        return;
+      }
+
+      const actor = game.actors.get(actorId);
+      if (!actor) {
+        ui.notifications.warn(game.i18n.format('SPELLMANAGER.Warnings.ActorNotFound', { id: actorId }));
+        return;
+      }
+
+      await actor.sheet.render(true);
+      log(3, `Opened actor sheet for ${actor.name}`);
+    } catch (error) {
+      log(1, 'Error opening actor sheet:', error);
+    }
+  }
+
+  /**
+   * Handle opening a class item sheet
+   * @static
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} _form - The form element
+   */
+  static async handleOpenClass(event, _form) {
+    try {
+      const appId = `gm-spell-list-manager-${MODULE.ID}`;
+      const instance = foundry.applications.instances.get(appId);
+      if (!instance || !instance.selectedSpellList) return;
+      const identifier = instance.selectedSpellList.document.system?.identifier;
+      if (!identifier) {
+        ui.notifications.warn(game.i18n.localize('SPELLMANAGER.Warnings.NoClassIdentifier'));
+        return;
+      }
+
+      const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
+      let classItem = null;
+      for (const actor of game.actors) {
+        const matchingItem = actor.items.find((i) => i.type === 'class' && i.system?.identifier?.toLowerCase() === identifier.toLowerCase());
+
+        if (matchingItem) {
+          classItem = matchingItem;
+          break;
+        }
+      }
+
+      if (!classItem) {
+        for (const pack of itemPacks) {
+          if (classItem) break;
+
+          try {
+            const index = await pack.getIndex({ fields: ['type', 'system.identifier'] });
+            for (const entry of index) {
+              if (entry.type === 'class' && entry.system?.identifier?.toLowerCase() === identifier.toLowerCase()) {
+                classItem = await pack.getDocument(entry._id);
+                break;
+              }
+            }
+          } catch (err) {
+            log(2, `Error searching pack ${pack.metadata.label}:`, err);
+          }
+        }
+      }
+
+      if (!classItem) {
+        ui.notifications.warn(game.i18n.format('SPELLMANAGER.Warnings.ClassNotFound', { identifier: identifier }));
+        return;
+      }
+
+      await classItem.sheet.render(true);
+      log(3, `Opened class sheet for ${classItem.name}`);
+    } catch (error) {
+      log(1, 'Error opening class sheet:', error);
     }
   }
 

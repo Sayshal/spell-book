@@ -9,11 +9,35 @@ import { log } from '../logger.mjs';
 export async function findCompendiumSpellLists() {
   const spellLists = [];
   const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
-
   await processStandardPacks(journalPacks, spellLists);
   await processCustomPack(spellLists);
+  for (const list of spellLists) {
+    try {
+      const document = await fromUuid(list.uuid);
+      if (document.system?.identifier && !list.identifier) list.identifier = document.system.identifier;
+      if (document?.flags?.[MODULE.ID]?.actorId) {
+        list.isActorOwned = true;
+        list.actorId = document.flags[MODULE.ID].actorId;
+        const actor = game.actors.get(list.actorId);
+        if (actor) list.actorName = actor.name;
+      } else if (document?.folder) {
+        const folderName = document.folder.name.toLowerCase();
+        if (folderName.includes('actor') || folderName.includes('character')) {
+          list.isActorOwned = true;
+          const possibleActor = game.actors.find((a) => folderName.includes(a.name.toLowerCase()));
 
-  log(3, `Found ${spellLists.length} total spell lists`);
+          if (possibleActor) {
+            list.actorName = possibleActor.name;
+            list.actorId = possibleActor.id;
+          }
+        }
+      }
+    } catch (error) {
+      log(1, `Error checking actor ownership for spell list ${list.name}:`, error);
+    }
+  }
+
+  log(3, `Found ${spellLists.length} total spell lists (${spellLists.filter((l) => l.isActorOwned).length} actor-owned)`);
   return spellLists;
 }
 

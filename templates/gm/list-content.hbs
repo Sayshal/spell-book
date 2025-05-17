@@ -10,6 +10,18 @@
 						data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Edit'}}">
 						<i class="fas fa-edit" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Edit"}}
 					</button>
+					{{#if selectedSpellList.isPlayerSpellbook}}
+						<button type="button" class="open-actor-button action-button" data-action="openActor"
+							aria-label="{{localize 'SPELLMANAGER.Buttons.OpenActor'}}">
+							<i class="fas fa-user" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.OpenActor"}}
+						</button>
+					{{/if}}
+					{{#if selectedSpellList.isClassSpellList}}
+						<button type="button" class="open-class-button action-button" data-action="openClass"
+							aria-label="{{localize 'SPELLMANAGER.Buttons.OpenClass'}}">
+							<i class="fas fa-scroll" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.OpenClass"}}
+						</button>
+					{{/if}}
 				{{else}}
 					<div class="custom-list-controls">
 						{{#if selectedSpellList.canRestore}}

@@ -16,6 +16,7 @@ export const MODULE = {
 export const FLAGS = {
   CANTRIP_RULES: 'cantripRules',
   CANTRIP_SWAP_TRACKING: 'cantripSwapTracking',
+  COLLAPSED_FOLDERS: 'collapsedFolders',
   COLLAPSED_LEVELS: 'collapsedSpellLevels',
   ENFORCEMENT_BEHAVIOR: 'enforcementBehavior',
   FORCE_WIZARD_MODE: 'forceWizardMode',

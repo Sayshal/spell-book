@@ -161,6 +161,119 @@
       box-shadow: var(--spell-book-manager-header-shadow);
     }
 
+    /* Folder styling */
+    .list-folder {
+      margin-bottom: 0.75rem;
+
+      &.collapsed {
+        .collapse-indicator {
+          transform: rotate(-90deg);
+        }
+
+        .folder-content {
+          display: none;
+          max-height: 0;
+          overflow: hidden;
+        }
+      }
+
+      .folder-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        border-bottom: 1px solid var(--spell-book-manager-border-color);
+        color: var(--spell-book-manager-text-primary);
+        font-weight: bold;
+        font-size: 0.9rem;
+        cursor: pointer;
+        user-select: none;
+
+        .collapse-indicator {
+          margin-right: 0.5rem;
+          transition: transform 0.2s ease;
+        }
+
+        .folder-icon {
+          margin-right: 0.5rem;
+        }
+
+        &:hover {
+          text-shadow: none;
+        }
+      }
+
+      .folder-content {
+        max-height: inherit;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+      }
+    }
+
+    /* Actor folder styling */
+    .actor-lists-folder {
+      .folder-header {
+        color: #6bd14d;
+
+        .folder-icon {
+          color: #6bd14d;
+        }
+      }
+    }
+
+    /* Standard folder styling */
+    .standard-lists-folder {
+      .folder-header {
+        color: var(--spell-book-manager-text-secondary);
+
+        .folder-icon {
+          color: var(--spell-book-manager-text-secondary);
+        }
+      }
+    }
+
+    /* Actor-owned list item styling */
+    .actor-owned-list {
+      border-left: 2px solid #6bd14d;
+
+      .list-name i {
+        color: #6bd14d !important;
+      }
+
+      &:hover {
+        background-color: #6bd14d33;
+      }
+
+      .source {
+        color: #6bd14d;
+        font-weight: 600;
+      }
+    }
+
+    /* Custom Lists folder styling */
+    .custom-lists-folder {
+      .folder-header {
+        color: #ffc919;
+
+        .folder-icon {
+          color: #ffc919;
+        }
+      }
+
+      .custom-list {
+        border-left: 2px solid #ffc919;
+
+        &:hover {
+          background-color: #ffc91933;
+        }
+
+        .source {
+          color: #ffc919;
+          font-weight: 600;
+        }
+      }
+    }
+
     .create-new-button {
       z-index: 5;
       position: absolute;
@@ -344,7 +457,7 @@
 
     .header-buttons {
       display: flex;
-      flex-wrap: wrap;
+      white-space: nowrap;
       justify-content: center;
       align-items: center;
       margin-top: -20px;
@@ -367,6 +480,12 @@
         background: none;
         box-shadow: none;
       }
+
+      &:focus {
+        outline: none;
+        box-shadow: none;
+        border: none;
+      }
     }
 
     .edit-button,
@@ -385,6 +504,18 @@
     .delete-button {
       &:hover {
         text-shadow: 0 0 8px var(--spell-book-manager-button-danger);
+      }
+    }
+
+    .open-actor-button {
+      &:hover {
+        text-shadow: 0 0 8px #e8bb4e;
+      }
+    }
+
+    .open-class-button {
+      &:hover {
+        text-shadow: 0 0 8px #4e9de8;
       }
     }
   }
@@ -425,6 +556,12 @@
     }
   }
 
+  .selected-list-spells:has(.empty-state) {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
   /* No selection message */
   .no-selection {
     display: flex;
@@ -434,6 +571,19 @@
     min-height: 400px;
     color: var(--color-text-dark-secondary);
     font-style: italic;
+  }
+
+  .empty-state {
+    text-align: center;
+    max-width: 80%;
+    padding: 2rem;
+    color: var(--spell-book-manager-text-tertiary);
+    font-style: italic;
+
+    p {
+      margin: 0;
+      line-height: 1.5;
+    }
   }
 }
 
@@ -961,6 +1111,46 @@
 
       .filter-count {
         color: #111;
+      }
+    }
+
+    .actor-owned-list {
+      background-color: #e8bb4e26;
+
+      .list-name i {
+        color: #bf8f20 !important;
+      }
+
+      .source {
+        color: #bf8f20;
+      }
+    }
+
+    .actor-lists-folder .folder-header {
+      color: #bf8f20;
+
+      i {
+        color: #bf8f20;
+      }
+    }
+
+    .custom-list {
+      background-color: #79d7d426;
+
+      .list-name i.is-custom-list {
+        color: #299792 !important;
+      }
+
+      .source {
+        color: #299792;
+      }
+    }
+
+    .custom-lists-folder .folder-header {
+      color: #299792;
+
+      i {
+        color: #299792;
       }
     }
   }

@@ -15,28 +15,105 @@
 	</div>
 
 	<div class="lists-container" role="list" aria-labelledby="available-lists-heading">
-		{{#if availableSpellLists.length}}
-			<ul class="spell-list-items">
-				{{#each availableSpellLists as |list|}}
-					<li class="spell-list-item {{#if list.isCustom}}custom-list{{/if}}" data-uuid="{{list.uuid}}" role="listitem"
-						aria-label="{{list.name}} - {{localize 'SPELLMANAGER.Status.SpellCount' count=list.spellCount}} - {{list.pack}}">
-						<div class="list-item-header" data-action="selectSpellList" data-uuid="{{list.uuid}}">
-							<div class="list-name">
-								<i class="fas fa-book {{#if list.isCustom}}is-custom-list{{else if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
-									aria-hidden="true"></i>
-								<span>{{list.name}}</span>
+		<!-- Player Spellbooks Section -->
+		{{#if hasActorOwnedLists}}
+			<div class="list-folder actor-lists-folder" data-folder-id="actor-lists">
+				<div class="folder-header" data-action="toggleFolder"
+					data-tooltip="{{localize 'SPELLMANAGER.Tooltips.PlayerSpellbooksFolder'}}">
+					<i class="fas fa-chevron-down collapse-indicator" aria-hidden="true"></i>
+					<i class="fas fa-user folder-icon" aria-hidden="true"></i>
+					<span>{{localize "SPELLMANAGER.Folders.PlayerSpellbooks"}}</span>
+				</div>
+				<ul class="spell-list-items folder-content">
+					{{#each actorOwnedLists as |list|}}
+						<li class="spell-list-item actor-owned-list {{#if list.isCustom}}custom-list{{/if}}"
+							data-uuid="{{list.uuid}}" role="listitem"
+							data-tooltip="{{localize 'SPELLMANAGER.Tooltips.ActorSpellbook' actorName=list.actorName}}"
+							aria-label="{{list.name}} - {{localize 'SPELLMANAGER.Status.SpellCount' count=list.spellCount}} - {{list.pack}}">
+							<div class="list-item-header" data-action="selectSpellList" data-uuid="{{list.uuid}}">
+								<div class="list-name">
+									<i class="fas fa-book {{#if list.isCustom}}is-custom-list{{else if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
+										aria-hidden="true"></i>
+									<span>{{list.name}}</span>
+								</div>
+								<div class="list-meta">
+									<span class="spell-count">{{localize "SPELLMANAGER.Status.SpellCount" count=list.spellCount}}</span>
+									<span class="meta-separator" aria-hidden="true">•</span>
+									<span
+										class="source">{{#if list.actorName}}{{list.actorName}}{{else}}{{localize "SPELLMANAGER.ListSource.Character"}}{{/if}}</span>
+								</div>
 							</div>
-							<div class="list-meta">
-								<span class="spell-count">{{localize "SPELLMANAGER.Status.SpellCount" count=list.spellCount}}</span>
-								<span class="meta-separator" aria-hidden="true">•</span>
-								<span class="source">{{#if list.isCustom}}Custom{{else}}{{list.pack}}{{/if}}</span>
-							</div>
-						</div>
-					</li>
-				{{/each}}
-			</ul>
-		{{else}}
-			{{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLMANAGER.Columns.NoLists")}}
+						</li>
+					{{/each}}
+				</ul>
+			</div>
 		{{/if}}
+
+		<!-- Custom Spell Lists Section -->
+		{{#if hasCustomLists}}
+			<div class="list-folder custom-lists-folder" data-folder-id="custom-lists">
+				<div class="folder-header" data-action="toggleFolder"
+					data-tooltip="{{localize 'SPELLMANAGER.Tooltips.CustomListsFolder'}}">
+					<i class="fas fa-chevron-down collapse-indicator" aria-hidden="true"></i>
+					<i class="fas fa-magic folder-icon" aria-hidden="true"></i>
+					<span>{{localize "SPELLMANAGER.Folders.CustomLists"}}</span>
+				</div>
+				<ul class="spell-list-items folder-content">
+					{{#each customLists as |list|}}
+						<li class="spell-list-item custom-list" data-uuid="{{list.uuid}}" role="listitem"
+							data-tooltip="{{localize 'SPELLMANAGER.Tooltips.CustomList' identifier=list.identifier}}"
+							aria-label="{{list.name}} - {{localize 'SPELLMANAGER.Status.SpellCount' count=list.spellCount}} - {{localize 'SPELLMANAGER.ListSource.Custom'}}">
+							<div class="list-item-header" data-action="selectSpellList" data-uuid="{{list.uuid}}">
+								<div class="list-name">
+									<i class="fas fa-book is-custom-list" aria-hidden="true"></i>
+									<span>{{list.name}}</span>
+								</div>
+								<div class="list-meta">
+									<span class="spell-count">{{localize "SPELLMANAGER.Status.SpellCount" count=list.spellCount}}</span>
+									<span class="meta-separator" aria-hidden="true">•</span>
+									<span class="source">{{localize "SPELLMANAGER.ListSource.Custom"}}</span>
+								</div>
+							</div>
+						</li>
+					{{/each}}
+				</ul>
+			</div>
+		{{/if}}
+
+		<!-- Standard Spell Lists Section -->
+		{{#if hasStandardLists}}
+			<div class="list-folder standard-lists-folder" data-folder-id="standard-lists">
+				<div class="folder-header" data-action="toggleFolder"
+					data-tooltip="{{localize 'SPELLMANAGER.Tooltips.StandardListsFolder'}}">
+					<i class="fas fa-chevron-down collapse-indicator" aria-hidden="true"></i>
+					<i class="fas fa-scroll folder-icon" aria-hidden="true"></i>
+					<span>{{localize "SPELLMANAGER.Folders.SpellLists"}}</span>
+				</div>
+				<ul class="spell-list-items folder-content">
+					{{#each standardLists as |list|}}
+						<li class="spell-list-item" data-uuid="{{list.uuid}}" role="listitem"
+							data-tooltip="{{#if (lookup ../customListMap list.uuid)}}{{localize 'SPELLMANAGER.Tooltips.ModifiedList' class=list.name source=list.pack}}{{else}}{{localize 'SPELLMANAGER.Tooltips.StandardList' class=list.name source=list.pack}}{{/if}}"
+							aria-label="{{list.name}} - {{localize 'SPELLMANAGER.Status.SpellCount' count=list.spellCount}} - {{list.pack}}">
+							<div class="list-item-header" data-action="selectSpellList" data-uuid="{{list.uuid}}">
+								<div class="list-name">
+									<i class="fas fa-book {{#if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
+										aria-hidden="true"></i>
+									<span>{{list.name}}</span>
+								</div>
+								<div class="list-meta">
+									<span class="spell-count">{{localize "SPELLMANAGER.Status.SpellCount" count=list.spellCount}}</span>
+									<span class="meta-separator" aria-hidden="true">•</span>
+									<span class="source">{{list.pack}}</span>
+								</div>
+							</div>
+						</li>
+					{{/each}}
+				</ul>
+			</div>
+		{{/if}}
+
+		{{#unless availableSpellLists.length}}
+			{{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLMANAGER.Columns.NoLists")}}
+		{{/unless}}
 	</div>
 </div>
