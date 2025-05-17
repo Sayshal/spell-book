@@ -8,76 +8,66 @@ import { log } from '../logger.mjs';
 export function registerTidy5eIntegration() {
   try {
     Hooks.on('tidy5e-sheet.renderActorSheet', onTidy5eRender);
-
     log(3, 'Registered Tidy5e sheet integration');
   } catch (error) {
     log(1, 'Error registering Tidy5e integration:', error);
   }
 }
 
+/**
+ * Handle Tidy5e sheet rendering
+ */
 function onTidy5eRender(sheet, element, data) {
   try {
     const actor = data.actor;
+    if (!discoveryUtils.canCastSpells(actor)) return;
 
-    // Only add button for characters that can cast spells
-    if (!discoveryUtils.canCastSpells(actor)) {
-      log(3, `Skipping spell book button for ${actor.name} (not a spellcaster)`);
-      return;
-    }
-
-    // Find the spells tab section
     const spellsTab = element.querySelector('.spellbook');
-    if (!spellsTab) {
-      log(2, `Spells tab not found in ${actor.name}'s sheet`);
-      return;
-    }
+    if (!spellsTab) return;
 
-    // Find the utility toolbar within the spells tab
     const utilityToolbar = spellsTab.querySelector('[data-tidy-sheet-part="utility-toolbar"]');
-    if (!utilityToolbar) {
-      log(2, `Utility toolbar not found in ${actor.name}'s spells tab`);
-      return;
-    }
+    if (!utilityToolbar) return;
 
-    // Find the search container within the utility toolbar
     const searchContainer = utilityToolbar.querySelector('[data-tidy-sheet-part="search-container"]');
-    if (!searchContainer) {
-      log(2, `Search container not found in ${actor.name}'s utility toolbar`);
-      return;
-    }
+    if (!searchContainer) return;
 
-    // Check if our button already exists to avoid duplicates
-    if (utilityToolbar.querySelector('.spell-book-button')) {
-      return;
-    }
+    if (utilityToolbar.querySelector('.spell-book-button')) return;
 
-    // Create our button in the style of other toolbar buttons
-    const buttonHtml = `
-      <button type="button" class="inline-icon-button spell-book-button"
-              title="${game.i18n.localize('SPELLBOOK.UI.OpenSpellBook')}" tabindex="-1">
-        <i class="fas fa-book-open"></i>
-      </button>
-    `;
-
-    // Insert after the search container
+    const buttonHtml = createTidySpellbookButtonHtml();
     searchContainer.insertAdjacentHTML('afterend', buttonHtml);
 
-    // Add click event listener to open the spell book
     const button = utilityToolbar.querySelector('.spell-book-button');
     if (button) {
-      button.addEventListener('click', function (ev) {
-        ev.preventDefault();
-        try {
-          const spellBook = new PlayerSpellBook(actor);
-          spellBook.render(true);
-        } catch (error) {
-          log(1, `Error opening spell book: ${error.message}`);
-        }
-      });
+      button.addEventListener('click', (ev) => openSpellbook(ev, actor));
     }
 
-    log(3, `Added spell book button to ${actor.name}'s Tidy5e character sheet utility toolbar`);
+    log(3, `Added spell book button to ${actor.name}'s Tidy5e sheet`);
   } catch (error) {
-    log(1, `Error adding spell book button to Tidy5e character sheet: ${error.message}`);
+    log(1, `Error adding spell book button to Tidy5e sheet:`, error);
+  }
+}
+
+/**
+ * Create HTML for Tidy5e spellbook button
+ */
+function createTidySpellbookButtonHtml() {
+  return `
+    <button type="button" class="inline-icon-button spell-book-button"
+            title="${game.i18n.localize('SPELLBOOK.UI.OpenSpellBook')}" tabindex="-1">
+      <i class="fas fa-book-open"></i>
+    </button>
+  `;
+}
+
+/**
+ * Open spellbook application
+ */
+function openSpellbook(ev, actor) {
+  ev.preventDefault();
+  try {
+    const spellBook = new PlayerSpellBook(actor);
+    spellBook.render(true);
+  } catch (error) {
+    log(1, `Error opening spell book:`, error);
   }
 }
