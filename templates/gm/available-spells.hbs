@@ -7,7 +7,7 @@
 		<div class="filter-search">
 			<input type="text" name="spell-search" id="spell-search"
 				placeholder="{{localize 'SPELLMANAGER.Filters.SearchPlaceholder'}}" value="{{filterState.name}}"
-				aria-label="{{localize 'SPELLMANAGER.Filters.SearchPlaceholder'}}">
+				{{#unless isEditing}}disabled{{/unless}} aria-label="{{localize 'SPELLMANAGER.Filters.SearchPlaceholder'}}">
 		</div>
 
 		<!-- Filter grid -->
@@ -15,7 +15,8 @@
 			<!-- Level filter -->
 			<div class="filter-item">
 				<label for="spell-level">{{localize "SPELLBOOK.Filters.Level"}}</label>
-				<select name="spell-level" id="spell-level" aria-label="{{localize 'SPELLBOOK.Filters.Level'}}">
+				<select name="spell-level" id="spell-level" {{#unless isEditing}}disabled{{/unless}}
+					aria-label="{{localize 'SPELLBOOK.Filters.Level'}}">
 					<option value="">{{localize "SPELLMANAGER.Filters.AllLevels"}}</option>
 					{{#each spellLevels as |label level|}}
 						<option value="{{level}}" {{#if (eq ../filterState.level level)}}selected{{/if}}>{{label}}</option>
@@ -26,7 +27,8 @@
 			<!-- School filter -->
 			<div class="filter-item">
 				<label for="spell-school">{{localize "SPELLBOOK.Filters.School"}}</label>
-				<select name="spell-school" id="spell-school" aria-label="{{localize 'SPELLBOOK.Filters.School'}}">
+				<select name="spell-school" id="spell-school" {{#unless isEditing}}disabled{{/unless}}
+					aria-label="{{localize 'SPELLBOOK.Filters.School'}}">
 					<option value="">{{localize "SPELLMANAGER.Filters.AllSchools"}}</option>
 					{{#each spellSchools as |school key|}}
 						<option value="{{key}}" {{#if (eq ../filterState.school key)}}selected{{/if}}>{{school.label}}</option>
@@ -37,7 +39,7 @@
 			<!-- Casting Time filter -->
 			<div class="filter-item">
 				<label for="spell-castingTime">{{localize "SPELLBOOK.Filters.CastingTime"}}</label>
-				<select name="spell-castingTime" id="spell-castingTime"
+				<select name="spell-castingTime" id="spell-castingTime" {{#unless isEditing}}disabled{{/unless}}
 					aria-label="{{localize 'SPELLBOOK.Filters.CastingTime'}}">
 					{{#each castingTimeOptions as |option|}}
 						<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
@@ -48,7 +50,8 @@
 			<!-- Damage Type filter -->
 			<div class="filter-item">
 				<label for="spell-damageType">{{localize "SPELLBOOK.Filters.DamageType"}}</label>
-				<select name="spell-damageType" id="spell-damageType" aria-label="{{localize 'SPELLBOOK.Filters.DamageType'}}">
+				<select name="spell-damageType" id="spell-damageType" {{#unless isEditing}}disabled{{/unless}}
+					aria-label="{{localize 'SPELLBOOK.Filters.DamageType'}}">
 					{{#each damageTypeOptions as |option|}}
 						<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
 					{{/each}}
@@ -58,7 +61,8 @@
 			<!-- Condition filter -->
 			<div class="filter-item">
 				<label for="spell-condition">{{localize "SPELLBOOK.Filters.Condition"}}</label>
-				<select name="spell-condition" id="spell-condition" aria-label="{{localize 'SPELLBOOK.Filters.Condition'}}">
+				<select name="spell-condition" id="spell-condition" {{#unless isEditing}}disabled{{/unless}}
+					aria-label="{{localize 'SPELLBOOK.Filters.Condition'}}">
 					{{#each conditionOptions as |option|}}
 						<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
 					{{/each}}
@@ -68,7 +72,7 @@
 			<!-- Requires Save filter -->
 			<div class="filter-item">
 				<label for="spell-requiresSave">{{localize "SPELLBOOK.Filters.RequiresSave"}}</label>
-				<select name="spell-requiresSave" id="spell-requiresSave"
+				<select name="spell-requiresSave" id="spell-requiresSave" {{#unless isEditing}}disabled{{/unless}}
 					aria-label="{{localize 'SPELLBOOK.Filters.RequiresSave'}}">
 					<option value="">{{localize "SPELLBOOK.Filters.All"}}</option>
 					<option value="true" {{#if (eq filterState.requiresSave "true")}}selected{{/if}}>
@@ -83,7 +87,7 @@
 			<!-- Concentration filter -->
 			<div class="filter-item">
 				<label for="spell-concentration">{{localize "SPELLBOOK.Filters.RequiresConcentration"}}</label>
-				<select name="spell-concentration" id="spell-concentration"
+				<select name="spell-concentration" id="spell-concentration" {{#unless isEditing}}disabled{{/unless}}
 					aria-label="{{localize 'SPELLBOOK.Filters.RequiresConcentration'}}">
 					<option value="">{{localize "SPELLBOOK.Filters.All"}}</option>
 					<option value="true" {{#if (eq filterState.concentration "true")}}selected{{/if}}>
@@ -99,7 +103,7 @@
 			<div class="filter-item checkbox-filter">
 				<label>
 					<input type="checkbox" name="spell-ritual" id="spell-ritual" {{checked filterState.ritual}}
-						aria-label="{{localize 'SPELLBOOK.Filters.RitualOnly'}}">
+						{{#unless isEditing}}disabled{{/unless}} aria-label="{{localize 'SPELLBOOK.Filters.RitualOnly'}}">
 					{{localize "SPELLBOOK.Filters.RitualOnly"}}
 				</label>
 			</div>
@@ -112,20 +116,21 @@
 			<div class="range-inputs" role="group" aria-labelledby="range-filter-label">
 				<input type="number" name="spell-min-range" id="spell-min-range"
 					placeholder="{{localize 'SPELLBOOK.Filters.RangeMin'}}" value="{{filterState.minRange}}"
-					aria-label="{{localize 'SPELLBOOK.Filters.RangeMinLabel'}}">
+					{{#unless isEditing}}disabled{{/unless}} aria-label="{{localize 'SPELLBOOK.Filters.RangeMinLabel'}}">
 				<div class="range-separator" aria-hidden="true">
 					<dnd5e-icon src="systems/dnd5e/icons/svg/range-connector.svg"></dnd5e-icon>
 				</div>
 				<input type="number" name="spell-max-range" id="spell-max-range"
 					placeholder="{{localize 'SPELLBOOK.Filters.RangeMax'}}" value="{{filterState.maxRange}}"
-					aria-label="{{localize 'SPELLBOOK.Filters.RangeMaxLabel'}}">
+					{{#unless isEditing}}disabled{{/unless}} aria-label="{{localize 'SPELLBOOK.Filters.RangeMaxLabel'}}">
 			</div>
 		</div>
 
 		<!-- Source filter -->
 		<div class="filter-item">
 			<label for="spell-source">{{localize "SPELLMANAGER.Filters.Source"}}</label>
-			<select name="spell-source" id="spell-source" aria-label="{{localize 'SPELLMANAGER.Filters.Source'}}">
+			<select name="spell-source" id="spell-source" {{#unless isEditing}}disabled{{/unless}}
+				aria-label="{{localize 'SPELLMANAGER.Filters.Source'}}">
 				{{#each spellSources as |source|}}
 					<option value="{{source.id}}" {{#if (eq ../filterState.source source.id)}}selected{{/if}}>
 						{{source.label}}
