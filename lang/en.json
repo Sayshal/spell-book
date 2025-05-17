@@ -212,6 +212,7 @@
   "SPELLMANAGER.Columns.AvailableSpells": "Available Spells",
   "SPELLMANAGER.Columns.EditPrompt": "Select a spell list and click \"Edit\" to customize it.",
   "SPELLMANAGER.Columns.NoListSelected": "Select a spell list from the left column to view its contents.",
+  "SPELLMANAGER.Columns.NoLists": "No spell lists found",
   "SPELLMANAGER.Columns.NoMatchingSpells": "No spells match your filters.",
   "SPELLMANAGER.Columns.NoSpells": "This spell list contains no spells.",
   "SPELLMANAGER.Confirm.Cancel": "Cancel",

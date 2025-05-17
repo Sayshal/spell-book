@@ -361,7 +361,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     try {
       const selectedSpellUUIDs = this.getSelectedSpellUUIDs();
       log(3, 'Beginning Filtering:', selectedSpellUUIDs.size, 'selected spells out of', this.availableSpells.length, 'total available');
-
       let remainingSpells = [...this.availableSpells];
       remainingSpells = this._filterBySelectedList(remainingSpells, selectedSpellUUIDs);
       remainingSpells = this._filterBySource(remainingSpells);
@@ -369,13 +368,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       remainingSpells = this._filterByRange(remainingSpells);
       remainingSpells = this._filterByDamageAndConditions(remainingSpells);
       remainingSpells = this._filterBySpecialProperties(remainingSpells);
-
       log(3, 'Final spells count:', remainingSpells.length);
-
-      return {
-        spells: remainingSpells,
-        totalFiltered: remainingSpells.length
-      };
+      return { spells: remainingSpells, totalFiltered: remainingSpells.length };
     } catch (error) {
       log(1, 'Error filtering available spells:', error);
       return { spells: [], totalFiltered: 0 };
@@ -435,7 +429,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     const { name, level, school, castingTime } = this.filterState;
     let filtered = spells;
     if (name) filtered = filtered.filter((spell) => spell.name.toLowerCase().includes(name.toLowerCase()));
-    if (level) filtered = filtered.filter((spell) => spell.level === parseInt(level));
+    if (level) {
+      const levelValue = parseInt(level);
+      filtered = filtered.filter((spell) => spell.level === levelValue);
+    }
     if (school) filtered = filtered.filter((spell) => spell.school === school);
     if (castingTime) {
       filtered = filtered.filter((spell) => {
@@ -613,14 +610,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       const visibleUUIDs = new Set(filteredData.spells.map((spell) => spell.uuid));
       const spellItems = this.element.querySelectorAll('.available-spells .spell-item');
       let visibleCount = 0;
-
-      for (const item of spellItems) {
+      spellItems.forEach((item) => {
         const uuid = item.dataset.uuid;
         const isVisible = visibleUUIDs.has(uuid);
         item.style.display = isVisible ? '' : 'none';
         if (isVisible) visibleCount++;
-      }
-
+      });
       const noResults = this.element.querySelector('.no-spells');
       if (noResults) noResults.style.display = visibleCount > 0 ? 'none' : 'block';
       const countDisplay = this.element.querySelector('.filter-count');
@@ -643,6 +638,43 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     this._setupDropdownFilters();
     this._setupRangeFilters();
     this._setupCheckboxFilters();
+    const resetButton = this.element.querySelector('.reset-filters');
+    if (resetButton) resetButton.addEventListener('click', () => this._resetAllFilters());
+  }
+
+  _resetAllFilters() {
+    this.filterState = {
+      name: '',
+      level: '',
+      school: '',
+      source: '',
+      castingTime: '',
+      minRange: '',
+      maxRange: '',
+      damageType: '',
+      condition: '',
+      requiresSave: '',
+      concentration: '',
+      prepared: false,
+      ritual: false
+    };
+
+    const nameInput = this.element.querySelector('input[name="spell-search"]');
+    if (nameInput) nameInput.value = '';
+    const selects = this.element.querySelectorAll('select[name^="spell-"]');
+    selects.forEach((select) => {
+      select.value = select.options[0].value;
+    });
+    const rangeInputs = this.element.querySelectorAll('input[name^="spell-"][type="number"]');
+    rangeInputs.forEach((input) => {
+      input.value = '';
+    });
+    const checkboxes = this.element.querySelectorAll('input[name^="spell-"][type="checkbox"]');
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = false;
+    });
+
+    this._refreshFilteredContent();
   }
 
   /**
@@ -684,11 +716,16 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         element.addEventListener('change', (event) => {
           if (this.filterState[property] !== event.target.value) {
             this.filterState[property] = event.target.value;
-            this.applyFilters();
+            if (property === 'level') this._refreshFilteredContent();
+            else this.applyFilters();
           }
         });
       }
     }
+  }
+
+  _refreshFilteredContent() {
+    this.render(false, { parts: ['availableSpells'] });
   }
 
   /**
