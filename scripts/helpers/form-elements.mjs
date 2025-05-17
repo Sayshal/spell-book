@@ -1,6 +1,4 @@
-/**
- * Helper functions for creating DnD5e-styled form elements
- */
+import { log } from '../logger.mjs';
 
 /**
  * Create a checkbox input using DnD5e styling
@@ -38,8 +36,8 @@ export function createCheckbox(config) {
 
     return checkbox;
   } catch (error) {
-    log(1, `Error creating checkbox: ${error.message}`);
-    return document.createElement('dnd5e-checkbox'); // Fallback
+    log(1, `Error creating checkbox:`, error);
+    return document.createElement('dnd5e-checkbox');
   }
 }
 
@@ -76,12 +74,12 @@ export function createNumberInput(config) {
 
     return dnd5e.applications.fields.createNumberInput(field, fieldConfig);
   } catch (error) {
-    log(1, `Error creating number input: ${error.message}`);
+    log(1, `Error creating number input:`, error);
     const input = document.createElement('input');
     input.type = 'number';
     input.name = config.name;
     if (config.value !== undefined) input.value = config.value;
-    return input; // Fallback
+    return input;
   }
 }
 
@@ -99,7 +97,6 @@ export function createNumberInput(config) {
 export function createTextInput(config) {
   try {
     const field = new foundry.data.fields.StringField();
-
     const fieldConfig = {
       name: config.name,
       value: config.value || '',
@@ -111,12 +108,12 @@ export function createTextInput(config) {
 
     return dnd5e.applications.fields.createTextInput(field, fieldConfig);
   } catch (error) {
-    log(1, `Error creating text input: ${error.message}`);
+    log(1, `Error creating text input:`, error);
     const input = document.createElement('input');
     input.type = 'text';
     input.name = config.name;
     if (config.value !== undefined) input.value = config.value;
-    return input; // Fallback
+    return input;
   }
 }
 
@@ -139,7 +136,6 @@ export function createSelect(config) {
     if (config.disabled) select.disabled = true;
     if (config.cssClass) select.className = config.cssClass;
 
-    // Add options
     if (config.options && Array.isArray(config.options)) {
       for (const option of config.options) {
         const optionEl = document.createElement('option');
@@ -152,8 +148,8 @@ export function createSelect(config) {
 
     return select;
   } catch (error) {
-    log(1, `Error creating select: ${error.message}`);
-    return document.createElement('select'); // Fallback
+    log(1, `Error creating select:`, error);
+    return document.createElement('select');
   }
 }
 
@@ -166,24 +162,21 @@ export function elementToHtml(element) {
   try {
     if (!element) return '';
 
-    // For single elements
     if (element instanceof HTMLElement) {
       const container = document.createElement('div');
       container.appendChild(element.cloneNode(true));
       return container.innerHTML;
     }
 
-    // For element collections or DocumentFragments
     if (element instanceof DocumentFragment) {
       const container = document.createElement('div');
       container.appendChild(element.cloneNode(true));
       return container.innerHTML;
     }
 
-    // In case it's already a string
     return String(element);
   } catch (error) {
-    log(1, `Error converting element to HTML: ${error.message}`);
+    log(1, `Error converting element to HTML:`, error);
     return '';
   }
 }

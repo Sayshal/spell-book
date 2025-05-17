@@ -2,6 +2,7 @@ import { CANTRIP_RULES, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.
 import * as actorSpellUtils from '../helpers/actor-spells.mjs';
 import * as filterUtils from '../helpers/filters.mjs';
 import * as formElements from '../helpers/form-elements.mjs';
+import * as genericUtils from '../helpers/generic-utils.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { SpellManager } from '../helpers/spell-preparation.mjs';
@@ -734,7 +735,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _loadSpellcastingClass() {
     try {
-      const classItem = discoveryUtils.findSpellcastingClass(this.actor);
+      const classItem = genericUtils.findSpellcastingClass(this.actor);
       if (!classItem) {
         return null;
       }
