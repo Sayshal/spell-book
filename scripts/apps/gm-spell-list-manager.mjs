@@ -1239,7 +1239,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       }
 
       log(3, `Processing ${this.pendingChanges.added.size} spell additions`);
-      for (const spellUuid of this.pendingChanges.added) urrentSpells.add(spellUuid);
+      for (const spellUuid of this.pendingChanges.added) currentSpells.add(spellUuid);
       await document.update({ 'system.spells': Array.from(currentSpells) });
       this.pendingChanges = { added: new Set(), removed: new Set() };
       this.isEditing = false;
