@@ -1,7 +1,3 @@
-//-----------------------------------------------------------------------------
-// CORE MODULE IDENTIFICATION
-//-----------------------------------------------------------------------------
-
 /**
  * Core module identification and configuration constants
  * @type {Object}
@@ -12,10 +8,6 @@ export const MODULE = {
   PACK: 'spell-book.custom-spell-lists',
   LOG_LEVEL: 0
 };
-
-//-----------------------------------------------------------------------------
-// FLAGS
-//-----------------------------------------------------------------------------
 
 /**
  * Flags used for data storage and state tracking
@@ -38,32 +30,11 @@ export const FLAGS = {
   WIZARD_SPELLBOOK: 'wizardSpellbook'
 };
 
-//-----------------------------------------------------------------------------
-// TEMPLATE PATHS
-//-----------------------------------------------------------------------------
-
 /**
  * Handlebars template paths used by the module
  * @type {Object}
  */
 export const TEMPLATES = {
-  PLAYER: {
-    CONTAINER: 'modules/spell-book/templates/player/spell-container.hbs',
-    FOOTER: 'modules/spell-book/templates/player/footer.hbs',
-    SIDEBAR: 'modules/spell-book/templates/player/sidebar.hbs',
-    TAB_NAV: 'modules/spell-book/templates/player/tab-navigation.hbs',
-    TAB_SPELLS: 'modules/spell-book/templates/player/tab-spells.hbs',
-    TAB_WIZARD_SPELLBOOK: 'modules/spell-book/templates/player/tab-wizard-spellbook.hbs'
-  },
-
-  GM: {
-    AVAILABLE_SPELLS: 'modules/spell-book/templates/gm/available-spells.hbs',
-    FOOTER: 'modules/spell-book/templates/gm/footer.hbs',
-    LIST_CONTENT: 'modules/spell-book/templates/gm/list-content.hbs',
-    MAIN: 'modules/spell-book/templates/gm/manager.hbs',
-    SPELL_LISTS: 'modules/spell-book/templates/gm/spell-lists.hbs'
-  },
-
   COMPONENTS: {
     EMPTY: 'modules/spell-book/templates/components/empty-state.hbs',
     ERROR: 'modules/spell-book/templates/components/error-message.hbs',
@@ -71,18 +42,28 @@ export const TEMPLATES = {
     SPELL_ITEM: 'modules/spell-book/templates/components/spell-item.hbs',
     SPELL_LEVEL: 'modules/spell-book/templates/components/spell-level.hbs'
   },
-
   DIALOGS: {
     CREATE_SPELL_LIST: 'modules/spell-book/templates/dialogs/create-spell-list.hbs',
     FILTER_CONFIG: 'modules/spell-book/templates/dialogs/filter-configuration.hbs',
     MANAGER_DOCUMENTATION: 'modules/spell-book/templates/dialogs/spell-list-manager-documentation.hbs',
     SPELLBOOK_SETTINGS: 'modules/spell-book/templates/dialogs/spellbook-settings.hbs'
+  },
+  GM: {
+    AVAILABLE_SPELLS: 'modules/spell-book/templates/gm/available-spells.hbs',
+    FOOTER: 'modules/spell-book/templates/gm/footer.hbs',
+    LIST_CONTENT: 'modules/spell-book/templates/gm/list-content.hbs',
+    MAIN: 'modules/spell-book/templates/gm/manager.hbs',
+    SPELL_LISTS: 'modules/spell-book/templates/gm/spell-lists.hbs'
+  },
+  PLAYER: {
+    CONTAINER: 'modules/spell-book/templates/player/spell-container.hbs',
+    FOOTER: 'modules/spell-book/templates/player/footer.hbs',
+    SIDEBAR: 'modules/spell-book/templates/player/sidebar.hbs',
+    TAB_NAV: 'modules/spell-book/templates/player/tab-navigation.hbs',
+    TAB_SPELLS: 'modules/spell-book/templates/player/tab-spells.hbs',
+    TAB_WIZARD_SPELLBOOK: 'modules/spell-book/templates/player/tab-wizard-spellbook.hbs'
   }
 };
-
-//-----------------------------------------------------------------------------
-// SETTINGS
-//-----------------------------------------------------------------------------
 
 /**
  * Settings keys used by the module
@@ -99,10 +80,6 @@ export const SETTINGS = {
   LOGGING_LEVEL: 'loggingLevel',
   OPEN_SPELL_MANAGER: 'openSpellListManager'
 };
-
-//-----------------------------------------------------------------------------
-// FILTER CONFIGURATION
-//-----------------------------------------------------------------------------
 
 /**
  * Filter types used in configuration
@@ -128,7 +105,6 @@ export const SORT_BY = {
 
 /**
  * Default filter configuration
- * Defines all available filters and their initial state
  * @type {Array}
  */
 export const DEFAULT_FILTER_CONFIG = [
@@ -230,10 +206,6 @@ export const DEFAULT_FILTER_CONFIG = [
   }
 ];
 
-//-----------------------------------------------------------------------------
-// CANTRIP CONFIGURATION
-//-----------------------------------------------------------------------------
-
 /**
  * Cantrip rules options
  * @type {Object}
@@ -249,19 +221,19 @@ export const CANTRIP_RULES = {
  * @type {Object}
  */
 export const ENFORCEMENT_BEHAVIOR = {
-  UNENFORCED: 'unenforced',
+  ENFORCED: 'enforced',
   NOTIFY_GM: 'notifyGM',
-  ENFORCED: 'enforced'
+  UNENFORCED: 'unenforced'
 };
 
-//-----------------------------------------------------------------------------
-// WIZARD CONFIGURATION
-//-----------------------------------------------------------------------------
-
+/**
+ * Default wizard configuration values
+ * @type {Object}
+ */
 export const WIZARD_DEFAULTS = {
-  STARTING_SPELLS: 6,
+  RITUAL_CASTING: true,
   SPELLS_PER_LEVEL: 2,
-  RITUAL_CASTING: true
+  STARTING_SPELLS: 6
 };
 
 /**
@@ -269,19 +241,23 @@ export const WIZARD_DEFAULTS = {
  * @type {Object}
  */
 export const WIZARD_SPELL_SOURCE = {
-  LEVEL_UP: 'levelUp',
   COPIED: 'copied',
+  FREE: 'free',
   INITIAL: 'initial',
-  FREE: 'free'
+  LEVEL_UP: 'levelUp'
 };
 
+/**
+ * Class identifiers for spellcasting classes
+ * @type {Object}
+ */
 export const CLASS_IDENTIFIERS = {
-  WIZARD: 'wizard',
+  ARTIFICER: 'artificer',
   BARD: 'bard',
   CLERIC: 'cleric',
   DRUID: 'druid',
+  RANGER: 'ranger',
   SORCERER: 'sorcerer',
   WARLOCK: 'warlock',
-  RANGER: 'ranger',
-  ARTIFICER: 'artificer'
+  WIZARD: 'wizard'
 };

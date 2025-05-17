@@ -21,7 +21,7 @@
     "verified": "12.331"
   },
   "download": "",
-  "esmodules": ["scripts/spell-book.mjs", "scripts/constants.mjs", "scripts/hooks.mjs"],
+  "esmodules": ["scripts/spell-book.mjs", "scripts/constants.mjs"],
   "flags": {
     "hotReload": {
       "extensions": ["css", "html", "hbs", "json"],

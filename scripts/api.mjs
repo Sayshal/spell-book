@@ -19,16 +19,14 @@ import { log } from './logger.mjs';
  */
 export function createAPI() {
   try {
+    //TODO: Update this with all helpers
     const api = {
-      // Applications
       apps: {
         PlayerSpellBook,
         GMSpellListManager,
         SpellbookSettingsDialog,
         PlayerFilterConfiguration
       },
-
-      // Helper utilities - organized by category
       utils: {
         actor: { ...actorSpellUtils },
         filters: { ...filterUtils },
@@ -38,33 +36,37 @@ export function createAPI() {
         SpellManager
       },
 
-      // Convenience methods
+      /**
+       * Open spell book for a specific actor
+       * @param {Actor5e} actor - The actor to open the spell book for
+       * @returns {PlayerSpellBook} The created spell book instance
+       */
       openSpellBookForActor: (actor) => {
-        if (!actor) {
-          throw new Error('No actor provided');
-        }
+        if (!actor) log(1, 'No actor provided');
         const spellBook = new PlayerSpellBook(actor);
         spellBook.render(true);
         return spellBook;
       },
 
+      /**
+       * Open the GM spell list manager
+       * @returns {GMSpellListManager} The created manager instance
+       */
       openSpellListManager: () => {
         const manager = new GMSpellListManager();
         manager.render(true);
         return manager;
       },
 
-      // Logging facility
       log
     };
 
-    // Register API globally
     globalThis.SPELLBOOK = api;
 
     log(3, 'Module API registered');
-
     return api;
   } catch (error) {
     log(1, 'Error creating API:', error);
+    return null;
   }
 }

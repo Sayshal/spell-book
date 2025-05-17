@@ -7,7 +7,6 @@ import { log } from './logger.mjs';
  */
 export function registerSettings() {
   try {
-    // Logging level setting
     game.settings.register(MODULE.ID, SETTINGS.LOGGING_LEVEL, {
       name: 'SPELLBOOK.Settings.Logger.Name',
       hint: 'SPELLBOOK.Settings.Logger.Hint',
@@ -27,7 +26,6 @@ export function registerSettings() {
       }
     });
 
-    // Rest prompt setting
     game.settings.register(MODULE.ID, SETTINGS.ENABLE_REST_PROMPT, {
       name: 'SPELLBOOK.Settings.EnableRestPrompt.Name',
       hint: 'SPELLBOOK.Settings.EnableRestPrompt.Hint',
@@ -37,18 +35,15 @@ export function registerSettings() {
       default: true
     });
 
-    // Custom spell list mappings (not shown in settings menu)
     game.settings.register(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, {
-      name: 'Custom Spell List Mappings',
-      hint: 'Mappings between original and custom spell lists',
+      name: 'SPELLBOOK.Settings.CustomSpellMappings.Name',
+      hint: 'SPELLBOOK.Settings.CustomSpellMappings.Hint',
       scope: 'world',
       config: false,
       type: Object,
       default: {},
-      // Add validation to ensure proper structure
       onChange: (value) => {
         try {
-          // Simple validation to ensure it's an object
           if (typeof value !== 'object' || value === null) {
             log(2, 'Invalid custom spell mappings format, resetting to default');
             game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, {});
@@ -59,7 +54,6 @@ export function registerSettings() {
       }
     });
 
-    // Distance unit setting (affects range filter)
     game.settings.register(MODULE.ID, SETTINGS.DISTANCE_UNIT, {
       name: 'SPELLBOOK.Settings.DistanceUnit.Name',
       hint: 'SPELLBOOK.Settings.DistanceUnit.Hint',
@@ -73,18 +67,15 @@ export function registerSettings() {
       default: 'feet'
     });
 
-    // Filter configuration (not shown in settings menu)
     game.settings.register(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, {
-      name: 'Filter Configuration',
-      hint: 'Configure which filters are enabled and their display order',
+      name: 'SPELLBOOK.Settings.FilterConfiguration.Name',
+      hint: 'SPELLBOOK.Settings.FilterConfiguration.Hint',
       scope: 'client',
       config: false,
       type: Object,
       default: DEFAULT_FILTER_CONFIG,
-      // Add validation
       onChange: (value) => {
         try {
-          // Ensure value is an array
           if (!Array.isArray(value)) {
             log(2, 'Invalid filter configuration format, resetting to default');
             game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, DEFAULT_FILTER_CONFIG);
@@ -95,7 +86,6 @@ export function registerSettings() {
       }
     });
 
-    // Add Spell List Manager button
     game.settings.registerMenu(MODULE.ID, SETTINGS.OPEN_SPELL_MANAGER, {
       name: 'SPELLBOOK.Settings.OpenSpellListManager.Name',
       hint: 'SPELLBOOK.Settings.OpenSpellListManager.Hint',
@@ -106,10 +96,9 @@ export function registerSettings() {
       restricted: true
     });
 
-    /* Cantrip Settings */
     game.settings.register(MODULE.ID, SETTINGS.DEFAULT_CANTRIP_RULES, {
-      name: 'SPELLBOOK.Settings.DefaultCantripRules',
-      hint: 'SPELLBOOK.Settings.DefaultCantripRulesHint',
+      name: 'SPELLBOOK.Settings.DefaultCantripRules.Name',
+      hint: 'SPELLBOOK.Settings.DefaultCantripRules.Hint',
       scope: 'world',
       config: true,
       type: String,
@@ -122,8 +111,8 @@ export function registerSettings() {
     });
 
     game.settings.register(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR, {
-      name: 'SPELLBOOK.Settings.DefaultEnforcementBehavior',
-      hint: 'SPELLBOOK.Settings.DefaultEnforcementBehaviorHint',
+      name: 'SPELLBOOK.Settings.DefaultEnforcementBehavior.Name',
+      hint: 'SPELLBOOK.Settings.DefaultEnforcementBehavior.Hint',
       scope: 'world',
       config: true,
       type: String,
@@ -147,6 +136,5 @@ export function registerSettings() {
     log(3, 'Module settings registered');
   } catch (error) {
     log(1, 'Error registering settings:', error);
-    log(1, `Fatal error registering settings:`, error);
   }
 }
