@@ -209,7 +209,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
               'Item',
               ritualModeSpells.map((s) => s.id)
             );
-            ui.notifications.info(`Removed ${ritualModeSpells.length} ritual spell(s) from character sheet.`);
           }
         }
       }
@@ -233,7 +232,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       return actor;
     } catch (error) {
       log(1, 'Error saving spellbook settings:', error);
-      ui.notifications.error(game.i18n.localize('SPELLBOOK.Error.SettingsNotSaved'));
       return null;
     }
   }

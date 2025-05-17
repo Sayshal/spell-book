@@ -391,6 +391,7 @@ export class SpellbookUI {
   /**
    * Lock all cantrip checkboxes (e.g., after swap completed)
    */
+  //TODO: dataset.tooltip should use `.format` and mention event for this action (levelup or longrest, etc.)
   lockAllCantripCheckboxes() {
     try {
       const cantripItems = this.element.querySelectorAll('.spell-item[data-spell-level="0"]');

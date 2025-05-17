@@ -15,10 +15,10 @@
 					<div class="custom-list-controls">
 						<!-- Only show restore button for duplicates of existing lists -->
 						{{#if (and
-             selectedSpellList.document.flags
-             selectedSpellList.document.flags.[spell-book]
-             selectedSpellList.document.flags.[spell-book].isDuplicate
-             selectedSpellList.document.flags.[spell-book].originalUuid)}}
+            selectedSpellList.document.flags
+            selectedSpellList.document.flags.[spell-book]
+            selectedSpellList.document.flags.[spell-book].isDuplicate
+            selectedSpellList.document.flags.[spell-book].originalUuid)}}
 
 							{{#if compareInfo.hasOriginalChanged}}
 								<span class="update-notice" role="status">{{localize "SPELLMANAGER.Status.UpdateNotice"}}</span>

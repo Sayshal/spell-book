@@ -565,11 +565,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const checkbox = event.target;
       const isChecked = checkbox.checked;
       const wasPrepared = checkbox.dataset.wasPrepared === 'true';
-      const spellName = spellItem?.querySelector('.spell-name .title')?.textContent || 'unknown';
-
       const isLevelUp = this.spellManager.canBeLeveledUp();
       const isLongRest = this._isLongRest;
-
       const sourceSpell = await fromUuid(uuid);
       if (!sourceSpell) {
         log(1, `Could not find source spell for UUID: ${uuid}`);
@@ -818,7 +815,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
       const spell = await fromUuid(spellUuid);
       if (!spell) {
-        ui.notifications.error(`Could not find spell with UUID: ${spellUuid}`);
+        ui.notifications.error(game.i18n.format('SPELLBOOK.Error.SpellNotFound', { uuid: spellUuid }));
         return;
       }
 
@@ -832,8 +829,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const success = await this.wizardManager.copySpell(spellUuid, costInfo.cost, time, costInfo.isFree);
 
         if (success) {
-          ui.notifications.info(`Learned ${spell.name} and added it to your spellbook.`);
-
           if (this._stateManager.wizardSpellbookCache) {
             this._stateManager.wizardSpellbookCache.push(spellUuid);
           }
@@ -867,12 +862,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             });
           }, 50);
         } else {
-          ui.notifications.warn(`Could not learn ${spell.name}.`);
+          ui.notifications.warn(game.i18n.format('SPELLBOOK.Wizard.LearnFailed', { name: spell.name }));
         }
       }
     } catch (error) {
       log(1, 'Error learning spell:', error);
-      ui.notifications.error('Failed to learn spell');
     }
   }
 

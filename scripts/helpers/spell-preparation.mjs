@@ -539,7 +539,6 @@ export class SpellManager {
       }
     } catch (error) {
       log(1, `Error saving prepared spells for ${this.actor?.name || 'unknown actor'}:`, error);
-      ui.notifications.error(game.i18n.localize('SPELLBOOK.Error.SavingFailed'));
     }
   }
 
