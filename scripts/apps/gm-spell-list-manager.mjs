@@ -147,7 +147,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (this.isLoading) return context;
     const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
     context.customListMap = customMappings;
-
     if (this.availableSpells.length > 0) {
       context.spellSources = this._prepareSpellSources();
       context.castingTimeOptions = managerHelpers.prepareCastingTimeOptions(this.availableSpells, this.filterState);
@@ -158,6 +157,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
     if (this.isEditing && this.selectedSpellList) {
       await this._addEditingContext(context);
+    }
+    if (this.selectedSpellList) {
+      context.selectedSpellList = this._processSpellListForDisplay(this.selectedSpellList);
     }
 
     return context;
@@ -279,6 +281,39 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  /**
+   * Process spell list data for display
+   * @param {Object} spellList - The spell list to process
+   * @returns {Object} Processed spell list with display data
+   */
+  _processSpellListForDisplay(spellList) {
+    if (!spellList) return null;
+    const processed = foundry.utils.deepClone(spellList);
+    processed.isCustomList = !!spellList.document.flags?.[MODULE.ID]?.isDuplicate;
+    processed.canRestore = !!(processed.isCustomList && spellList.document.flags?.[MODULE.ID]?.originalUuid);
+    processed.originalUuid = spellList.document.flags?.[MODULE.ID]?.originalUuid;
+
+    if (spellList.spellsByLevel?.length) {
+      processed.spellsByLevel = spellList.spellsByLevel.map((level) => ({
+        ...level,
+        spells: level.spells.map((spell) => this._processSpellItemForDisplay(spell))
+      }));
+    }
+
+    return processed;
+  }
+
+  /**
+   * Process spell item for display in the GM interface
+   * @param {Object} spell - The spell to process
+   * @returns {Object} Processed spell with display data
+   */
+  _processSpellItemForDisplay(spell) {
+    const processed = foundry.utils.deepClone(spell);
+    processed.cssClasses = 'spell-item';
+    processed.dataAttributes = `data-uuid="${spell.compendiumUuid}"`;
+    return processed;
+  }
   /* -------------------------------------------- */
   /*  Filtering Methods                           */
   /* -------------------------------------------- */

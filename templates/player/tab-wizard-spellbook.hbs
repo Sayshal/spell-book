@@ -12,18 +12,10 @@
 					<p>{{localize 'SPELLBOOK.Wizard.NewSpellsInfo1'}}</p>
 					<p>{{localize 'SPELLBOOK.Wizard.NewSpellsInfo2'}}</p>
 				</div>
-
 				{{#if spellLevels.length}}
 					{{#each spellLevels as |levelData|}}
 						{{#> "modules/spell-book/templates/components/spell-level.hbs" level=levelData.level levelName=levelData.levelName spells=levelData.spells}}
-							<li class="spell-item{{#if inWizardSpellbook}} in-wizard-spellbook prepared-spell{{/if}}"
-								data-spell-uuid="{{compendiumUuid}}" data-spell-level="{{../level}}"
-								data-spell-school="{{system.school}}" data-casting-time-type="{{filterData.castingTime.type}}"
-								data-casting-time-value="{{filterData.castingTime.value}}" data-range-units="{{filterData.range.units}}"
-								data-range-value="{{system.range.value}}" data-damage-types="{{filterData.damageTypes}}"
-								data-ritual="{{filterData.isRitual}}" data-concentration="{{filterData.concentration}}"
-								data-requires-save="{{filterData.requiresSave}}" data-conditions="{{filterData.conditions}}"
-								role="listitem">
+							<li class="{{cssClasses}}" {{{dataAttributes}}} role="listitem">
 								<div class="spell-header">
 									<div class="spell-name">
 										{{{enrichedIcon}}}
@@ -32,7 +24,6 @@
 											<span class="subtitle">{{{formattedDetails}}}</span>
 										</div>
 									</div>
-
 									<div class="wizard-spell-status">
 										{{#if inWizardSpellbook}}
 											<span class="in-spellbook-tag" aria-label="Spell is in your spellbook">
@@ -59,8 +50,6 @@
 					<p>{{localize 'SPELLBOOK.Wizard.Unavailable'}}</p>
 				</div>
 			{{/if}}
-
-			<!-- No results message (initially hidden) -->
 			<div class="no-filter-results" style="display: none;" role="status">
 				{{localize 'SPELLBOOK.Filters.NoResults'}}
 			</div>

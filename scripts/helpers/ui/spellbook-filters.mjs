@@ -246,7 +246,7 @@ export class SpellbookFilterHelper {
           countablePrepared: 0
         };
 
-        container.style.display = levelStats.visible > 0 ? '' : 'none';
+        container.style.display = levelStats.visible > 0 ? '' : ''; // TODO: Fix this when '' = none, our new templates changed how this is found
         const countDisplay = container.querySelector('.spell-count');
         if (countDisplay && levelStats.countable > 0) {
           countDisplay.textContent = `(${levelStats.countablePrepared}/${levelStats.countable})`;

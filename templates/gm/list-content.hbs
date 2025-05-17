@@ -4,7 +4,6 @@
 			<div class="header-title">
 				<h2 id="selected-list-title">{{selectedSpellList.name}}</h2>
 			</div>
-
 			<div class="header-buttons" role="toolbar" aria-label="{{localize 'SPELLMANAGER.UI.ListActions'}}">
 				{{#unless isEditing}}
 					<button type="button" class="edit-button action-button" data-action="editSpellList"
@@ -13,14 +12,8 @@
 					</button>
 				{{else}}
 					<div class="custom-list-controls">
-						<!-- Only show restore button for duplicates of existing lists -->
-						{{#if (and
-            selectedSpellList.document.flags
-            selectedSpellList.document.flags.[spell-book]
-            selectedSpellList.document.flags.[spell-book].isDuplicate
-            selectedSpellList.document.flags.[spell-book].originalUuid)}}
-
-							{{#if compareInfo.hasOriginalChanged}}
+						{{#if selectedSpellList.canRestore}}
+							{{#if selectedSpellList.compareInfo.hasOriginalChanged}}
 								<span class="update-notice" role="status">{{localize "SPELLMANAGER.Status.UpdateNotice"}}</span>
 							{{/if}}
 
@@ -30,7 +23,6 @@
 							</button>
 						{{/if}}
 
-						<!-- Always show delete and save buttons in edit mode -->
 						<button type="button" class="delete-button action-button" data-action="deleteCustomList"
 							data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Delete'}}">
 							<i class="fas fa-trash" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Delete"}}
@@ -44,7 +36,6 @@
 				{{/unless}}
 			</div>
 		</div>
-
 		<div class="selected-list-spells" aria-labelledby="selected-list-title">
 			{{#if selectedSpellList.isLoadingSpells}}
 				{{> "modules/spell-book/templates/components/loading-spinner.hbs" size=2 message=(localize "SPELLMANAGER.Application.LoadingSpells")}}
@@ -54,7 +45,7 @@
 				<div class="spells-container">
 					{{#each selectedSpellList.spellsByLevel as |levelData|}}
 						{{#> "modules/spell-book/templates/components/spell-level.hbs" level=levelData.level levelName=levelData.levelName spells=levelData.spells}}
-							<li class="spell-item" data-uuid="{{compendiumUuid}}" role="listitem">
+							<li class="{{cssClasses}}" {{{dataAttributes}}} role="listitem">
 								<div class="spell-name">
 									{{{enrichedIcon}}}
 									<div class="name-stacked">

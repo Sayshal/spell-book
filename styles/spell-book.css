@@ -2,70 +2,63 @@
 /* stylelint-disable comment-empty-line-before */
 
 /* ----------------------------------------- */
-/*  Spell Book Module - Main CSS             */
-/*  Updated for flat parts structure         */
-/* ----------------------------------------- */
-
-/* ----------------------------------------- */
 /*  Variables                                */
 /* ----------------------------------------- */
 :root {
   /* Layout */
-  --spell-book-bg-disabled: #00000008;
+  --spell-book-sidebar-width: 200px;
+  --spell-book-item-spacing: 0.5rem;
+  --spell-book-tab-full-width: 44px;
+  --spell-book-tab-inactive-width: 34px;
+  --spell-book-control-width: 16px;
+  --spell-book-config-width: 24px;
+  --spell-book-border-radius: 3px;
+
+  /* Colors */
+  --spell-book-bg-primary: #1b1d24e6;
   --spell-book-bg-item: #0000000d;
   --spell-book-bg-item-hover: #0000001a;
   --spell-book-bg-prepared: #0080001a;
-  --spell-book-bg-primary: #1b1d24e6;
-  --spell-book-border-highlight: var(--color-border-highlight);
-
-  /* Colors */
+  --spell-book-bg-disabled: #00000008;
   --spell-book-border-light: #c9c7b82a;
   --spell-book-border-light-theme: #5a5a5a5e;
-  --spell-book-border-radius: 3px;
-  --spell-book-config-width: 24px;
-  --spell-book-control-width: 16px;
-
-  /* Borders */
-  --spell-book-font-2xl: var(--font-size-15);
-  --spell-book-font-lg: var(--font-size-13);
-  --spell-book-font-md: var(--font-size-12);
+  --spell-book-border-highlight: var(--color-border-highlight);
 
   /* Text Colors */
-  --spell-book-font-sm: var(--font-size-11);
-  --spell-book-font-xl: var(--font-size-14);
-  --spell-book-font-xs: var(--font-size-10);
-
-  /* Tags */
-  --spell-book-icon-size: 32px;
-  --spell-book-item-spacing: 0.5rem;
-  --spell-book-shadow-light: 0 0 0.25rem var(--dnd5e-shadow-45);
-
-  /* Transitions */
-  --spell-book-shadow-normal: 0 0 0.375rem var(--color-shadow-dark);
-  --spell-book-shadow-top: 0 -2px 0.6rem #0000001a;
-
-  /* Shadows */
-  --spell-book-sidebar-width: 200px;
-  --spell-book-tab-full-width: 44px;
-  --spell-book-tab-inactive-width: 34px;
+  --spell-book-text-primary: var(--color-text-light-highlight);
+  --spell-book-text-secondary: #bababa;
+  --spell-book-text-disabled: var(--color-text-dark-secondary);
 
   /* Font Sizes */
+  --spell-book-font-2xl: var(--font-size-15);
+  --spell-book-font-xl: var(--font-size-14);
+  --spell-book-font-lg: var(--font-size-13);
+  --spell-book-font-md: var(--font-size-12);
+  --spell-book-font-sm: var(--font-size-11);
+  --spell-book-font-xs: var(--font-size-10);
+
+  /* Tag Colors */
   --spell-book-tag-always: #3fc6c1;
   --spell-book-tag-granted: #f59f70;
   --spell-book-tag-mode: #cea4e5;
-  --spell-book-text-disabled: var(--color-text-dark-secondary);
-  --spell-book-text-primary: var(--color-text-light-highlight);
-  --spell-book-text-secondary: #bababa;
 
-  /* Z-indices */
+  /* Icon Size */
+  --spell-book-icon-size: 32px;
+
+  /* Shadows */
+  --spell-book-shadow-light: 0 0 0.25rem var(--dnd5e-shadow-45);
+  --spell-book-shadow-normal: 0 0 0.375rem var(--color-shadow-dark);
+  --spell-book-shadow-top: 0 -2px 0.6rem #0000001a;
+
+  /* Transitions */
   --spell-book-transition-normal: all 250ms ease;
   --spell-book-transition-slow: all 450ms ease;
-  --spell-book-z-index-controls: 1;
 
-  /* Tab Navigation */
-  --spell-book-z-index-footer: 10;
+  /* Z-indices */
+  --spell-book-z-index-controls: 1;
   --spell-book-z-index-sidebar: 2;
   --spell-book-z-index-tabs: 3;
+  --spell-book-z-index-footer: 10;
 }
 
 /* ----------------------------------------- */
@@ -84,43 +77,37 @@
     flex-direction: column;
     min-height: 0;
     padding: 0;
-    overflow: visible !important; /* Important to allow tabs visibility */
+    overflow: visible !important;
     transition: var(--spell-book-transition-slow);
-  }
 
-  /* Content wrapper - manages overflow */
-  .content-wrapper {
-    inset: 0;
-    display: flex;
-    position: absolute;
-    flex-direction: column;
-    overflow: hidden; /* Controls sidebar hiding */
-  }
+    > * {
+      transition: var(--spell-book-transition-slow);
+    }
 
-  /* Basic styles for all direct window-content children */
-  .window-content > * {
-    transition: var(--spell-book-transition-slow);
-  }
+    > nav.tabs.tabs-right {
+      z-index: var(--spell-book-z-index-tabs);
+      position: absolute;
+      top: 20px;
+      left: 100%;
+      transform: translateZ(0);
+    }
 
-  /* Main container - positioned relative to sidebar */
-  .spell-book-container {
-    inset: 0 0 0 var(--spell-book-sidebar-width);
-    position: absolute;
-    overflow: visible;
-    transition: var(--spell-book-transition-slow);
-  }
+    > .tab {
+      inset: 0 0 20px var(--spell-book-sidebar-width);
+      display: none;
+      position: absolute;
+      padding: 0.6rem 0.6rem 0.6rem 1.5rem;
+      overflow-y: auto;
+    }
 
-  /* Position tabs - outside overflow context */
-  .window-content > nav.tabs.tabs-right {
-    z-index: var(--spell-book-z-index-tabs);
-    position: absolute;
-    top: 20px;
-    left: 100%;
-    transform: translateZ(0); /* Create stacking context */
-  }
+    &:has(.collapsed-footer:not(.hidden)) > .tab {
+      inset: 0 0 90px;
+    }
 
-  /* Position footer */
-  .window-content {
+    > .tab.active {
+      display: block;
+    }
+
     .collapsed-footer {
       z-index: var(--spell-book-z-index-footer);
       position: absolute;
@@ -146,21 +133,21 @@
     }
   }
 
-  /* Position tab content */
-  .window-content > .tab {
-    inset: 0 0 20px var(--spell-book-sidebar-width);
-    display: none; /* Leave space for footer */
+  /* Content wrapper - manages overflow */
+  .content-wrapper {
+    inset: 0;
+    display: flex;
     position: absolute;
-    padding: 0.6rem 0.6rem 0.6rem 1.5rem;
-    overflow-y: auto;
+    flex-direction: column;
+    overflow: hidden;
   }
 
-  .window-content:has(.collapsed-footer:not(.hidden)) > .tab {
-    inset: 0 0 90px; /* Increased bottom inset to make room for collapsed footer */
-  }
-
-  .window-content > .tab.active {
-    display: block;
+  /* Main container - positioned relative to sidebar */
+  .spell-book-container {
+    inset: 0 0 0 var(--spell-book-sidebar-width);
+    position: absolute;
+    overflow: visible;
+    transition: var(--spell-book-transition-slow);
   }
 
   /* Main content area */
@@ -169,7 +156,7 @@
     height: 100%;
     min-height: 100px;
     padding: 0.6rem 0.6rem 0.6rem 1.25rem;
-    padding-bottom: 3.75rem; /* Space for footer */
+    padding-bottom: 3.75rem;
     overflow: auto;
     transition: var(--spell-book-transition-slow);
   }
@@ -474,21 +461,21 @@
     height: 100%;
     margin: 2rem 0;
     text-align: center;
-  }
 
-  .loading-spinner i {
-    margin-bottom: 1rem;
+    i {
+      margin-bottom: 1rem;
+    }
   }
 
   .wizard-rules-info {
     display: inline-block;
     padding: 0.125rem 0.375rem;
     font-size: 0.9em;
-  }
 
-  .wizard-rules-info i {
-    margin-right: 4px;
-    color: var(--color-border-highlight);
+    i {
+      margin-right: 4px;
+      color: var(--color-border-highlight);
+    }
   }
 }
 
@@ -595,6 +582,11 @@
 
     .hide-checkbox .spell-preparation {
       visibility: hidden;
+    }
+
+    &.cantrip-locked {
+      opacity: 0.8;
+      cursor: not-allowed;
     }
   }
 
@@ -704,11 +696,6 @@
       text-align: center;
     }
   }
-
-  .spell-item.cantrip-locked {
-    opacity: 0.8;
-    cursor: not-allowed;
-  }
 }
 
 /* ----------------------------------------- */
@@ -735,31 +722,31 @@
 
     /* Specific tag types */
     &.always-prepared {
-      background-color: var(--spell-book-tag-always, #3fc6c1); /* Teal */
+      background-color: var(--spell-book-tag-always, #3fc6c1);
     }
 
     &.granted {
-      background-color: var(--spell-book-tag-granted, #f59f70); /* Light orange */
+      background-color: var(--spell-book-tag-granted, #f59f70);
     }
 
     &.pact {
-      background-color: #9b59b6; /* Purple */
+      background-color: #9b59b6;
     }
 
     &.innate {
-      background-color: #3498db; /* Blue */
+      background-color: #3498db;
     }
 
     &.ritual {
-      background-color: #f1c40f; /* Yellow */
+      background-color: #f1c40f;
     }
 
     &.atwill {
-      background-color: #e67e22; /* Orange */
+      background-color: #e67e22;
     }
 
     &.prepared {
-      background-color: #4caf50; /* Green */
+      background-color: #4caf50;
     }
   }
 
@@ -883,7 +870,6 @@
 /* ----------------------------------------- */
 /*  Tab Navigation                           */
 /* ----------------------------------------- */
-/* Styles for tab navigation as a direct child of .window-content */
 .window-content > .tabs.tabs-right {
   --icon-fill: var(--dnd5e-color-gold);
   --icon-size: 16px;
@@ -895,51 +881,50 @@
   flex-direction: column;
   margin: 0;
   border: none;
-}
 
-.window-content > .tabs.tabs-right > .item {
-  transform-style: preserve-3d;
-  display: flex;
-  position: relative;
-  flex: none;
-  justify-content: center;
-  align-items: center;
-  width: var(--tab-full-width);
-  height: 40px;
-  margin: 0;
-  border: 1px solid transparent;
-  border-radius: 0 8px 8px 0;
-  color: var(--dnd5e-color-gold);
-  cursor: pointer;
-  background: var(--dnd5e-color-black);
-  box-shadow: var(--spell-book-shadow-normal);
-  transition: all 250ms ease; /* Same approach as the sidebar collapser */
-  transform: translateZ(-1px);
-}
+  > .item {
+    transform-style: preserve-3d;
+    display: flex;
+    position: relative;
+    flex: none;
+    justify-content: center;
+    align-items: center;
+    width: var(--tab-full-width);
+    height: 40px;
+    margin: 0;
+    border: 1px solid transparent;
+    border-radius: 0 8px 8px 0;
+    color: var(--dnd5e-color-gold);
+    cursor: pointer;
+    background: var(--dnd5e-color-black);
+    box-shadow: var(--spell-book-shadow-normal);
+    transition: all 250ms ease;
+    transform: translateZ(-1px);
 
-.window-content > .tabs.tabs-right > .item.active,
-.window-content > .tabs.tabs-right > .item:hover {
-  border-color: var(--dnd5e-color-gold);
-  text-shadow: none;
-  box-shadow: 0 0 6px var(--dnd5e-color-gold);
-}
+    &.active,
+    &:hover {
+      border-color: var(--dnd5e-color-gold);
+      text-shadow: none;
+      box-shadow: 0 0 6px var(--dnd5e-color-gold);
+    }
 
-.window-content > .tabs.tabs-right > .item i,
-.window-content > .tabs.tabs-right > .item dnd5e-icon {
-  font-size: var(--icon-size);
-}
+    i,
+    dnd5e-icon {
+      font-size: var(--icon-size);
+    }
 
-/* Hide labels but keep for accessibility */
-.window-content > .tabs.tabs-right > .item > span {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  border-width: 0;
-  clip: rect(0, 0, 0, 0);
-  overflow: hidden;
-  white-space: nowrap;
+    > span {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      border-width: 0;
+      clip: rect(0, 0, 0, 0);
+      overflow: hidden;
+      white-space: nowrap;
+    }
+  }
 }
 
 /* ----------------------------------------- */
@@ -954,17 +939,17 @@
   padding: 0.75rem;
   border-radius: var(--spell-book-border-radius);
   background-color: var(--spell-book-bg-item);
-}
 
-.spellbook-info h3 {
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-  color: var(--spell-book-text-primary);
-  font-size: 1.2em;
-}
+  h3 {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--spell-book-text-primary);
+    font-size: 1.2em;
+  }
 
-.spellbook-info p {
-  margin-bottom: 0.5rem;
+  p {
+    margin-bottom: 0.5rem;
+  }
 }
 
 .wizard-level-container {
@@ -993,14 +978,14 @@
   border-bottom: 1px solid var(--spell-book-border-light);
   border-radius: var(--spell-book-border-radius);
   background-color: var(--spell-book-bg-item);
-}
 
-.wizard-spell-item:hover {
-  background-color: var(--spell-book-bg-item-hover);
-}
+  &:hover {
+    background-color: var(--spell-book-bg-item-hover);
+  }
 
-.wizard-spell-item.in-spellbook {
-  background-color: var(--spell-book-bg-prepared);
+  &.in-spellbook {
+    background-color: var(--spell-book-bg-prepared);
+  }
 }
 
 .wizard-spell-status {
@@ -1024,10 +1009,10 @@
   font-size: 0.8em;
   cursor: pointer;
   background-color: var(--color-button);
-}
 
-.copy-spell-btn:hover {
-  background-color: var(--color-button-hover);
+  &:hover {
+    background-color: var(--color-button-hover);
+  }
 }
 
 .wizard-unavailable {
@@ -1183,13 +1168,13 @@
     padding: 0.5rem;
     border-radius: 3px;
     background: #0000000d;
-  }
 
-  .settings-section h3 {
-    margin-top: 0;
-    margin-bottom: 0.5rem;
-    padding-bottom: 0.25rem;
-    border-bottom: 1px solid var(--color-border-light-tertiary);
+    h3 {
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.25rem;
+      border-bottom: 1px solid var(--color-border-light-tertiary);
+    }
   }
 
   .notice {
@@ -1282,8 +1267,6 @@
 /* ----------------------------------------- */
 /*  Responsive Design                        */
 /* ----------------------------------------- */
-
-/* Large Desktops */
 @media (width <= 1200px) {
   :root {
     --spell-book-sidebar-width: 180px;
@@ -1301,8 +1284,7 @@
   }
 }
 
-/* Small Desktops/Laptops */
-@media (width <= 900px) {
+@media (width <= 1024px) {
   :root {
     --spell-book-sidebar-width: 160px;
   }
@@ -1319,134 +1301,10 @@
     .name-stacked .subtitle {
       font-size: var(--spell-book-font-xs);
     }
-  }
-}
 
-/* Tablets */
-@media (width <= 768px) {
-  :root {
-    --spell-book-sidebar-width: 150px;
-  }
-
-  .spell-book {
-    .spell-book-container {
-      flex-direction: column;
-    }
-
-    .sidebar {
-      width: 100%;
-      min-width: 100%;
-      border-right: none;
-      border-bottom: 1px solid var(--color-border-light);
-    }
-
-    .sidebar-controls {
-      display: none;
-    }
-
-    &.sidebar-collapsed .sidebar {
-      width: 100%;
-      min-width: 100%;
-    }
-
-    .collapsed-footer {
-      display: none !important;
-    }
-
-    .spell-details {
-      max-width: 40%;
-    }
-
-    /* Adjust tabs for mobile */
-    .spell-book-container .tabs.tabs-right {
-      position: static;
-      top: auto;
-      right: auto;
-      flex-direction: row;
-      justify-content: center;
-      width: 100%;
-      margin-bottom: 0.5rem;
-    }
-
-    .spell-book-container .tabs.tabs-right > .item {
-      justify-content: center;
+    /* Adjust tabs for compact layout */
+    .window-content > .tabs.tabs-right > .item {
       width: auto;
-      height: 40px;
-      margin: 0 0.25rem !important;
-      padding: 0 0.75rem;
-      border-radius: 4px;
-    }
-  }
-}
-
-/* Large Phones */
-@media (width <= 650px) {
-  .spell-book {
-    .spell-details {
-      flex: 1;
-      max-width: 30%;
-    }
-
-    .spell-name {
-      max-width: 60%;
-    }
-
-    .spell-icon {
-      width: 24px;
-      height: 24px;
-    }
-
-    .name-stacked .title {
-      font-size: var(--spell-book-font-md);
-    }
-  }
-}
-
-/* Medium Phones */
-@media (width <= 550px) {
-  .spell-book {
-    .spell-details {
-      flex: 0.5;
-      max-width: 25%;
-    }
-
-    .spell-name {
-      max-width: 65%;
-    }
-
-    .footer-buttons button {
-      padding: 0.25rem 0.5rem;
-      font-size: var(--spell-book-font-sm);
-    }
-  }
-}
-
-/* Small Phones */
-@media (width <= 450px) {
-  .spell-book {
-    .spell-filters label {
-      font-size: var(--spell-book-font-xs);
-    }
-
-    .spell-details {
-      display: none;
-    }
-
-    .spell-name {
-      max-width: 80%;
-    }
-
-    .filter-toggles label {
-      font-size: var(--spell-book-font-sm);
-    }
-
-    .sidebar-footer-container .footer-buttons button {
-      padding: 0.25rem 0.4rem;
-      font-size: var(--spell-book-font-xs);
-    }
-
-    /* Further compress tabs on small screens */
-    .spell-book-container .tabs.tabs-right > .item {
       padding: 0 0.5rem;
     }
   }

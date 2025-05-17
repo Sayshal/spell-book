@@ -167,13 +167,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _processSpellForDisplay(spell) {
     const processedSpell = foundry.utils.deepClone(spell);
-
-    if (!spell.compendiumUuid) {
-      spell.compendiumUuid = genericUtils.getSpellUuid(spell);
-    }
-
+    if (!spell.compendiumUuid) spell.compendiumUuid = genericUtils.getSpellUuid(spell);
+    processedSpell.cssClasses = this._getSpellCssClasses(spell);
+    processedSpell.dataAttributes = this._getSpellDataAttributes(spell);
+    processedSpell.tag = this._getSpellPreparationTag(spell);
     const ariaLabel = spell.preparation.prepared ? game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name }) : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
-
     const checkbox = formElements.createCheckbox({
       name: `spellPreparation.${spell.compendiumUuid}`,
       checked: spell.preparation.prepared,
@@ -186,18 +184,99 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     checkbox.dataset.name = spell.name;
     checkbox.dataset.ritual = spell.filterData?.isRitual || false;
     checkbox.dataset.wasPrepared = spell.preparation.prepared;
-
-    if (spell.preparation.disabled && spell.preparation.disabledReason) {
-      checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
-    }
-
+    if (spell.preparation.disabled && spell.preparation.disabledReason) checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
     processedSpell.preparationCheckboxHtml = formElements.elementToHtml(checkbox);
+    if (this.wizardManager?.isWizard) processedSpell.inWizardSpellbook = this._stateManager.wizardSpellbookCache?.includes(spell.compendiumUuid) || false;
+    return processedSpell;
+  }
 
-    if (this.wizardManager?.isWizard) {
-      processedSpell.inWizardSpellbook = this._stateManager.wizardSpellbookCache?.includes(spell.compendiumUuid) || false;
+  /**
+   * Get CSS classes for a spell item
+   * @param {Object} spell - The spell object
+   * @returns {string} Space-separated CSS classes
+   * @private
+   */
+  _getSpellCssClasses(spell) {
+    const classes = ['spell-item'];
+    if (spell.preparation?.isOwned) classes.push('owned-spell');
+    if (spell.preparation?.prepared) classes.push('prepared-spell');
+    if (this.wizardManager?.isWizard && this._stateManager.wizardSpellbookCache?.includes(spell.compendiumUuid)) {
+      classes.push('in-wizard-spellbook');
+    }
+    return classes.join(' ');
+  }
+
+  /**
+   * Get data attributes for a spell item
+   * @param {Object} spell - The spell object
+   * @returns {string} HTML-ready data attributes
+   * @private
+   */
+  _getSpellDataAttributes(spell) {
+    return [
+      `data-spell-uuid="${spell.compendiumUuid}"`,
+      `data-spell-level="${spell.level || 0}"`,
+      `data-spell-school="${spell.system?.school || ''}"`,
+      `data-casting-time-type="${spell.filterData?.castingTime?.type || ''}"`,
+      `data-casting-time-value="${spell.filterData?.castingTime?.value || ''}"`,
+      `data-range-units="${spell.filterData?.range?.units || ''}"`,
+      `data-range-value="${spell.system?.range?.value || ''}"`,
+      `data-damage-types="${spell.filterData?.damageTypes || ''}"`,
+      `data-ritual="${spell.filterData?.isRitual || false}"`,
+      `data-concentration="${spell.filterData?.concentration || false}"`,
+      `data-requires-save="${spell.filterData?.requiresSave || false}"`,
+      `data-conditions="${spell.filterData?.conditions || ''}"`
+    ].join(' ');
+  }
+
+  /**
+   * Get the preparation tag for a spell
+   * @param {Object} spell - The spell object
+   * @returns {Object|null} Tag information or null
+   * @private
+   */
+  _getSpellPreparationTag(spell) {
+    if (!spell.preparation) return null;
+    if (spell.preparation.alwaysPrepared) {
+      return {
+        cssClass: 'always-prepared',
+        text: game.i18n.localize('SPELLBOOK.Preparation.Always'),
+        tooltip: spell.preparation.sourceItem?.name || game.i18n.localize('SPELLBOOK.Preparation.AlwaysTooltip')
+      };
     }
 
-    return processedSpell;
+    if (spell.preparation.isGranted) {
+      return {
+        cssClass: 'granted',
+        text: game.i18n.localize('SPELLBOOK.SpellSource.Granted'),
+        tooltip: spell.preparation.sourceItem?.name || ''
+      };
+    }
+
+    const modes = {
+      pact: true,
+      innate: true,
+      ritual: true,
+      atwill: true
+    };
+
+    if (modes[spell.preparation.preparationMode]) {
+      return {
+        cssClass: spell.preparation.preparationMode,
+        text: spell.preparation.localizedPreparationMode,
+        tooltip: spell.preparation.sourceItem?.name || ''
+      };
+    }
+
+    if (spell.preparation.preparationMode === 'prepared' && spell.preparation.prepared) {
+      return {
+        cssClass: 'prepared',
+        text: game.i18n.localize('SPELLBOOK.Preparation.Prepared'),
+        tooltip: ''
+      };
+    }
+
+    return null;
   }
 
   /**
