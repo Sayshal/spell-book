@@ -344,6 +344,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @returns {Object} Processed spell with display data
    */
   _processSpellItemForDisplay(spell) {
+    if (!spell.compendiumUuid) spell.compendiumUuid = spell.uuid;
     const processed = foundry.utils.deepClone(spell);
     processed.cssClasses = 'spell-item';
     processed.dataAttributes = `data-uuid="${spell.compendiumUuid}"`;
@@ -1205,7 +1206,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         const spellUuids = [spell.uuid, spell.compendiumUuid, ...(spell._id ? [spell._id] : [])];
         return !spellUuids.some((id) => normalizedForms.includes(id));
       });
-
       this.selectedSpellList.spellsByLevel = actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
       this._ensureSpellIcons();
       this.render(false);
@@ -1221,28 +1221,20 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   addSpell(spellUuid) {
     if (!this.selectedSpellList || !this.isEditing) return;
-
     try {
-      log(3, `Adding spell: ${spellUuid} to pending changes`);
       this.pendingChanges.added.add(spellUuid);
       this.pendingChanges.removed.delete(spellUuid);
-
       const spell = this.availableSpells.find((s) => s.uuid === spellUuid);
-
-      if (spell) {
-        const spellCopy = foundry.utils.deepClone(spell);
-
-        if (!spellCopy.enrichedIcon) {
-          spellCopy.enrichedIcon = formattingUtils.createSpellIconLink(spellCopy);
-        }
-
-        this.selectedSpellList.spellUuids.push(spellUuid);
-        this.selectedSpellList.spells.push(spellCopy);
-        this.selectedSpellList.spellsByLevel = actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
-        this._ensureSpellIcons();
-        this.render(false);
-        this.applyFilters();
-      }
+      if (!spell) return;
+      const spellCopy = foundry.utils.deepClone(spell);
+      spellCopy.compendiumUuid = spellUuid;
+      if (!spellCopy.enrichedIcon) spellCopy.enrichedIcon = formattingUtils.createSpellIconLink(spellCopy);
+      this.selectedSpellList.spellUuids.push(spellUuid);
+      this.selectedSpellList.spells.push(spellCopy);
+      this.selectedSpellList.spellsByLevel = actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
+      this._ensureSpellIcons();
+      this.render(false);
+      this.applyFilters();
     } catch (error) {
       log(1, 'Error adding spell:', error);
     }
