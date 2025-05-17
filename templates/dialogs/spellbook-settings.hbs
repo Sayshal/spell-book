@@ -69,7 +69,9 @@
   </div>
 
   {{!-- Wizard Settings (only show if actor is a wizard) --}}
+  {{log 'DEBUG' isWizard}}
   {{#if isWizard}}
+
     <div class="settings-section wizard-settings">
       <h3>{{localize 'SPELLBOOK.Wizard.SectionTitle'}}</h3>
 

@@ -10,9 +10,8 @@ import { WizardSpellbookManager } from '../helpers/wizard-spellbook.mjs';
 import { log } from '../logger.mjs';
 import { PlayerFilterConfiguration } from './player-filter-configuration.mjs';
 import { SpellbookSettingsDialog } from './spellbook-settings-dialog.mjs';
-import { WizardSpellCopyDialog } from './wizard-spell-copy-dialog.mjs';
 
-const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
  * Player-facing spell book application for managing prepared spells
@@ -821,11 +820,42 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
       const costInfo = await this.wizardManager.getCopyingCostWithFree(spell);
       const time = this.wizardManager.getCopyingTime(spell);
+      const costText = costInfo.isFree ? game.i18n.localize('SPELLBOOK.Wizard.SpellCopyFree') : game.i18n.format('SPELLBOOK.Wizard.SpellCopyCost', { cost: costInfo.cost });
+      const result = await DialogV2.wait({
+        title: game.i18n.format('SPELLBOOK.Wizard.LearnSpellTitle', { name: spell.name }),
+        content: `
+        <form class="wizard-copy-form">
+          <p>${game.i18n.format('SPELLBOOK.Wizard.LearnSpellPrompt', { name: spell.name })}</p>
+          <div class="copy-details">
+            <div class="form-group">
+              <label>${game.i18n.localize('SPELLBOOK.Wizard.CostLabel')}:</label>
+              <span>${costText}</span>
+            </div>
+            <div class="form-group">
+              <label>${game.i18n.localize('SPELLBOOK.Wizard.TimeLabel')}:</label>
+              <span>${game.i18n.format('SPELLBOOK.Wizard.SpellCopyTime', { hours: time })}</span>
+            </div>
+          </div>
+        </form>
+      `,
+        buttons: [
+          {
+            icon: 'fas fa-book',
+            label: game.i18n.localize('SPELLBOOK.Wizard.LearnSpellButton'),
+            action: 'confirm',
+            className: 'dialog-button'
+          },
+          {
+            icon: 'fas fa-times',
+            label: game.i18n.localize('SPELLBOOK.UI.Cancel'),
+            action: 'cancel',
+            className: 'dialog-button'
+          }
+        ],
+        default: 'confirm'
+      });
 
-      const dialog = new WizardSpellCopyDialog(spell, this.wizardManager, costInfo, time);
-      const result = await dialog.getResult();
-
-      if (result.confirmed) {
+      if (result === 'confirm') {
         const success = await this.wizardManager.copySpell(spellUuid, costInfo.cost, time, costInfo.isFree);
 
         if (success) {

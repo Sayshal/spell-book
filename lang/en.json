@@ -207,6 +207,9 @@
   "SPELLMANAGER.Confirm.DeleteButton": "Delete",
   "SPELLMANAGER.Confirm.DeleteContent": "Are you sure you want to delete the custom version of <strong>{name}</strong>? This cannot be undone.",
   "SPELLMANAGER.Confirm.DeleteTitle": "Delete Custom Spell List",
+  "SPELLMANAGER.Confirm.RestoreButton": "Restore",
+  "SPELLMANAGER.Confirm.RestoreContent": "Are you sure you want to restore <strong>{name}</strong> from the original source? Your customizations will be lost.",
+  "SPELLMANAGER.Confirm.RestoreTitle": "Restore from Original",
   "SPELLMANAGER.Confirm.Title": "Confirm Action",
   "SPELLMANAGER.CreateList.ClassLabel": "Class:",
   "SPELLMANAGER.CreateList.Custom": "Custom",
@@ -247,5 +250,12 @@
   "SPELLMANAGER.UI.ApplicationActions": "Spell Manager Actions",
   "SPELLMANAGER.UI.FilteredSpells": "Filtered Spells",
   "SPELLMANAGER.UI.ListActions": "List Actions",
-  "SPELLMANAGER.UI.SelectedList": "Selected Spell List"
+  "SPELLMANAGER.UI.SelectedList": "Selected Spell List",
+  "SPELLBOOK.Wizard.SpellCopyFree": "Free",
+  "SPELLBOOK.Wizard.SpellCopyCost": "{cost} gp",
+  "SPELLBOOK.Wizard.SpellCopyTime": "{hours} hours",
+  "SPELLBOOK.Wizard.LearnSpellPrompt": "Do you want to learn <strong>{name}</strong> and add it to your spellbook?",
+  "SPELLBOOK.Wizard.LearnSpellTitle": "Learn Spell: {name}",
+  "SPELLBOOK.Wizard.LearnSpellButton": "Learn Spell",
+  "SPELLBOOK.UI.Cancel": "Cancel"
 }
