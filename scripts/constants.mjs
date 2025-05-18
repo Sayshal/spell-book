@@ -80,7 +80,8 @@ export const SETTINGS = {
   ENABLE_REST_PROMPT: 'enableRestPrompt',
   FILTER_CONFIGURATION: 'filterConfiguration',
   LOGGING_LEVEL: 'loggingLevel',
-  OPEN_SPELL_MANAGER: 'openSpellListManager'
+  OPEN_SPELL_MANAGER: 'openSpellListManager',
+  RUN_MIGRATIONS: 'runMigrations'
 };
 
 /**

@@ -3,6 +3,7 @@ import { MODULE, TEMPLATES } from './constants.mjs';
 import { registerDnD5eIntegration } from './integrations/dnd5e.mjs';
 import { registerTidy5eIntegration } from './integrations/tidy5e.mjs';
 import { initializeLogger, log } from './logger.mjs';
+import { registerMigration } from './migrations.mjs';
 import { registerSettings } from './settings.mjs';
 
 Hooks.once('init', async function () {
@@ -12,6 +13,7 @@ Hooks.once('init', async function () {
     await initializeModuleComponents();
     await preloadTemplates();
     createAPI();
+    registerMigration();
     log(3, 'Module initialization complete');
   } catch (error) {
     log(1, `Error initializing module:`, error);
