@@ -274,7 +274,7 @@ function extractSpellConditions(spell) {
 export function createSpellIconLink(spell) {
   try {
     if (!spell) return '';
-    const uuid = spell.compendiumUuid || spell.uuid || spell?._stats?.compendiumSource;
+    const uuid = spell.compendiumUuid || spell.uuid || spell?._stats?.compendiumSource || spell?.system?.parent?.uuid;
     const parsed = foundry.utils.parseUuid(uuid);
     const itemId = parsed.id || '';
     const entityType = parsed.type || 'Item';

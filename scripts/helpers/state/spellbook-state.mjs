@@ -1,4 +1,4 @@
-import { FLAGS, MODULE } from '../../constants.mjs';
+import { CANTRIP_RULES, FLAGS, MODULE } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
 import * as actorSpellUtils from '../actor-spells.mjs';
 import * as genericUtils from '../generic-utils.mjs';
