@@ -109,15 +109,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     context.hasMultipleTabs = this._stateManager.spellcastingClasses && (Object.keys(this._stateManager.spellcastingClasses).length > 1 || context.isWizard);
     context.filters = this._prepareFilters();
 
-    // Add this section for footer data
-    context.activeTab = this.tabGroups['spellbook-tabs'];
-    if (context.activeTab === 'wizardbookTab' && this._stateManager.tabData?.wizardbookTab) {
-      context.wizardTotalSpellbookCount = this._stateManager.tabData.wizardbookTab.wizardTotalSpellbookCount || 0;
-      context.wizardFreeSpellbookCount = this._stateManager.tabData.wizardbookTab.wizardFreeSpellbookCount || 0;
-      context.wizardRemainingFreeSpells = this._stateManager.tabData.wizardbookTab.wizardRemainingFreeSpells || 0;
-      context.wizardHasFreeSpells = this._stateManager.tabData.wizardbookTab.wizardHasFreeSpells || false;
-    }
-
     return context;
   }
 
@@ -497,9 +488,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           this._spellsTabNeedsReload = false;
           this._loadSpellData();
         }
-        if (this._stateManager.tabData && this._stateManager.tabData.wizardbookTab) {
-          this.spellLevels = this._stateManager.tabData.wizardbookTab.spellLevels;
-          this.spellPreparation = this._stateManager.tabData.wizardbookTab.spellPreparation;
+        if (this._stateManager.tabData && this._stateManager.tabData[tabName]) {
+          this.spellLevels = this._stateManager.tabData[tabName].spellLevels;
+          this.spellPreparation = this._stateManager.tabData[tabName].spellPreparation;
           this.render(false);
         }
       }
