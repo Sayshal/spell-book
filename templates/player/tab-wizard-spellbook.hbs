@@ -1,5 +1,5 @@
-<div class="tab {{cssClass}}" data-tab="wizardbookTab" data-group="spellbook-tabs" role="tabpanel"
-	id="wizardbookTab-panel" aria-labelledby="tab-wizardbookTab" data-identifier="wizardbook">
+<div class="wizardtab tab {{#if (eq activeTab 'wizardtab')}}active{{/if}}" data-tab="wizardtab"
+	data-group="spellbook-tabs">
 	<div class="spells-container">
 		{{#if isLoading}}
 			{{> "modules/spell-book/templates/components/loading-spinner.hbs" size=3 message=(localize 'SPELLBOOK.Application.Loading')}}

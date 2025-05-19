@@ -229,7 +229,7 @@ export class SpellbookState {
       if (Object.keys(this.spellcastingClasses).length > 0) {
         this.handleCantripLevelUp();
         for (const [identifier, classData] of Object.entries(this.spellcastingClasses)) {
-          if (this.app.wizardManager?.isWizard) await this.loadWizardSpellData(classData);
+          if (this.app.wizardManager?.isWizard && identifier === 'wizard') await this.loadWizardSpellData(classData);
           else await this.loadClassSpellData(identifier, classData);
         }
         if (!this.activeClass && Object.keys(this.spellcastingClasses).length > 0) this.activeClass = Object.keys(this.spellcastingClasses)[0];
@@ -420,7 +420,7 @@ export class SpellbookState {
           spellLevels: [],
           spellPreparation: { current: 0, maximum: 0 }
         },
-        wizardbook: {
+        wizardtab: {
           spellLevels: [],
           spellPreparation: { current: 0, maximum: 0 }
         }
@@ -432,10 +432,10 @@ export class SpellbookState {
       const usedFreeSpells = await this.app.wizardManager.getUsedFreeSpells();
       const remainingFreeSpells = Math.max(0, totalFreeSpells - usedFreeSpells);
       const totalSpells = personalSpellbook.length;
-      tabData.wizardbook.wizardTotalSpellbookCount = totalSpells;
-      tabData.wizardbook.wizardFreeSpellbookCount = totalFreeSpells;
-      tabData.wizardbook.wizardRemainingFreeSpells = remainingFreeSpells;
-      tabData.wizardbook.wizardHasFreeSpells = remainingFreeSpells > 0;
+      tabData.wizardtab.wizardTotalSpellbookCount = totalSpells;
+      tabData.wizardtab.wizardFreeSpellbookCount = totalFreeSpells;
+      tabData.wizardtab.wizardRemainingFreeSpells = remainingFreeSpells;
+      tabData.wizardtab.wizardHasFreeSpells = remainingFreeSpells > 0;
 
       const grantedSpells = this.actor.items
         .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.preparation?.mode && ['pact', 'innate', 'atwill'].includes(i.system.preparation.mode))))
@@ -454,8 +454,8 @@ export class SpellbookState {
       const maxSpellsAllowed = this.app.wizardManager.getMaxSpellsAllowed();
       const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
 
-      tabData.wizardbook.wizardMaxSpellbookCount = maxSpellsAllowed;
-      tabData.wizardbook.wizardIsAtMax = isAtMaxSpells;
+      tabData.wizardtab.wizardMaxSpellbookCount = maxSpellsAllowed;
+      tabData.wizardtab.wizardIsAtMax = isAtMaxSpells;
 
       const sortBy = this.app.filterHelper?.getFilterState()?.sortBy || 'level';
       this.enrichWizardTabSpells(prepLevels, personalSpellbook, sortBy);
@@ -464,12 +464,12 @@ export class SpellbookState {
       const prepStats = this.calculatePreparationStats(prepLevels, classItem);
       tabData.spellstab.spellLevels = prepLevels;
       tabData.spellstab.spellPreparation = prepStats;
-      tabData.wizardbook.spellLevels = wizardLevels;
-      tabData.wizardbook.spellPreparation = prepStats;
+      tabData.wizardtab.spellLevels = wizardLevels;
+      tabData.wizardtab.spellPreparation = prepStats;
 
       // Store data for this wizard class
       this.classSpellData[identifier] = {
-        spellLevels: activeTab === 'wizardbook' ? wizardLevels : prepLevels,
+        spellLevels: activeTab === 'wizardtab' ? wizardLevels : prepLevels,
         className: classItem.name,
         spellPreparation: prepStats,
         classItem,

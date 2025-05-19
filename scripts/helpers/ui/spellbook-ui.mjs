@@ -228,7 +228,7 @@ export class SpellbookUI {
       const activeTab = this.app.tabGroups['spellbook-tabs'];
       const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
       if (!activeTabContent) return;
-      if (activeTab === 'wizardbookTab') {
+      if (activeTab === 'wizardtab') {
         const countDisplays = activeTabContent.querySelectorAll('.spell-count');
         countDisplays.forEach((countDisplay) => countDisplay.remove());
         return;
