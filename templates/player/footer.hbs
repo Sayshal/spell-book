@@ -11,10 +11,12 @@
 	{{else}}
 		<!-- Standard spells tab - show prepared spells count -->
 		<div class="spell-prep-tracking {{#if isAtMax}}at-max{{/if}}" aria-live="polite">
-			<span class="current-count"
-				aria-label="{{localize 'SPELLBOOK.Footer.PreparedCount'}}">{{spellPreparation.current}}</span>/
-			<span class="max-count"
-				aria-label="{{localize 'SPELLBOOK.Footer.MaximumCount'}}">{{spellPreparation.maximum}}</span>
+			<span class="current-count" aria-label="{{localize 'SPELLBOOK.Footer.PreparedCount'}}">
+				{{spellPreparation.current}}
+			</span>/
+			<span class="max-count" aria-label="{{localize 'SPELLBOOK.Footer.MaximumCount'}}">
+				{{spellPreparation.maximum}}
+			</span>
 			{{localize 'SPELLBOOK.Footer.PreparedLabel'}}
 		</div>
 	{{/if}}

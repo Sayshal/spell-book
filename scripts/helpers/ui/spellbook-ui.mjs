@@ -149,7 +149,10 @@ export class SpellbookUI {
    */
   updateSpellPreparationTracking() {
     try {
-      const preparedCheckboxes = this.element.querySelectorAll('dnd5e-checkbox[data-uuid]:not([disabled])');
+      const activeTab = this.app.tabGroups['spellbook-tabs'];
+      const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
+      if (!activeTabContent) return;
+      const preparedCheckboxes = activeTabContent.querySelectorAll('dnd5e-checkbox[data-uuid]:not([disabled])');
       const countDisplay = this.element.querySelector('.spell-prep-tracking');
       if (!countDisplay) return;
       let preparedCount = 0;
@@ -160,7 +163,8 @@ export class SpellbookUI {
         if (checkbox.checked) preparedCount++;
       });
 
-      const maxPrepared = this.app.spellPreparation?.maximum || 0;
+      const classIdentifier = this.app._stateManager.activeClass;
+      const maxPrepared = this.app._stateManager.classSpellData[classIdentifier]?.spellPreparation?.maximum || 0;
       const currentCountEl = countDisplay.querySelector('.current-count');
       const maxCountEl = countDisplay.querySelector('.max-count');
       if (currentCountEl) currentCountEl.textContent = preparedCount;
@@ -377,11 +381,15 @@ export class SpellbookUI {
    */
   setupCantripLocks() {
     try {
-      const cantripItems = this.element.querySelectorAll('.spell-item[data-spell-level="0"]');
+      const activeTab = this.app.tabGroups['spellbook-tabs'];
+      const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
+      if (!activeTabContent) return;
+      const cantripItems = activeTabContent.querySelectorAll('.spell-item[data-spell-level="0"]');
       if (!cantripItems.length) return;
       const isLevelUp = this.app.spellManager.canBeLeveledUp();
       const isLongRest = this.app._isLongRest;
-      const currentCount = this.app._uiCantripCount;
+      const cantripCounter = this.updateCantripCounter(activeTabContent.querySelector('.spell-level[data-level="0"]'));
+      const currentCount = cantripCounter ? cantripCounter.current : 0;
       this.app.spellManager.lockCantripCheckboxes(cantripItems, isLevelUp, isLongRest, currentCount);
     } catch (error) {
       log(1, 'Error setting up cantrip locks:', error);

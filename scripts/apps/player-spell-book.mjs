@@ -505,7 +505,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       for (const [identifier, classData] of Object.entries(this._stateManager.spellcastingClasses)) {
         const tabId = `${identifier}Tab`;
         const iconPath = classData?.img || 'icons/svg/book.svg';
-        log(1, 'Tab Data:', { tabId: tabId, iconPath: iconPath, classData: classData, identifier: identifier });
         tabs[tabId] = {
           id: tabId,
           label: game.i18n.format('SPELLBOOK.Tabs.ClassSpells', { class: classData.name }),
@@ -574,6 +573,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
     // Re-render both the navigation and the tab content
     this.render(false, { parts: ['navigation', tabName] });
+    setTimeout(() => {
+      this.ui.updateSpellCounts();
+      this.ui.updateSpellPreparationTracking();
+      this.ui.setupCantripUI();
+    }, 100);
   }
 
   /** @inheritdoc */
