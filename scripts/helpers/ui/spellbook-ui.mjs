@@ -334,10 +334,8 @@ export class SpellbookUI {
    * @returns {Object} Counter state with current and max values
    */
   updateCantripCounter(cantripLevel) {
-    if (!cantripLevel) {
-      cantripLevel = this.element.querySelector('.spell-level[data-level="0"]');
-    }
-    if (!cantripLevel) return;
+    if (!cantripLevel) return { current: 0, max: 0 };
+    if (this.app.tabGroups['spellbook-tabs'] === 'wizardbookTab') return { current: 0, max: 0 };
 
     try {
       const maxCantrips = this.app.spellManager.getMaxAllowed();
