@@ -52,7 +52,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     container: { template: TEMPLATES.PLAYER.CONTAINER },
     sidebar: { template: TEMPLATES.PLAYER.SIDEBAR },
     navigation: { template: TEMPLATES.PLAYER.TAB_NAV, classes: ['spellbook-nav'] },
-    wizardTab: { template: TEMPLATES.PLAYER.TAB_WIZARD_SPELLBOOK, scrollable: [''] },
+    wizardbookTab: { template: TEMPLATES.PLAYER.TAB_WIZARD_SPELLBOOK, scrollable: [''] },
     footer: { template: TEMPLATES.PLAYER.FOOTER }
   };
 
@@ -84,7 +84,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this._newlyCheckedCantrips = new Set();
     this._isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING) || false;
     this._wizardInitialized = false;
-    if (!this.tabGroups['spellbook-tabs']) this.tabGroups['spellbook-tabs'] = 'spellstab';
     this._flagChangeHook = Hooks.on('updateActor', (updatedActor, changes) => {
       if (updatedActor.id !== this.actor.id) return;
       if (changes.flags?.[MODULE.ID]) {
@@ -105,7 +104,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this.isLoading) return context;
 
     // Add general context data
-    context.activeTab = this.tabGroups['spellbook-tabs'];
+    context.tabs = this._getTabs();
     context.isWizard = !!this.wizardManager?.isWizard;
     context.hasMultipleTabs = this._stateManager.spellcastingClasses && (Object.keys(this._stateManager.spellcastingClasses).length > 1 || context.isWizard);
     context.filters = this._prepareFilters();
@@ -117,25 +116,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   async _preparePartContext(partId, context, options) {
     context = await super._preparePartContext(partId, context, options);
 
-    // Add tabs data to navigation
-    if (partId === 'navigation') {
-      context.tabs = this._getTabs();
-    }
-
     // Handle class tab parts
     if (partId.endsWith('Tab')) {
       const identifier = partId.replace('Tab', '');
 
-      if (identifier === 'wizard') {
+      if (identifier === 'wizardbook') {
         // Prepare wizard tab context
-        context.id = 'wizardTab';
-        context.cssClass = this.tabGroups['spellbook-tabs'] === 'wizardTab' ? 'active' : '';
+        context.id = 'wizardbookTab';
+        context.cssClass = this.tabGroups['spellbook-tabs'] === 'wizardbookTab' ? 'active' : '';
         // Add wizard-specific context data
-        if (this._stateManager.tabData?.wizardtab) {
-          context.wizardTotalSpellbookCount = this._stateManager.tabData.wizardtab.wizardTotalSpellbookCount || 0;
-          context.wizardFreeSpellbookCount = this._stateManager.tabData.wizardtab.wizardFreeSpellbookCount || 0;
-          context.wizardRemainingFreeSpells = this._stateManager.tabData.wizardtab.wizardRemainingFreeSpells || 0;
-          context.wizardHasFreeSpells = this._stateManager.tabData.wizardtab.wizardHasFreeSpells || false;
+        if (this._stateManager.tabData?.wizardbookTab) {
+          context.wizardTotalSpellbookCount = this._stateManager.tabData.wizardbookTab.wizardTotalSpellbookCount || 0;
+          context.wizardFreeSpellbookCount = this._stateManager.tabData.wizardbookTab.wizardFreeSpellbookCount || 0;
+          context.wizardRemainingFreeSpells = this._stateManager.tabData.wizardbookTab.wizardRemainingFreeSpells || 0;
+          context.wizardHasFreeSpells = this._stateManager.tabData.wizardbookTab.wizardHasFreeSpells || false;
         }
       } else if (this._stateManager.classSpellData[identifier]) {
         // Prepare class tab context
@@ -331,33 +325,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     return null;
   }
 
-  /**
-   * Add wizard-specific data to the context
-   * @param {Object} context - The context object to modify
-   * @private
-   */
-  _addWizardContextData(context) {
-    context.wizardSpellbookCount = this._stateManager.wizardSpellbookCache?.length || 0;
-    context.wizardRulesVersion = this.spellManager.getSettings().rules;
-
-    // Add wizard tab
-    context.tabs.wizardtab = {
-      id: 'wizardtab',
-      label: game.i18n.format('SPELLBOOK.Tabs.WizardSpells', { class: this.className }),
-      group: 'spellbook-tabs',
-      cssClass: this.tabGroups['spellbook-tabs'] === 'wizardtab' ? 'active' : '',
-      icon: 'fa-solid fa-book-spells'
-    };
-
-    // Add tab data if available
-    if (this._stateManager.tabData?.wizardtab) {
-      context.wizardTotalSpellbookCount = this._stateManager.tabData.wizardtab.wizardTotalSpellbookCount || 0;
-      context.wizardFreeSpellbookCount = this._stateManager.tabData.wizardtab.wizardFreeSpellbookCount || 0;
-      context.wizardRemainingFreeSpells = this._stateManager.tabData.wizardtab.wizardRemainingFreeSpells || 0;
-      context.wizardHasFreeSpells = this._stateManager.tabData.wizardtab.wizardHasFreeSpells || false;
-    }
-  }
-
   /** @inheritdoc */
   async _onRender(context, options) {
     super._onRender(context, options);
@@ -446,10 +413,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   _getTabs() {
     try {
       const tabGroup = 'spellbook-tabs';
-      if (!this.tabGroups[tabGroup]) {
-        this.tabGroups[tabGroup] = Object.keys(this._stateManager.spellcastingClasses)[0] + 'Tab';
-      }
-
       const tabs = {};
 
       // Add class tabs
@@ -468,17 +431,34 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       }
 
-      // Add wizard tab if applicable
+      // Add wizard spellbook tab if applicable
       if (this.wizardManager?.isWizard) {
-        tabs.wizardTab = {
-          id: 'wizardTab',
+        tabs.wizardbookTab = {
+          id: 'wizardbookTab',
           label: game.i18n.format('SPELLBOOK.Tabs.WizardSpells', { class: this.className }),
           group: tabGroup,
-          cssClass: this.tabGroups[tabGroup] === 'wizardTab' ? 'active' : '',
+          cssClass: this.tabGroups[tabGroup] === 'wizardbookTab' ? 'active' : '',
           icon: 'fa-solid fa-book-spells'
         };
       }
 
+      // If we only have one tab, make it active regardless of tabGroups setting
+      const tabIds = Object.keys(tabs);
+      if (tabIds.length === 1) {
+        const onlyTabId = tabIds[0];
+        tabs[onlyTabId].cssClass = 'active';
+        this.tabGroups[tabGroup] = onlyTabId;
+        log(2, `Single tab detected. Setting ${onlyTabId} as active.`);
+      }
+      // If we have multiple tabs but none are active, set the first one active
+      else if (tabIds.length > 1 && !tabIds.some((id) => tabs[id].cssClass === 'active')) {
+        const firstTabId = tabIds[0];
+        tabs[firstTabId].cssClass = 'active';
+        this.tabGroups[tabGroup] = firstTabId;
+        log(2, `No active tab found. Setting ${firstTabId} as active.`);
+      }
+
+      log(3, 'Tabs:', tabs);
       return tabs;
     } catch (error) {
       console.error('Error generating tabs:', error);
@@ -503,7 +483,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         this.className = this._stateManager.className;
         this.spellPreparation = this._stateManager.spellPreparation;
         this.render(false);
-      } else if (tabName === 'wizardtab' && this.wizardManager?.isWizard) {
+      } else if (tabName === 'wizardbookTab' && this.wizardManager?.isWizard) {
         if (this._spellsTabNeedsReload) {
           this._spellsTabNeedsReload = false;
           this._loadSpellData();
@@ -547,7 +527,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
     // Add wizard tab if appropriate
     if (hasWizardTab) {
-      options.parts.push('wizardTab');
+      options.parts.push('wizardbookTab');
     }
   }
 
@@ -565,6 +545,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       this.className = this._stateManager.className;
       this.spellPreparation = this._stateManager.spellPreparation;
 
+      if (!this.tabGroups['spellbook-tabs'] && Object.keys(this._stateManager.spellcastingClasses).length > 0) {
+        const firstClass = Object.keys(this._stateManager.spellcastingClasses)[0];
+        this.tabGroups['spellbook-tabs'] = `${firstClass}Tab`;
+      }
       this.render(false);
     } catch (error) {
       log(1, 'Error loading spell data:', error);
@@ -777,12 +761,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {boolean} isFree - Whether the spell was learned for free
    */
   _updateWizardTabDataAfterSpellLearning(isFree) {
-    if (this._stateManager.tabData && this._stateManager.tabData.wizardtab) {
-      this._stateManager.tabData.wizardtab.wizardTotalSpellbookCount = (this._stateManager.tabData.wizardtab.wizardTotalSpellbookCount || 0) + 1;
+    if (this._stateManager.tabData && this._stateManager.tabData.wizardbook) {
+      this._stateManager.tabData.wizardbook.wizardTotalSpellbookCount = (this._stateManager.tabData.wizardbook.wizardTotalSpellbookCount || 0) + 1;
 
       if (isFree) {
-        this._stateManager.tabData.wizardtab.wizardRemainingFreeSpells = Math.max(0, (this._stateManager.tabData.wizardtab.wizardRemainingFreeSpells || 0) - 1);
-        this._stateManager.tabData.wizardtab.wizardHasFreeSpells = this._stateManager.tabData.wizardtab.wizardRemainingFreeSpells > 0;
+        this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells = Math.max(0, (this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells || 0) - 1);
+        this._stateManager.tabData.wizardbook.wizardHasFreeSpells = this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells > 0;
       }
     }
   }
