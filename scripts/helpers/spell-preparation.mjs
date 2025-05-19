@@ -452,6 +452,7 @@ export class SpellManager {
         if (data.isAlwaysPrepared) continue;
         const isRitual = data.isRitual || false;
         const existingSpell = this.actor.items.find((i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid));
+        const spellSourceClass = data.sourceClass || '';
 
         if (!data.isPrepared) {
           if (data.wasPrepared && existingSpell) {
@@ -479,6 +480,10 @@ export class SpellManager {
                 newSpellData.flags = newSpellData.flags || {};
                 newSpellData.flags.core = newSpellData.flags.core || {};
                 newSpellData.flags.core.sourceId = uuid;
+                // Add sourceClass if provided
+                if (spellSourceClass) {
+                  newSpellData.system.sourceClass = spellSourceClass;
+                }
                 spellsToCreate.push(newSpellData);
               }
             } catch (error) {
@@ -487,13 +492,19 @@ export class SpellManager {
           }
         } else {
           if (existingSpell) {
-            if (!existingSpell.system.preparation?.prepared || existingSpell.system.preparation?.mode !== 'prepared') {
-              spellsToUpdate.push({
-                '_id': existingSpell.id,
-                'system.preparation.mode': 'prepared',
-                'system.preparation.prepared': true
-              });
+            // Update existing spell with sourceClass
+            const updateData = {
+              '_id': existingSpell.id,
+              'system.preparation.mode': 'prepared',
+              'system.preparation.prepared': true
+            };
+
+            // Update sourceClass if provided
+            if (spellSourceClass && existingSpell.system.sourceClass !== spellSourceClass) {
+              updateData['system.sourceClass'] = spellSourceClass;
             }
+
+            spellsToUpdate.push(updateData);
           } else {
             try {
               const sourceSpell = await fromUuid(uuid);
@@ -505,6 +516,12 @@ export class SpellManager {
                 newSpellData.flags = newSpellData.flags || {};
                 newSpellData.flags.core = newSpellData.flags.core || {};
                 newSpellData.flags.core.sourceId = uuid;
+
+                // Add sourceClass if provided
+                if (spellSourceClass) {
+                  newSpellData.system.sourceClass = spellSourceClass;
+                }
+
                 spellsToCreate.push(newSpellData);
 
                 if (sourceSpell.system.level === 0) {

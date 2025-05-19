@@ -184,10 +184,46 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     checkbox.dataset.name = spell.name;
     checkbox.dataset.ritual = spell.filterData?.isRitual || false;
     checkbox.dataset.wasPrepared = spell.preparation.prepared;
+
+    // Add sourceClass data attribute
+    if (spell.sourceClass) {
+      checkbox.dataset.sourceClass = spell.sourceClass;
+    }
+
     if (spell.preparation.disabled && spell.preparation.disabledReason) checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
     processedSpell.preparationCheckboxHtml = formElements.elementToHtml(checkbox);
     if (this.wizardManager?.isWizard) processedSpell.inWizardSpellbook = this._stateManager.wizardSpellbookCache?.includes(spell.compendiumUuid) || false;
     return processedSpell;
+  }
+
+  /**
+   * Get data attributes for a spell item
+   * @param {Object} spell - The spell object
+   * @returns {string} HTML-ready data attributes
+   * @private
+   */
+  _getSpellDataAttributes(spell) {
+    const attributes = [
+      `data-spell-uuid="${spell.compendiumUuid}"`,
+      `data-spell-level="${spell.system.level || 0}"`,
+      `data-spell-school="${spell.system?.school || ''}"`,
+      `data-casting-time-type="${spell.filterData?.castingTime?.type || ''}"`,
+      `data-casting-time-value="${spell.filterData?.castingTime?.value || ''}"`,
+      `data-range-units="${spell.filterData?.range?.units || ''}"`,
+      `data-range-value="${spell.system?.range?.value || ''}"`,
+      `data-damage-types="${spell.filterData?.damageTypes || ''}"`,
+      `data-ritual="${spell.filterData?.isRitual || false}"`,
+      `data-concentration="${spell.filterData?.concentration || false}"`,
+      `data-requires-save="${spell.filterData?.requiresSave || false}"`,
+      `data-conditions="${spell.filterData?.conditions || ''}"`
+    ];
+
+    // Add sourceClass attribute if available
+    if (spell.sourceClass) {
+      attributes.push(`data-source-class="${spell.sourceClass}"`);
+    }
+
+    return attributes.join(' ');
   }
 
   /**
@@ -204,29 +240,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       classes.push('in-wizard-spellbook');
     }
     return classes.join(' ');
-  }
-
-  /**
-   * Get data attributes for a spell item
-   * @param {Object} spell - The spell object
-   * @returns {string} HTML-ready data attributes
-   * @private
-   */
-  _getSpellDataAttributes(spell) {
-    return [
-      `data-spell-uuid="${spell.compendiumUuid}"`,
-      `data-spell-level="${spell.level || 0}"`,
-      `data-spell-school="${spell.system?.school || ''}"`,
-      `data-casting-time-type="${spell.filterData?.castingTime?.type || ''}"`,
-      `data-casting-time-value="${spell.filterData?.castingTime?.value || ''}"`,
-      `data-range-units="${spell.filterData?.range?.units || ''}"`,
-      `data-range-value="${spell.system?.range?.value || ''}"`,
-      `data-damage-types="${spell.filterData?.damageTypes || ''}"`,
-      `data-ritual="${spell.filterData?.isRitual || false}"`,
-      `data-concentration="${spell.filterData?.concentration || false}"`,
-      `data-requires-save="${spell.filterData?.requiresSave || false}"`,
-      `data-conditions="${spell.filterData?.conditions || ''}"`
-    ].join(' ');
   }
 
   /**
@@ -980,8 +993,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle form submission
-   * @param {Event} _event - The submit event
+   * Form handler for saving spellbook settings
+   * @param {Event} _event - The form submission event
    * @param {HTMLElement} form - The form element
    * @param {Object} formData - The form data
    * @returns {Promise<Actor|null>} The updated actor or null
@@ -1002,6 +1015,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const wasPrepared = checkbox.dataset.wasPrepared === 'true';
         const isPrepared = checkbox.checked;
         const isRitual = checkbox.dataset.ritual === 'true';
+        const sourceClass = checkbox.dataset.sourceClass || '';
 
         const spellItem = checkbox.closest('.spell-item');
         const isAlwaysPreparedElement = spellItem && (spellItem.querySelector('.tag.always-prepared') || spellItem.querySelector('.tag.granted'));
@@ -1013,7 +1027,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           wasPrepared,
           isPrepared,
           isAlwaysPrepared: false,
-          isRitual
+          isRitual,
+          sourceClass
         };
       }
 

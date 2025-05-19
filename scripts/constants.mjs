@@ -259,6 +259,7 @@ export const CLASS_IDENTIFIERS = {
   BARD: 'bard',
   CLERIC: 'cleric',
   DRUID: 'druid',
+  PALADIN: 'paladin',
   RANGER: 'ranger',
   SORCERER: 'sorcerer',
   WARLOCK: 'warlock',
