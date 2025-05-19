@@ -240,25 +240,23 @@ export class SpellbookState {
 
       // Process each spellcasting class
       for (const [identifier, classData] of Object.entries(this.spellcastingClasses)) {
-        if (this.app.wizardManager?.isWizard) {
+        if (this.app.wizardManager?.isWizard && identifier === 'wizard') {
           await this.loadWizardSpellData(classData);
         } else {
           await this.loadClassSpellData(identifier, classData);
         }
       }
 
-      // If we have an active class, use its data for the current view
+      // Set active class to the first one if none is active
+      if (!this.activeClass && Object.keys(this.spellcastingClasses).length > 0) {
+        this.activeClass = Object.keys(this.spellcastingClasses)[0];
+      }
+
+      // Initialize with the active class data
       if (this.activeClass && this.classSpellData[this.activeClass]) {
         this.spellLevels = this.classSpellData[this.activeClass].spellLevels || [];
         this.className = this.classSpellData[this.activeClass].className || '';
         this.spellPreparation = this.classSpellData[this.activeClass].spellPreparation || { current: 0, maximum: 0 };
-      } else if (Object.keys(this.classSpellData).length > 0) {
-        // Fallback to first class if no active class
-        const firstClassId = Object.keys(this.classSpellData)[0];
-        this.spellLevels = this.classSpellData[firstClassId].spellLevels || [];
-        this.className = this.classSpellData[firstClassId].className || '';
-        this.spellPreparation = this.classSpellData[firstClassId].spellPreparation || { current: 0, maximum: 0 };
-        this.activeClass = firstClassId;
       }
 
       this.isLoading = false;
@@ -363,6 +361,11 @@ export class SpellbookState {
         classItem,
         identifier
       };
+
+      // Hide cantrips for classes that don't have them
+      if (this._shouldHideCantrips(identifier)) {
+        this.classSpellData[identifier].spellLevels = spellLevels.filter((level) => level.level !== '0' && level.level !== 0);
+      }
     } catch (error) {
       log(1, `Error processing spells for class ${identifier}:`, error);
     }
@@ -594,7 +597,7 @@ export class SpellbookState {
 
   /**
    * Set active class and update data
-   * @param {string} identifier - The class identifer to set as active
+   * @param {string} identifier - The class identifier to set as active
    */
   setActiveClass(identifier) {
     if (this.classSpellData[identifier]) {
@@ -603,6 +606,23 @@ export class SpellbookState {
       this.className = this.classSpellData[identifier].className || '';
       this.spellPreparation = this.classSpellData[identifier].spellPreparation || { current: 0, maximum: 0 };
     }
+  }
+
+  /**
+   * Get tab data for a specific class
+   * @param {string} identifier - The class identifier
+   * @returns {Object} Tab data for the class
+   */
+  getClassTabData(identifier) {
+    if (this.classSpellData[identifier]) {
+      return {
+        spellLevels: this.classSpellData[identifier].spellLevels || [],
+        className: this.classSpellData[identifier].className || '',
+        spellPreparation: this.classSpellData[identifier].spellPreparation || { current: 0, maximum: 0 },
+        identifier: identifier
+      };
+    }
+    return null;
   }
 
   /**

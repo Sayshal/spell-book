@@ -296,5 +296,11 @@
   "SPELLMANAGER.Warnings.ActorNotFound": "Actor with ID {id} not found in the current game",
   "SPELLMANAGER.Warnings.ClassNotFound": "No class with identifier '{identifier}' found in the game",
   "SPELLMANAGER.Warnings.NoActorFound": "No actor ID associated with this spell list",
-  "SPELLMANAGER.Warnings.NoClassIdentifier": "No class identifier associated with this spell list"
+  "SPELLMANAGER.Warnings.NoClassIdentifier": "No class identifier associated with this spell list",
+
+  "SPELLBOOK.Tabs.ClassSpells": "{class} Spells",
+  "SPELLBOOK.Tabs.SpellList": "Spell List",
+  "SPELLBOOK.Errors.NoSpellsFound": "No spells found for {actor}",
+  "SPELLBOOK.Footer.ClassPreparation": "{class}: {current}/{maximum} Prepared",
+  "SPELLBOOK.Classes.Tab.Header": "{class} Spells"
 }

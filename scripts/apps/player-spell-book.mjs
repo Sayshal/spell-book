@@ -53,7 +53,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     container: { template: TEMPLATES.PLAYER.CONTAINER },
     sidebar: { template: TEMPLATES.PLAYER.SIDEBAR },
     navigation: { template: TEMPLATES.PLAYER.TAB_NAV },
-    spellsTab: { template: TEMPLATES.PLAYER.TAB_SPELLS, scrollable: [''] },
     wizardbook: { template: TEMPLATES.PLAYER.TAB_WIZARD_SPELLBOOK, scrollable: [''] },
     footer: { template: TEMPLATES.PLAYER.FOOTER }
   };
@@ -86,7 +85,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this._newlyCheckedCantrips = new Set();
     this._isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING) || false;
     this._wizardInitialized = false;
-    if (!this.tabGroups['spellbook-tabs']) this.tabGroups['spellbook-tabs'] = 'spellstab';
+
+    // Register class-specific parts immediately
+    this._registerClassParts();
+
     this._flagChangeHook = Hooks.on('updateActor', (updatedActor, changes) => {
       if (updatedActor.id !== this.actor.id) return;
       if (changes.flags?.[MODULE.ID]) {
@@ -101,23 +103,103 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     });
   }
 
+  /**
+   * Register class-specific parts for all spellcasting classes
+   * @private
+   */
+  async _registerClassParts() {
+    // Initialize state manager to get spellcasting classes
+    await this._stateManager.detectSpellcastingClasses();
+
+    // Register a part for each spellcasting class
+    if (this._stateManager.spellcastingClasses) {
+      for (const [identifier, classData] of Object.entries(this._stateManager.spellcastingClasses)) {
+        const tabId = `${identifier}Tab`;
+
+        // Add to constructor's PARTS directly
+        this.constructor.PARTS[tabId] = {
+          template: TEMPLATES.PLAYER.TAB_SPELLS,
+          scrollable: [''],
+          data: {
+            classIdentifier: identifier,
+            className: classData.name
+          }
+        };
+      }
+    }
+  }
+
   /** @inheritdoc */
   async _prepareContext(options) {
     const context = this._createBaseContext();
     if (this.isLoading) return context;
-    context.spellLevels = this.spellLevels.map((level) => {
-      const processedLevel = { ...level };
-      processedLevel.spells = level.spells.map((spell) => this._processSpellForDisplay(spell));
-      return processedLevel;
-    });
+
+    // Get all class spellcasting data
+    context.spellcastingClasses = this._stateManager.spellcastingClasses;
+    context.activeClass = this._stateManager.activeClass;
+
+    // Set up tabs
     context.activeTab = this.tabGroups['spellbook-tabs'];
     context.tabs = this._getTabs();
+
+    // Wizard-specific context - explicitly call this method to maintain compatibility
     context.isWizard = !!this.wizardManager?.isWizard;
     if (context.isWizard) {
       this._addWizardContextData(context);
     }
+
     context.hasMultipleTabs = Object.keys(context.tabs).length > 1;
     context.filters = this._prepareFilters();
+
+    return context;
+  }
+
+  /**
+   * Prepares context data for a specific part/tab of the application
+   * @param {string} partId - ID of the template part being rendered
+   * @param {object} context - Shared context from _prepareContext
+   * @param {object} options - Render options
+   * @returns {object} Modified context for the specific part
+   * @protected
+   */
+  async _preparePartContext(partId, context, options) {
+    context = await super._preparePartContext(partId, context, options);
+
+    // Set tab data for all parts that have a tab
+    if (context.tabs?.[partId]) {
+      context.tab = context.tabs[partId];
+    }
+
+    // Handle class-specific tabs
+    const classMatch = partId.match(/^([^T]+)Tab$/);
+    if (classMatch) {
+      const classIdentifier = classMatch[1];
+      if (this._stateManager.classSpellData[classIdentifier]) {
+        context.classIdentifier = classIdentifier;
+        context.className = this._stateManager.classSpellData[classIdentifier].className;
+        context.spellLevels = this._stateManager.classSpellData[classIdentifier].spellLevels.map((level) => {
+          const processedLevel = { ...level };
+          processedLevel.spells = level.spells.map((spell) => this._processSpellForDisplay(spell));
+          return processedLevel;
+        });
+        context.spellPreparation = this._stateManager.classSpellData[classIdentifier].spellPreparation;
+      }
+    }
+
+    // Handle wizard tab specifically
+    if (partId === 'wizardbook' && this._stateManager.tabData?.wizardbook) {
+      context.spellLevels = this._stateManager.tabData.wizardbook.spellLevels.map((level) => {
+        const processedLevel = { ...level };
+        processedLevel.spells = level.spells.map((spell) => this._processSpellForDisplay(spell));
+        return processedLevel;
+      });
+      context.spellPreparation = this._stateManager.tabData.wizardbook.spellPreparation;
+      context.wizardTotalSpellbookCount = this._stateManager.tabData.wizardbook.wizardTotalSpellbookCount || 0;
+      context.wizardFreeSpellbookCount = this._stateManager.tabData.wizardbook.wizardFreeSpellbookCount || 0;
+      context.wizardRemainingFreeSpells = this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells || 0;
+      context.wizardHasFreeSpells = this._stateManager.tabData.wizardbook.wizardHasFreeSpells || false;
+    }
+
     return context;
   }
 
@@ -406,16 +488,51 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _getTabs() {
     const tabGroup = 'spellbook-tabs';
+    const tabs = {};
 
-    return {
-      spellstab: {
-        id: 'spellstab',
-        label: game.i18n.format('SPELLBOOK.Tabs.Spells', { name: this.actor.name }),
-        group: tabGroup,
-        cssClass: this.tabGroups[tabGroup] === 'spellstab' ? 'active' : '',
-        icon: 'fa-solid fa-book-open'
+    // If no active tab is set yet, set it to the first spellcasting class's tab
+    if (!this.tabGroups[tabGroup] && this._stateManager.activeClass) {
+      this.tabGroups[tabGroup] = `${this._stateManager.activeClass}Tab`;
+    } else if (!this.tabGroups[tabGroup] && this.wizardManager?.isWizard) {
+      this.tabGroups[tabGroup] = 'wizardbook'; // Default to wizardbook if it exists and no active class
+    } else if (!this.tabGroups[tabGroup] && Object.keys(this._stateManager.spellcastingClasses || {}).length > 0) {
+      // Default to first class tab if no active tab is set
+      this.tabGroups[tabGroup] = `${Object.keys(this._stateManager.spellcastingClasses)[0]}Tab`;
+    }
+
+    // Add tabs for each spellcasting class
+    if (this._stateManager.spellcastingClasses) {
+      for (const [identifier, classData] of Object.entries(this._stateManager.spellcastingClasses)) {
+        const tabId = `${identifier}Tab`;
+        const iconPath = classData?.img || 'icons/svg/book.svg';
+        log(1, 'Tab Data:', { tabId: tabId, iconPath: iconPath, classData: classData, identifier: identifier });
+        tabs[tabId] = {
+          id: tabId,
+          label: game.i18n.format('SPELLBOOK.Tabs.ClassSpells', { class: classData.name }),
+          group: tabGroup,
+          cssClass: this.tabGroups[tabGroup] === tabId ? 'active' : '',
+          icon: 'fa-solid fa-book-open',
+          data: {
+            classImg: iconPath,
+            classIdentifier: identifier,
+            className: classData.name
+          }
+        };
       }
-    };
+    }
+
+    // Add wizardbook tab for wizards
+    if (this.wizardManager?.isWizard) {
+      tabs.wizardbook = {
+        id: 'wizardbook',
+        label: game.i18n.format('SPELLBOOK.Tabs.WizardSpells', { class: this._stateManager.className }),
+        group: tabGroup,
+        cssClass: this.tabGroups[tabGroup] === 'wizardbook' ? 'active' : '',
+        icon: 'fa-solid fa-book-spells'
+      };
+    }
+
+    return tabs;
   }
 
   /**
@@ -426,50 +543,74 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @override
    */
   changeTab(tabName, groupName, options = {}) {
+    // Call parent method to update tabGroups
     super.changeTab(tabName, groupName, options);
 
-    if (tabName === 'spellstab' && this._spellsTabNeedsReload && this.wizardManager?.isWizard) {
-      this._spellsTabNeedsReload = false;
+    // Extract class identifier from tab name if it's a class tab
+    const classMatch = tabName.match(/^([^T]+)Tab$/);
+    const classIdentifier = classMatch ? classMatch[1] : null;
 
-      if (this._stateManager.tabData) {
-        const collapsedLevels = Array.from(this.element.querySelectorAll('.spell-level.collapsed')).map((el) => el.dataset.level);
+    // If this is a class tab, set the active class in the state manager
+    if (classIdentifier && this._stateManager.classSpellData[classIdentifier]) {
+      this._stateManager.setActiveClass(classIdentifier);
+    }
 
-        this._loadSpellData().then(() => {
-          setTimeout(() => {
-            collapsedLevels.forEach((levelId) => {
-              const levelEl = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
-              if (levelEl) {
-                levelEl.classList.add('collapsed');
-                const heading = levelEl.querySelector('.spell-level-heading');
-                if (heading) heading.setAttribute('aria-expanded', 'false');
-              }
-            });
-          }, 50);
-        });
-        return;
+    // Ensure the tab part is registered
+    if (!this.constructor.PARTS[tabName]) {
+      if (classIdentifier) {
+        // Register it if it's a class tab but not yet registered
+        this.constructor.PARTS[tabName] = {
+          template: TEMPLATES.PLAYER.TAB_SPELLS,
+          scrollable: [''],
+          data: {
+            classIdentifier: classIdentifier,
+            className: this._stateManager.classSpellData[classIdentifier]?.className || ''
+          }
+        };
+      } else {
+        console.warn(`Tab ${tabName} is not registered as a part`);
       }
     }
 
-    if (this.wizardManager?.isWizard && this._stateManager.tabData && this._stateManager.tabData[tabName]) {
-      this.spellLevels = this._stateManager.tabData[tabName].spellLevels;
-      this.spellPreparation = this._stateManager.tabData[tabName].spellPreparation;
-      this.render(false);
-    }
+    // Re-render both the navigation and the tab content
+    this.render(false, { parts: ['navigation', tabName] });
   }
 
   /** @inheritdoc */
   _configureRenderOptions(options) {
     super._configureRenderOptions(options);
 
-    options.parts = ['container', 'sidebar', 'navigation', 'spellsTab', 'footer'];
+    // If specific parts are requested, don't modify them (except navigation)
+    if (options.parts && Array.isArray(options.parts)) {
+      // If a specific tab is requested but navigation is not included, add it
+      if (!options.parts.includes('navigation')) {
+        options.parts.unshift('navigation');
+      }
+      return;
+    }
 
+    // Default: include base parts and all class tabs
+    options.parts = ['container', 'sidebar', 'navigation', 'footer'];
+
+    // Add all registered class parts
+    for (const [partId, partConfig] of Object.entries(this.constructor.PARTS)) {
+      // Skip base parts and add only class tab parts
+      if (['container', 'sidebar', 'navigation', 'wizardbook', 'footer'].includes(partId)) continue;
+
+      // Add class tab parts
+      if (partId.endsWith('Tab')) {
+        options.parts.push(partId);
+      }
+    }
+
+    // Add wizardbook tab if actor is a wizard
     if (this.wizardManager?.isWizard) {
       options.parts.push('wizardbook');
     }
   }
 
   /**
-   * Load spell data from the state manager
+   *  spell data from the state manager
    * @returns {Promise<void>}
    * @private
    * @async

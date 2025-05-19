@@ -908,6 +908,15 @@
       box-shadow: 0 0 6px var(--dnd5e-color-gold);
     }
 
+    /* Class Icon Images Styling */
+    img.tab-icon {
+      width: 26px;
+      height: 26px;
+      object-fit: cover;
+      border: 1px solid var(--dnd5e-color-gold);
+      border-radius: 50%;
+    }
+
     i,
     dnd5e-icon {
       font-size: var(--icon-size);
@@ -925,6 +934,43 @@
       white-space: nowrap;
     }
   }
+}
+
+/* ----------------------------------------- */
+/*  Class Header Styling                     */
+/* ----------------------------------------- */
+.spell-book .class-header {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--dnd5e-color-gold);
+  text-align: center;
+}
+
+.spell-book .class-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: bold;
+  font-family: var(--dnd5e-font-primary);
+  text-shadow: none;
+  border-bottom: none;
+}
+
+/* ----------------------------------------- */
+/*  Tab Content                              */
+/* ----------------------------------------- */
+.spell-book .tab {
+  padding: 0.5rem;
+}
+
+/* ----------------------------------------- */
+/*  Source Class Indicator                   */
+/* ----------------------------------------- */
+.spell-book .source-class-indicator {
+  font-size: 0.85rem;
+  color: var(--dnd5e-color-beige);
+  margin-left: 0.5rem;
+  font-style: italic;
+  text-shadow: var(--spell-book-text-shadow);
 }
 
 /* ----------------------------------------- */

@@ -1,11 +1,14 @@
-<div class="spellstab tab {{#if (eq activeTab 'spellstab')}}active{{/if}}" data-tab="spellstab"
-	data-group="spellbook-tabs">
+<div class="spellstab {{tab.id}} tab {{tab.cssClass}}" data-tab="spellstab-{{tab.id}}" data-group="spellbook-tabs"
+	data-class-identifier="{{classIdentifier}}">
 	<div class="spells-container">
 		{{#if isLoading}}
 			{{> "modules/spell-book/templates/components/loading-spinner.hbs" size=3 message=(localize 'SPELLBOOK.Application.Loading')}}
 		{{else if hasError}}
 			{{> "modules/spell-book/templates/components/error-message.hbs" message=errorMessage}}
 		{{else}}
+			<div class="class-header">
+				<h2>{{tab.data.className}} {{localize 'SPELLBOOK.Tabs.SpellList'}}</h2>
+			</div>
 			{{#if spellLevels.length}}
 				{{#each spellLevels as |levelData|}}
 					{{#> "modules/spell-book/templates/components/spell-level.hbs" level=levelData.level levelName=levelData.levelName spells=levelData.spells}}

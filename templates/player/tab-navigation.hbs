@@ -3,7 +3,11 @@
 		{{#each tabs as |tab|}}
 			<a class="item {{tab.cssClass}}" data-action="tab" data-tab="{{tab.id}}" data-group="{{tab.group}}"
 				data-tooltip="{{tab.label}}">
-				{{#if tab.icon}}<i class="{{tab.icon}}"></i>{{/if}}
+				{{#if tab.data.classImg}}
+					<img src="{{tab.data.classImg}}" alt="{{tab.label}}" class="tab-icon">
+				{{else if tab.icon}}
+					<i class="{{tab.icon}}"></i>
+				{{/if}}
 			</a>
 		{{/each}}
 	{{/if}}
