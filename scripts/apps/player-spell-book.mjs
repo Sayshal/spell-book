@@ -1,4 +1,5 @@
 import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import * as filterUtils from '../helpers/filters.mjs';
 import * as formElements from '../helpers/form-elements.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
 import { SpellManager } from '../helpers/spell-preparation.mjs';
@@ -51,7 +52,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   static PARTS = {
     container: { template: TEMPLATES.PLAYER.CONTAINER },
     sidebar: { template: TEMPLATES.PLAYER.SIDEBAR },
-    navigation: { template: TEMPLATES.PLAYER.TAB_NAV, classes: ['spellbook-nav'] },
+    navigation: { template: TEMPLATES.PLAYER.TAB_NAV },
+    spellsTab: { template: TEMPLATES.PLAYER.TAB_SPELLS, scrollable: [''] },
     wizardTab: { template: TEMPLATES.PLAYER.TAB_WIZARD_SPELLBOOK, scrollable: [''] },
     footer: { template: TEMPLATES.PLAYER.FOOTER }
   };
@@ -103,60 +105,19 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   async _prepareContext(options) {
     const context = this._createBaseContext();
     if (this.isLoading) return context;
-
-    // Add general context data
+    context.spellLevels = this.spellLevels.map((level) => {
+      const processedLevel = { ...level };
+      processedLevel.spells = level.spells.map((spell) => this._processSpellForDisplay(spell));
+      return processedLevel;
+    });
     context.activeTab = this.tabGroups['spellbook-tabs'];
+    context.tabs = this._getTabs();
     context.isWizard = !!this.wizardManager?.isWizard;
-    context.hasMultipleTabs = this._stateManager.spellcastingClasses && (Object.keys(this._stateManager.spellcastingClasses).length > 1 || context.isWizard);
+    if (context.isWizard) {
+      this._addWizardContextData(context);
+    }
+    context.hasMultipleTabs = Object.keys(context.tabs).length > 1;
     context.filters = this._prepareFilters();
-
-    return context;
-  }
-
-  /** @inheritdoc */
-  async _preparePartContext(partId, context, options) {
-    context = await super._preparePartContext(partId, context, options);
-
-    // Add tabs data to navigation
-    if (partId === 'navigation') {
-      context.tabs = this._getTabs();
-    }
-
-    // Handle class tab parts
-    if (partId.endsWith('Tab')) {
-      const identifier = partId.replace('Tab', '');
-
-      if (identifier === 'wizard') {
-        // Prepare wizard tab context
-        context.id = 'wizardTab';
-        context.cssClass = this.tabGroups['spellbook-tabs'] === 'wizardTab' ? 'active' : '';
-        // Add wizard-specific context data
-        if (this._stateManager.tabData?.wizardtab) {
-          context.wizardTotalSpellbookCount = this._stateManager.tabData.wizardtab.wizardTotalSpellbookCount || 0;
-          context.wizardFreeSpellbookCount = this._stateManager.tabData.wizardtab.wizardFreeSpellbookCount || 0;
-          context.wizardRemainingFreeSpells = this._stateManager.tabData.wizardtab.wizardRemainingFreeSpells || 0;
-          context.wizardHasFreeSpells = this._stateManager.tabData.wizardtab.wizardHasFreeSpells || false;
-        }
-      } else if (this._stateManager.classSpellData[identifier]) {
-        // Prepare class tab context
-        const classData = this._stateManager.classSpellData[identifier];
-        context.id = `${identifier}Tab`;
-        context.identifier = identifier;
-        context.cssClass = this.tabGroups['spellbook-tabs'] === `${identifier}Tab` ? 'active' : '';
-        context.classData = classData;
-        context.hideCantrips = this._stateManager._shouldHideCantrips(identifier);
-
-        // Map spell levels for display
-        context.spellLevels = classData.spellLevels.map((level) => {
-          const processedLevel = { ...level };
-          processedLevel.spells = level.spells.map((spell) => this._processSpellForDisplay(spell));
-          return processedLevel;
-        });
-
-        context.spellPreparation = classData.spellPreparation;
-      }
-    }
-
     return context;
   }
 
@@ -444,46 +405,17 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _getTabs() {
-    try {
-      const tabGroup = 'spellbook-tabs';
-      if (!this.tabGroups[tabGroup]) {
-        this.tabGroups[tabGroup] = Object.keys(this._stateManager.spellcastingClasses)[0] + 'Tab';
+    const tabGroup = 'spellbook-tabs';
+
+    return {
+      spellstab: {
+        id: 'spellstab',
+        label: game.i18n.format('SPELLBOOK.Tabs.Spells', { name: this.actor.name }),
+        group: tabGroup,
+        cssClass: this.tabGroups[tabGroup] === 'spellstab' ? 'active' : '',
+        icon: 'fa-solid fa-book-open'
       }
-
-      const tabs = {};
-
-      // Add class tabs
-      if (this._stateManager.spellcastingClasses) {
-        for (const [identifier, classData] of Object.entries(this._stateManager.spellcastingClasses)) {
-          const tabId = `${identifier}Tab`;
-          tabs[tabId] = {
-            id: tabId,
-            identifier: identifier,
-            label: game.i18n.format('SPELLBOOK.Tabs.ClassSpells', { class: classData.name }),
-            group: tabGroup,
-            cssClass: this.tabGroups[tabGroup] === tabId ? 'active' : '',
-            icon: 'fa-solid fa-book-open',
-            img: classData.img
-          };
-        }
-      }
-
-      // Add wizard tab if applicable
-      if (this.wizardManager?.isWizard) {
-        tabs.wizardTab = {
-          id: 'wizardTab',
-          label: game.i18n.format('SPELLBOOK.Tabs.WizardSpells', { class: this.className }),
-          group: tabGroup,
-          cssClass: this.tabGroups[tabGroup] === 'wizardTab' ? 'active' : '',
-          icon: 'fa-solid fa-book-spells'
-        };
-      }
-
-      return tabs;
-    } catch (error) {
-      console.error('Error generating tabs:', error);
-      return {};
-    }
+    };
   }
 
   /**
@@ -495,25 +427,33 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   changeTab(tabName, groupName, options = {}) {
     super.changeTab(tabName, groupName, options);
-    if (groupName === 'spellbook-tabs') {
-      const tab = this._getTabs()[tabName];
-      if (tab && tab.identifier && this._stateManager.spellcastingClasses[tab.identifier]) {
-        this._stateManager.setActiveClass(tab.identifier);
-        this.spellLevels = this._stateManager.spellLevels;
-        this.className = this._stateManager.className;
-        this.spellPreparation = this._stateManager.spellPreparation;
-        this.render(false);
-      } else if (tabName === 'wizardtab' && this.wizardManager?.isWizard) {
-        if (this._spellsTabNeedsReload) {
-          this._spellsTabNeedsReload = false;
-          this._loadSpellData();
-        }
-        if (this._stateManager.tabData && this._stateManager.tabData[tabName]) {
-          this.spellLevels = this._stateManager.tabData[tabName].spellLevels;
-          this.spellPreparation = this._stateManager.tabData[tabName].spellPreparation;
-          this.render(false);
-        }
+
+    if (tabName === 'spellstab' && this._spellsTabNeedsReload && this.wizardManager?.isWizard) {
+      this._spellsTabNeedsReload = false;
+
+      if (this._stateManager.tabData) {
+        const collapsedLevels = Array.from(this.element.querySelectorAll('.spell-level.collapsed')).map((el) => el.dataset.level);
+
+        this._loadSpellData().then(() => {
+          setTimeout(() => {
+            collapsedLevels.forEach((levelId) => {
+              const levelEl = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
+              if (levelEl) {
+                levelEl.classList.add('collapsed');
+                const heading = levelEl.querySelector('.spell-level-heading');
+                if (heading) heading.setAttribute('aria-expanded', 'false');
+              }
+            });
+          }, 50);
+        });
+        return;
       }
+    }
+
+    if (this.wizardManager?.isWizard && this._stateManager.tabData && this._stateManager.tabData[tabName]) {
+      this.spellLevels = this._stateManager.tabData[tabName].spellLevels;
+      this.spellPreparation = this._stateManager.tabData[tabName].spellPreparation;
+      this.render(false);
     }
   }
 
@@ -521,32 +461,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   _configureRenderOptions(options) {
     super._configureRenderOptions(options);
 
-    // Base parts that are always included
-    options.parts = ['container', 'sidebar', 'footer'];
+    options.parts = ['container', 'sidebar', 'navigation', 'spellsTab', 'footer'];
 
-    // Add navigation if we have multiple tabs
-    const hasMultipleClasses = this._stateManager.spellcastingClasses && Object.keys(this._stateManager.spellcastingClasses).length > 1;
-    const hasWizardTab = !!this.wizardManager?.isWizard;
-
-    if (hasMultipleClasses || hasWizardTab) {
-      options.parts.push('navigation');
-    }
-
-    // Create class-specific tab parts
-    if (this._stateManager.spellcastingClasses) {
-      for (const identifier of Object.keys(this._stateManager.spellcastingClasses)) {
-        const tabId = `${identifier}Tab`;
-        // Dynamically add a part for each class tab
-        this.constructor.PARTS[tabId] = {
-          template: TEMPLATES.PLAYER.TAB_CLASS,
-          scrollable: ['']
-        };
-        options.parts.push(tabId);
-      }
-    }
-
-    // Add wizard tab if appropriate
-    if (hasWizardTab) {
+    if (this.wizardManager?.isWizard) {
       options.parts.push('wizardTab');
     }
   }
@@ -648,7 +565,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @returns {Array} The filter options
    * @private
    */
-  _getFilterOptions(filterId, filterState) {}
+  _getFilterOptions(filterId, filterState) {
+    return filterUtils.getOptionsForFilter(filterId, filterState, this.spellLevels);
+  }
 
   /**
    * Create a range filter element
@@ -709,9 +628,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const uuid = checkbox.dataset.uuid;
       const spellItem = checkbox.closest('.spell-item');
       const spellLevel = spellItem?.dataset.spellLevel;
-      const sourceClass = checkbox.dataset.sourceClass || this._stateManager.activeClass;
-      if (spellLevel === '0') await this._handleCantripPreparationChange(event, uuid, spellItem, sourceClass);
-      else if (spellItem) spellItem.classList.toggle('prepared-spell', checkbox.checked);
+
+      if (spellLevel === '0') {
+        await this._handleCantripPreparationChange(event, uuid, spellItem);
+      } else if (spellItem) {
+        spellItem.classList.toggle('prepared-spell', checkbox.checked);
+      }
+
       this.ui.updateSpellPreparationTracking();
       this.ui.updateSpellCounts();
     } catch (error) {

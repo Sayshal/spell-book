@@ -1,15 +1,10 @@
-<nav class="tabs tabs-right" role="tablist" aria-label="{{localize 'SPELLBOOK.Tabs.Navigation'}}">
-	{{#each tabs as |tab|}}
-		<a class="item {{tab.cssClass}}" data-action="tab" data-tab="{{tab.id}}" data-group="{{tab.group}}"
-			data-tooltip="{{tab.label}}" id="tab-{{tab.id}}" aria-label="{{tab.label}}" role="tab"
-			aria-controls="{{tab.id}}-panel" aria-selected="{{#if tab.cssClass}}true{{else}}false{{/if}}"
-			tabindex="{{#if tab.cssClass}}0{{else}}-1{{/if}}">
-			{{#if tab.img}}
-				<img src="{{tab.img}}" alt="{{tab.label}}" class="tab-icon">
-			{{else}}
-				<i class="{{tab.icon}}" aria-hidden="true"></i>
-			{{/if}}
-			<span class="tab-label">{{tab.label}}</span>
-		</a>
-	{{/each}}
+<nav class="tabs tabs-right" data-group="spellbook-tabs">
+	{{#if hasMultipleTabs}}
+		{{#each tabs as |tab|}}
+			<a class="item {{tab.cssClass}}" data-action="tab" data-tab="{{tab.id}}" data-group="{{tab.group}}"
+				data-tooltip="{{tab.label}}">
+				{{#if tab.icon}}<i class="{{tab.icon}}"></i>{{/if}}
+			</a>
+		{{/each}}
+	{{/if}}
 </nav>
