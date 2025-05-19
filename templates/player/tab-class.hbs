@@ -1,0 +1,52 @@
+<div class="tab {{cssClass}}" data-tab="{{id}}" data-group="spellbook-tabs" role="tabpanel" id="{{id}}-panel"
+	aria-labelledby="tab-{{id}}" data-class-id="{{identifier}}">
+	<div class="spells-container">
+		{{#if isLoading}}
+			{{> "modules/spell-book/templates/components/loading-spinner.hbs" size=3 message=(localize 'SPELLBOOK.Application.Loading')}}
+		{{else if hasError}}
+			{{> "modules/spell-book/templates/components/error-message.hbs" message=errorMessage}}
+		{{else}}
+			<div class="class-header">
+				<h2>{{classData.className}} {{localize 'SPELLBOOK.UI.Spellbook'}}</h2>
+				{{#if spellPreparation.maximum}}
+					<div class="preparation-info">
+						{{localize 'SPELLBOOK.UI.PreparationInfo' current=spellPreparation.current maximum=spellPreparation.maximum}}
+					</div>
+				{{/if}}
+			</div>
+
+			{{#if spellLevels.length}}
+				{{#each spellLevels as |levelData|}}
+					{{#unless (and ../hideCantrips (eq levelData.level "0"))}}
+						{{#> "modules/spell-book/templates/components/spell-level.hbs" level=levelData.level levelName=levelData.levelName spells=levelData.spells}}
+							<li class="{{cssClasses}}" {{{dataAttributes}}} role="listitem">
+								<div class="spell-name">
+									{{{enrichedIcon}}}
+									<div class="name-stacked">
+										<span class="title">{{name}}
+											{{#if tag}}
+												<span class="tag {{tag.cssClass}}" {{#if tag.tooltip}}data-tooltip="{{tag.tooltip}}" {{/if}}>
+													{{tag.text}}
+												</span>
+											{{/if}}
+										</span>
+										<span class="subtitle">{{{formattedDetails}}}</span>
+									</div>
+								</div>
+								<div class="spell-preparation dnd5e2">
+									{{{preparationCheckboxHtml}}}
+								</div>
+							</li>
+							{{/modules/spell-book/templates/components/spell-level.hbs}}
+					{{/unless}}
+				{{/each}}
+			{{else}}
+				{{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize 'SPELLBOOK.Errors.NoSpellsFound' actor=actor.name)}}
+			{{/if}}
+
+			<div class="no-filter-results" style="display: none;" role="status">
+				{{localize 'SPELLBOOK.Filters.NoResults'}}
+			</div>
+		{{/if}}
+	</div>
+</div>

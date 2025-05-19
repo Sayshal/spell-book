@@ -61,7 +61,7 @@ export const TEMPLATES = {
     FOOTER: 'modules/spell-book/templates/player/footer.hbs',
     SIDEBAR: 'modules/spell-book/templates/player/sidebar.hbs',
     TAB_NAV: 'modules/spell-book/templates/player/tab-navigation.hbs',
-    TAB_SPELLS: 'modules/spell-book/templates/player/tab-spells.hbs',
+    TAB_CLASS: 'modules/spell-book/templates/player/tab-class.hbs',
     TAB_WIZARD_SPELLBOOK: 'modules/spell-book/templates/player/tab-wizard-spellbook.hbs'
   }
 };

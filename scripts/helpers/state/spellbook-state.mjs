@@ -225,40 +225,21 @@ export class SpellbookState {
   async loadSpellData() {
     try {
       await this.app.spellManager.initializeFlags();
-
-      if (this.app.wizardManager?.isWizard) {
-        await this.cacheWizardSpellbook();
-      }
-
-      if (Object.keys(this.spellcastingClasses).length === 0) {
-        log(2, 'No spellcasting classes found for actor');
-        this.isLoading = false;
-        return false;
-      }
-
-      this.handleCantripLevelUp();
-
-      // Process each spellcasting class
-      for (const [identifier, classData] of Object.entries(this.spellcastingClasses)) {
-        if (this.app.wizardManager?.isWizard) {
-          await this.loadWizardSpellData(classData);
-        } else {
-          await this.loadClassSpellData(identifier, classData);
+      if (this.app.wizardManager?.isWizard) await this.cacheWizardSpellbook();
+      if (Object.keys(this.spellcastingClasses).length > 0) {
+        this.handleCantripLevelUp();
+        for (const [identifier, classData] of Object.entries(this.spellcastingClasses)) {
+          if (this.app.wizardManager?.isWizard && identifier === 'wizard') await this.loadWizardSpellData(classData);
+          else await this.loadClassSpellData(identifier, classData);
         }
-      }
-
-      // If we have an active class, use its data for the current view
-      if (this.activeClass && this.classSpellData[this.activeClass]) {
-        this.spellLevels = this.classSpellData[this.activeClass].spellLevels || [];
-        this.className = this.classSpellData[this.activeClass].className || '';
-        this.spellPreparation = this.classSpellData[this.activeClass].spellPreparation || { current: 0, maximum: 0 };
-      } else if (Object.keys(this.classSpellData).length > 0) {
-        // Fallback to first class if no active class
-        const firstClassId = Object.keys(this.classSpellData)[0];
-        this.spellLevels = this.classSpellData[firstClassId].spellLevels || [];
-        this.className = this.classSpellData[firstClassId].className || '';
-        this.spellPreparation = this.classSpellData[firstClassId].spellPreparation || { current: 0, maximum: 0 };
-        this.activeClass = firstClassId;
+        if (!this.activeClass && Object.keys(this.spellcastingClasses).length > 0) this.activeClass = Object.keys(this.spellcastingClasses)[0];
+        if (this.activeClass && this.classSpellData[this.activeClass]) {
+          this.spellLevels = this.classSpellData[this.activeClass].spellLevels || [];
+          this.className = this.classSpellData[this.activeClass].className || '';
+          this.spellPreparation = this.classSpellData[this.activeClass].spellPreparation || { current: 0, maximum: 0 };
+        }
+      } else {
+        log(2, 'No spellcasting classes found for actor');
       }
 
       this.isLoading = false;

@@ -900,6 +900,8 @@
     box-shadow: var(--spell-book-shadow-normal);
     transition: all 250ms ease;
     transform: translateZ(-1px);
+    flex-direction: column;
+    padding: 0.25rem;
 
     &.active,
     &:hover {
@@ -913,7 +915,21 @@
       font-size: var(--icon-size);
     }
 
-    > span {
+    .tab-icon {
+      width: 26px;
+      height: 26px;
+      object-fit: cover;
+      border: 1px solid var(--dnd5e-color-gold);
+      border-radius: 50%;
+    }
+
+    &.active .tab-icon,
+    &:hover .tab-icon {
+      box-shadow: 0 0 5px var(--dnd5e-color-gold);
+    }
+
+    > span,
+    .tab-label {
       position: absolute;
       width: 1px;
       height: 1px;
