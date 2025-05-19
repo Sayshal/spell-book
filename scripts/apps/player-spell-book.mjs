@@ -54,7 +54,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     sidebar: { template: TEMPLATES.PLAYER.SIDEBAR },
     navigation: { template: TEMPLATES.PLAYER.TAB_NAV },
     spellsTab: { template: TEMPLATES.PLAYER.TAB_SPELLS, scrollable: [''] },
-    wizardTab: { template: TEMPLATES.PLAYER.TAB_WIZARD_SPELLBOOK, scrollable: [''] },
+    wizardbook: { template: TEMPLATES.PLAYER.TAB_WIZARD_SPELLBOOK, scrollable: [''] },
     footer: { template: TEMPLATES.PLAYER.FOOTER }
   };
 
@@ -302,20 +302,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     context.wizardRulesVersion = this.spellManager.getSettings().rules;
 
     // Add wizard tab
-    context.tabs.wizardtab = {
-      id: 'wizardtab',
+    context.tabs.wizardbook = {
+      id: 'wizardbook',
       label: game.i18n.format('SPELLBOOK.Tabs.WizardSpells', { class: this.className }),
       group: 'spellbook-tabs',
-      cssClass: this.tabGroups['spellbook-tabs'] === 'wizardtab' ? 'active' : '',
+      cssClass: this.tabGroups['spellbook-tabs'] === 'wizardbook' ? 'active' : '',
       icon: 'fa-solid fa-book-spells'
     };
 
     // Add tab data if available
-    if (this._stateManager.tabData?.wizardtab) {
-      context.wizardTotalSpellbookCount = this._stateManager.tabData.wizardtab.wizardTotalSpellbookCount || 0;
-      context.wizardFreeSpellbookCount = this._stateManager.tabData.wizardtab.wizardFreeSpellbookCount || 0;
-      context.wizardRemainingFreeSpells = this._stateManager.tabData.wizardtab.wizardRemainingFreeSpells || 0;
-      context.wizardHasFreeSpells = this._stateManager.tabData.wizardtab.wizardHasFreeSpells || false;
+    if (this._stateManager.tabData?.wizardbook) {
+      context.wizardTotalSpellbookCount = this._stateManager.tabData.wizardbook.wizardTotalSpellbookCount || 0;
+      context.wizardFreeSpellbookCount = this._stateManager.tabData.wizardbook.wizardFreeSpellbookCount || 0;
+      context.wizardRemainingFreeSpells = this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells || 0;
+      context.wizardHasFreeSpells = this._stateManager.tabData.wizardbook.wizardHasFreeSpells || false;
     }
   }
 
@@ -464,7 +464,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     options.parts = ['container', 'sidebar', 'navigation', 'spellsTab', 'footer'];
 
     if (this.wizardManager?.isWizard) {
-      options.parts.push('wizardTab');
+      options.parts.push('wizardbook');
     }
   }
 
@@ -699,13 +699,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Update wizard tab data after learning a spell
    * @param {boolean} isFree - Whether the spell was learned for free
    */
-  _updateWizardTabDataAfterSpellLearning(isFree) {
-    if (this._stateManager.tabData && this._stateManager.tabData.wizardtab) {
-      this._stateManager.tabData.wizardtab.wizardTotalSpellbookCount = (this._stateManager.tabData.wizardtab.wizardTotalSpellbookCount || 0) + 1;
+  _updatewizardbookDataAfterSpellLearning(isFree) {
+    if (this._stateManager.tabData && this._stateManager.tabData.wizardbook) {
+      this._stateManager.tabData.wizardbook.wizardTotalSpellbookCount = (this._stateManager.tabData.wizardbook.wizardTotalSpellbookCount || 0) + 1;
 
       if (isFree) {
-        this._stateManager.tabData.wizardtab.wizardRemainingFreeSpells = Math.max(0, (this._stateManager.tabData.wizardtab.wizardRemainingFreeSpells || 0) - 1);
-        this._stateManager.tabData.wizardtab.wizardHasFreeSpells = this._stateManager.tabData.wizardtab.wizardRemainingFreeSpells > 0;
+        this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells = Math.max(0, (this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells || 0) - 1);
+        this._stateManager.tabData.wizardbook.wizardHasFreeSpells = this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells > 0;
       }
     }
   }
@@ -955,7 +955,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             this._stateManager.wizardSpellbookCache.push(spellUuid);
           }
 
-          this._updateWizardTabDataAfterSpellLearning(costInfo.isFree);
+          this._updatewizardbookDataAfterSpellLearning(costInfo.isFree);
 
           const spellItem = this.element.querySelector(`.spell-item[data-spell-uuid="${spellUuid}"]`);
           if (spellItem) {

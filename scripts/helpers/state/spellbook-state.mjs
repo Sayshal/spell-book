@@ -439,7 +439,7 @@ export class SpellbookState {
           spellLevels: [],
           spellPreparation: { current: 0, maximum: 0 }
         },
-        wizardtab: {
+        wizardbook: {
           spellLevels: [],
           spellPreparation: { current: 0, maximum: 0 }
         }
@@ -451,10 +451,10 @@ export class SpellbookState {
       const usedFreeSpells = await this.app.wizardManager.getUsedFreeSpells();
       const remainingFreeSpells = Math.max(0, totalFreeSpells - usedFreeSpells);
       const totalSpells = personalSpellbook.length;
-      tabData.wizardtab.wizardTotalSpellbookCount = totalSpells;
-      tabData.wizardtab.wizardFreeSpellbookCount = totalFreeSpells;
-      tabData.wizardtab.wizardRemainingFreeSpells = remainingFreeSpells;
-      tabData.wizardtab.wizardHasFreeSpells = remainingFreeSpells > 0;
+      tabData.wizardbook.wizardTotalSpellbookCount = totalSpells;
+      tabData.wizardbook.wizardFreeSpellbookCount = totalFreeSpells;
+      tabData.wizardbook.wizardRemainingFreeSpells = remainingFreeSpells;
+      tabData.wizardbook.wizardHasFreeSpells = remainingFreeSpells > 0;
 
       const grantedSpells = this.actor.items
         .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.preparation?.mode && ['pact', 'innate', 'atwill'].includes(i.system.preparation.mode))))
@@ -467,28 +467,28 @@ export class SpellbookState {
       }
 
       const prepTabSpells = allSpellItems.filter((spell) => spell.system.level === 0 || personalSpellbook.includes(spell.compendiumUuid) || grantedSpells.includes(spell.compendiumUuid));
-      const wizardTabSpells = allSpellItems.filter((spell) => this._fullWizardSpellList.has(spell.compendiumUuid) && spell.system.level !== 0);
+      const wizardbookSpells = allSpellItems.filter((spell) => this._fullWizardSpellList.has(spell.compendiumUuid) && spell.system.level !== 0);
       const prepLevels = actorSpellUtils.organizeSpellsByLevel(prepTabSpells, this.actor, this.app.spellManager);
-      const wizardLevels = actorSpellUtils.organizeSpellsByLevel(wizardTabSpells, null, this.app.spellManager);
+      const wizardLevels = actorSpellUtils.organizeSpellsByLevel(wizardbookSpells, null, this.app.spellManager);
       const maxSpellsAllowed = this.app.wizardManager.getMaxSpellsAllowed();
       const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
 
-      tabData.wizardtab.wizardMaxSpellbookCount = maxSpellsAllowed;
-      tabData.wizardtab.wizardIsAtMax = isAtMaxSpells;
+      tabData.wizardbook.wizardMaxSpellbookCount = maxSpellsAllowed;
+      tabData.wizardbook.wizardIsAtMax = isAtMaxSpells;
 
       const sortBy = this.app.filterHelper?.getFilterState()?.sortBy || 'level';
-      this.enrichWizardTabSpells(prepLevels, personalSpellbook, sortBy);
-      this.enrichWizardTabSpells(wizardLevels, personalSpellbook, sortBy, true, isAtMaxSpells);
+      this.enrichwizardbookSpells(prepLevels, personalSpellbook, sortBy);
+      this.enrichwizardbookSpells(wizardLevels, personalSpellbook, sortBy, true, isAtMaxSpells);
 
       const prepStats = this.calculatePreparationStats(prepLevels, classItem);
       tabData.spellstab.spellLevels = prepLevels;
       tabData.spellstab.spellPreparation = prepStats;
-      tabData.wizardtab.spellLevels = wizardLevels;
-      tabData.wizardtab.spellPreparation = prepStats;
+      tabData.wizardbook.spellLevels = wizardLevels;
+      tabData.wizardbook.spellPreparation = prepStats;
 
       // Store data for this wizard class
       this.classSpellData[identifier] = {
-        spellLevels: activeTab === 'wizardtab' ? wizardLevels : prepLevels,
+        spellLevels: activeTab === 'wizardbook' ? wizardLevels : prepLevels,
         className: classItem.name,
         spellPreparation: prepStats,
         classItem,
@@ -508,10 +508,10 @@ export class SpellbookState {
    * @param {Array} levels - Spell level groups
    * @param {Array} personalSpellbook - The personal spellbook spell UUIDs
    * @param {string} sortBy - Sort criteria
-   * @param {boolean} isWizardTab - Whether this is for the wizard tab
+   * @param {boolean} iswizardbook - Whether this is for the wizard tab
    * @param {boolean} isAtMaxSpells - Whether maximum spells are reached
    */
-  enrichWizardTabSpells(levels, personalSpellbook, sortBy, isWizardTab = false, isAtMaxSpells = false) {
+  enrichwizardbookSpells(levels, personalSpellbook, sortBy, iswizardbook = false, isAtMaxSpells = false) {
     for (const level of levels) {
       level.spells = this.app.filterHelper?.sortSpells(level.spells, sortBy) || level.spells;
 
@@ -519,7 +519,7 @@ export class SpellbookState {
         spell.isWizardClass = true;
         spell.inWizardSpellbook = personalSpellbook.includes(spell.compendiumUuid);
 
-        if (isWizardTab) {
+        if (iswizardbook) {
           spell.canAddToSpellbook = !spell.inWizardSpellbook && spell.system.level > 0;
           spell.isAtMaxSpells = isAtMaxSpells;
         }
