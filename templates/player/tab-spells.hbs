@@ -7,7 +7,7 @@
 			{{> "modules/spell-book/templates/components/error-message.hbs" message=errorMessage}}
 		{{else}}
 			<div class="class-header">
-				<h2>{{tab.data.className}} {{localize 'SPELLBOOK.Tabs.SpellList'}}</h2>
+				<h2>{{localize 'SPELLBOOK.Classes.Tab.Header' class=className}}</h2>
 			</div>
 			{{#if spellLevels.length}}
 				{{#each spellLevels as |levelData|}}

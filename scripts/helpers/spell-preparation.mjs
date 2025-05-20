@@ -1,4 +1,4 @@
-import { CANTRIP_RULES, CLASS_IDENTIFIERS, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, SETTINGS } from '../constants.mjs';
+import { CANTRIP_RULES, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, SETTINGS } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import { CantripManager } from './cantrip-manager.mjs';
 import * as genericUtils from './generic-utils.mjs';
@@ -42,17 +42,30 @@ export class SpellManager {
 
   /**
    * Get maximum allowed cantrips for the actor
-   * @returns {number} Maximum allowed cantrips
+   * @param {string} classIdentifier - The class identifier to check
+   * @returns {number} Maximum allowed cantrips for this class
    */
-  getMaxAllowed() {
-    if (!this.classItem) return 0;
-    if (this.classItem.scaleValues) {
-      const cantripsKnown = this.classItem.scaleValues['cantrips-known']?.value;
-      if (cantripsKnown !== undefined) return cantripsKnown;
+  getMaxAllowed(classIdentifier) {
+    if (!classIdentifier) return 0;
+
+    // Find the specific class item
+    const classItem = this.actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier));
+
+    if (!classItem) return 0;
+
+    // First check if the class has explicit cantrips-known scale value
+    try {
+      if (classItem.scaleValues && typeof classItem.scaleValues === 'object') {
+        const cantripsKnown = classItem.scaleValues['cantrips-known']?.value;
+        if (cantripsKnown !== undefined) return cantripsKnown;
+      }
+    } catch (err) {
+      log(2, `Error accessing scaleValues for ${classIdentifier}, using fallback calculation`, err);
     }
 
-    const classLevel = this.classItem.system.levels || this.actor.system.details.level;
-    const className = this.classItem.name.toLowerCase();
+    // If not, calculate based on class and level
+    const classLevel = classItem.system.levels || 0;
+    const className = classItem.name.toLowerCase();
 
     switch (className) {
       case CLASS_IDENTIFIERS.BARD:
@@ -89,11 +102,20 @@ export class SpellManager {
   }
 
   /**
-   * Get the current count of prepared cantrips
-   * @returns {number} Currently prepared cantrips count
+   * Get the current count of prepared cantrips for a specific class
+   * @param {string} classIdentifier - The class identifier
+   * @returns {number} Currently prepared cantrips count for this class
    */
-  getCurrentCount() {
-    return this.actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.preparation?.prepared && !i.system.preparation?.alwaysPrepared).length;
+  getCurrentCount(classIdentifier) {
+    if (!classIdentifier) return 0;
+    return this.actor.items.filter(
+      (i) =>
+        i.type === 'spell' &&
+        i.system.level === 0 &&
+        i.system.preparation?.prepared &&
+        !i.system.preparation?.alwaysPrepared &&
+        (i.system.sourceClass === classIdentifier || i.sourceClass === classIdentifier)
+    ).length;
   }
 
   /**
@@ -232,22 +254,45 @@ export class SpellManager {
       isCantripLocked: false
     };
 
+    // Get class-specific prepared spell info
+    const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
+    const spellSourceClass = spell.sourceClass || spell.system?.sourceClass;
+
     if (spell.parent === this.actor || spell._id) {
       return this._getOwnedSpellPreparationStatus(spell);
     }
 
-    const actorSpell = this.actor.items.find((item) => item.type === 'spell' && (item.name === spell.name || item.flags?.core?.sourceId === spell.compendiumUuid));
+    // Try to find the actor spell by source ID or name
+    const actorSpell = this.actor.items.find((i) => i.type === 'spell' && (i.name === spell.name || i.flags?.core?.sourceId === spell.compendiumUuid));
 
     if (!actorSpell) {
       if (spell.system.level === 0) {
-        const { behavior } = this.settings;
-        defaultStatus.isCantripLocked = behavior === ENFORCEMENT_BEHAVIOR.ENFORCED;
-        defaultStatus.cantripLockReason = 'SPELLBOOK.Cantrips.MaximumReached';
+        // For cantrips, check against class-specific max
+        const maxCantrips = this.getMaxAllowed();
+        const currentCount = this.getCurrentCount();
+        const isAtMax = currentCount >= maxCantrips;
+
+        if (isAtMax) {
+          const { behavior } = this.settings;
+          defaultStatus.isCantripLocked = behavior === ENFORCEMENT_BEHAVIOR.ENFORCED;
+          defaultStatus.cantripLockReason = 'SPELLBOOK.Cantrips.MaximumReached';
+        }
       }
+
       return defaultStatus;
     }
 
-    return this._getOwnedSpellPreparationStatus(actorSpell);
+    // Check if this spell is prepared for its source class
+    const isPreparedForClass = spellSourceClass && preparedByClass[spellSourceClass]?.includes(spell.compendiumUuid || spell.uuid);
+
+    if (isPreparedForClass) {
+      defaultStatus.prepared = true;
+    }
+
+    return {
+      ...defaultStatus,
+      ...this._getOwnedSpellPreparationStatus(actorSpell)
+    };
   }
 
   /**
@@ -263,6 +308,11 @@ export class SpellManager {
     const sourceInfo = this._determineSpellSource(spell);
     const isGranted = !!sourceInfo && !!spell.flags?.dnd5e?.cachedFor;
     const isCantrip = spell.system.level === 0;
+    const spellSourceClass = spell.sourceClass || spell.system?.sourceClass;
+
+    // Get class-specific prepared spell info
+    const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
+    const isPreparedForClass = spellSourceClass && preparedByClass[spellSourceClass]?.includes(spell.compendiumUuid || spell.uuid);
 
     let isCantripLocked = false;
     let cantripLockReason = '';
@@ -284,7 +334,7 @@ export class SpellManager {
     }
 
     const result = {
-      prepared: !!(isGranted || spell.system.preparation?.prepared || alwaysPrepared),
+      prepared: !!(isGranted || isPreparedForClass || alwaysPrepared),
       isOwned: true,
       preparationMode: preparationMode,
       localizedPreparationMode: localizedPreparationMode,
@@ -299,7 +349,7 @@ export class SpellManager {
 
     if (isCantrip && !alwaysPrepared && !isGranted) {
       const { rules, behavior } = this.settings;
-      const isPrepared = spell.system.preparation?.prepared;
+      const isPrepared = isPreparedForClass;
 
       if (behavior !== ENFORCEMENT_BEHAVIOR.ENFORCED) return result;
 
@@ -318,21 +368,6 @@ export class SpellManager {
         result.isCantripLocked = true;
         result.cantripLockReason = 'SPELLBOOK.Cantrips.LockedOutsideLongRest';
         result.disabledReason = 'SPELLBOOK.Cantrips.LockedOutsideLongRest';
-      }
-    }
-
-    if (this.isWizard && spell.system.level > 0 && preparationMode === 'prepared' && !result.disabled) {
-      if (!this._wizardManager) this._wizardManager = new WizardSpellbookManager(this.actor);
-
-      const spellUuid = genericUtils.getSpellUuid(spell);
-
-      if (this._wizardSpellbookCache) {
-        const inSpellbook = this._wizardSpellbookCache.includes(spellUuid);
-        if (!inSpellbook) {
-          result.disabled = true;
-          result.disabledReason = 'SPELLBOOK.Wizard.NotInSpellbook';
-        }
-        result.inWizardSpellbook = inSpellbook;
       }
     }
 
@@ -434,12 +469,25 @@ export class SpellManager {
     try {
       log(3, `Saving prepared spells for ${this.actor.name}`);
       const cantripChanges = { added: [], removed: [], hasChanges: false };
-      const preparedUuids = Object.entries(spellData)
-        .filter(([_uuid, data]) => data.isPrepared)
-        .map(([uuid]) => uuid);
 
-      await this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS, preparedUuids);
-      log(3, `Saved ${preparedUuids.length} prepared spells to actor flags`);
+      // Group prepared spells by class
+      const preparedByClass = {};
+      Object.entries(spellData).forEach(([uuid, data]) => {
+        if (data.isPrepared) {
+          const sourceClass = data.sourceClass || 'unknown';
+          if (!preparedByClass[sourceClass]) preparedByClass[sourceClass] = [];
+          preparedByClass[sourceClass].push(uuid);
+        }
+      });
+
+      // Save class-specific prepared spells
+      await this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
+
+      // Flatten for compatibility with older code
+      const allPreparedUuids = Object.values(preparedByClass).flat();
+      await this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS, allPreparedUuids);
+
+      log(3, `Saved prepared spells to actor flags by class`);
 
       const spellIdsToRemove = [];
       const spellsToUpdate = [];

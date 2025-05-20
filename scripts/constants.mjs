@@ -22,6 +22,7 @@ export const FLAGS = {
   FORCE_WIZARD_MODE: 'forceWizardMode',
   GM_COLLAPSED_LEVELS: 'gmCollapsedSpellLevels',
   PREPARED_SPELLS: 'preparedSpells',
+  PREPARED_SPELLS_BY_CLASS: 'preparedSpellsByClass',
   PREVIOUS_CANTRIP_MAX: 'previousCantripMax',
   PREVIOUS_LEVEL: 'previousLevel',
   SIDEBAR_COLLAPSED: 'sidebarCollapsed',

@@ -59,6 +59,7 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
  * Organize spells by level for display with preparation info
  * @param {Array} spellItems - Array of spell documents
  * @param {Actor5e|null} actor - The actor to check preparation status against
+ * @param {SpellManager|null} spellManager - The spell manager instance
  * @returns {Array} - Array of spell levels with formatted data
  */
 export function organizeSpellsByLevel(spellItems, actor = null, spellManager = null) {
@@ -90,6 +91,11 @@ export function organizeSpellsByLevel(spellItems, actor = null, spellManager = n
       }
     }
 
+    // Preserve sourceClass if it was set
+    if (spell.sourceClass) {
+      spellData.sourceClass = spell.sourceClass;
+    }
+
     spellData.filterData = formattingUtils.extractSpellFilterData(spell);
     spellData.formattedDetails = formattingUtils.formatSpellDetails(spell);
     spellsByLevel[level].push(spellData);
@@ -109,6 +115,11 @@ export function organizeSpellsByLevel(spellItems, actor = null, spellManager = n
         filterData: formattingUtils.extractSpellFilterData(spell),
         formattedDetails: formattingUtils.formatSpellDetails(spell)
       };
+
+      // If the spell has a sourceClass defined, preserve it
+      if (spell.system?.sourceClass) {
+        spellData.sourceClass = spell.system.sourceClass;
+      }
 
       spellsByLevel[level].push(spellData);
     }

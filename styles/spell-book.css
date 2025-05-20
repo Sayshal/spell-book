@@ -810,6 +810,17 @@
       margin-right: 0.25rem;
     }
 
+    .class-prep-count,
+    .global-prep-count {
+      display: inline-block;
+      margin-right: 0.5rem;
+    }
+
+    .global-prep-count {
+      opacity: 0.8;
+      font-size: 0.9em;
+    }
+
     &.at-max {
       color: var(--color-level-warning);
       font-weight: bold;
@@ -839,6 +850,31 @@
       white-space: nowrap;
       transition: all 0.4s ease;
     }
+  }
+
+  /* Class Header Styling */
+  .class-header {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--dnd5e-color-gold);
+    text-align: center;
+  }
+
+  .class-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: bold;
+    font-family: var(--dnd5e-font-primary);
+    text-shadow: none;
+    border-bottom: none;
+  }
+
+  .source-class-indicator {
+    font-size: 0.85rem;
+    color: var(--dnd5e-color-beige);
+    margin-left: 0.5rem;
+    font-style: italic;
+    text-shadow: var(--spell-book-text-shadow);
   }
 }
 

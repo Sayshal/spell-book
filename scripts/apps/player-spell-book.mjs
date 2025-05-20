@@ -142,6 +142,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     context.activeTab = this.tabGroups['spellbook-tabs'];
     context.tabs = this._getTabs();
 
+    // Add global preparation data
+    context.globalPrepared = this._stateManager.spellPreparation;
+
     // Wizard-specific context - explicitly call this method to maintain compatibility
     context.isWizard = !!this.wizardManager?.isWizard;
     if (context.isWizard) {
@@ -182,7 +185,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           processedLevel.spells = level.spells.map((spell) => this._processSpellForDisplay(spell));
           return processedLevel;
         });
+
+        // Add class-specific spell preparation data
         context.spellPreparation = this._stateManager.classSpellData[classIdentifier].spellPreparation;
+
+        // Add global preparation data
+        context.globalPrepared = this._stateManager.spellPreparation;
       }
     }
 
@@ -198,6 +206,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       context.wizardFreeSpellbookCount = this._stateManager.tabData.wizardbook.wizardFreeSpellbookCount || 0;
       context.wizardRemainingFreeSpells = this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells || 0;
       context.wizardHasFreeSpells = this._stateManager.tabData.wizardbook.wizardHasFreeSpells || false;
+
+      // Add global preparation data
+      context.globalPrepared = this._stateManager.spellPreparation;
     }
 
     return context;
@@ -784,6 +795,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       log(1, 'Error handling preparation change:', error);
     }
   }
+
   /**
    * Handle cantrip preparation change
    * @param {Event} event - The change event
@@ -800,24 +812,33 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const wasPrepared = checkbox.dataset.wasPrepared === 'true';
       const isLevelUp = this.spellManager.canBeLeveledUp();
       const isLongRest = this._isLongRest;
+      const sourceClass = checkbox.dataset.sourceClass;
+
+      // Get the active tab's class identifier
+      const activeTab = this.tabGroups['spellbook-tabs'];
+      const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
+      const classIdentifier = activeTabContent?.dataset.classIdentifier || sourceClass;
+
       const sourceSpell = await fromUuid(uuid);
       if (!sourceSpell) {
         log(1, `Could not find source spell for UUID: ${uuid}`);
         return;
       }
 
-      const canChange = this.spellManager.canChangeCantripStatus(sourceSpell, isChecked, isLevelUp, isLongRest, this._uiCantripCount);
+      const canChange = this.spellManager.canChangeCantripStatus(sourceSpell, isChecked, isLevelUp, isLongRest, this._uiCantripCount, classIdentifier);
 
       if (!canChange.allowed) {
         checkbox.checked = !isChecked;
         if (canChange.message) {
           ui.notifications.warn(game.i18n.localize(canChange.message));
         }
-        this.ui.updateCantripCounter();
+
+        // Use true to avoid recursion when updating counter
+        this.ui.updateCantripCounter(null, true);
         return;
       }
 
-      this.spellManager.trackCantripChange(sourceSpell, isChecked, isLevelUp, isLongRest);
+      this.spellManager.trackCantripChange(sourceSpell, isChecked, isLevelUp, isLongRest, classIdentifier);
 
       if (isChecked && !wasPrepared) {
         this._newlyCheckedCantrips.add(uuid);
@@ -825,12 +846,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         this._newlyCheckedCantrips.delete(uuid);
       }
 
-      this.ui.updateCantripCounter();
+      // Update the counter first without triggering lock setup
+      this.ui.updateCantripCounter(null, true);
 
       if (spellItem) {
         spellItem.classList.toggle('prepared-spell', isChecked);
       }
 
+      // Then set up locks separately
       this.ui.setupCantripLocks();
     } catch (error) {
       log(1, 'Error handling cantrip preparation change:', error);

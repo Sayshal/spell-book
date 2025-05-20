@@ -9,15 +9,19 @@
 			{{/if}}
 		</div>
 	{{else}}
-		<!-- Standard spells tab - show prepared spells count -->
-		<div class="spell-prep-tracking {{#if isAtMax}}at-max{{/if}}" aria-live="polite">
-			<span class="current-count" aria-label="{{localize 'SPELLBOOK.Footer.PreparedCount'}}">
-				{{spellPreparation.current}}
-			</span>/
-			<span class="max-count" aria-label="{{localize 'SPELLBOOK.Footer.MaximumCount'}}">
-				{{spellPreparation.maximum}}
+		<!-- Show class-specific preparation count with global maximum -->
+		<div class="spell-prep-tracking {{#if (gte globalPrepared.current globalPrepared.maximum)}}at-max{{/if}}"
+			aria-live="polite" data-class="{{className}}">
+			<span class="class-prep-count">
+				{{className}}: <span class="current-count" aria-label="{{localize 'SPELLBOOK.Footer.PreparedCount'}}">
+					{{spellPreparation.current}}
+				</span>/{{spellPreparation.maximum}}
 			</span>
-			{{localize 'SPELLBOOK.Footer.PreparedLabel'}}
+
+			<!-- Global total -->
+			<span class="global-prep-count">
+				(Total: <span class="global-current-count">{{globalPrepared.current}}</span>/{{globalPrepared.maximum}})
+			</span>
 		</div>
 	{{/if}}
 
