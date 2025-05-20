@@ -83,7 +83,6 @@ export class SpellbookUI {
     try {
       const filtersContainer = this.element.querySelector('.spell-filters');
       if (!filtersContainer) return;
-
       filtersContainer.addEventListener('change', (event) => {
         const target = event.target;
         if (target.matches('dnd5e-checkbox') || target.matches('select')) {
@@ -112,32 +111,9 @@ export class SpellbookUI {
    */
   setupPreparationListeners() {
     try {
-      const spellsContainer = this.element.querySelector('.spells-container');
-      if (!spellsContainer) return;
-      const isLevelUp = this.app.spellManager.canBeLeveledUp();
-      if (isLevelUp) {
-        this.app._cantripTracking = {
-          originalChecked: new Set(),
-          hasUnlearned: false,
-          hasLearned: false,
-          unlearned: null,
-          learned: null
-        };
-
-        const cantripItems = spellsContainer.querySelectorAll('.spell-item[data-spell-level="0"]');
-        cantripItems.forEach((item) => {
-          const checkbox = item.querySelector('dnd5e-checkbox[data-uuid]');
-          if (checkbox && checkbox.checked) {
-            this.app._cantripTracking.originalChecked.add(checkbox.dataset.uuid);
-          }
-        });
-      }
-
-      spellsContainer.addEventListener('change', async (event) => {
+      document.addEventListener('change', async (event) => {
         const target = event.target;
-        if (target.matches('dnd5e-checkbox[data-uuid]')) {
-          await this.app._handlePreparationChange(event);
-        }
+        if (target.matches('dnd5e-checkbox[data-uuid]')) await this.app._handlePreparationChange(event);
       });
     } catch (error) {
       log(1, 'Error setting up preparation listeners:', error);
@@ -156,11 +132,17 @@ export class SpellbookUI {
       const countDisplay = this.element.querySelector('.spell-prep-tracking');
       if (!countDisplay) return;
       let preparedCount = 0;
+      let countDebug = [];
       preparedCheckboxes.forEach((checkbox) => {
         const spellItem = checkbox.closest('.spell-item');
         const spellLevel = spellItem?.dataset.spellLevel;
         if (spellLevel === '0') return;
-        if (checkbox.checked) preparedCount++;
+
+        if (checkbox.checked) {
+          preparedCount++;
+          const spellName = spellItem.querySelector('.spell-name')?.textContent || 'unknown';
+          countDebug.push(`${spellName} (lvl ${spellLevel})`);
+        }
       });
 
       const classIdentifier = this.app._stateManager.activeClass;
@@ -169,12 +151,8 @@ export class SpellbookUI {
       const maxCountEl = countDisplay.querySelector('.max-count');
       if (currentCountEl) currentCountEl.textContent = preparedCount;
       if (maxCountEl) maxCountEl.textContent = maxPrepared;
-      if (preparedCount >= maxPrepared) {
-        countDisplay.classList.add('at-max');
-      } else {
-        countDisplay.classList.remove('at-max');
-      }
-
+      if (preparedCount >= maxPrepared) countDisplay.classList.add('at-max');
+      else countDisplay.classList.remove('at-max');
       if (maxPrepared > 0) {
         if (preparedCount >= maxPrepared) {
           this.element.classList.add('at-max-spells');
@@ -194,7 +172,10 @@ export class SpellbookUI {
    * @private
    */
   _disableUnpreparedSpells() {
-    const allSpellCheckboxes = this.element.querySelectorAll('dnd5e-checkbox[data-uuid]');
+    const activeTab = this.app.tabGroups['spellbook-tabs'];
+    const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
+    if (!activeTabContent) return;
+    const allSpellCheckboxes = activeTabContent.querySelectorAll('dnd5e-checkbox[data-uuid]');
     allSpellCheckboxes.forEach((checkbox) => {
       const spellItem = checkbox.closest('.spell-item');
       const spellLevel = spellItem?.dataset.spellLevel;
@@ -212,7 +193,11 @@ export class SpellbookUI {
    * @private
    */
   _enableAllSpells() {
-    const allSpellCheckboxes = this.element.querySelectorAll('dnd5e-checkbox[data-uuid]');
+    const activeTab = this.app.tabGroups['spellbook-tabs'];
+    const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
+    if (!activeTabContent) return;
+    const allSpellCheckboxes = activeTabContent.querySelectorAll('dnd5e-checkbox[data-uuid]');
+    log(1, `Found ${allSpellCheckboxes.length} checkboxes to process for enabling`);
     allSpellCheckboxes.forEach((checkbox) => {
       const spellItem = checkbox.closest('.spell-item');
       const spellLevel = spellItem?.dataset.spellLevel;
@@ -237,7 +222,6 @@ export class SpellbookUI {
         countDisplays.forEach((countDisplay) => countDisplay.remove());
         return;
       }
-
       const spellLevels = activeTabContent.querySelectorAll('.spell-level');
       spellLevels.forEach((levelContainer) => {
         const levelId = levelContainer.dataset.level;
@@ -254,7 +238,6 @@ export class SpellbookUI {
           const hasAlwaysPrepared = !!item.querySelector('.tag.always-prepared');
           const hasGranted = !!item.querySelector('.tag.granted');
           const isPrepared = item.classList.contains('prepared-spell');
-
           if (!hasAlwaysPrepared && !hasGranted) {
             countableSpells.push(item);
             if (isPrepared) preparedSpells.push(item);
@@ -263,7 +246,6 @@ export class SpellbookUI {
 
         const preparedCount = preparedSpells.length;
         const totalAvailable = countableSpells.length;
-
         const countDisplay = levelContainer.querySelector('.spell-count');
         if (countDisplay) {
           countDisplay.textContent = totalAvailable > 0 ? `(${preparedCount}/${totalAvailable})` : '';
@@ -294,7 +276,6 @@ export class SpellbookUI {
   applyCollapsedLevels() {
     try {
       const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
-
       for (const levelId of collapsedLevels) {
         const levelContainer = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
         if (levelContainer) levelContainer.classList.add('collapsed');
@@ -309,17 +290,16 @@ export class SpellbookUI {
    */
   setupCantripUI() {
     try {
-      const cantripLevel = this.element.querySelector('.spell-level[data-level="0"]');
+      const activeTab = this.app.tabGroups['spellbook-tabs'];
+      const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
+      if (!activeTabContent) return;
+      const cantripLevel = activeTabContent.querySelector('.spell-level[data-level="0"]');
       if (!cantripLevel) return;
-
-      this.updateCantripCounter(cantripLevel);
       this.setupCantripLocks();
-
       if (this.app.wizardManager?.isWizard && this.app._isLongRest) {
         const cantripRules = this.app.spellManager.getSettings().rules;
         const existingInfo = cantripLevel.querySelector('.wizard-rules-info');
         if (existingInfo) existingInfo.remove();
-
         const infoElement = document.createElement('div');
         infoElement.className = 'wizard-rules-info';
         const ruleKey = cantripRules === CANTRIP_RULES.MODERN_LONG_REST ? 'SPELLBOOK.Wizard.ModernCantripRules' : 'SPELLBOOK.Wizard.LegacyCantripRules';
@@ -339,9 +319,11 @@ export class SpellbookUI {
    */
   updateCantripCounter(cantripLevel) {
     if (!cantripLevel) {
-      cantripLevel = this.element.querySelector('.spell-level[data-level="0"]');
+      const activeTab = this.app.tabGroups['spellbook-tabs'];
+      const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
+      cantripLevel = activeTabContent?.querySelector('.spell-level[data-level="0"]');
+      if (!cantripLevel) return { current: 0, max: 0 };
     }
-    if (!cantripLevel) return;
 
     try {
       const maxCantrips = this.app.spellManager.getMaxAllowed();
@@ -354,18 +336,17 @@ export class SpellbookUI {
       });
       this.app._uiCantripCount = currentCount;
       const levelHeading = cantripLevel.querySelector('.spell-level-heading');
+      if (!levelHeading) return { current: currentCount, max: maxCantrips };
       let counterElem = levelHeading.querySelector('.cantrip-counter');
       if (!counterElem) {
         counterElem = document.createElement('span');
         counterElem.className = 'cantrip-counter';
         const spellCount = levelHeading.querySelector('.spell-count');
-        if (spellCount) {
-          spellCount.after(counterElem);
-        } else {
-          levelHeading.appendChild(counterElem);
-        }
+        if (spellCount) spellCount.after(counterElem);
+        else levelHeading.appendChild(counterElem);
       }
-      counterElem.textContent = `[${currentCount}/${maxCantrips}]`;
+      const newContent = `[${currentCount}/${maxCantrips}]`;
+      counterElem.textContent = newContent;
       counterElem.title = game.i18n.localize('SPELLBOOK.Cantrips.CounterTooltip');
       counterElem.style.display = '';
       counterElem.classList.toggle('at-max', currentCount >= maxCantrips);
@@ -388,7 +369,8 @@ export class SpellbookUI {
       if (!cantripItems.length) return;
       const isLevelUp = this.app.spellManager.canBeLeveledUp();
       const isLongRest = this.app._isLongRest;
-      const cantripCounter = this.updateCantripCounter(activeTabContent.querySelector('.spell-level[data-level="0"]'));
+      const cantripLevel = activeTabContent.querySelector('.spell-level[data-level="0"]');
+      const cantripCounter = this.updateCantripCounter(cantripLevel);
       const currentCount = cantripCounter ? cantripCounter.current : 0;
       this.app.spellManager.lockCantripCheckboxes(cantripItems, isLevelUp, isLongRest, currentCount);
     } catch (error) {
@@ -402,8 +384,10 @@ export class SpellbookUI {
   //TODO: dataset.tooltip should use `.format` and mention event for this action (levelup or longrest, etc.)
   lockAllCantripCheckboxes() {
     try {
-      const cantripItems = this.element.querySelectorAll('.spell-item[data-spell-level="0"]');
-
+      const activeTab = this.app.tabGroups['spellbook-tabs'];
+      const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
+      if (!activeTabContent) return;
+      const cantripItems = activeTabContent.querySelectorAll('.spell-item[data-spell-level="0"]');
       for (const item of cantripItems) {
         const checkbox = item.querySelector('dnd5e-checkbox');
         if (!checkbox || checkbox.hasAttribute('data-always-disabled')) continue;

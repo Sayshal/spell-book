@@ -544,7 +544,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   changeTab(tabName, groupName, options = {}) {
     // Call parent method to update tabGroups
     super.changeTab(tabName, groupName, options);
-
+    this.render(false, { parts: ['footer'] });
     // Extract class identifier from tab name if it's a class tab
     const classMatch = tabName.match(/^([^T]+)Tab$/);
     const classIdentifier = classMatch ? classMatch[1] : null;
@@ -771,22 +771,19 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       const checkbox = event.target;
       const uuid = checkbox.dataset.uuid;
+      const sourceClass = checkbox.dataset.sourceClass;
       const spellItem = checkbox.closest('.spell-item');
+      const spellName = spellItem?.querySelector('.spell-name')?.textContent.trim() || 'unknown';
       const spellLevel = spellItem?.dataset.spellLevel;
-
-      if (spellLevel === '0') {
-        await this._handleCantripPreparationChange(event, uuid, spellItem);
-      } else if (spellItem) {
-        spellItem.classList.toggle('prepared-spell', checkbox.checked);
-      }
-
+      if (spellLevel === '0') await this._handleCantripPreparationChange(event, uuid, spellItem);
+      else if (spellItem) spellItem.classList.toggle('prepared-spell', checkbox.checked);
       this.ui.updateSpellPreparationTracking();
       this.ui.updateSpellCounts();
+      this.render(false, { parts: ['footer'] });
     } catch (error) {
       log(1, 'Error handling preparation change:', error);
     }
   }
-
   /**
    * Handle cantrip preparation change
    * @param {Event} event - The change event
