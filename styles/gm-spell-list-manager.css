@@ -12,23 +12,23 @@
 
   /* Colors */
   --spell-book-manager-border-color: var(--color-border-light-tertiary);
-  --spell-book-manager-bg-primary: #1b1d24e6;
-  --spell-book-manager-bg-item: #0000000d;
-  --spell-book-manager-bg-item-hover: #0000001a;
-  --spell-book-manager-custom-color: #79d7d4;
+  --spell-book-manager-bg-primary: rgb(27 29 36 / 90.2%);
+  --spell-book-manager-bg-item: rgb(0 0 0 / 5.1%);
+  --spell-book-manager-bg-item-hover: rgb(0 0 0 / 10.2%);
+  --spell-book-manager-custom-color: rgb(121 215 212);
 
   /* Text Colors */
   --spell-book-manager-text-primary: var(--color-text-light-highlight);
   --spell-book-manager-text-secondary: var(--color-text-light-6);
   --spell-book-manager-text-tertiary: var(--color-text-light-5);
-  --spell-book-manager-text-muted: #bababa;
-  --spell-book-manager-text-notice: #000;
+  --spell-book-manager-text-muted: rgb(186 186 186);
+  --spell-book-manager-text-notice: rgb(0 0 0);
 
   /* Button Colors */
-  --spell-book-manager-button-danger: #f44336;
-  --spell-book-manager-button-info: #2196f3;
-  --spell-book-manager-button-success: #4caf50;
-  --spell-book-manager-button-warning: #ffc107;
+  --spell-book-manager-button-danger: rgb(244 67 54);
+  --spell-book-manager-button-info: rgb(33 150 243);
+  --spell-book-manager-button-success: rgb(76 175 80);
+  --spell-book-manager-button-warning: rgb(255 193 7);
 
   /* Font Sizes */
   --spell-book-manager-font-title: 1.2rem;
@@ -38,7 +38,7 @@
   --spell-book-manager-font-xs: 0.625rem;
 
   /* Shadows */
-  --spell-book-manager-header-shadow: 0 4px 6px -2px #0000004d;
+  --spell-book-manager-header-shadow: 0 4px 6px -2px rgb(0 0 0 / 30.2%);
   --spell-book-manager-item-shadow: 0 0 0.25rem var(--dnd5e-shadow-45);
   --spell-book-manager-sidebar-shadow: 0 0 0.375rem var(--color-shadow-dark);
 
@@ -142,7 +142,7 @@
       color: var(--spell-book-manager-text-primary);
       font-size: var(--spell-book-manager-font-title);
       text-align: center;
-      background-color: #0003;
+      background-color: rgb(0 0 0 / 20%);
       box-shadow: var(--spell-book-manager-header-shadow);
     }
 
@@ -153,7 +153,7 @@
       align-items: center;
       margin: 0;
       color: var(--spell-book-manager-text-primary);
-      background-color: #0003;
+      background-color: rgb(0 0 0 / 20%);
       box-shadow: var(--spell-book-manager-header-shadow);
     }
 
@@ -209,10 +209,10 @@
     /* Actor folder styling */
     .actor-lists-folder {
       .folder-header {
-        color: #6bd14d;
+        color: rgb(107 209 77);
 
         .folder-icon {
-          color: #6bd14d;
+          color: rgb(107 209 77);
         }
       }
     }
@@ -230,18 +230,18 @@
 
     /* Actor-owned list item styling */
     .actor-owned-list {
-      border-left: 2px solid #6bd14d;
+      border-left: 2px solid rgb(107 209 77);
 
       .list-name i {
-        color: #6bd14d !important;
+        color: rgb(107 209 77) !important;
       }
 
       &:hover {
-        background-color: #6bd14d33;
+        background-color: rgb(107 209 77 / 20%);
       }
 
       .source {
-        color: #6bd14d;
+        color: rgb(107 209 77);
         font-weight: 600;
       }
     }
@@ -249,22 +249,22 @@
     /* Custom Lists folder styling */
     .custom-lists-folder {
       .folder-header {
-        color: #ffc919;
+        color: rgb(255 201 25);
 
         .folder-icon {
-          color: #ffc919;
+          color: rgb(255 201 25);
         }
       }
 
       .custom-list {
-        border-left: 2px solid #ffc919;
+        border-left: 2px solid rgb(255 201 25);
 
         &:hover {
-          background-color: #ffc91933;
+          background-color: rgb(255 201 25 / 20%);
         }
 
         .source {
-          color: #ffc919;
+          color: rgb(255 201 25);
           font-weight: 600;
         }
       }
@@ -327,7 +327,7 @@
   .lists-container {
     flex: 1 1 auto;
     height: 0;
-    margin-right: 2px;
+    margin-right: 0.125rem;
     padding: 0 0.5rem;
     overflow-y: auto;
   }
@@ -369,7 +369,7 @@
         }
 
         &.is-custom-list {
-          color: #ffc919;
+          color: rgb(255 201 25);
         }
       }
     }
@@ -438,7 +438,7 @@
     align-items: center;
     margin-bottom: 1rem;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid #ffffff1a;
+    border-bottom: 1px solid rgb(255 255 255 / 10.2%);
 
     .header-title {
       width: 100%;
@@ -457,7 +457,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      margin-top: -20px;
+      margin-top: -1.25rem;
       white-space: nowrap;
     }
 
@@ -507,13 +507,13 @@
 
     .open-actor-button {
       &:hover {
-        text-shadow: 0 0 8px #e8bb4e;
+        text-shadow: 0 0 8px rgb(232 187 78);
       }
     }
 
     .open-class-button {
       &:hover {
-        text-shadow: 0 0 8px #4e9de8;
+        text-shadow: 0 0 8px rgb(78 157 232);
       }
     }
   }
@@ -591,7 +591,7 @@
 .gm-spell-list-manager {
   .spell-level {
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 1rem;
 
     &.collapsed {
       .collapse-indicator {
@@ -764,7 +764,7 @@
     }
 
     .subtitle {
-      margin-left: 2px;
+      margin-left: 0.125rem;
       overflow: hidden;
       color: var(--spell-book-manager-text-muted);
       font-size: var(--spell-book-manager-font-xs);
@@ -818,7 +818,7 @@
       color: var(--spell-book-manager-text-primary);
       font-size: var(--spell-book-manager-font-title);
       text-align: center;
-      background-color: #0003;
+      background-color: rgb(0 0 0 / 20%);
       box-shadow: var(--spell-book-manager-header-shadow);
     }
   }
@@ -849,7 +849,7 @@
     flex: 1;
     min-height: 0;
     max-height: calc(100vh - 500px);
-    margin-bottom: 5px;
+    margin-bottom: 0.3rem;
     overflow-y: auto;
   }
 
@@ -1058,11 +1058,11 @@
 .theme-light {
   .gm-spell-list-manager {
     h2 {
-      color: #000;
+      color: rgb(0 0 0);
     }
 
     .spell-lists-sidebar {
-      background: #f4f4f4e6;
+      background: rgb(244 244 244 / 90.2%);
 
       .list-meta {
         color: unset;
@@ -1072,7 +1072,7 @@
         color: unset;
 
         &.has-custom-version {
-          color: #299792;
+          color: rgb(41 151 146);
         }
       }
 
@@ -1083,7 +1083,7 @@
 
     .selected-list-spells {
       .spell-level-heading {
-        color: #111;
+        color: rgb(17 17 17);
       }
 
       .name-stacked {
@@ -1113,47 +1113,47 @@
       }
 
       .filter-count {
-        color: #111;
+        color: rgb(17 17 17);
       }
     }
 
     .actor-owned-list {
-      background-color: #e8bb4e26;
+      background-color: rgb(232 187 78 / 14.9%);
 
       .list-name i {
-        color: #bf8f20 !important;
+        color: rgb(191 143 32) !important;
       }
 
       .source {
-        color: #bf8f20;
+        color: rgb(191 143 32);
       }
     }
 
     .actor-lists-folder .folder-header {
-      color: #bf8f20;
+      color: rgb(191 143 32);
 
       i {
-        color: #bf8f20;
+        color: rgb(191 143 32);
       }
     }
 
     .custom-list {
-      background-color: #79d7d426;
+      background-color: rgb(121 215 212 / 14.9%);
 
       .list-name i.is-custom-list {
-        color: #299792 !important;
+        color: rgb(41 151 146) !important;
       }
 
       .source {
-        color: #299792;
+        color: rgb(41 151 146);
       }
     }
 
     .custom-lists-folder .folder-header {
-      color: #299792;
+      color: rgb(41 151 146);
 
       i {
-        color: #299792;
+        color: rgb(41 151 146);
       }
     }
   }

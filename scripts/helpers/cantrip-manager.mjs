@@ -87,7 +87,7 @@ export class CantripManager {
     if (behavior === ENFORCEMENT_BEHAVIOR.UNENFORCED || behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
       if (behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM && isChecked) {
         const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount(classIdentifier);
-        const maxCantrips = this.getMaxAllowed(classIdentifier);
+        const maxCantrips = this.spellManager.getMaxAllowed(classIdentifier);
         if (currentCount >= maxCantrips) {
           ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.MaximumReached'));
         }
@@ -97,7 +97,7 @@ export class CantripManager {
 
     if (isChecked) {
       const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount(classIdentifier);
-      const maxCantrips = this.getMaxAllowed(classIdentifier);
+      const maxCantrips = this.spellManager.getMaxAllowed(classIdentifier);
       if (currentCount >= maxCantrips) {
         return { allowed: false, message: 'SPELLBOOK.Cantrips.MaximumReached' };
       }

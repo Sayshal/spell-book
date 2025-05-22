@@ -345,18 +345,32 @@ export class SpellbookState {
    */
   async processAndOrganizeSpellsForClass(identifier, spellItems, classItem) {
     try {
-      // Tag each spell with the class identifier
+      // Tag each spell with the class identifier and ensure system.sourceClass is set too
       for (const spell of spellItems) {
         spell.sourceClass = identifier;
+        if (spell.system && !spell.system.sourceClass) {
+          spell.system.sourceClass = identifier;
+        }
       }
 
       // Organize spells by level
       const spellLevels = actorSpellUtils.organizeSpellsByLevel(spellItems, this.actor, this.app.spellManager);
 
-      // Sort spells
+      // Sort spells and ensure all have sourceClass set
       const sortBy = this.app.filterHelper?.getFilterState()?.sortBy || 'level';
       for (const level of spellLevels) {
         level.spells = this.app.filterHelper?.sortSpells(level.spells, sortBy) || level.spells;
+
+        // Double-check that all spells have sourceClass set
+        for (const spell of level.spells) {
+          if (!spell.sourceClass) {
+            spell.sourceClass = identifier;
+          }
+
+          if (spell.system && !spell.system.sourceClass) {
+            spell.system.sourceClass = identifier;
+          }
+        }
       }
 
       // Add additional spell data

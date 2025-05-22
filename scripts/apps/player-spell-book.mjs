@@ -93,8 +93,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (updatedActor.id !== this.actor.id) return;
       if (changes.flags?.[MODULE.ID]) {
         const changedFlags = Object.keys(changes.flags[MODULE.ID]);
-        const cantripFlagChanged = changedFlags.some((flag) => [FLAGS.CANTRIP_RULES, FLAGS.ENFORCEMENT_BEHAVIOR, FLAGS.FORCE_WIZARD_MODE].includes(flag));
-        const wizardFlagChanged = changedFlags.some((flag) => [FLAGS.WIZARD_SPELLBOOK, FLAGS.WIZARD_LEARNED_SPELLS, FLAGS.WIZARD_COPIED_SPELLS].includes(flag));
+        const cantripFlagChanged = changedFlags.some((flag) =>
+          [FLAGS.CANTRIP_RULES, FLAGS.ENFORCEMENT_BEHAVIOR, FLAGS.FORCE_WIZARD_MODE].includes(flag)
+        );
+        const wizardFlagChanged = changedFlags.some((flag) =>
+          [FLAGS.WIZARD_SPELLBOOK, FLAGS.WIZARD_LEARNED_SPELLS, FLAGS.WIZARD_COPIED_SPELLS].includes(flag)
+        );
 
         if ((cantripFlagChanged || wizardFlagChanged) && this.rendered) {
           this.render(false);
@@ -243,7 +247,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       isLoading: this.isLoading,
       spellLevels: this.spellLevels || [],
       className: this.className || '',
-      filters: this.isLoading ? { search: null, dropdowns: [], checkboxes: [], range: null } : this.filterHelper.getFilterState(),
+      filters:
+        this.isLoading ?
+          { search: null, dropdowns: [], checkboxes: [], range: null }
+        : this.filterHelper.getFilterState(),
       spellSchools: CONFIG.DND5E.spellSchools,
       buttons: buttons,
       actorId: this.actor.id,
@@ -264,7 +271,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     processedSpell.cssClasses = this._getSpellCssClasses(spell);
     processedSpell.dataAttributes = this._getSpellDataAttributes(spell);
     processedSpell.tag = this._getSpellPreparationTag(spell);
-    const ariaLabel = spell.preparation.prepared ? game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name }) : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
+    const ariaLabel =
+      spell.preparation.prepared ?
+        game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name })
+      : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
     const checkbox = formElements.createCheckbox({
       name: `spellPreparation.${spell.compendiumUuid}`,
       checked: spell.preparation.prepared,
@@ -283,9 +293,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       checkbox.dataset.sourceClass = spell.sourceClass;
     }
 
-    if (spell.preparation.disabled && spell.preparation.disabledReason) checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
+    if (spell.preparation.disabled && spell.preparation.disabledReason)
+      checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
     processedSpell.preparationCheckboxHtml = formElements.elementToHtml(checkbox);
-    if (this.wizardManager?.isWizard) processedSpell.inWizardSpellbook = this._stateManager.wizardSpellbookCache?.includes(spell.compendiumUuid) || false;
+    if (this.wizardManager?.isWizard)
+      processedSpell.inWizardSpellbook =
+        this._stateManager.wizardSpellbookCache?.includes(spell.compendiumUuid) || false;
     return processedSpell;
   }
 
@@ -462,7 +475,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const wrapper = document.createElement('div');
       wrapper.className = 'content-wrapper';
 
-      const elementsToWrap = [this.element.querySelector('.sidebar'), this.element.querySelector('.spell-book-container'), this.element.querySelector('.window-content > footer')].filter((el) => el);
+      const elementsToWrap = [
+        this.element.querySelector('.sidebar'),
+        this.element.querySelector('.spell-book-container'),
+        this.element.querySelector('.window-content > footer')
+      ].filter((el) => el);
 
       if (elementsToWrap.length && elementsToWrap[0].parentNode) {
         elementsToWrap[0].parentNode.insertBefore(wrapper, elementsToWrap[0]);
@@ -814,10 +831,22 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const isLongRest = this._isLongRest;
       const sourceClass = checkbox.dataset.sourceClass;
 
-      // Get the active tab's class identifier
+      // Get the active tab's class identifier - use sourceClass as fallback
       const activeTab = this.tabGroups['spellbook-tabs'];
       const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
-      const classIdentifier = activeTabContent?.dataset.classIdentifier || sourceClass;
+      // Use a fallback if activeTabContent isn't found
+      const classIdentifier =
+        activeTabContent?.dataset.classIdentifier || sourceClass || this._stateManager.activeClass;
+
+      if (!classIdentifier) {
+        log(2, `No class identifier could be determined for cantrip change handling - using first available class`);
+        // Last resort - use the first available class
+        const firstClass = Object.keys(this._stateManager.classSpellData)[0];
+        if (!firstClass) {
+          log(1, `No class data available, cannot process cantrip change for ${uuid}`);
+          return;
+        }
+      }
 
       const sourceSpell = await fromUuid(uuid);
       if (!sourceSpell) {
@@ -825,7 +854,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         return;
       }
 
-      const canChange = this.spellManager.canChangeCantripStatus(sourceSpell, isChecked, isLevelUp, isLongRest, this._uiCantripCount, classIdentifier);
+      const canChange = this.spellManager.canChangeCantripStatus(
+        sourceSpell,
+        isChecked,
+        isLevelUp,
+        isLongRest,
+        this._uiCantripCount,
+        classIdentifier
+      );
 
       if (!canChange.allowed) {
         checkbox.checked = !isChecked;
@@ -833,8 +869,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           ui.notifications.warn(game.i18n.localize(canChange.message));
         }
 
-        // Use true to avoid recursion when updating counter
-        this.ui.updateCantripCounter(null, true);
+        // Update counter without triggering recursive lock setup
+        if (this.ui) {
+          try {
+            this.ui.updateCantripCounter(null, true);
+          } catch (err) {
+            log(2, 'Error updating cantrip counter after prevention:', err);
+          }
+        }
         return;
       }
 
@@ -846,15 +888,22 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         this._newlyCheckedCantrips.delete(uuid);
       }
 
-      // Update the counter first without triggering lock setup
-      this.ui.updateCantripCounter(null, true);
+      if (this.ui) {
+        // Update visual indicators - safely
+        try {
+          // Update the counter without triggering lock setup
+          this.ui.updateCantripCounter(null, true);
 
-      if (spellItem) {
-        spellItem.classList.toggle('prepared-spell', isChecked);
+          if (spellItem) {
+            spellItem.classList.toggle('prepared-spell', isChecked);
+          }
+
+          // Call setupCantripLocks directly, not through updateCantripCounter
+          this.ui.setupCantripLocks();
+        } catch (err) {
+          log(2, 'Error updating UI after cantrip change:', err);
+        }
       }
-
-      // Then set up locks separately
-      this.ui.setupCantripLocks();
     } catch (error) {
       log(1, 'Error handling cantrip preparation change:', error);
     }
@@ -866,11 +915,16 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _updatewizardbookDataAfterSpellLearning(isFree) {
     if (this._stateManager.tabData && this._stateManager.tabData.wizardbook) {
-      this._stateManager.tabData.wizardbook.wizardTotalSpellbookCount = (this._stateManager.tabData.wizardbook.wizardTotalSpellbookCount || 0) + 1;
+      this._stateManager.tabData.wizardbook.wizardTotalSpellbookCount =
+        (this._stateManager.tabData.wizardbook.wizardTotalSpellbookCount || 0) + 1;
 
       if (isFree) {
-        this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells = Math.max(0, (this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells || 0) - 1);
-        this._stateManager.tabData.wizardbook.wizardHasFreeSpells = this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells > 0;
+        this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells = Math.max(
+          0,
+          (this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells || 0) - 1
+        );
+        this._stateManager.tabData.wizardbook.wizardHasFreeSpells =
+          this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells > 0;
       }
     }
   }
@@ -1066,7 +1120,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const spellUuid = event.target.dataset.uuid;
       if (!spellUuid) return;
 
-      const collapsedLevels = Array.from(this.element.querySelectorAll('.spell-level.collapsed')).map((el) => el.dataset.level);
+      const collapsedLevels = Array.from(this.element.querySelectorAll('.spell-level.collapsed')).map(
+        (el) => el.dataset.level
+      );
       const activeTab = this.tabGroups['spellbook-tabs'];
 
       const spell = await fromUuid(spellUuid);
@@ -1077,7 +1133,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
       const costInfo = await this.wizardManager.getCopyingCostWithFree(spell);
       const time = this.wizardManager.getCopyingTime(spell);
-      const costText = costInfo.isFree ? game.i18n.localize('SPELLBOOK.Wizard.SpellCopyFree') : game.i18n.format('SPELLBOOK.Wizard.SpellCopyCost', { cost: costInfo.cost });
+      const costText =
+        costInfo.isFree ?
+          game.i18n.localize('SPELLBOOK.Wizard.SpellCopyFree')
+        : game.i18n.format('SPELLBOOK.Wizard.SpellCopyCost', { cost: costInfo.cost });
       const result = await DialogV2.wait({
         title: game.i18n.format('SPELLBOOK.Wizard.LearnSpellTitle', { name: spell.name }),
         content: `
@@ -1183,7 +1242,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const sourceClass = checkbox.dataset.sourceClass || '';
 
         const spellItem = checkbox.closest('.spell-item');
-        const isAlwaysPreparedElement = spellItem && (spellItem.querySelector('.tag.always-prepared') || spellItem.querySelector('.tag.granted'));
+        const isAlwaysPreparedElement =
+          spellItem && (spellItem.querySelector('.tag.always-prepared') || spellItem.querySelector('.tag.granted'));
 
         if (isAlwaysPreparedElement) continue;
 

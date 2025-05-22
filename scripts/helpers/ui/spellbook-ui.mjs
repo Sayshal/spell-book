@@ -126,23 +126,40 @@ export class SpellbookUI {
   updateSpellPreparationTracking() {
     try {
       const activeTab = this.app.tabGroups['spellbook-tabs'];
+      if (!activeTab) {
+        log(2, 'No active tab found when updating spell preparation tracking');
+        return;
+      }
+
       const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
-      if (!activeTabContent) return;
+      if (!activeTabContent) {
+        log(1, 'DEBUG NO TAB CONTENT FOUND', { this: this, element: this.element });
+        log(2, `No tab content found for tab "${activeTab}"`);
+        return;
+      }
 
       // Get class identifier from the active tab
       const classIdentifier = activeTabContent.dataset.classIdentifier;
-      if (!classIdentifier) return;
+      if (!classIdentifier) {
+        log(2, `No class identifier found in tab "${activeTab}"`);
+        return;
+      }
 
       // Get the class data for this tab
       const classData = this.app._stateManager.classSpellData[classIdentifier];
-      if (!classData) return;
+      if (!classData) {
+        log(2, `No class data found for identifier "${classIdentifier}"`);
+        return;
+      }
 
       // Count prepared spells for this specific class
       let preparedCount = 0;
       const preparedCheckboxes = activeTabContent.querySelectorAll('dnd5e-checkbox[data-uuid]:not([disabled])');
       preparedCheckboxes.forEach((checkbox) => {
         const spellItem = checkbox.closest('.spell-item');
-        const spellLevel = spellItem?.dataset.spellLevel;
+        if (!spellItem) return;
+
+        const spellLevel = spellItem.dataset.spellLevel;
         const spellSourceClass = checkbox.dataset.sourceClass;
 
         // Skip cantrips in spell count
@@ -158,7 +175,10 @@ export class SpellbookUI {
 
       // Update class-specific count in the UI
       const countDisplay = this.element.querySelector('.spell-prep-tracking');
-      if (!countDisplay) return;
+      if (!countDisplay) {
+        log(2, 'No spell prep tracking element found');
+        return;
+      }
 
       const className = classData.className || '';
       const maxPrepared = classData.spellPreparation?.maximum || 0;
@@ -193,8 +213,6 @@ export class SpellbookUI {
         this.element.classList.remove('at-max-spells');
         this._enableAllSpells();
       }
-
-      // Don't update cantrip counters here to avoid potential recursion
     } catch (error) {
       log(1, 'Error updating spell preparation tracking:', error);
     }
@@ -250,14 +268,27 @@ export class SpellbookUI {
   updateSpellCounts() {
     try {
       const activeTab = this.app.tabGroups['spellbook-tabs'];
-      const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
-      log(1, 'DEBUG', { activeTab: activeTab, activeTabContent: activeTabContent });
-      if (!activeTabContent) return;
+      if (!activeTab) {
+        log(2, 'No active tab found when updating spell counts');
+        return;
+      }
+
+      // Add debug logging
+      log(2, 'updateSpellCounts: DEBUG', { activeTab, activeTabContent: this?.element?.querySelector(`.tab[data-tab="${activeTab}"]`) });
+
+      const activeTabContent = this?.element?.querySelector(`.tab[data-tab="${activeTab}"]`);
+      if (!activeTabContent) {
+        log(1, 'DEBUG NO TAB CONTENT FOUND', { this: this, element: this.element });
+        log(2, `No tab content found for tab "${activeTab}"`);
+        return;
+      }
+
       if (activeTab === 'wizardbook') {
         const countDisplays = activeTabContent.querySelectorAll('.spell-count');
         countDisplays.forEach((countDisplay) => countDisplay.remove());
         return;
       }
+
       const spellLevels = activeTabContent.querySelectorAll('.spell-level');
       spellLevels.forEach((levelContainer) => {
         const levelId = levelContainer.dataset.level;
@@ -286,12 +317,13 @@ export class SpellbookUI {
         if (countDisplay) {
           countDisplay.textContent = totalAvailable > 0 ? `(${preparedCount}/${totalAvailable})` : '';
         } else if (totalAvailable > 0) {
-          const newCount = document.createElement('span');
-          newCount.className = 'spell-count';
-          newCount.setAttribute('aria-label', 'SPELLBOOK.UI.SpellCount');
-          newCount.textContent = `(${preparedCount}/${totalAvailable})`;
           const levelHeading = levelContainer.querySelector('.spell-level-heading');
           if (levelHeading) {
+            const newCount = document.createElement('span');
+            newCount.className = 'spell-count';
+            newCount.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.SpellCount'));
+            newCount.textContent = `(${preparedCount}/${totalAvailable})`;
+
             const cantripCounter = levelHeading.querySelector('.cantrip-counter');
             if (cantripCounter) {
               levelHeading.insertBefore(newCount, cantripCounter);
@@ -355,20 +387,37 @@ export class SpellbookUI {
    * @returns {Object} Counter state with current and max values
    */
   updateCantripCounter(cantripLevel, skipLockSetup = false) {
-    if (!cantripLevel) {
-      const activeTab = this.app.tabGroups['spellbook-tabs'];
-      const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
-      cantripLevel = activeTabContent?.querySelector('.spell-level[data-level="0"]');
-      if (!cantripLevel) return { current: 0, max: 0 };
-    }
-
     try {
+      if (!cantripLevel) {
+        const activeTab = this.app.tabGroups['spellbook-tabs'];
+        if (!activeTab) {
+          log(2, 'No active tab found when updating cantrip counter');
+          return { current: 0, max: 0 };
+        }
+
+        const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
+        if (!activeTabContent) {
+          log(1, 'DEBUG NO TAB CONTENT FOUND', { this: this, element: this.element });
+          log(2, `No tab content found for tab "${activeTab}"`);
+          return { current: 0, max: 0 };
+        }
+
+        cantripLevel = activeTabContent.querySelector('.spell-level[data-level="0"]');
+        if (!cantripLevel) {
+          log(3, 'No cantrip level container found in active tab');
+          return { current: 0, max: 0 };
+        }
+      }
+
       // Get class identifier for the active tab
       const activeTab = this.app.tabGroups['spellbook-tabs'];
       const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
       const classIdentifier = activeTabContent?.dataset.classIdentifier;
 
-      if (!classIdentifier) return { current: 0, max: 0 };
+      if (!classIdentifier) {
+        log(2, 'No class identifier found for cantrip counter');
+        return { current: 0, max: 0 };
+      }
 
       // Get max cantrips for this specific class
       const maxCantrips = this.app.spellManager.getMaxAllowed(classIdentifier);
@@ -380,12 +429,14 @@ export class SpellbookUI {
         if (item.querySelector('.tag.always-prepared') || item.querySelector('.tag.granted')) return;
 
         const checkbox = item.querySelector('dnd5e-checkbox');
-        const spellSourceClass = checkbox?.dataset.sourceClass;
+        if (!checkbox) return;
+
+        const spellSourceClass = checkbox.dataset.sourceClass;
 
         // Only count cantrips for this class
         if (spellSourceClass && spellSourceClass !== classIdentifier) return;
 
-        if (checkbox && checkbox.checked) {
+        if (checkbox.checked) {
           currentCount++;
         }
       });
@@ -412,7 +463,11 @@ export class SpellbookUI {
 
       // Only call setupCantripLocks if not explicitly skipped
       if (!skipLockSetup) {
-        this.setupCantripLocks();
+        try {
+          this.setupCantripLocks();
+        } catch (err) {
+          log(2, 'Error in setupCantripLocks called from updateCantripCounter:', err);
+        }
       }
 
       return { current: currentCount, max: maxCantrips };
@@ -424,27 +479,59 @@ export class SpellbookUI {
 
   /**
    * Set up cantrip lock states based on selection rules
+   * @param {boolean} [force=false] - Force update even if no active tab is found
    */
-  setupCantripLocks() {
+  setupCantripLocks(force = false) {
     try {
       const activeTab = this.app.tabGroups['spellbook-tabs'];
-      const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
-      if (!activeTabContent) return;
+      if (!activeTab && !force) {
+        log(2, 'No active tab found when setting up cantrip locks');
+        return;
+      }
 
-      const classIdentifier = activeTabContent.dataset.classIdentifier;
-      if (!classIdentifier) return;
+      const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
+      if (!activeTabContent && !force) {
+        log(1, 'DEBUG NO TAB CONTENT FOUND', { this: this, element: this.element });
+        log(2, `No tab content found for tab "${activeTab}"`);
+        return;
+      }
+
+      const classIdentifier = activeTabContent?.dataset.classIdentifier;
+      if (!classIdentifier && !force) {
+        log(2, 'No class identifier found for cantrip locks');
+        return;
+      }
 
       const cantripItems = activeTabContent.querySelectorAll('.spell-item[data-spell-level="0"]');
-      if (!cantripItems.length) return;
+      if (!cantripItems.length) {
+        log(3, 'No cantrip items found in active tab');
+        return;
+      }
 
       const isLevelUp = this.app.spellManager.canBeLeveledUp();
       const isLongRest = this.app._isLongRest;
       const cantripLevel = activeTabContent.querySelector('.spell-level[data-level="0"]');
+      if (!cantripLevel) {
+        log(3, 'No cantrip level container found in active tab');
+        return;
+      }
 
       // Get class-specific cantrip count - pass true to skip recursive call back to setupCantripLocks
-      const cantripCounter = this.updateCantripCounter(cantripLevel, true);
-      const currentCount = cantripCounter ? cantripCounter.current : 0;
-      const maxCantrips = cantripCounter ? cantripCounter.max : 0;
+      let currentCount = 0;
+      let maxCantrips = 0;
+
+      try {
+        // This is the line that was causing recursion - call updateCantripCounter with skipLockSetup=true
+        const cantripCounter = this.updateCantripCounter(cantripLevel, true);
+        currentCount = cantripCounter ? cantripCounter.current : 0;
+        maxCantrips = cantripCounter ? cantripCounter.max : 0;
+      } catch (err) {
+        log(2, 'Error getting cantrip counts:', err);
+        // Fallback - try to get max from SpellManager directly
+        if (classIdentifier) {
+          maxCantrips = this.app.spellManager.getMaxAllowed(classIdentifier);
+        }
+      }
 
       // Apply locks based on class-specific limit
       for (const item of cantripItems) {

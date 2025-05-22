@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
 import { PlayerFilterConfiguration } from './apps/player-filter-configuration.mjs';
 import { PlayerSpellBook } from './apps/player-spell-book.mjs';

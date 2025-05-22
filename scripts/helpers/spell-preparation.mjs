@@ -55,7 +55,19 @@ export class SpellManager {
 
     // First check if the class has explicit cantrips-known scale value
     try {
-      if (classItem.scaleValues && typeof classItem.scaleValues === 'object') {
+      // Safely access scaleValues
+      if (typeof classItem.scaleValues === 'function') {
+        // It's a getter function
+        try {
+          const scaleValues = classItem.scaleValues;
+          if (scaleValues && scaleValues['cantrips-known'] && scaleValues['cantrips-known'].value !== undefined) {
+            return scaleValues['cantrips-known'].value;
+          }
+        } catch (err) {
+          log(2, `Error accessing scaleValues for ${classIdentifier}, using fallback calculation`, err);
+        }
+      } else if (classItem.scaleValues && typeof classItem.scaleValues === 'object') {
+        // It's a property
         const cantripsKnown = classItem.scaleValues['cantrips-known']?.value;
         if (cantripsKnown !== undefined) return cantripsKnown;
       }
@@ -79,7 +91,10 @@ export class SpellManager {
       case CLASS_IDENTIFIERS.ARTIFICER:
         return Math.min(3, Math.max(2, Math.floor(classLevel / 6) + 1));
       default:
-        return 0;
+        // For unknown classes, check if they have cantrips
+        const hasCantrips = this.actor.items.some((i) => i.type === 'spell' && i.system.level === 0 && (i.sourceClass === classIdentifier || i.system.sourceClass === classIdentifier));
+        // Return a reasonable default if they have cantrips
+        return hasCantrips ? 3 : 0;
     }
   }
 
