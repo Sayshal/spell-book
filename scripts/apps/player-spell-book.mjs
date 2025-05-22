@@ -613,44 +613,196 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Change the active tab and handle related state updates
+   * Enhanced tab switching that preserves uncommitted UI state
    * @param {string} tabName - The name of the tab to activate
    * @param {string} groupName - The tab group name
    * @param {Object} options - Additional options
    * @override
    */
   changeTab(tabName, groupName, options = {}) {
-    // Call parent method to update tabGroups
+    try {
+      // Store the current tab's uncommitted state before switching
+      const currentTab = this.tabGroups[groupName];
+      if (currentTab && currentTab !== tabName) {
+        this._preserveTabState(currentTab);
+      }
+
+      // Call parent method to update tabGroups
+      super.changeTab(tabName, groupName, options);
+
+      // Extract class identifier from tab name if it's a class tab
+      const classMatch = tabName.match(/^([^T]+)Tab$/);
+      const classIdentifier = classMatch ? classMatch[1] : null;
+
+      // If this is a class tab, set the active class in the state manager
+      if (classIdentifier && this._stateManager.classSpellData[classIdentifier]) {
+        this._stateManager.setActiveClass(classIdentifier);
+      }
+
+      // Instead of re-rendering, just update visibility and restore state
+      this._switchTabVisibility(tabName);
+      this._restoreTabState(tabName);
+
+      // Update footer with new class context
+      this.render(false, { parts: ['footer'] });
+
+      // Update UI elements that depend on the active tab
+      setTimeout(() => {
+        this.ui.updateSpellCounts();
+        this.ui.updateSpellPreparationTracking();
+        this.ui.setupCantripUI();
+      }, 50); // Reduced timeout since we're not re-rendering
+    } catch (error) {
+      log(1, 'Error in enhanced changeTab:', error);
+      // Fallback to original behavior if enhancement fails
+      this._fallbackChangeTab(tabName, groupName, options);
+    }
+  }
+
+  /**
+   * Preserve the current state of a tab before switching away
+   * @param {string} tabName - The tab to preserve state for
+   * @private
+   */
+  _preserveTabState(tabName) {
+    try {
+      const tabElement = this.element.querySelector(`.tab[data-tab="${tabName}"]`);
+      if (!tabElement) return;
+
+      // Store checkbox states
+      const checkboxes = tabElement.querySelectorAll('dnd5e-checkbox[data-uuid]');
+      const tabState = {
+        checkboxStates: new Map(),
+        timestamp: Date.now()
+      };
+
+      checkboxes.forEach((checkbox) => {
+        const uuid = checkbox.dataset.uuid;
+        const sourceClass = checkbox.dataset.sourceClass;
+        const key = `${sourceClass}:${uuid}`;
+
+        tabState.checkboxStates.set(key, {
+          checked: checkbox.checked,
+          disabled: checkbox.disabled,
+          wasPrepared: checkbox.dataset.wasPrepared === 'true'
+        });
+      });
+
+      // Store in a session-based cache (not persistent across page reloads)
+      if (!this._tabStateCache) this._tabStateCache = new Map();
+      this._tabStateCache.set(tabName, tabState);
+
+      log(3, `Preserved state for tab ${tabName} with ${tabState.checkboxStates.size} checkboxes`);
+    } catch (error) {
+      log(2, `Error preserving tab state for ${tabName}:`, error);
+    }
+  }
+
+  /**
+   * Restore preserved state to a tab after switching to it
+   * @param {string} tabName - The tab to restore state for
+   * @private
+   */
+  _restoreTabState(tabName) {
+    try {
+      if (!this._tabStateCache || !this._tabStateCache.has(tabName)) return;
+
+      const tabElement = this.element.querySelector(`.tab[data-tab="${tabName}"]`);
+      if (!tabElement) return;
+
+      const tabState = this._tabStateCache.get(tabName);
+      const checkboxes = tabElement.querySelectorAll('dnd5e-checkbox[data-uuid]');
+
+      let restoredCount = 0;
+      checkboxes.forEach((checkbox) => {
+        const uuid = checkbox.dataset.uuid;
+        const sourceClass = checkbox.dataset.sourceClass;
+        const key = `${sourceClass}:${uuid}`;
+
+        const savedState = tabState.checkboxStates.get(key);
+        if (savedState) {
+          // Only restore if the checkbox wasn't in a different state due to database changes
+          const currentWasPrepared = checkbox.dataset.wasPrepared === 'true';
+          if (savedState.wasPrepared === currentWasPrepared) {
+            checkbox.checked = savedState.checked;
+            restoredCount++;
+          }
+        }
+      });
+
+      log(3, `Restored state for tab ${tabName}, ${restoredCount} checkboxes restored`);
+    } catch (error) {
+      log(2, `Error restoring tab state for ${tabName}:`, error);
+    }
+  }
+
+  /**
+   * Switch tab visibility without re-rendering
+   * @param {string} activeTabName - The tab to make active
+   * @private
+   */
+  _switchTabVisibility(activeTabName) {
+    try {
+      // Hide all tabs
+      const allTabs = this.element.querySelectorAll('.tab');
+      allTabs.forEach((tab) => {
+        tab.classList.remove('active');
+        tab.style.display = 'none';
+      });
+
+      // Show and activate the target tab
+      const activeTab = this.element.querySelector(`.tab[data-tab="${activeTabName}"]`);
+      if (activeTab) {
+        activeTab.classList.add('active');
+        activeTab.style.display = 'block';
+      }
+
+      // Update navigation
+      const navItems = this.element.querySelectorAll('.tabs .item');
+      navItems.forEach((item) => {
+        item.classList.remove('active');
+        if (item.dataset.tab === activeTabName) {
+          item.classList.add('active');
+        }
+      });
+
+      log(3, `Switched to tab ${activeTabName} without re-rendering`);
+    } catch (error) {
+      log(2, `Error switching tab visibility:`, error);
+    }
+  }
+
+  /**
+   * Clear preserved state when form is submitted
+   * @private
+   */
+  _clearTabStateCache() {
+    if (this._tabStateCache) {
+      this._tabStateCache.clear();
+      log(3, 'Cleared tab state cache after form submission');
+    }
+  }
+
+  /**
+   * Fallback to original tab change behavior
+   * @param {string} tabName - Tab name
+   * @param {string} groupName - Group name
+   * @param {Object} options - Options
+   * @private
+   */
+  _fallbackChangeTab(tabName, groupName, options) {
     super.changeTab(tabName, groupName, options);
     this.render(false, { parts: ['footer'] });
-    // Extract class identifier from tab name if it's a class tab
+
     const classMatch = tabName.match(/^([^T]+)Tab$/);
     const classIdentifier = classMatch ? classMatch[1] : null;
 
-    // If this is a class tab, set the active class in the state manager
     if (classIdentifier && this._stateManager.classSpellData[classIdentifier]) {
       this._stateManager.setActiveClass(classIdentifier);
     }
 
-    // Ensure the tab part is registered
-    if (!this.constructor.PARTS[tabName]) {
-      if (classIdentifier) {
-        // Register it if it's a class tab but not yet registered
-        this.constructor.PARTS[tabName] = {
-          template: TEMPLATES.PLAYER.TAB_SPELLS,
-          scrollable: [''],
-          data: {
-            classIdentifier: classIdentifier,
-            className: this._stateManager.classSpellData[classIdentifier]?.className || ''
-          }
-        };
-      } else {
-        console.warn(`Tab ${tabName} is not registered as a part`);
-      }
-    }
-
-    // Re-render both the navigation and the tab content
     this.render(false, { parts: ['navigation', tabName] });
+
     setTimeout(() => {
       this.ui.updateSpellCounts();
       this.ui.updateSpellPreparationTracking();
@@ -1330,7 +1482,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Form handler for saving spellbook settings
+   * Form handler for saving spellbook settings with class-specific preparation
    * @param {Event} _event - The form submission event
    * @param {HTMLElement} form - The form element
    * @param {Object} formData - The form data
@@ -1343,7 +1495,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const actor = this.actor;
       if (!actor) return null;
 
-      const spellData = {};
+      // Group spell data by class for independent processing
+      const spellDataByClass = {};
       const checkboxes = form.querySelectorAll('dnd5e-checkbox[data-uuid]');
 
       for (const checkbox of checkboxes) {
@@ -1352,26 +1505,41 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const wasPrepared = checkbox.dataset.wasPrepared === 'true';
         const isPrepared = checkbox.checked;
         const isRitual = checkbox.dataset.ritual === 'true';
-        const sourceClass = checkbox.dataset.sourceClass || '';
+        const sourceClass = checkbox.dataset.sourceClass || 'unknown';
 
         const spellItem = checkbox.closest('.spell-item');
         const isAlwaysPreparedElement =
           spellItem && (spellItem.querySelector('.tag.always-prepared') || spellItem.querySelector('.tag.granted'));
 
+        // Skip always prepared spells
         if (isAlwaysPreparedElement) continue;
 
-        spellData[uuid] = {
+        // Initialize class data if needed
+        if (!spellDataByClass[sourceClass]) {
+          spellDataByClass[sourceClass] = {};
+        }
+
+        // Create class-specific spell key
+        const classSpellKey = `${sourceClass}:${uuid}`;
+
+        spellDataByClass[sourceClass][classSpellKey] = {
+          uuid,
           name,
           wasPrepared,
           isPrepared,
           isAlwaysPrepared: false,
           isRitual,
-          sourceClass
+          sourceClass,
+          classSpellKey
         };
       }
 
-      await this.spellManager.saveActorPreparedSpells(spellData);
+      // Process each class independently
+      for (const [classIdentifier, classSpellData] of Object.entries(spellDataByClass)) {
+        await this.spellManager.saveClassSpecificPreparedSpells(classIdentifier, classSpellData);
+      }
 
+      // Handle post-processing
       if (this.spellManager.canBeLeveledUp()) {
         await this.spellManager.completeCantripsLevelUp();
       }
@@ -1387,6 +1555,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (actor.sheet.rendered) {
         actor.sheet.render(true);
       }
+
+      // Clear preserved tab state since changes are now committed
+      this._clearTabStateCache();
 
       return actor;
     } catch (error) {

@@ -352,7 +352,7 @@ export class SpellbookState {
   }
 
   /**
-   * Process and organize spells for a specific class
+   * Process and organize spells for a specific class with class-aware preparation
    * @param {string} identifier - Identifier of the class
    * @param {Array} spellItems - Array of spell items
    * @param {Item} classItem - The class item
@@ -361,7 +361,7 @@ export class SpellbookState {
    */
   async processAndOrganizeSpellsForClass(identifier, spellItems, classItem) {
     try {
-      // Tag each spell with the class identifier and ensure system.sourceClass is set too
+      // Tag each spell with the class identifier
       for (const spell of spellItems) {
         spell.sourceClass = identifier;
         if (spell.system && !spell.system.sourceClass) {
@@ -369,20 +369,19 @@ export class SpellbookState {
         }
       }
 
-      // Organize spells by level
-      const spellLevels = actorSpellUtils.organizeSpellsByLevel(spellItems, this.actor, this.app.spellManager);
+      // Organize spells by level with class-specific preparation checking
+      const spellLevels = this._organizeSpellsByLevelForClass(spellItems, identifier, classItem);
 
       // Sort spells and ensure all have sourceClass set
       const sortBy = this.app.filterHelper?.getFilterState()?.sortBy || 'level';
       for (const level of spellLevels) {
         level.spells = this.app.filterHelper?.sortSpells(level.spells, sortBy) || level.spells;
 
-        // Double-check that all spells have sourceClass set
+        // Ensure all spells have sourceClass set
         for (const spell of level.spells) {
           if (!spell.sourceClass) {
             spell.sourceClass = identifier;
           }
-
           if (spell.system && !spell.system.sourceClass) {
             spell.system.sourceClass = identifier;
           }
@@ -415,6 +414,122 @@ export class SpellbookState {
     } catch (error) {
       log(1, `Error processing spells for class ${identifier}:`, error);
     }
+  }
+
+  /**
+   * Organize spells by level with class-specific preparation awareness
+   * @param {Array} spellItems - Array of spell documents
+   * @param {string} classIdentifier - The class identifier
+   * @param {Item} classItem - The class item
+   * @returns {Array} Array of spell levels with formatted data
+   * @private
+   */
+  _organizeSpellsByLevelForClass(spellItems, classIdentifier, classItem) {
+    log(3, `Organizing ${spellItems.length} spells by level for class ${classIdentifier}`);
+
+    const spellsByLevel = {};
+    const processedSpellIds = new Set();
+    const processedSpellNames = new Set();
+
+    for (const spell of spellItems) {
+      if (spell?.system?.level === undefined) continue;
+
+      const level = spell.system.level;
+      const spellName = spell.name.toLowerCase();
+
+      if (!spellsByLevel[level]) spellsByLevel[level] = [];
+
+      const spellData = { ...spell };
+
+      // Get class-specific preparation status
+      if (this.app.spellManager) {
+        spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spell, classIdentifier);
+      }
+
+      // Preserve sourceClass
+      spellData.sourceClass = classIdentifier;
+
+      spellData.filterData = formattingUtils.extractSpellFilterData(spell);
+      spellData.formattedDetails = formattingUtils.formatSpellDetails(spell);
+
+      spellsByLevel[level].push(spellData);
+      processedSpellIds.add(spell.id || spell.compendiumUuid || spell.uuid);
+      processedSpellNames.add(spellName);
+    }
+
+    // Handle actor spells with class-specific filtering
+    if (this.actor) {
+      const actorSpells = this._findClassSpecificActorSpells(classIdentifier, processedSpellIds, processedSpellNames);
+      for (const { spell, source } of actorSpells) {
+        if (spell?.system?.level === undefined) continue;
+
+        const level = spell.system.level;
+        if (!spellsByLevel[level]) spellsByLevel[level] = [];
+
+        const spellData = {
+          ...spell,
+          preparation: this.app.spellManager.getSpellPreparationStatus(spell, classIdentifier),
+          filterData: formattingUtils.extractSpellFilterData(spell),
+          formattedDetails: formattingUtils.formatSpellDetails(spell),
+          sourceClass: classIdentifier
+        };
+
+        spellsByLevel[level].push(spellData);
+      }
+    }
+
+    // Sort spells within each level
+    for (const level in spellsByLevel) {
+      if (spellsByLevel.hasOwnProperty(level)) {
+        spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
+      }
+    }
+
+    // Convert to array format
+    const result = Object.entries(spellsByLevel)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([level, spells]) => ({
+        level: level,
+        levelName: CONFIG.DND5E.spellLevels[level],
+        spells: spells
+      }));
+
+    log(3, `Final organized spell levels for ${classIdentifier}: ${result.length}`);
+    return result;
+  }
+
+  /**
+   * Find actor spells that belong to a specific class
+   * @param {string} classIdentifier - The class identifier
+   * @param {Set<string>} processedSpellIds - Set of already processed spell IDs
+   * @param {Set<string>} processedSpellNames - Set of already processed spell names
+   * @returns {Array} Array of class-specific actor spells
+   * @private
+   */
+  _findClassSpecificActorSpells(classIdentifier, processedSpellIds, processedSpellNames) {
+    const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
+    const newSpells = [];
+    const spellManager = this.app.spellManager;
+
+    log(3, `Finding actor spells for class ${classIdentifier} - ${actorSpells.length} total spells`);
+
+    for (const spell of actorSpells) {
+      const spellId = spell.id || spell.uuid;
+      const spellName = spell.name.toLowerCase();
+
+      // Skip if already processed
+      if (processedSpellIds.has(spellId) || processedSpellNames.has(spellName)) continue;
+
+      // Check if this spell belongs to this class
+      const spellSourceClass = spell.system?.sourceClass || spell.sourceClass;
+      if (spellSourceClass && spellSourceClass !== classIdentifier) continue;
+
+      const source = spellManager._determineSpellSource(spell);
+      newSpells.push({ spell, source });
+    }
+
+    log(3, `Found ${newSpells.length} additional spells for class ${classIdentifier}`);
+    return newSpells;
   }
 
   /**

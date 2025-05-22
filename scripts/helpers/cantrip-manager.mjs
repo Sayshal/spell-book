@@ -1,4 +1,4 @@
-import { CANTRIP_RULES, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE } from '../constants.mjs';
+import { CANTRIP_RULES, CLASS_IDENTIFIERS, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import * as genericUtils from './generic-utils.mjs';
 
