@@ -71,6 +71,7 @@
   "SPELLBOOK.Footer.MaximumCount": "Maximum prepared spells",
   "SPELLBOOK.Footer.PreparedCount": "Current prepared spells",
   "SPELLBOOK.Footer.PreparedLabel": "Prepared Spells",
+  "SPELLBOOK.Footer.Total": "Total",
   "SPELLBOOK.Migrations.AndMore": "...and {count} more",
   "SPELLBOOK.Migrations.Apology": "We apologize for any inconvenience this may have caused. Your data has been updated to ensure compatibility with the latest version of Spell Book.",
   "SPELLBOOK.Migrations.ChatDescription": "The Spell Book module has completed a data migration to clean up outdated flags. This ensures compatibility with the latest version.",

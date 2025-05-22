@@ -155,6 +155,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     // Add global preparation data
     context.globalPrepared = this._stateManager.spellPreparation;
 
+    // Add class-specific preparation data for footer
+    context.classPreparationData = this._prepareClassPreparationData();
+
     // Wizard-specific context - explicitly call this method to maintain compatibility
     context.isWizard = !!this.wizardManager?.isWizard;
     if (context.isWizard) {
@@ -472,6 +475,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       this.ui.updateSpellPreparationTracking();
       this.ui.setupCantripUI();
       this.ui.updateSpellCounts();
+
+      // Apply class-specific styling
+      await this.ui.applyClassStyling();
     } catch (error) {
       log(1, 'Error in _onRender:', error);
     }
@@ -682,6 +688,43 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     // Add wizardbook tab if actor is a wizard
     if (this.wizardManager?.isWizard) {
       options.parts.push('wizardbook');
+    }
+  }
+
+  /**
+   * Prepare class-specific preparation data for footer display
+   * @returns {Array} Array of class preparation data
+   * @private
+   */
+  _prepareClassPreparationData() {
+    try {
+      const activeTab = this.tabGroups['spellbook-tabs'];
+      const classPreparationData = [];
+
+      // Get active class identifier from tab
+      const activeClassMatch = activeTab?.match(/^([^T]+)Tab$/);
+      const activeClassIdentifier = activeClassMatch ? activeClassMatch[1] : null;
+
+      // Build data for each spellcasting class
+      for (const [identifier, classData] of Object.entries(this._stateManager.classSpellData)) {
+        const isActive = identifier === activeClassIdentifier;
+
+        classPreparationData.push({
+          identifier: identifier,
+          className: classData.className,
+          current: classData.spellPreparation?.current || 0,
+          maximum: classData.spellPreparation?.maximum || 0,
+          isActive: isActive
+        });
+      }
+
+      // Sort alphabetically only (remove active-first sorting)
+      classPreparationData.sort((a, b) => a.className.localeCompare(b.className));
+
+      return classPreparationData;
+    } catch (error) {
+      log(1, 'Error preparing class preparation data:', error);
+      return [];
     }
   }
 

@@ -1,5 +1,6 @@
 import { CANTRIP_RULES, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
+import * as colorUtils from '../color-utils.mjs';
 
 /**
  * Helper class for UI-related functionality in the spellbook application
@@ -605,6 +606,20 @@ export class SpellbookUI {
       }
     } catch (error) {
       log(1, 'Error locking cantrip checkboxes:', error);
+    }
+  }
+
+  /**
+   * Apply class-specific colors and styling
+   * @returns {Promise<void>}
+   */
+  async applyClassStyling() {
+    try {
+      if (this.app._stateManager.spellcastingClasses) {
+        await colorUtils.applyClassColors(this.app._stateManager.spellcastingClasses);
+      }
+    } catch (error) {
+      log(1, 'Error applying class styling:', error);
     }
   }
 }

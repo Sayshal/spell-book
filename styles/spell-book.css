@@ -800,6 +800,7 @@
   .spell-prep-tracking,
   .spell-book-tracking {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     width: 100%;
@@ -810,15 +811,43 @@
       margin-right: 0.25rem;
     }
 
-    .class-prep-count,
-    .global-prep-count {
-      display: inline-block;
-      margin-right: 0.5rem;
+    .class-prep-count {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.125rem;
+      font-size: 0.9em;
+
+      &.active-class {
+        font-weight: bold;
+
+        .class-name {
+          font-weight: bold;
+        }
+      }
+
+      .class-name {
+        margin-right: 0.25rem;
+        font-weight: 400;
+      }
+
+      .class-current {
+        font-weight: 600;
+      }
     }
 
     .global-prep-count {
-      font-size: 0.9em;
-      opacity: 0.8;
+      display: flex;
+      align-items: center;
+      margin-top: 0.25rem;
+      padding-top: 0.25rem;
+      border-top: 1px solid var(--color-border-light-tertiary);
+      font-size: 0.85em;
+      opacity: 0.9;
+
+      .global-label {
+        margin-right: 0.25rem;
+        font-weight: 600;
+      }
     }
 
     &.at-max {
@@ -826,7 +855,8 @@
       color: var(--color-level-warning);
 
       .current-count,
-      .max-count {
+      .max-count,
+      .global-current-count {
         color: var(--color-level-warning);
       }
     }
@@ -850,31 +880,6 @@
       white-space: nowrap;
       transition: all 0.4s ease;
     }
-  }
-
-  /* Class Header Styling */
-  .class-header {
-    padding-bottom: 0.5rem;
-    margin-bottom: 0.75rem;
-    text-align: center;
-    border-bottom: 1px solid var(--dnd5e-color-gold);
-  }
-
-  .class-header h2 {
-    margin: 0;
-    font-family: var(--dnd5e-font-primary);
-    font-size: 1.25rem;
-    font-weight: bold;
-    text-shadow: none;
-    border-bottom: none;
-  }
-
-  .source-class-indicator {
-    margin-left: 0.5rem;
-    font-size: 0.85rem;
-    font-style: italic;
-    color: var(--dnd5e-color-beige);
-    text-shadow: var(--spell-book-text-shadow);
   }
 }
 

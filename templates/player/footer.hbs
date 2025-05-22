@@ -11,12 +11,24 @@
     {{else}}
         <div class="spell-prep-tracking {{#if (gte globalPrepared.current globalPrepared.maximum)}}at-max{{/if}}"
             aria-live="polite">
-            <span class="global-prep-count">
-                {{localize 'SPELLBOOK.Footer.PreparedLabel'}}:
+            <!-- Class-specific preparation counters -->
+            {{#if classPreparationData}}
+                {{#each classPreparationData as |classData|}}
+                    <div class="class-prep-count {{#if classData.isActive}}active-class{{/if}}"
+                        data-class-identifier="{{classData.identifier}}">
+                        <span class="class-name">{{classData.className}}</span>
+                        <span class="class-current">{{classData.current}}</span>/{{classData.maximum}}
+                    </div>
+                {{/each}}
+            {{/if}}
+
+            <!-- Global total -->
+            <div class="global-prep-count">
+                <span class="global-label">{{localize 'SPELLBOOK.Footer.PreparedLabel'}}</span>:
                 <span class="global-current-count" aria-label="{{localize 'SPELLBOOK.Footer.PreparedCount'}}">
                     {{globalPrepared.current}}
                 </span>/{{globalPrepared.maximum}}
-            </span>
+            </div>
         </div>
     {{/if}}
 
