@@ -657,9 +657,8 @@ export class SpellManager {
    * @returns {WizardSpellbookManager|null} The wizard spellbook manager or null
    */
   getWizardManager() {
-    if (!this._wizardManager) {
-      if (this.isWizard) this._wizardManager = new WizardSpellbookManager(this.actor);
-      else return null;
+    if (!this._wizardManager && this.isWizard) {
+      this._wizardManager = new WizardSpellbookManager(this.actor);
     }
     return this._wizardManager;
   }

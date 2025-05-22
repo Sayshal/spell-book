@@ -112,24 +112,30 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   async _registerClassParts() {
-    // Initialize state manager to get spellcasting classes
-    await this._stateManager.detectSpellcastingClasses();
-
-    // Register a part for each spellcasting class
-    if (this._stateManager.spellcastingClasses) {
-      for (const [identifier, classData] of Object.entries(this._stateManager.spellcastingClasses)) {
-        const tabId = `${identifier}Tab`;
-
-        // Add to constructor's PARTS directly
-        this.constructor.PARTS[tabId] = {
-          template: TEMPLATES.PLAYER.TAB_SPELLS,
-          scrollable: [''],
-          data: {
-            classIdentifier: identifier,
-            className: classData.name
-          }
-        };
+    try {
+      // Only detect classes for registration, don't duplicate the full detection
+      if (!this._stateManager._classesDetected) {
+        await this._stateManager.detectSpellcastingClasses();
       }
+
+      // Register a part for each spellcasting class
+      if (this._stateManager.spellcastingClasses) {
+        for (const [identifier, classData] of Object.entries(this._stateManager.spellcastingClasses)) {
+          const tabId = `${identifier}Tab`;
+
+          // Add to constructor's PARTS directly
+          this.constructor.PARTS[tabId] = {
+            template: TEMPLATES.PLAYER.TAB_SPELLS,
+            scrollable: [''],
+            data: {
+              classIdentifier: identifier,
+              className: classData.name
+            }
+          };
+        }
+      }
+    } catch (error) {
+      log(1, 'Error registering class parts:', error);
     }
   }
 
@@ -680,13 +686,23 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   *  spell data from the state manager
+   * Load spell data from the state manager
    * @returns {Promise<void>}
    * @private
    * @async
    */
   async _loadSpellData() {
     try {
+      // Prevent multiple initializations
+      if (this._stateManager._initialized) {
+        log(3, 'State manager already initialized, updating UI only');
+        this.isLoading = false;
+        this.spellLevels = this._stateManager.spellLevels;
+        this.className = this._stateManager.className;
+        this.spellPreparation = this._stateManager.spellPreparation;
+        return;
+      }
+
       await this._stateManager.initialize();
       this.isLoading = this._stateManager.isLoading;
       this.spellLevels = this._stateManager.spellLevels;
