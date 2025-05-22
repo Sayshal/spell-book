@@ -201,7 +201,9 @@ function extractDamageTypes(spell) {
 function checkIsRitual(spell) {
   return Boolean(
     spell.labels?.components?.tags?.includes(game.i18n.localize('DND5E.Item.Property.Ritual')) ||
-      (spell.system.properties && Array.isArray(spell.system.properties) && spell.system.properties.includes('ritual')) ||
+      (spell.system.properties &&
+        Array.isArray(spell.system.properties) &&
+        spell.system.properties.includes('ritual')) ||
       spell.system.components?.ritual
   );
 }
@@ -213,7 +215,11 @@ function checkIsRitual(spell) {
  */
 function checkIsConcentration(spell) {
   if (spell.system.duration?.concentration) return true;
-  return spell.system.properties && Array.isArray(spell.system.properties) && spell.system.properties.includes('concentration');
+  return (
+    spell.system.properties &&
+    Array.isArray(spell.system.properties) &&
+    spell.system.properties.includes('concentration')
+  );
 }
 
 /**

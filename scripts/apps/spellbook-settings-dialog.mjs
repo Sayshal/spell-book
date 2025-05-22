@@ -86,8 +86,14 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     const context = await super._prepareContext(options);
     try {
       context.cantripSettings = this.spellManager.getSettings();
-      context.stats = { maxCantrips: this.spellManager.getMaxAllowed(), currentCount: this.spellManager.getCurrentCount() };
-      log(3, `Current cantrip settings: rules=${context.cantripSettings.rules}, behavior=${context.cantripSettings.behavior}`);
+      context.stats = {
+        maxCantrips: this.spellManager.getMaxAllowed(),
+        currentCount: this.spellManager.getCurrentCount()
+      };
+      log(
+        3,
+        `Current cantrip settings: rules=${context.cantripSettings.rules}, behavior=${context.cantripSettings.behavior}`
+      );
       context.isWizard = !!this.wizardManager?.isWizard;
       log(1, 'Wizard?', context.isWizard);
       context.forceWizardMode = this.actor.getFlag(MODULE.ID, FLAGS.FORCE_WIZARD_MODE) || false;
@@ -142,8 +148,18 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       const actor = this.actor;
       if (!actor) return null;
       log(3, `Saving spellbook settings for ${actor.name}`);
-      const { cantripRules, enforcementBehavior, wizardStartingSpells, wizardSpellsPerLevel, wizardRitualCasting, forceWizardMode } = formData.object;
-      log(3, `New cantrip settings: rules=${cantripRules}, behavior=${enforcementBehavior}, Force wizard mode: ${forceWizardMode}`);
+      const {
+        cantripRules,
+        enforcementBehavior,
+        wizardStartingSpells,
+        wizardSpellsPerLevel,
+        wizardRitualCasting,
+        forceWizardMode
+      } = formData.object;
+      log(
+        3,
+        `New cantrip settings: rules=${cantripRules}, behavior=${enforcementBehavior}, Force wizard mode: ${forceWizardMode}`
+      );
       const spellManager = new SpellManager(actor);
       await spellManager.saveSettings(cantripRules, enforcementBehavior);
       actor.setFlag(MODULE.ID, FLAGS.FORCE_WIZARD_MODE, !!forceWizardMode);
@@ -152,8 +168,10 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       if (isWizard) {
         const previousRitualCasting = actor.getFlag(MODULE.ID, 'wizardRitualCasting') !== false; // Default true
         const updateData = {
-          [`flags.${MODULE.ID}.wizardStartingSpells`]: parseInt(wizardStartingSpells) || WIZARD_DEFAULTS.STARTING_SPELLS,
-          [`flags.${MODULE.ID}.wizardSpellsPerLevel`]: parseInt(wizardSpellsPerLevel) || WIZARD_DEFAULTS.SPELLS_PER_LEVEL,
+          [`flags.${MODULE.ID}.wizardStartingSpells`]:
+            parseInt(wizardStartingSpells) || WIZARD_DEFAULTS.STARTING_SPELLS,
+          [`flags.${MODULE.ID}.wizardSpellsPerLevel`]:
+            parseInt(wizardSpellsPerLevel) || WIZARD_DEFAULTS.SPELLS_PER_LEVEL,
           [`flags.${MODULE.ID}.wizardRitualCasting`]: !!wizardRitualCasting
         };
 
@@ -163,7 +181,9 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       }
 
       ui.notifications.info(game.i18n.format('SPELLBOOK.Settings.Saved', { name: actor.name }));
-      const spellBook = Object.values(foundry.applications.instances).find((w) => w.id === `player-${MODULE.ID}` && w.actor.id === actor.id);
+      const spellBook = Object.values(foundry.applications.instances).find(
+        (w) => w.id === `player-${MODULE.ID}` && w.actor.id === actor.id
+      );
 
       if (spellBook) {
         log(3, 'Refreshing open spell book with new settings');

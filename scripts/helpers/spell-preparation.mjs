@@ -35,8 +35,14 @@ export class SpellManager {
    */
   getSettings() {
     return {
-      rules: this.actor.getFlag(MODULE.ID, FLAGS.CANTRIP_RULES) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_CANTRIP_RULES) || CANTRIP_RULES.LEGACY,
-      behavior: this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || ENFORCEMENT_BEHAVIOR.NOTIFY_GM
+      rules:
+        this.actor.getFlag(MODULE.ID, FLAGS.CANTRIP_RULES) ||
+        game.settings.get(MODULE.ID, SETTINGS.DEFAULT_CANTRIP_RULES) ||
+        CANTRIP_RULES.LEGACY,
+      behavior:
+        this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) ||
+        game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) ||
+        ENFORCEMENT_BEHAVIOR.NOTIFY_GM
     };
   }
 
@@ -49,7 +55,11 @@ export class SpellManager {
     if (!classIdentifier) return 0;
 
     // Find the specific class item
-    const classItem = this.actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier));
+    const classItem = this.actor.items.find(
+      (i) =>
+        i.type === 'class' &&
+        (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier)
+    );
 
     if (!classItem) return 0;
 
@@ -92,28 +102,25 @@ export class SpellManager {
         return Math.min(3, Math.max(2, Math.floor(classLevel / 6) + 1));
       default:
         // For unknown classes, check if they have cantrips
-        const hasCantrips = this.actor.items.some((i) => i.type === 'spell' && i.system.level === 0 && (i.sourceClass === classIdentifier || i.system.sourceClass === classIdentifier));
+        const hasCantrips = this.actor.items.some(
+          (i) =>
+            i.type === 'spell' &&
+            i.system.level === 0 &&
+            (i.sourceClass === classIdentifier || i.system.sourceClass === classIdentifier)
+        );
         // Return a reasonable default if they have cantrips
         return hasCantrips ? 3 : 0;
     }
   }
 
   /**
-   * Calculate maximum prepared spells for the actor
+   * Calculate maximum prepared spells for the actor - REMOVED FALLBACK LOGIC
    * @returns {number} Maximum allowed prepared spells
    */
   getMaxPrepared() {
-    if (!this.classItem) return 0;
-    if (this.classItem.scaleValues) {
-      const maxPrepared = this.classItem.scaleValues['max-prepared']?.value;
-      if (maxPrepared !== undefined) return maxPrepared;
-    }
-
-    const spellcastingAbility = this.classItem.system.spellcasting?.ability;
-    if (!spellcastingAbility) return 0;
-    const abilityMod = this.actor.system.abilities[spellcastingAbility]?.mod || 0;
-    const classLevel = this.classItem.system.levels || this.actor.system.details.level;
-    return Math.max(1, classLevel + abilityMod);
+    // ONLY use the system spellcasting preparation max - no fallbacks
+    if (!this.classItem?.system?.spellcasting?.preparation?.max) return 0;
+    return this.classItem.system.spellcasting.preparation.max;
   }
 
   /**
@@ -186,11 +193,17 @@ export class SpellManager {
     const flags = this.actor.flags?.[MODULE.ID] || {};
 
     if (flags[FLAGS.CANTRIP_RULES] === undefined) {
-      updateData[`flags.${MODULE.ID}.${FLAGS.CANTRIP_RULES}`] = game.settings.get(MODULE.ID, SETTINGS.DEFAULT_CANTRIP_RULES);
+      updateData[`flags.${MODULE.ID}.${FLAGS.CANTRIP_RULES}`] = game.settings.get(
+        MODULE.ID,
+        SETTINGS.DEFAULT_CANTRIP_RULES
+      );
     }
 
     if (flags[FLAGS.ENFORCEMENT_BEHAVIOR] === undefined) {
-      updateData[`flags.${MODULE.ID}.${FLAGS.ENFORCEMENT_BEHAVIOR}`] = game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR);
+      updateData[`flags.${MODULE.ID}.${FLAGS.ENFORCEMENT_BEHAVIOR}`] = game.settings.get(
+        MODULE.ID,
+        SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR
+      );
     }
 
     const isFirstTime = flags[FLAGS.PREVIOUS_LEVEL] === undefined && flags[FLAGS.PREVIOUS_CANTRIP_MAX] === undefined;
@@ -278,7 +291,9 @@ export class SpellManager {
     }
 
     // Try to find the actor spell by source ID or name
-    const actorSpell = this.actor.items.find((i) => i.type === 'spell' && (i.name === spell.name || i.flags?.core?.sourceId === spell.compendiumUuid));
+    const actorSpell = this.actor.items.find(
+      (i) => i.type === 'spell' && (i.name === spell.name || i.flags?.core?.sourceId === spell.compendiumUuid)
+    );
 
     if (!actorSpell) {
       if (spell.system.level === 0) {
@@ -298,7 +313,8 @@ export class SpellManager {
     }
 
     // Check if this spell is prepared for its source class
-    const isPreparedForClass = spellSourceClass && preparedByClass[spellSourceClass]?.includes(spell.compendiumUuid || spell.uuid);
+    const isPreparedForClass =
+      spellSourceClass && preparedByClass[spellSourceClass]?.includes(spell.compendiumUuid || spell.uuid);
 
     if (isPreparedForClass) {
       defaultStatus.prepared = true;
@@ -327,7 +343,8 @@ export class SpellManager {
 
     // Get class-specific prepared spell info
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
-    const isPreparedForClass = spellSourceClass && preparedByClass[spellSourceClass]?.includes(spell.compendiumUuid || spell.uuid);
+    const isPreparedForClass =
+      spellSourceClass && preparedByClass[spellSourceClass]?.includes(spell.compendiumUuid || spell.uuid);
 
     let isCantripLocked = false;
     let cantripLockReason = '';
@@ -514,7 +531,9 @@ export class SpellManager {
       for (const [uuid, data] of Object.entries(spellData)) {
         if (data.isAlwaysPrepared) continue;
         const isRitual = data.isRitual || false;
-        const existingSpell = this.actor.items.find((i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid));
+        const existingSpell = this.actor.items.find(
+          (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid)
+        );
         const spellSourceClass = data.sourceClass || '';
 
         if (!data.isPrepared) {
@@ -525,7 +544,10 @@ export class SpellManager {
                 'system.preparation.mode': 'ritual',
                 'system.preparation.prepared': false
               });
-            } else if (existingSpell.system.preparation?.mode === 'prepared' && !existingSpell.system.preparation?.alwaysPrepared) {
+            } else if (
+              existingSpell.system.preparation?.mode === 'prepared' &&
+              !existingSpell.system.preparation?.alwaysPrepared
+            ) {
               spellIdsToRemove.push(existingSpell.id);
               if (existingSpell.system.level === 0) {
                 cantripChanges.removed.push({ name: existingSpell.name, uuid: uuid });

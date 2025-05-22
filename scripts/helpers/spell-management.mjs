@@ -37,7 +37,10 @@ export async function findCompendiumSpellLists() {
     }
   }
 
-  log(3, `Found ${spellLists.length} total spell lists (${spellLists.filter((l) => l.isActorOwned).length} actor-owned)`);
+  log(
+    3,
+    `Found ${spellLists.length} total spell lists (${spellLists.filter((l) => l.isActorOwned).length} actor-owned)`
+  );
   return spellLists;
 }
 

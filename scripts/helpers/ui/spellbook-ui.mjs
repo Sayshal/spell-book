@@ -81,8 +81,9 @@ export class SpellbookUI {
    */
   setupFilterListeners() {
     try {
-      const filtersContainer = this.element.querySelector('.spell-filters');
+      const filtersContainer = this.element?.querySelector('.spell-filters');
       if (!filtersContainer) return;
+
       filtersContainer.addEventListener('change', (event) => {
         const target = event.target;
         if (target.matches('dnd5e-checkbox') || target.matches('select')) {
@@ -107,24 +108,16 @@ export class SpellbookUI {
   }
 
   /**
-   * Set up event listeners for spell preparation checkboxes
-   */
-  setupPreparationListeners() {
-    try {
-      document.addEventListener('change', async (event) => {
-        const target = event.target;
-        if (target.matches('dnd5e-checkbox[data-uuid]')) await this.app._handlePreparationChange(event);
-      });
-    } catch (error) {
-      log(1, 'Error setting up preparation listeners:', error);
-    }
-  }
-
-  /**
    * Update spell preparation tracking display
    */
   updateSpellPreparationTracking() {
     try {
+      // Early return if element not ready
+      if (!this.element) {
+        log(2, 'Element not ready for spell preparation tracking update');
+        return;
+      }
+
       const activeTab = this.app.tabGroups['spellbook-tabs'];
       if (!activeTab) {
         log(2, 'No active tab found when updating spell preparation tracking');
@@ -133,7 +126,6 @@ export class SpellbookUI {
 
       const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
       if (!activeTabContent) {
-        log(1, 'DEBUG NO TAB CONTENT FOUND', { this: this, element: this.element });
         log(2, `No tab content found for tab "${activeTab}"`);
         return;
       }
@@ -173,45 +165,32 @@ export class SpellbookUI {
         }
       });
 
-      // Update class-specific count in the UI
-      const countDisplay = this.element.querySelector('.spell-prep-tracking');
-      if (!countDisplay) {
-        log(2, 'No spell prep tracking element found');
-        return;
-      }
-
-      const className = classData.className || '';
-      const maxPrepared = classData.spellPreparation?.maximum || 0;
-
-      const currentCountEl = countDisplay.querySelector('.current-count');
-      if (currentCountEl) currentCountEl.textContent = preparedCount;
-
-      // Set class data on the display element
-      countDisplay.dataset.class = className;
-
       // Update class data object with current count
       classData.spellPreparation.current = preparedCount;
 
-      // Update global counts
+      // Update global counts using the state manager method
       this.app._stateManager.updateGlobalPreparationCount();
       const globalPrepared = this.app._stateManager.spellPreparation;
 
       // Update global count in the UI
-      const globalCurrentEl = countDisplay.querySelector('.global-current-count');
-      if (globalCurrentEl) globalCurrentEl.textContent = globalPrepared.current;
+      const countDisplay = this.element.querySelector('.spell-prep-tracking');
+      if (countDisplay) {
+        const globalCurrentEl = countDisplay.querySelector('.global-current-count');
+        if (globalCurrentEl) globalCurrentEl.textContent = globalPrepared.current;
 
-      // Check if global max is reached
-      const isGloballyAtMax = globalPrepared.current >= globalPrepared.maximum;
+        // Check if global max is reached
+        const isGloballyAtMax = globalPrepared.current >= globalPrepared.maximum;
 
-      // Set the at-max class based on global total
-      if (isGloballyAtMax) {
-        countDisplay.classList.add('at-max');
-        this.element.classList.add('at-max-spells');
-        this._disableUnpreparedSpells();
-      } else {
-        countDisplay.classList.remove('at-max');
-        this.element.classList.remove('at-max-spells');
-        this._enableAllSpells();
+        // Set the at-max class based on global total
+        if (isGloballyAtMax) {
+          countDisplay.classList.add('at-max');
+          this.element.classList.add('at-max-spells');
+          this._disableUnpreparedSpells();
+        } else {
+          countDisplay.classList.remove('at-max');
+          this.element.classList.remove('at-max-spells');
+          this._enableAllSpells();
+        }
       }
     } catch (error) {
       log(1, 'Error updating spell preparation tracking:', error);
@@ -267,18 +246,20 @@ export class SpellbookUI {
    */
   updateSpellCounts() {
     try {
+      // Early return if element not ready
+      if (!this.element) {
+        log(2, 'Element not ready for spell counts update');
+        return;
+      }
+
       const activeTab = this.app.tabGroups['spellbook-tabs'];
       if (!activeTab) {
         log(2, 'No active tab found when updating spell counts');
         return;
       }
 
-      // Add debug logging
-      log(2, 'updateSpellCounts: DEBUG', { activeTab, activeTabContent: this?.element?.querySelector(`.tab[data-tab="${activeTab}"]`) });
-
-      const activeTabContent = this?.element?.querySelector(`.tab[data-tab="${activeTab}"]`);
+      const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
       if (!activeTabContent) {
-        log(1, 'DEBUG NO TAB CONTENT FOUND', { this: this, element: this.element });
         log(2, `No tab content found for tab "${activeTab}"`);
         return;
       }
@@ -370,7 +351,10 @@ export class SpellbookUI {
         if (existingInfo) existingInfo.remove();
         const infoElement = document.createElement('div');
         infoElement.className = 'wizard-rules-info';
-        const ruleKey = cantripRules === CANTRIP_RULES.MODERN_LONG_REST ? 'SPELLBOOK.Wizard.ModernCantripRules' : 'SPELLBOOK.Wizard.LegacyCantripRules';
+        const ruleKey =
+          cantripRules === CANTRIP_RULES.MODERN_LONG_REST ?
+            'SPELLBOOK.Wizard.ModernCantripRules'
+          : 'SPELLBOOK.Wizard.LegacyCantripRules';
         infoElement.innerHTML = `<i class="fas fa-info-circle"></i> ${game.i18n.localize(ruleKey)}`;
         const levelHeading = cantripLevel.querySelector('.spell-level-heading');
         if (levelHeading) levelHeading.appendChild(infoElement);
@@ -388,6 +372,12 @@ export class SpellbookUI {
    */
   updateCantripCounter(cantripLevel, skipLockSetup = false) {
     try {
+      // Early return if element not ready
+      if (!this.element) {
+        log(2, 'Element not ready for cantrip counter update');
+        return { current: 0, max: 0 };
+      }
+
       if (!cantripLevel) {
         const activeTab = this.app.tabGroups['spellbook-tabs'];
         if (!activeTab) {
@@ -397,7 +387,6 @@ export class SpellbookUI {
 
         const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
         if (!activeTabContent) {
-          log(1, 'DEBUG NO TAB CONTENT FOUND', { this: this, element: this.element });
           log(2, `No tab content found for tab "${activeTab}"`);
           return { current: 0, max: 0 };
         }

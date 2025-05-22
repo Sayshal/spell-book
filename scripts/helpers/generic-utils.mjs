@@ -22,7 +22,12 @@ export function isWizard(actor) {
  * @returns {string} The spell's UUID
  */
 export function getSpellUuid(spell) {
-  return spell.flags?.core?.sourceId || spell.flags?.dnd5e?.sourceId || spell.system?.parent?._source._stats.compendiumSource || spell.uuid;
+  return (
+    spell.flags?.core?.sourceId ||
+    spell.flags?.dnd5e?.sourceId ||
+    spell.system?.parent?._source._stats.compendiumSource ||
+    spell.uuid
+  );
 }
 
 /**
@@ -74,7 +79,9 @@ export function parseSpellUuid(uuid) {
  * @returns {Item5e|null} - The spellcasting class item or null
  */
 export function findSpellcastingClass(actor) {
-  return actor.items.find((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
+  return actor.items.find(
+    (i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none'
+  );
 }
 
 /**

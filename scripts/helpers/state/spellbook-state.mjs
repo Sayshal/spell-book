@@ -390,7 +390,9 @@ export class SpellbookState {
 
       // Hide cantrips for classes that don't have them
       if (this._shouldHideCantrips(identifier)) {
-        this.classSpellData[identifier].spellLevels = spellLevels.filter((level) => level.level !== '0' && level.level !== 0);
+        this.classSpellData[identifier].spellLevels = spellLevels.filter(
+          (level) => level.level !== '0' && level.level !== 0
+        );
       }
 
       log(3, `Processed ${spellItems.length} spells for class ${classItem.name}`);
@@ -409,12 +411,9 @@ export class SpellbookState {
   calculatePreparationStats(classIdentifier, spellLevels, classItem) {
     try {
       let preparedCount = 0;
-      let maxPrepared = 0;
 
-      // Use the system's calculation for max prepared spells
-      if (classItem && classItem.system.spellcasting?.preparation) {
-        maxPrepared = classItem.system.spellcasting.preparation.max || 0;
-      }
+      // ONLY use the system's spellcasting preparation max - no fallbacks
+      const maxPrepared = classItem?.system?.spellcasting?.preparation?.max || 0;
 
       // Count prepared spells for this specific class
       for (const level of spellLevels) {
@@ -422,7 +421,11 @@ export class SpellbookState {
 
         for (const spell of level.spells) {
           // Only count spells with this class as their source class
-          if (spell.preparation?.prepared && spell.sourceClass === classIdentifier && !spell.preparation?.alwaysPrepared) {
+          if (
+            spell.preparation?.prepared &&
+            spell.sourceClass === classIdentifier &&
+            !spell.preparation?.alwaysPrepared
+          ) {
             preparedCount++;
           }
         }
@@ -436,18 +439,25 @@ export class SpellbookState {
   }
 
   /**
-   * Update the global prepared spell count
+   * Update the global prepared spell count using ONLY system spellcasting preparation max values
    */
   updateGlobalPreparationCount() {
     try {
       let totalPrepared = 0;
       let totalMaxPrepared = 0;
 
-      // Sum up prepared spells and max prepared counts from all classes
+      // Sum up the system spellcasting preparation max from all spellcasting classes
+      for (const [identifier, classData] of Object.entries(this.spellcastingClasses)) {
+        const classItem = this.actor.items.get(classData.id);
+        if (classItem?.system?.spellcasting?.preparation?.max) {
+          totalMaxPrepared += classItem.system.spellcasting.preparation.max;
+        }
+      }
+
+      // Sum up current prepared counts from all classes
       for (const [identifier, classData] of Object.entries(this.classSpellData)) {
         if (classData.spellPreparation) {
           totalPrepared += classData.spellPreparation.current;
-          totalMaxPrepared += classData.spellPreparation.maximum;
         }
       }
 
@@ -530,7 +540,10 @@ export class SpellbookState {
     const cantripLevelUp = this.app.spellManager.checkForLevelUp();
     if (cantripLevelUp) {
       const settings = this.app.spellManager.getSettings();
-      const message = settings.rules === CANTRIP_RULES.DEFAULT ? 'SPELLBOOK.Cantrips.LevelUpDefault' : 'SPELLBOOK.Cantrips.LevelUpModern';
+      const message =
+        settings.rules === CANTRIP_RULES.DEFAULT ?
+          'SPELLBOOK.Cantrips.LevelUpDefault'
+        : 'SPELLBOOK.Cantrips.LevelUpModern';
       ui.notifications.info(game.i18n.localize(message));
     }
   }
@@ -610,7 +623,12 @@ export class SpellbookState {
       tabData.wizardbook.wizardHasFreeSpells = remainingFreeSpells > 0;
 
       const grantedSpells = this.actor.items
-        .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.preparation?.mode && ['pact', 'innate', 'atwill'].includes(i.system.preparation.mode))))
+        .filter(
+          (i) =>
+            i.type === 'spell' &&
+            (i.flags?.dnd5e?.cachedFor ||
+              (i.system?.preparation?.mode && ['pact', 'innate', 'atwill'].includes(i.system.preparation.mode)))
+        )
         .map((i) => i.flags?.core?.sourceId || i.uuid)
         .filter(Boolean);
 
@@ -619,8 +637,15 @@ export class SpellbookState {
         spell.sourceClass = identifier; // Use identifier instead of ID
       }
 
-      const prepTabSpells = allSpellItems.filter((spell) => spell.system.level === 0 || personalSpellbook.includes(spell.compendiumUuid) || grantedSpells.includes(spell.compendiumUuid));
-      const wizardbookSpells = allSpellItems.filter((spell) => this._fullWizardSpellList.has(spell.compendiumUuid) && spell.system.level !== 0);
+      const prepTabSpells = allSpellItems.filter(
+        (spell) =>
+          spell.system.level === 0 ||
+          personalSpellbook.includes(spell.compendiumUuid) ||
+          grantedSpells.includes(spell.compendiumUuid)
+      );
+      const wizardbookSpells = allSpellItems.filter(
+        (spell) => this._fullWizardSpellList.has(spell.compendiumUuid) && spell.system.level !== 0
+      );
       const prepLevels = actorSpellUtils.organizeSpellsByLevel(prepTabSpells, this.actor, this.app.spellManager);
       const wizardLevels = actorSpellUtils.organizeSpellsByLevel(wizardbookSpells, null, this.app.spellManager);
       const maxSpellsAllowed = this.app.wizardManager.getMaxSpellsAllowed();

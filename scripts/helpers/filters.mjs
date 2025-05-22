@@ -105,10 +105,22 @@ export function getOptionsForFilter(filterId, filterState, spellLevels) {
 
     case 'sortBy':
       options.push(
-        { value: 'level', label: game.i18n.localize('SPELLBOOK.Sort.ByLevel'), selected: filterState.sortBy === 'level' },
+        {
+          value: 'level',
+          label: game.i18n.localize('SPELLBOOK.Sort.ByLevel'),
+          selected: filterState.sortBy === 'level'
+        },
         { value: 'name', label: game.i18n.localize('SPELLBOOK.Sort.ByName'), selected: filterState.sortBy === 'name' },
-        { value: 'school', label: game.i18n.localize('SPELLBOOK.Sort.BySchool'), selected: filterState.sortBy === 'school' },
-        { value: 'prepared', label: game.i18n.localize('SPELLBOOK.Sort.ByPrepared'), selected: filterState.sortBy === 'prepared' }
+        {
+          value: 'school',
+          label: game.i18n.localize('SPELLBOOK.Sort.BySchool'),
+          selected: filterState.sortBy === 'school'
+        },
+        {
+          value: 'prepared',
+          label: game.i18n.localize('SPELLBOOK.Sort.ByPrepared'),
+          selected: filterState.sortBy === 'prepared'
+        }
       );
       break;
   }

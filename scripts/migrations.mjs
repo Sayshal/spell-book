@@ -77,7 +77,12 @@ async function migrateDocument(doc, validFlags) {
 
   // Check each flag
   for (const [key, value] of Object.entries(flags)) {
-    if (!validFlags.includes(key) || value === null || value === undefined || (typeof value === 'object' && Object.keys(value).length === 0)) {
+    if (
+      !validFlags.includes(key) ||
+      value === null ||
+      value === undefined ||
+      (typeof value === 'object' && Object.keys(value).length === 0)
+    ) {
       updates[`flags.${MODULE.ID}.-=${key}`] = null;
       updated = true;
       log(3, `Removing invalid flag "${key}" from ${doc.documentName} "${doc.name}"`);

@@ -116,7 +116,8 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   static getValidConfiguration() {
     try {
       const config = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
-      if (!config || !Array.isArray(config) || config.length === 0) return foundry.utils.deepClone(DEFAULT_FILTER_CONFIG);
+      if (!config || !Array.isArray(config) || config.length === 0)
+        return foundry.utils.deepClone(DEFAULT_FILTER_CONFIG);
       return config;
     } catch (error) {
       log(1, 'Error retrieving configuration, using defaults:', error);
@@ -137,7 +138,12 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       }
 
       this.config = this.config.map((filter) => {
-        const sortable = !(filter.id === 'name' || filter.id === 'prepared' || filter.id === 'ritual' || filter.id === 'sortBy');
+        const sortable = !(
+          filter.id === 'name' ||
+          filter.id === 'prepared' ||
+          filter.id === 'ritual' ||
+          filter.id === 'sortBy'
+        );
 
         const checkbox = document.createElement('dnd5e-checkbox');
         checkbox.name = `enabled-${filter.id}`;
@@ -325,7 +331,8 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
           const box = child.getBoundingClientRect();
           const offset = event.clientY - (box.top + box.height / 2);
 
-          if (closest === null || Math.abs(offset) < Math.abs(closest.offset)) return { element: child, offset: offset };
+          if (closest === null || Math.abs(offset) < Math.abs(closest.offset))
+            return { element: child, offset: offset };
           else return closest;
         }, null)?.element || null
       );
@@ -467,7 +474,10 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       for (const filter of filterConfig) {
         const enabledKey = `enabled-${filter.id}`;
         const enabled = formData[enabledKey] === true;
-        const sortable = filter.sortable !== undefined ? filter.sortable : !['name', 'prepared', 'ritual', 'sortBy'].includes(filter.id);
+        const sortable =
+          filter.sortable !== undefined ?
+            filter.sortable
+          : !['name', 'prepared', 'ritual', 'sortBy'].includes(filter.id);
 
         const updatedFilter = {
           ...filter,
@@ -552,7 +562,10 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
     try {
       const currentConfig = PlayerFilterConfiguration.getValidConfiguration();
-      const { sortableFilters, nonSortableFilters } = PlayerFilterConfiguration.processSortableFilters(currentConfig, formData.object);
+      const { sortableFilters, nonSortableFilters } = PlayerFilterConfiguration.processSortableFilters(
+        currentConfig,
+        formData.object
+      );
       const sortedFilters = PlayerFilterConfiguration.updateFilterOrder(sortableFilters, form);
 
       const updatedConfig = [

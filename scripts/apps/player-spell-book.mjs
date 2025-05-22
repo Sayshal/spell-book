@@ -451,10 +451,16 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         });
       }
 
-      // Set up UI
+      // Set up UI - only once
       this.ui.positionFooter();
       this.ui.setupFilterListeners();
-      this.ui.setupPreparationListeners();
+
+      // Only set up preparation listeners once
+      if (!this._preparationListenersSetup) {
+        this.setupPreparationListeners();
+        this._preparationListenersSetup = true;
+      }
+
       this.ui.applyCollapsedLevels();
       this._applyFilters();
       this.ui.updateSpellPreparationTracking();
@@ -495,6 +501,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   _onClose() {
     try {
+      // Clean up event listeners
+      if (this._preparationListener) {
+        document.removeEventListener('change', this._preparationListener);
+        this._preparationListener = null;
+      }
+
       if (this._isLongRest) {
         this.actor.unsetFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING);
       }
@@ -506,6 +518,32 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       super._onClose();
     } catch (error) {
       log(1, 'Error in _onClose:', error);
+    }
+  }
+
+  /**
+   * Set up event listeners for spell preparation checkboxes
+   * Only set up once to prevent multiple handlers
+   */
+  setupPreparationListeners() {
+    try {
+      // Remove existing listener if it exists
+      if (this._preparationListener) {
+        document.removeEventListener('change', this._preparationListener);
+      }
+
+      // Create and store the listener
+      this._preparationListener = async (event) => {
+        const target = event.target;
+        if (target.matches('dnd5e-checkbox[data-uuid]')) {
+          await this._handlePreparationChange(event);
+        }
+      };
+
+      // Add the listener
+      document.addEventListener('change', this._preparationListener);
+    } catch (error) {
+      log(1, 'Error setting up preparation listeners:', error);
     }
   }
 
@@ -797,19 +835,35 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   async _handlePreparationChange(event) {
     try {
+      // Prevent multiple executions during the same event
+      if (this._handlingPreparation) return;
+      this._handlingPreparation = true;
+
       const checkbox = event.target;
       const uuid = checkbox.dataset.uuid;
       const sourceClass = checkbox.dataset.sourceClass;
       const spellItem = checkbox.closest('.spell-item');
       const spellName = spellItem?.querySelector('.spell-name')?.textContent.trim() || 'unknown';
       const spellLevel = spellItem?.dataset.spellLevel;
-      if (spellLevel === '0') await this._handleCantripPreparationChange(event, uuid, spellItem);
-      else if (spellItem) spellItem.classList.toggle('prepared-spell', checkbox.checked);
-      this.ui.updateSpellPreparationTracking();
-      this.ui.updateSpellCounts();
-      this.render(false, { parts: ['footer'] });
+
+      if (spellLevel === '0') {
+        await this._handleCantripPreparationChange(event, uuid, spellItem);
+      } else if (spellItem) {
+        spellItem.classList.toggle('prepared-spell', checkbox.checked);
+      }
+
+      // Only update UI if element is ready
+      if (this.element) {
+        this.ui.updateSpellPreparationTracking();
+        this.ui.updateSpellCounts();
+
+        // Only re-render footer, not the whole app
+        this.render(false, { parts: ['footer'] });
+      }
     } catch (error) {
       log(1, 'Error handling preparation change:', error);
+    } finally {
+      this._handlingPreparation = false;
     }
   }
 
