@@ -265,7 +265,6 @@
     margin-left: 0;
     overflow-x: visible;
     background: var(--spell-book-bg-primary);
-    border-right: 1px solid var(--color-border-light);
     box-shadow: var(--spell-book-shadow-normal);
     transform: translateZ(0);
     transition: margin-left 450ms ease;
@@ -444,7 +443,7 @@
   .no-filter-results {
     margin-top: 1rem;
     color: var(--color-text-dark-secondary);
-    border: 1px dashed var(--color-border-light);
+    border: 1px dashed var(--color-light-2);
     border-radius: var(--spell-book-border-radius);
   }
 
@@ -507,7 +506,7 @@
     color: var(--spell-book-text-primary);
     cursor: pointer;
     user-select: none;
-    border-bottom: 1px solid var(--color-border-light);
+    border-bottom: 1px solid var(--color-light-2);
 
     .spell-count {
       margin-left: 0.5rem;
@@ -1048,7 +1047,7 @@
   margin-bottom: 0.5rem;
   font-size: 1.2em;
   color: var(--spell-book-text-primary);
-  border-bottom: 1px solid var(--color-border-light);
+  border-bottom: 1px solid var(--color-light-2);
 }
 
 .wizard-spell-list {
@@ -1210,7 +1209,7 @@
     width: 100%;
     padding-top: 0.75rem;
     margin-top: auto;
-    border-top: 1px solid var(--color-border-light);
+    border-top: 1px solid var(--color-light-2);
 
     .footer-buttons {
       display: flex;
@@ -1239,39 +1238,93 @@
   .spellbook-settings-form {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.5rem;
     padding: 1rem;
     max-height: 70vh;
     overflow-y: auto;
   }
 
-  .settings-section {
+  /* Fieldset styling */
+  .settings-fieldset {
+    margin: 0;
     padding: 1rem;
-    background: var(--spell-book-bg-item);
+    border: 1px solid var(--color-light-2);
     border-radius: var(--spell-book-border-radius);
-    border: 1px solid var(--color-border-light-tertiary);
+    background: var(--spell-book-bg-item);
 
-    h3 {
-      margin: 0 0 1rem;
-      padding-bottom: 0.5rem;
-      font-size: 1.2em;
+    legend {
+      padding: 0 0.5rem;
+      font-size: 1.1em;
+      font-weight: bold;
       color: var(--spell-book-text-primary);
-      border-bottom: 1px solid var(--color-border-light-tertiary);
     }
 
-    .section-description {
-      margin-bottom: 1rem;
+    .fieldset-description {
+      margin: 0 0 1rem;
       font-style: italic;
       color: var(--spell-book-text-secondary);
     }
   }
 
-  .class-settings-group {
+  /* Setting row - the core of our new layout */
+  .setting-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    border-radius: var(--spell-book-border-radius);
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: var(--spell-book-bg-item-hover);
+    }
+
+    &.disabled {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    label {
+      flex: 1;
+      font-weight: 500;
+      color: var(--spell-book-text-primary);
+      cursor: pointer;
+    }
+
+    .setting-tooltip {
+      flex: 0 0 auto;
+      color: var(--color-text-dark-secondary);
+      cursor: help;
+      font-size: 0.9em;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: var(--color-border-highlight);
+      }
+    }
+
+    select,
+    input[type='checkbox'],
+    input[type='number'] {
+      flex: 2 1 5px;
+    }
+
+    input[type='checkbox'] {
+      min-width: auto;
+      width: 1.25rem;
+      height: 1.25rem;
+      cursor: pointer;
+    }
+  }
+
+  /* Class-specific sections */
+  .class-settings-section {
     margin-bottom: 2rem;
     padding: 1rem;
     background: var(--spell-book-bg-primary);
     border-radius: var(--spell-book-border-radius);
-    border: 1px solid var(--color-border-light);
+    border: 1px solid var(--color-border-light-tertiary);
 
     &:last-child {
       margin-bottom: 0;
@@ -1287,8 +1340,8 @@
     border-bottom: 1px solid var(--color-border-light-tertiary);
 
     .class-icon {
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
       border: 2px solid var(--dnd5e-color-gold);
       object-fit: cover;
@@ -1297,7 +1350,6 @@
     h4 {
       flex: 1;
       margin: 0;
-      font-size: 1.1em;
       color: var(--spell-book-text-primary);
     }
 
@@ -1306,91 +1358,45 @@
       flex-direction: column;
       align-items: flex-end;
       gap: 0.25rem;
-      font-size: 0.85em;
+      font-size: 0.8em;
+      color: var(--spell-book-text-secondary);
 
-      .cantrip-count {
-        color: var(--spell-book-text-secondary);
-      }
-
-      .preparation-bonus {
-        color: var(--spell-book-text-secondary);
-
-        &.has-bonus {
-          font-weight: bold;
-          color: var(--color-level-info);
-        }
-      }
-    }
-  }
-
-  .class-rules-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-
-      &.disabled {
-        opacity: 0.6;
-        pointer-events: none;
-      }
-
-      label {
+      .has-bonus {
         font-weight: bold;
-        color: var(--spell-book-text-primary);
+        color: var(--color-level-info);
       }
-
-      .hint {
-        margin: 0;
-        font-size: 0.85em;
-        font-style: italic;
-        color: var(--spell-book-text-secondary);
-      }
-
-      select,
-      input[type='number'] {
-        width: 100%;
-        padding: 0.5rem;
-        font-size: var(--spell-book-font-md);
-      }
-
-      input[type='checkbox'] {
-        width: auto;
-        margin: 0;
-      }
-    }
-
-    /* Full width elements */
-    .form-group:has(.preparation-bonus-controls) {
-      grid-column: 1 / -1;
     }
   }
 
+  .class-settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Preparation bonus controls styling */
   .preparation-bonus-controls {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    width: fit-content;
+    min-width: 140px;
 
     .prep-bonus-decrease,
     .prep-bonus-increase {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       padding: 0;
-      font-size: 1.2em;
+      font-size: 1.1em;
       font-weight: bold;
       cursor: pointer;
       background: var(--color-button);
       color: var(--color-text-button);
-      border: 1px solid var(--color-border-light);
+      border: 1px solid var(--color-light-2);
       border-radius: 4px;
-      transition: var(--spell-book-transition-normal);
+      transition: all 0.2s ease;
 
       &:hover {
         background: var(--color-button-hover);
@@ -1403,13 +1409,14 @@
     }
 
     .prep-bonus-input {
-      width: 80px;
+      width: 60px;
+      min-width: 60px;
       text-align: center;
       font-weight: bold;
     }
   }
 
-  .submit-group {
+  .submit-section {
     margin-top: 1rem;
     padding-top: 1rem;
     border-top: 1px solid var(--color-border-light-tertiary);
