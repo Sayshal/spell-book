@@ -16,16 +16,19 @@ export const MODULE = {
 export const FLAGS = {
   CANTRIP_RULES: 'cantripRules',
   CANTRIP_SWAP_TRACKING: 'cantripSwapTracking',
+  CLASS_RULES: 'classRules',
   COLLAPSED_FOLDERS: 'collapsedFolders',
   COLLAPSED_LEVELS: 'collapsedSpellLevels',
   ENFORCEMENT_BEHAVIOR: 'enforcementBehavior',
   FORCE_WIZARD_MODE: 'forceWizardMode',
   GM_COLLAPSED_LEVELS: 'gmCollapsedSpellLevels',
-  PREPARED_SPELLS: 'preparedSpells',
   PREPARED_SPELLS_BY_CLASS: 'preparedSpellsByClass',
+  PREPARED_SPELLS: 'preparedSpells',
   PREVIOUS_CANTRIP_MAX: 'previousCantripMax',
   PREVIOUS_LEVEL: 'previousLevel',
+  RULE_SET_OVERRIDE: 'ruleSetOverride',
   SIDEBAR_COLLAPSED: 'sidebarCollapsed',
+  SWAP_TRACKING: 'swapTracking',
   WIZARD_COPIED_SPELLS: 'wizardCopiedSpells',
   WIZARD_LEARNED_SPELLS: 'wizardLearnedSpells',
   WIZARD_LONG_REST_TRACKING: 'wizardLongRestTracking',
@@ -74,7 +77,10 @@ export const TEMPLATES = {
 export const SETTINGS = {
   CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',
   DEFAULT_CANTRIP_RULES: 'defaultCantripRules',
+  DEFAULT_CANTRIP_SWAPPING: 'defaultCantripSwapping',
   DEFAULT_ENFORCEMENT_BEHAVIOR: 'defaultEnforcementBehavior',
+  DEFAULT_RITUAL_CASTING: 'defaultRitualCasting',
+  DEFAULT_SPELL_SWAPPING: 'defaultSpellSwapping',
   DISABLE_CANTRIP_SWAP_PROMPT: 'disableCantripSwapPrompt',
   DISTANCE_UNIT: 'distanceUnit',
   ENABLE_JOURNAL_BUTTON: 'enableJournalButton',
@@ -82,7 +88,8 @@ export const SETTINGS = {
   FILTER_CONFIGURATION: 'filterConfiguration',
   LOGGING_LEVEL: 'loggingLevel',
   OPEN_SPELL_MANAGER: 'openSpellListManager',
-  RUN_MIGRATIONS: 'runMigrations'
+  RUN_MIGRATIONS: 'runMigrations',
+  SPELLCASTING_RULE_SET: 'spellcastingRuleSet'
 };
 
 /**
@@ -265,4 +272,43 @@ export const CLASS_IDENTIFIERS = {
   SORCERER: 'sorcerer',
   WARLOCK: 'warlock',
   WIZARD: 'wizard'
+};
+
+/**
+ * Spellcasting rule set options
+ * @type {Object}
+ */
+export const RULE_SETS = {
+  LEGACY: 'legacy',
+  MODERN: 'modern'
+};
+
+/**
+ * Cantrip swapping timing options
+ * @type {Object}
+ */
+export const CANTRIP_SWAP_TIMING = {
+  NONE: 'none',
+  LEVEL_UP: 'levelUp',
+  LONG_REST: 'longRest'
+};
+
+/**
+ * Spell swapping modes
+ * @type {Object}
+ */
+export const SPELL_SWAP_MODES = {
+  NONE: 'none',
+  LEVEL_UP: 'levelUp',
+  LONG_REST: 'longRest'
+};
+
+/**
+ * Ritual casting modes
+ * @type {Object}
+ */
+export const RITUAL_CASTING_MODES = {
+  NONE: 'none',
+  PREPARED: 'prepared',
+  ALWAYS: 'always'
 };

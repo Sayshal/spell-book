@@ -3,6 +3,7 @@ import { log } from '../logger.mjs';
 import { CantripManager } from './cantrip-manager.mjs';
 import * as genericUtils from './generic-utils.mjs';
 import { RitualManager } from './ritual-manager.mjs';
+import { RuleSetManager } from './rule-set-manager.mjs';
 import * as formattingUtils from './spell-formatting.mjs';
 import { WizardSpellbookManager } from './wizard-spellbook.mjs';
 
@@ -33,7 +34,23 @@ export class SpellManager {
    * Get cantrip and spell settings for the actor
    * @returns {Object} Actor's spell settings
    */
-  getSettings() {
+  getSettings(classIdentifier = null) {
+    if (classIdentifier) {
+      // Get class-specific rules
+      const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
+      return {
+        cantripSwapping: classRules.cantripSwapping,
+        spellSwapping: classRules.spellSwapping,
+        ritualCasting: classRules.ritualCasting,
+        showCantrips: classRules.showCantrips,
+        behavior:
+          this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) ||
+          game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) ||
+          ENFORCEMENT_BEHAVIOR.NOTIFY_GM
+      };
+    }
+
+    // Fallback to legacy behavior for backwards compatibility
     return {
       rules:
         this.actor.getFlag(MODULE.ID, FLAGS.CANTRIP_RULES) ||
@@ -189,30 +206,23 @@ export class SpellManager {
    * @returns {Promise<Object>} Update data applied, if any
    */
   async initializeFlags() {
+    // Initialize class rules for any new spellcasting classes
+    await RuleSetManager.initializeNewClasses(this.actor);
+
+    // Keep existing flag initialization for backwards compatibility
     const updateData = {};
     const flags = this.actor.flags?.[MODULE.ID] || {};
 
-    if (flags[FLAGS.CANTRIP_RULES] === undefined) {
-      updateData[`flags.${MODULE.ID}.${FLAGS.CANTRIP_RULES}`] = game.settings.get(
-        MODULE.ID,
-        SETTINGS.DEFAULT_CANTRIP_RULES
-      );
+    // Migration: Convert old cantrip rules to new class-based system
+    if (flags[FLAGS.CANTRIP_RULES] && !flags[FLAGS.CLASS_RULES]) {
+      // This will be handled by a migration script later
+      log(1, 'WARNING: Found legacy cantrip rules, migration needed');
     }
 
-    if (flags[FLAGS.ENFORCEMENT_BEHAVIOR] === undefined) {
-      updateData[`flags.${MODULE.ID}.${FLAGS.ENFORCEMENT_BEHAVIOR}`] = game.settings.get(
-        MODULE.ID,
-        SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR
-      );
+    if (Object.keys(updateData).length > 0) {
+      await this.actor.update(updateData);
     }
 
-    const isFirstTime = flags[FLAGS.PREVIOUS_LEVEL] === undefined && flags[FLAGS.PREVIOUS_CANTRIP_MAX] === undefined;
-    if (isFirstTime) {
-      updateData[`flags.${MODULE.ID}.${FLAGS.PREVIOUS_LEVEL}`] = this.actor.system.details.level;
-      updateData[`flags.${MODULE.ID}.${FLAGS.PREVIOUS_CANTRIP_MAX}`] = this.getMaxAllowed();
-    }
-
-    if (Object.keys(updateData).length > 0) await this.actor.update(updateData);
     return updateData;
   }
 

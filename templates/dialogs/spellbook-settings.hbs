@@ -1,107 +1,193 @@
 <div class="spellbook-settings-form">
   <h2>{{localize 'SPELLBOOK.Settings.Title' name=actor.name}}</h2>
 
-  {{!-- Character Stats --}}
-  <div class="spellbook-stats">
-    <p>{{localize 'SPELLBOOK.Cantrips.ActorStats' name=actor.name count=stats.currentCount max=stats.maxCantrips}}</p>
-  </div>
-
-  {{!-- Cantrip Settings --}}
-  <div class="settings-section cantrip-settings">
-    <h3>{{localize 'SPELLBOOK.Cantrips.SectionTitle'}}</h3>
+  {{!-- Global Rule Set Override --}}
+  <div class="settings-section rule-set-section">
+    <h3>{{localize 'SPELLBOOK.Settings.GlobalRules'}}</h3>
 
     <div class="form-group">
-      <label>{{localize 'SPELLBOOK.Cantrips.RulesLabel'}}</label>
+      <label>{{localize 'SPELLBOOK.Settings.RuleSetOverride.Label'}}</label>
       <div class="form-fields">
-        <select name="cantripRules">
-          <option value="{{CANTRIP_RULES.LEGACY}}"
-            {{#if (eq cantripSettings.rules CANTRIP_RULES.LEGACY)}}selected{{/if}}>
-            {{localize 'SPELLBOOK.Cantrips.RulesLegacy'}}
+        <select name="ruleSetOverride">
+          <option value="global" {{#unless ruleSetOverride}}selected{{/unless}}>
+            {{localize 'SPELLBOOK.Settings.RuleSetOverride.Global'}} ({{currentRuleSetLabel}})
           </option>
-          <option value="{{CANTRIP_RULES.MODERN_LEVEL_UP}}"
-            {{#if (eq cantripSettings.rules CANTRIP_RULES.MODERN_LEVEL_UP)}}selected{{/if}}>
-            {{localize 'SPELLBOOK.Cantrips.RulesModernLevelUp'}}
+          <option value="{{RULE_SETS.LEGACY}}" {{#if (eq ruleSetOverride RULE_SETS.LEGACY)}}selected{{/if}}>
+            {{localize 'SPELLBOOK.Settings.SpellcastingRuleSet.Legacy'}}
           </option>
-          <option value="{{CANTRIP_RULES.MODERN_LONG_REST}}"
-            {{#if (eq cantripSettings.rules CANTRIP_RULES.MODERN_LONG_REST)}}selected{{/if}}
-            {{#unless isWizard}}disabled{{/unless}}>
-            {{localize 'SPELLBOOK.Cantrips.RulesModernLongRest'}}
-            {{#unless isWizard}}({{localize 'SPELLBOOK.Cantrips.WizardOnly'}}){{/unless}}
+          <option value="{{RULE_SETS.MODERN}}" {{#if (eq ruleSetOverride RULE_SETS.MODERN)}}selected{{/if}}>
+            {{localize 'SPELLBOOK.Settings.SpellcastingRuleSet.Modern'}}
           </option>
         </select>
       </div>
-      <p class="hint">{{localize 'SPELLBOOK.Cantrips.RulesHint'}}</p>
+      <p class="hint">{{localize 'SPELLBOOK.Settings.RuleSetOverride.Hint'}}</p>
     </div>
 
     <div class="form-group">
-      <label>{{localize 'SPELLBOOK.Cantrips.EnforcementLabel'}}</label>
+      <label>{{localize 'SPELLBOOK.Settings.EnforcementBehavior.Label'}}</label>
       <div class="form-fields">
         <select name="enforcementBehavior">
+          <option value="global" {{#unless enforcementBehavior}}selected{{/unless}}>
+            {{localize 'SPELLBOOK.Settings.EnforcementBehavior.Global'}}
+          </option>
           <option value="{{ENFORCEMENT_BEHAVIOR.UNENFORCED}}"
-            {{#if (eq cantripSettings.behavior ENFORCEMENT_BEHAVIOR.UNENFORCED)}}selected{{/if}}>
+            {{#if (eq enforcementBehavior ENFORCEMENT_BEHAVIOR.UNENFORCED)}}selected{{/if}}>
             {{localize 'SPELLBOOK.Cantrips.BehaviorUnenforced'}}
           </option>
           <option value="{{ENFORCEMENT_BEHAVIOR.NOTIFY_GM}}"
-            {{#if (eq cantripSettings.behavior ENFORCEMENT_BEHAVIOR.NOTIFY_GM)}}selected{{/if}}>
+            {{#if (eq enforcementBehavior ENFORCEMENT_BEHAVIOR.NOTIFY_GM)}}selected{{/if}}>
             {{localize 'SPELLBOOK.Cantrips.BehaviorNotifyGM'}}
           </option>
           <option value="{{ENFORCEMENT_BEHAVIOR.ENFORCED}}"
-            {{#if (eq cantripSettings.behavior ENFORCEMENT_BEHAVIOR.ENFORCED)}}selected{{/if}}>
+            {{#if (eq enforcementBehavior ENFORCEMENT_BEHAVIOR.ENFORCED)}}selected{{/if}}>
             {{localize 'SPELLBOOK.Cantrips.BehaviorEnforced'}}
           </option>
         </select>
       </div>
-      <p class="hint">{{localize 'SPELLBOOK.Cantrips.EnforcementHint'}}</p>
+      <p class="hint">{{localize 'SPELLBOOK.Settings.EnforcementBehavior.Hint'}}</p>
     </div>
   </div>
 
-  {{!-- Always show this option, even if not currently detected as wizard --}}
-  <div class="settings-section class-settings">
-    <h3>{{localize 'SPELLBOOK.Settings.ClassSettingsTitle'}}</h3>
+  {{!-- Per-Class Settings --}}
+  {{#if spellcastingClasses.length}}
+    <div class="settings-section class-rules-section">
+      <h3>{{localize 'SPELLBOOK.Settings.ClassRules.Title'}}</h3>
+      <p class="section-description">{{localize 'SPELLBOOK.Settings.ClassRules.Description'}}</p>
 
-    <div class="form-group">
-      <label>{{localize 'SPELLBOOK.Settings.ForceWizardMode'}}</label>
-      <div class="form-fields">
-        <input type="checkbox" name="forceWizardMode" {{#if forceWizardMode}}checked{{/if}}>
-      </div>
-      <p class="hint">{{localize 'SPELLBOOK.Settings.ForceWizardModeHint'}}</p>
-    </div>
-  </div>
+      {{#each spellcastingClasses as |classData|}}
+        <div class="class-settings-group" data-class="{{classData.identifier}}">
+          <div class="class-header">
+            {{#if classData.img}}
+              <img src="{{classData.img}}" alt="{{classData.name}}" class="class-icon">
+            {{/if}}
+            <h4>{{classData.name}} {{localize 'SPELLBOOK.Settings.ClassSettings'}}</h4>
+            <div class="class-stats">
+              {{#if classData.rules.showCantrips}}
+                <span
+                  class="cantrip-count">{{localize 'SPELLBOOK.Settings.CantripsKnown' current=classData.stats.currentCantrips max=classData.stats.maxCantrips}}</span>
+              {{/if}}
+              <span class="preparation-bonus {{#if (ne classData.rules.preparationBonus 0)}}has-bonus{{/if}}">
+                {{#if (gt classData.rules.preparationBonus 0)}}+{{classData.rules.preparationBonus}}{{else if (lt classData.rules.preparationBonus 0)}}{{classData.rules.preparationBonus}}{{else}}±0{{/if}}
+                {{localize 'SPELLBOOK.Settings.PreparationBonus.Text'}}
+              </span>
+            </div>
+          </div>
 
-  {{!-- Wizard Settings (only show if actor is a wizard) --}}
-  {{log 'DEBUG' isWizard}}
-  {{#if isWizard}}
+          <div class="class-rules-grid">
+            {{!-- Show Cantrips Toggle --}}
+            <div class="form-group">
+              <label>{{localize 'SPELLBOOK.Settings.ShowCantrips.Label'}}</label>
+              <div class="form-fields">
+                <input type="checkbox" name="class.{{classData.identifier}}.showCantrips"
+                  {{#if classData.rules.showCantrips}}checked{{/if}}>
+              </div>
+              <p class="hint">{{localize 'SPELLBOOK.Settings.ShowCantrips.Hint'}}</p>
+            </div>
 
-    <div class="settings-section wizard-settings">
-      <h3>{{localize 'SPELLBOOK.Wizard.SectionTitle'}}</h3>
+            {{!-- Cantrip Swapping --}}
+            <div class="form-group {{#unless classData.rules.showCantrips}}disabled{{/unless}}">
+              <label>{{localize 'SPELLBOOK.Settings.CantripSwapping.Label'}}</label>
+              <div class="form-fields">
+                <select name="class.{{classData.identifier}}.cantripSwapping"
+                  {{#unless classData.rules.showCantrips}}disabled{{/unless}}>
+                  <option value="{{CANTRIP_SWAP_TIMING.NONE}}"
+                    {{#if (eq classData.rules.cantripSwapping CANTRIP_SWAP_TIMING.NONE)}}selected{{/if}}>
+                    {{localize 'SPELLBOOK.Settings.CantripSwapping.None'}}
+                  </option>
+                  <option value="{{CANTRIP_SWAP_TIMING.LEVEL_UP}}"
+                    {{#if (eq classData.rules.cantripSwapping CANTRIP_SWAP_TIMING.LEVEL_UP)}}selected{{/if}}>
+                    {{localize 'SPELLBOOK.Settings.CantripSwapping.LevelUp'}}
+                  </option>
+                  <option value="{{CANTRIP_SWAP_TIMING.LONG_REST}}"
+                    {{#if (eq classData.rules.cantripSwapping CANTRIP_SWAP_TIMING.LONG_REST)}}selected{{/if}}>
+                    {{localize 'SPELLBOOK.Settings.CantripSwapping.LongRest'}}
+                  </option>
+                </select>
+              </div>
+              <p class="hint">{{localize 'SPELLBOOK.Settings.CantripSwapping.Hint'}}</p>
+            </div>
 
-      <div class="form-group">
-        <label>{{localize 'SPELLBOOK.Wizard.StartingSpellsLabel'}}</label>
-        <div class="form-fields">
-          <input type="number" name="wizardStartingSpells" value="{{wizardSettings.startingSpells}}" min="0" max="20">
+            {{!-- Spell Swapping --}}
+            <div class="form-group">
+              <label>{{localize 'SPELLBOOK.Settings.SpellSwapping.Label'}}</label>
+              <div class="form-fields">
+                <select name="class.{{classData.identifier}}.spellSwapping">
+                  <option value="{{SPELL_SWAP_MODES.NONE}}"
+                    {{#if (eq classData.rules.spellSwapping SPELL_SWAP_MODES.NONE)}}selected{{/if}}>
+                    {{localize 'SPELLBOOK.Settings.SpellSwapping.None'}}
+                  </option>
+                  <option value="{{SPELL_SWAP_MODES.LEVEL_UP}}"
+                    {{#if (eq classData.rules.spellSwapping SPELL_SWAP_MODES.LEVEL_UP)}}selected{{/if}}>
+                    {{localize 'SPELLBOOK.Settings.SpellSwapping.LevelUp'}}
+                  </option>
+                  <option value="{{SPELL_SWAP_MODES.LONG_REST}}"
+                    {{#if (eq classData.rules.spellSwapping SPELL_SWAP_MODES.LONG_REST)}}selected{{/if}}>
+                    {{localize 'SPELLBOOK.Settings.SpellSwapping.LongRest'}}
+                  </option>
+                </select>
+              </div>
+              <p class="hint">{{localize 'SPELLBOOK.Settings.SpellSwapping.Hint'}}</p>
+            </div>
+
+            {{!-- Ritual Casting --}}
+            <div class="form-group">
+              <label>{{localize 'SPELLBOOK.Settings.RitualCasting.Label'}}</label>
+              <div class="form-fields">
+                <select name="class.{{classData.identifier}}.ritualCasting">
+                  <option value="{{RITUAL_CASTING_MODES.NONE}}"
+                    {{#if (eq classData.rules.ritualCasting RITUAL_CASTING_MODES.NONE)}}selected{{/if}}>
+                    {{localize 'SPELLBOOK.Settings.RitualCasting.None'}}
+                  </option>
+                  <option value="{{RITUAL_CASTING_MODES.PREPARED}}"
+                    {{#if (eq classData.rules.ritualCasting RITUAL_CASTING_MODES.PREPARED)}}selected{{/if}}>
+                    {{localize 'SPELLBOOK.Settings.RitualCasting.Prepared'}}
+                  </option>
+                  <option value="{{RITUAL_CASTING_MODES.ALWAYS}}"
+                    {{#if (eq classData.rules.ritualCasting RITUAL_CASTING_MODES.ALWAYS)}}selected{{/if}}>
+                    {{localize 'SPELLBOOK.Settings.RitualCasting.Always'}}
+                  </option>
+                </select>
+              </div>
+              <p class="hint">{{localize 'SPELLBOOK.Settings.RitualCasting.Hint'}}</p>
+            </div>
+
+            {{!-- Custom Spell List --}}
+            <div class="form-group">
+              <label>{{localize 'SPELLBOOK.Settings.CustomSpellList.Label'}}</label>
+              <div class="form-fields">
+                <select name="class.{{classData.identifier}}.customSpellList">
+                  {{#each ../availableSpellLists as |option|}}
+                    <option value="{{option.value}}"
+                      {{#if (eq option.value classData.rules.customSpellList)}}selected{{/if}}>
+                      {{option.label}}
+                    </option>
+                  {{/each}}
+                </select>
+              </div>
+              <p class="hint">{{localize 'SPELLBOOK.Settings.CustomSpellList.Hint'}}</p>
+            </div>
+
+            {{!-- Preparation Bonus --}}
+            <div class="form-group">
+              <label>{{localize 'SPELLBOOK.Settings.PreparationBonus.Label'}}</label>
+              <div class="form-fields preparation-bonus-controls">
+                <button type="button" class="prep-bonus-decrease" data-class="{{classData.identifier}}"
+                  data-action="decrease">−</button>
+                <input type="number" name="class.{{classData.identifier}}.preparationBonus"
+                  value="{{classData.rules.preparationBonus}}" min="-10" max="20" class="prep-bonus-input">
+                <button type="button" class="prep-bonus-increase" data-class="{{classData.identifier}}"
+                  data-action="increase">+</button>
+              </div>
+              <p class="hint">{{localize 'SPELLBOOK.Settings.PreparationBonus.Hint'}}</p>
+            </div>
+          </div>
         </div>
-        <p class="hint">{{localize 'SPELLBOOK.Wizard.StartingSpellsHint'}}</p>
-      </div>
-
-      <div class="form-group">
-        <label>{{localize 'SPELLBOOK.Wizard.SpellsPerLevelLabel'}}</label>
-        <div class="form-fields">
-          <input type="number" name="wizardSpellsPerLevel" value="{{wizardSettings.spellsPerLevel}}" min="0" max="10">
-        </div>
-        <p class="hint">{{localize 'SPELLBOOK.Wizard.SpellsPerLevelHint'}}</p>
-      </div>
-
-      <div class="form-group">
-        <label>{{localize 'SPELLBOOK.Wizard.RitualCastingLabel'}}</label>
-        <div class="form-fields">
-          <input type="checkbox" name="wizardRitualCasting" {{#if wizardSettings.ritualCasting}}checked{{/if}}>
-        </div>
-        <p class="hint">{{localize 'SPELLBOOK.Wizard.RitualCastingHint'}}</p>
-      </div>
+      {{/each}}
     </div>
   {{/if}}
 
-  <div class="form-group">
+  {{!-- Submit Button --}}
+  <div class="form-group submit-group">
     <button type="submit" name="submit" class="submit-button">
       <i class="fas fa-save"></i> {{localize 'SPELLBOOK.Settings.SaveButton'}}
     </button>
