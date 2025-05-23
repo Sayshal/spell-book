@@ -109,7 +109,7 @@ export class SpellbookUI {
   }
 
   /**
-   * Update spell preparation tracking display
+   * Enhanced spell preparation tracking that enforces per-class limits
    */
   updateSpellPreparationTracking() {
     try {
@@ -145,8 +145,10 @@ export class SpellbookUI {
         return;
       }
 
-      // Count prepared spells for this specific class
-      let preparedCount = 0;
+      // Count prepared spells for this specific class (excluding cantrips)
+      let classPreparedCount = 0;
+      const classMaxPrepared = classData.classItem?.system?.spellcasting?.preparation?.max || 0;
+
       const preparedCheckboxes = activeTabContent.querySelectorAll('dnd5e-checkbox[data-uuid]:not([disabled])');
       preparedCheckboxes.forEach((checkbox) => {
         const spellItem = checkbox.closest('.spell-item');
@@ -155,19 +157,25 @@ export class SpellbookUI {
         const spellLevel = spellItem.dataset.spellLevel;
         const spellSourceClass = checkbox.dataset.sourceClass;
 
-        // Skip cantrips in spell count
-        if (spellLevel === '0') return;
-
-        // Only count spells for this class
-        if (spellSourceClass && spellSourceClass !== classIdentifier) return;
+        // Skip cantrips and spells from other classes
+        if (spellLevel === '0' || (spellSourceClass && spellSourceClass !== classIdentifier)) return;
 
         if (checkbox.checked) {
-          preparedCount++;
+          classPreparedCount++;
         }
       });
 
       // Update class data object with current count
-      classData.spellPreparation.current = preparedCount;
+      classData.spellPreparation.current = classPreparedCount;
+
+      // Check if this class is at its limit
+      const isClassAtMax = classPreparedCount >= classMaxPrepared;
+
+      // Apply per-class enforcement if using enforced behavior
+      const settings = this.app.spellManager.getSettings();
+      if (settings.behavior === ENFORCEMENT_BEHAVIOR.ENFORCED) {
+        this._enforcePerClassSpellLimits(activeTabContent, classIdentifier, isClassAtMax);
+      }
 
       // Update global counts using the state manager method
       this.app._stateManager.updateGlobalPreparationCount();
@@ -179,22 +187,65 @@ export class SpellbookUI {
         const globalCurrentEl = countDisplay.querySelector('.global-current-count');
         if (globalCurrentEl) globalCurrentEl.textContent = globalPrepared.current;
 
-        // Check if global max is reached
+        // Check if globally at max
         const isGloballyAtMax = globalPrepared.current >= globalPrepared.maximum;
 
-        // Set the at-max class based on global total
-        if (isGloballyAtMax) {
+        // Set the at-max class based on either class or global limits
+        if (isClassAtMax || isGloballyAtMax) {
           countDisplay.classList.add('at-max');
           this.element.classList.add('at-max-spells');
-          this._disableUnpreparedSpells();
         } else {
           countDisplay.classList.remove('at-max');
           this.element.classList.remove('at-max-spells');
-          this._enableAllSpells();
         }
       }
     } catch (error) {
       log(1, 'Error updating spell preparation tracking:', error);
+    }
+  }
+
+  /**
+   * Enforce per-class spell limits for non-cantrip spells
+   * @param {HTMLElement} tabContent - The active tab content element
+   * @param {string} classIdentifier - The class identifier
+   * @param {boolean} isClassAtMax - Whether this class is at its spell limit
+   * @private
+   */
+  _enforcePerClassSpellLimits(tabContent, classIdentifier, isClassAtMax) {
+    try {
+      const spellCheckboxes = tabContent.querySelectorAll('dnd5e-checkbox[data-uuid]');
+
+      spellCheckboxes.forEach((checkbox) => {
+        const spellItem = checkbox.closest('.spell-item');
+        if (!spellItem) return;
+
+        const spellLevel = spellItem.dataset.spellLevel;
+        const spellSourceClass = checkbox.dataset.sourceClass;
+
+        // Skip cantrips and spells from other classes
+        if (spellLevel === '0' || (spellSourceClass && spellSourceClass !== classIdentifier)) return;
+
+        // Skip always prepared and granted spells
+        if (spellItem.querySelector('.tag.always-prepared') || spellItem.querySelector('.tag.granted')) return;
+
+        // If class is at max and this spell isn't prepared, disable it
+        if (isClassAtMax && !checkbox.checked) {
+          checkbox.disabled = true;
+          checkbox.dataset.tooltip = game.i18n.format('SPELLBOOK.Preparation.ClassAtMaximum', {
+            class: this.app._stateManager.classSpellData[classIdentifier]?.className || classIdentifier
+          });
+          spellItem.classList.add('class-max-prepared');
+        } else {
+          // Re-enable if not at max
+          checkbox.disabled = false;
+          delete checkbox.dataset.tooltip;
+          spellItem.classList.remove('class-max-prepared');
+        }
+      });
+
+      log(3, `Applied per-class spell limits for ${classIdentifier}, at max: ${isClassAtMax}`);
+    } catch (error) {
+      log(1, `Error enforcing per-class spell limits for ${classIdentifier}:`, error);
     }
   }
 

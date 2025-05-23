@@ -914,7 +914,7 @@ export class SpellManager {
   }
 
   /**
-   * Handle unpreparing a spell for a specific class
+   * Handle unpreparing a spell for a specific class by removing the class-specific instance
    * @param {string} uuid - Spell UUID
    * @param {string} sourceClass - Source class identifier
    * @param {boolean} isRitual - Whether spell is ritual
@@ -935,61 +935,50 @@ export class SpellManager {
     spellsToUpdate
   ) {
     try {
-      // Find the specific spell instance for this class
-      const existingSpell = this.actor.items.find(
+      // Find the SPECIFIC spell instance for this exact class
+      // This is crucial - we want the instance that belongs to this class only
+      const targetSpell = this.actor.items.find(
         (i) =>
           i.type === 'spell' &&
           (i.flags?.core?.sourceId === uuid || i.uuid === uuid) &&
           (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
       );
 
-      if (!existingSpell) {
-        log(3, `No spell found to unprepare: ${uuid} for class ${sourceClass}`);
+      if (!targetSpell) {
+        log(3, `No class-specific spell instance found to remove: ${uuid} for class ${sourceClass}`);
         return;
       }
 
-      // Check if this spell should be kept as ritual or removed entirely
-      const shouldKeepAsRitual = isRitual && isWizard && ritualCastingEnabled;
-      const isAlwaysPrepared = existingSpell.system.preparation?.alwaysPrepared;
-      const isGranted = !!existingSpell.flags?.dnd5e?.cachedFor;
+      // Check if this is a spell we should never remove
+      const isAlwaysPrepared = targetSpell.system.preparation?.alwaysPrepared;
+      const isGranted = !!targetSpell.flags?.dnd5e?.cachedFor;
+      const isFromClassFeature = targetSpell.system.preparation?.mode === 'always';
 
-      // Never remove always prepared or granted spells
-      if (isAlwaysPrepared || isGranted) {
-        log(3, `Skipping removal of always prepared/granted spell: ${existingSpell.name}`);
+      // Never remove always prepared, granted, or class feature spells
+      if (isAlwaysPrepared || isGranted || isFromClassFeature) {
+        log(3, `Skipping removal of protected spell: ${targetSpell.name} (${targetSpell.system.preparation?.mode})`);
         return;
       }
 
-      if (shouldKeepAsRitual) {
-        // Convert to ritual mode instead of removing
+      // Special handling for wizard ritual spells
+      if (isRitual && isWizard && ritualCastingEnabled && targetSpell.system.level > 0) {
+        // For wizard rituals, we convert to ritual mode instead of removing
+        // This allows casting from spellbook without preparation
         spellsToUpdate.push({
-          '_id': existingSpell.id,
+          '_id': targetSpell.id,
           'system.preparation.mode': 'ritual',
           'system.preparation.prepared': false
         });
-        log(3, `Converting spell to ritual mode: ${existingSpell.name}`);
-      } else {
-        // Check if this spell is also prepared by other classes
-        const otherClassesUsingSpell = await this._findOtherClassesUsingSpell(uuid, sourceClass);
-
-        if (otherClassesUsingSpell.length > 0) {
-          // Other classes are using this spell, so just update the sourceClass
-          // or create a class-specific flag to track which classes have it prepared
-          log(3, `Spell ${existingSpell.name} is used by other classes: ${otherClassesUsingSpell.join(', ')}`);
-
-          // For now, we'll keep the spell but mark it as unprepared for this class
-          // This is a complex case that might need more sophisticated handling
-          spellsToUpdate.push({
-            '_id': existingSpell.id,
-            'system.preparation.prepared': false
-          });
-        } else {
-          // Safe to remove - no other classes are using this spell
-          spellIdsToRemove.push(existingSpell.id);
-          log(3, `Marking spell for removal: ${existingSpell.name}`);
-        }
+        log(3, `Converting wizard spell to ritual mode: ${targetSpell.name}`);
+        return;
       }
+
+      // For all other cases, remove the spell entirely
+      // This is the key change - we always remove the class-specific instance
+      spellIdsToRemove.push(targetSpell.id);
+      log(3, `Marking class-specific spell for removal: ${targetSpell.name} (${sourceClass})`);
     } catch (error) {
-      log(1, `Error handling unpreparing spell ${uuid}:`, error);
+      log(1, `Error handling unpreparing spell ${uuid} for class ${sourceClass}:`, error);
     }
   }
 

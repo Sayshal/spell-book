@@ -613,7 +613,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Enhanced tab switching that preserves uncommitted UI state
+   * Enhanced tab switching that ensures state synchronization before footer render
    * @param {string} tabName - The name of the tab to activate
    * @param {string} groupName - The tab group name
    * @param {Object} options - Additional options
@@ -639,11 +639,15 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         this._stateManager.setActiveClass(classIdentifier);
       }
 
-      // Instead of re-rendering, just update visibility and restore state
+      // CRITICAL: Update global preparation counts BEFORE rendering footer
+      // This ensures the footer gets accurate data
+      this._stateManager.updateGlobalPreparationCount();
+
+      // Switch tab visibility without full re-render
       this._switchTabVisibility(tabName);
       this._restoreTabState(tabName);
 
-      // Update footer with new class context
+      // Now render footer with guaranteed up-to-date data
       this.render(false, { parts: ['footer'] });
 
       // Update UI elements that depend on the active tab
@@ -651,10 +655,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         this.ui.updateSpellCounts();
         this.ui.updateSpellPreparationTracking();
         this.ui.setupCantripUI();
-      }, 50); // Reduced timeout since we're not re-rendering
+      }, 50);
     } catch (error) {
       log(1, 'Error in enhanced changeTab:', error);
-      // Fallback to original behavior if enhancement fails
       this._fallbackChangeTab(tabName, groupName, options);
     }
   }

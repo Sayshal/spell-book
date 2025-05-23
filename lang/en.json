@@ -88,6 +88,7 @@
   "SPELLBOOK.Preparation.AlwaysTooltip": "This spell is always prepared and doesn't count against your prepared spell limit",
   "SPELLBOOK.Preparation.AtMaximum": "You've reached your maximum number of prepared spells",
   "SPELLBOOK.Preparation.AtWillTooltip": "This spell can be cast at will and doesn't require preparation",
+  "SPELLBOOK.Preparation.ClassAtMaximum": "You've reached your maximum number of {class} spells",
   "SPELLBOOK.Preparation.InnateTooltip": "This spell is innate and doesn't require preparation",
   "SPELLBOOK.Preparation.Locked": "This spell cannot be changed",
   "SPELLBOOK.Preparation.PactTooltip": "This spell is part of your Pact Magic and doesn't require traditional preparation",

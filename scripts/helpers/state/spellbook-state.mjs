@@ -578,7 +578,7 @@ export class SpellbookState {
   }
 
   /**
-   * Update the global prepared spell count using ONLY system spellcasting preparation max values
+   * Update the global prepared spell count with proper error handling and logging
    */
   updateGlobalPreparationCount() {
     try {
@@ -600,14 +600,22 @@ export class SpellbookState {
         }
       }
 
+      // Update the global counts
       this.spellPreparation = {
         current: totalPrepared,
         maximum: totalMaxPrepared
       };
 
       log(3, `Updated global preparation count: ${totalPrepared}/${totalMaxPrepared}`);
+
+      // Validate the numbers make sense
+      if (totalMaxPrepared <= 0) {
+        log(2, `Warning: Global max preparation is ${totalMaxPrepared}, this might indicate a data issue`);
+      }
     } catch (error) {
       log(1, 'Error updating global preparation count:', error);
+      // Provide fallback values to prevent UI breakage
+      this.spellPreparation = { current: 0, maximum: 0 };
     }
   }
 
