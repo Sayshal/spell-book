@@ -28,6 +28,10 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       closeOnSubmit: true,
       submitOnChange: false
     },
+    actions: {
+      increasePrepBonus: SpellbookSettingsDialog.increasePrepBonus,
+      decreasePrepBonus: SpellbookSettingsDialog.decreasePrepBonus
+    },
     classes: ['spellbook-settings-dialog'],
     window: {
       icon: 'fas fa-book-spells',
@@ -190,6 +194,114 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     } catch (error) {
       log(1, 'Error preparing spell list options:', error);
       return [{ value: '', label: game.i18n.localize('SPELLBOOK.Settings.SpellList.AutoDetect') }];
+    }
+  }
+
+  /**
+   * Increase preparation bonus for a specific class
+   * @param {Event} event - The click event
+   * @param {HTMLElement} target - The clicked button
+   * @static
+   */
+  static increasePrepBonus(event, target) {
+    try {
+      // Get the class identifier from the button's data attribute
+      const classIdentifier = target.dataset.class;
+      if (!classIdentifier) {
+        log(2, 'No class identifier found on preparation bonus button');
+        return;
+      }
+
+      // Find the corresponding input field
+      const input = this.element.querySelector(`input[name="class.${classIdentifier}.preparationBonus"]`);
+      if (!input) {
+        log(2, `Could not find preparation bonus input for class ${classIdentifier}`);
+        return;
+      }
+
+      // Get current value and increment (with bounds checking)
+      const currentValue = parseInt(input.value) || 0;
+      const newValue = Math.min(currentValue + 1, 20); // Cap at +20 bonus
+
+      // Update the input and trigger any change events
+      input.value = newValue;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+
+      // Update the class stats display to reflect the change immediately
+      this._updateClassStatsDisplay(classIdentifier, newValue);
+
+      log(3, `Increased preparation bonus for ${classIdentifier} to ${newValue}`);
+    } catch (error) {
+      log(1, 'Error increasing preparation bonus:', error);
+    }
+  }
+
+  /**
+   * Decrease preparation bonus for a specific class
+   * @param {Event} event - The click event
+   * @param {HTMLElement} target - The clicked button
+   * @static
+   */
+  static decreasePrepBonus(event, target) {
+    try {
+      // Get the class identifier from the button's data attribute
+      const classIdentifier = target.dataset.class;
+      if (!classIdentifier) {
+        log(2, 'No class identifier found on preparation bonus button');
+        return;
+      }
+
+      // Find the corresponding input field
+      const input = this.element.querySelector(`input[name="class.${classIdentifier}.preparationBonus"]`);
+      if (!input) {
+        log(2, `Could not find preparation bonus input for class ${classIdentifier}`);
+        return;
+      }
+
+      // Get current value and decrement (with bounds checking)
+      const currentValue = parseInt(input.value) || 0;
+      const newValue = Math.max(currentValue - 1, -10); // Allow up to -10 penalty
+
+      // Update the input and trigger any change events
+      input.value = newValue;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+
+      // Update the class stats display to reflect the change immediately
+      this._updateClassStatsDisplay(classIdentifier, newValue);
+
+      log(3, `Decreased preparation bonus for ${classIdentifier} to ${newValue}`);
+    } catch (error) {
+      log(1, 'Error decreasing preparation bonus:', error);
+    }
+  }
+
+  /**
+   * Update the visual display of class stats when preparation bonus changes
+   * @param {string} classIdentifier - The class identifier
+   * @param {number} newBonus - The new bonus value
+   * @private
+   */
+  _updateClassStatsDisplay(classIdentifier, newBonus) {
+    try {
+      // Find the class stats display element
+      const classSection = this.element.querySelector(`[data-class="${classIdentifier}"]`);
+      const bonusDisplay = classSection?.querySelector('.preparation-bonus');
+
+      if (bonusDisplay) {
+        // Update the text content
+        if (newBonus > 0) {
+          bonusDisplay.textContent = `+${newBonus} ${game.i18n.localize('SPELLBOOK.Settings.PreparationBonus')}`;
+        } else if (newBonus < 0) {
+          bonusDisplay.textContent = `${newBonus} ${game.i18n.localize('SPELLBOOK.Settings.PreparationBonus')}`;
+        } else {
+          bonusDisplay.textContent = `±0 ${game.i18n.localize('SPELLBOOK.Settings.PreparationBonus')}`;
+        }
+
+        // Update the CSS class to show visual distinction for non-zero bonuses
+        bonusDisplay.classList.toggle('has-bonus', newBonus !== 0);
+      }
+    } catch (error) {
+      log(2, 'Error updating class stats display:', error);
     }
   }
 

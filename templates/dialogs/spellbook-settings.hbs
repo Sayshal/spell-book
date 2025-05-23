@@ -177,12 +177,12 @@
                 data-tooltip="{{localize 'SPELLBOOK.Settings.PreparationBonus.Hint'}}"></i>
               <div class="preparation-bonus-controls">
                 <button type="button" class="prep-bonus-decrease" data-class="{{classData.identifier}}"
-                  data-action="decrease">−</button>
+                  data-action="decreasePrepBonus">−</button>
                 <input type="number" id="preparation-bonus-{{classData.identifier}}"
                   name="class.{{classData.identifier}}.preparationBonus" value="{{classData.rules.preparationBonus}}"
                   min="-10" max="20" class="prep-bonus-input">
                 <button type="button" class="prep-bonus-increase" data-class="{{classData.identifier}}"
-                  data-action="increase">+</button>
+                  data-action="increasePrepBonus">+</button>
               </div>
             </div>
           </div>

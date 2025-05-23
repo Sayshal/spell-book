@@ -178,35 +178,51 @@ export class RuleSetManager {
    * @private
    */
   static _applyLegacyDefaults(classIdentifier, defaults) {
+    defaults.cantripSwapping = CANTRIP_SWAP_TIMING.NONE;
+    defaults.ritualCasting = RITUAL_CASTING_MODES.NONE;
+
     switch (classIdentifier) {
       case CLASS_IDENTIFIERS.WIZARD:
         defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST;
         defaults.ritualCasting = RITUAL_CASTING_MODES.ALWAYS;
+        defaults.showCantrips = true;
         break;
 
       case CLASS_IDENTIFIERS.CLERIC:
       case CLASS_IDENTIFIERS.DRUID:
         defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST;
         defaults.ritualCasting = RITUAL_CASTING_MODES.PREPARED;
+        defaults.showCantrips = true;
         break;
 
       case CLASS_IDENTIFIERS.PALADIN:
         defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST;
-        defaults.showCantrips = false; // Paladins don't get cantrips in legacy
+        defaults.showCantrips = false;
         break;
 
       case CLASS_IDENTIFIERS.RANGER:
+        defaults.spellSwapping = SPELL_SWAP_MODES.LEVEL_UP;
+        defaults.showCantrips = false;
+        break;
+
       case CLASS_IDENTIFIERS.BARD:
       case CLASS_IDENTIFIERS.SORCERER:
       case CLASS_IDENTIFIERS.WARLOCK:
         defaults.spellSwapping = SPELL_SWAP_MODES.LEVEL_UP;
-        if (classIdentifier === CLASS_IDENTIFIERS.RANGER) {
-          defaults.showCantrips = false; // Rangers don't get cantrips in legacy
+        defaults.showCantrips = true;
+        if (classIdentifier === CLASS_IDENTIFIERS.BARD) {
+          defaults.ritualCasting = RITUAL_CASTING_MODES.PREPARED;
         }
         break;
 
       case CLASS_IDENTIFIERS.ARTIFICER:
         defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST;
+        defaults.showCantrips = true;
+        break;
+
+      default:
+        defaults.spellSwapping = SPELL_SWAP_MODES.LEVEL_UP;
+        defaults.showCantrips = true;
         break;
     }
   }
@@ -218,31 +234,32 @@ export class RuleSetManager {
    * @private
    */
   static _applyModernDefaults(classIdentifier, defaults) {
-    // Most classes get cantrip swapping on level up in modern rules
     defaults.cantripSwapping = CANTRIP_SWAP_TIMING.LEVEL_UP;
+    defaults.ritualCasting = RITUAL_CASTING_MODES.NONE;
 
     switch (classIdentifier) {
       case CLASS_IDENTIFIERS.WIZARD:
-        defaults.cantripSwapping = CANTRIP_SWAP_TIMING.LONG_REST; // Special wizard rule
+        defaults.cantripSwapping = CANTRIP_SWAP_TIMING.LONG_REST;
         defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST;
         defaults.ritualCasting = RITUAL_CASTING_MODES.ALWAYS;
+        defaults.showCantrips = true;
         break;
 
       case CLASS_IDENTIFIERS.CLERIC:
       case CLASS_IDENTIFIERS.DRUID:
         defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST;
-        defaults.ritualCasting = RITUAL_CASTING_MODES.PREPARED;
+        defaults.showCantrips = true;
         break;
 
       case CLASS_IDENTIFIERS.PALADIN:
-        defaults.cantripSwapping = CANTRIP_SWAP_TIMING.NONE; // Still no cantrips
-        defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST; // Modern paladins can swap 1 per long rest
+        defaults.cantripSwapping = CANTRIP_SWAP_TIMING.NONE;
+        defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST;
         defaults.showCantrips = false;
         break;
 
       case CLASS_IDENTIFIERS.RANGER:
-        defaults.cantripSwapping = CANTRIP_SWAP_TIMING.NONE; // Still no cantrips
-        defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST; // Modern rangers can swap 1 per long rest
+        defaults.cantripSwapping = CANTRIP_SWAP_TIMING.NONE;
+        defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST;
         defaults.showCantrips = false;
         break;
 
@@ -250,10 +267,17 @@ export class RuleSetManager {
       case CLASS_IDENTIFIERS.SORCERER:
       case CLASS_IDENTIFIERS.WARLOCK:
         defaults.spellSwapping = SPELL_SWAP_MODES.LEVEL_UP;
+        defaults.showCantrips = true;
         break;
 
       case CLASS_IDENTIFIERS.ARTIFICER:
         defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST;
+        defaults.showCantrips = true;
+        break;
+
+      default:
+        defaults.spellSwapping = SPELL_SWAP_MODES.LEVEL_UP;
+        defaults.showCantrips = true;
         break;
     }
   }
