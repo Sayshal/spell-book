@@ -1,6 +1,7 @@
 import { CANTRIP_RULES, CLASS_IDENTIFIERS, FLAGS, MODULE } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
 import * as actorSpellUtils from '../actor-spells.mjs';
+import { RuleSetManager } from '../rule-set-manager.mjs';
 import * as discoveryUtils from '../spell-discovery.mjs';
 import * as formattingUtils from '../spell-formatting.mjs';
 
@@ -543,8 +544,13 @@ export class SpellbookState {
     try {
       let preparedCount = 0;
 
-      // ONLY use the system's spellcasting preparation max - no fallbacks
-      const maxPrepared = classItem?.system?.spellcasting?.preparation?.max || 0;
+      // Get base max from system
+      const baseMaxPrepared = classItem?.system?.spellcasting?.preparation?.max || 0;
+
+      // Get class-specific rules and apply preparation bonus
+      const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
+      const preparationBonus = classRules?.preparationBonus || 0;
+      const maxPrepared = baseMaxPrepared + preparationBonus;
 
       // Ensure spellLevels is iterable
       if (!Array.isArray(spellLevels)) {
@@ -626,22 +632,20 @@ export class SpellbookState {
    * @private
    */
   _shouldHideCantrips(identifier) {
-    // Check for class-specific flag using the identifier
-    const classCantripsFlag = this.actor.getFlag(MODULE.ID, `class.${identifier}.hideCantrips`);
-    if (classCantripsFlag !== undefined) return !!classCantripsFlag;
+    try {
+      // Get class-specific rules from RuleSetManager
+      const classRules = RuleSetManager.getClassRules(this.actor, identifier);
 
-    // Check global actor setting
-    const actorCantripsFlag = this.actor.getFlag(MODULE.ID, 'hideCantrips');
-    if (actorCantripsFlag !== undefined) {
-      // If this is an object mapping class identifiers to settings, check it
-      if (typeof actorCantripsFlag === 'object') {
-        const setting = actorCantripsFlag[identifier];
-        if (setting !== undefined) return !!setting;
+      if (classRules && classRules.showCantrips !== undefined) {
+        return !classRules.showCantrips; // invert because we want "hide" cantrips
       }
-    }
 
-    // Default behavior based on class identifiers
-    return [CLASS_IDENTIFIERS.PALADIN, CLASS_IDENTIFIERS.RANGER].includes(identifier);
+      // Fallback to legacy behavior
+      return [CLASS_IDENTIFIERS.PALADIN, CLASS_IDENTIFIERS.RANGER].includes(identifier);
+    } catch (error) {
+      log(1, `Error checking if cantrips should be hidden for ${identifier}:`, error);
+      return false;
+    }
   }
 
   /**

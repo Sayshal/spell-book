@@ -1,6 +1,7 @@
 import { CANTRIP_RULES, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
 import * as colorUtils from '../color-utils.mjs';
+import { RuleSetManager } from '../rule-set-manager.mjs';
 
 /**
  * Helper class for UI-related functionality in the spellbook application
@@ -145,11 +146,16 @@ export class SpellbookUI {
         return;
       }
 
+      // Get class rules for preparation limits
+      const classRules = RuleSetManager.getClassRules(this.app.actor, classIdentifier);
+      const baseMaxPrepared = classData.classItem?.system?.spellcasting?.preparation?.max || 0;
+      const preparationBonus = classRules?.preparationBonus || 0;
+      const classMaxPrepared = baseMaxPrepared + preparationBonus;
+
       // Count prepared spells for this specific class (excluding cantrips)
       let classPreparedCount = 0;
-      const classMaxPrepared = classData.classItem?.system?.spellcasting?.preparation?.max || 0;
-
       const preparedCheckboxes = activeTabContent.querySelectorAll('dnd5e-checkbox[data-uuid]:not([disabled])');
+
       preparedCheckboxes.forEach((checkbox) => {
         const spellItem = checkbox.closest('.spell-item');
         if (!spellItem) return;
@@ -167,6 +173,7 @@ export class SpellbookUI {
 
       // Update class data object with current count
       classData.spellPreparation.current = classPreparedCount;
+      classData.spellPreparation.maximum = classMaxPrepared; // Update with bonus
 
       // Check if this class is at its limit
       const isClassAtMax = classPreparedCount >= classMaxPrepared;

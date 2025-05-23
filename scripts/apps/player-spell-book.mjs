@@ -1485,6 +1485,57 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
+   * Handle class rule changes and re-render accordingly
+   * @param {string} classIdentifier - The class that had rules changed
+   * @returns {Promise<void>}
+   */
+  async handleClassRulesChange(classIdentifier) {
+    try {
+      log(3, `Handling class rules change for ${classIdentifier}`);
+
+      // Reload spell data for the affected class
+      if (this._stateManager.spellcastingClasses[classIdentifier]) {
+        const classData = this._stateManager.spellcastingClasses[classIdentifier];
+        const classItem = this.actor.items.get(classData.id);
+
+        if (classItem) {
+          // Reload spell data for this class
+          await this._stateManager.loadClassSpellData(classIdentifier, classItem);
+
+          // Update global preparation count
+          this._stateManager.updateGlobalPreparationCount();
+
+          // Re-render the application
+          this.render(false);
+        }
+      }
+    } catch (error) {
+      log(1, `Error handling class rules change for ${classIdentifier}:`, error);
+    }
+  }
+
+  /**
+   * Add this method to refresh the spellbook when settings change
+   */
+  async refreshFromSettingsChange() {
+    try {
+      log(3, 'Refreshing spellbook from settings change');
+
+      // Re-initialize the state manager
+      this._stateManager._initialized = false;
+      this._stateManager._classesDetected = false;
+
+      // Reload everything
+      await this._stateManager.initialize();
+
+      // Re-render
+      this.render(false);
+    } catch (error) {
+      log(1, 'Error refreshing spellbook from settings change:', error);
+    }
+  }
+
+  /**
    * Form handler for saving spellbook settings with class-specific preparation
    * @param {Event} _event - The form submission event
    * @param {HTMLElement} form - The form element

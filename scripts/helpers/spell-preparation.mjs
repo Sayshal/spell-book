@@ -1,4 +1,4 @@
-import { CANTRIP_RULES, CLASS_IDENTIFIERS, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, SETTINGS } from '../constants.mjs';
+import { CANTRIP_RULES, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, SETTINGS } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import { CantripManager } from './cantrip-manager.mjs';
 import * as genericUtils from './generic-utils.mjs';
@@ -80,54 +80,59 @@ export class SpellManager {
 
     if (!classItem) return 0;
 
-    // First check if the class has explicit cantrips-known scale value
+    // Get base cantrips from scale values
+    let baseCantrips = 0;
+
     try {
       // Safely access scaleValues
       if (typeof classItem.scaleValues === 'function') {
-        // It's a getter function
         try {
           const scaleValues = classItem.scaleValues;
           if (scaleValues && scaleValues['cantrips-known'] && scaleValues['cantrips-known'].value !== undefined) {
-            return scaleValues['cantrips-known'].value;
+            baseCantrips = scaleValues['cantrips-known'].value;
           }
         } catch (err) {
           log(2, `Error accessing scaleValues for ${classIdentifier}, using fallback calculation`, err);
         }
       } else if (classItem.scaleValues && typeof classItem.scaleValues === 'object') {
-        // It's a property
         const cantripsKnown = classItem.scaleValues['cantrips-known']?.value;
-        if (cantripsKnown !== undefined) return cantripsKnown;
+        if (cantripsKnown !== undefined) baseCantrips = cantripsKnown;
       }
     } catch (err) {
       log(2, `Error accessing scaleValues for ${classIdentifier}, using fallback calculation`, err);
     }
 
-    // If not, calculate based on class and level
-    const classLevel = classItem.system.levels || 0;
-    const className = classItem.name.toLowerCase();
+    // If no scale values found, automatically disable cantrips for this class
+    if (baseCantrips === 0) {
+      log(2, `No cantrip scale value found for class ${classIdentifier}, disabling cantrips`);
 
-    switch (className) {
-      case CLASS_IDENTIFIERS.BARD:
-      case CLASS_IDENTIFIERS.CLERIC:
-      case CLASS_IDENTIFIERS.DRUID:
-      case CLASS_IDENTIFIERS.SORCERER:
-      case CLASS_IDENTIFIERS.WARLOCK:
-      case CLASS_IDENTIFIERS.WIZARD:
-        return Math.min(4, Math.max(3, Math.floor(classLevel / 4) + 2));
-      case CLASS_IDENTIFIERS.RANGER:
-      case CLASS_IDENTIFIERS.ARTIFICER:
-        return Math.min(3, Math.max(2, Math.floor(classLevel / 6) + 1));
-      default:
-        // For unknown classes, check if they have cantrips
-        const hasCantrips = this.actor.items.some(
-          (i) =>
-            i.type === 'spell' &&
-            i.system.level === 0 &&
-            (i.sourceClass === classIdentifier || i.system.sourceClass === classIdentifier)
-        );
-        // Return a reasonable default if they have cantrips
-        return hasCantrips ? 3 : 0;
+      // Automatically set showCantrips to false in class rules
+      const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
+      if (classRules.showCantrips !== false) {
+        // Update the class rules to hide cantrips
+        RuleSetManager.updateClassRules(this.actor, classIdentifier, {
+          showCantrips: false,
+          _noScaleValue: true // Flag to show notice in settings
+        }).catch((error) => {
+          log(1, `Error auto-updating class rules for ${classIdentifier}:`, error);
+        });
+      }
+
+      return 0;
     }
+
+    // Apply class-specific rules and bonuses
+    const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
+
+    // If cantrips should be hidden for this class, return 0
+    if (classRules && classRules.showCantrips === false) {
+      return 0;
+    }
+
+    // Apply any cantrip bonus (if we add this setting later)
+    const cantripBonus = classRules?.cantripBonus || 0;
+
+    return Math.max(0, baseCantrips + cantripBonus);
   }
 
   /**

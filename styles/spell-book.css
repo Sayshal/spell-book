@@ -1244,6 +1244,45 @@
     overflow-y: auto;
   }
 
+  /* Notice area styling */
+  .settings-notices {
+    margin-bottom: 1rem;
+
+    .notice {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      border-radius: var(--spell-book-border-radius);
+      font-size: 0.9rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      i {
+        flex-shrink: 0;
+      }
+
+      strong {
+        font-weight: 600;
+      }
+
+      &.warning {
+        background-color: rgb(255 193 7 / 10%);
+        border-left: 4px solid rgb(255 193 7);
+        color: rgb(133 100 4);
+      }
+
+      &.info {
+        background-color: rgb(13 202 240 / 10%);
+        border-left: 4px solid rgb(13 202 240);
+        color: rgb(5 81 96);
+      }
+    }
+  }
+
   /* Fieldset styling */
   .settings-fieldset {
     margin: 0;
@@ -1282,7 +1321,12 @@
 
     &.disabled {
       opacity: 0.6;
-      pointer-events: none;
+
+      input,
+      select {
+        pointer-events: none;
+        cursor: not-allowed;
+      }
     }
 
     label {
@@ -1316,6 +1360,19 @@
       height: 1.25rem;
       cursor: pointer;
     }
+
+    .setting-note {
+      display: block;
+      font-size: 0.8rem;
+      font-style: italic;
+      margin-top: 0.25rem;
+      margin-left: auto;
+      flex: 0 0 auto;
+
+      &.warning {
+        color: rgb(133 100 4);
+      }
+    }
   }
 
   /* Class-specific sections */
@@ -1328,6 +1385,12 @@
 
     &:last-child {
       margin-bottom: 0;
+    }
+
+    &.has-issues {
+      border-left: 3px solid rgb(255 193 7);
+      padding-left: 1rem;
+      background: rgb(255 193 7 / 5%);
     }
   }
 
@@ -1426,25 +1489,6 @@
       padding: 0.75rem;
       font-size: 1.1em;
       font-weight: bold;
-    }
-  }
-}
-
-/* Responsive adjustments for smaller screens */
-@media (width <= 768px) {
-  .spellbook-settings-dialog {
-    .class-rules-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .class-header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.5rem;
-
-      .class-stats {
-        align-items: flex-start;
-      }
     }
   }
 }
@@ -1562,6 +1606,22 @@
     .window-content > .tabs.tabs-right > .item {
       width: auto;
       padding: 0 0.5rem;
+    }
+  }
+
+  .spellbook-settings-dialog {
+    .class-rules-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .class-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+
+      .class-stats {
+        align-items: flex-start;
+      }
     }
   }
 }

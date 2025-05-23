@@ -86,6 +86,11 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       // Detect spellcasting classes and get their current rules
       context.spellcastingClasses = await this._prepareClassSettings();
 
+      // Check if we have any notices to show
+      context.hasNotices = context.spellcastingClasses.some(
+        (classData) => classData.rules._noScaleValue || classData.hasCustomSpellList
+      );
+
       // Prepare available spell lists for custom selection
       context.availableSpellLists = await this._prepareSpellListOptions();
 
@@ -107,53 +112,69 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Prepare class-specific settings data
-   * @returns {Promise<Array>} Array of class setting objects
+   * Prepare class settings data including rules and stats
+   * @returns {Promise<Array>} Array of class settings data
    * @private
    */
   async _prepareClassSettings() {
-    const classSettings = [];
+    try {
+      const classSettings = [];
 
-    // Get all spellcasting classes
-    const classItems = this.actor.items.filter(
-      (item) =>
-        item.type === 'class' &&
-        item.system.spellcasting?.progression &&
-        item.system.spellcasting.progression !== 'none'
-    );
-
-    for (const classItem of classItems) {
-      const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
-      const rules = RuleSetManager.getClassRules(this.actor, identifier);
-
-      // Calculate current cantrip count for this class
-      const currentCantrips = this.actor.items.filter(
+      // Get all spellcasting classes
+      const classItems = this.actor.items.filter(
         (item) =>
-          item.type === 'spell' &&
-          item.system.level === 0 &&
-          item.system.preparation?.prepared &&
-          !item.system.preparation?.alwaysPrepared &&
-          (item.system.sourceClass === identifier || item.sourceClass === identifier)
-      ).length;
+          item.type === 'class' &&
+          item.system.spellcasting?.progression &&
+          item.system.spellcasting.progression !== 'none'
+      );
 
-      // Calculate max cantrips for this class
-      const maxCantrips = this.spellManager.getMaxAllowed(identifier) || 0;
+      for (const classItem of classItems) {
+        const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
+        const classRules = RuleSetManager.getClassRules(this.actor, identifier);
 
-      classSettings.push({
-        identifier,
-        name: classItem.name,
-        img: classItem.img,
-        rules,
-        stats: {
-          currentCantrips,
-          maxCantrips
-        },
-        // Disable cantrip options if cantrips are hidden
-        cantripOptionsDisabled: !rules.showCantrips
-      });
+        // Get spell manager for this actor to check cantrip stats
+        const spellManager = new SpellManager(this.actor);
+        const maxCantrips = spellManager.getMaxAllowed(identifier);
+        const currentCantrips = spellManager.getCurrentCount(identifier);
+
+        // Check if using custom spell list
+        const hasCustomSpellList = !!classRules.customSpellList;
+        let customSpellListName = null;
+        if (hasCustomSpellList) {
+          try {
+            const customList = await fromUuid(classRules.customSpellList);
+            customSpellListName = customList?.name || 'Unknown List';
+          } catch (error) {
+            log(2, `Error loading custom spell list name: ${error.message}`);
+          }
+        }
+
+        const classData = {
+          name: classItem.name,
+          identifier: identifier,
+          img: classItem.img,
+          rules: classRules,
+          stats: {
+            currentCantrips: currentCantrips,
+            maxCantrips: maxCantrips,
+            classLevel: classItem.system.levels || 1,
+            basePreparationMax: classItem.system.spellcasting?.preparation?.max || 0
+          },
+          hasCustomSpellList: hasCustomSpellList,
+          customSpellListName: customSpellListName
+        };
+
+        classSettings.push(classData);
+      }
+
+      // Sort by class name for consistent display
+      classSettings.sort((a, b) => a.name.localeCompare(b.name));
+
+      return classSettings;
+    } catch (error) {
+      log(1, 'Error preparing class settings:', error);
+      return [];
     }
-
-    return classSettings.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   /**
@@ -353,65 +374,68 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
       log(3, `Saving enhanced spellbook settings for ${actor.name}`, formData);
 
+      // Expand the form data to handle nested properties
+      const expandedData = foundry.utils.expandObject(formData.object);
+
       // Handle rule set override
-      const ruleSetOverride = formData.object.ruleSetOverride === 'global' ? null : formData.object.ruleSetOverride;
+      const ruleSetOverride = expandedData.ruleSetOverride === 'global' ? null : expandedData.ruleSetOverride;
       await actor.setFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE, ruleSetOverride);
 
       // Handle enforcement behavior
       const enforcementBehavior =
-        formData.object.enforcementBehavior === 'global' ? null : formData.object.enforcementBehavior;
+        expandedData.enforcementBehavior === 'global' ? null : expandedData.enforcementBehavior;
       await actor.setFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR, enforcementBehavior);
 
-      // Process class-specific rules
-      const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+      // Apply class rule changes using RuleSetManager
+      if (expandedData.classRules) {
+        for (const [classId, rules] of Object.entries(expandedData.classRules)) {
+          // Process the rules to ensure proper types
+          const processedRules = {};
 
-      // Find all class rule entries in form data
-      for (const [key, value] of Object.entries(formData.object)) {
-        const classMatch = key.match(/^class\.([^.]+)\.(.+)$/);
-        if (classMatch) {
-          const [, classId, property] = classMatch;
-
-          if (!classRules[classId]) {
-            classRules[classId] = RuleSetManager.getClassRules(actor, classId);
+          if (rules.preparationBonus !== undefined) {
+            processedRules.preparationBonus = parseInt(rules.preparationBonus) || 0;
           }
 
-          // Handle different property types
-          if (property === 'preparationBonus') {
-            classRules[classId][property] = parseInt(value) || 0;
-          } else if (property === 'showCantrips') {
-            classRules[classId][property] = Boolean(value);
-          } else if (property === 'customSpellList') {
-            classRules[classId][property] = value || null;
-          } else {
-            classRules[classId][property] = value;
+          if (rules.showCantrips !== undefined) {
+            processedRules.showCantrips = Boolean(rules.showCantrips);
           }
+
+          if (rules.customSpellList !== undefined) {
+            processedRules.customSpellList = rules.customSpellList || null;
+          }
+
+          // Add other rule properties as needed
+          ['cantripSwapping', 'spellSwapping', 'ritualCasting'].forEach((prop) => {
+            if (rules[prop] !== undefined) {
+              processedRules[prop] = rules[prop];
+            }
+          });
+
+          // Update the class rules
+          await RuleSetManager.updateClassRules(actor, classId, processedRules);
         }
       }
-
-      // Save updated class rules
-      await actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
 
       // If rule set changed, apply new defaults to any classes that don't have custom overrides
       if (ruleSetOverride) {
         await RuleSetManager.applyRuleSetToActor(actor, ruleSetOverride);
       }
 
-      ui.notifications.info(game.i18n.format('SPELLBOOK.Settings.Saved', { name: actor.name }));
-
-      // Refresh any open spell book
-      const spellBook = Object.values(foundry.applications.instances).find(
-        (w) => w.id === `player-${MODULE.ID}` && w.actor.id === actor.id
+      // Trigger spellbook refresh if it's open
+      const openSpellbooks = Object.values(foundry.applications.instances).filter(
+        (w) => w.constructor.name === 'PlayerSpellBook' && w.actor.id === actor.id
       );
 
-      if (spellBook) {
-        log(3, 'Refreshing open spell book with new settings');
-        spellBook.spellManager.refresh();
-        spellBook.render(false);
+      for (const spellbook of openSpellbooks) {
+        await spellbook.refreshFromSettingsChange();
       }
+
+      ui.notifications.info(game.i18n.format('SPELLBOOK.Settings.Saved', { name: actor.name }));
 
       return actor;
     } catch (error) {
       log(1, 'Error saving enhanced spellbook settings:', error);
+      ui.notifications.error(game.i18n.localize('SPELLBOOK.Settings.SaveError'));
       return null;
     }
   }

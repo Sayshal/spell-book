@@ -1,6 +1,27 @@
 <div class="spellbook-settings-form">
   <h2>{{localize 'SPELLBOOK.Settings.Title' name=actor.name}}</h2>
 
+  {{!-- Notice Area --}}
+  {{#if hasNotices}}
+    <div class="settings-notices">
+      {{#each spellcastingClasses as |classData|}}
+        {{#if classData.rules._noScaleValue}}
+          <div class="notice warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>{{classData.name}}:</strong> {{localize 'SPELLBOOK.Settings.NoScaleValueNotice'}}
+          </div>
+        {{/if}}
+        {{#if classData.hasCustomSpellList}}
+          <div class="notice info">
+            <i class="fas fa-info-circle"></i>
+            <strong>{{classData.name}}:</strong>
+            {{localize 'SPELLBOOK.Settings.UsingCustomSpellList' list=classData.customSpellListName}}
+          </div>
+        {{/if}}
+      {{/each}}
+    </div>
+  {{/if}}
+
   {{!-- Global Rule Set Override --}}
   <fieldset class="settings-fieldset rule-set-fieldset">
     <legend>{{localize 'SPELLBOOK.Settings.GlobalRules'}}</legend>
@@ -50,7 +71,8 @@
       <p class="fieldset-description">{{localize 'SPELLBOOK.Settings.ClassRules.Description'}}</p>
 
       {{#each spellcastingClasses as |classData|}}
-        <div class="class-settings-section" data-class="{{classData.identifier}}">
+        <div class="class-settings-section {{#if classData.rules._noScaleValue}}has-issues{{/if}}"
+          data-class="{{classData.identifier}}">
           <div class="class-header">
             {{#if classData.img}}
               <img src="{{classData.img}}" alt="{{classData.name}}" class="class-icon">
@@ -70,13 +92,17 @@
 
           <div class="class-settings-list">
             {{!-- Show Cantrips Setting --}}
-            <div class="setting-row">
+            <div class="setting-row {{#if classData.rules._noScaleValue}}disabled{{/if}}">
               <label
                 for="show-cantrips-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.ShowCantrips.Label'}}</label>
               <i class="fas fa-question-circle setting-tooltip"
                 data-tooltip="{{localize 'SPELLBOOK.Settings.ShowCantrips.Hint'}}"></i>
               <input type="checkbox" id="show-cantrips-{{classData.identifier}}"
-                name="class.{{classData.identifier}}.showCantrips" {{#if classData.rules.showCantrips}}checked{{/if}}>
+                name="class.{{classData.identifier}}.showCantrips" {{#if classData.rules.showCantrips}}checked{{/if}}
+                {{#if classData.rules._noScaleValue}}disabled{{/if}}>
+              {{#if classData.rules._noScaleValue}}
+                <small class="setting-note warning">{{localize 'SPELLBOOK.Settings.DisabledNoScaleValue'}}</small>
+              {{/if}}
             </div>
 
             {{!-- Cantrip Swapping Setting --}}
