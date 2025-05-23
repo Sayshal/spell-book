@@ -258,9 +258,29 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         return;
       }
 
-      // Get current value and decrement (with bounds checking)
+      // Find the class item to get the base preparation maximum
+      const classItem = this.actor.items.find(
+        (item) =>
+          item.type === 'class' &&
+          (item.system.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier)
+      );
+
+      let minimumBonus = -10; // Fallback to old behavior if we can't find the class
+
+      if (classItem) {
+        const baseMax = classItem.system?.spellcasting?.preparation?.max || 0;
+        // Allow decreasing until total preparation slots would be 0
+        // So if base max is 6, minimum bonus is -6 (6 + (-6) = 0)
+        minimumBonus = -baseMax;
+
+        log(3, `Class ${classIdentifier} has base max ${baseMax}, allowing bonus down to ${minimumBonus}`);
+      } else {
+        log(2, `Could not find class item for identifier ${classIdentifier}, using fallback minimum`);
+      }
+
+      // Get current value and decrement (with dynamic bounds checking)
       const currentValue = parseInt(input.value) || 0;
-      const newValue = Math.max(currentValue - 1, -10); // Allow up to -10 penalty
+      const newValue = Math.max(currentValue - 1, minimumBonus);
 
       // Update the input and trigger any change events
       input.value = newValue;
@@ -268,6 +288,20 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
       // Update the class stats display to reflect the change immediately
       this._updateClassStatsDisplay(classIdentifier, newValue);
+
+      // Provide user feedback if they hit the minimum
+      if (newValue === minimumBonus && currentValue > minimumBonus) {
+        const baseMax = classItem?.system?.spellcasting?.preparation?.max || 0;
+        const message =
+          baseMax > 0 ?
+            game.i18n.format('SPELLBOOK.Settings.PreparationBonus.MinimumReached', {
+              class: classItem?.name || classIdentifier,
+              total: baseMax + newValue
+            })
+          : game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.MinimumReachedGeneric');
+
+        ui.notifications.info(message);
+      }
 
       log(3, `Decreased preparation bonus for ${classIdentifier} to ${newValue}`);
     } catch (error) {
@@ -290,11 +324,11 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       if (bonusDisplay) {
         // Update the text content
         if (newBonus > 0) {
-          bonusDisplay.textContent = `+${newBonus} ${game.i18n.localize('SPELLBOOK.Settings.PreparationBonus')}`;
+          bonusDisplay.textContent = `+${newBonus} ${game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.Text')}`;
         } else if (newBonus < 0) {
-          bonusDisplay.textContent = `${newBonus} ${game.i18n.localize('SPELLBOOK.Settings.PreparationBonus')}`;
+          bonusDisplay.textContent = `${newBonus} ${game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.Text')}`;
         } else {
-          bonusDisplay.textContent = `±0 ${game.i18n.localize('SPELLBOOK.Settings.PreparationBonus')}`;
+          bonusDisplay.textContent = `±0 ${game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.Text')}`;
         }
 
         // Update the CSS class to show visual distinction for non-zero bonuses

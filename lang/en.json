@@ -164,6 +164,8 @@
   "SPELLBOOK.Settings.OpenSpellListManager.Name": "Open Spell List Manager",
   "SPELLBOOK.Settings.PreparationBonus.Hint": "Additional spell preparation slots beyond the class default (can be negative)",
   "SPELLBOOK.Settings.PreparationBonus.Label": "Preparation Bonus",
+  "SPELLBOOK.Settings.PreparationBonus.MinimumReached": "Cannot reduce {class} preparation bonus further. Total slots would be {total} (minimum 0).",
+  "SPELLBOOK.Settings.PreparationBonus.MinimumReachedGeneric": "Cannot reduce preparation bonus further without creating negative spell slots.",
   "SPELLBOOK.Settings.PreparationBonus.Text": "Prep Bonus",
   "SPELLBOOK.Settings.RitualCasting.Always": "Cast Any Known Ritual",
   "SPELLBOOK.Settings.RitualCasting.Hint": "How this class can cast ritual spells",
