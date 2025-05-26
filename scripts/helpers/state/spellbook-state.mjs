@@ -518,12 +518,29 @@ export class SpellbookState {
       const spellId = spell.id || spell.uuid;
       const spellName = spell.name.toLowerCase();
 
-      // Skip if already processed
+      // Skip if already processed by UUID or name
       if (processedSpellIds.has(spellId) || processedSpellNames.has(spellName)) continue;
 
       // Check if this spell belongs to this class
       const spellSourceClass = spell.system?.sourceClass || spell.sourceClass;
+
+      // If spell has a sourceClass, only include if it matches
       if (spellSourceClass && spellSourceClass !== classIdentifier) continue;
+
+      // If spell doesn't have a sourceClass but we're hiding cantrips for this class, skip cantrips
+      if (!spellSourceClass && spell.system.level === 0 && this._shouldHideCantrips(classIdentifier)) {
+        continue;
+      }
+
+      // If spell doesn't have a sourceClass and it's not a cantrip, we need to determine if it belongs to this class
+      // This is tricky - for now, we'll include unassigned spells for the first class that processes them
+      if (!spellSourceClass) {
+        // Assign the spell to this class for future reference
+        spell.sourceClass = classIdentifier;
+        if (spell.system) {
+          spell.system.sourceClass = classIdentifier;
+        }
+      }
 
       const source = spellManager._determineSpellSource(spell);
       newSpells.push({ spell, source });

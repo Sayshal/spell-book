@@ -379,6 +379,9 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
       log(3, 'Expanded form data:', expandedData);
 
+      // Get current class rules for comparison
+      const currentClassRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+
       // Handle rule set override
       const ruleSetOverride = expandedData.ruleSetOverride === 'global' ? null : expandedData.ruleSetOverride;
       const previousRuleSetOverride = actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE);
@@ -396,10 +399,26 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         await RuleSetManager.applyRuleSetToActor(actor, ruleSetOverride);
       }
 
+      // Track cantrip visibility changes for cleanup
+      const cantripVisibilityChanges = {};
+
       // Apply class rule changes using RuleSetManager - this should come AFTER rule set application
       if (expandedData.class) {
         for (const [classId, rules] of Object.entries(expandedData.class)) {
           log(3, `Processing rules for class ${classId}:`, rules);
+
+          // Check if showCantrips changed from true to false
+          const currentRules = currentClassRules[classId] || {};
+          const wasShowingCantrips = currentRules.showCantrips !== false; // default to true
+          const willShowCantrips = rules.showCantrips !== false; // default to true
+
+          if (wasShowingCantrips && !willShowCantrips) {
+            cantripVisibilityChanges[classId] = 'disabled';
+            log(3, `Cantrips disabled for class ${classId}`);
+          } else if (!wasShowingCantrips && willShowCantrips) {
+            cantripVisibilityChanges[classId] = 'enabled';
+            log(3, `Cantrips enabled for class ${classId}`);
+          }
 
           // Process the rules to ensure proper types
           const processedRules = {};
@@ -432,7 +451,12 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         log(2, 'No class rules found in expanded data:', expandedData);
       }
 
-      // Trigger spellbook refresh if it's open
+      // Handle cantrip cleanup/restoration
+      if (Object.keys(cantripVisibilityChanges).length > 0) {
+        await SpellbookSettingsDialog._handleCantripVisibilityChanges(actor, cantripVisibilityChanges);
+      }
+
+      // Trigger spellbook refresh if it's open - with force flag
       const openSpellbooks = Object.values(foundry.applications.instances).filter(
         (w) => w.constructor.name === 'PlayerSpellBook' && w.actor.id === actor.id
       );
@@ -448,6 +472,46 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       log(1, 'Error saving enhanced spellbook settings:', error);
       ui.notifications.error(game.i18n.localize('SPELLBOOK.Settings.SaveError'));
       return null;
+    }
+  }
+
+  /**
+   * Handle cantrip visibility changes - cleanup when disabled, restore when enabled
+   * @param {Actor5e} actor - The actor
+   * @param {Object} changes - Object mapping class IDs to 'enabled'/'disabled'
+   * @returns {Promise<void>}
+   * @private
+   */
+  static async _handleCantripVisibilityChanges(actor, changes) {
+    try {
+      const spellManager = new SpellManager(actor);
+
+      for (const [classId, changeType] of Object.entries(changes)) {
+        if (changeType === 'disabled') {
+          // Remove cantrips from actor items
+          const cantripsToRemove = actor.items
+            .filter(
+              (item) =>
+                item.type === 'spell' &&
+                item.system.level === 0 &&
+                (item.system.sourceClass === classId || item.sourceClass === classId) &&
+                // Don't remove always prepared or granted cantrips
+                !item.system.preparation?.alwaysPrepared &&
+                !item.flags?.dnd5e?.cachedFor
+            )
+            .map((item) => item.id);
+
+          if (cantripsToRemove.length > 0) {
+            await actor.deleteEmbeddedDocuments('Item', cantripsToRemove);
+            log(3, `Removed ${cantripsToRemove.length} cantrips for disabled class ${classId}`);
+          }
+
+          // Clean up prepared spells flags
+          await spellManager.cleanupCantripsForClass(classId);
+        }
+      }
+    } catch (error) {
+      log(1, 'Error handling cantrip visibility changes:', error);
     }
   }
 }

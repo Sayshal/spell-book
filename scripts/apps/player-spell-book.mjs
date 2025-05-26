@@ -1514,21 +1514,60 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /**
+   * Refresh the spellbook after settings changes with proper UI updates
+   * @returns {Promise<void>}
+   */
   async refreshFromSettingsChange() {
     try {
       log(3, 'Refreshing spellbook from settings change');
 
-      // Re-initialize the state manager
+      // Store current tab selection
+      const currentTab = this.tabGroups['spellbook-tabs'];
+
+      // Clear any cached state
       this._stateManager._initialized = false;
       this._stateManager._classesDetected = false;
+      this._stateManager.spellcastingClasses = {};
+      this._stateManager.classSpellData = {};
+
+      // Clear tab state cache to prevent stale data
+      if (this._tabStateCache) {
+        this._tabStateCache.clear();
+      }
+
+      // Re-register class parts (in case classes were added/removed)
+      await this._registerClassParts();
 
       // Reload everything
       await this._stateManager.initialize();
 
-      // Re-render
-      this.render(false);
+      // Try to restore the previous tab if it still exists
+      if (currentTab && this._stateManager.spellcastingClasses) {
+        const classMatch = currentTab.match(/^([^T]+)Tab$/);
+        const classIdentifier = classMatch ? classMatch[1] : null;
+
+        if (classIdentifier && this._stateManager.classSpellData[classIdentifier]) {
+          this.tabGroups['spellbook-tabs'] = currentTab;
+          this._stateManager.setActiveClass(classIdentifier);
+        } else {
+          // If previous tab no longer exists, default to first available
+          const firstClass = Object.keys(this._stateManager.spellcastingClasses)[0];
+          if (firstClass) {
+            this.tabGroups['spellbook-tabs'] = `${firstClass}Tab`;
+            this._stateManager.setActiveClass(firstClass);
+          }
+        }
+      }
+
+      // Force a complete re-render
+      this.render(true);
+
+      log(3, 'Spellbook refresh complete');
     } catch (error) {
       log(1, 'Error refreshing spellbook from settings change:', error);
+      // Fallback to basic render
+      this.render(false);
     }
   }
 
