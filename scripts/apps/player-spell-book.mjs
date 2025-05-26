@@ -1199,31 +1199,37 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         return;
       }
 
-      const canChange = this.spellManager.canChangeCantripStatus(
-        sourceSpell,
-        isChecked,
-        isLevelUp,
-        isLongRest,
-        this._uiCantripCount,
-        classIdentifier
-      );
+      // During UI interaction, only enforce count limits for checking cantrips
+      // Rule-based restrictions will be applied after form submission
+      if (isChecked) {
+        // Check count limits when checking a cantrip
+        const canChange = this.spellManager.canChangeCantripStatus(
+          sourceSpell,
+          isChecked,
+          isLevelUp,
+          isLongRest,
+          this._uiCantripCount,
+          classIdentifier
+        );
 
-      if (!canChange.allowed) {
-        checkbox.checked = !isChecked;
-        if (canChange.message) {
-          ui.notifications.warn(game.i18n.localize(canChange.message));
-        }
-
-        // Update counter without triggering recursive lock setup
-        if (this.ui) {
-          try {
-            this.ui.updateCantripCounter(null, true);
-          } catch (err) {
-            log(2, 'Error updating cantrip counter after prevention:', err);
+        if (!canChange.allowed) {
+          checkbox.checked = !isChecked;
+          if (canChange.message) {
+            ui.notifications.warn(game.i18n.localize(canChange.message));
           }
+
+          // Update counter without triggering recursive lock setup
+          if (this.ui) {
+            try {
+              this.ui.updateCantripCounter(null, true);
+            } catch (err) {
+              log(2, 'Error updating cantrip counter after prevention:', err);
+            }
+          }
+          return;
         }
-        return;
       }
+      // For unchecking during UI interaction, allow it freely - rules will be enforced after saving
 
       this.spellManager.trackCantripChange(sourceSpell, isChecked, isLevelUp, isLongRest, classIdentifier);
 

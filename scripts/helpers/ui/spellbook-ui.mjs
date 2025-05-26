@@ -453,7 +453,7 @@ export class SpellbookUI {
 
       const cantripLevel = activeTabContent.querySelector('.spell-level[data-level="0"]');
       if (cantripLevel) {
-        // Apply rule-based locks on initial setup (based on saved state)
+        // Apply rule-based locks based on saved state (not current UI state)
         this.setupCantripLocks(false, true);
 
         if (this.app.wizardManager?.isWizard && this.app._isLongRest) {
@@ -680,11 +680,18 @@ export class SpellbookUI {
 
     const isLevelUp = this.app.spellManager.canBeLeveledUp();
     const isLongRest = this.app._isLongRest;
+    const uuid = checkbox.dataset.uuid;
+
+    // Check if this cantrip is actually saved as prepared in actor flags
+    const preparedByClass = this.app.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
+    const classPreparedSpells = preparedByClass[classIdentifier] || [];
+    const classSpellKey = `${classIdentifier}:${uuid}`;
+    const isSavedAsPrepared = classPreparedSpells.includes(classSpellKey);
 
     // Use the class-specific cantrip swapping rules
     switch (settings.cantripSwapping) {
-      case 'none': // Legacy behavior - can't change once set
-        if (isChecked) {
+      case 'none': // Legacy behavior - can't change once saved as prepared
+        if (isSavedAsPrepared) {
           checkbox.disabled = true;
           checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedLegacy');
           item.classList.add('cantrip-locked');
@@ -692,7 +699,7 @@ export class SpellbookUI {
         break;
 
       case 'levelUp': // Modern level-up rules
-        if (!isLevelUp && isChecked) {
+        if (!isLevelUp && isSavedAsPrepared) {
           checkbox.disabled = true;
           checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedOutsideLevelUp');
           item.classList.add('cantrip-locked');
@@ -705,7 +712,7 @@ export class SpellbookUI {
           checkbox.disabled = true;
           checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.WizardRuleOnly');
           item.classList.add('cantrip-locked');
-        } else if (!isLongRest && isChecked) {
+        } else if (!isLongRest && isSavedAsPrepared) {
           checkbox.disabled = true;
           checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedOutsideLongRest');
           item.classList.add('cantrip-locked');
