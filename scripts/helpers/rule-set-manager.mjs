@@ -24,11 +24,18 @@ export class RuleSetManager {
     try {
       // Detect all spellcasting classes on the actor
       const spellcastingClasses = RuleSetManager._detectSpellcastingClasses(actor);
+
+      // Get existing class rules to preserve any custom settings
+      const existingClassRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
       const classRules = {};
 
-      // Apply rule set defaults for each class
+      // Apply rule set defaults for each class, but preserve existing custom values
       for (const [classId, classData] of Object.entries(spellcastingClasses)) {
-        classRules[classId] = RuleSetManager._getClassDefaults(classId, ruleSet);
+        const defaults = RuleSetManager._getClassDefaults(classId, ruleSet);
+        const existing = existingClassRules[classId] || {};
+
+        // Merge defaults with existing, giving preference to existing values
+        classRules[classId] = { ...defaults, ...existing };
       }
 
       // Save the class rules to the actor
@@ -80,7 +87,15 @@ export class RuleSetManager {
   static async updateClassRules(actor, classIdentifier, newRules) {
     try {
       const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
-      classRules[classIdentifier] = { ...classRules[classIdentifier], ...newRules };
+
+      // Merge the new rules with existing ones
+      classRules[classIdentifier] = {
+        ...classRules[classIdentifier],
+        ...newRules
+      };
+
+      log(3, `Updating class rules for ${classIdentifier}:`, classRules[classIdentifier]);
+
       await actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
 
       log(3, `Updated class rules for ${classIdentifier} on ${actor.name}`);

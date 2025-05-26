@@ -1514,9 +1514,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  /**
-   * Add this method to refresh the spellbook when settings change
-   */
   async refreshFromSettingsChange() {
     try {
       log(3, 'Refreshing spellbook from settings change');

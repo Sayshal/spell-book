@@ -62,7 +62,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
   /** @override */
   get title() {
-    return `${game.i18n.localize('SPELLBOOK.Settings.Title')}: ${this.actor.name}`;
+    return game.i18n.format('SPELLBOOK.Settings.Title', { name: this.actor.name });
   }
 
   /** @override */
@@ -377,8 +377,12 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       // Expand the form data to handle nested properties
       const expandedData = foundry.utils.expandObject(formData.object);
 
+      log(3, 'Expanded form data:', expandedData);
+
       // Handle rule set override
       const ruleSetOverride = expandedData.ruleSetOverride === 'global' ? null : expandedData.ruleSetOverride;
+      const previousRuleSetOverride = actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE);
+
       await actor.setFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE, ruleSetOverride);
 
       // Handle enforcement behavior
@@ -386,9 +390,17 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         expandedData.enforcementBehavior === 'global' ? null : expandedData.enforcementBehavior;
       await actor.setFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR, enforcementBehavior);
 
-      // Apply class rule changes using RuleSetManager
-      if (expandedData.classRules) {
-        for (const [classId, rules] of Object.entries(expandedData.classRules)) {
+      // If rule set changed, apply new defaults FIRST, then override with custom settings
+      if (ruleSetOverride && ruleSetOverride !== previousRuleSetOverride) {
+        log(3, `Rule set changed from ${previousRuleSetOverride} to ${ruleSetOverride}, applying defaults first`);
+        await RuleSetManager.applyRuleSetToActor(actor, ruleSetOverride);
+      }
+
+      // Apply class rule changes using RuleSetManager - this should come AFTER rule set application
+      if (expandedData.class) {
+        for (const [classId, rules] of Object.entries(expandedData.class)) {
+          log(3, `Processing rules for class ${classId}:`, rules);
+
           // Process the rules to ensure proper types
           const processedRules = {};
 
@@ -411,14 +423,13 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
             }
           });
 
-          // Update the class rules
+          log(3, `Processed rules for class ${classId}:`, processedRules);
+
+          // Update the class rules - this will override the defaults
           await RuleSetManager.updateClassRules(actor, classId, processedRules);
         }
-      }
-
-      // If rule set changed, apply new defaults to any classes that don't have custom overrides
-      if (ruleSetOverride) {
-        await RuleSetManager.applyRuleSetToActor(actor, ruleSetOverride);
+      } else {
+        log(2, 'No class rules found in expanded data:', expandedData);
       }
 
       // Trigger spellbook refresh if it's open
