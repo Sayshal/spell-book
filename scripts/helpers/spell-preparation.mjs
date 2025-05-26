@@ -1201,4 +1201,62 @@ export class SpellManager {
       log(2, 'Cleaned up stale preparation flags');
     }
   }
+
+  /**
+   * Determine if a spell can be swapped based on class rules
+   * @param {Item5e} spell - The spell being modified
+   * @param {boolean} isChecked - Whether the spell is being checked (true) or unchecked (false)
+   * @param {boolean} wasPrepared - Whether the spell was previously prepared
+   * @param {string} classIdentifier - The class identifier
+   * @returns {Object} Status object with allowed and message properties
+   */
+  canChangeSpellStatus(spell, isChecked, wasPrepared, classIdentifier) {
+    // Skip cantrips - they have their own enforcement
+    if (spell.system.level === 0) return { allowed: true };
+
+    // If no class identifier provided, use spell's source class
+    if (!classIdentifier) {
+      classIdentifier = spell.sourceClass || spell.system?.sourceClass;
+    }
+
+    if (!classIdentifier) {
+      log(2, `No class identifier for spell ${spell.name}, allowing change but may cause issues`);
+      return { allowed: true };
+    }
+
+    // Get class-specific settings
+    const settings = this.getSettings(classIdentifier);
+    const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
+
+    // Only enforce for "enforced" behavior - allow free changes for notifyGM/unenforced
+    if (settings.behavior !== ENFORCEMENT_BEHAVIOR.ENFORCED) {
+      return { allowed: true };
+    }
+
+    // If unchecking a spell, check if swapping is allowed
+    if (!isChecked && wasPrepared) {
+      const spellSwapping = classRules.spellSwapping || 'none';
+      const isLevelUp = this.canBeLeveledUp();
+      const isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING) || false;
+
+      switch (spellSwapping) {
+        case 'levelUp': // Can only swap on level up (Bard, Sorcerer, Warlock)
+          if (!isLevelUp) {
+            return { allowed: false, message: 'SPELLBOOK.Spells.LockedOutsideLevelUp' };
+          }
+          break;
+
+        case 'longRest': // Can swap on long rest (Cleric, Druid, Wizard, Paladin)
+          if (!isLongRest) {
+            return { allowed: false, message: 'SPELLBOOK.Spells.LockedOutsideLongRest' };
+          }
+          break;
+
+        case 'none': // Can't swap at all
+          return { allowed: false, message: 'SPELLBOOK.Spells.LockedNoSwapping' };
+      }
+    }
+
+    return { allowed: true };
+  }
 }

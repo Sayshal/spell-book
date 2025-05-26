@@ -267,6 +267,7 @@ export class SpellbookUI {
   _enforcePerClassSpellLimits(tabContent, classIdentifier, isClassAtMax) {
     try {
       const spellCheckboxes = tabContent.querySelectorAll('dnd5e-checkbox[data-uuid]');
+      const classData = this.app._stateManager.classSpellData[classIdentifier];
 
       spellCheckboxes.forEach((checkbox) => {
         const spellItem = checkbox.closest('.spell-item');
@@ -285,14 +286,16 @@ export class SpellbookUI {
         if (isClassAtMax && !checkbox.checked) {
           checkbox.disabled = true;
           checkbox.dataset.tooltip = game.i18n.format('SPELLBOOK.Preparation.ClassAtMaximum', {
-            class: this.app._stateManager.classSpellData[classIdentifier]?.className || classIdentifier
+            class: classData?.className || classIdentifier
           });
-          spellItem.classList.add('class-max-prepared');
+          spellItem.classList.add('spell-locked', 'max-prepared');
         } else {
-          // Re-enable if not at max
-          checkbox.disabled = false;
-          delete checkbox.dataset.tooltip;
-          spellItem.classList.remove('class-max-prepared');
+          // Re-enable if not at max (but preserve other lock states)
+          if (!spellItem.classList.contains('spell-locked')) {
+            checkbox.disabled = false;
+            delete checkbox.dataset.tooltip;
+          }
+          spellItem.classList.remove('max-prepared');
         }
       });
 
@@ -440,7 +443,7 @@ export class SpellbookUI {
   }
 
   /**
-   * Set up cantrip-specific UI elements
+   * Set up cantrip-specific UI elements and spell locks
    */
   setupCantripUI() {
     try {
@@ -449,27 +452,30 @@ export class SpellbookUI {
       if (!activeTabContent) return;
 
       const cantripLevel = activeTabContent.querySelector('.spell-level[data-level="0"]');
-      if (!cantripLevel) return;
+      if (cantripLevel) {
+        // Apply rule-based locks on initial setup (based on saved state)
+        this.setupCantripLocks(false, true);
 
-      // Apply rule-based locks on initial setup (based on saved state)
-      this.setupCantripLocks(false, true);
+        if (this.app.wizardManager?.isWizard && this.app._isLongRest) {
+          const cantripRules = this.app.spellManager.getSettings().rules;
+          const existingInfo = cantripLevel.querySelector('.wizard-rules-info');
+          if (existingInfo) existingInfo.remove();
 
-      if (this.app.wizardManager?.isWizard && this.app._isLongRest) {
-        const cantripRules = this.app.spellManager.getSettings().rules;
-        const existingInfo = cantripLevel.querySelector('.wizard-rules-info');
-        if (existingInfo) existingInfo.remove();
+          const infoElement = document.createElement('div');
+          infoElement.className = 'wizard-rules-info';
+          const ruleKey =
+            cantripRules === CANTRIP_RULES.MODERN_LONG_REST ?
+              'SPELLBOOK.Wizard.ModernCantripRules'
+            : 'SPELLBOOK.Wizard.LegacyCantripRules';
+          infoElement.innerHTML = `<i class="fas fa-info-circle"></i> ${game.i18n.localize(ruleKey)}`;
 
-        const infoElement = document.createElement('div');
-        infoElement.className = 'wizard-rules-info';
-        const ruleKey =
-          cantripRules === CANTRIP_RULES.MODERN_LONG_REST ?
-            'SPELLBOOK.Wizard.ModernCantripRules'
-          : 'SPELLBOOK.Wizard.LegacyCantripRules';
-        infoElement.innerHTML = `<i class="fas fa-info-circle"></i> ${game.i18n.localize(ruleKey)}`;
-
-        const levelHeading = cantripLevel.querySelector('.spell-level-heading');
-        if (levelHeading) levelHeading.appendChild(infoElement);
+          const levelHeading = cantripLevel.querySelector('.spell-level-heading');
+          if (levelHeading) levelHeading.appendChild(infoElement);
+        }
       }
+
+      // Also set up spell locks for rule-based enforcement
+      this.setupSpellLocks(true);
     } catch (error) {
       log(1, 'Error setting up cantrip UI:', error);
     }
@@ -743,6 +749,126 @@ export class SpellbookUI {
       }
     } catch (error) {
       log(1, 'Error applying class styling:', error);
+    }
+  }
+
+  /**
+   * Set up spell lock states based on class swapping rules and max limits
+   * @param {boolean} [applyRuleLocks=false] - Whether to apply rule-based locks (vs count-only)
+   */
+  setupSpellLocks(applyRuleLocks = false) {
+    try {
+      const activeTab = this.app.tabGroups['spellbook-tabs'];
+      if (!activeTab) return;
+
+      const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
+      if (!activeTabContent) return;
+
+      const classIdentifier = activeTabContent?.dataset.classIdentifier;
+      if (!classIdentifier) return;
+
+      // Get class-specific settings and data
+      const settings = this.app.spellManager.getSettings(classIdentifier);
+      const classRules = RuleSetManager.getClassRules(this.app.actor, classIdentifier);
+      const classData = this.app._stateManager.classSpellData[classIdentifier];
+
+      if (!classData) return;
+
+      // Get current spell preparation counts for this class
+      const currentPrepared = classData.spellPreparation.current || 0;
+      const maxPrepared = classData.spellPreparation.maximum || 0;
+      const isAtMax = currentPrepared >= maxPrepared;
+
+      const spellItems = activeTabContent.querySelectorAll('.spell-item');
+      const isLevelUp = this.app.spellManager.canBeLeveledUp();
+      const isLongRest = this.app._isLongRest;
+
+      for (const item of spellItems) {
+        const spellLevel = item.dataset.spellLevel;
+
+        // Skip cantrips - they have their own lock system
+        if (spellLevel === '0') continue;
+
+        const checkbox = item.querySelector('dnd5e-checkbox');
+        if (!checkbox) continue;
+
+        const spellSourceClass = checkbox.dataset.sourceClass;
+
+        // Only process spells for this class
+        if (spellSourceClass && spellSourceClass !== classIdentifier) continue;
+
+        // Skip always prepared/granted spells
+        if (item.querySelector('.tag.always-prepared') || item.querySelector('.tag.granted')) continue;
+
+        const isChecked = checkbox.checked;
+        const wasPrepared = checkbox.dataset.wasPrepared === 'true';
+
+        // Reset lock state
+        checkbox.disabled = false;
+        delete checkbox.dataset.tooltip;
+        item.classList.remove('spell-locked', 'max-prepared');
+
+        // Apply enforcement only for enforced behavior
+        if (settings.behavior === ENFORCEMENT_BEHAVIOR.ENFORCED) {
+          // PRIORITY 1: Max limit enforcement - disable unchecked spells when at max
+          if (isAtMax && !isChecked) {
+            checkbox.disabled = true;
+            checkbox.dataset.tooltip = game.i18n.format('SPELLBOOK.Preparation.ClassAtMaximum', {
+              class: classData.className || classIdentifier
+            });
+            item.classList.add('spell-locked', 'max-prepared');
+            continue; // Skip rule-based locks since max limit takes precedence
+          }
+
+          // PRIORITY 2: Rule-based locks for prepared spells (only if not at max limit)
+          if (applyRuleLocks && isChecked && wasPrepared) {
+            this._applyRuleBasedSpellLocks(item, checkbox, classIdentifier, classRules, isLevelUp, isLongRest);
+          }
+        }
+        // For NOTIFY_GM and UNENFORCED modes, no locks are applied
+      }
+
+      log(3, `Applied spell locks for ${classIdentifier}, at max: ${isAtMax} (${currentPrepared}/${maxPrepared})`);
+    } catch (error) {
+      log(1, 'Error setting up spell locks:', error);
+    }
+  }
+
+  /**
+   * Apply rule-based locks to a spell based on class swapping rules
+   * @param {HTMLElement} item - The spell item element
+   * @param {HTMLElement} checkbox - The checkbox element
+   * @param {string} classIdentifier - The class identifier
+   * @param {Object} classRules - The class-specific rules
+   * @param {boolean} isLevelUp - Whether this is during level-up
+   * @param {boolean} isLongRest - Whether this is during long rest
+   * @private
+   */
+  _applyRuleBasedSpellLocks(item, checkbox, classIdentifier, classRules, isLevelUp, isLongRest) {
+    const spellSwapping = classRules.spellSwapping || 'none';
+
+    switch (spellSwapping) {
+      case 'levelUp': // Can only swap on level up (Bard, Sorcerer, Warlock)
+        if (!isLevelUp) {
+          checkbox.disabled = true;
+          checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Spells.LockedOutsideLevelUp');
+          item.classList.add('spell-locked');
+        }
+        break;
+
+      case 'longRest': // Can swap on long rest (Cleric, Druid, Wizard, Paladin)
+        if (!isLongRest) {
+          checkbox.disabled = true;
+          checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Spells.LockedOutsideLongRest');
+          item.classList.add('spell-locked');
+        }
+        break;
+
+      case 'none': // Can't swap at all
+        checkbox.disabled = true;
+        checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Spells.LockedNoSwapping');
+        item.classList.add('spell-locked');
+        break;
     }
   }
 }

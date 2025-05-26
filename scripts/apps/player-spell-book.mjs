@@ -1058,11 +1058,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const spellItem = checkbox.closest('.spell-item');
       const spellName = spellItem?.querySelector('.spell-name')?.textContent.trim() || 'unknown';
       const spellLevel = spellItem?.dataset.spellLevel;
+      const wasPrepared = checkbox.dataset.wasPrepared === 'true';
+      const isChecked = checkbox.checked;
 
       if (spellLevel === '0') {
         await this._handleCantripPreparationChange(event, uuid, spellItem);
-      } else if (spellItem) {
-        spellItem.classList.toggle('prepared-spell', checkbox.checked);
+      } else {
+        // Handle regular spell preparation with swapping enforcement
+        await this._handleSpellPreparationChange(event, uuid, spellItem, sourceClass, wasPrepared, isChecked);
       }
 
       // Only update UI if element is ready
@@ -1077,6 +1080,81 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       log(1, 'Error handling preparation change:', error);
     } finally {
       this._handlingPreparation = false;
+    }
+  }
+
+  /**
+   * Handle regular spell preparation change with swapping enforcement
+   * @param {Event} event - The change event
+   * @param {string} uuid - The spell UUID
+   * @param {HTMLElement} spellItem - The spell item element
+   * @param {string} sourceClass - The source class identifier
+   * @param {boolean} wasPrepared - Whether the spell was previously prepared
+   * @param {boolean} isChecked - Whether the spell is being checked
+   * @returns {Promise<void>}
+   * @private
+   * @async
+   */
+  async _handleSpellPreparationChange(event, uuid, spellItem, sourceClass, wasPrepared, isChecked) {
+    try {
+      const checkbox = event.target;
+
+      // Get the active tab's class identifier - use sourceClass as fallback
+      const activeTab = this.tabGroups['spellbook-tabs'];
+      const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
+      const classIdentifier =
+        activeTabContent?.dataset.classIdentifier || sourceClass || this._stateManager.activeClass;
+
+      if (!classIdentifier) {
+        log(2, `No class identifier could be determined for spell change handling`);
+        return;
+      }
+
+      const sourceSpell = await fromUuid(uuid);
+      if (!sourceSpell) {
+        log(1, `Could not find source spell for UUID: ${uuid}`);
+        return;
+      }
+
+      // Get class data for max limit checking
+      const classData = this._stateManager.classSpellData[classIdentifier];
+      const settings = this.spellManager.getSettings(classIdentifier);
+
+      // Check max limits first (only for enforced mode)
+      if (settings.behavior === ENFORCEMENT_BEHAVIOR.ENFORCED && isChecked && !wasPrepared) {
+        const currentPrepared = classData?.spellPreparation?.current || 0;
+        const maxPrepared = classData?.spellPreparation?.maximum || 0;
+
+        if (currentPrepared >= maxPrepared) {
+          // Revert the checkbox state
+          checkbox.checked = false;
+          ui.notifications.warn(
+            game.i18n.format('SPELLBOOK.Preparation.ClassAtMaximum', {
+              class: classData?.className || classIdentifier
+            })
+          );
+          return;
+        }
+      }
+
+      // Check if spell swapping is allowed (for unchecking prepared spells)
+      const canChange = this.spellManager.canChangeSpellStatus(sourceSpell, isChecked, wasPrepared, classIdentifier);
+
+      if (!canChange.allowed) {
+        // Revert the checkbox state
+        checkbox.checked = !isChecked;
+        if (canChange.message) {
+          ui.notifications.warn(game.i18n.localize(canChange.message));
+        }
+        return;
+      }
+
+      // Update visual state
+      if (spellItem) {
+        spellItem.classList.toggle('prepared-spell', isChecked);
+      }
+    } catch (error) {
+      log(1, 'Error handling spell preparation change:', error);
     }
   }
 
@@ -1704,6 +1782,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       // Apply rule-based locks now that changes are saved
       if (this.ui && this.rendered) {
         this.ui.setupCantripUI(); // This will apply rule locks
+        this.ui.setupSpellLocks(true); // Apply spell rule locks after saving
       }
 
       return actor;
