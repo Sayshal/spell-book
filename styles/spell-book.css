@@ -1239,12 +1239,14 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    padding: 0.25rem 1rem;
+    padding: 0.25rem 1rem 0; /* Remove bottom padding */
     max-height: 70vh;
+    height: 100%; /* Use full height */
   }
 
   /* Notice area styling */
   .settings-notices {
+    flex: 0 0 auto; /* Don't grow/shrink */
     margin-bottom: 1rem;
 
     .notice {
@@ -1284,6 +1286,7 @@
 
   /* Fieldset styling */
   .settings-fieldset {
+    flex: 0 0 auto; /* Don't grow/shrink by default */
     margin: 0;
     padding: 0.5rem;
     border: 1px solid var(--color-light-2);
@@ -1301,14 +1304,74 @@
       font-style: italic;
       color: var(--spell-book-text-secondary);
     }
+
+    &.rule-set-fieldset {
+      flex: 0 0 auto; /* Fixed size */
+    }
   }
 
+  /* Scrollable class rules section */
   .class-rules-fieldset {
-    overflow: scroll;
-    overflow-y: auto;
+    flex: 1 1 auto; /* Allow this to grow and shrink */
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Important for flexbox scrolling */
+    overflow: hidden; /* Hide overflow on the fieldset itself */
+
+    .fieldset-description {
+      flex: 0 0 auto;
+    }
+
+    /* The actual scrollable content */
+    .class-rules-content {
+      flex: 1 1 auto;
+      overflow: hidden auto;
+      padding-right: 0.25rem; /* Space for scrollbar */
+
+      /* Custom scrollbar styling */
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: var(--spell-book-bg-disabled);
+        border-radius: 3px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: var(--color-border-light-tertiary);
+        border-radius: 3px;
+
+        &:hover {
+          background: var(--color-border-light-secondary);
+        }
+      }
+    }
   }
 
-  /* Setting row - the core of our new layout */
+  /* Fixed footer section */
+  .submit-section {
+    flex: 0 0 auto; /* Fixed size */
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem;
+    margin: 0 -1rem -0.25rem; /* Negative margins to extend to edges */
+    background: var(--spell-book-bg-primary);
+    border-top: 1px solid var(--color-border-light-tertiary);
+    box-shadow: 0 -2px 4px rgb(0 0 0 / 10%);
+    z-index: 10;
+
+    .submit-button {
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 1.1em;
+      font-weight: bold;
+    }
+  }
+
+  /* Rest of the existing styles... */
   .setting-row {
     display: flex;
     align-items: center;
@@ -1477,15 +1540,6 @@
       width: 60px;
       min-width: 60px;
       text-align: center;
-      font-weight: bold;
-    }
-  }
-
-  .submit-section {
-    .submit-button {
-      width: 100%;
-      padding: 0.75rem;
-      font-size: 1.1em;
       font-weight: bold;
     }
   }
