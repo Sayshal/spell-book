@@ -1,4 +1,4 @@
-import { CANTRIP_RULES, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, SETTINGS } from '../constants.mjs';
+import { ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, SETTINGS } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import { CantripManager } from './cantrip-manager.mjs';
 import * as genericUtils from './generic-utils.mjs';
@@ -321,22 +321,61 @@ export class SpellManager {
       classIdentifier = spell.sourceClass || spell.system?.sourceClass;
     }
 
-    // Get class-specific prepared spell tracking
+    const spellUuid = spell.compendiumUuid || spell.uuid;
+
+    // PRIORITY 1: Check if there's an actual spell on the actor that matches this UUID and class
+    const actualSpell = this.actor.items.find(
+      (item) =>
+        item.type === 'spell' &&
+        (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) &&
+        (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
+    );
+
+    if (actualSpell) {
+      // Use the actual spell's state - this is the source of truth
+      return this._getOwnedSpellPreparationStatus(actualSpell, classIdentifier);
+    }
+
+    // PRIORITY 2: Check for any spell on actor with this UUID (might need sourceClass assignment)
+    const unassignedSpell = this.actor.items.find(
+      (item) =>
+        item.type === 'spell' &&
+        (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) &&
+        !item.system?.sourceClass &&
+        !item.sourceClass
+    );
+
+    if (unassignedSpell && classIdentifier) {
+      // Auto-assign sourceClass and use its state
+      unassignedSpell.sourceClass = classIdentifier;
+      if (unassignedSpell.system) {
+        unassignedSpell.system.sourceClass = classIdentifier;
+      }
+      return this._getOwnedSpellPreparationStatus(unassignedSpell, classIdentifier);
+    }
+
+    // PRIORITY 3: For spells that exist on actor but belong to other classes
+    const otherClassSpell = this.actor.items.find(
+      (item) =>
+        item.type === 'spell' &&
+        (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) &&
+        item.system?.sourceClass &&
+        item.system.sourceClass !== classIdentifier
+    );
+
+    if (otherClassSpell) {
+      // This spell belongs to a different class, so it's not prepared for this class
+      return defaultStatus;
+    }
+
+    // PRIORITY 4: Fall back to flag-based checking for compendium spells not on actor
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const classPreparedSpells = preparedByClass[classIdentifier] || [];
 
     // Check if this specific spell is prepared for this specific class
-    const spellKey = this._createClassSpellKey(spell.compendiumUuid || spell.uuid, classIdentifier);
+    const spellKey = this._createClassSpellKey(spellUuid, classIdentifier);
     const isPreparedForClass = classPreparedSpells.includes(spellKey);
 
-    // For owned spells, get the detailed status
-    if (spell.parent === this.actor || spell._id) {
-      const ownedStatus = this._getOwnedSpellPreparationStatus(spell, classIdentifier);
-      ownedStatus.prepared = isPreparedForClass || ownedStatus.prepared;
-      return ownedStatus;
-    }
-
-    // For non-owned spells, check if prepared for this class
     defaultStatus.prepared = isPreparedForClass;
 
     // Handle cantrip limits per class
@@ -383,22 +422,25 @@ export class SpellManager {
   /**
    * Get preparation status for a spell that's on the actor
    * @param {Item5e} spell - The spell item
+   * @param {string} classIdentifier - The class identifier for context
    * @returns {Object} - Preparation status information
    * @private
    */
-  _getOwnedSpellPreparationStatus(spell) {
+  _getOwnedSpellPreparationStatus(spell, classIdentifier) {
     const preparationMode = spell.system.preparation?.mode;
     const alwaysPrepared = preparationMode === 'always';
     const localizedPreparationMode = formattingUtils.getLocalizedPreparationMode(preparationMode);
     const sourceInfo = this._determineSpellSource(spell);
     const isGranted = !!sourceInfo && !!spell.flags?.dnd5e?.cachedFor;
     const isCantrip = spell.system.level === 0;
-    const spellSourceClass = spell.sourceClass || spell.system?.sourceClass;
 
-    // Get class-specific prepared spell info
-    const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
-    const isPreparedForClass =
-      spellSourceClass && preparedByClass[spellSourceClass]?.includes(spell.compendiumUuid || spell.uuid);
+    // For owned spells, use the actual preparation state, not flags
+    const actuallyPrepared = !!(
+      isGranted ||
+      alwaysPrepared ||
+      spell.system.preparation?.prepared ||
+      ['innate', 'pact', 'atwill', 'ritual'].includes(preparationMode)
+    );
 
     let isCantripLocked = false;
     let cantripLockReason = '';
@@ -420,7 +462,7 @@ export class SpellManager {
     }
 
     const result = {
-      prepared: !!(isGranted || isPreparedForClass || alwaysPrepared),
+      prepared: actuallyPrepared,
       isOwned: true,
       preparationMode: preparationMode,
       localizedPreparationMode: localizedPreparationMode,
@@ -433,31 +475,57 @@ export class SpellManager {
       cantripLockReason: cantripLockReason
     };
 
-    if (isCantrip && !alwaysPrepared && !isGranted) {
-      const { rules, behavior } = this.settings;
-      const isPrepared = isPreparedForClass;
-
-      if (behavior !== ENFORCEMENT_BEHAVIOR.ENFORCED) return result;
-
-      if (rules === CANTRIP_RULES.LEGACY && isPrepared) {
-        result.disabled = true;
-        result.isCantripLocked = true;
-        result.cantripLockReason = 'SPELLBOOK.Cantrips.LockedLegacy';
-        result.disabledReason = 'SPELLBOOK.Cantrips.LockedLegacy';
-      } else if (rules === CANTRIP_RULES.MODERN_LEVEL_UP && isPrepared) {
-        result.disabled = true;
-        result.isCantripLocked = true;
-        result.cantripLockReason = 'SPELLBOOK.Cantrips.LockedOutsideLevelUp';
-        result.disabledReason = 'SPELLBOOK.Cantrips.LockedOutsideLevelUp';
-      } else if (rules === CANTRIP_RULES.MODERN_LONG_REST && isPrepared && this.isWizard) {
-        result.disabled = true;
-        result.isCantripLocked = true;
-        result.cantripLockReason = 'SPELLBOOK.Cantrips.LockedOutsideLongRest';
-        result.disabledReason = 'SPELLBOOK.Cantrips.LockedOutsideLongRest';
+    // Apply rule-based cantrip locks if needed
+    if (isCantrip && !alwaysPrepared && !isGranted && classIdentifier) {
+      const settings = this.getSettings(classIdentifier);
+      if (settings.behavior === ENFORCEMENT_BEHAVIOR.ENFORCED) {
+        this._applyRuleBasedCantripLocks(result, actuallyPrepared, classIdentifier, settings);
       }
     }
 
     return result;
+  }
+
+  /**
+   * Apply rule-based cantrip locks to preparation status
+   * @param {Object} result - The preparation status result to modify
+   * @param {boolean} isPrepared - Whether the cantrip is currently prepared
+   * @param {string} classIdentifier - The class identifier
+   * @param {Object} settings - The class settings
+   * @private
+   */
+  _applyRuleBasedCantripLocks(result, isPrepared, classIdentifier, settings) {
+    const isLevelUp = this.canBeLeveledUp();
+    const isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING) || false;
+
+    switch (settings.cantripSwapping) {
+      case 'none': // Legacy behavior - can't change once set
+        if (isPrepared) {
+          result.disabled = true;
+          result.isCantripLocked = true;
+          result.cantripLockReason = 'SPELLBOOK.Cantrips.LockedLegacy';
+          result.disabledReason = 'SPELLBOOK.Cantrips.LockedLegacy';
+        }
+        break;
+
+      case 'levelUp': // Modern level-up rules
+        if (!isLevelUp && isPrepared) {
+          result.disabled = true;
+          result.isCantripLocked = true;
+          result.cantripLockReason = 'SPELLBOOK.Cantrips.LockedOutsideLevelUp';
+          result.disabledReason = 'SPELLBOOK.Cantrips.LockedOutsideLevelUp';
+        }
+        break;
+
+      case 'longRest': // Modern long-rest rules (wizard only)
+        if (classIdentifier === 'wizard' && !isLongRest && isPrepared) {
+          result.disabled = true;
+          result.isCantripLocked = true;
+          result.cantripLockReason = 'SPELLBOOK.Cantrips.LockedOutsideLongRest';
+          result.disabledReason = 'SPELLBOOK.Cantrips.LockedOutsideLongRest';
+        }
+        break;
+    }
   }
 
   /**
@@ -1080,6 +1148,46 @@ export class SpellManager {
       preparedByClass[classIdentifier] = cleanedSpells;
       await this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
       await this._updateGlobalPreparedSpellsFlag();
+    }
+  }
+
+  /**
+   * Clean up stale preparation flags that don't correspond to actual spells
+   * @returns {Promise<void>}
+   */
+  async cleanupStalePreparationFlags() {
+    const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
+    let hasChanges = false;
+
+    for (const [classIdentifier, spellKeys] of Object.entries(preparedByClass)) {
+      const cleanedKeys = [];
+
+      for (const spellKey of spellKeys) {
+        const parsed = this._parseClassSpellKey(spellKey);
+
+        // Check if there's actually a spell on the actor for this UUID and class
+        const actualSpell = this.actor.items.find(
+          (item) =>
+            item.type === 'spell' &&
+            (item.flags?.core?.sourceId === parsed.spellUuid || item.uuid === parsed.spellUuid) &&
+            (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
+        );
+
+        if (actualSpell) {
+          cleanedKeys.push(spellKey);
+        } else {
+          log(3, `Cleaning up stale flag for ${parsed.spellUuid} in class ${classIdentifier}`);
+          hasChanges = true;
+        }
+      }
+
+      preparedByClass[classIdentifier] = cleanedKeys;
+    }
+
+    if (hasChanges) {
+      await this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
+      await this._updateGlobalPreparedSpellsFlag();
+      log(2, 'Cleaned up stale preparation flags');
     }
   }
 }

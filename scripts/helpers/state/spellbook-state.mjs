@@ -62,6 +62,9 @@ export class SpellbookState {
         await this.detectSpellcastingClasses();
       }
 
+      // Clean up stale flags before loading
+      await this.app.spellManager.cleanupStalePreparationFlags();
+
       await this.loadSpellData();
       this._initialized = true;
       return true;
