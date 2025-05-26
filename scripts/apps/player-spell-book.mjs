@@ -1515,60 +1515,50 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Refresh the spellbook after settings changes with proper UI updates
+   * Refresh the spellbook after settings changes
    * @returns {Promise<void>}
    */
   async refreshFromSettingsChange() {
-    try {
-      log(3, 'Refreshing spellbook from settings change');
+    // Store current tab selection
+    const currentTab = this.tabGroups['spellbook-tabs'];
 
-      // Store current tab selection
-      const currentTab = this.tabGroups['spellbook-tabs'];
+    // Clear cached state
+    this._stateManager._initialized = false;
+    this._stateManager._classesDetected = false;
+    this._stateManager.spellcastingClasses = {};
+    this._stateManager.classSpellData = {};
 
-      // Clear any cached state
-      this._stateManager._initialized = false;
-      this._stateManager._classesDetected = false;
-      this._stateManager.spellcastingClasses = {};
-      this._stateManager.classSpellData = {};
+    // Clear tab state cache
+    if (this._tabStateCache) {
+      this._tabStateCache.clear();
+    }
 
-      // Clear tab state cache to prevent stale data
-      if (this._tabStateCache) {
-        this._tabStateCache.clear();
-      }
+    // Re-register class parts
+    await this._registerClassParts();
 
-      // Re-register class parts (in case classes were added/removed)
-      await this._registerClassParts();
+    // Reload everything
+    await this._stateManager.initialize();
 
-      // Reload everything
-      await this._stateManager.initialize();
+    // Restore previous tab if it still exists
+    if (currentTab && this._stateManager.spellcastingClasses) {
+      const classMatch = currentTab.match(/^([^T]+)Tab$/);
+      const classIdentifier = classMatch ? classMatch[1] : null;
 
-      // Try to restore the previous tab if it still exists
-      if (currentTab && this._stateManager.spellcastingClasses) {
-        const classMatch = currentTab.match(/^([^T]+)Tab$/);
-        const classIdentifier = classMatch ? classMatch[1] : null;
-
-        if (classIdentifier && this._stateManager.classSpellData[classIdentifier]) {
-          this.tabGroups['spellbook-tabs'] = currentTab;
-          this._stateManager.setActiveClass(classIdentifier);
-        } else {
-          // If previous tab no longer exists, default to first available
-          const firstClass = Object.keys(this._stateManager.spellcastingClasses)[0];
-          if (firstClass) {
-            this.tabGroups['spellbook-tabs'] = `${firstClass}Tab`;
-            this._stateManager.setActiveClass(firstClass);
-          }
+      if (classIdentifier && this._stateManager.classSpellData[classIdentifier]) {
+        this.tabGroups['spellbook-tabs'] = currentTab;
+        this._stateManager.setActiveClass(classIdentifier);
+      } else {
+        // Default to first available class
+        const firstClass = Object.keys(this._stateManager.spellcastingClasses)[0];
+        if (firstClass) {
+          this.tabGroups['spellbook-tabs'] = `${firstClass}Tab`;
+          this._stateManager.setActiveClass(firstClass);
         }
       }
-
-      // Force a complete re-render
-      this.render(true);
-
-      log(3, 'Spellbook refresh complete');
-    } catch (error) {
-      log(1, 'Error refreshing spellbook from settings change:', error);
-      // Fallback to basic render
-      this.render(false);
     }
+
+    // Force complete re-render
+    this.render(true);
   }
 
   /**

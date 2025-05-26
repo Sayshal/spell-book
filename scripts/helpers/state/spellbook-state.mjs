@@ -53,13 +53,11 @@ export class SpellbookState {
   async initialize() {
     try {
       if (this._initialized) {
-        log(3, 'SpellbookState already initialized, skipping');
         return true;
       }
 
       this.isLongRest = !!this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING);
 
-      // Only detect classes if not already done
       if (!this._classesDetected) {
         await this.detectSpellcastingClasses();
       }
@@ -69,6 +67,7 @@ export class SpellbookState {
       return true;
     } catch (error) {
       log(1, 'Error initializing spellbook state:', error);
+      this.isLoading = false;
       return false;
     }
   }
@@ -79,68 +78,56 @@ export class SpellbookState {
    * @async
    */
   async detectSpellcastingClasses() {
-    try {
-      if (this._classesDetected) {
-        log(3, 'Spellcasting classes already detected, skipping');
-        return;
-      }
-
-      this.spellcastingClasses = {};
-      this.classSpellData = {};
-      this.classPrepModes = {};
-      this.classRitualRules = {};
-      this.classSwapRules = {};
-
-      // Get all class items
-      const classItems = this.actor.items.filter((i) => i.type === 'class');
-
-      // Find all spellcasting classes
-      for (const classItem of classItems) {
-        // Skip classes without spellcasting
-        if (!classItem.system.spellcasting?.progression || classItem.system.spellcasting.progression === 'none') {
-          continue;
-        }
-
-        const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
-        log(3, `Found spellcasting class: ${classItem.name} (${identifier})`);
-
-        this.spellcastingClasses[identifier] = {
-          name: classItem.name,
-          uuid: classItem.uuid,
-          id: classItem.id,
-          spellcasting: classItem.system.spellcasting,
-          img: classItem.img
-        };
-
-        this.classSpellData[identifier] = {
-          spellLevels: [],
-          className: classItem.name,
-          spellPreparation: { current: 0, maximum: 0 },
-          classItem: classItem,
-          type: classItem.system.spellcasting?.type || 'leveled',
-          progression: classItem.system.spellcasting?.progression || 'none'
-        };
-
-        // Initialize preparation modes for this class
-        this.classPrepModes[identifier] = this.getClassPreparationMode(classItem);
-
-        // Initialize ritual rules for this class
-        this.classRitualRules[identifier] = this.getClassRitualRules(classItem);
-
-        // Initialize spell swap rules for this class
-        this.classSwapRules[identifier] = this.getClassSwapRules(classItem);
-      }
-
-      // Set the active class to the first one if none is active
-      if (Object.keys(this.spellcastingClasses).length > 0 && !this.activeClass) {
-        this.activeClass = Object.keys(this.spellcastingClasses)[0];
-      }
-
-      this._classesDetected = true;
-      log(2, `Detected ${Object.keys(this.spellcastingClasses).length} spellcasting classes for ${this.actor.name}`);
-    } catch (error) {
-      log(1, 'Error detecting spellcasting classes:', error);
+    if (this._classesDetected) {
+      return;
     }
+
+    // Clear existing data
+    this.spellcastingClasses = {};
+    this.classSpellData = {};
+    this.classPrepModes = {};
+    this.classRitualRules = {};
+    this.classSwapRules = {};
+
+    // Get all class items
+    const classItems = this.actor.items.filter((i) => i.type === 'class');
+
+    // Find all spellcasting classes
+    for (const classItem of classItems) {
+      if (!classItem.system.spellcasting?.progression || classItem.system.spellcasting.progression === 'none') {
+        continue;
+      }
+
+      const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
+
+      this.spellcastingClasses[identifier] = {
+        name: classItem.name,
+        uuid: classItem.uuid,
+        id: classItem.id,
+        spellcasting: classItem.system.spellcasting,
+        img: classItem.img
+      };
+
+      this.classSpellData[identifier] = {
+        spellLevels: [],
+        className: classItem.name,
+        spellPreparation: { current: 0, maximum: 0 },
+        classItem: classItem,
+        type: classItem.system.spellcasting?.type || 'leveled',
+        progression: classItem.system.spellcasting?.progression || 'none'
+      };
+
+      this.classPrepModes[identifier] = this.getClassPreparationMode(classItem);
+      this.classRitualRules[identifier] = this.getClassRitualRules(classItem);
+      this.classSwapRules[identifier] = this.getClassSwapRules(classItem);
+    }
+
+    // Set the active class to the first one if none is active
+    if (Object.keys(this.spellcastingClasses).length > 0 && !this.activeClass) {
+      this.activeClass = Object.keys(this.spellcastingClasses)[0];
+    }
+
+    this._classesDetected = true;
   }
 
   /**

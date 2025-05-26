@@ -372,14 +372,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       const actor = this.actor;
       if (!actor) return null;
 
-      log(3, `Saving enhanced spellbook settings for ${actor.name}`, formData);
-
-      // Expand the form data to handle nested properties
       const expandedData = foundry.utils.expandObject(formData.object);
-
-      log(3, 'Expanded form data:', expandedData);
-
-      // Get current class rules for comparison
       const currentClassRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
 
       // Handle rule set override
@@ -393,34 +386,29 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         expandedData.enforcementBehavior === 'global' ? null : expandedData.enforcementBehavior;
       await actor.setFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR, enforcementBehavior);
 
-      // If rule set changed, apply new defaults FIRST, then override with custom settings
+      // If rule set changed, apply new defaults first
       if (ruleSetOverride && ruleSetOverride !== previousRuleSetOverride) {
-        log(3, `Rule set changed from ${previousRuleSetOverride} to ${ruleSetOverride}, applying defaults first`);
         await RuleSetManager.applyRuleSetToActor(actor, ruleSetOverride);
       }
 
       // Track cantrip visibility changes for cleanup
       const cantripVisibilityChanges = {};
 
-      // Apply class rule changes using RuleSetManager - this should come AFTER rule set application
+      // Apply class rule changes
       if (expandedData.class) {
         for (const [classId, rules] of Object.entries(expandedData.class)) {
-          log(3, `Processing rules for class ${classId}:`, rules);
-
-          // Check if showCantrips changed from true to false
+          // Check if showCantrips changed
           const currentRules = currentClassRules[classId] || {};
-          const wasShowingCantrips = currentRules.showCantrips !== false; // default to true
-          const willShowCantrips = rules.showCantrips !== false; // default to true
+          const wasShowingCantrips = currentRules.showCantrips !== false;
+          const willShowCantrips = rules.showCantrips !== false;
 
           if (wasShowingCantrips && !willShowCantrips) {
             cantripVisibilityChanges[classId] = 'disabled';
-            log(3, `Cantrips disabled for class ${classId}`);
           } else if (!wasShowingCantrips && willShowCantrips) {
             cantripVisibilityChanges[classId] = 'enabled';
-            log(3, `Cantrips enabled for class ${classId}`);
           }
 
-          // Process the rules to ensure proper types
+          // Process the rules
           const processedRules = {};
 
           if (rules.preparationBonus !== undefined) {
@@ -435,20 +423,14 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
             processedRules.customSpellList = rules.customSpellList || null;
           }
 
-          // Add other rule properties as needed
           ['cantripSwapping', 'spellSwapping', 'ritualCasting'].forEach((prop) => {
             if (rules[prop] !== undefined) {
               processedRules[prop] = rules[prop];
             }
           });
 
-          log(3, `Processed rules for class ${classId}:`, processedRules);
-
-          // Update the class rules - this will override the defaults
           await RuleSetManager.updateClassRules(actor, classId, processedRules);
         }
-      } else {
-        log(2, 'No class rules found in expanded data:', expandedData);
       }
 
       // Handle cantrip cleanup/restoration
@@ -456,8 +438,9 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         await SpellbookSettingsDialog._handleCantripVisibilityChanges(actor, cantripVisibilityChanges);
       }
 
-      // Trigger spellbook refresh if it's open - with force flag
-      const openSpellbooks = Object.values(foundry.applications.instances).filter(
+      // Find and refresh open spellbooks
+      const allInstances = Array.from(foundry.applications.instances.values());
+      const openSpellbooks = allInstances.filter(
         (w) => w.constructor.name === 'PlayerSpellBook' && w.actor.id === actor.id
       );
 
@@ -466,10 +449,9 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       }
 
       ui.notifications.info(game.i18n.format('SPELLBOOK.Settings.Saved', { name: actor.name }));
-
       return actor;
     } catch (error) {
-      log(1, 'Error saving enhanced spellbook settings:', error);
+      log(1, 'Error saving spellbook settings:', error);
       ui.notifications.error(game.i18n.localize('SPELLBOOK.Settings.SaveError'));
       return null;
     }
@@ -483,35 +465,29 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    * @private
    */
   static async _handleCantripVisibilityChanges(actor, changes) {
-    try {
-      const spellManager = new SpellManager(actor);
+    const spellManager = new SpellManager(actor);
 
-      for (const [classId, changeType] of Object.entries(changes)) {
-        if (changeType === 'disabled') {
-          // Remove cantrips from actor items
-          const cantripsToRemove = actor.items
-            .filter(
-              (item) =>
-                item.type === 'spell' &&
-                item.system.level === 0 &&
-                (item.system.sourceClass === classId || item.sourceClass === classId) &&
-                // Don't remove always prepared or granted cantrips
-                !item.system.preparation?.alwaysPrepared &&
-                !item.flags?.dnd5e?.cachedFor
-            )
-            .map((item) => item.id);
+    for (const [classId, changeType] of Object.entries(changes)) {
+      if (changeType === 'disabled') {
+        // Remove cantrips from actor items
+        const cantripsToRemove = actor.items
+          .filter(
+            (item) =>
+              item.type === 'spell' &&
+              item.system.level === 0 &&
+              (item.system.sourceClass === classId || item.sourceClass === classId) &&
+              !item.system.preparation?.alwaysPrepared &&
+              !item.flags?.dnd5e?.cachedFor
+          )
+          .map((item) => item.id);
 
-          if (cantripsToRemove.length > 0) {
-            await actor.deleteEmbeddedDocuments('Item', cantripsToRemove);
-            log(3, `Removed ${cantripsToRemove.length} cantrips for disabled class ${classId}`);
-          }
-
-          // Clean up prepared spells flags
-          await spellManager.cleanupCantripsForClass(classId);
+        if (cantripsToRemove.length > 0) {
+          await actor.deleteEmbeddedDocuments('Item', cantripsToRemove);
         }
+
+        // Clean up prepared spells flags
+        await spellManager.cleanupCantripsForClass(classId);
       }
-    } catch (error) {
-      log(1, 'Error handling cantrip visibility changes:', error);
     }
   }
 }

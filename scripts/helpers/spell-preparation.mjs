@@ -1036,41 +1036,32 @@ export class SpellManager {
    * @returns {Promise<void>}
    */
   async cleanupCantripsForClass(classIdentifier) {
-    try {
-      const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
+    const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
 
-      if (!preparedByClass[classIdentifier]) return;
+    if (!preparedByClass[classIdentifier]) return;
 
-      const cleanedSpells = [];
+    const cleanedSpells = [];
 
-      for (const classSpellKey of preparedByClass[classIdentifier]) {
-        const parsed = this._parseClassSpellKey(classSpellKey);
+    for (const classSpellKey of preparedByClass[classIdentifier]) {
+      const parsed = this._parseClassSpellKey(classSpellKey);
 
-        try {
-          // Try to get the spell to check its level
-          const spell = await fromUuid(parsed.spellUuid);
+      try {
+        const spell = await fromUuid(parsed.spellUuid);
 
-          // Only keep non-cantrips
-          if (spell && spell.system.level !== 0) {
-            cleanedSpells.push(classSpellKey);
-          }
-        } catch (error) {
-          // If we can't load the spell, keep it (better safe than sorry)
+        // Only keep non-cantrips
+        if (spell && spell.system.level !== 0) {
           cleanedSpells.push(classSpellKey);
         }
+      } catch (error) {
+        // If we can't load the spell, keep it (safer)
+        cleanedSpells.push(classSpellKey);
       }
+    }
 
-      if (cleanedSpells.length !== preparedByClass[classIdentifier].length) {
-        preparedByClass[classIdentifier] = cleanedSpells;
-        await this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
-
-        // Update global prepared spells flag too
-        await this._updateGlobalPreparedSpellsFlag();
-
-        log(3, `Cleaned up cantrip entries for class ${classIdentifier}`);
-      }
-    } catch (error) {
-      log(1, `Error cleaning up cantrips for class ${classIdentifier}:`, error);
+    if (cleanedSpells.length !== preparedByClass[classIdentifier].length) {
+      preparedByClass[classIdentifier] = cleanedSpells;
+      await this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
+      await this._updateGlobalPreparedSpellsFlag();
     }
   }
 }
