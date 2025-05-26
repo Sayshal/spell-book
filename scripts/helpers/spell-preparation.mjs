@@ -346,11 +346,19 @@ export class SpellManager {
     );
 
     if (unassignedSpell && classIdentifier) {
-      // Auto-assign sourceClass and use its state
-      unassignedSpell.sourceClass = classIdentifier;
-      if (unassignedSpell.system) {
-        unassignedSpell.system.sourceClass = classIdentifier;
+      // Don't auto-assign sourceClass to always prepared spells (they come from subclasses/items/features)
+      const isAlwaysPrepared = unassignedSpell.system.preparation?.mode === 'always';
+      const isGranted = !!unassignedSpell.flags?.dnd5e?.cachedFor;
+      const isSpecialMode = ['innate', 'pact', 'atwill', 'ritual'].includes(unassignedSpell.system.preparation?.mode);
+
+      if (!isAlwaysPrepared && !isGranted && !isSpecialMode) {
+        // Only auto-assign sourceClass to regular prepared spells
+        unassignedSpell.sourceClass = classIdentifier;
+        if (unassignedSpell.system) {
+          unassignedSpell.system.sourceClass = classIdentifier;
+        }
       }
+
       return this._getOwnedSpellPreparationStatus(unassignedSpell, classIdentifier);
     }
 

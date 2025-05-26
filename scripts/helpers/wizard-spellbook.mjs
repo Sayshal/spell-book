@@ -97,7 +97,7 @@ export class WizardSpellbookManager {
    */
   async getSpellbookSpells() {
     const journal = await this.getOrCreateSpellbookJournal();
-    const journalPage = journal.pages.find((p) => p.type === 'spells');
+    const journalPage = journal?.pages.find((p) => p.type === 'spells');
     return Array.from(journalPage.system.spells || []);
   }
 
