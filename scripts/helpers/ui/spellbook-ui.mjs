@@ -596,7 +596,7 @@ export class SpellbookUI {
       const cantripItems = activeTabContent.querySelectorAll('.spell-item[data-spell-level="0"]');
       if (!cantripItems.length) return;
 
-      // Get class-specific settings
+      // Get class-specific settings including enforcement behavior
       const settings = this.app.spellManager.getSettings(classIdentifier);
 
       // Get class-specific cantrip count
@@ -634,18 +634,26 @@ export class SpellbookUI {
         delete checkbox.dataset.tooltip;
         item.classList.remove('cantrip-locked');
 
-        // ALWAYS apply count-based limits
-        if (currentCount >= maxCantrips && !isChecked) {
-          checkbox.disabled = true;
-          checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.MaximumReached');
-          item.classList.add('cantrip-locked');
-          continue;
-        }
+        // Only apply count-based limits if enforcement behavior is ENFORCED
+        // This makes cantrips consistent with leveled spell behavior
+        if (settings.behavior === ENFORCEMENT_BEHAVIOR.ENFORCED) {
+          if (currentCount >= maxCantrips && !isChecked) {
+            checkbox.disabled = true;
+            checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.MaximumReached');
+            item.classList.add('cantrip-locked');
+            continue;
+          }
 
-        // Only apply rule-based locks if explicitly requested
-        if (applyRuleLocks) {
-          this._applyRuleBasedCantripLocks(item, checkbox, isChecked, classIdentifier, settings);
+          // Only apply rule-based locks if explicitly requested AND behavior is enforced
+          if (applyRuleLocks) {
+            this._applyRuleBasedCantripLocks(item, checkbox, isChecked, classIdentifier, settings);
+          }
+        } else if (settings.behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
+          // For NOTIFY_GM mode, allow going over limits but could add visual indicators
+          // The actual GM notification will be handled during form submission
+          // No locks applied, full freedom like leveled spells
         }
+        // For UNENFORCED mode, no locks are applied at all
       }
     } catch (error) {
       log(1, 'Error setting up cantrip locks:', error);

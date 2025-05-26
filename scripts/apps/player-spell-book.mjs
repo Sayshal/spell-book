@@ -1,4 +1,4 @@
-import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import { ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as filterUtils from '../helpers/filters.mjs';
 import * as formElements from '../helpers/form-elements.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
@@ -1593,6 +1593,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         // Skip always prepared spells
         if (isAlwaysPreparedElement) continue;
 
+        // Get spell level for over-limit notifications
+        const spellLevel = spellItem?.dataset.spellLevel ? parseInt(spellItem.dataset.spellLevel) : 0;
+
         // Initialize class data if needed
         if (!spellDataByClass[sourceClass]) {
           spellDataByClass[sourceClass] = {};
@@ -1609,13 +1612,73 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           isAlwaysPrepared: false,
           isRitual,
           sourceClass,
-          classSpellKey
+          classSpellKey,
+          spellLevel
         };
       }
 
-      // Process each class independently
+      // Process each class independently and collect cantrip changes
+      const allCantripChangesByClass = {};
       for (const [classIdentifier, classSpellData] of Object.entries(spellDataByClass)) {
-        await this.spellManager.saveClassSpecificPreparedSpells(classIdentifier, classSpellData);
+        const saveResult = await this.spellManager.saveClassSpecificPreparedSpells(classIdentifier, classSpellData);
+        if (saveResult && saveResult.cantripChanges && saveResult.cantripChanges.hasChanges) {
+          allCantripChangesByClass[classIdentifier] = saveResult.cantripChanges;
+        }
+      }
+
+      // Send comprehensive GM notifications in notifyGM mode
+      const globalBehavior =
+        this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) ||
+        game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) ||
+        ENFORCEMENT_BEHAVIOR.NOTIFY_GM;
+
+      if (globalBehavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
+        const notificationData = {
+          actorName: this.actor.name,
+          classChanges: {}
+        };
+
+        // Build notification data using actual save results
+        for (const [classIdentifier, classSpellData] of Object.entries(spellDataByClass)) {
+          const classData = this._stateManager.classSpellData[classIdentifier];
+          if (!classData) continue;
+
+          const className = classData.className || classIdentifier;
+
+          // Use actual cantrip changes from save operation
+          const cantripChanges = allCantripChangesByClass[classIdentifier] || { added: [], removed: [] };
+
+          // Count final prepared amounts
+          const cantripCount = Object.values(classSpellData).filter(
+            (spell) => spell.isPrepared && spell.spellLevel === 0
+          ).length;
+          const spellCount = Object.values(classSpellData).filter(
+            (spell) => spell.isPrepared && spell.spellLevel > 0
+          ).length;
+
+          const maxCantrips = this.spellManager.getMaxAllowed(classIdentifier);
+          const maxSpells = classData.spellPreparation?.maximum || 0;
+
+          notificationData.classChanges[classIdentifier] = {
+            className,
+            cantripChanges,
+            overLimits: {
+              cantrips: {
+                isOver: cantripCount > maxCantrips,
+                current: cantripCount,
+                max: maxCantrips
+              },
+              spells: {
+                isOver: spellCount > maxSpells,
+                current: spellCount,
+                max: maxSpells
+              }
+            }
+          };
+        }
+
+        // Send comprehensive notification
+        await this.spellManager.cantripManager.sendComprehensiveGMNotification(notificationData);
       }
 
       // Handle post-processing

@@ -216,15 +216,6 @@ export class SpellManager {
   }
 
   /**
-   * Notify GM about cantrip changes (if setting enabled)
-   * @param {Object} changes - Information about cantrip changes
-   * @returns {Promise<void>}
-   */
-  async notifyGMOfCantripChanges(changes) {
-    return this.cantripManager.notifyGMOfCantripChanges(changes);
-  }
-
-  /**
    * Initialize flags on the actor
    * @returns {Promise<Object>} Update data applied, if any
    */
@@ -625,7 +616,7 @@ export class SpellManager {
   /**
    * Save prepared spells to the actor
    * @param {Object} spellData - Object mapping spell UUIDs to preparation data
-   * @returns {Promise<void>}
+   * @returns {Promise<Object>} Object containing cantrip changes and save results
    */
   async saveActorPreparedSpells(spellData) {
     try {
@@ -766,11 +757,11 @@ export class SpellManager {
         await this.actor.createEmbeddedDocuments('Item', spellsToCreate);
       }
 
-      if (cantripChanges.hasChanges) {
-        await this.notifyGMOfCantripChanges(cantripChanges);
-      }
+      // Return cantrip changes instead of notifying directly
+      return { cantripChanges };
     } catch (error) {
       log(1, `Error saving prepared spells for ${this.actor?.name || 'unknown actor'}:`, error);
+      return { cantripChanges: { added: [], removed: [], hasChanges: false } };
     }
   }
 
@@ -821,7 +812,7 @@ export class SpellManager {
    * Save prepared spells for a specific class
    * @param {string} classIdentifier - The class identifier
    * @param {Object} classSpellData - Object mapping class-spell keys to preparation data
-   * @returns {Promise<void>}
+   * @returns {Promise<Object>} Object containing cantrip changes and save results
    */
   async saveClassSpecificPreparedSpells(classIdentifier, classSpellData) {
     try {
@@ -845,10 +836,16 @@ export class SpellManager {
       const ritualCastingEnabled = this.ritualManager.isRitualCastingEnabled();
 
       for (const [classSpellKey, data] of Object.entries(classSpellData)) {
-        const { uuid, isPrepared, wasPrepared, isRitual, sourceClass } = data;
+        const { uuid, isPrepared, wasPrepared, isRitual, sourceClass, name } = data;
 
         if (isPrepared) {
           newClassPrepared.push(classSpellKey);
+
+          // Track cantrip additions
+          if (!wasPrepared && data.spellLevel === 0) {
+            cantripChanges.added.push({ name, uuid });
+            cantripChanges.hasChanges = true;
+          }
 
           // Find or create the spell on the actor
           await this._ensureSpellOnActor(
@@ -862,6 +859,12 @@ export class SpellManager {
             spellsToUpdate
           );
         } else if (wasPrepared) {
+          // Track cantrip removals
+          if (data.spellLevel === 0) {
+            cantripChanges.removed.push({ name, uuid });
+            cantripChanges.hasChanges = true;
+          }
+
           // Handle unpreparing spell
           await this._handleUnpreparingSpell(
             uuid,
@@ -898,11 +901,11 @@ export class SpellManager {
       // Update global prepared spells flag for compatibility
       await this._updateGlobalPreparedSpellsFlag();
 
-      if (cantripChanges.hasChanges) {
-        await this.notifyGMOfCantripChanges(cantripChanges);
-      }
+      // Return cantrip changes instead of notifying directly
+      return { cantripChanges };
     } catch (error) {
       log(1, `Error saving prepared spells for class ${classIdentifier}:`, error);
+      return { cantripChanges: { added: [], removed: [], hasChanges: false } };
     }
   }
 

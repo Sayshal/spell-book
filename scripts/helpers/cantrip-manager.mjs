@@ -139,7 +139,13 @@ export class CantripManager {
         const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount(classIdentifier);
         const maxCantrips = this.spellManager.getMaxAllowed(classIdentifier);
         if (currentCount >= maxCantrips) {
-          ui.notifications.warn(game.i18n.localize('SPELLBOOK.Cantrips.MaximumReached'));
+          ui.notifications.info(
+            game.i18n.format('SPELLBOOK.Notifications.OverLimitWarning', {
+              type: 'cantrips',
+              current: currentCount + 1,
+              max: maxCantrips
+            })
+          );
         }
       }
       return { allowed: true };
@@ -483,57 +489,6 @@ export class CantripManager {
   }
 
   /**
-   * Notify GM about cantrip changes (if setting enabled)
-   * @param {Object} changes - Information about cantrip changes
-   * @returns {Promise<void>}
-   */
-  async notifyGMOfCantripChanges(changes) {
-    if (changes.added.length === 0 && changes.removed.length === 0) return;
-
-    // Use global behavior setting for notifications
-    const globalBehavior =
-      this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) ||
-      game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) ||
-      ENFORCEMENT_BEHAVIOR.NOTIFY_GM;
-
-    if (globalBehavior !== ENFORCEMENT_BEHAVIOR.NOTIFY_GM) return;
-
-    const currentCantrips = this.actor.items
-      .filter(
-        (i) =>
-          i.type === 'spell' &&
-          i.system.level === 0 &&
-          i.system.preparation?.prepared &&
-          !i.system.preparation?.alwaysPrepared
-      )
-      .map((i) => i.name);
-
-    const originalCantripsSet = new Set(currentCantrips);
-    for (const { name } of changes.removed) originalCantripsSet.add(name);
-    for (const { name } of changes.added) originalCantripsSet.delete(name);
-    const originalCantrips = Array.from(originalCantripsSet).sort();
-
-    const newCantripsSet = new Set(originalCantrips);
-    for (const { name } of changes.removed) newCantripsSet.delete(name);
-    for (const { name } of changes.added) newCantripsSet.add(name);
-    const newCantrips = Array.from(newCantripsSet).sort();
-
-    let content = `<h3>${game.i18n.format('SPELLBOOK.Cantrips.ChangeNotification', { name: this.actor.name })}</h3>`;
-    if (originalCantrips.length > 0)
-      content += `<p><strong>Original Cantrips:</strong> ${originalCantrips.join(', ')}</p>`;
-    if (changes.removed.length > 0)
-      content += `<p><strong>${game.i18n.localize('SPELLBOOK.Cantrips.Removed')}:</strong> ${changes.removed.map((c) => c.name).join(', ')}</p>`;
-    if (changes.added.length > 0)
-      content += `<p><strong>${game.i18n.localize('SPELLBOOK.Cantrips.Added')}:</strong> ${changes.added.map((c) => c.name).join(', ')}</p>`;
-    if (newCantrips.length > 0) content += `<p><strong>New Cantrips:</strong> ${newCantrips.join(', ')}</p>`;
-
-    ChatMessage.create({
-      content: content,
-      whisper: game.users.filter((u) => u.isGM).map((u) => u.id)
-    });
-  }
-
-  /**
    * Reset all cantrip swap tracking data
    * @returns {Promise<void>}
    */
@@ -555,5 +510,74 @@ export class CantripManager {
     } else {
       await this.actor.setFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING, allTracking);
     }
+  }
+
+  /**
+   * Send comprehensive GM notification with all spell changes and over-limit warnings
+   * @param {Object} notificationData - Combined notification data
+   * @returns {Promise<void>}
+   */
+  async sendComprehensiveGMNotification(notificationData) {
+    const { actorName, classChanges } = notificationData;
+
+    // Check if there's anything to report
+    const hasChanges = Object.values(classChanges).some(
+      (classData) =>
+        classData.cantripChanges.added.length > 0 ||
+        classData.cantripChanges.removed.length > 0 ||
+        classData.overLimits.cantrips.isOver ||
+        classData.overLimits.spells.isOver
+    );
+
+    if (!hasChanges) return;
+
+    let content = `<h2>${game.i18n.format('SPELLBOOK.Notifications.ComprehensiveTitle', { name: actorName })}</h2>`;
+
+    for (const [classIdentifier, classData] of Object.entries(classChanges)) {
+      const { className, cantripChanges, overLimits } = classData;
+
+      // Skip if nothing to report for this class
+      if (
+        cantripChanges.added.length === 0 &&
+        cantripChanges.removed.length === 0 &&
+        !overLimits.cantrips.isOver &&
+        !overLimits.spells.isOver
+      ) {
+        continue;
+      }
+
+      content += `<h3>${className}</h3>`;
+
+      // Cantrip changes
+      if (cantripChanges.added.length > 0 || cantripChanges.removed.length > 0) {
+        content += `<p><strong>${game.i18n.localize('SPELLBOOK.Notifications.CantripChanges')}:</strong></p><ul>`;
+
+        if (cantripChanges.removed.length > 0) {
+          content += `<li><strong>${game.i18n.localize('SPELLBOOK.Notifications.Removed')}:</strong> ${cantripChanges.removed.map((c) => c.name).join(', ')}</li>`;
+        }
+
+        if (cantripChanges.added.length > 0) {
+          content += `<li><strong>${game.i18n.localize('SPELLBOOK.Notifications.Added')}:</strong> ${cantripChanges.added.map((c) => c.name).join(', ')}</li>`;
+        }
+
+        content += `</ul>`;
+      }
+
+      // Over-limit warnings
+      if (overLimits.cantrips.isOver) {
+        content += `<p><strong>${game.i18n.localize('SPELLBOOK.Notifications.CantripOverLimit')}:</strong> ${overLimits.cantrips.current}/${overLimits.cantrips.max} (${overLimits.cantrips.current - overLimits.cantrips.max} over)</p>`;
+      }
+
+      if (overLimits.spells.isOver) {
+        content += `<p><strong>${game.i18n.localize('SPELLBOOK.Notifications.SpellOverLimit')}:</strong> ${overLimits.spells.current}/${overLimits.spells.max} (${overLimits.spells.current - overLimits.spells.max} over)</p>`;
+      }
+
+      content += `<hr>`;
+    }
+
+    await ChatMessage.create({
+      content: content,
+      whisper: game.users.filter((u) => u.isGM).map((u) => u.id)
+    });
   }
 }
