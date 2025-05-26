@@ -43,9 +43,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       positioned: true
     },
     position: {
-      height: '840',
-      width: '600',
-      top: '75'
+      height: '900',
+      width: '600'
     }
   };
 

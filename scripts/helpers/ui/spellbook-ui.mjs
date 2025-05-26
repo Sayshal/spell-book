@@ -188,26 +188,72 @@ export class SpellbookUI {
       this.app._stateManager.updateGlobalPreparationCount();
       const globalPrepared = this.app._stateManager.spellPreparation;
 
-      // Update global count in the UI
-      const countDisplay = this.element.querySelector('.spell-prep-tracking');
-      if (countDisplay) {
-        const globalCurrentEl = countDisplay.querySelector('.global-current-count');
-        if (globalCurrentEl) globalCurrentEl.textContent = globalPrepared.current;
-
-        // Check if globally at max
-        const isGloballyAtMax = globalPrepared.current >= globalPrepared.maximum;
-
-        // Set the at-max class based on either class or global limits
-        if (isClassAtMax || isGloballyAtMax) {
-          countDisplay.classList.add('at-max');
-          this.element.classList.add('at-max-spells');
-        } else {
-          countDisplay.classList.remove('at-max');
-          this.element.classList.remove('at-max-spells');
-        }
-      }
+      // Update the footer UI elements with granular at-max classes
+      this._updateFooterPreparationDisplay(classIdentifier, isClassAtMax, globalPrepared);
     } catch (error) {
       log(1, 'Error updating spell preparation tracking:', error);
+    }
+  }
+
+  /**
+   * Update the footer preparation display with granular at-max styling
+   * @param {string} activeClassIdentifier - The currently active class identifier
+   * @param {boolean} isActiveClassAtMax - Whether the active class is at maximum
+   * @param {Object} globalPrepared - Global preparation counts {current, maximum}
+   * @private
+   */
+  _updateFooterPreparationDisplay(activeClassIdentifier, isActiveClassAtMax, globalPrepared) {
+    try {
+      const prepTrackingContainer = this.element.querySelector('.spell-prep-tracking');
+      if (!prepTrackingContainer) return;
+
+      // Update global count display
+      const globalCurrentEl = prepTrackingContainer.querySelector('.global-current-count');
+      if (globalCurrentEl) {
+        globalCurrentEl.textContent = globalPrepared.current;
+      }
+
+      // Check if globally at max
+      const isGloballyAtMax = globalPrepared.current >= globalPrepared.maximum;
+
+      // Apply at-max class to global prep count
+      const globalPrepCount = prepTrackingContainer.querySelector('.global-prep-count');
+      if (globalPrepCount) {
+        globalPrepCount.classList.toggle('at-max', isGloballyAtMax);
+      }
+
+      // Update class-specific preparation displays
+      const classPreps = prepTrackingContainer.querySelectorAll('.class-prep-count');
+      classPreps.forEach((classPrepEl) => {
+        const classId = classPrepEl.dataset.classIdentifier;
+
+        if (!classId) return;
+
+        // Get the class data to check if this specific class is at max
+        const classSpellData = this.app._stateManager.classSpellData[classId];
+        const isThisClassAtMax =
+          classSpellData ? classSpellData.spellPreparation.current >= classSpellData.spellPreparation.maximum : false;
+
+        // Apply at-max class to this specific class prep counter
+        classPrepEl.classList.toggle('at-max', isThisClassAtMax);
+
+        // Update the current count display for this class
+        const classCurrentEl = classPrepEl.querySelector('.class-current');
+        if (classCurrentEl && classSpellData) {
+          classCurrentEl.textContent = classSpellData.spellPreparation.current;
+        }
+      });
+
+      // Apply global styling to the application element for overall state
+      // This can be used for global CSS rules that affect the entire app
+      this.element.classList.toggle('at-max-spells', isGloballyAtMax);
+
+      log(
+        3,
+        `Updated footer: active class ${activeClassIdentifier} at max: ${isActiveClassAtMax}, global at max: ${isGloballyAtMax}`
+      );
+    } catch (error) {
+      log(1, 'Error updating footer preparation display:', error);
     }
   }
 

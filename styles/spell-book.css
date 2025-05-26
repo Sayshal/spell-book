@@ -824,6 +824,15 @@
         }
       }
 
+      &.at-max {
+        color: rgb(159 214 143);
+        font-weight: bold;
+
+        .class-current {
+          color: rgb(159 214 143);
+        }
+      }
+
       .class-name {
         margin-right: 0.25rem;
         font-weight: 400;
@@ -840,23 +849,19 @@
       margin-top: 0.25rem;
       padding-top: 0.25rem;
       border-top: 1px solid var(--color-border-light-tertiary);
-      font-size: 0.85em;
-      opacity: 0.9;
+
+      &.at-max {
+        color: rgb(159 214 143);
+        font-weight: bold;
+
+        .global-current-count {
+          color: rgb(159 214 143);
+        }
+      }
 
       .global-label {
         margin-right: 0.25rem;
         font-weight: 600;
-      }
-    }
-
-    &.at-max {
-      font-weight: bold;
-      color: var(--color-level-warning);
-
-      .current-count,
-      .max-count,
-      .global-current-count {
-        color: var(--color-level-warning);
       }
     }
   }
