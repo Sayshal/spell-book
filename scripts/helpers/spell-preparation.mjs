@@ -32,13 +32,32 @@ export class SpellManager {
 
   /**
    * Get cantrip and spell settings for the actor
+   * @param {string} classIdentifier - Optional class identifier for class-specific rules
    * @returns {Object} Actor's spell settings
    */
   getSettings(classIdentifier = null) {
     if (classIdentifier) {
       // Get class-specific rules
       const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
+
+      // Convert class-specific cantripSwapping to old format for compatibility
+      let cantripRules;
+      switch (classRules.cantripSwapping) {
+        case 'none':
+          cantripRules = 'legacy';
+          break;
+        case 'levelUp':
+          cantripRules = 'levelUp';
+          break;
+        case 'longRest':
+          cantripRules = 'longRest';
+          break;
+        default:
+          cantripRules = 'legacy';
+      }
+
       return {
+        rules: cantripRules,
         cantripSwapping: classRules.cantripSwapping,
         spellSwapping: classRules.spellSwapping,
         ritualCasting: classRules.ritualCasting,
@@ -50,12 +69,11 @@ export class SpellManager {
       };
     }
 
-    // Fallback to legacy behavior for backwards compatibility
+    // Fallback for backwards compatibility - should rarely be used now
+    const effectiveRuleSet = RuleSetManager.getEffectiveRuleSet(this.actor);
+
     return {
-      rules:
-        this.actor.getFlag(MODULE.ID, FLAGS.CANTRIP_RULES) ||
-        game.settings.get(MODULE.ID, SETTINGS.DEFAULT_CANTRIP_RULES) ||
-        CANTRIP_RULES.LEGACY,
+      rules: effectiveRuleSet === 'modern' ? 'levelUp' : 'legacy', // Convert rule set to cantrip rules
       behavior:
         this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) ||
         game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) ||

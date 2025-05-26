@@ -1166,8 +1166,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             spellItem.classList.toggle('prepared-spell', isChecked);
           }
 
-          // Call setupCantripLocks directly, not through updateCantripCounter
-          this.ui.setupCantripLocks();
+          // Call setupCantripLocks with count-only during UI interaction
+          this.ui.setupCantripLocks(false, false);
         } catch (err) {
           log(2, 'Error updating UI after cantrip change:', err);
         }
@@ -1638,6 +1638,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
       // Clear preserved tab state since changes are now committed
       this._clearTabStateCache();
+
+      // Apply rule-based locks now that changes are saved
+      if (this.ui && this.rendered) {
+        this.ui.setupCantripUI(); // This will apply rule locks
+      }
 
       return actor;
     } catch (error) {

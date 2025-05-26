@@ -13,6 +13,7 @@ import * as managerHelpers from './helpers/spell-management.mjs';
 import { SpellManager } from './helpers/spell-preparation.mjs';
 
 import { log } from './logger.mjs';
+import { forceMigration } from './migrations.mjs';
 
 /**
  * Creates and registers the module's API
@@ -34,7 +35,8 @@ export function createAPI() {
         discovery: { ...discoveryUtils },
         formatting: { ...formattingUtils },
         management: { ...managerHelpers },
-        SpellManager
+        SpellManager,
+        forceMigration: forceMigration
       },
 
       /**

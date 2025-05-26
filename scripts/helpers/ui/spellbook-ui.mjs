@@ -401,13 +401,18 @@ export class SpellbookUI {
       const activeTab = this.app.tabGroups['spellbook-tabs'];
       const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
       if (!activeTabContent) return;
+
       const cantripLevel = activeTabContent.querySelector('.spell-level[data-level="0"]');
       if (!cantripLevel) return;
-      this.setupCantripLocks();
+
+      // Apply rule-based locks on initial setup (based on saved state)
+      this.setupCantripLocks(false, true);
+
       if (this.app.wizardManager?.isWizard && this.app._isLongRest) {
         const cantripRules = this.app.spellManager.getSettings().rules;
         const existingInfo = cantripLevel.querySelector('.wizard-rules-info');
         if (existingInfo) existingInfo.remove();
+
         const infoElement = document.createElement('div');
         infoElement.className = 'wizard-rules-info';
         const ruleKey =
@@ -415,6 +420,7 @@ export class SpellbookUI {
             'SPELLBOOK.Wizard.ModernCantripRules'
           : 'SPELLBOOK.Wizard.LegacyCantripRules';
         infoElement.innerHTML = `<i class="fas fa-info-circle"></i> ${game.i18n.localize(ruleKey)}`;
+
         const levelHeading = cantripLevel.querySelector('.spell-level-heading');
         if (levelHeading) levelHeading.appendChild(infoElement);
       }
@@ -528,60 +534,41 @@ export class SpellbookUI {
   /**
    * Set up cantrip lock states based on selection rules
    * @param {boolean} [force=false] - Force update even if no active tab is found
+   * @param {boolean} [applyRuleLocks=false] - Whether to apply rule-based locks (vs count-only)
    */
-  setupCantripLocks(force = false) {
+  setupCantripLocks(force = false, applyRuleLocks = false) {
     try {
       const activeTab = this.app.tabGroups['spellbook-tabs'];
-      if (!activeTab && !force) {
-        log(2, 'No active tab found when setting up cantrip locks');
-        return;
-      }
+      if (!activeTab && !force) return;
 
       const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
-      if (!activeTabContent && !force) {
-        log(1, 'DEBUG NO TAB CONTENT FOUND', { this: this, element: this.element });
-        log(2, `No tab content found for tab "${activeTab}"`);
-        return;
-      }
+      if (!activeTabContent && !force) return;
 
       const classIdentifier = activeTabContent?.dataset.classIdentifier;
-      if (!classIdentifier && !force) {
-        log(2, 'No class identifier found for cantrip locks');
-        return;
-      }
+      if (!classIdentifier && !force) return;
 
       const cantripItems = activeTabContent.querySelectorAll('.spell-item[data-spell-level="0"]');
-      if (!cantripItems.length) {
-        log(3, 'No cantrip items found in active tab');
-        return;
-      }
+      if (!cantripItems.length) return;
 
-      const isLevelUp = this.app.spellManager.canBeLeveledUp();
-      const isLongRest = this.app._isLongRest;
-      const cantripLevel = activeTabContent.querySelector('.spell-level[data-level="0"]');
-      if (!cantripLevel) {
-        log(3, 'No cantrip level container found in active tab');
-        return;
-      }
+      // Get class-specific settings
+      const settings = this.app.spellManager.getSettings(classIdentifier);
 
-      // Get class-specific cantrip count - pass true to skip recursive call back to setupCantripLocks
+      // Get class-specific cantrip count
       let currentCount = 0;
       let maxCantrips = 0;
 
       try {
-        // This is the line that was causing recursion - call updateCantripCounter with skipLockSetup=true
-        const cantripCounter = this.updateCantripCounter(cantripLevel, true);
+        const cantripCounter = this.updateCantripCounter(null, true);
         currentCount = cantripCounter ? cantripCounter.current : 0;
         maxCantrips = cantripCounter ? cantripCounter.max : 0;
       } catch (err) {
         log(2, 'Error getting cantrip counts:', err);
-        // Fallback - try to get max from SpellManager directly
         if (classIdentifier) {
           maxCantrips = this.app.spellManager.getMaxAllowed(classIdentifier);
         }
       }
 
-      // Apply locks based on class-specific limit
+      // Apply locks to cantrip items
       for (const item of cantripItems) {
         const checkbox = item.querySelector('dnd5e-checkbox');
         if (!checkbox) continue;
@@ -591,16 +578,17 @@ export class SpellbookUI {
         // Only process cantrips for this class
         if (spellSourceClass && spellSourceClass !== classIdentifier) continue;
 
+        // Skip always prepared/granted cantrips
         if (item.querySelector('.tag.always-prepared') || item.querySelector('.tag.granted')) continue;
 
         const isChecked = checkbox.checked;
-        const uuid = checkbox.dataset.uuid;
 
+        // Reset lock state
         checkbox.disabled = false;
         delete checkbox.dataset.tooltip;
         item.classList.remove('cantrip-locked');
 
-        // Apply per-class cantrip limit
+        // ALWAYS apply count-based limits
         if (currentCount >= maxCantrips && !isChecked) {
           checkbox.disabled = true;
           checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.MaximumReached');
@@ -608,38 +596,61 @@ export class SpellbookUI {
           continue;
         }
 
-        // Apply cantrip swap rules
-        const rules = this.app.spellManager.getSettings().rules;
-        const behavior = this.app.spellManager.getSettings().behavior;
-
-        if (behavior !== ENFORCEMENT_BEHAVIOR.ENFORCED) continue;
-
-        // Apply the appropriate rules
-        if (rules === CANTRIP_RULES.LEGACY && isChecked) {
-          checkbox.disabled = true;
-          checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedLegacy');
-          item.classList.add('cantrip-locked');
-        } else if (rules === CANTRIP_RULES.MODERN_LEVEL_UP) {
-          if (!isLevelUp && isChecked) {
-            checkbox.disabled = true;
-            checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedOutsideLevelUp');
-            item.classList.add('cantrip-locked');
-          }
-        } else if (rules === CANTRIP_RULES.MODERN_LONG_REST) {
-          const isWizard = classIdentifier === CLASS_IDENTIFIERS.WIZARD;
-          if (!isWizard) {
-            checkbox.disabled = true;
-            checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.WizardRuleOnly');
-            item.classList.add('cantrip-locked');
-          } else if (!isLongRest && isChecked) {
-            checkbox.disabled = true;
-            checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedOutsideLongRest');
-            item.classList.add('cantrip-locked');
-          }
+        // Only apply rule-based locks if explicitly requested
+        if (applyRuleLocks) {
+          this._applyRuleBasedCantripLocks(item, checkbox, isChecked, classIdentifier, settings);
         }
       }
     } catch (error) {
       log(1, 'Error setting up cantrip locks:', error);
+    }
+  }
+
+  /**
+   * Apply rule-based locks to a cantrip (legacy/modern restrictions)
+   * @param {HTMLElement} item - The spell item element
+   * @param {HTMLElement} checkbox - The checkbox element
+   * @param {boolean} isChecked - Whether the checkbox is checked
+   * @param {string} classIdentifier - The class identifier
+   * @param {Object} settings - The class-specific settings
+   * @private
+   */
+  _applyRuleBasedCantripLocks(item, checkbox, isChecked, classIdentifier, settings) {
+    if (settings.behavior !== ENFORCEMENT_BEHAVIOR.ENFORCED) return;
+
+    const isLevelUp = this.app.spellManager.canBeLeveledUp();
+    const isLongRest = this.app._isLongRest;
+
+    // Use the class-specific cantrip swapping rules
+    switch (settings.cantripSwapping) {
+      case 'none': // Legacy behavior - can't change once set
+        if (isChecked) {
+          checkbox.disabled = true;
+          checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedLegacy');
+          item.classList.add('cantrip-locked');
+        }
+        break;
+
+      case 'levelUp': // Modern level-up rules
+        if (!isLevelUp && isChecked) {
+          checkbox.disabled = true;
+          checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedOutsideLevelUp');
+          item.classList.add('cantrip-locked');
+        }
+        break;
+
+      case 'longRest': // Modern long-rest rules (wizard only)
+        const isWizard = classIdentifier === 'wizard';
+        if (!isWizard) {
+          checkbox.disabled = true;
+          checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.WizardRuleOnly');
+          item.classList.add('cantrip-locked');
+        } else if (!isLongRest && isChecked) {
+          checkbox.disabled = true;
+          checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedOutsideLongRest');
+          item.classList.add('cantrip-locked');
+        }
+        break;
     }
   }
 
