@@ -1238,15 +1238,16 @@
   .spellbook-settings-form {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
-    padding: 0.25rem 1rem 0; /* Remove bottom padding */
-    max-height: 70vh;
-    height: 100%; /* Use full height */
+    gap: 0.75rem;
+    padding: 0.25rem 1rem 0;
+    max-height: 80vh;
+    min-height: 800px;
+    height: 100%;
   }
 
-  /* Notice area styling */
+  /* Notice area styling - keep as is */
   .settings-notices {
-    flex: 0 0 auto; /* Don't grow/shrink */
+    flex: 0 0 auto;
     margin-bottom: 1rem;
 
     .notice {
@@ -1286,7 +1287,7 @@
 
   /* Fieldset styling */
   .settings-fieldset {
-    flex: 0 0 auto; /* Don't grow/shrink by default */
+    flex: 0 0 auto;
     margin: 0;
     padding: 0.5rem;
     border: 1px solid var(--color-light-2);
@@ -1306,29 +1307,27 @@
     }
 
     &.rule-set-fieldset {
-      flex: 0 0 auto; /* Fixed size */
+      flex: 0 0 auto;
     }
   }
 
-  /* Scrollable class rules section */
+  /* The main scrollable section - this is where the magic happens */
   .class-rules-fieldset {
-    flex: 1 1 auto; /* Allow this to grow and shrink */
+    flex: 1 1 0;
     display: flex;
     flex-direction: column;
-    min-height: 0; /* Important for flexbox scrolling */
-    overflow: hidden; /* Hide overflow on the fieldset itself */
+    min-height: 0;
 
     .fieldset-description {
       flex: 0 0 auto;
     }
 
-    /* The actual scrollable content */
     .class-rules-content {
-      flex: 1 1 auto;
+      flex: 1 1 0;
       overflow: hidden auto;
-      padding-right: 0.25rem; /* Space for scrollbar */
+      padding-right: 0.25rem;
+      max-height: 50vh;
 
-      /* Custom scrollbar styling */
       &::-webkit-scrollbar {
         width: 6px;
       }
@@ -1349,29 +1348,19 @@
     }
   }
 
-  /* Fixed footer section */
   .submit-section {
-    flex: 0 0 auto; /* Fixed size */
-    position: sticky;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 1rem;
-    margin: 0 -1rem -0.25rem; /* Negative margins to extend to edges */
-    background: var(--spell-book-bg-primary);
-    border-top: 1px solid var(--color-border-light-tertiary);
-    box-shadow: 0 -2px 4px rgb(0 0 0 / 10%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 0 0 auto;
+    padding: 0.5rem 0;
     z-index: 10;
 
     .submit-button {
-      width: 100%;
-      padding: 0.75rem;
-      font-size: 1.1em;
-      font-weight: bold;
+      width: auto;
     }
   }
 
-  /* Rest of the existing styles... */
   .setting-row {
     display: flex;
     align-items: center;
