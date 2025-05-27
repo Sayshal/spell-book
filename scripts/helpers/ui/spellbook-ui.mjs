@@ -280,7 +280,13 @@ export class SpellbookUI {
         if (spellLevel === '0' || (spellSourceClass && spellSourceClass !== classIdentifier)) return;
 
         // Skip always prepared and granted spells
-        if (spellItem.querySelector('.tag.always-prepared') || spellItem.querySelector('.tag.granted')) return;
+        if (
+          spellItem.querySelector('.tag.always-prepared') ||
+          spellItem.querySelector('.tag.granted') ||
+          spellItem.querySelector('.tag.innate') ||
+          spellItem.querySelector('.tag.atwill')
+        )
+          return;
 
         // If class is at max and this spell isn't prepared, disable it
         if (isClassAtMax && !checkbox.checked) {
@@ -341,7 +347,13 @@ export class SpellbookUI {
       // Skip cantrips
       if (spellLevel === '0') return;
 
-      if (spellItem.querySelector('.tag.always-prepared') || spellItem.querySelector('.tag.granted')) return;
+      if (
+        spellItem.querySelector('.tag.always-prepared') ||
+        spellItem.querySelector('.tag.granted') ||
+        spellItem.querySelector('.tag.innate') ||
+        spellItem.querySelector('.tag.atwill')
+      )
+        return;
 
       checkbox.disabled = false;
       delete checkbox.dataset.tooltip;
@@ -393,8 +405,10 @@ export class SpellbookUI {
         spellItems.forEach((item) => {
           const hasAlwaysPrepared = !!item.querySelector('.tag.always-prepared');
           const hasGranted = !!item.querySelector('.tag.granted');
+          const hasInnate = !!item.querySelector('.tag.innate');
+          const hasAtWill = !!item.querySelector('.tag.atwill');
           const isPrepared = item.classList.contains('prepared-spell');
-          if (!hasAlwaysPrepared && !hasGranted) {
+          if (!hasAlwaysPrepared && !hasGranted && !hasInnate && !hasAtWill) {
             countableSpells.push(item);
             if (isPrepared) preparedSpells.push(item);
           }
@@ -532,7 +546,13 @@ export class SpellbookUI {
       let currentCount = 0;
       const cantripItems = cantripLevel.querySelectorAll('.spell-item');
       cantripItems.forEach((item) => {
-        if (item.querySelector('.tag.always-prepared') || item.querySelector('.tag.granted')) return;
+        if (
+          item.querySelector('.tag.always-prepared') ||
+          item.querySelector('.tag.atwill') ||
+          item.querySelector('.tag.innate') ||
+          item.querySelector('.tag.granted')
+        )
+          return;
 
         const checkbox = item.querySelector('dnd5e-checkbox');
         if (!checkbox) return;
@@ -817,7 +837,13 @@ export class SpellbookUI {
         if (spellSourceClass && spellSourceClass !== classIdentifier) continue;
 
         // Skip always prepared/granted spells
-        if (item.querySelector('.tag.always-prepared') || item.querySelector('.tag.granted')) continue;
+        if (
+          item.querySelector('.tag.always-prepared') ||
+          item.querySelector('.tag.granted') ||
+          item.querySelector('.tag.innate') ||
+          item.querySelector('.tag.atwill')
+        )
+          continue;
 
         const isChecked = checkbox.checked;
         const wasPrepared = checkbox.dataset.wasPrepared === 'true';

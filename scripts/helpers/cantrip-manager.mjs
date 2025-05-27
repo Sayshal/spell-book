@@ -409,7 +409,13 @@ export class CantripManager {
       const checkbox = item.querySelector('dnd5e-checkbox');
       if (!checkbox) continue;
 
-      if (item.querySelector('.tag.always-prepared') || item.querySelector('.tag.granted')) continue;
+      if (
+        item.querySelector('.tag.always-prepared') ||
+        item.querySelector('.tag.granted') ||
+        item.querySelector('.tag.innate') ||
+        item.querySelector('.tag.atwill')
+      )
+        continue;
 
       const isChecked = checkbox.checked;
       const uuid = checkbox.dataset.uuid;

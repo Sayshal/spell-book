@@ -56,7 +56,7 @@ export class SpellbookState {
         return true;
       }
 
-      this.isLongRest = !!this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING);
+      this.isLongRest = !!this.actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);
 
       if (!this._classesDetected) {
         await this.detectSpellcastingClasses();
@@ -906,7 +906,7 @@ export class SpellbookState {
   setLongRestContext(isLongRest) {
     this.isLongRest = !!isLongRest;
     if (this.isLongRest) {
-      this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, true);
+      this.actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
     }
   }
 }

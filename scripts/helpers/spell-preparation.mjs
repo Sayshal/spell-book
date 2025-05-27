@@ -509,7 +509,7 @@ export class SpellManager {
    */
   _applyRuleBasedCantripLocks(result, isPrepared, classIdentifier, settings) {
     const isLevelUp = this.canBeLeveledUp();
-    const isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING) || false;
+    const isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED) || false;
 
     switch (settings.cantripSwapping) {
       case 'none': // Legacy behavior - can't change once set
@@ -1251,7 +1251,7 @@ export class SpellManager {
     if (!isChecked && wasPrepared) {
       const spellSwapping = classRules.spellSwapping || 'none';
       const isLevelUp = this.canBeLeveledUp();
-      const isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING) || false;
+      const isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED) || false;
 
       switch (spellSwapping) {
         case 'levelUp': // Can only swap on level up (Bard, Sorcerer, Warlock)

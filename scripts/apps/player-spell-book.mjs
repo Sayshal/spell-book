@@ -82,7 +82,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.className = '';
     this.spellPreparation = { current: 0, maximum: 0 };
     this._newlyCheckedCantrips = new Set();
-    this._isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING) || false;
+    this._isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED) || false;
     this._wizardInitialized = false;
 
     // Register class-specific parts immediately
@@ -522,7 +522,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       }
 
       if (this._isLongRest) {
-        this.actor.unsetFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING);
+        this.actor.unsetFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);
       }
 
       if (this._flagChangeHook) {
@@ -1780,7 +1780,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
       if (this._isLongRest) {
         await this.spellManager.resetSwapTracking();
-        await actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, false);
+        await actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, false);
         this._isLongRest = false;
       }
 

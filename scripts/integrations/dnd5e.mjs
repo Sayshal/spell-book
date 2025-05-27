@@ -44,24 +44,73 @@ function addSpellbookButton(app, html, data) {
 }
 
 /**
- * Handle long rest completion for wizard cantrip swapping
+ * Handle long rest completion for all spellcasting classes
  */
 async function handleRestCompleted(actor, result, config) {
   try {
     if (!result.longRest) return;
-    if (!genericUtils.isWizard(actor)) return;
 
-    log(3, `Long rest completed for wizard ${actor.name}, checking cantrip rules`);
-    const spellManager = new SpellManager(actor);
-    const rulesVersion = spellManager.getSettings().rules;
+    log(3, `Long rest completed for ${actor.name}, processing all spellcasting classes`);
 
-    if (rulesVersion !== CANTRIP_RULES.MODERN_LONG_REST) {
-      log(3, `Wizard ${actor.name} uses ${rulesVersion} rules, skipping cantrip swap prompt`);
-      return;
+    // Get all class rules to check which classes need long rest mechanics
+    const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+
+    let hasAnyLongRestMechanics = false;
+    let wizardNeedsCantripSwap = false;
+
+    // Check each spellcasting class for long rest mechanics
+    for (const [classIdentifier, rules] of Object.entries(classRules)) {
+      const needsSpellSwap = rules.spellSwapping === 'longRest';
+      const needsCantripSwap = rules.cantripSwapping === 'longRest';
+
+      if (needsSpellSwap || needsCantripSwap) {
+        hasAnyLongRestMechanics = true;
+
+        log(
+          3,
+          `Class ${classIdentifier} needs long rest mechanics: spell swap=${needsSpellSwap}, cantrip swap=${needsCantripSwap}`
+        );
+
+        // Set class-specific swap tracking flags
+        if (needsSpellSwap) {
+          const swapTracking = actor.getFlag(MODULE.ID, FLAGS.SWAP_TRACKING) || {};
+          if (!swapTracking[classIdentifier]) swapTracking[classIdentifier] = {};
+          swapTracking[classIdentifier].longRest = true;
+          await actor.setFlag(MODULE.ID, FLAGS.SWAP_TRACKING, swapTracking);
+          log(3, `Set spell swap flag for class ${classIdentifier}`);
+        }
+
+        if (needsCantripSwap) {
+          // Handle cantrip swapping (currently only wizards support this)
+          if (classIdentifier === 'wizard' && genericUtils.isWizard(actor)) {
+            wizardNeedsCantripSwap = true;
+          } else if (classIdentifier !== 'wizard') {
+            log(
+              2,
+              `Class ${classIdentifier} has cantrip long rest swapping but this is currently only supported for wizards`
+            );
+          }
+        }
+      }
     }
 
-    await spellManager.resetSwapTracking();
-    await handleCantripSwapPrompt(actor);
+    // Set the consolidated long rest flag if any class needs long rest mechanics
+    if (hasAnyLongRestMechanics) {
+      await actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
+      log(3, `Set long rest completion flag for ${actor.name} - available for all classes that need it`);
+    }
+
+    // Handle wizard-specific cantrip swapping if needed
+    if (wizardNeedsCantripSwap) {
+      const spellManager = new SpellManager(actor);
+      await spellManager.resetSwapTracking();
+      await handleCantripSwapPrompt(actor);
+      log(3, `Processed wizard cantrip swapping for ${actor.name}`);
+    }
+
+    if (!hasAnyLongRestMechanics) {
+      log(3, `No classes on ${actor.name} require long rest mechanics, skipping`);
+    }
   } catch (error) {
     log(1, `Error in long rest completed hook:`, error);
   }
@@ -98,15 +147,13 @@ async function handleCantripSwapPrompt(actor) {
   const isPromptDisabled = game.settings.get(MODULE.ID, SETTINGS.DISABLE_CANTRIP_SWAP_PROMPT);
 
   if (isPromptDisabled) {
-    log(3, `Cantrip swap prompt disabled by user preference, setting flag silently`);
-    await actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, true);
+    log(3, `Cantrip swap prompt disabled by user preference, flag already set`);
     ui.notifications.info(game.i18n.format('SPELLBOOK.Cantrips.SwapAvailableNotification', { name: actor.name }));
     return;
   }
 
   const dialogResult = await showCantripSwapDialog();
   if (dialogResult === 'confirm') {
-    await actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, true);
     const spellBook = new PlayerSpellBook(actor);
     spellBook.render(true);
   }
@@ -169,7 +216,7 @@ async function onSpellBookButtonClick(actor, ev) {
       const rulesVersion = spellManager.getSettings().rules;
 
       if (rulesVersion === CANTRIP_RULES.MODERN_LONG_REST) {
-        const longRestFlagValue = actor.getFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING);
+        const longRestFlagValue = actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);
         const swapData = actor.getFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING)?.longRest;
         const hasCompletedSwap = swapData && swapData.hasLearned && swapData.hasUnlearned;
 
@@ -178,7 +225,7 @@ async function onSpellBookButtonClick(actor, ev) {
         }
 
         if (longRestFlagValue === undefined || longRestFlagValue === null) {
-          await actor.setFlag(MODULE.ID, FLAGS.WIZARD_LONG_REST_TRACKING, true);
+          await actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
         }
       }
     }
