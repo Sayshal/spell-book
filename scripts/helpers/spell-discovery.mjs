@@ -1,6 +1,7 @@
 import { MODULE, SETTINGS } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import * as genericUtils from './generic-utils.mjs';
+import { RuleSetManager } from './rule-set-manager.mjs';
 import { WizardSpellbookManager } from './wizard-spellbook.mjs';
 
 /**
@@ -14,6 +15,25 @@ import { WizardSpellbookManager } from './wizard-spellbook.mjs';
 export async function getClassSpellList(className, classUuid, actor, wizardManager) {
   if (!classUuid) return new Set();
   try {
+    if (actor) {
+      const classItem = await fromUuid(classUuid);
+      if (classItem) {
+        const classIdentifier = classItem?.system?.identifier?.toLowerCase() || className.toLowerCase();
+        const classRules = RuleSetManager.getClassRules(actor, classIdentifier);
+        if (classRules.customSpellList) {
+          log(3, `Using custom spell list for ${className}: ${classRules.customSpellList}`);
+          try {
+            const customSpellList = await fromUuid(classRules.customSpellList);
+            if (customSpellList && customSpellList.system?.spells) {
+              return customSpellList.system.spells;
+            }
+          } catch (error) {
+            log(1, `Error loading custom spell list ${classRules.customSpellList}:`, error);
+          }
+        }
+      }
+    }
+
     if (actor && genericUtils.isWizard(actor)) {
       const manager = wizardManager || new WizardSpellbookManager(actor);
       const spells = await manager.getSpellbookSpells();

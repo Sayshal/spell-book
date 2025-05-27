@@ -190,6 +190,19 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
 
       for (const pack of journalPacks) {
+        let topLevelFolderName = pack.metadata.label;
+        try {
+          if (pack.folder) {
+            if (pack.folder.depth !== 1) {
+              topLevelFolderName = pack.folder.getParentFolders().at(-1).name;
+            } else {
+              topLevelFolderName = pack.folder.name;
+            }
+          }
+        } catch (error) {
+          log(1, `Error getting parent folders for pack ${pack.metadata.label}:`, error);
+        }
+
         const index = await pack.getIndex();
 
         for (const journalData of index) {
@@ -200,7 +213,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
               if (page.type === 'spells') {
                 options.push({
                   value: page.uuid,
-                  label: `${page.name} (${pack.metadata.label})`
+                  label: `${page.name} (${topLevelFolderName})`
                 });
               }
             }
