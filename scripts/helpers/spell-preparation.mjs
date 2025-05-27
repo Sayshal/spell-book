@@ -428,35 +428,42 @@ export class SpellManager {
   _getOwnedSpellPreparationStatus(spell, classIdentifier) {
     const preparationMode = spell.system.preparation?.mode;
     const alwaysPrepared = preparationMode === 'always';
+    const isInnateCasting = preparationMode === 'innate';
+    const isPactMagic = preparationMode === 'pact';
+    const isAtWill = preparationMode === 'atwill';
+    const isRitualMode = preparationMode === 'ritual';
+
     const localizedPreparationMode = formattingUtils.getLocalizedPreparationMode(preparationMode);
     const sourceInfo = this._determineSpellSource(spell);
     const isGranted = !!sourceInfo && !!spell.flags?.dnd5e?.cachedFor;
     const isCantrip = spell.system.level === 0;
 
-    // For owned spells, use the actual preparation state, not flags
+    // For innate spells, FORCE them to be prepared regardless of the prepared flag
     const actuallyPrepared = !!(
       isGranted ||
       alwaysPrepared ||
-      spell.system.preparation?.prepared ||
-      ['innate', 'pact', 'atwill', 'ritual'].includes(preparationMode)
+      isInnateCasting || // ✅ This forces innate spells to be prepared
+      isPactMagic ||
+      isAtWill ||
+      isRitualMode ||
+      spell.system.preparation?.prepared
     );
 
-    let isCantripLocked = false;
-    let cantripLockReason = '';
-    let isDisabled = isGranted || alwaysPrepared || ['innate', 'pact', 'atwill', 'ritual'].includes(preparationMode);
+    // Force disable for special preparation modes
+    let isDisabled = isGranted || alwaysPrepared || isInnateCasting || isPactMagic || isAtWill || isRitualMode;
     let disabledReason = '';
 
     if (isGranted) {
       disabledReason = 'SPELLBOOK.SpellSource.GrantedTooltip';
     } else if (alwaysPrepared) {
       disabledReason = 'SPELLBOOK.Preparation.AlwaysTooltip';
-    } else if (preparationMode === 'innate') {
+    } else if (isInnateCasting) {
       disabledReason = 'SPELLBOOK.Preparation.InnateTooltip';
-    } else if (preparationMode === 'pact') {
+    } else if (isPactMagic) {
       disabledReason = 'SPELLBOOK.Preparation.PactTooltip';
-    } else if (preparationMode === 'atwill') {
+    } else if (isAtWill) {
       disabledReason = 'SPELLBOOK.Preparation.AtWillTooltip';
-    } else if (preparationMode === 'ritual') {
+    } else if (isRitualMode) {
       disabledReason = 'SPELLBOOK.Preparation.RitualTooltip';
     }
 
@@ -470,17 +477,9 @@ export class SpellManager {
       alwaysPrepared: !!alwaysPrepared,
       sourceItem: sourceInfo,
       isGranted: !!isGranted,
-      isCantripLocked: !!isCantripLocked,
-      cantripLockReason: cantripLockReason
+      isCantripLocked: false,
+      cantripLockReason: ''
     };
-
-    // Apply rule-based cantrip locks if needed
-    if (isCantrip && !alwaysPrepared && !isGranted && classIdentifier) {
-      const settings = this.getSettings(classIdentifier);
-      if (settings.behavior === ENFORCEMENT_BEHAVIOR.ENFORCED) {
-        this._applyRuleBasedCantripLocks(result, actuallyPrepared, classIdentifier, settings);
-      }
-    }
 
     return result;
   }

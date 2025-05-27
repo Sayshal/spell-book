@@ -352,11 +352,19 @@ export class SpellbookState {
    */
   async processAndOrganizeSpellsForClass(identifier, spellItems, classItem) {
     try {
-      // Tag each spell with the class identifier
+      // Tag each spell with the class identifier - BUT NOT for special spells
       for (const spell of spellItems) {
-        spell.sourceClass = identifier;
-        if (spell.system && !spell.system.sourceClass) {
-          spell.system.sourceClass = identifier;
+        // Check if this is a special spell that should remain class-agnostic
+        const preparationMode = spell.system?.preparation?.mode;
+        const isSpecialMode = ['innate', 'pact', 'atwill', 'always'].includes(preparationMode);
+        const isGranted = !!spell.flags?.dnd5e?.cachedFor;
+
+        // Only assign sourceClass to regular prepared spells
+        if (!isSpecialMode && !isGranted) {
+          spell.sourceClass = identifier;
+          if (spell.system && !spell.system.sourceClass) {
+            spell.system.sourceClass = identifier;
+          }
         }
       }
 
