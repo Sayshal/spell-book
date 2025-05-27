@@ -75,6 +75,7 @@ export const TEMPLATES = {
  * @type {Object}
  */
 export const SETTINGS = {
+  CANTRIP_SCALE_VALUES: 'cantripScaleValues',
   CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',
   DEFAULT_CANTRIP_RULES: 'defaultCantripRules',
   DEFAULT_CANTRIP_SWAPPING: 'defaultCantripSwapping',

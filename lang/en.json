@@ -116,6 +116,8 @@
   "SPELLBOOK.Rest.KeepSpells": "Keep Current Spells",
   "SPELLBOOK.Rest.OpenSpellbook": "Open Spell Book",
   "SPELLBOOK.Rest.UpdateSpells": "{name} has completed a long rest. Would you like to change which spells are prepared?",
+  "SPELLBOOK.Settings.CantripScaleValues.Hint": "Comma-separated list of scale value keys to check for cantrip limits. The system will use the first matching key found. Add custom keys for homebrew classes as needed. WARNING: syntax errors may break this module, follow identifer rules.",
+  "SPELLBOOK.Settings.CantripScaleValues.Name": "Cantrip Scale Value Keys",
   "SPELLBOOK.Settings.CantripSwapping.Hint": "When this class can swap cantrips",
   "SPELLBOOK.Settings.CantripSwapping.Label": "Cantrip Swapping",
   "SPELLBOOK.Settings.CantripSwapping.LevelUp": "On Level Up",

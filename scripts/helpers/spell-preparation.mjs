@@ -98,6 +98,13 @@ export class SpellManager {
 
     if (!classItem) return 0;
 
+    // Get cantrip scale value keys from settings
+    const cantripScaleValuesSetting = game.settings.get(MODULE.ID, SETTINGS.CANTRIP_SCALE_VALUES);
+    const cantripScaleKeys = cantripScaleValuesSetting
+      .split(',')
+      .map((v) => v.trim())
+      .filter((v) => v.length > 0);
+
     // Get base cantrips from scale values
     let baseCantrips = 0;
 
@@ -106,15 +113,29 @@ export class SpellManager {
       if (typeof classItem.scaleValues === 'function') {
         try {
           const scaleValues = classItem.scaleValues;
-          if (scaleValues && scaleValues['cantrips-known'] && scaleValues['cantrips-known'].value !== undefined) {
-            baseCantrips = scaleValues['cantrips-known'].value;
+          if (scaleValues) {
+            // Check all configured cantrip scale value keys
+            for (const key of cantripScaleKeys) {
+              if (scaleValues[key] && scaleValues[key].value !== undefined) {
+                baseCantrips = scaleValues[key].value;
+                log(3, `Found cantrip scale value '${key}' = ${baseCantrips} for class ${classIdentifier}`);
+                break; // Use the first match found
+              }
+            }
           }
         } catch (err) {
           log(2, `Error accessing scaleValues for ${classIdentifier}, using fallback calculation`, err);
         }
       } else if (classItem.scaleValues && typeof classItem.scaleValues === 'object') {
-        const cantripsKnown = classItem.scaleValues['cantrips-known']?.value;
-        if (cantripsKnown !== undefined) baseCantrips = cantripsKnown;
+        // Check all configured cantrip scale value keys
+        for (const key of cantripScaleKeys) {
+          const cantripValue = classItem.scaleValues[key]?.value;
+          if (cantripValue !== undefined) {
+            baseCantrips = cantripValue;
+            log(3, `Found cantrip scale value '${key}' = ${baseCantrips} for class ${classIdentifier}`);
+            break; // Use the first match found
+          }
+        }
       }
     } catch (err) {
       log(2, `Error accessing scaleValues for ${classIdentifier}, using fallback calculation`, err);
@@ -122,7 +143,10 @@ export class SpellManager {
 
     // If no scale values found, automatically disable cantrips for this class
     if (baseCantrips === 0) {
-      log(2, `No cantrip scale value found for class ${classIdentifier}, disabling cantrips`);
+      log(
+        2,
+        `No cantrip scale value found for class ${classIdentifier} (checked: ${cantripScaleKeys.join(', ')}), disabling cantrips`
+      );
 
       // Automatically set showCantrips to false in class rules
       const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);

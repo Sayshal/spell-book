@@ -213,6 +213,30 @@ export function registerSettings() {
       default: RITUAL_CASTING_MODES.NONE
     });
 
+    game.settings.register(MODULE.ID, SETTINGS.CANTRIP_SCALE_VALUES, {
+      name: 'SPELLBOOK.Settings.CantripScaleValues.Name',
+      hint: 'SPELLBOOK.Settings.CantripScaleValues.Hint',
+      scope: 'world',
+      config: true,
+      type: String,
+      default: 'cantrips-known, cantrips',
+      onChange: (value) => {
+        try {
+          // Validate the setting by parsing it
+          const scaleValues = value
+            .split(',')
+            .map((v) => v.trim())
+            .filter((v) => v.length > 0);
+          if (scaleValues.length === 0) {
+            log(2, 'Cantrip scale values setting cannot be empty, resetting to default');
+            game.settings.set(MODULE.ID, SETTINGS.CANTRIP_SCALE_VALUES, 'cantrips-known, cantrips');
+          }
+        } catch (error) {
+          log(1, 'Error validating cantrip scale values setting:', error);
+        }
+      }
+    });
+
     log(3, 'Module settings registered');
   } catch (error) {
     log(1, 'Error registering settings:', error);
