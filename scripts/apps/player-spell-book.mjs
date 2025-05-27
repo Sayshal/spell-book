@@ -114,7 +114,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   getRitualManager() {
     if (!this.ritualManager && this.wizardManager?.isWizard) {
-      log(1, `Lazy-creating RitualManager for ${this.actor.name}`);
       this.ritualManager = new RitualManager(this.actor, this.wizardManager);
     }
     return this.ritualManager;
@@ -1674,14 +1673,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       const actor = this.actor;
       if (!actor) return null;
-
-      log(1, `FormHandler starting for ${actor.name}`);
-
-      // Group spell data by class for independent processing
       const spellDataByClass = {};
       const checkboxes = form.querySelectorAll('dnd5e-checkbox[data-uuid]');
-
-      log(1, `Processing ${checkboxes.length} checkboxes from form`);
 
       for (const checkbox of checkboxes) {
         const uuid = checkbox.dataset.uuid;
@@ -1738,7 +1731,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       // Process each class independently and collect cantrip changes
       const allCantripChangesByClass = {};
       for (const [classIdentifier, classSpellData] of Object.entries(spellDataByClass)) {
-        log(1, `Saving spells for class ${classIdentifier}: ${Object.keys(classSpellData).length} spells`);
         const saveResult = await this.spellManager.saveClassSpecificPreparedSpells(classIdentifier, classSpellData);
         if (saveResult && saveResult.cantripChanges && saveResult.cantripChanges.hasChanges) {
           allCantripChangesByClass[classIdentifier] = saveResult.cantripChanges;
@@ -1782,8 +1774,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       const ritualManager = this.getRitualManager();
       if (!ritualManager?.isWizard) return;
-
-      log(1, `Adding missing ritual spells for wizard ${this.actor.name}`);
 
       // Get all spells in wizard spellbook
       const spellbookSpells = await this.wizardManager.getSpellbookSpells();

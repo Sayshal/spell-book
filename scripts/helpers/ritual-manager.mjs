@@ -23,7 +23,6 @@ export class RitualManager {
     if (wizardManager && wizardManager.isWizard) {
       this.isWizard = true;
       this.wizardManager = wizardManager;
-      log(1, `RitualManager: Using provided wizard manager for ${actor.name}`);
     } else {
       this._initializeWizardManager();
     }
