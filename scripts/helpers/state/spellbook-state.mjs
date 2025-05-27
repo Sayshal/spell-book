@@ -909,4 +909,21 @@ export class SpellbookState {
       this.actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
     }
   }
+
+  /**
+   * Refresh spell data for a specific class after changes (e.g., learning new spells)
+   * @param {string} classIdentifier - The identifier of the class to refresh
+   * @returns {Promise<void>}
+   * @async
+   */
+  async refreshClassSpellData(classIdentifier) {
+    const classData = this.spellcastingClasses[classIdentifier];
+    if (!classData) return;
+    const classItem = this.actor.items.get(classData.id);
+    if (!classItem) return;
+    const isWizardClass = this.app.wizardManager?.isWizard && this.app.wizardManager.classItem?.id === classItem.id;
+    if (isWizardClass) await this.loadWizardSpellData(classItem);
+    else await this.loadClassSpellData(classIdentifier, classItem);
+    this.updateGlobalPreparationCount();
+  }
 }

@@ -1547,7 +1547,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           }
 
           this._updatewizardbookDataAfterSpellLearning(costInfo.isFree);
-
+          await this._stateManager.refreshClassSpellData('wizard');
           const spellItem = this.element.querySelector(`.spell-item[data-spell-uuid="${spellUuid}"]`);
           if (spellItem) {
             const buttonContainer = spellItem.querySelector('.wizard-spell-status');
