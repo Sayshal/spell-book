@@ -613,18 +613,10 @@ export class SpellbookState {
       let totalPrepared = 0;
       let totalMaxPrepared = 0;
 
-      // Sum up the system spellcasting preparation max from all spellcasting classes
-      for (const [identifier, classData] of Object.entries(this.spellcastingClasses)) {
-        const classItem = this.actor.items.get(classData.id);
-        if (classItem?.system?.spellcasting?.preparation?.max) {
-          totalMaxPrepared += classItem.system.spellcasting.preparation.max;
-        }
-      }
-
-      // Sum up current prepared counts from all classes
       for (const [identifier, classData] of Object.entries(this.classSpellData)) {
         if (classData.spellPreparation) {
           totalPrepared += classData.spellPreparation.current;
+          totalMaxPrepared += classData.spellPreparation.maximum;
         }
       }
 
