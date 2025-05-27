@@ -53,6 +53,18 @@ async function processStandardPacks(journalPacks, spellLists) {
   for (const pack of journalPacks) {
     try {
       if (pack.metadata.id === MODULE.PACK) continue;
+      let topLevelFolderName;
+      try {
+        if (pack.folder) {
+          if (pack.folder.depth !== 1) {
+            topLevelFolderName = pack.folder.getParentFolders().at(-1).name;
+          } else {
+            topLevelFolderName = pack.folder.name;
+          }
+        }
+      } catch (error) {
+        log(1, `Error getting folder for pack ${pack.metadata.label}:`, error);
+      }
 
       const index = await pack.getIndex();
 
@@ -67,7 +79,7 @@ async function processStandardPacks(journalPacks, spellLists) {
               uuid: page.uuid,
               name: page.name,
               journal: journal.name,
-              pack: pack.metadata.label,
+              pack: topLevelFolderName || pack.metadata.label,
               packageName: pack.metadata.packageName,
               system: page.system,
               spellCount: page.system.spells?.size || 0,
