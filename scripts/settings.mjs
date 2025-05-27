@@ -134,9 +134,9 @@ export function registerSettings() {
       default: ENFORCEMENT_BEHAVIOR.NOTIFY_GM
     });
 
-    game.settings.register(MODULE.ID, SETTINGS.DISABLE_CANTRIP_SWAP_PROMPT, {
-      name: 'SPELLBOOK.Settings.DisableCantripSwapPrompt.Name',
-      hint: 'SPELLBOOK.Settings.DisableCantripSwapPrompt.Hint',
+    game.settings.register(MODULE.ID, SETTINGS.DISABLE_LONG_REST_SWAP_PROMPT, {
+      name: 'SPELLBOOK.Settings.DisableLongRestSwapPrompt.Name',
+      hint: 'SPELLBOOK.Settings.DisableLongRestSwapPrompt.Hint',
       scope: 'client',
       config: true,
       type: Boolean,

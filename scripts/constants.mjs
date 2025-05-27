@@ -82,7 +82,7 @@ export const SETTINGS = {
   DEFAULT_ENFORCEMENT_BEHAVIOR: 'defaultEnforcementBehavior',
   DEFAULT_RITUAL_CASTING: 'defaultRitualCasting',
   DEFAULT_SPELL_SWAPPING: 'defaultSpellSwapping',
-  DISABLE_CANTRIP_SWAP_PROMPT: 'disableCantripSwapPrompt',
+  DISABLE_LONG_REST_SWAP_PROMPT: 'disableLongRestSwapPrompt',
   DISTANCE_UNIT: 'distanceUnit',
   ENABLE_JOURNAL_BUTTON: 'enableJournalButton',
   ENABLE_REST_PROMPT: 'enableRestPrompt',
