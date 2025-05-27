@@ -60,7 +60,6 @@ export async function getClassSpellList(className, classUuid, actor, wizardManag
     if (topLevelFolderName) {
       const folderMatch = await findSpellListByTopLevelFolder(topLevelFolderName, classIdentifier, customMappings);
       if (folderMatch && folderMatch.size > 0) {
-        log(1, `Found ${folderMatch.size} spells using top-level folder match`);
         return folderMatch;
       }
     }
@@ -97,11 +96,9 @@ function getTopLevelFolderFromCompendiumSource(source) {
 
   try {
     const packCollection = foundry.utils.parseUuid(source).collection.metadata.id;
-    log(1, `Looking for pack: ${packCollection}`);
 
     // Find the pack and get its top-level folder
     const pack = game.packs.get(packCollection);
-    log(1, 'DEBUG', { pack: pack });
     if (!pack) {
       log(1, `Pack not found: ${packCollection}`);
       return null;
@@ -109,7 +106,6 @@ function getTopLevelFolderFromCompendiumSource(source) {
 
     if (pack.folder) {
       const topLevelFolder = pack.folder.name;
-      log(1, `Found top-level folder: "${topLevelFolder}" for source: ${source}`);
       return topLevelFolder;
     }
 
@@ -256,8 +252,6 @@ export function canCastSpells(actor) {
  * @returns {Promise<Set<string>|null>} Matched spell list or null
  */
 async function findSpellListByTopLevelFolder(topLevelFolderName, identifier, customMappings) {
-  log(1, `Searching for folder: "${topLevelFolderName}", identifier: "${identifier}"`);
-
   const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
 
   for (const pack of journalPacks) {
@@ -273,11 +267,8 @@ async function findSpellListByTopLevelFolder(topLevelFolderName, identifier, cus
         continue;
       }
 
-      log(1, `Checking pack "${pack.metadata.label}" in folder "${packTopLevelFolder}"`);
-
       const spellList = await searchPackForSpellList(pack, identifier, customMappings);
       if (spellList) {
-        log(1, `Found spell list in pack "${pack.metadata.label}"`);
         return spellList;
       }
     } catch (error) {

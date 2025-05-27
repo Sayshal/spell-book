@@ -96,9 +96,24 @@ export class WizardSpellbookManager {
    * @returns {Promise<Array<string>>} Array of spell UUIDs
    */
   async getSpellbookSpells() {
-    const journal = await this.getOrCreateSpellbookJournal();
-    const journalPage = journal?.pages.find((p) => p.type === 'spells');
-    return Array.from(journalPage.system.spells || []);
+    try {
+      const journal = await this.getOrCreateSpellbookJournal();
+      if (!journal) {
+        log(2, `No spellbook journal available for ${this.actor.name}`);
+        return [];
+      }
+
+      const journalPage = journal.pages?.find((p) => p.type === 'spells');
+      if (!journalPage) {
+        log(2, `No spells page found in spellbook journal for ${this.actor.name}`);
+        return [];
+      }
+
+      return Array.from(journalPage.system?.spells || []);
+    } catch (error) {
+      log(1, `Error getting spellbook spells for ${this.actor.name}:`, error);
+      return [];
+    }
   }
 
   /**
@@ -107,9 +122,18 @@ export class WizardSpellbookManager {
    * @returns {Promise<boolean>} Whether the spell is in the spellbook
    */
   async isSpellInSpellbook(spellUuid) {
-    const journal = await this.getOrCreateSpellbookJournal();
-    const journalPage = journal.pages.find((p) => p.type === 'spells');
-    return journalPage.system.spells.has(spellUuid);
+    try {
+      const journal = await this.getOrCreateSpellbookJournal();
+      if (!journal) return false;
+
+      const journalPage = journal.pages?.find((p) => p.type === 'spells');
+      if (!journalPage) return false;
+
+      return journalPage.system?.spells?.has(spellUuid) || false;
+    } catch (error) {
+      log(1, `Error checking spell in spellbook for ${this.actor.name}:`, error);
+      return false;
+    }
   }
 
   /**
@@ -285,18 +309,27 @@ export class WizardSpellbookManager {
 
   /**
    * Get or create the actor's spellbook journal
-   * @returns {Promise<JournalEntry>} The actor's spellbook journal
+   * @returns {Promise<JournalEntry|null>} The actor's spellbook journal
    */
   async getOrCreateSpellbookJournal() {
-    const actorLock = WizardSpellbookManager._journalCreationLocks.get(this.actor.id);
-    if (actorLock) return null;
+    // Wait for any existing creation process to complete
+    while (WizardSpellbookManager._journalCreationLocks.get(this.actor.id)) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
     try {
       WizardSpellbookManager._journalCreationLocks.set(this.actor.id, true);
+
       const existingJournal = await this.findSpellbookJournal();
-      if (existingJournal) return existingJournal;
-      return await this.createSpellbookJournal();
+      if (existingJournal) {
+        return existingJournal;
+      }
+
+      const newJournal = await this.createSpellbookJournal();
+      return newJournal;
     } catch (error) {
-      log(1, `Error getting or creating spellbook journal:`, error);
+      log(1, `Error getting or creating spellbook journal for ${this.actor.name}:`, error);
+      return null;
     } finally {
       WizardSpellbookManager._journalCreationLocks.delete(this.actor.id);
     }
