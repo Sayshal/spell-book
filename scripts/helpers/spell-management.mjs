@@ -440,14 +440,28 @@ async function fetchSpellsFromPack(pack, maxLevel) {
 function formatSpellEntry(entry, pack) {
   const formattedDetails = formattingUtils.formatSpellDetails(entry);
 
+  // Get top-level folder name as the source
+  let topLevelFolderName = pack.metadata.label; // fallback
+
+  try {
+    if (pack.folder) {
+      if (pack.folder.depth !== 1) {
+        topLevelFolderName = pack.folder.getParentFolders().at(-1).name;
+      } else {
+        topLevelFolderName = pack.folder.name;
+      }
+    }
+  } catch (error) {
+    log(1, `Error getting parent folders for pack ${pack.metadata.label}:`, error);
+  }
   const spell = {
     uuid: `Compendium.${pack.collection}.${entry._id}`,
     name: entry.name,
     img: entry.img,
     level: entry.system?.level || 0,
     school: entry.system?.school || '',
-    sourceId: pack.metadata.packageName,
-    packName: pack.folder?.folder?.name || pack.folder?.name || pack.metadata.label,
+    sourceId: topLevelFolderName,
+    packName: topLevelFolderName,
     formattedDetails,
     system: entry.system || {},
     labels: entry.labels

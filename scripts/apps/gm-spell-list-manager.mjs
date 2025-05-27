@@ -208,22 +208,24 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     // Add each unique source from available spells
     this.availableSpells.forEach((spell) => {
       if (spell.sourceId) {
-        const sourceId = spell.sourceId.split('.')[0];
+        const sourceId = spell.sourceId;
         if (!sourceMap.has(sourceId)) {
           sourceMap.set(sourceId, {
             id: sourceId,
-            label: spell.packName?.split(' - ')[0] || sourceId
+            label: sourceId
           });
         }
       }
     });
 
     // Convert to array and sort
-    return Array.from(sourceMap.values()).sort((a, b) => {
+    const sources = Array.from(sourceMap.values()).sort((a, b) => {
       if (a.id === 'all') return -1;
       if (b.id === 'all') return 1;
       return a.label.localeCompare(b.label);
     });
+
+    return sources;
   }
 
   /**
