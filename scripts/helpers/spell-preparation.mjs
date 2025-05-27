@@ -60,10 +60,7 @@ export class SpellManager {
         spellSwapping: classRules.spellSwapping,
         ritualCasting: classRules.ritualCasting,
         showCantrips: classRules.showCantrips,
-        behavior:
-          this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) ||
-          game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) ||
-          ENFORCEMENT_BEHAVIOR.NOTIFY_GM
+        behavior: this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || ENFORCEMENT_BEHAVIOR.NOTIFY_GM
       };
     }
 
@@ -72,10 +69,7 @@ export class SpellManager {
 
     return {
       rules: effectiveRuleSet === 'modern' ? 'levelUp' : 'legacy', // Convert rule set to cantrip rules
-      behavior:
-        this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) ||
-        game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) ||
-        ENFORCEMENT_BEHAVIOR.NOTIFY_GM
+      behavior: this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || ENFORCEMENT_BEHAVIOR.NOTIFY_GM
     };
   }
 
@@ -88,11 +82,7 @@ export class SpellManager {
     if (!classIdentifier) return 0;
 
     // Find the specific class item
-    const classItem = this.actor.items.find(
-      (i) =>
-        i.type === 'class' &&
-        (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier)
-    );
+    const classItem = this.actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier));
 
     if (!classItem) return 0;
 
@@ -141,10 +131,7 @@ export class SpellManager {
 
     // If no scale values found, automatically disable cantrips for this class
     if (baseCantrips === 0) {
-      log(
-        2,
-        `No cantrip scale value found for class ${classIdentifier} (checked: ${cantripScaleKeys.join(', ')}), disabling cantrips`
-      );
+      log(2, `No cantrip scale value found for class ${classIdentifier} (checked: ${cantripScaleKeys.join(', ')}), disabling cantrips`);
 
       // Automatically set showCantrips to false in class rules
       const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
@@ -351,11 +338,7 @@ export class SpellManager {
 
     // PRIORITY 2: Check for any spell on actor with this UUID (might need sourceClass assignment)
     const unassignedSpell = this.actor.items.find(
-      (item) =>
-        item.type === 'spell' &&
-        (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) &&
-        !item.system?.sourceClass &&
-        !item.sourceClass
+      (item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && !item.system?.sourceClass && !item.sourceClass
     );
 
     if (unassignedSpell && classIdentifier) {
@@ -378,10 +361,7 @@ export class SpellManager {
     // PRIORITY 3: For spells that exist on actor but belong to other classes
     const otherClassSpell = this.actor.items.find(
       (item) =>
-        item.type === 'spell' &&
-        (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) &&
-        item.system?.sourceClass &&
-        item.system.sourceClass !== classIdentifier
+        item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && item.system?.sourceClass && item.system.sourceClass !== classIdentifier
     );
 
     if (otherClassSpell) {
@@ -458,13 +438,7 @@ export class SpellManager {
     const isCantrip = spell.system.level === 0;
 
     // For innate spells, FORCE them to be prepared regardless of the prepared flag
-    const actuallyPrepared = !!(
-      isGranted ||
-      alwaysPrepared ||
-      isInnateCasting ||
-      isAtWill ||
-      spell.system.preparation?.prepared
-    );
+    const actuallyPrepared = !!(isGranted || alwaysPrepared || isInnateCasting || isAtWill || spell.system.preparation?.prepared);
 
     // Force disable for special preparation modes
     let isDisabled = isGranted || alwaysPrepared || isInnateCasting || isAtWill;
@@ -661,17 +635,12 @@ export class SpellManager {
       for (const [uuid, data] of Object.entries(spellData)) {
         if (data.isAlwaysPrepared) continue;
         const isRitual = data.isRitual || false;
-        const existingSpell = this.actor.items.find(
-          (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid)
-        );
+        const existingSpell = this.actor.items.find((i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid));
         const spellSourceClass = data.sourceClass || '';
 
         if (!data.isPrepared) {
           if (data.wasPrepared && existingSpell) {
-            if (
-              existingSpell.system.preparation?.mode === 'prepared' &&
-              !existingSpell.system.preparation?.alwaysPrepared
-            ) {
+            if (existingSpell.system.preparation?.mode === 'prepared' && !existingSpell.system.preparation?.alwaysPrepared) {
               spellIdsToRemove.push(existingSpell.id);
               if (existingSpell.system.level === 0) {
                 cantripChanges.removed.push({ name: existingSpell.name, uuid: uuid });
@@ -885,10 +854,7 @@ export class SpellManager {
   async _ensureRitualSpellOnActor(uuid, sourceClass, spellsToCreate, spellsToUpdate) {
     // Look for existing spell
     const existingSpell = this.actor.items.find(
-      (i) =>
-        i.type === 'spell' &&
-        (i.flags?.core?.sourceId === uuid || i.uuid === uuid) &&
-        (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
+      (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
     );
 
     if (existingSpell) {
@@ -939,11 +905,7 @@ export class SpellManager {
    */
   _getClassPreparationMode(classIdentifier) {
     // Get the class item
-    const classItem = this.actor.items.find(
-      (i) =>
-        i.type === 'class' &&
-        (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier)
-    );
+    const classItem = this.actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier));
 
     if (!classItem) return 'prepared';
 
@@ -969,10 +931,7 @@ export class SpellManager {
   async _ensureSpellOnActor(uuid, sourceClass, preparationMode, spellsToCreate, spellsToUpdate) {
     // Look for existing spell that matches both UUID and class
     const existingSpell = this.actor.items.find(
-      (i) =>
-        i.type === 'spell' &&
-        (i.flags?.core?.sourceId === uuid || i.uuid === uuid) &&
-        (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
+      (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
     );
 
     if (existingSpell) {
@@ -1057,10 +1016,7 @@ export class SpellManager {
     try {
       // Find the SPECIFIC spell instance for this exact class
       const targetSpell = this.actor.items.find(
-        (i) =>
-          i.type === 'spell' &&
-          (i.flags?.core?.sourceId === uuid || i.uuid === uuid) &&
-          (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
+        (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
       );
 
       if (!targetSpell) {

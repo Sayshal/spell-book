@@ -231,8 +231,7 @@ export class SpellbookUI {
 
         // Get the class data to check if this specific class is at max
         const classSpellData = this.app._stateManager.classSpellData[classId];
-        const isThisClassAtMax =
-          classSpellData ? classSpellData.spellPreparation.current >= classSpellData.spellPreparation.maximum : false;
+        const isThisClassAtMax = classSpellData ? classSpellData.spellPreparation.current >= classSpellData.spellPreparation.maximum : false;
 
         // Apply at-max class to this specific class prep counter
         classPrepEl.classList.toggle('at-max', isThisClassAtMax);
@@ -248,10 +247,7 @@ export class SpellbookUI {
       // This can be used for global CSS rules that affect the entire app
       this.element.classList.toggle('at-max-spells', isGloballyAtMax);
 
-      log(
-        3,
-        `Updated footer: active class ${activeClassIdentifier} at max: ${isActiveClassAtMax}, global at max: ${isGloballyAtMax}`
-      );
+      log(3, `Updated footer: active class ${activeClassIdentifier} at max: ${isActiveClassAtMax}, global at max: ${isGloballyAtMax}`);
     } catch (error) {
       log(1, 'Error updating footer preparation display:', error);
     }
@@ -477,10 +473,7 @@ export class SpellbookUI {
 
           const infoElement = document.createElement('div');
           infoElement.className = 'wizard-rules-info';
-          const ruleKey =
-            cantripRules === CANTRIP_RULES.MODERN_LONG_REST ?
-              'SPELLBOOK.Wizard.ModernCantripRules'
-            : 'SPELLBOOK.Wizard.LegacyCantripRules';
+          const ruleKey = cantripRules === CANTRIP_RULES.MODERN_LONG_REST ? 'SPELLBOOK.Wizard.ModernCantripRules' : 'SPELLBOOK.Wizard.LegacyCantripRules';
           infoElement.innerHTML = `<i class="fas fa-info-circle"></i> ${game.i18n.localize(ruleKey)}`;
 
           const levelHeading = cantripLevel.querySelector('.spell-level-heading');
@@ -546,13 +539,7 @@ export class SpellbookUI {
       let currentCount = 0;
       const cantripItems = cantripLevel.querySelectorAll('.spell-item');
       cantripItems.forEach((item) => {
-        if (
-          item.querySelector('.tag.always-prepared') ||
-          item.querySelector('.tag.atwill') ||
-          item.querySelector('.tag.innate') ||
-          item.querySelector('.tag.granted')
-        )
-          return;
+        if (item.querySelector('.tag.always-prepared') || item.querySelector('.tag.atwill') || item.querySelector('.tag.innate') || item.querySelector('.tag.granted')) return;
 
         const checkbox = item.querySelector('dnd5e-checkbox');
         if (!checkbox) return;
@@ -837,13 +824,7 @@ export class SpellbookUI {
         if (spellSourceClass && spellSourceClass !== classIdentifier) continue;
 
         // Skip always prepared/granted spells
-        if (
-          item.querySelector('.tag.always-prepared') ||
-          item.querySelector('.tag.granted') ||
-          item.querySelector('.tag.innate') ||
-          item.querySelector('.tag.atwill')
-        )
-          continue;
+        if (item.querySelector('.tag.always-prepared') || item.querySelector('.tag.granted') || item.querySelector('.tag.innate') || item.querySelector('.tag.atwill')) continue;
 
         const isChecked = checkbox.checked;
         const wasPrepared = checkbox.dataset.wasPrepared === 'true';

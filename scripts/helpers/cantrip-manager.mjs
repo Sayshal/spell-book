@@ -35,13 +35,7 @@ export class CantripManager {
   getCurrentCount(classIdentifier = null) {
     if (!classIdentifier) {
       // Fallback to total count if no class specified
-      return this.actor.items.filter(
-        (i) =>
-          i.type === 'spell' &&
-          i.system.level === 0 &&
-          i.system.preparation?.prepared &&
-          !i.system.preparation?.alwaysPrepared
-      ).length;
+      return this.actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.preparation?.prepared && !i.system.preparation?.alwaysPrepared).length;
     }
 
     return this.actor.items.filter(
@@ -64,10 +58,7 @@ export class CantripManager {
     const currentLevel = this.actor.system.details.level;
     // Note: getMaxAllowed needs classIdentifier now, but for backwards compatibility we'll use total
     const currentMax = this._getTotalMaxCantrips();
-    return (
-      (previousLevel === 0 && currentLevel > 0) ||
-      ((currentLevel > previousLevel || currentMax > previousMax) && previousLevel > 0)
-    );
+    return (previousLevel === 0 && currentLevel > 0) || ((currentLevel > previousLevel || currentMax > previousMax) && previousLevel > 0);
   }
 
   /**
@@ -77,9 +68,7 @@ export class CantripManager {
    */
   _getTotalMaxCantrips() {
     // Get all spellcasting classes and sum their cantrip maxes
-    const classItems = this.actor.items.filter(
-      (i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none'
-    );
+    const classItems = this.actor.items.filter((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
 
     let total = 0;
     for (const classItem of classItems) {
@@ -156,10 +145,7 @@ export class CantripManager {
       const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount(classIdentifier);
       const maxCantrips = this.spellManager.getMaxAllowed(classIdentifier);
 
-      log(
-        3,
-        `Cantrip check: ${spell.name} for class ${classIdentifier}, current: ${currentCount}, max: ${maxCantrips}`
-      );
+      log(3, `Cantrip check: ${spell.name} for class ${classIdentifier}, current: ${currentCount}, max: ${maxCantrips}`);
 
       if (currentCount >= maxCantrips) {
         return { allowed: false, message: 'SPELLBOOK.Cantrips.MaximumReached' };
@@ -198,20 +184,10 @@ export class CantripManager {
     const spellUuid = genericUtils.getSpellUuid(spell);
 
     if ((isLevelUp && cantripSwapping === 'levelUp') || (isLongRest && cantripSwapping === 'longRest')) {
-      if (
-        !isChecked &&
-        trackingData.hasUnlearned &&
-        trackingData.unlearned !== spellUuid &&
-        trackingData.originalChecked.includes(spellUuid)
-      ) {
+      if (!isChecked && trackingData.hasUnlearned && trackingData.unlearned !== spellUuid && trackingData.originalChecked.includes(spellUuid)) {
         return { allowed: false, message: 'SPELLBOOK.Cantrips.OnlyOneSwap' };
       }
-      if (
-        isChecked &&
-        trackingData.hasLearned &&
-        trackingData.learned !== spellUuid &&
-        !trackingData.originalChecked.includes(spellUuid)
-      ) {
+      if (isChecked && trackingData.hasLearned && trackingData.learned !== spellUuid && !trackingData.originalChecked.includes(spellUuid)) {
         return { allowed: false, message: 'SPELLBOOK.Cantrips.OnlyOneSwap' };
       }
       if (isChecked && !trackingData.hasUnlearned && !trackingData.originalChecked.includes(spellUuid)) {
@@ -235,10 +211,7 @@ export class CantripManager {
       return { hasUnlearned: false, unlearned: null, hasLearned: false, learned: null, originalChecked: [] };
     }
 
-    const flagName =
-      isLevelUp ?
-        `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.levelUp`
-      : `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.longRest`;
+    const flagName = isLevelUp ? `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.levelUp` : `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.longRest`;
 
     const data = this.actor.getFlag(MODULE.ID, flagName);
     return (
@@ -282,10 +255,7 @@ export class CantripManager {
     if (cantripSwapping === 'longRest' && classIdentifier !== CLASS_IDENTIFIERS.WIZARD) return;
 
     // Use class-specific tracking flag
-    const flagName =
-      isLevelUp ?
-        `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.levelUp`
-      : `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.longRest`;
+    const flagName = isLevelUp ? `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.levelUp` : `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.longRest`;
 
     let tracking = this.actor.getFlag(MODULE.ID, flagName);
 
@@ -293,11 +263,7 @@ export class CantripManager {
       // Get cantrips prepared for this specific class
       const preparedCantrips = this.actor.items
         .filter(
-          (i) =>
-            i.type === 'spell' &&
-            i.system.level === 0 &&
-            i.system.preparation?.prepared &&
-            (i.sourceClass === classIdentifier || i.system.sourceClass === classIdentifier)
+          (i) => i.type === 'spell' && i.system.level === 0 && i.system.preparation?.prepared && (i.sourceClass === classIdentifier || i.system.sourceClass === classIdentifier)
         )
         .map((i) => genericUtils.getSpellUuid(i));
 
@@ -409,13 +375,7 @@ export class CantripManager {
       const checkbox = item.querySelector('dnd5e-checkbox');
       if (!checkbox) continue;
 
-      if (
-        item.querySelector('.tag.always-prepared') ||
-        item.querySelector('.tag.granted') ||
-        item.querySelector('.tag.innate') ||
-        item.querySelector('.tag.atwill')
-      )
-        continue;
+      if (item.querySelector('.tag.always-prepared') || item.querySelector('.tag.granted') || item.querySelector('.tag.innate') || item.querySelector('.tag.atwill')) continue;
 
       const isChecked = checkbox.checked;
       const uuid = checkbox.dataset.uuid;
@@ -529,10 +489,7 @@ export class CantripManager {
     // Check if there's anything to report
     const hasChanges = Object.values(classChanges).some(
       (classData) =>
-        classData.cantripChanges.added.length > 0 ||
-        classData.cantripChanges.removed.length > 0 ||
-        classData.overLimits.cantrips.isOver ||
-        classData.overLimits.spells.isOver
+        classData.cantripChanges.added.length > 0 || classData.cantripChanges.removed.length > 0 || classData.overLimits.cantrips.isOver || classData.overLimits.spells.isOver
     );
 
     if (!hasChanges) return;
@@ -543,12 +500,7 @@ export class CantripManager {
       const { className, cantripChanges, overLimits } = classData;
 
       // Skip if nothing to report for this class
-      if (
-        cantripChanges.added.length === 0 &&
-        cantripChanges.removed.length === 0 &&
-        !overLimits.cantrips.isOver &&
-        !overLimits.spells.isOver
-      ) {
+      if (cantripChanges.added.length === 0 && cantripChanges.removed.length === 0 && !overLimits.cantrips.isOver && !overLimits.spells.isOver) {
         continue;
       }
 

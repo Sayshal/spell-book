@@ -205,23 +205,15 @@ export class SpellbookFilterHelper {
         items.sort((a, b) => {
           switch (sortBy) {
             case 'name':
-              return a
-                .querySelector('.spell-name')
-                .textContent.localeCompare(b.querySelector('.spell-name').textContent);
+              return a.querySelector('.spell-name').textContent.localeCompare(b.querySelector('.spell-name').textContent);
             case 'school':
               const schoolA = a.dataset.spellSchool || '';
               const schoolB = b.dataset.spellSchool || '';
-              return (
-                schoolA.localeCompare(schoolB) ||
-                a.querySelector('.spell-name').textContent.localeCompare(b.querySelector('.spell-name').textContent)
-              );
+              return schoolA.localeCompare(schoolB) || a.querySelector('.spell-name').textContent.localeCompare(b.querySelector('.spell-name').textContent);
             case 'prepared':
               const aPrepared = a.classList.contains('prepared-spell') ? 0 : 1;
               const bPrepared = b.classList.contains('prepared-spell') ? 0 : 1;
-              return (
-                aPrepared - bPrepared ||
-                a.querySelector('.spell-name').textContent.localeCompare(b.querySelector('.spell-name').textContent)
-              );
+              return aPrepared - bPrepared || a.querySelector('.spell-name').textContent.localeCompare(b.querySelector('.spell-name').textContent);
             default:
               return 0;
           }

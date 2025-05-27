@@ -1,17 +1,13 @@
-// @ts-nocheck
 import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
 import { PlayerFilterConfiguration } from './apps/player-filter-configuration.mjs';
 import { PlayerSpellBook } from './apps/player-spell-book.mjs';
 import { SpellbookSettingsDialog } from './apps/spellbook-settings-dialog.mjs';
-
-// Import all helper functions
 import * as actorSpellUtils from './helpers/actor-spells.mjs';
 import * as filterUtils from './helpers/filters.mjs';
 import * as discoveryUtils from './helpers/spell-discovery.mjs';
 import * as formattingUtils from './helpers/spell-formatting.mjs';
 import * as managerHelpers from './helpers/spell-management.mjs';
 import { SpellManager } from './helpers/spell-preparation.mjs';
-
 import { log } from './logger.mjs';
 import { forceMigration } from './migrations.mjs';
 

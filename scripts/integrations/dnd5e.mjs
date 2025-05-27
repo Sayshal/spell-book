@@ -68,32 +68,21 @@ async function handleRestCompleted(actor, result, config) {
       if (needsSpellSwap || needsCantripSwap) {
         hasAnyLongRestMechanics = true;
 
-        log(
-          3,
-          `Class ${classIdentifier} needs long rest mechanics: spell swap=${needsSpellSwap}, cantrip swap=${needsCantripSwap}`
-        );
+        log(3, `Class ${classIdentifier} needs long rest mechanics: spell swap=${needsSpellSwap}, cantrip swap=${needsCantripSwap}`);
 
         // Collect class information for the prompt
         if (needsCantripSwap) {
           // Get the actual class name for display
-          const spellcastingClasses = actor.items.filter(
-            (i) => i.type === 'class' && i.system.spellcasting?.progression !== 'none'
-          );
-          const classItem = spellcastingClasses.find(
-            (c) => c.system.identifier?.toLowerCase() === classIdentifier || c.name.toLowerCase() === classIdentifier
-          );
+          const spellcastingClasses = actor.items.filter((i) => i.type === 'class' && i.system.spellcasting?.progression !== 'none');
+          const classItem = spellcastingClasses.find((c) => c.system.identifier?.toLowerCase() === classIdentifier || c.name.toLowerCase() === classIdentifier);
           const className = classItem?.name || classIdentifier;
 
           longRestClasses.cantripSwapping.push({ identifier: classIdentifier, name: className });
         }
 
         if (needsSpellSwap) {
-          const spellcastingClasses = actor.items.filter(
-            (i) => i.type === 'class' && i.system.spellcasting?.progression !== 'none'
-          );
-          const classItem = spellcastingClasses.find(
-            (c) => c.system.identifier?.toLowerCase() === classIdentifier || c.name.toLowerCase() === classIdentifier
-          );
+          const spellcastingClasses = actor.items.filter((i) => i.type === 'class' && i.system.spellcasting?.progression !== 'none');
+          const classItem = spellcastingClasses.find((c) => c.system.identifier?.toLowerCase() === classIdentifier || c.name.toLowerCase() === classIdentifier);
           const className = classItem?.name || classIdentifier;
 
           longRestClasses.spellSwapping.push({ identifier: classIdentifier, name: className });
@@ -161,10 +150,7 @@ async function handleLongRestSwapPrompt(actor, longRestClasses) {
     log(3, `Long rest swap prompt disabled by user preference, flag already set`);
 
     // Create a comprehensive notification
-    const classNames = [
-      ...longRestClasses.cantripSwapping.map((c) => c.name),
-      ...longRestClasses.spellSwapping.map((c) => c.name)
-    ];
+    const classNames = [...longRestClasses.cantripSwapping.map((c) => c.name), ...longRestClasses.spellSwapping.map((c) => c.name)];
     const uniqueClassNames = [...new Set(classNames)];
 
     ui.notifications.info(
@@ -273,9 +259,7 @@ async function onSpellBookButtonClick(actor, ev) {
   try {
     // Check if any class has long rest swapping rules
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
-    const hasLongRestSwapping = Object.values(classRules).some(
-      (rules) => rules.cantripSwapping === 'longRest' || rules.spellSwapping === 'longRest'
-    );
+    const hasLongRestSwapping = Object.values(classRules).some((rules) => rules.cantripSwapping === 'longRest' || rules.spellSwapping === 'longRest');
 
     if (hasLongRestSwapping) {
       const longRestFlagValue = actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);

@@ -123,12 +123,7 @@ async function migrateDocument(doc, validFlags) {
     // Skip the cantrip rules flag since we handled it above
     if (key === FLAGS.CANTRIP_RULES) continue;
 
-    if (
-      !validFlags.includes(key) ||
-      value === null ||
-      value === undefined ||
-      (typeof value === 'object' && Object.keys(value).length === 0)
-    ) {
+    if (!validFlags.includes(key) || value === null || value === undefined || (typeof value === 'object' && Object.keys(value).length === 0)) {
       updates[`flags.${MODULE.ID}.-=${key}`] = null;
       invalidFlags = true;
       wasUpdated = true;

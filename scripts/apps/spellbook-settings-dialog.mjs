@@ -1,14 +1,4 @@
-import {
-  CANTRIP_SWAP_TIMING,
-  ENFORCEMENT_BEHAVIOR,
-  FLAGS,
-  MODULE,
-  RITUAL_CASTING_MODES,
-  RULE_SETS,
-  SETTINGS,
-  SPELL_SWAP_MODES,
-  TEMPLATES
-} from '../constants.mjs';
+import { CANTRIP_SWAP_TIMING, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, RITUAL_CASTING_MODES, RULE_SETS, SETTINGS, SPELL_SWAP_MODES, TEMPLATES } from '../constants.mjs';
 import { RuleSetManager } from '../helpers/rule-set-manager.mjs';
 import { SpellManager } from '../helpers/spell-preparation.mjs';
 import { log } from '../logger.mjs';
@@ -76,9 +66,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       // Get current settings
       context.currentRuleSet = RuleSetManager.getEffectiveRuleSet(this.actor);
       context.ruleSetOverride = this.actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE);
-      context.enforcementBehavior =
-        this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) ||
-        game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR);
+      context.enforcementBehavior = this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR);
       context.currentRuleSetLabel = game.i18n.localize(
         `SPELLBOOK.Settings.SpellcastingRuleSet.${context.currentRuleSet.charAt(0).toUpperCase() + context.currentRuleSet.slice(1)}`
       );
@@ -87,9 +75,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       context.spellcastingClasses = await this._prepareClassSettings();
 
       // Check if we have any notices to show
-      context.hasNotices = context.spellcastingClasses.some(
-        (classData) => classData.rules._noScaleValue || classData.hasCustomSpellList
-      );
+      context.hasNotices = context.spellcastingClasses.some((classData) => classData.rules._noScaleValue || classData.hasCustomSpellList);
 
       // Prepare available spell lists for custom selection
       context.availableSpellLists = await this._prepareSpellListOptions();
@@ -121,12 +107,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       const classSettings = [];
 
       // Get all spellcasting classes
-      const classItems = this.actor.items.filter(
-        (item) =>
-          item.type === 'class' &&
-          item.system.spellcasting?.progression &&
-          item.system.spellcasting.progression !== 'none'
-      );
+      const classItems = this.actor.items.filter((item) => item.type === 'class' && item.system.spellcasting?.progression && item.system.spellcasting.progression !== 'none');
 
       for (const classItem of classItems) {
         const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
@@ -294,9 +275,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
       // Find the class item to get the base preparation maximum
       const classItem = this.actor.items.find(
-        (item) =>
-          item.type === 'class' &&
-          (item.system.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier)
+        (item) => item.type === 'class' && (item.system.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier)
       );
 
       let minimumBonus = -10; // Fallback to old behavior if we can't find the class
@@ -395,8 +374,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       await actor.setFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE, ruleSetOverride);
 
       // Handle enforcement behavior
-      const enforcementBehavior =
-        expandedData.enforcementBehavior === 'global' ? null : expandedData.enforcementBehavior;
+      const enforcementBehavior = expandedData.enforcementBehavior === 'global' ? null : expandedData.enforcementBehavior;
       await actor.setFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR, enforcementBehavior);
 
       // If rule set changed, apply new defaults first
@@ -453,9 +431,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
       // Find and refresh open spellbooks
       const allInstances = Array.from(foundry.applications.instances.values());
-      const openSpellbooks = allInstances.filter(
-        (w) => w.constructor.name === 'PlayerSpellBook' && w.actor.id === actor.id
-      );
+      const openSpellbooks = allInstances.filter((w) => w.constructor.name === 'PlayerSpellBook' && w.actor.id === actor.id);
 
       for (const spellbook of openSpellbooks) {
         await spellbook.refreshFromSettingsChange();

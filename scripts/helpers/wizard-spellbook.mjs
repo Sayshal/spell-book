@@ -32,9 +32,7 @@ export class WizardSpellbookManager {
   _findWizardClass() {
     if (genericUtils.isWizard(this.actor)) {
       const localizedWizardName = game.i18n.localize('SPELLBOOK.Classes.Wizard').toLowerCase();
-      const wizardClass = this.actor.items.find(
-        (i) => i.type === 'class' && i.name.toLowerCase() === localizedWizardName
-      );
+      const wizardClass = this.actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === localizedWizardName);
       if (wizardClass) return wizardClass;
       if (this.actor.getFlag(MODULE.ID, FLAGS.FORCE_WIZARD_MODE)) return genericUtils.findSpellcastingClass(this.actor);
     }
@@ -47,11 +45,7 @@ export class WizardSpellbookManager {
    * @returns {string} The current cantrip rules setting
    */
   getCantripRules() {
-    return (
-      this.actor.getFlag(MODULE.ID, FLAGS.CANTRIP_RULES) ||
-      game.settings.get(MODULE.ID, SETTINGS.DEFAULT_CANTRIP_RULES) ||
-      CANTRIP_RULES.LEGACY
-    );
+    return this.actor.getFlag(MODULE.ID, FLAGS.CANTRIP_RULES) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_CANTRIP_RULES) || CANTRIP_RULES.LEGACY;
   }
 
   /**

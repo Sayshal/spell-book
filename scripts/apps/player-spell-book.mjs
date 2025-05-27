@@ -94,12 +94,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (updatedActor.id !== this.actor.id) return;
       if (changes.flags?.[MODULE.ID]) {
         const changedFlags = Object.keys(changes.flags[MODULE.ID]);
-        const cantripFlagChanged = changedFlags.some((flag) =>
-          [FLAGS.CANTRIP_RULES, FLAGS.ENFORCEMENT_BEHAVIOR, FLAGS.FORCE_WIZARD_MODE].includes(flag)
-        );
-        const wizardFlagChanged = changedFlags.some((flag) =>
-          [FLAGS.WIZARD_SPELLBOOK, FLAGS.WIZARD_LEARNED_SPELLS, FLAGS.WIZARD_COPIED_SPELLS].includes(flag)
-        );
+        const cantripFlagChanged = changedFlags.some((flag) => [FLAGS.CANTRIP_RULES, FLAGS.ENFORCEMENT_BEHAVIOR, FLAGS.FORCE_WIZARD_MODE].includes(flag));
+        const wizardFlagChanged = changedFlags.some((flag) => [FLAGS.WIZARD_SPELLBOOK, FLAGS.WIZARD_LEARNED_SPELLS, FLAGS.WIZARD_COPIED_SPELLS].includes(flag));
 
         if ((cantripFlagChanged || wizardFlagChanged) && this.rendered) {
           this.render(false);
@@ -268,10 +264,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       isLoading: this.isLoading,
       spellLevels: this.spellLevels || [],
       className: this.className || '',
-      filters:
-        this.isLoading ?
-          { search: null, dropdowns: [], checkboxes: [], range: null }
-        : this.filterHelper.getFilterState(),
+      filters: this.isLoading ? { search: null, dropdowns: [], checkboxes: [], range: null } : this.filterHelper.getFilterState(),
       spellSchools: CONFIG.DND5E.spellSchools,
       buttons: buttons,
       actorId: this.actor.id,
@@ -317,12 +310,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       checkbox.dataset.sourceClass = spell.sourceClass;
     }
 
-    if (spell.preparation.disabled && spell.preparation.disabledReason)
-      checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
+    if (spell.preparation.disabled && spell.preparation.disabledReason) checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
     processedSpell.preparationCheckboxHtml = formElements.elementToHtml(checkbox);
-    if (this.wizardManager?.isWizard)
-      processedSpell.inWizardSpellbook =
-        this._stateManager.wizardSpellbookCache?.includes(spell.compendiumUuid) || false;
+    if (this.wizardManager?.isWizard) processedSpell.inWizardSpellbook = this._stateManager.wizardSpellbookCache?.includes(spell.compendiumUuid) || false;
     return processedSpell;
   }
 
@@ -1118,8 +1108,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       // Get the active tab's class identifier - use sourceClass as fallback
       const activeTab = this.tabGroups['spellbook-tabs'];
       const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
-      const classIdentifier =
-        activeTabContent?.dataset.classIdentifier || sourceClass || this._stateManager.activeClass;
+      const classIdentifier = activeTabContent?.dataset.classIdentifier || sourceClass || this._stateManager.activeClass;
 
       if (!classIdentifier) {
         log(2, `No class identifier could be determined for spell change handling`);
@@ -1196,8 +1185,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const activeTab = this.tabGroups['spellbook-tabs'];
       const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
       // Use a fallback if activeTabContent isn't found
-      const classIdentifier =
-        activeTabContent?.dataset.classIdentifier || sourceClass || this._stateManager.activeClass;
+      const classIdentifier = activeTabContent?.dataset.classIdentifier || sourceClass || this._stateManager.activeClass;
 
       if (!classIdentifier) {
         log(2, `No class identifier could be determined for cantrip change handling - using first available class`);
@@ -1219,14 +1207,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       // Rule-based restrictions will be applied after form submission
       if (isChecked) {
         // Check count limits when checking a cantrip
-        const canChange = this.spellManager.canChangeCantripStatus(
-          sourceSpell,
-          isChecked,
-          isLevelUp,
-          isLongRest,
-          this._uiCantripCount,
-          classIdentifier
-        );
+        const canChange = this.spellManager.canChangeCantripStatus(sourceSpell, isChecked, isLevelUp, isLongRest, this._uiCantripCount, classIdentifier);
 
         if (!canChange.allowed) {
           checkbox.checked = !isChecked;
@@ -1282,16 +1263,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _updatewizardbookDataAfterSpellLearning(isFree) {
     if (this._stateManager.tabData && this._stateManager.tabData.wizardbook) {
-      this._stateManager.tabData.wizardbook.wizardTotalSpellbookCount =
-        (this._stateManager.tabData.wizardbook.wizardTotalSpellbookCount || 0) + 1;
+      this._stateManager.tabData.wizardbook.wizardTotalSpellbookCount = (this._stateManager.tabData.wizardbook.wizardTotalSpellbookCount || 0) + 1;
 
       if (isFree) {
-        this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells = Math.max(
-          0,
-          (this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells || 0) - 1
-        );
-        this._stateManager.tabData.wizardbook.wizardHasFreeSpells =
-          this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells > 0;
+        this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells = Math.max(0, (this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells || 0) - 1);
+        this._stateManager.tabData.wizardbook.wizardHasFreeSpells = this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells > 0;
       }
     }
   }
@@ -1487,9 +1463,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const spellUuid = event.target.dataset.uuid;
       if (!spellUuid) return;
 
-      const collapsedLevels = Array.from(this.element.querySelectorAll('.spell-level.collapsed')).map(
-        (el) => el.dataset.level
-      );
+      const collapsedLevels = Array.from(this.element.querySelectorAll('.spell-level.collapsed')).map((el) => el.dataset.level);
       const activeTab = this.tabGroups['spellbook-tabs'];
 
       const spell = await fromUuid(spellUuid);
@@ -1500,10 +1474,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
       const costInfo = await this.wizardManager.getCopyingCostWithFree(spell);
       const time = this.wizardManager.getCopyingTime(spell);
-      const costText =
-        costInfo.isFree ?
-          game.i18n.localize('SPELLBOOK.Wizard.SpellCopyFree')
-        : game.i18n.format('SPELLBOOK.Wizard.SpellCopyCost', { cost: costInfo.cost });
+      const costText = costInfo.isFree ? game.i18n.localize('SPELLBOOK.Wizard.SpellCopyFree') : game.i18n.format('SPELLBOOK.Wizard.SpellCopyCost', { cost: costInfo.cost });
       const result = await DialogV2.wait({
         title: game.i18n.format('SPELLBOOK.Wizard.LearnSpellTitle', { name: spell.name }),
         content: `
@@ -1717,10 +1688,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           spellLevel
         };
 
-        log(
-          3,
-          `Processed spell: ${name} (${uuid}) - prepared: ${isPrepared}, ritual: ${isRitual}, class: ${sourceClass}`
-        );
+        log(3, `Processed spell: ${name} (${uuid}) - prepared: ${isPrepared}, ritual: ${isRitual}, class: ${sourceClass}`);
       }
 
       // Handle wizard ritual spells - add missing ritual spells to the data
@@ -1835,9 +1803,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   async _sendGMNotifications(spellDataByClass, allCantripChangesByClass) {
     const globalBehavior =
-      this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) ||
-      game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) ||
-      ENFORCEMENT_BEHAVIOR.NOTIFY_GM;
+      this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || ENFORCEMENT_BEHAVIOR.NOTIFY_GM;
 
     if (globalBehavior !== ENFORCEMENT_BEHAVIOR.NOTIFY_GM) return;
 
@@ -1855,12 +1821,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const cantripChanges = allCantripChangesByClass[classIdentifier] || { added: [], removed: [] };
 
       // Count final prepared amounts
-      const cantripCount = Object.values(classSpellData).filter(
-        (spell) => spell.isPrepared && spell.spellLevel === 0
-      ).length;
-      const spellCount = Object.values(classSpellData).filter(
-        (spell) => spell.isPrepared && spell.spellLevel > 0
-      ).length;
+      const cantripCount = Object.values(classSpellData).filter((spell) => spell.isPrepared && spell.spellLevel === 0).length;
+      const spellCount = Object.values(classSpellData).filter((spell) => spell.isPrepared && spell.spellLevel > 0).length;
 
       const maxCantrips = this.spellManager.getMaxAllowed(classIdentifier);
       const maxSpells = classData.spellPreparation?.maximum || 0;

@@ -150,12 +150,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
     if (!this.isLoading && this.availableSpellLists?.length) {
       const actorOwnedLists = this.availableSpellLists.filter((list) => list.isActorOwned);
-      const customLists = this.availableSpellLists.filter(
-        (list) => !list.isActorOwned && (list.isCustom || list.document?.flags?.[MODULE.ID]?.isNewList)
-      );
-      const standardLists = this.availableSpellLists.filter(
-        (list) => !list.isActorOwned && !customLists.includes(list)
-      );
+      const customLists = this.availableSpellLists.filter((list) => !list.isActorOwned && (list.isCustom || list.document?.flags?.[MODULE.ID]?.isNewList));
+      const standardLists = this.availableSpellLists.filter((list) => !list.isActorOwned && !customLists.includes(list));
       actorOwnedLists.sort((a, b) => {
         if (a.actorName && b.actorName) return a.actorName.localeCompare(b.actorName);
         if (a.actorName) return -1;
@@ -242,10 +238,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       if (originalUuid) {
         context.originalUuid = originalUuid;
         try {
-          const compareResult = await managerHelpers.compareListVersions(
-            originalUuid,
-            this.selectedSpellList.document.uuid
-          );
+          const compareResult = await managerHelpers.compareListVersions(originalUuid, this.selectedSpellList.document.uuid);
           context.compareInfo = compareResult;
         } catch (error) {
           log(1, 'Error comparing versions:', error);
@@ -370,14 +363,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   filterAvailableSpells() {
     try {
       const selectedSpellUUIDs = this.getSelectedSpellUUIDs();
-      log(
-        3,
-        'Beginning Filtering:',
-        selectedSpellUUIDs.size,
-        'selected spells out of',
-        this.availableSpells.length,
-        'total available'
-      );
+      log(3, 'Beginning Filtering:', selectedSpellUUIDs.size, 'selected spells out of', this.availableSpells.length, 'total available');
       let remainingSpells = [...this.availableSpells];
       remainingSpells = this._filterBySelectedList(remainingSpells, selectedSpellUUIDs);
       remainingSpells = this._filterBySource(remainingSpells);
@@ -423,9 +409,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     const filtered = spells.filter((spell) => {
       const spellSource = (spell.sourceId || '').split('.')[0];
       const packName = spell.packName || '';
-      return (
-        spellSource.includes(source) || spellSource === source || packName.toLowerCase().includes(source.toLowerCase())
-      );
+      return spellSource.includes(source) || spellSource === source || packName.toLowerCase().includes(source.toLowerCase());
     });
 
     if (filtered.length === 0 && beforeCount > 0) {
@@ -457,9 +441,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       filtered = filtered.filter((spell) => {
         const [filterType, filterValue] = castingTime.split(':');
         const spellCastingType = spell.filterData?.castingTime?.type || spell.system?.activation?.type || '';
-        const spellCastingValue = String(
-          spell.filterData?.castingTime?.value || spell.system?.activation?.value || '1'
-        );
+        const spellCastingValue = String(spell.filterData?.castingTime?.value || spell.system?.activation?.value || '1');
         return spellCastingType === filterType && spellCastingValue === filterValue;
       });
     }
@@ -547,9 +529,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (concentration) {
       filtered = filtered.filter((spell) => {
         const requiresConcentration = !!spell.filterData?.concentration;
-        return (
-          (concentration === 'true' && requiresConcentration) || (concentration === 'false' && !requiresConcentration)
-        );
+        return (concentration === 'true' && requiresConcentration) || (concentration === 'false' && !requiresConcentration);
       });
     }
 
@@ -1221,9 +1201,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       this.pendingChanges.removed.add(spellUuid);
       this.pendingChanges.added.delete(spellUuid);
       const normalizedForms = managerHelpers.normalizeUuid(spellUuid);
-      this.selectedSpellList.spellUuids = this.selectedSpellList.spellUuids.filter(
-        (uuid) => !normalizedForms.includes(uuid)
-      );
+      this.selectedSpellList.spellUuids = this.selectedSpellList.spellUuids.filter((uuid) => !normalizedForms.includes(uuid));
       this.selectedSpellList.spells = this.selectedSpellList.spells.filter((spell) => {
         const spellUuids = [spell.uuid, spell.compendiumUuid, ...(spell._id ? [spell._id] : [])];
         return !spellUuids.some((id) => normalizedForms.includes(id));
@@ -1625,8 +1603,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       const collapsedFolders = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_FOLDERS) || [];
       const isCollapsed = folderContainer.classList.contains('collapsed');
       if (isCollapsed && !collapsedFolders.includes(folderId)) collapsedFolders.push(folderId);
-      else if (!isCollapsed && collapsedFolders.includes(folderId))
-        collapsedFolders.splice(collapsedFolders.indexOf(folderId), 1);
+      else if (!isCollapsed && collapsedFolders.includes(folderId)) collapsedFolders.splice(collapsedFolders.indexOf(folderId), 1);
       game.user.setFlag(MODULE.ID, FLAGS.COLLAPSED_FOLDERS, collapsedFolders);
     } catch (error) {
       log(1, 'Error handling toggle folder:', error);
@@ -1685,9 +1662,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
       let classItem = null;
       for (const actor of game.actors) {
-        const matchingItem = actor.items.find(
-          (i) => i.type === 'class' && i.system?.identifier?.toLowerCase() === identifier.toLowerCase()
-        );
+        const matchingItem = actor.items.find((i) => i.type === 'class' && i.system?.identifier?.toLowerCase() === identifier.toLowerCase());
 
         if (matchingItem) {
           classItem = matchingItem;

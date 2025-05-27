@@ -125,9 +125,7 @@ function getTopLevelFolderFromCompendiumSource(source) {
  * @returns {Promise<Set<string>|null>} Matched spell list or null
  */
 async function findSpellListByPack(packName, identifier, customMappings) {
-  const journalPacks = Array.from(game.packs).filter(
-    (p) => p.metadata.type === 'JournalEntry' && p.collection.includes(packName)
-  );
+  const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry' && p.collection.includes(packName));
   for (const pack of journalPacks) {
     try {
       const spellList = await searchPackForSpellList(pack, identifier, customMappings);
@@ -239,8 +237,7 @@ export function calculateMaxSpellLevel(actorLevel, spellcasting) {
 export function canCastSpells(actor) {
   return (
     actor?.system?.attributes?.spellcasting &&
-    (actor.items.some((i) => i.type === 'spell') ||
-      actor.items.some((i) => i.type === 'class' && i.system?.spellcasting?.progression !== 'none'))
+    (actor.items.some((i) => i.type === 'spell') || actor.items.some((i) => i.type === 'class' && i.system?.spellcasting?.progression !== 'none'))
   );
 }
 

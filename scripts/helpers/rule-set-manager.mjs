@@ -1,13 +1,4 @@
-import {
-  CANTRIP_SWAP_TIMING,
-  CLASS_IDENTIFIERS,
-  FLAGS,
-  MODULE,
-  RITUAL_CASTING_MODES,
-  RULE_SETS,
-  SETTINGS,
-  SPELL_SWAP_MODES
-} from '../constants.mjs';
+import { CANTRIP_SWAP_TIMING, CLASS_IDENTIFIERS, FLAGS, MODULE, RITUAL_CASTING_MODES, RULE_SETS, SETTINGS, SPELL_SWAP_MODES } from '../constants.mjs';
 import { log } from '../logger.mjs';
 
 /**

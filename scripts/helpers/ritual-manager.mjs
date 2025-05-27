@@ -78,10 +78,7 @@ export class RitualManager {
    */
   async initializeAllRitualSpells() {
     if (!this.isWizard || !this.isRitualCastingEnabled() || !this.wizardManager) {
-      log(
-        1,
-        `Ritual initialization skipped - isWizard: ${this.isWizard}, enabled: ${this.isRitualCastingEnabled()}, hasManager: ${!!this.wizardManager}`
-      );
+      log(1, `Ritual initialization skipped - isWizard: ${this.isWizard}, enabled: ${this.isRitualCastingEnabled()}, hasManager: ${!!this.wizardManager}`);
       return;
     }
 
@@ -89,10 +86,7 @@ export class RitualManager {
       const spellbookSpells = await this.wizardManager.getSpellbookSpells();
       const spellsToCreate = [];
 
-      log(
-        1,
-        `Starting ritual initialization for ${this.actor.name}, checking ${spellbookSpells.length} spellbook spells`
-      );
+      log(1, `Starting ritual initialization for ${this.actor.name}, checking ${spellbookSpells.length} spellbook spells`);
 
       let ritualSpellsFound = 0;
       let ritualSpellsAlreadyExist = 0;
@@ -101,9 +95,7 @@ export class RitualManager {
       for (const spellUuid of spellbookSpells) {
         try {
           // Check if this spell already exists on the actor
-          const existingSpell = this.actor.items.find(
-            (i) => i.type === 'spell' && (i.flags?.core?.sourceId === spellUuid || i.uuid === spellUuid)
-          );
+          const existingSpell = this.actor.items.find((i) => i.type === 'spell' && (i.flags?.core?.sourceId === spellUuid || i.uuid === spellUuid));
 
           // Get the source spell to check if it's a ritual
           const sourceSpell = await fromUuid(spellUuid);
@@ -157,10 +149,7 @@ export class RitualManager {
         }
       }
 
-      log(
-        1,
-        `Ritual summary - Found: ${ritualSpellsFound}, Already exist: ${ritualSpellsAlreadyExist}, To create: ${ritualSpellsToCreate}`
-      );
+      log(1, `Ritual summary - Found: ${ritualSpellsFound}, Already exist: ${ritualSpellsAlreadyExist}, To create: ${ritualSpellsToCreate}`);
 
       // Create all new ritual spells at once
       if (spellsToCreate.length > 0) {
@@ -182,9 +171,7 @@ export class RitualManager {
     if (!this.isWizard) return;
 
     try {
-      const ritualOnlySpells = this.actor.items.filter(
-        (i) => i.type === 'spell' && i.system.preparation?.mode === 'ritual' && !i.system.preparation?.prepared
-      );
+      const ritualOnlySpells = this.actor.items.filter((i) => i.type === 'spell' && i.system.preparation?.mode === 'ritual' && !i.system.preparation?.prepared);
 
       if (ritualOnlySpells.length > 0) {
         const idsToRemove = ritualOnlySpells.map((s) => s.id);
