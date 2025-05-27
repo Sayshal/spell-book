@@ -274,21 +274,35 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _processSpellForDisplay(spell) {
+    console.log(`=== PROCESSING SPELL FOR DISPLAY: ${spell.name} ===`);
+    console.log(`Spell preparation status:`, spell.preparation);
+
     const processedSpell = foundry.utils.deepClone(spell);
     if (!spell.compendiumUuid) spell.compendiumUuid = genericUtils.getSpellUuid(spell);
+
     processedSpell.cssClasses = this._getSpellCssClasses(spell);
     processedSpell.dataAttributes = this._getSpellDataAttributes(spell);
     processedSpell.tag = this._getSpellPreparationTag(spell);
+
     const ariaLabel =
       spell.preparation.prepared ?
         game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name })
       : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
+
+    console.log(`Creating checkbox for ${spell.name}:`, {
+      checked: spell.preparation.prepared,
+      disabled: spell.preparation.disabled,
+      preparationMode: spell.preparation.preparationMode
+    });
+
     const checkbox = formElements.createCheckbox({
       name: `spellPreparation.${spell.compendiumUuid}`,
       checked: spell.preparation.prepared,
       disabled: spell.preparation.disabled,
       ariaLabel: ariaLabel
     });
+
+    console.log(`Checkbox created:`, checkbox.outerHTML);
 
     checkbox.id = `prep-${spell.compendiumUuid}`;
     checkbox.dataset.uuid = spell.compendiumUuid;
@@ -1671,11 +1685,16 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const sourceClass = checkbox.dataset.sourceClass || 'unknown';
 
         const spellItem = checkbox.closest('.spell-item');
-        const isAlwaysPreparedElement =
-          spellItem && (spellItem.querySelector('.tag.always-prepared') || spellItem.querySelector('.tag.granted'));
+        // NEW - COMPLETE:
+        const isSpecialPreparedElement =
+          spellItem &&
+          (spellItem.querySelector('.tag.always-prepared') ||
+            spellItem.querySelector('.tag.granted') ||
+            spellItem.querySelector('.tag.innate') ||
+            spellItem.querySelector('.tag.atwill'));
 
-        // Skip always prepared spells
-        if (isAlwaysPreparedElement) continue;
+        // Skip all special preparation mode spells
+        if (isSpecialPreparedElement) continue;
 
         // Get spell level for over-limit notifications
         const spellLevel = spellItem?.dataset.spellLevel ? parseInt(spellItem.dataset.spellLevel) : 0;

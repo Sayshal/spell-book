@@ -427,12 +427,16 @@ export class SpellManager {
    */
   _getOwnedSpellPreparationStatus(spell, classIdentifier) {
     const preparationMode = spell.system.preparation?.mode;
+
+    console.log(`=== CHECKING PREPARATION STATUS: ${spell.name} ===`, {
+      preparationMode,
+      classIdentifier,
+      rawPreparationData: spell.system.preparation
+    });
+
     const alwaysPrepared = preparationMode === 'always';
     const isInnateCasting = preparationMode === 'innate';
-    const isPactMagic = preparationMode === 'pact';
     const isAtWill = preparationMode === 'atwill';
-    const isRitualMode = preparationMode === 'ritual';
-
     const localizedPreparationMode = formattingUtils.getLocalizedPreparationMode(preparationMode);
     const sourceInfo = this._determineSpellSource(spell);
     const isGranted = !!sourceInfo && !!spell.flags?.dnd5e?.cachedFor;
@@ -442,15 +446,14 @@ export class SpellManager {
     const actuallyPrepared = !!(
       isGranted ||
       alwaysPrepared ||
-      isInnateCasting || // ✅ This forces innate spells to be prepared
-      isPactMagic ||
+      isInnateCasting ||
       isAtWill ||
-      isRitualMode ||
       spell.system.preparation?.prepared
     );
 
     // Force disable for special preparation modes
-    let isDisabled = isGranted || alwaysPrepared || isInnateCasting || isPactMagic || isAtWill || isRitualMode;
+    let isDisabled = isGranted || alwaysPrepared || isInnateCasting || isAtWill;
+
     let disabledReason = '';
 
     if (isGranted) {
@@ -459,12 +462,8 @@ export class SpellManager {
       disabledReason = 'SPELLBOOK.Preparation.AlwaysTooltip';
     } else if (isInnateCasting) {
       disabledReason = 'SPELLBOOK.Preparation.InnateTooltip';
-    } else if (isPactMagic) {
-      disabledReason = 'SPELLBOOK.Preparation.PactTooltip';
     } else if (isAtWill) {
       disabledReason = 'SPELLBOOK.Preparation.AtWillTooltip';
-    } else if (isRitualMode) {
-      disabledReason = 'SPELLBOOK.Preparation.RitualTooltip';
     }
 
     const result = {
@@ -480,7 +479,7 @@ export class SpellManager {
       isCantripLocked: false,
       cantripLockReason: ''
     };
-
+    console.log(`Final preparation result for ${spell.name}:`, result);
     return result;
   }
 

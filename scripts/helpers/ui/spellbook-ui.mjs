@@ -626,12 +626,17 @@ export class SpellbookUI {
         if (!checkbox) continue;
 
         const spellSourceClass = checkbox.dataset.sourceClass;
-
-        // Only process cantrips for this class
         if (spellSourceClass && spellSourceClass !== classIdentifier) continue;
 
-        // Skip always prepared/granted cantrips
-        if (item.querySelector('.tag.always-prepared') || item.querySelector('.tag.granted')) continue;
+        const isAlwaysPrepared = item.querySelector('.tag.always-prepared');
+        const isGranted = item.querySelector('.tag.granted');
+        const isInnate = item.querySelector('.tag.innate');
+        const isAtWill = item.querySelector('.tag.atwill');
+
+        // Skip resetting locks for special spells
+        if (isAlwaysPrepared || isGranted || isInnate || isAtWill) {
+          continue;
+        }
 
         const isChecked = checkbox.checked;
 
@@ -792,14 +797,21 @@ export class SpellbookUI {
 
       for (const item of spellItems) {
         const spellLevel = item.dataset.spellLevel;
-
-        // Skip cantrips - they have their own lock system
         if (spellLevel === '0') continue;
 
         const checkbox = item.querySelector('dnd5e-checkbox');
         if (!checkbox) continue;
 
         const spellSourceClass = checkbox.dataset.sourceClass;
+        const isAlwaysPrepared = item.querySelector('.tag.always-prepared');
+        const isGranted = item.querySelector('.tag.granted');
+        const isInnate = item.querySelector('.tag.innate');
+        const isAtWill = item.querySelector('.tag.atwill');
+
+        // Skip resetting locks for special spells
+        if (isAlwaysPrepared || isGranted || isInnate || isAtWill) {
+          continue;
+        }
 
         // Only process spells for this class
         if (spellSourceClass && spellSourceClass !== classIdentifier) continue;

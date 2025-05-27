@@ -354,7 +354,6 @@ export class SpellbookState {
     try {
       // Tag each spell with the class identifier - BUT NOT for special spells
       for (const spell of spellItems) {
-        // Check if this is a special spell that should remain class-agnostic
         const preparationMode = spell.system?.preparation?.mode;
         const isSpecialMode = ['innate', 'pact', 'atwill', 'always'].includes(preparationMode);
         const isGranted = !!spell.flags?.dnd5e?.cachedFor;
@@ -375,16 +374,6 @@ export class SpellbookState {
       const sortBy = this.app.filterHelper?.getFilterState()?.sortBy || 'level';
       for (const level of spellLevels) {
         level.spells = this.app.filterHelper?.sortSpells(level.spells, sortBy) || level.spells;
-
-        // Ensure all spells have sourceClass set
-        for (const spell of level.spells) {
-          if (!spell.sourceClass) {
-            spell.sourceClass = identifier;
-          }
-          if (spell.system && !spell.system.sourceClass) {
-            spell.system.sourceClass = identifier;
-          }
-        }
       }
 
       // Add additional spell data
@@ -430,11 +419,53 @@ export class SpellbookState {
     const processedSpellIds = new Set();
     const processedSpellNames = new Set();
 
+    // PRIORITY 1: Process actor spells FIRST (especially innate/special spells)
+    if (this.actor) {
+      const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
+
+      for (const spell of actorSpells) {
+        if (spell?.system?.level === undefined) continue;
+
+        const level = spell.system.level;
+        const spellName = spell.name.toLowerCase();
+        const preparationMode = spell.system.preparation?.mode;
+        const isSpecialMode = ['innate', 'pact', 'atwill', 'always'].includes(preparationMode);
+
+        // Process ALL actor spells, but prioritize special ones
+        if (!spellsByLevel[level]) spellsByLevel[level] = [];
+
+        const spellData = {
+          ...spell,
+          preparation: this.app.spellManager.getSpellPreparationStatus(spell, classIdentifier),
+          filterData: formattingUtils.extractSpellFilterData(spell),
+          formattedDetails: formattingUtils.formatSpellDetails(spell)
+        };
+
+        // Don't assign sourceClass to special spells
+        if (!isSpecialMode) {
+          spellData.sourceClass = classIdentifier;
+        }
+
+        spellsByLevel[level].push(spellData);
+        processedSpellIds.add(spell.id || spell.uuid);
+        processedSpellNames.add(spellName);
+
+        console.log(`✅ PRIORITIZED ACTOR SPELL: ${spell.name} (${preparationMode})`);
+      }
+    }
+
+    // PRIORITY 2: Process compendium spells (skip if already processed from actor)
     for (const spell of spellItems) {
       if (spell?.system?.level === undefined) continue;
 
       const level = spell.system.level;
       const spellName = spell.name.toLowerCase();
+
+      // Skip if we already processed this spell from the actor
+      if (processedSpellNames.has(spellName)) {
+        console.log(`⏭️ SKIPPED COMPENDIUM SPELL: ${spell.name} (already have actor version)`);
+        continue;
+      }
 
       if (!spellsByLevel[level]) spellsByLevel[level] = [];
 
@@ -445,7 +476,7 @@ export class SpellbookState {
         spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spell, classIdentifier);
       }
 
-      // Preserve sourceClass
+      // Preserve sourceClass for compendium spells
       spellData.sourceClass = classIdentifier;
 
       spellData.filterData = formattingUtils.extractSpellFilterData(spell);
@@ -454,27 +485,8 @@ export class SpellbookState {
       spellsByLevel[level].push(spellData);
       processedSpellIds.add(spell.id || spell.compendiumUuid || spell.uuid);
       processedSpellNames.add(spellName);
-    }
 
-    // Handle actor spells with class-specific filtering
-    if (this.actor) {
-      const actorSpells = this._findClassSpecificActorSpells(classIdentifier, processedSpellIds, processedSpellNames);
-      for (const { spell, source } of actorSpells) {
-        if (spell?.system?.level === undefined) continue;
-
-        const level = spell.system.level;
-        if (!spellsByLevel[level]) spellsByLevel[level] = [];
-
-        const spellData = {
-          ...spell,
-          preparation: this.app.spellManager.getSpellPreparationStatus(spell, classIdentifier),
-          filterData: formattingUtils.extractSpellFilterData(spell),
-          formattedDetails: formattingUtils.formatSpellDetails(spell),
-          sourceClass: classIdentifier
-        };
-
-        spellsByLevel[level].push(spellData);
-      }
+      console.log(`✅ ADDED COMPENDIUM SPELL: ${spell.name}`);
     }
 
     // Sort spells within each level
