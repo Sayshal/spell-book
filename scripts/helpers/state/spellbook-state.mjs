@@ -449,8 +449,6 @@ export class SpellbookState {
         spellsByLevel[level].push(spellData);
         processedSpellIds.add(spell.id || spell.uuid);
         processedSpellNames.add(spellName);
-
-        console.log(`✅ PRIORITIZED ACTOR SPELL: ${spell.name} (${preparationMode})`);
       }
     }
 
@@ -463,7 +461,6 @@ export class SpellbookState {
 
       // Skip if we already processed this spell from the actor
       if (processedSpellNames.has(spellName)) {
-        console.log(`⏭️ SKIPPED COMPENDIUM SPELL: ${spell.name} (already have actor version)`);
         continue;
       }
 
@@ -485,8 +482,6 @@ export class SpellbookState {
       spellsByLevel[level].push(spellData);
       processedSpellIds.add(spell.id || spell.compendiumUuid || spell.uuid);
       processedSpellNames.add(spellName);
-
-      console.log(`✅ ADDED COMPENDIUM SPELL: ${spell.name}`);
     }
 
     // Sort spells within each level

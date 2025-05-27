@@ -427,13 +427,6 @@ export class SpellManager {
    */
   _getOwnedSpellPreparationStatus(spell, classIdentifier) {
     const preparationMode = spell.system.preparation?.mode;
-
-    console.log(`=== CHECKING PREPARATION STATUS: ${spell.name} ===`, {
-      preparationMode,
-      classIdentifier,
-      rawPreparationData: spell.system.preparation
-    });
-
     const alwaysPrepared = preparationMode === 'always';
     const isInnateCasting = preparationMode === 'innate';
     const isAtWill = preparationMode === 'atwill';
@@ -479,7 +472,6 @@ export class SpellManager {
       isCantripLocked: false,
       cantripLockReason: ''
     };
-    console.log(`Final preparation result for ${spell.name}:`, result);
     return result;
   }
 

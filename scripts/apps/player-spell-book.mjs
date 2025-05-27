@@ -274,9 +274,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _processSpellForDisplay(spell) {
-    console.log(`=== PROCESSING SPELL FOR DISPLAY: ${spell.name} ===`);
-    console.log(`Spell preparation status:`, spell.preparation);
-
     const processedSpell = foundry.utils.deepClone(spell);
     if (!spell.compendiumUuid) spell.compendiumUuid = genericUtils.getSpellUuid(spell);
 
@@ -289,20 +286,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name })
       : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
 
-    console.log(`Creating checkbox for ${spell.name}:`, {
-      checked: spell.preparation.prepared,
-      disabled: spell.preparation.disabled,
-      preparationMode: spell.preparation.preparationMode
-    });
-
     const checkbox = formElements.createCheckbox({
       name: `spellPreparation.${spell.compendiumUuid}`,
       checked: spell.preparation.prepared,
       disabled: spell.preparation.disabled,
       ariaLabel: ariaLabel
     });
-
-    console.log(`Checkbox created:`, checkbox.outerHTML);
 
     checkbox.id = `prep-${spell.compendiumUuid}`;
     checkbox.dataset.uuid = spell.compendiumUuid;
