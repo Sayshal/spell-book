@@ -6,7 +6,6 @@ import { RitualManager } from './ritual-manager.mjs';
 import { RuleSetManager } from './rule-set-manager.mjs';
 import * as formattingUtils from './spell-formatting.mjs';
 import { WizardSpellbookManager } from './wizard-spellbook.mjs';
-
 /**
  * Manages spell preparation and related functionality
  */
@@ -27,7 +26,6 @@ export class SpellManager {
 
     // Initialize sub-managers
     this.cantripManager = new CantripManager(actor, this);
-    this.ritualManager = new RitualManager(actor);
   }
 
   /**
@@ -660,9 +658,6 @@ export class SpellManager {
       const spellsToUpdate = [];
       const spellsToCreate = [];
 
-      const isWizard = this.isWizard;
-      const ritualCastingEnabled = this.ritualManager.isRitualCastingEnabled();
-
       for (const [uuid, data] of Object.entries(spellData)) {
         if (data.isAlwaysPrepared) continue;
         const isRitual = data.isRitual || false;
@@ -673,13 +668,7 @@ export class SpellManager {
 
         if (!data.isPrepared) {
           if (data.wasPrepared && existingSpell) {
-            if (isRitual && isWizard && ritualCastingEnabled) {
-              spellsToUpdate.push({
-                '_id': existingSpell.id,
-                'system.preparation.mode': 'ritual',
-                'system.preparation.prepared': false
-              });
-            } else if (
+            if (
               existingSpell.system.preparation?.mode === 'prepared' &&
               !existingSpell.system.preparation?.alwaysPrepared
             ) {
@@ -688,26 +677,6 @@ export class SpellManager {
                 cantripChanges.removed.push({ name: existingSpell.name, uuid: uuid });
                 cantripChanges.hasChanges = true;
               }
-            }
-          } else if (isRitual && isWizard && ritualCastingEnabled && !existingSpell) {
-            try {
-              const sourceSpell = await fromUuid(uuid);
-              if (sourceSpell) {
-                const newSpellData = sourceSpell.toObject();
-                if (!newSpellData.system.preparation) newSpellData.system.preparation = {};
-                newSpellData.system.preparation.mode = 'ritual';
-                newSpellData.system.preparation.prepared = false;
-                newSpellData.flags = newSpellData.flags || {};
-                newSpellData.flags.core = newSpellData.flags.core || {};
-                newSpellData.flags.core.sourceId = uuid;
-                // Add sourceClass if provided
-                if (spellSourceClass) {
-                  newSpellData.system.sourceClass = spellSourceClass;
-                }
-                spellsToCreate.push(newSpellData);
-              }
-            } catch (error) {
-              log(1, `Error fetching ritual spell ${uuid}:`, error);
             }
           }
         } else {
@@ -846,8 +815,6 @@ export class SpellManager {
       const spellIdsToRemove = [];
 
       const cantripChanges = { added: [], removed: [], hasChanges: false };
-      const isWizard = this.isWizard && classIdentifier === 'wizard';
-      const ritualCastingEnabled = this.ritualManager.isRitualCastingEnabled();
 
       for (const [classSpellKey, data] of Object.entries(classSpellData)) {
         const { uuid, isPrepared, wasPrepared, isRitual, sourceClass, name } = data;
@@ -862,16 +829,7 @@ export class SpellManager {
           }
 
           // Find or create the spell on the actor
-          await this._ensureSpellOnActor(
-            uuid,
-            sourceClass,
-            preparationMode,
-            isRitual,
-            isWizard,
-            ritualCastingEnabled,
-            spellsToCreate,
-            spellsToUpdate
-          );
+          await this._ensureSpellOnActor(uuid, sourceClass, preparationMode, spellsToCreate, spellsToUpdate);
         } else if (wasPrepared) {
           // Track cantrip removals
           if (data.spellLevel === 0) {
@@ -880,15 +838,7 @@ export class SpellManager {
           }
 
           // Handle unpreparing spell
-          await this._handleUnpreparingSpell(
-            uuid,
-            sourceClass,
-            isRitual,
-            isWizard,
-            ritualCastingEnabled,
-            spellIdsToRemove,
-            spellsToUpdate
-          );
+          await this._handleUnpreparingSpell(uuid, sourceClass, spellIdsToRemove, spellsToUpdate);
         }
       }
 
@@ -953,24 +903,12 @@ export class SpellManager {
    * @param {string} uuid - Spell UUID
    * @param {string} sourceClass - Source class identifier
    * @param {string} preparationMode - Preparation mode for this class
-   * @param {boolean} isRitual - Whether spell is ritual
-   * @param {boolean} isWizard - Whether this is for wizard class
-   * @param {boolean} ritualCastingEnabled - Whether ritual casting is enabled
    * @param {Array} spellsToCreate - Array to add creation data to
    * @param {Array} spellsToUpdate - Array to add update data to
    * @returns {Promise<void>}
    * @private
    */
-  async _ensureSpellOnActor(
-    uuid,
-    sourceClass,
-    preparationMode,
-    isRitual,
-    isWizard,
-    ritualCastingEnabled,
-    spellsToCreate,
-    spellsToUpdate
-  ) {
+  async _ensureSpellOnActor(uuid, sourceClass, preparationMode, spellsToCreate, spellsToUpdate) {
     // Look for existing spell that matches both UUID and class
     const existingSpell = this.actor.items.find(
       (i) =>
@@ -980,11 +918,20 @@ export class SpellManager {
     );
 
     if (existingSpell) {
-      // Update existing spell
+      // For existing spells, determine the right preparation mode
+      let targetMode = preparationMode;
+      let targetPrepared = true;
+
+      // Special case: if this is a ritual spell in ritual mode, transition to prepared
+      if (existingSpell.system.preparation?.mode === 'ritual') {
+        targetMode = 'prepared';
+        targetPrepared = true;
+      }
+
       const updateData = {
         '_id': existingSpell.id,
-        'system.preparation.mode': preparationMode,
-        'system.preparation.prepared': true
+        'system.preparation.mode': targetMode,
+        'system.preparation.prepared': targetPrepared
       };
 
       // Ensure sourceClass is set
@@ -1040,29 +987,17 @@ export class SpellManager {
   }
 
   /**
-   * Handle unpreparing a spell for a specific class by removing the class-specific instance
+   * Handle unpreparing a spell for a specific class
    * @param {string} uuid - Spell UUID
    * @param {string} sourceClass - Source class identifier
-   * @param {boolean} isRitual - Whether spell is ritual
-   * @param {boolean} isWizard - Whether this is for wizard class
-   * @param {boolean} ritualCastingEnabled - Whether ritual casting is enabled
    * @param {Array} spellIdsToRemove - Array to add removal IDs to
    * @param {Array} spellsToUpdate - Array to add update data to
    * @returns {Promise<void>}
    * @private
    */
-  async _handleUnpreparingSpell(
-    uuid,
-    sourceClass,
-    isRitual,
-    isWizard,
-    ritualCastingEnabled,
-    spellIdsToRemove,
-    spellsToUpdate
-  ) {
+  async _handleUnpreparingSpell(uuid, sourceClass, spellIdsToRemove, spellsToUpdate) {
     try {
       // Find the SPECIFIC spell instance for this exact class
-      // This is crucial - we want the instance that belongs to this class only
       const targetSpell = this.actor.items.find(
         (i) =>
           i.type === 'spell' &&
@@ -1071,7 +1006,7 @@ export class SpellManager {
       );
 
       if (!targetSpell) {
-        log(3, `No class-specific spell instance found to remove: ${uuid} for class ${sourceClass}`);
+        log(3, `No class-specific spell instance found to unprepare: ${uuid} for class ${sourceClass}`);
         return;
       }
 
@@ -1082,27 +1017,29 @@ export class SpellManager {
 
       // Never remove always prepared, granted, or class feature spells
       if (isAlwaysPrepared || isGranted || isFromClassFeature) {
-        log(3, `Skipping removal of protected spell: ${targetSpell.name} (${targetSpell.system.preparation?.mode})`);
+        log(3, `Skipping unprepare of protected spell: ${targetSpell.name} (${targetSpell.system.preparation?.mode})`);
         return;
       }
 
-      // Special handling for wizard ritual spells
-      if (isRitual && isWizard && ritualCastingEnabled && targetSpell.system.level > 0) {
-        // For wizard rituals, we convert to ritual mode instead of removing
-        // This allows casting from spellbook without preparation
+      // Special case: ritual spells should revert to ritual mode, not be removed
+      const isRitualSpell = targetSpell.system.components?.ritual;
+      const isWizard = sourceClass === 'wizard';
+      const ritualCastingEnabled = this.ritualManager?.isRitualCastingEnabled();
+
+      if (isRitualSpell && isWizard && ritualCastingEnabled && targetSpell.system.level > 0) {
+        // Convert back to ritual mode instead of removing
         spellsToUpdate.push({
           '_id': targetSpell.id,
           'system.preparation.mode': 'ritual',
           'system.preparation.prepared': false
         });
-        log(3, `Converting wizard spell to ritual mode: ${targetSpell.name}`);
+        log(3, `Converting wizard spell back to ritual mode: ${targetSpell.name}`);
         return;
       }
 
       // For all other cases, remove the spell entirely
-      // This is the key change - we always remove the class-specific instance
       spellIdsToRemove.push(targetSpell.id);
-      log(3, `Marking class-specific spell for removal: ${targetSpell.name} (${sourceClass})`);
+      log(3, `Marking spell for removal: ${targetSpell.name} (${sourceClass})`);
     } catch (error) {
       log(1, `Error handling unpreparing spell ${uuid} for class ${sourceClass}:`, error);
     }

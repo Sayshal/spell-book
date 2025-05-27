@@ -2,6 +2,7 @@ import { ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../con
 import * as filterUtils from '../helpers/filters.mjs';
 import * as formElements from '../helpers/form-elements.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
+import { RitualManager } from '../helpers/ritual-manager.mjs';
 import { SpellManager } from '../helpers/spell-preparation.mjs';
 import { SpellbookState } from '../helpers/state/spellbook-state.mjs';
 import { SpellbookFilterHelper } from '../helpers/ui/spellbook-filters.mjs';
@@ -77,6 +78,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this._stateManager = new SpellbookState(this);
     this.ui = new SpellbookUI(this);
     this.filterHelper = new SpellbookFilterHelper(this);
+    this.ritualManager = null;
     this.isLoading = true;
     this.spellLevels = [];
     this.className = '';
@@ -104,6 +106,18 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       }
     });
+  }
+
+  /**
+   * Get or create the ritual manager when needed
+   * @returns {RitualManager|null}
+   */
+  getRitualManager() {
+    if (!this.ritualManager && this.wizardManager?.isWizard) {
+      log(1, `Lazy-creating RitualManager for ${this.actor.name}`);
+      this.ritualManager = new RitualManager(this.actor, this.wizardManager);
+    }
+    return this.ritualManager;
   }
 
   /**
@@ -1661,9 +1675,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const actor = this.actor;
       if (!actor) return null;
 
+      log(1, `FormHandler starting for ${actor.name}`);
+
       // Group spell data by class for independent processing
       const spellDataByClass = {};
       const checkboxes = form.querySelectorAll('dnd5e-checkbox[data-uuid]');
+
+      log(1, `Processing ${checkboxes.length} checkboxes from form`);
 
       for (const checkbox of checkboxes) {
         const uuid = checkbox.dataset.uuid;
@@ -1674,19 +1692,18 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const sourceClass = checkbox.dataset.sourceClass || 'unknown';
 
         const spellItem = checkbox.closest('.spell-item');
-        // NEW - COMPLETE:
-        const isSpecialPreparedElement =
-          spellItem &&
-          (spellItem.querySelector('.tag.always-prepared') ||
-            spellItem.querySelector('.tag.granted') ||
-            spellItem.querySelector('.tag.innate') ||
-            spellItem.querySelector('.tag.atwill'));
-
-        // Skip all special preparation mode spells
-        if (isSpecialPreparedElement) continue;
-
-        // Get spell level for over-limit notifications
         const spellLevel = spellItem?.dataset.spellLevel ? parseInt(spellItem.dataset.spellLevel) : 0;
+
+        // Skip special preparation mode spells (always-prepared, granted, etc.)
+        // But allow ritual spells to be processed
+        const isAlwaysPrepared = spellItem?.querySelector('.tag.always-prepared');
+        const isGranted = spellItem?.querySelector('.tag.granted');
+        const isInnate = spellItem?.querySelector('.tag.innate');
+        const isAtWill = spellItem?.querySelector('.tag.atwill');
+
+        if (isAlwaysPrepared || isGranted || isInnate || isAtWill) {
+          continue; // Skip these - they're managed by the system
+        }
 
         // Initialize class data if needed
         if (!spellDataByClass[sourceClass]) {
@@ -1701,108 +1718,200 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           name,
           wasPrepared,
           isPrepared,
-          isAlwaysPrepared: false,
           isRitual,
           sourceClass,
           classSpellKey,
           spellLevel
         };
+
+        log(
+          3,
+          `Processed spell: ${name} (${uuid}) - prepared: ${isPrepared}, ritual: ${isRitual}, class: ${sourceClass}`
+        );
+      }
+
+      // Handle wizard ritual spells - add missing ritual spells to the data
+      if (this.wizardManager?.isWizard) {
+        await this._addMissingRitualSpells(spellDataByClass);
       }
 
       // Process each class independently and collect cantrip changes
       const allCantripChangesByClass = {};
       for (const [classIdentifier, classSpellData] of Object.entries(spellDataByClass)) {
+        log(1, `Saving spells for class ${classIdentifier}: ${Object.keys(classSpellData).length} spells`);
         const saveResult = await this.spellManager.saveClassSpecificPreparedSpells(classIdentifier, classSpellData);
         if (saveResult && saveResult.cantripChanges && saveResult.cantripChanges.hasChanges) {
           allCantripChangesByClass[classIdentifier] = saveResult.cantripChanges;
         }
       }
 
-      // Send comprehensive GM notifications in notifyGM mode
-      const globalBehavior =
-        this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) ||
-        game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) ||
-        ENFORCEMENT_BEHAVIOR.NOTIFY_GM;
-
-      if (globalBehavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
-        const notificationData = {
-          actorName: this.actor.name,
-          classChanges: {}
-        };
-
-        // Build notification data using actual save results
-        for (const [classIdentifier, classSpellData] of Object.entries(spellDataByClass)) {
-          const classData = this._stateManager.classSpellData[classIdentifier];
-          if (!classData) continue;
-
-          const className = classData.className || classIdentifier;
-
-          // Use actual cantrip changes from save operation
-          const cantripChanges = allCantripChangesByClass[classIdentifier] || { added: [], removed: [] };
-
-          // Count final prepared amounts
-          const cantripCount = Object.values(classSpellData).filter(
-            (spell) => spell.isPrepared && spell.spellLevel === 0
-          ).length;
-          const spellCount = Object.values(classSpellData).filter(
-            (spell) => spell.isPrepared && spell.spellLevel > 0
-          ).length;
-
-          const maxCantrips = this.spellManager.getMaxAllowed(classIdentifier);
-          const maxSpells = classData.spellPreparation?.maximum || 0;
-
-          notificationData.classChanges[classIdentifier] = {
-            className,
-            cantripChanges,
-            overLimits: {
-              cantrips: {
-                isOver: cantripCount > maxCantrips,
-                current: cantripCount,
-                max: maxCantrips
-              },
-              spells: {
-                isOver: spellCount > maxSpells,
-                current: spellCount,
-                max: maxSpells
-              }
-            }
-          };
-        }
-
-        // Send comprehensive notification
-        await this.spellManager.cantripManager.sendComprehensiveGMNotification(notificationData);
-      }
+      // Send GM notifications if needed
+      await this._sendGMNotifications(spellDataByClass, allCantripChangesByClass);
 
       // Handle post-processing
-      if (this.spellManager.canBeLeveledUp()) {
-        await this.spellManager.completeCantripsLevelUp();
-      }
+      await this._handlePostProcessing(actor);
 
-      if (this._isLongRest) {
-        await this.spellManager.resetSwapTracking();
-        await actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, false);
-        this._isLongRest = false;
-      }
-
+      // Clean up and refresh
       this._newlyCheckedCantrips.clear();
+      this._clearTabStateCache();
 
       if (actor.sheet.rendered) {
         actor.sheet.render(true);
       }
 
-      // Clear preserved tab state since changes are now committed
-      this._clearTabStateCache();
-
       // Apply rule-based locks now that changes are saved
       if (this.ui && this.rendered) {
-        this.ui.setupCantripUI(); // This will apply rule locks
-        this.ui.setupSpellLocks(true); // Apply spell rule locks after saving
+        this.ui.setupCantripUI();
+        this.ui.setupSpellLocks(true);
       }
 
       return actor;
     } catch (error) {
       log(1, 'Error handling form submission:', error);
       return null;
+    }
+  }
+
+  /**
+   * Add missing ritual spells from wizard spellbook to the spell data
+   * @param {Object} spellDataByClass - The spell data grouped by class
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _addMissingRitualSpells(spellDataByClass) {
+    try {
+      const ritualManager = this.getRitualManager();
+      if (!ritualManager?.isWizard) return;
+
+      log(1, `Adding missing ritual spells for wizard ${this.actor.name}`);
+
+      // Get all spells in wizard spellbook
+      const spellbookSpells = await this.wizardManager.getSpellbookSpells();
+      const processedUuids = new Set();
+
+      // Collect UUIDs that are already processed
+      if (spellDataByClass.wizard) {
+        Object.values(spellDataByClass.wizard).forEach((spellData) => {
+          processedUuids.add(spellData.uuid);
+        });
+      }
+
+      // Check each spellbook spell for ritual tag
+      for (const spellUuid of spellbookSpells) {
+        if (processedUuids.has(spellUuid)) continue; // Already processed
+
+        try {
+          const sourceSpell = await fromUuid(spellUuid);
+          if (!sourceSpell || !sourceSpell.system.components?.ritual || sourceSpell.system.level === 0) {
+            continue; // Not a ritual or is a cantrip
+          }
+
+          log(1, `Found missing ritual spell: ${sourceSpell.name} (${spellUuid})`);
+
+          // Initialize wizard class data if needed
+          if (!spellDataByClass.wizard) {
+            spellDataByClass.wizard = {};
+          }
+
+          // Add as unprepared ritual spell
+          const classSpellKey = `wizard:${spellUuid}`;
+          spellDataByClass.wizard[classSpellKey] = {
+            uuid: spellUuid,
+            name: sourceSpell.name,
+            wasPrepared: false,
+            isPrepared: false, // Ritual spells start unprepared
+            isRitual: true,
+            sourceClass: 'wizard',
+            classSpellKey,
+            spellLevel: sourceSpell.system.level
+          };
+
+          log(1, `Added missing ritual spell: ${sourceSpell.name} as unprepared`);
+        } catch (error) {
+          log(2, `Error processing potential ritual spell ${spellUuid}:`, error);
+        }
+      }
+    } catch (error) {
+      log(1, `Error adding missing ritual spells:`, error);
+    }
+  }
+
+  /**
+   * Send GM notifications if needed
+   * @param {Object} spellDataByClass - The spell data grouped by class
+   * @param {Object} allCantripChangesByClass - Cantrip changes by class
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _sendGMNotifications(spellDataByClass, allCantripChangesByClass) {
+    const globalBehavior =
+      this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) ||
+      game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) ||
+      ENFORCEMENT_BEHAVIOR.NOTIFY_GM;
+
+    if (globalBehavior !== ENFORCEMENT_BEHAVIOR.NOTIFY_GM) return;
+
+    const notificationData = {
+      actorName: this.actor.name,
+      classChanges: {}
+    };
+
+    // Build notification data using actual save results
+    for (const [classIdentifier, classSpellData] of Object.entries(spellDataByClass)) {
+      const classData = this._stateManager.classSpellData[classIdentifier];
+      if (!classData) continue;
+
+      const className = classData.className || classIdentifier;
+      const cantripChanges = allCantripChangesByClass[classIdentifier] || { added: [], removed: [] };
+
+      // Count final prepared amounts
+      const cantripCount = Object.values(classSpellData).filter(
+        (spell) => spell.isPrepared && spell.spellLevel === 0
+      ).length;
+      const spellCount = Object.values(classSpellData).filter(
+        (spell) => spell.isPrepared && spell.spellLevel > 0
+      ).length;
+
+      const maxCantrips = this.spellManager.getMaxAllowed(classIdentifier);
+      const maxSpells = classData.spellPreparation?.maximum || 0;
+
+      notificationData.classChanges[classIdentifier] = {
+        className,
+        cantripChanges,
+        overLimits: {
+          cantrips: {
+            isOver: cantripCount > maxCantrips,
+            current: cantripCount,
+            max: maxCantrips
+          },
+          spells: {
+            isOver: spellCount > maxSpells,
+            current: spellCount,
+            max: maxSpells
+          }
+        }
+      };
+    }
+
+    // Send comprehensive notification
+    await this.spellManager.cantripManager.sendComprehensiveGMNotification(notificationData);
+  }
+
+  /**
+   * Handle post-processing after spell save
+   * @param {Actor} actor - The actor
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _handlePostProcessing(actor) {
+    if (this.spellManager.canBeLeveledUp()) {
+      await this.spellManager.completeCantripsLevelUp();
+    }
+
+    if (this._isLongRest) {
+      await this.spellManager.resetSwapTracking();
+      await actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, false);
+      this._isLongRest = false;
     }
   }
 }
