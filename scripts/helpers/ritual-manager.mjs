@@ -1,4 +1,4 @@
-import { MODULE } from '../constants.mjs';
+import { FLAGS, MODULE } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import { WizardSpellbookManager } from './wizard-spellbook.mjs';
 
@@ -49,7 +49,7 @@ export class RitualManager {
    */
   isRitualCastingEnabled() {
     if (!this.isWizard) return false;
-    return this.actor.getFlag(MODULE.ID, 'wizardRitualCasting') !== false;
+    return this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_RITUAL_CASTING) !== false;
   }
 
   /**
@@ -60,7 +60,7 @@ export class RitualManager {
   async setRitualCastingEnabled(enabled) {
     if (!this.isWizard) return false;
 
-    await this.actor.setFlag(MODULE.ID, 'wizardRitualCasting', enabled);
+    await this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_RITUAL_CASTING, enabled);
 
     // Update ritual spells on the actor based on the new setting
     if (enabled) {
