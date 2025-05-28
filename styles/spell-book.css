@@ -983,10 +983,10 @@
 
     /* Class Icon Images Styling */
     img.tab-icon {
-      width: 26px;
-      height: 26px;
+      width: 32px;
+      height: 32px;
       object-fit: cover;
-      border: 1px solid var(--dnd5e-color-gold);
+      border: none;
       border-radius: 50%;
     }
 

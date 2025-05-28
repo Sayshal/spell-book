@@ -169,7 +169,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     // Wizard-specific context - explicitly call this method to maintain compatibility
     context.isWizard = !!this.wizardManager?.isWizard;
     if (context.isWizard) {
-      this._addWizardContextData(context);
+      await this._addWizardContextData(context);
     }
 
     context.hasMultipleTabs = Object.keys(context.tabs).length > 1;
@@ -417,14 +417,18 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {Object} context - The context object to modify
    * @private
    */
-  _addWizardContextData(context) {
-    // Add wizard tab
+  async _addWizardContextData(context) {
+    const wizardBookImage = await this._getRandomWizardBookImage();
+    // Add wizard tab with random book image instead of font-awesome icon
     context.tabs.wizardbook = {
       id: 'wizardbook',
       label: game.i18n.format('SPELLBOOK.Tabs.WizardSpells', { class: this.className }),
       group: 'spellbook-tabs',
       cssClass: this.tabGroups['spellbook-tabs'] === 'wizardbook' ? 'active' : '',
-      icon: 'fa-solid fa-book-spells'
+      icon: 'fa-solid fa-book-open', // fallback icon
+      data: {
+        classImg: wizardBookImage
+      }
     };
 
     // Add tab data if available
@@ -482,6 +486,16 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       await this.ui.applyClassStyling();
     } catch (error) {
       log(1, 'Error in _onRender:', error);
+    }
+  }
+
+  /** @inheritdoc */
+  async _onFirstRender(context, options) {
+    await super._onFirstRender(context, options);
+
+    // Initialize wizard book image selection on first render only
+    if (this.wizardManager?.isWizard) {
+      await this._getRandomWizardBookImage();
     }
   }
 
@@ -1266,6 +1280,55 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells = Math.max(0, (this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells || 0) - 1);
         this._stateManager.tabData.wizardbook.wizardHasFreeSpells = this._stateManager.tabData.wizardbook.wizardRemainingFreeSpells > 0;
       }
+    }
+  }
+
+  /**
+   * Get a random book image path for the wizard spellbook tab
+   * Dynamically checks folder contents and selects randomly
+   * Only selects once on first render to maintain consistency
+   * @returns {Promise<string>} Path to a random book image
+   * @private
+   */
+  async _getRandomWizardBookImage() {
+    if (this._wizardBookImage) {
+      return this._wizardBookImage;
+    }
+
+    try {
+      const folderPath = 'icons/sundries/books';
+
+      // Browse the folder to get its contents
+      const browseResult = await FilePicker.browse('public', folderPath);
+
+      if (!browseResult || !browseResult.files) {
+        log(2, `Could not browse folder ${folderPath}, using fallback`);
+        this._wizardBookImage = 'icons/svg/book.svg'; // fallback
+        return this._wizardBookImage;
+      }
+
+      // Filter for .webp files only
+      const webpFiles = browseResult.files.filter((filePath) => filePath.toLowerCase().endsWith('.webp'));
+
+      if (webpFiles.length === 0) {
+        log(2, `No .webp files found in ${folderPath}, using fallback`);
+        this._wizardBookImage = 'icons/svg/book.svg'; // fallback
+        return this._wizardBookImage;
+      }
+
+      // Randomly select one file
+      const randomIndex = Math.floor(Math.random() * webpFiles.length);
+      const selectedFile = webpFiles[randomIndex];
+
+      // Store the full path
+      this._wizardBookImage = selectedFile;
+
+      log(3, `Selected random wizard book image: ${this._wizardBookImage} (${randomIndex + 1} of ${webpFiles.length})`);
+      return this._wizardBookImage;
+    } catch (error) {
+      log(1, `Error selecting random wizard book image:`, error);
+      this._wizardBookImage = 'icons/svg/book.svg'; // fallback
+      return this._wizardBookImage;
     }
   }
 
