@@ -1,4 +1,4 @@
-import { CANTRIP_SWAP_TIMING, CLASS_IDENTIFIERS, FLAGS, MODULE, RITUAL_CASTING_MODES, RULE_SETS, SETTINGS, SPELL_SWAP_MODES } from '../constants.mjs';
+import { CLASS_IDENTIFIERS, FLAGS, MODULE, RITUAL_CASTING_MODES, RULE_SETS, SETTINGS, SWAP_MODES } from '../constants.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -159,8 +159,8 @@ export class RuleSetManager {
   static _getClassDefaults(classIdentifier, ruleSet) {
     // Start with base defaults
     const defaults = {
-      cantripSwapping: CANTRIP_SWAP_TIMING.NONE,
-      spellSwapping: SPELL_SWAP_MODES.NONE,
+      cantripSwapping: SWAP_MODES.NONE,
+      spellSwapping: SWAP_MODES.NONE,
       ritualCasting: RITUAL_CASTING_MODES.NONE,
       showCantrips: true,
       customSpellList: null,
@@ -184,37 +184,37 @@ export class RuleSetManager {
    * @private
    */
   static _applyLegacyDefaults(classIdentifier, defaults) {
-    defaults.cantripSwapping = CANTRIP_SWAP_TIMING.NONE;
+    defaults.cantripSwapping = SWAP_MODES.NONE;
     defaults.ritualCasting = RITUAL_CASTING_MODES.NONE;
 
     switch (classIdentifier) {
       case CLASS_IDENTIFIERS.WIZARD:
-        defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST;
+        defaults.spellSwapping = SWAP_MODES.LONG_REST;
         defaults.ritualCasting = RITUAL_CASTING_MODES.ALWAYS;
         defaults.showCantrips = true;
         break;
 
       case CLASS_IDENTIFIERS.CLERIC:
       case CLASS_IDENTIFIERS.DRUID:
-        defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST;
+        defaults.spellSwapping = SWAP_MODES.LONG_REST;
         defaults.ritualCasting = RITUAL_CASTING_MODES.PREPARED;
         defaults.showCantrips = true;
         break;
 
       case CLASS_IDENTIFIERS.PALADIN:
-        defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST;
+        defaults.spellSwapping = SWAP_MODES.LONG_REST;
         defaults.showCantrips = false;
         break;
 
       case CLASS_IDENTIFIERS.RANGER:
-        defaults.spellSwapping = SPELL_SWAP_MODES.LEVEL_UP;
+        defaults.spellSwapping = SWAP_MODES.LEVEL_UP;
         defaults.showCantrips = false;
         break;
 
       case CLASS_IDENTIFIERS.BARD:
       case CLASS_IDENTIFIERS.SORCERER:
       case CLASS_IDENTIFIERS.WARLOCK:
-        defaults.spellSwapping = SPELL_SWAP_MODES.LEVEL_UP;
+        defaults.spellSwapping = SWAP_MODES.LEVEL_UP;
         defaults.showCantrips = true;
         if (classIdentifier === CLASS_IDENTIFIERS.BARD) {
           defaults.ritualCasting = RITUAL_CASTING_MODES.PREPARED;
@@ -222,12 +222,12 @@ export class RuleSetManager {
         break;
 
       case CLASS_IDENTIFIERS.ARTIFICER:
-        defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST;
+        defaults.spellSwapping = SWAP_MODES.LONG_REST;
         defaults.showCantrips = true;
         break;
 
       default:
-        defaults.spellSwapping = SPELL_SWAP_MODES.LEVEL_UP;
+        defaults.spellSwapping = SWAP_MODES.LEVEL_UP;
         defaults.showCantrips = true;
         break;
     }
@@ -240,49 +240,49 @@ export class RuleSetManager {
    * @private
    */
   static _applyModernDefaults(classIdentifier, defaults) {
-    defaults.cantripSwapping = CANTRIP_SWAP_TIMING.LEVEL_UP;
+    defaults.cantripSwapping = SWAP_MODES.LEVEL_UP;
     defaults.ritualCasting = RITUAL_CASTING_MODES.NONE;
 
     switch (classIdentifier) {
       case CLASS_IDENTIFIERS.WIZARD:
-        defaults.cantripSwapping = CANTRIP_SWAP_TIMING.LONG_REST;
-        defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST;
+        defaults.cantripSwapping = SWAP_MODES.LONG_REST;
+        defaults.spellSwapping = SWAP_MODES.LONG_REST;
         defaults.ritualCasting = RITUAL_CASTING_MODES.ALWAYS;
         defaults.showCantrips = true;
         break;
 
       case CLASS_IDENTIFIERS.CLERIC:
       case CLASS_IDENTIFIERS.DRUID:
-        defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST;
+        defaults.spellSwapping = SWAP_MODES.LONG_REST;
         defaults.showCantrips = true;
         break;
 
       case CLASS_IDENTIFIERS.PALADIN:
-        defaults.cantripSwapping = CANTRIP_SWAP_TIMING.NONE;
-        defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST;
+        defaults.cantripSwapping = SWAP_MODES.NONE;
+        defaults.spellSwapping = SWAP_MODES.LONG_REST;
         defaults.showCantrips = false;
         break;
 
       case CLASS_IDENTIFIERS.RANGER:
-        defaults.cantripSwapping = CANTRIP_SWAP_TIMING.NONE;
-        defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST;
+        defaults.cantripSwapping = SWAP_MODES.NONE;
+        defaults.spellSwapping = SWAP_MODES.LONG_REST;
         defaults.showCantrips = false;
         break;
 
       case CLASS_IDENTIFIERS.BARD:
       case CLASS_IDENTIFIERS.SORCERER:
       case CLASS_IDENTIFIERS.WARLOCK:
-        defaults.spellSwapping = SPELL_SWAP_MODES.LEVEL_UP;
+        defaults.spellSwapping = SWAP_MODES.LEVEL_UP;
         defaults.showCantrips = true;
         break;
 
       case CLASS_IDENTIFIERS.ARTIFICER:
-        defaults.spellSwapping = SPELL_SWAP_MODES.LONG_REST;
+        defaults.spellSwapping = SWAP_MODES.LONG_REST;
         defaults.showCantrips = true;
         break;
 
       default:
-        defaults.spellSwapping = SPELL_SWAP_MODES.LEVEL_UP;
+        defaults.spellSwapping = SWAP_MODES.LEVEL_UP;
         defaults.showCantrips = true;
         break;
     }

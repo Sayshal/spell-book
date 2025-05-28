@@ -1,4 +1,4 @@
-import { CANTRIP_RULES, CLASS_IDENTIFIERS, FLAGS, MODULE } from '../../constants.mjs';
+import { CLASS_IDENTIFIERS, FLAGS, MODULE } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
 import * as actorSpellUtils from '../actor-spells.mjs';
 import { RuleSetManager } from '../rule-set-manager.mjs';
@@ -188,58 +188,19 @@ export class SpellbookState {
    * @returns {Object} Spell swapping rules
    */
   getClassSwapRules(classItem) {
-    // Get the class identifier
     const identifier = classItem.system?.identifier?.toLowerCase() || '';
-
     const rules = {
       canSwapCantrips: false,
-      cantripSwapMode: 'none', // none, levelUp, longRest
+      cantripSwapMode: 'none',
       canSwapSpells: false,
-      spellSwapMode: 'none' // none, levelUp, longRest, daily
+      spellSwapMode: 'none'
     };
 
-    // Set up default rules based on class
-    switch (identifier) {
-      case CLASS_IDENTIFIERS.BARD:
-      case CLASS_IDENTIFIERS.SORCERER:
-      case CLASS_IDENTIFIERS.WARLOCK:
-        rules.canSwapSpells = true;
-        rules.spellSwapMode = 'levelUp'; // Can swap 1 spell on level up
-        break;
-      case CLASS_IDENTIFIERS.CLERIC:
-      case CLASS_IDENTIFIERS.DRUID:
-        rules.canSwapSpells = true;
-        rules.spellSwapMode = 'daily'; // Can prepare fresh set each day
-        break;
-      case CLASS_IDENTIFIERS.PALADIN:
-        rules.canSwapSpells = true;
-        rules.spellSwapMode = 'daily'; // Can prepare fresh set each day
-        break;
-      case CLASS_IDENTIFIERS.RANGER:
-        rules.canSwapSpells = true;
-        rules.spellSwapMode = 'levelUp'; // Can swap 1 spell on level up
-        break;
-      case CLASS_IDENTIFIERS.WIZARD:
-        rules.canSwapSpells = true;
-        rules.spellSwapMode = 'daily'; // Can prepare fresh set each day from spellbook
-        rules.canSwapCantrips = true;
-        rules.cantripSwapMode = 'longRest'; // Modern rules: can swap 1 cantrip on long rest
-        break;
-    }
-
-    // Override with user settings
-    const cantripRules = this.app.spellManager.getSettings().rules;
-    if (cantripRules === CANTRIP_RULES.LEGACY) {
-      rules.canSwapCantrips = false;
-      rules.cantripSwapMode = 'none';
-    } else if (cantripRules === CANTRIP_RULES.MODERN_LEVEL_UP) {
-      rules.canSwapCantrips = true;
-      rules.cantripSwapMode = 'levelUp';
-    } else if (cantripRules === CANTRIP_RULES.MODERN_LONG_REST && identifier === CLASS_IDENTIFIERS.WIZARD) {
-      rules.canSwapCantrips = true;
-      rules.cantripSwapMode = 'longRest';
-    }
-
+    const classRules = RuleSetManager.getClassRules(this.actor, identifier);
+    rules.canSwapCantrips = classRules.cantripSwapping !== 'none';
+    rules.cantripSwapMode = classRules.cantripSwapping || 'none';
+    rules.canSwapSpells = classRules.spellSwapping !== 'none';
+    rules.spellSwapMode = classRules.spellSwapping || 'none';
     return rules;
   }
 
@@ -250,8 +211,7 @@ export class SpellbookState {
    */
   async loadSpellData() {
     try {
-      await this.app.spellManager.initializeFlags();
-
+      await RuleSetManager.initializeNewClasses(this.actor);
       if (this.app.wizardManager?.isWizard) {
         await this.cacheWizardSpellbook();
       }
@@ -698,9 +658,11 @@ export class SpellbookState {
   handleCantripLevelUp() {
     const cantripLevelUp = this.app.spellManager.checkForLevelUp();
     if (cantripLevelUp) {
-      const settings = this.app.spellManager.getSettings();
-      const message = settings.rules === CANTRIP_RULES.DEFAULT ? 'SPELLBOOK.Cantrips.LevelUpDefault' : 'SPELLBOOK.Cantrips.LevelUpModern';
-      ui.notifications.info(game.i18n.localize(message));
+      const hasLevelUpSwapping = Object.keys(this.spellcastingClasses).some((classId) => {
+        const classRules = RuleSetManager.getClassRules(this.actor, classId);
+        return classRules.cantripSwapping === 'levelUp';
+      });
+      if (hasLevelUpSwapping) ui.notifications.info(game.i18n.localize('SPELLBOOK.Cantrips.LevelUpModern'));
     }
   }
 

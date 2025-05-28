@@ -1,4 +1,4 @@
-import { CANTRIP_RULES, FLAGS, MODULE, WIZARD_DEFAULTS, WIZARD_SPELL_SOURCE } from '../constants.mjs';
+import { FLAGS, MODULE, WIZARD_DEFAULTS, WIZARD_SPELL_SOURCE } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import * as genericUtils from './generic-utils.mjs';
 
@@ -41,14 +41,6 @@ export class WizardSpellbookManager {
   }
 
   /**
-   * Get the rules for this wizard from cantrip settings
-   * @returns {string} The current cantrip rules setting
-   */
-  getCantripRules() {
-    return this.actor.getFlag(MODULE.ID, FLAGS.CANTRIP_RULES) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_CANTRIP_RULES) || CANTRIP_RULES.LEGACY;
-  }
-
-  /**
    * Initialize wizard flags on the actor
    * @returns {Promise<Object>} Update data applied, if any
    * @private
@@ -75,14 +67,23 @@ export class WizardSpellbookManager {
   }
 
   /**
+   * Get the wizard's cantrip swapping rules from class-specific settings
+   * @returns {string} The current cantrip swapping mode ('none', 'levelUp', 'longRest')
+   */
+  getCantripSwappingMode() {
+    const classRules = RuleSetManager.getClassRules(this.actor, 'wizard');
+    return classRules.cantripSwapping || 'none';
+  }
+
+  /**
    * Determine if wizard can swap cantrips on long rest
    * @param {boolean} isLongRest - Whether this is being called during a long rest
    * @returns {boolean} - Whether cantrip swapping is allowed
    */
   canSwapCantripsOnLongRest(isLongRest) {
     if (!isLongRest) return true;
-    const rules = this.getCantripRules();
-    return rules === CANTRIP_RULES.MODERN_LONG_REST;
+    const cantripSwappingMode = this.getCantripSwappingMode();
+    return cantripSwappingMode === 'longRest';
   }
 
   /**

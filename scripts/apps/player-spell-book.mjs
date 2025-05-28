@@ -94,8 +94,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (updatedActor.id !== this.actor.id) return;
       if (changes.flags?.[MODULE.ID]) {
         const changedFlags = Object.keys(changes.flags[MODULE.ID]);
-        const cantripFlagChanged = changedFlags.some((flag) => [FLAGS.CANTRIP_RULES, FLAGS.ENFORCEMENT_BEHAVIOR, FLAGS.FORCE_WIZARD_MODE].includes(flag));
-        const wizardFlagChanged = changedFlags.some((flag) => [FLAGS.WIZARD_SPELLBOOK, FLAGS.WIZARD_LEARNED_SPELLS, FLAGS.WIZARD_COPIED_SPELLS].includes(flag));
+        const cantripFlagChanged = changedFlags.some((flag) => [FLAGS.CLASS_RULES, FLAGS.ENFORCEMENT_BEHAVIOR, FLAGS.FORCE_WIZARD_MODE].includes(flag));
+        const wizardFlagChanged = changedFlags.some((flag) => [FLAGS.WIZARD_COPIED_SPELLS].includes(flag));
 
         if ((cantripFlagChanged || wizardFlagChanged) && this.rendered) {
           this.render(false);
@@ -418,9 +418,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _addWizardContextData(context) {
-    context.wizardSpellbookCount = this._stateManager.wizardSpellbookCache?.length || 0;
-    context.wizardRulesVersion = this.spellManager.getSettings().rules;
-
     // Add wizard tab
     context.tabs.wizardbook = {
       id: 'wizardbook',

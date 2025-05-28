@@ -14,7 +14,6 @@ export const MODULE = {
  * @type {Object}
  */
 export const FLAGS = {
-  CANTRIP_RULES: 'cantripRules',
   CANTRIP_SWAP_TRACKING: 'cantripSwapTracking',
   CLASS_RULES: 'classRules',
   COLLAPSED_FOLDERS: 'collapsedFolders',
@@ -30,10 +29,8 @@ export const FLAGS = {
   RULE_SET_OVERRIDE: 'ruleSetOverride',
   SIDEBAR_COLLAPSED: 'sidebarCollapsed',
   SWAP_TRACKING: 'swapTracking',
-  WIZARD_COPIED_SPELLS: 'wizardCopiedSpells', // How is this diferent than _LEARNED_SPELLS?
-  WIZARD_LEARNED_SPELLS: 'wizardLearnedSpells', // This is only used once in player-spell-book.mjs, never actually set? I think this can be destroyed?
-  WIZARD_SPELLBOOK: 'wizardSpellbook', // This is only used once in player-spell-book.mjs, never actually set? I think this can be destroyed?
-  WIZARD_RITUAL_CASTING: 'wizardRitualCasting' // This is set & retrieved in ritual-manager.mjs
+  WIZARD_COPIED_SPELLS: 'wizardCopiedSpells',
+  WIZARD_RITUAL_CASTING: 'wizardRitualCasting'
 };
 
 /**
@@ -42,12 +39,11 @@ export const FLAGS = {
  */
 export const TEMPLATES = {
   COMPONENTS: {
-    /**TEMPLATE.COMPONENETS IS NEVER USED IN OUR CODE */
-    EMPTY: 'modules/spell-book/templates/components/empty-state.hbs', // USED DIRECTLY IN 5X HBS FILES - SHOULD WE SWAP TO ADDING TEMPLATE TO CONTEXT?
-    ERROR: 'modules/spell-book/templates/components/error-message.hbs', // USED DIRECTLY IN 4X HBS FILES - SHOULD WE SWAP TO ADDING TEMPLATE TO CONTEXT?
-    LOADING: 'modules/spell-book/templates/components/loading-spinner.hbs', // USED DIRECTLY IN 4X HBS FILES - SHOULD WE SWAP TO ADDING TEMPLATE TO CONTEXT?
-    SPELL_ITEM: 'modules/spell-book/templates/components/spell-item.hbs', // NOT USED ANYWHERE - SAFE TO DELETE?
-    SPELL_LEVEL: 'modules/spell-book/templates/components/spell-level.hbs' // USED DIRECTLY IN 3X HBS FILES - SHOULD WE SWAP TO ADDING TEMPLATE TO CONTEXT?
+    EMPTY: 'modules/spell-book/templates/components/empty-state.hbs',
+    ERROR: 'modules/spell-book/templates/components/error-message.hbs',
+    LOADING: 'modules/spell-book/templates/components/loading-spinner.hbs',
+    SPELL_ITEM: 'modules/spell-book/templates/components/spell-item.hbs',
+    SPELL_LEVEL: 'modules/spell-book/templates/components/spell-level.hbs'
   },
   DIALOGS: {
     CREATE_SPELL_LIST: 'modules/spell-book/templates/dialogs/create-spell-list.hbs',
@@ -79,20 +75,15 @@ export const TEMPLATES = {
 export const SETTINGS = {
   CANTRIP_SCALE_VALUES: 'cantripScaleValues',
   CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',
-  DEFAULT_CANTRIP_RULES: 'defaultCantripRules', // HOW IS THIS DIFFERENT FROM CANTRIP_SWAPPING - SEE SETTINGS.MJS
-  DEFAULT_CANTRIP_SWAPPING: 'defaultCantripSwapping', // HOW IS THIS DIFFERENT FROM RULES - SEE SETTINGS.MJS (SETTING ALSO NOT USED ANYWHERE BESIDES INITIAL SETTING IN SETTINGS.MJS)
   DEFAULT_ENFORCEMENT_BEHAVIOR: 'defaultEnforcementBehavior',
-  DEFAULT_RITUAL_CASTING: 'defaultRitualCasting', // NOT USED ANYWHERE OUTSIDE OF INITIAL SETUP - DO WE NEED THIS? IS THIS JUST NOT SETUP AT ALL?
-  DEFAULT_SPELL_SWAPPING: 'defaultSpellSwapping', // NOT USED ANYWHERE OUTSIDE OF INTIAL SETUP - DO WE NEED THIS? IS THIS JUST NOT SETUP AT ALL?
   DISABLE_LONG_REST_SWAP_PROMPT: 'disableLongRestSwapPrompt',
   DISTANCE_UNIT: 'distanceUnit',
   ENABLE_JOURNAL_BUTTON: 'enableJournalButton',
-  ENABLE_REST_PROMPT: 'enableRestPrompt', // NOT USED ANYWHERE OUTSIDE OF INTIAL SETUP - DO WE NEED THIS? IS THIS THE SAME AS DISABLE_LONG_REST_SWAP_PROMPT?
   FILTER_CONFIGURATION: 'filterConfiguration',
   LOGGING_LEVEL: 'loggingLevel',
   OPEN_SPELL_MANAGER: 'openSpellListManager',
   RUN_MIGRATIONS: 'runMigrations',
-  SPELLCASTING_RULE_SET: 'spellcastingRuleSet' // WHAT DOES THIS DO COMPARED TO THE CANTRIP RULES? ITS USED BRIEFLY IN RULE-SET-MANAGER.MJS. WE LIKELY NEED THIS BUT IS IT FULLY IMPLEMENTED?
+  SPELLCASTING_RULE_SET: 'spellcastingRuleSet'
 };
 
 /**
@@ -221,16 +212,6 @@ export const DEFAULT_FILTER_CONFIG = [
 ];
 
 /**
- * Cantrip rules options
- * @type {Object}
- */
-export const CANTRIP_RULES = {
-  LEGACY: 'legacy',
-  MODERN_LEVEL_UP: 'levelUp',
-  MODERN_LONG_REST: 'longRest'
-};
-
-/**
  * Spell change behavior options
  * @type {Object}
  */
@@ -287,20 +268,10 @@ export const RULE_SETS = {
 };
 
 /**
- * Cantrip swapping timing options
+ * Spell swap modes (cantrips & levelled spells)
  * @type {Object}
  */
-export const CANTRIP_SWAP_TIMING = {
-  NONE: 'none',
-  LEVEL_UP: 'levelUp',
-  LONG_REST: 'longRest'
-};
-
-/**
- * Spell swapping modes
- * @type {Object}
- */
-export const SPELL_SWAP_MODES = {
+export const SWAP_MODES = {
   NONE: 'none',
   LEVEL_UP: 'levelUp',
   LONG_REST: 'longRest'

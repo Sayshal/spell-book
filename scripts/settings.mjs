@@ -1,15 +1,5 @@
 import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
-import {
-  CANTRIP_RULES,
-  CANTRIP_SWAP_TIMING,
-  DEFAULT_FILTER_CONFIG,
-  ENFORCEMENT_BEHAVIOR,
-  MODULE,
-  RITUAL_CASTING_MODES,
-  RULE_SETS,
-  SETTINGS,
-  SPELL_SWAP_MODES
-} from './constants.mjs';
+import { DEFAULT_FILTER_CONFIG, ENFORCEMENT_BEHAVIOR, MODULE, RULE_SETS, SETTINGS } from './constants.mjs';
 import { log } from './logger.mjs';
 
 /**
@@ -34,15 +24,6 @@ export function registerSettings() {
         MODULE.LOG_LEVEL = parseInt(value);
         log(3, `Logging level changed to ${MODULE.LOG_LEVEL}`);
       }
-    });
-
-    game.settings.register(MODULE.ID, SETTINGS.ENABLE_REST_PROMPT, {
-      name: 'SPELLBOOK.Settings.EnableRestPrompt.Name',
-      hint: 'SPELLBOOK.Settings.EnableRestPrompt.Hint',
-      scope: 'world',
-      config: true,
-      type: Boolean,
-      default: true
     });
 
     game.settings.register(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, {
@@ -106,18 +87,20 @@ export function registerSettings() {
       restricted: true
     });
 
-    game.settings.register(MODULE.ID, SETTINGS.DEFAULT_CANTRIP_RULES, {
-      name: 'SPELLBOOK.Settings.DefaultCantripRules.Name',
-      hint: 'SPELLBOOK.Settings.DefaultCantripRules.Hint',
+    game.settings.register(MODULE.ID, SETTINGS.SPELLCASTING_RULE_SET, {
+      name: 'SPELLBOOK.Settings.SpellcastingRuleSet.Name',
+      hint: 'SPELLBOOK.Settings.SpellcastingRuleSet.Hint',
       scope: 'world',
       config: true,
       type: String,
       choices: {
-        [CANTRIP_RULES.LEGACY]: 'SPELLBOOK.Cantrips.RulesLegacy',
-        [CANTRIP_RULES.MODERN_LEVEL_UP]: 'SPELLBOOK.Cantrips.RulesModernLevelUp',
-        [CANTRIP_RULES.MODERN_LONG_REST]: 'SPELLBOOK.Cantrips.RulesModernLongRest'
+        [RULE_SETS.LEGACY]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Legacy',
+        [RULE_SETS.MODERN]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Modern'
       },
-      default: CANTRIP_RULES.LEGACY
+      default: RULE_SETS.LEGACY,
+      onChange: (value) => {
+        ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.RuleSetChanged'));
+      }
     });
 
     game.settings.register(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR, {
@@ -153,64 +136,6 @@ export function registerSettings() {
       onChange: () => {
         if (game.user.isGM) ui.sidebar.render(true);
       }
-    });
-
-    game.settings.register(MODULE.ID, SETTINGS.SPELLCASTING_RULE_SET, {
-      name: 'SPELLBOOK.Settings.SpellcastingRuleSet.Name',
-      hint: 'SPELLBOOK.Settings.SpellcastingRuleSet.Hint',
-      scope: 'world',
-      config: true,
-      type: String,
-      choices: {
-        [RULE_SETS.LEGACY]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Legacy',
-        [RULE_SETS.MODERN]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Modern'
-      },
-      default: RULE_SETS.LEGACY,
-      onChange: (value) => {
-        ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.RuleSetChanged'));
-      }
-    });
-
-    game.settings.register(MODULE.ID, SETTINGS.DEFAULT_CANTRIP_SWAPPING, {
-      name: 'SPELLBOOK.Settings.DefaultCantripSwapping.Name',
-      hint: 'SPELLBOOK.Settings.DefaultCantripSwapping.Hint',
-      scope: 'world',
-      config: true,
-      type: String,
-      choices: {
-        [CANTRIP_SWAP_TIMING.NONE]: 'SPELLBOOK.Settings.CantripSwapping.None',
-        [CANTRIP_SWAP_TIMING.LEVEL_UP]: 'SPELLBOOK.Settings.CantripSwapping.LevelUp',
-        [CANTRIP_SWAP_TIMING.LONG_REST]: 'SPELLBOOK.Settings.CantripSwapping.LongRest'
-      },
-      default: CANTRIP_SWAP_TIMING.NONE
-    });
-
-    game.settings.register(MODULE.ID, SETTINGS.DEFAULT_SPELL_SWAPPING, {
-      name: 'SPELLBOOK.Settings.DefaultSpellSwapping.Name',
-      hint: 'SPELLBOOK.Settings.DefaultSpellSwapping.Hint',
-      scope: 'world',
-      config: true,
-      type: String,
-      choices: {
-        [SPELL_SWAP_MODES.NONE]: 'SPELLBOOK.Settings.SpellSwapping.None',
-        [SPELL_SWAP_MODES.LEVEL_UP]: 'SPELLBOOK.Settings.SpellSwapping.LevelUp',
-        [SPELL_SWAP_MODES.LONG_REST]: 'SPELLBOOK.Settings.SpellSwapping.LongRest'
-      },
-      default: SPELL_SWAP_MODES.LEVEL_UP
-    });
-
-    game.settings.register(MODULE.ID, SETTINGS.DEFAULT_RITUAL_CASTING, {
-      name: 'SPELLBOOK.Settings.DefaultRitualCasting.Name',
-      hint: 'SPELLBOOK.Settings.DefaultRitualCasting.Hint',
-      scope: 'world',
-      config: true,
-      type: String,
-      choices: {
-        [RITUAL_CASTING_MODES.NONE]: 'SPELLBOOK.Settings.RitualCasting.None',
-        [RITUAL_CASTING_MODES.PREPARED]: 'SPELLBOOK.Settings.RitualCasting.Prepared',
-        [RITUAL_CASTING_MODES.ALWAYS]: 'SPELLBOOK.Settings.RitualCasting.Always'
-      },
-      default: RITUAL_CASTING_MODES.NONE
     });
 
     game.settings.register(MODULE.ID, SETTINGS.CANTRIP_SCALE_VALUES, {

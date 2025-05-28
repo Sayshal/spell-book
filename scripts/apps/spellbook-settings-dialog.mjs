@@ -1,4 +1,4 @@
-import { CANTRIP_SWAP_TIMING, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, RITUAL_CASTING_MODES, RULE_SETS, SETTINGS, SPELL_SWAP_MODES, TEMPLATES } from '../constants.mjs';
+import { ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, RITUAL_CASTING_MODES, RULE_SETS, SETTINGS, TEMPLATES } from '../constants.mjs';
 import { RuleSetManager } from '../helpers/rule-set-manager.mjs';
 import { SpellManager } from '../helpers/spell-preparation.mjs';
 import { log } from '../logger.mjs';
@@ -82,8 +82,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
       // Add constants for template use
       context.RULE_SETS = RULE_SETS;
-      context.CANTRIP_SWAP_TIMING = CANTRIP_SWAP_TIMING;
-      context.SPELL_SWAP_MODES = SPELL_SWAP_MODES;
       context.RITUAL_CASTING_MODES = RITUAL_CASTING_MODES;
       context.ENFORCEMENT_BEHAVIOR = ENFORCEMENT_BEHAVIOR;
 

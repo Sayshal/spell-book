@@ -1,4 +1,4 @@
-import { CANTRIP_RULES, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE } from '../../constants.mjs';
+import { ENFORCEMENT_BEHAVIOR, FLAGS, MODULE } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
 import * as colorUtils from '../color-utils.mjs';
 import { RuleSetManager } from '../rule-set-manager.mjs';
@@ -179,7 +179,7 @@ export class SpellbookUI {
       const isClassAtMax = classPreparedCount >= classMaxPrepared;
 
       // Apply per-class enforcement if using enforced behavior
-      const settings = this.app.spellManager.getSettings();
+      const settings = this.app.spellManager.getSettings(classIdentifier);
       if (settings.behavior === ENFORCEMENT_BEHAVIOR.ENFORCED) {
         this._enforcePerClassSpellLimits(activeTabContent, classIdentifier, isClassAtMax);
       }
@@ -463,25 +463,20 @@ export class SpellbookUI {
 
       const cantripLevel = activeTabContent.querySelector('.spell-level[data-level="0"]');
       if (cantripLevel) {
-        // Apply rule-based locks based on saved state (not current UI state)
         this.setupCantripLocks(false, true);
-
         if (this.app.wizardManager?.isWizard && this.app._isLongRest) {
-          const cantripRules = this.app.spellManager.getSettings().rules;
+          const classRules = RuleSetManager.getClassRules(this.app.actor, 'wizard');
+          const cantripSwappingMode = classRules.cantripSwapping || 'none';
           const existingInfo = cantripLevel.querySelector('.wizard-rules-info');
           if (existingInfo) existingInfo.remove();
-
           const infoElement = document.createElement('div');
           infoElement.className = 'wizard-rules-info';
-          const ruleKey = cantripRules === CANTRIP_RULES.MODERN_LONG_REST ? 'SPELLBOOK.Wizard.ModernCantripRules' : 'SPELLBOOK.Wizard.LegacyCantripRules';
+          const ruleKey = cantripSwappingMode === 'longRest' ? 'SPELLBOOK.Wizard.ModernCantripRules' : 'SPELLBOOK.Wizard.LegacyCantripRules';
           infoElement.innerHTML = `<i class="fas fa-info-circle"></i> ${game.i18n.localize(ruleKey)}`;
-
           const levelHeading = cantripLevel.querySelector('.spell-level-heading');
           if (levelHeading) levelHeading.appendChild(infoElement);
         }
       }
-
-      // Also set up spell locks for rule-based enforcement
       this.setupSpellLocks(true);
     } catch (error) {
       log(1, 'Error setting up cantrip UI:', error);

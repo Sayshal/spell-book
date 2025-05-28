@@ -1,5 +1,4 @@
 import { FLAGS, MODULE, SETTINGS } from './constants.mjs';
-import { RuleSetManager } from './helpers/rule-set-manager.mjs';
 import { log } from './logger.mjs';
 
 /**
@@ -96,33 +95,8 @@ async function migrateDocument(doc, validFlags) {
   let invalidFlags = false;
   const updates = {};
 
-  // Handle cantrip rules migration (old system -> new per-class system)
-  if (flags[FLAGS.CANTRIP_RULES]) {
-    const oldCantripRules = flags[FLAGS.CANTRIP_RULES];
-    log(3, `Migrating cantrip rules for ${doc.documentName} "${doc.name}": ${oldCantripRules} -> per-class rules`);
-
-    // Remove the old flag
-    updates[`flags.${MODULE.ID}.-=${FLAGS.CANTRIP_RULES}`] = null;
-    cantripMigration = true;
-    wasUpdated = true;
-
-    // If this is an actor, ensure they have proper class rules set up
-    if (doc.documentName === 'Actor') {
-      try {
-        // Initialize new class rules if they don't exist
-        await RuleSetManager.initializeNewClasses(doc);
-        log(3, `Applied per-class cantrip rules for ${doc.name}`);
-      } catch (error) {
-        log(1, `Error applying per-class rules to ${doc.name}:`, error);
-      }
-    }
-  }
-
   // Check for other invalid/deprecated flags
   for (const [key, value] of Object.entries(flags)) {
-    // Skip the cantrip rules flag since we handled it above
-    if (key === FLAGS.CANTRIP_RULES) continue;
-
     if (!validFlags.includes(key) || value === null || value === undefined || (typeof value === 'object' && Object.keys(value).length === 0)) {
       updates[`flags.${MODULE.ID}.-=${key}`] = null;
       invalidFlags = true;
