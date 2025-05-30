@@ -89,13 +89,11 @@ async function runMigration() {
 async function migrateDocument(doc, validFlags) {
   const flags = doc.flags?.[MODULE.ID];
   if (!flags) return { wasUpdated: false, cantripMigration: false, invalidFlags: false };
-
   let wasUpdated = false;
   let cantripMigration = false;
   let invalidFlags = false;
   const updates = {};
 
-  // Check for other invalid/deprecated flags
   for (const [key, value] of Object.entries(flags)) {
     if (!validFlags.includes(key) || value === null || value === undefined || (typeof value === 'object' && Object.keys(value).length === 0)) {
       updates[`flags.${MODULE.ID}.-=${key}`] = null;
@@ -105,7 +103,6 @@ async function migrateDocument(doc, validFlags) {
     }
   }
 
-  // Apply updates if any were needed
   if (wasUpdated) {
     try {
       await doc.update(updates);
@@ -148,17 +145,10 @@ function logMigrationResults(results) {
     results.actors.slice(0, 10).forEach((actor) => {
       let actorLine = actor.name;
       let details = [];
-
       if (actor.hadCantripMigration) details.push('cantrip rules');
       if (actor.hadInvalidFlags) details.push('invalid flags');
-
-      if (details.length > 0) {
-        actorLine += ` (${details.join(', ')})`;
-      }
-
-      if (actor.pack) {
-        actorLine += ` - ${game.i18n.format('SPELLBOOK.Migrations.Compendium', { name: actor.pack })}`;
-      }
+      if (details.length > 0) actorLine += ` (${details.join(', ')})`;
+      if (actor.pack) actorLine += ` - ${game.i18n.format('SPELLBOOK.Migrations.Compendium', { name: actor.pack })}`;
 
       content += `<li>${actorLine}</li>`;
     });
@@ -186,7 +176,6 @@ function logMigrationResults(results) {
  */
 export async function forceMigration() {
   log(2, 'Force running migration for testing...');
-  ui.notifications.info('Running migration test...');
   await runMigration();
-  ui.notifications.info('Migration test complete - check console and chat for results');
+  log(2, 'Migration test complete.');
 }

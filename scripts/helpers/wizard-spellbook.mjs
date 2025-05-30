@@ -15,7 +15,6 @@ export class WizardSpellbookManager {
    */
   constructor(actor) {
     this.actor = actor;
-    log(3, `Creating WizardSpellbookManager for ${actor.name}`);
     this.classItem = this._findWizardClass();
     this.isWizard = this.classItem !== null;
     if (this.isWizard) this._initializeFlags();
@@ -258,7 +257,7 @@ export class WizardSpellbookManager {
             },
             system: {
               identifier: `${this.actor.id}-${MODULE.ID}`,
-              description: `Spellbook for ${this.actor.name}`,
+              description: `Spellbook for ${this.actor.name}`, //TODO: Localize this
               spells: new Set()
             }
           }
@@ -278,7 +277,6 @@ export class WizardSpellbookManager {
    */
   async getOrCreateSpellbookJournal() {
     while (WizardSpellbookManager._journalCreationLocks.get(this.actor.id)) await new Promise((resolve) => setTimeout(resolve, 50));
-
     try {
       WizardSpellbookManager._journalCreationLocks.set(this.actor.id, true);
       const existingJournal = await this.findSpellbookJournal();

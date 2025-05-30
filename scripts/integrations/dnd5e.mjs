@@ -26,17 +26,13 @@ function addSpellbookButton(app, html, data) {
   try {
     const actor = data.actor;
     if (!canAddSpellbookButton(actor, html)) return;
-
     const spellsTab = html[0].querySelector('.tab.spells');
     const controlsList = spellsTab.querySelector('ul.controls');
     if (!controlsList) return;
-
     const button = createSpellBookButton(actor);
     const listItem = document.createElement('li');
     listItem.appendChild(button);
     controlsList.appendChild(listItem);
-
-    log(3, `Added spell book button to ${actor.name}'s character sheet`);
   } catch (error) {
     log(1, `Error adding spell book button:`, error);
   }

@@ -13,13 +13,10 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
   const spellItems = [];
   const errors = [];
   const filteredOut = [];
-
   log(3, `Fetching spell documents: ${spellUuids.size} spells, max level ${maxSpellLevel}`);
-
   for (const uuid of spellUuids) {
     try {
       const spell = await fromUuid(uuid);
-
       if (!spell) {
         errors.push({ uuid, reason: 'Document not found' });
         continue;
@@ -31,26 +28,15 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
       }
 
       const sourceUuid = spell.parent && spell.flags?.core?.sourceId ? spell.flags.core.sourceId : uuid;
-
-      if (spell.system.level <= maxSpellLevel) {
-        spellItems.push({ ...spell, compendiumUuid: sourceUuid });
-      } else {
-        filteredOut.push({ ...spell, compendiumUuid: sourceUuid });
-      }
+      if (spell.system.level <= maxSpellLevel) spellItems.push({ ...spell, compendiumUuid: sourceUuid });
+      else filteredOut.push({ ...spell, compendiumUuid: sourceUuid });
     } catch (error) {
       errors.push({ uuid, reason: error.message || 'Unknown error' });
     }
   }
 
-  if (filteredOut.length > 0) {
-    log(3, `Filtered out ${filteredOut.length} spells.`);
-  }
-
-  if (errors.length > 0) {
-    log(2, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`);
-    errors.forEach((err) => log(2, `Error fetching spell ${err.uuid}: ${err.reason}`));
-  }
-
+  if (filteredOut.length > 0) log(3, `Filtered out ${filteredOut.length} spells.`);
+  if (errors.length > 0) log(2, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`, { errors });
   log(3, `Successfully fetched ${spellItems.length}/${spellUuids.size} spells`);
   return spellItems;
 }
@@ -64,11 +50,7 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
  */
 export function organizeSpellsByLevel(spellItems, actor = null, spellManager = null) {
   log(3, `Organizing ${spellItems.length} spells by level${actor ? ` for ${actor.name}` : ''}`);
-
-  if (actor && !spellManager) {
-    spellManager = new SpellManager(actor);
-  }
-
+  if (actor && !spellManager) spellManager = new SpellManager(actor);
   const preparedSpells = actor ? actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS) || [] : [];
   const spellsByLevel = {};
   const processedSpellIds = new Set();
@@ -80,22 +62,15 @@ export function organizeSpellsByLevel(spellItems, actor = null, spellManager = n
     const spellName = spell.name.toLowerCase();
     if (!spellsByLevel[level]) spellsByLevel[level] = [];
     const spellData = { ...spell };
-
     if (spellManager) {
       spellData.preparation = spellManager.getSpellPreparationStatus(spell);
 
       if (preparedSpells.includes(spell.compendiumUuid)) {
-        if (!spellData.preparation.alwaysPrepared && !spellData.preparation.isGranted) {
-          spellData.preparation.prepared = true;
-        }
+        if (!spellData.preparation.alwaysPrepared && !spellData.preparation.isGranted) spellData.preparation.prepared = true;
       }
     }
 
-    // Preserve sourceClass if it was set
-    if (spell.sourceClass) {
-      spellData.sourceClass = spell.sourceClass;
-    }
-
+    if (spell.sourceClass) spellData.sourceClass = spell.sourceClass;
     spellData.filterData = formattingUtils.extractSpellFilterData(spell);
     spellData.formattedDetails = formattingUtils.formatSpellDetails(spell);
     spellsByLevel[level].push(spellData);
@@ -116,19 +91,13 @@ export function organizeSpellsByLevel(spellItems, actor = null, spellManager = n
         formattedDetails: formattingUtils.formatSpellDetails(spell)
       };
 
-      // If the spell has a sourceClass defined, preserve it
-      if (spell.system?.sourceClass) {
-        spellData.sourceClass = spell.system.sourceClass;
-      }
-
+      if (spell.system?.sourceClass) spellData.sourceClass = spell.system.sourceClass;
       spellsByLevel[level].push(spellData);
     }
   }
 
   for (const level in spellsByLevel) {
-    if (spellsByLevel.hasOwnProperty(level)) {
-      spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
-    }
+    if (spellsByLevel.hasOwnProperty(level)) spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
   }
 
   const result = Object.entries(spellsByLevel)
@@ -153,15 +122,11 @@ export function findActorSpells(actor, processedSpellIds, processedSpellNames) {
   const actorSpells = actor.items.filter((item) => item.type === 'spell');
   const newSpells = [];
   const spellManager = new SpellManager(actor);
-
   log(3, `Finding actor spells for ${actor.name} - ${actorSpells.length} total spells`);
-
   for (const spell of actorSpells) {
     const spellId = spell.id || spell.uuid;
     const spellName = spell.name.toLowerCase();
-
     if (processedSpellIds.has(spellId) || processedSpellNames.has(spellName)) continue;
-
     const source = spellManager._determineSpellSource(spell);
     newSpells.push({ spell, source });
   }

@@ -48,33 +48,25 @@ export class SpellbookUI {
    * Set sidebar expanded/collapsed state from user flags
    */
   setSidebarState() {
-    try {
-      const sidebarCollapsed = game.user.getFlag(MODULE.ID, FLAGS.SIDEBAR_COLLAPSED);
-      if (sidebarCollapsed) this.element.classList.add('sidebar-collapsed');
-    } catch (error) {
-      log(1, 'Error setting sidebar state:', error);
-    }
+    const sidebarCollapsed = game.user.getFlag(MODULE.ID, FLAGS.SIDEBAR_COLLAPSED);
+    if (sidebarCollapsed) this.element.classList.add('sidebar-collapsed');
   }
 
   /**
    * Position the footer based on sidebar state
    */
   positionFooter() {
-    try {
-      const footer = this.element.querySelector('footer');
-      if (!footer) return;
-      const isSidebarCollapsed = this.element.classList.contains('sidebar-collapsed');
-      const sidebarFooterContainer = this.element.querySelector('.sidebar-footer-container');
-      const collapsedFooter = this.element.querySelector('.collapsed-footer');
-      if (isSidebarCollapsed && collapsedFooter) {
-        collapsedFooter.appendChild(footer);
-        collapsedFooter.classList.remove('hidden');
-      } else if (sidebarFooterContainer) {
-        sidebarFooterContainer.appendChild(footer);
-        if (collapsedFooter) collapsedFooter.classList.add('hidden');
-      }
-    } catch (error) {
-      log(1, 'Error positioning footer:', error);
+    const footer = this.element.querySelector('footer');
+    if (!footer) return;
+    const isSidebarCollapsed = this.element.classList.contains('sidebar-collapsed');
+    const sidebarFooterContainer = this.element.querySelector('.sidebar-footer-container');
+    const collapsedFooter = this.element.querySelector('.collapsed-footer');
+    if (isSidebarCollapsed && collapsedFooter) {
+      collapsedFooter.appendChild(footer);
+      collapsedFooter.classList.remove('hidden');
+    } else if (sidebarFooterContainer) {
+      sidebarFooterContainer.appendChild(footer);
+      if (collapsedFooter) collapsedFooter.classList.add('hidden');
     }
   }
 
@@ -82,31 +74,26 @@ export class SpellbookUI {
    * Set up event listeners for filter controls
    */
   setupFilterListeners() {
-    try {
-      const filtersContainer = this.element?.querySelector('.spell-filters');
-      if (!filtersContainer) return;
+    const filtersContainer = this.element?.querySelector('.spell-filters');
+    if (!filtersContainer) return;
+    filtersContainer.addEventListener('change', (event) => {
+      const target = event.target;
+      if (target.matches('dnd5e-checkbox') || target.matches('select')) {
+        this.app._applyFilters();
+        if (target.name === 'sort-by') this.app._applySorting(target.value);
+      }
+    });
 
-      filtersContainer.addEventListener('change', (event) => {
-        const target = event.target;
-        if (target.matches('dnd5e-checkbox') || target.matches('select')) {
-          this.app._applyFilters();
-          if (target.name === 'sort-by') this.app._applySorting(target.value);
-        }
-      });
-
-      filtersContainer.addEventListener('input', (event) => {
-        const target = event.target;
-        if (target.matches('input[type="text"]')) {
-          clearTimeout(this.app._searchTimer);
-          this.app._searchTimer = setTimeout(() => this.app._applyFilters(), 200);
-        } else if (target.matches('input[type="number"]')) {
-          clearTimeout(this.app._rangeTimer);
-          this.app._rangeTimer = setTimeout(() => this.app._applyFilters(), 200);
-        }
-      });
-    } catch (error) {
-      log(1, 'Error setting up filter listeners:', error);
-    }
+    filtersContainer.addEventListener('input', (event) => {
+      const target = event.target;
+      if (target.matches('input[type="text"]')) {
+        clearTimeout(this.app._searchTimer);
+        this.app._searchTimer = setTimeout(() => this.app._applyFilters(), 200);
+      } else if (target.matches('input[type="number"]')) {
+        clearTimeout(this.app._rangeTimer);
+        this.app._rangeTimer = setTimeout(() => this.app._applyFilters(), 200);
+      }
+    });
   }
 
   /**
@@ -139,22 +126,13 @@ export class SpellbookUI {
         if (checkbox.checked) classPreparedCount++;
       });
 
-      // Update class data object with current count
       classData.spellPreparation.current = classPreparedCount;
       classData.spellPreparation.maximum = classMaxPrepared;
-
-      // Check if this class is at its limit
       const isClassAtMax = classPreparedCount >= classMaxPrepared;
-
-      // Apply per-class enforcement if using enforced behavior
       const settings = this.app.spellManager.getSettings(classIdentifier);
       if (settings.behavior === ENFORCEMENT_BEHAVIOR.ENFORCED) this._enforcePerClassSpellLimits(activeTabContent, classIdentifier, isClassAtMax);
-
-      // Update global counts using the state manager method
       this.app._stateManager.updateGlobalPreparationCount();
       const globalPrepared = this.app._stateManager.spellPreparation;
-
-      // Update the footer UI elements with granular at-max classes
       this._updateFooterPreparationDisplay(classIdentifier, isClassAtMax, globalPrepared);
     } catch (error) {
       log(1, 'Error updating spell preparation tracking:', error);
@@ -219,7 +197,6 @@ export class SpellbookUI {
         )
           return;
 
-        // If class is at max and this spell isn't prepared, disable it
         if (isClassAtMax && !checkbox.checked) {
           checkbox.disabled = true;
           checkbox.dataset.tooltip = game.i18n.format('SPELLBOOK.Preparation.ClassAtMaximum', { class: classData?.className || classIdentifier });
@@ -350,19 +327,15 @@ export class SpellbookUI {
    * Apply collapsed state to spell levels from user flags
    */
   applyCollapsedLevels() {
-    try {
-      const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
-      for (const levelId of collapsedLevels) {
-        const levelContainer = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
-        if (levelContainer) levelContainer.classList.add('collapsed');
-      }
-    } catch (error) {
-      log(1, 'Error applying collapsed levels:', error);
+    const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
+    for (const levelId of collapsedLevels) {
+      const levelContainer = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
+      if (levelContainer) levelContainer.classList.add('collapsed');
     }
   }
 
   /**
-   * Set up cantrip-specific UI elements and spell locks
+   * Set up cantrip-specific UI elements
    */
   setupCantripUI() {
     try {
@@ -386,7 +359,11 @@ export class SpellbookUI {
           if (levelHeading) levelHeading.appendChild(infoElement);
         }
       }
-      this.setupSpellLocks(true);
+
+      if (!this._cantripUIInitialized) {
+        this.setupSpellLocks(true);
+        this._cantripUIInitialized = true;
+      }
     } catch (error) {
       log(1, 'Error setting up cantrip UI:', error);
     }
@@ -411,13 +388,10 @@ export class SpellbookUI {
         if (!cantripLevel) return { current: 0, max: 0 };
       }
 
-      // Get class identifier for the active tab
       const activeTab = this.app.tabGroups['spellbook-tabs'];
       const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
       const classIdentifier = activeTabContent?.dataset.classIdentifier;
       if (!classIdentifier) return { current: 0, max: 0 };
-
-      // Use cached max cantrips value
       const maxCantrips = this.app.getMaxCantripsForClass(classIdentifier);
       let currentCount = 0;
       const cantripItems = cantripLevel.querySelectorAll('.spell-item');
@@ -447,14 +421,7 @@ export class SpellbookUI {
       counterElem.title = game.i18n.localize('SPELLBOOK.Cantrips.CounterTooltip');
       counterElem.style.display = '';
       counterElem.classList.toggle('at-max', currentCount >= maxCantrips);
-      if (!skipLockSetup) {
-        try {
-          this.setupCantripLocks();
-        } catch (err) {
-          log(2, 'Error in setupCantripLocks called from updateCantripCounter:', err);
-        }
-      }
-
+      if (!skipLockSetup) this.setupCantripLocks();
       return { current: currentCount, max: maxCantrips };
     } catch (error) {
       log(1, 'Error updating cantrip counter:', error);
@@ -487,7 +454,6 @@ export class SpellbookUI {
         maxCantrips = cantripCounter ? cantripCounter.max : 0;
       } catch (err) {
         log(2, 'Error getting cantrip counts:', err);
-        // Use cached value as fallback
         if (classIdentifier) maxCantrips = this.app.getMaxCantripsForClass(classIdentifier);
       }
 
@@ -539,7 +505,6 @@ export class SpellbookUI {
     const classSpellKey = `${classIdentifier}:${uuid}`;
     const isSavedAsPrepared = classPreparedSpells.includes(classSpellKey);
 
-    // Use the class-specific cantrip swapping rules
     switch (settings.cantripSwapping) {
       case 'none':
         if (isSavedAsPrepared) {
@@ -548,7 +513,6 @@ export class SpellbookUI {
           item.classList.add('cantrip-locked');
         }
         break;
-
       case 'levelUp':
         if (!isLevelUp && isSavedAsPrepared) {
           checkbox.disabled = true;
@@ -556,7 +520,6 @@ export class SpellbookUI {
           item.classList.add('cantrip-locked');
         }
         break;
-
       case 'longRest':
         const isWizard = classIdentifier === 'wizard';
         if (!isWizard) {
@@ -601,11 +564,7 @@ export class SpellbookUI {
    * @returns {Promise<void>}
    */
   async applyClassStyling() {
-    try {
-      if (this.app._stateManager.spellcastingClasses) await colorUtils.applyClassColors(this.app._stateManager.spellcastingClasses);
-    } catch (error) {
-      log(1, 'Error applying class styling:', error);
-    }
+    if (this.app._stateManager.spellcastingClasses) await colorUtils.applyClassColors(this.app._stateManager.spellcastingClasses);
   }
 
   /**
@@ -649,7 +608,6 @@ export class SpellbookUI {
         delete checkbox.dataset.tooltip;
         item.classList.remove('spell-locked', 'max-prepared');
         if (settings.behavior === ENFORCEMENT_BEHAVIOR.ENFORCED) {
-          // Max limit enforcement - disable unchecked spells when at max
           if (isAtMax && !isChecked) {
             checkbox.disabled = true;
             checkbox.dataset.tooltip = game.i18n.format('SPELLBOOK.Preparation.ClassAtMaximum', {
@@ -689,7 +647,6 @@ export class SpellbookUI {
           item.classList.add('spell-locked');
         }
         break;
-
       case 'longRest':
         if (!isLongRest) {
           checkbox.disabled = true;
@@ -697,7 +654,6 @@ export class SpellbookUI {
           item.classList.add('spell-locked');
         }
         break;
-
       case 'none':
         checkbox.disabled = true;
         checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Spells.LockedNoSwapping');

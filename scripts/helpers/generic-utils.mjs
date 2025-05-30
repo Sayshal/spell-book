@@ -1,7 +1,3 @@
-/**
- * Common utility functions
- */
-
 import { FLAGS, MODULE } from '../constants.mjs';
 import { log } from '../logger.mjs';
 
@@ -31,18 +27,9 @@ export function getSpellUuid(spell) {
  * @returns {Object} UUID components including pack, id, and type
  */
 export function parseSpellUuid(uuid) {
+  //TODO: Got to be a better way with foundry.utils.parseUuid
   try {
-    // Handle basic UUIDs like "Actor.abcdefgh"
-    if (!uuid.includes('.')) {
-      return {
-        id: uuid,
-        type: null,
-        pack: null,
-        isValid: false
-      };
-    }
-
-    // Handle compendium UUIDs like "Compendium.dnd5e.spells.Item.abcdefgh"
+    if (!uuid.includes('.')) return { id: uuid, type: null, pack: null, isValid: false };
     const parts = uuid.split('.');
 
     if (parts[0] === 'Compendium') {
@@ -54,7 +41,6 @@ export function parseSpellUuid(uuid) {
       };
     }
 
-    // Handle simple UUIDs like "Actor.abcdefgh.Item.ijklmnop"
     return {
       type: parts[0],
       id: parts[1],

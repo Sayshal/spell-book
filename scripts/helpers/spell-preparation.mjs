@@ -25,8 +25,6 @@ export class SpellManager {
     this.isWizard = genericUtils.isWizard(actor);
     this._wizardSpellbookCache = null;
     this._wizardManager = null;
-
-    // Initialize sub-managers with spellbook reference
     this.cantripManager = new CantripManager(actor, this, spellbook);
   }
 
@@ -63,13 +61,7 @@ export class SpellManager {
    */
   getMaxAllowed(classIdentifier) {
     if (!classIdentifier) return 0;
-
-    // Use cached value from spellbook if available
-    if (this.spellbook && this.spellbook.getMaxCantripsForClass) {
-      return this.spellbook.getMaxCantripsForClass(classIdentifier);
-    }
-
-    // Fallback to direct calculation (for when called outside spellbook context)
+    if (this.spellbook && this.spellbook.getMaxCantripsForClass) return this.spellbook.getMaxCantripsForClass(classIdentifier);
     return this._calculateMaxCantrips(classIdentifier);
   }
 
@@ -78,7 +70,6 @@ export class SpellManager {
    * @returns {number} Maximum allowed prepared spells
    */
   getMaxPrepared() {
-    // ONLY use the system spellcasting preparation max - no fallbacks
     if (!this.classItem?.system?.spellcasting?.preparation?.max) return 0;
     return this.classItem.system.spellcasting.preparation.max;
   }
@@ -90,25 +81,17 @@ export class SpellManager {
    * @private
    */
   _calculateMaxCantrips(classIdentifier) {
-    // Find the specific class item
     const classItem = this.actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier));
-
     if (!classItem) return 0;
-
-    // Get cantrip scale value keys from settings
     const cantripScaleValuesSetting = game.settings.get(MODULE.ID, SETTINGS.CANTRIP_SCALE_VALUES);
     const cantripScaleKeys = cantripScaleValuesSetting
       .split(',')
       .map((v) => v.trim())
       .filter((v) => v.length > 0);
-
-    // Get base cantrips from scale values
     let baseCantrips = 0;
 
     try {
-      // Safely access scaleValues
       if (classItem.scaleValues) {
-        // Check all configured cantrip scale value keys
         for (const key of cantripScaleKeys) {
           const cantripValue = classItem.scaleValues[key]?.value;
           if (cantripValue !== undefined) {
@@ -122,17 +105,13 @@ export class SpellManager {
       log(2, `Error accessing scaleValues for ${classIdentifier}, using fallback calculation`, err);
     }
 
-    // If no scale values found, automatically disable cantrips for this class
     if (baseCantrips === 0) {
       log(2, `No cantrip scale value found for class ${classIdentifier} (checked: ${cantripScaleKeys.join(', ')}), disabling cantrips`);
-
-      // Automatically set showCantrips to false in class rules
       const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
       if (classRules.showCantrips !== false) {
-        // Update the class rules to hide cantrips
         RuleSetManager.updateClassRules(this.actor, classIdentifier, {
           showCantrips: false,
-          _noScaleValue: true // Flag to show notice in settings
+          _noScaleValue: true
         }).catch((error) => {
           log(1, `Error auto-updating class rules for ${classIdentifier}:`, error);
         });
@@ -141,17 +120,9 @@ export class SpellManager {
       return 0;
     }
 
-    // Apply class-specific rules and bonuses
     const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
-
-    // If cantrips should be hidden for this class, return 0
-    if (classRules && classRules.showCantrips === false) {
-      return 0;
-    }
-
-    // TODO: Add Cantrip Bonus alongside existing PREP BONUS
+    if (classRules && classRules.showCantrips === false) return 0;
     const cantripBonus = classRules?.cantripBonus || 0;
-
     return Math.max(0, baseCantrips + cantripBonus);
   }
 
@@ -183,6 +154,7 @@ export class SpellManager {
    * @returns {Object} Status object with allowed and message properties
    */
   canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest, uiCantripCount, classIdentifier) {
+    // TODO: Remove this wrapper and update references to use below method directly
     return this.cantripManager.canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest, uiCantripCount, classIdentifier);
   }
 
@@ -195,6 +167,7 @@ export class SpellManager {
    * @param {string} classIdentifier - The current class identifier
    */
   trackCantripChange(spell, isChecked, isLevelUp, isLongRest, classIdentifier) {
+    // TODO: Remove this wrapper and update references to use below method directly
     this.cantripManager.trackCantripChange(spell, isChecked, isLevelUp, isLongRest, classIdentifier);
   }
 
@@ -206,6 +179,7 @@ export class SpellManager {
    * @param {number} currentCount - Current count of prepared cantrips
    */
   lockCantripCheckboxes(cantripItems, isLevelUp, isLongRest, currentCount) {
+    // TODO: Remove this wrapper and update references to use below method directly
     this.cantripManager.lockCantripCheckboxes(cantripItems, isLevelUp, isLongRest, currentCount);
   }
 
@@ -229,6 +203,7 @@ export class SpellManager {
    * @returns {boolean} Whether a level-up cantrip change is detected
    */
   checkForLevelUp() {
+    // TODO: Remove this wrapper and update references to use below method directly
     return this.cantripManager.checkForLevelUp();
   }
 
@@ -237,6 +212,7 @@ export class SpellManager {
    * @returns {boolean} Whether cantrips can be changed
    */
   canBeLeveledUp() {
+    // TODO: Remove this wrapper and update references to use below method directly
     return this.cantripManager.canBeLeveledUp();
   }
 
@@ -251,8 +227,6 @@ export class SpellManager {
     this.isWizard = genericUtils.isWizard(this.actor);
     this._wizardSpellbookCache = null;
     this._wizardManager = null;
-
-    // Refresh sub-managers
     this.cantripManager = new CantripManager(this.actor, this);
     this.ritualManager = new RitualManager(this.actor);
   }
@@ -276,14 +250,10 @@ export class SpellManager {
       isCantripLocked: false
     };
 
-    // If no class identifier provided, try to get it from the spell
-    if (!classIdentifier) {
-      classIdentifier = spell.sourceClass || spell.system?.sourceClass;
-    }
-
+    if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
     const spellUuid = spell.compendiumUuid || spell.uuid;
 
-    // PRIORITY 1: Check if there's an actual spell on the actor that matches this UUID and class
+    // Check if there's an actual spell on the actor that matches this UUID and class
     const actualSpell = this.actor.items.find(
       (item) =>
         item.type === 'spell' &&
@@ -291,12 +261,9 @@ export class SpellManager {
         (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
     );
 
-    if (actualSpell) {
-      // Use the actual spell's state - this is the source of truth
-      return this._getOwnedSpellPreparationStatus(actualSpell, classIdentifier);
-    }
+    if (actualSpell) return this._getOwnedSpellPreparationStatus(actualSpell, classIdentifier);
 
-    // PRIORITY 2: Check for any spell on actor with this UUID (might need sourceClass assignment)
+    // Check for any spell on actor with this UUID (might need sourceClass assignment)
     const unassignedSpell = this.actor.items.find(
       (item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && !item.system?.sourceClass && !item.sourceClass
     );
@@ -308,38 +275,28 @@ export class SpellManager {
       const isSpecialMode = ['innate', 'pact', 'atwill', 'ritual'].includes(unassignedSpell.system.preparation?.mode);
 
       if (!isAlwaysPrepared && !isGranted && !isSpecialMode) {
-        // Only auto-assign sourceClass to regular prepared spells
         unassignedSpell.sourceClass = classIdentifier;
-        if (unassignedSpell.system) {
-          unassignedSpell.system.sourceClass = classIdentifier;
-        }
+        if (unassignedSpell.system) unassignedSpell.system.sourceClass = classIdentifier;
       }
 
       return this._getOwnedSpellPreparationStatus(unassignedSpell, classIdentifier);
     }
 
-    // PRIORITY 3: For spells that exist on actor but belong to other classes
+    // For spells that exist on actor but belong to other classes
     const otherClassSpell = this.actor.items.find(
       (item) =>
         item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && item.system?.sourceClass && item.system.sourceClass !== classIdentifier
     );
 
-    if (otherClassSpell) {
-      // This spell belongs to a different class, so it's not prepared for this class
-      return defaultStatus;
-    }
+    if (otherClassSpell) return defaultStatus;
 
-    // PRIORITY 4: Fall back to flag-based checking for compendium spells not on actor
+    // Fall back to flag-based checking for compendium spells not on actor
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const classPreparedSpells = preparedByClass[classIdentifier] || [];
-
-    // Check if this specific spell is prepared for this specific class
     const spellKey = this._createClassSpellKey(spellUuid, classIdentifier);
     const isPreparedForClass = classPreparedSpells.includes(spellKey);
-
     defaultStatus.prepared = isPreparedForClass;
 
-    // Handle cantrip limits per class
     if (spell.system.level === 0 && classIdentifier) {
       const maxCantrips = this.getMaxAllowed(classIdentifier);
       const currentCount = this.getCurrentCount(classIdentifier);
@@ -375,10 +332,7 @@ export class SpellManager {
    */
   _parseClassSpellKey(key) {
     const [classIdentifier, ...uuidParts] = key.split(':');
-    return {
-      classIdentifier,
-      spellUuid: uuidParts.join(':') // Handle UUIDs that contain colons
-    };
+    return { classIdentifier, spellUuid: uuidParts.join(':') };
   }
 
   /**
@@ -397,13 +351,8 @@ export class SpellManager {
     const sourceInfo = this._determineSpellSource(spell);
     const isGranted = !!sourceInfo && !!spell.flags?.dnd5e?.cachedFor;
     const isCantrip = spell.system.level === 0;
-
-    // For innate spells, FORCE them to be prepared regardless of the prepared flag
     const actuallyPrepared = !!(isGranted || alwaysPrepared || isInnateCasting || isAtWill || spell.system.preparation?.prepared);
-
-    // Force disable for special preparation modes
     let isDisabled = isGranted || alwaysPrepared || isInnateCasting || isAtWill;
-
     let disabledReason = '';
 
     if (isGranted) {
@@ -445,7 +394,7 @@ export class SpellManager {
     const isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED) || false;
 
     switch (settings.cantripSwapping) {
-      case 'none': // Legacy behavior - can't change once set
+      case 'none':
         if (isPrepared) {
           result.disabled = true;
           result.isCantripLocked = true;
@@ -454,7 +403,7 @@ export class SpellManager {
         }
         break;
 
-      case 'levelUp': // Modern level-up rules
+      case 'levelUp':
         if (!isLevelUp && isPrepared) {
           result.disabled = true;
           result.isCantripLocked = true;
@@ -463,7 +412,7 @@ export class SpellManager {
         }
         break;
 
-      case 'longRest': // Modern long-rest rules (wizard only)
+      case 'longRest':
         if (classIdentifier === 'wizard' && !isLongRest && isPrepared) {
           result.disabled = true;
           result.isCantripLocked = true;
@@ -544,7 +493,7 @@ export class SpellManager {
         };
       }
       return {
-        name: 'Pact Magic',
+        name: 'Pact Magic', // TODO: Localize (Also what is this currently needed for?)
         type: 'class'
       };
     } else {
@@ -570,7 +519,6 @@ export class SpellManager {
       log(3, `Saving prepared spells for ${this.actor.name}`);
       const cantripChanges = { added: [], removed: [], hasChanges: false };
 
-      // Group prepared spells by class
       const preparedByClass = {};
       Object.entries(spellData).forEach(([uuid, data]) => {
         if (data.isPrepared) {
@@ -580,12 +528,9 @@ export class SpellManager {
         }
       });
 
-      // Save class-specific prepared spells
-      await this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
-
-      // Flatten for compatibility with older code
+      this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
       const allPreparedUuids = Object.values(preparedByClass).flat();
-      await this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS, allPreparedUuids);
+      this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS, allPreparedUuids);
 
       log(3, `Saved prepared spells to actor flags by class`);
 
@@ -611,18 +556,13 @@ export class SpellManager {
           }
         } else {
           if (existingSpell) {
-            // Update existing spell with sourceClass
             const updateData = {
               '_id': existingSpell.id,
               'system.preparation.mode': 'prepared',
               'system.preparation.prepared': true
             };
 
-            // Update sourceClass if provided
-            if (spellSourceClass && existingSpell.system.sourceClass !== spellSourceClass) {
-              updateData['system.sourceClass'] = spellSourceClass;
-            }
-
+            if (spellSourceClass && existingSpell.system.sourceClass !== spellSourceClass) updateData['system.sourceClass'] = spellSourceClass;
             spellsToUpdate.push(updateData);
           } else {
             try {
@@ -635,14 +575,8 @@ export class SpellManager {
                 newSpellData.flags = newSpellData.flags || {};
                 newSpellData.flags.core = newSpellData.flags.core || {};
                 newSpellData.flags.core.sourceId = uuid;
-
-                // Add sourceClass if provided
-                if (spellSourceClass) {
-                  newSpellData.system.sourceClass = spellSourceClass;
-                }
-
+                if (spellSourceClass) newSpellData.system.sourceClass = spellSourceClass;
                 spellsToCreate.push(newSpellData);
-
                 if (sourceSpell.system.level === 0) {
                   cantripChanges.added.push({ name: sourceSpell.name, uuid });
                   cantripChanges.hasChanges = true;
@@ -669,8 +603,6 @@ export class SpellManager {
         log(3, `Creating ${spellsToCreate.length} spells on actor`);
         await this.actor.createEmbeddedDocuments('Item', spellsToCreate);
       }
-
-      // Return cantrip changes instead of notifying directly
       return { cantripChanges };
     } catch (error) {
       log(1, `Error saving prepared spells for ${this.actor?.name || 'unknown actor'}:`, error);
@@ -683,6 +615,7 @@ export class SpellManager {
    * @returns {Promise<boolean>} Success status
    */
   async completeCantripsLevelUp() {
+    // TODO: Remove this wrapper and update references to use below method directly
     return this.cantripManager.completeCantripsLevelUp();
   }
 
@@ -691,9 +624,7 @@ export class SpellManager {
    * @returns {WizardSpellbookManager|null} The wizard spellbook manager or null
    */
   getWizardManager() {
-    if (!this._wizardManager && this.isWizard) {
-      this._wizardManager = new WizardSpellbookManager(this.actor);
-    }
+    if (!this._wizardManager && this.isWizard) this._wizardManager = new WizardSpellbookManager(this.actor);
     return this._wizardManager;
   }
 
@@ -705,11 +636,7 @@ export class SpellManager {
   async isSpellInWizardBook(uuid) {
     const wizardManager = this.getWizardManager();
     if (!wizardManager) return false;
-
-    if (!this._wizardSpellbookCache) {
-      this._wizardSpellbookCache = await wizardManager.getSpellbookSpells();
-    }
-
+    if (!this._wizardSpellbookCache) this._wizardSpellbookCache = await wizardManager.getSpellbookSpells();
     return this._wizardSpellbookCache.includes(uuid);
   }
 
@@ -718,6 +645,7 @@ export class SpellManager {
    * @returns {Promise<void>}
    */
   async resetSwapTracking() {
+    // TODO: Remove this wrapper and update references to use below method directly
     return this.cantripManager.resetSwapTracking();
   }
 
@@ -731,19 +659,13 @@ export class SpellManager {
     try {
       log(3, `Saving prepared spells for class ${classIdentifier}`);
 
-      // Get current class-specific preparation data
       const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
       const currentClassPrepared = preparedByClass[classIdentifier] || [];
-
-      // Determine preparation mode for this class
       const preparationMode = this._getClassPreparationMode(classIdentifier);
-
-      // Build new prepared list for this class
       const newClassPrepared = [];
       const spellsToUpdate = [];
       const spellsToCreate = [];
       const spellIdsToRemove = [];
-
       const cantripChanges = { added: [], removed: [], hasChanges: false };
 
       for (const [classSpellKey, data] of Object.entries(classSpellData)) {
@@ -751,14 +673,10 @@ export class SpellManager {
 
         if (isPrepared) {
           newClassPrepared.push(classSpellKey);
-
-          // Track cantrip additions
           if (!wasPrepared && data.spellLevel === 0) {
             cantripChanges.added.push({ name, uuid });
             cantripChanges.hasChanges = true;
           }
-
-          // Find or create the spell on the actor
           await this._ensureSpellOnActor(uuid, sourceClass, preparationMode, spellsToCreate, spellsToUpdate);
         } else if (!isPrepared && isRitual && genericUtils.isWizard(this.actor)) {
           await this._ensureRitualSpellOnActor(uuid, sourceClass, spellsToCreate, spellsToUpdate);
@@ -767,16 +685,13 @@ export class SpellManager {
             cantripChanges.removed.push({ name, uuid });
             cantripChanges.hasChanges = true;
           }
-
           await this._handleUnpreparingSpell(uuid, sourceClass, spellIdsToRemove, spellsToUpdate);
         }
       }
 
-      // Update the class-specific prepared spells flag
       preparedByClass[classIdentifier] = newClassPrepared;
-      await this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
+      this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
 
-      // Apply changes to actor spells
       if (spellIdsToRemove.length > 0) {
         log(3, `Removing ${spellIdsToRemove.length} spells from actor`);
         await this.actor.deleteEmbeddedDocuments('Item', spellIdsToRemove);
@@ -792,10 +707,7 @@ export class SpellManager {
         await this.actor.createEmbeddedDocuments('Item', spellsToCreate);
       }
 
-      // Update global prepared spells flag for compatibility
       await this._updateGlobalPreparedSpellsFlag();
-
-      // Return cantrip changes instead of notifying directly
       return { cantripChanges };
     } catch (error) {
       log(1, `Error saving prepared spells for class ${classIdentifier}:`, error);
@@ -813,13 +725,11 @@ export class SpellManager {
    * @private
    */
   async _ensureRitualSpellOnActor(uuid, sourceClass, spellsToCreate, spellsToUpdate) {
-    // Look for existing spell
     const existingSpell = this.actor.items.find(
       (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
     );
 
     if (existingSpell) {
-      // Update existing spell to ritual mode if it's not already
       if (existingSpell.system.preparation?.mode !== 'ritual') {
         const updateData = {
           '_id': existingSpell.id,
@@ -830,27 +740,18 @@ export class SpellManager {
         spellsToUpdate.push(updateData);
       }
     } else {
-      // Create new ritual spell
       try {
         const sourceSpell = await fromUuid(uuid);
         if (sourceSpell) {
           const newSpellData = sourceSpell.toObject();
-
-          // Set ritual preparation data
           if (!newSpellData.system.preparation) newSpellData.system.preparation = {};
           newSpellData.system.preparation.mode = 'ritual';
           newSpellData.system.preparation.prepared = false;
-
-          // Set source information
           newSpellData.flags = newSpellData.flags || {};
           newSpellData.flags.core = newSpellData.flags.core || {};
           newSpellData.flags.core.sourceId = uuid;
-
-          // Set class association
           newSpellData.system.sourceClass = sourceClass;
-
           spellsToCreate.push(newSpellData);
-          log(1, `Creating new ritual spell: ${sourceSpell.name}`);
         }
       } catch (error) {
         log(1, `Error fetching ritual spell ${uuid}:`, error);
@@ -865,17 +766,9 @@ export class SpellManager {
    * @private
    */
   _getClassPreparationMode(classIdentifier) {
-    // Get the class item
     const classItem = this.actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier));
-
     if (!classItem) return 'prepared';
-
-    // Check if this is a pact magic caster
-    if (classItem.system.spellcasting?.type === 'pact') {
-      return 'pact';
-    }
-
-    // Default to prepared for most classes
+    if (classItem.system.spellcasting?.type === 'pact') return 'pact';
     return 'prepared';
   }
 
@@ -890,17 +783,13 @@ export class SpellManager {
    * @private
    */
   async _ensureSpellOnActor(uuid, sourceClass, preparationMode, spellsToCreate, spellsToUpdate) {
-    // Look for existing spell that matches both UUID and class
     const existingSpell = this.actor.items.find(
       (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
     );
 
     if (existingSpell) {
-      // For existing spells, determine the right preparation mode
       let targetMode = preparationMode;
       let targetPrepared = true;
-
-      // Special case: if this is a ritual spell in ritual mode, transition to prepared
       if (existingSpell.system.preparation?.mode === 'ritual') {
         targetMode = 'prepared';
         targetPrepared = true;
@@ -912,32 +801,20 @@ export class SpellManager {
         'system.preparation.prepared': targetPrepared
       };
 
-      // Ensure sourceClass is set
-      if (existingSpell.system.sourceClass !== sourceClass) {
-        updateData['system.sourceClass'] = sourceClass;
-      }
-
+      if (existingSpell.system.sourceClass !== sourceClass) updateData['system.sourceClass'] = sourceClass;
       spellsToUpdate.push(updateData);
     } else {
-      // Create new spell instance for this class
       try {
         const sourceSpell = await fromUuid(uuid);
         if (sourceSpell) {
           const newSpellData = sourceSpell.toObject();
-
-          // Set preparation data
           if (!newSpellData.system.preparation) newSpellData.system.preparation = {};
           newSpellData.system.preparation.mode = preparationMode;
           newSpellData.system.preparation.prepared = true;
-
-          // Set source information
           newSpellData.flags = newSpellData.flags || {};
           newSpellData.flags.core = newSpellData.flags.core || {};
           newSpellData.flags.core.sourceId = uuid;
-
-          // Set class association
           newSpellData.system.sourceClass = sourceClass;
-
           spellsToCreate.push(newSpellData);
         }
       } catch (error) {
@@ -954,8 +831,6 @@ export class SpellManager {
   async _updateGlobalPreparedSpellsFlag() {
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const allPreparedKeys = Object.values(preparedByClass).flat();
-
-    // Extract UUIDs from class-spell keys for compatibility
     const allPreparedUuids = allPreparedKeys.map((key) => {
       const parsed = this._parseClassSpellKey(key);
       return parsed.spellUuid;
@@ -975,34 +850,19 @@ export class SpellManager {
    */
   async _handleUnpreparingSpell(uuid, sourceClass, spellIdsToRemove, spellsToUpdate) {
     try {
-      // Find the SPECIFIC spell instance for this exact class
       const targetSpell = this.actor.items.find(
         (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
       );
 
-      if (!targetSpell) {
-        log(3, `No class-specific spell instance found to unprepare: ${uuid} for class ${sourceClass}`);
-        return;
-      }
-
-      // Check if this is a spell we should never remove
+      if (!targetSpell) return;
       const isAlwaysPrepared = targetSpell.system.preparation?.alwaysPrepared;
       const isGranted = !!targetSpell.flags?.dnd5e?.cachedFor;
       const isFromClassFeature = targetSpell.system.preparation?.mode === 'always';
-
-      // Never remove always prepared, granted, or class feature spells
-      if (isAlwaysPrepared || isGranted || isFromClassFeature) {
-        log(3, `Skipping unprepare of protected spell: ${targetSpell.name} (${targetSpell.system.preparation?.mode})`);
-        return;
-      }
-
-      // Special case: ritual spells should revert to ritual mode, not be removed
+      if (isAlwaysPrepared || isGranted || isFromClassFeature) return;
       const isRitualSpell = targetSpell.system.components?.ritual;
       const isWizard = genericUtils.isWizard(this.actor);
       const ritualCastingEnabled = this.ritualManager?.isRitualCastingEnabled();
-
       if (isRitualSpell && isWizard && ritualCastingEnabled && targetSpell.system.level > 0) {
-        // Convert back to ritual mode instead of removing
         spellsToUpdate.push({
           '_id': targetSpell.id,
           'system.preparation.mode': 'ritual',
@@ -1012,7 +872,6 @@ export class SpellManager {
         return;
       }
 
-      // For all other cases, remove the spell entirely
       spellIdsToRemove.push(targetSpell.id);
       log(3, `Marking spell for removal: ${targetSpell.name} (${sourceClass})`);
     } catch (error) {
@@ -1034,16 +893,12 @@ export class SpellManager {
 
       for (const [classIdentifier, preparedSpells] of Object.entries(preparedByClass)) {
         if (classIdentifier === excludeClass) continue;
-
-        // Check if this class has the spell prepared
         const hasSpellPrepared = preparedSpells.some((key) => {
           const parsed = this._parseClassSpellKey(key);
           return parsed.spellUuid === uuid;
         });
 
-        if (hasSpellPrepared) {
-          usingClasses.push(classIdentifier);
-        }
+        if (hasSpellPrepared) usingClasses.push(classIdentifier);
       }
 
       return usingClasses;
@@ -1060,23 +915,14 @@ export class SpellManager {
    */
   async cleanupCantripsForClass(classIdentifier) {
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
-
     if (!preparedByClass[classIdentifier]) return;
-
     const cleanedSpells = [];
-
     for (const classSpellKey of preparedByClass[classIdentifier]) {
       const parsed = this._parseClassSpellKey(classSpellKey);
-
       try {
         const spell = await fromUuid(parsed.spellUuid);
-
-        // Only keep non-cantrips
-        if (spell && spell.system.level !== 0) {
-          cleanedSpells.push(classSpellKey);
-        }
+        if (spell && spell.system.level !== 0) cleanedSpells.push(classSpellKey);
       } catch (error) {
-        // If we can't load the spell, keep it (safer)
         cleanedSpells.push(classSpellKey);
       }
     }
@@ -1101,8 +947,6 @@ export class SpellManager {
 
       for (const spellKey of spellKeys) {
         const parsed = this._parseClassSpellKey(spellKey);
-
-        // Check if there's actually a spell on the actor for this UUID and class
         const actualSpell = this.actor.items.find(
           (item) =>
             item.type === 'spell' &&
@@ -1110,19 +954,15 @@ export class SpellManager {
             (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
         );
 
-        if (actualSpell) {
-          cleanedKeys.push(spellKey);
-        } else {
-          log(3, `Cleaning up stale flag for ${parsed.spellUuid} in class ${classIdentifier}`);
-          hasChanges = true;
-        }
+        if (actualSpell) cleanedKeys.push(spellKey);
+        else hasChanges = true;
       }
 
       preparedByClass[classIdentifier] = cleanedKeys;
     }
 
     if (hasChanges) {
-      await this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
+      this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
       await this._updateGlobalPreparedSpellsFlag();
       log(2, 'Cleaned up stale preparation flags');
     }
@@ -1137,52 +977,13 @@ export class SpellManager {
    * @returns {Object} Status object with allowed and message properties
    */
   canChangeSpellStatus(spell, isChecked, wasPrepared, classIdentifier) {
-    // Skip cantrips - they have their own enforcement
+    // TODO: This always returns allowed: true?
     if (spell.system.level === 0) return { allowed: true };
-
-    // If no class identifier provided, use spell's source class
-    if (!classIdentifier) {
-      classIdentifier = spell.sourceClass || spell.system?.sourceClass;
-    }
-
-    if (!classIdentifier) {
-      log(2, `No class identifier for spell ${spell.name}, allowing change but may cause issues`);
-      return { allowed: true };
-    }
-
-    // Get class-specific settings
+    if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
+    if (!classIdentifier) return { allowed: true };
     const settings = this.getSettings(classIdentifier);
     const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
-
-    // Only enforce for "enforced" behavior - allow free changes for notifyGM/unenforced
-    if (settings.behavior !== ENFORCEMENT_BEHAVIOR.ENFORCED) {
-      return { allowed: true };
-    }
-
-    // If unchecking a spell, check if swapping is allowed
-    if (!isChecked && wasPrepared) {
-      const spellSwapping = classRules.spellSwapping || 'none';
-      const isLevelUp = this.canBeLeveledUp();
-      const isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED) || false;
-
-      switch (spellSwapping) {
-        case 'levelUp': // Can only swap on level up (Bard, Sorcerer, Warlock)
-          if (!isLevelUp) {
-            return { allowed: false, message: 'SPELLBOOK.Spells.LockedOutsideLevelUp' };
-          }
-          break;
-
-        case 'longRest': // Can swap on long rest (Cleric, Druid, Wizard, Paladin)
-          if (!isLongRest) {
-            return { allowed: false, message: 'SPELLBOOK.Spells.LockedOutsideLongRest' };
-          }
-          break;
-
-        case 'none': // Can't swap at all
-          return { allowed: false, message: 'SPELLBOOK.Spells.LockedNoSwapping' };
-      }
-    }
-
+    if (settings.behavior !== ENFORCEMENT_BEHAVIOR.ENFORCED) return { allowed: true };
     return { allowed: true };
   }
 }

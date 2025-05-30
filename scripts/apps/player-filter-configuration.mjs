@@ -7,10 +7,6 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
  * Application to configure which filters are displayed in the spell browser
  */
 export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(ApplicationV2) {
-  /* -------------------------------------------- */
-  /*  Static Properties                           */
-  /* -------------------------------------------- */
-
   /** @override */
   static DEFAULT_OPTIONS = {
     id: `filter-config-${MODULE.ID}`,
@@ -45,19 +41,8 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   /** @override */
   static PARTS = { form: { template: TEMPLATES.DIALOGS.FILTER_CONFIG } };
 
-  /* -------------------------------------------- */
-  /*  Properties                                  */
-  /* -------------------------------------------- */
-
-  /** The parent application */
   parentApp = null;
-
-  /** Configuration being edited */
   config = [];
-
-  /* -------------------------------------------- */
-  /*  Constructor                                 */
-  /* -------------------------------------------- */
 
   /**
    * @param {Application} parentApp - The parent application that opened this configuration
@@ -69,10 +54,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
     this.initializeConfig();
   }
 
-  /* -------------------------------------------- */
-  /*  Configuration Methods                       */
-  /* -------------------------------------------- */
-
   /**
    * Initialize the filter configuration from settings or defaults
    */
@@ -80,7 +61,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
     try {
       log(3, 'Initializing filter configuration');
       let config = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
-
       if (!config || !Array.isArray(config) || config.length === 0) {
         log(2, 'No valid configuration found, using defaults');
         config = foundry.utils.deepClone(DEFAULT_FILTER_CONFIG);
@@ -124,10 +104,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
     }
   }
 
-  /* -------------------------------------------- */
-  /*  Core Methods                                */
-  /* -------------------------------------------- */
-
   /** @override */
   _prepareContext(_options) {
     try {
@@ -138,7 +114,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
       this.config = this.config.map((filter) => {
         const sortable = !(filter.id === 'name' || filter.id === 'prepared' || filter.id === 'ritual' || filter.id === 'sortBy');
-
         const checkbox = document.createElement('dnd5e-checkbox');
         checkbox.name = `enabled-${filter.id}`;
         checkbox.id = `enabled-${filter.id}`;
@@ -226,10 +201,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       log(1, 'Error setting up drag and drop:', error);
     }
   }
-
-  /* -------------------------------------------- */
-  /*  Drag & Drop Handlers                        */
-  /* -------------------------------------------- */
 
   /**
    * Set draggable attributes on filter items
@@ -434,10 +405,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
     }
   }
 
-  /* -------------------------------------------- */
-  /*  Form Handling                               */
-  /* -------------------------------------------- */
-
   /**
    * Capture current form state for filter enablement
    * @returns {Object} Map of filter IDs to enabled states
@@ -543,10 +510,9 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
    * @param {Event} event - The submit event
    * @param {HTMLFormElement} form - The form element
    * @param {FormDataExtended} formData - The processed form data
-   * @returns {Promise<boolean>} Success status
    * @static
    */
-  static async formHandler(event, form, formData) {
+  static formHandler(event, form, formData) {
     event.preventDefault();
     event.stopPropagation();
 
@@ -561,7 +527,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
         ...nonSortableFilters.filter((f) => f.id !== 'name').map((f, idx) => ({ ...f, order: 1000 + idx * 10 }))
       ];
 
-      await game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, updatedConfig);
+      game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, updatedConfig);
 
       if (this.parentApp) {
         this.parentApp.render(false);

@@ -10,10 +10,6 @@ const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applicat
  * GM Spell List Manager application for viewing, editing, and creating spell lists
  */
 export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2) {
-  /* -------------------------------------------- */
-  /*  Static Properties                           */
-  /* -------------------------------------------- */
-
   /** @override */
   static DEFAULT_OPTIONS = {
     id: `gm-spell-list-manager-${MODULE.ID}`,
@@ -56,23 +52,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     footer: { template: TEMPLATES.GM.FOOTER }
   };
 
-  /* -------------------------------------------- */
-  /*  Instance Properties                         */
-  /* -------------------------------------------- */
-
-  /** @type {boolean} Loading state */
   isLoading = true;
-
-  /** @type {Array} Available spell lists */
   availableSpellLists = [];
-
-  /** @type {Object|null} Currently selected spell list */
   selectedSpellList = null;
-
-  /** @type {Array} Available spells for adding */
   availableSpells = [];
-
-  /** @type {Object} Current filter state for available spells */
   filterState = {
     name: '',
     level: '',
@@ -89,14 +72,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     ritual: false
   };
 
-  /** @type {boolean} Editing state */
   isEditing = false;
-
-  /** @type {Object} Pending changes to apply on save */
-  pendingChanges = {
-    added: new Set(),
-    removed: new Set()
-  };
+  pendingChanges = { added: new Set(), removed: new Set() };
 
   /**
    * @returns {string} The application title
@@ -104,10 +81,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   get title() {
     return game.i18n.localize('SPELLMANAGER.Application.Title');
   }
-
-  /* -------------------------------------------- */
-  /*  Constructor                                 */
-  /* -------------------------------------------- */
 
   /**
    * @param {Object} options - Application options
@@ -130,10 +103,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       ritual: false
     };
   }
-
-  /* -------------------------------------------- */
-  /*  Core Methods                                */
-  /* -------------------------------------------- */
 
   /** @override */
   async _prepareContext(options) {
@@ -179,13 +148,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       context.filteredSpells = this.filterAvailableSpells();
     }
 
-    if (this.isEditing && this.selectedSpellList) {
-      await this._addEditingContext(context);
-    }
-    if (this.selectedSpellList) {
-      context.selectedSpellList = this._processSpellListForDisplay(this.selectedSpellList);
-    }
-
+    if (this.isEditing && this.selectedSpellList) await this._addEditingContext(context);
+    if (this.selectedSpellList) context.selectedSpellList = this._processSpellListForDisplay(this.selectedSpellList);
     return context;
   }
 
@@ -201,7 +165,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       label: game.i18n.localize('SPELLMANAGER.Filters.AllSources')
     });
 
-    // Add each unique source from available spells
     this.availableSpells.forEach((spell) => {
       if (spell.sourceId) {
         const sourceId = spell.sourceId;
@@ -214,7 +177,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       }
     });
 
-    // Convert to array and sort
     const sources = Array.from(sourceMap.values()).sort((a, b) => {
       if (a.id === 'all') return -1;
       if (b.id === 'all') return 1;
@@ -232,7 +194,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   async _addEditingContext(context) {
     context.isCustomList = !!this.selectedSpellList.document.flags?.[MODULE.ID]?.isDuplicate;
-
     if (context.isCustomList) {
       const originalUuid = this.selectedSpellList.document.flags?.[MODULE.ID]?.originalUuid;
       if (originalUuid) {
@@ -254,7 +215,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   _onRender(context, options) {
     super._onRender(context, options);
-
     if (this.isLoading) {
       this.loadData();
       return;
@@ -271,10 +231,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     options.parts = ['container', 'spellLists', 'listContent', 'availableSpells', 'footer'];
   }
 
-  /* -------------------------------------------- */
-  /*  Data Loading                                */
-  /* -------------------------------------------- */
-
   /**
    * Load spell lists and available spells
    * @returns {Promise<void>}
@@ -282,7 +238,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   async loadData() {
     try {
       log(3, 'Loading spell lists for GM manager');
-
       await managerHelpers.getValidCustomListMappings();
       this.availableSpellLists = await managerHelpers.findCompendiumSpellLists();
       this.availableSpellLists.sort((a, b) => a.name.localeCompare(b.name));
@@ -352,9 +307,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     processed.dataAttributes = `data-uuid="${spell.compendiumUuid}"`;
     return processed;
   }
-  /* -------------------------------------------- */
-  /*  Filtering Methods                           */
-  /* -------------------------------------------- */
 
   /**
    * Filter available spells based on current filter state
@@ -628,10 +580,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /* -------------------------------------------- */
-  /*  Filter Setup & Event Handlers               */
-  /* -------------------------------------------- */
-
   /**
    * Set up event listeners for filter elements
    */
@@ -795,10 +743,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /* -------------------------------------------- */
-  /*  Spell List Operations                       */
-  /* -------------------------------------------- */
-
   /**
    * Load spell details for a list of spell UUIDs
    * @param {Array} spellUuids - Array of spell UUIDs to load
@@ -832,10 +776,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       this.render(false);
     }
   }
-
-  /* -------------------------------------------- */
-  /*  Dialog Methods                              */
-  /* -------------------------------------------- */
 
   /**
    * Display a confirmation dialog
@@ -1066,10 +1006,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       log(1, `Error creating list: ${error.message}`);
     }
   }
-
-  /* -------------------------------------------- */
-  /*  Action Methods                              */
-  /* -------------------------------------------- */
 
   /**
    * Select a spell list by UUID
@@ -1368,10 +1304,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       log(1, 'Error applying collapsed folders:', error);
     }
   }
-
-  /* -------------------------------------------- */
-  /*  Static Handler Methods                      */
-  /* -------------------------------------------- */
 
   /**
    * Handle selecting a spell list

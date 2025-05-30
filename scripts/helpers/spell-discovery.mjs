@@ -22,14 +22,8 @@ export async function getClassSpellList(className, classUuid, actor, wizardManag
         const classRules = RuleSetManager.getClassRules(actor, classIdentifier);
         if (classRules.customSpellList) {
           log(3, `Using custom spell list for ${className}: ${classRules.customSpellList}`);
-          try {
-            const customSpellList = await fromUuid(classRules.customSpellList);
-            if (customSpellList && customSpellList.system?.spells) {
-              return customSpellList.system.spells;
-            }
-          } catch (error) {
-            log(1, `Error loading custom spell list ${classRules.customSpellList}:`, error);
-          }
+          const customSpellList = await fromUuid(classRules.customSpellList);
+          if (customSpellList && customSpellList.system?.spells) return customSpellList.system.spells;
         }
       }
     }
@@ -41,43 +35,21 @@ export async function getClassSpellList(className, classUuid, actor, wizardManag
     }
 
     const classItem = await fromUuid(classUuid);
-    if (!classItem) {
-      log(1, `Class item not found for UUID: ${classUuid}`);
-      return new Set();
-    }
-
+    if (!classItem) return new Set();
     const classIdentifier = classItem?.system?.identifier?.toLowerCase();
     const topLevelFolderName = getTopLevelFolderFromCompendiumSource(classItem?._stats?.compendiumSource);
-    if (!classIdentifier) {
-      log(1, `No class identifier found for ${className}`);
-      return new Set();
-    }
-
-    // Check custom mappings first
+    if (!classIdentifier) return new Set();
     const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
 
-    // Try to find spell list by top-level folder name and class identifier
     if (topLevelFolderName) {
       const folderMatch = await findSpellListByTopLevelFolder(topLevelFolderName, classIdentifier, customMappings);
-      if (folderMatch && folderMatch.size > 0) {
-        return folderMatch;
-      }
+      if (folderMatch && folderMatch.size > 0) return folderMatch;
     }
 
-    // Try custom spell lists
     const customMatch = await findCustomSpellListByIdentifier(classIdentifier);
-    if (customMatch && customMatch.size > 0) {
-      log(1, `Found ${customMatch.size} spells using custom spell list`);
-      return customMatch;
-    }
-
-    // Final fallback - search by identifier only
+    if (customMatch && customMatch.size > 0) return customMatch;
     const identifierMatch = await findSpellListByIdentifier(classIdentifier, customMappings);
-    if (identifierMatch && identifierMatch.size > 0) {
-      log(1, `Found ${identifierMatch.size} spells using identifier-only match`);
-      return identifierMatch;
-    }
-
+    if (identifierMatch && identifierMatch.size > 0) return identifierMatch;
     log(1, `No spell list found for class ${className} (${classIdentifier}) from folder "${topLevelFolderName}"`);
     return new Set();
   } catch (error) {
@@ -93,17 +65,10 @@ export async function getClassSpellList(className, classUuid, actor, wizardManag
  */
 function getTopLevelFolderFromCompendiumSource(source) {
   if (!source) return null;
-
   try {
     const packCollection = foundry.utils.parseUuid(source).collection.metadata.id;
-
-    // Find the pack and get its top-level folder
     const pack = game.packs.get(packCollection);
-    if (!pack) {
-      log(1, `Pack not found: ${packCollection}`);
-      return null;
-    }
-
+    if (!pack) return null;
     if (pack.folder) {
       const topLevelFolder = pack.folder.name;
       return topLevelFolder;
@@ -253,21 +218,11 @@ async function findSpellListByTopLevelFolder(topLevelFolderName, identifier, cus
 
   for (const pack of journalPacks) {
     try {
-      // Check if this pack is in the correct top-level folder
       let packTopLevelFolder = null;
-      if (pack.folder) {
-        packTopLevelFolder = pack.folder.name;
-      }
-
-      // Skip packs that don't match the top-level folder
-      if (packTopLevelFolder !== topLevelFolderName) {
-        continue;
-      }
-
+      if (pack.folder) packTopLevelFolder = pack.folder.name;
+      if (packTopLevelFolder !== topLevelFolderName) continue;
       const spellList = await searchPackForSpellList(pack, identifier, customMappings);
-      if (spellList) {
-        return spellList;
-      }
+      if (spellList) return spellList;
     } catch (error) {
       log(1, `Error processing pack ${pack.metadata.label}:`, error);
     }

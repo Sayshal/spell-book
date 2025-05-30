@@ -21,7 +21,6 @@ export function log(level, ...args) {
 
     const now = new Date();
     const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-
     const logEntry = {
       type:
         level === 1 ? 'error'
@@ -35,7 +34,6 @@ export function log(level, ...args) {
     if (!window.console_logs) window.console_logs = [];
     if (window.console_logs.length > 2000) window.console_logs.shift();
     window.console_logs.push(logEntry);
-
     const configuredLogLevel = MODULE.LOG_LEVEL;
     if (configuredLogLevel > 0 && level <= configuredLogLevel) {
       switch (level) {

@@ -11,28 +11,18 @@ export class RuleSetManager {
    * @param {string} ruleSet - The rule set to apply ('legacy' or 'modern')
    * @returns {Promise<void>}
    */
-  static async applyRuleSetToActor(actor, ruleSet) {
+  static applyRuleSetToActor(actor, ruleSet) {
     try {
-      // Detect all spellcasting classes on the actor
       const spellcastingClasses = RuleSetManager._detectSpellcastingClasses(actor);
-
-      // Get existing class rules to preserve any custom settings
       const existingClassRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
       const classRules = {};
-
-      // Apply rule set defaults for each class, but preserve existing custom values
       for (const [classId, classData] of Object.entries(spellcastingClasses)) {
         const defaults = RuleSetManager._getClassDefaults(classId, ruleSet);
         const existing = existingClassRules[classId] || {};
-
-        // Merge defaults with existing, giving preference to existing values
         classRules[classId] = { ...defaults, ...existing };
       }
-
-      // Save the class rules to the actor
-      await actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
-      await actor.setFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE, ruleSet);
-
+      actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
+      actor.setFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE, ruleSet);
       log(3, `Applied ${ruleSet} rule set to ${actor.name} for ${Object.keys(classRules).length} classes`);
     } catch (error) {
       log(1, `Error applying rule set to actor ${actor.name}:`, error);
@@ -47,7 +37,6 @@ export class RuleSetManager {
   static getEffectiveRuleSet(actor) {
     const override = actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE);
     if (override) return override;
-
     return game.settings.get(MODULE.ID, SETTINGS.SPELLCASTING_RULE_SET) || RULE_SETS.LEGACY;
   }
 
@@ -60,10 +49,7 @@ export class RuleSetManager {
   static getClassRules(actor, classIdentifier) {
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const existingRules = classRules[classIdentifier];
-
     if (existingRules) return existingRules;
-
-    // If no existing rules, create defaults from current rule set
     const ruleSet = RuleSetManager.getEffectiveRuleSet(actor);
     return RuleSetManager._getClassDefaults(classIdentifier, ruleSet);
   }
@@ -75,20 +61,12 @@ export class RuleSetManager {
    * @param {Object} newRules - The new rules to apply
    * @returns {Promise<void>}
    */
-  static async updateClassRules(actor, classIdentifier, newRules) {
+  static updateClassRules(actor, classIdentifier, newRules) {
     try {
       const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
-
-      // Merge the new rules with existing ones
-      classRules[classIdentifier] = {
-        ...classRules[classIdentifier],
-        ...newRules
-      };
-
+      classRules[classIdentifier] = { ...classRules[classIdentifier], ...newRules };
       log(3, `Updating class rules for ${classIdentifier}:`, classRules[classIdentifier]);
-
-      await actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
-
+      actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
       log(3, `Updated class rules for ${classIdentifier} on ${actor.name}`);
     } catch (error) {
       log(1, `Error updating class rules for ${classIdentifier}:`, error);
@@ -100,14 +78,12 @@ export class RuleSetManager {
    * @param {Actor5e} actor - The actor to check
    * @returns {Promise<void>}
    */
-  static async initializeNewClasses(actor) {
+  static initializeNewClasses(actor) {
     try {
       const spellcastingClasses = RuleSetManager._detectSpellcastingClasses(actor);
       const existingRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
       const ruleSet = RuleSetManager.getEffectiveRuleSet(actor);
       let hasNewClasses = false;
-
-      // Check for any classes that don't have rules yet
       for (const classId of Object.keys(spellcastingClasses)) {
         if (!existingRules[classId]) {
           existingRules[classId] = RuleSetManager._getClassDefaults(classId, ruleSet);
@@ -115,9 +91,8 @@ export class RuleSetManager {
         }
       }
 
-      // Save if we found new classes
       if (hasNewClasses) {
-        await actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, existingRules);
+        actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, existingRules);
         log(3, `Initialized rules for new spellcasting classes on ${actor.name}`);
       }
     } catch (error) {
@@ -133,11 +108,9 @@ export class RuleSetManager {
    */
   static _detectSpellcastingClasses(actor) {
     const classes = {};
-
     for (const item of actor.items) {
       if (item.type !== 'class') continue;
       if (!item.system.spellcasting?.progression || item.system.spellcasting.progression === 'none') continue;
-
       const identifier = item.system.identifier?.toLowerCase() || item.name.toLowerCase();
       classes[identifier] = {
         name: item.name,
@@ -157,7 +130,6 @@ export class RuleSetManager {
    * @private
    */
   static _getClassDefaults(classIdentifier, ruleSet) {
-    // Start with base defaults
     const defaults = {
       cantripSwapping: SWAP_MODES.NONE,
       spellSwapping: SWAP_MODES.NONE,
@@ -167,13 +139,8 @@ export class RuleSetManager {
       preparationBonus: 0
     };
 
-    // Apply rule set specific defaults
-    if (ruleSet === RULE_SETS.LEGACY) {
-      RuleSetManager._applyLegacyDefaults(classIdentifier, defaults);
-    } else if (ruleSet === RULE_SETS.MODERN) {
-      RuleSetManager._applyModernDefaults(classIdentifier, defaults);
-    }
-
+    if (ruleSet === RULE_SETS.LEGACY) RuleSetManager._applyLegacyDefaults(classIdentifier, defaults);
+    else if (ruleSet === RULE_SETS.MODERN) RuleSetManager._applyModernDefaults(classIdentifier, defaults);
     return defaults;
   }
 
@@ -216,9 +183,7 @@ export class RuleSetManager {
       case CLASS_IDENTIFIERS.WARLOCK:
         defaults.spellSwapping = SWAP_MODES.LEVEL_UP;
         defaults.showCantrips = true;
-        if (classIdentifier === CLASS_IDENTIFIERS.BARD) {
-          defaults.ritualCasting = RITUAL_CASTING_MODES.PREPARED;
-        }
+        if (classIdentifier === CLASS_IDENTIFIERS.BARD) defaults.ritualCasting = RITUAL_CASTING_MODES.PREPARED;
         break;
 
       case CLASS_IDENTIFIERS.ARTIFICER:

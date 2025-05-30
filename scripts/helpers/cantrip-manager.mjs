@@ -26,6 +26,7 @@ export class CantripManager {
    * @private
    */
   _getClassSettings(classIdentifier) {
+    // TODO: Remove this wrapper and update references to use below method directly
     return this.spellManager.getSettings(classIdentifier);
   }
 
@@ -36,7 +37,6 @@ export class CantripManager {
    */
   getCurrentCount(classIdentifier = null) {
     if (!classIdentifier) {
-      // Fallback to total count if no class specified
       return this.actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.preparation?.prepared && !i.system.preparation?.alwaysPrepared).length;
     }
 
@@ -69,12 +69,7 @@ export class CantripManager {
    * @private
    */
   _getMaxCantripsForClass(classIdentifier) {
-    // Use cached value from spellbook if available
-    if (this.spellbook && this.spellbook.getMaxCantripsForClass) {
-      return this.spellbook.getMaxCantripsForClass(classIdentifier);
-    }
-
-    // Fallback to direct calculation
+    if (this.spellbook && this.spellbook.getMaxCantripsForClass) return this.spellbook.getMaxCantripsForClass(classIdentifier);
     return this.spellManager.getMaxAllowed(classIdentifier);
   }
 
@@ -84,15 +79,10 @@ export class CantripManager {
    * @private
    */
   _getTotalMaxCantrips() {
-    // Use cached value from spellbook if available
-    if (this.spellbook && this.spellbook.getTotalMaxCantrips) {
-      return this.spellbook.getTotalMaxCantrips();
-    }
-
-    // Fallback to calculation (for backwards compatibility)
+    if (this.spellbook && this.spellbook.getTotalMaxCantrips) return this.spellbook.getTotalMaxCantrips();
     const classItems = this.actor.items.filter((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
-
     let total = 0;
+
     for (const classItem of classItems) {
       const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
       total += this.spellManager.getMaxAllowed(identifier);
@@ -129,21 +119,15 @@ export class CantripManager {
    */
   canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest, uiCantripCount, classIdentifier) {
     if (spell.system.level !== 0) return { allowed: true };
+    if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
 
-    // If no class identifier provided, use spell's source class
-    if (!classIdentifier) {
-      classIdentifier = spell.sourceClass || spell.system?.sourceClass;
-    }
-
-    // If still no class identifier, allow the change but warn
     if (!classIdentifier) {
       log(2, `No class identifier for cantrip ${spell.name}, allowing change but may cause issues`);
       return { allowed: true };
     }
 
-    // Get class-specific settings
     const settings = this._getClassSettings(classIdentifier);
-    const spellName = spell.name || 'unknown cantrip';
+    const spellName = spell.name;
 
     if (settings.behavior === ENFORCEMENT_BEHAVIOR.UNENFORCED || settings.behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
       if (settings.behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM && isChecked) {
@@ -162,49 +146,30 @@ export class CantripManager {
       return { allowed: true };
     }
 
-    // Always check count limits when trying to check a cantrip
     if (isChecked) {
       const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount(classIdentifier);
       const maxCantrips = this._getMaxCantripsForClass(classIdentifier); // Use cached value
-
       log(3, `Cantrip check: ${spell.name} for class ${classIdentifier}, current: ${currentCount}, max: ${maxCantrips}`);
-
-      if (currentCount >= maxCantrips) {
-        return { allowed: false, message: 'SPELLBOOK.Cantrips.MaximumReached' };
-      }
-      // For checking cantrips during UI interaction, only apply count limits
-      // Rule-based restrictions will be applied after saving
+      if (currentCount >= maxCantrips) return { allowed: false, message: 'SPELLBOOK.Cantrips.MaximumReached' };
       return { allowed: true };
     }
 
-    // For unchecking, apply class-specific cantrip swapping rules
     const cantripSwapping = settings.cantripSwapping || 'none';
-
     switch (cantripSwapping) {
-      case 'none': // Legacy - can't uncheck once checked
+      case 'none':
         return { allowed: false, message: 'SPELLBOOK.Cantrips.LockedLegacy' };
-
-      case 'levelUp': // Can only change during level up
-        if (!isLevelUp) {
-          return { allowed: false, message: 'SPELLBOOK.Cantrips.LockedOutsideLevelUp' };
-        }
+      case 'levelUp':
+        if (!isLevelUp) return { allowed: false, message: 'SPELLBOOK.Cantrips.LockedOutsideLevelUp' };
         break;
-
-      case 'longRest': // Can only change during long rest (wizard only)
+      case 'longRest':
         const isWizard = classIdentifier === CLASS_IDENTIFIERS.WIZARD;
-        if (!isWizard) {
-          return { allowed: false, message: 'SPELLBOOK.Cantrips.WizardRuleOnly' };
-        }
-        if (!isLongRest) {
-          return { allowed: false, message: 'SPELLBOOK.Cantrips.LockedOutsideLongRest' };
-        }
+        if (!isWizard) return { allowed: false, message: 'SPELLBOOK.Cantrips.WizardRuleOnly' };
+        if (!isLongRest) return { allowed: false, message: 'SPELLBOOK.Cantrips.LockedOutsideLongRest' };
         break;
     }
 
-    // Apply swap tracking restrictions if in the right context
     const trackingData = this._getSwapTrackingData(isLevelUp, isLongRest, classIdentifier);
     const spellUuid = genericUtils.getSpellUuid(spell);
-
     if ((isLevelUp && cantripSwapping === 'levelUp') || (isLongRest && cantripSwapping === 'longRest')) {
       if (!isChecked && trackingData.hasUnlearned && trackingData.unlearned !== spellUuid && trackingData.originalChecked.includes(spellUuid)) {
         return { allowed: false, message: 'SPELLBOOK.Cantrips.OnlyOneSwap' };
@@ -229,12 +194,8 @@ export class CantripManager {
    * @private
    */
   _getSwapTrackingData(isLevelUp, isLongRest, classIdentifier) {
-    if (!isLevelUp && !isLongRest) {
-      return { hasUnlearned: false, unlearned: null, hasLearned: false, learned: null, originalChecked: [] };
-    }
-
+    if (!isLevelUp && !isLongRest) return { hasUnlearned: false, unlearned: null, hasLearned: false, learned: null, originalChecked: [] };
     const flagName = isLevelUp ? `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.levelUp` : `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.longRest`;
-
     const data = this.actor.getFlag(MODULE.ID, flagName);
     return (
       data || {
@@ -258,7 +219,6 @@ export class CantripManager {
   trackCantripChange(spell, isChecked, isLevelUp, isLongRest, classIdentifier) {
     if (spell.system.level !== 0) return;
 
-    // Default to spell's source class if not provided
     if (!classIdentifier) {
       classIdentifier = spell.sourceClass || spell.system?.sourceClass;
       if (!classIdentifier) {
@@ -267,22 +227,15 @@ export class CantripManager {
       }
     }
 
-    // Get class-specific settings
     const settings = this._getClassSettings(classIdentifier);
     const cantripSwapping = settings.cantripSwapping || 'none';
     const spellUuid = genericUtils.getSpellUuid(spell);
-
     if (!isLevelUp && !isLongRest) return;
     if (cantripSwapping === 'none') return;
     if (cantripSwapping === 'longRest' && classIdentifier !== CLASS_IDENTIFIERS.WIZARD) return;
-
-    // Use class-specific tracking flag
     const flagName = isLevelUp ? `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.levelUp` : `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.longRest`;
-
     let tracking = this.actor.getFlag(MODULE.ID, flagName);
-
     if (!tracking) {
-      // Get cantrips prepared for this specific class
       const preparedCantrips = this.actor.items
         .filter(
           (i) => i.type === 'spell' && i.system.level === 0 && i.system.preparation?.prepared && (i.sourceClass === classIdentifier || i.system.sourceClass === classIdentifier)
@@ -332,26 +285,17 @@ export class CantripManager {
    * @returns {Promise<boolean>} Success status
    */
   async completeCantripSwap(isLevelUp) {
-    // Clear tracking for all classes
     const allTracking = this.actor.getFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING) || {};
     const contextKey = isLevelUp ? 'levelUp' : 'longRest';
-
-    // Remove the specific context tracking for all classes
     for (const classId of Object.keys(allTracking)) {
       if (allTracking[classId] && allTracking[classId][contextKey]) {
         delete allTracking[classId][contextKey];
-        if (Object.keys(allTracking[classId]).length === 0) {
-          delete allTracking[classId];
-        }
+        if (Object.keys(allTracking[classId]).length === 0) delete allTracking[classId];
       }
     }
 
-    if (Object.keys(allTracking).length === 0) {
-      await this.actor.unsetFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING);
-    } else {
-      await this.actor.setFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING, allTracking);
-    }
-
+    if (Object.keys(allTracking).length === 0) await this.actor.unsetFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING);
+    else await this.actor.setFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING, allTracking);
     if (isLevelUp) {
       const currentLevel = this.actor.system.details.level;
       const currentMax = this._getTotalMaxCantrips();
@@ -396,16 +340,12 @@ export class CantripManager {
     for (const item of cantripItems) {
       const checkbox = item.querySelector('dnd5e-checkbox');
       if (!checkbox) continue;
-
       if (item.querySelector('.tag.always-prepared') || item.querySelector('.tag.granted') || item.querySelector('.tag.innate') || item.querySelector('.tag.atwill')) continue;
-
       const isChecked = checkbox.checked;
       const uuid = checkbox.dataset.uuid;
-
       checkbox.disabled = false;
       delete checkbox.dataset.tooltip;
       item.classList.remove('cantrip-locked');
-
       if (isAtMax && !isChecked) {
         checkbox.disabled = true;
         checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.MaximumReached');
@@ -414,20 +354,17 @@ export class CantripManager {
       }
 
       if (settings.behavior !== ENFORCEMENT_BEHAVIOR.ENFORCED) continue;
-
-      // Apply class-specific cantrip swapping rules
       const cantripSwapping = settings.cantripSwapping || 'none';
 
       switch (cantripSwapping) {
-        case 'none': // Legacy
+        case 'none':
           if (isChecked) {
             checkbox.disabled = true;
             checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedLegacy');
             item.classList.add('cantrip-locked');
           }
           break;
-
-        case 'levelUp': // Modern level-up rules
+        case 'levelUp':
           if (isLevelUp) {
             if (trackingData.hasUnlearned && uuid !== trackingData.unlearned && isChecked) {
               checkbox.disabled = true;
@@ -445,8 +382,7 @@ export class CantripManager {
             item.classList.add('cantrip-locked');
           }
           break;
-
-        case 'longRest': // Modern long-rest rules (wizard only)
+        case 'longRest':
           const isWizard = classIdentifier === CLASS_IDENTIFIERS.WIZARD;
           if (!isWizard) {
             checkbox.disabled = true;
@@ -478,26 +414,18 @@ export class CantripManager {
 
   /**
    * Reset all cantrip swap tracking data
-   * @returns {Promise<void>}
    */
-  async resetSwapTracking() {
+  resetSwapTracking() {
     const allTracking = this.actor.getFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING) || {};
-
-    // Clear longRest tracking for all classes
     for (const classId of Object.keys(allTracking)) {
       if (allTracking[classId] && allTracking[classId].longRest) {
         delete allTracking[classId].longRest;
-        if (Object.keys(allTracking[classId]).length === 0) {
-          delete allTracking[classId];
-        }
+        if (Object.keys(allTracking[classId]).length === 0) delete allTracking[classId];
       }
     }
 
-    if (Object.keys(allTracking).length === 0) {
-      await this.actor.unsetFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING);
-    } else {
-      await this.actor.setFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING, allTracking);
-    }
+    if (Object.keys(allTracking).length === 0) this.actor.unsetFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING);
+    else this.actor.setFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING, allTracking);
   }
 
   /**
@@ -508,56 +436,36 @@ export class CantripManager {
   async sendComprehensiveGMNotification(notificationData) {
     const { actorName, classChanges } = notificationData;
 
-    // Check if there's anything to report
     const hasChanges = Object.values(classChanges).some(
       (classData) =>
         classData.cantripChanges.added.length > 0 || classData.cantripChanges.removed.length > 0 || classData.overLimits.cantrips.isOver || classData.overLimits.spells.isOver
     );
 
     if (!hasChanges) return;
-
     let content = `<h2>${game.i18n.format('SPELLBOOK.Notifications.ComprehensiveTitle', { name: actorName })}</h2>`;
-
     for (const [classIdentifier, classData] of Object.entries(classChanges)) {
       const { className, cantripChanges, overLimits } = classData;
-
-      // Skip if nothing to report for this class
-      if (cantripChanges.added.length === 0 && cantripChanges.removed.length === 0 && !overLimits.cantrips.isOver && !overLimits.spells.isOver) {
-        continue;
-      }
-
+      if (cantripChanges.added.length === 0 && cantripChanges.removed.length === 0 && !overLimits.cantrips.isOver && !overLimits.spells.isOver) continue;
       content += `<h3>${className}</h3>`;
-
-      // Cantrip changes
       if (cantripChanges.added.length > 0 || cantripChanges.removed.length > 0) {
         content += `<p><strong>${game.i18n.localize('SPELLBOOK.Notifications.CantripChanges')}:</strong></p><ul>`;
-
         if (cantripChanges.removed.length > 0) {
           content += `<li><strong>${game.i18n.localize('SPELLBOOK.Notifications.Removed')}:</strong> ${cantripChanges.removed.map((c) => c.name).join(', ')}</li>`;
         }
-
         if (cantripChanges.added.length > 0) {
           content += `<li><strong>${game.i18n.localize('SPELLBOOK.Notifications.Added')}:</strong> ${cantripChanges.added.map((c) => c.name).join(', ')}</li>`;
         }
-
         content += `</ul>`;
       }
-
-      // Over-limit warnings
       if (overLimits.cantrips.isOver) {
         content += `<p><strong>${game.i18n.localize('SPELLBOOK.Notifications.CantripOverLimit')}:</strong> ${overLimits.cantrips.current}/${overLimits.cantrips.max} (${overLimits.cantrips.current - overLimits.cantrips.max} over)</p>`;
       }
-
       if (overLimits.spells.isOver) {
         content += `<p><strong>${game.i18n.localize('SPELLBOOK.Notifications.SpellOverLimit')}:</strong> ${overLimits.spells.current}/${overLimits.spells.max} (${overLimits.spells.current - overLimits.spells.max} over)</p>`;
       }
-
       content += `<hr>`;
     }
 
-    await ChatMessage.create({
-      content: content,
-      whisper: game.users.filter((u) => u.isGM).map((u) => u.id)
-    });
+    await ChatMessage.create({ content: content, whisper: game.users.filter((u) => u.isGM).map((u) => u.id) });
   }
 }

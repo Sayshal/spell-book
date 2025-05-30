@@ -30,11 +30,8 @@ export function formatSpellDetails(spell) {
 function formatSpellComponents(spell) {
   const components = [];
 
-  if (spell.labels?.components?.all) {
-    for (const c of spell.labels.components.all) {
-      components.push(c.abbr);
-    }
-  } else if (spell.system?.properties?.length) {
+  if (spell.labels?.components?.all) for (const c of spell.labels.components.all) components.push(c.abbr);
+  else if (spell.system?.properties?.length) {
     const componentMap = {
       vocal: 'V',
       somatic: 'S',
@@ -43,9 +40,7 @@ function formatSpellComponents(spell) {
       ritual: 'R'
     };
 
-    for (const prop of spell.system.properties) {
-      if (componentMap[prop]) components.push(componentMap[prop]);
-    }
+    for (const prop of spell.system.properties) if (componentMap[prop]) components.push(componentMap[prop]);
   }
 
   return components.join(', ');
@@ -62,7 +57,6 @@ function formatSpellActivation(spell) {
     const type = spell.system.activation.type;
     const value = spell.system.activation.value || 1;
     const typeLabel = CONFIG.DND5E.abilityActivationTypes[type];
-
     if (value === 1 || value === null) return typeLabel;
     return `${value} ${typeLabel}s`;
   }
@@ -77,10 +71,7 @@ function formatSpellActivation(spell) {
  */
 function formatSpellSchool(spell) {
   if (spell.labels?.school) return spell.labels.school;
-  if (spell.system?.school) {
-    return CONFIG.DND5E.spellSchools[spell.system.school]?.label || spell.system.school;
-  }
-
+  if (spell.system?.school) return CONFIG.DND5E.spellSchools[spell.system.school]?.label || spell.system.school;
   return '';
 }
 
@@ -92,10 +83,7 @@ function formatSpellSchool(spell) {
 export function getLocalizedPreparationMode(mode) {
   try {
     if (!mode) return '';
-    if (CONFIG.DND5E.spellPreparationModes[mode]?.label) {
-      return CONFIG.DND5E.spellPreparationModes[mode].label;
-    }
-
+    if (CONFIG.DND5E.spellPreparationModes[mode]?.label) return CONFIG.DND5E.spellPreparationModes[mode].label;
     return mode.charAt(0).toUpperCase() + mode.slice(1);
   } catch (error) {
     log(1, `Error getting localized preparation mode:`, error);
@@ -169,9 +157,7 @@ function extractDamageTypes(spell) {
   const damageTypes = [];
   if (spell.labels?.damages?.length) {
     for (const damage of spell.labels.damages) {
-      if (damage.damageType && !damageTypes.includes(damage.damageType)) {
-        damageTypes.push(damage.damageType);
-      }
+      if (damage.damageType && !damageTypes.includes(damage.damageType)) damageTypes.push(damage.damageType);
     }
   }
   if (spell.system?.activities) {
@@ -279,19 +265,13 @@ export function createSpellIconLink(spell) {
     const itemId = parsed.id || '';
     const entityType = parsed.type || 'Item';
     let packId = '';
-
-    if (parsed.collection) {
-      packId = parsed.collection.collection || '';
-    }
-
+    if (parsed.collection) packId = parsed.collection.collection || '';
     return `<a class="content-link" draggable="true" data-link="" data-uuid="${uuid}" data-id="${itemId}" data-type="${entityType}" data-pack="${packId}" data-tooltip="${spell.name}"><img src="${spell.img}" class="spell-icon" alt="${spell.name} icon"></a>`
       .replace(/\s+/g, ' ')
       .trim();
   } catch (error) {
     log(1, `Error creating spell icon link:`, error);
-    if (spell?.img) {
-      return `<img src="${spell.img}" class="spell-icon" alt="${spell?.name || ''} icon">`;
-    }
+    if (spell?.img) return `<img src="${spell.img}" class="spell-icon" alt="${spell?.name || ''} icon">`;
     return '';
   }
 }
