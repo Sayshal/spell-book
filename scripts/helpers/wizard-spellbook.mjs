@@ -6,22 +6,19 @@ import * as genericUtils from './generic-utils.mjs';
  * Manages wizard-specific spellbook functionality
  */
 export class WizardSpellbookManager {
+  static _folderCreationLock = false;
+  static _journalCreationLocks = new Map();
+
   /**
    * Create a new WizardSpellbookManager for an actor
    * @param {Actor5e} actor - The actor to manage wizard spellbook for
    */
-  static _folderCreationLock = false;
-  static _journalCreationLocks = new Map();
-
   constructor(actor) {
     this.actor = actor;
     log(3, `Creating WizardSpellbookManager for ${actor.name}`);
     this.classItem = this._findWizardClass();
     this.isWizard = this.classItem !== null;
-
-    if (this.isWizard) {
-      this._initializeFlags();
-    }
+    if (this.isWizard) this._initializeFlags();
   }
 
   /**
@@ -49,16 +46,8 @@ export class WizardSpellbookManager {
     try {
       const updateData = {};
       const flags = this.actor.flags?.[MODULE.ID] || {};
-
-      if (!flags[FLAGS.WIZARD_COPIED_SPELLS]) {
-        updateData[`flags.${MODULE.ID}.${FLAGS.WIZARD_COPIED_SPELLS}`] = [];
-      }
-
-      if (Object.keys(updateData).length > 0) {
-        log(3, 'Initializing wizard flags', updateData);
-        await this.actor.update(updateData);
-      }
-
+      if (!flags[FLAGS.WIZARD_COPIED_SPELLS]) updateData[`flags.${MODULE.ID}.${FLAGS.WIZARD_COPIED_SPELLS}`] = [];
+      if (Object.keys(updateData).length > 0) await this.actor.update(updateData);
       return updateData;
     } catch (error) {
       log(1, 'Error initializing wizard flags:', error);
@@ -93,17 +82,9 @@ export class WizardSpellbookManager {
   async getSpellbookSpells() {
     try {
       const journal = await this.getOrCreateSpellbookJournal();
-      if (!journal) {
-        log(2, `No spellbook journal available for ${this.actor.name}`);
-        return [];
-      }
-
+      if (!journal) return [];
       const journalPage = journal.pages?.find((p) => p.type === 'spells');
-      if (!journalPage) {
-        log(2, `No spells page found in spellbook journal for ${this.actor.name}`);
-        return [];
-      }
-
+      if (!journalPage) return [];
       return Array.from(journalPage.system?.spells || []);
     } catch (error) {
       log(1, `Error getting spellbook spells for ${this.actor.name}:`, error);
@@ -120,10 +101,8 @@ export class WizardSpellbookManager {
     try {
       const journal = await this.getOrCreateSpellbookJournal();
       if (!journal) return false;
-
       const journalPage = journal.pages?.find((p) => p.type === 'spells');
       if (!journalPage) return false;
-
       return journalPage.system?.spells?.has(spellUuid) || false;
     } catch (error) {
       log(1, `Error checking spell in spellbook for ${this.actor.name}:`, error);
@@ -140,11 +119,8 @@ export class WizardSpellbookManager {
    * @returns {Promise<boolean>} Success state
    */
   async copySpell(spellUuid, cost, time, isFree = false) {
-    if (!isFree) {
-      return this.addSpellToSpellbook(spellUuid, WIZARD_SPELL_SOURCE.COPIED, { cost, timeSpent: time });
-    } else {
-      return this.addSpellToSpellbook(spellUuid, WIZARD_SPELL_SOURCE.FREE, null);
-    }
+    if (!isFree) return this.addSpellToSpellbook(spellUuid, WIZARD_SPELL_SOURCE.COPIED, { cost, timeSpent: time });
+    else return this.addSpellToSpellbook(spellUuid, WIZARD_SPELL_SOURCE.FREE, null);
   }
 
   /**
@@ -165,14 +141,8 @@ export class WizardSpellbookManager {
       const spellbookSpells = await this.getSpellbookSpells();
       const ritualSpells = [];
       for (const uuid of spellbookSpells) {
-        try {
-          const spell = await fromUuid(uuid);
-          if (spell && spell.system.components?.ritual) {
-            ritualSpells.push(spell);
-          }
-        } catch (error) {
-          log(1, `Error loading ritual spell ${uuid}: ${error.message}`);
-        }
+        const spell = await fromUuid(uuid);
+        if (spell && spell.system.components?.ritual) ritualSpells.push(spell);
       }
 
       return ritualSpells;
@@ -278,7 +248,7 @@ export class WizardSpellbookManager {
         },
         pages: [
           {
-            name: `${this.actor.name}'s Spell Book`,
+            name: `${this.actor.name}'s Spell Book`, //TODO: Localize this
             type: 'spells',
             flags: {
               [MODULE.ID]: {
@@ -307,19 +277,12 @@ export class WizardSpellbookManager {
    * @returns {Promise<JournalEntry|null>} The actor's spellbook journal
    */
   async getOrCreateSpellbookJournal() {
-    // Wait for any existing creation process to complete
-    while (WizardSpellbookManager._journalCreationLocks.get(this.actor.id)) {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    }
+    while (WizardSpellbookManager._journalCreationLocks.get(this.actor.id)) await new Promise((resolve) => setTimeout(resolve, 50));
 
     try {
       WizardSpellbookManager._journalCreationLocks.set(this.actor.id, true);
-
       const existingJournal = await this.findSpellbookJournal();
-      if (existingJournal) {
-        return existingJournal;
-      }
-
+      if (existingJournal) return existingJournal;
       const newJournal = await this.createSpellbookJournal();
       return newJournal;
     } catch (error) {
@@ -407,7 +370,6 @@ export class WizardSpellbookManager {
   async getCopyingCostWithFree(spell) {
     const isFree = await this.isSpellFree(spell);
     if (isFree) return { cost: 0, isFree: true };
-
     const cost = this.getCopyingCost(spell);
     return { cost, isFree: false };
   }

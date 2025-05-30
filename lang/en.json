@@ -147,6 +147,8 @@
   "SPELLBOOK.Settings.Saved": "Settings saved for {name}",
   "SPELLBOOK.Settings.ShowCantrips.Hint": "Whether to display cantrips for this class",
   "SPELLBOOK.Settings.ShowCantrips.Label": "Show Cantrips",
+  "SPELLBOOK.Settings.SpellBookPosition.Hint": "Config only setting to save the last position of the player spell book.",
+  "SPELLBOOK.Settings.SpellBookPosition.Name": "Set Spell Book Permission",
   "SPELLBOOK.Settings.SpellList.AutoDetect": "Auto-Detect from Compendiums",
   "SPELLBOOK.Settings.SpellSwapping.Hint": "When this class can swap spells",
   "SPELLBOOK.Settings.SpellSwapping.Label": "Spell Swapping",

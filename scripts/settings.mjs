@@ -45,6 +45,15 @@ export function registerSettings() {
       }
     });
 
+    game.settings.register(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION, {
+      name: 'SPELLBOOK.Settings.SpellBookPosition.Name',
+      hint: 'SPELLBOOK.Settings.SpellBookPosition.Hint',
+      scope: 'client',
+      config: false,
+      type: Object,
+      default: {}
+    });
+
     game.settings.register(MODULE.ID, SETTINGS.DISTANCE_UNIT, {
       name: 'SPELLBOOK.Settings.DistanceUnit.Name',
       hint: 'SPELLBOOK.Settings.DistanceUnit.Hint',

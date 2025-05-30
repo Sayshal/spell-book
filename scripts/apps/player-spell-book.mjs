@@ -78,6 +78,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this._stateManager = new SpellbookState(this);
     this.ui = new SpellbookUI(this);
     this.filterHelper = new SpellbookFilterHelper(this);
+    this.lastPosition = {};
     this.ritualManager = null;
     this.isLoading = true;
     this.spellLevels = [];
@@ -271,6 +272,22 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       spellPreparation: this.spellPreparation || { current: 0, maximum: 0 },
       isGM: game.user.isGM
     };
+  }
+
+  /** @inheritDoc */
+  _initializeApplicationOptions(options) {
+    options = super._initializeApplicationOptions(options);
+    this.lastPosition = game.settings.get(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION);
+    if (this.lastPosition) {
+      Object.assign(options.position, this.lastPosition);
+    }
+    return options;
+  }
+
+  /** @inheritDoc */
+  setPosition(options) {
+    options = super.setPosition(options);
+    this.lastPosition = options;
   }
 
   /**
@@ -529,6 +546,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   _onClose() {
     try {
+      // Save last positions
+      game.settings.set(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION, this.lastPosition);
       // Clean up event listeners
       if (this._preparationListener) {
         document.removeEventListener('change', this._preparationListener);
@@ -1121,10 +1140,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
       const classIdentifier = activeTabContent?.dataset.classIdentifier || sourceClass || this._stateManager.activeClass;
 
-      if (!classIdentifier) {
-        log(2, `No class identifier could be determined for spell change handling`);
-        return;
-      }
+      if (!classIdentifier) return;
 
       const sourceSpell = await fromUuid(uuid);
       if (!sourceSpell) {
@@ -1198,26 +1214,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       // Use a fallback if activeTabContent isn't found
       const classIdentifier = activeTabContent?.dataset.classIdentifier || sourceClass || this._stateManager.activeClass;
 
-      if (!classIdentifier) {
-        log(2, `No class identifier could be determined for cantrip change handling - using first available class`);
-        // Last resort - use the first available class
-        const firstClass = Object.keys(this._stateManager.classSpellData)[0];
-        if (!firstClass) {
-          log(1, `No class data available, cannot process cantrip change for ${uuid}`);
-          return;
-        }
-      }
-
       const sourceSpell = await fromUuid(uuid);
-      if (!sourceSpell) {
-        log(1, `Could not find source spell for UUID: ${uuid}`);
-        return;
-      }
+      if (!sourceSpell) return;
 
       // During UI interaction, only enforce count limits for checking cantrips
       // Rule-based restrictions will be applied after form submission
       if (isChecked) {
         // Check count limits when checking a cantrip
+
         const canChange = this.spellManager.canChangeCantripStatus(sourceSpell, isChecked, isLevelUp, isLongRest, this._uiCantripCount, classIdentifier);
 
         if (!canChange.allowed) {
@@ -1227,13 +1231,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           }
 
           // Update counter without triggering recursive lock setup
-          if (this.ui) {
-            try {
-              this.ui.updateCantripCounter(null, true);
-            } catch (err) {
-              log(2, 'Error updating cantrip counter after prevention:', err);
-            }
-          }
+          this.ui.updateCantripCounter(null, true);
           return;
         }
       }
@@ -1247,21 +1245,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         this._newlyCheckedCantrips.delete(uuid);
       }
 
-      if (this.ui) {
-        // Update visual indicators - safely
-        try {
-          // Update the counter without triggering lock setup
-          this.ui.updateCantripCounter(null, true);
-
-          if (spellItem) {
-            spellItem.classList.toggle('prepared-spell', isChecked);
-          }
-
-          // Call setupCantripLocks with count-only during UI interaction
-          this.ui.setupCantripLocks(false, false);
-        } catch (err) {
-          log(2, 'Error updating UI after cantrip change:', err);
-        }
+      // Update visual indicators - safely
+      try {
+        // Update the counter without triggering lock setup
+        this.ui.updateCantripCounter(null, true);
+        if (spellItem) spellItem.classList.toggle('prepared-spell', isChecked);
+        this.ui.setupCantripLocks(false, false);
+      } catch (err) {
+        log(2, 'Error updating UI after cantrip change:', err);
       }
     } catch (error) {
       log(1, 'Error handling cantrip preparation change:', error);

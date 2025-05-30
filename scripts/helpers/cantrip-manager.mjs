@@ -105,7 +105,7 @@ export class CantripManager {
    * @param {string} classIdentifier - The current class identifier
    * @returns {Object} Status object with allowed and message properties
    */
-  canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest, uiCantripCount = null, classIdentifier = null) {
+  canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest, uiCantripCount, classIdentifier) {
     if (spell.system.level !== 0) return { allowed: true };
 
     // If no class identifier provided, use spell's source class

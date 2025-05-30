@@ -220,10 +220,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     try {
       // Get the class identifier from the button's data attribute
       const classIdentifier = target.dataset.class;
-      if (!classIdentifier) {
-        log(2, 'No class identifier found on preparation bonus button');
-        return;
-      }
+      if (!classIdentifier) return;
 
       // Find the corresponding input field
       const input = this.element.querySelector(`input[name="class.${classIdentifier}.preparationBonus"]`);
@@ -259,10 +256,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     try {
       // Get the class identifier from the button's data attribute
       const classIdentifier = target.dataset.class;
-      if (!classIdentifier) {
-        log(2, 'No class identifier found on preparation bonus button');
-        return;
-      }
+      if (!classIdentifier) return;
 
       // Find the corresponding input field
       const input = this.element.querySelector(`input[name="class.${classIdentifier}.preparationBonus"]`);

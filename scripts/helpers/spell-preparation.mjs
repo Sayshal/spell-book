@@ -177,10 +177,11 @@ export class SpellManager {
    * @param {boolean} isLevelUp - Whether this is during level-up
    * @param {boolean} isLongRest - Whether this is during a long rest
    * @param {number} uiCantripCount - Number of checked cantrip boxes in the ui currently
+   * @param {string} classIdentifier - The current class identifier
    * @returns {Object} Status object with allowed and message properties
    */
-  canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest, uiCantripCount = null) {
-    return this.cantripManager.canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest, uiCantripCount);
+  canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest, uiCantripCount, classIdentifier) {
+    return this.cantripManager.canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest, uiCantripCount, classIdentifier);
   }
 
   /**
@@ -189,9 +190,10 @@ export class SpellManager {
    * @param {boolean} isChecked - Whether the spell is being checked (true) or unchecked (false)
    * @param {boolean} isLevelUp - Whether this is during level-up
    * @param {boolean} isLongRest - Whether this is during a long rest
+   * @param {string} classIdentifier - The current class identifier
    */
-  trackCantripChange(spell, isChecked, isLevelUp, isLongRest) {
-    this.cantripManager.trackCantripChange(spell, isChecked, isLevelUp, isLongRest);
+  trackCantripChange(spell, isChecked, isLevelUp, isLongRest, classIdentifier) {
+    this.cantripManager.trackCantripChange(spell, isChecked, isLevelUp, isLongRest, classIdentifier);
   }
 
   /**

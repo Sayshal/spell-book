@@ -92,7 +92,6 @@ export class SpellbookFilterHelper {
 
         if (visible) {
           visibleCount++;
-
           if (!levelVisibilityMap.has(level)) {
             levelVisibilityMap.set(level, {
               visible: 0,
@@ -104,21 +103,16 @@ export class SpellbookFilterHelper {
 
           const levelStats = levelVisibilityMap.get(level);
           levelStats.visible++;
-
           if (isCountable) {
             levelStats.countable++;
             if (isPrepared) levelStats.countablePrepared++;
           }
-
           if (isPrepared) levelStats.prepared++;
         }
       }
 
       const noResults = this.element.querySelector('.no-filter-results');
-      if (noResults) {
-        noResults.style.display = visibleCount > 0 ? 'none' : 'block';
-      }
-
+      if (noResults) noResults.style.display = visibleCount > 0 ? 'none' : 'block';
       this._updateLevelContainers(levelVisibilityMap);
     } catch (error) {
       log(1, 'Error applying filters:', error);
@@ -219,9 +213,7 @@ export class SpellbookFilterHelper {
           }
         });
 
-        for (const item of items) {
-          list.appendChild(item);
-        }
+        for (const item of items) list.appendChild(item);
       }
     } catch (error) {
       log(1, 'Error applying sorting:', error);
@@ -236,7 +228,6 @@ export class SpellbookFilterHelper {
   _updateLevelContainers(levelVisibilityMap) {
     try {
       const levelContainers = this.element.querySelectorAll('.spell-level');
-
       for (const container of levelContainers) {
         const levelId = container.dataset.level;
         const levelStats = levelVisibilityMap.get(levelId) || {

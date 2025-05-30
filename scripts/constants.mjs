@@ -83,6 +83,7 @@ export const SETTINGS = {
   LOGGING_LEVEL: 'loggingLevel',
   OPEN_SPELL_MANAGER: 'openSpellListManager',
   RUN_MIGRATIONS: 'runMigrations',
+  SPELL_BOOK_POSITION: 'spellBookPositionn',
   SPELLCASTING_RULE_SET: 'spellcastingRuleSet'
 };
 
