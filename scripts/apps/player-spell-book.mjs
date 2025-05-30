@@ -3,6 +3,7 @@ import * as filterUtils from '../helpers/filters.mjs';
 import * as formElements from '../helpers/form-elements.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
 import { RitualManager } from '../helpers/ritual-manager.mjs';
+import { RuleSetManager } from '../helpers/rule-set-manager.mjs';
 import { SpellManager } from '../helpers/spell-preparation.mjs';
 import { SpellbookState } from '../helpers/state/spellbook-state.mjs';
 import { SpellbookFilterHelper } from '../helpers/ui/spellbook-filters.mjs';
@@ -73,7 +74,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(actor, options = {}) {
     super(options);
     this.actor = actor;
-    this.spellManager = new SpellManager(actor);
+    this.spellManager = new SpellManager(actor, this);
     this.wizardManager = genericUtils.isWizard(actor) ? new WizardSpellbookManager(actor) : null;
     this._stateManager = new SpellbookState(this);
     this.ui = new SpellbookUI(this);
@@ -88,6 +89,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this._isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED) || false;
     this._wizardInitialized = false;
 
+    // Cache for max cantrips - single source of truth
+    this._maxCantripsByClass = new Map();
+    this._totalMaxCantrips = 0;
+
     // Register class-specific parts immediately
     this._registerClassParts();
 
@@ -99,6 +104,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const wizardFlagChanged = changedFlags.some((flag) => [FLAGS.WIZARD_COPIED_SPELLS].includes(flag));
 
         if ((cantripFlagChanged || wizardFlagChanged) && this.rendered) {
+          this._clearMaxCantripCache();
           this.render(false);
         }
       }
@@ -919,6 +925,126 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
+   * Calculate and cache max cantrips for all spellcasting classes
+   * This is the single source of truth for cantrip limits
+   * @private
+   */
+  _calculateAndCacheMaxCantrips() {
+    try {
+      this._maxCantripsByClass.clear();
+      this._totalMaxCantrips = 0;
+
+      // Get all spellcasting classes
+      const classItems = this.actor.items.filter((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
+
+      for (const classItem of classItems) {
+        const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
+
+        // Calculate max cantrips for this class using the original logic
+        const maxCantrips = this._calculateMaxCantripsForClass(classItem, identifier);
+
+        this._maxCantripsByClass.set(identifier, maxCantrips);
+        this._totalMaxCantrips += maxCantrips;
+
+        log(3, `Cached max cantrips for ${identifier}: ${maxCantrips}`);
+      }
+
+      log(3, `Total max cantrips across all classes: ${this._totalMaxCantrips}`);
+    } catch (error) {
+      log(1, 'Error calculating max cantrips cache:', error);
+    }
+  }
+
+  /**
+   * Calculate max cantrips for a specific class (extracted from SpellManager.getMaxAllowed)
+   * @param {Item5e} classItem - The class item
+   * @param {string} classIdentifier - The class identifier
+   * @returns {number} Maximum cantrips for this class
+   * @private
+   */
+  _calculateMaxCantripsForClass(classItem, classIdentifier) {
+    // Get cantrip scale value keys from settings
+    const cantripScaleValuesSetting = game.settings.get(MODULE.ID, SETTINGS.CANTRIP_SCALE_VALUES);
+    const cantripScaleKeys = cantripScaleValuesSetting
+      .split(',')
+      .map((v) => v.trim())
+      .filter((v) => v.length > 0);
+
+    // Get base cantrips from scale values
+    let baseCantrips = 0;
+
+    try {
+      // Safely access scaleValues
+      if (classItem.scaleValues) {
+        // Check all configured cantrip scale value keys
+        for (const key of cantripScaleKeys) {
+          const cantripValue = classItem.scaleValues[key]?.value;
+          if (cantripValue !== undefined) {
+            baseCantrips = cantripValue;
+            log(3, `Found cantrip scale value '${key}' = ${baseCantrips} for class ${classIdentifier}`);
+            break;
+          }
+        }
+      }
+    } catch (err) {
+      log(2, `Error accessing scaleValues for ${classIdentifier}, using fallback calculation`, err);
+    }
+
+    // If no scale values found, return 0
+    if (baseCantrips === 0) {
+      log(2, `No cantrip scale value found for class ${classIdentifier} (checked: ${cantripScaleKeys.join(', ')}), returning 0`);
+      return 0;
+    }
+
+    // Apply class-specific rules and bonuses
+    const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
+
+    // If cantrips should be hidden for this class, return 0
+    if (classRules && classRules.showCantrips === false) {
+      return 0;
+    }
+
+    // Apply cantrip bonus if it exists
+    const cantripBonus = classRules?.cantripBonus || 0;
+
+    return Math.max(0, baseCantrips + cantripBonus);
+  }
+
+  /**
+   * Get cached max cantrips for a specific class
+   * @param {string} classIdentifier - The class identifier
+   * @returns {number} Cached max cantrips for this class
+   */
+  getMaxCantripsForClass(classIdentifier) {
+    if (!this._maxCantripsByClass.has(classIdentifier)) {
+      log(2, `Max cantrips not cached for class ${classIdentifier}, recalculating...`);
+      this._calculateAndCacheMaxCantrips();
+    }
+    return this._maxCantripsByClass.get(classIdentifier) || 0;
+  }
+
+  /**
+   * Get cached total max cantrips across all classes
+   * @returns {number} Total max cantrips
+   */
+  getTotalMaxCantrips() {
+    if (this._totalMaxCantrips === 0 && this._maxCantripsByClass.size === 0) {
+      log(3, `Total max cantrips not cached, calculating...`);
+      this._calculateAndCacheMaxCantrips();
+    }
+    return this._totalMaxCantrips;
+  }
+
+  /**
+   * Clear the max cantrip cache (call when class rules change)
+   * @private
+   */
+  _clearMaxCantripCache() {
+    this._maxCantripsByClass.clear();
+    this._totalMaxCantrips = 0;
+  }
+
+  /**
    * Load spell data from the state manager
    * @returns {Promise<void>}
    * @private
@@ -937,6 +1063,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       }
 
       await this._stateManager.initialize();
+
+      // Calculate max cantrips cache after state manager initialization
+      if (this._totalMaxCantrips === 0) {
+        this._calculateAndCacheMaxCantrips();
+      }
+
       this.isLoading = this._stateManager.isLoading;
       this.spellLevels = this._stateManager.spellLevels;
       this.className = this._stateManager.className;
@@ -1643,7 +1775,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     // Store current tab selection
     const currentTab = this.tabGroups['spellbook-tabs'];
 
-    // Clear cached state
+    // Clear cached state including max cantrips
+    this._clearMaxCantripCache();
     this._stateManager._initialized = false;
     this._stateManager._classesDetected = false;
     this._stateManager.spellcastingClasses = {};
@@ -1659,6 +1792,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
     // Reload everything
     await this._stateManager.initialize();
+
+    // Recalculate max cantrips cache
+    this._calculateAndCacheMaxCantrips();
 
     // Restore previous tab if it still exists
     if (currentTab && this._stateManager.spellcastingClasses) {

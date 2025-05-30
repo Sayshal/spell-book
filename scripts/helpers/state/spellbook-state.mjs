@@ -425,7 +425,7 @@ export class SpellbookState {
   }
 
   /**
-   * Update the global prepared spell count with proper error handling and logging
+   * Update the global prepared spell count
    */
   updateGlobalPreparationCount() {
     try {

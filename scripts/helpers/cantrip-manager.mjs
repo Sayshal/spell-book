@@ -10,10 +10,12 @@ export class CantripManager {
    * Create a new CantripManager
    * @param {Actor5e} actor - The actor to manage cantrips for
    * @param {SpellManager} spellManager - The associated SpellManager
+   * @param {PlayerSpellBook} [spellbook] - The spellbook application for cached values
    */
-  constructor(actor, spellManager) {
+  constructor(actor, spellManager, spellbook = null) {
     this.actor = actor;
     this.spellManager = spellManager;
+    this.spellbook = spellbook;
     this.isWizard = genericUtils.isWizard(actor);
   }
 
@@ -56,18 +58,38 @@ export class CantripManager {
     const previousLevel = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL) || 0;
     const previousMax = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX) || 0;
     const currentLevel = this.actor.system.details.level;
-    // Note: getMaxAllowed needs classIdentifier now, but for backwards compatibility we'll use total
     const currentMax = this._getTotalMaxCantrips();
     return (previousLevel === 0 && currentLevel > 0) || ((currentLevel > previousLevel || currentMax > previousMax) && previousLevel > 0);
   }
 
   /**
-   * Get total max cantrips across all classes (for backwards compatibility)
+   * Get max cantrips for a class using cached values when available
+   * @param {string} classIdentifier - The class identifier
+   * @returns {number} Max cantrips for this class
+   * @private
+   */
+  _getMaxCantripsForClass(classIdentifier) {
+    // Use cached value from spellbook if available
+    if (this.spellbook && this.spellbook.getMaxCantripsForClass) {
+      return this.spellbook.getMaxCantripsForClass(classIdentifier);
+    }
+
+    // Fallback to direct calculation
+    return this.spellManager.getMaxAllowed(classIdentifier);
+  }
+
+  /**
+   * Get total max cantrips across all classes using cached values when available
    * @returns {number} Total max cantrips
    * @private
    */
   _getTotalMaxCantrips() {
-    // Get all spellcasting classes and sum their cantrip maxes
+    // Use cached value from spellbook if available
+    if (this.spellbook && this.spellbook.getTotalMaxCantrips) {
+      return this.spellbook.getTotalMaxCantrips();
+    }
+
+    // Fallback to calculation (for backwards compatibility)
     const classItems = this.actor.items.filter((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
 
     let total = 0;
@@ -126,7 +148,7 @@ export class CantripManager {
     if (settings.behavior === ENFORCEMENT_BEHAVIOR.UNENFORCED || settings.behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
       if (settings.behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM && isChecked) {
         const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount(classIdentifier);
-        const maxCantrips = this.spellManager.getMaxAllowed(classIdentifier);
+        const maxCantrips = this._getMaxCantripsForClass(classIdentifier); // Use cached value
         if (currentCount >= maxCantrips) {
           ui.notifications.info(
             game.i18n.format('SPELLBOOK.Notifications.OverLimitWarning', {
@@ -143,7 +165,7 @@ export class CantripManager {
     // Always check count limits when trying to check a cantrip
     if (isChecked) {
       const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount(classIdentifier);
-      const maxCantrips = this.spellManager.getMaxAllowed(classIdentifier);
+      const maxCantrips = this._getMaxCantripsForClass(classIdentifier); // Use cached value
 
       log(3, `Cantrip check: ${spell.name} for class ${classIdentifier}, current: ${currentCount}, max: ${maxCantrips}`);
 

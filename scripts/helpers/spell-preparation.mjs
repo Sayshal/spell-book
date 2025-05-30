@@ -13,9 +13,11 @@ export class SpellManager {
   /**
    * Create a new SpellManager for an actor
    * @param {Actor5e} actor - The actor to manage spells for
+   * @param {PlayerSpellBook} [spellbook] - The spellbook application for cached values
    */
-  constructor(actor) {
+  constructor(actor, spellbook = null) {
     this.actor = actor;
+    this.spellbook = spellbook;
     this.classItem = genericUtils.findSpellcastingClass(actor);
     this.settings = this.getSettings();
     this.maxCantrips = this.getMaxAllowed();
@@ -24,8 +26,8 @@ export class SpellManager {
     this._wizardSpellbookCache = null;
     this._wizardManager = null;
 
-    // Initialize sub-managers
-    this.cantripManager = new CantripManager(actor, this);
+    // Initialize sub-managers with spellbook reference
+    this.cantripManager = new CantripManager(actor, this, spellbook);
   }
 
   /**
@@ -55,13 +57,39 @@ export class SpellManager {
   }
 
   /**
-   * Get maximum allowed cantrips for the actor
+   * Get maximum allowed cantrips for the actor using cached values when available
    * @param {string} classIdentifier - The class identifier to check
    * @returns {number} Maximum allowed cantrips for this class
    */
   getMaxAllowed(classIdentifier) {
     if (!classIdentifier) return 0;
 
+    // Use cached value from spellbook if available
+    if (this.spellbook && this.spellbook.getMaxCantripsForClass) {
+      return this.spellbook.getMaxCantripsForClass(classIdentifier);
+    }
+
+    // Fallback to direct calculation (for when called outside spellbook context)
+    return this._calculateMaxCantrips(classIdentifier);
+  }
+
+  /**
+   * Calculate maximum prepared spells for the actor - REMOVED FALLBACK LOGIC
+   * @returns {number} Maximum allowed prepared spells
+   */
+  getMaxPrepared() {
+    // ONLY use the system spellcasting preparation max - no fallbacks
+    if (!this.classItem?.system?.spellcasting?.preparation?.max) return 0;
+    return this.classItem.system.spellcasting.preparation.max;
+  }
+
+  /**
+   * Calculate max cantrips for a class (fallback when no cache available)
+   * @param {string} classIdentifier - The class identifier
+   * @returns {number} Maximum cantrips for this class
+   * @private
+   */
+  _calculateMaxCantrips(classIdentifier) {
     // Find the specific class item
     const classItem = this.actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier));
 
@@ -125,16 +153,6 @@ export class SpellManager {
     const cantripBonus = classRules?.cantripBonus || 0;
 
     return Math.max(0, baseCantrips + cantripBonus);
-  }
-
-  /**
-   * Calculate maximum prepared spells for the actor - REMOVED FALLBACK LOGIC
-   * @returns {number} Maximum allowed prepared spells
-   */
-  getMaxPrepared() {
-    // ONLY use the system spellcasting preparation max - no fallbacks
-    if (!this.classItem?.system?.spellcasting?.preparation?.max) return 0;
-    return this.classItem.system.spellcasting.preparation.max;
   }
 
   /**

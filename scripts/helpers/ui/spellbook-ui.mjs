@@ -393,7 +393,7 @@ export class SpellbookUI {
   }
 
   /**
-   * Update cantrip counter display
+   * Update cantrip counter display using cached max values
    * @param {HTMLElement} [cantripLevel] - The cantrip level container
    * @param {boolean} [skipLockSetup=false] - Whether to skip calling setupCantripLocks
    * @returns {Object} Counter state with current and max values
@@ -416,7 +416,9 @@ export class SpellbookUI {
       const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
       const classIdentifier = activeTabContent?.dataset.classIdentifier;
       if (!classIdentifier) return { current: 0, max: 0 };
-      const maxCantrips = this.app.spellManager.getMaxAllowed(classIdentifier);
+
+      // Use cached max cantrips value
+      const maxCantrips = this.app.getMaxCantripsForClass(classIdentifier);
       let currentCount = 0;
       const cantripItems = cantripLevel.querySelectorAll('.spell-item');
       cantripItems.forEach((item) => {
@@ -461,7 +463,7 @@ export class SpellbookUI {
   }
 
   /**
-   * Set up cantrip lock states based on selection rules
+   * Set up cantrip lock states based on selection rules using cached max values
    * @param {boolean} [force=false] - Force update even if no active tab is found
    * @param {boolean} [applyRuleLocks=false] - Whether to apply rule-based locks (vs count-only)
    */
@@ -485,7 +487,8 @@ export class SpellbookUI {
         maxCantrips = cantripCounter ? cantripCounter.max : 0;
       } catch (err) {
         log(2, 'Error getting cantrip counts:', err);
-        if (classIdentifier) maxCantrips = this.app.spellManager.getMaxAllowed(classIdentifier);
+        // Use cached value as fallback
+        if (classIdentifier) maxCantrips = this.app.getMaxCantripsForClass(classIdentifier);
       }
 
       for (const item of cantripItems) {
