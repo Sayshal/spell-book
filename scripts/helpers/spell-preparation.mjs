@@ -79,30 +79,14 @@ export class SpellManager {
 
     try {
       // Safely access scaleValues
-      if (typeof classItem.scaleValues === 'function') {
-        try {
-          const scaleValues = classItem.scaleValues;
-          if (scaleValues) {
-            // Check all configured cantrip scale value keys
-            for (const key of cantripScaleKeys) {
-              if (scaleValues[key] && scaleValues[key].value !== undefined) {
-                baseCantrips = scaleValues[key].value;
-                log(3, `Found cantrip scale value '${key}' = ${baseCantrips} for class ${classIdentifier}`);
-                break; // Use the first match found
-              }
-            }
-          }
-        } catch (err) {
-          log(2, `Error accessing scaleValues for ${classIdentifier}, using fallback calculation`, err);
-        }
-      } else if (classItem.scaleValues && typeof classItem.scaleValues === 'object') {
+      if (classItem.scaleValues) {
         // Check all configured cantrip scale value keys
         for (const key of cantripScaleKeys) {
           const cantripValue = classItem.scaleValues[key]?.value;
           if (cantripValue !== undefined) {
             baseCantrips = cantripValue;
             log(3, `Found cantrip scale value '${key}' = ${baseCantrips} for class ${classIdentifier}`);
-            break; // Use the first match found
+            break;
           }
         }
       }
@@ -137,7 +121,7 @@ export class SpellManager {
       return 0;
     }
 
-    // Apply any cantrip bonus (if we add this setting later)
+    // TODO: Add Cantrip Bonus alongside existing PREP BONUS
     const cantripBonus = classRules?.cantripBonus || 0;
 
     return Math.max(0, baseCantrips + cantripBonus);
