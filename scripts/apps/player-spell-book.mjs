@@ -1,4 +1,4 @@
-import { ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import { DEFAULT_FILTER_CONFIG, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as filterUtils from '../helpers/filters.mjs';
 import * as formElements from '../helpers/form-elements.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
@@ -909,59 +909,94 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   _prepareFilters() {
     try {
       let filterConfig = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
-      if (!Array.isArray(filterConfig) || !filterConfig.length) {
-        filterConfig = DEFAULT_FILTER_CONFIG;
-      }
+      if (Array.isArray(filterConfig) && filterConfig.length > 0) {
+        const existingFilters = new Map(filterConfig.map((f) => [f.id, f]));
+        for (const defaultFilter of DEFAULT_FILTER_CONFIG) {
+          if (!existingFilters.has(defaultFilter.id)) filterConfig.push(foundry.utils.deepClone(defaultFilter));
+        }
+        const defaultFilterIds = new Set(DEFAULT_FILTER_CONFIG.map((f) => f.id));
+        filterConfig = filterConfig.filter((filter) => {
+          if (!defaultFilterIds.has(filter.id)) return false;
+          return true;
+        });
 
+        game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, filterConfig);
+      } else filterConfig = foundry.utils.deepClone(DEFAULT_FILTER_CONFIG);
       const sortedFilters = filterConfig.filter((f) => f.enabled).sort((a, b) => a.order - b.order);
       const filterState = this.filterHelper.getFilterState();
-      return sortedFilters.map((filter) => {
-        const result = {
-          id: filter.id,
-          type: filter.type,
-          name: `filter-${filter.id}`,
-          label: game.i18n.localize(filter.label)
-        };
+      log(3, `Preparing ${sortedFilters.length} enabled filters for UI`);
+      return sortedFilters
+        .map((filter) => {
+          const result = {
+            id: filter.id,
+            type: filter.type,
+            name: `filter-${filter.id}`,
+            label: game.i18n.localize(filter.label)
+          };
 
-        let element;
+          let element;
 
-        switch (filter.type) {
-          case 'search':
-            element = formElements.createTextInput({
-              name: `filter-${filter.id}`,
-              value: filterState[filter.id] || '',
-              placeholder: game.i18n.localize(filter.label),
-              ariaLabel: game.i18n.localize(filter.label)
-            });
-            break;
-          case 'dropdown':
-            const options = this._getFilterOptions(filter.id, filterState);
-            element = formElements.createSelect({
-              name: `filter-${filter.id}`,
-              options: options,
-              ariaLabel: game.i18n.localize(filter.label)
-            });
-            break;
-          case 'checkbox':
-            element = formElements.createCheckbox({
-              name: `filter-${filter.id}`,
-              checked: filterState[filter.id] || false,
-              label: game.i18n.localize(filter.label),
-              ariaLabel: game.i18n.localize(filter.label)
-            });
-            break;
-          case 'range':
-            element = this._createRangeFilterElement(filter.id, filterState);
-            result.unit = game.settings.get(MODULE.ID, SETTINGS.DISTANCE_UNIT);
-            break;
-        }
+          switch (filter.type) {
+            case 'search':
+              element = formElements.createTextInput({
+                name: `filter-${filter.id}`,
+                value: filterState[filter.id] || '',
+                placeholder: game.i18n.localize(filter.label),
+                ariaLabel: game.i18n.localize(filter.label)
+              });
+              break;
 
-        result.elementHtml = formElements.elementToHtml(element);
-        return result;
-      });
+            case 'dropdown':
+              const options = this._getFilterOptions(filter.id, filterState);
+              element = formElements.createSelect({
+                name: `filter-${filter.id}`,
+                options: options,
+                ariaLabel: game.i18n.localize(filter.label)
+              });
+              break;
+
+            case 'checkbox':
+              element = formElements.createCheckbox({
+                name: `filter-${filter.id}`,
+                checked: filterState[filter.id] || false,
+                label: game.i18n.localize(filter.label),
+                ariaLabel: game.i18n.localize(filter.label)
+              });
+              break;
+
+            case 'range':
+              element = this._createRangeFilterElement(filter.id, filterState);
+              result.unit = game.settings.get(MODULE.ID, SETTINGS.DISTANCE_UNIT);
+              break;
+
+            default:
+              log(2, `Unknown filter type: ${filter.type} for filter ${filter.id}`);
+              return null;
+          }
+
+          if (!element) return null;
+          result.elementHtml = formElements.elementToHtml(element);
+          return result;
+        })
+        .filter(Boolean);
     } catch (error) {
       log(1, 'Error preparing filters:', error);
-      return [];
+      return [
+        {
+          id: 'name',
+          type: 'search',
+          name: 'filter-name',
+          label: game.i18n.localize('SPELLBOOK.Filters.SearchPlaceholder'),
+          elementHtml: formElements.elementToHtml(
+            formElements.createTextInput({
+              name: 'filter-name',
+              value: '',
+              placeholder: game.i18n.localize('SPELLBOOK.Filters.SearchPlaceholder'),
+              ariaLabel: game.i18n.localize('SPELLBOOK.Filters.SearchPlaceholder')
+            })
+          )
+        }
+      ];
     }
   }
 

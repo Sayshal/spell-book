@@ -11,12 +11,12 @@ export function formatSpellDetails(spell) {
     const details = [];
     const componentsStr = formatSpellComponents(spell);
     if (componentsStr) details.push(componentsStr);
-    const materialsStr = formatMaterialComponents(spell);
-    if (materialsStr) details.push(materialsStr);
     const activationStr = formatSpellActivation(spell);
     if (activationStr) details.push(activationStr);
     const schoolStr = formatSpellSchool(spell);
     if (schoolStr) details.push(schoolStr);
+    const materialsStr = formatMaterialComponents(spell);
+    if (materialsStr) details.push(materialsStr);
     return details.filter(Boolean).join(' • ');
   } catch (error) {
     log(1, `Error formatting spell details:`, error);

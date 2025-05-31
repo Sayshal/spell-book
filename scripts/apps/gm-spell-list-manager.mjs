@@ -469,7 +469,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @private
    */
   _filterBySpecialProperties(spells) {
-    const { requiresSave, concentration, ritual } = this.filterState;
+    const { requiresSave, concentration, ritual, materialComponents } = this.filterState;
     let filtered = spells;
 
     if (requiresSave) {
@@ -1591,6 +1591,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @param {HTMLElement} _form - The form element
    */
   static async handleOpenClass(event, _form) {
+    log(1, 'Handle Open Class:', { event: event, _form: _form });
     try {
       const appId = `gm-spell-list-manager-${MODULE.ID}`;
       const instance = foundry.applications.instances.get(appId);
