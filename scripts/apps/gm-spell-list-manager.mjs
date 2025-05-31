@@ -10,7 +10,6 @@ const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applicat
  * GM Spell List Manager application for viewing, editing, and creating spell lists
  */
 export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2) {
-  /** @override */
   static DEFAULT_OPTIONS = {
     id: `gm-spell-list-manager-${MODULE.ID}`,
     tag: 'div',
@@ -52,30 +51,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     footer: { template: TEMPLATES.GM.FOOTER }
   };
 
-  isLoading = true;
-  availableSpellLists = [];
-  selectedSpellList = null;
-  availableSpells = [];
-  filterState = {
-    name: '',
-    level: '',
-    school: '',
-    source: '',
-    castingTime: '',
-    minRange: '',
-    maxRange: '',
-    damageType: '',
-    condition: '',
-    requiresSave: '',
-    concentration: '',
-    materialComponents: '',
-    prepared: false,
-    ritual: false
-  };
-
-  isEditing = false;
-  pendingChanges = { added: new Set(), removed: new Set() };
-
   /**
    * @returns {string} The application title
    */
@@ -86,8 +61,14 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /**
    * @param {Object} options - Application options
    */
-  constructor(options = {}) {
+  constructor(options) {
     super(options);
+    this.isLoading = true;
+    this.availableSpellLists = [];
+    this.selectedSpellList = null;
+    this.availableSpells = [];
+    this.isEditing = false;
+    this.pendingChanges = { added: new Set(), removed: new Set() };
     this.filterState = {
       name: '',
       level: '',
@@ -100,12 +81,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       condition: '',
       requiresSave: '',
       concentration: '',
+      materialComponents: '',
       prepared: false,
       ritual: false
     };
   }
 
-  /** @override */
+  /** @inheritdoc */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     context.isLoading = this.isLoading;
@@ -209,11 +191,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
-  /**
-   * @override
-   * @param {Object} context - The context data
-   * @param {Object} options - Rendering options
-   */
+  /** @inheritdoc */
   _onRender(context, options) {
     super._onRender(context, options);
     if (this.isLoading) {
@@ -226,7 +204,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     this.applyCollapsedFolders();
   }
 
-  /** @override */
+  /** @inheritdoc */
   _configureRenderOptions(options) {
     super._configureRenderOptions(options);
     options.parts = ['container', 'spellLists', 'listContent', 'availableSpells', 'footer'];
@@ -258,15 +236,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   async enrichAvailableSpells() {
     if (!this.availableSpells.length) return;
-
     log(3, 'Enriching available spells with icons');
-
     for (let spell of this.availableSpells) {
-      try {
-        spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
-      } catch (error) {
-        log(1, `Error enriching spell icon for ${spell.name}:`, error);
-      }
+      spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
     }
   }
 
@@ -353,11 +325,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   _filterBySource(spells) {
     const { source } = this.filterState;
-
-    if (!source || source.trim() === '' || source === 'all') {
-      return spells;
-    }
-
+    if (!source || source.trim() === '' || source === 'all') return spells;
     const beforeCount = spells.length;
     const filtered = spells.filter((spell) => {
       const spellSource = (spell.sourceId || '').split('.')[0];
@@ -411,23 +379,15 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   _filterByRange(spells) {
     const { minRange, maxRange } = this.filterState;
     if (!minRange && !maxRange) return spells;
-
     const filtered = spells.filter((spell) => {
       if (!(spell.filterData?.range?.units || spell.system?.range?.units)) return true;
-
       const rangeUnits = spell.filterData?.range?.units || spell.system?.range?.units || '';
       const rangeValue = parseInt(spell.system?.range?.value || 0);
-
       let standardizedRange = rangeValue;
-      if (rangeUnits === 'mi') {
-        standardizedRange = rangeValue * 5280;
-      } else if (rangeUnits === 'spec') {
-        standardizedRange = 0;
-      }
-
+      if (rangeUnits === 'mi') standardizedRange = rangeValue * 5280;
+      else if (rangeUnits === 'spec') standardizedRange = 0;
       const minRangeVal = minRange ? parseInt(minRange) : 0;
       const maxRangeVal = maxRange ? parseInt(maxRange) : Infinity;
-
       return standardizedRange >= minRangeVal && standardizedRange <= maxRangeVal;
     });
 
@@ -534,9 +494,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   getSelectedSpellUUIDs() {
     try {
       if (!this.selectedSpellList?.spells) return new Set();
-
       const selectedSpellUUIDs = new Set();
-
       for (const spell of this.selectedSpellList.spells) {
         if (spell.compendiumUuid) {
           try {
@@ -548,9 +506,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
             selectedSpellUUIDs.add(spell.compendiumUuid);
             const idPart = spell.compendiumUuid.split('.').pop();
-            if (idPart) {
-              selectedSpellUUIDs.add(idPart);
-            }
+            if (idPart) selectedSpellUUIDs.add(idPart);
           } catch (e) {
             log(1, `Error parsing UUID for ${spell.name}:`, e);
           }
@@ -633,7 +589,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     checkboxes.forEach((checkbox) => {
       checkbox.checked = false;
     });
-
     this._refreshFilteredContent();
   }
 
@@ -704,7 +659,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
           if (this.filterState[property] !== event.target.value) {
             this.filterState[property] = event.target.value;
-
             clearTimeout(this._rangeFilterTimer);
             this._rangeFilterTimer = setTimeout(() => {
               this.applyFilters();
@@ -764,14 +718,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     try {
       this.selectedSpellList.isLoadingSpells = true;
       this.render(false);
-
       const spellDocs = await actorSpellUtils.fetchSpellDocuments(new Set(spellUuids), 9);
       const spellLevels = actorSpellUtils.organizeSpellsByLevel(spellDocs, null);
-
       for (const level of spellLevels) {
-        for (const spell of level.spells) {
-          spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
-        }
+        for (const spell of level.spells) spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
       }
 
       this.selectedSpellList.spells = spellDocs;
@@ -956,7 +906,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     const customField = target.querySelector('.custom-id-group');
     const customIdentifierInput = target.querySelector('#custom-identifier');
     const createButton = target.querySelector('button[data-action="create"]');
-
     if (identifierSelect && customField && customIdentifierInput) {
       identifierSelect.addEventListener('change', (e) => {
         if (e.target.value === 'custom') {
@@ -979,16 +928,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         const value = e.target.value;
         const isValid = /^[a-z0-9_-]+$/.test(value);
         const errorElement = target.querySelector('.validation-error');
-
-        if (errorElement) {
-          errorElement.style.display = isValid || value === '' ? 'none' : 'block';
-        }
-
+        if (errorElement) errorElement.style.display = isValid || value === '' ? 'none' : 'block';
         createButton.disabled = value !== '' && !isValid;
-
-        if (value !== '') {
-          customIdentifierInput.classList.toggle('error', !isValid);
-        } else {
+        if (value !== '') customIdentifierInput.classList.toggle('error', !isValid);
+        else {
           customIdentifierInput.classList.remove('error');
           createButton.disabled = true;
         }
@@ -1007,7 +950,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     try {
       const source = game.i18n.localize('SPELLMANAGER.CreateList.Custom');
       const newList = await managerHelpers.createNewSpellList(name, identifier, source);
-
       if (newList) {
         await this.loadData();
         await this.selectSpellList(newList.uuid);
@@ -1025,9 +967,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   async selectSpellList(uuid) {
     try {
       log(3, `Selecting spell list: ${uuid}`);
-
       const duplicate = await managerHelpers.findDuplicateSpellList(uuid);
-
       if (duplicate && duplicate.uuid !== uuid) return this.selectSpellList(duplicate.uuid);
       const spellList = await fromUuid(uuid);
       if (!spellList) return;
@@ -1093,20 +1033,15 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   async editSpellList(uuid) {
     if (!this.selectedSpellList) return;
-
-    try {
-      log(3, `Editing spell list: ${uuid}`);
-      this.pendingChanges = { added: new Set(), removed: new Set() };
-      const flags = this.selectedSpellList.document.flags?.[MODULE.ID] || {};
-      const isCustom = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList;
-      const isActorSpellbook = !!flags.isActorSpellbook;
-      if (!isCustom && !isActorSpellbook) await this._duplicateForEditing();
-      this.isEditing = true;
-      this.render(false);
-      setTimeout(() => this.applyFilters(), 100);
-    } catch (error) {
-      log(1, 'Error entering edit mode:', error);
-    }
+    log(3, `Editing spell list: ${uuid}`);
+    this.pendingChanges = { added: new Set(), removed: new Set() };
+    const flags = this.selectedSpellList.document.flags?.[MODULE.ID] || {};
+    const isCustom = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList;
+    const isActorSpellbook = !!flags.isActorSpellbook;
+    if (!isCustom && !isActorSpellbook) await this._duplicateForEditing();
+    this.isEditing = true;
+    this.render(false);
+    setTimeout(() => this.applyFilters(), 100);
   }
 
   /**
@@ -1268,7 +1203,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (!this.selectedSpellList) return;
     const originalUuid = this.selectedSpellList.document.flags?.[MODULE.ID]?.originalUuid;
     if (!originalUuid) return;
-
     const listName = this.selectedSpellList.name;
     const confirmed = await this.confirmDialog({
       title: game.i18n.localize('SPELLMANAGER.Confirm.RestoreTitle'),
@@ -1279,7 +1213,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     });
 
     if (!confirmed) return;
-
     try {
       const originalList = await fromUuid(originalUuid);
       if (!originalList) return;
