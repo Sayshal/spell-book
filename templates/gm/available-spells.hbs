@@ -99,6 +99,21 @@
 				</select>
 			</div>
 
+			<!-- Material Components filter -->
+			<div class="filter-item">
+				<label for="spell-materialComponents">{{localize "SPELLBOOK.Filters.MaterialComponents.Title"}}</label>
+				<select name="spell-materialComponents" id="spell-materialComponents" {{#unless isEditing}}disabled{{/unless}}
+					aria-label="{{localize 'SPELLBOOK.Filters.MaterialComponents'}}">
+					<option value="">{{localize "SPELLBOOK.Filters.All"}}</option>
+					<option value="consumed" {{#if (eq filterState.materialComponents "consumed")}}selected{{/if}}>
+						{{localize "SPELLBOOK.Filters.MaterialComponents.Consumed"}}
+					</option>
+					<option value="notConsumed" {{#if (eq filterState.materialComponents "notConsumed")}}selected{{/if}}>
+						{{localize "SPELLBOOK.Filters.MaterialComponents.NotConsumed"}}
+					</option>
+				</select>
+			</div>
+
 			<!-- Ritual filter -->
 			<div class="filter-item checkbox-filter">
 				<label>

@@ -11,6 +11,8 @@ export function formatSpellDetails(spell) {
     const details = [];
     const componentsStr = formatSpellComponents(spell);
     if (componentsStr) details.push(componentsStr);
+    const materialsStr = formatMaterialComponents(spell);
+    if (materialsStr) details.push(materialsStr);
     const activationStr = formatSpellActivation(spell);
     if (activationStr) details.push(activationStr);
     const schoolStr = formatSpellSchool(spell);
@@ -76,6 +78,19 @@ function formatSpellSchool(spell) {
 }
 
 /**
+ * Format material components for display when consumed
+ * @param {Object} spell - The spell object
+ * @returns {string} - Formatted material components string
+ */
+function formatMaterialComponents(spell) {
+  const materials = spell.system?.materials;
+  if (!materials || !materials.consumed) return '';
+  if (materials.cost && materials.cost > 0) return game.i18n.format('SPELLBOOK.MaterialComponents.Cost', { cost: materials.cost });
+  else if (materials.value) return materials.value;
+  else return game.i18n.localize('SPELLBOOK.MaterialComponents.UnknownCost');
+}
+
+/**
  * Get localized preparation mode text
  * @param {string} mode - The preparation mode
  * @returns {string} - Localized preparation mode text
@@ -106,6 +121,7 @@ export function extractSpellFilterData(spell) {
       damageTypes: extractDamageTypes(spell),
       isRitual: checkIsRitual(spell),
       concentration: checkIsConcentration(spell),
+      materialComponents: extractMaterialComponents(spell),
       requiresSave: checkSpellRequiresSave(spell),
       conditions: extractSpellConditions(spell)
     };
@@ -117,6 +133,7 @@ export function extractSpellFilterData(spell) {
       damageTypes: [],
       isRitual: false,
       concentration: false,
+      materialComponents: [],
       requiresSave: false,
       conditions: []
     };
@@ -200,6 +217,21 @@ function checkIsRitual(spell) {
 function checkIsConcentration(spell) {
   if (spell.system.duration?.concentration) return true;
   return spell.system.properties && Array.isArray(spell.system.properties) && spell.system.properties.includes('concentration');
+}
+
+/**
+ * Extract material component information from spell
+ * @param {Object} spell - The spell document
+ * @returns {Object} - Material component data
+ */
+function extractMaterialComponents(spell) {
+  const materials = spell.system?.materials || {};
+  return {
+    consumed: !!materials.consumed,
+    cost: materials.cost || 0,
+    value: materials.value || '',
+    hasConsumedMaterials: !!materials.consumed
+  };
 }
 
 /**

@@ -42,6 +42,7 @@ export class SpellbookFilterHelper {
       prepared: this.element.querySelector('[name="filter-prepared"]')?.checked || false,
       ritual: this.element.querySelector('[name="filter-ritual"]')?.checked || false,
       concentration: this.element.querySelector('[name="filter-concentration"]')?.value || '',
+      materialComponents: this.element.querySelector('[name="filter-materialComponents"]')?.value || '',
       sortBy: this.element.querySelector('[name="sort-by"]')?.value || 'level'
     };
   }
@@ -69,6 +70,7 @@ export class SpellbookFilterHelper {
         const isConcentration = item.dataset.concentration === 'true';
         const requiresSave = item.dataset.requiresSave === 'true';
         const conditions = (item.dataset.conditions || '').split(',');
+        const hasMaterialComponents = item.dataset.materialComponents === 'true';
         const isGranted = !!item.querySelector('.tag.granted');
         const isAlwaysPrepared = !!item.querySelector('.tag.always-prepared');
         const isCountable = !isGranted && !isAlwaysPrepared;
@@ -85,7 +87,8 @@ export class SpellbookFilterHelper {
           isRitual,
           isConcentration,
           requiresSave,
-          conditions
+          conditions,
+          hasMaterialComponents
         });
 
         item.style.display = visible ? '' : 'none';
@@ -154,6 +157,10 @@ export class SpellbookFilterHelper {
     if (filters.concentration) {
       if (filters.concentration === 'true' && !spell.isConcentration) return false;
       if (filters.concentration === 'false' && spell.isConcentration) return false;
+    }
+    if (filters.materialComponents) {
+      if (filters.materialComponents === 'consumed' && !spell.hasMaterialComponents) return false;
+      if (filters.materialComponents === 'notConsumed' && spell.hasMaterialComponents) return false;
     }
 
     return true;

@@ -68,6 +68,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     condition: '',
     requiresSave: '',
     concentration: '',
+    materialComponents: '',
     prepared: false,
     ritual: false
   };
@@ -485,6 +486,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       });
     }
 
+    if (materialComponents) {
+      filtered = filtered.filter((spell) => {
+        const hasMaterialComponents = spell.filterData?.materialComponents?.hasConsumedMaterials || false;
+        return (materialComponents === 'consumed' && hasMaterialComponents) || (materialComponents === 'notConsumed' && !hasMaterialComponents);
+      });
+    }
+
     if (ritual) filtered = filtered.filter((spell) => !!spell.filterData?.isRitual);
     return filtered;
   }
@@ -606,6 +614,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       condition: '',
       requiresSave: '',
       concentration: '',
+      materialComponents: '',
       prepared: false,
       ritual: false
     };
@@ -658,7 +667,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       { selector: 'select[name="spell-damageType"]', property: 'damageType' },
       { selector: 'select[name="spell-condition"]', property: 'condition' },
       { selector: 'select[name="spell-requiresSave"]', property: 'requiresSave' },
-      { selector: 'select[name="spell-concentration"]', property: 'concentration' }
+      { selector: 'select[name="spell-concentration"]', property: 'concentration' },
+      { selector: 'select[name="spell-materialComponents"]', property: 'materialComponents' }
     ];
 
     for (const { selector, property } of dropdownSelectors) {

@@ -103,6 +103,21 @@ export function getOptionsForFilter(filterId, filterState, spellLevels) {
       );
       break;
 
+    case 'materialComponents':
+      options.push(
+        {
+          value: 'consumed',
+          label: game.i18n.localize('SPELLBOOK.Filters.MaterialComponents.Consumed'),
+          selected: filterState.materialComponents === 'consumed'
+        },
+        {
+          value: 'notConsumed',
+          label: game.i18n.localize('SPELLBOOK.Filters.MaterialComponents.NotConsumed'),
+          selected: filterState.materialComponents === 'notConsumed'
+        }
+      );
+      break;
+
     case 'sortBy':
       options.push(
         {
@@ -205,6 +220,7 @@ export function getDefaultFilterState() {
     prepared: false,
     ritual: false,
     concentration: '',
+    materialComponents: '',
     sortBy: 'level'
   };
 }

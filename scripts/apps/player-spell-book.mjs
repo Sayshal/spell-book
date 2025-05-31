@@ -312,7 +312,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       `data-ritual="${spell.filterData?.isRitual || false}"`,
       `data-concentration="${spell.filterData?.concentration || false}"`,
       `data-requires-save="${spell.filterData?.requiresSave || false}"`,
-      `data-conditions="${spell.filterData?.conditions || ''}"`
+      `data-conditions="${spell.filterData?.conditions || ''}"`,
+      `data-material-components="${spell.filterData?.materialComponents?.hasConsumedMaterials || false}"`
     ];
 
     if (spell.sourceClass) attributes.push(`data-source-class="${spell.sourceClass}"`);

@@ -187,6 +187,14 @@ export const DEFAULT_FILTER_CONFIG = [
     sortable: true
   },
   {
+    id: 'materialComponents',
+    type: FILTER_TYPES.DROPDOWN,
+    enabled: true,
+    order: 100,
+    label: 'SPELLBOOK.Filters.MaterialComponents',
+    sortable: true
+  },
+  {
     id: 'sortBy',
     type: FILTER_TYPES.DROPDOWN,
     enabled: true,
