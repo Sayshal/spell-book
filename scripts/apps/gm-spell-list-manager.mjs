@@ -1079,16 +1079,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /**
    * Handle editing a spell list
    * @static
-   * @param {Event} event - The triggering event
+   * @param {Event} _event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @returns {Promise<void>}
    */
-  static async handleEditSpellList(event, _form) {
-    const element = event.target.closest('[data-uuid]');
-    if (!element) return;
-    let spellUuid = element.dataset.uuid;
+  static async handleEditSpellList(_event, _form) {
     if (!this.selectedSpellList) return;
-    log(3, `Editing spell list: ${uuid}`);
     this.pendingChanges = { added: new Set(), removed: new Set() };
     const flags = this.selectedSpellList.document.flags?.[MODULE.ID] || {};
     const isCustom = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList;
