@@ -44,18 +44,12 @@ async function runMigration() {
   for (const actor of game.actors) {
     const result = await migrateDocument(actor, validFlags);
     if (result.wasUpdated) {
-      migrationResults.actors.push({
-        name: actor.name,
-        id: actor.id,
-        hadCantripMigration: result.cantripMigration,
-        hadInvalidFlags: result.invalidFlags
-      });
+      migrationResults.actors.push({ name: actor.name, id: actor.id, hadCantripMigration: result.cantripMigration, hadInvalidFlags: result.invalidFlags });
       migrationResults.processed++;
       if (result.cantripMigration) migrationResults.cantripMigrations++;
       if (result.invalidFlags) migrationResults.invalidFlagRemovals++;
     }
   }
-
   const modulePack = game.packs.get(MODULE.PACK);
   if (modulePack) {
     log(3, `Migrating module compendium: ${modulePack.metadata.label}`);
@@ -76,7 +70,6 @@ async function runMigration() {
       }
     }
   }
-
   logMigrationResults(migrationResults);
 }
 
@@ -93,7 +86,6 @@ async function migrateDocument(doc, validFlags) {
   let cantripMigration = false;
   let invalidFlags = false;
   const updates = {};
-
   for (const [key, value] of Object.entries(flags)) {
     if (!validFlags.includes(key) || value === null || value === undefined || (typeof value === 'object' && Object.keys(value).length === 0)) {
       updates[`flags.${MODULE.ID}.-=${key}`] = null;
@@ -102,17 +94,10 @@ async function migrateDocument(doc, validFlags) {
       log(3, `Removing invalid flag "${key}" from ${doc.documentName} "${doc.name}"`);
     }
   }
-
   if (wasUpdated) {
-    try {
-      await doc.update(updates);
-      log(3, `Updated ${doc.documentName} "${doc.name}"`);
-    } catch (error) {
-      log(1, `Error updating ${doc.documentName} "${doc.name}":`, error);
-      return { wasUpdated: false, cantripMigration: false, invalidFlags: false };
-    }
+    await doc.update(updates);
+    log(3, `Updated ${doc.documentName} "${doc.name}"`);
   }
-
   return { wasUpdated, cantripMigration, invalidFlags };
 }
 
@@ -125,21 +110,13 @@ function logMigrationResults(results) {
     log(2, game.i18n.localize('SPELLBOOK.Migrations.NoUpdatesNeeded'));
     return;
   }
-
   let content = `
   <h2>${game.i18n.localize('SPELLBOOK.Migrations.ChatTitle')}</h2>
   <p>${game.i18n.localize('SPELLBOOK.Migrations.ChatDescription')}</p>
   <p>${game.i18n.format('SPELLBOOK.Migrations.TotalUpdated', { count: results.processed })}</p>`;
-
-  // Add specific migration type counts
-  if (results.cantripMigrations > 0) {
+  if (results.cantripMigrations > 0)
     content += `<p><strong>Cantrip Rules Migration:</strong> ${results.cantripMigrations} actors migrated from legacy cantrip system to per-class rules</p>`;
-  }
-
-  if (results.invalidFlagRemovals > 0) {
-    content += `<p><strong>Invalid Flags Removed:</strong> ${results.invalidFlagRemovals} actors had invalid flags cleaned up</p>`;
-  }
-
+  if (results.invalidFlagRemovals > 0) content += `<p><strong>Invalid Flags Removed:</strong> ${results.invalidFlagRemovals} actors had invalid flags cleaned up</p>`;
   if (actorCount > 0) {
     content += `<h3>${game.i18n.format('SPELLBOOK.Migrations.UpdatedActors', { count: actorCount })}</h3><ul>`;
     results.actors.slice(0, 10).forEach((actor) => {
@@ -149,24 +126,13 @@ function logMigrationResults(results) {
       if (actor.hadInvalidFlags) details.push('invalid flags');
       if (details.length > 0) actorLine += ` (${details.join(', ')})`;
       if (actor.pack) actorLine += ` - ${game.i18n.format('SPELLBOOK.Migrations.Compendium', { name: actor.pack })}`;
-
       content += `<li>${actorLine}</li>`;
     });
-
-    if (actorCount > 10) {
-      content += `<li>${game.i18n.format('SPELLBOOK.Migrations.AndMore', { count: actorCount - 10 })}</li>`;
-    }
+    if (actorCount > 10) content += `<li>${game.i18n.format('SPELLBOOK.Migrations.AndMore', { count: actorCount - 10 })}</li>`;
     content += `</ul>`;
   }
-
   content += `<p>${game.i18n.localize('SPELLBOOK.Migrations.Apology')}</p>`;
-
-  ChatMessage.create({
-    content: content,
-    whisper: [game.user.id],
-    user: game.user.id
-  });
-
+  ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id });
   log(2, game.i18n.format('SPELLBOOK.Migrations.LogComplete', { count: results.processed }));
 }
 

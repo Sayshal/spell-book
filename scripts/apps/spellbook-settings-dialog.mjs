@@ -9,7 +9,6 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
  * Enhanced dialog for configuring spell book settings with per-class rules
  */
 export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(ApplicationV2) {
-  /** @override */
   static DEFAULT_OPTIONS = {
     id: 'spellbook-settings-dialog',
     tag: 'form',
@@ -70,7 +69,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     context.MODULE.RITUAL_CASTING_MODES = MODULE.RITUAL_CASTING_MODES;
     context.MODULE.ENFORCEMENT_BEHAVIOR = MODULE.ENFORCEMENT_BEHAVIOR;
     context.actor = this.actor;
-    log(3, 'Prepared spellbook settings context', context);
     return context;
   }
 
@@ -80,51 +78,38 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    * @private
    */
   async _prepareClassSettings() {
-    try {
-      const classSettings = [];
-      const classItems = this.actor.items.filter((item) => item.type === 'class' && item.system.spellcasting?.progression && item.system.spellcasting.progression !== 'none');
-
-      for (const classItem of classItems) {
-        const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
-        const classRules = RuleSetManager.getClassRules(this.actor, identifier);
-        const spellManager = new SpellManager(this.actor);
-        const maxCantrips = spellManager.getMaxAllowed(identifier);
-        const currentCantrips = spellManager.getCurrentCount(identifier);
-        const hasCustomSpellList = !!classRules.customSpellList;
-        let customSpellListName = null;
-        if (hasCustomSpellList) {
-          try {
-            const customList = await fromUuid(classRules.customSpellList);
-            customSpellListName = customList?.name || game.i18n.localize('SPELLBOOK.Settings.UnknownList');
-          } catch (error) {
-            log(2, `Error loading custom spell list name: ${error.message}`);
-          }
-        }
-
-        const classData = {
-          name: classItem.name,
-          identifier: identifier,
-          img: classItem.img,
-          rules: classRules,
-          stats: {
-            currentCantrips: currentCantrips,
-            maxCantrips: maxCantrips,
-            classLevel: classItem.system.levels || 1,
-            basePreparationMax: classItem.system.spellcasting?.preparation?.max || 0
-          },
-          hasCustomSpellList: hasCustomSpellList,
-          customSpellListName: customSpellListName
-        };
-
-        classSettings.push(classData);
+    const classSettings = [];
+    const classItems = this.actor.items.filter((item) => item.type === 'class' && item.system.spellcasting?.progression && item.system.spellcasting.progression !== 'none');
+    for (const classItem of classItems) {
+      const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
+      const classRules = RuleSetManager.getClassRules(this.actor, identifier);
+      const spellManager = new SpellManager(this.actor);
+      const maxCantrips = spellManager.getMaxAllowed(identifier);
+      const currentCantrips = spellManager.getCurrentCount(identifier);
+      const hasCustomSpellList = !!classRules.customSpellList;
+      let customSpellListName = null;
+      if (hasCustomSpellList) {
+        const customList = await fromUuid(classRules.customSpellList);
+        customSpellListName = customList?.name || game.i18n.localize('SPELLBOOK.Settings.UnknownList');
       }
-
-      classSettings.sort((a, b) => a.name.localeCompare(b.name));
-      return classSettings;
-    } catch (error) {
-      log(1, 'Error preparing class settings:', error);
-      return [];
+      const classData = {
+        name: classItem.name,
+        identifier: identifier,
+        img: classItem.img,
+        rules: classRules,
+        stats: {
+          currentCantrips: currentCantrips,
+          maxCantrips: maxCantrips,
+          classLevel: classItem.system.levels || 1,
+          basePreparationMax: classItem.system.spellcasting?.preparation?.max || 0
+        },
+        hasCustomSpellList: hasCustomSpellList,
+        customSpellListName: customSpellListName
+      };
+      classSettings.push(classData);
     }
+    classSettings.sort((a, b) => a.name.localeCompare(b.name));
+    return classSettings;
   }
 
   /**
@@ -136,15 +121,12 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     try {
       const options = [{ value: '', label: game.i18n.localize('SPELLBOOK.Settings.SpellList.AutoDetect') }];
       const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
-
       for (const pack of journalPacks) {
         let topLevelFolderName = pack.metadata.label;
-
         if (pack.folder) {
           if (pack.folder.depth !== 1) topLevelFolderName = pack.folder.getParentFolders().at(-1).name;
           else topLevelFolderName = pack.folder.name;
         }
-
         const index = await pack.getIndex();
         for (const journalData of index) {
           const journal = await pack.getDocument(journalData._id);
@@ -155,7 +137,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
           }
         }
       }
-
       return options;
     } catch (error) {
       log(1, 'Error preparing spell list options:', error);
@@ -170,20 +151,16 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    * @static
    */
   static increasePrepBonus(event, target) {
-    try {
-      const classIdentifier = target.dataset.class;
-      if (!classIdentifier) return;
-      const input = this.element.querySelector(`input[name="class.${classIdentifier}.preparationBonus"]`);
-      if (!input) return;
-      const currentValue = parseInt(input.value) || 0;
-      const newValue = Math.min(currentValue + 1, 20);
-      input.value = newValue;
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-      this._updateClassStatsDisplay(classIdentifier, newValue);
-      log(3, `Increased preparation bonus for ${classIdentifier} to ${newValue}`);
-    } catch (error) {
-      log(1, 'Error increasing preparation bonus:', error);
-    }
+    const classIdentifier = target.dataset.class;
+    if (!classIdentifier) return;
+    const input = this.element.querySelector(`input[name="class.${classIdentifier}.preparationBonus"]`);
+    if (!input) return;
+    const currentValue = parseInt(input.value) || 0;
+    const newValue = Math.min(currentValue + 1, 20);
+    input.value = newValue;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    this._updateClassStatsDisplay(classIdentifier, newValue);
+    log(3, `Increased preparation bonus for ${classIdentifier} to ${newValue}`);
   }
 
   /**
@@ -193,45 +170,37 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    * @static
    */
   static decreasePrepBonus(event, target) {
-    try {
-      const classIdentifier = target.dataset.class;
-      if (!classIdentifier) return;
-      const input = this.element.querySelector(`input[name="class.${classIdentifier}.preparationBonus"]`);
-      if (!input) return;
-      const classItem = this.actor.items.find(
-        (item) => item.type === 'class' && (item.system.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier)
-      );
-
-      let minimumBonus = -10;
-
-      if (classItem) {
-        const baseMax = classItem.system?.spellcasting?.preparation?.max || 0;
-        minimumBonus = -baseMax;
-      } else {
-        log(2, `Could not find class item for identifier ${classIdentifier}, using fallback minimum`);
-      }
-
-      const currentValue = parseInt(input.value) || 0;
-      const newValue = Math.max(currentValue - 1, minimumBonus);
-      input.value = newValue;
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-      this._updateClassStatsDisplay(classIdentifier, newValue);
-      if (newValue === minimumBonus && currentValue > minimumBonus) {
-        const baseMax = classItem?.system?.spellcasting?.preparation?.max || 0;
-        const message =
-          baseMax > 0 ?
-            game.i18n.format('SPELLBOOK.Settings.PreparationBonus.MinimumReached', {
-              class: classItem?.name || classIdentifier,
-              total: baseMax + newValue
-            })
-          : game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.MinimumReachedGeneric');
-        ui.notifications.info(message);
-      }
-
-      log(3, `Decreased preparation bonus for ${classIdentifier} to ${newValue}`);
-    } catch (error) {
-      log(1, 'Error decreasing preparation bonus:', error);
+    const classIdentifier = target.dataset.class;
+    if (!classIdentifier) return;
+    const input = this.element.querySelector(`input[name="class.${classIdentifier}.preparationBonus"]`);
+    if (!input) return;
+    const classItem = this.actor.items.find(
+      (item) => item.type === 'class' && (item.system.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier)
+    );
+    let minimumBonus = -10;
+    if (classItem) {
+      const baseMax = classItem.system?.spellcasting?.preparation?.max || 0;
+      minimumBonus = -baseMax;
+    } else {
+      log(2, `Could not find class item for identifier ${classIdentifier}, using fallback minimum`);
     }
+    const currentValue = parseInt(input.value) || 0;
+    const newValue = Math.max(currentValue - 1, minimumBonus);
+    input.value = newValue;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    this._updateClassStatsDisplay(classIdentifier, newValue);
+    if (newValue === minimumBonus && currentValue > minimumBonus) {
+      const baseMax = classItem?.system?.spellcasting?.preparation?.max || 0;
+      const message =
+        baseMax > 0 ?
+          game.i18n.format('SPELLBOOK.Settings.PreparationBonus.MinimumReached', {
+            class: classItem?.name || classIdentifier,
+            total: baseMax + newValue
+          })
+        : game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.MinimumReachedGeneric');
+      ui.notifications.info(message);
+    }
+    log(3, `Decreased preparation bonus for ${classIdentifier} to ${newValue}`);
   }
 
   /**
@@ -241,18 +210,13 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    * @private
    */
   _updateClassStatsDisplay(classIdentifier, newBonus) {
-    try {
-      const classSection = this.element.querySelector(`[data-class="${classIdentifier}"]`);
-      const bonusDisplay = classSection?.querySelector('.preparation-bonus');
-
-      if (bonusDisplay) {
-        if (newBonus > 0) bonusDisplay.textContent = `+${newBonus} ${game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.Text')}`;
-        else if (newBonus < 0) bonusDisplay.textContent = `${newBonus} ${game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.Text')}`;
-        else bonusDisplay.textContent = `±0 ${game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.Text')}`;
-        bonusDisplay.classList.toggle('has-bonus', newBonus !== 0);
-      }
-    } catch (error) {
-      log(2, 'Error updating class stats display:', error);
+    const classSection = this.element.querySelector(`[data-class="${classIdentifier}"]`);
+    const bonusDisplay = classSection?.querySelector('.preparation-bonus');
+    if (bonusDisplay) {
+      if (newBonus > 0) bonusDisplay.textContent = `+${newBonus} ${game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.Text')}`;
+      else if (newBonus < 0) bonusDisplay.textContent = `${newBonus} ${game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.Text')}`;
+      else bonusDisplay.textContent = `±0 ${game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.Text')}`;
+      bonusDisplay.classList.toggle('has-bonus', newBonus !== 0);
     }
   }
 
@@ -264,49 +228,40 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    * @returns {Promise<Actor5e|null>} The actor or null if error
    */
   static async formHandler(_event, _form, formData) {
-    try {
-      const actor = this.actor;
-      if (!actor) return null;
-      const expandedData = foundry.utils.expandObject(formData.object);
-      const currentClassRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
-      const ruleSetOverride = expandedData.ruleSetOverride === 'global' ? null : expandedData.ruleSetOverride;
-      const previousRuleSetOverride = actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE);
-      actor.setFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE, ruleSetOverride);
-      const enforcementBehavior = expandedData.enforcementBehavior === 'global' ? null : expandedData.enforcementBehavior;
-      actor.setFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR, enforcementBehavior);
-      if (ruleSetOverride && ruleSetOverride !== previousRuleSetOverride) RuleSetManager.applyRuleSetToActor(actor, ruleSetOverride);
-      const cantripVisibilityChanges = {};
-
-      if (expandedData.class) {
-        for (const [classId, rules] of Object.entries(expandedData.class)) {
-          const currentRules = currentClassRules[classId] || {};
-          const wasShowingCantrips = currentRules.showCantrips !== false;
-          const willShowCantrips = rules.showCantrips !== false;
-          if (wasShowingCantrips && !willShowCantrips) cantripVisibilityChanges[classId] = 'disabled';
-          else if (!wasShowingCantrips && willShowCantrips) cantripVisibilityChanges[classId] = 'enabled';
-          const processedRules = {};
-          if (rules.preparationBonus !== undefined) processedRules.preparationBonus = parseInt(rules.preparationBonus) || 0;
-          if (rules.showCantrips !== undefined) processedRules.showCantrips = Boolean(rules.showCantrips);
-          if (rules.customSpellList !== undefined) processedRules.customSpellList = rules.customSpellList || null;
-          ['cantripSwapping', 'spellSwapping', 'ritualCasting'].forEach((prop) => {
-            if (rules[prop] !== undefined) processedRules[prop] = rules[prop];
-          });
-
-          RuleSetManager.updateClassRules(actor, classId, processedRules);
-        }
+    const actor = this.actor;
+    if (!actor) return null;
+    const expandedData = foundry.utils.expandObject(formData.object);
+    const currentClassRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+    const ruleSetOverride = expandedData.ruleSetOverride === 'global' ? null : expandedData.ruleSetOverride;
+    const previousRuleSetOverride = actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE);
+    actor.setFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE, ruleSetOverride);
+    const enforcementBehavior = expandedData.enforcementBehavior === 'global' ? null : expandedData.enforcementBehavior;
+    actor.setFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR, enforcementBehavior);
+    if (ruleSetOverride && ruleSetOverride !== previousRuleSetOverride) RuleSetManager.applyRuleSetToActor(actor, ruleSetOverride);
+    const cantripVisibilityChanges = {};
+    if (expandedData.class) {
+      for (const [classId, rules] of Object.entries(expandedData.class)) {
+        const currentRules = currentClassRules[classId] || {};
+        const wasShowingCantrips = currentRules.showCantrips !== false;
+        const willShowCantrips = rules.showCantrips !== false;
+        if (wasShowingCantrips && !willShowCantrips) cantripVisibilityChanges[classId] = 'disabled';
+        else if (!wasShowingCantrips && willShowCantrips) cantripVisibilityChanges[classId] = 'enabled';
+        const processedRules = {};
+        if (rules.preparationBonus !== undefined) processedRules.preparationBonus = parseInt(rules.preparationBonus) || 0;
+        if (rules.showCantrips !== undefined) processedRules.showCantrips = Boolean(rules.showCantrips);
+        if (rules.customSpellList !== undefined) processedRules.customSpellList = rules.customSpellList || null;
+        ['cantripSwapping', 'spellSwapping', 'ritualCasting'].forEach((prop) => {
+          if (rules[prop] !== undefined) processedRules[prop] = rules[prop];
+        });
+        RuleSetManager.updateClassRules(actor, classId, processedRules);
       }
-
-      if (Object.keys(cantripVisibilityChanges).length > 0) await SpellbookSettingsDialog._handleCantripVisibilityChanges(actor, cantripVisibilityChanges);
-      const allInstances = Array.from(foundry.applications.instances.values());
-      const openSpellbooks = allInstances.filter((w) => w.constructor.name === 'PlayerSpellBook' && w.actor.id === actor.id);
-      for (const spellbook of openSpellbooks) await spellbook.refreshFromSettingsChange();
-      ui.notifications.info(game.i18n.format('SPELLBOOK.Settings.Saved', { name: actor.name }));
-      return actor;
-    } catch (error) {
-      log(1, 'Error saving spellbook settings:', error);
-      ui.notifications.error(game.i18n.localize('SPELLBOOK.Settings.SaveError'));
-      return null;
     }
+    if (Object.keys(cantripVisibilityChanges).length > 0) await SpellbookSettingsDialog._handleCantripVisibilityChanges(actor, cantripVisibilityChanges);
+    const allInstances = Array.from(foundry.applications.instances.values());
+    const openSpellbooks = allInstances.filter((w) => w.constructor.name === 'PlayerSpellBook' && w.actor.id === actor.id);
+    for (const spellbook of openSpellbooks) await spellbook.refreshFromSettingsChange();
+    ui.notifications.info(game.i18n.format('SPELLBOOK.Settings.Saved', { name: actor.name }));
+    return actor;
   }
 
   /**
@@ -318,7 +273,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    */
   static async _handleCantripVisibilityChanges(actor, changes) {
     const spellManager = new SpellManager(actor);
-
     for (const [classId, changeType] of Object.entries(changes)) {
       if (changeType === 'disabled') {
         const cantripsToRemove = actor.items
@@ -331,7 +285,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
               !item.flags?.dnd5e?.cachedFor
           )
           .map((item) => item.id);
-
         if (cantripsToRemove.length > 0) await actor.deleteEmbeddedDocuments('Item', cantripsToRemove);
         await spellManager.cleanupCantripsForClass(classId);
       }

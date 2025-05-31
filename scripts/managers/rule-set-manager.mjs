@@ -12,21 +12,17 @@ export class RuleSetManager {
    * @returns {Promise<void>}
    */
   static applyRuleSetToActor(actor, ruleSet) {
-    try {
-      const spellcastingClasses = RuleSetManager._detectSpellcastingClasses(actor);
-      const existingClassRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
-      const classRules = {};
-      for (const [classId, classData] of Object.entries(spellcastingClasses)) {
-        const defaults = RuleSetManager._getClassDefaults(classId, ruleSet);
-        const existing = existingClassRules[classId] || {};
-        classRules[classId] = { ...defaults, ...existing };
-      }
-      actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
-      actor.setFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE, ruleSet);
-      log(3, `Applied ${ruleSet} rule set to ${actor.name} for ${Object.keys(classRules).length} classes`);
-    } catch (error) {
-      log(1, `Error applying rule set to actor ${actor.name}:`, error);
+    const spellcastingClasses = RuleSetManager._detectSpellcastingClasses(actor);
+    const existingClassRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+    const classRules = {};
+    for (const [classId, classData] of Object.entries(spellcastingClasses)) {
+      const defaults = RuleSetManager._getClassDefaults(classId, ruleSet);
+      const existing = existingClassRules[classId] || {};
+      classRules[classId] = { ...defaults, ...existing };
     }
+    actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
+    actor.setFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE, ruleSet);
+    log(3, `Applied ${ruleSet} rule set to ${actor.name} for ${Object.keys(classRules).length} classes`);
   }
 
   /**
@@ -62,15 +58,11 @@ export class RuleSetManager {
    * @returns {Promise<void>}
    */
   static updateClassRules(actor, classIdentifier, newRules) {
-    try {
-      const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
-      classRules[classIdentifier] = { ...classRules[classIdentifier], ...newRules };
-      log(3, `Updating class rules for ${classIdentifier}:`, classRules[classIdentifier]);
-      actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
-      log(3, `Updated class rules for ${classIdentifier} on ${actor.name}`);
-    } catch (error) {
-      log(1, `Error updating class rules for ${classIdentifier}:`, error);
-    }
+    const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+    classRules[classIdentifier] = { ...classRules[classIdentifier], ...newRules };
+    log(3, `Updating class rules for ${classIdentifier}:`, classRules[classIdentifier]);
+    actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
+    log(3, `Updated class rules for ${classIdentifier} on ${actor.name}`);
   }
 
   /**
@@ -79,24 +71,19 @@ export class RuleSetManager {
    * @returns {Promise<void>}
    */
   static initializeNewClasses(actor) {
-    try {
-      const spellcastingClasses = RuleSetManager._detectSpellcastingClasses(actor);
-      const existingRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
-      const ruleSet = RuleSetManager.getEffectiveRuleSet(actor);
-      let hasNewClasses = false;
-      for (const classId of Object.keys(spellcastingClasses)) {
-        if (!existingRules[classId]) {
-          existingRules[classId] = RuleSetManager._getClassDefaults(classId, ruleSet);
-          hasNewClasses = true;
-        }
+    const spellcastingClasses = RuleSetManager._detectSpellcastingClasses(actor);
+    const existingRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+    const ruleSet = RuleSetManager.getEffectiveRuleSet(actor);
+    let hasNewClasses = false;
+    for (const classId of Object.keys(spellcastingClasses)) {
+      if (!existingRules[classId]) {
+        existingRules[classId] = RuleSetManager._getClassDefaults(classId, ruleSet);
+        hasNewClasses = true;
       }
-
-      if (hasNewClasses) {
-        actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, existingRules);
-        log(3, `Initialized rules for new spellcasting classes on ${actor.name}`);
-      }
-    } catch (error) {
-      log(1, `Error initializing new classes for ${actor.name}:`, error);
+    }
+    if (hasNewClasses) {
+      actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, existingRules);
+      log(3, `Initialized rules for new spellcasting classes on ${actor.name}`);
     }
   }
 
@@ -112,13 +99,8 @@ export class RuleSetManager {
       if (item.type !== 'class') continue;
       if (!item.system.spellcasting?.progression || item.system.spellcasting.progression === 'none') continue;
       const identifier = item.system.identifier?.toLowerCase() || item.name.toLowerCase();
-      classes[identifier] = {
-        name: item.name,
-        item: item,
-        spellcasting: item.system.spellcasting
-      };
+      classes[identifier] = { name: item.name, item: item, spellcasting: item.system.spellcasting };
     }
-
     return classes;
   }
 
@@ -138,7 +120,6 @@ export class RuleSetManager {
       customSpellList: null,
       preparationBonus: 0
     };
-
     if (ruleSet === MODULE.RULE_SETS.LEGACY) RuleSetManager._applyLegacyDefaults(classIdentifier, defaults);
     else if (ruleSet === MODULE.RULE_SETS.MODERN) RuleSetManager._applyModernDefaults(classIdentifier, defaults);
     return defaults;
@@ -153,31 +134,26 @@ export class RuleSetManager {
   static _applyLegacyDefaults(classIdentifier, defaults) {
     defaults.cantripSwapping = MODULE.SWAP_MODES.NONE;
     defaults.ritualCasting = MODULE.RITUAL_CASTING_MODES.NONE;
-
     switch (classIdentifier) {
       case MODULE.CLASS_IDENTIFIERS.WIZARD:
         defaults.spellSwapping = MODULE.SWAP_MODES.LONG_REST;
         defaults.ritualCasting = MODULE.RITUAL_CASTING_MODES.ALWAYS;
         defaults.showCantrips = true;
         break;
-
       case MODULE.CLASS_IDENTIFIERS.CLERIC:
       case MODULE.CLASS_IDENTIFIERS.DRUID:
         defaults.spellSwapping = MODULE.SWAP_MODES.LONG_REST;
         defaults.ritualCasting = MODULE.RITUAL_CASTING_MODES.PREPARED;
         defaults.showCantrips = true;
         break;
-
       case MODULE.CLASS_IDENTIFIERS.PALADIN:
         defaults.spellSwapping = MODULE.SWAP_MODES.LONG_REST;
         defaults.showCantrips = false;
         break;
-
       case MODULE.CLASS_IDENTIFIERS.RANGER:
         defaults.spellSwapping = MODULE.SWAP_MODES.LEVEL_UP;
         defaults.showCantrips = false;
         break;
-
       case MODULE.CLASS_IDENTIFIERS.BARD:
       case MODULE.CLASS_IDENTIFIERS.SORCERER:
       case MODULE.CLASS_IDENTIFIERS.WARLOCK:
@@ -185,12 +161,10 @@ export class RuleSetManager {
         defaults.showCantrips = true;
         if (classIdentifier === MODULE.CLASS_IDENTIFIERS.BARD) defaults.ritualCasting = MODULE.RITUAL_CASTING_MODES.PREPARED;
         break;
-
       case MODULE.CLASS_IDENTIFIERS.ARTIFICER:
         defaults.spellSwapping = MODULE.SWAP_MODES.LONG_REST;
         defaults.showCantrips = true;
         break;
-
       default:
         defaults.spellSwapping = MODULE.SWAP_MODES.LEVEL_UP;
         defaults.showCantrips = true;
@@ -207,7 +181,6 @@ export class RuleSetManager {
   static _applyModernDefaults(classIdentifier, defaults) {
     defaults.cantripSwapping = MODULE.SWAP_MODES.LEVEL_UP;
     defaults.ritualCasting = MODULE.RITUAL_CASTING_MODES.NONE;
-
     switch (classIdentifier) {
       case MODULE.CLASS_IDENTIFIERS.WIZARD:
         defaults.cantripSwapping = MODULE.SWAP_MODES.LONG_REST;
@@ -215,37 +188,31 @@ export class RuleSetManager {
         defaults.ritualCasting = MODULE.RITUAL_CASTING_MODES.ALWAYS;
         defaults.showCantrips = true;
         break;
-
       case MODULE.CLASS_IDENTIFIERS.CLERIC:
       case MODULE.CLASS_IDENTIFIERS.DRUID:
         defaults.spellSwapping = MODULE.SWAP_MODES.LONG_REST;
         defaults.showCantrips = true;
         break;
-
       case MODULE.CLASS_IDENTIFIERS.PALADIN:
         defaults.cantripSwapping = MODULE.SWAP_MODES.NONE;
         defaults.spellSwapping = MODULE.SWAP_MODES.LONG_REST;
         defaults.showCantrips = false;
         break;
-
       case MODULE.CLASS_IDENTIFIERS.RANGER:
         defaults.cantripSwapping = MODULE.SWAP_MODES.NONE;
         defaults.spellSwapping = MODULE.SWAP_MODES.LONG_REST;
         defaults.showCantrips = false;
         break;
-
       case MODULE.CLASS_IDENTIFIERS.BARD:
       case MODULE.CLASS_IDENTIFIERS.SORCERER:
       case MODULE.CLASS_IDENTIFIERS.WARLOCK:
         defaults.spellSwapping = MODULE.SWAP_MODES.LEVEL_UP;
         defaults.showCantrips = true;
         break;
-
       case MODULE.CLASS_IDENTIFIERS.ARTIFICER:
         defaults.spellSwapping = MODULE.SWAP_MODES.LONG_REST;
         defaults.showCantrips = true;
         break;
-
       default:
         defaults.spellSwapping = MODULE.SWAP_MODES.LEVEL_UP;
         defaults.showCantrips = true;

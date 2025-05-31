@@ -7,7 +7,6 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
  * Application to configure which filters are displayed in the spell browser
  */
 export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(ApplicationV2) {
-  /** @override */
   static DEFAULT_OPTIONS = {
     id: `filter-config-${MODULE.ID}`,
     tag: 'form',
@@ -42,6 +41,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   static PARTS = { form: { template: TEMPLATES.DIALOGS.FILTER_CONFIG } };
 
   parentApp = null;
+
   config = [];
 
   /**
@@ -107,24 +107,14 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   /** @override */
   _prepareContext(_options) {
     try {
-      if (!Array.isArray(this.config) || this.config.length === 0) {
-        log(2, 'Invalid configuration in _prepareContext, reinitializing');
-        this.initializeConfig();
-      }
-
+      if (!Array.isArray(this.config) || this.config.length === 0) this.initializeConfig();
       this.config = this.config.map((filter) => {
         const sortable = !(filter.id === 'name' || filter.id === 'prepared' || filter.id === 'ritual' || filter.id === 'sortBy');
         const checkbox = document.createElement('dnd5e-checkbox');
         checkbox.name = `enabled-${filter.id}`;
         checkbox.id = `enabled-${filter.id}`;
         if (filter.enabled) checkbox.checked = true;
-        checkbox.setAttribute(
-          'aria-label',
-          game.i18n.format('SPELLBOOK.Settings.EnableFilter', {
-            name: game.i18n.localize(filter.label)
-          })
-        );
-
+        checkbox.setAttribute('aria-label', game.i18n.format('SPELLBOOK.Settings.EnableFilter', { name: game.i18n.localize(filter.label) }));
         const container = document.createElement('div');
         container.appendChild(checkbox);
 
@@ -134,8 +124,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
           checkboxHtml: container.innerHTML
         };
       });
-
-      log(3, 'Prepared context with configuration and DnD5e checkboxes');
 
       return {
         filterConfig: this.config,
@@ -169,53 +157,41 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   /** @override */
   _onRender(context, options) {
     super._onRender(context, options);
-    try {
-      this.setDraggableAttributes();
-      this.setupDragDrop();
-    } catch (error) {
-      log(1, 'Error in _onRender:', error);
-    }
+    this.setDraggableAttributes();
+    this.setupDragDrop();
   }
 
   /**
    * Set up drag and drop handlers for filter reordering
    */
   setupDragDrop() {
-    try {
-      this.options.dragDrop.forEach((dragDropOptions) => {
-        dragDropOptions.permissions = {
-          dragstart: this.canDragStart.bind(this),
-          drop: this.canDragDrop.bind(this)
-        };
+    this.options.dragDrop.forEach((dragDropOptions) => {
+      dragDropOptions.permissions = {
+        dragstart: this.canDragStart.bind(this),
+        drop: this.canDragDrop.bind(this)
+      };
 
-        dragDropOptions.callbacks = {
-          dragstart: this.onDragStart.bind(this),
-          dragover: this.onDragOver.bind(this),
-          drop: this.onDrop.bind(this)
-        };
+      dragDropOptions.callbacks = {
+        dragstart: this.onDragStart.bind(this),
+        dragover: this.onDragOver.bind(this),
+        drop: this.onDrop.bind(this)
+      };
 
-        const dragDropHandler = new DragDrop(dragDropOptions);
-        dragDropHandler.bind(this.element);
-      });
-    } catch (error) {
-      log(1, 'Error setting up drag and drop:', error);
-    }
+      const dragDropHandler = new DragDrop(dragDropOptions);
+      dragDropHandler.bind(this.element);
+    });
   }
 
   /**
    * Set draggable attributes on filter items
    */
   setDraggableAttributes() {
-    try {
-      const items = this.element.querySelectorAll('.filter-config-item');
-      items.forEach((item) => {
-        const li = item.closest('li');
-        const isSortable = !li.classList.contains('not-sortable');
-        item.setAttribute('draggable', isSortable ? 'true' : 'false');
-      });
-    } catch (error) {
-      log(1, 'Error setting draggable attributes:', error);
-    }
+    const items = this.element.querySelectorAll('.filter-config-item');
+    items.forEach((item) => {
+      const li = item.closest('li');
+      const isSortable = !li.classList.contains('not-sortable');
+      item.setAttribute('draggable', isSortable ? 'true' : 'false');
+    });
   }
 
   /**
@@ -264,23 +240,19 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
    * @param {string} _selector - The selector for drag targets
    */
   onDragOver(event, _selector) {
-    try {
-      event.preventDefault();
-      const list = this.element.querySelector('.filter-config-list');
-      if (!list) return;
-      const draggingItem = list.querySelector('.dragging');
-      if (!draggingItem) return;
-      const items = Array.from(list.querySelectorAll('li:not(.dragging)'));
-      if (!items.length) return;
-      const targetItem = this.getDragTarget(event, items);
-      if (!targetItem) return;
-      const rect = targetItem.getBoundingClientRect();
-      const dropAfter = event.clientY > rect.top + rect.height / 2;
-      this.removeDropPlaceholders();
-      this.createDropPlaceholder(targetItem, dropAfter);
-    } catch (error) {
-      log(1, 'Error handling drag over:', error);
-    }
+    event.preventDefault();
+    const list = this.element.querySelector('.filter-config-list');
+    if (!list) return;
+    const draggingItem = list.querySelector('.dragging');
+    if (!draggingItem) return;
+    const items = Array.from(list.querySelectorAll('li:not(.dragging)'));
+    if (!items.length) return;
+    const targetItem = this.getDragTarget(event, items);
+    if (!targetItem) return;
+    const rect = targetItem.getBoundingClientRect();
+    const dropAfter = event.clientY > rect.top + rect.height / 2;
+    this.removeDropPlaceholders();
+    this.createDropPlaceholder(targetItem, dropAfter);
   }
 
   /**
@@ -295,7 +267,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
         items.reduce((closest, child) => {
           const box = child.getBoundingClientRect();
           const offset = event.clientY - (box.top + box.height / 2);
-
           if (closest === null || Math.abs(offset) < Math.abs(closest.offset)) return { element: child, offset: offset };
           else return closest;
         }, null)?.element || null
@@ -314,7 +285,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   async onDrop(event) {
     try {
       event.preventDefault();
-
       const dataString = event.dataTransfer.getData('text/plain');
       if (!dataString) return false;
       const data = JSON.parse(dataString);
@@ -334,15 +304,11 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       const [movedItem] = this.config.splice(sourceIndex, 1);
       this.config.splice(newIndex, 0, movedItem);
       this.updateFilterOrder();
-
       if (this._formState) {
         for (const filter of this.config) {
-          if (this._formState.hasOwnProperty(filter.id)) {
-            filter.enabled = this._formState[filter.id];
-          }
+          if (this._formState.hasOwnProperty(filter.id)) filter.enabled = this._formState[filter.id];
         }
       }
-
       this.render(false);
       return true;
     } catch (error) {
@@ -369,40 +335,27 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
    * @param {boolean} dropAfter - Whether to drop after the target
    */
   createDropPlaceholder(targetItem, dropAfter) {
-    try {
-      const placeholder = document.createElement('div');
-      placeholder.classList.add('drop-placeholder');
-
-      if (dropAfter) targetItem.after(placeholder);
-      else targetItem.before(placeholder);
-    } catch (error) {
-      log(1, 'Error creating drop placeholder:', error);
-    }
+    const placeholder = document.createElement('div');
+    placeholder.classList.add('drop-placeholder');
+    if (dropAfter) targetItem.after(placeholder);
+    else targetItem.before(placeholder);
   }
 
   /**
    * Remove all drop placeholders
    */
   removeDropPlaceholders() {
-    try {
-      const placeholders = this.element.querySelectorAll('.drop-placeholder');
-      placeholders.forEach((el) => el.remove());
-    } catch (error) {
-      log(1, 'Error removing drop placeholders:', error);
-    }
+    const placeholders = this.element.querySelectorAll('.drop-placeholder');
+    placeholders.forEach((el) => el.remove());
   }
 
   /**
    * Clean up visual elements after dragging
    */
   cleanupDragElements() {
-    try {
-      const draggingItems = this.element.querySelectorAll('.dragging');
-      draggingItems.forEach((el) => el.classList.remove('dragging'));
-      this.removeDropPlaceholders();
-    } catch (error) {
-      log(1, 'Error cleaning up drag elements:', error);
-    }
+    const draggingItems = this.element.querySelectorAll('.dragging');
+    draggingItems.forEach((el) => el.classList.remove('dragging'));
+    this.removeDropPlaceholders();
   }
 
   /**
@@ -430,7 +383,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
     try {
       const sortableFilters = [];
       const nonSortableFilters = [];
-
       for (const filter of filterConfig) {
         const enabledKey = `enabled-${filter.id}`;
         const enabled = formData[enabledKey] === true;
@@ -441,11 +393,9 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
           enabled: enabled,
           sortable: sortable
         };
-
         if (sortable) sortableFilters.push(updatedFilter);
         else nonSortableFilters.push(updatedFilter);
       }
-
       return { sortableFilters, nonSortableFilters };
     } catch (error) {
       log(1, 'Error processing sortable filters:', error);
@@ -464,24 +414,20 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
     try {
       const sortableFilterElements = Array.from(form.querySelectorAll('.filter-item:not(.not-sortable)'));
       const orderMap = {};
-
       sortableFilterElements.forEach((el, idx) => {
         const filterId = el.dataset.filterId;
         if (filterId) orderMap[filterId] = idx;
       });
-
       sortableFilters.sort((a, b) => {
         const orderA = orderMap[a.id] !== undefined ? orderMap[a.id] : a.order;
         const orderB = orderMap[b.id] !== undefined ? orderMap[b.id] : b.order;
         return orderA - orderB;
       });
-
       let nextOrder = 20;
       sortableFilters.forEach((filter) => {
         filter.order = nextOrder;
         nextOrder += 10;
       });
-
       return sortableFilters;
     } catch (error) {
       log(1, 'Error updating filter order:', error);
@@ -496,13 +442,9 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
    * @static
    */
   static handleReset(event, _form) {
-    try {
-      event.preventDefault();
-      this.config = foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG);
-      this.render(false);
-    } catch (error) {
-      log(1, 'Error handling reset:', error);
-    }
+    event.preventDefault();
+    this.config = foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG);
+    this.render(false);
   }
 
   /**
@@ -515,7 +457,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   static formHandler(event, form, formData) {
     event.preventDefault();
     event.stopPropagation();
-
     try {
       const currentConfig = PlayerFilterConfiguration.getValidConfiguration();
       const { sortableFilters, nonSortableFilters } = PlayerFilterConfiguration.processSortableFilters(currentConfig, formData.object);
@@ -526,13 +467,8 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
         ...sortedFilters,
         ...nonSortableFilters.filter((f) => f.id !== 'name').map((f, idx) => ({ ...f, order: 1000 + idx * 10 }))
       ];
-
       game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, updatedConfig);
-
-      if (this.parentApp) {
-        this.parentApp.render(false);
-      }
-
+      if (this.parentApp) this.parentApp.render(false);
       return true;
     } catch (error) {
       log(1, 'Error saving filter configuration:', error);

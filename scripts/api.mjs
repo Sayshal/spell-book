@@ -83,12 +83,9 @@ export function createAPI() {
         manager.render(true);
         return manager;
       },
-
       log
     };
-
     globalThis.SPELLBOOK = api;
-
     log(3, 'Module API registered');
     return api;
   } catch (error) {

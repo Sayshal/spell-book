@@ -8,9 +8,7 @@ function setInputAttributes(input, config) {
   input.toggleAttribute('autofocus', config.autofocus === true);
   if (config.placeholder) input.setAttribute('placeholder', config.placeholder);
   if ('dataset' in config) {
-    for (const [k, v] of Object.entries(config.dataset)) {
-      input.dataset[k] = v;
-    }
+    for (const [k, v] of Object.entries(config.dataset)) input.dataset[k] = v;
   }
 }
 
@@ -52,13 +50,7 @@ function _createTextInput(field, config) {
  */
 export function createCheckbox(config) {
   const field = new foundry.data.fields.BooleanField();
-  const fieldConfig = {
-    name: config.name,
-    value: config.checked || false,
-    disabled: config.disabled,
-    ariaLabel: config.ariaLabel,
-    classes: config.cssClass
-  };
+  const fieldConfig = { name: config.name, value: config.checked || false, disabled: config.disabled, ariaLabel: config.ariaLabel, classes: config.cssClass };
   const checkbox = _createCheckboxInput(field, fieldConfig);
   if (config.label) {
     const label = document.createElement('label');
@@ -87,20 +79,8 @@ export function createCheckbox(config) {
  * @returns {HTMLElement} The created number input
  */
 export function createNumberInput(config) {
-  const field = new foundry.data.fields.NumberField({
-    min: config.min,
-    max: config.max,
-    step: config.step
-  });
-
-  const fieldConfig = {
-    name: config.name,
-    value: config.value,
-    placeholder: config.placeholder,
-    disabled: config.disabled,
-    ariaLabel: config.ariaLabel,
-    classes: config.cssClass
-  };
+  const field = new foundry.data.fields.NumberField({ min: config.min, max: config.max, step: config.step });
+  const fieldConfig = { name: config.name, value: config.value, placeholder: config.placeholder, disabled: config.disabled, ariaLabel: config.ariaLabel, classes: config.cssClass };
   return _createNumberInput(field, fieldConfig);
 }
 
@@ -153,7 +133,6 @@ export function createSelect(config) {
       select.appendChild(optionEl);
     }
   }
-
   return select;
 }
 

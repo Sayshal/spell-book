@@ -1,4 +1,4 @@
-import { FLAGS, MODULE, MODULE.WIZARD_DEFAULTS, WIZARD_SPELL_SOURCE } from '../constants.mjs';
+import { FLAGS, MODULE } from '../constants.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
 import { log } from '../logger.mjs';
 
@@ -17,12 +17,9 @@ export class WizardSpellbookManager {
     this.actor = actor;
     this.classItem = this._findWizardClass();
     this.isWizard = this.classItem !== null;
-
-    // Pre-cache frequently used data
     this._spellbookCache = null;
     this._maxSpellsCache = null;
     this._freeSpellsCache = null;
-
     if (this.isWizard) {
       this._initializeFlags();
       this._initializeCache();
@@ -34,13 +31,9 @@ export class WizardSpellbookManager {
    * @private
    */
   async _initializeCache() {
-    try {
-      this._maxSpellsCache = this.getMaxSpellsAllowed();
-      this._freeSpellsCache = this.getTotalFreeSpells();
-      log(3, `Initialized wizard cache: max=${this._maxSpellsCache}, free=${this._freeSpellsCache}`);
-    } catch (error) {
-      log(1, 'Error initializing wizard cache:', error);
-    }
+    this._maxSpellsCache = this.getMaxSpellsAllowed();
+    this._freeSpellsCache = this.getTotalFreeSpells();
+    log(3, `Initialized wizard cache: max=${this._maxSpellsCache}, free=${this._freeSpellsCache}`);
   }
 
   /**
@@ -64,7 +57,6 @@ export class WizardSpellbookManager {
       if (wizardClass) return wizardClass;
       if (this.actor.getFlag(MODULE.ID, FLAGS.FORCE_WIZARD_MODE)) return genericUtils.findSpellcastingClass(this.actor);
     }
-
     return null;
   }
 
@@ -74,16 +66,11 @@ export class WizardSpellbookManager {
    * @private
    */
   async _initializeFlags() {
-    try {
-      const updateData = {};
-      const flags = this.actor.flags?.[MODULE.ID] || {};
-      if (!flags[FLAGS.WIZARD_COPIED_SPELLS]) updateData[`flags.${MODULE.ID}.${FLAGS.WIZARD_COPIED_SPELLS}`] = [];
-      if (Object.keys(updateData).length > 0) await this.actor.update(updateData);
-      return updateData;
-    } catch (error) {
-      log(1, 'Error initializing wizard flags:', error);
-      return {};
-    }
+    const updateData = {};
+    const flags = this.actor.flags?.[MODULE.ID] || {};
+    if (!flags[FLAGS.WIZARD_COPIED_SPELLS]) updateData[`flags.${MODULE.ID}.${FLAGS.WIZARD_COPIED_SPELLS}`] = [];
+    if (Object.keys(updateData).length > 0) await this.actor.update(updateData);
+    return updateData;
   }
 
   /**
@@ -111,20 +98,13 @@ export class WizardSpellbookManager {
    * @returns {Promise<Array<string>>} Array of spell UUIDs
    */
   async getSpellbookSpells() {
-    try {
-      if (this._spellbookCache) return this._spellbookCache;
-
-      const journal = await this.getOrCreateSpellbookJournal();
-      if (!journal) return [];
-      const journalPage = journal.pages?.find((p) => p.type === 'spells');
-      if (!journalPage) return [];
-
-      this._spellbookCache = Array.from(journalPage.system?.spells || []);
-      return this._spellbookCache;
-    } catch (error) {
-      log(1, `Error getting spellbook spells for ${this.actor.name}:`, error);
-      return [];
-    }
+    if (this._spellbookCache) return this._spellbookCache;
+    const journal = await this.getOrCreateSpellbookJournal();
+    if (!journal) return [];
+    const journalPage = journal.pages?.find((p) => p.type === 'spells');
+    if (!journalPage) return [];
+    this._spellbookCache = Array.from(journalPage.system?.spells || []);
+    return this._spellbookCache;
   }
 
   /**
@@ -133,13 +113,8 @@ export class WizardSpellbookManager {
    * @returns {Promise<boolean>} Whether the spell is in the spellbook
    */
   async isSpellInSpellbook(spellUuid) {
-    try {
-      const spells = await this.getSpellbookSpells();
-      return spells.includes(spellUuid);
-    } catch (error) {
-      log(1, `Error checking spell in spellbook for ${this.actor.name}:`, error);
-      return false;
-    }
+    const spells = await this.getSpellbookSpells();
+    return spells.includes(spellUuid);
   }
 
   /**
@@ -153,9 +128,8 @@ export class WizardSpellbookManager {
   async copySpell(spellUuid, cost, time, isFree = false) {
     const result =
       !isFree ?
-        await this.addSpellToSpellbook(spellUuid, WIZARD_SPELL_SOURCE.COPIED, { cost, timeSpent: time })
-      : await this.addSpellToSpellbook(spellUuid, WIZARD_SPELL_SOURCE.FREE, null);
-
+        await this.addSpellToSpellbook(spellUuid, MODULE.WIZARD_SPELL_SOURCE.COPIED, { cost, timeSpent: time })
+      : await this.addSpellToSpellbook(spellUuid, MODULE.WIZARD_SPELL_SOURCE.FREE, null);
     if (result) this.invalidateCache();
     return result;
   }
@@ -174,19 +148,13 @@ export class WizardSpellbookManager {
    * @returns {Promise<Array<Item5e>>} Array of ritual spell items
    */
   async getRitualSpells() {
-    try {
-      const spellbookSpells = await this.getSpellbookSpells();
-      const ritualSpells = [];
-      for (const uuid of spellbookSpells) {
-        const spell = await fromUuid(uuid);
-        if (spell && spell.system.components?.ritual) ritualSpells.push(spell);
-      }
-
-      return ritualSpells;
-    } catch (error) {
-      log(1, `Error getting ritual spells: ${error.message}`);
-      return [];
+    const spellbookSpells = await this.getSpellbookSpells();
+    const ritualSpells = [];
+    for (const uuid of spellbookSpells) {
+      const spell = await fromUuid(uuid);
+      if (spell && spell.system.components?.ritual) ritualSpells.push(spell);
     }
+    return ritualSpells;
   }
 
   /**
@@ -215,32 +183,20 @@ export class WizardSpellbookManager {
    * @returns {Promise<boolean>} Success state
    */
   async addSpellToSpellbook(spellUuid, source, metadata) {
-    try {
-      const journal = await this.getOrCreateSpellbookJournal();
-      const journalPage = journal.pages.find((p) => p.type === 'spells');
-      const spells = journalPage.system.spells || new Set();
-      spells.add(spellUuid);
-      await journalPage.update({ 'system.spells': spells });
-      if (source === WIZARD_SPELL_SOURCE.COPIED) {
-        const metadataObj = {
-          spellUuid,
-          dateCopied: Date.now(),
-          cost: metadata?.cost || 0,
-          timeSpent: metadata?.timeSpent || 0
-        };
-
-        const copiedSpells = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_COPIED_SPELLS) || [];
-        copiedSpells.push(metadataObj);
-        this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_COPIED_SPELLS, copiedSpells);
-      }
-
-      log(3, `Added spell ${spellUuid} to ${this.actor.name}'s spellbook`);
-      this.invalidateCache();
-      return true;
-    } catch (error) {
-      log(1, `Error adding spell to spellbook: ${error.message}`);
-      return false;
+    const journal = await this.getOrCreateSpellbookJournal();
+    const journalPage = journal.pages.find((p) => p.type === 'spells');
+    const spells = journalPage.system.spells || new Set();
+    spells.add(spellUuid);
+    await journalPage.update({ 'system.spells': spells });
+    if (source === MODULE.WIZARD_SPELL_SOURCE.COPIED) {
+      const metadataObj = { spellUuid, dateCopied: Date.now(), cost: metadata?.cost || 0, timeSpent: metadata?.timeSpent || 0 };
+      const copiedSpells = this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_COPIED_SPELLS) || [];
+      copiedSpells.push(metadataObj);
+      this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_COPIED_SPELLS, copiedSpells);
     }
+    log(3, `Added spell ${spellUuid} to ${this.actor.name}'s spellbook`);
+    this.invalidateCache();
+    return true;
   }
 
   /**
@@ -248,22 +204,16 @@ export class WizardSpellbookManager {
    * @returns {Promise<JournalEntry|null>} The actor's spellbook journal or null if not found
    */
   async findSpellbookJournal() {
-    try {
-      const customPack = game.packs.get(MODULE.PACK);
-      const index = await customPack.getIndex({ fields: ['flags'] });
-      for (const entry of index) {
-        if (entry.flags?.[MODULE.ID]?.actorId === this.actor.id) {
-          const document = await customPack.getDocument(entry._id);
-          return document;
-        }
+    const customPack = game.packs.get(MODULE.PACK);
+    const index = await customPack.getIndex({ fields: ['flags'] });
+    for (const entry of index) {
+      if (entry.flags?.[MODULE.ID]?.actorId === this.actor.id) {
+        const document = await customPack.getDocument(entry._id);
+        return document;
       }
-
-      log(2, `No spellbook journal found for actor ${this.actor.id}`);
-      return null;
-    } catch (error) {
-      log(1, `Error finding spellbook journal: ${error.message}`);
-      return null;
     }
+    log(2, `No spellbook journal found for actor ${this.actor.id}`);
+    return null;
   }
 
   /**
@@ -271,43 +221,39 @@ export class WizardSpellbookManager {
    * @returns {Promise<JournalEntry>} The created journal
    */
   async createSpellbookJournal() {
-    try {
-      const customPack = game.packs.get(MODULE.PACK);
-      const folder = this.getSpellbooksFolder();
-      const journalData = {
-        name: this.actor.name,
-        folder: folder ? folder.id : null,
-        flags: {
-          [MODULE.ID]: {
-            actorId: this.actor.id,
-            isActorSpellbook: true,
-            creationDate: Date.now()
-          }
-        },
-        pages: [
-          {
-            name: `${this.actor.name}'s Spell Book`,
-            type: 'spells',
-            flags: {
-              [MODULE.ID]: {
-                isActorSpellbook: true,
-                actorId: this.actor.id
-              }
-            },
-            system: {
-              identifier: `${this.actor.id}-${MODULE.ID}`,
-              description: `Spellbook for ${this.actor.name}`,
-              spells: new Set()
+    const customPack = game.packs.get(MODULE.PACK);
+    const folder = this.getSpellbooksFolder();
+    const journalData = {
+      name: this.actor.name,
+      folder: folder ? folder.id : null,
+      flags: {
+        [MODULE.ID]: {
+          actorId: this.actor.id,
+          isActorSpellbook: true,
+          creationDate: Date.now()
+        }
+      },
+      pages: [
+        {
+          name: `${this.actor.name}'s Spell Book`, //TODO: Localize
+          type: 'spells',
+          flags: {
+            [MODULE.ID]: {
+              isActorSpellbook: true,
+              actorId: this.actor.id
             }
+          },
+          system: {
+            identifier: `${this.actor.id}-${MODULE.ID}`,
+            description: `Spellbook for ${this.actor.name}`, //TODO: Localize
+            spells: new Set()
           }
-        ]
-      };
-      const journal = await JournalEntry.create(journalData, { pack: customPack.collection });
-      log(3, `Created new spellbook journal for ${this.actor.name}: ${journal.uuid}`);
-      return journal;
-    } catch (error) {
-      log(1, `Error creating spellbook journal:`, error);
-    }
+        }
+      ]
+    };
+    const journal = await JournalEntry.create(journalData, { pack: customPack.collection });
+    log(3, `Created new spellbook journal for ${this.actor.name}: ${journal.uuid}`);
+    return journal;
   }
 
   /**
@@ -347,13 +293,11 @@ export class WizardSpellbookManager {
    */
   getMaxSpellsAllowed() {
     if (this._maxSpellsCache !== null) return this._maxSpellsCache;
-
     if (!this.isWizard) return 0;
     const wizardLevel = this.classItem.system.levels || 1;
     const startingSpells = MODULE.WIZARD_DEFAULTS.STARTING_SPELLS;
     const spellsPerLevel = MODULE.WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
     const maxSpells = startingSpells + Math.max(0, wizardLevel - 1) * spellsPerLevel;
-
     this._maxSpellsCache = maxSpells;
     log(3, `Maximum wizard spells: ${maxSpells} (level ${wizardLevel})`);
     return maxSpells;
@@ -365,11 +309,9 @@ export class WizardSpellbookManager {
    */
   getTotalFreeSpells() {
     if (this._freeSpellsCache !== null) return this._freeSpellsCache;
-
     if (!this.isWizard) return 0;
     const wizardLevel = this.classItem.system.levels || 1;
     const freeSpells = MODULE.WIZARD_DEFAULTS.STARTING_SPELLS + Math.max(0, wizardLevel - 1) * MODULE.WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
-
     this._freeSpellsCache = freeSpells;
     return freeSpells;
   }

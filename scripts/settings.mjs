@@ -1,5 +1,5 @@
 import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
-import { MODULE.DEFAULT_FILTER_CONFIG, MODULE.ENFORCEMENT_BEHAVIOR, MODULE, MODULE.RULE_SETS, SETTINGS } from './constants.mjs';
+import { MODULE, SETTINGS } from './constants.mjs';
 import { log } from './logger.mjs';
 
 /**
@@ -111,7 +111,7 @@ export function registerSettings() {
     }
   });
 
-  game.settings.register(MODULE.ID, SETTINGS.DEFAULT_MODULE.ENFORCEMENT_BEHAVIOR, {
+  game.settings.register(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR, {
     name: 'SPELLBOOK.Settings.DefaultEnforcementBehavior.Name',
     hint: 'SPELLBOOK.Settings.DefaultEnforcementBehavior.Hint',
     scope: 'world',

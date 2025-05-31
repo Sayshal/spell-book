@@ -21,12 +21,10 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
         errors.push({ uuid, reason: 'Document not found' });
         continue;
       }
-
       if (spell.type !== 'spell') {
         errors.push({ uuid, reason: 'Not a valid spell document' });
         continue;
       }
-
       const sourceUuid = spell.parent && spell.flags?.core?.sourceId ? spell.flags.core.sourceId : uuid;
       if (spell.system.level <= maxSpellLevel) spellItems.push({ ...spell, compendiumUuid: sourceUuid });
       else filteredOut.push({ ...spell, compendiumUuid: sourceUuid });
@@ -34,7 +32,6 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
       errors.push({ uuid, reason: error.message || 'Unknown error' });
     }
   }
-
   if (filteredOut.length > 0) log(3, `Filtered out ${filteredOut.length} spells.`);
   if (errors.length > 0) log(2, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`, { errors });
   log(3, `Successfully fetched ${spellItems.length}/${spellUuids.size} spells`);
@@ -55,7 +52,6 @@ export function organizeSpellsByLevel(spellItems, actor = null, spellManager = n
   const spellsByLevel = {};
   const processedSpellIds = new Set();
   const processedSpellNames = new Set();
-
   for (const spell of spellItems) {
     if (spell?.system?.level === undefined) continue;
     const level = spell.system.level;
@@ -64,12 +60,8 @@ export function organizeSpellsByLevel(spellItems, actor = null, spellManager = n
     const spellData = { ...spell };
     if (spellManager) {
       spellData.preparation = spellManager.getSpellPreparationStatus(spell);
-
-      if (preparedSpells.includes(spell.compendiumUuid)) {
-        if (!spellData.preparation.alwaysPrepared && !spellData.preparation.isGranted) spellData.preparation.prepared = true;
-      }
+      if (preparedSpells.includes(spell.compendiumUuid)) if (!spellData.preparation.alwaysPrepared && !spellData.preparation.isGranted) spellData.preparation.prepared = true;
     }
-
     if (spell.sourceClass) spellData.sourceClass = spell.sourceClass;
     spellData.filterData = formattingUtils.extractSpellFilterData(spell);
     spellData.formattedDetails = formattingUtils.formatSpellDetails(spell);
@@ -77,7 +69,6 @@ export function organizeSpellsByLevel(spellItems, actor = null, spellManager = n
     processedSpellIds.add(spell.id || spell.compendiumUuid || spell.uuid);
     processedSpellNames.add(spellName);
   }
-
   if (actor) {
     const actorSpells = findActorSpells(actor, processedSpellIds, processedSpellNames);
     for (const { spell, source } of actorSpells) {
@@ -90,24 +81,14 @@ export function organizeSpellsByLevel(spellItems, actor = null, spellManager = n
         filterData: formattingUtils.extractSpellFilterData(spell),
         formattedDetails: formattingUtils.formatSpellDetails(spell)
       };
-
       if (spell.system?.sourceClass) spellData.sourceClass = spell.system.sourceClass;
       spellsByLevel[level].push(spellData);
     }
   }
-
-  for (const level in spellsByLevel) {
-    if (spellsByLevel.hasOwnProperty(level)) spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
-  }
-
+  for (const level in spellsByLevel) if (spellsByLevel.hasOwnProperty(level)) spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
   const result = Object.entries(spellsByLevel)
     .sort(([a, b]) => Number(a) - Number(b))
-    .map(([level, spells]) => ({
-      level: level,
-      levelName: CONFIG.DND5E.spellLevels[level],
-      spells: spells
-    }));
-
+    .map(([level, spells]) => ({ level: level, levelName: CONFIG.DND5E.spellLevels[level], spells: spells }));
   log(3, `Final organized spell levels: ${result.length}`);
   return result;
 }
@@ -130,7 +111,6 @@ export function findActorSpells(actor, processedSpellIds, processedSpellNames) {
     const source = spellManager._determineSpellSource(spell);
     newSpells.push({ spell, source });
   }
-
   log(3, `Found ${newSpells.length} additional spells on actor ${actor.name}`);
   return newSpells;
 }

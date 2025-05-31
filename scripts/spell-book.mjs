@@ -44,13 +44,9 @@ async function initializeModuleComponents() {
  * @returns {Promise<void>}
  */
 async function unlockModuleCompendium() {
-  try {
-    const pack = game.packs.find((p) => p.collection === MODULE.PACK);
-    if (pack && pack.locked) await pack.configure({ locked: false });
-    await createActorSpellbooksFolder(pack);
-  } catch (error) {
-    log(1, 'Error unlocking module compendium:', error);
-  }
+  const pack = game.packs.find((p) => p.collection === MODULE.PACK);
+  if (pack && pack.locked) await pack.configure({ locked: false });
+  await createActorSpellbooksFolder(pack);
 }
 
 /**
@@ -59,38 +55,22 @@ async function unlockModuleCompendium() {
  * @returns {Promise<void>}
  */
 async function createActorSpellbooksFolder(pack) {
-  try {
-    if (!pack) return;
-    const folder = pack.folders.find((f) => f.name === 'Actor Spellbooks');
-    if (!folder) {
-      log(3, 'Creating Actor Spellbooks folder at module initialization');
-      await Folder.create(
-        {
-          name: game.i18n.localize('SPELLBOOK.Folders.ActorSpellbooks'),
-          type: 'JournalEntry'
-        },
-        { pack: pack.collection }
-      );
-      log(3, 'Created Actor Spellbooks folder');
-    }
-  } catch (error) {
-    log(1, 'Error creating Actor Spellbooks folder:', error);
+  if (!pack) return;
+  const folder = pack.folders.find((f) => f.name === 'Actor Spellbooks');
+  if (!folder) {
+    await Folder.create({ name: game.i18n.localize('SPELLBOOK.Folders.ActorSpellbooks'), type: 'JournalEntry' }, { pack: pack.collection });
+    log(3, 'Created Actor Spellbooks folder');
   }
 }
 
 async function preloadTemplates() {
-  try {
-    function flattenTemplateObject(obj, result = []) {
-      for (const key in obj) {
-        if (typeof obj[key] === 'string') result.push(obj[key]);
-        else if (typeof obj[key] === 'object') flattenTemplateObject(obj[key], result);
-      }
-      return result;
+  function flattenTemplateObject(obj, result = []) {
+    for (const key in obj) {
+      if (typeof obj[key] === 'string') result.push(obj[key]);
+      else if (typeof obj[key] === 'object') flattenTemplateObject(obj[key], result);
     }
-
-    const templatePaths = flattenTemplateObject(TEMPLATES);
-    return loadTemplates(templatePaths);
-  } catch (error) {
-    log(1, 'Error preloading templates:', error);
+    return result;
   }
+  const templatePaths = flattenTemplateObject(TEMPLATES);
+  return loadTemplates(templatePaths);
 }

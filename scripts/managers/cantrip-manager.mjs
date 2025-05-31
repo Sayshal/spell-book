@@ -18,8 +18,6 @@ export class CantripManager {
     this.spellManager = spellManager;
     this.spellbook = spellbook;
     this.isWizard = genericUtils.isWizard(actor);
-
-    // Cache cantrip calculations
     this._maxCantripsByClass = new Map();
     this._totalMaxCantrips = 0;
     this._cacheInitialized = false;
@@ -32,12 +30,9 @@ export class CantripManager {
    */
   _initializeCache() {
     if (this._cacheInitialized) return;
-
     this._maxCantripsByClass.clear();
     this._totalMaxCantrips = 0;
-
     const classItems = this.actor.items.filter((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
-
     for (const classItem of classItems) {
       const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
       const maxCantrips = this._calculateMaxCantripsForClass(classItem, identifier);
@@ -45,7 +40,6 @@ export class CantripManager {
       this._totalMaxCantrips += maxCantrips;
       log(3, `Cached max cantrips for ${identifier}: ${maxCantrips}`);
     }
-
     this._cacheInitialized = true;
     log(3, `Total max cantrips across all classes: ${this._totalMaxCantrips}`);
   }
@@ -92,22 +86,16 @@ export class CantripManager {
       .map((v) => v.trim())
       .filter((v) => v.length > 0);
     let baseCantrips = 0;
-
-    try {
-      if (classItem.scaleValues) {
-        for (const key of cantripScaleKeys) {
-          const cantripValue = classItem.scaleValues[key]?.value;
-          if (cantripValue !== undefined) {
-            baseCantrips = cantripValue;
-            log(3, `Found cantrip scale value '${key}' = ${baseCantrips} for class ${classIdentifier}`);
-            break;
-          }
+    if (classItem.scaleValues) {
+      for (const key of cantripScaleKeys) {
+        const cantripValue = classItem.scaleValues[key]?.value;
+        if (cantripValue !== undefined) {
+          baseCantrips = cantripValue;
+          log(3, `Found cantrip scale value '${key}' = ${baseCantrips} for class ${classIdentifier}`);
+          break;
         }
       }
-    } catch (err) {
-      log(2, `Error accessing scaleValues for ${classIdentifier}, using fallback calculation`, err);
     }
-
     if (baseCantrips === 0) return 0;
     const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
     if (classRules && classRules.showCantrips === false) return 0;
@@ -134,7 +122,6 @@ export class CantripManager {
     if (!classIdentifier) {
       return this.actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.preparation?.prepared && !i.system.preparation?.alwaysPrepared).length;
     }
-
     return this.actor.items.filter(
       (i) =>
         i.type === 'spell' &&
@@ -162,16 +149,11 @@ export class CantripManager {
    * @returns {boolean} Whether a level-up cantrip change is detected
    */
   checkForLevelUp() {
-    try {
-      const previousLevel = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL) || 0;
-      const previousMax = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX) || 0;
-      const currentLevel = this.actor.system.details.level;
-      const currentMax = this._getTotalMaxCantrips();
-      return (currentLevel > previousLevel || currentMax > previousMax) && previousLevel > 0;
-    } catch (error) {
-      log(1, 'Error checking for cantrip level up:', error);
-      return false;
-    }
+    const previousLevel = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL) || 0;
+    const previousMax = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX) || 0;
+    const currentLevel = this.actor.system.details.level;
+    const currentMax = this._getTotalMaxCantrips();
+    return (currentLevel > previousLevel || currentMax > previousMax) && previousLevel > 0;
   }
 
   /**
@@ -187,32 +169,22 @@ export class CantripManager {
   canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest, uiCantripCount, classIdentifier) {
     if (spell.system.level !== 0) return { allowed: true };
     if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
-
     if (!classIdentifier) {
       log(2, `No class identifier for cantrip ${spell.name}, allowing change but may cause issues`);
       return { allowed: true };
     }
-
     const settings = this._getClassSettings(classIdentifier);
     const spellName = spell.name;
-
     if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.UNENFORCED || settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
       if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM && isChecked) {
         const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount(classIdentifier);
         const maxCantrips = this._getMaxCantripsForClass(classIdentifier);
         if (currentCount >= maxCantrips) {
-          ui.notifications.info(
-            game.i18n.format('SPELLBOOK.Notifications.OverLimitWarning', {
-              type: 'cantrips',
-              current: currentCount + 1,
-              max: maxCantrips
-            })
-          );
+          ui.notifications.info(game.i18n.format('SPELLBOOK.Notifications.OverLimitWarning', { type: 'cantrips', current: currentCount + 1, max: maxCantrips }));
         }
       }
       return { allowed: true };
     }
-
     if (isChecked) {
       const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount(classIdentifier);
       const maxCantrips = this._getMaxCantripsForClass(classIdentifier);
@@ -220,7 +192,6 @@ export class CantripManager {
       if (currentCount >= maxCantrips) return { allowed: false, message: 'SPELLBOOK.Cantrips.MaximumReached' };
       return { allowed: true };
     }
-
     const cantripSwapping = settings.cantripSwapping || 'none';
     switch (cantripSwapping) {
       case 'none':
@@ -234,7 +205,6 @@ export class CantripManager {
         if (!isLongRest) return { allowed: false, message: 'SPELLBOOK.Cantrips.LockedOutsideLongRest' };
         break;
     }
-
     const trackingData = this._getSwapTrackingData(isLevelUp, isLongRest, classIdentifier);
     const spellUuid = genericUtils.getSpellUuid(spell);
     if ((isLevelUp && cantripSwapping === 'levelUp') || (isLongRest && cantripSwapping === 'longRest')) {
@@ -248,7 +218,6 @@ export class CantripManager {
         return { allowed: false, message: 'SPELLBOOK.Cantrips.MustUnlearnFirst' };
       }
     }
-
     return { allowed: true };
   }
 
@@ -264,15 +233,7 @@ export class CantripManager {
     if (!isLevelUp && !isLongRest) return { hasUnlearned: false, unlearned: null, hasLearned: false, learned: null, originalChecked: [] };
     const flagName = isLevelUp ? `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.levelUp` : `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.longRest`;
     const data = this.actor.getFlag(MODULE.ID, flagName);
-    return (
-      data || {
-        hasUnlearned: false,
-        unlearned: null,
-        hasLearned: false,
-        learned: null,
-        originalChecked: []
-      }
-    );
+    return data || { hasUnlearned: false, unlearned: null, hasLearned: false, learned: null, originalChecked: [] };
   }
 
   /**
@@ -285,7 +246,6 @@ export class CantripManager {
    */
   trackCantripChange(spell, isChecked, isLevelUp, isLongRest, classIdentifier) {
     if (spell.system.level !== 0) return;
-
     if (!classIdentifier) {
       classIdentifier = spell.sourceClass || spell.system?.sourceClass;
       if (!classIdentifier) {
@@ -293,7 +253,6 @@ export class CantripManager {
         return;
       }
     }
-
     const settings = this._getClassSettings(classIdentifier);
     const cantripSwapping = settings.cantripSwapping || 'none';
     const spellUuid = genericUtils.getSpellUuid(spell);
@@ -308,17 +267,9 @@ export class CantripManager {
           (i) => i.type === 'spell' && i.system.level === 0 && i.system.preparation?.prepared && (i.sourceClass === classIdentifier || i.system.sourceClass === classIdentifier)
         )
         .map((i) => genericUtils.getSpellUuid(i));
-
-      tracking = {
-        hasUnlearned: false,
-        unlearned: null,
-        hasLearned: false,
-        learned: null,
-        originalChecked: preparedCantrips
-      };
+      tracking = { hasUnlearned: false, unlearned: null, hasLearned: false, learned: null, originalChecked: preparedCantrips };
       this.actor.setFlag(MODULE.ID, flagName, tracking);
     }
-
     if (!isChecked && tracking.originalChecked.includes(spellUuid)) {
       if (tracking.unlearned === spellUuid) {
         tracking.hasUnlearned = false;
@@ -342,7 +293,6 @@ export class CantripManager {
       tracking.hasUnlearned = false;
       tracking.unlearned = null;
     }
-
     this.actor.setFlag(MODULE.ID, flagName, tracking);
   }
 
@@ -360,7 +310,6 @@ export class CantripManager {
         if (Object.keys(allTracking[classId]).length === 0) delete allTracking[classId];
       }
     }
-
     if (Object.keys(allTracking).length === 0) await this.actor.unsetFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING);
     else await this.actor.setFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING, allTracking);
     if (isLevelUp) {
@@ -398,12 +347,10 @@ export class CantripManager {
       log(2, 'No class identifier provided to lockCantripCheckboxes');
       return;
     }
-
     const settings = this._getClassSettings(classIdentifier);
     const maxCantrips = this._getMaxCantripsForClass(classIdentifier);
     const isAtMax = currentCount >= maxCantrips;
     const trackingData = this._getSwapTrackingData(isLevelUp, isLongRest, classIdentifier);
-
     for (const item of cantripItems) {
       const checkbox = item.querySelector('dnd5e-checkbox');
       if (!checkbox) continue;
@@ -422,7 +369,6 @@ export class CantripManager {
 
       if (settings.behavior !== MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) continue;
       const cantripSwapping = settings.cantripSwapping || 'none';
-
       switch (cantripSwapping) {
         case 'none':
           if (isChecked) {
@@ -457,7 +403,6 @@ export class CantripManager {
             item.classList.add('cantrip-locked');
             continue;
           }
-
           if (isLongRest) {
             if (trackingData.hasUnlearned && uuid !== trackingData.unlearned && isChecked) {
               checkbox.disabled = true;
@@ -490,7 +435,6 @@ export class CantripManager {
         if (Object.keys(allTracking[classId]).length === 0) delete allTracking[classId];
       }
     }
-
     if (Object.keys(allTracking).length === 0) this.actor.unsetFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING);
     else this.actor.setFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING, allTracking);
   }
@@ -502,12 +446,10 @@ export class CantripManager {
    */
   async sendComprehensiveGMNotification(notificationData) {
     const { actorName, classChanges } = notificationData;
-
     const hasChanges = Object.values(classChanges).some(
       (classData) =>
         classData.cantripChanges.added.length > 0 || classData.cantripChanges.removed.length > 0 || classData.overLimits.cantrips.isOver || classData.overLimits.spells.isOver
     );
-
     if (!hasChanges) return;
     let content = `<h2>${game.i18n.format('SPELLBOOK.Notifications.ComprehensiveTitle', { name: actorName })}</h2>`;
     for (const [classIdentifier, classData] of Object.entries(classChanges)) {
@@ -532,7 +474,6 @@ export class CantripManager {
       }
       content += `<hr>`;
     }
-
     await ChatMessage.create({ content: content, whisper: game.users.filter((u) => u.isGM).map((u) => u.id) });
   }
 }

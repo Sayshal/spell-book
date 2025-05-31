@@ -35,8 +35,6 @@ export class RitualManager {
       this.isWizard = true;
       this.wizardManager = wizardManager;
       log(3, `Created new wizard manager for ${this.actor.name}`);
-    } else {
-      log(1, `Actor ${this.actor.name} is not a wizard`);
     }
   }
 
@@ -69,66 +67,47 @@ export class RitualManager {
    */
   async initializeAllRitualSpells() {
     if (!this.isWizard || !this.isRitualCastingEnabled() || !this.wizardManager) return;
-
-    try {
-      const spellbookSpells = await this.wizardManager.getSpellbookSpells();
-      const spellsToCreate = [];
-      log(1, `Starting ritual initialization for ${this.actor.name}, checking ${spellbookSpells.length} spellbook spells`);
-      let ritualSpellsFound = 0;
-      let ritualSpellsAlreadyExist = 0;
-      let ritualSpellsToCreate = 0;
-
-      for (const spellUuid of spellbookSpells) {
-        try {
-          const existingSpell = this.actor.items.find((i) => i.type === 'spell' && (i.flags?.core?.sourceId === spellUuid || i.uuid === spellUuid));
-          const sourceSpell = await fromUuid(spellUuid);
-          if (!sourceSpell) {
-            log(2, `Could not load spell ${spellUuid} from wizard spellbook`);
-            continue;
-          }
-
-          if (!sourceSpell.system.components?.ritual || sourceSpell.system.level === 0) continue;
-          ritualSpellsFound++;
-          log(3, `Found ritual spell: ${sourceSpell.name} (${spellUuid}), exists on actor: ${!!existingSpell}`);
-
-          if (existingSpell) {
-            ritualSpellsAlreadyExist++;
-            const isPrepared = existingSpell.system.preparation?.prepared;
-            const currentMode = existingSpell.system.preparation?.mode;
-
-            log(3, `Existing spell ${sourceSpell.name} - prepared: ${isPrepared}, mode: ${currentMode}`);
-
-            if (!isPrepared && currentMode !== 'ritual') {
-              await existingSpell.update({
-                'system.preparation.mode': 'ritual',
-                'system.preparation.prepared': false,
-                'system.sourceClass': 'wizard'
-              });
-              log(1, `Updated existing spell ${sourceSpell.name} to ritual mode`);
-            }
-          } else {
-            ritualSpellsToCreate++;
-            const newSpellData = sourceSpell.toObject();
-            if (!newSpellData.system.preparation) newSpellData.system.preparation = {};
-            newSpellData.system.preparation.mode = 'ritual';
-            newSpellData.system.preparation.prepared = false;
-            newSpellData.flags = newSpellData.flags || {};
-            newSpellData.flags.core = newSpellData.flags.core || {};
-            newSpellData.flags.core.sourceId = spellUuid;
-            newSpellData.system.sourceClass = 'wizard';
-            spellsToCreate.push(newSpellData);
-            log(3, `Preparing to create ritual spell: ${sourceSpell.name}`);
-          }
-        } catch (error) {
-          log(1, `Error processing ritual spell ${spellUuid}: ${error.message}`);
-        }
+    const spellbookSpells = await this.wizardManager.getSpellbookSpells();
+    const spellsToCreate = [];
+    log(1, `Starting ritual initialization for ${this.actor.name}, checking ${spellbookSpells.length} spellbook spells`);
+    let ritualSpellsFound = 0;
+    let ritualSpellsAlreadyExist = 0;
+    let ritualSpellsToCreate = 0;
+    for (const spellUuid of spellbookSpells) {
+      const existingSpell = this.actor.items.find((i) => i.type === 'spell' && (i.flags?.core?.sourceId === spellUuid || i.uuid === spellUuid));
+      const sourceSpell = await fromUuid(spellUuid);
+      if (!sourceSpell) {
+        log(2, `Could not load spell ${spellUuid} from wizard spellbook`);
+        continue;
       }
-
-      log(3, `Ritual summary - Found: ${ritualSpellsFound}, Already exist: ${ritualSpellsAlreadyExist}, To create: ${ritualSpellsToCreate}`);
-      if (spellsToCreate.length > 0) await this.actor.createEmbeddedDocuments('Item', spellsToCreate);
-    } catch (error) {
-      log(1, `ERROR initializing ritual spells for ${this.actor.name}: ${error.message}`);
+      if (!sourceSpell.system.components?.ritual || sourceSpell.system.level === 0) continue;
+      ritualSpellsFound++;
+      log(3, `Found ritual spell: ${sourceSpell.name} (${spellUuid}), exists on actor: ${!!existingSpell}`);
+      if (existingSpell) {
+        ritualSpellsAlreadyExist++;
+        const isPrepared = existingSpell.system.preparation?.prepared;
+        const currentMode = existingSpell.system.preparation?.mode;
+        log(3, `Existing spell ${sourceSpell.name} - prepared: ${isPrepared}, mode: ${currentMode}`);
+        if (!isPrepared && currentMode !== 'ritual') {
+          await existingSpell.update({ 'system.preparation.mode': 'ritual', 'system.preparation.prepared': false, 'system.sourceClass': 'wizard' });
+          log(1, `Updated existing spell ${sourceSpell.name} to ritual mode`);
+        }
+      } else {
+        ritualSpellsToCreate++;
+        const newSpellData = sourceSpell.toObject();
+        if (!newSpellData.system.preparation) newSpellData.system.preparation = {};
+        newSpellData.system.preparation.mode = 'ritual';
+        newSpellData.system.preparation.prepared = false;
+        newSpellData.flags = newSpellData.flags || {};
+        newSpellData.flags.core = newSpellData.flags.core || {};
+        newSpellData.flags.core.sourceId = spellUuid;
+        newSpellData.system.sourceClass = 'wizard';
+        spellsToCreate.push(newSpellData);
+        log(3, `Preparing to create ritual spell: ${sourceSpell.name}`);
+      }
     }
+    log(3, `Ritual summary - Found: ${ritualSpellsFound}, Already exist: ${ritualSpellsAlreadyExist}, To create: ${ritualSpellsToCreate}`);
+    if (spellsToCreate.length > 0) await this.actor.createEmbeddedDocuments('Item', spellsToCreate);
   }
 
   /**
@@ -137,17 +116,11 @@ export class RitualManager {
    */
   async removeAllRitualOnlySpells() {
     if (!this.isWizard) return;
-
-    try {
-      const ritualOnlySpells = this.actor.items.filter((i) => i.type === 'spell' && i.system.preparation?.mode === 'ritual' && !i.system.preparation?.prepared);
-
-      if (ritualOnlySpells.length > 0) {
-        const idsToRemove = ritualOnlySpells.map((s) => s.id);
-        await this.actor.deleteEmbeddedDocuments('Item', idsToRemove);
-        log(3, `Removed ${ritualOnlySpells.length} ritual-only spells from ${this.actor.name}`);
-      }
-    } catch (error) {
-      log(1, `Error removing ritual-only spells for ${this.actor.name}:`, error);
+    const ritualOnlySpells = this.actor.items.filter((i) => i.type === 'spell' && i.system.preparation?.mode === 'ritual' && !i.system.preparation?.prepared);
+    if (ritualOnlySpells.length > 0) {
+      const idsToRemove = ritualOnlySpells.map((s) => s.id);
+      await this.actor.deleteEmbeddedDocuments('Item', idsToRemove);
+      log(3, `Removed ${ritualOnlySpells.length} ritual-only spells from ${this.actor.name}`);
     }
   }
 

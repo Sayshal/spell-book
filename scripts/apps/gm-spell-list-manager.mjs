@@ -148,12 +148,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       const originalUuid = this.selectedSpellList.document.flags?.[MODULE.ID]?.originalUuid;
       if (originalUuid) {
         context.originalUuid = originalUuid;
-        try {
-          const compareResult = await managerHelpers.compareListVersions(originalUuid, this.selectedSpellList.document.uuid);
-          context.compareInfo = compareResult;
-        } catch (error) {
-          log(1, 'Error comparing versions:', error);
-        }
+        const compareResult = await managerHelpers.compareListVersions(originalUuid, this.selectedSpellList.document.uuid);
+        context.compareInfo = compareResult;
       }
     }
   }
@@ -165,7 +161,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       this.loadData();
       return;
     }
-
     this.setupFilterListeners();
     this.applyCollapsedLevels();
     this.applyCollapsedFolders();
@@ -230,21 +225,16 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @returns {boolean} Whether the spell is in the selected list
    */
   isSpellInSelectedList(spell, selectedSpellUUIDs) {
-    try {
-      if (!selectedSpellUUIDs.size) return false;
-      if (selectedSpellUUIDs.has(spell.uuid)) return true;
-      const spellIdPart = spell.uuid.split('.').pop();
-      if (spellIdPart && selectedSpellUUIDs.has(spellIdPart)) return true;
-      const parsedUuid = foundry.utils.parseUuid(spell.uuid);
-      if (parsedUuid.collection) {
-        const normalizedId = `Compendium.${parsedUuid.collection.collection}.${parsedUuid.id}`;
-        if (selectedSpellUUIDs.has(normalizedId)) return true;
-      }
-      return false;
-    } catch (error) {
-      log(1, 'Error checking if spell is in selected list:', error);
-      return false;
+    if (!selectedSpellUUIDs.size) return false;
+    if (selectedSpellUUIDs.has(spell.uuid)) return true;
+    const spellIdPart = spell.uuid.split('.').pop();
+    if (spellIdPart && selectedSpellUUIDs.has(spellIdPart)) return true;
+    const parsedUuid = foundry.utils.parseUuid(spell.uuid);
+    if (parsedUuid.collection) {
+      const normalizedId = `Compendium.${parsedUuid.collection.collection}.${parsedUuid.id}`;
+      if (selectedSpellUUIDs.has(normalizedId)) return true;
     }
+    return false;
   }
 
   /**
@@ -278,24 +268,20 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * Apply filters to the DOM elements in the UI
    */
   applyFilters() {
-    try {
-      const filteredData = this._filterAvailableSpells();
-      const visibleUUIDs = new Set(filteredData.spells.map((spell) => spell.uuid));
-      const spellItems = this.element.querySelectorAll('.available-spells .spell-item');
-      let visibleCount = 0;
-      spellItems.forEach((item) => {
-        const uuid = item.dataset.uuid;
-        const isVisible = visibleUUIDs.has(uuid);
-        item.style.display = isVisible ? '' : 'none';
-        if (isVisible) visibleCount++;
-      });
-      const noResults = this.element.querySelector('.no-spells');
-      if (noResults) noResults.style.display = visibleCount > 0 ? 'none' : 'block';
-      const countDisplay = this.element.querySelector('.filter-count');
-      if (countDisplay) countDisplay.textContent = `${visibleCount} spells`;
-    } catch (error) {
-      log(1, 'Error applying filters:', error);
-    }
+    const filteredData = this._filterAvailableSpells();
+    const visibleUUIDs = new Set(filteredData.spells.map((spell) => spell.uuid));
+    const spellItems = this.element.querySelectorAll('.available-spells .spell-item');
+    let visibleCount = 0;
+    spellItems.forEach((item) => {
+      const uuid = item.dataset.uuid;
+      const isVisible = visibleUUIDs.has(uuid);
+      item.style.display = isVisible ? '' : 'none';
+      if (isVisible) visibleCount++;
+    });
+    const noResults = this.element.querySelector('.no-spells');
+    if (noResults) noResults.style.display = visibleCount > 0 ? 'none' : 'block';
+    const countDisplay = this.element.querySelector('.filter-count');
+    if (countDisplay) countDisplay.textContent = `${visibleCount} spells`;
   }
 
   /**
@@ -443,14 +429,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * Apply saved collapsed level states from user flags
    */
   applyCollapsedLevels() {
-    try {
-      const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS) || [];
-      for (const levelId of collapsedLevels) {
-        const levelContainer = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
-        if (levelContainer) levelContainer.classList.add('collapsed');
-      }
-    } catch (error) {
-      log(1, 'Error applying collapsed levels:', error);
+    const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS) || [];
+    for (const levelId of collapsedLevels) {
+      const levelContainer = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
+      if (levelContainer) levelContainer.classList.add('collapsed');
     }
   }
 
@@ -633,15 +615,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @private
    */
   async _createNewListCallback(name, identifier) {
-    try {
-      const source = game.i18n.localize('SPELLMANAGER.CreateList.Custom');
-      const newList = await managerHelpers.createNewSpellList(name, identifier, source);
-      if (newList) {
-        await this.loadData();
-        await this.selectSpellList(newList.uuid);
-      }
-    } catch (error) {
-      log(1, `Error creating list: ${error.message}`);
+    const source = game.i18n.localize('SPELLMANAGER.CreateList.Custom');
+    const newList = await managerHelpers.createNewSpellList(name, identifier, source);
+    if (newList) {
+      await this.loadData();
+      await this.selectSpellList(newList.uuid);
     }
   }
 
@@ -651,28 +629,24 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @returns {Promise<void>}
    */
   async selectSpellList(uuid) {
-    try {
-      log(3, `Selecting spell list: ${uuid}`);
-      const duplicate = await managerHelpers.findDuplicateSpellList(uuid);
-      if (duplicate && duplicate.uuid !== uuid) return this.selectSpellList(duplicate.uuid);
-      const spellList = await fromUuid(uuid);
-      if (!spellList) return;
-      this.isEditing = false;
-      const spellUuids = Array.from(spellList.system.spells || []);
-      this.selectedSpellList = {
-        document: spellList,
-        uuid: spellList.uuid,
-        name: spellList.name,
-        spellUuids: spellUuids,
-        spells: [],
-        isLoadingSpells: true
-      };
-      this.determineSourceFilter(spellList);
-      this.render(false);
-      await this.loadSpellDetails(spellUuids);
-    } catch (error) {
-      log(1, 'Error selecting spell list:', error);
-    }
+    log(3, `Selecting spell list: ${uuid}`);
+    const duplicate = await managerHelpers.findDuplicateSpellList(uuid);
+    if (duplicate && duplicate.uuid !== uuid) return this.selectSpellList(duplicate.uuid);
+    const spellList = await fromUuid(uuid);
+    if (!spellList) return;
+    this.isEditing = false;
+    const spellUuids = Array.from(spellList.system.spells || []);
+    this.selectedSpellList = {
+      document: spellList,
+      uuid: spellList.uuid,
+      name: spellList.name,
+      spellUuids: spellUuids,
+      spells: [],
+      isLoadingSpells: true
+    };
+    this.determineSourceFilter(spellList);
+    this.render(false);
+    await this.loadSpellDetails(spellUuids);
   }
 
   /**
@@ -687,14 +661,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       if (isCustomList) {
         const originalUuid = spellList.flags?.[MODULE.ID]?.originalUuid;
         if (originalUuid) {
-          try {
-            const parsedUuid = foundry.utils.parseUuid(originalUuid);
-            const packageName = parsedUuid.collection.metadata.packageName.split('.')[0];
-            sourceFilter = packageName;
-            log(3, `Using original source: ${sourceFilter}`);
-          } catch (e) {
-            log(1, `Error parsing original UUID: ${e.message}`);
-          }
+          const parsedUuid = foundry.utils.parseUuid(originalUuid);
+          const packageName = parsedUuid.collection.metadata.packageName.split('.')[0];
+          sourceFilter = packageName;
+          log(3, `Using original source: ${sourceFilter}`);
         }
       } else if (spellList.pack) {
         const packageName = spellList.pack.split('.')[0];
@@ -740,9 +710,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   _ensureSpellIcons() {
     for (const level of this.selectedSpellList.spellsByLevel) {
       for (const spell of level.spells) {
-        if (!spell.enrichedIcon) {
-          spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
-        }
+        if (!spell.enrichedIcon) spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
       }
     }
   }
@@ -751,14 +719,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * Apply saved collapsed folder states from user flags
    */
   applyCollapsedFolders() {
-    try {
-      const collapsedFolders = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_FOLDERS) || [];
-      for (const folderId of collapsedFolders) {
-        const folderContainer = this.element.querySelector(`.list-folder[data-folder-id="${folderId}"]`);
-        if (folderContainer) folderContainer.classList.add('collapsed');
-      }
-    } catch (error) {
-      log(1, 'Error applying collapsed folders:', error);
+    const collapsedFolders = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_FOLDERS) || [];
+    for (const folderId of collapsedFolders) {
+      const folderContainer = this.element.querySelector(`.list-folder[data-folder-id="${folderId}"]`);
+      if (folderContainer) folderContainer.classList.add('collapsed');
     }
   }
 
@@ -894,10 +858,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     for (const spellUuid of this.pendingChanges.removed) {
       const normalizedForms = managerHelpers.normalizeUuid(spellUuid);
       for (const existingUuid of currentSpells) {
-        if (normalizedForms.includes(existingUuid)) {
-          currentSpells.delete(existingUuid);
-          log(3, `Removed spell ${existingUuid} from list`);
-        }
+        if (normalizedForms.includes(existingUuid)) currentSpells.delete(existingUuid);
       }
     }
     log(3, `Processing ${this.pendingChanges.added.size} spell additions`);
