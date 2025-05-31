@@ -1316,6 +1316,43 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
+   * Find a class item in a specific top-level folder
+   * @static
+   * @private
+   * @param {string} identifier - The class identifier to search for
+   * @param {string} topLevelFolderName - The top-level folder name to search in
+   * @returns {Promise<Item|null>} The found class item or null
+   */
+  static async _findClassInTopLevelFolder(identifier, topLevelFolderName) {
+    const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
+    for (const pack of itemPacks) {
+      let packTopLevelFolder = null;
+      if (pack.folder) {
+        if (pack.folder.depth !== 1) packTopLevelFolder = pack.folder.getParentFolders().at(-1).name;
+        else packTopLevelFolder = pack.folder.name;
+      }
+
+      if (packTopLevelFolder !== topLevelFolderName) continue;
+
+      try {
+        const index = await pack.getIndex({ fields: ['type', 'system.identifier'] });
+        const entry = index.find((e) => e.type === 'class' && e.system?.identifier?.toLowerCase() === identifier.toLowerCase());
+
+        if (entry) {
+          const classItem = await pack.getDocument(entry._id);
+          log(3, `Found class ${classItem.name} in pack ${pack.metadata.label} (folder: ${packTopLevelFolder})`);
+          return classItem;
+        }
+      } catch (err) {
+        log(2, `Error searching pack ${pack.metadata.label}:`, err);
+      }
+    }
+
+    log(2, `No class with identifier "${identifier}" found in top-level folder "${topLevelFolderName}"`);
+    return null;
+  }
+
+  /**
    * Handle selecting a spell list
    * @static
    * @param {Event} event - The triggering event
@@ -1591,45 +1628,34 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @param {HTMLElement} _form - The form element
    */
   static async handleOpenClass(event, _form) {
-    log(1, 'Handle Open Class:', { event: event, _form: _form });
     try {
       const appId = `gm-spell-list-manager-${MODULE.ID}`;
       const instance = foundry.applications.instances.get(appId);
       if (!instance || !instance.selectedSpellList) return;
-      const identifier = instance.selectedSpellList.document.system?.identifier;
+      const selectedSpellList = instance.selectedSpellList;
+      const identifier = selectedSpellList.document.system?.identifier;
       if (!identifier) {
         ui.notifications.warn(game.i18n.localize('SPELLMANAGER.Warnings.NoClassIdentifier'));
         return;
       }
 
-      const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
-      let classItem = null;
-      for (const actor of game.actors) {
-        const matchingItem = actor.items.find((i) => i.type === 'class' && i.system?.identifier?.toLowerCase() === identifier.toLowerCase());
-
-        if (matchingItem) {
-          classItem = matchingItem;
-          break;
+      let spellListMeta = instance.availableSpellLists.find((list) => list.uuid === selectedSpellList.uuid);
+      if (!spellListMeta || (spellListMeta.isCustom && selectedSpellList.document.flags?.[MODULE.ID]?.originalUuid)) {
+        const originalUuid = selectedSpellList.document.flags[MODULE.ID].originalUuid;
+        if (originalUuid) {
+          spellListMeta = instance.availableSpellLists.find((list) => list.uuid === originalUuid);
+          log(3, `Using original spell list source for custom duplicate`);
         }
       }
 
-      if (!classItem) {
-        for (const pack of itemPacks) {
-          if (classItem) break;
-
-          try {
-            const index = await pack.getIndex({ fields: ['type', 'system.identifier'] });
-            for (const entry of index) {
-              if (entry.type === 'class' && entry.system?.identifier?.toLowerCase() === identifier.toLowerCase()) {
-                classItem = await pack.getDocument(entry._id);
-                break;
-              }
-            }
-          } catch (err) {
-            log(2, `Error searching pack ${pack.metadata.label}:`, err);
-          }
-        }
+      if (!spellListMeta) {
+        ui.notifications.warn(game.i18n.localize('SPELLMANAGER.Warnings.ClassNotFound', { identifier: identifier }));
+        return;
       }
+
+      const topLevelFolderName = spellListMeta.pack;
+      log(3, `Searching for class ${identifier} in source: ${topLevelFolderName}`);
+      const classItem = await GMSpellListManager._findClassInTopLevelFolder(identifier, topLevelFolderName);
 
       if (!classItem) {
         ui.notifications.warn(game.i18n.format('SPELLMANAGER.Warnings.ClassNotFound', { identifier: identifier }));
@@ -1637,7 +1663,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       }
 
       await classItem.sheet.render(true);
-      log(3, `Opened class sheet for ${classItem.name}`);
+      log(3, `Opened class sheet for ${classItem.name} from ${topLevelFolderName}`);
     } catch (error) {
       log(1, 'Error opening class sheet:', error);
     }
