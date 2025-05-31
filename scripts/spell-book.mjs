@@ -66,7 +66,7 @@ async function createActorSpellbooksFolder(pack) {
       log(3, 'Creating Actor Spellbooks folder at module initialization');
       await Folder.create(
         {
-          name: 'Actor Spellbooks', // TODO: Localize this
+          name: game.i18n.localize('SPELLBOOK.Folders.ActorSpellbooks'),
           type: 'JournalEntry'
         },
         { pack: pack.collection }

@@ -95,7 +95,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         if (hasCustomSpellList) {
           try {
             const customList = await fromUuid(classRules.customSpellList);
-            customSpellListName = customList?.name || 'Unknown List'; //TODO: Localize this
+            customSpellListName = customList?.name || game.i18n.localize('SPELLBOOK.Settings.UnknownList');
           } catch (error) {
             log(2, `Error loading custom spell list name: ${error.message}`);
           }

@@ -2,8 +2,8 @@ import { ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, SETTINGS } from '../constants.mjs'
 import * as genericUtils from '../helpers/generic-utils.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { log } from '../logger.mjs';
+import { RitualManager } from '../managers/ritual-manager.mjs';
 import { CantripManager } from './cantrip-manager.mjs';
-import { RitualManager } from './ritual-manager.mjs/index.js';
 import { RuleSetManager } from './rule-set-manager.mjs';
 import { WizardSpellbookManager } from './wizard-spellbook-manager.mjs';
 
@@ -792,21 +792,51 @@ export class SpellManager {
   }
 
   /**
-   * Determine if a spell can be swapped based on class rules
+   * Determine if a spell can be changed based on class rules and current state
    * @param {Item5e} spell - The spell being modified
    * @param {boolean} isChecked - Whether the spell is being checked (true) or unchecked (false)
    * @param {boolean} wasPrepared - Whether the spell was previously prepared
+   * @param {boolean} isLevelUp - Whether this is during level-up
+   * @param {boolean} isLongRest - Whether this is during a long rest
    * @param {string} classIdentifier - The class identifier
+   * @param {number} currentPrepared - Current number of prepared spells for this class
+   * @param {number} maxPrepared - Maximum allowed prepared spells for this class
    * @returns {Object} Status object with allowed and message properties
    */
-  canChangeSpellStatus(spell, isChecked, wasPrepared, classIdentifier) {
-    // TODO: This always returns allowed: true?
+  canChangeSpellStatus(spell, isChecked, wasPrepared, isLevelUp, isLongRest, classIdentifier, currentPrepared, maxPrepared) {
     if (spell.system.level === 0) return { allowed: true };
     if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
     if (!classIdentifier) return { allowed: true };
     const settings = this.getSettings(classIdentifier);
     const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
-    if (settings.behavior !== ENFORCEMENT_BEHAVIOR.ENFORCED) return { allowed: true };
+    if (settings.behavior === ENFORCEMENT_BEHAVIOR.UNENFORCED || settings.behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
+      if (settings.behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM && isChecked) {
+        if (currentPrepared >= maxPrepared) {
+          ui.notifications.info(
+            game.i18n.format('SPELLBOOK.Notifications.OverLimitWarning', {
+              type: 'spells',
+              current: currentPrepared + 1,
+              max: maxPrepared
+            })
+          );
+        }
+      }
+      return { allowed: true };
+    }
+    if (isChecked && currentPrepared >= maxPrepared) return { allowed: false, message: 'SPELLBOOK.Preparation.ClassAtMaximum' };
+    if (!isChecked && wasPrepared) {
+      const spellSwapping = settings.spellSwapping || 'none';
+      switch (spellSwapping) {
+        case 'none':
+          return { allowed: false, message: 'SPELLBOOK.Spells.LockedNoSwapping' };
+        case 'levelUp':
+          if (!isLevelUp) return { allowed: false, message: 'SPELLBOOK.Spells.LockedOutsideLevelUp' };
+          break;
+        case 'longRest':
+          if (!isLongRest) return { allowed: false, message: 'SPELLBOOK.Spells.LockedOutsideLongRest' };
+          break;
+      }
+    }
     return { allowed: true };
   }
 }

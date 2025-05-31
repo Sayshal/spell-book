@@ -570,7 +570,6 @@ export class SpellbookUI {
       if (!classData) return;
       const currentPrepared = classData.spellPreparation.current || 0;
       const maxPrepared = classData.spellPreparation.maximum || 0;
-      const isAtMax = currentPrepared >= maxPrepared;
       const spellItems = activeTabContent.querySelectorAll('.spell-item');
       const isLevelUp = this.app.spellManager.cantripManager.canBeLeveledUp();
       const isLongRest = this.app._isLongRest;
@@ -587,26 +586,75 @@ export class SpellbookUI {
         const isAtWill = item.querySelector('.tag.atwill');
         if (isAlwaysPrepared || isGranted || isInnate || isAtWill) continue;
         if (spellSourceClass && spellSourceClass !== classIdentifier) continue;
-        if (item.querySelector('.tag.always-prepared') || item.querySelector('.tag.granted') || item.querySelector('.tag.innate') || item.querySelector('.tag.atwill')) continue;
+
         const isChecked = checkbox.checked;
         const wasPrepared = checkbox.dataset.wasPrepared === 'true';
+
+        // Reset state
         checkbox.disabled = false;
         delete checkbox.dataset.tooltip;
         item.classList.remove('spell-locked', 'max-prepared');
-        if (settings.behavior === ENFORCEMENT_BEHAVIOR.ENFORCED) {
-          if (isAtMax && !isChecked) {
-            checkbox.disabled = true;
-            checkbox.dataset.tooltip = game.i18n.format('SPELLBOOK.Preparation.ClassAtMaximum', {
-              class: classData.className || classIdentifier
-            });
-            item.classList.add('spell-locked', 'max-prepared');
-            continue;
+
+        if (settings.behavior !== ENFORCEMENT_BEHAVIOR.ENFORCED) continue;
+
+        // Get spell object for validation
+        const spellUuid = checkbox.dataset.uuid;
+        const spellName = checkbox.dataset.name || 'Unknown Spell';
+
+        // Create minimal spell object for validation
+        const spell = {
+          name: spellName,
+          system: { level: parseInt(spellLevel) || 1 },
+          sourceClass: spellSourceClass,
+          uuid: spellUuid
+        };
+
+        // Check if this spell can be changed
+        const canChange = this.app.spellManager.canChangeSpellStatus(spell, isChecked, wasPrepared, isLevelUp, isLongRest, classIdentifier, currentPrepared, maxPrepared);
+
+        if (!canChange.allowed) {
+          checkbox.disabled = true;
+          if (canChange.message) {
+            let tooltipText = game.i18n.localize(canChange.message);
+            if (canChange.message === 'SPELLBOOK.Preparation.ClassAtMaximum') {
+              tooltipText = game.i18n.format('SPELLBOOK.Preparation.ClassAtMaximum', {
+                class: classData.className || classIdentifier
+              });
+            }
+            checkbox.dataset.tooltip = tooltipText;
           }
-          if (applyRuleLocks && isChecked && wasPrepared) this._applyRuleBasedSpellLocks(item, checkbox, classIdentifier, classRules, isLevelUp, isLongRest);
+          item.classList.add('spell-locked');
+
+          // Add specific CSS class for max prepared
+          if (canChange.message === 'SPELLBOOK.Preparation.ClassAtMaximum') {
+            item.classList.add('max-prepared');
+          }
+        }
+
+        // Apply rule-based locks if requested (for initial setup)
+        if (applyRuleLocks && isChecked && wasPrepared) {
+          const ruleLockCheck = this.app.spellManager.canChangeSpellStatus(
+            spell,
+            false, // Check if we could uncheck it
+            wasPrepared,
+            isLevelUp,
+            isLongRest,
+            classIdentifier,
+            currentPrepared,
+            maxPrepared
+          );
+
+          if (!ruleLockCheck.allowed) {
+            checkbox.disabled = true;
+            if (ruleLockCheck.message) {
+              checkbox.dataset.tooltip = game.i18n.localize(ruleLockCheck.message);
+            }
+            item.classList.add('spell-locked');
+          }
         }
       }
 
-      log(3, `Applied spell locks for ${classIdentifier}, at max: ${isAtMax} (${currentPrepared}/${maxPrepared})`);
+      log(3, `Applied spell locks for ${classIdentifier}, prepared: ${currentPrepared}/${maxPrepared}`);
     } catch (error) {
       log(1, 'Error setting up spell locks:', error);
     }

@@ -1,4 +1,4 @@
-import { CLASS_IDENTIFIERS, FLAGS, MODULE } from '../../constants.mjs';
+import { CLASS_IDENTIFIERS, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
 import { RuleSetManager } from '../../managers/rule-set-manager.mjs';
 import * as actorSpellUtils from '../actor-spells.mjs';

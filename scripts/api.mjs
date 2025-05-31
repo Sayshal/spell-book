@@ -3,12 +3,22 @@ import { PlayerFilterConfiguration } from './apps/player-filter-configuration.mj
 import { PlayerSpellBook } from './apps/player-spell-book.mjs';
 import { SpellbookSettingsDialog } from './apps/spellbook-settings-dialog.mjs';
 import * as actorSpellUtils from './helpers/actor-spells.mjs';
+import * as colorUtils from './helpers/color-utils.mjs';
 import * as managerHelpers from './helpers/compendium-management.mjs';
 import * as filterUtils from './helpers/filters.mjs';
+import * as formElements from './helpers/form-elements.mjs';
+import * as genericUtils from './helpers/generic-utils.mjs';
 import * as discoveryUtils from './helpers/spell-discovery.mjs';
 import * as formattingUtils from './helpers/spell-formatting.mjs';
+import { SpellbookState } from './helpers/state/spellbook-state.mjs';
+import { SpellbookFilterHelper } from './helpers/ui/spellbook-filters.mjs';
+import { SpellbookUI } from './helpers/ui/spellbook-ui.mjs';
 import { log } from './logger.mjs';
+import { CantripManager } from './managers/cantrip-manager.mjs';
+import { RitualManager } from './managers/ritual-manager.mjs';
+import { RuleSetManager } from './managers/rule-set-manager.mjs';
 import { SpellManager } from './managers/spell-manager.mjs';
+import { WizardSpellbookManager } from './managers/wizard-spellbook-manager.mjs';
 import { forceMigration } from './migrations.mjs';
 
 /**
@@ -17,7 +27,6 @@ import { forceMigration } from './migrations.mjs';
  */
 export function createAPI() {
   try {
-    //TODO: Update this with all helpers
     const api = {
       apps: {
         PlayerSpellBook,
@@ -27,12 +36,30 @@ export function createAPI() {
       },
       utils: {
         actor: { ...actorSpellUtils },
+        colors: { ...colorUtils },
         filters: { ...filterUtils },
         discovery: { ...discoveryUtils },
         formatting: { ...formattingUtils },
         management: { ...managerHelpers },
+        forms: { ...formElements },
+        generic: { ...genericUtils }
+      },
+      helpers: {
+        state: { SpellbookState },
+        ui: {
+          SpellbookFilterHelper,
+          SpellbookUI
+        }
+      },
+      managers: {
         SpellManager,
-        forceMigration: forceMigration
+        CantripManager,
+        RitualManager,
+        RuleSetManager,
+        WizardSpellbookManager
+      },
+      migrations: {
+        forceMigration
       },
 
       /**

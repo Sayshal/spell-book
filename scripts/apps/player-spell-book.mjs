@@ -1,4 +1,4 @@
-import { DEFAULT_FILTER_CONFIG, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import { DEFAULT_FILTER_CONFIG, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as filterUtils from '../helpers/filters.mjs';
 import * as formElements from '../helpers/form-elements.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
@@ -6,7 +6,7 @@ import { SpellbookState } from '../helpers/state/spellbook-state.mjs';
 import { SpellbookFilterHelper } from '../helpers/ui/spellbook-filters.mjs';
 import { SpellbookUI } from '../helpers/ui/spellbook-ui.mjs';
 import { log } from '../logger.mjs';
-import { RitualManager } from '../managers/ritual-manager.mjs/index.js';
+import { RitualManager } from '../managers/ritual-manager.mjs';
 import { SpellManager } from '../managers/spell-manager.mjs';
 import { WizardSpellbookManager } from '../managers/wizard-spellbook-manager.mjs';
 import { PlayerFilterConfiguration } from './player-filter-configuration.mjs';
@@ -920,24 +920,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const sourceSpell = await fromUuid(uuid);
       if (!sourceSpell) return;
       const classData = this._stateManager.classSpellData[classIdentifier];
-      const settings = this.spellManager.getSettings(classIdentifier);
-      if (settings.behavior === ENFORCEMENT_BEHAVIOR.ENFORCED && isChecked && !wasPrepared) {
-        const currentPrepared = classData?.spellPreparation?.current || 0;
-        const maxPrepared = classData?.spellPreparation?.maximum || 0;
-        if (currentPrepared >= maxPrepared) {
-          checkbox.checked = false;
-          ui.notifications.warn(
-            game.i18n.format('SPELLBOOK.Preparation.ClassAtMaximum', {
-              class: classData?.className || classIdentifier
-            })
-          );
-          return;
-        }
-      }
-      const canChange = this.spellManager.canChangeSpellStatus(sourceSpell, isChecked, wasPrepared, classIdentifier);
+      const isLevelUp = this.spellManager.cantripManager.canBeLeveledUp();
+      const isLongRest = this._isLongRest;
+      const currentPrepared = classData?.spellPreparation?.current || 0;
+      const maxPrepared = classData?.spellPreparation?.maximum || 0;
+      const canChange = this.spellManager.canChangeSpellStatus(sourceSpell, isChecked, wasPrepared, isLevelUp, isLongRest, classIdentifier, currentPrepared, maxPrepared);
       if (!canChange.allowed) {
         checkbox.checked = !isChecked;
-        if (canChange.message) ui.notifications.warn(game.i18n.localize(canChange.message));
+        if (canChange.message) {
+          let message = game.i18n.localize(canChange.message);
+          if (canChange.message === 'SPELLBOOK.Preparation.ClassAtMaximum') {
+            message = game.i18n.format('SPELLBOOK.Preparation.ClassAtMaximum', { class: classData?.className || classIdentifier });
+          }
+          ui.notifications.warn(message);
+        }
         return;
       }
       if (spellItem) spellItem.classList.toggle('prepared-spell', isChecked);
