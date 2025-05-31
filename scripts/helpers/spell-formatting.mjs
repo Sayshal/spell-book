@@ -25,6 +25,85 @@ export function formatSpellDetails(spell) {
 }
 
 /**
+ * Process spell list data for display (moved from GMSpellListManager)
+ * @param {Object} spellList - The spell list to process
+ * @returns {Object} Processed spell list with display data
+ */
+export function processSpellListForDisplay(spellList) {
+  if (!spellList) return null;
+  const processed = foundry.utils.deepClone(spellList);
+  processed.isCustomList = !!spellList.document.flags?.[MODULE.ID]?.isDuplicate;
+  processed.canRestore = !!(processed.isCustomList && spellList.document.flags?.[MODULE.ID]?.originalUuid);
+  processed.originalUuid = spellList.document.flags?.[MODULE.ID]?.originalUuid;
+  processed.actorId = spellList.document.flags?.[MODULE.ID]?.actorId;
+  processed.isPlayerSpellbook = !!processed.actorId;
+  processed.identifier = spellList.document.system?.identifier;
+  processed.isClassSpellList = !processed.isCustomList && !processed.isPlayerSpellbook && !!processed.identifier;
+
+  if (spellList.spellsByLevel?.length) {
+    processed.spellsByLevel = spellList.spellsByLevel.map((level) => ({
+      ...level,
+      spells: level.spells.map((spell) => processSpellItemForDisplay(spell))
+    }));
+  }
+
+  return processed;
+}
+
+/**
+ * Process spell item for display in the GM interface (moved from GMSpellListManager)
+ * @param {Object} spell - The spell to process
+ * @returns {Object} Processed spell with display data
+ */
+export function processSpellItemForDisplay(spell) {
+  if (!spell.compendiumUuid) spell.compendiumUuid = spell.uuid;
+  const processed = foundry.utils.deepClone(spell);
+  processed.cssClasses = 'spell-item';
+  processed.dataAttributes = `data-uuid="${spell.compendiumUuid}"`;
+  return processed;
+}
+
+/**
+ * Process spell for display in PlayerSpellBook (moved from PlayerSpellBook)
+ * @param {Object} spell - The spell to process
+ * @param {Function} getSpellCssClasses - Function to get CSS classes
+ * @param {Function} getSpellDataAttributes - Function to get data attributes
+ * @param {Function} getSpellPreparationTag - Function to get preparation tag
+ * @param {Function} createCheckbox - Function to create checkbox element
+ * @returns {Object} Processed spell with display data
+ */
+export function processSpellForDisplay(spell, getSpellCssClasses, getSpellDataAttributes, getSpellPreparationTag, createCheckbox) {
+  const processedSpell = foundry.utils.deepClone(spell);
+  if (!spell.compendiumUuid) spell.compendiumUuid = genericUtils.getSpellUuid(spell);
+  processedSpell.cssClasses = getSpellCssClasses(spell);
+  processedSpell.dataAttributes = getSpellDataAttributes(spell);
+  processedSpell.tag = getSpellPreparationTag(spell);
+
+  const ariaLabel =
+    spell.preparation.prepared ?
+      game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name })
+    : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
+
+  const checkbox = createCheckbox({
+    name: `spellPreparation.${spell.compendiumUuid}`,
+    checked: spell.preparation.prepared,
+    disabled: spell.preparation.disabled,
+    ariaLabel: ariaLabel
+  });
+
+  checkbox.id = `prep-${spell.compendiumUuid}`;
+  checkbox.dataset.uuid = spell.compendiumUuid;
+  checkbox.dataset.name = spell.name;
+  checkbox.dataset.ritual = spell.filterData?.isRitual || false;
+  checkbox.dataset.wasPrepared = spell.preparation.prepared;
+  if (spell.sourceClass) checkbox.dataset.sourceClass = spell.sourceClass;
+  if (spell.preparation.disabled && spell.preparation.disabledReason) checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
+
+  processedSpell.preparationCheckboxHtml = formElements.elementToHtml(checkbox);
+  return processedSpell;
+}
+
+/**
  * Format spell components for display
  * @param {Object} spell - The spell object
  * @returns {string} - Formatted components string

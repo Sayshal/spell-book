@@ -1,9 +1,10 @@
-import { CLASS_IDENTIFIERS, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE } from '../constants.mjs';
+import { CLASS_IDENTIFIERS, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, SETTINGS } from '../constants.mjs';
+import * as genericUtils from '../helpers/generic-utils.mjs';
 import { log } from '../logger.mjs';
-import * as genericUtils from './generic-utils.mjs';
+import { RuleSetManager } from './rule-set-manager.mjs';
 
 /**
- * Manages cantrip-specific functionality
+ * Manages cantrip-specific functionality - Single source of truth for cantrip calculations
  */
 export class CantripManager {
   /**
@@ -17,6 +18,101 @@ export class CantripManager {
     this.spellManager = spellManager;
     this.spellbook = spellbook;
     this.isWizard = genericUtils.isWizard(actor);
+
+    // Cache cantrip calculations
+    this._maxCantripsByClass = new Map();
+    this._totalMaxCantrips = 0;
+    this._cacheInitialized = false;
+    this._initializeCache();
+  }
+
+  /**
+   * Initialize cantrip calculation cache
+   * @private
+   */
+  _initializeCache() {
+    if (this._cacheInitialized) return;
+
+    this._maxCantripsByClass.clear();
+    this._totalMaxCantrips = 0;
+
+    const classItems = this.actor.items.filter((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
+
+    for (const classItem of classItems) {
+      const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
+      const maxCantrips = this._calculateMaxCantripsForClass(classItem, identifier);
+      this._maxCantripsByClass.set(identifier, maxCantrips);
+      this._totalMaxCantrips += maxCantrips;
+      log(3, `Cached max cantrips for ${identifier}: ${maxCantrips}`);
+    }
+
+    this._cacheInitialized = true;
+    log(3, `Total max cantrips across all classes: ${this._totalMaxCantrips}`);
+  }
+
+  /**
+   * Clear cantrip calculation cache (call when class rules change)
+   */
+  clearCache() {
+    this._maxCantripsByClass.clear();
+    this._totalMaxCantrips = 0;
+    this._cacheInitialized = false;
+  }
+
+  /**
+   * Get max cantrips for a class using cached values when available
+   * @param {string} classIdentifier - The class identifier
+   * @returns {number} Max cantrips for this class
+   */
+  _getMaxCantripsForClass(classIdentifier) {
+    if (!this._cacheInitialized) this._initializeCache();
+    return this._maxCantripsByClass.get(classIdentifier) || 0;
+  }
+
+  /**
+   * Get total max cantrips across all classes using cached values when available
+   * @returns {number} Total max cantrips
+   */
+  _getTotalMaxCantrips() {
+    if (!this._cacheInitialized) this._initializeCache();
+    return this._totalMaxCantrips;
+  }
+
+  /**
+   * Calculate max cantrips for a specific class (extracted from SpellManager.getMaxAllowed)
+   * @param {Item5e} classItem - The class item
+   * @param {string} classIdentifier - The class identifier
+   * @returns {number} Maximum cantrips for this class
+   * @private
+   */
+  _calculateMaxCantripsForClass(classItem, classIdentifier) {
+    const cantripScaleValuesSetting = game.settings.get(MODULE.ID, SETTINGS.CANTRIP_SCALE_VALUES);
+    const cantripScaleKeys = cantripScaleValuesSetting
+      .split(',')
+      .map((v) => v.trim())
+      .filter((v) => v.length > 0);
+    let baseCantrips = 0;
+
+    try {
+      if (classItem.scaleValues) {
+        for (const key of cantripScaleKeys) {
+          const cantripValue = classItem.scaleValues[key]?.value;
+          if (cantripValue !== undefined) {
+            baseCantrips = cantripValue;
+            log(3, `Found cantrip scale value '${key}' = ${baseCantrips} for class ${classIdentifier}`);
+            break;
+          }
+        }
+      }
+    } catch (err) {
+      log(2, `Error accessing scaleValues for ${classIdentifier}, using fallback calculation`, err);
+    }
+
+    if (baseCantrips === 0) return 0;
+    const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
+    if (classRules && classRules.showCantrips === false) return 0;
+    const cantripBonus = classRules?.cantripBonus || 0;
+    return Math.max(0, baseCantrips + cantripBonus);
   }
 
   /**
@@ -26,7 +122,6 @@ export class CantripManager {
    * @private
    */
   _getClassSettings(classIdentifier) {
-    // TODO: Remove this wrapper and update references to use below method directly
     return this.spellManager.getSettings(classIdentifier);
   }
 
@@ -60,34 +155,6 @@ export class CantripManager {
     const currentLevel = this.actor.system.details.level;
     const currentMax = this._getTotalMaxCantrips();
     return (previousLevel === 0 && currentLevel > 0) || ((currentLevel > previousLevel || currentMax > previousMax) && previousLevel > 0);
-  }
-
-  /**
-   * Get max cantrips for a class using cached values when available
-   * @param {string} classIdentifier - The class identifier
-   * @returns {number} Max cantrips for this class
-   * @private
-   */
-  _getMaxCantripsForClass(classIdentifier) {
-    if (this.spellbook && this.spellbook.getMaxCantripsForClass) return this.spellbook.getMaxCantripsForClass(classIdentifier);
-    return this.spellManager.getMaxAllowed(classIdentifier);
-  }
-
-  /**
-   * Get total max cantrips across all classes using cached values when available
-   * @returns {number} Total max cantrips
-   * @private
-   */
-  _getTotalMaxCantrips() {
-    if (this.spellbook && this.spellbook.getTotalMaxCantrips) return this.spellbook.getTotalMaxCantrips();
-    const classItems = this.actor.items.filter((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
-    let total = 0;
-
-    for (const classItem of classItems) {
-      const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
-      total += this.spellManager.getMaxAllowed(identifier);
-    }
-    return total;
   }
 
   /**
@@ -132,7 +199,7 @@ export class CantripManager {
     if (settings.behavior === ENFORCEMENT_BEHAVIOR.UNENFORCED || settings.behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
       if (settings.behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM && isChecked) {
         const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount(classIdentifier);
-        const maxCantrips = this._getMaxCantripsForClass(classIdentifier); // Use cached value
+        const maxCantrips = this._getMaxCantripsForClass(classIdentifier);
         if (currentCount >= maxCantrips) {
           ui.notifications.info(
             game.i18n.format('SPELLBOOK.Notifications.OverLimitWarning', {
@@ -148,7 +215,7 @@ export class CantripManager {
 
     if (isChecked) {
       const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount(classIdentifier);
-      const maxCantrips = this._getMaxCantripsForClass(classIdentifier); // Use cached value
+      const maxCantrips = this._getMaxCantripsForClass(classIdentifier);
       log(3, `Cantrip check: ${spell.name} for class ${classIdentifier}, current: ${currentCount}, max: ${maxCantrips}`);
       if (currentCount >= maxCantrips) return { allowed: false, message: 'SPELLBOOK.Cantrips.MaximumReached' };
       return { allowed: true };
@@ -333,7 +400,7 @@ export class CantripManager {
     }
 
     const settings = this._getClassSettings(classIdentifier);
-    const maxCantrips = this.spellManager.getMaxAllowed(classIdentifier);
+    const maxCantrips = this._getMaxCantripsForClass(classIdentifier);
     const isAtMax = currentCount >= maxCantrips;
     const trackingData = this._getSwapTrackingData(isLevelUp, isLongRest, classIdentifier);
 

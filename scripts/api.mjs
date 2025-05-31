@@ -3,12 +3,12 @@ import { PlayerFilterConfiguration } from './apps/player-filter-configuration.mj
 import { PlayerSpellBook } from './apps/player-spell-book.mjs';
 import { SpellbookSettingsDialog } from './apps/spellbook-settings-dialog.mjs';
 import * as actorSpellUtils from './helpers/actor-spells.mjs';
+import * as managerHelpers from './helpers/compendium-management.mjs';
 import * as filterUtils from './helpers/filters.mjs';
 import * as discoveryUtils from './helpers/spell-discovery.mjs';
 import * as formattingUtils from './helpers/spell-formatting.mjs';
-import * as managerHelpers from './helpers/spell-management.mjs';
-import { SpellManager } from './helpers/spell-preparation.mjs';
 import { log } from './logger.mjs';
+import { SpellManager } from './managers/spell-manager.mjs';
 import { forceMigration } from './migrations.mjs';
 
 /**

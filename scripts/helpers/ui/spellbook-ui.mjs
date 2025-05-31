@@ -1,7 +1,7 @@
 import { ENFORCEMENT_BEHAVIOR, FLAGS, MODULE } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
+import { RuleSetManager } from '../../managers/rule-set-manager.mjs';
 import * as colorUtils from '../color-utils.mjs';
-import { RuleSetManager } from '../rule-set-manager.mjs';
 
 /**
  * Helper class for UI-related functionality in the spellbook application
@@ -14,6 +14,7 @@ export class SpellbookUI {
   constructor(app) {
     this.app = app;
     this.actor = app.actor;
+    this._colorApplicationCount = 0;
   }
 
   /**
@@ -81,6 +82,7 @@ export class SpellbookUI {
       if (target.matches('dnd5e-checkbox') || target.matches('select')) {
         this.app._applyFilters();
         if (target.name === 'sort-by') this.app._applySorting(target.value);
+        this.app.filterHelper.invalidateFilterCache();
       }
     });
 
@@ -88,12 +90,52 @@ export class SpellbookUI {
       const target = event.target;
       if (target.matches('input[type="text"]')) {
         clearTimeout(this.app._searchTimer);
-        this.app._searchTimer = setTimeout(() => this.app._applyFilters(), 200);
+        this.app._searchTimer = setTimeout(() => {
+          this.app.filterHelper.invalidateFilterCache();
+          this.app._applyFilters();
+        }, 200);
       } else if (target.matches('input[type="number"]')) {
         clearTimeout(this.app._rangeTimer);
-        this.app._rangeTimer = setTimeout(() => this.app._applyFilters(), 200);
+        this.app._rangeTimer = setTimeout(() => {
+          this.app.filterHelper.invalidateFilterCache();
+          this.app._applyFilters();
+        }, 200);
       }
     });
+  }
+
+  /**
+   * Get a random wizard book image (moved from PlayerSpellBook)
+   * @returns {Promise<string>} Path to a random book image
+   */
+  async getRandomWizardBookImage() {
+    if (this._wizardBookImage) return this._wizardBookImage;
+    try {
+      const folderPath = 'icons/sundries/books';
+      const browseResult = await FilePicker.browse('public', folderPath);
+      if (!browseResult || !browseResult.files) {
+        log(2, `Could not browse folder ${folderPath}, using fallback`);
+        this._wizardBookImage = 'icons/svg/book.svg';
+        return this._wizardBookImage;
+      }
+      const webpFiles = browseResult.files.filter((filePath) => filePath.toLowerCase().endsWith('.webp'));
+
+      if (webpFiles.length === 0) {
+        log(2, `No .webp files found in ${folderPath}, using fallback`);
+        this._wizardBookImage = 'icons/svg/book.svg';
+        return this._wizardBookImage;
+      }
+
+      const randomIndex = Math.floor(Math.random() * webpFiles.length);
+      const selectedFile = webpFiles[randomIndex];
+      this._wizardBookImage = selectedFile;
+      log(3, `Selected random wizard book image: ${this._wizardBookImage} (${randomIndex + 1} of ${webpFiles.length})`);
+      return this._wizardBookImage;
+    } catch (error) {
+      log(1, `Error selecting random wizard book image:`, error);
+      this._wizardBookImage = 'icons/svg/book.svg';
+      return this._wizardBookImage;
+    }
   }
 
   /**
@@ -214,48 +256,6 @@ export class SpellbookUI {
     } catch (error) {
       log(1, `Error enforcing per-class spell limits for ${classIdentifier}:`, error);
     }
-  }
-
-  /**
-   * Disable unprepared spell checkboxes when at max prepared spells
-   * @private
-   */
-  _disableUnpreparedSpells() {
-    const allSpellCheckboxes = this.element.querySelectorAll('dnd5e-checkbox[data-uuid]');
-    allSpellCheckboxes.forEach((checkbox) => {
-      const spellItem = checkbox.closest('.spell-item');
-      const spellLevel = spellItem?.dataset.spellLevel;
-      if (spellLevel === '0') return;
-      if (!checkbox.checked) {
-        checkbox.disabled = true;
-        checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Preparation.AtMaximum');
-        spellItem?.classList.add('max-prepared');
-      }
-    });
-  }
-
-  /**
-   * Enable all spell checkboxes when not at max prepared spells
-   * @private
-   */
-  _enableAllSpells() {
-    const allSpellCheckboxes = this.element.querySelectorAll('dnd5e-checkbox[data-uuid]');
-    allSpellCheckboxes.forEach((checkbox) => {
-      const spellItem = checkbox.closest('.spell-item');
-      const spellLevel = spellItem?.dataset.spellLevel;
-      if (spellLevel === '0') return;
-      if (
-        spellItem.querySelector('.tag.always-prepared') ||
-        spellItem.querySelector('.tag.granted') ||
-        spellItem.querySelector('.tag.innate') ||
-        spellItem.querySelector('.tag.atwill')
-      )
-        return;
-
-      checkbox.disabled = false;
-      delete checkbox.dataset.tooltip;
-      spellItem?.classList.remove('max-prepared');
-    });
   }
 
   /**
@@ -392,7 +392,7 @@ export class SpellbookUI {
       const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
       const classIdentifier = activeTabContent?.dataset.classIdentifier;
       if (!classIdentifier) return { current: 0, max: 0 };
-      const maxCantrips = this.app.getMaxCantripsForClass(classIdentifier);
+      const maxCantrips = this.app.spellManager.cantripManager._getMaxCantripsForClass(classIdentifier);
       let currentCount = 0;
       const cantripItems = cantripLevel.querySelectorAll('.spell-item');
       cantripItems.forEach((item) => {
@@ -454,7 +454,7 @@ export class SpellbookUI {
         maxCantrips = cantripCounter ? cantripCounter.max : 0;
       } catch (err) {
         log(2, 'Error getting cantrip counts:', err);
-        if (classIdentifier) maxCantrips = this.app.getMaxCantripsForClass(classIdentifier);
+        if (classIdentifier) maxCantrips = this.app.spellManager.cantripManager._getMaxCantripsForClass(classIdentifier);
       }
 
       for (const item of cantripItems) {
@@ -497,7 +497,7 @@ export class SpellbookUI {
    */
   _applyRuleBasedCantripLocks(item, checkbox, isChecked, classIdentifier, settings) {
     if (settings.behavior !== ENFORCEMENT_BEHAVIOR.ENFORCED) return;
-    const isLevelUp = this.app.spellManager.canBeLeveledUp();
+    const isLevelUp = this.app.spellManager.cantripManager.canBeLeveledUp();
     const isLongRest = this.app._isLongRest;
     const uuid = checkbox.dataset.uuid;
     const preparedByClass = this.app.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
@@ -536,35 +536,20 @@ export class SpellbookUI {
   }
 
   /**
-   * Lock all cantrip checkboxes (e.g., after swap completed)
-   */
-  //TODO: dataset.tooltip should use `.format` and mention event for this action (levelup or longrest, etc.)
-  lockAllCantripCheckboxes() {
-    try {
-      const activeTab = this.app.tabGroups['spellbook-tabs'];
-      const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
-      if (!activeTabContent) return;
-      const cantripItems = activeTabContent.querySelectorAll('.spell-item[data-spell-level="0"]');
-      for (const item of cantripItems) {
-        const checkbox = item.querySelector('dnd5e-checkbox');
-        if (!checkbox || checkbox.hasAttribute('data-always-disabled')) continue;
-        checkbox.disabled = true;
-        checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.SwapComplete');
-        item.classList.add('cantrip-locked');
-        const lockIcon = item.querySelector('.cantrip-lock-icon');
-        if (lockIcon) lockIcon.remove();
-      }
-    } catch (error) {
-      log(1, 'Error locking cantrip checkboxes:', error);
-    }
-  }
-
-  /**
-   * Apply class-specific colors and styling
+   * Apply class-specific colors and styling (only once during application lifecycle)
    * @returns {Promise<void>}
    */
   async applyClassStyling() {
-    if (this.app._stateManager.spellcastingClasses) await colorUtils.applyClassColors(this.app._stateManager.spellcastingClasses);
+    if (this._colorApplicationCount > 0) {
+      log(3, 'Class colors already applied, skipping repeated application');
+      return;
+    }
+
+    if (this.app._stateManager.spellcastingClasses) {
+      await colorUtils.applyClassColors(this.app._stateManager.spellcastingClasses);
+      this._colorApplicationCount++;
+      log(3, 'Applied class colors for the first time');
+    }
   }
 
   /**
@@ -587,8 +572,9 @@ export class SpellbookUI {
       const maxPrepared = classData.spellPreparation.maximum || 0;
       const isAtMax = currentPrepared >= maxPrepared;
       const spellItems = activeTabContent.querySelectorAll('.spell-item');
-      const isLevelUp = this.app.spellManager.canBeLeveledUp();
+      const isLevelUp = this.app.spellManager.cantripManager.canBeLeveledUp();
       const isLongRest = this.app._isLongRest;
+
       for (const item of spellItems) {
         const spellLevel = item.dataset.spellLevel;
         if (spellLevel === '0') continue;

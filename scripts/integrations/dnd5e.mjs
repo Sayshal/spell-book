@@ -2,8 +2,8 @@ import { GMSpellListManager } from '../apps/gm-spell-list-manager.mjs';
 import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
 import { FLAGS, MODULE, SETTINGS } from '../constants.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
-import { SpellManager } from '../helpers/spell-preparation.mjs';
 import { log } from '../logger.mjs';
+import { SpellManager } from '../managers/spell-manager.mjs';
 
 /**
  * Register hooks related to DnD5e system integration

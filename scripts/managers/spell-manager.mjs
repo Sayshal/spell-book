@@ -1,11 +1,12 @@
 import { ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, SETTINGS } from '../constants.mjs';
+import * as genericUtils from '../helpers/generic-utils.mjs';
+import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { log } from '../logger.mjs';
 import { CantripManager } from './cantrip-manager.mjs';
-import * as genericUtils from './generic-utils.mjs';
-import { RitualManager } from './ritual-manager.mjs';
+import { RitualManager } from './ritual-manager.mjs/index.js';
 import { RuleSetManager } from './rule-set-manager.mjs';
-import * as formattingUtils from './spell-formatting.mjs';
-import { WizardSpellbookManager } from './wizard-spellbook.mjs';
+import { WizardSpellbookManager } from './wizard-spellbook-manager.mjs';
+
 /**
  * Manages spell preparation and related functionality
  */
@@ -61,69 +62,16 @@ export class SpellManager {
    */
   getMaxAllowed(classIdentifier) {
     if (!classIdentifier) return 0;
-    if (this.spellbook && this.spellbook.getMaxCantripsForClass) return this.spellbook.getMaxCantripsForClass(classIdentifier);
-    return this._calculateMaxCantrips(classIdentifier);
+    return this.cantripManager._getMaxCantripsForClass(classIdentifier);
   }
 
   /**
-   * Calculate maximum prepared spells for the actor - REMOVED FALLBACK LOGIC
+   * Calculate maximum prepared spells for the actor
    * @returns {number} Maximum allowed prepared spells
    */
   getMaxPrepared() {
     if (!this.classItem?.system?.spellcasting?.preparation?.max) return 0;
     return this.classItem.system.spellcasting.preparation.max;
-  }
-
-  /**
-   * Calculate max cantrips for a class (fallback when no cache available)
-   * @param {string} classIdentifier - The class identifier
-   * @returns {number} Maximum cantrips for this class
-   * @private
-   */
-  _calculateMaxCantrips(classIdentifier) {
-    const classItem = this.actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier));
-    if (!classItem) return 0;
-    const cantripScaleValuesSetting = game.settings.get(MODULE.ID, SETTINGS.CANTRIP_SCALE_VALUES);
-    const cantripScaleKeys = cantripScaleValuesSetting
-      .split(',')
-      .map((v) => v.trim())
-      .filter((v) => v.length > 0);
-    let baseCantrips = 0;
-
-    try {
-      if (classItem.scaleValues) {
-        for (const key of cantripScaleKeys) {
-          const cantripValue = classItem.scaleValues[key]?.value;
-          if (cantripValue !== undefined) {
-            baseCantrips = cantripValue;
-            log(3, `Found cantrip scale value '${key}' = ${baseCantrips} for class ${classIdentifier}`);
-            break;
-          }
-        }
-      }
-    } catch (err) {
-      log(2, `Error accessing scaleValues for ${classIdentifier}, using fallback calculation`, err);
-    }
-
-    if (baseCantrips === 0) {
-      log(2, `No cantrip scale value found for class ${classIdentifier} (checked: ${cantripScaleKeys.join(', ')}), disabling cantrips`);
-      const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
-      if (classRules.showCantrips !== false) {
-        RuleSetManager.updateClassRules(this.actor, classIdentifier, {
-          showCantrips: false,
-          _noScaleValue: true
-        }).catch((error) => {
-          log(1, `Error auto-updating class rules for ${classIdentifier}:`, error);
-        });
-      }
-
-      return 0;
-    }
-
-    const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
-    if (classRules && classRules.showCantrips === false) return 0;
-    const cantripBonus = classRules?.cantripBonus || 0;
-    return Math.max(0, baseCantrips + cantripBonus);
   }
 
   /**
@@ -133,54 +81,7 @@ export class SpellManager {
    */
   getCurrentCount(classIdentifier) {
     if (!classIdentifier) return 0;
-    return this.actor.items.filter(
-      (i) =>
-        i.type === 'spell' &&
-        i.system.level === 0 &&
-        i.system.preparation?.prepared &&
-        !i.system.preparation?.alwaysPrepared &&
-        (i.system.sourceClass === classIdentifier || i.sourceClass === classIdentifier)
-    ).length;
-  }
-
-  /**
-   * Determine if a cantrip can be changed
-   * @param {Item5e} spell - The spell being modified
-   * @param {boolean} isChecked - Whether the spell is being checked (true) or unchecked (false)
-   * @param {boolean} isLevelUp - Whether this is during level-up
-   * @param {boolean} isLongRest - Whether this is during a long rest
-   * @param {number} uiCantripCount - Number of checked cantrip boxes in the ui currently
-   * @param {string} classIdentifier - The current class identifier
-   * @returns {Object} Status object with allowed and message properties
-   */
-  canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest, uiCantripCount, classIdentifier) {
-    // TODO: Remove this wrapper and update references to use below method directly
-    return this.cantripManager.canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest, uiCantripCount, classIdentifier);
-  }
-
-  /**
-   * Track changes to cantrips for swap management
-   * @param {Item5e} spell - The spell being modified
-   * @param {boolean} isChecked - Whether the spell is being checked (true) or unchecked (false)
-   * @param {boolean} isLevelUp - Whether this is during level-up
-   * @param {boolean} isLongRest - Whether this is during a long rest
-   * @param {string} classIdentifier - The current class identifier
-   */
-  trackCantripChange(spell, isChecked, isLevelUp, isLongRest, classIdentifier) {
-    // TODO: Remove this wrapper and update references to use below method directly
-    this.cantripManager.trackCantripChange(spell, isChecked, isLevelUp, isLongRest, classIdentifier);
-  }
-
-  /**
-   * Lock cantrip checkboxes based on current rules and state
-   * @param {NodeList} cantripItems - DOM elements for cantrip items
-   * @param {boolean} isLevelUp - Whether this is during level-up
-   * @param {boolean} isLongRest - Whether this is during a long rest
-   * @param {number} currentCount - Current count of prepared cantrips
-   */
-  lockCantripCheckboxes(cantripItems, isLevelUp, isLongRest, currentCount) {
-    // TODO: Remove this wrapper and update references to use below method directly
-    this.cantripManager.lockCantripCheckboxes(cantripItems, isLevelUp, isLongRest, currentCount);
+    return this.cantripManager.getCurrentCount(classIdentifier);
   }
 
   /**
@@ -196,24 +97,6 @@ export class SpellManager {
     });
     this.settings = this.getSettings();
     return true;
-  }
-
-  /**
-   * Check if actor has had a level up that affects cantrips
-   * @returns {boolean} Whether a level-up cantrip change is detected
-   */
-  checkForLevelUp() {
-    // TODO: Remove this wrapper and update references to use below method directly
-    return this.cantripManager.checkForLevelUp();
-  }
-
-  /**
-   * Check if cantrips can currently be changed (level-up situation)
-   * @returns {boolean} Whether cantrips can be changed
-   */
-  canBeLeveledUp() {
-    // TODO: Remove this wrapper and update references to use below method directly
-    return this.cantripManager.canBeLeveledUp();
   }
 
   /**
@@ -298,8 +181,8 @@ export class SpellManager {
     defaultStatus.prepared = isPreparedForClass;
 
     if (spell.system.level === 0 && classIdentifier) {
-      const maxCantrips = this.getMaxAllowed(classIdentifier);
-      const currentCount = this.getCurrentCount(classIdentifier);
+      const maxCantrips = this.cantripManager._getMaxCantripsForClass(classIdentifier);
+      const currentCount = this.cantripManager.getCurrentCount(classIdentifier);
       const isAtMax = currentCount >= maxCantrips;
 
       if (isAtMax && !isPreparedForClass) {
@@ -382,48 +265,6 @@ export class SpellManager {
   }
 
   /**
-   * Apply rule-based cantrip locks to preparation status
-   * @param {Object} result - The preparation status result to modify
-   * @param {boolean} isPrepared - Whether the cantrip is currently prepared
-   * @param {string} classIdentifier - The class identifier
-   * @param {Object} settings - The class settings
-   * @private
-   */
-  _applyRuleBasedCantripLocks(result, isPrepared, classIdentifier, settings) {
-    const isLevelUp = this.canBeLeveledUp();
-    const isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED) || false;
-
-    switch (settings.cantripSwapping) {
-      case 'none':
-        if (isPrepared) {
-          result.disabled = true;
-          result.isCantripLocked = true;
-          result.cantripLockReason = 'SPELLBOOK.Cantrips.LockedLegacy';
-          result.disabledReason = 'SPELLBOOK.Cantrips.LockedLegacy';
-        }
-        break;
-
-      case 'levelUp':
-        if (!isLevelUp && isPrepared) {
-          result.disabled = true;
-          result.isCantripLocked = true;
-          result.cantripLockReason = 'SPELLBOOK.Cantrips.LockedOutsideLevelUp';
-          result.disabledReason = 'SPELLBOOK.Cantrips.LockedOutsideLevelUp';
-        }
-        break;
-
-      case 'longRest':
-        if (classIdentifier === 'wizard' && !isLongRest && isPrepared) {
-          result.disabled = true;
-          result.isCantripLocked = true;
-          result.cantripLockReason = 'SPELLBOOK.Cantrips.LockedOutsideLongRest';
-          result.disabledReason = 'SPELLBOOK.Cantrips.LockedOutsideLongRest';
-        }
-        break;
-    }
-  }
-
-  /**
    * Determine the source of a spell on the actor
    * @param {Item5e} spell - The spell item
    * @returns {Object|null} - Source information for the spell
@@ -493,7 +334,7 @@ export class SpellManager {
         };
       }
       return {
-        name: 'Pact Magic', // TODO: Localize (Also what is this currently needed for?)
+        name: 'Pact Magic',
         type: 'class'
       };
     } else {
@@ -611,15 +452,6 @@ export class SpellManager {
   }
 
   /**
-   * Complete the cantrip level-up process
-   * @returns {Promise<boolean>} Success status
-   */
-  async completeCantripsLevelUp() {
-    // TODO: Remove this wrapper and update references to use below method directly
-    return this.cantripManager.completeCantripsLevelUp();
-  }
-
-  /**
    * Get the wizard spellbook manager if the actor is a wizard
    * @returns {WizardSpellbookManager|null} The wizard spellbook manager or null
    */
@@ -638,15 +470,6 @@ export class SpellManager {
     if (!wizardManager) return false;
     if (!this._wizardSpellbookCache) this._wizardSpellbookCache = await wizardManager.getSpellbookSpells();
     return this._wizardSpellbookCache.includes(uuid);
-  }
-
-  /**
-   * Reset all cantrip swap tracking data
-   * @returns {Promise<void>}
-   */
-  async resetSwapTracking() {
-    // TODO: Remove this wrapper and update references to use below method directly
-    return this.cantripManager.resetSwapTracking();
   }
 
   /**

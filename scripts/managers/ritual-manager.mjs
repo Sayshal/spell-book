@@ -1,6 +1,6 @@
 import { FLAGS, MODULE } from '../constants.mjs';
 import { log } from '../logger.mjs';
-import { WizardSpellbookManager } from './wizard-spellbook.mjs';
+import { WizardSpellbookManager } from './wizard-spellbook-manager.mjs';
 
 /**
  * Manages ritual casting from spellbooks
@@ -34,9 +34,9 @@ export class RitualManager {
     if (wizardManager.isWizard) {
       this.isWizard = true;
       this.wizardManager = wizardManager;
-      log(3, `RitualManager: Created new wizard manager for ${this.actor.name}`);
+      log(3, `Created new wizard manager for ${this.actor.name}`);
     } else {
-      log(1, `RitualManager: Actor ${this.actor.name} is not a wizard`);
+      log(1, `Actor ${this.actor.name} is not a wizard`);
     }
   }
 

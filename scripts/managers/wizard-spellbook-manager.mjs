@@ -1,6 +1,6 @@
 import { FLAGS, MODULE, WIZARD_DEFAULTS, WIZARD_SPELL_SOURCE } from '../constants.mjs';
+import * as genericUtils from '../helpers/generic-utils.mjs';
 import { log } from '../logger.mjs';
-import * as genericUtils from './generic-utils.mjs';
 
 /**
  * Manages wizard-specific spellbook functionality
@@ -17,7 +17,39 @@ export class WizardSpellbookManager {
     this.actor = actor;
     this.classItem = this._findWizardClass();
     this.isWizard = this.classItem !== null;
-    if (this.isWizard) this._initializeFlags();
+
+    // Pre-cache frequently used data
+    this._spellbookCache = null;
+    this._maxSpellsCache = null;
+    this._freeSpellsCache = null;
+
+    if (this.isWizard) {
+      this._initializeFlags();
+      this._initializeCache();
+    }
+  }
+
+  /**
+   * Initialize cache with pre-calculated values
+   * @private
+   */
+  async _initializeCache() {
+    try {
+      this._maxSpellsCache = this.getMaxSpellsAllowed();
+      this._freeSpellsCache = this.getTotalFreeSpells();
+      log(3, `Initialized wizard cache: max=${this._maxSpellsCache}, free=${this._freeSpellsCache}`);
+    } catch (error) {
+      log(1, 'Error initializing wizard cache:', error);
+    }
+  }
+
+  /**
+   * Invalidate cache when spells are added/removed
+   */
+  invalidateCache() {
+    this._spellbookCache = null;
+    this._maxSpellsCache = null;
+    this._freeSpellsCache = null;
   }
 
   /**
@@ -75,16 +107,20 @@ export class WizardSpellbookManager {
   }
 
   /**
-   * Get all spells in the wizard's spellbook
+   * Get all spells in the wizard's spellbook (with caching)
    * @returns {Promise<Array<string>>} Array of spell UUIDs
    */
   async getSpellbookSpells() {
     try {
+      if (this._spellbookCache) return this._spellbookCache;
+
       const journal = await this.getOrCreateSpellbookJournal();
       if (!journal) return [];
       const journalPage = journal.pages?.find((p) => p.type === 'spells');
       if (!journalPage) return [];
-      return Array.from(journalPage.system?.spells || []);
+
+      this._spellbookCache = Array.from(journalPage.system?.spells || []);
+      return this._spellbookCache;
     } catch (error) {
       log(1, `Error getting spellbook spells for ${this.actor.name}:`, error);
       return [];
@@ -98,11 +134,8 @@ export class WizardSpellbookManager {
    */
   async isSpellInSpellbook(spellUuid) {
     try {
-      const journal = await this.getOrCreateSpellbookJournal();
-      if (!journal) return false;
-      const journalPage = journal.pages?.find((p) => p.type === 'spells');
-      if (!journalPage) return false;
-      return journalPage.system?.spells?.has(spellUuid) || false;
+      const spells = await this.getSpellbookSpells();
+      return spells.includes(spellUuid);
     } catch (error) {
       log(1, `Error checking spell in spellbook for ${this.actor.name}:`, error);
       return false;
@@ -118,8 +151,13 @@ export class WizardSpellbookManager {
    * @returns {Promise<boolean>} Success state
    */
   async copySpell(spellUuid, cost, time, isFree = false) {
-    if (!isFree) return this.addSpellToSpellbook(spellUuid, WIZARD_SPELL_SOURCE.COPIED, { cost, timeSpent: time });
-    else return this.addSpellToSpellbook(spellUuid, WIZARD_SPELL_SOURCE.FREE, null);
+    const result =
+      !isFree ?
+        await this.addSpellToSpellbook(spellUuid, WIZARD_SPELL_SOURCE.COPIED, { cost, timeSpent: time })
+      : await this.addSpellToSpellbook(spellUuid, WIZARD_SPELL_SOURCE.FREE, null);
+
+    if (result) this.invalidateCache();
+    return result;
   }
 
   /**
@@ -197,6 +235,7 @@ export class WizardSpellbookManager {
       }
 
       log(3, `Added spell ${spellUuid} to ${this.actor.name}'s spellbook`);
+      this.invalidateCache();
       return true;
     } catch (error) {
       log(1, `Error adding spell to spellbook: ${error.message}`);
@@ -247,7 +286,7 @@ export class WizardSpellbookManager {
         },
         pages: [
           {
-            name: `${this.actor.name}'s Spell Book`, //TODO: Localize this
+            name: `${this.actor.name}'s Spell Book`,
             type: 'spells',
             flags: {
               [MODULE.ID]: {
@@ -257,7 +296,7 @@ export class WizardSpellbookManager {
             },
             system: {
               identifier: `${this.actor.id}-${MODULE.ID}`,
-              description: `Spellbook for ${this.actor.name}`, //TODO: Localize this
+              description: `Spellbook for ${this.actor.name}`,
               spells: new Set()
             }
           }
@@ -303,27 +342,36 @@ export class WizardSpellbookManager {
   }
 
   /**
-   * Calculate the maximum number of spells allowed in the wizard's spellbook
+   * Calculate the maximum number of spells allowed in the wizard's spellbook (cached)
    * @returns {number} The maximum number of spells allowed
    */
   getMaxSpellsAllowed() {
+    if (this._maxSpellsCache !== null) return this._maxSpellsCache;
+
     if (!this.isWizard) return 0;
     const wizardLevel = this.classItem.system.levels || 1;
     const startingSpells = WIZARD_DEFAULTS.STARTING_SPELLS;
     const spellsPerLevel = WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
     const maxSpells = startingSpells + Math.max(0, wizardLevel - 1) * spellsPerLevel;
+
+    this._maxSpellsCache = maxSpells;
     log(3, `Maximum wizard spells: ${maxSpells} (level ${wizardLevel})`);
     return maxSpells;
   }
 
   /**
-   * Get the number of free spells the wizard should have at current level
+   * Get the number of free spells the wizard should have at current level (cached)
    * @returns {number} The number of free spells
    */
   getTotalFreeSpells() {
+    if (this._freeSpellsCache !== null) return this._freeSpellsCache;
+
     if (!this.isWizard) return 0;
     const wizardLevel = this.classItem.system.levels || 1;
-    return WIZARD_DEFAULTS.STARTING_SPELLS + Math.max(0, wizardLevel - 1) * WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
+    const freeSpells = WIZARD_DEFAULTS.STARTING_SPELLS + Math.max(0, wizardLevel - 1) * WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
+
+    this._freeSpellsCache = freeSpells;
+    return freeSpells;
   }
 
   /**

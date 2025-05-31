@@ -1,7 +1,7 @@
 import { FLAGS, MODULE } from '../constants.mjs';
 import { log } from '../logger.mjs';
+import { SpellManager } from '../managers/spell-manager.mjs';
 import * as formattingUtils from './spell-formatting.mjs';
-import { SpellManager } from './spell-preparation.mjs';
 
 /**
  * Fetch spell documents from UUIDs based on maximum spell level

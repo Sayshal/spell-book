@@ -1,8 +1,8 @@
 import { MODULE, SETTINGS } from '../constants.mjs';
 import { log } from '../logger.mjs';
+import { RuleSetManager } from '../managers/rule-set-manager.mjs';
+import { WizardSpellbookManager } from '../managers/wizard-spellbook-manager.mjs';
 import * as genericUtils from './generic-utils.mjs';
-import { RuleSetManager } from './rule-set-manager.mjs';
-import { WizardSpellbookManager } from './wizard-spellbook.mjs';
 
 /**
  * Get a class's spell list from compendium journals

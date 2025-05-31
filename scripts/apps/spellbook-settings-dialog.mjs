@@ -1,7 +1,7 @@
 import { ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, RITUAL_CASTING_MODES, RULE_SETS, SETTINGS, TEMPLATES } from '../constants.mjs';
-import { RuleSetManager } from '../helpers/rule-set-manager.mjs';
-import { SpellManager } from '../helpers/spell-preparation.mjs';
 import { log } from '../logger.mjs';
+import { RuleSetManager } from '../managers/rule-set-manager.mjs';
+import { SpellManager } from '../managers/spell-manager.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 

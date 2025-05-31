@@ -1,12 +1,12 @@
 import { CLASS_IDENTIFIERS, FLAGS, MODULE } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
+import { RuleSetManager } from '../../managers/rule-set-manager.mjs';
 import * as actorSpellUtils from '../actor-spells.mjs';
-import { RuleSetManager } from '../rule-set-manager.mjs';
 import * as discoveryUtils from '../spell-discovery.mjs';
 import * as formattingUtils from '../spell-formatting.mjs';
 
 /**
- * Manages state for the spellbook application
+ * Manages state for the spellbook application with cached calculations
  * Handles loading, processing, and organizing spell data
  */
 export class SpellbookState {
@@ -25,6 +25,8 @@ export class SpellbookState {
     this._newlyCheckedCantrips = new Set();
     this._spellsTabNeedsReload = false;
     this._uiCantripCount = 0;
+    this._preparationStatsCache = new Map();
+    this._classDetectionCache = new Map();
     this.activeClass = null;
     this.className = '';
     this.classPrepModes = {};
@@ -73,6 +75,9 @@ export class SpellbookState {
     this.classPrepModes = {};
     this.classRitualRules = {};
     this.classSwapRules = {};
+    this._preparationStatsCache.clear();
+    this._classDetectionCache.clear();
+
     const classItems = this.actor.items.filter((i) => i.type === 'class');
     for (const classItem of classItems) {
       if (!classItem.system.spellcasting?.progression || classItem.system.spellcasting.progression === 'none') continue;
@@ -127,7 +132,6 @@ export class SpellbookState {
     };
 
     const identifier = classItem.system?.identifier?.toLowerCase() || '';
-    // TODO: Shouldnt this just check if isWizard?
     if (identifier === CLASS_IDENTIFIERS.WIZARD) {
       rules.canCastRituals = true;
       rules.mustPrepare = false;
@@ -336,43 +340,7 @@ export class SpellbookState {
   }
 
   /**
-   * Find actor spells that belong to a specific class
-   * @param {string} classIdentifier - The class identifier
-   * @param {Set<string>} processedSpellIds - Set of already processed spell IDs
-   * @param {Set<string>} processedSpellNames - Set of already processed spell names
-   * @returns {Array} Array of class-specific actor spells
-   * @private
-   */
-  _findClassSpecificActorSpells(classIdentifier, processedSpellIds, processedSpellNames) {
-    const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
-    const newSpells = [];
-    const spellManager = this.app.spellManager;
-    log(3, `Finding actor spells for class ${classIdentifier} - ${actorSpells.length} total spells`);
-
-    for (const spell of actorSpells) {
-      const spellId = spell.id || spell.uuid;
-      const spellName = spell.name.toLowerCase();
-      if (processedSpellIds.has(spellId) || processedSpellNames.has(spellName)) continue;
-      const spellSourceClass = spell.system?.sourceClass || spell.sourceClass;
-      if (spellSourceClass && spellSourceClass !== classIdentifier) continue;
-      if (!spellSourceClass && spell.system.level === 0 && this._shouldHideCantrips(classIdentifier)) continue;
-
-      // TODO: Dont set sourceClass for spells not manipulated by spell-book
-      if (!spellSourceClass) {
-        spell.sourceClass = classIdentifier;
-        if (spell.system) spell.system.sourceClass = classIdentifier;
-      }
-
-      const source = spellManager._determineSpellSource(spell);
-      newSpells.push({ spell, source });
-    }
-
-    log(3, `Found ${newSpells.length} additional spells for class ${classIdentifier}`);
-    return newSpells;
-  }
-
-  /**
-   * Calculate preparation statistics for a specific class
+   * Calculate preparation statistics for a specific class (with caching)
    * @param {string} classIdentifier - The class identifier
    * @param {Array} spellLevels - Spell level groups
    * @param {Item} classItem - The spellcasting class item
@@ -380,6 +348,8 @@ export class SpellbookState {
    */
   calculatePreparationStats(classIdentifier, spellLevels, classItem) {
     try {
+      const cacheKey = `${classIdentifier}-${spellLevels.length}-${classItem.system.levels}`;
+      if (this._preparationStatsCache.has(cacheKey)) return this._preparationStatsCache.get(cacheKey);
       let preparedCount = 0;
       const baseMaxPrepared = classItem?.system?.spellcasting?.preparation?.max || 0;
       const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
@@ -395,11 +365,20 @@ export class SpellbookState {
         }
       }
 
-      return { current: preparedCount, maximum: maxPrepared };
+      const result = { current: preparedCount, maximum: maxPrepared };
+      this._preparationStatsCache.set(cacheKey, result);
+      return result;
     } catch (error) {
       log(1, `Error calculating preparation stats for class ${classIdentifier}:`, error);
       return { current: 0, maximum: 0 };
     }
+  }
+
+  /**
+   * Invalidate preparation stats cache (call when class data changes)
+   */
+  invalidatePreparationStatsCache() {
+    this._preparationStatsCache.clear();
   }
 
   /**
@@ -427,16 +406,20 @@ export class SpellbookState {
   }
 
   /**
-   * Determine if cantrips should be hidden for a class
+   * Determine if cantrips should be hidden for a class (with caching)
    * @param {string} identifier - Identifier of the class
    * @returns {boolean} Whether cantrips should be hidden
    * @private
    */
   _shouldHideCantrips(identifier) {
     try {
+      if (this._classDetectionCache.has(identifier)) return this._classDetectionCache.get(identifier);
       const classRules = RuleSetManager.getClassRules(this.actor, identifier);
-      if (classRules && classRules.showCantrips !== undefined) return !classRules.showCantrips;
-      return [CLASS_IDENTIFIERS.PALADIN, CLASS_IDENTIFIERS.RANGER].includes(identifier);
+      let shouldHide = false;
+      if (classRules && classRules.showCantrips !== undefined) shouldHide = !classRules.showCantrips;
+      else shouldHide = [CLASS_IDENTIFIERS.PALADIN, CLASS_IDENTIFIERS.RANGER].includes(identifier);
+      this._classDetectionCache.set(identifier, shouldHide);
+      return shouldHide;
     } catch (error) {
       log(1, `Error checking if cantrips should be hidden for ${identifier}:`, error);
       return false;
@@ -479,7 +462,7 @@ export class SpellbookState {
    * Handle cantrip level-up notification if needed
    */
   handleCantripLevelUp() {
-    const cantripLevelUp = this.app.spellManager.checkForLevelUp();
+    const cantripLevelUp = this.app.spellManager.cantripManager.checkForLevelUp();
     if (cantripLevelUp) {
       const hasLevelUpSwapping = Object.keys(this.spellcastingClasses).some((classId) => {
         const classRules = RuleSetManager.getClassRules(this.actor, classId);
@@ -651,11 +634,183 @@ export class SpellbookState {
   async refreshClassSpellData(classIdentifier) {
     const classData = this.spellcastingClasses[classIdentifier];
     if (!classData) return;
+    this.invalidatePreparationStatsCache();
     const classItem = this.actor.items.get(classData.id);
     if (!classItem) return;
     const isWizardClass = this.app.wizardManager?.isWizard && this.app.wizardManager.classItem?.id === classItem.id;
     if (isWizardClass) await this.loadWizardSpellData(classItem);
     else await this.loadClassSpellData(classIdentifier, classItem);
     this.updateGlobalPreparationCount();
+  }
+
+  /**
+   * Preserve tab state (moved from PlayerSpellBook)
+   * @param {string} tabName - The tab to preserve state for
+   */
+  preserveTabState(tabName) {
+    try {
+      const tabElement = this.app.element.querySelector(`.tab[data-tab="${tabName}"]`);
+      if (!tabElement) return;
+      const checkboxes = tabElement.querySelectorAll('dnd5e-checkbox[data-uuid]');
+      const tabState = { checkboxStates: new Map(), timestamp: Date.now() };
+
+      checkboxes.forEach((checkbox) => {
+        const uuid = checkbox.dataset.uuid;
+        const sourceClass = checkbox.dataset.sourceClass;
+        const key = `${sourceClass}:${uuid}`;
+
+        tabState.checkboxStates.set(key, {
+          checked: checkbox.checked,
+          disabled: checkbox.disabled,
+          wasPrepared: checkbox.dataset.wasPrepared === 'true'
+        });
+      });
+
+      if (!this.app._tabStateCache) this.app._tabStateCache = new Map();
+      this.app._tabStateCache.set(tabName, tabState);
+      log(3, `Preserved state for tab ${tabName} with ${tabState.checkboxStates.size} checkboxes`);
+    } catch (error) {
+      log(2, `Error preserving tab state for ${tabName}:`, error);
+    }
+  }
+
+  /**
+   * Restore tab state (moved from PlayerSpellBook)
+   * @param {string} tabName - The tab to restore state for
+   */
+  restoreTabState(tabName) {
+    try {
+      if (!this.app._tabStateCache || !this.app._tabStateCache.has(tabName)) return;
+      const tabElement = this.app.element.querySelector(`.tab[data-tab="${tabName}"]`);
+      if (!tabElement) return;
+      const tabState = this.app._tabStateCache.get(tabName);
+      const checkboxes = tabElement.querySelectorAll('dnd5e-checkbox[data-uuid]');
+      let restoredCount = 0;
+
+      checkboxes.forEach((checkbox) => {
+        const uuid = checkbox.dataset.uuid;
+        const sourceClass = checkbox.dataset.sourceClass;
+        const key = `${sourceClass}:${uuid}`;
+        const savedState = tabState.checkboxStates.get(key);
+
+        if (savedState) {
+          const currentWasPrepared = checkbox.dataset.wasPrepared === 'true';
+          if (savedState.wasPrepared === currentWasPrepared) {
+            checkbox.checked = savedState.checked;
+            restoredCount++;
+          }
+        }
+      });
+
+      log(3, `Restored state for tab ${tabName}, ${restoredCount} checkboxes restored`);
+    } catch (error) {
+      log(2, `Error restoring tab state for ${tabName}:`, error);
+    }
+  }
+
+  /**
+   * Handle post-processing after spell save (moved from PlayerSpellBook)
+   * @param {Actor} actor - The actor
+   * @returns {Promise<void>}
+   */
+  async handlePostProcessing(actor) {
+    if (this.app.spellManager.cantripManager.canBeLeveledUp()) await this.app.spellManager.cantripManager.completeCantripsLevelUp();
+    if (this.isLongRest) {
+      await this.app.spellManager.cantripManager.resetSwapTracking();
+      await actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, false);
+      this.isLongRest = false;
+    }
+  }
+
+  /**
+   * Add missing ritual spells from wizard spellbook (moved from PlayerSpellBook)
+   * @param {Object} spellDataByClass - The spell data grouped by class
+   * @returns {Promise<void>}
+   */
+  async addMissingRitualSpells(spellDataByClass) {
+    try {
+      const ritualManager = this.app.getRitualManager();
+      if (!ritualManager?.isWizard) return;
+      const spellbookSpells = await this.app.wizardManager.getSpellbookSpells();
+      const processedUuids = new Set();
+
+      if (spellDataByClass.wizard) {
+        Object.values(spellDataByClass.wizard).forEach((spellData) => {
+          processedUuids.add(spellData.uuid);
+        });
+      }
+
+      for (const spellUuid of spellbookSpells) {
+        if (processedUuids.has(spellUuid)) continue;
+
+        try {
+          const sourceSpell = await fromUuid(spellUuid);
+          if (!sourceSpell || !sourceSpell.system.components?.ritual || sourceSpell.system.level === 0) {
+            continue;
+          }
+
+          log(1, `Found missing ritual spell: ${sourceSpell.name} (${spellUuid})`);
+          if (!spellDataByClass.wizard) spellDataByClass.wizard = {};
+          const classSpellKey = `wizard:${spellUuid}`;
+          spellDataByClass.wizard[classSpellKey] = {
+            uuid: spellUuid,
+            name: sourceSpell.name,
+            wasPrepared: false,
+            isPrepared: false,
+            isRitual: true,
+            sourceClass: 'wizard',
+            classSpellKey,
+            spellLevel: sourceSpell.system.level
+          };
+
+          log(1, `Added missing ritual spell: ${sourceSpell.name} as unprepared`);
+        } catch (error) {
+          log(2, `Error processing potential ritual spell ${spellUuid}:`, error);
+        }
+      }
+    } catch (error) {
+      log(1, `Error adding missing ritual spells:`, error);
+    }
+  }
+
+  /**
+   * Send GM notifications if needed (moved from PlayerSpellBook)
+   * @param {Object} spellDataByClass - The spell data grouped by class
+   * @param {Object} allCantripChangesByClass - Cantrip changes by class
+   * @returns {Promise<void>}
+   */
+  async sendGMNotifications(spellDataByClass, allCantripChangesByClass) {
+    const globalBehavior =
+      this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || ENFORCEMENT_BEHAVIOR.NOTIFY_GM;
+    if (globalBehavior !== ENFORCEMENT_BEHAVIOR.NOTIFY_GM) return;
+    const notificationData = { actorName: this.actor.name, classChanges: {} };
+    for (const [classIdentifier, classSpellData] of Object.entries(spellDataByClass)) {
+      const classData = this.classSpellData[classIdentifier];
+      if (!classData) continue;
+      const className = classData.className || classIdentifier;
+      const cantripChanges = allCantripChangesByClass[classIdentifier] || { added: [], removed: [] };
+      const cantripCount = Object.values(classSpellData).filter((spell) => spell.isPrepared && spell.spellLevel === 0).length;
+      const spellCount = Object.values(classSpellData).filter((spell) => spell.isPrepared && spell.spellLevel > 0).length;
+      const maxCantrips = this.app.spellManager.cantripManager._getMaxCantripsForClass(classIdentifier);
+      const maxSpells = classData.spellPreparation?.maximum || 0;
+      notificationData.classChanges[classIdentifier] = {
+        className,
+        cantripChanges,
+        overLimits: {
+          cantrips: {
+            isOver: cantripCount > maxCantrips,
+            current: cantripCount,
+            max: maxCantrips
+          },
+          spells: {
+            isOver: spellCount > maxSpells,
+            current: spellCount,
+            max: maxSpells
+          }
+        }
+      };
+    }
+
+    await this.app.spellManager.cantripManager.sendComprehensiveGMNotification(notificationData);
   }
 }

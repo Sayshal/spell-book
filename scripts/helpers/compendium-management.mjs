@@ -41,6 +41,39 @@ export async function findCompendiumSpellLists() {
 }
 
 /**
+ * Prepare spell sources for filtering (moved from GMSpellListManager)
+ * @param {Array} availableSpells - The available spells array
+ * @returns {Array} Array of source options
+ */
+export function prepareSpellSources(availableSpells) {
+  const sourceMap = new Map();
+  sourceMap.set('all', {
+    id: 'all',
+    label: game.i18n.localize('SPELLMANAGER.Filters.AllSources')
+  });
+
+  availableSpells.forEach((spell) => {
+    if (spell.sourceId) {
+      const sourceId = spell.sourceId;
+      if (!sourceMap.has(sourceId)) {
+        sourceMap.set(sourceId, {
+          id: sourceId,
+          label: sourceId
+        });
+      }
+    }
+  });
+
+  const sources = Array.from(sourceMap.values()).sort((a, b) => {
+    if (a.id === 'all') return -1;
+    if (b.id === 'all') return 1;
+    return a.label.localeCompare(b.label);
+  });
+
+  return sources;
+}
+
+/**
  * Process standard journal packs for spell lists
  * @param {Array} journalPacks - Array of journal packs
  * @param {Array} spellLists - Array to store results
@@ -451,7 +484,7 @@ export async function createNewSpellList(name, identifier, source) {
         },
         system: {
           identifier: identifier.toLowerCase(),
-          description: `Custom spell list for ${identifier}`, // TODO: Localize this
+          description: `Custom spell list for ${identifier}`,
           spells: []
         }
       }
