@@ -1,4 +1,4 @@
-import { ENFORCEMENT_BEHAVIOR, FLAGS, MODULE } from '../../constants.mjs';
+import { FLAGS, MODULE } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
 import { RuleSetManager } from '../../managers/rule-set-manager.mjs';
 import * as colorUtils from '../color-utils.mjs';
@@ -172,7 +172,7 @@ export class SpellbookUI {
       classData.spellPreparation.maximum = classMaxPrepared;
       const isClassAtMax = classPreparedCount >= classMaxPrepared;
       const settings = this.app.spellManager.getSettings(classIdentifier);
-      if (settings.behavior === ENFORCEMENT_BEHAVIOR.ENFORCED) this._enforcePerClassSpellLimits(activeTabContent, classIdentifier, isClassAtMax);
+      if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) this._enforcePerClassSpellLimits(activeTabContent, classIdentifier, isClassAtMax);
       this.app._stateManager.updateGlobalPreparationCount();
       const globalPrepared = this.app._stateManager.spellPreparation;
       this._updateFooterPreparationDisplay(classIdentifier, isClassAtMax, globalPrepared);
@@ -471,7 +471,7 @@ export class SpellbookUI {
         checkbox.disabled = false;
         delete checkbox.dataset.tooltip;
         item.classList.remove('cantrip-locked');
-        if (settings.behavior === ENFORCEMENT_BEHAVIOR.ENFORCED) {
+        if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) {
           if (currentCount >= maxCantrips && !isChecked) {
             checkbox.disabled = true;
             checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.MaximumReached');
@@ -496,7 +496,7 @@ export class SpellbookUI {
    * @private
    */
   _applyRuleBasedCantripLocks(item, checkbox, isChecked, classIdentifier, settings) {
-    if (settings.behavior !== ENFORCEMENT_BEHAVIOR.ENFORCED) return;
+    if (settings.behavior !== MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) return;
     const isLevelUp = this.app.spellManager.cantripManager.canBeLeveledUp();
     const isLongRest = this.app._isLongRest;
     const uuid = checkbox.dataset.uuid;
@@ -595,7 +595,7 @@ export class SpellbookUI {
         delete checkbox.dataset.tooltip;
         item.classList.remove('spell-locked', 'max-prepared');
 
-        if (settings.behavior !== ENFORCEMENT_BEHAVIOR.ENFORCED) continue;
+        if (settings.behavior !== MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) continue;
 
         // Get spell object for validation
         const spellUuid = checkbox.dataset.uuid;

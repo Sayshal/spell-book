@@ -6,7 +6,194 @@ export const MODULE = {
   ID: 'spell-book',
   NAME: 'Spell Book',
   PACK: 'spell-book.custom-spell-lists',
-  LOG_LEVEL: 0
+  LOG_LEVEL: 0,
+
+  /**
+   * Default filter configuration
+   * @type {Array}
+   */
+  DEFAULT_FILTER_CONFIG: [
+    {
+      id: 'name',
+      type: 'search',
+      enabled: true,
+      order: 10,
+      label: 'SPELLBOOK.Filters.SearchPlaceholder',
+      sortable: false
+    },
+    {
+      id: 'level',
+      type: 'dropdown',
+      enabled: true,
+      order: 20,
+      label: 'SPELLBOOK.Filters.Level',
+      sortable: true
+    },
+    {
+      id: 'school',
+      type: 'dropdown',
+      enabled: true,
+      order: 30,
+      label: 'SPELLBOOK.Filters.School',
+      sortable: true
+    },
+    {
+      id: 'castingTime',
+      type: 'dropdown',
+      enabled: true,
+      order: 40,
+      label: 'SPELLBOOK.Filters.CastingTime',
+      sortable: true
+    },
+    {
+      id: 'range',
+      type: 'range',
+      enabled: true,
+      order: 50,
+      label: 'SPELLBOOK.Filters.Range',
+      sortable: true
+    },
+    {
+      id: 'damageType',
+      type: 'dropdown',
+      enabled: true,
+      order: 60,
+      label: 'SPELLBOOK.Filters.DamageType',
+      sortable: true
+    },
+    {
+      id: 'condition',
+      type: 'dropdown',
+      enabled: true,
+      order: 70,
+      label: 'SPELLBOOK.Filters.Condition',
+      sortable: true
+    },
+    {
+      id: 'requiresSave',
+      type: 'dropdown',
+      enabled: true,
+      order: 80,
+      label: 'SPELLBOOK.Filters.RequiresSave',
+      sortable: true
+    },
+    {
+      id: 'concentration',
+      type: 'dropdown',
+      enabled: true,
+      order: 90,
+      label: 'SPELLBOOK.Filters.RequiresConcentration',
+      sortable: true
+    },
+    {
+      id: 'materialComponents',
+      type: 'dropdown',
+      enabled: true,
+      order: 100,
+      label: 'SPELLBOOK.Filters.MaterialComponents.Title',
+      sortable: true
+    },
+    {
+      id: 'sortBy',
+      type: 'dropdown',
+      enabled: true,
+      order: 1000,
+      label: 'SPELLBOOK.Filters.SortBy',
+      sortable: false
+    },
+    {
+      id: 'prepared',
+      type: 'checkbox',
+      enabled: true,
+      order: 2000,
+      label: 'SPELLBOOK.Filters.PreparedOnly',
+      sortable: false
+    },
+    {
+      id: 'ritual',
+      type: 'checkbox',
+      enabled: true,
+      order: 3000,
+      label: 'SPELLBOOK.Filters.RitualOnly',
+      sortable: false
+    }
+  ],
+
+  /**
+   * Spell change behavior options
+   * @type {Object}
+   */
+  ENFORCEMENT_BEHAVIOR: {
+    ENFORCED: 'enforced',
+    NOTIFY_GM: 'notifyGM',
+    UNENFORCED: 'unenforced'
+  },
+
+  /**
+   * Default wizard configuration values
+   * @type {Object}
+   */
+  WIZARD_DEFAULTS: {
+    RITUAL_CASTING: true,
+    SPELLS_PER_LEVEL: 2,
+    STARTING_SPELLS: 6
+  },
+
+  /**
+   * Wizard spell source types
+   * @type {Object}
+   */
+  WIZARD_SPELL_SOURCE: {
+    COPIED: 'copied',
+    FREE: 'free',
+    INITIAL: 'initial',
+    LEVEL_UP: 'levelUp'
+  },
+
+  /**
+   * Class identifiers for spellcasting classes
+   * @type {Object}
+   */
+  CLASS_IDENTIFIERS: {
+    ARTIFICER: 'artificer',
+    BARD: 'bard',
+    CLERIC: 'cleric',
+    DRUID: 'druid',
+    PALADIN: 'paladin',
+    RANGER: 'ranger',
+    SORCERER: 'sorcerer',
+    WARLOCK: 'warlock',
+    WIZARD: 'wizard'
+  },
+
+  /**
+   * Spellcasting rule set options
+   * @type {Object}
+   */
+  RULE_SETS: {
+    LEGACY: 'legacy',
+    MODERN: 'modern'
+  },
+
+  /**
+   * Spell swap modes (cantrips & levelled spells)
+   * @type {Object}
+   */
+  SWAP_MODES: {
+    NONE: 'none',
+    LEVEL_UP: 'levelUp',
+    LONG_REST: 'longRest'
+  },
+
+  /**
+   * Ritual casting modes
+   * @type {Object}
+   */
+  RITUAL_CASTING_MODES: {
+    NONE: 'none',
+    PREPARED: 'prepared',
+    ALWAYS: 'always'
+  }
 };
 
 /**
@@ -88,17 +275,6 @@ export const SETTINGS = {
 };
 
 /**
- * Filter types used in configuration
- * @type {Object}
- */
-export const FILTER_TYPES = {
-  CHECKBOX: 'checkbox',
-  DROPDOWN: 'dropdown',
-  RANGE: 'range',
-  SEARCH: 'search'
-};
-
-/**
  * Sort options for spell display
  * @type {Object}
  */
@@ -107,191 +283,4 @@ export const SORT_BY = {
   NAME: 'name',
   PREPARED: 'prepared',
   SCHOOL: 'school'
-};
-
-/**
- * Default filter configuration
- * @type {Array}
- */
-export const DEFAULT_FILTER_CONFIG = [
-  {
-    id: 'name',
-    type: FILTER_TYPES.SEARCH,
-    enabled: true,
-    order: 10,
-    label: 'SPELLBOOK.Filters.SearchPlaceholder',
-    sortable: false
-  },
-  {
-    id: 'level',
-    type: FILTER_TYPES.DROPDOWN,
-    enabled: true,
-    order: 20,
-    label: 'SPELLBOOK.Filters.Level',
-    sortable: true
-  },
-  {
-    id: 'school',
-    type: FILTER_TYPES.DROPDOWN,
-    enabled: true,
-    order: 30,
-    label: 'SPELLBOOK.Filters.School',
-    sortable: true
-  },
-  {
-    id: 'castingTime',
-    type: FILTER_TYPES.DROPDOWN,
-    enabled: true,
-    order: 40,
-    label: 'SPELLBOOK.Filters.CastingTime',
-    sortable: true
-  },
-  {
-    id: 'range',
-    type: FILTER_TYPES.RANGE,
-    enabled: true,
-    order: 50,
-    label: 'SPELLBOOK.Filters.Range',
-    sortable: true
-  },
-  {
-    id: 'damageType',
-    type: FILTER_TYPES.DROPDOWN,
-    enabled: true,
-    order: 60,
-    label: 'SPELLBOOK.Filters.DamageType',
-    sortable: true
-  },
-  {
-    id: 'condition',
-    type: FILTER_TYPES.DROPDOWN,
-    enabled: true,
-    order: 70,
-    label: 'SPELLBOOK.Filters.Condition',
-    sortable: true
-  },
-  {
-    id: 'requiresSave',
-    type: FILTER_TYPES.DROPDOWN,
-    enabled: true,
-    order: 80,
-    label: 'SPELLBOOK.Filters.RequiresSave',
-    sortable: true
-  },
-  {
-    id: 'concentration',
-    type: FILTER_TYPES.DROPDOWN,
-    enabled: true,
-    order: 90,
-    label: 'SPELLBOOK.Filters.RequiresConcentration',
-    sortable: true
-  },
-  {
-    id: 'materialComponents',
-    type: FILTER_TYPES.DROPDOWN,
-    enabled: true,
-    order: 100,
-    label: 'SPELLBOOK.Filters.MaterialComponents.Title',
-    sortable: true
-  },
-  {
-    id: 'sortBy',
-    type: FILTER_TYPES.DROPDOWN,
-    enabled: true,
-    order: 1000,
-    label: 'SPELLBOOK.Filters.SortBy',
-    sortable: false
-  },
-  {
-    id: 'prepared',
-    type: FILTER_TYPES.CHECKBOX,
-    enabled: true,
-    order: 2000,
-    label: 'SPELLBOOK.Filters.PreparedOnly',
-    sortable: false
-  },
-  {
-    id: 'ritual',
-    type: FILTER_TYPES.CHECKBOX,
-    enabled: true,
-    order: 3000,
-    label: 'SPELLBOOK.Filters.RitualOnly',
-    sortable: false
-  }
-];
-
-/**
- * Spell change behavior options
- * @type {Object}
- */
-export const ENFORCEMENT_BEHAVIOR = {
-  ENFORCED: 'enforced',
-  NOTIFY_GM: 'notifyGM',
-  UNENFORCED: 'unenforced'
-};
-
-/**
- * Default wizard configuration values
- * @type {Object}
- */
-export const WIZARD_DEFAULTS = {
-  RITUAL_CASTING: true,
-  SPELLS_PER_LEVEL: 2,
-  STARTING_SPELLS: 6
-};
-
-/**
- * Wizard spell source types
- * @type {Object}
- */
-export const WIZARD_SPELL_SOURCE = {
-  COPIED: 'copied',
-  FREE: 'free',
-  INITIAL: 'initial',
-  LEVEL_UP: 'levelUp'
-};
-
-/**
- * Class identifiers for spellcasting classes
- * @type {Object}
- */
-export const CLASS_IDENTIFIERS = {
-  ARTIFICER: 'artificer',
-  BARD: 'bard',
-  CLERIC: 'cleric',
-  DRUID: 'druid',
-  PALADIN: 'paladin',
-  RANGER: 'ranger',
-  SORCERER: 'sorcerer',
-  WARLOCK: 'warlock',
-  WIZARD: 'wizard'
-};
-
-/**
- * Spellcasting rule set options
- * @type {Object}
- */
-export const RULE_SETS = {
-  LEGACY: 'legacy',
-  MODERN: 'modern'
-};
-
-/**
- * Spell swap modes (cantrips & levelled spells)
- * @type {Object}
- */
-export const SWAP_MODES = {
-  NONE: 'none',
-  LEVEL_UP: 'levelUp',
-  LONG_REST: 'longRest'
-};
-
-/**
- * Ritual casting modes
- * @type {Object}
- */
-export const RITUAL_CASTING_MODES = {
-  NONE: 'none',
-  PREPARED: 'prepared',
-  ALWAYS: 'always'
 };

@@ -1,4 +1,4 @@
-import { CLASS_IDENTIFIERS, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE } from '../../constants.mjs';
+import { FLAGS, MODULE } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
 import { RuleSetManager } from '../../managers/rule-set-manager.mjs';
 import * as actorSpellUtils from '../actor-spells.mjs';
@@ -132,11 +132,11 @@ export class SpellbookState {
     };
 
     const identifier = classItem.system?.identifier?.toLowerCase() || '';
-    if (identifier === CLASS_IDENTIFIERS.WIZARD) {
+    if (identifier === MODULE.CLASS_IDENTIFIERS.WIZARD) {
       rules.canCastRituals = true;
       rules.mustPrepare = false;
       rules.fromSpellbook = true;
-    } else if ([CLASS_IDENTIFIERS.CLERIC, CLASS_IDENTIFIERS.DRUID, CLASS_IDENTIFIERS.BARD].includes(identifier)) {
+    } else if ([MODULE.CLASS_IDENTIFIERS.CLERIC, MODULE.CLASS_IDENTIFIERS.DRUID, MODULE.CLASS_IDENTIFIERS.BARD].includes(identifier)) {
       rules.canCastRituals = true;
       rules.mustPrepare = true;
     }
@@ -417,7 +417,7 @@ export class SpellbookState {
       const classRules = RuleSetManager.getClassRules(this.actor, identifier);
       let shouldHide = false;
       if (classRules && classRules.showCantrips !== undefined) shouldHide = !classRules.showCantrips;
-      else shouldHide = [CLASS_IDENTIFIERS.PALADIN, CLASS_IDENTIFIERS.RANGER].includes(identifier);
+      else shouldHide = [MODULE.CLASS_IDENTIFIERS.PALADIN, MODULE.CLASS_IDENTIFIERS.RANGER].includes(identifier);
       this._classDetectionCache.set(identifier, shouldHide);
       return shouldHide;
     } catch (error) {
@@ -781,8 +781,10 @@ export class SpellbookState {
    */
   async sendGMNotifications(spellDataByClass, allCantripChangesByClass) {
     const globalBehavior =
-      this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || ENFORCEMENT_BEHAVIOR.NOTIFY_GM;
-    if (globalBehavior !== ENFORCEMENT_BEHAVIOR.NOTIFY_GM) return;
+      this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) ||
+      game.settings.get(MODULE.ID, SETTINGS.DEFAULT_MODULE.ENFORCEMENT_BEHAVIOR) ||
+      MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM;
+    if (globalBehavior !== MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM) return;
     const notificationData = { actorName: this.actor.name, classChanges: {} };
     for (const [classIdentifier, classSpellData] of Object.entries(spellDataByClass)) {
       const classData = this.classSpellData[classIdentifier];

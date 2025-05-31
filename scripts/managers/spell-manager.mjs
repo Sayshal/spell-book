@@ -1,4 +1,4 @@
-import { ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, SETTINGS } from '../constants.mjs';
+import { FLAGS, MODULE, SETTINGS } from '../constants.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { log } from '../logger.mjs';
@@ -41,7 +41,10 @@ export class SpellManager {
         spellSwapping: 'none',
         ritualCasting: 'none',
         showCantrips: true,
-        behavior: this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || ENFORCEMENT_BEHAVIOR.NOTIFY_GM
+        behavior:
+          this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) ||
+          game.settings.get(MODULE.ID, SETTINGS.DEFAULT_MODULE.ENFORCEMENT_BEHAVIOR) ||
+          MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM
       };
     }
 
@@ -51,7 +54,10 @@ export class SpellManager {
       spellSwapping: classRules.spellSwapping || 'none',
       ritualCasting: classRules.ritualCasting || 'none',
       showCantrips: classRules.showCantrips !== false,
-      behavior: this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || ENFORCEMENT_BEHAVIOR.NOTIFY_GM
+      behavior:
+        this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) ||
+        game.settings.get(MODULE.ID, SETTINGS.DEFAULT_MODULE.ENFORCEMENT_BEHAVIOR) ||
+        MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM
     };
   }
 
@@ -188,7 +194,7 @@ export class SpellManager {
       if (isAtMax && !isPreparedForClass) {
         const settings = this.getSettings(classIdentifier);
         const { behavior } = settings;
-        defaultStatus.isCantripLocked = behavior === ENFORCEMENT_BEHAVIOR.ENFORCED;
+        defaultStatus.isCantripLocked = behavior === MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED;
         defaultStatus.cantripLockReason = 'SPELLBOOK.Cantrips.MaximumReached';
       }
     }
@@ -809,8 +815,8 @@ export class SpellManager {
     if (!classIdentifier) return { allowed: true };
     const settings = this.getSettings(classIdentifier);
     const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
-    if (settings.behavior === ENFORCEMENT_BEHAVIOR.UNENFORCED || settings.behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
-      if (settings.behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM && isChecked) {
+    if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.UNENFORCED || settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
+      if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM && isChecked) {
         if (currentPrepared >= maxPrepared) {
           ui.notifications.info(
             game.i18n.format('SPELLBOOK.Notifications.OverLimitWarning', {

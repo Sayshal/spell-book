@@ -1,4 +1,4 @@
-import { FLAGS, MODULE, WIZARD_DEFAULTS, WIZARD_SPELL_SOURCE } from '../constants.mjs';
+import { FLAGS, MODULE, MODULE.WIZARD_DEFAULTS, WIZARD_SPELL_SOURCE } from '../constants.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
 import { log } from '../logger.mjs';
 
@@ -350,8 +350,8 @@ export class WizardSpellbookManager {
 
     if (!this.isWizard) return 0;
     const wizardLevel = this.classItem.system.levels || 1;
-    const startingSpells = WIZARD_DEFAULTS.STARTING_SPELLS;
-    const spellsPerLevel = WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
+    const startingSpells = MODULE.WIZARD_DEFAULTS.STARTING_SPELLS;
+    const spellsPerLevel = MODULE.WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
     const maxSpells = startingSpells + Math.max(0, wizardLevel - 1) * spellsPerLevel;
 
     this._maxSpellsCache = maxSpells;
@@ -368,7 +368,7 @@ export class WizardSpellbookManager {
 
     if (!this.isWizard) return 0;
     const wizardLevel = this.classItem.system.levels || 1;
-    const freeSpells = WIZARD_DEFAULTS.STARTING_SPELLS + Math.max(0, wizardLevel - 1) * WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
+    const freeSpells = MODULE.WIZARD_DEFAULTS.STARTING_SPELLS + Math.max(0, wizardLevel - 1) * MODULE.WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
 
     this._freeSpellsCache = freeSpells;
     return freeSpells;

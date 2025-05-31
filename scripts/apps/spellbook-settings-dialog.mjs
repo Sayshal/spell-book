@@ -1,4 +1,4 @@
-import { ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, RITUAL_CASTING_MODES, RULE_SETS, SETTINGS, TEMPLATES } from '../constants.mjs';
+import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import { RuleSetManager } from '../managers/rule-set-manager.mjs';
 import { SpellManager } from '../managers/spell-manager.mjs';
@@ -61,14 +61,14 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     RuleSetManager.initializeNewClasses(this.actor);
     context.currentRuleSet = RuleSetManager.getEffectiveRuleSet(this.actor);
     context.ruleSetOverride = this.actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE);
-    context.enforcementBehavior = this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR);
+    context.enforcementBehavior = this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_MODULE.ENFORCEMENT_BEHAVIOR);
     context.currentRuleSetLabel = game.i18n.localize(`SPELLBOOK.Settings.SpellcastingRuleSet.${context.currentRuleSet.charAt(0).toUpperCase() + context.currentRuleSet.slice(1)}`);
     context.spellcastingClasses = await this._prepareClassSettings();
     context.hasNotices = context.spellcastingClasses.some((classData) => classData.rules._noScaleValue || classData.hasCustomSpellList);
     context.availableSpellLists = await this._prepareSpellListOptions();
-    context.RULE_SETS = RULE_SETS;
-    context.RITUAL_CASTING_MODES = RITUAL_CASTING_MODES;
-    context.ENFORCEMENT_BEHAVIOR = ENFORCEMENT_BEHAVIOR;
+    context.MODULE.RULE_SETS = MODULE.RULE_SETS;
+    context.MODULE.RITUAL_CASTING_MODES = MODULE.RITUAL_CASTING_MODES;
+    context.MODULE.ENFORCEMENT_BEHAVIOR = MODULE.ENFORCEMENT_BEHAVIOR;
     context.actor = this.actor;
     log(3, 'Prepared spellbook settings context', context);
     return context;

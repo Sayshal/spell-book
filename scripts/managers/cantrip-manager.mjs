@@ -1,4 +1,4 @@
-import { CLASS_IDENTIFIERS, ENFORCEMENT_BEHAVIOR, FLAGS, MODULE, SETTINGS } from '../constants.mjs';
+import { FLAGS, MODULE, SETTINGS } from '../constants.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
 import { log } from '../logger.mjs';
 import { RuleSetManager } from './rule-set-manager.mjs';
@@ -196,8 +196,8 @@ export class CantripManager {
     const settings = this._getClassSettings(classIdentifier);
     const spellName = spell.name;
 
-    if (settings.behavior === ENFORCEMENT_BEHAVIOR.UNENFORCED || settings.behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
-      if (settings.behavior === ENFORCEMENT_BEHAVIOR.NOTIFY_GM && isChecked) {
+    if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.UNENFORCED || settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
+      if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM && isChecked) {
         const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount(classIdentifier);
         const maxCantrips = this._getMaxCantripsForClass(classIdentifier);
         if (currentCount >= maxCantrips) {
@@ -229,7 +229,7 @@ export class CantripManager {
         if (!isLevelUp) return { allowed: false, message: 'SPELLBOOK.Cantrips.LockedOutsideLevelUp' };
         break;
       case 'longRest':
-        const isWizard = classIdentifier === CLASS_IDENTIFIERS.WIZARD;
+        const isWizard = classIdentifier === MODULE.CLASS_IDENTIFIERS.WIZARD;
         if (!isWizard) return { allowed: false, message: 'SPELLBOOK.Cantrips.WizardRuleOnly' };
         if (!isLongRest) return { allowed: false, message: 'SPELLBOOK.Cantrips.LockedOutsideLongRest' };
         break;
@@ -299,7 +299,7 @@ export class CantripManager {
     const spellUuid = genericUtils.getSpellUuid(spell);
     if (!isLevelUp && !isLongRest) return;
     if (cantripSwapping === 'none') return;
-    if (cantripSwapping === 'longRest' && classIdentifier !== CLASS_IDENTIFIERS.WIZARD) return;
+    if (cantripSwapping === 'longRest' && classIdentifier !== MODULE.CLASS_IDENTIFIERS.WIZARD) return;
     const flagName = isLevelUp ? `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.levelUp` : `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.longRest`;
     let tracking = this.actor.getFlag(MODULE.ID, flagName);
     if (!tracking) {
@@ -420,7 +420,7 @@ export class CantripManager {
         continue;
       }
 
-      if (settings.behavior !== ENFORCEMENT_BEHAVIOR.ENFORCED) continue;
+      if (settings.behavior !== MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) continue;
       const cantripSwapping = settings.cantripSwapping || 'none';
 
       switch (cantripSwapping) {
@@ -450,7 +450,7 @@ export class CantripManager {
           }
           break;
         case 'longRest':
-          const isWizard = classIdentifier === CLASS_IDENTIFIERS.WIZARD;
+          const isWizard = classIdentifier === MODULE.CLASS_IDENTIFIERS.WIZARD;
           if (!isWizard) {
             checkbox.disabled = true;
             checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.WizardRuleOnly');

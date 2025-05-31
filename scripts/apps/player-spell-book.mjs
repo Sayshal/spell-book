@@ -1,4 +1,4 @@
-import { DEFAULT_FILTER_CONFIG, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as filterUtils from '../helpers/filters.mjs';
 import * as formElements from '../helpers/form-elements.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
@@ -730,17 +730,17 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       let filterConfig = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
       if (Array.isArray(filterConfig) && filterConfig.length > 0) {
         const existingFilters = new Map(filterConfig.map((f) => [f.id, f]));
-        for (const defaultFilter of DEFAULT_FILTER_CONFIG) {
+        for (const defaultFilter of MODULE.DEFAULT_FILTER_CONFIG) {
           if (!existingFilters.has(defaultFilter.id)) filterConfig.push(foundry.utils.deepClone(defaultFilter));
         }
-        const defaultFilterIds = new Set(DEFAULT_FILTER_CONFIG.map((f) => f.id));
+        const defaultFilterIds = new Set(MODULE.DEFAULT_FILTER_CONFIG.map((f) => f.id));
         filterConfig = filterConfig.filter((filter) => {
           if (!defaultFilterIds.has(filter.id)) return false;
           return true;
         });
 
         game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, filterConfig);
-      } else filterConfig = foundry.utils.deepClone(DEFAULT_FILTER_CONFIG);
+      } else filterConfig = foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG);
       const sortedFilters = filterConfig.filter((f) => f.enabled).sort((a, b) => a.order - b.order);
       const filterState = this.filterHelper.getFilterState();
       log(3, `Preparing ${sortedFilters.length} enabled filters for UI`);

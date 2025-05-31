@@ -1,5 +1,5 @@
 import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
-import { DEFAULT_FILTER_CONFIG, ENFORCEMENT_BEHAVIOR, MODULE, RULE_SETS, SETTINGS } from './constants.mjs';
+import { MODULE.DEFAULT_FILTER_CONFIG, MODULE.ENFORCEMENT_BEHAVIOR, MODULE, MODULE.RULE_SETS, SETTINGS } from './constants.mjs';
 import { log } from './logger.mjs';
 
 /**
@@ -72,12 +72,12 @@ export function registerSettings() {
     scope: 'client',
     config: false,
     type: Object,
-    default: DEFAULT_FILTER_CONFIG,
+    default: MODULE.DEFAULT_FILTER_CONFIG,
     onChange: (value) => {
       try {
         if (!Array.isArray(value)) {
           log(2, 'Invalid filter configuration format, resetting to default');
-          game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, DEFAULT_FILTER_CONFIG);
+          game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, MODULE.DEFAULT_FILTER_CONFIG);
         }
       } catch (error) {
         log(1, 'Error validating filter configuration:', error);
@@ -102,27 +102,27 @@ export function registerSettings() {
     config: true,
     type: String,
     choices: {
-      [RULE_SETS.LEGACY]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Legacy',
-      [RULE_SETS.MODERN]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Modern'
+      [MODULE.RULE_SETS.LEGACY]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Legacy',
+      [MODULE.RULE_SETS.MODERN]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Modern'
     },
-    default: RULE_SETS.LEGACY,
+    default: MODULE.RULE_SETS.LEGACY,
     onChange: (value) => {
       ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.RuleSetChanged'));
     }
   });
 
-  game.settings.register(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR, {
+  game.settings.register(MODULE.ID, SETTINGS.DEFAULT_MODULE.ENFORCEMENT_BEHAVIOR, {
     name: 'SPELLBOOK.Settings.DefaultEnforcementBehavior.Name',
     hint: 'SPELLBOOK.Settings.DefaultEnforcementBehavior.Hint',
     scope: 'world',
     config: true,
     type: String,
     choices: {
-      [ENFORCEMENT_BEHAVIOR.UNENFORCED]: 'SPELLBOOK.Cantrips.BehaviorUnenforced',
-      [ENFORCEMENT_BEHAVIOR.NOTIFY_GM]: 'SPELLBOOK.Cantrips.BehaviorNotifyGM',
-      [ENFORCEMENT_BEHAVIOR.ENFORCED]: 'SPELLBOOK.Cantrips.BehaviorEnforced'
+      [MODULE.ENFORCEMENT_BEHAVIOR.UNENFORCED]: 'SPELLBOOK.Cantrips.BehaviorUnenforced',
+      [MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM]: 'SPELLBOOK.Cantrips.BehaviorNotifyGM',
+      [MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED]: 'SPELLBOOK.Cantrips.BehaviorEnforced'
     },
-    default: ENFORCEMENT_BEHAVIOR.NOTIFY_GM
+    default: MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM
   });
 
   game.settings.register(MODULE.ID, SETTINGS.DISABLE_LONG_REST_SWAP_PROMPT, {

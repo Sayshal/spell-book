@@ -1,4 +1,4 @@
-import { DEFAULT_FILTER_CONFIG, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -63,10 +63,10 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       let config = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
       if (!config || !Array.isArray(config) || config.length === 0) {
         log(2, 'No valid configuration found, using defaults');
-        config = foundry.utils.deepClone(DEFAULT_FILTER_CONFIG);
+        config = foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG);
       } else {
         config = config.map((filter) => {
-          const defaultFilter = DEFAULT_FILTER_CONFIG.find((df) => df.id === filter.id);
+          const defaultFilter = MODULE.DEFAULT_FILTER_CONFIG.find((df) => df.id === filter.id);
           if (defaultFilter) {
             return {
               ...filter,
@@ -84,7 +84,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       log(3, 'Configuration initialized successfully');
     } catch (error) {
       log(1, 'Error initializing filter configuration:', error);
-      this.config = foundry.utils.deepClone(DEFAULT_FILTER_CONFIG);
+      this.config = foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG);
     }
   }
 
@@ -96,11 +96,11 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   static getValidConfiguration() {
     try {
       const config = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
-      if (!config || !Array.isArray(config) || config.length === 0) return foundry.utils.deepClone(DEFAULT_FILTER_CONFIG);
+      if (!config || !Array.isArray(config) || config.length === 0) return foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG);
       return config;
     } catch (error) {
       log(1, 'Error retrieving configuration, using defaults:', error);
-      return foundry.utils.deepClone(DEFAULT_FILTER_CONFIG);
+      return foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG);
     }
   }
 
@@ -498,7 +498,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   static handleReset(event, _form) {
     try {
       event.preventDefault();
-      this.config = foundry.utils.deepClone(DEFAULT_FILTER_CONFIG);
+      this.config = foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG);
       this.render(false);
     } catch (error) {
       log(1, 'Error handling reset:', error);
