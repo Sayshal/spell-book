@@ -671,9 +671,13 @@
       display: flex;
       align-items: center;
       font-weight: bold;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
 
       .content-link {
         display: inline-flex;
+        flex-shrink: 0;
         margin: 0 !important;
         padding: 0 !important;
         border: none !important;
@@ -719,6 +723,7 @@
       gap: 0.5rem;
       display: flex;
       align-items: center;
+      flex-shrink: 0;
       color: var(--spell-book-manager-text-tertiary);
     }
 
@@ -1049,6 +1054,74 @@
   ol,
   ul {
     margin: 0;
+  }
+}
+
+/* ----------------------------------------- */
+/*  Documentation Dialog Styles             */
+/* ----------------------------------------- */
+.application.dialog.gm-spell-list-manager-helper {
+  .spell-manager-documentation {
+    padding-right: 0.5rem;
+
+    h3 {
+      margin: 1rem 0 0.5rem;
+      border-bottom: 1px solid var(--color-border-light-tertiary);
+
+      &:first-of-type {
+        margin-top: 0;
+      }
+    }
+
+    p {
+      line-height: 1.5;
+
+      + ol,
+      + ul {
+        margin-top: 0.5rem;
+      }
+    }
+
+    ol,
+    ul {
+      padding-left: 1.5rem;
+
+      li {
+        line-height: 1.6;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+
+      + p {
+        margin-top: 1rem;
+      }
+    }
+
+    ol {
+      li {
+        padding-left: 0.25rem;
+        margin-bottom: 0;
+      }
+    }
+
+    ul {
+      li {
+        padding-left: 0.25rem;
+        margin-bottom: 0;
+      }
+    }
+
+    strong {
+      display: inline-block;
+      margin-bottom: 0.25rem;
+    }
+
+    /* Last element cleanup */
+    > *:last-child {
+      margin-bottom: 0;
+    }
   }
 }
 

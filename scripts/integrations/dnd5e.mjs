@@ -150,7 +150,8 @@ async function showLongRestSwapDialog(longRestClasses) {
       { icon: 'fas fa-book', label: game.i18n.localize('SPELLBOOK.LongRest.SwapConfirm'), action: 'confirm', className: 'dialog-button' },
       { icon: 'fas fa-times', label: game.i18n.localize('SPELLBOOK.LongRest.SwapCancel'), action: 'cancel', className: 'dialog-button' }
     ],
-    default: 'cancel'
+    default: 'cancel',
+    rejectClose: false
   });
 }
 

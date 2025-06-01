@@ -211,7 +211,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     try {
       const selectedSpellUUIDs = this.getSelectedSpellUUIDs();
       log(3, 'Beginning Filtering:', selectedSpellUUIDs.size, 'selected spells out of', this.availableSpells.length, 'total available');
-      return this.filterHelper.filterAvailableSpells(this.availableSpells, selectedSpellUUIDs, this.isSpellInSelectedList.bind(this));
+      return this.filterHelper.filterAvailableSpells(this.availableSpells, selectedSpellUUIDs, this.isSpellInSelectedList.bind(this), this.filterState);
     } catch (error) {
       log(1, 'Error filtering available spells:', error);
       return { spells: [], totalFiltered: 0 };
@@ -495,7 +495,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
             className: 'dialog-button'
           }
         ],
-        default: 'cancel'
+        default: 'cancel',
+        rejectClose: false
       });
       return result === 'confirm';
     } catch (error) {
@@ -557,6 +558,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         }
       ],
       default: 'cancel',
+      rejectClose: false,
       render: (event, target, form) => {
         this._setupCreateListDialogListeners(target);
       }
@@ -951,12 +953,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   static async handleShowDocumentation(_event, _form) {
     const content = await renderTemplate(TEMPLATES.DIALOGS.MANAGER_DOCUMENTATION, {});
     await DialogV2.wait({
-      title: game.i18n.localize('SPELLMANAGER.Documentation.Title'),
+      window: { title: game.i18n.localize('SPELLMANAGER.Documentation.Title') },
       content: content,
       classes: ['gm-spell-list-manager-helper'],
       buttons: [{ icon: 'fas fa-check', label: game.i18n.localize('SPELLMANAGER.Buttons.Close'), action: 'close' }],
-      position: { top: 150, left: 150, width: 600, height: 800 },
-      default: 'close'
+      position: { width: 650, height: 800 },
+      default: 'close',
+      rejectClose: false
     });
   }
 

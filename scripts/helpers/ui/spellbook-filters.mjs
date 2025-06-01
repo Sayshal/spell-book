@@ -65,18 +65,19 @@ export class SpellbookFilterHelper {
    * @param {Array} availableSpells - Array of available spells
    * @param {Set} selectedSpellUUIDs - Set of selected spell UUIDs
    * @param {Function} isSpellInSelectedList - Function to check if spell is in selected list
+   * @param {Object} [filterState] - Optional filter state to use instead of reading from DOM
    * @returns {Object} Filtered spells with count
    */
-  filterAvailableSpells(availableSpells, selectedSpellUUIDs, isSpellInSelectedList) {
-    const filterState = this.getFilterState();
+  filterAvailableSpells(availableSpells, selectedSpellUUIDs, isSpellInSelectedList, filterState = null) {
+    const filters = filterState || this.getFilterState();
     log(3, 'Beginning Filtering:', selectedSpellUUIDs.size, 'selected spells out of', availableSpells.length, 'total available');
     let remainingSpells = [...availableSpells];
     remainingSpells = this._filterBySelectedList(remainingSpells, selectedSpellUUIDs, isSpellInSelectedList);
-    remainingSpells = this._filterBySource(remainingSpells, filterState);
-    remainingSpells = this._filterByBasicProperties(remainingSpells, filterState);
-    remainingSpells = this._filterByRange(remainingSpells, filterState);
-    remainingSpells = this._filterByDamageAndConditions(remainingSpells, filterState);
-    remainingSpells = this._filterBySpecialProperties(remainingSpells, filterState);
+    remainingSpells = this._filterBySource(remainingSpells, filters);
+    remainingSpells = this._filterByBasicProperties(remainingSpells, filters);
+    remainingSpells = this._filterByRange(remainingSpells, filters);
+    remainingSpells = this._filterByDamageAndConditions(remainingSpells, filters);
+    remainingSpells = this._filterBySpecialProperties(remainingSpells, filters);
     log(3, 'Final spells count:', remainingSpells.length);
     return { spells: remainingSpells, totalFiltered: remainingSpells.length };
   }

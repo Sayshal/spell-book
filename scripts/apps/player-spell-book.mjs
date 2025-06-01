@@ -1089,7 +1089,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         { icon: 'fas fa-book', label: game.i18n.localize('SPELLBOOK.Wizard.LearnSpellButton'), action: 'confirm', className: 'dialog-button' },
         { icon: 'fas fa-times', label: game.i18n.localize('SPELLBOOK.UI.Cancel'), action: 'cancel', className: 'dialog-button' }
       ],
-      default: 'confirm'
+      default: 'confirm',
+      rejectClose: false
     });
 
     if (result === 'confirm') {
