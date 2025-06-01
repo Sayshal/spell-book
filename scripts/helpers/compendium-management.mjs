@@ -353,7 +353,7 @@ function formatSpellEntry(entry, pack) {
  * @returns {Promise<JournalEntryPage>} The created spell list
  */
 export async function createNewSpellList(name, identifier, source) {
-  if (!source) source = game.i18n.localize('SPELLMANAGER.CreateList.Custom'); //TODO: Localize
+  if (!source) source = game.i18n.localize('SPELLMANAGER.CreateList.Custom');
   const journalData = {
     name: `${source} - ${name}`,
     pages: [
@@ -361,7 +361,7 @@ export async function createNewSpellList(name, identifier, source) {
         name: name,
         type: 'spells',
         flags: { [MODULE.ID]: { isCustom: true, isNewList: true, isDuplicate: false, creationDate: Date.now() } },
-        system: { identifier: identifier.toLowerCase(), description: `Custom spell list for ${identifier}`, spells: [] }
+        system: { identifier: identifier.toLowerCase(), description: game.i18n.format('SPELLMANAGER.CreateList.CustomDescription', { identifier }), spells: [] }
       }
     ]
   };

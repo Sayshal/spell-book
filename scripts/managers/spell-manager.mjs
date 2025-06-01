@@ -277,7 +277,7 @@ export class SpellManager {
     } else if (preparationMode === 'pact') {
       const subclass = this.actor.items.find((i) => i.type === 'subclass');
       if (subclass) return { name: subclass.name, type: 'subclass', id: subclass.id };
-      return { name: 'Pact Magic', type: 'class' }; //TODO: Localize
+      return { name: game.i18n.localize('SPELLBOOK.SpellSource.PactMagic'), type: 'class' };
     } else {
       const classItem = this.actor.items.find((i) => i.type === 'class');
       if (classItem) return { name: classItem.name, type: 'class', id: classItem.id };

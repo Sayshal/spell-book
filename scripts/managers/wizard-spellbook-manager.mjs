@@ -235,7 +235,7 @@ export class WizardSpellbookManager {
       },
       pages: [
         {
-          name: `${this.actor.name}'s Spell Book`, //TODO: Localize
+          name: game.i18n.format('SPELLBOOK.Journal.PageTitle', { name: this.actor.name }),
           type: 'spells',
           flags: {
             [MODULE.ID]: {
@@ -245,7 +245,7 @@ export class WizardSpellbookManager {
           },
           system: {
             identifier: `${this.actor.id}-${MODULE.ID}`,
-            description: `Spellbook for ${this.actor.name}`, //TODO: Localize
+            description: game.i18n.format('SPELLBOOK.Journal.SpellbookDescription', { name: this.actor.name }),
             spells: new Set()
           }
         }
