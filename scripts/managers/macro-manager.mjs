@@ -1,13 +1,15 @@
 import { MODULE } from '../constants.mjs';
 import { log } from '../logger.mjs';
+import { flagPurge } from '../macros/flag-purge.mjs';
 import { spellBookQuickAccess } from '../macros/spell-book-quick-access.mjs';
 import { spellSlotTracker } from '../macros/spell-slot-tracker.mjs';
+import { spellsNotInLists } from '../macros/spells-not-in-lists.mjs';
 
 /**
  * All macro definitions for the spell-book module
  * @type {Array}
  */
-const MACRO_DEFINITIONS = [spellBookQuickAccess, spellSlotTracker];
+const MACRO_DEFINITIONS = [spellBookQuickAccess, spellSlotTracker, flagPurge, spellsNotInLists];
 
 /**
  * Macro Manager class for handling versioned compendium macros
