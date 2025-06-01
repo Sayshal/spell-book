@@ -105,10 +105,15 @@ function A(c, bg, t = 4.5) {
 }
 export async function extractDominantColor(src) {
   try {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const i = new Image();
       i.crossOrigin = 'anonymous';
+      const timeout = setTimeout(() => {
+        log(2, `Timeout loading image for color extraction: ${src}`);
+        resolve('#8B4513');
+      }, 5000);
       i.onload = () => {
+        clearTimeout(timeout);
         try {
           const c = document.createElement('canvas'),
             ctx = c.getContext('2d'),
@@ -139,7 +144,9 @@ export async function extractDominantColor(src) {
             }
           if (dc) {
             const [r, g, b] = dc.split(',').map(Number);
-            resolve(`#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`);
+            const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+            if (hex.match(/^#[0-9A-Fa-f]{6}$/)) resolve(hex);
+            else resolve('#8B4513');
           } else resolve('#8B4513');
         } catch (e) {
           log(1, 'Error processing image for color extraction:', e);
@@ -147,9 +154,11 @@ export async function extractDominantColor(src) {
         }
       };
       i.onerror = () => {
+        clearTimeout(timeout);
         log(2, 'Could not load image for color extraction:', src);
         resolve('#8B4513');
       };
+
       i.src = src;
     });
   } catch (e) {
@@ -157,12 +166,13 @@ export async function extractDominantColor(src) {
     return '#8B4513';
   }
 }
+
 export async function applyClassColors(sc) {
   try {
     const se = document.getElementById('spell-book-class-colors') || document.createElement('style');
     se.id = 'spell-book-class-colors';
-    const tm = d(),
-      bg = T[tm];
+    const tm = d();
+    const bg = T[tm] || T.light || '#f4f4f4';
     let css = '';
     for (const [id, cd] of Object.entries(sc)) {
       const img = cd.img;
@@ -170,12 +180,23 @@ export async function applyClassColors(sc) {
       if (img && img !== 'icons/svg/mystery-man.svg') {
         try {
           const ec = await extractDominantColor(img);
-          clr = A(ec, bg, 4.5);
+          if (ec && typeof ec === 'string' && ec.match(/^#[0-9A-Fa-f]{6}$/)) {
+            clr = A(ec, bg, 4.5);
+          } else {
+            log(2, `Invalid color extracted for class ${id}, using fallback`);
+            clr = A('#8B4513', bg, 4.5);
+          }
         } catch (e) {
           log(2, `Could not extract color for class ${id}, using fallback`);
           clr = A('#8B4513', bg, 4.5);
         }
-      } else clr = A('#8B4513', bg, 4.5);
+      } else {
+        clr = A('#8B4513', bg, 4.5);
+      }
+      if (!clr || typeof clr !== 'string' || !clr.match(/^#[0-9A-Fa-f]{6}$/)) {
+        log(2, `Final color validation failed for class ${id}, using raw fallback`);
+        clr = '#8B4513';
+      }
       css += `.spell-prep-tracking .class-prep-count[data-class-identifier="${id}"] .class-name{color:${clr}}.spell-prep-tracking .class-prep-count[data-class-identifier="${id}"].active-class{font-weight:bold}.spell-prep-tracking .class-prep-count[data-class-identifier="${id}"].active-class .class-name{color:${clr};text-shadow:0 0 3px ${clr}40}`;
     }
     se.textContent = css;
