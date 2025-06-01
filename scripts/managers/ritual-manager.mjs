@@ -1,9 +1,9 @@
-import { FLAGS, MODULE } from '../constants.mjs';
 import { log } from '../logger.mjs';
+import { RuleSetManager } from './rule-set-manager.mjs';
 import { WizardSpellbookManager } from './wizard-spellbook-manager.mjs';
 
 /**
- * Manages ritual casting from spellbooks
+ * Manages ritual casting from spellbooks using per-class rules
  */
 export class RitualManager {
   /**
@@ -15,8 +15,6 @@ export class RitualManager {
     this.actor = actor;
     this.isWizard = false;
     this.wizardManager = null;
-
-    // Use provided wizard manager or create new one
     if (wizardManager && wizardManager.isWizard) {
       this.isWizard = true;
       this.wizardManager = wizardManager;
@@ -39,47 +37,75 @@ export class RitualManager {
   }
 
   /**
-   * Check if ritual casting is enabled for the actor
+   * Check if ritual casting is enabled for the wizard class
+   * @param {string} classIdentifier - The class identifier (defaults to 'wizard')
    * @returns {boolean} Whether ritual casting is enabled
    */
-  isRitualCastingEnabled() {
+  isRitualCastingEnabled(classIdentifier = 'wizard') {
     if (!this.isWizard) return false;
-    return this.actor.getFlag(MODULE.ID, FLAGS.WIZARD_RITUAL_CASTING) !== false;
+    const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
+    return classRules.ritualCasting !== 'none';
   }
 
   /**
-   * Enable or disable ritual casting
-   * @param {boolean} enabled - Whether to enable ritual casting
-   * @returns {Promise<boolean>} Success status
+   * Get the ritual casting mode for the wizard class
+   * @param {string} classIdentifier - The class identifier (defaults to 'wizard')
+   * @returns {string} The ritual casting mode ('none', 'prepared', 'always')
    */
-  async setRitualCastingEnabled(enabled) {
-    //TODO: This is not yet implemented anywhere.
-    if (!this.isWizard) return false;
-    this.actor.setFlag(MODULE.ID, FLAGS.WIZARD_RITUAL_CASTING, enabled);
-    if (enabled) await this.initializeAllRitualSpells();
-    else await this.removeAllRitualOnlySpells();
-    return true;
+  getRitualCastingMode(classIdentifier = 'wizard') {
+    if (!this.isWizard) return 'none';
+    const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
+    return classRules.ritualCasting || 'none';
   }
 
   /**
-   * Initialize all ritual spells from the wizard's spellbook
+   * Check if a spell should be available as a ritual based on the current mode
+   * @param {Item5e} spell - The spell to check
+   * @param {string} classIdentifier - The class identifier (defaults to 'wizard')
+   * @returns {boolean} Whether the spell should be available as a ritual
+   */
+  shouldSpellBeAvailableAsRitual(spell, classIdentifier = 'wizard') {
+    if (!this.isWizard || !spell.system.components?.ritual || spell.system.level === 0) {
+      return false;
+    }
+    const mode = this.getRitualCastingMode(classIdentifier);
+    switch (mode) {
+      case 'always':
+        return true;
+      case 'prepared':
+        return spell.system.preparation?.prepared || spell.system.preparation?.mode === 'prepared';
+      case 'none':
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Initialize all ritual spells from the wizard's spellbook based on current rules
+   * @param {string} classIdentifier - The class identifier (defaults to 'wizard')
    * @returns {Promise<void>}
    */
-  async initializeAllRitualSpells() {
-    if (!this.isWizard || !this.isRitualCastingEnabled() || !this.wizardManager) return;
+  async initializeAllRitualSpells(classIdentifier = 'wizard') {
+    if (!this.isWizard || !this.wizardManager) return;
+    const ritualMode = this.getRitualCastingMode(classIdentifier);
+    if (ritualMode === 'none') return;
     const spellbookSpells = await this.wizardManager.getSpellbookSpells();
     const spellsToCreate = [];
-    log(1, `Starting ritual initialization for ${this.actor.name}, checking ${spellbookSpells.length} spellbook spells`);
+    log(3, `Starting ritual initialization for ${this.actor.name} (${ritualMode} mode), checking ${spellbookSpells.length} spellbook spells`);
     let ritualSpellsFound = 0;
     let ritualSpellsAlreadyExist = 0;
     let ritualSpellsToCreate = 0;
     for (const spellUuid of spellbookSpells) {
-      const existingSpell = this.actor.items.find((i) => i.type === 'spell' && (i.flags?.core?.sourceId === spellUuid || i.uuid === spellUuid));
+      const existingSpell = this.actor.items.find(
+        (i) =>
+          i.type === 'spell' && (i.flags?.core?.sourceId === spellUuid || i.uuid === spellUuid) && (i.system?.sourceClass === classIdentifier || i.sourceClass === classIdentifier)
+      );
       const sourceSpell = await fromUuid(spellUuid);
       if (!sourceSpell) {
         log(2, `Could not load spell ${spellUuid} from wizard spellbook`);
         continue;
       }
+
       if (!sourceSpell.system.components?.ritual || sourceSpell.system.level === 0) continue;
       ritualSpellsFound++;
       log(3, `Found ritual spell: ${sourceSpell.name} (${spellUuid}), exists on actor: ${!!existingSpell}`);
@@ -88,22 +114,37 @@ export class RitualManager {
         const isPrepared = existingSpell.system.preparation?.prepared;
         const currentMode = existingSpell.system.preparation?.mode;
         log(3, `Existing spell ${sourceSpell.name} - prepared: ${isPrepared}, mode: ${currentMode}`);
-        if (!isPrepared && currentMode !== 'ritual') {
-          await existingSpell.update({ 'system.preparation.mode': 'ritual', 'system.preparation.prepared': false, 'system.sourceClass': 'wizard' });
+        if (ritualMode === 'always' && currentMode !== 'ritual') {
+          await existingSpell.update({
+            'system.preparation.mode': 'ritual',
+            'system.preparation.prepared': false,
+            'system.sourceClass': classIdentifier
+          });
           log(1, `Updated existing spell ${sourceSpell.name} to ritual mode`);
+        } else if (ritualMode === 'prepared' && !isPrepared && currentMode !== 'ritual') {
+          if (currentMode === 'prepared') {
+            await existingSpell.update({
+              'system.preparation.mode': 'ritual',
+              'system.preparation.prepared': false,
+              'system.sourceClass': classIdentifier
+            });
+            log(1, `Updated prepared spell ${sourceSpell.name} to ritual mode`);
+          }
         }
       } else {
-        ritualSpellsToCreate++;
-        const newSpellData = sourceSpell.toObject();
-        if (!newSpellData.system.preparation) newSpellData.system.preparation = {};
-        newSpellData.system.preparation.mode = 'ritual';
-        newSpellData.system.preparation.prepared = false;
-        newSpellData.flags = newSpellData.flags || {};
-        newSpellData.flags.core = newSpellData.flags.core || {};
-        newSpellData.flags.core.sourceId = spellUuid;
-        newSpellData.system.sourceClass = 'wizard';
-        spellsToCreate.push(newSpellData);
-        log(3, `Preparing to create ritual spell: ${sourceSpell.name}`);
+        if (ritualMode === 'always') {
+          ritualSpellsToCreate++;
+          const newSpellData = sourceSpell.toObject();
+          if (!newSpellData.system.preparation) newSpellData.system.preparation = {};
+          newSpellData.system.preparation.mode = 'ritual';
+          newSpellData.system.preparation.prepared = false;
+          newSpellData.flags = newSpellData.flags || {};
+          newSpellData.flags.core = newSpellData.flags.core || {};
+          newSpellData.flags.core.sourceId = spellUuid;
+          newSpellData.system.sourceClass = classIdentifier;
+          spellsToCreate.push(newSpellData);
+          log(3, `Preparing to create ritual spell: ${sourceSpell.name}`);
+        }
       }
     }
     log(3, `Ritual summary - Found: ${ritualSpellsFound}, Already exist: ${ritualSpellsAlreadyExist}, To create: ${ritualSpellsToCreate}`);
@@ -111,26 +152,84 @@ export class RitualManager {
   }
 
   /**
-   * Remove all ritual-only spells from the actor
+   * Remove all ritual-only spells from the actor for a specific class
+   * @param {string} classIdentifier - The class identifier (defaults to 'wizard')
    * @returns {Promise<void>}
    */
-  async removeAllRitualOnlySpells() {
+  async removeAllRitualOnlySpells(classIdentifier = 'wizard') {
     if (!this.isWizard) return;
-    const ritualOnlySpells = this.actor.items.filter((i) => i.type === 'spell' && i.system.preparation?.mode === 'ritual' && !i.system.preparation?.prepared);
+    const ritualOnlySpells = this.actor.items.filter(
+      (i) =>
+        i.type === 'spell' &&
+        i.system.preparation?.mode === 'ritual' &&
+        !i.system.preparation?.prepared &&
+        (i.system?.sourceClass === classIdentifier || i.sourceClass === classIdentifier)
+    );
     if (ritualOnlySpells.length > 0) {
       const idsToRemove = ritualOnlySpells.map((s) => s.id);
       await this.actor.deleteEmbeddedDocuments('Item', idsToRemove);
-      log(3, `Removed ${ritualOnlySpells.length} ritual-only spells from ${this.actor.name}`);
+      log(3, `Removed ${ritualOnlySpells.length} ritual-only spells for ${classIdentifier} from ${this.actor.name}`);
     }
   }
 
   /**
-   * Get all ritual spells available to cast
+   * Update ritual spells based on current class rules
+   * @param {string} classIdentifier - The class identifier (defaults to 'wizard')
+   * @returns {Promise<void>}
+   */
+  async updateRitualSpellsForCurrentMode(classIdentifier = 'wizard') {
+    if (!this.isWizard || !this.wizardManager) return;
+    const ritualMode = this.getRitualCastingMode(classIdentifier);
+    switch (ritualMode) {
+      case 'none':
+        await this.removeAllRitualOnlySpells(classIdentifier);
+        break;
+      case 'always':
+      case 'prepared':
+        await this.initializeAllRitualSpells(classIdentifier);
+        break;
+    }
+  }
+
+  /**
+   * Get all ritual spells available to cast for a specific class
+   * @param {string} classIdentifier - The class identifier (defaults to 'wizard')
    * @returns {Promise<Array<Item5e>>} Array of ritual spell items
    */
-  async getRitualSpells() {
+  async getRitualSpells(classIdentifier = 'wizard') {
     if (!this.isWizard || !this.wizardManager) return [];
-    if (!this.isRitualCastingEnabled()) return [];
-    return await this.wizardManager.getRitualSpells();
+    const ritualMode = this.getRitualCastingMode(classIdentifier);
+    if (ritualMode === 'none') return [];
+    const ritualSpells = this.actor.items.filter((spell) => {
+      if (spell.type !== 'spell') return false;
+      if (!spell.system.components?.ritual) return false;
+      if (spell.system.level === 0) return false;
+      const spellClass = spell.system?.sourceClass || spell.sourceClass;
+      if (spellClass && spellClass !== classIdentifier) return false;
+      switch (ritualMode) {
+        case 'always':
+          return spell.system.preparation?.mode === 'ritual' || spell.system.preparation?.prepared;
+        case 'prepared':
+          return spell.system.preparation?.prepared || spell.system.preparation?.mode === 'ritual';
+        default:
+          return false;
+      }
+    });
+
+    return ritualSpells;
+  }
+
+  /**
+   * Check if a specific spell can be cast as a ritual
+   * @param {Item5e|string} spell - The spell item or UUID
+   * @param {string} classIdentifier - The class identifier (defaults to 'wizard')
+   * @returns {Promise<boolean>} Whether the spell can be cast as a ritual
+   */
+  async canCastAsRitual(spell, classIdentifier = 'wizard') {
+    if (!this.isWizard) return false;
+    let spellItem = spell;
+    if (typeof spell === 'string') spellItem = await fromUuid(spell);
+    if (!spellItem || !spellItem.system.components?.ritual || spellItem.system.level === 0) return false;
+    return this.shouldSpellBeAvailableAsRitual(spellItem, classIdentifier);
   }
 }

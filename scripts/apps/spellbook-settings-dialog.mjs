@@ -65,9 +65,9 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     context.spellcastingClasses = await this._prepareClassSettings();
     context.hasNotices = context.spellcastingClasses.some((classData) => classData.rules._noScaleValue || classData.hasCustomSpellList);
     context.availableSpellLists = await this._prepareSpellListOptions();
-    context.MODULE.RULE_SETS = MODULE.RULE_SETS;
-    context.MODULE.RITUAL_CASTING_MODES = MODULE.RITUAL_CASTING_MODES;
-    context.MODULE.ENFORCEMENT_BEHAVIOR = MODULE.ENFORCEMENT_BEHAVIOR;
+    context.RULE_SETS = MODULE.RULE_SETS;
+    context.RITUAL_CASTING_MODES = MODULE.RITUAL_CASTING_MODES;
+    context.ENFORCEMENT_BEHAVIOR = MODULE.ENFORCEMENT_BEHAVIOR;
     context.actor = this.actor;
     return context;
   }
