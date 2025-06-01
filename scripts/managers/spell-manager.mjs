@@ -400,6 +400,9 @@ export class SpellManager {
     const spellsToCreate = [];
     const spellIdsToRemove = [];
     const cantripChanges = { added: [], removed: [], hasChanges: false };
+    const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
+    const supportsRitualCasting = classRules.ritualCasting === 'always';
+    if (!supportsRitualCasting) await this._cleanupModuleRitualSpells(classIdentifier, spellIdsToRemove);
     for (const [classSpellKey, data] of Object.entries(classSpellData)) {
       const { uuid, isPrepared, wasPrepared, isRitual, sourceClass, name } = data;
       if (isPrepared) {
@@ -409,7 +412,7 @@ export class SpellManager {
           cantripChanges.hasChanges = true;
         }
         await this._ensureSpellOnActor(uuid, sourceClass, preparationMode, spellsToCreate, spellsToUpdate);
-      } else if (!isPrepared && isRitual && genericUtils.isWizard(this.actor)) {
+      } else if (!isPrepared && isRitual && supportsRitualCasting) {
         await this._ensureRitualSpellOnActor(uuid, sourceClass, spellsToCreate, spellsToUpdate);
       } else if (wasPrepared && !isRitual) {
         if (data.spellLevel === 0) {
@@ -438,6 +441,30 @@ export class SpellManager {
   }
 
   /**
+   * Clean up ritual spells created by our module for a specific class
+   * @param {string} classIdentifier - The class identifier
+   * @param {Array} spellIdsToRemove - Array to add removal IDs to
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _cleanupModuleRitualSpells(classIdentifier, spellIdsToRemove) {
+    const moduleRitualSpells = this.actor.items.filter(
+      (item) =>
+        item.type === 'spell' &&
+        item.system?.preparation?.mode === 'ritual' &&
+        (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier) &&
+        item.flags?.[MODULE.ID]?.isModuleRitual === true
+    );
+    if (moduleRitualSpells.length > 0) {
+      log(2, `Cleaning up ${moduleRitualSpells.length} module-created ritual spells for ${classIdentifier}`);
+      moduleRitualSpells.forEach((spell) => {
+        spellIdsToRemove.push(spell.id);
+        log(3, `  - Marking for removal: ${spell.name}`);
+      });
+    }
+  }
+
+  /**
    * Ensure a ritual spell exists on the actor in ritual mode
    * @param {string} uuid - Spell UUID
    * @param {string} sourceClass - Source class identifier
@@ -452,7 +479,13 @@ export class SpellManager {
     );
     if (existingSpell) {
       if (existingSpell.system.preparation?.mode !== 'ritual') {
-        const updateData = { '_id': existingSpell.id, 'system.preparation.mode': 'ritual', 'system.preparation.prepared': false, 'system.sourceClass': sourceClass };
+        const updateData = {
+          '_id': existingSpell.id,
+          'system.preparation.mode': 'ritual',
+          'system.preparation.prepared': false,
+          'system.sourceClass': sourceClass,
+          [`flags.${MODULE.ID}.isModuleRitual`]: true
+        };
         spellsToUpdate.push(updateData);
       }
     } else {
@@ -466,6 +499,8 @@ export class SpellManager {
         newSpellData.flags.core = newSpellData.flags.core || {};
         newSpellData.flags.core.sourceId = uuid;
         newSpellData.system.sourceClass = sourceClass;
+        newSpellData.flags[MODULE.ID] = newSpellData.flags[MODULE.ID] || {};
+        newSpellData.flags[MODULE.ID].isModuleRitual = true;
         spellsToCreate.push(newSpellData);
       }
     }

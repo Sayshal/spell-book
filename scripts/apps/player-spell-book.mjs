@@ -1212,12 +1212,17 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         isPrepared,
         isRitual,
         sourceClass,
-        classSpellKey,
-        spellLevel
+        spellItem,
+        spellLevel,
+        isAlwaysPrepared,
+        isGranted,
+        isInnate,
+        isAtWill,
+        classSpellKey
       };
       log(3, `Processed spell: ${name} (${uuid}) - prepared: ${isPrepared}, ritual: ${isRitual}, class: ${sourceClass}`);
     }
-    if (this.wizardManager?.isWizard) await this._stateManager.addMissingRitualSpells(spellDataByClass);
+    await this._stateManager.addMissingRitualSpells(spellDataByClass);
     const allCantripChangesByClass = {};
     for (const [classIdentifier, classSpellData] of Object.entries(spellDataByClass)) {
       const saveResult = await this.spellManager.saveClassSpecificPreparedSpells(classIdentifier, classSpellData);

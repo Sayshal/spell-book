@@ -603,38 +603,167 @@ export class SpellbookState {
   }
 
   /**
-   * Add missing ritual spells from wizard spellbook (moved from PlayerSpellBook)
+   * Add missing ritual spells for all classes with ritual casting enabled
    * @param {Object} spellDataByClass - The spell data grouped by class
    * @returns {Promise<void>}
    */
   async addMissingRitualSpells(spellDataByClass) {
+    await this._cleanupDisabledRitualSpells();
+    for (const [classIdentifier, classData] of Object.entries(this.spellcastingClasses)) {
+      const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
+      if (classRules.ritualCasting === 'always') {
+        if (classIdentifier === 'wizard' && this.app.wizardManager?.isWizard) await this._addWizardRitualSpells(classIdentifier, spellDataByClass);
+        else await this._addClassRitualSpells(classIdentifier, classData, spellDataByClass);
+      }
+    }
+  }
+
+  /**
+   * Clean up module-created ritual spells for classes that no longer support ritual casting
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _cleanupDisabledRitualSpells() {
+    const spellIdsToRemove = [];
+    for (const [classIdentifier, classData] of Object.entries(this.spellcastingClasses)) {
+      const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
+      if (classRules.ritualCasting !== 'always') {
+        const moduleRitualSpells = this.actor.items.filter(
+          (item) =>
+            item.type === 'spell' &&
+            item.system?.preparation?.mode === 'ritual' &&
+            (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier) &&
+            item.flags?.[MODULE.ID]?.isModuleRitual === true
+        );
+        if (moduleRitualSpells.length > 0) {
+          moduleRitualSpells.forEach((spell) => {
+            spellIdsToRemove.push(spell.id);
+          });
+        }
+      }
+    }
+    if (spellIdsToRemove.length > 0) await this.actor.deleteEmbeddedDocuments('Item', spellIdsToRemove);
+  }
+
+  /**
+   * Add missing wizard ritual spells using wizard spellbook
+   * @param {string} classIdentifier - The class identifier (should be 'wizard')
+   * @param {Object} spellDataByClass - The spell data grouped by class
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _addWizardRitualSpells(classIdentifier, spellDataByClass) {
     const ritualManager = this.app.getRitualManager();
     if (!ritualManager?.isWizard) return;
     const spellbookSpells = await this.app.wizardManager.getSpellbookSpells();
     const processedUuids = new Set();
-    if (spellDataByClass.wizard) {
-      Object.values(spellDataByClass.wizard).forEach((spellData) => {
+    if (spellDataByClass[classIdentifier]) {
+      Object.values(spellDataByClass[classIdentifier]).forEach((spellData) => {
         processedUuids.add(spellData.uuid);
       });
     }
+    const isRitualSpell = (spell) => {
+      if (spell.system?.properties && spell.system.properties.has) return spell.system.properties.has('ritual');
+      if (spell.system?.properties && Array.isArray(spell.system.properties)) return spell.system.properties.some((prop) => prop.value === 'ritual');
+      return spell.system?.components?.ritual || false;
+    };
     for (const spellUuid of spellbookSpells) {
       if (processedUuids.has(spellUuid)) continue;
       const sourceSpell = await fromUuid(spellUuid);
-      if (!sourceSpell || !sourceSpell.system.components?.ritual || sourceSpell.system.level === 0) continue;
-      log(3, `Found missing ritual spell: ${sourceSpell.name} (${spellUuid})`);
-      if (!spellDataByClass.wizard) spellDataByClass.wizard = {};
-      const classSpellKey = `wizard:${spellUuid}`;
-      spellDataByClass.wizard[classSpellKey] = {
+      if (!sourceSpell || !isRitualSpell(sourceSpell) || sourceSpell.system.level === 0) continue;
+      log(3, `Found missing wizard ritual spell: ${sourceSpell.name} (${spellUuid})`);
+      if (!spellDataByClass[classIdentifier]) spellDataByClass[classIdentifier] = {};
+      const classSpellKey = `${classIdentifier}:${spellUuid}`;
+      spellDataByClass[classIdentifier][classSpellKey] = {
         uuid: spellUuid,
         name: sourceSpell.name,
         wasPrepared: false,
         isPrepared: false,
         isRitual: true,
-        sourceClass: 'wizard',
+        sourceClass: classIdentifier,
         classSpellKey,
         spellLevel: sourceSpell.system.level
       };
-      log(3, `Added missing ritual spell: ${sourceSpell.name} as unprepared`);
+      log(3, `Added missing wizard ritual spell: ${sourceSpell.name} as unprepared`);
+    }
+  }
+
+  /**
+   * Add missing ritual spells for non-wizard classes using class spell lists
+   * @param {string} classIdentifier - The class identifier
+   * @param {Object} classData - The class data from spellcastingClasses
+   * @param {Object} spellDataByClass - The spell data grouped by class
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _addClassRitualSpells(classIdentifier, classData, spellDataByClass) {
+    const className = classData.name.toLowerCase();
+    const classUuid = classData.uuid;
+    const spellList = await discoveryUtils.getClassSpellList(className, classUuid, this.actor);
+    if (!spellList || !spellList.size) {
+      log(1, `No spell list found for class ${classIdentifier} (${className})`);
+      return;
+    }
+    const spellItems = await actorSpellUtils.fetchSpellDocuments(spellList, 9);
+    if (!spellItems || !spellItems.length) {
+      log(1, `No spell items fetched for class ${classIdentifier} - fetchSpellDocuments returned empty`);
+      return;
+    }
+    const preparedUuids = new Set();
+    if (spellDataByClass[classIdentifier]) {
+      Object.values(spellDataByClass[classIdentifier]).forEach((spellData) => {
+        if (spellData.isPrepared || spellData.wasPrepared) {
+          preparedUuids.add(spellData.uuid);
+        }
+      });
+    }
+    let addedCount = 0;
+    let ritualSpellsFound = 0;
+    let skippedReasons = {
+      alreadyPrepared: 0,
+      notRitual: 0,
+      isCantrip: 0,
+      alreadyOnActorAsRitual: 0,
+      addedAsRitual: 0
+    };
+    const isRitualSpell = (spell) => {
+      if (spell.system?.properties && spell.system.properties.has) return spell.system.properties.has('ritual');
+      if (spell.system?.properties && Array.isArray(spell.system.properties)) return spell.system.properties.some((prop) => prop.value === 'ritual');
+      return spell.system?.components?.ritual || false;
+    };
+    for (const spell of spellItems) {
+      const spellUuid = spell.compendiumUuid || spell.uuid;
+      const spellName = spell.name;
+      const spellLevel = spell.system?.level;
+      const hasRitual = isRitualSpell(spell);
+      if (!hasRitual) continue;
+      if (spellLevel === 0) continue;
+      if (preparedUuids.has(spellUuid)) continue;
+      const existingRitualSpell = this.actor.items.find(
+        (item) =>
+          item.type === 'spell' &&
+          (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) &&
+          (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier) &&
+          item.system?.preparation?.mode === 'ritual'
+      );
+      if (existingRitualSpell) continue;
+      if (!spellDataByClass[classIdentifier]) spellDataByClass[classIdentifier] = {};
+      const classSpellKey = `${classIdentifier}:${spellUuid}`;
+      if (spellDataByClass[classIdentifier][classSpellKey]) {
+        spellDataByClass[classIdentifier][classSpellKey].isRitual = true;
+        spellDataByClass[classIdentifier][classSpellKey].isPrepared = false;
+      } else {
+        spellDataByClass[classIdentifier][classSpellKey] = {
+          uuid: spellUuid,
+          name: spellName,
+          wasPrepared: false,
+          isPrepared: false,
+          isRitual: true,
+          sourceClass: classIdentifier,
+          classSpellKey,
+          spellLevel: spellLevel
+        };
+      }
     }
   }
 
