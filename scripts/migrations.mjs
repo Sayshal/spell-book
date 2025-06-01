@@ -50,7 +50,7 @@ async function runMigration() {
       if (result.invalidFlags) migrationResults.invalidFlagRemovals++;
     }
   }
-  const modulePack = game.packs.get(MODULE.PACK);
+  const modulePack = game.packs.get(MODULE.PACK.SPELLS);
   if (modulePack) {
     log(3, `Migrating module compendium: ${modulePack.metadata.label}`);
     const documents = await modulePack.getDocuments();

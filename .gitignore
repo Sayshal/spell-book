@@ -2,3 +2,4 @@
 *.md
 check-unused-keys.js
 unused-keys-report.txt
+/packs

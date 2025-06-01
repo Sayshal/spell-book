@@ -205,7 +205,7 @@ export class WizardSpellbookManager {
    * @returns {Promise<JournalEntry|null>} The actor's spellbook journal or null if not found
    */
   async findSpellbookJournal() {
-    const customPack = game.packs.get(MODULE.PACK);
+    const customPack = game.packs.get(MODULE.PACK.SPELLS);
     const index = await customPack.getIndex({ fields: ['flags'] });
     for (const entry of index) {
       if (entry.flags?.[MODULE.ID]?.actorId === this.actor.id) {
@@ -222,7 +222,7 @@ export class WizardSpellbookManager {
    * @returns {Promise<JournalEntry>} The created journal
    */
   async createSpellbookJournal() {
-    const customPack = game.packs.get(MODULE.PACK);
+    const customPack = game.packs.get(MODULE.PACK.SPELLS);
     const folder = this.getSpellbooksFolder();
     const journalData = {
       name: this.actor.name,
@@ -282,7 +282,7 @@ export class WizardSpellbookManager {
    * @returns {Folder|null} The folder or null if not found
    */
   getSpellbooksFolder() {
-    const customPack = game.packs.get(MODULE.PACK);
+    const customPack = game.packs.get(MODULE.PACK.SPELLS);
     const folder = customPack.folders.find((f) => f.name === 'Actor Spellbooks');
     if (folder) return folder;
     return null;

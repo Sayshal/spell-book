@@ -180,8 +180,7 @@ export class SpellbookState {
     const classUuid = classItem.uuid;
     const spellList = await discoveryUtils.getClassSpellList(className, classUuid, this.actor);
     if (!spellList || !spellList.size) return;
-    const classLevel = classItem.system.levels || 0;
-    let maxSpellLevel = discoveryUtils.calculateMaxSpellLevel(classLevel, classItem.system.spellcasting);
+    let maxSpellLevel = discoveryUtils.calculateMaxSpellLevel(classItem, this.actor);
     const hideCantrips = this._shouldHideCantrips(identifier);
     if (hideCantrips && maxSpellLevel > 0) maxSpellLevel = Math.max(1, maxSpellLevel);
     const spellItems = await actorSpellUtils.fetchSpellDocuments(spellList, maxSpellLevel);
@@ -403,8 +402,7 @@ export class SpellbookState {
   async loadWizardSpellData(classItem) {
     const className = classItem.name.toLowerCase();
     const classUuid = classItem.uuid;
-    const actorLevel = this.actor.system.details.level;
-    const maxSpellLevel = discoveryUtils.calculateMaxSpellLevel(actorLevel, classItem.spellcasting);
+    const maxSpellLevel = discoveryUtils.calculateMaxSpellLevel(classItem, this.actor);
     const fullSpellList = await discoveryUtils.getClassSpellList(className, classUuid, null);
     if (!fullSpellList || !fullSpellList.size) return;
     const personalSpellbook = await this.app.wizardManager.getSpellbookSpells();

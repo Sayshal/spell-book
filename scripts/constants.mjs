@@ -5,7 +5,7 @@
 export const MODULE = {
   ID: 'spell-book',
   NAME: 'Spell Book',
-  PACK: 'spell-book.custom-spell-lists',
+  PACK: { SPELLS: 'spell-book.custom-spell-lists', MACROS: 'spell-book.spell-book-macros' },
   LOG_LEVEL: 0,
 
   /**

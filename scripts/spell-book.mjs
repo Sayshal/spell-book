@@ -3,6 +3,7 @@ import { MODULE, TEMPLATES } from './constants.mjs';
 import { registerDnD5eIntegration } from './integrations/dnd5e.mjs';
 import { registerTidy5eIntegration } from './integrations/tidy5e.mjs';
 import { initializeLogger, log } from './logger.mjs';
+import { MacroManager } from './managers/macro-manager.mjs';
 import { registerMigration } from './migrations.mjs';
 import { registerSettings } from './settings.mjs';
 
@@ -18,6 +19,7 @@ Hooks.once('init', async function () {
 
 Hooks.once('ready', async function () {
   await unlockModuleCompendium();
+  await MacroManager.initializeMacros();
 });
 
 /**
@@ -44,9 +46,11 @@ async function initializeModuleComponents() {
  * @returns {Promise<void>}
  */
 async function unlockModuleCompendium() {
-  const pack = game.packs.find((p) => p.collection === MODULE.PACK);
-  if (pack && pack.locked) await pack.configure({ locked: false });
-  await createActorSpellbooksFolder(pack);
+  const spellsPack = game.packs.find((p) => p.collection === MODULE.PACK.SPELLS);
+  if (spellsPack && spellsPack.locked) await spellsPack.configure({ locked: false });
+  const macrosPack = game.packs.find((p) => p.collection === MODULE.PACK.MACROS);
+  if (macrosPack && macrosPack.locked) await macrosPack.configure({ locked: false });
+  await createActorSpellbooksFolder(spellsPack);
 }
 
 /**
@@ -56,7 +60,7 @@ async function unlockModuleCompendium() {
  */
 async function createActorSpellbooksFolder(pack) {
   if (!pack) return;
-  const folder = pack.folders.find((f) => f.name === 'Actor Spellbooks');
+  const folder = pack.folders.find((f) => f.name === game.i18n.localize('SPELLBOOK.Folders.ActorSpellbooks'));
   if (!folder) {
     await Folder.create({ name: game.i18n.localize('SPELLBOOK.Folders.ActorSpellbooks'), type: 'JournalEntry' }, { pack: pack.collection });
     log(3, 'Created Actor Spellbooks folder');

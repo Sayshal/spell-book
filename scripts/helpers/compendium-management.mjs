@@ -64,7 +64,7 @@ export function prepareSpellSources(availableSpells) {
  */
 async function processStandardPacks(journalPacks, spellLists) {
   for (const pack of journalPacks) {
-    if (pack.metadata.id === MODULE.PACK) continue;
+    if (pack.metadata.id === MODULE.PACK.SPELLS) continue;
     let topLevelFolderName;
     if (pack.folder) {
       if (pack.folder.depth !== 1) topLevelFolderName = pack.folder.getParentFolders().at(-1).name;
@@ -95,7 +95,7 @@ async function processStandardPacks(journalPacks, spellLists) {
  * @param {Array} spellLists - Array to store results
  */
 async function processCustomPack(spellLists) {
-  const customPack = game.packs.get(MODULE.PACK);
+  const customPack = game.packs.get(MODULE.PACK.SPELLS);
   if (!customPack) return;
   const index = await customPack.getIndex();
   for (const journalData of index) {
@@ -183,7 +183,7 @@ export async function getValidCustomListMappings() {
  * @returns {Promise<JournalEntryPage>} The duplicated spell list
  */
 export async function duplicateSpellList(originalSpellList) {
-  const customPack = game.packs.get(MODULE.PACK);
+  const customPack = game.packs.get(MODULE.PACK.SPELLS);
   if (!customPack) log(1, 'Custom spell lists pack not found');
   const existingDuplicate = await findDuplicateSpellList(originalSpellList.uuid);
   if (existingDuplicate) return existingDuplicate;
@@ -210,7 +210,7 @@ export async function duplicateSpellList(originalSpellList) {
  * @returns {Promise<JournalEntryPage|null>} The duplicate or null
  */
 export async function findDuplicateSpellList(originalUuid) {
-  const customPack = game.packs.get(MODULE.PACK);
+  const customPack = game.packs.get(MODULE.PACK.SPELLS);
   if (!customPack) return null;
   const journals = await customPack.getDocuments();
   for (const journal of journals) {
@@ -365,7 +365,7 @@ export async function createNewSpellList(name, identifier, source) {
       }
     ]
   };
-  const journal = await JournalEntry.create(journalData, { pack: MODULE.PACK });
+  const journal = await JournalEntry.create(journalData, { pack: MODULE.PACK.SPELLS });
   return journal.pages.contents[0];
 }
 
