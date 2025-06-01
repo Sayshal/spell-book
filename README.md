@@ -231,7 +231,7 @@ Whether you're a new player learning spellcasting basics or a veteran managing a
 
 ![Sidebar Filters in Action](./github_media/06_FILTERS.png)
 
-***sidebar with various filters applied***
+***Sidebar with various filters applied***
 
 ### GM Tools
 
@@ -243,5 +243,5 @@ Whether you're a new player learning spellcasting basics or a veteran managing a
 
 ## Support & Community
 
-- **Discord**: Join our community for support, suggestions, and updates
-- **GitHub Issues**: Report bugs or request features
+- **Discord**: ![Join our community for support, suggestions, and updates](https://discord.gg/PzzUwU9gdz)
+- **GitHub Issues**: ![Report bugs or request features](https://github.com/Sayshal/spell-book/issues)
