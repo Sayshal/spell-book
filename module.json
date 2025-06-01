@@ -1,25 +1,20 @@
 {
-  "id": "spell-book",
-  "title": "Spell Book",
-  "description": "Enhanced spell management for DnD5e. Easily view, prepare, and customize spell lists.",
-  "version": "",
-  "bugs": "https://github.com/Sayshal/spell-book/issues",
-  "changelog": "https://github.com/Sayshal/spell-book/releases",
-  "license": "https://github.com/Sayshal/spell-book?tab=MIT-1-ov-file",
-  "readme": "https://github.com/Sayshal/spell-book?tab=readme-ov-file",
   "authors": [
     {
-      "name": "Tyler",
       "discord": "Tyler",
-      "url": "https://github.com/Sayshal",
-      "flags": {}
+      "flags": {},
+      "name": "Tyler",
+      "url": "https://github.com/Sayshal"
     }
   ],
+  "bugs": "https://github.com/Sayshal/spell-book/issues",
+  "changelog": "https://github.com/Sayshal/spell-book/releases",
   "compatibility": {
     "maximum": "13.999",
     "minimum": "12.331",
-    "verified": "12.331"
+    "verified": "12.343"
   },
+  "description": "Enhanced spell management for DnD5e. Easily view, prepare, and customize spell lists.",
   "download": "",
   "esmodules": ["scripts/spell-book.mjs", "scripts/constants.mjs"],
   "flags": {
@@ -28,6 +23,7 @@
       "paths": ["styles", "lang", "templates"]
     }
   },
+  "id": "spell-book",
   "languages": [
     {
       "lang": "en",
@@ -35,39 +31,52 @@
       "path": "lang/en.json"
     }
   ],
+  "license": "https://github.com/Sayshal/spell-book?tab=MIT-1-ov-file",
   "manifest": "https://github.com/Sayshal/spell-book/releases/latest/download/module.json",
+  "packFolders": [
+    {
+      "name": "Spell Book",
+      "packs": ["custom-spell-lists", "spell-book-macros"],
+      "sorting": "a"
+    }
+  ],
+  "packs": [
+    {
+      "label": "Custom Spell Lists",
+      "name": "custom-spell-lists",
+      "ownership": {
+        "ASSISTANT": "OWNER",
+        "PLAYER": "OBSERVER"
+      },
+      "path": "storage/custom-spell-lists",
+      "type": "JournalEntry"
+    },
+    {
+      "label": "Spell Book Macros",
+      "name": "spell-book-macros",
+      "ownership": {
+        "ASSISTANT": "OWNER",
+        "PLAYER": "NONE"
+      },
+      "type": "Macro"
+    }
+  ],
+  "readme": "https://github.com/Sayshal/spell-book?tab=readme-ov-file",
   "relationships": {
     "systems": [
       {
         "compatibility": {
-          "maximum": "4.4.x",
+          "maximum": "4.9",
           "minimum": "3.3.1",
-          "verified": "3.3.1"
+          "verified": "4"
         },
         "id": "dnd5e",
         "type": "system"
       }
     ]
   },
-  "packs": [
-    {
-      "name": "custom-spell-lists",
-      "label": "Custom Spell Lists",
-      "type": "JournalEntry",
-      "path": "storage/custom-spell-lists",
-      "ownership": {
-        "PLAYER": "OBSERVER",
-        "ASSISTANT": "OWNER"
-      }
-    }
-  ],
-  "packFolders": [
-    {
-      "name": "Spell Book",
-      "sorting": "a",
-      "packs": ["custom-spell-lists"]
-    }
-  ],
   "styles": ["styles/spell-book.css", "styles/gm-spell-list-manager.css"],
-  "url": "https://github.com/Sayshal/spell-book"
+  "title": "Spell Book",
+  "url": "https://github.com/Sayshal/spell-book",
+  "version": ""
 }
