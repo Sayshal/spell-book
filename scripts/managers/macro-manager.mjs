@@ -1,15 +1,8 @@
 import { MODULE } from '../constants.mjs';
 import { log } from '../logger.mjs';
-import { flagPurge } from '../macros/flag-purge.mjs';
-import { spellBookQuickAccess } from '../macros/spell-book-quick-access.mjs';
-import { spellSlotTracker } from '../macros/spell-slot-tracker.mjs';
-import { spellsNotInLists } from '../macros/spells-not-in-lists.mjs';
+import * as macros from '../macros/index.mjs';
 
-/**
- * All macro definitions for the spell-book module
- * @type {Array}
- */
-const MACRO_DEFINITIONS = [spellBookQuickAccess, spellSlotTracker, flagPurge, spellsNotInLists];
+const MACROS = Object.values(macros);
 
 /**
  * Macro Manager class for handling versioned compendium macros
@@ -23,7 +16,7 @@ export class MacroManager {
     log(3, `Initializing compendium macros...`);
     const pack = game.packs.get(MODULE.PACK.MACROS);
     if (!pack) return;
-    for (const macroDef of MACRO_DEFINITIONS) await this.ensureCompendiumMacroExists(pack, macroDef);
+    for (const macro of MACROS) await this.ensureCompendiumMacroExists(pack, macro);
     await this.cleanupObsoleteMacros(pack);
     log(3, `All compendium macros initialized successfully`);
   }
@@ -100,7 +93,7 @@ export class MacroManager {
    * @returns {Promise<void>}
    */
   static async cleanupObsoleteMacros(pack) {
-    const currentFlagKeys = MACRO_DEFINITIONS.map((def) => def.flagKey);
+    const currentFlagKeys = MACROS.map((def) => def.flagKey);
     const managedMacros = await this.getManagedMacros();
     for (const macro of managedMacros) {
       const moduleFlags = macro.getFlag(MODULE.ID);

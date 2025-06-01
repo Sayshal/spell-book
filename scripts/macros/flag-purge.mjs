@@ -1,80 +1,46 @@
 function flagPurgeScript() {
-  // Flag Purge macro for Spell Book module
   const MODULE_ID = 'spell-book';
-
   async function showFlagPurgeDialog() {
-    // Get all actors with player ownership and spellcasting classes
     const eligibleActors = game.actors
       .filter((actor) => {
         if (!actor.hasPlayerOwner) return false;
-
-        // Check if actor has spellcasting classes
         const spellcastingClasses = actor.items.filter((item) => item.type === 'class' && item.system.spellcasting?.progression !== 'none');
-
         return spellcastingClasses.length > 0;
       })
       .sort((a, b) => a.name.localeCompare(b.name));
-
     if (eligibleActors.length === 0) {
       ui.notifications.warn('No eligible actors found with player ownership and spellcasting classes.');
       return;
     }
-
-    // Build dropdown options
     let actorOptions = '<option value="all">All Eligible Actors</option>';
     eligibleActors.forEach((actor) => {
       actorOptions += `<option value="${actor.id}">${actor.name}</option>`;
     });
-
     const content = `
       <div class="flag-purge-dialog">
         <p><strong>Warning:</strong> This will permanently delete all Spell Book module flags and items from the selected actor(s).</p>
         <div class="form-group">
           <label for="actor-select">Select Actor:</label>
-          <select id="actor-select" name="actorId">
-            ${actorOptions}
-          </select>
+          <select id="actor-select" name="actorId">${actorOptions}</select>
         </div>
         <p class="warning-text" style="color: #ff6b6b; font-weight: bold;">This action cannot be undone!</p>
       </div>
     `;
-
     const result = await foundry.applications.api.DialogV2.wait({
       content: content,
       classes: ['dnd5e2'],
-      window: {
-        icon: 'fas fa-trash',
-        resizable: false,
-        minimizable: false,
-        positioned: true,
-        title: 'Spell Book - Flag Purge',
-        classes: ['dnd5e2']
-      },
-      position: { height: 'auto', width: '400' },
+      window: { icon: 'fas fa-trash', resizable: false, minimizable: false, positioned: true, title: 'Spell Book - Flag Purge' },
+      position: { height: 'auto', width: 'auto' },
       buttons: [
-        {
-          icon: 'fas fa-trash',
-          label: 'Purge Flags',
-          action: 'confirm',
-          className: 'dialog-button'
-        },
-        {
-          icon: 'fas fa-times',
-          label: 'Cancel',
-          action: 'cancel',
-          className: 'dialog-button'
-        }
+        { icon: 'fas fa-trash', label: 'Purge Flags', action: 'confirm', className: 'dialog-button' },
+        { icon: 'fas fa-times', label: 'Cancel', action: 'cancel', className: 'dialog-button' }
       ],
       default: 'cancel',
       rejectClose: false
     });
-
     if (result !== 'confirm') return;
-
-    // Get the selected actor ID from the form
     const form = document.querySelector('.flag-purge-dialog');
     const selectedActorId = form.querySelector('#actor-select').value;
-
     let actorsToPurge = [];
     if (selectedActorId === 'all') {
       actorsToPurge = eligibleActors;
@@ -82,12 +48,9 @@ function flagPurgeScript() {
       const selectedActor = game.actors.get(selectedActorId);
       if (selectedActor) actorsToPurge = [selectedActor];
     }
-
-    // Perform the purge
     let purgedCount = 0;
     for (const actor of actorsToPurge) {
       try {
-        // Remove all module flags
         const flags = actor.flags[MODULE_ID];
         if (flags) {
           const flagKeys = Object.keys(flags);
@@ -95,27 +58,18 @@ function flagPurgeScript() {
             await actor.unsetFlag(MODULE_ID, flagKey);
           }
         }
-
-        // Remove all items (spells, etc.)
         const itemIds = actor.items.map((item) => item.id);
-        if (itemIds.length > 0) {
-          await actor.deleteEmbeddedDocuments('Item', itemIds);
-        }
-
+        if (itemIds.length > 0) await actor.deleteEmbeddedDocuments('Item', itemIds);
         purgedCount++;
-        console.log(`Purged flags and items for actor: ${actor.name}`);
+        SPELLBOOK.log(3, `Purged flags and items for actor: ${actor.name}`);
       } catch (error) {
-        console.error(`Error purging actor ${actor.name}:`, error);
-        ui.notifications.error(`Failed to purge ${actor.name}: ${error.message}`);
+        SPELLBOOK.log(1, `Error purging actor ${actor.name}:`, error);
       }
     }
-
     ui.notifications.info(`Successfully purged ${purgedCount} actor(s).`);
   }
-
   showFlagPurgeDialog();
 }
-
 export const flagPurge = {
   flagKey: 'flagPurge',
   version: '1.0.0',

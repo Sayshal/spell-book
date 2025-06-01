@@ -126,18 +126,14 @@ async function showLongRestSwapDialog(longRestClasses) {
   if (longRestClasses.cantripSwapping.length > 0) {
     content += `<div class="swap-category">`;
     content += `<ul>`;
-    for (const classInfo of longRestClasses.cantripSwapping) {
-      content += `<li>${game.i18n.format('SPELLBOOK.LongRest.CantripSwappingClass', { className: classInfo.name })}</li>`;
-    }
+    for (const classInfo of longRestClasses.cantripSwapping) content += `<li>${game.i18n.format('SPELLBOOK.LongRest.CantripSwappingClass', { className: classInfo.name })}</li>`;
     content += `</ul>`;
     content += `</div>`;
   }
   if (longRestClasses.spellSwapping.length > 0) {
     content += `<div class="swap-category">`;
     content += `<ul>`;
-    for (const classInfo of longRestClasses.spellSwapping) {
-      content += `<li>${game.i18n.format('SPELLBOOK.LongRest.SpellSwappingClass', { className: classInfo.name })}</li>`;
-    }
+    for (const classInfo of longRestClasses.spellSwapping) content += `<li>${game.i18n.format('SPELLBOOK.LongRest.SpellSwappingClass', { className: classInfo.name })}</li>`;
     content += `</ul>`;
     content += `</div>`;
   }
