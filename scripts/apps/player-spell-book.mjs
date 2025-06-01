@@ -1071,20 +1071,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const result = await DialogV2.wait({
       title: game.i18n.format('SPELLBOOK.Wizard.LearnSpellTitle', { name: spell.name }),
       content: `
-        <form class="wizard-copy-form">
-          <p>${game.i18n.format('SPELLBOOK.Wizard.LearnSpellPrompt', { name: spell.name })}</p>
-          <div class="copy-details">
-            <div class="form-group">
-              <label>${game.i18n.localize('SPELLBOOK.Wizard.CostLabel')}:</label>
-              <span>${costText}</span>
-            </div>
-            <div class="form-group">
-              <label>${game.i18n.localize('SPELLBOOK.Wizard.TimeLabel')}:</label>
-              <span>${game.i18n.format('SPELLBOOK.Wizard.SpellCopyTime', { hours: time })}</span>
-            </div>
+      <form class="wizard-copy-form">
+        <p>${game.i18n.format('SPELLBOOK.Wizard.LearnSpellPrompt', { name: spell.name })}</p>
+        <div class="copy-details">
+          <div class="form-group">
+            <label>${game.i18n.localize('SPELLBOOK.Wizard.CostLabel')}:</label>
+            <span>${costText}</span>
           </div>
-        </form>
-      `,
+          <div class="form-group">
+            <label>${game.i18n.localize('SPELLBOOK.Wizard.TimeLabel')}:</label>
+            <span>${game.i18n.format('SPELLBOOK.Wizard.SpellCopyTime', { hours: time })}</span>
+          </div>
+        </div>
+      </form>
+    `,
       buttons: [
         { icon: 'fas fa-book', label: game.i18n.localize('SPELLBOOK.Wizard.LearnSpellButton'), action: 'confirm', className: 'dialog-button' },
         { icon: 'fas fa-times', label: game.i18n.localize('SPELLBOOK.UI.Cancel'), action: 'cancel', className: 'dialog-button' }
@@ -1102,8 +1102,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const spellItem = this.element.querySelector(`.spell-item[data-spell-uuid="${spellUuid}"]`);
         if (spellItem) {
           const buttonContainer = spellItem.querySelector('.wizard-spell-status');
-          if (buttonContainer)
+          if (buttonContainer) {
             buttonContainer.innerHTML = `<span class="in-spellbook-tag" aria-label="Spell is in your spellbook">${game.i18n.localize('SPELLBOOK.Wizard.InSpellbook')}</span>`;
+          }
           spellItem.classList.add('in-wizard-spellbook', 'prepared-spell');
         }
         this._spellsTabNeedsReload = true;
