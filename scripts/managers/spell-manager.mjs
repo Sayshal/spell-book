@@ -42,9 +42,7 @@ export class SpellManager {
         ritualCasting: 'none',
         showCantrips: true,
         behavior:
-          this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) ||
-          game.settings.get(MODULE.ID, SETTINGS.DEFAULT_MODULE.ENFORCEMENT_BEHAVIOR) ||
-          MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM
+          this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM
       };
     }
 
@@ -55,9 +53,7 @@ export class SpellManager {
       ritualCasting: classRules.ritualCasting || 'none',
       showCantrips: classRules.showCantrips !== false,
       behavior:
-        this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) ||
-        game.settings.get(MODULE.ID, SETTINGS.DEFAULT_MODULE.ENFORCEMENT_BEHAVIOR) ||
-        MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM
+        this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM
     };
   }
 

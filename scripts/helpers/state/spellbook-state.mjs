@@ -1,4 +1,4 @@
-import { FLAGS, MODULE } from '../../constants.mjs';
+import { FLAGS, MODULE, SETTINGS } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
 import { RuleSetManager } from '../../managers/rule-set-manager.mjs';
 import * as actorSpellUtils from '../actor-spells.mjs';
@@ -775,9 +775,7 @@ export class SpellbookState {
    */
   async sendGMNotifications(spellDataByClass, allCantripChangesByClass) {
     const globalBehavior =
-      this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) ||
-      game.settings.get(MODULE.ID, SETTINGS.DEFAULT_MODULE.ENFORCEMENT_BEHAVIOR) ||
-      MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM;
+      this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM;
     if (globalBehavior !== MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM) return;
     const notificationData = { actorName: this.actor.name, classChanges: {} };
     for (const [classIdentifier, classSpellData] of Object.entries(spellDataByClass)) {
