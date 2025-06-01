@@ -1,5 +1,7 @@
 import { MODULE } from '../constants.mjs';
 import { log } from '../logger.mjs';
+import * as formElements from './form-elements.mjs';
+import * as genericUtils from './generic-utils.mjs';
 
 /**
  * Format spell details for display

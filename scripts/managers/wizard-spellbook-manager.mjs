@@ -1,6 +1,7 @@
 import { FLAGS, MODULE } from '../constants.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
 import { log } from '../logger.mjs';
+import { RuleSetManager } from './rule-set-manager.mjs';
 
 /**
  * Manages wizard-specific spellbook functionality

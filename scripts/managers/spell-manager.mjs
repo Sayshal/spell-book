@@ -2,8 +2,8 @@ import { FLAGS, MODULE, SETTINGS } from '../constants.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { log } from '../logger.mjs';
-import { RitualManager } from '../managers/ritual-manager.mjs';
 import { CantripManager } from './cantrip-manager.mjs';
+import { RitualManager } from './ritual-manager.mjs';
 import { RuleSetManager } from './rule-set-manager.mjs';
 import { WizardSpellbookManager } from './wizard-spellbook-manager.mjs';
 

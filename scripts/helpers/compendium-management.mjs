@@ -1,6 +1,6 @@
 import { MODULE, SETTINGS } from '../constants.mjs';
-import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { log } from '../logger.mjs';
+import * as formattingUtils from './spell-formatting.mjs';
 
 /**
  * Scan compendiums for spell lists
