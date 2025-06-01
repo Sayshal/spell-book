@@ -243,5 +243,5 @@ Whether you're a new player learning spellcasting basics or a veteran managing a
 
 ## Support & Community
 
-- **Discord**: ![Join our community for support, suggestions, and updates](https://discord.gg/PzzUwU9gdz)
-- **GitHub Issues**: ![Report bugs or request features](https://github.com/Sayshal/spell-book/issues)
+- **Discord**: [Join our community for support, suggestions, and updates](https://discord.gg/PzzUwU9gdz).
+- **GitHub Issues**: [Report bugs or request features](https://github.com/Sayshal/spell-book/issues).
