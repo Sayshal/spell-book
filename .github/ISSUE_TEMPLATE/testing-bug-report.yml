@@ -1,14 +1,14 @@
-name: Alpha Bug Report
-description: File a bug report for an alpha test
-title: '[Alpha] '
-labels: ['alpha']
+name: Testing Bug Report
+description: File a bug report for a testing release
+title: '[Testing] '
+labels: ['testing']
 assignees:
   - Sayshal
 body:
   - type: markdown
     attributes:
       value: |
-        Use this form to report an issue with the alpha testing. This is not for regular bug reporting.
+        Use this form to report an issue with a testing release. This is not for regular bug reporting.
   - type: textarea
     id: what-happened
     attributes:
