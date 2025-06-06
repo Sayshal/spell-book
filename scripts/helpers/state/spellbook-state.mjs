@@ -407,7 +407,7 @@ export class SpellbookState {
     const className = classItem.name.toLowerCase();
     const classUuid = classItem.uuid;
     const maxSpellLevel = discoveryUtils.calculateMaxSpellLevel(classItem, this.actor);
-    const fullSpellList = await discoveryUtils.getClassSpellList(className, classUuid, null);
+    const fullSpellList = await discoveryUtils.getClassSpellList(className, classUuid, this.actor);
     if (!fullSpellList || !fullSpellList.size) return;
     const personalSpellbook = await this.app.wizardManager.getSpellbookSpells();
     this._fullWizardSpellList = new Set(fullSpellList);
