@@ -261,6 +261,7 @@ export const TEMPLATES = {
  */
 export const SETTINGS = {
   CANTRIP_SCALE_VALUES: 'cantripScaleValues',
+  CONSUME_SCROLLS_WHEN_LEARNING: 'consumeScrollsWhenLearning',
   CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',
   DEFAULT_ENFORCEMENT_BEHAVIOR: 'defaultEnforcementBehavior',
   DISABLE_LONG_REST_SWAP_PROMPT: 'disableLongRestSwapPrompt',

@@ -168,4 +168,13 @@ export function registerSettings() {
       }
     }
   });
+
+  game.settings.register(MODULE.ID, SETTINGS.CONSUME_SCROLLS_WHEN_LEARNING, {
+    name: 'SPELLBOOK.Settings.ConsumeScrollsWhenLearning.Name',
+    hint: 'SPELLBOOK.Settings.ConsumeScrollsWhenLearning.Hint',
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: true
+  });
 }
