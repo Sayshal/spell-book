@@ -433,6 +433,7 @@ export class SpellbookState {
       wizardbook: { spellLevels: [], spellPreparation: { current: 0, maximum: 0 } }
     };
     const identifier = classItem.system?.identifier?.toLowerCase() || 'wizard';
+    const shouldHideCantrips = this._shouldHideCantrips(identifier);
     const totalFreeSpells = this.app.wizardManager.getTotalFreeSpells();
     const usedFreeSpells = await this.app.wizardManager.getUsedFreeSpells();
     const remainingFreeSpells = Math.max(0, totalFreeSpells - usedFreeSpells);
@@ -448,16 +449,19 @@ export class SpellbookState {
       .filter(Boolean);
     for (const spell of allSpellItems) spell.sourceClass = identifier;
     const prepTabSpells = allSpellItems.filter(
-      (spell) => spell.system.level === 0 || personalSpellbook.includes(spell.compendiumUuid) || grantedSpells.includes(spell.compendiumUuid)
+      (spell) =>
+        (!shouldHideCantrips && spell.system.level === 0) ||
+        (spell.system.level !== 0 && (personalSpellbook.includes(spell.compendiumUuid) || grantedSpells.includes(spell.compendiumUuid)))
     );
     const wizardbookSpells = allSpellItems.filter((spell) => this._fullWizardSpellList.has(spell.compendiumUuid) && spell.system.level !== 0);
-    const prepLevels = actorSpellUtils.organizeSpellsByLevel(prepTabSpells, this.actor, this.app.spellManager);
+    let prepLevels = actorSpellUtils.organizeSpellsByLevel(prepTabSpells, this.actor, this.app.spellManager);
     const wizardLevels = actorSpellUtils.organizeSpellsByLevel(wizardbookSpells, null, this.app.spellManager);
     const maxSpellsAllowed = this.app.wizardManager.getMaxSpellsAllowed();
     const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
     tabData.wizardbook.wizardMaxSpellbookCount = maxSpellsAllowed;
     tabData.wizardbook.wizardIsAtMax = isAtMaxSpells;
     const sortBy = this.app.filterHelper?.getFilterState()?.sortBy || 'level';
+    if (shouldHideCantrips) prepLevels = prepLevels.filter((level) => level.level !== '0' && level.level !== 0);
     this.enrichWizardBookSpells(prepLevels, personalSpellbook, sortBy);
     this.enrichWizardBookSpells(wizardLevels, personalSpellbook, sortBy, true, isAtMaxSpells);
     const prepStats = this.calculatePreparationStats(identifier, prepLevels, classItem);
