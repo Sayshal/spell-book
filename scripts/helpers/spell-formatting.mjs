@@ -28,7 +28,7 @@ export function formatSpellDetails(spell) {
 }
 
 /**
- * Process spell list data for display (moved from GMSpellListManager)
+ * Process spell list data for display
  * @param {Object} spellList - The spell list to process
  * @returns {Object} Processed spell list with display data
  */
@@ -52,7 +52,7 @@ export function processSpellListForDisplay(spellList) {
 }
 
 /**
- * Process spell item for display in the GM interface (moved from GMSpellListManager)
+ * Process spell item for display in the GM interface
  * @param {Object} spell - The spell to process
  * @returns {Object} Processed spell with display data
  */
@@ -65,7 +65,7 @@ export function processSpellItemForDisplay(spell) {
 }
 
 /**
- * Process spell for display in PlayerSpellBook (moved from PlayerSpellBook)
+ * Process spell for display in PlayerSpellBook
  * @param {Object} spell - The spell to process
  * @param {Function} getSpellCssClasses - Function to get CSS classes
  * @param {Function} getSpellDataAttributes - Function to get data attributes

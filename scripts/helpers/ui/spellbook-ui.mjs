@@ -105,7 +105,7 @@ export class SpellbookUI {
   }
 
   /**
-   * Get a random wizard book image (moved from PlayerSpellBook)
+   * Get a random wizard book image
    * @returns {Promise<string>} Path to a random book image
    */
   async getRandomWizardBookImage() {

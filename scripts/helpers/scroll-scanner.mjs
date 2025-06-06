@@ -32,11 +32,11 @@ export class ScrollScanner {
    * @private
    */
   static async _extractSpellFromScroll(scroll, actor) {
-    if (!scroll.system?.activities) return null;
+    if (!scroll.system?.activities?.contents) return null;
     const wizardClass = genericUtils.findWizardClass(actor);
     if (!wizardClass) return null;
     const maxSpellLevel = discoveryUtils.calculateMaxSpellLevel(wizardClass, actor);
-    for (const [activityId, activity] of Object.entries(scroll.system.activities)) {
+    for (const [index, activity] of scroll.system.activities.contents.entries()) {
       if (activity.type === 'cast' && activity.spell?.uuid) {
         const spellUuid = activity.spell.uuid;
         try {
@@ -55,7 +55,18 @@ export class ScrollScanner {
             formattedDetails: formattingUtils.formatSpellDetails(spell),
             isFromScroll: true,
             scrollId: scroll.id,
-            scrollName: scroll.name
+            scrollName: scroll.name,
+            preparation: {
+              prepared: false,
+              disabled: true,
+              preparationMode: 'scroll',
+              isOwned: false,
+              alwaysPrepared: false,
+              sourceItem: null,
+              isGranted: false,
+              localizedPreparationMode: '',
+              disabledReason: 'SPELLBOOK.Scrolls.NotPreparable'
+            }
           };
         } catch (error) {
           log(1, `Error processing spell from scroll ${scroll.name}:`, error);
@@ -108,41 +119,37 @@ export class ScrollScanner {
    * @private
    */
   static async _showLearnFromScrollDialog(spell, cost, time, isFree, isAlreadyInSpellbook) {
-    let content = `<p>${game.i18n.format('SPELLBOOK.Scrolls.LearnFromScroll', { name: spell.name })}</p>`;
-    if (isAlreadyInSpellbook) content += `<p class="notification warning">${game.i18n.localize('SPELLBOOK.Wizard.SpellAlreadyKnown')}</p>`;
-    content += '<div class="copy-details">';
-    if (isFree) {
-      content += `<div class="form-group"><label>${game.i18n.localize('SPELLBOOK.Wizard.CostLabel')}:</label><span class="free-spell">${game.i18n.localize('SPELLBOOK.Wizard.FreeSpell')}</span></div>`;
-    } else {
-      content += `<div class="form-group"><label>${game.i18n.localize('SPELLBOOK.Wizard.CostLabel')}:</label><span>${cost} ${game.i18n.localize('SPELLBOOK.Currency.GoldPieces')}</span></div>`;
-    }
-    content += `<div class="form-group"><label>${game.i18n.localize('SPELLBOOK.Wizard.TimeLabel')}:</label><span>${time} ${game.i18n.localize('SPELLBOOK.Units.Hours')}</span></div>`;
-    content += '</div>';
+    const costText = isFree ? game.i18n.localize('SPELLBOOK.Wizard.SpellCopyFree') : game.i18n.format('SPELLBOOK.Wizard.SpellCopyCost', { cost: cost });
     const shouldConsume = game.settings.get(MODULE.ID, SETTINGS.CONSUME_SCROLLS_WHEN_LEARNING);
-    if (shouldConsume) content += `<p class="notification info">${game.i18n.localize('SPELLBOOK.Scrolls.ScrollConsumed')}</p>`;
+    let content = `
+    <form class="wizard-copy-form">
+      <p>${game.i18n.format('SPELLBOOK.Wizard.LearnSpellPrompt', { name: spell.name })}</p>`;
+    if (isAlreadyInSpellbook) content += `<p class="notification warning">${game.i18n.localize('SPELLBOOK.Wizard.SpellAlreadyKnown')}</p>`;
+    content += `
+      <div class="copy-details">
+        <div class="form-group">
+          <label>${game.i18n.localize('SPELLBOOK.Wizard.CostLabel')}:</label>
+          <span>${costText}</span>
+        </div>
+        <div class="form-group">
+          <label>${game.i18n.localize('SPELLBOOK.Wizard.TimeLabel')}:</label>
+          <span>${game.i18n.format('SPELLBOOK.Wizard.SpellCopyTime', { hours: time })}</span>
+        </div>
+      </div>`;
+    if (shouldConsume) content += `<p class="notification info">${game.i18n.localize('SPELLBOOK.Scrolls.ScrollWillBeConsumed')}</p>`;
+    content += `</form>`;
     try {
       const result = await foundry.applications.api.DialogV2.wait({
-        window: {
-          title: game.i18n.format('SPELLBOOK.Scrolls.LearnFromScroll', { name: spell.name }),
-          icon: 'fas fa-scroll'
-        },
+        title: game.i18n.format('SPELLBOOK.Wizard.LearnSpellTitle', { name: spell.name }),
         content: content,
         buttons: [
-          {
-            label: game.i18n.localize('SPELLBOOK.Wizard.LearnSpell'),
-            icon: 'fas fa-check',
-            action: 'learn'
-          },
-          {
-            label: game.i18n.localize('SPELLBOOK.Confirm.Cancel'),
-            icon: 'fas fa-times',
-            action: 'cancel'
-          }
+          { icon: 'fas fa-book', label: game.i18n.localize('SPELLBOOK.Wizard.LearnSpellButton'), action: 'confirm', className: 'dialog-button' },
+          { icon: 'fas fa-times', label: game.i18n.localize('SPELLBOOK.UI.Cancel'), action: 'cancel', className: 'dialog-button' }
         ],
-        default: 'learn',
+        default: 'confirm',
         rejectClose: false
       });
-      return result === 'learn';
+      return result === 'confirm';
     } catch (error) {
       log(1, 'Error showing learn from scroll dialog:', error);
       return false;

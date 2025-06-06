@@ -36,7 +36,7 @@ export async function findCompendiumSpellLists() {
 }
 
 /**
- * Prepare spell sources for filtering (moved from GMSpellListManager)
+ * Prepare spell sources for filtering
  * @param {Array} availableSpells - The available spells array
  * @returns {Array} Array of source options
  */

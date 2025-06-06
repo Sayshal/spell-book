@@ -61,7 +61,7 @@ export class SpellbookFilterHelper {
   }
 
   /**
-   * Filter available spells based on current filter state (moved from GMSpellListManager)
+   * Filter available spells based on current filter state
    * @param {Array} availableSpells - Array of available spells
    * @param {Set} selectedSpellUUIDs - Set of selected spell UUIDs
    * @param {Function} isSpellInSelectedList - Function to check if spell is in selected list

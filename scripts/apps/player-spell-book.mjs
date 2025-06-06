@@ -196,6 +196,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         processedLevel.spells = level.spells.map((spell) => this._processSpellForDisplay(spell));
         return processedLevel;
       });
+      const scrollSpells = this._stateManager.scrollSpells || [];
+      if (scrollSpells.length > 0) {
+        const processedScrollSpells = scrollSpells.map((spell) => this._processSpellForDisplay(spell));
+        const scrollsLevel = { level: 'scrolls', levelName: game.i18n.localize('SPELLBOOK.Scrolls.SectionTitle'), spells: processedScrollSpells };
+        context.spellLevels.unshift(scrollsLevel);
+      }
+
       context.spellPreparation = this._stateManager.tabData.wizardbook.spellPreparation;
       context.wizardTotalSpellbookCount = this._stateManager.tabData.wizardbook.wizardTotalSpellbookCount || 0;
       context.wizardFreeSpellbookCount = this._stateManager.tabData.wizardbook.wizardFreeSpellbookCount || 0;

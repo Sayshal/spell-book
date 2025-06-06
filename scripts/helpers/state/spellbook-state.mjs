@@ -552,7 +552,7 @@ export class SpellbookState {
   }
 
   /**
-   * Preserve tab state (moved from PlayerSpellBook)
+   * Preserve tab state
    * @param {string} tabName - The tab to preserve state for
    */
   preserveTabState(tabName) {
@@ -572,7 +572,7 @@ export class SpellbookState {
   }
 
   /**
-   * Restore tab state (moved from PlayerSpellBook)
+   * Restore tab state
    * @param {string} tabName - The tab to restore state for
    */
   restoreTabState(tabName) {
@@ -599,7 +599,7 @@ export class SpellbookState {
   }
 
   /**
-   * Handle post-processing after spell save (moved from PlayerSpellBook)
+   * Handle post-processing after spell save
    * @param {Actor} actor - The actor
    * @returns {Promise<void>}
    */
@@ -778,7 +778,7 @@ export class SpellbookState {
   }
 
   /**
-   * Send GM notifications if needed (moved from PlayerSpellBook)
+   * Send GM notifications if needed
    * @param {Object} spellDataByClass - The spell data grouped by class
    * @param {Object} allCantripChangesByClass - Cantrip changes by class
    * @returns {Promise<void>}
