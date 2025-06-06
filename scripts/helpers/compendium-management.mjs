@@ -354,23 +354,36 @@ function formatSpellEntry(entry, pack) {
  * Create a new spell list
  * @param {string} name - The name of the spell list
  * @param {string} identifier - The identifier (typically class name)
- * @param {string} source - The source description
+ * @param {string} source - The source description (not used for naming anymore)
  * @returns {Promise<JournalEntryPage>} The created spell list
  */
 export async function createNewSpellList(name, identifier, source) {
-  if (!source) source = game.i18n.localize('SPELLMANAGER.CreateList.Custom');
+  const customFolder = await getOrCreateCustomFolder();
   const journalData = {
-    name: `${source} - ${name}`,
+    name: name,
+    folder: customFolder?.id || null,
     pages: [
       {
         name: name,
         type: 'spells',
-        flags: { [MODULE.ID]: { isCustom: true, isNewList: true, isDuplicate: false, creationDate: Date.now() } },
-        system: { identifier: identifier.toLowerCase(), description: game.i18n.format('SPELLMANAGER.CreateList.CustomDescription', { identifier }), spells: [] }
+        flags: {
+          [MODULE.ID]: {
+            isCustom: true,
+            isNewList: true,
+            isDuplicate: false,
+            creationDate: Date.now()
+          }
+        },
+        system: {
+          identifier: identifier.toLowerCase(),
+          description: game.i18n.format('SPELLMANAGER.CreateList.CustomDescription', { identifier }),
+          spells: []
+        }
       }
     ]
   };
   const journal = await JournalEntry.create(journalData, { pack: MODULE.PACK.SPELLS });
+  log(3, `Created custom spell list: ${name} in folder`);
   return journal.pages.contents[0];
 }
 
@@ -493,9 +506,10 @@ export async function createMergedSpellList(sourceListUuid, copyFromListUuid, me
   const copyFromSpells = new Set(copyFromList.system.spells || []);
   const mergedSpells = new Set([...sourceSpells, ...copyFromSpells]);
   const identifier = sourceList.system?.identifier || 'merged';
-  const source = game.i18n.localize('SPELLMANAGER.CreateList.Merged');
+  const mergedFolder = await getOrCreateMergedFolder();
   const journalData = {
-    name: `${source} - ${mergedListName}`,
+    name: mergedListName,
+    folder: mergedFolder?.id || null,
     pages: [
       {
         name: mergedListName,
@@ -522,6 +536,60 @@ export async function createMergedSpellList(sourceListUuid, copyFromListUuid, me
     ]
   };
   const journal = await JournalEntry.create(journalData, { pack: MODULE.PACK.SPELLS });
-  log(3, `Created merged spell list: ${mergedListName} with ${mergedSpells.size} spells`);
+  log(3, `Created merged spell list: ${mergedListName} with ${mergedSpells.size} spells in folder`);
   return journal.pages.contents[0];
+}
+
+/**
+ * Get or create a folder in the custom spell lists pack
+ * @param {string} folderName - Name of the folder
+ * @param {string} localizationKey - Localization key for the folder name
+ * @returns {Promise<Folder|null>} The folder document
+ */
+export async function getOrCreateSpellListFolder(folderName, localizationKey) {
+  const customPack = game.packs.get(MODULE.PACK.SPELLS);
+  if (!customPack) {
+    log(1, 'Custom spell lists pack not found');
+    return null;
+  }
+
+  // Check if folder already exists
+  const existingFolder = customPack.folders.find((f) => f.name === folderName);
+  if (existingFolder) {
+    return existingFolder;
+  }
+
+  // Create new folder
+  try {
+    const folderData = {
+      name: folderName,
+      type: 'JournalEntry',
+      folder: null // Top-level folder
+    };
+
+    const folder = await Folder.create(folderData, { pack: customPack.collection });
+    log(3, `Created spell list folder: ${folderName}`);
+    return folder;
+  } catch (error) {
+    log(1, `Failed to create folder ${folderName}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Get or create the Custom Spell Lists folder
+ * @returns {Promise<Folder|null>}
+ */
+export async function getOrCreateCustomFolder() {
+  const folderName = game.i18n.localize('SPELLMANAGER.Folders.CustomSpellListsFolder');
+  return getOrCreateSpellListFolder(folderName, 'SPELLMANAGER.Folders.CustomSpellListsFolder');
+}
+
+/**
+ * Get or create the Merged Spell Lists folder
+ * @returns {Promise<Folder|null>}
+ */
+export async function getOrCreateMergedFolder() {
+  const folderName = game.i18n.localize('SPELLMANAGER.Folders.MergedSpellListsFolder');
+  return getOrCreateSpellListFolder(folderName, 'SPELLMANAGER.Folders.MergedSpellListsFolder');
 }
