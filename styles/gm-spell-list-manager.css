@@ -119,11 +119,11 @@
 /* ----------------------------------------- */
 .gm-spell-list-manager {
   .spell-lists-sidebar {
+    inset: 0 0 60px;
     transform-style: preserve-3d;
     display: flex;
     z-index: var(--spell-book-manager-z-sidebar);
     position: absolute;
-    inset: 0 0 60px;
     flex-direction: column;
     width: var(--spell-book-manager-sidebar-width);
     height: auto;
@@ -148,9 +148,9 @@
     }
 
     .lists-header {
+      display: flex;
       z-index: var(--spell-book-manager-z-header);
       position: relative;
-      display: flex;
       justify-content: space-between;
       align-items: center;
       margin: 0;
@@ -202,15 +202,15 @@
     }
 
     .merge-lists-button {
-      order: 1;
       top: 12px;
       left: 15px;
+      order: 1;
     }
 
     .create-new-button {
-      order: 3;
       top: 12px;
       right: 15px;
+      order: 3;
     }
 
     h2 {
@@ -485,10 +485,10 @@
 .gm-spell-list-manager {
   .selected-list-content {
     inset: 0 var(--spell-book-manager-spells-sidebar-width) 60px var(--spell-book-manager-sidebar-width);
-    padding-left: 1.25rem;
     display: flex;
     position: absolute;
     flex-direction: column;
+    padding-left: 1.25rem;
     overflow: hidden;
     transition: all var(--spell-book-manager-transition-slow);
   }
@@ -731,11 +731,11 @@
 
     .spell-name {
       display: flex;
-      align-items: center;
-      font-weight: bold;
       flex: 1;
+      align-items: center;
       min-width: 0;
       overflow: hidden;
+      font-weight: bold;
 
       .content-link {
         display: inline-flex;
@@ -784,8 +784,8 @@
     .spell-meta {
       gap: 0.5rem;
       display: flex;
-      align-items: center;
       flex-shrink: 0;
+      align-items: center;
       color: var(--spell-book-manager-text-tertiary);
     }
 
@@ -1025,12 +1025,12 @@
     }
 
     .range-separator {
+      --icon-fill: var(--color-text-light-6);
+
       display: flex;
       justify-content: center;
       align-items: center;
       width: 1rem;
-
-      --icon-fill: var(--color-text-light-6);
     }
   }
 }
@@ -1145,9 +1145,9 @@
 
   .notes {
     margin: 0.5rem 0 0;
-    font-size: 0.875rem;
     color: var(--color-text-dark-5);
     font-style: italic;
+    font-size: 0.875rem;
   }
 
   .validation-error {
@@ -1200,15 +1200,15 @@
 
     ol {
       li {
-        padding-left: 0.25rem;
         margin-bottom: 0;
+        padding-left: 0.25rem;
       }
     }
 
     ul {
       li {
-        padding-left: 0.25rem;
         margin-bottom: 0;
+        padding-left: 0.25rem;
       }
     }
 

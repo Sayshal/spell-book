@@ -72,8 +72,8 @@
 
   /* Window content - base container */
   .window-content {
-    position: relative;
     display: flex;
+    position: relative;
     flex-direction: column;
     min-height: 0;
     padding: 0;
@@ -85,17 +85,17 @@
     }
 
     > nav.tabs.tabs-right {
+      z-index: var(--spell-book-z-index-tabs);
       position: absolute;
       top: 20px;
       left: 100%;
-      z-index: var(--spell-book-z-index-tabs);
       transform: translateZ(0);
     }
 
     > .tab {
-      position: absolute;
       inset: 0 0 20px var(--spell-book-sidebar-width);
       display: none;
+      position: absolute;
       padding: 0.6rem 0.6rem 0.6rem 1.5rem;
       overflow-y: auto;
     }
@@ -109,11 +109,11 @@
     }
 
     .collapsed-footer {
+      z-index: var(--spell-book-z-index-footer);
       position: absolute;
       right: 0;
       bottom: 0;
       left: 0;
-      z-index: var(--spell-book-z-index-footer);
       height: auto;
       box-shadow: var(--spell-book-shadow-top);
 
@@ -135,17 +135,17 @@
 
   /* Content wrapper - manages overflow */
   .content-wrapper {
-    position: absolute;
     inset: 0;
     display: flex;
+    position: absolute;
     flex-direction: column;
     overflow: hidden;
   }
 
   /* Main container - positioned relative to sidebar */
   .spell-book-container {
-    position: absolute;
     inset: 0 0 0 var(--spell-book-sidebar-width);
+    position: absolute;
     overflow: visible;
     transition: var(--spell-book-transition-slow);
   }
@@ -163,15 +163,15 @@
 
   /* Collapsed footer */
   .collapsed-footer {
+    display: none;
+    z-index: var(--spell-book-z-index-footer);
     position: absolute;
     right: 0;
     bottom: 0;
     left: 0;
-    z-index: var(--spell-book-z-index-footer);
-    display: none;
     padding: 0.5rem;
-    background: var(--spell-book-bg-primary);
     border-top: 1px solid var(--color-border-light-tertiary);
+    background: var(--spell-book-bg-primary);
     box-shadow: var(--spell-book-shadow-top);
   }
 
@@ -210,18 +210,18 @@
 
     .spell-book-content {
       height: calc(100% - 60px);
-      padding-bottom: 0;
       margin-bottom: 0;
+      padding-bottom: 0;
     }
   }
 
   /* Loading state */
   &.loading {
     .spell-book-content {
-      position: relative;
       display: flex;
-      align-items: center;
+      position: relative;
       justify-content: center;
+      align-items: center;
       min-height: 200px;
     }
 
@@ -236,9 +236,9 @@
 
   /* Max spells state */
   &.at-max-spells .spell-item.max-prepared {
-    pointer-events: auto;
-    cursor: not-allowed;
     opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: auto;
     filter: grayscale(40%);
 
     .spell-name {
@@ -253,33 +253,33 @@
 /* ----------------------------------------- */
 .spell-book {
   .sidebar {
+    transform-style: preserve-3d;
+    display: flex;
+    z-index: var(--spell-book-z-index-sidebar);
     position: absolute;
     top: 0;
     left: 0;
-    z-index: var(--spell-book-z-index-sidebar);
-    display: flex;
     flex-direction: column;
     width: var(--spell-book-sidebar-width);
     height: 100%;
-    padding: 0.5rem 1rem;
     margin-left: 0;
+    padding: 0.5rem 1rem;
     overflow-x: visible;
     background: var(--spell-book-bg-primary);
     box-shadow: var(--spell-book-shadow-normal);
-    transform: translateZ(0);
     transition: margin-left 450ms ease;
-    transform-style: preserve-3d;
+    transform: translateZ(0);
   }
 
   /* Sidebar Controls Container */
   .sidebar-controls {
+    gap: 0.5rem;
+    display: flex;
+    z-index: calc(var(--spell-book-z-index-sidebar) + 1);
     position: absolute;
     top: 0.5rem;
     right: -22px;
-    z-index: calc(var(--spell-book-z-index-sidebar) + 1);
-    display: flex;
     flex-direction: column;
-    gap: 0.5rem;
     transform: translateZ(-1px);
   }
 
@@ -287,13 +287,13 @@
   .filter-config-button,
   .cantrip-config-button,
   .sidebar-collapser {
-    display: grid;
     place-content: center;
-    cursor: pointer;
-    outline: none;
-    background: var(--spell-book-bg-primary);
+    display: grid;
     border-color: var(--spell-book-border-light);
     border-radius: 0 3px 3px 0;
+    outline: none;
+    cursor: pointer;
+    background: var(--spell-book-bg-primary);
     box-shadow: var(--spell-book-shadow-normal);
     transition: var(--spell-book-transition-normal);
 
@@ -317,8 +317,8 @@
 
   .sidebar-footer-container {
     width: 100%;
-    padding-bottom: 0.5rem;
     margin-top: auto;
+    padding-bottom: 0.5rem;
     text-align: center;
 
     .footer-buttons {
@@ -334,27 +334,27 @@
 /* ----------------------------------------- */
 .spell-book {
   .spell-filters {
+    gap: 0.2rem;
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
-    background-color: var(--spell-book-bg-disabled);
     border-bottom: 1px solid var(--color-border-light-tertiary);
+    background-color: var(--spell-book-bg-disabled);
   }
 
   input[name='filter-name'] {
     padding: 0.5rem;
-    font-size: var(--spell-book-font-lg);
     border-width: 2px;
+    font-size: var(--spell-book-font-lg);
   }
 
   .filter-item {
     display: flex;
+    opacity: 0.8;
     flex-direction: column;
     margin: 0.2rem;
-    font-size: var(--spell-book-font-xs);
     font-weight: bold;
+    font-size: var(--spell-book-font-xs);
     text-transform: uppercase;
-    opacity: 0.8;
 
     + .filter-toggles {
       border-top: 1px solid var(--color-border-light-tertiary);
@@ -362,8 +362,8 @@
 
     label {
       margin-bottom: 0.25rem;
-      font-size: var(--spell-book-font-sm);
       color: var(--spell-book-text-primary);
+      font-size: var(--spell-book-font-sm);
     }
 
     &.active select {
@@ -383,11 +383,11 @@
     padding: 0.2rem;
 
     label {
-      display: flex;
       gap: 0.2rem;
+      display: flex;
       align-items: center;
-      font-size: var(--spell-book-font-md);
       color: var(--spell-book-text-primary);
+      font-size: var(--spell-book-font-md);
 
       &.active {
         border-color: var(--spell-book-border-highlight);
@@ -398,9 +398,9 @@
 
   .filter-range {
     .range-inputs {
+      gap: 0.5rem;
       display: flex;
       flex-wrap: nowrap;
-      gap: 0.5rem;
       align-items: center;
       width: 100%;
     }
@@ -418,9 +418,9 @@
       --icon-fill: var(--color-text-light-6);
       --spell-book-nav-icon-size: 16px;
 
+      place-content: center;
       display: inline-grid;
       flex: none;
-      place-content: center;
       width: 10%;
       height: var(--form-field-height);
       color: var(--spell-book-text-primary);
@@ -442,9 +442,9 @@
 
   .no-filter-results {
     margin-top: 1rem;
-    color: var(--color-text-dark-secondary);
     border: 1px dashed var(--color-light-2);
     border-radius: var(--spell-book-border-radius);
+    color: var(--color-text-dark-secondary);
   }
 
   .error-message {
@@ -454,8 +454,8 @@
   .loading-spinner {
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     width: 100%;
     height: 100%;
     margin: 2rem 0;
@@ -500,19 +500,19 @@
   .spell-level-heading {
     display: flex;
     align-items: center;
-    padding: 0.5rem 0;
     margin-bottom: 0.065rem;
-    font-size: 1.2em;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--color-light-2);
     color: var(--spell-book-text-primary);
+    font-size: 1.2em;
     cursor: pointer;
     user-select: none;
-    border-bottom: 1px solid var(--color-light-2);
 
     .spell-count {
-      margin-left: 0.5rem;
-      font-size: 0.8em;
-      font-weight: normal;
       opacity: 0.75;
+      margin-left: 0.5rem;
+      font-weight: normal;
+      font-size: 0.8em;
     }
 
     .collapse-indicator {
@@ -523,8 +523,8 @@
 
   .spell-list {
     max-height: inherit;
-    padding: 0;
     margin: 0;
+    padding: 0;
     overflow: hidden;
     list-style: none;
     transition: max-height 0.4s ease;
@@ -535,14 +535,14 @@
   }
 
   .cantrip-counter {
-    margin-left: 0.5rem;
-    font-size: 0.8em;
-    font-weight: normal;
     opacity: 0.85;
+    margin-left: 0.5rem;
+    font-weight: normal;
+    font-size: 0.8em;
 
     &.at-max {
-      font-weight: bold;
       color: var(--color-level-warning);
+      font-weight: bold;
     }
   }
 }
@@ -552,16 +552,16 @@
 /* ----------------------------------------- */
 .spell-book {
   .spell-item {
-    position: relative;
     display: flex;
+    position: relative;
     align-items: center;
     min-height: 40px;
-    padding: 0 0.375rem;
     margin: 0.125rem 0;
-    overflow: hidden;
-    background: var(--spell-book-bg-item);
+    padding: 0 0.375rem;
     border-bottom: 1px solid var(--spell-book-border-light);
     border-radius: var(--spell-book-border-radius);
+    overflow: hidden;
+    background: var(--spell-book-bg-item);
 
     &.owned-spell {
       background-color: rgb(0 0 0 / 2%);
@@ -584,8 +584,8 @@
     }
 
     &.cantrip-locked {
-      cursor: not-allowed;
       opacity: 0.8;
+      cursor: not-allowed;
     }
   }
 
@@ -603,14 +603,14 @@
 
     .content-link {
       display: inline-flex;
-      padding: 0 !important;
       margin: 0 !important;
-      font-size: inherit !important;
-      font-weight: inherit !important;
+      padding: 0 !important;
+      border: none !important;
       color: inherit !important;
+      font-weight: inherit !important;
+      font-size: inherit !important;
       text-decoration: none;
       background: none !important;
-      border: none !important;
       box-shadow: none !important;
 
       i {
@@ -623,21 +623,21 @@
       }
 
       &.broken {
-        background: none !important;
         border: none !important;
+        background: none !important;
       }
     }
   }
 
   .spell-icon {
-    width: var(--spell-book-icon-size);
-    height: var(--spell-book-icon-size);
-    vertical-align: middle;
     object-fit: cover;
     object-position: top;
-    background-color: var(--dnd5e-color-light-gray);
+    width: var(--spell-book-icon-size);
+    height: var(--spell-book-icon-size);
     border: 2px solid var(--dnd5e-color-gold);
     border-radius: 0.25rem;
+    vertical-align: middle;
+    background-color: var(--dnd5e-color-light-gray);
     box-shadow: var(--spell-book-shadow-light);
   }
 
@@ -650,11 +650,11 @@
 
     .title {
       overflow: hidden;
-      text-overflow: ellipsis;
-      font-family: var(--dnd5e-font-roboto-slab, serif);
-      font-size: var(--spell-book-font-2xl);
-      font-weight: bold;
       color: var(--spell-book-text-primary);
+      font-weight: bold;
+      font-size: var(--spell-book-font-2xl);
+      font-family: var(--dnd5e-font-roboto-slab, serif);
+      text-overflow: ellipsis;
       white-space: nowrap;
       transition: text-shadow 250ms ease;
     }
@@ -662,10 +662,10 @@
     .subtitle {
       margin-left: 0.125rem;
       overflow: hidden;
-      text-overflow: ellipsis;
-      font-family: var(--dnd5e-font-roboto, sans-serif);
-      font-size: var(--spell-book-font-xs);
       color: var(--spell-book-text-secondary);
+      font-size: var(--spell-book-font-xs);
+      font-family: var(--dnd5e-font-roboto, sans-serif);
+      text-overflow: ellipsis;
       white-space: nowrap;
     }
   }
@@ -680,8 +680,8 @@
       cursor: pointer;
 
       &:disabled {
-        cursor: not-allowed;
         opacity: 0.5;
+        cursor: not-allowed;
       }
     }
 
@@ -690,8 +690,8 @@
       width: 16px;
       height: 16px;
       margin: 0 auto;
-      font-size: 1.2em;
       color: rgb(136 136 136);
+      font-size: 1.2em;
       text-align: center;
     }
   }
@@ -703,21 +703,21 @@
 .spell-book {
   /* Base tag style */
   .spell-tag {
-    padding: 0 0.35rem;
     margin-left: 0.35rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: rgb(0 0 0);
+    padding: 0 0.35rem;
     border-radius: var(--spell-book-border-radius);
+    color: rgb(0 0 0);
+    font-weight: 600;
+    font-size: 0.75rem;
   }
 
   .tag {
-    padding: 0 0.35rem;
     margin-left: 0.35rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: rgb(0 0 0);
+    padding: 0 0.35rem;
     border-radius: var(--spell-book-border-radius);
+    color: rgb(0 0 0);
+    font-weight: 600;
+    font-size: 0.75rem;
 
     /* Specific tag types */
     &.always-prepared {
@@ -753,15 +753,15 @@
     width: 100%;
     margin-top: 0.25rem;
     margin-left: 2.5rem;
-    font-size: var(--spell-book-font-md);
-    font-style: italic;
     color: var(--spell-book-text-secondary);
+    font-style: italic;
+    font-size: var(--spell-book-font-md);
 
     .tags {
       --icon-fill: var(--dnd5e-color-black);
 
-      display: flex;
       gap: 0.25rem;
+      display: flex;
       align-items: center;
       padding-right: 0.1rem;
       overflow: hidden;
@@ -771,11 +771,11 @@
     dnd5e-icon {
       --spell-book-nav-icon-size: 1em;
 
+      display: inline-flex;
       position: relative;
       top: -0.05em;
-      display: inline-flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       vertical-align: middle;
 
       svg {
@@ -800,8 +800,8 @@
   .spell-book-tracking {
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     width: 100%;
     padding: 0.25rem 0;
     color: var(--spell-book-text-primary);
@@ -809,34 +809,34 @@
     .class-prep-counts {
       display: flex;
       flex-wrap: wrap;
-      align-items: center;
       justify-content: center;
+      align-items: center;
+      max-width: 100%;
       margin-bottom: 0.25rem;
       line-height: 1.4;
-      max-width: 100%;
     }
 
     .class-prep-count {
       display: inline-flex;
+      position: relative;
       align-items: center;
       font-size: 0.9em;
       white-space: nowrap;
-      position: relative;
 
       /* Add separator after each item except the last */
       &:not(:last-child)::after {
-        content: ' | ';
         margin: 0 0.25rem;
-        font-weight: normal;
         color: var(--spell-book-text-secondary);
+        font-weight: normal;
+        content: ' | ';
       }
 
       /* Force line break after every 2nd item */
       &:nth-child(2n)::after {
-        content: '';
         flex-basis: 100%;
         height: 0;
         margin: 0;
+        content: '';
       }
 
       /* Add line break styling */
@@ -895,16 +895,16 @@
   }
 
   .footer-buttons {
+    gap: 0.5rem;
     display: flex;
     flex-direction: row;
-    gap: 0.5rem;
     align-items: stretch;
 
     button {
       display: flex;
       flex: 0 1 auto;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       width: auto;
       min-width: 0;
       padding: 0.25rem 1rem;
@@ -934,8 +934,8 @@
 
   &:hover,
   &:focus {
-    outline: none !important;
     border: none !important;
+    outline: none !important;
     box-shadow: none !important;
   }
 }
@@ -949,43 +949,43 @@
   --tab-full-width: 44px;
   --tab-inactive-width: 34px;
 
+  gap: 0.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
   margin: 0;
   border: none;
 
   > .item {
-    position: relative;
+    transform-style: preserve-3d;
     display: flex;
+    position: relative;
     flex: none;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     width: var(--tab-full-width);
     height: 40px;
     margin: 0;
+    border: 1px solid transparent;
+    border-radius: 0 8px 8px 0;
     color: var(--dnd5e-color-gold);
     cursor: pointer;
     background: var(--dnd5e-color-black);
-    border: 1px solid transparent;
-    border-radius: 0 8px 8px 0;
     box-shadow: var(--spell-book-shadow-normal);
-    transform: translateZ(-1px);
     transition: all 250ms ease;
-    transform-style: preserve-3d;
+    transform: translateZ(-1px);
 
     &.active,
     &:hover {
-      text-shadow: none;
       border-color: var(--dnd5e-color-gold);
+      text-shadow: none;
       box-shadow: 0 0 6px var(--dnd5e-color-gold);
     }
 
     /* Class Icon Images Styling */
     img.tab-icon {
+      object-fit: cover;
       width: 32px;
       height: 32px;
-      object-fit: cover;
       border: none;
       border-radius: 50%;
     }
@@ -999,12 +999,12 @@
       position: absolute;
       width: 1px;
       height: 1px;
-      padding: 0;
       margin: -0.065rem;
-      overflow: hidden;
-      white-space: nowrap;
+      padding: 0;
       border-width: 0;
       clip: rect(0, 0, 0, 0);
+      overflow: hidden;
+      white-space: nowrap;
     }
   }
 }
@@ -1013,19 +1013,19 @@
 /*  Class Header Styling                     */
 /* ----------------------------------------- */
 .spell-book .class-header {
-  padding-bottom: 0.5rem;
   margin-bottom: 0.75rem;
-  text-align: center;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--dnd5e-color-gold);
+  text-align: center;
 }
 
 .spell-book .class-header h2 {
   margin: 0;
-  font-family: var(--dnd5e-font-primary);
-  font-size: 1.25rem;
-  font-weight: bold;
-  text-shadow: none;
   border-bottom: none;
+  font-weight: bold;
+  font-size: 1.25rem;
+  font-family: var(--dnd5e-font-primary);
+  text-shadow: none;
 }
 
 /* ----------------------------------------- */
@@ -1040,9 +1040,9 @@
 /* ----------------------------------------- */
 .spell-book .source-class-indicator {
   margin-left: 0.5rem;
-  font-size: 0.85rem;
-  font-style: italic;
   color: var(--dnd5e-color-beige);
+  font-style: italic;
+  font-size: 0.85rem;
   text-shadow: var(--spell-book-text-shadow);
 }
 
@@ -1054,16 +1054,16 @@
 }
 
 .spellbook-info {
-  padding: 0.75rem;
   margin-bottom: 1rem;
-  background-color: var(--spell-book-bg-item);
+  padding: 0.75rem;
   border-radius: var(--spell-book-border-radius);
+  background-color: var(--spell-book-bg-item);
 
   h3 {
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
-    font-size: 1.2em;
     color: var(--spell-book-text-primary);
+    font-size: 1.2em;
   }
 
   p {
@@ -1076,27 +1076,27 @@
 }
 
 .wizard-level-header {
-  padding-bottom: 0.25rem;
   margin-bottom: 0.5rem;
-  font-size: 1.2em;
-  color: var(--spell-book-text-primary);
+  padding-bottom: 0.25rem;
   border-bottom: 1px solid var(--color-light-2);
+  color: var(--spell-book-text-primary);
+  font-size: 1.2em;
 }
 
 .wizard-spell-list {
-  padding: 0;
   margin: 0;
+  padding: 0;
   list-style: none;
 }
 
 .wizard-spell-item {
   display: flex;
   align-items: center;
-  padding: 0.5rem;
   margin-bottom: 0.125rem;
-  background-color: var(--spell-book-bg-item);
+  padding: 0.5rem;
   border-bottom: 1px solid var(--spell-book-border-light);
   border-radius: var(--spell-book-border-radius);
+  background-color: var(--spell-book-bg-item);
 
   &:hover {
     background-color: var(--spell-book-bg-item-hover);
@@ -1113,21 +1113,21 @@
 
 .in-spellbook-tag {
   padding: 0.2rem 0.5rem;
-  font-size: 0.8em;
-  font-weight: bold;
-  color: rgb(0 0 0);
-  background-color: rgb(63 198 193);
   border-radius: var(--spell-book-border-radius);
+  color: rgb(0 0 0);
+  font-weight: bold;
+  font-size: 0.8em;
+  background-color: rgb(63 198 193);
 }
 
 .copy-spell-btn {
   padding: 0.2rem 0.5rem;
-  font-size: 0.8em;
-  color: var(--color-text-button);
-  cursor: pointer;
-  background-color: var(--color-button);
   border: none;
   border-radius: var(--spell-book-border-radius);
+  color: var(--color-text-button);
+  font-size: 0.8em;
+  cursor: pointer;
+  background-color: var(--color-button);
 
   &:hover {
     background-color: var(--color-button-hover);
@@ -1136,11 +1136,11 @@
 
 .wizard-unavailable {
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   height: 100%;
-  font-style: italic;
   color: var(--spell-book-text-secondary);
+  font-style: italic;
 }
 
 /* ----------------------------------------- */
@@ -1169,8 +1169,8 @@
     width: 100%;
     min-width: 100px;
     max-width: 450px;
-    padding: 0;
     margin: 0;
+    padding: 0;
     list-style: none;
   }
 
@@ -1178,19 +1178,19 @@
     width: 100%;
     min-width: 100px;
     max-width: 450px;
-    padding: 0;
     margin-bottom: 0.5rem;
+    padding: 0;
 
     &.dragging .filter-config-item {
-      border: 1px dashed var(--spell-book-border-highlight);
       opacity: 0.5;
+      border: 1px dashed var(--spell-book-border-highlight);
     }
 
     &.not-sortable {
       .filter-config-item {
+        border-style: dashed;
         cursor: default;
         background: var(--spell-book-bg-disabled);
-        border-style: dashed;
       }
 
       .drag-handle {
@@ -1204,10 +1204,10 @@
     align-items: center;
     width: 100%;
     padding: 0.5rem;
-    cursor: grab;
-    background: var(--spell-book-bg-item);
     border: 1px solid var(--color-border-light-tertiary);
     border-radius: var(--spell-book-border-radius);
+    cursor: grab;
+    background: var(--spell-book-bg-item);
 
     &:hover {
       background: var(--spell-book-bg-item-hover);
@@ -1240,8 +1240,8 @@
 
   .filter-config-footer {
     width: 100%;
-    padding-top: 0.75rem;
     margin-top: auto;
+    padding-top: 0.75rem;
     border-top: 1px solid var(--color-light-2);
 
     .footer-buttons {
@@ -1269,13 +1269,13 @@
 /* ----------------------------------------- */
 .spellbook-settings-dialog {
   .spellbook-settings-form {
+    gap: 0.75rem;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.25rem 1rem 0;
-    max-height: 80vh;
-    min-height: 800px;
     height: 100%;
+    min-height: 800px;
+    max-height: 80vh;
+    padding: 0.25rem 1rem 0;
   }
 
   /* Notice area styling - keep as is */
@@ -1284,11 +1284,11 @@
     margin-bottom: 1rem;
 
     .notice {
+      gap: 0.5rem;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem;
       margin-bottom: 0.5rem;
+      padding: 0.75rem;
       border-radius: var(--spell-book-border-radius);
       font-size: 0.9rem;
 
@@ -1305,15 +1305,15 @@
       }
 
       &.warning {
-        background-color: rgb(255 193 7 / 10%);
         border-left: 4px solid rgb(255 193 7);
         color: rgb(133 100 4);
+        background-color: rgb(255 193 7 / 10%);
       }
 
       &.info {
-        background-color: rgb(13 202 240 / 10%);
         border-left: 4px solid rgb(13 202 240);
         color: rgb(5 81 96);
+        background-color: rgb(13 202 240 / 10%);
       }
     }
   }
@@ -1328,15 +1328,15 @@
     background: var(--spell-book-bg-item);
 
     legend {
-      font-size: 1rem;
-      font-weight: 500;
       color: var(--spell-book-text-primary);
+      font-weight: 500;
+      font-size: 1rem;
     }
 
     .fieldset-description {
       margin: 0 0 1rem;
-      font-style: italic;
       color: var(--spell-book-text-secondary);
+      font-style: italic;
     }
 
     &.rule-set-fieldset {
@@ -1346,8 +1346,8 @@
 
   /* The main scrollable section - this is where the magic happens */
   .class-rules-fieldset {
-    flex: 1 1 0;
     display: flex;
+    flex: 1 1 0;
     flex-direction: column;
     min-height: 0;
 
@@ -1357,22 +1357,22 @@
 
     .class-rules-content {
       flex: 1 1 0;
-      overflow: hidden auto;
-      padding-right: 0.25rem;
       max-height: 50vh;
+      padding-right: 0.25rem;
+      overflow: hidden auto;
 
       &::-webkit-scrollbar {
         width: 6px;
       }
 
       &::-webkit-scrollbar-track {
-        background: var(--spell-book-bg-disabled);
         border-radius: 3px;
+        background: var(--spell-book-bg-disabled);
       }
 
       &::-webkit-scrollbar-thumb {
-        background: var(--color-border-light-tertiary);
         border-radius: 3px;
+        background: var(--color-border-light-tertiary);
 
         &:hover {
           background: var(--color-border-light-secondary);
@@ -1383,11 +1383,11 @@
 
   .submit-section {
     display: flex;
+    z-index: 10;
+    flex: 0 0 auto;
     justify-content: center;
     align-items: center;
-    flex: 0 0 auto;
     padding: 0.5rem 0;
-    z-index: 10;
 
     .submit-button {
       width: auto;
@@ -1395,9 +1395,9 @@
   }
 
   .setting-row {
+    gap: 0.75rem;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
     padding: 0.25rem;
     border-radius: var(--spell-book-border-radius);
     transition: background-color 0.2s ease;
@@ -1411,23 +1411,23 @@
 
       input,
       select {
-        pointer-events: none;
         cursor: not-allowed;
+        pointer-events: none;
       }
     }
 
     label {
       flex: 1;
-      font-weight: 500;
       color: var(--spell-book-text-primary);
+      font-weight: 500;
       cursor: pointer;
     }
 
     .setting-tooltip {
       flex: 0 0 auto;
       color: var(--color-text-dark-secondary);
-      cursor: help;
       font-size: 0.9em;
+      cursor: help;
       transition: color 0.2s ease;
 
       &:hover {
@@ -1442,19 +1442,19 @@
     }
 
     input[type='checkbox'] {
-      min-width: auto;
       width: 1.25rem;
+      min-width: auto;
       height: 1.25rem;
       cursor: pointer;
     }
 
     .setting-note {
       display: block;
-      font-size: 0.8rem;
-      font-style: italic;
+      flex: 0 0 auto;
       margin-top: 0.25rem;
       margin-left: auto;
-      flex: 0 0 auto;
+      font-style: italic;
+      font-size: 0.8rem;
 
       &.warning {
         color: rgb(133 100 4);
@@ -1466,35 +1466,35 @@
   .class-settings-section {
     margin-bottom: 0.5rem;
     padding: 0.5rem;
-    background: var(--spell-book-bg-primary);
-    border-radius: var(--spell-book-border-radius);
     border: 1px solid var(--color-border-light-tertiary);
+    border-radius: var(--spell-book-border-radius);
+    background: var(--spell-book-bg-primary);
 
     &:last-child {
       margin-bottom: 0;
     }
 
     &.has-issues {
-      border-left: 3px solid rgb(255 193 7);
       padding-left: 1rem;
+      border-left: 3px solid rgb(255 193 7);
       background: rgb(255 193 7 / 5%);
     }
   }
 
   .class-header {
+    gap: 0.75rem;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
     margin-bottom: 1rem;
     padding-bottom: 0.75rem;
     border-bottom: 1px solid var(--color-border-light-tertiary);
 
     .class-icon {
+      object-fit: cover;
       width: 28px;
       height: 28px;
-      border-radius: 50%;
       border: 2px solid var(--dnd5e-color-gold);
-      object-fit: cover;
+      border-radius: 50%;
     }
 
     h4 {
@@ -1504,48 +1504,48 @@
     }
 
     .class-stats {
+      gap: 0.25rem;
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: 0.25rem;
-      font-size: 0.8em;
       color: var(--spell-book-text-secondary);
+      font-size: 0.8em;
 
       .has-bonus {
-        font-weight: bold;
         color: var(--color-level-info);
+        font-weight: bold;
       }
     }
   }
 
   .class-settings-list {
+    gap: 0;
     display: flex;
     flex-direction: column;
-    gap: 0;
   }
 
   /* Preparation bonus controls styling */
   .preparation-bonus-controls {
+    gap: 0.5rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
     min-width: 140px;
 
     .prep-bonus-decrease,
     .prep-bonus-increase {
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       width: 28px;
       height: 28px;
       padding: 0;
-      font-size: 1.1em;
-      font-weight: bold;
-      cursor: pointer;
-      background: var(--color-button);
-      color: var(--color-text-button);
       border: 1px solid var(--color-light-2);
       border-radius: 4px;
+      color: var(--color-text-button);
+      font-weight: bold;
+      font-size: 1.1em;
+      cursor: pointer;
+      background: var(--color-button);
       transition: all 0.2s ease;
 
       &:hover {
@@ -1561,8 +1561,8 @@
     .prep-bonus-input {
       width: 60px;
       min-width: 60px;
-      text-align: center;
       font-weight: bold;
+      text-align: center;
     }
   }
 }
@@ -1605,9 +1605,9 @@
     }
 
     .spell-level-heading {
+      border-bottom: 1px solid var(--color-border-light-secondary);
       color: var(--color-text-dark-primary);
       text-shadow: none;
-      border-bottom: 1px solid var(--color-border-light-secondary);
     }
 
     .name-stacked {
@@ -1689,9 +1689,9 @@
     }
 
     .class-header {
+      gap: 0.5rem;
       flex-direction: column;
       align-items: flex-start;
-      gap: 0.5rem;
 
       .class-stats {
         align-items: flex-start;
