@@ -1,5 +1,5 @@
-<form>
-  <div class="form-group">
+<div class="merge-spell-lists-form">
+  <div class="form-group source-list">
     <label for="source-list">{{localize "SPELLMANAGER.MergeLists.SourceListLabel"}}</label>
     <select id="source-list" name="sourceList" required>
       <option value="">{{localize "SPELLMANAGER.MergeLists.SelectSourceList"}}</option>
@@ -19,6 +19,13 @@
           {{/each}}
         </optgroup>
       {{/if}}
+      {{#if hasMergedLists}}
+        <optgroup label="{{localize 'SPELLMANAGER.Folders.MergedLists'}}">
+          {{#each mergedLists as |list|}}
+            <option value="{{list.uuid}}">{{list.name}}</option>
+          {{/each}}
+        </optgroup>
+      {{/if}}
       {{#if hasStandardLists}}
         <optgroup label="{{localize 'SPELLMANAGER.Folders.SpellLists'}}">
           {{#each standardLists as |list|}}
@@ -29,7 +36,7 @@
     </select>
   </div>
 
-  <div class="form-group">
+  <div class="form-group copy-from-list">
     <label for="copy-from-list">{{localize "SPELLMANAGER.MergeLists.CopyFromListLabel"}}</label>
     <select id="copy-from-list" name="copyFromList" required>
       <option value="">{{localize "SPELLMANAGER.MergeLists.SelectCopyFromList"}}</option>
@@ -49,6 +56,13 @@
           {{/each}}
         </optgroup>
       {{/if}}
+      {{#if hasMergedLists}}
+        <optgroup label="{{localize 'SPELLMANAGER.Folders.MergedLists'}}">
+          {{#each mergedLists as |list|}}
+            <option value="{{list.uuid}}">{{list.name}}</option>
+          {{/each}}
+        </optgroup>
+      {{/if}}
       {{#if hasStandardLists}}
         <optgroup label="{{localize 'SPELLMANAGER.Folders.SpellLists'}}">
           {{#each standardLists as |list|}}
@@ -59,13 +73,11 @@
     </select>
   </div>
 
-  <div class="form-group">
+  <div class="form-group merged-list-name">
     <label for="merged-list-name">{{localize "SPELLMANAGER.MergeLists.MergedListNameLabel"}}</label>
-    <input type="text" id="merged-list-name" name="mergedListName"
-      placeholder="{{localize 'SPELLMANAGER.MergeLists.MergedListNamePlaceholder'}}">
-    <p class="notes">{{localize "SPELLMANAGER.MergeLists.MergedListNameNotes"}}</p>
-    <p class="validation-error" style="color: red; display: none;">
-      {{localize "SPELLMANAGER.MergeLists.SameListError"}}
-    </p>
+    <input type="text" id="merged-list-name" name="mergedListName"placeholder="{{localize 'SPELLMANAGER.MergeLists.MergedListNamePlaceholder'}}">
+    <p class="hint">{{localize "SPELLMANAGER.MergeLists.MergedListNameNotes"}}</p>
   </div>
-</form>
+  <p class="validation-error" style="color: red; display: none;">{{localize "SPELLMANAGER.MergeLists.SameListError"}}
+  </p>
+</div>

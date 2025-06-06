@@ -41,7 +41,8 @@ export function processSpellListForDisplay(spellList) {
   processed.actorId = spellList.document.flags?.[MODULE.ID]?.actorId;
   processed.isPlayerSpellbook = !!processed.actorId;
   processed.identifier = spellList.document.system?.identifier;
-  processed.isClassSpellList = !processed.isCustomList && !processed.isPlayerSpellbook && !!processed.identifier;
+  processed.isMerged = !!spellList.document?.flags?.[MODULE.ID]?.isMerged;
+  processed.isClassSpellList = !processed.isCustomList && !processed.isPlayerSpellbook && !processed.isMerged && !!processed.identifier;
   if (spellList.spellsByLevel?.length) {
     processed.spellsByLevel = spellList.spellsByLevel.map((level) => ({
       ...level,

@@ -83,7 +83,8 @@ async function processStandardPacks(journalPacks, spellLists) {
           packageName: pack.metadata.packageName,
           system: page.system,
           spellCount: page.system.spells?.size || 0,
-          identifier: page.system.identifier
+          identifier: page.system.identifier,
+          document: page
         });
       }
     }
@@ -104,6 +105,8 @@ async function processCustomPack(spellLists) {
       if (page.type !== 'spells') continue;
       const flags = page.flags?.[MODULE.ID] || {};
       if (flags.isDuplicate || flags.originalUuid) continue;
+      const isMerged = !!flags.isMerged;
+      const isCustom = !isMerged;
       spellLists.push({
         uuid: page.uuid,
         name: page.name,
@@ -113,7 +116,9 @@ async function processCustomPack(spellLists) {
         system: page.system,
         spellCount: page.system.spells?.size || 0,
         identifier: page.system.identifier,
-        isCustom: true
+        isCustom: isCustom,
+        isMerged: isMerged,
+        document: page
       });
     }
   }

@@ -16,6 +16,7 @@
   --spell-book-manager-bg-item: rgb(0 0 0 / 5.1%);
   --spell-book-manager-bg-item-hover: rgb(0 0 0 / 10.2%);
   --spell-book-manager-custom-color: rgb(121 215 212);
+  --spell-book-manager-merged-color: rgb(147 51 234);
 
   /* Text Colors */
   --spell-book-manager-text-primary: var(--color-text-light-highlight);
@@ -276,6 +277,54 @@
       }
     }
 
+    /* Custom Lists folder styling */
+    .custom-lists-folder {
+      .folder-header {
+        color: rgb(255 201 25);
+
+        .folder-icon {
+          color: rgb(255 201 25);
+        }
+      }
+
+      .custom-list {
+        border-left: 2px solid rgb(255 201 25);
+
+        &:hover {
+          background-color: rgb(255 201 25 / 20%);
+        }
+
+        .source {
+          color: rgb(255 201 25);
+          font-weight: 600;
+        }
+      }
+    }
+
+    /* Merged Lists folder styling */
+    .merged-lists-folder {
+      .folder-header {
+        color: var(--spell-book-manager-merged-color);
+
+        .folder-icon {
+          color: var(--spell-book-manager-merged-color);
+        }
+      }
+
+      .merged-list {
+        border-left: 2px solid var(--spell-book-manager-merged-color);
+
+        &:hover {
+          background-color: rgb(147 51 234 / 20%);
+        }
+
+        .source {
+          color: var(--spell-book-manager-merged-color);
+          font-weight: 600;
+        }
+      }
+    }
+
     /* Standard folder styling */
     .standard-lists-folder {
       .folder-header {
@@ -302,30 +351,6 @@
       .source {
         color: rgb(107 209 77);
         font-weight: 600;
-      }
-    }
-
-    /* Custom Lists folder styling */
-    .custom-lists-folder {
-      .folder-header {
-        color: rgb(255 201 25);
-
-        .folder-icon {
-          color: rgb(255 201 25);
-        }
-      }
-
-      .custom-list {
-        border-left: 2px solid rgb(255 201 25);
-
-        &:hover {
-          background-color: rgb(255 201 25 / 20%);
-        }
-
-        .source {
-          color: rgb(255 201 25);
-          font-weight: 600;
-        }
       }
     }
   }
@@ -403,6 +428,10 @@
 
         &.is-custom-list {
           color: rgb(255 201 25);
+        }
+
+        &.is-merged-list {
+          color: var(--spell-book-manager-merged-color);
         }
       }
     }
@@ -1090,6 +1119,43 @@
   }
 }
 
+/* Merge spell lists dialog styling */
+.merge-spell-lists-form {
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+
+  select {
+    width: auto;
+    min-width: 200px;
+    max-width: 100%;
+  }
+
+  input[type='text'] {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .notes {
+    margin: 0.5rem 0 0;
+    font-size: 0.875rem;
+    color: var(--color-text-dark-5);
+    font-style: italic;
+  }
+
+  .validation-error {
+    margin: 0.5rem 0 0;
+    font-size: 0.875rem;
+  }
+}
+
 /* ----------------------------------------- */
 /*  Documentation Dialog Styles             */
 /* ----------------------------------------- */
@@ -1260,6 +1326,26 @@
 
       i {
         color: rgb(41 151 146);
+      }
+    }
+
+    .merged-list {
+      background-color: rgb(147 51 234 / 14.9%);
+
+      .list-name i.is-merged-list {
+        color: rgb(126 34 206) !important;
+      }
+
+      .source {
+        color: rgb(126 34 206);
+      }
+    }
+
+    .merged-lists-folder .folder-header {
+      color: rgb(126 34 206);
+
+      i {
+        color: rgb(126 34 206);
       }
     }
   }

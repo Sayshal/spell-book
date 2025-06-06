@@ -105,8 +105,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     context.settings = { distanceUnit: game.settings.get(MODULE.ID, SETTINGS.DISTANCE_UNIT) };
     if (!this.isLoading && this.availableSpellLists?.length) {
       const actorOwnedLists = this.availableSpellLists.filter((list) => list.isActorOwned);
-      const customLists = this.availableSpellLists.filter((list) => !list.isActorOwned && (list.isCustom || list.document?.flags?.[MODULE.ID]?.isNewList));
-      const standardLists = this.availableSpellLists.filter((list) => !list.isActorOwned && !customLists.includes(list));
+      const mergedLists = this.availableSpellLists.filter((list) => !list.isActorOwned && list.isMerged);
+      const customLists = this.availableSpellLists.filter((list) => !list.isActorOwned && !list.isMerged && (list.isCustom || list.document?.flags?.[MODULE.ID]?.isNewList));
+      const standardLists = this.availableSpellLists.filter((list) => !list.isActorOwned && !list.isCustom && !list.isMerged && !list.document?.flags?.[MODULE.ID]?.isNewList);
       actorOwnedLists.sort((a, b) => {
         if (a.actorName && b.actorName) return a.actorName.localeCompare(b.actorName);
         if (a.actorName) return -1;
@@ -114,12 +115,15 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         return a.name.localeCompare(b.name);
       });
       customLists.sort((a, b) => a.name.localeCompare(b.name));
+      mergedLists.sort((a, b) => a.name.localeCompare(b.name));
       standardLists.sort((a, b) => a.name.localeCompare(b.name));
       context.actorOwnedLists = actorOwnedLists;
       context.customLists = customLists;
+      context.mergedLists = mergedLists;
       context.standardLists = standardLists;
       context.hasActorOwnedLists = actorOwnedLists.length > 0;
       context.hasCustomLists = customLists.length > 0;
+      context.hasMergedLists = mergedLists.length > 0;
       context.hasStandardLists = standardLists.length > 0;
     }
     if (this.isLoading) return context;
@@ -1083,27 +1087,23 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       ui.notifications.warn(game.i18n.localize('SPELLMANAGER.MergeLists.InsufficientLists'));
       return;
     }
-
     const context = {
       actorOwnedLists: this.availableSpellLists.filter((list) => list.isActorOwned),
-      customLists: this.availableSpellLists.filter((list) => !list.isActorOwned && (list.isCustom || list.document?.flags?.[MODULE.ID]?.isNewList)),
-      standardLists: this.availableSpellLists.filter((list) => !list.isActorOwned && !list.isCustom && !list.document?.flags?.[MODULE.ID]?.isNewList),
+      customLists: this.availableSpellLists.filter((list) => !list.isActorOwned && !list.isMerged && (list.isCustom || list.document?.flags?.[MODULE.ID]?.isNewList)),
+      mergedLists: this.availableSpellLists.filter((list) => !list.isActorOwned && list.isMerged),
+      standardLists: this.availableSpellLists.filter((list) => !list.isActorOwned && !list.isCustom && !list.isMerged && !list.document?.flags?.[MODULE.ID]?.isNewList),
       hasActorOwnedLists: false,
       hasCustomLists: false,
+      hasMergedLists: false,
       hasStandardLists: false
     };
-
-    // Set folder visibility flags
     context.hasActorOwnedLists = context.actorOwnedLists.length > 0;
     context.hasCustomLists = context.customLists.length > 0;
+    context.hasMergedLists = context.mergedLists.length > 0;
     context.hasStandardLists = context.standardLists.length > 0;
-
     const content = await renderTemplate(TEMPLATES.DIALOGS.MERGE_SPELL_LISTS, context);
     const { result, formData } = await this._showMergeListsDialog(content);
-
-    if (result === 'merge' && formData) {
-      await this._mergeListsCallback(formData.sourceListUuid, formData.copyFromListUuid, formData.mergedListName);
-    }
+    if (result === 'merge' && formData) await this._mergeListsCallback(formData.sourceListUuid, formData.copyFromListUuid, formData.mergedListName);
   }
 
   /**
