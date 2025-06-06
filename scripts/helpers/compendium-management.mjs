@@ -472,3 +472,51 @@ export async function findClassIdentifiers() {
   }
   return identifiers;
 }
+
+/**
+ * Create a merged spell list from two existing spell lists
+ * @param {string} sourceListUuid - UUID of the source spell list
+ * @param {string} copyFromListUuid - UUID of the list to copy spells from
+ * @param {string} mergedListName - Name for the merged list
+ * @returns {Promise<JournalEntryPage>} The created merged spell list
+ */
+export async function createMergedSpellList(sourceListUuid, copyFromListUuid, mergedListName) {
+  const sourceList = await fromUuid(sourceListUuid);
+  const copyFromList = await fromUuid(copyFromListUuid);
+  if (!sourceList || !copyFromList) throw new Error('Unable to load source or copy-from spell lists');
+  const sourceSpells = new Set(sourceList.system.spells || []);
+  const copyFromSpells = new Set(copyFromList.system.spells || []);
+  const mergedSpells = new Set([...sourceSpells, ...copyFromSpells]);
+  const identifier = sourceList.system?.identifier || 'merged';
+  const source = game.i18n.localize('SPELLMANAGER.CreateList.Merged');
+  const journalData = {
+    name: `${source} - ${mergedListName}`,
+    pages: [
+      {
+        name: mergedListName,
+        type: 'spells',
+        flags: {
+          [MODULE.ID]: {
+            isCustom: true,
+            isMerged: true,
+            isDuplicate: false,
+            creationDate: Date.now(),
+            sourceListUuid: sourceListUuid,
+            copyFromListUuid: copyFromListUuid
+          }
+        },
+        system: {
+          identifier: identifier.toLowerCase(),
+          description: game.i18n.format('SPELLMANAGER.CreateList.MergedDescription', {
+            sourceList: sourceList.name,
+            copyFromList: copyFromList.name
+          }),
+          spells: Array.from(mergedSpells)
+        }
+      }
+    ]
+  };
+  const journal = await JournalEntry.create(journalData, { pack: MODULE.PACK.SPELLS });
+  log(3, `Created merged spell list: ${mergedListName} with ${mergedSpells.size} spells`);
+  return journal.pages.contents[0];
+}

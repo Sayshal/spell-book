@@ -30,7 +30,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       toggleFolder: GMSpellListManager.handleToggleFolder,
       openActor: GMSpellListManager.handleOpenActor,
       openClass: GMSpellListManager.handleOpenClass,
-      createNewList: GMSpellListManager.handleCreateNewList
+      createNewList: GMSpellListManager.handleCreateNewList,
+      mergeLists: GMSpellListManager.handleMergeLists
     },
     classes: ['gm-spell-list-manager'],
     window: {
@@ -1068,5 +1069,167 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     const content = await renderTemplate(TEMPLATES.DIALOGS.CREATE_SPELL_LIST, { identifierOptions });
     const { result, formData } = await this._showCreateListDialog(content, identifierOptions);
     if (result === 'create' && formData) await this._createNewListCallback(formData.name, formData.identifier);
+  }
+
+  /**
+   * Handle merging spell lists
+   * @static
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} _form - The form element
+   * @returns {Promise<void>}
+   */
+  static async handleMergeLists(event, _form) {
+    if (this.availableSpellLists.length < 2) {
+      ui.notifications.warn(game.i18n.localize('SPELLMANAGER.MergeLists.InsufficientLists'));
+      return;
+    }
+
+    const context = {
+      actorOwnedLists: this.availableSpellLists.filter((list) => list.isActorOwned),
+      customLists: this.availableSpellLists.filter((list) => !list.isActorOwned && (list.isCustom || list.document?.flags?.[MODULE.ID]?.isNewList)),
+      standardLists: this.availableSpellLists.filter((list) => !list.isActorOwned && !list.isCustom && !list.document?.flags?.[MODULE.ID]?.isNewList),
+      hasActorOwnedLists: false,
+      hasCustomLists: false,
+      hasStandardLists: false
+    };
+
+    // Set folder visibility flags
+    context.hasActorOwnedLists = context.actorOwnedLists.length > 0;
+    context.hasCustomLists = context.customLists.length > 0;
+    context.hasStandardLists = context.standardLists.length > 0;
+
+    const content = await renderTemplate(TEMPLATES.DIALOGS.MERGE_SPELL_LISTS, context);
+    const { result, formData } = await this._showMergeListsDialog(content);
+
+    if (result === 'merge' && formData) {
+      await this._mergeListsCallback(formData.sourceListUuid, formData.copyFromListUuid, formData.mergedListName);
+    }
+  }
+
+  /**
+   * Show the merge lists dialog and return result
+   * @param {string} content - Dialog content HTML
+   * @returns {Promise<Object>} Dialog result and form data
+   * @private
+   */
+  async _showMergeListsDialog(content) {
+    let formData = null;
+
+    const result = await DialogV2.wait({
+      window: {
+        title: game.i18n.localize('SPELLMANAGER.MergeLists.DialogTitle'),
+        icon: 'fas fa-code-merge'
+      },
+      content: content,
+      buttons: [
+        {
+          label: game.i18n.localize('SPELLMANAGER.Buttons.MergeLists'),
+          icon: 'fas fa-code-merge',
+          action: 'merge',
+          callback: (event, target, form) => {
+            const sourceListSelect = form.querySelector('[name="sourceList"]');
+            const copyFromListSelect = form.querySelector('[name="copyFromList"]');
+            const mergedListNameInput = form.querySelector('[name="mergedListName"]');
+
+            if (!sourceListSelect.value || !copyFromListSelect.value) {
+              return false;
+            }
+
+            if (sourceListSelect.value === copyFromListSelect.value) {
+              const errorElement = form.querySelector('.validation-error');
+              if (errorElement) errorElement.style.display = 'block';
+              return false;
+            }
+
+            // Generate default name if not provided
+            let mergedListName = mergedListNameInput.value.trim();
+            if (!mergedListName) {
+              const sourceList = this.availableSpellLists.find((list) => list.uuid === sourceListSelect.value);
+              mergedListName = game.i18n.format('SPELLMANAGER.MergeLists.DefaultMergedName', {
+                sourceName: sourceList ? sourceList.name : 'Unknown'
+              });
+            }
+
+            formData = {
+              sourceListUuid: sourceListSelect.value,
+              copyFromListUuid: copyFromListSelect.value,
+              mergedListName: mergedListName
+            };
+            return 'merge';
+          }
+        },
+        {
+          label: game.i18n.localize('SPELLMANAGER.Confirm.Cancel'),
+          icon: 'fas fa-times',
+          action: 'cancel'
+        }
+      ],
+      default: 'cancel',
+      rejectClose: false,
+      render: (event, target, form) => {
+        this._setupMergeListsDialogListeners(target);
+      }
+    });
+
+    return { result, formData };
+  }
+
+  /**
+   * Set up listeners for the merge lists dialog
+   * @param {HTMLElement} target - The dialog DOM element
+   * @private
+   */
+  _setupMergeListsDialogListeners(target) {
+    const sourceListSelect = target.querySelector('#source-list');
+    const copyFromListSelect = target.querySelector('#copy-from-list');
+    const mergeButton = target.querySelector('button[data-action="merge"]');
+    const errorElement = target.querySelector('.validation-error');
+
+    const validateSelections = () => {
+      const sourceValue = sourceListSelect.value;
+      const copyFromValue = copyFromListSelect.value;
+      const hasBothSelections = sourceValue && copyFromValue;
+      const sameListSelected = sourceValue === copyFromValue;
+
+      if (errorElement) {
+        errorElement.style.display = sameListSelected && hasBothSelections ? 'block' : 'none';
+      }
+
+      mergeButton.disabled = !hasBothSelections || sameListSelected;
+    };
+
+    if (sourceListSelect && copyFromListSelect) {
+      sourceListSelect.addEventListener('change', validateSelections);
+      copyFromListSelect.addEventListener('change', validateSelections);
+
+      // Initial validation
+      validateSelections();
+    }
+  }
+
+  /**
+   * Create merged spell list
+   * @param {string} sourceListUuid - UUID of the source spell list
+   * @param {string} copyFromListUuid - UUID of the list to copy from
+   * @param {string} mergedListName - Name for the merged list
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _mergeListsCallback(sourceListUuid, copyFromListUuid, mergedListName) {
+    try {
+      const mergedList = await managerHelpers.createMergedSpellList(sourceListUuid, copyFromListUuid, mergedListName);
+      if (mergedList) {
+        ui.notifications.info(
+          game.i18n.format('SPELLMANAGER.MergeLists.SuccessMessage', {
+            name: mergedListName
+          })
+        );
+        await this.loadData();
+        await this.selectSpellList(mergedList.uuid);
+      }
+    } catch (error) {
+      log(1, 'Error creating merged spell list:', error);
+      ui.notifications.error(game.i18n.localize('SPELLMANAGER.MergeLists.ErrorMessage'));
+    }
   }
 }

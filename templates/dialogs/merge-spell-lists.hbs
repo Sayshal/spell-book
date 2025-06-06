@@ -1,0 +1,71 @@
+<form>
+  <div class="form-group">
+    <label for="source-list">{{localize "SPELLMANAGER.MergeLists.SourceListLabel"}}</label>
+    <select id="source-list" name="sourceList" required>
+      <option value="">{{localize "SPELLMANAGER.MergeLists.SelectSourceList"}}</option>
+      {{#if hasActorOwnedLists}}
+        <optgroup label="{{localize 'SPELLMANAGER.Folders.PlayerSpellbooks'}}">
+          {{#each actorOwnedLists as |list|}}
+            <option value="{{list.uuid}}">{{list.name}}
+              ({{#if list.actorName}}{{list.actorName}}{{else}}{{localize "SPELLMANAGER.ListSource.Character"}}{{/if}})
+            </option>
+          {{/each}}
+        </optgroup>
+      {{/if}}
+      {{#if hasCustomLists}}
+        <optgroup label="{{localize 'SPELLMANAGER.Folders.CustomLists'}}">
+          {{#each customLists as |list|}}
+            <option value="{{list.uuid}}">{{list.name}}</option>
+          {{/each}}
+        </optgroup>
+      {{/if}}
+      {{#if hasStandardLists}}
+        <optgroup label="{{localize 'SPELLMANAGER.Folders.SpellLists'}}">
+          {{#each standardLists as |list|}}
+            <option value="{{list.uuid}}">{{list.name}} ({{list.pack}})</option>
+          {{/each}}
+        </optgroup>
+      {{/if}}
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="copy-from-list">{{localize "SPELLMANAGER.MergeLists.CopyFromListLabel"}}</label>
+    <select id="copy-from-list" name="copyFromList" required>
+      <option value="">{{localize "SPELLMANAGER.MergeLists.SelectCopyFromList"}}</option>
+      {{#if hasActorOwnedLists}}
+        <optgroup label="{{localize 'SPELLMANAGER.Folders.PlayerSpellbooks'}}">
+          {{#each actorOwnedLists as |list|}}
+            <option value="{{list.uuid}}">{{list.name}}
+              ({{#if list.actorName}}{{list.actorName}}{{else}}{{localize "SPELLMANAGER.ListSource.Character"}}{{/if}})
+            </option>
+          {{/each}}
+        </optgroup>
+      {{/if}}
+      {{#if hasCustomLists}}
+        <optgroup label="{{localize 'SPELLMANAGER.Folders.CustomLists'}}">
+          {{#each customLists as |list|}}
+            <option value="{{list.uuid}}">{{list.name}}</option>
+          {{/each}}
+        </optgroup>
+      {{/if}}
+      {{#if hasStandardLists}}
+        <optgroup label="{{localize 'SPELLMANAGER.Folders.SpellLists'}}">
+          {{#each standardLists as |list|}}
+            <option value="{{list.uuid}}">{{list.name}} ({{list.pack}})</option>
+          {{/each}}
+        </optgroup>
+      {{/if}}
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="merged-list-name">{{localize "SPELLMANAGER.MergeLists.MergedListNameLabel"}}</label>
+    <input type="text" id="merged-list-name" name="mergedListName"
+      placeholder="{{localize 'SPELLMANAGER.MergeLists.MergedListNamePlaceholder'}}">
+    <p class="notes">{{localize "SPELLMANAGER.MergeLists.MergedListNameNotes"}}</p>
+    <p class="validation-error" style="color: red; display: none;">
+      {{localize "SPELLMANAGER.MergeLists.SameListError"}}
+    </p>
+  </div>
+</form>

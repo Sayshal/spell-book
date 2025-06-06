@@ -149,12 +149,71 @@
     .lists-header {
       z-index: var(--spell-book-manager-z-header);
       position: relative;
+      display: flex;
       justify-content: space-between;
       align-items: center;
       margin: 0;
+      padding: 0.75rem 0.5rem;
       color: var(--spell-book-manager-text-primary);
       background-color: rgb(0 0 0 / 20%);
       box-shadow: var(--spell-book-manager-header-shadow);
+
+      h2 {
+        flex: 1;
+        margin: 0;
+        padding: 0;
+        font-size: var(--spell-book-manager-font-title);
+        text-align: center;
+        background: none;
+        box-shadow: none;
+      }
+    }
+
+    .merge-lists-button,
+    .create-new-button {
+      z-index: 5;
+      position: absolute;
+      align-items: center;
+      width: auto;
+      margin: 0;
+      padding: 0;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+      background: none;
+      transition: all 0.2s ease;
+
+      i {
+        margin: 0;
+      }
+
+      &:hover {
+        border: none;
+        text-shadow: none;
+        box-shadow: none;
+      }
+
+      &:focus {
+        border-color: var(--color-border-highlight);
+        outline: none;
+        box-shadow: 0 0 3px var(--color-shadow-highlight);
+      }
+    }
+
+    .merge-lists-button {
+      order: 1;
+      top: 12px;
+      left: 15px;
+    }
+
+    .create-new-button {
+      order: 3;
+      top: 12px;
+      right: 15px;
+    }
+
+    h2 {
+      order: 2;
     }
 
     /* Folder styling */
@@ -267,32 +326,6 @@
           color: rgb(255 201 25);
           font-weight: 600;
         }
-      }
-    }
-
-    .create-new-button {
-      z-index: 5;
-      position: absolute;
-      top: 12px;
-      right: 15px;
-      align-items: center;
-      width: auto;
-      margin: 0;
-      padding: 0;
-      border: none;
-      font-size: 1rem;
-      cursor: pointer;
-      background: none;
-      transition: all 0.2s ease;
-
-      i {
-        margin-right: 0;
-      }
-
-      &:hover {
-        border: none;
-        text-shadow: none;
-        box-shadow: none;
       }
     }
   }

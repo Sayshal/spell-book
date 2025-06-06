@@ -7,9 +7,15 @@
 	</button>
 
 	<div class="lists-header">
+		<button type="button" class="merge-lists-button" data-action="mergeLists"
+			aria-label="{{localize 'SPELLMANAGER.Buttons.MergeLists'}}"
+			data-tooltip="{{localize 'SPELLMANAGER.Tooltips.MergeLists'}}">
+			<i class="fas fa-code-merge" aria-hidden="true"></i>
+		</button>
 		<h2 id="available-lists-heading">{{localize "SPELLMANAGER.Columns.AvailableLists"}}</h2>
 		<button type="button" class="create-new-button" data-action="createNewList"
-			aria-label="{{localize 'SPELLMANAGER.Buttons.CreateNew'}}">
+			aria-label="{{localize 'SPELLMANAGER.Buttons.CreateNew'}}"
+			data-tooltip="{{localize 'SPELLMANAGER.Tooltips.CreateNew'}}">
 			<i class="fas fa-plus" aria-hidden="true"></i>
 		</button>
 	</div>
