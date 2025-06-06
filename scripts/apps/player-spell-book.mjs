@@ -2,6 +2,7 @@ import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as filterUtils from '../helpers/filters.mjs';
 import * as formElements from '../helpers/form-elements.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
+import { ScrollScanner } from '../helpers/scroll-scanner.mjs';
 import { SpellbookState } from '../helpers/state/spellbook-state.mjs';
 import { SpellbookFilterHelper } from '../helpers/ui/spellbook-filters.mjs';
 import { SpellbookUI } from '../helpers/ui/spellbook-ui.mjs';

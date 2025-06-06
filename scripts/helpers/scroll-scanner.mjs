@@ -1,6 +1,7 @@
 import { MODULE, SETTINGS } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import * as genericUtils from './generic-utils.mjs';
+import * as discoveryUtils from './spell-discovery.mjs';
 import * as formattingUtils from './spell-formatting.mjs';
 
 /**
@@ -16,7 +17,6 @@ export class ScrollScanner {
     const scrollSpells = [];
     if (!genericUtils.isWizard(actor)) return scrollSpells;
     const scrollItems = actor.items.filter((item) => item.type === 'consumable' && item.system?.type?.value === 'scroll');
-    log(3, `Found ${scrollItems.length} scroll items in ${actor.name}'s inventory`);
     for (const scroll of scrollItems) {
       const spellData = await this._extractSpellFromScroll(scroll, actor);
       if (spellData) scrollSpells.push(spellData);
@@ -33,16 +33,15 @@ export class ScrollScanner {
    */
   static async _extractSpellFromScroll(scroll, actor) {
     if (!scroll.system?.activities) return null;
+    const wizardClass = genericUtils.findWizardClass(actor);
+    if (!wizardClass) return null;
+    const maxSpellLevel = discoveryUtils.calculateMaxSpellLevel(wizardClass, actor);
     for (const [activityId, activity] of Object.entries(scroll.system.activities)) {
       if (activity.type === 'cast' && activity.spell?.uuid) {
         const spellUuid = activity.spell.uuid;
         try {
           const spell = await fromUuid(spellUuid);
           if (!spell || spell.type !== 'spell') continue;
-          const wizardClass = genericUtils.findSpellcastingClass(actor);
-          if (!wizardClass) continue;
-          const wizardLevel = wizardClass.system.levels || 1;
-          const maxSpellLevel = Math.ceil(wizardLevel / 2); // We calculate this elsewhere - why aren't we importing and using that logic?
           if (spell.system.level > maxSpellLevel && spell.system.level > 0) continue;
           return {
             scrollItem: scroll,

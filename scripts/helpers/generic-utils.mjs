@@ -37,3 +37,23 @@ export function findSpellcastingClass(actor) {
 export function isGrantedSpell(spell) {
   return !!spell.flags?.dnd5e?.cachedFor;
 }
+
+/**
+ * Find the wizard class item for an actor
+ * @param {Actor5e} actor - The actor to check
+ * @returns {Item5e|null} The wizard class item or null
+ */
+export function findWizardClass(actor) {
+  if (!isWizard(actor)) return null;
+  const spellcastingClasses = actor.items.filter((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
+  if (spellcastingClasses.length === 1) return spellcastingClasses[0];
+  if (spellcastingClasses.length >= 2) {
+    // TODO: Check actor flags for DM-forced wizard class when that feature is re-added
+    const wizardByIdentifier = spellcastingClasses.find((i) => i.system.identifier?.toLowerCase() === 'wizard');
+    if (wizardByIdentifier) return wizardByIdentifier;
+    const localizedWizardName = game.i18n.localize('SPELLBOOK.Classes.Wizard').toLowerCase();
+    const wizardByName = spellcastingClasses.find((i) => i.name.toLowerCase() === localizedWizardName);
+    if (wizardByName) return wizardByName;
+  }
+  return null;
+}

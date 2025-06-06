@@ -2,6 +2,7 @@ import { FLAGS, MODULE, SETTINGS } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
 import { RuleSetManager } from '../../managers/rule-set-manager.mjs';
 import * as actorSpellUtils from '../actor-spells.mjs';
+import { ScrollScanner } from '../scroll-scanner.mjs';
 import * as discoveryUtils from '../spell-discovery.mjs';
 import * as formattingUtils from '../spell-formatting.mjs';
 
@@ -481,7 +482,7 @@ export class SpellbookState {
    * @param {boolean} isWizardBook - Whether this is for the wizard tab
    * @param {boolean} isAtMaxSpells - Whether maximum spells are reached
    */
-  enrichwizardbookSpells(levels, personalSpellbook, sortBy, isWizardBook = false, isAtMaxSpells = false) {
+  enrichWizardBookSpells(levels, personalSpellbook, sortBy, isWizardBook = false, isAtMaxSpells = false) {
     if (isWizardBook && this.scrollSpells.length > 0) {
       for (const scrollSpell of this.scrollSpells) {
         scrollSpell.isWizardClass = true;
