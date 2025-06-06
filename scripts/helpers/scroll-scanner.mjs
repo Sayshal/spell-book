@@ -32,49 +32,78 @@ export class ScrollScanner {
    * @private
    */
   static async _extractSpellFromScroll(scroll, actor) {
-    if (!scroll.system?.activities?.contents) return null;
     const wizardClass = genericUtils.findWizardClass(actor);
     if (!wizardClass) return null;
     const maxSpellLevel = discoveryUtils.calculateMaxSpellLevel(wizardClass, actor);
-    for (const [index, activity] of scroll.system.activities.contents.entries()) {
-      if (activity.type === 'cast' && activity.spell?.uuid) {
-        const spellUuid = activity.spell.uuid;
-        try {
-          const spell = await fromUuid(spellUuid);
-          if (!spell || spell.type !== 'spell') continue;
-          if (spell.system.level > maxSpellLevel && spell.system.level > 0) continue;
-          return {
-            scrollItem: scroll,
-            spell: spell,
-            spellUuid: spellUuid,
-            name: spell.name,
-            level: spell.system.level,
-            img: spell.img,
-            system: spell.system,
-            enrichedIcon: formattingUtils.createSpellIconLink(spell),
-            formattedDetails: formattingUtils.formatSpellDetails(spell),
-            isFromScroll: true,
-            scrollId: scroll.id,
-            scrollName: scroll.name,
-            preparation: {
-              prepared: false,
-              disabled: true,
-              preparationMode: 'scroll',
-              isOwned: false,
-              alwaysPrepared: false,
-              sourceItem: null,
-              isGranted: false,
-              localizedPreparationMode: '',
-              disabledReason: 'SPELLBOOK.Scrolls.NotPreparable'
-            }
-          };
-        } catch (error) {
-          log(1, `Error processing spell from scroll ${scroll.name}:`, error);
-          continue;
+    if (scroll.system?.activities?.contents) {
+      for (const [index, activity] of scroll.system.activities.contents.entries()) {
+        if (activity.type === 'cast' && activity.spell?.uuid) {
+          const spellUuid = activity.spell.uuid;
+          const result = await this._processScrollSpell(scroll, spellUuid, maxSpellLevel);
+          if (result) return result;
+        }
+      }
+    } else {
+      // Backwards compatibility: check description for UUID (v3.3.1 and earlier)
+      const description = scroll.system?.description?.value;
+      if (description) {
+        const uuidMatch = description.match(/@UUID\[([^\]]+)\]/);
+        if (uuidMatch) {
+          const spellUuid = uuidMatch[1];
+          const result = await this._processScrollSpell(scroll, spellUuid, maxSpellLevel);
+          if (result) return result;
         }
       }
     }
+
     return null;
+  }
+
+  /**
+   * Process a spell UUID from a scroll and create spell data
+   * @param {Item5e} scroll - The scroll item
+   * @param {string} spellUuid - The spell UUID
+   * @param {number} maxSpellLevel - Maximum spell level the actor can cast
+   * @returns {Promise<Object|null>} Processed spell data or null
+   * @private
+   */
+  static async _processScrollSpell(scroll, spellUuid, maxSpellLevel) {
+    try {
+      const spell = await fromUuid(spellUuid);
+      if (!spell || spell.type !== 'spell') {
+        return null;
+      }
+      if (spell.system.level > maxSpellLevel && spell.system.level > 0) return null;
+      let processedResult = {
+        scrollItem: scroll,
+        spell: spell,
+        spellUuid: spellUuid,
+        name: spell.name,
+        level: spell.system.level,
+        img: spell.img,
+        system: spell.system,
+        enrichedIcon: formattingUtils.createSpellIconLink(spell),
+        formattedDetails: formattingUtils.formatSpellDetails(spell),
+        isFromScroll: true,
+        scrollId: scroll.id,
+        scrollName: scroll.name,
+        preparation: {
+          prepared: false,
+          disabled: true,
+          preparationMode: 'scroll',
+          isOwned: false,
+          alwaysPrepared: false,
+          sourceItem: null,
+          isGranted: false,
+          localizedPreparationMode: '',
+          disabledReason: 'SPELLBOOK.Scrolls.NotPreparable'
+        }
+      };
+      return processedResult;
+    } catch (error) {
+      log(1, `Error processing spell from scroll ${scroll.name}:`, error);
+      return null;
+    }
   }
 
   /**
