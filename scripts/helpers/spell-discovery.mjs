@@ -60,8 +60,10 @@ function getTopLevelFolderFromCompendiumSource(source) {
   const pack = game.packs.get(packCollection);
   if (!pack) return null;
   if (pack.folder) {
-    const topLevelFolder = pack.folder.name;
-    return topLevelFolder;
+    let currentFolder = pack.folder;
+    while (currentFolder && currentFolder.depth > 1) currentFolder = currentFolder.folder;
+    if (currentFolder && currentFolder.depth === 1) return currentFolder.name;
+    else log(1, `Could not find top level folder, final depth: ${currentFolder?.depth || 'undefined'}`);
   }
   log(1, `No folder structure found for pack: ${packCollection}`);
   return null;

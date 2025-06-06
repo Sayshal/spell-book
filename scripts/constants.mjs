@@ -197,6 +197,13 @@ export const MODULE = {
 };
 
 /**
+ * Deprecated flags that should be removed during migration
+ * Each entry should include the flag name and reason for deprecation
+ * @type {Array<{key: string, reason: string, removedInVersion?: string}>}
+ */
+export const DEPRECATED_FLAGS = [];
+
+/**
  * Flags used for data storage and state tracking
  * @type {Object}
  */

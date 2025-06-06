@@ -325,7 +325,9 @@ export class SpellbookState {
     }
     this.spellPreparation = { current: totalPrepared, maximum: totalMaxPrepared };
     log(3, `Updated global preparation count: ${totalPrepared}/${totalMaxPrepared}`);
-    if (totalMaxPrepared <= 0) log(2, `Global max preparation is ${totalMaxPrepared}, this might indicate a data issue`);
+    if (totalMaxPrepared <= 0) {
+      log(2, `Global max preparation is ${totalMaxPrepared}, this might indicate a data issue. Note: If on 3.3.1, you must set this manually due to system limitations.`);
+    }
   }
 
   /**

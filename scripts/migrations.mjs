@@ -1,4 +1,4 @@
-import { FLAGS, MODULE, SETTINGS } from './constants.mjs';
+import { DEPRECATED_FLAGS, MODULE, SETTINGS } from './constants.mjs';
 import * as managerHelpers from './helpers/compendium-management.mjs';
 import { log } from './logger.mjs';
 
@@ -54,9 +54,8 @@ async function checkAndRunMigration() {
 }
 
 async function migrateCollection(documents, results, packName = null) {
-  const validFlags = Object.values(FLAGS);
   for (const doc of documents) {
-    const migrationResult = await migrateDocument(doc, validFlags);
+    const migrationResult = await migrateDocument(doc, DEPRECATED_FLAGS);
     if (migrationResult.wasUpdated) {
       results.actors.push({ name: doc.name, id: doc.id, pack: packName, hadInvalidFlags: migrationResult.invalidFlags });
       results.processed++;
@@ -65,21 +64,23 @@ async function migrateCollection(documents, results, packName = null) {
   }
 }
 
-async function migrateDocument(doc, validFlags) {
+async function migrateDocument(doc, deprecatedFlags) {
   const flags = doc.flags?.[MODULE.ID];
   if (!flags) return { wasUpdated: false, invalidFlags: false };
   const updates = {};
-  let hasInvalidFlags = false;
+  let hasRemovals = false;
   for (const [key, value] of Object.entries(flags)) {
-    const isInvalid = !validFlags.includes(key) || value === null || value === undefined || (typeof value === 'object' && Object.keys(value).length === 0);
-    if (isInvalid) {
+    const isDeprecated = deprecatedFlags.some((deprecated) => deprecated.key === key);
+    const isInvalid = value === null || value === undefined || (typeof value === 'object' && Object.keys(value).length === 0);
+    if (isDeprecated || isInvalid) {
       updates[`flags.${MODULE.ID}.-=${key}`] = null;
-      hasInvalidFlags = true;
-      log(3, `Removing invalid flag "${key}" from ${doc.documentName} "${doc.name}"`);
+      hasRemovals = true;
+      const reason = isDeprecated ? deprecatedFlags.find((d) => d.key === key)?.reason : 'Invalid value (null/undefined/empty object)';
+      log(3, `Removing flag "${key}" from ${doc.documentName} "${doc.name}": ${reason}`);
     }
   }
-  if (hasInvalidFlags) await doc.update(updates);
-  return { wasUpdated: hasInvalidFlags, invalidFlags: hasInvalidFlags };
+  if (hasRemovals) await doc.update(updates);
+  return { wasUpdated: hasRemovals, invalidFlags: hasRemovals };
 }
 
 async function migrateSpellListFolders() {
