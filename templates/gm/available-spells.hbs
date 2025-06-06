@@ -1,160 +1,66 @@
 <div class="available-spells-sidebar" role="complementary"
 	aria-label="{{localize 'SPELLMANAGER.Columns.AvailableSpells'}}">
 	<h2 id="available-spells-heading">{{localize "SPELLMANAGER.Columns.AvailableSpells"}}</h2>
-
 	<div class="spell-filters" role="search" aria-labelledby="available-spells-heading">
-		<!-- Search bar -->
 		<div class="filter-search">
-			<input type="text" name="spell-search" id="spell-search"
-				placeholder="{{localize 'SPELLMANAGER.Filters.SearchPlaceholder'}}" value="{{filterState.name}}"
-				{{#unless isEditing}}disabled{{/unless}} aria-label="{{localize 'SPELLMANAGER.Filters.SearchPlaceholder'}}">
+			{{{filterFormElements.searchInputHtml}}}
 		</div>
-
-		<!-- Filter grid -->
 		<div class="filter-grid">
-			<!-- Level filter -->
 			<div class="filter-item">
 				<label for="spell-level">{{localize "SPELLBOOK.Filters.Level"}}</label>
-				<select name="spell-level" id="spell-level" {{#unless isEditing}}disabled{{/unless}}
-					aria-label="{{localize 'SPELLBOOK.Filters.Level'}}">
-					<option value="">{{localize "SPELLMANAGER.Filters.AllLevels"}}</option>
-					{{#each spellLevels as |label level|}}
-						<option value="{{level}}" {{#if (eq ../filterState.level level)}}selected{{/if}}>{{label}}</option>
-					{{/each}}
-				</select>
+				{{{filterFormElements.levelSelectHtml}}}
 			</div>
-
-			<!-- School filter -->
 			<div class="filter-item">
 				<label for="spell-school">{{localize "SPELLBOOK.Filters.School"}}</label>
-				<select name="spell-school" id="spell-school" {{#unless isEditing}}disabled{{/unless}}
-					aria-label="{{localize 'SPELLBOOK.Filters.School'}}">
-					<option value="">{{localize "SPELLMANAGER.Filters.AllSchools"}}</option>
-					{{#each spellSchools as |school key|}}
-						<option value="{{key}}" {{#if (eq ../filterState.school key)}}selected{{/if}}>{{school.label}}</option>
-					{{/each}}
-				</select>
+				{{{filterFormElements.schoolSelectHtml}}}
 			</div>
-
-			<!-- Casting Time filter -->
 			<div class="filter-item">
 				<label for="spell-castingTime">{{localize "SPELLBOOK.Filters.CastingTime"}}</label>
-				<select name="spell-castingTime" id="spell-castingTime" {{#unless isEditing}}disabled{{/unless}}
-					aria-label="{{localize 'SPELLBOOK.Filters.CastingTime'}}">
-					{{#each castingTimeOptions as |option|}}
-						<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
-					{{/each}}
-				</select>
+				{{{filterFormElements.castingTimeSelectHtml}}}
 			</div>
-
-			<!-- Damage Type filter -->
 			<div class="filter-item">
 				<label for="spell-damageType">{{localize "SPELLBOOK.Filters.DamageType"}}</label>
-				<select name="spell-damageType" id="spell-damageType" {{#unless isEditing}}disabled{{/unless}}
-					aria-label="{{localize 'SPELLBOOK.Filters.DamageType'}}">
-					{{#each damageTypeOptions as |option|}}
-						<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
-					{{/each}}
-				</select>
+				{{{filterFormElements.damageTypeSelectHtml}}}
 			</div>
-
-			<!-- Condition filter -->
 			<div class="filter-item">
 				<label for="spell-condition">{{localize "SPELLBOOK.Filters.Condition"}}</label>
-				<select name="spell-condition" id="spell-condition" {{#unless isEditing}}disabled{{/unless}}
-					aria-label="{{localize 'SPELLBOOK.Filters.Condition'}}">
-					{{#each conditionOptions as |option|}}
-						<option value="{{option.value}}" {{#if option.selected}}selected{{/if}}>{{option.label}}</option>
-					{{/each}}
-				</select>
+				{{{filterFormElements.conditionSelectHtml}}}
 			</div>
-
-			<!-- Requires Save filter -->
 			<div class="filter-item">
 				<label for="spell-requiresSave">{{localize "SPELLBOOK.Filters.RequiresSave"}}</label>
-				<select name="spell-requiresSave" id="spell-requiresSave" {{#unless isEditing}}disabled{{/unless}}
-					aria-label="{{localize 'SPELLBOOK.Filters.RequiresSave'}}">
-					<option value="">{{localize "SPELLBOOK.Filters.All"}}</option>
-					<option value="true" {{#if (eq filterState.requiresSave "true")}}selected{{/if}}>
-						{{localize "SPELLBOOK.Filters.True"}}
-					</option>
-					<option value="false" {{#if (eq filterState.requiresSave "false")}}selected{{/if}}>
-						{{localize "SPELLBOOK.Filters.False"}}
-					</option>
-				</select>
+				{{{filterFormElements.requiresSaveSelectHtml}}}
 			</div>
-
-			<!-- Concentration filter -->
 			<div class="filter-item">
 				<label for="spell-concentration">{{localize "SPELLBOOK.Filters.RequiresConcentration"}}</label>
-				<select name="spell-concentration" id="spell-concentration" {{#unless isEditing}}disabled{{/unless}}
-					aria-label="{{localize 'SPELLBOOK.Filters.RequiresConcentration'}}">
-					<option value="">{{localize "SPELLBOOK.Filters.All"}}</option>
-					<option value="true" {{#if (eq filterState.concentration "true")}}selected{{/if}}>
-						{{localize "SPELLBOOK.Filters.True"}}
-					</option>
-					<option value="false" {{#if (eq filterState.concentration "false")}}selected{{/if}}>
-						{{localize "SPELLBOOK.Filters.False"}}
-					</option>
-				</select>
+				{{{filterFormElements.concentrationSelectHtml}}}
 			</div>
-
-			<!-- Material Components filter -->
 			<div class="filter-item">
 				<label for="spell-materialComponents">{{localize "SPELLBOOK.Filters.MaterialComponents.Title"}}</label>
-				<select name="spell-materialComponents" id="spell-materialComponents" {{#unless isEditing}}disabled{{/unless}}
-					aria-label="{{localize 'SPELLBOOK.Filters.MaterialComponents'}}">
-					<option value="">{{localize "SPELLBOOK.Filters.All"}}</option>
-					<option value="consumed" {{#if (eq filterState.materialComponents "consumed")}}selected{{/if}}>
-						{{localize "SPELLBOOK.Filters.MaterialComponents.Consumed"}}
-					</option>
-					<option value="notConsumed" {{#if (eq filterState.materialComponents "notConsumed")}}selected{{/if}}>
-						{{localize "SPELLBOOK.Filters.MaterialComponents.NotConsumed"}}
-					</option>
-				</select>
+				{{{filterFormElements.materialComponentsSelectHtml}}}
 			</div>
-
-			<!-- Ritual filter -->
 			<div class="filter-item checkbox-filter">
 				<label>
-					<input type="checkbox" name="spell-ritual" id="spell-ritual" {{checked filterState.ritual}}
-						{{#unless isEditing}}disabled{{/unless}} aria-label="{{localize 'SPELLBOOK.Filters.RitualOnly'}}">
+					{{{filterFormElements.ritualCheckboxHtml}}}
 					{{localize "SPELLBOOK.Filters.RitualOnly"}}
 				</label>
 			</div>
 		</div>
-
-		<!-- Range filter -->
 		<div class="filter-range">
 			<label id="range-filter-label">{{localize "SPELLBOOK.Filters.Range"}}
 				({{#if (eq (lookup @root.settings "distanceUnit") "meters")}}{{localize "SPELLBOOK.Settings.DistanceUnit.Meters"}}{{else}}{{localize "SPELLBOOK.Settings.DistanceUnit.Feet"}}{{/if}})</label>
 			<div class="range-inputs" role="group" aria-labelledby="range-filter-label">
-				<input type="number" name="spell-min-range" id="spell-min-range"
-					placeholder="{{localize 'SPELLBOOK.Filters.RangeMin'}}" value="{{filterState.minRange}}"
-					{{#unless isEditing}}disabled{{/unless}} aria-label="{{localize 'SPELLBOOK.Filters.RangeMinLabel'}}">
+				{{{filterFormElements.minRangeInputHtml}}}
 				<div class="range-separator" aria-hidden="true">
 					<dnd5e-icon src="systems/dnd5e/icons/svg/range-connector.svg"></dnd5e-icon>
 				</div>
-				<input type="number" name="spell-max-range" id="spell-max-range"
-					placeholder="{{localize 'SPELLBOOK.Filters.RangeMax'}}" value="{{filterState.maxRange}}"
-					{{#unless isEditing}}disabled{{/unless}} aria-label="{{localize 'SPELLBOOK.Filters.RangeMaxLabel'}}">
+				{{{filterFormElements.maxRangeInputHtml}}}
 			</div>
 		</div>
-
-		<!-- Source filter -->
 		<div class="filter-item">
 			<label for="spell-source">{{localize "SPELLMANAGER.Filters.Source"}}</label>
-			<select name="spell-source" id="spell-source" {{#unless isEditing}}disabled{{/unless}}
-				aria-label="{{localize 'SPELLMANAGER.Filters.Source'}}">
-				{{#each spellSources as |source|}}
-					<option value="{{source.id}}" {{#if (eq ../filterState.source source.id)}}selected{{/if}}>
-						{{source.label}}
-					</option>
-				{{/each}}
-			</select>
+			{{{filterFormElements.sourceSelectHtml}}}
 		</div>
 	</div>
-
 	<div class="available-spells-list">
 		{{#if isEditing}}
 			{{#if filteredSpells.spells.length}}
