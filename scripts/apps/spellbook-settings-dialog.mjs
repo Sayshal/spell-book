@@ -1,4 +1,5 @@
 import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import * as formElements from '../helpers/form-elements.mjs';
 import { log } from '../logger.mjs';
 import { RuleSetManager } from '../managers/rule-set-manager.mjs';
 import { SpellManager } from '../managers/spell-manager.mjs';
@@ -54,22 +55,94 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     return game.i18n.format('SPELLBOOK.Settings.Title', { name: this.actor.name });
   }
 
-  /** @override */
-  async _prepareContext(options) {
-    const context = await super._prepareContext(options);
-    RuleSetManager.initializeNewClasses(this.actor);
-    context.currentRuleSet = RuleSetManager.getEffectiveRuleSet(this.actor);
-    context.ruleSetOverride = this.actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE);
-    context.enforcementBehavior = this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR);
-    context.currentRuleSetLabel = game.i18n.localize(`SPELLBOOK.Settings.SpellcastingRuleSet.${context.currentRuleSet.charAt(0).toUpperCase() + context.currentRuleSet.slice(1)}`);
-    context.spellcastingClasses = await this._prepareClassSettings();
-    context.hasNotices = context.spellcastingClasses.some((classData) => classData.rules._noScaleValue || classData.hasCustomSpellList);
-    context.availableSpellLists = await this._prepareSpellListOptions();
-    context.RULE_SETS = MODULE.RULE_SETS;
-    context.RITUAL_CASTING_MODES = MODULE.RITUAL_CASTING_MODES;
-    context.ENFORCEMENT_BEHAVIOR = MODULE.ENFORCEMENT_BEHAVIOR;
-    context.actor = this.actor;
-    return context;
+  _prepareGlobalSettingsFormData() {
+    // Get the raw flag values (null means "use global")
+    const ruleSetOverride = this.actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE);
+    const enforcementBehavior = this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR);
+
+    // Get the actual global game settings (not actor-specific)
+    const globalRuleSet = game.settings.get(MODULE.ID, SETTINGS.SPELLCASTING_RULE_SET);
+    const globalEnforcementBehavior = game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR);
+
+    const globalRuleSetLabel = game.i18n.localize(`SPELLBOOK.Settings.SpellcastingRuleSet.${globalRuleSet.charAt(0).toUpperCase() + globalRuleSet.slice(1)}`);
+    const globalEnforcementBehaviorLabel = game.i18n.localize(
+      `SPELLBOOK.Settings.EnforcementBehavior.${globalEnforcementBehavior.charAt(0).toUpperCase() + globalEnforcementBehavior.slice(1)}`
+    );
+
+    // For form display: null/undefined means 'global' was selected
+    const ruleSetValue = ruleSetOverride || 'global';
+    const enforcementValue = enforcementBehavior || 'global';
+
+    log(3, 'Global settings - raw flags - ruleSetOverride:', ruleSetOverride, 'enforcementBehavior:', enforcementBehavior);
+    log(3, 'Global settings - form values:', ruleSetValue, enforcementValue);
+    log(3, 'Global game settings - ruleSet:', globalRuleSet, 'enforcement:', globalEnforcementBehavior);
+
+    const ruleSetOptions = [
+      {
+        value: 'global',
+        label: `${game.i18n.localize('SPELLBOOK.Settings.RuleSetOverride.Global')} (${globalRuleSetLabel})`,
+        selected: ruleSetValue === 'global'
+      },
+      {
+        value: 'legacy',
+        label: game.i18n.localize('SPELLBOOK.Settings.SpellcastingRuleSet.Legacy'),
+        selected: ruleSetValue === 'legacy'
+      },
+      {
+        value: 'modern',
+        label: game.i18n.localize('SPELLBOOK.Settings.SpellcastingRuleSet.Modern'),
+        selected: ruleSetValue === 'modern'
+      }
+    ];
+
+    const enforcementOptions = [
+      {
+        value: 'global',
+        label: `${game.i18n.localize('SPELLBOOK.Settings.EnforcementBehavior.Global')} (${globalEnforcementBehaviorLabel})`,
+        selected: enforcementValue === 'global'
+      },
+      {
+        value: 'unenforced',
+        label: game.i18n.localize('SPELLBOOK.Settings.EnforcementBehavior.Unenforced'),
+        selected: enforcementValue === 'unenforced'
+      },
+      {
+        value: 'notifyGM',
+        label: game.i18n.localize('SPELLBOOK.Settings.EnforcementBehavior.NotifyGM'),
+        selected: enforcementValue === 'notifyGM'
+      },
+      {
+        value: 'enforced',
+        label: game.i18n.localize('SPELLBOOK.Settings.EnforcementBehavior.Enforced'),
+        selected: enforcementValue === 'enforced'
+      }
+    ];
+
+    log(3, 'Rule set options:', ruleSetOptions);
+    log(3, 'Enforcement options:', enforcementOptions);
+
+    const ruleSetSelect = formElements.createSelect({
+      name: 'ruleSetOverride',
+      options: ruleSetOptions,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.RuleSetOverride.Label')
+    });
+    ruleSetSelect.id = 'rule-set-override';
+
+    const enforcementSelect = formElements.createSelect({
+      name: 'enforcementBehavior',
+      options: enforcementOptions,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.EnforcementBehavior.Label')
+    });
+    enforcementSelect.id = 'enforcement-behavior';
+
+    return {
+      currentRuleSet: globalRuleSet,
+      ruleSetOverride,
+      enforcementBehavior,
+      currentRuleSetLabel: globalRuleSetLabel,
+      ruleSetSelectHtml: formElements.elementToHtml(ruleSetSelect),
+      enforcementSelectHtml: formElements.elementToHtml(enforcementSelect)
+    };
   }
 
   /**
@@ -80,23 +153,54 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   async _prepareClassSettings() {
     const classSettings = [];
     const classItems = this.actor.items.filter((item) => item.type === 'class' && item.system.spellcasting?.progression && item.system.spellcasting.progression !== 'none');
+    const availableSpellLists = await this._prepareSpellListOptions();
+
+    // Get the raw class rules from actor flags (this is what was actually saved)
+    const currentClassRules = this.actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+
     for (const classItem of classItems) {
       const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
-      const classRules = RuleSetManager.getClassRules(this.actor, identifier);
+
+      // Get the processed class rules (includes defaults and rule set applications)
+      const processedClassRules = RuleSetManager.getClassRules(this.actor, identifier);
+
+      // Get the raw saved values for this specific class
+      const savedClassRules = currentClassRules[identifier] || {};
+
+      log(3, `Class ${identifier} - processedClassRules:`, processedClassRules);
+      log(3, `Class ${identifier} - savedClassRules:`, savedClassRules);
+
       const spellManager = new SpellManager(this.actor);
       const maxCantrips = spellManager.getMaxAllowed(identifier);
       const currentCantrips = spellManager.getCurrentCount(identifier);
-      const hasCustomSpellList = !!classRules.customSpellList;
+
+      // For display purposes, use saved values if they exist, otherwise use processed defaults
+      const formRules = {
+        showCantrips: savedClassRules.hasOwnProperty('showCantrips') ? savedClassRules.showCantrips : processedClassRules.showCantrips,
+        cantripSwapping: savedClassRules.cantripSwapping || processedClassRules.cantripSwapping || 'none',
+        spellSwapping: savedClassRules.spellSwapping || processedClassRules.spellSwapping || 'none',
+        ritualCasting: savedClassRules.ritualCasting || processedClassRules.ritualCasting || 'none',
+        customSpellList: savedClassRules.customSpellList || processedClassRules.customSpellList || '',
+        preparationBonus: savedClassRules.hasOwnProperty('preparationBonus') ? savedClassRules.preparationBonus : processedClassRules.preparationBonus || 0,
+        _noScaleValue: processedClassRules._noScaleValue
+      };
+
+      log(3, `Class ${identifier} - formRules for display:`, formRules);
+
+      const hasCustomSpellList = !!formRules.customSpellList;
       let customSpellListName = null;
       if (hasCustomSpellList) {
-        const customList = await fromUuid(classRules.customSpellList);
+        const customList = await fromUuid(formRules.customSpellList);
         customSpellListName = customList?.name || game.i18n.localize('SPELLBOOK.Settings.UnknownList');
       }
+
+      const classFormElements = this._prepareClassFormElements(identifier, formRules, availableSpellLists);
+
       const classData = {
         name: classItem.name,
         identifier: identifier,
         img: classItem.img,
-        rules: classRules,
+        rules: processedClassRules, // Keep processed rules for display logic
         stats: {
           currentCantrips: currentCantrips,
           maxCantrips: maxCantrips,
@@ -104,12 +208,184 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
           basePreparationMax: classItem.system.spellcasting?.preparation?.max || 0
         },
         hasCustomSpellList: hasCustomSpellList,
-        customSpellListName: customSpellListName
+        customSpellListName: customSpellListName,
+        formElements: classFormElements
       };
       classSettings.push(classData);
     }
     classSettings.sort((a, b) => a.name.localeCompare(b.name));
     return classSettings;
+  }
+
+  /**
+   * Prepare form elements for a specific class
+   * @param {string} identifier - The class identifier
+   * @param {Object} formRules - The form rules configuration (with actual saved values)
+   * @param {Array} availableSpellLists - Available spell list options
+   * @returns {Object} Object containing all form element HTML for the class
+   * @private
+   */
+  _prepareClassFormElements(identifier, formRules, availableSpellLists) {
+    log(3, `Preparing form elements for ${identifier} with rules:`, formRules);
+
+    const showCantripsCheckbox = formElements.createCheckbox({
+      name: `class.${identifier}.showCantrips`,
+      checked: formRules.showCantrips,
+      disabled: formRules._noScaleValue,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.ShowCantrips.Label')
+    });
+    showCantripsCheckbox.id = `show-cantrips-${identifier}`;
+
+    const cantripSwappingValue = formRules.cantripSwapping;
+    const cantripSwappingOptions = [
+      {
+        value: 'none',
+        label: game.i18n.localize('SPELLBOOK.Settings.CantripSwapping.None'),
+        selected: cantripSwappingValue === 'none'
+      },
+      {
+        value: 'levelUp',
+        label: game.i18n.localize('SPELLBOOK.Settings.CantripSwapping.LevelUp'),
+        selected: cantripSwappingValue === 'levelUp'
+      },
+      {
+        value: 'longRest',
+        label: game.i18n.localize('SPELLBOOK.Settings.CantripSwapping.LongRest'),
+        selected: cantripSwappingValue === 'longRest'
+      }
+    ];
+
+    log(3, `Cantrip swapping for ${identifier}: value=${cantripSwappingValue}, options:`, cantripSwappingOptions);
+
+    const cantripSwappingSelect = formElements.createSelect({
+      name: `class.${identifier}.cantripSwapping`,
+      options: cantripSwappingOptions,
+      disabled: !formRules.showCantrips,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.CantripSwapping.Label')
+    });
+    cantripSwappingSelect.id = `cantrip-swapping-${identifier}`;
+
+    const spellSwappingValue = formRules.spellSwapping;
+    const spellSwappingOptions = [
+      {
+        value: 'none',
+        label: game.i18n.localize('SPELLBOOK.Settings.SpellSwapping.None'),
+        selected: spellSwappingValue === 'none'
+      },
+      {
+        value: 'levelUp',
+        label: game.i18n.localize('SPELLBOOK.Settings.SpellSwapping.LevelUp'),
+        selected: spellSwappingValue === 'levelUp'
+      },
+      {
+        value: 'longRest',
+        label: game.i18n.localize('SPELLBOOK.Settings.SpellSwapping.LongRest'),
+        selected: spellSwappingValue === 'longRest'
+      }
+    ];
+
+    const spellSwappingSelect = formElements.createSelect({
+      name: `class.${identifier}.spellSwapping`,
+      options: spellSwappingOptions,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.SpellSwapping.Label')
+    });
+    spellSwappingSelect.id = `spell-swapping-${identifier}`;
+
+    const ritualCastingValue = formRules.ritualCasting;
+    const ritualCastingOptions = [
+      {
+        value: 'none',
+        label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.None'),
+        selected: ritualCastingValue === 'none'
+      },
+      {
+        value: 'prepared',
+        label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.Prepared'),
+        selected: ritualCastingValue === 'prepared'
+      },
+      {
+        value: 'always',
+        label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.Always'),
+        selected: ritualCastingValue === 'always'
+      }
+    ];
+
+    const ritualCastingSelect = formElements.createSelect({
+      name: `class.${identifier}.ritualCasting`,
+      options: ritualCastingOptions,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.Label')
+    });
+    ritualCastingSelect.id = `ritual-casting-${identifier}`;
+
+    const customSpellListValue = formRules.customSpellList;
+    const customSpellListOptions = availableSpellLists.map((option) => ({
+      ...option,
+      selected: option.value === customSpellListValue
+    }));
+
+    log(3, `Custom spell list for ${identifier}: value=${customSpellListValue}`);
+
+    const customSpellListSelect = formElements.createSelect({
+      name: `class.${identifier}.customSpellList`,
+      options: customSpellListOptions,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.CustomSpellList.Label')
+    });
+    customSpellListSelect.id = `custom-spell-list-${identifier}`;
+
+    const preparationBonusControls = this._createPreparationBonusControls(identifier, formRules.preparationBonus);
+
+    return {
+      showCantripsCheckboxHtml: formElements.elementToHtml(showCantripsCheckbox),
+      cantripSwappingSelectHtml: formElements.elementToHtml(cantripSwappingSelect),
+      spellSwappingSelectHtml: formElements.elementToHtml(spellSwappingSelect),
+      ritualCastingSelectHtml: formElements.elementToHtml(ritualCastingSelect),
+      customSpellListSelectHtml: formElements.elementToHtml(customSpellListSelect),
+      preparationBonusControlsHtml: preparationBonusControls
+    };
+  }
+
+  /**
+   * Create preparation bonus controls (decrease button, input, increase button)
+   * @param {string} identifier - The class identifier
+   * @param {number} currentValue - The current preparation bonus value
+   * @returns {string} HTML string for the preparation bonus controls
+   * @private
+   */
+  _createPreparationBonusControls(identifier, currentValue) {
+    const container = document.createElement('div');
+    container.className = 'preparation-bonus-controls';
+
+    const decreaseButton = document.createElement('button');
+    decreaseButton.type = 'button';
+    decreaseButton.className = 'prep-bonus-decrease';
+    decreaseButton.dataset.class = identifier;
+    decreaseButton.dataset.action = 'decreasePrepBonus';
+    decreaseButton.textContent = '−';
+    decreaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.Decrease'));
+
+    const input = formElements.createNumberInput({
+      name: `class.${identifier}.preparationBonus`,
+      value: currentValue,
+      min: -10,
+      max: 20,
+      cssClass: 'prep-bonus-input',
+      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.Label')
+    });
+    input.id = `preparation-bonus-${identifier}`;
+
+    const increaseButton = document.createElement('button');
+    increaseButton.type = 'button';
+    increaseButton.className = 'prep-bonus-increase';
+    increaseButton.dataset.class = identifier;
+    increaseButton.dataset.action = 'increasePrepBonus';
+    increaseButton.textContent = '+';
+    increaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.Increase'));
+
+    container.appendChild(decreaseButton);
+    container.appendChild(input);
+    container.appendChild(increaseButton);
+
+    return formElements.elementToHtml(container);
   }
 
   /**
@@ -142,6 +418,53 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       log(1, 'Error preparing spell list options:', error);
       return [{ value: '', label: game.i18n.localize('SPELLBOOK.Settings.SpellList.AutoDetect') }];
     }
+  }
+
+  /**
+   * Prepare submit button configuration
+   * @returns {Object} Submit button configuration
+   * @private
+   */
+  _prepareSubmitButton() {
+    const submitButton = document.createElement('button');
+    submitButton.type = 'submit';
+    submitButton.name = 'submit';
+    submitButton.className = 'submit-button';
+    submitButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.SaveButton'));
+
+    const icon = document.createElement('i');
+    icon.className = 'fas fa-save';
+    icon.setAttribute('aria-hidden', 'true');
+
+    submitButton.appendChild(icon);
+    submitButton.appendChild(document.createTextNode(` ${game.i18n.localize('SPELLBOOK.Settings.SaveButton')}`));
+
+    return {
+      submitButtonHtml: formElements.elementToHtml(submitButton)
+    };
+  }
+
+  /** @override */
+  async _prepareContext(options) {
+    const context = await super._prepareContext(options);
+    RuleSetManager.initializeNewClasses(this.actor);
+
+    const globalSettings = this._prepareGlobalSettingsFormData();
+    const spellcastingClasses = await this._prepareClassSettings();
+    const submitButton = this._prepareSubmitButton();
+    const availableSpellLists = await this._prepareSpellListOptions();
+
+    context.globalSettings = globalSettings;
+    context.spellcastingClasses = spellcastingClasses;
+    context.hasNotices = spellcastingClasses.some((classData) => classData.rules._noScaleValue || classData.hasCustomSpellList);
+    context.availableSpellLists = availableSpellLists;
+    context.submitButton = submitButton;
+    context.RULE_SETS = MODULE.RULE_SETS;
+    context.RITUAL_CASTING_MODES = MODULE.RITUAL_CASTING_MODES;
+    context.ENFORCEMENT_BEHAVIOR = MODULE.ENFORCEMENT_BEHAVIOR;
+    context.actor = this.actor;
+
+    return context;
   }
 
   /**
