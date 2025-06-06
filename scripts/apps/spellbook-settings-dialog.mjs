@@ -511,7 +511,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         ['cantripSwapping', 'spellSwapping', 'ritualCasting'].forEach((prop) => {
           if (rules[prop] !== undefined) processedRules[prop] = rules[prop];
         });
-        RuleSetManager.updateClassRules(actor, classId, processedRules);
+        const success = await RuleSetManager.updateClassRules(actor, classId, processedRules);
+        if (!success) throw new Error('FORM_CANCELLED');
       }
     }
     if (Object.keys(cantripVisibilityChanges).length > 0) await SpellbookSettingsDialog._handleCantripVisibilityChanges(actor, cantripVisibilityChanges);

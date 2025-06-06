@@ -613,7 +613,7 @@ export class SpellbookState {
     if (this.app.spellManager.cantripManager.canBeLeveledUp()) await this.app.spellManager.cantripManager.completeCantripsLevelUp();
     if (this.isLongRest) {
       await this.app.spellManager.cantripManager.resetSwapTracking();
-      await actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, false);
+      actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, false);
       this.isLongRest = false;
     }
   }
