@@ -35,7 +35,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       toggleSpellLevel: PlayerSpellBook.toggleSpellLevel,
       configureFilters: PlayerSpellBook.configureFilters,
       configureCantripSettings: PlayerSpellBook.configureCantripSettings,
-      learnSpell: PlayerSpellBook.learnSpell
+      learnSpell: PlayerSpellBook.learnSpell,
+      learnFromScroll: PlayerSpellBook.handleLearnFromScroll
     },
     classes: ['spell-book', 'vertical-tabs'],
     window: {
@@ -1132,6 +1133,28 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       } else {
         ui.notifications.warn(game.i18n.format('SPELLBOOK.Wizard.LearnFailed', { name: spell.name }));
       }
+    }
+  }
+
+  /**
+   * Handle learning a spell from a scroll
+   * @static
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} _form - The form element
+   * @returns {Promise<void>}
+   */
+  static async handleLearnFromScroll(event, _form) {
+    const spellUuid = event.target.dataset.uuid;
+    const scrollId = event.target.dataset.scrollId;
+    if (!spellUuid || !scrollId) return;
+    const scrollSpellData = this._stateManager.scrollSpells.find((s) => s.spellUuid === spellUuid && s.scrollId === scrollId);
+    if (!scrollSpellData) return;
+    const wizardManager = this.wizardManager;
+    if (!wizardManager) return;
+    const success = await ScrollScanner.learnSpellFromScroll(this.actor, scrollSpellData, wizardManager);
+    if (success) {
+      await this._stateManager.refreshClassSpellData('wizard');
+      this.render(false);
     }
   }
 
