@@ -101,12 +101,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.spellPreparation = { current: 0, maximum: 0 };
     this._newlyCheckedCantrips = new Set();
     this._isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED) || false;
-    this._wizardBookImages = new Map();
     this._wizardInitialized = false;
     this._registerClassParts();
     this._cantripUIInitialized = false;
     this._classColorsApplied = false;
     this._classesChanged = false;
+    this._wizardBookImages = new Map();
     this._flagChangeHook = Hooks.on('updateActor', (updatedActor, changes) => {
       if (updatedActor.id !== this.actor.id) return;
       if (changes.flags?.[MODULE.ID]) {
@@ -502,7 +502,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           } while (usedImages.has(wizardBookImage) && attempts < 10);
           usedImages.add(wizardBookImage);
           this._wizardBookImages.set(identifier, wizardBookImage);
-          log(3, `Cached unique wizard book image for class ${identifier}: ${wizardBookImage}`);
         }
       }
     }
@@ -1293,6 +1292,22 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const { identifier } of wizardClasses) this.wizardManagers.set(identifier, new WizardSpellbookManager(this.actor, identifier));
     await this._registerClassParts();
     await this._stateManager.initialize();
+    if (this.wizardManagers.size > 0) {
+      if (!this._wizardBookImages) this._wizardBookImages = new Map();
+      const usedImages = new Set();
+      for (const [identifier, wizardManager] of this.wizardManagers) {
+        if (wizardManager.isWizard && !this._wizardBookImages.has(identifier)) {
+          let wizardBookImage;
+          let attempts = 0;
+          do {
+            wizardBookImage = await this.ui.getRandomWizardBookImage();
+            attempts++;
+          } while (usedImages.has(wizardBookImage) && attempts < 10);
+          usedImages.add(wizardBookImage);
+          this._wizardBookImages.set(identifier, wizardBookImage);
+        }
+      }
+    }
     if (currentTab && this._stateManager.spellcastingClasses) {
       const classMatch = currentTab.match(/^([^T]+)Tab$/);
       const wizardMatch = currentTab.match(/^wizardbook-(.+)$/);
