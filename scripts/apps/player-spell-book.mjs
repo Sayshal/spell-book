@@ -491,11 +491,18 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     await super._onFirstRender(context, options);
     if (this.wizardManagers.size > 0) {
       this._wizardBookImages = new Map();
+      const usedImages = new Set();
       for (const [identifier, wizardManager] of this.wizardManagers) {
         if (wizardManager.isWizard) {
-          const wizardBookImage = await this.ui.getRandomWizardBookImage();
+          let wizardBookImage;
+          let attempts = 0;
+          do {
+            wizardBookImage = await this.ui.getRandomWizardBookImage();
+            attempts++;
+          } while (usedImages.has(wizardBookImage) && attempts < 10);
+          usedImages.add(wizardBookImage);
           this._wizardBookImages.set(identifier, wizardBookImage);
-          log(3, `Cached wizard book image for class ${identifier}: ${wizardBookImage}`);
+          log(3, `Cached unique wizard book image for class ${identifier}: ${wizardBookImage}`);
         }
       }
     }
@@ -564,14 +571,16 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       this.tabGroups[tabGroup] = `${Object.keys(this._stateManager.spellcastingClasses)[0]}Tab`;
     }
     if (this._stateManager.spellcastingClasses) {
-      for (const [identifier, classData] of Object.entries(this._stateManager.spellcastingClasses)) {
-        const tabId = `${identifier}Tab`;
+      const sortedClassIdentifiers = Object.keys(this._stateManager.spellcastingClasses).sort();
+      for (const identifier of sortedClassIdentifiers) {
+        const classData = this._stateManager.spellcastingClasses[identifier];
+        const classTabId = `${identifier}Tab`;
         const iconPath = classData?.img || 'icons/svg/book.svg';
-        tabs[tabId] = {
-          id: tabId,
+        tabs[classTabId] = {
+          id: classTabId,
           label: game.i18n.format('SPELLBOOK.Tabs.ClassSpells', { class: classData.name }),
           group: tabGroup,
-          cssClass: this.tabGroups[tabGroup] === tabId ? 'active' : '',
+          cssClass: this.tabGroups[tabGroup] === classTabId ? 'active' : '',
           icon: 'fa-solid fa-book-open',
           data: {
             classImg: iconPath,
@@ -579,25 +588,24 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             className: classData.name
           }
         };
-      }
-    }
-    for (const [identifier, wizardManager] of this.wizardManagers) {
-      if (wizardManager.isWizard) {
-        const tabId = `wizardbook-${identifier}`;
-        const className = this._stateManager.classSpellData[identifier]?.className || identifier;
-        const wizardBookImage = this._wizardBookImages?.get(identifier) || 'icons/svg/book.svg';
-        tabs[tabId] = {
-          id: tabId,
-          label: game.i18n.format('SPELLBOOK.Tabs.WizardSpells', { class: className }),
-          group: tabGroup,
-          cssClass: this.tabGroups[tabGroup] === tabId ? 'active' : '',
-          icon: 'fa-solid fa-book-spells',
-          data: {
-            classImg: wizardBookImage,
-            classIdentifier: identifier,
-            className: className
-          }
-        };
+        const wizardManager = this.wizardManagers.get(identifier);
+        if (wizardManager && wizardManager.isWizard) {
+          const wizardTabId = `wizardbook-${identifier}`;
+          const className = classData.name;
+          const wizardBookImage = this._wizardBookImages?.get(identifier) || 'icons/svg/book.svg';
+          tabs[wizardTabId] = {
+            id: wizardTabId,
+            label: game.i18n.format('SPELLBOOK.Tabs.WizardSpells', { class: className }),
+            group: tabGroup,
+            cssClass: this.tabGroups[tabGroup] === wizardTabId ? 'active' : '',
+            icon: 'fa-solid fa-book-spells',
+            data: {
+              classImg: wizardBookImage,
+              classIdentifier: identifier,
+              className: className
+            }
+          };
+        }
       }
     }
     return tabs;
@@ -1280,10 +1288,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this._tabStateCache) this._tabStateCache.clear();
     this.wizardManagers.clear();
     this.ritualManagers.clear();
+    this._wizardBookImages?.clear();
     const wizardClasses = genericUtils.getWizardEnabledClasses(this.actor);
-    for (const { identifier } of wizardClasses) {
-      this.wizardManagers.set(identifier, new WizardSpellbookManager(this.actor, identifier));
-    }
+    for (const { identifier } of wizardClasses) this.wizardManagers.set(identifier, new WizardSpellbookManager(this.actor, identifier));
     await this._registerClassParts();
     await this._stateManager.initialize();
     if (currentTab && this._stateManager.spellcastingClasses) {
