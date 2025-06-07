@@ -14,6 +14,7 @@ Hooks.once('init', async function () {
   await preloadTemplates();
   createAPI();
   registerMigration();
+  registerHandlebarsHelpers();
   log(3, `${MODULE.NAME} initialized!`);
 });
 
@@ -77,4 +78,10 @@ async function preloadTemplates() {
   }
   const templatePaths = flattenTemplateObject(TEMPLATES);
   return loadTemplates(templatePaths);
+}
+
+function registerHandlebarsHelpers() {
+  Handlebars.registerHelper('isWizardTab', function (tabName) {
+    return tabName && (tabName === 'wizardbook' || tabName.startsWith('wizardbook-'));
+  });
 }

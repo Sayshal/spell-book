@@ -1,12 +1,12 @@
-<div class="wizardbook tab {{#if (eq activeTab 'wizardbook')}}active{{/if}}" data-tab="wizardbook"
-	data-group="spellbook-tabs">
+<div class="wizardbook tab {{tab.cssClass}}" data-tab="{{tab.id}}" data-group="{{tab.group}}"
+	data-class-identifier="{{classIdentifier}}">
 	<div class="spells-container">
 		{{#if isLoading}}
 			{{> "modules/spell-book/templates/components/loading-spinner.hbs" size=3 message=(localize 'SPELLBOOK.Application.Loading')}}
 		{{else if hasError}}
 			{{> "modules/spell-book/templates/components/error-message.hbs" message=errorMessage}}
 		{{else}}
-			{{#if isWizard}}
+			{{#if (or isWizard isForceWizard)}}
 				<div class="spellbook-rules">
 					<h3>{{localize 'SPELLBOOK.Wizard.NewSpellsTitle'}}</h3>
 					<p>{{localize 'SPELLBOOK.Wizard.NewSpellsInfo1'}}</p>
@@ -56,9 +56,6 @@
 					<p>{{localize 'SPELLBOOK.Wizard.Unavailable'}}</p>
 				</div>
 			{{/if}}
-			<div class="no-filter-results" style="display: none;" role="status">
-				{{localize 'SPELLBOOK.Filters.NoResults'}}
-			</div>
 		{{/if}}
 	</div>
 </div>

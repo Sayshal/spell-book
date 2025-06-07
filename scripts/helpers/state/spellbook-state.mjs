@@ -575,10 +575,11 @@ export class SpellbookState {
     this.invalidatePreparationStatsCache();
     const classItem = this.actor.items.get(classData.id);
     if (!classItem) return;
-    const isWizardClass = this.app.wizardManager?.isWizard && this.app.wizardManager.classItem?.id === classItem.id;
-    if (isWizardClass) await this.loadWizardSpellData(classItem);
+    if (genericUtils.isClassWizardEnabled(this.actor, classIdentifier)) await this.cacheWizardSpellbook(classIdentifier);
+    if (genericUtils.isClassWizardEnabled(this.actor, classIdentifier)) await this.loadWizardSpellData(classItem, classIdentifier);
     else await this.loadClassSpellData(classIdentifier, classItem);
     this.updateGlobalPreparationCount();
+    log(3, `Refreshed spell data for class ${classIdentifier}`);
   }
 
   /**

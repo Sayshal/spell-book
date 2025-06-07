@@ -69,6 +69,16 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
+   * Get the primary wizard manager (for backward compatibility)
+   * @returns {WizardSpellbookManager|null}
+   */
+  get wizardManager() {
+    for (const [identifier, manager] of this.wizardManagers) if (manager.isWizard) if (identifier === 'wizard') return manager;
+    for (const [identifier, manager] of this.wizardManagers) if (manager.isWizard) return manager;
+    return null;
+  }
+
+  /**
    * Create a new PlayerSpellBook application
    * @param {Actor} actor - The actor whose spells to display
    * @param {Object} options - Application options
@@ -91,6 +101,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.spellPreparation = { current: 0, maximum: 0 };
     this._newlyCheckedCantrips = new Set();
     this._isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED) || false;
+    this._wizardBookImages = new Map();
     this._wizardInitialized = false;
     this._registerClassParts();
     this._cantripUIInitialized = false;
@@ -169,9 +180,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     context.globalPrepared = this._stateManager.spellPreparation;
     context.classPreparationData = this._prepareClassPreparationData();
     context.isWizard = !!this.wizardManager?.isWizard;
-    if (context.isWizard) await this._addWizardContextData(context);
     context.hasMultipleTabs = Object.keys(context.tabs).length > 1;
     context.filters = this._prepareFilters();
+    const activeTab = context.activeTab;
+    if (activeTab && (activeTab === 'wizardbook' || activeTab.startsWith('wizardbook-'))) {
+      const wizardTabData = this._stateManager.tabData?.[activeTab];
+      if (wizardTabData) {
+        context.wizardTotalSpellbookCount = wizardTabData.wizardTotalSpellbookCount || 0;
+        context.wizardFreeSpellbookCount = wizardTabData.wizardFreeSpellbookCount || 0;
+        context.wizardRemainingFreeSpells = wizardTabData.wizardRemainingFreeSpells || 0;
+        context.wizardHasFreeSpells = wizardTabData.wizardHasFreeSpells || false;
+        context.wizardMaxSpellbookCount = wizardTabData.wizardMaxSpellbookCount || 0;
+        context.wizardIsAtMax = wizardTabData.wizardIsAtMax || false;
+      }
+    }
     return context;
   }
 
@@ -218,6 +240,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       log(3, `Processing wizard tab for identifier: ${classIdentifier}`);
       context.classIdentifier = classIdentifier;
       context.className = this._stateManager.classSpellData[classIdentifier]?.className || classIdentifier;
+      const wizardManager = this.wizardManagers.get(classIdentifier);
+      context.isWizard = wizardManager?.isWizard || false;
+      context.isForceWizard = wizardManager?.classItem && genericUtils.isClassWizardEnabled(this.actor, classIdentifier);
       if (this._stateManager.tabData?.[partId]) {
         log(3, `Found tab data for ${partId}, spell levels: ${this._stateManager.tabData[partId].spellLevels?.length || 0}`);
         context.spellLevels = this._stateManager.tabData[partId].spellLevels.map((level) => {
@@ -335,7 +360,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (spell.sourceClass) checkbox.dataset.sourceClass = spell.sourceClass;
     if (spell.preparation.disabled && spell.preparation.disabledReason) checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
     processedSpell.preparationCheckboxHtml = formElements.elementToHtml(checkbox);
-    if (this.wizardManager?.isWizard) processedSpell.inWizardSpellbook = this._stateManager.wizardSpellbookCache?.includes(spell.compendiumUuid) || false;
+    if (spell.sourceClass && this._stateManager.wizardSpellbookCache) {
+      const classSpellbook = this._stateManager.wizardSpellbookCache.get(spell.sourceClass);
+      processedSpell.inWizardSpellbook = classSpellbook ? classSpellbook.includes(spell.compendiumUuid) : false;
+    } else processedSpell.inWizardSpellbook = false;
     return processedSpell;
   }
 
@@ -375,7 +403,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const classes = ['spell-item'];
     if (spell.preparation?.isOwned) classes.push('owned-spell');
     if (spell.preparation?.prepared) classes.push('prepared-spell');
-    if (this.wizardManager?.isWizard && this._stateManager.wizardSpellbookCache?.includes(spell.compendiumUuid)) classes.push('in-wizard-spellbook');
+    if (this._stateManager.wizardSpellbookCache && spell.sourceClass) {
+      const classSpellbook = this._stateManager.wizardSpellbookCache.get(spell.sourceClass);
+      if (classSpellbook && classSpellbook.includes(spell.compendiumUuid)) classes.push('in-wizard-spellbook');
+    }
     return classes.join(' ');
   }
 
@@ -419,36 +450,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     return null;
   }
 
-  /**
-   * Add wizard-specific data to the context
-   * @param {Object} context - The context object to modify
-   * @private
-   */
-  async _addWizardContextData(context) {
-    for (const [identifier, wizardManager] of this.wizardManagers) {
-      if (wizardManager.isWizard) {
-        const wizardBookImage = await this.ui.getRandomWizardBookImage();
-        const tabId = `wizardbook-${identifier}`;
-        const className = this._stateManager.classSpellData[identifier]?.className || identifier;
-        context.tabs[tabId] = {
-          id: tabId,
-          label: game.i18n.format('SPELLBOOK.Tabs.WizardSpells', { class: className }),
-          group: 'spellbook-tabs',
-          cssClass: this.tabGroups['spellbook-tabs'] === tabId ? 'active' : '',
-          icon: 'fa-solid fa-book-open',
-          data: { classImg: wizardBookImage }
-        };
-        if (this._stateManager.tabData?.[tabId]) {
-          const tabData = this._stateManager.tabData[tabId];
-          context.wizardTotalSpellbookCount = tabData.wizardTotalSpellbookCount || 0;
-          context.wizardFreeSpellbookCount = tabData.wizardFreeSpellbookCount || 0;
-          context.wizardRemainingFreeSpells = tabData.wizardRemainingFreeSpells || 0;
-          context.wizardHasFreeSpells = tabData.wizardHasFreeSpells || false;
-        }
-      }
-    }
-  }
-
   /** @inheritdoc */
   async _onRender(context, options) {
     super._onRender(context, options);
@@ -488,7 +489,16 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   async _onFirstRender(context, options) {
     await super._onFirstRender(context, options);
-    if (this.wizardManager?.isWizard) await this.ui.getRandomWizardBookImage();
+    if (this.wizardManagers.size > 0) {
+      this._wizardBookImages = new Map();
+      for (const [identifier, wizardManager] of this.wizardManagers) {
+        if (wizardManager.isWizard) {
+          const wizardBookImage = await this.ui.getRandomWizardBookImage();
+          this._wizardBookImages.set(identifier, wizardBookImage);
+          log(3, `Cached wizard book image for class ${identifier}: ${wizardBookImage}`);
+        }
+      }
+    }
   }
 
   /**
@@ -575,6 +585,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (wizardManager.isWizard) {
         const tabId = `wizardbook-${identifier}`;
         const className = this._stateManager.classSpellData[identifier]?.className || identifier;
+        const wizardBookImage = this._wizardBookImages?.get(identifier) || 'icons/svg/book.svg';
         tabs[tabId] = {
           id: tabId,
           label: game.i18n.format('SPELLBOOK.Tabs.WizardSpells', { class: className }),
@@ -582,6 +593,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           cssClass: this.tabGroups[tabGroup] === tabId ? 'active' : '',
           icon: 'fa-solid fa-book-spells',
           data: {
+            classImg: wizardBookImage,
             classIdentifier: identifier,
             className: className
           }
@@ -988,6 +1000,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         this._stateManager.tabData[wizardTabId].wizardRemainingFreeSpells = Math.max(0, (this._stateManager.tabData[wizardTabId].wizardRemainingFreeSpells || 0) - 1);
         this._stateManager.tabData[wizardTabId].wizardHasFreeSpells = this._stateManager.tabData[wizardTabId].wizardRemainingFreeSpells > 0;
       }
+      const wizardManager = this.wizardManagers.get(classIdentifier);
+      if (wizardManager) wizardManager.invalidateCache();
     }
   }
 
@@ -1152,20 +1166,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const result = await DialogV2.wait({
       title: game.i18n.format('SPELLBOOK.Wizard.LearnSpellTitle', { name: spell.name }),
       content: `
-      <form class="wizard-copy-form">
-        <p>${game.i18n.format('SPELLBOOK.Wizard.LearnSpellPrompt', { name: spell.name })}</p>
-        <div class="copy-details">
-          <div class="form-group">
-            <label>${game.i18n.localize('SPELLBOOK.Wizard.CostLabel')}:</label>
-            <span>${costText}</span>
-          </div>
-          <div class="form-group">
-            <label>${game.i18n.localize('SPELLBOOK.Wizard.TimeLabel')}:</label>
-            <span>${game.i18n.format('SPELLBOOK.Wizard.SpellCopyTime', { hours: time })}</span>
-          </div>
+    <form class="wizard-copy-form">
+      <p>${game.i18n.format('SPELLBOOK.Wizard.LearnSpellPrompt', { name: spell.name })}</p>
+      <div class="copy-details">
+        <div class="form-group">
+          <label>${game.i18n.localize('SPELLBOOK.Wizard.CostLabel')}:</label>
+          <span>${costText}</span>
         </div>
-      </form>
-    `,
+        <div class="form-group">
+          <label>${game.i18n.localize('SPELLBOOK.Wizard.TimeLabel')}:</label>
+          <span>${game.i18n.format('SPELLBOOK.Wizard.SpellCopyTime', { hours: time })}</span>
+        </div>
+      </div>
+    </form>
+  `,
       buttons: [
         { icon: 'fas fa-book', label: game.i18n.localize('SPELLBOOK.Wizard.LearnSpellButton'), action: 'confirm', className: 'dialog-button' },
         { icon: 'fas fa-times', label: game.i18n.localize('SPELLBOOK.UI.Cancel'), action: 'cancel', className: 'dialog-button' }
@@ -1190,7 +1204,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           }
           spellItem.classList.add('in-wizard-spellbook', 'prepared-spell');
         }
-        this._spellsTabNeedsReload = true;
         this.render(false);
         setTimeout(() => {
           if (activeTab && this.tabGroups['spellbook-tabs'] !== activeTab) {
