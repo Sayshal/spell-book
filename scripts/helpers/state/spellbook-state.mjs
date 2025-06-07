@@ -288,7 +288,7 @@ export class SpellbookState {
     let preparedCount = 0;
     const baseMaxPrepared = classItem?.system?.spellcasting?.preparation?.max || 0;
     const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
-    const preparationBonus = classRules?.preparationBonus || 0;
+    const preparationBonus = classRules?.spellPreparationBonus || 0;
     const maxPrepared = baseMaxPrepared + preparationBonus;
     if (!Array.isArray(spellLevels)) spellLevels = [];
     for (const level of spellLevels) {

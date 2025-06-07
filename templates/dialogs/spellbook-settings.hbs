@@ -59,9 +59,13 @@
                   <span
                     class="cantrip-count">{{localize 'SPELLBOOK.Settings.CantripsKnown' current=classData.stats.currentCantrips max=classData.stats.maxCantrips}}</span>
                 {{/if}}
-                <span class="preparation-bonus {{#if (ne classData.rules.preparationBonus 0)}}has-bonus{{/if}}">
-                  {{#if (gt classData.rules.preparationBonus 0)}}+{{classData.rules.preparationBonus}}{{else if (lt classData.rules.preparationBonus 0)}}{{classData.rules.preparationBonus}}{{else}}±0{{/if}}
-                  {{localize 'SPELLBOOK.Settings.PreparationBonus.Text'}}
+                <span class="preparation-bonus {{#if (ne classData.rules.spellPreparationBonus 0)}}has-bonus{{/if}}">
+                  {{#if (gt classData.rules.spellPreparationBonus 0)}}+{{classData.rules.spellPreparationBonus}}{{else if (lt classData.rules.spellPreparationBonus 0)}}{{classData.rules.spellPreparationBonus}}{{else}}±0{{/if}}
+                  {{localize 'SPELLBOOK.Settings.SpellPreparationBonus.Text'}}
+                </span>
+                <span class="preparation-bonus {{#if (ne classData.rules.cantripPreparationBonus 0)}}has-bonus{{/if}}">
+                  {{#if (gt classData.rules.cantripPreparationBonus 0)}}+{{classData.rules.cantripPreparationBonus}}{{else if (lt classData.rules.cantripPreparationBonus 0)}}{{classData.rules.cantripPreparationBonus}}{{else}}±0{{/if}}
+                  {{localize 'SPELLBOOK.Settings.CantripPreparationBonus.Text'}}
                 </span>
               </div>
             </div>
@@ -115,13 +119,22 @@
                 {{{classData.formElements.customSpellListSelectHtml}}}
               </div>
 
-              {{!-- Preparation Bonus Setting --}}
+              {{!-- Spell Preparation Bonus Setting --}}
               <div class="setting-row">
                 <label
-                  for="preparation-bonus-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.PreparationBonus.Label'}}</label>
+                  for="spell-preparation-bonus-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.SpellPreparationBonus.Label'}}</label>
                 <i class="fas fa-question-circle setting-tooltip"
-                  data-tooltip="{{localize 'SPELLBOOK.Settings.PreparationBonus.Hint'}}"></i>
-                {{{classData.formElements.preparationBonusControlsHtml}}}
+                  data-tooltip="{{localize 'SPELLBOOK.Settings.SpellPreparationBonus.Hint'}}"></i>
+                {{{classData.formElements.spellPreparationBonusControlsHtml}}}
+              </div>
+
+              {{!-- Cantrip Preparation Bonus Setting --}}
+              <div class="setting-row {{#unless classData.rules.showCantrips}}disabled{{/unless}}">
+                <label
+                  for="cantrip-preparation-bonus-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.CantripPreparationBonus.Label'}}</label>
+                <i class="fas fa-question-circle setting-tooltip"
+                  data-tooltip="{{localize 'SPELLBOOK.Settings.CantripPreparationBonus.Hint'}}"></i>
+                {{{classData.formElements.cantripPreparationBonusControlsHtml}}}
               </div>
             </div>
           </div>

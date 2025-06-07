@@ -19,8 +19,10 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       submitOnChange: false
     },
     actions: {
-      increasePrepBonus: SpellbookSettingsDialog.increasePrepBonus,
-      decreasePrepBonus: SpellbookSettingsDialog.decreasePrepBonus
+      increaseSpellPrepBonus: SpellbookSettingsDialog.increaseSpellPrepBonus,
+      decreaseSpellPrepBonus: SpellbookSettingsDialog.decreaseSpellPrepBonus,
+      increaseCantripPrepBonus: SpellbookSettingsDialog.increaseCantripPrepBonus,
+      decreaseCantripPrepBonus: SpellbookSettingsDialog.decreaseCantripPrepBonus
     },
     classes: ['spellbook-settings-dialog'],
     window: {
@@ -140,17 +142,18 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     for (const classItem of classItems) {
       const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
       const processedClassRules = RuleSetManager.getClassRules(this.actor, identifier);
-      const savedClassRules = currentClassRules[identifier] || {};
+      const savedRules = currentClassRules[identifier] || {};
       const spellManager = new SpellManager(this.actor);
       const maxCantrips = spellManager.getMaxAllowed(identifier);
       const currentCantrips = spellManager.getCurrentCount(identifier);
       const formRules = {
-        showCantrips: savedClassRules.hasOwnProperty('showCantrips') ? savedClassRules.showCantrips : processedClassRules.showCantrips,
-        cantripSwapping: savedClassRules.cantripSwapping || processedClassRules.cantripSwapping || 'none',
-        spellSwapping: savedClassRules.spellSwapping || processedClassRules.spellSwapping || 'none',
-        ritualCasting: savedClassRules.ritualCasting || processedClassRules.ritualCasting || 'none',
-        customSpellList: savedClassRules.customSpellList || processedClassRules.customSpellList || '',
-        preparationBonus: savedClassRules.hasOwnProperty('preparationBonus') ? savedClassRules.preparationBonus : processedClassRules.preparationBonus || 0,
+        showCantrips: savedRules.hasOwnProperty('showCantrips') ? savedRules.showCantrips : processedClassRules.showCantrips,
+        cantripSwapping: savedRules.cantripSwapping || processedClassRules.cantripSwapping || 'none',
+        spellSwapping: savedRules.spellSwapping || processedClassRules.spellSwapping || 'none',
+        ritualCasting: savedRules.ritualCasting || processedClassRules.ritualCasting || 'none',
+        customSpellList: savedRules.customSpellList || processedClassRules.customSpellList || '',
+        spellPreparationBonus: savedRules.hasOwnProperty('spellPreparationBonus') ? savedRules.spellPreparationBonus : processedClassRules.spellPreparationBonus || 0,
+        cantripPreparationBonus: savedRules.hasOwnProperty('cantripPreparationBonus') ? savedRules.cantripPreparationBonus : processedClassRules.cantripPreparationBonus || 0,
         _noScaleValue: processedClassRules._noScaleValue
       };
       const hasCustomSpellList = !!formRules.customSpellList;
@@ -281,50 +284,113 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.CustomSpellList.Label')
     });
     customSpellListSelect.id = `custom-spell-list-${identifier}`;
-    const preparationBonusControls = this._createPreparationBonusControls(identifier, formRules.preparationBonus);
+    const spellPreparationBonusControls = this._createSpellPreparationBonusControls(identifier, formRules.spellPreparationBonus);
+    const cantripPreparationBonusControls = this._createCantripPreparationBonusControls(identifier, formRules.cantripPreparationBonus);
     return {
       showCantripsCheckboxHtml: formElements.elementToHtml(showCantripsCheckbox),
       cantripSwappingSelectHtml: formElements.elementToHtml(cantripSwappingSelect),
       spellSwappingSelectHtml: formElements.elementToHtml(spellSwappingSelect),
       ritualCastingSelectHtml: formElements.elementToHtml(ritualCastingSelect),
       customSpellListSelectHtml: formElements.elementToHtml(customSpellListSelect),
-      preparationBonusControlsHtml: preparationBonusControls
+      spellPreparationBonusControlsHtml: spellPreparationBonusControls,
+      cantripPreparationBonusControlsHtml: cantripPreparationBonusControls
     };
   }
 
   /**
-   * Create preparation bonus controls (decrease button, input, increase button)
+   * Create spell preparation bonus controls (decrease button, input, increase button)
    * @param {string} identifier - The class identifier
-   * @param {number} currentValue - The current preparation bonus value
-   * @returns {string} HTML string for the preparation bonus controls
+   * @param {number} currentValue - The current spell preparation bonus value
+   * @returns {string} HTML string for the spell preparation bonus controls
    * @private
    */
-  _createPreparationBonusControls(identifier, currentValue) {
+  _createSpellPreparationBonusControls(identifier, currentValue) {
     const container = document.createElement('div');
     container.className = 'preparation-bonus-controls';
+    const classItem = this.actor.items.find((item) => item.type === 'class' && (item.system.identifier?.toLowerCase() === identifier || item.name.toLowerCase() === identifier));
+    const baseMaxSpells = classItem?.system?.spellcasting?.preparation?.max || 0;
+    const minValue = -baseMaxSpells;
     const decreaseButton = document.createElement('button');
     decreaseButton.type = 'button';
     decreaseButton.className = 'prep-bonus-decrease';
     decreaseButton.dataset.class = identifier;
-    decreaseButton.dataset.action = 'decreasePrepBonus';
+    decreaseButton.dataset.action = 'decreaseSpellPrepBonus';
     decreaseButton.textContent = '−';
-    decreaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.Decrease'));
+    decreaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.SpellPreparationBonus.Decrease'));
     const input = formElements.createNumberInput({
-      name: `class.${identifier}.preparationBonus`,
+      name: `class.${identifier}.spellPreparationBonus`,
       value: currentValue,
-      min: -10,
+      min: minValue,
       max: 20,
       cssClass: 'prep-bonus-input',
-      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.Label')
+      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.SpellPreparationBonus.Label')
     });
-    input.id = `preparation-bonus-${identifier}`;
+    input.id = `spell-preparation-bonus-${identifier}`;
     const increaseButton = document.createElement('button');
     increaseButton.type = 'button';
     increaseButton.className = 'prep-bonus-increase';
     increaseButton.dataset.class = identifier;
-    increaseButton.dataset.action = 'increasePrepBonus';
+    increaseButton.dataset.action = 'increaseSpellPrepBonus';
     increaseButton.textContent = '+';
-    increaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.Increase'));
+    increaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.SpellPreparationBonus.Increase'));
+    container.appendChild(decreaseButton);
+    container.appendChild(input);
+    container.appendChild(increaseButton);
+    return formElements.elementToHtml(container);
+  }
+
+  /**
+   * Create cantrip preparation bonus controls (decrease button, input, increase button)
+   * @param {string} identifier - The class identifier
+   * @param {number} currentValue - The current cantrip preparation bonus value
+   * @returns {string} HTML string for the cantrip preparation bonus controls
+   * @private
+   */
+  _createCantripPreparationBonusControls(identifier, currentValue) {
+    const container = document.createElement('div');
+    container.className = 'preparation-bonus-controls';
+    const classItem = this.actor.items.find((item) => item.type === 'class' && (item.system.identifier?.toLowerCase() === identifier || item.name.toLowerCase() === identifier));
+    let baseMaxCantrips = 0;
+    if (classItem) {
+      const cantripScaleValuesSetting = game.settings.get(MODULE.ID, SETTINGS.CANTRIP_SCALE_VALUES);
+      const cantripScaleKeys = cantripScaleValuesSetting
+        .split(',')
+        .map((v) => v.trim())
+        .filter((v) => v.length > 0);
+      if (classItem.scaleValues) {
+        for (const key of cantripScaleKeys) {
+          const cantripValue = classItem.scaleValues[key]?.value;
+          if (cantripValue !== undefined) {
+            baseMaxCantrips = cantripValue;
+            break;
+          }
+        }
+      }
+    }
+    const minValue = -baseMaxCantrips;
+    const decreaseButton = document.createElement('button');
+    decreaseButton.type = 'button';
+    decreaseButton.className = 'prep-bonus-decrease';
+    decreaseButton.dataset.class = identifier;
+    decreaseButton.dataset.action = 'decreaseCantripPrepBonus';
+    decreaseButton.textContent = '−';
+    decreaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.CantripPreparationBonus.Decrease'));
+    const input = formElements.createNumberInput({
+      name: `class.${identifier}.cantripPreparationBonus`,
+      value: currentValue,
+      min: minValue,
+      max: 20,
+      cssClass: 'prep-bonus-input',
+      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.CantripPreparationBonus.Label')
+    });
+    input.id = `cantrip-preparation-bonus-${identifier}`;
+    const increaseButton = document.createElement('button');
+    increaseButton.type = 'button';
+    increaseButton.className = 'prep-bonus-increase';
+    increaseButton.dataset.class = identifier;
+    increaseButton.dataset.action = 'increaseCantripPrepBonus';
+    increaseButton.textContent = '+';
+    increaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.CantripPreparationBonus.Increase'));
     container.appendChild(decreaseButton);
     container.appendChild(input);
     container.appendChild(increaseButton);
@@ -403,77 +469,143 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Increase preparation bonus for a specific class
+   * Increase spell preparation bonus for a specific class
    * @param {Event} event - The click event
    * @param {HTMLElement} target - The clicked button
    * @static
    */
-  static increasePrepBonus(event, target) {
+  static increaseSpellPrepBonus(event, target) {
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
-    const input = this.element.querySelector(`input[name="class.${classIdentifier}.preparationBonus"]`);
+    const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellPreparationBonus"]`);
     if (!input) return;
     const currentValue = parseInt(input.value) || 0;
     const newValue = Math.min(currentValue + 1, 20);
     input.value = newValue;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-    this._updateClassStatsDisplay(classIdentifier, newValue);
-    log(3, `Increased preparation bonus for ${classIdentifier} to ${newValue}`);
+    this._updateClassStatsDisplay(classIdentifier, 'spell', newValue);
+    log(3, `Increased spell preparation bonus for ${classIdentifier} to ${newValue}`);
   }
 
   /**
-   * Decrease preparation bonus for a specific class
+   * Decrease spell preparation bonus for a specific class
    * @param {Event} event - The click event
    * @param {HTMLElement} target - The clicked button
    * @static
    */
-  static decreasePrepBonus(event, target) {
+  static decreaseSpellPrepBonus(event, target) {
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
-    const input = this.element.querySelector(`input[name="class.${classIdentifier}.preparationBonus"]`);
+    const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellPreparationBonus"]`);
     if (!input) return;
     const classItem = this.actor.items.find(
       (item) => item.type === 'class' && (item.system.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier)
     );
-    let minimumBonus = -10;
-    if (classItem) {
-      const baseMax = classItem.system?.spellcasting?.preparation?.max || 0;
-      minimumBonus = -baseMax;
-    } else {
-      log(2, `Could not find class item for identifier ${classIdentifier}, using fallback minimum`);
-    }
+    const baseMax = classItem?.system?.spellcasting?.preparation?.max || 0;
+    const minimumBonus = -baseMax;
     const currentValue = parseInt(input.value) || 0;
     const newValue = Math.max(currentValue - 1, minimumBonus);
     input.value = newValue;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-    this._updateClassStatsDisplay(classIdentifier, newValue);
+    this._updateClassStatsDisplay(classIdentifier, 'spell', newValue);
     if (newValue === minimumBonus && currentValue > minimumBonus) {
-      const baseMax = classItem?.system?.spellcasting?.preparation?.max || 0;
       const message =
         baseMax > 0 ?
-          game.i18n.format('SPELLBOOK.Settings.PreparationBonus.MinimumReached', {
+          game.i18n.format('SPELLBOOK.Settings.SpellPreparationBonus.MinimumReached', {
             class: classItem?.name || classIdentifier,
             total: baseMax + newValue
           })
-        : game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.MinimumReachedGeneric');
+        : game.i18n.localize('SPELLBOOK.Settings.SpellPreparationBonus.MinimumReachedGeneric');
       ui.notifications.info(message);
     }
-    log(3, `Decreased preparation bonus for ${classIdentifier} to ${newValue}`);
+    log(3, `Decreased spell preparation bonus for ${classIdentifier} to ${newValue}`);
+  }
+
+  /**
+   * Increase cantrip preparation bonus for a specific class
+   * @param {Event} event - The click event
+   * @param {HTMLElement} target - The clicked button
+   * @static
+   */
+  static increaseCantripPrepBonus(event, target) {
+    const classIdentifier = target.dataset.class;
+    if (!classIdentifier) return;
+    const input = this.element.querySelector(`input[name="class.${classIdentifier}.cantripPreparationBonus"]`);
+    if (!input) return;
+    const currentValue = parseInt(input.value) || 0;
+    const newValue = Math.min(currentValue + 1, 20);
+    input.value = newValue;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    this._updateClassStatsDisplay(classIdentifier, 'cantrip', newValue);
+    log(3, `Increased cantrip preparation bonus for ${classIdentifier} to ${newValue}`);
+  }
+
+  /**
+   * Decrease cantrip preparation bonus for a specific class
+   * @param {Event} event - The click event
+   * @param {HTMLElement} target - The clicked button
+   * @static
+   */
+  static decreaseCantripPrepBonus(event, target) {
+    const classIdentifier = target.dataset.class;
+    if (!classIdentifier) return;
+    const input = this.element.querySelector(`input[name="class.${classIdentifier}.cantripPreparationBonus"]`);
+    if (!input) return;
+    const classItem = this.actor.items.find(
+      (item) => item.type === 'class' && (item.system.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier)
+    );
+    let baseMaxCantrips = 0;
+    if (classItem) {
+      const cantripScaleValuesSetting = game.settings.get(MODULE.ID, SETTINGS.CANTRIP_SCALE_VALUES);
+      const cantripScaleKeys = cantripScaleValuesSetting
+        .split(',')
+        .map((v) => v.trim())
+        .filter((v) => v.length > 0);
+      if (classItem.scaleValues) {
+        for (const key of cantripScaleKeys) {
+          const cantripValue = classItem.scaleValues[key]?.value;
+          if (cantripValue !== undefined) {
+            baseMaxCantrips = cantripValue;
+            break;
+          }
+        }
+      }
+    }
+    const minimumBonus = -baseMaxCantrips;
+    const currentValue = parseInt(input.value) || 0;
+    const newValue = Math.max(currentValue - 1, minimumBonus);
+    input.value = newValue;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    this._updateClassStatsDisplay(classIdentifier, 'cantrip', newValue);
+    if (newValue === minimumBonus && currentValue > minimumBonus) {
+      const message =
+        baseMaxCantrips > 0 ?
+          game.i18n.format('SPELLBOOK.Settings.CantripPreparationBonus.MinimumReached', {
+            class: classItem?.name || classIdentifier,
+            total: baseMaxCantrips + newValue
+          })
+        : game.i18n.localize('SPELLBOOK.Settings.CantripPreparationBonus.MinimumReachedGeneric');
+      ui.notifications.info(message);
+    }
+    log(3, `Decreased cantrip preparation bonus for ${classIdentifier} to ${newValue}`);
   }
 
   /**
    * Update the visual display of class stats when preparation bonus changes
    * @param {string} classIdentifier - The class identifier
+   * @param {string} bonusType - The type of bonus ('spell' or 'cantrip')
    * @param {number} newBonus - The new bonus value
    * @private
    */
-  _updateClassStatsDisplay(classIdentifier, newBonus) {
+  _updateClassStatsDisplay(classIdentifier, bonusType, newBonus) {
     const classSection = this.element.querySelector(`[data-class="${classIdentifier}"]`);
-    const bonusDisplay = classSection?.querySelector('.preparation-bonus');
+    const selector = bonusType === 'spell' ? '.spell-preparation-bonus' : '.cantrip-preparation-bonus';
+    const bonusDisplay = classSection?.querySelector(selector);
     if (bonusDisplay) {
-      if (newBonus > 0) bonusDisplay.textContent = `+${newBonus} ${game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.Text')}`;
-      else if (newBonus < 0) bonusDisplay.textContent = `${newBonus} ${game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.Text')}`;
-      else bonusDisplay.textContent = `±0 ${game.i18n.localize('SPELLBOOK.Settings.PreparationBonus.Text')}`;
+      const labelKey = bonusType === 'spell' ? 'SPELLBOOK.Settings.SpellPreparationBonus.Text' : 'SPELLBOOK.Settings.CantripPreparationBonus.Text';
+      if (newBonus > 0) bonusDisplay.textContent = `+${newBonus} ${game.i18n.localize(labelKey)}`;
+      else if (newBonus < 0) bonusDisplay.textContent = `${newBonus} ${game.i18n.localize(labelKey)}`;
+      else bonusDisplay.textContent = `±0 ${game.i18n.localize(labelKey)}`;
       bonusDisplay.classList.toggle('has-bonus', newBonus !== 0);
     }
   }
@@ -505,7 +637,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         if (wasShowingCantrips && !willShowCantrips) cantripVisibilityChanges[classId] = 'disabled';
         else if (!wasShowingCantrips && willShowCantrips) cantripVisibilityChanges[classId] = 'enabled';
         const processedRules = {};
-        if (rules.preparationBonus !== undefined) processedRules.preparationBonus = parseInt(rules.preparationBonus) || 0;
+        if (rules.spellPreparationBonus !== undefined) processedRules.spellPreparationBonus = parseInt(rules.spellPreparationBonus) || 0;
+        if (rules.cantripPreparationBonus !== undefined) processedRules.cantripPreparationBonus = parseInt(rules.cantripPreparationBonus) || 0;
         if (rules.showCantrips !== undefined) processedRules.showCantrips = Boolean(rules.showCantrips);
         if (rules.customSpellList !== undefined) processedRules.customSpellList = rules.customSpellList || null;
         ['cantripSwapping', 'spellSwapping', 'ritualCasting'].forEach((prop) => {

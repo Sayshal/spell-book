@@ -129,7 +129,8 @@ export class RuleSetManager {
       ritualCasting: MODULE.RITUAL_CASTING_MODES.NONE,
       showCantrips: true,
       customSpellList: null,
-      preparationBonus: 0
+      spellPreparationBonus: 0,
+      cantripPreparationBonus: 0
     };
     if (ruleSet === MODULE.RULE_SETS.LEGACY) RuleSetManager._applyLegacyDefaults(classIdentifier, defaults);
     else if (ruleSet === MODULE.RULE_SETS.MODERN) RuleSetManager._applyModernDefaults(classIdentifier, defaults);

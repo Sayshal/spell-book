@@ -153,7 +153,7 @@ export class SpellbookUI {
     if (!classData) return;
     const classRules = RuleSetManager.getClassRules(this.app.actor, classIdentifier);
     const baseMaxPrepared = classData.classItem?.system?.spellcasting?.preparation?.max || 0;
-    const preparationBonus = classRules?.preparationBonus || 0;
+    const preparationBonus = classRules?.spellPreparationBonus || 0;
     const classMaxPrepared = baseMaxPrepared + preparationBonus;
     let classPreparedCount = 0;
     const preparedCheckboxes = activeTabContent.querySelectorAll('dnd5e-checkbox[data-uuid]:not([disabled])');
