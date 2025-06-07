@@ -94,7 +94,6 @@
 
     > .tab {
       inset: 0 0 20px var(--spell-book-sidebar-width);
-      display: none;
       position: absolute;
       padding: 0.6rem 0.6rem 0.6rem 1.5rem;
       overflow-y: auto;
@@ -102,10 +101,6 @@
 
     &:has(.collapsed-footer:not(.hidden)) > .tab {
       inset: 0 0 90px;
-    }
-
-    > .tab.active {
-      display: block;
     }
 
     .collapsed-footer {
@@ -116,10 +111,9 @@
       left: 0;
       height: auto;
       box-shadow: var(--spell-book-shadow-top);
-
-      &.hidden {
-        display: none;
-      }
+      padding: 0.5rem;
+      border-top: 1px solid var(--color-border-light-tertiary);
+      background: var(--spell-book-bg-primary);
 
       .spell-prep-tracking,
       .spell-book-tracking {
@@ -142,14 +136,6 @@
     overflow: hidden;
   }
 
-  /* Main container - positioned relative to sidebar */
-  .spell-book-container {
-    inset: 0 0 0 var(--spell-book-sidebar-width);
-    position: absolute;
-    overflow: visible;
-    transition: var(--spell-book-transition-slow);
-  }
-
   /* Main content area */
   .spell-book-content {
     position: relative;
@@ -159,20 +145,6 @@
     padding-bottom: 3.75rem;
     overflow: auto;
     transition: var(--spell-book-transition-slow);
-  }
-
-  /* Collapsed footer */
-  .collapsed-footer {
-    display: none;
-    z-index: var(--spell-book-z-index-footer);
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    padding: 0.5rem;
-    border-top: 1px solid var(--color-border-light-tertiary);
-    background: var(--spell-book-bg-primary);
-    box-shadow: var(--spell-book-shadow-top);
   }
 
   /* Collapsed sidebar styles */
@@ -898,18 +870,11 @@
     gap: 0.5rem;
     display: flex;
     flex-direction: row;
-    align-items: stretch;
 
     button {
-      display: flex;
-      flex: 0 1 auto;
-      justify-content: center;
-      align-items: center;
       width: auto;
       min-width: 0;
       padding: 0.25rem 1rem;
-      font-size: var(--spell-book-font-md);
-      white-space: nowrap;
       transition: all 0.4s ease;
     }
   }
@@ -984,8 +949,8 @@
     /* Class Icon Images Styling */
     img.tab-icon {
       object-fit: cover;
-      width: 32px;
-      height: 32px;
+      width: 24px;
+      height: 24px;
       border: none;
       border-radius: 50%;
     }
@@ -1026,13 +991,6 @@
   font-size: 1.25rem;
   font-family: var(--dnd5e-font-primary);
   text-shadow: none;
-}
-
-/* ----------------------------------------- */
-/*  Tab Content                              */
-/* ----------------------------------------- */
-.spell-book .tab {
-  padding: 0.5rem;
 }
 
 /* ----------------------------------------- */

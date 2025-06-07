@@ -39,7 +39,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       learnSpell: PlayerSpellBook.learnSpell,
       learnFromScroll: PlayerSpellBook.handleLearnFromScroll
     },
-    classes: ['spell-book', 'vertical-tabs'],
+    classes: ['dnd5e2', 'spell-book', 'vertical-tabs'],
     window: {
       icon: 'fas fa-book-open',
       resizable: true,
