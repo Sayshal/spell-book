@@ -115,7 +115,6 @@
   "SPELLBOOK.Settings.CantripSwapping.LongRest": "On Long Rest",
   "SPELLBOOK.Settings.CantripSwapping.None": "No Swapping",
   "SPELLBOOK.Settings.CantripsKnown": "{current}/{max} Cantrips",
-  "SPELLBOOK.Settings.ClassRules.Description": "Configure spellcasting rules for each class individually.",
   "SPELLBOOK.Settings.ClassRules.Title": "Per-Class Rules",
   "SPELLBOOK.Settings.ConfigureFilters": "Configure Filters",
   "SPELLBOOK.Settings.ConsumeScrollsWhenLearning.Hint": "Whether spell scrolls should be consumed when learning spells from them in the wizard spellbook.",

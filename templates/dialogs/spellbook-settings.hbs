@@ -43,8 +43,6 @@
   {{#if spellcastingClasses.length}}
     <fieldset class="settings-fieldset class-rules-fieldset">
       <legend>{{localize 'SPELLBOOK.Settings.ClassRules.Title'}}</legend>
-      <p class="fieldset-description">{{localize 'SPELLBOOK.Settings.ClassRules.Description'}}</p>
-
       <div class="class-rules-content">
         {{#each spellcastingClasses as |classData|}}
           <div class="class-settings-section {{#if classData.rules._noScaleValue}}has-issues{{/if}}"

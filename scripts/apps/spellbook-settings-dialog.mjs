@@ -24,7 +24,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       increaseCantripPrepBonus: SpellbookSettingsDialog.increaseCantripPrepBonus,
       decreaseCantripPrepBonus: SpellbookSettingsDialog.decreaseCantripPrepBonus
     },
-    classes: ['spellbook-settings-dialog'],
+    classes: ['dnd5e2', 'spellbook-settings-dialog'],
     window: {
       icon: 'fas fa-book-spells',
       resizable: true,
