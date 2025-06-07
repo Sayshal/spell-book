@@ -130,7 +130,8 @@ export class RuleSetManager {
       showCantrips: true,
       customSpellList: null,
       spellPreparationBonus: 0,
-      cantripPreparationBonus: 0
+      cantripPreparationBonus: 0,
+      forceWizardMode: false
     };
     if (ruleSet === MODULE.RULE_SETS.LEGACY) RuleSetManager._applyLegacyDefaults(classIdentifier, defaults);
     else if (ruleSet === MODULE.RULE_SETS.MODERN) RuleSetManager._applyModernDefaults(classIdentifier, defaults);

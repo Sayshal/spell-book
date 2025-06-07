@@ -214,7 +214,6 @@ export const FLAGS = {
   COLLAPSED_LEVELS: 'collapsedSpellLevels',
   ENFORCEMENT_BEHAVIOR: 'enforcementBehavior',
   LONG_REST_COMPLETED: 'longRestCompleted',
-  FORCE_WIZARD_MODE: 'forceWizardMode',
   GM_COLLAPSED_LEVELS: 'gmCollapsedSpellLevels',
   PREPARED_SPELLS_BY_CLASS: 'preparedSpellsByClass',
   PREPARED_SPELLS: 'preparedSpells',

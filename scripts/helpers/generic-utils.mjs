@@ -6,9 +6,11 @@ import { FLAGS, MODULE } from '../constants.mjs';
  * @returns {boolean} True if actor has a wizard class or force wizard mode is enabled
  */
 export function isWizard(actor) {
-  if (actor.getFlag(MODULE.ID, FLAGS.FORCE_WIZARD_MODE)) return true;
   const localizedWizardName = game.i18n.localize('SPELLBOOK.Classes.Wizard').toLowerCase();
-  return !!actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === localizedWizardName);
+  const hasWizardClass = !!actor.items.find((i) => i.type === 'class' && i.name.toLowerCase() === localizedWizardName);
+  const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+  const hasForceWizardMode = Object.values(classRules).some((rules) => rules.forceWizardMode === true);
+  return hasWizardClass || hasForceWizardMode;
 }
 
 /**
@@ -56,4 +58,38 @@ export function findWizardClass(actor) {
     if (wizardByName) return wizardByName;
   }
   return null;
+}
+
+/**
+ * Get all wizard-enabled classes for an actor (including force wizard mode classes)
+ * @param {Actor5e} actor - The actor to check
+ * @returns {Array} Array of class identifiers that are wizard-enabled
+ */
+export function getWizardEnabledClasses(actor) {
+  const wizardClasses = [];
+  const localizedWizardName = game.i18n.localize('SPELLBOOK.Classes.Wizard').toLowerCase();
+  const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+  for (const classItem of actor.items.filter((i) => i.type === 'class')) {
+    const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
+    const isNaturalWizard = classItem.name.toLowerCase() === localizedWizardName;
+    const hasForceWizard = classRules[identifier]?.forceWizardMode === true;
+    if (isNaturalWizard || hasForceWizard) wizardClasses.push({ identifier, classItem, isNaturalWizard, isForceWizard: hasForceWizard });
+  }
+  return wizardClasses;
+}
+
+/**
+ * Check if a specific class is wizard-enabled
+ * @param {Actor5e} actor - The actor to check
+ * @param {string} classIdentifier - The class identifier to check
+ * @returns {boolean} True if the class is wizard-enabled
+ */
+export function isClassWizardEnabled(actor, classIdentifier) {
+  const classItem = actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier));
+  if (!classItem) return false;
+  const localizedWizardName = game.i18n.localize('SPELLBOOK.Classes.Wizard').toLowerCase();
+  const isNaturalWizard = classItem.name.toLowerCase() === localizedWizardName;
+  const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+  const hasForceWizard = classRules[classIdentifier]?.forceWizardMode === true;
+  return isNaturalWizard || hasForceWizard;
 }

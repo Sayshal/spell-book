@@ -148,6 +148,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       const currentCantrips = spellManager.getCurrentCount(identifier);
       const formRules = {
         showCantrips: savedRules.hasOwnProperty('showCantrips') ? savedRules.showCantrips : processedClassRules.showCantrips,
+        forceWizardMode: savedRules.hasOwnProperty('forceWizardMode') ? savedRules.forceWizardMode : processedClassRules.forceWizardMode,
         cantripSwapping: savedRules.cantripSwapping || processedClassRules.cantripSwapping || 'none',
         spellSwapping: savedRules.spellSwapping || processedClassRules.spellSwapping || 'none',
         ritualCasting: savedRules.ritualCasting || processedClassRules.ritualCasting || 'none',
@@ -200,6 +201,12 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.ShowCantrips.Label')
     });
     showCantripsCheckbox.id = `show-cantrips-${identifier}`;
+    const forceWizardCheckbox = formElements.createCheckbox({
+      name: `class.${identifier}.forceWizardMode`,
+      checked: formRules.forceWizardMode,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.ForceWizardMode.Label')
+    });
+    forceWizardCheckbox.id = `force-wizard-mode-${identifier}`;
     const cantripSwappingValue = formRules.cantripSwapping;
     const cantripSwappingOptions = [
       {
@@ -288,6 +295,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     const cantripPreparationBonusControls = this._createCantripPreparationBonusControls(identifier, formRules.cantripPreparationBonus);
     return {
       showCantripsCheckboxHtml: formElements.elementToHtml(showCantripsCheckbox),
+      forceWizardModeCheckboxHtml: formElements.elementToHtml(forceWizardCheckbox),
       cantripSwappingSelectHtml: formElements.elementToHtml(cantripSwappingSelect),
       spellSwappingSelectHtml: formElements.elementToHtml(spellSwappingSelect),
       ritualCastingSelectHtml: formElements.elementToHtml(ritualCastingSelect),
@@ -629,6 +637,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     actor.setFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR, enforcementBehavior);
     if (ruleSetOverride && ruleSetOverride !== previousRuleSetOverride) RuleSetManager.applyRuleSetToActor(actor, ruleSetOverride);
     const cantripVisibilityChanges = {};
+    const wizardModeChanges = {};
     if (expandedData.class) {
       for (const [classId, rules] of Object.entries(expandedData.class)) {
         const currentRules = currentClassRules[classId] || {};
@@ -636,10 +645,15 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         const willShowCantrips = rules.showCantrips !== false;
         if (wasShowingCantrips && !willShowCantrips) cantripVisibilityChanges[classId] = 'disabled';
         else if (!wasShowingCantrips && willShowCantrips) cantripVisibilityChanges[classId] = 'enabled';
+        const wasWizardMode = currentRules.forceWizardMode === true;
+        const willBeWizardMode = rules.forceWizardMode === true;
+        if (!wasWizardMode && willBeWizardMode) wizardModeChanges[classId] = 'enabled';
+        else if (wasWizardMode && !willBeWizardMode) wizardModeChanges[classId] = 'disabled';
         const processedRules = {};
         if (rules.spellPreparationBonus !== undefined) processedRules.spellPreparationBonus = parseInt(rules.spellPreparationBonus) || 0;
         if (rules.cantripPreparationBonus !== undefined) processedRules.cantripPreparationBonus = parseInt(rules.cantripPreparationBonus) || 0;
         if (rules.showCantrips !== undefined) processedRules.showCantrips = Boolean(rules.showCantrips);
+        if (rules.forceWizardMode !== undefined) processedRules.forceWizardMode = Boolean(rules.forceWizardMode);
         if (rules.customSpellList !== undefined) processedRules.customSpellList = rules.customSpellList || null;
         ['cantripSwapping', 'spellSwapping', 'ritualCasting'].forEach((prop) => {
           if (rules[prop] !== undefined) processedRules[prop] = rules[prop];
@@ -649,11 +663,32 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       }
     }
     if (Object.keys(cantripVisibilityChanges).length > 0) await SpellbookSettingsDialog._handleCantripVisibilityChanges(actor, cantripVisibilityChanges);
+    if (Object.keys(wizardModeChanges).length > 0) await SpellbookSettingsDialog._handleWizardModeChanges(actor, wizardModeChanges);
     const allInstances = Array.from(foundry.applications.instances.values());
     const openSpellbooks = allInstances.filter((w) => w.constructor.name === 'PlayerSpellBook' && w.actor.id === actor.id);
     for (const spellbook of openSpellbooks) await spellbook.refreshFromSettingsChange();
     ui.notifications.info(game.i18n.format('SPELLBOOK.Settings.Saved', { name: actor.name }));
     return actor;
+  }
+
+  /**
+   * Handle wizard mode changes - create/cleanup wizard spellbooks when enabled/disabled
+   * @param {Actor5e} actor - The actor
+   * @param {Object} changes - Object mapping class IDs to 'enabled'/'disabled'
+   * @returns {Promise<void>}
+   * @private
+   */
+  static async _handleWizardModeChanges(actor, changes) {
+    for (const [classId, changeType] of Object.entries(changes)) {
+      if (changeType === 'enabled') {
+        log(3, `Force wizard mode enabled for class ${classId}`);
+        // Wizard spellbook will be created automatically when the spellbook is opened
+      } else if (changeType === 'disabled') {
+        log(3, `Force wizard mode disabled for class ${classId}`);
+        // Optional: Could cleanup wizard spellbook here, but safer to leave it
+        // in case the user wants to re-enable wizard mode later
+      }
+    }
   }
 
   /**

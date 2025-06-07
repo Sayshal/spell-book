@@ -83,6 +83,15 @@
                 {{/if}}
               </div>
 
+              {{!-- Force Wizard Mode Setting --}}
+              <div class="setting-row">
+                <label
+                  for="force-wizard-mode-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.ForceWizardMode.Label'}}</label>
+                <i class="fas fa-question-circle setting-tooltip"
+                  data-tooltip="{{localize 'SPELLBOOK.Settings.ForceWizardMode.Hint'}}"></i>
+                {{{classData.formElements.forceWizardModeCheckboxHtml}}}
+              </div>
+
               {{!-- Cantrip Swapping Setting --}}
               <div class="setting-row {{#unless classData.rules.showCantrips}}disabled{{/unless}}">
                 <label

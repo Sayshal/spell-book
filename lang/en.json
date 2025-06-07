@@ -149,6 +149,8 @@
   "SPELLBOOK.Settings.FilterInstructions": "Enable or disable filters using checkboxes. Drag filters with grip handles to reorder them. Some filters have fixed positions and cannot be moved.",
   "SPELLBOOK.Settings.FixedPosition": "Fixed position",
   "SPELLBOOK.Settings.FixedPositionDesc": "This filter has a fixed position",
+  "SPELLBOOK.Settings.ForceWizardMode.Hint": "Treat this class as a wizard, enabling wizard spellbook functionality including spell copying, ritual casting from spellbook, and spellbook management. This creates a separate wizard spellbook for this class.",
+  "SPELLBOOK.Settings.ForceWizardMode.Label": "Force Wizard Mode",
   "SPELLBOOK.Settings.GlobalRules": "Global Rules",
   "SPELLBOOK.Settings.Logger.Choices.Errors": "Errors",
   "SPELLBOOK.Settings.Logger.Choices.Off": "Off",
