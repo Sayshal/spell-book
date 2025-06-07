@@ -18,7 +18,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       resizable: false,
       minimizable: true
     },
-    classes: ['filter-configuration'],
+    classes: ['dnd5e2', 'filter-configuration'],
     form: {
       handler: PlayerFilterConfiguration.formHandler,
       closeOnSubmit: true,
