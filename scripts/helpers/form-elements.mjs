@@ -129,7 +129,10 @@ export function createSelect(config) {
       const optionEl = document.createElement('option');
       optionEl.value = option.value;
       optionEl.textContent = option.label;
-      if (option.selected) optionEl.selected = true;
+      if (option.selected) {
+        optionEl.selected = true;
+        optionEl.setAttribute('selected', 'selected');
+      }
       select.appendChild(optionEl);
     }
   }

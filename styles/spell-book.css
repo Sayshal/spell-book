@@ -1305,15 +1305,15 @@
       }
 
       &.warning {
-        border-left: 4px solid rgb(255 193 7);
-        color: rgb(133 100 4);
-        background-color: rgb(255 193 7 / 10%);
+        border-left: 4px solid rgb(54 41 2);
+        color: rgb(54 41 2);
+        background-color: rgb(255 213 87);
       }
 
       &.info {
-        border-left: 4px solid rgb(13 202 240);
+        border-left: 4px solid rgb(5 81 96);
         color: rgb(5 81 96);
-        background-color: rgb(13 202 240 / 10%);
+        background-color: rgb(76 218 246);
       }
     }
   }

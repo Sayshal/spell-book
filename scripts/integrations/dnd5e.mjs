@@ -65,13 +65,13 @@ async function handleRestCompleted(actor, result, config) {
         const swapTracking = actor.getFlag(MODULE.ID, FLAGS.SWAP_TRACKING) || {};
         if (!swapTracking[classIdentifier]) swapTracking[classIdentifier] = {};
         swapTracking[classIdentifier].longRest = true;
-        await actor.setFlag(MODULE.ID, FLAGS.SWAP_TRACKING, swapTracking);
+        actor.setFlag(MODULE.ID, FLAGS.SWAP_TRACKING, swapTracking);
         log(3, `Set spell swap flag for class ${classIdentifier}`);
       }
     }
   }
   if (hasAnyLongRestMechanics) {
-    await actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
+    actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
     log(3, `Set long rest completion flag for ${actor.name} - available for all classes that need it`);
     await handleLongRestSwapPrompt(actor, longRestClasses);
   }
@@ -194,7 +194,7 @@ async function onSpellBookButtonClick(actor, event) {
       const spellManager = new SpellManager(actor);
       await spellManager.resetSwapTracking();
     }
-    if (longRestFlagValue === undefined || longRestFlagValue === null) await actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
+    if (longRestFlagValue === undefined || longRestFlagValue === null) actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
   }
   const spellBook = new PlayerSpellBook(actor);
   spellBook.render(true);

@@ -1,6 +1,6 @@
 <footer role="contentinfo">
   {{#unless isLoading}}
-    {{#if (eq activeTab 'wizardbook')}}
+    {{#if (isWizardTab activeTab)}}
       <!-- Wizard Spellbook tab - show free spells remaining or total count -->
       <div class="spell-book-tracking" aria-live="polite">
         {{#if wizardHasFreeSpells}}

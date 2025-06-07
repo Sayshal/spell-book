@@ -99,7 +99,7 @@ export class CantripManager {
     if (baseCantrips === 0) return 0;
     const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
     if (classRules && classRules.showCantrips === false) return 0;
-    const cantripBonus = classRules?.cantripBonus || 0;
+    const cantripBonus = classRules?.cantripPreparationBonus || 0;
     return Math.max(0, baseCantrips + cantripBonus);
   }
 

@@ -1,4 +1,5 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import * as formElements from '../helpers/form-elements.mjs';
 import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -104,46 +105,67 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
     }
   }
 
-  /** @override */
-  _prepareContext(_options) {
+  /**
+   * Prepare filter configuration form data with constructed elements
+   * @returns {Array} Array of filter configuration objects with form elements
+   * @private
+   */
+  _prepareFilterConfigFormData() {
     try {
-      if (!Array.isArray(this.config) || this.config.length === 0) this.initializeConfig();
-      this.config = this.config.map((filter) => {
+      return this.config.map((filter) => {
         const sortable = !(filter.id === 'name' || filter.id === 'prepared' || filter.id === 'ritual' || filter.id === 'sortBy');
-        const checkbox = document.createElement('dnd5e-checkbox');
-        checkbox.name = `enabled-${filter.id}`;
+        const checkbox = formElements.createCheckbox({
+          name: `enabled-${filter.id}`,
+          checked: filter.enabled,
+          ariaLabel: game.i18n.format('SPELLBOOK.Settings.EnableFilter', { name: game.i18n.localize(filter.label) })
+        });
         checkbox.id = `enabled-${filter.id}`;
-        if (filter.enabled) checkbox.checked = true;
-        checkbox.setAttribute('aria-label', game.i18n.format('SPELLBOOK.Settings.EnableFilter', { name: game.i18n.localize(filter.label) }));
-        const container = document.createElement('div');
-        container.appendChild(checkbox);
-
         return {
           ...filter,
           sortable: filter.sortable !== undefined ? filter.sortable : sortable,
-          checkboxHtml: container.innerHTML
+          checkboxHtml: formElements.elementToHtml(checkbox)
         };
       });
+    } catch (error) {
+      log(1, 'Error preparing filter config form data:', error);
+      return [];
+    }
+  }
 
+  /**
+   * Prepare form buttons configuration
+   * @returns {Array} Array of button configurations
+   * @private
+   */
+  _prepareFormButtons() {
+    return [
+      {
+        type: 'submit',
+        icon: 'fas fa-save',
+        label: 'SPELLBOOK.UI.Save'
+      },
+      {
+        type: 'button',
+        action: 'reset',
+        icon: 'fas fa-undo',
+        label: 'SPELLBOOK.UI.Reset'
+      }
+    ];
+  }
+
+  /** @override */
+  _prepareContext(options) {
+    const context = super._prepareContext(options);
+    try {
+      if (!Array.isArray(this.config) || this.config.length === 0) this.initializeConfig();
       return {
-        filterConfig: this.config,
-        buttons: [
-          {
-            type: 'submit',
-            icon: 'fas fa-save',
-            label: 'SPELLBOOK.UI.Save'
-          },
-          {
-            type: 'button',
-            action: 'reset',
-            icon: 'fas fa-undo',
-            label: 'SPELLBOOK.UI.Reset'
-          }
-        ]
+        ...context,
+        filterConfig: this._prepareFilterConfigFormData(),
+        buttons: this._prepareFormButtons()
       };
     } catch (error) {
       log(1, 'Error preparing context:', error);
-      return { filterConfig: [], buttons: [] };
+      return { ...context, filterConfig: [], buttons: [] };
     }
   }
 

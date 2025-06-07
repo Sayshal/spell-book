@@ -1,6 +1,7 @@
 import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as actorSpellUtils from '../helpers/actor-spells.mjs';
 import * as managerHelpers from '../helpers/compendium-management.mjs';
+import * as formElements from '../helpers/form-elements.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { SpellbookFilterHelper } from '../helpers/ui/spellbook-filters.mjs';
 import { log } from '../logger.mjs';
@@ -135,10 +136,275 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       context.damageTypeOptions = managerHelpers.prepareDamageTypeOptions(this.filterState);
       context.conditionOptions = managerHelpers.prepareConditionOptions(this.filterState);
       context.filteredSpells = this._filterAvailableSpells();
+      context.filterFormElements = this._prepareFilterFormElements();
     }
     if (this.isEditing && this.selectedSpellList) await this._addEditingContext(context);
     if (this.selectedSpellList) context.selectedSpellList = formattingUtils.processSpellListForDisplay(this.selectedSpellList);
     return context;
+  }
+
+  /**
+   * Prepare form elements for the spell filters
+   * @returns {Object} Object containing all filter form element HTML
+   * @private
+   */
+  _prepareFilterFormElements() {
+    const searchInput = formElements.createTextInput({
+      name: 'spell-search',
+      value: this.filterState.name || '',
+      placeholder: game.i18n.localize('SPELLMANAGER.Filters.SearchPlaceholder'),
+      disabled: !this.isEditing,
+      ariaLabel: game.i18n.localize('SPELLMANAGER.Filters.SearchPlaceholder')
+    });
+    searchInput.id = 'spell-search';
+    const levelOptions = [{ value: '', label: game.i18n.localize('SPELLMANAGER.Filters.AllLevels'), selected: !this.filterState.level }];
+    Object.entries(CONFIG.DND5E.spellLevels).forEach(([level, label]) => {
+      levelOptions.push({ value: level, label: label, selected: this.filterState.level === level });
+    });
+    const levelSelect = formElements.createSelect({
+      name: 'spell-level',
+      options: levelOptions,
+      disabled: !this.isEditing,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Filters.Level')
+    });
+    levelSelect.id = 'spell-level';
+    const schoolOptions = [{ value: '', label: game.i18n.localize('SPELLMANAGER.Filters.AllSchools'), selected: !this.filterState.school }];
+    Object.entries(CONFIG.DND5E.spellSchools).forEach(([key, school]) => {
+      schoolOptions.push({ value: key, label: school.label, selected: this.filterState.school === key });
+    });
+    const schoolSelect = formElements.createSelect({
+      name: 'spell-school',
+      options: schoolOptions,
+      disabled: !this.isEditing,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Filters.School')
+    });
+    schoolSelect.id = 'spell-school';
+    const castingTimeOptions = managerHelpers.prepareCastingTimeOptions(this.availableSpells, this.filterState);
+    const castingTimeSelect = formElements.createSelect({
+      name: 'spell-castingTime',
+      options: castingTimeOptions,
+      disabled: !this.isEditing,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Filters.CastingTime')
+    });
+    castingTimeSelect.id = 'spell-castingTime';
+    const damageTypeOptions = managerHelpers.prepareDamageTypeOptions(this.filterState);
+    const damageTypeSelect = formElements.createSelect({
+      name: 'spell-damageType',
+      options: damageTypeOptions,
+      disabled: !this.isEditing,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Filters.DamageType')
+    });
+    damageTypeSelect.id = 'spell-damageType';
+    const conditionOptions = managerHelpers.prepareConditionOptions(this.filterState);
+    const conditionSelect = formElements.createSelect({
+      name: 'spell-condition',
+      options: conditionOptions,
+      disabled: !this.isEditing,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Filters.Condition')
+    });
+    conditionSelect.id = 'spell-condition';
+    const requiresSaveOptions = [
+      { value: '', label: game.i18n.localize('SPELLBOOK.Filters.All'), selected: !this.filterState.requiresSave },
+      { value: 'true', label: game.i18n.localize('SPELLBOOK.Filters.True'), selected: this.filterState.requiresSave === 'true' },
+      { value: 'false', label: game.i18n.localize('SPELLBOOK.Filters.False'), selected: this.filterState.requiresSave === 'false' }
+    ];
+    const requiresSaveSelect = formElements.createSelect({
+      name: 'spell-requiresSave',
+      options: requiresSaveOptions,
+      disabled: !this.isEditing,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RequiresSave')
+    });
+    requiresSaveSelect.id = 'spell-requiresSave';
+    const concentrationOptions = [
+      { value: '', label: game.i18n.localize('SPELLBOOK.Filters.All'), selected: !this.filterState.concentration },
+      { value: 'true', label: game.i18n.localize('SPELLBOOK.Filters.True'), selected: this.filterState.concentration === 'true' },
+      { value: 'false', label: game.i18n.localize('SPELLBOOK.Filters.False'), selected: this.filterState.concentration === 'false' }
+    ];
+    const concentrationSelect = formElements.createSelect({
+      name: 'spell-concentration',
+      options: concentrationOptions,
+      disabled: !this.isEditing,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RequiresConcentration')
+    });
+    concentrationSelect.id = 'spell-concentration';
+    const materialComponentsOptions = [
+      { value: '', label: game.i18n.localize('SPELLBOOK.Filters.All'), selected: !this.filterState.materialComponents },
+      { value: 'consumed', label: game.i18n.localize('SPELLBOOK.Filters.MaterialComponents.Consumed'), selected: this.filterState.materialComponents === 'consumed' },
+      { value: 'notConsumed', label: game.i18n.localize('SPELLBOOK.Filters.MaterialComponents.NotConsumed'), selected: this.filterState.materialComponents === 'notConsumed' }
+    ];
+    const materialComponentsSelect = formElements.createSelect({
+      name: 'spell-materialComponents',
+      options: materialComponentsOptions,
+      disabled: !this.isEditing,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Filters.MaterialComponents')
+    });
+    materialComponentsSelect.id = 'spell-materialComponents';
+    const ritualCheckbox = formElements.createCheckbox({
+      name: 'spell-ritual',
+      checked: this.filterState.ritual || false,
+      disabled: !this.isEditing,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RitualOnly')
+    });
+    ritualCheckbox.id = 'spell-ritual';
+    const minRangeInput = formElements.createNumberInput({
+      name: 'spell-min-range',
+      value: this.filterState.minRange || '',
+      placeholder: game.i18n.localize('SPELLBOOK.Filters.RangeMin'),
+      disabled: !this.isEditing,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RangeMinLabel')
+    });
+    minRangeInput.id = 'spell-min-range';
+    const maxRangeInput = formElements.createNumberInput({
+      name: 'spell-max-range',
+      value: this.filterState.maxRange || '',
+      placeholder: game.i18n.localize('SPELLBOOK.Filters.RangeMax'),
+      disabled: !this.isEditing,
+      ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RangeMaxLabel')
+    });
+    maxRangeInput.id = 'spell-max-range';
+    const spellSources = managerHelpers.prepareSpellSources(this.availableSpells);
+    const currentSourceValue = this.filterState.source || 'all';
+    const sourceOptions = spellSources.map((source) => ({
+      value: source.id,
+      label: source.label,
+      selected: currentSourceValue === source.id
+    }));
+    const sourceSelect = formElements.createSelect({
+      name: 'spell-source',
+      options: sourceOptions,
+      disabled: !this.isEditing,
+      ariaLabel: game.i18n.localize('SPELLMANAGER.Filters.Source')
+    });
+    sourceSelect.id = 'spell-source';
+    return {
+      searchInputHtml: formElements.elementToHtml(searchInput),
+      levelSelectHtml: formElements.elementToHtml(levelSelect),
+      schoolSelectHtml: formElements.elementToHtml(schoolSelect),
+      castingTimeSelectHtml: formElements.elementToHtml(castingTimeSelect),
+      damageTypeSelectHtml: formElements.elementToHtml(damageTypeSelect),
+      conditionSelectHtml: formElements.elementToHtml(conditionSelect),
+      requiresSaveSelectHtml: formElements.elementToHtml(requiresSaveSelect),
+      concentrationSelectHtml: formElements.elementToHtml(concentrationSelect),
+      materialComponentsSelectHtml: formElements.elementToHtml(materialComponentsSelect),
+      ritualCheckboxHtml: formElements.elementToHtml(ritualCheckbox),
+      minRangeInputHtml: formElements.elementToHtml(minRangeInput),
+      maxRangeInputHtml: formElements.elementToHtml(maxRangeInput),
+      sourceSelectHtml: formElements.elementToHtml(sourceSelect)
+    };
+  }
+
+  /**
+   * Prepare form data for the create spell list dialog
+   * @param {Array} identifierOptions - Available class identifier options
+   * @returns {Object} Object containing form element HTML
+   * @private
+   */
+  _prepareCreateListFormData(identifierOptions) {
+    const nameInput = formElements.createTextInput({
+      name: 'name',
+      required: true,
+      ariaLabel: game.i18n.localize('SPELLMANAGER.CreateList.ListNameLabel')
+    });
+    nameInput.id = 'list-name';
+    const classOptions = identifierOptions.map((option) => ({
+      value: option.id,
+      label: option.name,
+      selected: false
+    }));
+    classOptions.push({ value: 'custom', label: game.i18n.localize('SPELLMANAGER.CreateList.CustomOption'), selected: false });
+    const classSelect = formElements.createSelect({
+      name: 'identifier',
+      options: classOptions,
+      ariaLabel: game.i18n.localize('SPELLMANAGER.CreateList.ClassLabel')
+    });
+    classSelect.id = 'class-identifier';
+    const customInput = formElements.createTextInput({
+      name: 'customIdentifier',
+      pattern: '[a-z0-9_-]+',
+      title: game.i18n.localize('SPELLMANAGER.CreateList.IdentifierNotes'),
+      ariaLabel: game.i18n.localize('SPELLMANAGER.CreateList.CustomIdentifierLabel')
+    });
+    customInput.id = 'custom-identifier';
+    return {
+      nameInputHtml: formElements.elementToHtml(nameInput),
+      classSelectHtml: formElements.elementToHtml(classSelect),
+      customInputHtml: formElements.elementToHtml(customInput)
+    };
+  }
+
+  /**
+   * Prepare form data for the merge spell lists dialog
+   * @returns {Object} Object containing form element HTML
+   * @private
+   */
+  _prepareMergeListFormData() {
+    const sourceListOptions = this._buildSpellListOptions('SPELLMANAGER.MergeLists.SelectSourceList');
+    const sourceListSelect = formElements.createSelect({
+      name: 'sourceList',
+      options: sourceListOptions,
+      required: true,
+      ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.SourceListLabel')
+    });
+    sourceListSelect.id = 'source-list';
+    const copyFromListOptions = this._buildSpellListOptions('SPELLMANAGER.MergeLists.SelectCopyFromList');
+    const copyFromListSelect = formElements.createSelect({
+      name: 'copyFromList',
+      options: copyFromListOptions,
+      required: true,
+      ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.CopyFromListLabel')
+    });
+    copyFromListSelect.id = 'copy-from-list';
+    const mergedListNameInput = formElements.createTextInput({
+      name: 'mergedListName',
+      placeholder: game.i18n.localize('SPELLMANAGER.MergeLists.MergedListNamePlaceholder'),
+      ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.MergedListNameLabel')
+    });
+    mergedListNameInput.id = 'merged-list-name';
+    return {
+      sourceListSelectHtml: formElements.elementToHtml(sourceListSelect),
+      copyFromListSelectHtml: formElements.elementToHtml(copyFromListSelect),
+      mergedListNameInputHtml: formElements.elementToHtml(mergedListNameInput)
+    };
+  }
+
+  /**
+   * Build spell list options for dropdowns
+   * @param {string} defaultLabel - Localization key for default option
+   * @returns {Array} Array of option objects
+   * @private
+   */
+  _buildSpellListOptions(defaultLabel) {
+    const options = [{ value: '', label: game.i18n.localize(defaultLabel), selected: true }];
+    const actorOwnedLists = this.availableSpellLists.filter((list) => list.isActorOwned);
+    const customLists = this.availableSpellLists.filter((list) => !list.isActorOwned && !list.isMerged && (list.isCustom || list.document?.flags?.[MODULE.ID]?.isNewList));
+    const mergedLists = this.availableSpellLists.filter((list) => !list.isActorOwned && list.isMerged);
+    const standardLists = this.availableSpellLists.filter((list) => !list.isActorOwned && !list.isCustom && !list.isMerged && !list.document?.flags?.[MODULE.ID]?.isNewList);
+    if (actorOwnedLists.length > 0) {
+      options.push({ value: 'optgroup', label: game.i18n.localize('SPELLMANAGER.Folders.PlayerSpellbooks'), optgroup: true });
+      actorOwnedLists.forEach((list) => {
+        const label = `${list.name} (${list.actorName || game.i18n.localize('SPELLMANAGER.ListSource.Character')})`;
+        options.push({ value: list.uuid, label: label, selected: false });
+      });
+    }
+    if (customLists.length > 0) {
+      options.push({ value: 'optgroup', label: game.i18n.localize('SPELLMANAGER.Folders.CustomLists'), optgroup: true });
+      customLists.forEach((list) => {
+        options.push({ value: list.uuid, label: list.name, selected: false });
+      });
+    }
+    if (mergedLists.length > 0) {
+      options.push({ value: 'optgroup', label: game.i18n.localize('SPELLMANAGER.Folders.MergedLists'), optgroup: true });
+      mergedLists.forEach((list) => {
+        options.push({ value: list.uuid, label: list.name, selected: false });
+      });
+    }
+    if (standardLists.length > 0) {
+      options.push({ value: 'optgroup', label: game.i18n.localize('SPELLMANAGER.Folders.SpellLists'), optgroup: true });
+      standardLists.forEach((list) => {
+        options.push({ value: list.uuid, label: `${list.name} (${list.pack})`, selected: false });
+      });
+    }
+    return options;
   }
 
   /**
@@ -512,13 +778,17 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Show the create list dialog and return result
-   * @param {string} content - Dialog content HTML
    * @param {Array} identifierOptions - Class identifier options
    * @returns {Promise<Object>} Dialog result and form data
    * @private
    */
-  async _showCreateListDialog(content, identifierOptions) {
+  async _showCreateListDialog(identifierOptions) {
     let formData = null;
+    const formElements = this._prepareCreateListFormData(identifierOptions);
+    const content = await renderTemplate(TEMPLATES.DIALOGS.CREATE_SPELL_LIST, {
+      identifierOptions,
+      formElements
+    });
     const result = await DialogV2.wait({
       window: { title: game.i18n.localize('SPELLMANAGER.Buttons.CreateNew'), icon: 'fas fa-star' },
       content: content,
@@ -1070,8 +1340,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         name: data.fullDisplay,
         plainName: data.name
       }));
-    const content = await renderTemplate(TEMPLATES.DIALOGS.CREATE_SPELL_LIST, { identifierOptions });
-    const { result, formData } = await this._showCreateListDialog(content, identifierOptions);
+    const { result, formData } = await this._showCreateListDialog(identifierOptions);
     if (result === 'create' && formData) await this._createNewListCallback(formData.name, formData.identifier);
   }
 
@@ -1087,6 +1356,18 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       ui.notifications.warn(game.i18n.localize('SPELLMANAGER.MergeLists.InsufficientLists'));
       return;
     }
+    const { result, formData } = await this._showMergeListsDialog();
+    if (result === 'merge' && formData) await this._mergeListsCallback(formData.sourceListUuid, formData.copyFromListUuid, formData.mergedListName);
+  }
+
+  /**
+   * Show the merge lists dialog and return result
+   * @returns {Promise<Object>} Dialog result and form data
+   * @private
+   */
+  async _showMergeListsDialog() {
+    let formData = null;
+    const formElements = this._prepareMergeListFormData();
     const context = {
       actorOwnedLists: this.availableSpellLists.filter((list) => list.isActorOwned),
       customLists: this.availableSpellLists.filter((list) => !list.isActorOwned && !list.isMerged && (list.isCustom || list.document?.flags?.[MODULE.ID]?.isNewList)),
@@ -1095,26 +1376,14 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       hasActorOwnedLists: false,
       hasCustomLists: false,
       hasMergedLists: false,
-      hasStandardLists: false
+      hasStandardLists: false,
+      formElements
     };
     context.hasActorOwnedLists = context.actorOwnedLists.length > 0;
     context.hasCustomLists = context.customLists.length > 0;
     context.hasMergedLists = context.mergedLists.length > 0;
     context.hasStandardLists = context.standardLists.length > 0;
     const content = await renderTemplate(TEMPLATES.DIALOGS.MERGE_SPELL_LISTS, context);
-    const { result, formData } = await this._showMergeListsDialog(content);
-    if (result === 'merge' && formData) await this._mergeListsCallback(formData.sourceListUuid, formData.copyFromListUuid, formData.mergedListName);
-  }
-
-  /**
-   * Show the merge lists dialog and return result
-   * @param {string} content - Dialog content HTML
-   * @returns {Promise<Object>} Dialog result and form data
-   * @private
-   */
-  async _showMergeListsDialog(content) {
-    let formData = null;
-
     const result = await DialogV2.wait({
       window: {
         title: game.i18n.localize('SPELLMANAGER.MergeLists.DialogTitle'),
@@ -1130,18 +1399,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
             const sourceListSelect = form.querySelector('[name="sourceList"]');
             const copyFromListSelect = form.querySelector('[name="copyFromList"]');
             const mergedListNameInput = form.querySelector('[name="mergedListName"]');
-
-            if (!sourceListSelect.value || !copyFromListSelect.value) {
-              return false;
-            }
-
+            if (!sourceListSelect.value || !copyFromListSelect.value) return false;
             if (sourceListSelect.value === copyFromListSelect.value) {
               const errorElement = form.querySelector('.validation-error');
               if (errorElement) errorElement.style.display = 'block';
               return false;
             }
-
-            // Generate default name if not provided
             let mergedListName = mergedListNameInput.value.trim();
             if (!mergedListName) {
               const sourceList = this.availableSpellLists.find((list) => list.uuid === sourceListSelect.value);
@@ -1149,7 +1412,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
                 sourceName: sourceList ? sourceList.name : 'Unknown'
               });
             }
-
             formData = {
               sourceListUuid: sourceListSelect.value,
               copyFromListUuid: copyFromListSelect.value,
@@ -1170,7 +1432,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         this._setupMergeListsDialogListeners(target);
       }
     });
-
     return { result, formData };
   }
 
@@ -1184,25 +1445,17 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     const copyFromListSelect = target.querySelector('#copy-from-list');
     const mergeButton = target.querySelector('button[data-action="merge"]');
     const errorElement = target.querySelector('.validation-error');
-
     const validateSelections = () => {
       const sourceValue = sourceListSelect.value;
       const copyFromValue = copyFromListSelect.value;
       const hasBothSelections = sourceValue && copyFromValue;
       const sameListSelected = sourceValue === copyFromValue;
-
-      if (errorElement) {
-        errorElement.style.display = sameListSelected && hasBothSelections ? 'block' : 'none';
-      }
-
+      if (errorElement) errorElement.style.display = sameListSelected && hasBothSelections ? 'block' : 'none';
       mergeButton.disabled = !hasBothSelections || sameListSelected;
     };
-
     if (sourceListSelect && copyFromListSelect) {
       sourceListSelect.addEventListener('change', validateSelections);
       copyFromListSelect.addEventListener('change', validateSelections);
-
-      // Initial validation
       validateSelections();
     }
   }

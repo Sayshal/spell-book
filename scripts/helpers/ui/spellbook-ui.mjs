@@ -109,32 +109,25 @@ export class SpellbookUI {
    * @returns {Promise<string>} Path to a random book image
    */
   async getRandomWizardBookImage() {
-    if (this._wizardBookImage) return this._wizardBookImage;
     try {
       const folderPath = 'icons/sundries/books';
       const browseResult = await FilePicker.browse('public', folderPath);
       if (!browseResult || !browseResult.files) {
         log(2, `Could not browse folder ${folderPath}, using fallback`);
-        this._wizardBookImage = 'icons/svg/book.svg';
-        return this._wizardBookImage;
+        return 'icons/svg/book.svg';
       }
       const webpFiles = browseResult.files.filter((filePath) => filePath.toLowerCase().endsWith('.webp'));
-
       if (webpFiles.length === 0) {
         log(2, `No .webp files found in ${folderPath}, using fallback`);
-        this._wizardBookImage = 'icons/svg/book.svg';
-        return this._wizardBookImage;
+        return 'icons/svg/book.svg';
       }
-
       const randomIndex = Math.floor(Math.random() * webpFiles.length);
       const selectedFile = webpFiles[randomIndex];
-      this._wizardBookImage = selectedFile;
-      log(3, `Selected random wizard book image: ${this._wizardBookImage} (${randomIndex + 1} of ${webpFiles.length})`);
-      return this._wizardBookImage;
+      log(3, `Selected random wizard book image: ${selectedFile} (${randomIndex + 1} of ${webpFiles.length})`);
+      return selectedFile;
     } catch (error) {
       log(1, `Error selecting random wizard book image:`, error);
-      this._wizardBookImage = 'icons/svg/book.svg';
-      return this._wizardBookImage;
+      return 'icons/svg/book.svg';
     }
   }
 
@@ -153,7 +146,7 @@ export class SpellbookUI {
     if (!classData) return;
     const classRules = RuleSetManager.getClassRules(this.app.actor, classIdentifier);
     const baseMaxPrepared = classData.classItem?.system?.spellcasting?.preparation?.max || 0;
-    const preparationBonus = classRules?.preparationBonus || 0;
+    const preparationBonus = classRules?.spellPreparationBonus || 0;
     const classMaxPrepared = baseMaxPrepared + preparationBonus;
     let classPreparedCount = 0;
     const preparedCheckboxes = activeTabContent.querySelectorAll('dnd5e-checkbox[data-uuid]:not([disabled])');
