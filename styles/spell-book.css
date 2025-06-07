@@ -136,14 +136,6 @@
     overflow: hidden;
   }
 
-  /* Main container - positioned relative to sidebar */
-  .spell-book-container {
-    inset: 0 0 0 var(--spell-book-sidebar-width);
-    position: absolute;
-    overflow: visible;
-    transition: var(--spell-book-transition-slow);
-  }
-
   /* Main content area */
   .spell-book-content {
     position: relative;
