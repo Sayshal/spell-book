@@ -34,7 +34,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       createNewList: GMSpellListManager.handleCreateNewList,
       mergeLists: GMSpellListManager.handleMergeLists
     },
-    classes: ['gm-spell-list-manager'],
+    classes: ['dnd5e2', 'gm-spell-list-manager'],
     window: {
       icon: 'fas fa-bars-progress',
       resizable: true,
