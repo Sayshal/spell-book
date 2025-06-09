@@ -3,3 +3,6 @@ contact_links:
   - name: Get In Touch
     url: https://discord.gg/feMsefha8D
     about: Join our Discord server to get in touch with the developers and other users of Spell Book!
+  - name: Road Map
+    url: https://github.com/Sayshal/spell-book/blob/main/ROADMAP.md
+    about: View the roadmap of new features and bug fixes being worked on next!
