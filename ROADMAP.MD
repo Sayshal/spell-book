@@ -64,7 +64,7 @@ Hide duplicate/merged spell lists with toggle controls, implement a "Hidden" tab
 - Optimize re-render cycles in frequently updated components
 - Cache frequently accessed spell data
 
-## **Non-Standard Spellcasting Classes Support [High Priority]**
+#### **Non-Standard Spellcasting Classes Support [High Priority]**
 
 Support homebrew and edge-case spellcasting classes that don't follow standard spell progression patterns, including cantrip-only casters and ritual-only casters.
 
@@ -212,7 +212,7 @@ Implement encounter-based spell tracking, player spell usage monitoring, advance
 - Custom spell creation wizard with balance validation
 - Campaign-specific spell availability rules
 
-## Implementation Priority Matrix
+### Implementation Priority Matrix
 
 ### High Impact, Low Effort
 
@@ -238,7 +238,7 @@ Implement encounter-based spell tracking, player spell usage monitoring, advance
 - **Advanced Wizard Research** - Complex new mechanics with limited user base
 - **Comprehensive Analytics** - Extensive data processing with uncertain user adoption
 
-## Development Notes
+### Development Notes
 
 ### Code Architecture Status
 
