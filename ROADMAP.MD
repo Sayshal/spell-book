@@ -4,17 +4,17 @@
 
 **Priority: Critical Bug Fixes & User Requests**
 
-#### **Fix Class Rules Bug [Critical]**
+#### **Fixed: Class Rules Cleanup Bug [Critical]**
 
-Auto-purge outdated class rules and spell data when switching between classes or if a class is no longer detected on the actor. Improve class detection and cleanup logic.
+Resolved an issue where outdated class rules and spell data were not purged when switching classes or when a class was removed from an actor. Improved detection and cleanup logic to ensure data consistency.
 
-**Code justification:** In `spellbook-state.mjs`, the `detectSpellcastingClasses()` method detects current classes but doesn't clean up data from removed classes. The `classSpellData` and `spellcastingClasses` objects can retain stale entries. Additionally, in `rule-set-manager.mjs`, the `getClassRules()` method falls back to defaults but doesn't clean up invalid stored rules. The `_stateManager._classesChanged` flag in `player-spell-book.mjs` suggests this is a known issue that needs proper cleanup logic.
+**Fix details:**
+Previously, `detectSpellcastingClasses()` in `spellbook-state.mjs` failed to remove stale entries from `classSpellData` and `spellcastingClasses`. Likewise, `getClassRules()` in `rule-set-manager.mjs` would fall back to defaults but retained invalid rules. The `_stateManager._classesChanged` flag in `player-spell-book.mjs` indicated awareness of the issue but lacked proper cleanup logic.
 
-**Implementation approach:**
+**Fix summary:**
 
-- Add cleanup callbacks to `detectSpellcastingClasses()`
-- Implement data validation on actor updates
-- Create migration utility for existing corrupted saves
+- Added cleanup logic to `detectSpellcastingClasses()`
+- Validated class data on actor updates
 
 #### **Spell Loadouts System [High Priority]**
 
