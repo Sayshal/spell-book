@@ -221,6 +221,7 @@ export const FLAGS = {
   PREVIOUS_LEVEL: 'previousLevel',
   RULE_SET_OVERRIDE: 'ruleSetOverride',
   SIDEBAR_COLLAPSED: 'sidebarCollapsed',
+  SPELL_LOADOUTS: 'spellLoadouts',
   SWAP_TRACKING: 'swapTracking',
   WIZARD_COPIED_SPELLS: 'wizardCopiedSpells',
   WIZARD_RITUAL_CASTING: 'wizardRitualCasting'
@@ -243,6 +244,7 @@ export const TEMPLATES = {
     FILTER_CONFIG: 'modules/spell-book/templates/dialogs/filter-configuration.hbs',
     MANAGER_DOCUMENTATION: 'modules/spell-book/templates/dialogs/spell-list-manager-documentation.hbs',
     MERGE_SPELL_LISTS: 'modules/spell-book/templates/dialogs/merge-spell-lists.hbs',
+    SPELL_LOADOUT: 'modules/spell-book/templates/dialogs/spell-loadout.hbs',
     SPELLBOOK_SETTINGS: 'modules/spell-book/templates/dialogs/spellbook-settings.hbs'
   },
   GM: {

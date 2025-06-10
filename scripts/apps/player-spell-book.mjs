@@ -11,6 +11,7 @@ import { RitualManager } from '../managers/ritual-manager.mjs';
 import { SpellManager } from '../managers/spell-manager.mjs';
 import { WizardSpellbookManager } from '../managers/wizard-spellbook-manager.mjs';
 import { PlayerFilterConfiguration } from './player-filter-configuration.mjs';
+import { SpellLoadoutDialog } from './spell-loadout-dialog.mjs';
 import { SpellbookSettingsDialog } from './spellbook-settings-dialog.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -37,7 +38,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       configureFilters: PlayerSpellBook.configureFilters,
       configureCantripSettings: PlayerSpellBook.configureCantripSettings,
       learnSpell: PlayerSpellBook.learnSpell,
-      learnFromScroll: PlayerSpellBook.handleLearnFromScroll
+      learnFromScroll: PlayerSpellBook.handleLearnFromScroll,
+      openLoadoutDialog: PlayerSpellBook.openLoadoutDialog
     },
     classes: ['spell-book', 'vertical-tabs'],
     window: {
@@ -1251,6 +1253,21 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       await this._stateManager.refreshClassSpellData('wizard');
       this.render(false);
     }
+  }
+
+  /**
+   * Open the spell loadout dialog
+   * @param {Event} event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
+   */
+  static async openLoadoutDialog(event, _form) {
+    const activeTab = this.tabGroups['spellbook-tabs'];
+    const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
+    const classIdentifier = activeTabContent?.dataset.classIdentifier || this._stateManager.activeClass;
+    if (!classIdentifier) return;
+    const dialog = new SpellLoadoutDialog(this.actor, this, classIdentifier);
+    dialog.render(true);
   }
 
   /**
