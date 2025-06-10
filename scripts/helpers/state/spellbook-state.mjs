@@ -47,7 +47,7 @@ export class SpellbookState {
   async initialize() {
     if (this._initialized) return true;
     this.isLongRest = !!this.actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);
-    if (!this._classesDetected) await this.detectSpellcastingClasses();
+    if (!this._classesDetected) this.detectSpellcastingClasses();
     await this.app.spellManager.cleanupStalePreparationFlags();
     await this.loadSpellData();
     this._initialized = true;
@@ -55,12 +55,13 @@ export class SpellbookState {
   }
 
   /**
-   * Detect and initialize all spellcasting classes for the actor
+   * Detect and initialize all spellcasting classes for the actor with cleanup of stale data
    * @returns {Promise<void>}
-   * @async
    */
-  async detectSpellcastingClasses() {
+  detectSpellcastingClasses() {
     if (this._classesDetected) return;
+    const currentClassIds = [];
+    const classItems = this.actor.items.filter((i) => i.type === 'class');
     this.spellcastingClasses = {};
     this.classSpellData = {};
     this.classPrepModes = {};
@@ -68,10 +69,10 @@ export class SpellbookState {
     this.classSwapRules = {};
     this._preparationStatsCache.clear();
     this._classDetectionCache.clear();
-    const classItems = this.actor.items.filter((i) => i.type === 'class');
     for (const classItem of classItems) {
       if (!classItem.system.spellcasting?.progression || classItem.system.spellcasting.progression === 'none') continue;
       const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
+      currentClassIds.push(identifier);
       this.spellcastingClasses[identifier] = {
         name: classItem.name,
         uuid: classItem.uuid,
@@ -91,8 +92,106 @@ export class SpellbookState {
       this.classRitualRules[identifier] = this.getClassRitualRules(classItem);
       this.classSwapRules[identifier] = this.getClassSwapRules(classItem);
     }
+    this._cleanupStaleClassData(currentClassIds);
     if (Object.keys(this.spellcastingClasses).length > 0 && !this.activeClass) this.activeClass = Object.keys(this.spellcastingClasses)[0];
     this._classesDetected = true;
+  }
+
+  /**
+   * Clean up all stored data for class identifiers that don't match current actor classes
+   * @param {Array<string>} currentClassIds - Array of current valid class identifiers
+   * @returns {Promise<void>}
+   * @private
+   */
+  _cleanupStaleClassData(currentClassIds) {
+    this._cleanupStaleFlags(currentClassIds);
+    this._cleanupStaleManagers(currentClassIds);
+  }
+
+  /**
+   * Clean up all flag-based data for non-existent classes
+   * @param {Array<string>} currentClassIds - Array of current valid class identifiers
+   * @returns {Promise<void>}
+   * @private
+   */
+  _cleanupStaleFlags(currentClassIds) {
+    const actorFlags = this.actor.flags?.[MODULE.ID] || {};
+    const classRules = actorFlags[FLAGS.CLASS_RULES] || {};
+    const validClassRules = {};
+    for (const [classId, rules] of Object.entries(classRules)) if (currentClassIds.includes(classId)) validClassRules[classId] = rules;
+    if (Object.keys(validClassRules).length !== Object.keys(classRules).length) {
+      this.actor.unsetFlag(MODULE.ID, FLAGS.CLASS_RULES);
+      this.actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, validClassRules);
+    }
+    const preparedByClass = actorFlags[FLAGS.PREPARED_SPELLS_BY_CLASS] || {};
+    const validPreparedByClass = {};
+    for (const [classId, spells] of Object.entries(preparedByClass)) if (currentClassIds.includes(classId)) validPreparedByClass[classId] = spells;
+    if (Object.keys(validPreparedByClass).length !== Object.keys(preparedByClass).length) {
+      this.actor.unsetFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS);
+      this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, validPreparedByClass);
+      const allPreparedKeys = Object.values(validPreparedByClass).flat();
+      const allPreparedUuids = allPreparedKeys.map((key) => {
+        const [, ...uuidParts] = key.split(':');
+        return uuidParts.join(':');
+      });
+      this.actor.unsetFlag(MODULE.ID, FLAGS.PREPARED_SPELLS);
+      this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS, allPreparedUuids);
+    }
+    const cantripTracking = actorFlags[FLAGS.CANTRIP_SWAP_TRACKING] || {};
+    const validCantripTracking = {};
+    for (const [classId, tracking] of Object.entries(cantripTracking)) if (currentClassIds.includes(classId)) validCantripTracking[classId] = tracking;
+    if (Object.keys(validCantripTracking).length !== Object.keys(cantripTracking).length) {
+      this.actor.unsetFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING);
+      this.actor.setFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING, validCantripTracking);
+    }
+    const swapTracking = actorFlags[FLAGS.SWAP_TRACKING] || {};
+    const validSwapTracking = {};
+    for (const [classId, tracking] of Object.entries(swapTracking)) if (currentClassIds.includes(classId)) validSwapTracking[classId] = tracking;
+    if (Object.keys(validSwapTracking).length !== Object.keys(swapTracking).length) {
+      this.actor.unsetFlag(MODULE.ID, FLAGS.SWAP_TRACKING);
+      this.actor.setFlag(MODULE.ID, FLAGS.SWAP_TRACKING, validSwapTracking);
+    }
+    const wizardFlags = Object.keys(actorFlags).filter(
+      (key) =>
+        key.startsWith(FLAGS.WIZARD_COPIED_SPELLS + '-') ||
+        key.startsWith(FLAGS.WIZARD_COPIED_SPELLS + '_') ||
+        key.startsWith(FLAGS.WIZARD_RITUAL_CASTING + '-') ||
+        key.startsWith(FLAGS.WIZARD_RITUAL_CASTING + '_')
+    );
+    for (const flagKey of wizardFlags) {
+      const separatorIndex = Math.max(flagKey.lastIndexOf('-'), flagKey.lastIndexOf('_'));
+      const classId = flagKey.substring(separatorIndex + 1);
+      if (!currentClassIds.includes(classId)) this.actor.unsetFlag(MODULE.ID, flagKey);
+    }
+  }
+
+  /**
+   * Clean up manager caches and maps for non-existent classes
+   * @param {Array<string>} currentClassIds - Array of current valid class identifiers
+   * @private
+   */
+  _cleanupStaleManagers(currentClassIds) {
+    if (this.app.wizardManagers) {
+      const wizardManagerKeys = [...this.app.wizardManagers.keys()];
+      for (const classId of wizardManagerKeys) if (!currentClassIds.includes(classId)) this.app.wizardManagers.delete(classId);
+    }
+    if (this.app.ritualManagers) {
+      const ritualManagerKeys = [...this.app.ritualManagers.keys()];
+      for (const classId of ritualManagerKeys) if (!currentClassIds.includes(classId)) this.app.ritualManagers.delete(classId);
+    }
+    if (this.wizardSpellbookCache) {
+      const wizardCacheKeys = [...this.wizardSpellbookCache.keys()];
+      for (const classId of wizardCacheKeys) if (!currentClassIds.includes(classId)) this.wizardSpellbookCache.delete(classId);
+    }
+    if (this.app._wizardBookImages) {
+      const wizardImageKeys = [...this.app._wizardBookImages.keys()];
+      log(1, `Found wizard book images for classes: [${wizardImageKeys.join(', ')}]`);
+      for (const classId of wizardImageKeys) if (!currentClassIds.includes(classId)) this.app._wizardBookImages.delete(classId);
+    }
+    const prepStatsSize = this._preparationStatsCache.size;
+    const classDetectionSize = this._classDetectionCache.size;
+    this._preparationStatsCache.clear();
+    this._classDetectionCache.clear();
   }
 
   /**

@@ -46,7 +46,21 @@ export class RuleSetManager {
   static getClassRules(actor, classIdentifier) {
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const existingRules = classRules[classIdentifier];
-    if (existingRules) return existingRules;
+    if (existingRules) {
+      const classExists = actor.items.some(
+        (item) =>
+          item.type === 'class' &&
+          (item.system.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier) &&
+          item.system.spellcasting?.progression &&
+          item.system.spellcasting.progression !== 'none'
+      );
+      if (!classExists) {
+        log(2, `Class rules found for non-existent class: ${classIdentifier}. Will be cleaned up on next spellbook open.`);
+        const ruleSet = RuleSetManager.getEffectiveRuleSet(actor);
+        return RuleSetManager._getClassDefaults(classIdentifier, ruleSet);
+      }
+      return existingRules;
+    }
     const ruleSet = RuleSetManager.getEffectiveRuleSet(actor);
     return RuleSetManager._getClassDefaults(classIdentifier, ruleSet);
   }

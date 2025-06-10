@@ -138,8 +138,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Register class-specific parts for all spellcasting classes and wizard tabs
    * @private
    */
-  async _registerClassParts() {
-    if (!this._stateManager._classesDetected) await this._stateManager.detectSpellcastingClasses();
+  _registerClassParts() {
+    if (!this._stateManager._classesDetected) this._stateManager.detectSpellcastingClasses();
     if (this._stateManager.spellcastingClasses) {
       for (const [identifier, classData] of Object.entries(this._stateManager.spellcastingClasses)) {
         const tabId = `${identifier}Tab`;
@@ -1290,7 +1290,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this._wizardBookImages?.clear();
     const wizardClasses = genericUtils.getWizardEnabledClasses(this.actor);
     for (const { identifier } of wizardClasses) this.wizardManagers.set(identifier, new WizardSpellbookManager(this.actor, identifier));
-    await this._registerClassParts();
+    this._registerClassParts();
     await this._stateManager.initialize();
     if (this.wizardManagers.size > 0) {
       if (!this._wizardBookImages) this._wizardBookImages = new Map();
