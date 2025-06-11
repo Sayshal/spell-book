@@ -96,26 +96,29 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
    * @param {HTMLElement} target - The clicked element
    * @static
    */
-  static saveLoadout(event, target) {
+  static async saveLoadout(event, target) {
     const form = target.closest('form');
     const formData = new FormData(form);
     const name = formData.get('loadout-name')?.trim();
     const description = formData.get('loadout-description')?.trim() || '';
+
     if (!name) {
       ui.notifications.warn(game.i18n.localize('SPELLBOOK.Loadouts.NameRequired'));
       return;
     }
+
     try {
       const spellConfiguration = this.loadoutManager.captureCurrentState(this.classIdentifier);
       if (spellConfiguration.length === 0) {
         ui.notifications.warn(game.i18n.localize('SPELLBOOK.Loadouts.NoSpellsPrepared'));
         return;
       }
-      const success = this.loadoutManager.saveLoadout(name, description, spellConfiguration, this.classIdentifier);
+
+      const success = await this.loadoutManager.saveLoadout(name, description, spellConfiguration, this.classIdentifier);
       if (success) {
         ui.notifications.info(game.i18n.format('SPELLBOOK.Loadouts.Saved', { name }));
         form.reset();
-        this.render({ force: true });
+        await this.render({ force: true });
       }
     } catch (error) {
       log(1, 'Error saving loadout:', error);
@@ -129,25 +132,58 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
    * @param {HTMLElement} target - The clicked element
    * @static
    */
-  static overwriteLoadout(event, target) {
+  static async overwriteLoadout(event, target) {
     const loadoutId = target.dataset.loadoutId;
     const loadoutName = target.dataset.loadoutName;
     if (!loadoutId) return;
+
     try {
       const existingLoadout = this.loadoutManager.loadLoadout(loadoutId);
       if (!existingLoadout) return;
+
       const spellConfiguration = this.loadoutManager.captureCurrentState(this.classIdentifier);
       if (spellConfiguration.length === 0) return;
+
       const updatedLoadout = { ...existingLoadout, spellConfiguration, updatedAt: Date.now() };
-      const existingLoadouts = this.loadoutManager.actor.getFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS) || {};
-      existingLoadouts[loadoutId] = updatedLoadout;
-      this.loadoutManager.actor.unsetFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS);
-      this.loadoutManager.actor.setFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS, existingLoadouts);
+
+      // Update the specific loadout entry
+      await this.loadoutManager.actor.update({
+        [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.${loadoutId}`]: updatedLoadout
+      });
+
       this.loadoutManager._invalidateCache();
       ui.notifications.info(game.i18n.format('SPELLBOOK.Loadouts.Overwritten', { name: loadoutName }));
-      this.render(false);
+      await this.render(false);
     } catch (error) {
       log(1, 'Error overwriting loadout:', error);
+    }
+  }
+
+  /**
+   * Delete a loadout
+   * @param {Event} event - The click event
+   * @param {HTMLElement} target - The clicked element
+   * @static
+   */
+  static async deleteLoadout(event, target) {
+    const loadoutId = target.dataset.loadoutId;
+    const loadoutName = target.dataset.loadoutName;
+    if (!loadoutId) return;
+
+    const confirmed = await foundry.applications.api.DialogV2.confirm({
+      title: game.i18n.localize('SPELLBOOK.Loadouts.ConfirmDelete'),
+      content: game.i18n.format('SPELLBOOK.Loadouts.ConfirmDeleteContent', { name: loadoutName })
+    });
+
+    if (confirmed) {
+      try {
+        const success = await this.loadoutManager.deleteLoadout(loadoutId);
+        if (success) {
+          await this.render(false);
+        }
+      } catch (error) {
+        log(1, 'Error deleting loadout:', error);
+      }
     }
   }
 
@@ -165,30 +201,6 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
       if (success) this.close();
     } catch (error) {
       log(1, 'Error applying loadout:', error);
-    }
-  }
-
-  /**
-   * Delete a loadout
-   * @param {Event} event - The click event
-   * @param {HTMLElement} target - The clicked element
-   * @static
-   */
-  static async deleteLoadout(event, target) {
-    const loadoutId = target.dataset.loadoutId;
-    const loadoutName = target.dataset.loadoutName;
-    if (!loadoutId) return;
-    const confirmed = await foundry.applications.api.DialogV2.confirm({
-      title: game.i18n.localize('SPELLBOOK.Loadouts.ConfirmDelete'),
-      content: game.i18n.format('SPELLBOOK.Loadouts.ConfirmDeleteContent', { name: loadoutName })
-    });
-    if (confirmed) {
-      try {
-        const success = this.loadoutManager.deleteLoadout(loadoutId);
-        if (success) this.render(false);
-      } catch (error) {
-        log(1, 'Error deleting loadout:', error);
-      }
     }
   }
 

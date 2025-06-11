@@ -46,11 +46,12 @@ export class SpellLoadoutManager {
    * @param {string} description - The loadout description
    * @param {Array} spellConfiguration - The spell preparation configuration
    * @param {string} classIdentifier - Optional class identifier
-   * @returns {boolean} Success status
+   * @returns {Promise<boolean>} Success status
    */
-  saveLoadout(name, description, spellConfiguration, classIdentifier = null) {
+  async saveLoadout(name, description, spellConfiguration, classIdentifier = null) {
     try {
       if (!name || !name.trim()) throw new Error('Loadout name is required');
+
       const loadoutId = foundry.utils.randomID();
       const loadout = {
         id: loadoutId,
@@ -61,9 +62,12 @@ export class SpellLoadoutManager {
         createdAt: Date.now(),
         updatedAt: Date.now()
       };
-      const existingLoadouts = this.actor.getFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS) || {};
-      existingLoadouts[loadoutId] = loadout;
-      this.actor.setFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS, existingLoadouts);
+
+      // Update the specific loadout entry, not the entire object
+      await this.actor.update({
+        [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.${loadoutId}`]: loadout
+      });
+
       this._invalidateCache();
       log(3, `Saved loadout: ${name} for ${classIdentifier || 'all classes'}`);
       return true;
@@ -113,16 +117,20 @@ export class SpellLoadoutManager {
   /**
    * Delete a loadout
    * @param {string} loadoutId - The loadout ID to delete
-   * @returns {boolean} Success status
+   * @returns {Promise<boolean>} Success status
    */
-  deleteLoadout(loadoutId) {
+  async deleteLoadout(loadoutId) {
     try {
       const existingLoadouts = this.actor.getFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS) || {};
       if (!existingLoadouts[loadoutId]) throw new Error('Loadout not found');
+
       const loadoutName = existingLoadouts[loadoutId].name;
-      delete existingLoadouts[loadoutId];
-      this.actor.unsetFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS);
-      this.actor.setFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS, existingLoadouts);
+
+      // Use the -= operator to remove the specific loadout
+      await this.actor.update({
+        [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.-=${loadoutId}`]: null
+      });
+
       this._invalidateCache();
       log(3, `Deleted loadout: ${loadoutName}`);
       ui.notifications.info(game.i18n.format('SPELLBOOK.Loadouts.Deleted', { name: loadoutName }));
