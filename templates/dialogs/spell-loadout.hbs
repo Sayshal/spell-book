@@ -31,55 +31,51 @@
 
   <!-- Existing Loadouts Section -->
   {{#if existingLoadouts.length}}
-  <fieldset class="loadout-section existing-loadouts">
-    <legend>{{localize 'SPELLBOOK.Loadouts.ExistingLoadouts'}}</legend>
+    <fieldset class="loadout-section existing-loadouts">
+      <legend>{{localize 'SPELLBOOK.Loadouts.ExistingLoadouts'}}</legend>
 
-    <div class="loadout-list">
-      {{#each existingLoadouts as |loadout|}}
-      <div class="loadout-item">
-        <div class="loadout-header-row">
-          <div class="loadout-name-desc">
-            <span class="loadout-name">{{loadout.name}}</span>{{#if loadout.description}}<span class="loadout-separator">.</span> <span class="loadout-description">{{loadout.description}}</span>{{/if}}
-          </div>
-          <button type="button"
-                  data-action="applyLoadout"
-                  data-loadout-id="{{loadout.id}}"
-                  class="apply-loadout-btn">
-            <i class="fas fa-check"></i>
-            {{localize 'SPELLBOOK.Loadouts.Apply'}}
-          </button>
-        </div>
+      <div class="loadout-list">
+        {{#each existingLoadouts as |loadout|}}
+          <div class="loadout-item">
+            <!-- Title row: Name + Description -->
+            <div class="loadout-title">
+              <span class="loadout-name">{{loadout.name}}</span>{{#if loadout.description}}. <span
+                  class="loadout-description">{{loadout.description}}</span>{{/if}}
+            </div>
 
-        <div class="loadout-meta-row">
-          <div class="loadout-meta">
-            {{localize 'SPELLBOOK.Loadouts.SpellCount' count=loadout.spellCount}}{{#if loadout.formattedDate}} • {{localize 'SPELLBOOK.Loadouts.LastUpdated' date=loadout.formattedDate}}{{/if}}
+            <!-- Actions row: All buttons -->
+            <div class="loadout-actions">
+              <button type="button" data-action="applyLoadout" data-loadout-id="{{loadout.id}}"
+                class="apply-loadout-btn">
+                <i class="fas fa-check"></i>
+                {{localize 'SPELLBOOK.Loadouts.Apply'}}
+              </button>
+              <button type="button" data-action="overwriteLoadout" data-loadout-id="{{loadout.id}}"
+                data-loadout-name="{{loadout.name}}" class="overwrite-loadout-btn">
+                <i class="fas fa-sync-alt"></i>
+                {{localize 'SPELLBOOK.Loadouts.Overwrite'}}
+              </button>
+              <button type="button" data-action="deleteLoadout" data-loadout-id="{{loadout.id}}"
+                data-loadout-name="{{loadout.name}}" class="delete-loadout-btn">
+                <i class="fas fa-trash"></i>
+                {{localize 'SPELLBOOK.Loadouts.Delete'}}
+              </button>
+            </div>
+
+            <!-- Footer row: Metadata -->
+            <div class="loadout-footer">
+              <div class="loadout-meta">
+                {{localize 'SPELLBOOK.Loadouts.SpellCount' count=loadout.spellCount}}{{#if loadout.formattedDate}} •
+                  {{localize 'SPELLBOOK.Loadouts.LastUpdated' date=loadout.formattedDate}}{{/if}}
+              </div>
+            </div>
           </div>
-          <div class="loadout-actions">
-            <button type="button"
-                    data-action="overwriteLoadout"
-                    data-loadout-id="{{loadout.id}}"
-                    data-loadout-name="{{loadout.name}}"
-                    class="overwrite-loadout-btn">
-              <i class="fas fa-sync-alt"></i>
-              {{localize 'SPELLBOOK.Loadouts.Overwrite'}}
-            </button>
-            <button type="button"
-                    data-action="deleteLoadout"
-                    data-loadout-id="{{loadout.id}}"
-                    data-loadout-name="{{loadout.name}}"
-                    class="delete-loadout-btn">
-              <i class="fas fa-trash"></i>
-              {{localize 'SPELLBOOK.Loadouts.Delete'}}
-            </button>
-          </div>
-        </div>
+        {{/each}}
       </div>
-      {{/each}}
-    </div>
-  </fieldset>
+    </fieldset>
   {{else}}
-  <div class="no-loadouts">
-    <p>{{localize 'SPELLBOOK.Loadouts.NoLoadouts'}}</p>
-  </div>
+    <div class="no-loadouts">
+      <p>{{localize 'SPELLBOOK.Loadouts.NoLoadouts'}}</p>
+    </div>
   {{/if}}
 </div>

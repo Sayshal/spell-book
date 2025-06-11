@@ -301,6 +301,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         label: 'SPELLBOOK.UI.Reset',
         tooltip: 'SPELLBOOK.UI.ResetTooltip',
         cssClass: 'reset-button'
+      },
+      {
+        type: 'button',
+        action: 'openLoadoutDialog',
+        icon: 'fas fa-toolbox',
+        label: 'SPELLBOOK.UI.SpellLoadouts',
+        tooltip: 'SPELLBOOK.Loadouts.ManageLoadouts',
+        cssClass: 'loadout-button'
       }
     ];
     return {

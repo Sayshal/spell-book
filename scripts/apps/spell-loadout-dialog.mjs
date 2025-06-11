@@ -25,7 +25,7 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
     },
     classes: ['spell-loadout-dialog'],
     window: {
-      icon: 'fas fa-save',
+      icon: 'fas fa-toolbox',
       resizable: true,
       minimizable: false,
       positioned: true
@@ -115,7 +115,7 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
       if (success) {
         ui.notifications.info(game.i18n.format('SPELLBOOK.Loadouts.Saved', { name }));
         form.reset();
-        this.render(false);
+        this.render({ force: true });
       }
     } catch (error) {
       log(1, 'Error saving loadout:', error);

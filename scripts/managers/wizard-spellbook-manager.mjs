@@ -201,7 +201,7 @@ export class WizardSpellbookManager {
       const copiedSpellsFlag = `${FLAGS.WIZARD_COPIED_SPELLS}_${this.classIdentifier}`;
       const copiedSpells = this.actor.getFlag(MODULE.ID, copiedSpellsFlag) || [];
       copiedSpells.push(metadataObj);
-      this.actor.setFlag(MODULE.ID, copiedSpellsFlag, copiedSpells);
+      await this.actor.setFlag(MODULE.ID, copiedSpellsFlag, copiedSpells);
     }
     log(3, `Added spell ${spellUuid} to ${this.actor.name}'s ${this.classIdentifier} spellbook`);
     this.invalidateCache();

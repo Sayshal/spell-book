@@ -297,9 +297,9 @@ export class SpellManager {
         preparedByClass[sourceClass].push(uuid);
       }
     });
-    this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
+    await this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
     const allPreparedUuids = Object.values(preparedByClass).flat();
-    this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS, allPreparedUuids);
+    await this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS, allPreparedUuids);
     log(3, `Saved prepared spells to actor flags by class`);
     const spellIdsToRemove = [];
     const spellsToUpdate = [];
@@ -419,7 +419,7 @@ export class SpellManager {
       }
     }
     preparedByClass[classIdentifier] = newClassPrepared;
-    this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
+    await this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
     if (spellIdsToRemove.length > 0) {
       log(3, `Removing ${spellIdsToRemove.length} spells from actor`);
       await this.actor.deleteEmbeddedDocuments('Item', spellIdsToRemove);
@@ -669,7 +669,7 @@ export class SpellManager {
       preparedByClass[classIdentifier] = cleanedKeys;
     }
     if (hasChanges) {
-      this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
+      await this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
       await this._updateGlobalPreparedSpellsFlag();
       log(2, 'Cleaned up stale preparation flags');
     }
