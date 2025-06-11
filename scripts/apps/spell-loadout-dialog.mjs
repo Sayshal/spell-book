@@ -90,6 +90,12 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
     return context;
   }
 
+  /** @override */
+  async _onRender(context, options) {
+    await super._onRender(context, options);
+    this._setupSpellPreviewHandlers();
+  }
+
   /**
    * Save current configuration as a new loadout
    * @param {Event} event - The form event
@@ -202,6 +208,142 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
     } catch (error) {
       log(1, 'Error applying loadout:', error);
     }
+  }
+
+  /**
+   * Set up spell preview hover handlers
+   * @private
+   */
+  _setupSpellPreviewHandlers() {
+    const previewIcons = this.element.querySelectorAll('.spell-preview-icon');
+    previewIcons.forEach((icon) => {
+      icon.addEventListener('mouseenter', async (event) => {
+        await this._showSpellPreview(event);
+      });
+      icon.addEventListener('mouseleave', () => {
+        this._hideSpellPreview();
+      });
+      icon.addEventListener('mousemove', (event) => {
+        this._positionTooltip(event);
+      });
+    });
+  }
+
+  /**
+   * Show spell preview tooltip
+   * @param {Event} event - The mouse event
+   * @private
+   */
+  async _showSpellPreview(event) {
+    const loadoutId = event.target.dataset.loadoutId;
+    const loadout = this.loadoutManager.loadLoadout(loadoutId);
+    if (!loadout || !loadout.spellConfiguration) return;
+    let tooltip = document.getElementById('spell-preview-tooltip');
+    if (!tooltip) {
+      tooltip = document.createElement('div');
+      tooltip.id = 'spell-preview-tooltip';
+      tooltip.className = 'spell-preview-tooltip';
+      document.body.appendChild(tooltip);
+    }
+
+    try {
+      tooltip.innerHTML = `
+      <div class="tooltip-content">
+        <div class="loading">${game.i18n.localize('SPELLBOOK.Loadouts.LoadingSpells')}</div>
+      </div>
+    `;
+      tooltip.style.display = 'block';
+      this._positionTooltip(event, tooltip);
+      const spellData = await Promise.all(
+        loadout.spellConfiguration.map(async (uuid) => {
+          const spell = await fromUuid(uuid);
+          return spell ? { name: spell.name, img: spell.img, level: spell.system?.level || 0, uuid: uuid } : null;
+        })
+      );
+      const validSpells = spellData
+        .filter((spell) => spell !== null)
+        .sort((a, b) => {
+          if (a.level !== b.level) return a.level - b.level;
+          return a.name.localeCompare(b.name);
+        });
+
+      if (validSpells.length === 0) {
+        tooltip.innerHTML = `
+        <div class="tooltip-content">
+          <div class="no-spells">${game.i18n.localize('SPELLBOOK.Loadouts.NoValidSpells')}</div>
+        </div>
+      `;
+        return;
+      }
+      const spellsHtml = validSpells
+        .map(
+          (spell) => `
+      <div class="spell-preview-item">
+        <img src="${spell.img}" alt="${spell.name}" class="spell-icon" />
+        <span class="spell-name">${spell.name}</span>
+        ${spell.level > 0 ? `<span class="spell-level">${spell.level}</span>` : 'C'}
+      </div>
+    `
+        )
+        .join('');
+
+      tooltip.innerHTML = `
+      <div class="tooltip-content">
+        <div class="tooltip-header">
+          <strong>${loadout.name}</strong> ${game.i18n.format('SPELLBOOK.Loadouts.SpellCountParens', { count: validSpells.length })}
+        </div>
+        <div class="spell-preview-list">
+          ${spellsHtml}
+        </div>
+      </div>
+    `;
+    } catch (error) {
+      log(1, 'Error showing spell preview:', error);
+      tooltip.innerHTML = `
+      <div class="tooltip-content">
+        <div class="error">${game.i18n.localize('SPELLBOOK.Loadouts.ErrorLoadingPreview')}</div>
+      </div>
+    `;
+    }
+  }
+
+  /**
+   * Hide spell preview tooltip
+   * @private
+   */
+  _hideSpellPreview() {
+    const tooltip = document.getElementById('spell-preview-tooltip');
+    if (tooltip) tooltip.style.display = 'none';
+  }
+
+  /**
+   * Position tooltip near cursor
+   * @param {Event} event - The mouse event
+   * @param {HTMLElement} tooltip - Optional tooltip element
+   * @private
+   */
+  _positionTooltip(event, tooltip = null) {
+    if (!tooltip) tooltip = document.getElementById('spell-preview-tooltip');
+    if (!tooltip) return;
+    const offset = 15;
+    const x = event.clientX + offset;
+    const y = event.clientY + offset;
+    const rect = tooltip.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    let finalX = x;
+    let finalY = y;
+    if (x + rect.width > viewportWidth) finalX = event.clientX - rect.width - offset;
+    if (y + rect.height > viewportHeight) finalY = event.clientY - rect.height - offset;
+    tooltip.style.left = `${finalX}px`;
+    tooltip.style.top = `${finalY}px`;
+  }
+
+  /** @override */
+  _onClose() {
+    const tooltip = document.getElementById('spell-preview-tooltip');
+    if (tooltip) tooltip.remove();
+    super._onClose();
   }
 
   /**

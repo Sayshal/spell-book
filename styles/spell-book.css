@@ -16,6 +16,7 @@
 
   /* Colors */
   --spell-book-bg-primary: rgb(27 29 36 / 90.2%);
+  --spell-book-bg-primary-opaque: rgb(27 29 36);
   --spell-book-bg-item: rgb(0 0 0 / 5.1%);
   --spell-book-bg-item-hover: rgb(0 0 0 / 10.2%);
   --spell-book-bg-prepared: rgb(0 128 0 / 10.2%);
@@ -59,6 +60,8 @@
   --spell-book-z-index-sidebar: 2;
   --spell-book-z-index-tabs: 3;
   --spell-book-z-index-footer: 10;
+  --spell-book-z-index-tooltip: 9999;
+  --spell-book-z-index-context: 9998;
 }
 
 /* ----------------------------------------- */
@@ -1714,6 +1717,16 @@
   }
 
   .loadout-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+
+    .loadout-text {
+      flex: 1;
+      min-width: 0;
+    }
+
     .loadout-name {
       color: var(--spell-book-text-primary);
       font-weight: 600;
@@ -1724,6 +1737,18 @@
       color: var(--spell-book-text-secondary);
       font-style: italic;
       font-size: 0.9em;
+    }
+
+    .spell-preview-icon {
+      flex: 0 0 auto;
+      color: var(--spell-book-text-secondary);
+      font-size: 1rem;
+      cursor: help;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: var(--color-border-highlight);
+      }
     }
   }
 
@@ -1795,6 +1820,161 @@
 }
 
 /* ----------------------------------------- */
+/*  Spell Preview Tooltip                    */
+/* ----------------------------------------- */
+.spell-preview-tooltip {
+  position: absolute;
+  z-index: var(--spell-book-z-index-tooltip);
+  max-width: 350px;
+  padding: 0.5rem;
+  border-radius: var(--spell-book-border-radius);
+  color: var(--color-text-light-primary);
+  font-family: var(--font-primary);
+  background: var(--spell-book-bg-primary-opaque);
+  pointer-events: none;
+
+  .tooltip-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .tooltip-header {
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid var(--color-border-light-tertiary);
+    color: var(--spell-book-text-primary);
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .spell-preview-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    max-height: 300px;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: var(--spell-book-bg-disabled);
+    }
+
+    &::-webkit-scrollbar-thumb {
+      border-radius: 2px;
+      background: var(--color-border-light-tertiary);
+    }
+  }
+
+  .spell-preview-item {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem;
+    border-radius: 2px;
+    font-size: 0.8rem;
+    background: var(--spell-book-bg-item);
+
+    &:hover {
+      background: var(--spell-book-bg-item-hover);
+    }
+
+    .spell-icon {
+      object-fit: cover;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--spell-book-bg-disabled);
+    }
+
+    .spell-name {
+      flex: 1;
+      overflow: hidden;
+      color: var(--spell-book-text-primary);
+      font-weight: 500;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .spell-level {
+      color: var(--spell-book-text-secondary);
+      font-size: 0.75em;
+    }
+  }
+
+  .loading,
+  .error,
+  .no-spells {
+    padding: 1rem;
+    color: var(--spell-book-text-secondary);
+    font-style: italic;
+    text-align: center;
+  }
+
+  .error {
+    color: var(--color-level-error);
+  }
+}
+
+/* ----------------------------------------- */
+/*  Loadout Context Menu                     */
+/* ----------------------------------------- */
+.spell-loadout-context-menu {
+  position: absolute;
+  z-index: var(--spell-book-z-index-context);
+  max-width: 300px;
+  border-radius: var(--spell-book-border-radius);
+  color: var(--color-text-light-primary);
+  font-family: var(--font-primary);
+  background: var(--spell-book-bg-primary-opaque);
+
+  .context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem;
+    border: none;
+    color: var(--spell-book-text-primary);
+    cursor: pointer;
+    background: none;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background: var(--spell-book-bg-item-hover);
+    }
+
+    &.separator {
+      height: 1px;
+      padding: 0;
+      margin: 0.25rem 0;
+      border-bottom: 1px solid var(--color-border-light-tertiary);
+      cursor: default;
+      background: none;
+
+      &:hover {
+        background: none;
+      }
+    }
+
+    .item-icon {
+      flex: 0 0 auto;
+      width: 16px;
+      text-align: center;
+      color: var(--spell-book-text-secondary);
+    }
+
+    .item-text {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}
+
+/* ----------------------------------------- */
 /*  Theme Support                            */
 /* ----------------------------------------- */
 .theme-light {
@@ -1846,6 +2026,20 @@
         color: var(--color-text-dark-secondary);
       }
     }
+  }
+
+  .spell-preview-tooltip {
+    border-color: var(--color-border-light-primary);
+    color: var(--color-text-dark-primary);
+    background: rgb(248 248 248);
+    box-shadow: 0 0 0.375rem rgb(0 0 0 / 20%);
+  }
+
+  .spell-loadout-context-menu {
+    border-color: var(--color-border-light-primary);
+    color: var(--color-text-dark-primary);
+    background: rgb(248 248 248);
+    box-shadow: 0 0 0.375rem rgb(0 0 0 / 20%);
   }
 }
 

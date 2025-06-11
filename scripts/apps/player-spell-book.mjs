@@ -8,6 +8,7 @@ import { SpellbookFilterHelper } from '../helpers/ui/spellbook-filters.mjs';
 import { SpellbookUI } from '../helpers/ui/spellbook-ui.mjs';
 import { log } from '../logger.mjs';
 import { RitualManager } from '../managers/ritual-manager.mjs';
+import { SpellLoadoutManager } from '../managers/spell-loadout-manager.mjs';
 import { SpellManager } from '../managers/spell-manager.mjs';
 import { WizardSpellbookManager } from '../managers/wizard-spellbook-manager.mjs';
 import { PlayerFilterConfiguration } from './player-filter-configuration.mjs';
@@ -494,6 +495,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       this._classColorsApplied = true;
       this._classesChanged = false;
     }
+    this._setupLoadoutContextMenu();
   }
 
   /** @inheritdoc */
@@ -548,6 +550,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     if (this._isLongRest) this.actor.unsetFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);
     if (this._flagChangeHook) Hooks.off('updateActor', this._flagChangeHook);
+    document.removeEventListener('click', this._hideLoadoutContextMenu.bind(this));
     super._onClose();
   }
 
@@ -893,6 +896,105 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _applyFilters() {
     this.filterHelper.applyFilters();
+  }
+
+  /**
+   * Set up context menu for loadout button
+   * @private
+   */
+  _setupLoadoutContextMenu() {
+    const loadoutButton = this.element.querySelector('[data-action="openLoadoutDialog"]');
+    if (!loadoutButton) return;
+    loadoutButton.addEventListener('contextmenu', async (event) => {
+      event.preventDefault();
+      await this._showLoadoutContextMenu(event);
+    });
+    document.addEventListener('click', this._hideLoadoutContextMenu.bind(this));
+  }
+
+  /**
+   * Show context menu with available loadouts
+   * @param {Event} event - The right-click event
+   * @private
+   */
+  async _showLoadoutContextMenu(event) {
+    this._hideLoadoutContextMenu();
+    const activeTab = this.tabGroups['spellbook-tabs'];
+    const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
+    const classIdentifier = activeTabContent?.dataset.classIdentifier || this._stateManager.activeClass;
+    if (!classIdentifier) return;
+    try {
+      const loadoutManager = new SpellLoadoutManager(this.actor, this);
+      const availableLoadouts = loadoutManager.getAvailableLoadouts(classIdentifier);
+      if (availableLoadouts.length === 0) return;
+      const contextMenu = document.createElement('div');
+      contextMenu.id = 'spell-loadout-context-menu';
+      contextMenu.className = 'spell-loadout-context-menu';
+      const menuItems = availableLoadouts
+        .map((loadout) => {
+          const spellCount = loadout.spellConfiguration?.length || 0;
+          return `
+        <div class="context-menu-item" data-loadout-id="${loadout.id}">
+          <i class="fas fa-magic item-icon"></i>
+          <span class="item-text">${loadout.name} (${spellCount})</span>
+        </div>
+      `;
+        })
+        .join('');
+      contextMenu.innerHTML = menuItems;
+      document.body.appendChild(contextMenu);
+      this._positionContextMenu(event, contextMenu);
+      contextMenu.addEventListener('click', async (clickEvent) => {
+        const item = clickEvent.target.closest('.context-menu-item');
+        if (!item || item.classList.contains('separator')) return;
+        if (item.dataset.action === 'manage') {
+          const dialog = new SpellLoadoutDialog(this.actor, this, classIdentifier);
+          dialog.render(true);
+        } else if (item.dataset.loadoutId) {
+          const success = await loadoutManager.applyLoadout(item.dataset.loadoutId, classIdentifier);
+        }
+        this._hideLoadoutContextMenu();
+      });
+      this._activeContextMenu = contextMenu;
+    } catch (error) {
+      log(1, 'Error showing loadout context menu:', error);
+    }
+  }
+
+  /**
+   * Position context menu at the left edge of the spell book application
+   * @param {Event} event - The click event
+   * @param {HTMLElement} menu - The context menu element
+   * @private
+   */
+  _positionContextMenu(event, menu) {
+    const button = event.currentTarget;
+    const appRect = this.element.getBoundingClientRect();
+    const buttonRect = button.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const finalX = appRect.left - menuRect.width;
+    let finalY = buttonRect.top;
+    if (finalY + menuRect.height > viewportHeight) {
+      const aboveY = buttonRect.bottom - menuRect.height;
+      if (aboveY >= 10) finalY = aboveY;
+      else finalY = viewportHeight - menuRect.height - 10;
+    }
+    if (finalY < 10) finalY = 10;
+    const minX = 10;
+    const adjustedX = Math.max(finalX, minX);
+    menu.style.left = `${adjustedX}px`;
+    menu.style.top = `${finalY}px`;
+  }
+
+  /**
+   * Hide loadout context menu
+   * @private
+   */
+  _hideLoadoutContextMenu() {
+    const existingMenu = document.getElementById('spell-loadout-context-menu');
+    if (existingMenu) existingMenu.remove();
+    this._activeContextMenu = null;
   }
 
   /**

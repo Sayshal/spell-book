@@ -37,10 +37,16 @@
       <div class="loadout-list">
         {{#each existingLoadouts as |loadout|}}
           <div class="loadout-item">
-            <!-- Title row: Name + Description -->
+            <!-- Title row: Name + Description + Preview Icon -->
             <div class="loadout-title">
-              <span class="loadout-name">{{loadout.name}}</span>{{#if loadout.description}}. <span
-                  class="loadout-description">{{loadout.description}}</span>{{/if}}
+              <div class="loadout-text">
+                <span class="loadout-name">{{loadout.name}}</span>{{#if loadout.description}}. <span
+                    class="loadout-description">{{loadout.description}}</span>{{/if}}
+              </div>
+              {{#if loadout.spellCount}}
+                <i class="fas fa-eye spell-preview-icon" data-loadout-id="{{loadout.id}}">
+                </i>
+              {{/if}}
             </div>
 
             <!-- Actions row: All buttons -->
