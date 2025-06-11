@@ -4,6 +4,7 @@
 			<div class="header-title">
 				<h2 id="selected-list-title">{{selectedSpellList.name}}</h2>
 			</div>
+
 			<div class="header-buttons" role="toolbar" aria-label="{{localize 'SPELLMANAGER.UI.ListActions'}}">
 				{{#unless isEditing}}
 					<button type="button" class="edit-button action-button" data-action="editSpellList"
@@ -28,7 +29,6 @@
 							{{#if selectedSpellList.compareInfo.hasOriginalChanged}}
 								<span class="update-notice" role="status">{{localize "SPELLMANAGER.Status.UpdateNotice"}}</span>
 							{{/if}}
-
 							<button type="button" class="restore-button action-button" data-action="restoreOriginal"
 								data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Restore'}}">
 								<i class="fas fa-sync" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Restore"}}
@@ -46,8 +46,16 @@
 						</button>
 					</div>
 				{{/unless}}
+
+				{{#if (and isEditing selectionMode)}}
+					<div class="select-all-remove-container">
+						<span class="selection-label">{{localize "SPELLMANAGER.Selection.SelectAllToRemove"}}</span>
+						{{{selectAllRemoveCheckboxHtml}}}
+					</div>
+				{{/if}}
 			</div>
 		</div>
+
 		<div class="selected-list-spells" aria-labelledby="selected-list-title">
 			{{#if selectedSpellList.isLoadingSpells}}
 				{{> "modules/spell-book/templates/components/loading-spinner.hbs" size=2 message=(localize "SPELLMANAGER.Application.LoadingSpells")}}
@@ -57,7 +65,10 @@
 				<div class="spells-container">
 					{{#each selectedSpellList.spellsByLevel as |levelData|}}
 						{{#> "modules/spell-book/templates/components/spell-level.hbs" level=levelData.level levelName=levelData.levelName spells=levelData.spells}}
-							<li class="{{cssClasses}}" {{{dataAttributes}}} role="listitem">
+							<li
+								class="spell-item{{#if ../../selectionMode}} selectable{{/if}}{{#if (lookup ../../selectedSpellsToRemove compendiumUuid)}} selected{{/if}}"
+								data-uuid="{{compendiumUuid}}" data-selection-type="remove" role="listitem">
+
 								<div class="spell-name">
 									{{{enrichedIcon}}}
 									<div class="name-stacked">
@@ -65,12 +76,18 @@
 										<span class="subtitle">{{formattedDetails}}</span>
 									</div>
 								</div>
-								{{#if @root.isEditing}}
+
+								{{#if ../../isEditing}}
 									<div class="spell-preparation">
-										<button type="button" class="remove-spell" data-action="removeSpell" data-uuid="{{compendiumUuid}}"
-											aria-label="{{localize 'SPELLMANAGER.Buttons.RemoveSpell' name=name}}">
-											<i class="fas fa-trash" aria-hidden="true"></i>
-										</button>
+										{{#if ../../selectionMode}}
+											{{{selectRemoveCheckboxHtml}}}
+										{{else}}
+											<button type="button" class="remove-spell" data-action="removeSpell"
+												data-uuid="{{compendiumUuid}}"
+												aria-label="{{localize 'SPELLMANAGER.Buttons.RemoveSpell' name=name}}">
+												<i class="fas fa-trash" aria-hidden="true"></i>
+											</button>
+										{{/if}}
 									</div>
 								{{/if}}
 							</li>

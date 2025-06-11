@@ -1,10 +1,12 @@
 <div class="available-spells-sidebar" role="complementary"
 	aria-label="{{localize 'SPELLMANAGER.Columns.AvailableSpells'}}">
 	<h2 id="available-spells-heading">{{localize "SPELLMANAGER.Columns.AvailableSpells"}}</h2>
+
 	<div class="spell-filters" role="search" aria-labelledby="available-spells-heading">
 		<div class="filter-search">
 			{{{filterFormElements.searchInputHtml}}}
 		</div>
+
 		<div class="filter-grid">
 			<div class="filter-item">
 				<label for="spell-level">{{localize "SPELLBOOK.Filters.Level"}}</label>
@@ -45,6 +47,7 @@
 				</label>
 			</div>
 		</div>
+
 		<div class="filter-range">
 			<label id="range-filter-label">{{localize "SPELLBOOK.Filters.Range"}}
 				({{#if (eq (lookup @root.settings "distanceUnit") "meters")}}{{localize "SPELLBOOK.Settings.DistanceUnit.Meters"}}{{else}}{{localize "SPELLBOOK.Settings.DistanceUnit.Feet"}}{{/if}})</label>
@@ -56,25 +59,37 @@
 				{{{filterFormElements.maxRangeInputHtml}}}
 			</div>
 		</div>
+
 		<div class="filter-item">
 			<label for="spell-source">{{localize "SPELLMANAGER.Filters.Source"}}</label>
 			{{{filterFormElements.sourceSelectHtml}}}
 		</div>
 	</div>
+
+	{{#if (and isEditing selectionMode)}}
+		<div class="select-all-add-container">
+			<span class="selection-label">{{localize "SPELLMANAGER.Selection.SelectAllToAdd"}}</span>
+			{{{selectAllAddCheckboxHtml}}}
+		</div>
+	{{/if}}
+
 	<div class="available-spells-list">
 		{{#if isEditing}}
 			{{#if filteredSpells.spells.length}}
 				<div class="available-spells-wrapper">
 					<ul class="available-spells" role="list" aria-label="{{localize 'SPELLMANAGER.UI.FilteredSpells'}}">
 						{{#each filteredSpells.spells as |spell|}}
-							<li class="spell-item available" data-uuid="{{spell.uuid}}" data-spell-level="{{spell.level}}"
-								data-spell-school="{{spell.school}}" data-casting-time-type="{{spell.filterData.castingTime.type}}"
+							<li
+								class="spell-item available{{#if ../selectionMode}} selectable{{/if}}{{#if (lookup ../selectedSpellsToAdd spell.uuid)}} selected{{/if}}"
+								data-uuid="{{spell.uuid}}" data-spell-level="{{spell.level}}" data-spell-school="{{spell.school}}"
+								data-casting-time-type="{{spell.filterData.castingTime.type}}"
 								data-casting-time-value="{{spell.filterData.castingTime.value}}"
 								data-range-units="{{spell.filterData.range.units}}" data-range-value="{{spell.system.range.value}}"
 								data-damage-types="{{spell.filterData.damageTypes}}" data-ritual="{{spell.filterData.isRitual}}"
 								data-concentration="{{spell.filterData.concentration}}"
 								data-requires-save="{{spell.filterData.requiresSave}}" data-conditions="{{spell.filterData.conditions}}"
-								role="listitem">
+								data-selection-type="add" role="listitem">
+
 								<div class="spell-name">
 									{{{spell.enrichedIcon}}}
 									<div class="name-stacked">
@@ -82,16 +97,22 @@
 										<span class="subtitle">{{spell.formattedDetails}}</span>
 									</div>
 								</div>
+
 								<div class="spell-meta">
-									<button type="button" class="add-spell" data-action="addSpell" data-uuid="{{spell.uuid}}"
-										aria-label="{{localize 'SPELLMANAGER.Buttons.AddSpell' name=spell.name}}">
-										<i class="fas fa-plus" aria-hidden="true"></i>
-									</button>
+									{{#if ../selectionMode}}
+										{{{spell.selectAddCheckboxHtml}}}
+									{{else}}
+										<button type="button" class="add-spell" data-action="addSpell" data-uuid="{{spell.uuid}}"
+											aria-label="{{localize 'SPELLMANAGER.Buttons.AddSpell' name=spell.name}}">
+											<i class="fas fa-plus" aria-hidden="true"></i>
+										</button>
+									{{/if}}
 								</div>
 							</li>
 						{{/each}}
 					</ul>
 				</div>
+
 				<div class="filter-count-display" role="status" aria-live="polite">
 					<span
 						class="filter-count">{{localize "SPELLMANAGER.Filters.FilteredSpellCount" count=filteredSpells.totalFiltered}}</span>

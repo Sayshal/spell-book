@@ -521,6 +521,31 @@
       align-items: center;
       margin-top: -1.25rem;
       white-space: nowrap;
+      position: relative;
+      width: 100%;
+
+      .select-all-remove-container {
+        position: absolute;
+        height: 100%;
+        top: 0;
+        right: 5px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: var(--spell-book-manager-font-sm);
+
+        .selection-label {
+          color: var(--spell-book-manager-text-secondary);
+          font-weight: 500;
+          white-space: nowrap;
+        }
+
+        .select-all-checkbox {
+          width: 1rem;
+          height: 1rem;
+          cursor: pointer;
+        }
+      }
     }
 
     /* Action buttons */
@@ -787,6 +812,12 @@
       flex-shrink: 0;
       align-items: center;
       color: var(--spell-book-manager-text-tertiary);
+
+      dnd5e-checkbox.spell-select-cb {
+        width: 1rem;
+        height: 1rem;
+        cursor: pointer;
+      }
     }
 
     .add-spell,
@@ -844,8 +875,14 @@
   /* Spell preparation */
   .spell-preparation {
     flex: 0 0 auto;
-    width: 1.25rem;
+    width: 1.9rem;
     margin-left: 0.5rem;
+
+    dnd5e-checkbox.spell-select-cb {
+      width: 1rem;
+      height: 1rem;
+      cursor: pointer;
+    }
 
     .remove-spell {
       padding: 0;
@@ -860,6 +897,46 @@
       }
     }
   }
+
+  /* Selection mode styles */
+  &.selection-mode {
+    .spell-item {
+      cursor: pointer;
+      padding-left: 2.5rem; /* Space for checkbox */
+
+      &.selected {
+        background-color: var(--color-bg-option);
+        border-left: 3px solid var(--color-border-highlight);
+      }
+
+      &.selectable:hover {
+        background: var(--spell-book-manager-bg-item-hover);
+      }
+    }
+  }
+
+  /* Selection mode spell items */
+  .spell-item.selectable {
+    position: relative;
+    user-select: none;
+
+    &.selected {
+      background-color: var(--color-bg-option);
+      border-left: 3px solid var(--color-border-highlight);
+    }
+
+    &:hover.selectable {
+      background: var(--spell-book-manager-bg-item-hover);
+    }
+  }
+
+  /* Adjust spell content positioning when checkbox is present */
+  .selection-mode .spell-item {
+    .spell-name,
+    .spell-details {
+      margin-left: 0.5rem;
+    }
+  }
 }
 
 /* ----------------------------------------- */
@@ -872,7 +949,7 @@
     top: 0;
     right: 0;
     bottom: 60px;
-    flex-direction: column; /* Account for footer height */
+    flex-direction: column;
     width: var(--spell-book-manager-spells-sidebar-width);
     border-left: 1px solid var(--spell-book-manager-border-color);
     overflow: hidden;
@@ -887,6 +964,32 @@
       text-align: center;
       background-color: rgb(0 0 0 / 20%);
       box-shadow: var(--spell-book-manager-header-shadow);
+    }
+  }
+
+  /* Available spells select all positioning */
+  .select-all-add-container {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 0.25rem;
+    padding-bottom: 0.25rem;
+    margin-right: 0.85rem;
+    font-size: var(--spell-book-manager-font-sm);
+    border-bottom: 1px solid var(--spell-book-border-light);
+    border-radius: var(--spell-book-border-radius);
+
+    .selection-label {
+      color: var(--spell-book-manager-text-secondary);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    dnd5e-checkbox.select-all-checkbox {
+      width: 1rem;
+      height: 1rem;
+      cursor: pointer;
+      margin-left: 0.5rem;
     }
   }
 
@@ -1040,31 +1143,198 @@
 /* ----------------------------------------- */
 .gm-spell-list-manager {
   .manager-footer {
-    gap: 0.5rem;
     display: flex;
     z-index: var(--spell-book-manager-z-footer);
     position: absolute;
     right: 0;
     bottom: 0;
     left: 0;
-    justify-content: center;
     height: 60px;
-    padding: 0.5rem;
     border-top: 1px solid var(--spell-book-manager-border-color);
     background: var(--spell-book-manager-bg-item);
 
+    .footer-content {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: 0.75rem 1rem;
+      gap: 1rem;
+    }
+
+    .footer-center {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .footer-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+    }
+
     button {
       width: auto;
+      padding: 0.25rem 0.5rem;
+      border: 1px solid var(--spell-book-manager-border-color);
+      border-radius: 3px;
+      cursor: pointer;
+      background-color: var(--spell-book-manager-bg-item);
     }
   }
 
-  .help-button,
-  .close-button {
-    padding: 0.25rem 0.5rem;
-    border: 1px solid var(--spell-book-manager-border-color);
-    border-radius: 3px;
-    cursor: pointer;
-    background-color: var(--spell-book-manager-bg-item);
+  .selection-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    .selection-info {
+      display: flex;
+      align-items: center;
+
+      .selection-summary {
+        font-size: var(--spell-book-manager-font-sm);
+        color: var(--spell-book-manager-text-secondary);
+        font-weight: 500;
+        white-space: nowrap;
+      }
+    }
+
+    .toggle-selection-mode,
+    .bulk-save-btn,
+    .cancel-selection-btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--spell-book-manager-border-color);
+      border-radius: 4px;
+      font-size: var(--spell-book-manager-font-sm);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+
+      i {
+        margin-right: 0.375rem;
+      }
+
+      &:hover:not(:disabled) {
+        transform: translateY(-1px);
+      }
+    }
+
+    .toggle-selection-mode {
+      background: var(--spell-book-manager-button-primary);
+    }
+
+    .bulk-save-btn {
+      background: var(--spell-book-manager-button-success);
+      color: rgb(255 255 255);
+
+      &:hover:not(:disabled) {
+        background: rgb(67 160 71);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: var(--color-bg-btn-minor);
+        color: var(--color-text-light-5);
+      }
+    }
+
+    .cancel-selection-btn {
+      background: var(--spell-book-manager-bg-item);
+      color: var(--spell-book-manager-text-primary);
+
+      &:hover {
+        border-color: var(--color-border-highlight);
+        background: var(--color-bg-btn-minor-hover);
+      }
+    }
+  }
+
+  /* Selection mode styles */
+  &.selection-mode {
+    .spell-item {
+      cursor: pointer;
+      padding-left: 2.5rem; /* Space for checkbox */
+
+      &.selected {
+        background-color: var(--color-bg-option);
+        border-left: 3px solid var(--color-border-highlight);
+      }
+
+      &.selectable:hover {
+        background: var(--spell-book-manager-bg-item-hover);
+      }
+    }
+  }
+
+  .selection-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--spell-book-manager-border-color);
+    background: var(--spell-book-manager-bg-item);
+    font-size: var(--spell-book-manager-font-sm);
+
+    .select-all-checkbox {
+      flex-shrink: 0;
+    }
+
+    .selection-label {
+      color: var(--spell-book-manager-text-secondary);
+      font-weight: 500;
+    }
+  }
+
+  /* Selection mode spell items */
+  .spell-item.selectable {
+    position: relative;
+    user-select: none;
+
+    &.selected {
+      background-color: var(--color-bg-option);
+      border-left: 3px solid var(--color-border-highlight);
+    }
+
+    &:hover.selectable {
+      background: var(--spell-book-manager-bg-item-hover);
+    }
+  }
+
+  /* Adjust spell content positioning when checkbox is present */
+  .selection-mode .spell-item {
+    .spell-name,
+    .spell-details {
+      margin-left: 0.5rem;
+    }
+  }
+
+  /* List content header styling */
+  .list-content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    gap: 1rem;
+
+    h2 {
+      flex: 1;
+      margin: 0;
+    }
+
+    .selection-header {
+      flex-shrink: 0;
+      margin-bottom: 0;
+      padding: 0.25rem 0.5rem;
+      border: 1px solid var(--spell-book-manager-border-color);
+      border-radius: 4px;
+    }
   }
 }
 
@@ -1347,6 +1617,30 @@
       i {
         color: rgb(126 34 206);
       }
+    }
+
+    .selection-header {
+      background: rgb(244 244 244 / 90.2%);
+
+      .selection-label {
+        color: rgb(17 17 17);
+      }
+    }
+
+    .selection-controls {
+      .selection-summary {
+        color: rgb(17 17 17);
+      }
+
+      .cancel-selection-btn {
+        background: rgb(244 244 244 / 90.2%);
+        color: inherit;
+      }
+    }
+
+    .spell-item.selected {
+      background-color: rgb(25 118 210 / 10%);
+      border-left-color: rgb(25 118 210);
     }
   }
 }
