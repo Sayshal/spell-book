@@ -177,4 +177,23 @@ export function registerSettings() {
     type: Boolean,
     default: true
   });
+
+  game.settings.register(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, {
+    name: 'SPELLBOOK.Settings.HiddenSpellLists.Name',
+    hint: 'SPELLBOOK.Settings.HiddenSpellLists.Hint',
+    scope: 'world',
+    config: false,
+    type: Array,
+    default: [],
+    onChange: (value) => {
+      try {
+        if (!Array.isArray(value)) {
+          log(2, 'Invalid hidden spell lists format, resetting to default');
+          game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, []);
+        }
+      } catch (error) {
+        log(1, 'Error validating hidden spell lists setting:', error);
+      }
+    }
+  });
 }

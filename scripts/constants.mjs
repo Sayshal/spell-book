@@ -277,6 +277,7 @@ export const SETTINGS = {
   DISTANCE_UNIT: 'distanceUnit',
   ENABLE_JOURNAL_BUTTON: 'enableJournalButton',
   FILTER_CONFIGURATION: 'filterConfiguration',
+  HIDDEN_SPELL_LISTS: 'hiddenSpellLists',
   LOGGING_LEVEL: 'loggingLevel',
   OPEN_SPELL_MANAGER: 'openSpellListManager',
   RUN_MIGRATIONS: 'runMigrations',

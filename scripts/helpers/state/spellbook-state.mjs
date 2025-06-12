@@ -185,7 +185,6 @@ export class SpellbookState {
     }
     if (this.app._wizardBookImages) {
       const wizardImageKeys = [...this.app._wizardBookImages.keys()];
-      log(1, `Found wizard book images for classes: [${wizardImageKeys.join(', ')}]`);
       for (const classId of wizardImageKeys) if (!currentClassIds.includes(classId)) this.app._wizardBookImages.delete(classId);
     }
     const prepStatsSize = this._preparationStatsCache.size;

@@ -4,13 +4,20 @@ import * as formattingUtils from './spell-formatting.mjs';
 
 /**
  * Scan compendiums for spell lists
+ * @param {boolean} [includeHidden=true] - Whether to include hidden spell lists
  * @returns {Promise<Array>} Array of spell list objects with metadata
  */
-export async function findCompendiumSpellLists() {
+export async function findCompendiumSpellLists(includeHidden = true) {
   const spellLists = [];
   const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
   await processStandardPacks(journalPacks, spellLists);
   await processCustomPack(spellLists);
+  if (!includeHidden && !game.user.isGM) {
+    const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
+    const filteredLists = spellLists.filter((list) => !hiddenLists.includes(list.uuid));
+    log(3, `Filtered out ${spellLists.length - filteredLists.length} hidden spell lists.`);
+    return filteredLists;
+  }
   for (const list of spellLists) {
     const document = await fromUuid(list.uuid);
     if (document.system?.identifier && !list.identifier) list.identifier = document.system.identifier;

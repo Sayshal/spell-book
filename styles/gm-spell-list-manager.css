@@ -480,6 +480,100 @@
 }
 
 /* ----------------------------------------- */
+/*  Hidden Lists Folder                     */
+/* ----------------------------------------- */
+.gm-spell-list-manager {
+  .hidden-lists-folder {
+    .folder-header {
+      color: var(--spell-book-manager-text-muted);
+
+      .folder-icon {
+        color: var(--spell-book-manager-text-muted);
+      }
+    }
+
+    .hidden-list {
+      opacity: 0.7;
+      border-left: 2px solid var(--spell-book-manager-text-muted);
+
+      &:hover {
+        background-color: rgb(186 186 186 / 20%);
+      }
+
+      .source {
+        color: var(--spell-book-manager-text-muted);
+        font-weight: 600;
+      }
+    }
+  }
+
+  .list-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+
+    .list-item-content {
+      flex: 1;
+      min-width: 0;
+      cursor: pointer;
+    }
+
+    .visibility-toggle {
+      display: flex;
+      flex-shrink: 0;
+      justify-content: center;
+      align-items: center;
+      width: 24px;
+      height: 24px;
+      margin-left: 0.5rem;
+      padding: 0;
+      border: none;
+      border-radius: 3px;
+      color: var(--spell-book-manager-text-tertiary);
+      cursor: pointer;
+      background: none;
+      transition: all 0.2s ease;
+
+      &:hover {
+        color: var(--spell-book-manager-text-primary);
+        background-color: var(--spell-book-manager-bg-item-hover);
+        box-shadow: none;
+      }
+
+      &:focus {
+        outline: 2px solid var(--color-border-highlight);
+        outline-offset: 1px;
+      }
+
+      i {
+        font-size: 0.75rem;
+      }
+    }
+  }
+
+  .merge-spell-lists-form {
+    .checkbox-label {
+      gap: 0.5rem;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+
+      span {
+        font-weight: normal;
+      }
+    }
+
+    .hint {
+      margin-top: 0.25rem;
+      color: var(--color-text-dark-5);
+      font-style: italic;
+      font-size: 0.8rem;
+    }
+  }
+}
+
+/* ----------------------------------------- */
 /*  Middle Section: Selected List Content    */
 /* ----------------------------------------- */
 .gm-spell-list-manager {
@@ -517,21 +611,21 @@
 
     .header-buttons {
       display: flex;
+      position: relative;
       justify-content: center;
       align-items: center;
+      width: 100%;
       margin-top: -1.25rem;
       white-space: nowrap;
-      position: relative;
-      width: 100%;
 
       .select-all-remove-container {
+        gap: 0.5rem;
+        display: flex;
         position: absolute;
-        height: 100%;
         top: 0;
         right: 5px;
-        display: flex;
         align-items: center;
-        gap: 0.5rem;
+        height: 100%;
         font-size: var(--spell-book-manager-font-sm);
 
         .selection-label {
@@ -901,12 +995,12 @@
   /* Selection mode styles */
   &.selection-mode {
     .spell-item {
-      cursor: pointer;
-      padding-left: 2.5rem; /* Space for checkbox */
+      padding-left: 2.5rem;
+      cursor: pointer; /* Space for checkbox */
 
       &.selected {
-        background-color: var(--color-bg-option);
         border-left: 3px solid var(--color-border-highlight);
+        background-color: var(--color-bg-option);
       }
 
       &.selectable:hover {
@@ -921,8 +1015,8 @@
     user-select: none;
 
     &.selected {
-      background-color: var(--color-bg-option);
       border-left: 3px solid var(--color-border-highlight);
+      background-color: var(--color-bg-option);
     }
 
     &:hover.selectable {
@@ -972,12 +1066,12 @@
     display: flex;
     justify-content: flex-end;
     align-items: center;
+    margin-right: 0.85rem;
     margin-bottom: 0.25rem;
     padding-bottom: 0.25rem;
-    margin-right: 0.85rem;
-    font-size: var(--spell-book-manager-font-sm);
     border-bottom: 1px solid var(--spell-book-border-light);
     border-radius: var(--spell-book-border-radius);
+    font-size: var(--spell-book-manager-font-sm);
 
     .selection-label {
       color: var(--spell-book-manager-text-secondary);
@@ -988,8 +1082,8 @@
     dnd5e-checkbox.select-all-checkbox {
       width: 1rem;
       height: 1rem;
-      cursor: pointer;
       margin-left: 0.5rem;
+      cursor: pointer;
     }
   }
 
@@ -1154,27 +1248,27 @@
     background: var(--spell-book-manager-bg-item);
 
     .footer-content {
-      position: relative;
+      gap: 1rem;
       display: flex;
+      position: relative;
       align-items: center;
       width: 100%;
       padding: 0.75rem 1rem;
-      gap: 1rem;
     }
 
     .footer-center {
+      gap: 0.5rem;
+      display: flex;
       position: absolute;
       left: 50%;
-      transform: translateX(-50%);
-      display: flex;
       align-items: center;
-      gap: 0.5rem;
+      transform: translateX(-50%);
     }
 
     .footer-right {
-      margin-left: auto;
       display: flex;
       align-items: center;
+      margin-left: auto;
     }
 
     button {
@@ -1188,18 +1282,18 @@
   }
 
   .selection-controls {
+    gap: 0.75rem;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
 
     .selection-info {
       display: flex;
       align-items: center;
 
       .selection-summary {
-        font-size: var(--spell-book-manager-font-sm);
         color: var(--spell-book-manager-text-secondary);
         font-weight: 500;
+        font-size: var(--spell-book-manager-font-sm);
         white-space: nowrap;
       }
     }
@@ -1211,9 +1305,9 @@
       border: 1px solid var(--spell-book-manager-border-color);
       border-radius: 4px;
       font-size: var(--spell-book-manager-font-sm);
+      white-space: nowrap;
       cursor: pointer;
       transition: all 0.2s ease;
-      white-space: nowrap;
 
       i {
         margin-right: 0.375rem;
@@ -1229,8 +1323,8 @@
     }
 
     .bulk-save-btn {
-      background: var(--spell-book-manager-button-success);
       color: rgb(255 255 255);
+      background: var(--spell-book-manager-button-success);
 
       &:hover:not(:disabled) {
         background: rgb(67 160 71);
@@ -1238,15 +1332,15 @@
 
       &:disabled {
         opacity: 0.5;
+        color: var(--color-text-light-5);
         cursor: not-allowed;
         background: var(--color-bg-btn-minor);
-        color: var(--color-text-light-5);
       }
     }
 
     .cancel-selection-btn {
-      background: var(--spell-book-manager-bg-item);
       color: var(--spell-book-manager-text-primary);
+      background: var(--spell-book-manager-bg-item);
 
       &:hover {
         border-color: var(--color-border-highlight);
@@ -1258,12 +1352,12 @@
   /* Selection mode styles */
   &.selection-mode {
     .spell-item {
-      cursor: pointer;
-      padding-left: 2.5rem; /* Space for checkbox */
+      padding-left: 2.5rem;
+      cursor: pointer; /* Space for checkbox */
 
       &.selected {
-        background-color: var(--color-bg-option);
         border-left: 3px solid var(--color-border-highlight);
+        background-color: var(--color-bg-option);
       }
 
       &.selectable:hover {
@@ -1273,14 +1367,14 @@
   }
 
   .selection-header {
+    gap: 0.5rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem;
     margin-bottom: 0.5rem;
+    padding: 0.5rem;
     border-bottom: 1px solid var(--spell-book-manager-border-color);
-    background: var(--spell-book-manager-bg-item);
     font-size: var(--spell-book-manager-font-sm);
+    background: var(--spell-book-manager-bg-item);
 
     .select-all-checkbox {
       flex-shrink: 0;
@@ -1298,8 +1392,8 @@
     user-select: none;
 
     &.selected {
-      background-color: var(--color-bg-option);
       border-left: 3px solid var(--color-border-highlight);
+      background-color: var(--color-bg-option);
     }
 
     &:hover.selectable {
@@ -1317,11 +1411,11 @@
 
   /* List content header styling */
   .list-content-header {
+    gap: 1rem;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 1rem;
-    gap: 1rem;
 
     h2 {
       flex: 1;
@@ -1633,14 +1727,43 @@
       }
 
       .cancel-selection-btn {
-        background: rgb(244 244 244 / 90.2%);
         color: inherit;
+        background: rgb(244 244 244 / 90.2%);
       }
     }
 
     .spell-item.selected {
-      background-color: rgb(25 118 210 / 10%);
       border-left-color: rgb(25 118 210);
+      background-color: rgb(25 118 210 / 10%);
+    }
+
+    .hidden-lists-folder .folder-header {
+      color: rgb(117 117 117);
+
+      i {
+        color: rgb(117 117 117);
+      }
+    }
+
+    .hidden-list {
+      background-color: rgb(117 117 117 / 8%);
+
+      &:hover {
+        background-color: rgb(117 117 117 / 16%);
+      }
+
+      .source {
+        color: rgb(117 117 117);
+      }
+    }
+
+    .visibility-toggle {
+      color: rgb(117 117 117);
+
+      &:hover {
+        color: rgb(17 17 17);
+        background-color: rgb(117 117 117 / 16%);
+      }
     }
   }
 }

@@ -112,7 +112,7 @@ export function createTextInput(config) {
  * Create a select dropdown using DnD5e styling
  * @param {Object} config - Configuration options
  * @param {string} config.name - The name attribute for the select
- * @param {Array} [config.options] - Array of option objects { value, label, selected }
+ * @param {Array} [config.options] - Array of option objects { value, label, selected, disabled, optgroup }
  * @param {string} [config.ariaLabel] - The aria-label attribute
  * @param {boolean} [config.disabled] - Whether the select is disabled
  * @param {string} [config.cssClass] - Additional CSS classes
@@ -125,15 +125,26 @@ export function createSelect(config) {
   if (config.disabled) select.disabled = true;
   if (config.cssClass) select.className = config.cssClass;
   if (config.options && Array.isArray(config.options)) {
+    let currentOptgroup = null;
     for (const option of config.options) {
-      const optionEl = document.createElement('option');
-      optionEl.value = option.value;
-      optionEl.textContent = option.label;
-      if (option.selected) {
-        optionEl.selected = true;
-        optionEl.setAttribute('selected', 'selected');
+      if (option.optgroup === 'start') {
+        currentOptgroup = document.createElement('optgroup');
+        currentOptgroup.label = option.label;
+        select.appendChild(currentOptgroup);
+      } else if (option.optgroup === 'end') {
+        currentOptgroup = null;
+      } else {
+        const optionEl = document.createElement('option');
+        optionEl.value = option.value;
+        optionEl.textContent = option.label;
+        if (option.selected) {
+          optionEl.selected = true;
+          optionEl.setAttribute('selected', 'selected');
+        }
+        if (option.disabled) optionEl.disabled = true;
+        if (currentOptgroup) currentOptgroup.appendChild(optionEl);
+        else select.appendChild(optionEl);
       }
-      select.appendChild(optionEl);
     }
   }
   return select;

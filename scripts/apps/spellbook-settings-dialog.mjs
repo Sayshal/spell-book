@@ -413,6 +413,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   async _prepareSpellListOptions() {
     try {
       const options = [{ value: '', label: game.i18n.localize('SPELLBOOK.Settings.SpellList.AutoDetect') }];
+      const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
+      const allSpellLists = [];
       const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
       for (const pack of journalPacks) {
         let topLevelFolderName = pack.metadata.label;
@@ -424,11 +426,53 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         for (const journalData of index) {
           const journal = await pack.getDocument(journalData._id);
           for (const page of journal.pages) {
-            if (page.type === 'spells') {
-              options.push({ value: page.uuid, label: `${page.name} (${topLevelFolderName})` });
-            }
+            if (page.type !== 'spells' || page.system?.type === 'other') continue;
+            if (hiddenLists.includes(page.uuid)) continue;
+            const flags = page.flags?.[MODULE.ID] || {};
+            const isActorOwned = !!flags.actorId;
+            const isCustom = !!flags.isCustom || !!flags.isNewList;
+            const isMerged = !!flags.isMerged;
+            allSpellLists.push({ uuid: page.uuid, name: page.name, pack: topLevelFolderName, isActorOwned, isCustom, isMerged, flags });
           }
         }
+      }
+      const actorOwnedLists = allSpellLists.filter((list) => list.isActorOwned);
+      const customLists = allSpellLists.filter((list) => !list.isActorOwned && list.isCustom && !list.isMerged);
+      const mergedLists = allSpellLists.filter((list) => !list.isActorOwned && list.isMerged);
+      const standardLists = allSpellLists.filter((list) => !list.isActorOwned && !list.isCustom && !list.isMerged);
+      if (actorOwnedLists.length > 0) {
+        options.push({ value: '', label: game.i18n.localize('SPELLMANAGER.Folders.PlayerSpellbooks'), optgroup: 'start' });
+        actorOwnedLists.forEach((list) => {
+          let actorName = game.i18n.localize('SPELLMANAGER.ListSource.Character');
+          if (list.flags.actorId) {
+            const actor = game.actors.get(list.flags.actorId);
+            if (actor) actorName = actor.name;
+          }
+          const label = `${list.name} (${actorName})`;
+          options.push({ value: list.uuid, label: label, selected: false });
+        });
+        options.push({ value: '', label: '', optgroup: 'end' });
+      }
+      if (customLists.length > 0) {
+        options.push({ value: '', label: game.i18n.localize('SPELLMANAGER.Folders.CustomLists'), optgroup: 'start' });
+        customLists.forEach((list) => {
+          options.push({ value: list.uuid, label: list.name, selected: false });
+        });
+        options.push({ value: '', label: '', optgroup: 'end' });
+      }
+      if (mergedLists.length > 0) {
+        options.push({ value: '', label: game.i18n.localize('SPELLMANAGER.Folders.MergedLists'), optgroup: 'start' });
+        mergedLists.forEach((list) => {
+          options.push({ value: list.uuid, label: list.name, selected: false });
+        });
+        options.push({ value: '', label: '', optgroup: 'end' });
+      }
+      if (standardLists.length > 0) {
+        options.push({ value: '', label: game.i18n.localize('SPELLMANAGER.Folders.SpellLists'), optgroup: 'start' });
+        standardLists.forEach((list) => {
+          options.push({ value: list.uuid, label: `${list.name} (${list.pack})`, selected: false });
+        });
+        options.push({ value: '', label: '', optgroup: 'end' });
       }
       return options;
     } catch (error) {

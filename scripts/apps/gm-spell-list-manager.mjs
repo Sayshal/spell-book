@@ -40,7 +40,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       toggleSelectionMode: GMSpellListManager.handleToggleSelectionMode,
       selectAll: GMSpellListManager.handleSelectAll,
       bulkSave: GMSpellListManager.handleBulkSave,
-      cancelSelection: GMSpellListManager.handleCancelSelection
+      cancelSelection: GMSpellListManager.handleCancelSelection,
+      toggleListVisibility: GMSpellListManager.handleToggleListVisibility
     },
     classes: ['gm-spell-list-manager'],
     window: {
@@ -160,10 +161,16 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @private
    */
   _organizeSpellListsContext(context) {
+    const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
     const actorOwnedLists = this.availableSpellLists.filter((list) => list.isActorOwned);
-    const mergedLists = this.availableSpellLists.filter((list) => !list.isActorOwned && list.isMerged);
-    const customLists = this.availableSpellLists.filter((list) => !list.isActorOwned && !list.isMerged && (list.isCustom || list.document?.flags?.[MODULE.ID]?.isNewList));
-    const standardLists = this.availableSpellLists.filter((list) => !list.isActorOwned && !list.isCustom && !list.isMerged && !list.document?.flags?.[MODULE.ID]?.isNewList);
+    const hiddenSpellLists = this.availableSpellLists.filter((list) => !list.isActorOwned && hiddenLists.includes(list.uuid));
+    const mergedLists = this.availableSpellLists.filter((list) => !list.isActorOwned && list.isMerged && !hiddenLists.includes(list.uuid));
+    const customLists = this.availableSpellLists.filter(
+      (list) => !list.isActorOwned && !list.isMerged && (list.isCustom || list.document?.flags?.[MODULE.ID]?.isNewList) && !hiddenLists.includes(list.uuid)
+    );
+    const standardLists = this.availableSpellLists.filter(
+      (list) => !list.isActorOwned && !list.isCustom && !list.isMerged && !list.document?.flags?.[MODULE.ID]?.isNewList && !hiddenLists.includes(list.uuid)
+    );
     actorOwnedLists.sort((a, b) => {
       if (a.actorName && b.actorName) return a.actorName.localeCompare(b.actorName);
       if (a.actorName) return -1;
@@ -173,15 +180,19 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     customLists.sort((a, b) => a.name.localeCompare(b.name));
     mergedLists.sort((a, b) => a.name.localeCompare(b.name));
     standardLists.sort((a, b) => a.name.localeCompare(b.name));
+    hiddenSpellLists.sort((a, b) => a.name.localeCompare(b.name));
     context.actorOwnedLists = actorOwnedLists;
     context.customLists = customLists;
     context.mergedLists = mergedLists;
     context.standardLists = standardLists;
+    context.hiddenSpellLists = hiddenSpellLists;
     context.hasActorOwnedLists = actorOwnedLists.length > 0;
     context.hasCustomLists = customLists.length > 0;
     context.hasMergedLists = mergedLists.length > 0;
     context.hasStandardLists = standardLists.length > 0;
+    context.hasHiddenLists = hiddenSpellLists.length > 0;
     context.availableSpellLists = this.availableSpellLists;
+    context.hiddenListUuids = hiddenLists;
   }
 
   /**
@@ -235,7 +246,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     try {
       log(3, 'Loading spell lists for GM manager');
       await managerHelpers.getValidCustomListMappings();
-      this.availableSpellLists = await managerHelpers.findCompendiumSpellLists();
+      this.availableSpellLists = await managerHelpers.findCompendiumSpellLists(true);
       this.availableSpellLists.sort((a, b) => a.name.localeCompare(b.name));
       this.availableSpells = await managerHelpers.fetchAllCompendiumSpells();
       await this.enrichAvailableSpells();
@@ -953,10 +964,17 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.MergedListNameLabel')
     });
     mergedListNameInput.id = 'merged-list-name';
+    const hideSourceListsCheckbox = formElements.createCheckbox({
+      name: 'hideSourceLists',
+      checked: false,
+      ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.HideSourceListsLabel')
+    });
+    hideSourceListsCheckbox.id = 'hide-source-lists';
     return {
       sourceListSelectHtml: formElements.elementToHtml(sourceListSelect),
       copyFromListSelectHtml: formElements.elementToHtml(copyFromListSelect),
-      mergedListNameInputHtml: formElements.elementToHtml(mergedListNameInput)
+      mergedListNameInputHtml: formElements.elementToHtml(mergedListNameInput),
+      hideSourceListsCheckboxHtml: formElements.elementToHtml(hideSourceListsCheckbox)
     };
   }
 
@@ -1098,6 +1116,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
             const sourceListSelect = form.querySelector('[name="sourceList"]');
             const copyFromListSelect = form.querySelector('[name="copyFromList"]');
             const mergedListNameInput = form.querySelector('[name="mergedListName"]');
+            const hideSourceListsCheckbox = form.querySelector('[name="hideSourceLists"]');
             if (!sourceListSelect.value || !copyFromListSelect.value) return false;
             if (sourceListSelect.value === copyFromListSelect.value) {
               const errorElement = form.querySelector('.validation-error');
@@ -1114,7 +1133,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
             formData = {
               sourceListUuid: sourceListSelect.value,
               copyFromListUuid: copyFromListSelect.value,
-              mergedListName: mergedListName
+              mergedListName: mergedListName,
+              hideSourceLists: hideSourceListsCheckbox ? hideSourceListsCheckbox.checked : false
             };
             return 'merge';
           }
@@ -1146,34 +1166,43 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   _buildSpellListOptions(defaultLabel) {
     const options = [{ value: '', label: game.i18n.localize(defaultLabel), selected: true }];
+    const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
     const actorOwnedLists = this.availableSpellLists.filter((list) => list.isActorOwned);
-    const customLists = this.availableSpellLists.filter((list) => !list.isActorOwned && !list.isMerged && (list.isCustom || list.document?.flags?.[MODULE.ID]?.isNewList));
-    const mergedLists = this.availableSpellLists.filter((list) => !list.isActorOwned && list.isMerged);
-    const standardLists = this.availableSpellLists.filter((list) => !list.isActorOwned && !list.isCustom && !list.isMerged && !list.document?.flags?.[MODULE.ID]?.isNewList);
+    const customLists = this.availableSpellLists.filter(
+      (list) => !list.isActorOwned && !list.isMerged && (list.isCustom || list.document?.flags?.[MODULE.ID]?.isNewList) && !hiddenLists.includes(list.uuid)
+    );
+    const mergedLists = this.availableSpellLists.filter((list) => !list.isActorOwned && list.isMerged && !hiddenLists.includes(list.uuid));
+    const standardLists = this.availableSpellLists.filter(
+      (list) => !list.isActorOwned && !list.isCustom && !list.isMerged && !list.document?.flags?.[MODULE.ID]?.isNewList && !hiddenLists.includes(list.uuid)
+    );
     if (actorOwnedLists.length > 0) {
-      options.push({ value: 'optgroup', label: game.i18n.localize('SPELLMANAGER.Folders.PlayerSpellbooks'), optgroup: true });
+      options.push({ value: '', label: game.i18n.localize('SPELLMANAGER.Folders.PlayerSpellbooks'), optgroup: 'start' });
       actorOwnedLists.forEach((list) => {
         const label = `${list.name} (${list.actorName || game.i18n.localize('SPELLMANAGER.ListSource.Character')})`;
         options.push({ value: list.uuid, label: label, selected: false });
       });
+      options.push({ value: '', label: '', optgroup: 'end' });
     }
     if (customLists.length > 0) {
-      options.push({ value: 'optgroup', label: game.i18n.localize('SPELLMANAGER.Folders.CustomLists'), optgroup: true });
+      options.push({ value: '', label: game.i18n.localize('SPELLMANAGER.Folders.CustomLists'), optgroup: 'start' });
       customLists.forEach((list) => {
         options.push({ value: list.uuid, label: list.name, selected: false });
       });
+      options.push({ value: '', label: '', optgroup: 'end' });
     }
     if (mergedLists.length > 0) {
-      options.push({ value: 'optgroup', label: game.i18n.localize('SPELLMANAGER.Folders.MergedLists'), optgroup: true });
+      options.push({ value: '', label: game.i18n.localize('SPELLMANAGER.Folders.MergedLists'), optgroup: 'start' });
       mergedLists.forEach((list) => {
         options.push({ value: list.uuid, label: list.name, selected: false });
       });
+      options.push({ value: '', label: '', optgroup: 'end' });
     }
     if (standardLists.length > 0) {
-      options.push({ value: 'optgroup', label: game.i18n.localize('SPELLMANAGER.Folders.SpellLists'), optgroup: true });
+      options.push({ value: '', label: game.i18n.localize('SPELLMANAGER.Folders.SpellLists'), optgroup: 'start' });
       standardLists.forEach((list) => {
         options.push({ value: list.uuid, label: `${list.name} (${list.pack})`, selected: false });
       });
+      options.push({ value: '', label: '', optgroup: 'end' });
     }
     return options;
   }
@@ -1337,14 +1366,27 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @param {string} sourceListUuid - UUID of the source spell list
    * @param {string} copyFromListUuid - UUID of the list to copy from
    * @param {string} mergedListName - Name for the merged list
+   * @param {boolean} hideSourceLists - Whether to hide source lists after merge
    * @returns {Promise<void>}
    * @private
    */
-  async _mergeListsCallback(sourceListUuid, copyFromListUuid, mergedListName) {
+  async _mergeListsCallback(sourceListUuid, copyFromListUuid, mergedListName, hideSourceLists = false) {
     try {
       const mergedList = await managerHelpers.createMergedSpellList(sourceListUuid, copyFromListUuid, mergedListName);
       if (mergedList) {
         ui.notifications.info(game.i18n.format('SPELLMANAGER.MergeLists.SuccessMessage', { name: mergedListName }));
+        if (hideSourceLists) {
+          const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
+          const sourceList = this.availableSpellLists.find((l) => l.uuid === sourceListUuid);
+          const copyFromList = this.availableSpellLists.find((l) => l.uuid === copyFromListUuid);
+          const listsToHide = [];
+          if (sourceList && !sourceList.isActorOwned && !hiddenLists.includes(sourceListUuid)) listsToHide.push(sourceListUuid);
+          if (copyFromList && !copyFromList.isActorOwned && !hiddenLists.includes(copyFromListUuid)) listsToHide.push(copyFromListUuid);
+          if (listsToHide.length > 0) {
+            await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, [...hiddenLists, ...listsToHide]);
+            ui.notifications.info(game.i18n.format('SPELLMANAGER.MergeLists.SourceListsHidden', { count: listsToHide.length }));
+          }
+        }
         await this.loadData();
         await this.selectSpellList(mergedList.uuid);
       }
@@ -1679,7 +1721,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       return;
     }
     const { result, formData } = await this._showMergeListsDialog();
-    if (result === 'merge' && formData) await this._mergeListsCallback(formData.sourceListUuid, formData.copyFromListUuid, formData.mergedListName);
+    if (result === 'merge' && formData) await this._mergeListsCallback(formData.sourceListUuid, formData.copyFromListUuid, formData.mergedListName, formData.hideSourceLists);
   }
 
   // ========================================
@@ -1835,6 +1877,42 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   static handleCancelSelection(event, _form) {
     this._clearSelections();
     this.render(false);
+  }
+
+  /**
+   * Handle toggling spell list visibility
+   * @static
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} _form - The form element
+   * @returns {Promise<void>}
+   */
+  static async handleToggleListVisibility(event, _form) {
+    event.stopPropagation();
+    const listItem = event.target.closest('[data-uuid]');
+    if (!listItem) return;
+    const uuid = listItem.dataset.uuid;
+    const list = this.availableSpellLists.find((l) => l.uuid === uuid);
+    if (!list || list.isActorOwned) return;
+    const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
+    const isCurrentlyHidden = hiddenLists.includes(uuid);
+    try {
+      if (isCurrentlyHidden) {
+        const newHiddenLists = hiddenLists.filter((id) => id !== uuid);
+        await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, newHiddenLists);
+        ui.notifications.clear();
+        ui.notifications.info(game.i18n.format('SPELLMANAGER.HideList.Unhidden', { name: list.name }));
+      } else {
+        const newHiddenLists = [...hiddenLists, uuid];
+        await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, newHiddenLists);
+        ui.notifications.clear();
+        ui.notifications.info(game.i18n.format('SPELLMANAGER.HideList.Hidden', { name: list.name }));
+      }
+      this.render(false);
+    } catch (error) {
+      log(1, 'Error toggling list visibility:', error);
+      ui.notifications.clear();
+      ui.notifications.error(game.i18n.localize('SPELLMANAGER.HideList.ToggleError'));
+    }
   }
 
   // ========================================
