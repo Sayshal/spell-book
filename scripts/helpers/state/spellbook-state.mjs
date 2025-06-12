@@ -546,7 +546,6 @@ export class SpellbookState {
     if (!this.tabData) this.tabData = {};
     const spellsTabId = `${classIdentifier}Tab`;
     const wizardTabId = `wizardbook-${classIdentifier}`;
-    log(3, `Processing wizard spells for ${classIdentifier}, spellsTabId: ${spellsTabId}, wizardTabId: ${wizardTabId}`);
     const tabData = {
       [spellsTabId]: { spellLevels: [], spellPreparation: { current: 0, maximum: 0 } },
       [wizardTabId]: { spellLevels: [], spellPreparation: { current: 0, maximum: 0 } }
@@ -581,7 +580,11 @@ export class SpellbookState {
     tabData[wizardTabId].wizardMaxSpellbookCount = maxSpellsAllowed;
     tabData[wizardTabId].wizardIsAtMax = isAtMaxSpells;
     const sortBy = this.app.filterHelper?.getFilterState()?.sortBy || 'level';
-    if (shouldHideCantrips) prepLevels = prepLevels.filter((level) => level.level !== '0' && level.level !== 0);
+    if (shouldHideCantrips) {
+      const originalPrepLevelsCount = prepLevels.length;
+      prepLevels = prepLevels.filter((level) => level.level !== '0' && level.level !== 0);
+    }
+    log(3, `Enriching spell data for ${classIdentifier}`);
     this.enrichWizardBookSpells(prepLevels, personalSpellbook, sortBy);
     this.enrichWizardBookSpells(wizardLevels, personalSpellbook, sortBy, true, isAtMaxSpells);
     const prepStats = this.calculatePreparationStats(classIdentifier, prepLevels, classItem);
@@ -589,7 +592,6 @@ export class SpellbookState {
     tabData[spellsTabId].spellPreparation = prepStats;
     tabData[wizardTabId].spellLevels = wizardLevels;
     tabData[wizardTabId].spellPreparation = prepStats;
-    log(3, `Created tab data for ${classIdentifier}: prepLevels=${prepLevels.length}, wizardLevels=${wizardLevels.length}`);
     this.classSpellData[classIdentifier] = {
       spellLevels: activeTab === wizardTabId ? wizardLevels : prepLevels,
       className: classItem.name,
@@ -603,7 +605,7 @@ export class SpellbookState {
   }
 
   /**
-   * Enrich wizard tab spells with additional data
+   * Enrich wizard tab spells with additional data and proper scroll integration
    * @param {Array} levels - Spell level groups
    * @param {Array} personalSpellbook - The personal spellbook spell UUIDs
    * @param {string} sortBy - Sort criteria
@@ -611,23 +613,21 @@ export class SpellbookState {
    * @param {boolean} isAtMaxSpells - Whether maximum spells are reached
    */
   enrichWizardBookSpells(levels, personalSpellbook, sortBy, isWizardBook = false, isAtMaxSpells = false) {
-    if (isWizardBook && this.scrollSpells.length > 0) {
-      for (const scrollSpell of this.scrollSpells) {
-        scrollSpell.isWizardClass = true;
-        scrollSpell.inWizardSpellbook = personalSpellbook.includes(scrollSpell.spellUuid);
-        scrollSpell.canAddToSpellbook = true;
-        scrollSpell.isAtMaxSpells = isAtMaxSpells;
-        scrollSpell.isFromScroll = true;
-      }
-    }
     for (const level of levels) {
       level.spells = this.app.filterHelper?.sortSpells(level.spells, sortBy) || level.spells;
       for (const spell of level.spells) {
         spell.isWizardClass = true;
-        spell.inWizardSpellbook = personalSpellbook.includes(spell.compendiumUuid);
+        spell.inWizardSpellbook = personalSpellbook.includes(spell.compendiumUuid || spell.spellUuid);
         if (isWizardBook) {
           spell.canAddToSpellbook = !spell.inWizardSpellbook && spell.system.level > 0;
           spell.isAtMaxSpells = isAtMaxSpells;
+          if (spell.isFromScroll) {
+            spell.canLearnFromScroll = !spell.inWizardSpellbook;
+            spell.scrollMetadata = {
+              scrollId: spell.scrollId,
+              scrollName: spell.scrollName
+            };
+          }
         }
         spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
         spell.formattedDetails = formattingUtils.formatSpellDetails(spell);
@@ -671,13 +671,18 @@ export class SpellbookState {
     const classData = this.spellcastingClasses[classIdentifier];
     if (!classData) return;
     this.invalidatePreparationStatsCache();
+    this.scrollSpells = [];
+    const wizardManager = this.app.wizardManagers.get(classIdentifier);
+    if (wizardManager) wizardManager.invalidateCache();
     const classItem = this.actor.items.get(classData.id);
     if (!classItem) return;
-    if (genericUtils.isClassWizardEnabled(this.actor, classIdentifier)) await this.cacheWizardSpellbook(classIdentifier);
-    if (genericUtils.isClassWizardEnabled(this.actor, classIdentifier)) await this.loadWizardSpellData(classItem, classIdentifier);
-    else await this.loadClassSpellData(classIdentifier, classItem);
+    if (genericUtils.isClassWizardEnabled(this.actor, classIdentifier)) {
+      await this.cacheWizardSpellbook(classIdentifier);
+      await this.loadWizardSpellData(classItem, classIdentifier);
+    } else {
+      await this.loadClassSpellData(classIdentifier, classItem);
+    }
     this.updateGlobalPreparationCount();
-    log(3, `Refreshed spell data for class ${classIdentifier}`);
   }
 
   /**

@@ -1,18 +1,15 @@
 import { MODULE, SETTINGS } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import { RuleSetManager } from '../managers/rule-set-manager.mjs';
-import { WizardSpellbookManager } from '../managers/wizard-spellbook-manager.mjs';
-import * as genericUtils from './generic-utils.mjs';
 
 /**
  * Get a class's spell list from compendium journals
  * @param {string} className - The name of the class
  * @param {string} [classUuid] - UUID of the class item
- * @param {Actor5e} [actor] - The actor (for wizard spellbook)
- * @param {WizardSpellbookManager} [wizardManager] - Existing wizard manager instance
+ * @param {Actor5e} [actor] - The actor (for custom spell list lookup)
  * @returns {Promise<Set<string>>} - Set of spell UUIDs
  */
-export async function getClassSpellList(className, classUuid, actor, wizardManager) {
+export async function getClassSpellList(className, classUuid, actor) {
   if (!classUuid) return new Set();
   if (actor) {
     const classItem = await fromUuid(classUuid);
@@ -25,11 +22,6 @@ export async function getClassSpellList(className, classUuid, actor, wizardManag
         if (customSpellList && customSpellList.system?.spells) return customSpellList.system.spells;
       }
     }
-  }
-  if (actor && genericUtils.isWizard(actor)) {
-    const manager = wizardManager || new WizardSpellbookManager(actor);
-    const spells = await manager.getSpellbookSpells();
-    if (spells.length > 0) return new Set(spells);
   }
   const classItem = await fromUuid(classUuid);
   if (!classItem) return new Set();

@@ -132,6 +132,7 @@
   "SPELLBOOK.Scrolls.LearnFromScroll": "Learn from Scroll",
   "SPELLBOOK.Scrolls.NotPreparable": "Scroll spells cannot be prepared, only learned.",
   "SPELLBOOK.Scrolls.ScrollConsumed": "Scroll consumed during learning process",
+  "SPELLBOOK.Scrolls.ScrollWillBeConsumed": "The scroll will be consumed.",
   "SPELLBOOK.Scrolls.SectionTitle": "Spell Scrolls",
   "SPELLBOOK.Settings.CantripPreparationBonus.Decrease": "Decrease cantrip preparation bonus",
   "SPELLBOOK.Settings.CantripPreparationBonus.Hint": "Bonus to the number of cantrips this class can prepare. Can be negative to reduce the base amount.",

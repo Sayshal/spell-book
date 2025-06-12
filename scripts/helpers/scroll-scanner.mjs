@@ -55,7 +55,6 @@ export class ScrollScanner {
         }
       }
     }
-
     return null;
   }
 

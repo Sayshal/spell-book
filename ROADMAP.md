@@ -66,28 +66,20 @@ Added a new world setting `HIDDEN_SPELL_LISTS` for storing hidden list UUIDs and
 - **GM Override**: GMs retain full visibility of hidden lists while maintaining clean player interfaces
 - **Persistent State**: Hidden status preserved across sessions with proper world-level settings storage
 
-#### **Bug: Wizard Scroll Learning Sequence Break [Critical Priority]**
+#### **Fixed: Wizard Scroll Learning Sequence Break [Critical Priority]**
 
 Resolved an issue where learning spells from spell scrolls before selecting a wizard's free spells causes the spellbook to display only scroll-learned spells, hiding all other available spells from both the main spell list and learning interface.
 
-**Bug details:**
-The spell learning sequence logic in the wizard spellbook fails to properly integrate scroll-learned spells with the standard spell selection workflow. When spells are learned from scrolls before the wizard's free spell selection process is completed, the spell filtering and display logic becomes corrupted, causing the system to only show spells that were acquired through scroll learning rather than the complete available spell list.
+**Fix details:**
+The root cause was identified in `getClassSpellList()` in `spell-discovery.mjs`, which incorrectly returned the wizard's personal spellbook instead of the full class spell list when called for wizard classes. This caused the wizard learning tab to show only spells the wizard already knew (typically 2-6 spells) rather than the complete class spell list (hundreds of spells). The problematic logic `if (actor && genericUtils.isWizard(actor)) { return manager.getSpellbookSpells(); }` was confusing "spells the wizard knows" with "spells the wizard can learn."
 
-**Technical investigation needed:**
+**Fix summary:**
 
-- Examine spell source tracking in `spellbook-state.mjs` and how it differentiates between free wizard spells and scroll-learned spells
-- Review spell filtering logic in the wizard spellbook display components
-- Check if `detectSpellcastingClasses()` and related methods properly handle mixed spell acquisition sources
-- Investigate potential race conditions between scroll learning workflows and standard wizard spell selection
-- Verify spell list population logic doesn't exclude spells based on acquisition order
-
-**Fix requirements:**
-
-- Ensure scroll-learned spells don't interfere with standard wizard spell list display
-- Maintain proper spell source tracking while preserving full spell list visibility
-- Add validation to prevent learning sequence from corrupting spell availability
-- Implement fallback logic to restore full spell list access if corruption is detected
-- Test edge cases where multiple acquisition methods are used in different orders
+- **Corrected spell list retrieval**: Removed wizard personal spellbook logic from `getClassSpellList()` function
+- **Restored full spell availability**: Wizard learning tab now displays complete class spell list regardless of learning sequence
+- **Preserved scroll integration**: Scroll spells continue to appear in dedicated "Scrolls" section with functional "Learn from Scroll" buttons
+- **Eliminated sequence dependency**: Learning order (scrolls → free → paid spells) no longer affects spell list display
+- **Enhanced debugging**: Added comprehensive logging to detect and prevent similar spell list corruption issues
 
 #### **Non-Standard Spellcasting Classes Support [High Priority]**
 

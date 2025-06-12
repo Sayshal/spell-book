@@ -255,13 +255,18 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         });
         const scrollSpells = this._stateManager.scrollSpells || [];
         if (scrollSpells.length > 0) {
-          const processedScrollSpells = scrollSpells.map((spell) => this._processSpellForDisplay(spell));
-          const scrollsLevel = {
-            level: 'scrolls',
-            levelName: game.i18n.localize('SPELLBOOK.Scrolls.SectionTitle'),
-            spells: processedScrollSpells
-          };
-          context.spellLevels.unshift(scrollsLevel);
+          const existingSpellUuids = new Set();
+          context.spellLevels.forEach((level) => {
+            level.spells.forEach((spell) => {
+              existingSpellUuids.add(spell.compendiumUuid || spell.spellUuid);
+            });
+          });
+          const filteredScrollSpells = scrollSpells.filter((scroll) => !existingSpellUuids.has(scroll.spellUuid));
+          if (filteredScrollSpells.length > 0) {
+            const processedScrollSpells = filteredScrollSpells.map((spell) => this._processSpellForDisplay(spell));
+            const scrollsLevel = { level: 'scrolls', levelName: game.i18n.localize('SPELLBOOK.Scrolls.SectionTitle'), spells: processedScrollSpells };
+            context.spellLevels.unshift(scrollsLevel);
+          }
         }
         context.spellPreparation = this._stateManager.tabData[partId].spellPreparation;
         context.wizardTotalSpellbookCount = this._stateManager.tabData[partId].wizardTotalSpellbookCount || 0;
