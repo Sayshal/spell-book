@@ -49,25 +49,45 @@ Enhanced the `GMSpellListManager` class in `gm-spell-list-manager.mjs` with a co
 - **Template Integration**: Updated Handlebars templates with conditional checkbox rendering and selection UI elements
 - **Error Handling**: Graceful handling of partial failures with detailed user feedback
 
-#### **Spell List Hiding [Medium Priority]**
+#### **Completed: Spell List Hiding [Medium Priority]**
 
-Hide duplicate/merged spell lists with toggle controls, implement a "Hidden" tab in the spell list manager, and provide optional auto-hide functionality after merging operations.
+Implemented comprehensive spell list visibility management with toggle controls, dedicated hidden lists folder, and optional auto-hide functionality after merge operations to reduce interface clutter and improve organization.
 
-**Code justification:** In `gm-spell-list-manager.mjs`, the `_prepareContext()` method shows all spell lists (merged, custom, standard, actor-owned) simultaneously. The `mergedLists` and `customLists` arrays can create visual clutter when users have many variations of the same base lists. There's no mechanism to hide lists that are no longer actively needed, leading to overcrowded interfaces.
+**Implementation details:**
+Added a new world setting `HIDDEN_SPELL_LISTS` for storing hidden list UUIDs and enhanced `findCompendiumSpellLists()` in `compendium-management.mjs` to filter hidden lists for non-GM users. Updated `GMSpellListManager` in `gm-spell-list-manager.mjs` with visibility toggle handlers and reorganized context preparation to separate hidden lists into their own folder. Enhanced form elements helper with optgroup support for cleaner dropdown organization in merge dialogs and spellbook settings.
 
-**Features:**
+**Implementation summary:**
 
-- Toggle visibility controls for each spell list
-- "Hidden" tab to manage archived lists
-- Auto-hide suggestions after merge operations
-- Restore hidden lists functionality
+- **Visibility Controls**: Eye/eye-slash icons on each spell list (except actor spellbooks) for instant hide/unhide functionality
+- **Hidden Lists Folder**: Dedicated collapsible folder in GM interface for managing archived spell lists
+- **Merge Integration**: Optional checkbox in merge dialog to automatically hide source lists after successful merge
+- **Player Filtering**: Hidden lists automatically excluded from player spell list selections and custom spell list dropdowns
+- **Organized Dropdowns**: Implemented optgroup support with proper semantic grouping in merge dialogs and character settings
+- **GM Override**: GMs retain full visibility of hidden lists while maintaining clean player interfaces
+- **Persistent State**: Hidden status preserved across sessions with proper world-level settings storage
 
-#### **Performance Improvements [Medium Priority]**
+#### **Bug: Wizard Scroll Learning Sequence Break [Critical Priority]**
 
-- Implement virtual scrolling for large spell lists (1000+ spells)
-- Add lazy loading for spell details and icons
-- Optimize re-render cycles in frequently updated components
-- Cache frequently accessed spell data
+Resolved an issue where learning spells from spell scrolls before selecting a wizard's free spells causes the spellbook to display only scroll-learned spells, hiding all other available spells from both the main spell list and learning interface.
+
+**Bug details:**
+The spell learning sequence logic in the wizard spellbook fails to properly integrate scroll-learned spells with the standard spell selection workflow. When spells are learned from scrolls before the wizard's free spell selection process is completed, the spell filtering and display logic becomes corrupted, causing the system to only show spells that were acquired through scroll learning rather than the complete available spell list.
+
+**Technical investigation needed:**
+
+- Examine spell source tracking in `spellbook-state.mjs` and how it differentiates between free wizard spells and scroll-learned spells
+- Review spell filtering logic in the wizard spellbook display components
+- Check if `detectSpellcastingClasses()` and related methods properly handle mixed spell acquisition sources
+- Investigate potential race conditions between scroll learning workflows and standard wizard spell selection
+- Verify spell list population logic doesn't exclude spells based on acquisition order
+
+**Fix requirements:**
+
+- Ensure scroll-learned spells don't interfere with standard wizard spell list display
+- Maintain proper spell source tracking while preserving full spell list visibility
+- Add validation to prevent learning sequence from corrupting spell availability
+- Implement fallback logic to restore full spell list access if corruption is detected
+- Test edge cases where multiple acquisition methods are used in different orders
 
 #### **Non-Standard Spellcasting Classes Support [High Priority]**
 
@@ -80,6 +100,13 @@ Support homebrew and edge-case spellcasting classes that don't follow standard s
 - **Other homebrew classes**: Custom spellcasting patterns that don't fit standard progressions
 
 **Code justification:** Currently, `spellbook-state.mjs` and `rule-set-manager.mjs` filter out classes where `spellcasting.progression` is missing or set to `'none'`. The detection logic in `detectSpellcastingClasses()` and `_detectSpellcastingClasses()` excludes these classes entirely:
+
+#### **Performance Improvements [Medium Priority]**
+
+- Implement virtual scrolling for large spell lists (1000+ spells)
+- Add lazy loading for spell details and icons
+- Optimize re-render cycles in frequently updated components
+- Cache frequently accessed spell data
 
 ### v0.9.0 - Enhanced User Experience & Multi 5e System Support
 
