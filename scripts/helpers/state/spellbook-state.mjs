@@ -313,17 +313,6 @@ export class SpellbookState {
     }
     const spellLevels = this._organizeSpellsByLevelForClass(spellItems, identifier, classItem);
     const sortBy = this.app.filterHelper?.getFilterState()?.sortBy || 'level';
-
-    // Safety check and sorting
-    for (const level of spellLevels) {
-      if (Array.isArray(level.spells)) {
-        level.spells = this.app.filterHelper?.sortSpells(level.spells, sortBy) || level.spells;
-      } else {
-        log(1, `Warning: level.spells is not an array for level ${level.level}:`, level.spells);
-        level.spells = [];
-      }
-    }
-
     for (const level of spellLevels) level.spells = this.app.filterHelper?.sortSpells(level.spells, sortBy) || level.spells;
     await this.enrichSpellData(spellLevels);
     const prepStats = this.calculatePreparationStats(identifier, spellLevels, classItem);
@@ -333,20 +322,18 @@ export class SpellbookState {
   }
 
   /**
-   * Organize spells by level for class with lazy loading metadata (flattened version)
+   * Organize spells by level with class-specific preparation awareness
    * @param {Array} spellItems - Array of spell documents
    * @param {string} classIdentifier - The class identifier
    * @param {Item} classItem - The class item
-   * @returns {Array} Flattened spell array with level metadata for batching
+   * @returns {Array} Array of spell levels with formatted data
    * @private
    */
   _organizeSpellsByLevelForClass(spellItems, classIdentifier, classItem) {
-    log(1, `Organizing ${spellItems.length} spells by level for class ${classIdentifier} (flattened)`);
+    log(3, `Organizing ${spellItems.length} spells by level for class ${classIdentifier}`);
     const spellsByLevel = {};
     const processedSpellIds = new Set();
     const processedSpellNames = new Set();
-    const flattenedSpells = [];
-
     if (this.actor) {
       const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
       for (const spell of actorSpells) {
@@ -355,66 +342,40 @@ export class SpellbookState {
         const spellName = spell.name.toLowerCase();
         const preparationMode = spell.system.preparation?.mode;
         const isSpecialMode = ['innate', 'pact', 'atwill', 'always'].includes(preparationMode);
-
         if (!spellsByLevel[level]) spellsByLevel[level] = [];
-
         const spellData = {
           ...spell,
           preparation: this.app.spellManager.getSpellPreparationStatus(spell, classIdentifier),
           filterData: formattingUtils.extractSpellFilterData(spell),
-          formattedDetails: formattingUtils.formatSpellDetails(spell),
-          levelMetadata: {
-            level: level,
-            levelName: CONFIG.DND5E.spellLevels[level] || `Level ${level}`,
-            needsLevelHeader: false
-          }
+          formattedDetails: formattingUtils.formatSpellDetails(spell)
         };
-
         if (!isSpecialMode) spellData.sourceClass = classIdentifier;
-
         spellsByLevel[level].push(spellData);
         processedSpellIds.add(spell.id || spell.uuid);
         processedSpellNames.add(spellName);
       }
     }
-
     for (const spell of spellItems) {
       if (spell?.system?.level === undefined) continue;
       const level = spell.system.level;
       const spellName = spell.name.toLowerCase();
       if (processedSpellNames.has(spellName)) continue;
-
       if (!spellsByLevel[level]) spellsByLevel[level] = [];
-
       const spellData = { ...spell };
       if (this.app.spellManager) spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spell, classIdentifier);
       spellData.sourceClass = classIdentifier;
       spellData.filterData = formattingUtils.extractSpellFilterData(spell);
       spellData.formattedDetails = formattingUtils.formatSpellDetails(spell);
-      spellData.levelMetadata = {
-        level: level,
-        levelName: CONFIG.DND5E.spellLevels[level] || `Level ${level}`,
-        needsLevelHeader: false
-      };
-
       spellsByLevel[level].push(spellData);
       processedSpellIds.add(spell.id || spell.compendiumUuid || spell.uuid);
       processedSpellNames.add(spellName);
     }
-
-    // Sort spells within each level
-    for (const level in spellsByLevel) {
-      if (spellsByLevel.hasOwnProperty(level)) spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
-    }
-
-    // Flatten into single array while preserving level order
-    const sortedLevels = Object.keys(spellsByLevel).sort((a, b) => Number(a) - Number(b));
-    for (const level of sortedLevels) {
-      flattenedSpells.push(...spellsByLevel[level]);
-    }
-
-    log(1, `Final flattened spells for ${classIdentifier}: ${flattenedSpells.length}`);
-    return flattenedSpells;
+    for (const level in spellsByLevel) if (spellsByLevel.hasOwnProperty(level)) spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
+    const result = Object.entries(spellsByLevel)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([level, spells]) => ({ level: level, levelName: CONFIG.DND5E.spellLevels[level], spells: spells }));
+    log(3, `Final organized spell levels for ${classIdentifier}: ${result.length}`);
+    return result;
   }
 
   /**

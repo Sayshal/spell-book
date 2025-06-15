@@ -278,7 +278,6 @@ export const SETTINGS = {
   ENABLE_JOURNAL_BUTTON: 'enableJournalButton',
   FILTER_CONFIGURATION: 'filterConfiguration',
   HIDDEN_SPELL_LISTS: 'hiddenSpellLists',
-  LAZY_LOADING_BATCH_SIZE: 'batchSize',
   LOGGING_LEVEL: 'loggingLevel',
   OPEN_SPELL_MANAGER: 'openSpellListManager',
   RUN_MIGRATIONS: 'runMigrations',

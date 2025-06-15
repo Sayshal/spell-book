@@ -134,8 +134,6 @@
   "SPELLBOOK.Scrolls.ScrollConsumed": "Scroll consumed during learning process",
   "SPELLBOOK.Scrolls.ScrollWillBeConsumed": "The scroll will be consumed.",
   "SPELLBOOK.Scrolls.SectionTitle": "Spell Scrolls",
-  "SPELLBOOK.Settings.BatchSize.Hint": "Number of spells to load per batch when using lazy loading. Higher values load more spells at once but may impact performance.",
-  "SPELLBOOK.Settings.BatchSize.Name": "Batch Size",
   "SPELLBOOK.Settings.CantripPreparationBonus.Decrease": "Decrease cantrip preparation bonus",
   "SPELLBOOK.Settings.CantripPreparationBonus.Hint": "Bonus to the number of cantrips this class can prepare. Can be negative to reduce the base amount.",
   "SPELLBOOK.Settings.CantripPreparationBonus.Increase": "Increase cantrip preparation bonus",

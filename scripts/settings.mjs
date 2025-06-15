@@ -25,23 +25,6 @@ export function registerSettings() {
     }
   });
 
-  game.settings.register(MODULE.ID, SETTINGS.LAZY_LOADING_BATCH_SIZE, {
-    name: 'SPELLBOOK.Settings.BatchSize.Name',
-    hint: 'SPELLBOOK.Settings.BatchSize.Hint',
-    scope: 'client',
-    config: true,
-    type: Number,
-    default: 50,
-    range: {
-      min: 10,
-      max: 200,
-      step: 10
-    },
-    onChange: (value) => {
-      log(3, `Batch size changed to ${value}`);
-    }
-  });
-
   game.settings.register(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, {
     name: 'SPELLBOOK.Settings.CustomSpellMappings.Name',
     hint: 'SPELLBOOK.Settings.CustomSpellMappings.Hint',

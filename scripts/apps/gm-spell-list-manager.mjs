@@ -65,22 +65,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   };
 
   /**
-   * Batching configuration for lazy loading
-   * @type {Record<string, number>}
-   */
-  static BATCHING = {
-    /**
-     * The number of pixels before reaching the end of the scroll container to begin loading additional entries.
-     */
-    MARGIN: 100,
-
-    /**
-     * The number of entries to load per batch.
-     */
-    SIZE: game.settings?.get?.(MODULE.ID, SETTINGS.LAZY_LOADING_BATCH_SIZE) || 50
-  };
-
-  /**
    * @returns {string} The application title
    */
   get title() {
@@ -122,53 +106,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     };
     this.filterHelper = new SpellbookFilterHelper(this);
     this.isUpdatingCheckboxes = false;
-
-    // Lazy loading state for center panel (selected list spells)
-    this.#lazyResultsCenter = null;
-    this.#lazyRenderIndexCenter = -1;
-    this.#lazyRenderThrottleCenter = false;
-
-    // Lazy loading state for right panel (available spells)
-    this.#lazyResultsRight = null;
-    this.#lazyRenderIndexRight = -1;
-    this.#lazyRenderThrottleRight = false;
   }
-
-  /**
-   * Lazy loading results for center panel (selected list spells)
-   * @type {Array|null}
-   */
-  #lazyResultsCenter = null;
-
-  /**
-   * Current render index for center panel lazy loading
-   * @type {number}
-   */
-  #lazyRenderIndexCenter = -1;
-
-  /**
-   * Render throttle flag for center panel lazy loading
-   * @type {boolean}
-   */
-  #lazyRenderThrottleCenter = false;
-
-  /**
-   * Lazy loading results for right panel (available spells)
-   * @type {Array|null}
-   */
-  #lazyResultsRight = null;
-
-  /**
-   * Current render index for right panel lazy loading
-   * @type {number}
-   */
-  #lazyRenderIndexRight = -1;
-
-  /**
-   * Render throttle flag for right panel lazy loading
-   * @type {boolean}
-   */
-  #lazyRenderThrottleRight = false;
 
   // ========================================
   // Context Preparation
@@ -201,53 +139,20 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     context.customListMap = customMappings;
     if (this.availableSpells.length > 0) this._prepareFilterContext(context);
     if (this.isEditing && this.selectedSpellList) await this._addEditingContext(context);
-
-    // Prepare flattened spell data for lazy loading - center panel
-    if (this.selectedSpellList?.spellsByLevel && this.isEditing) {
-      context.flattenedSelectedSpells = this._organizeSpellsByLevelForClass(this.selectedSpellList.spellsByLevel, 'selected');
-      if (this.selectionMode) {
-        context.flattenedSelectedSpells = context.flattenedSelectedSpells.map((spell) => {
+    if (this.selectedSpellList?.spellsByLevel && this.isEditing && this.selectionMode) {
+      this.selectedSpellList.spellsByLevel = this.selectedSpellList.spellsByLevel.map((levelData) => {
+        const processedLevel = { ...levelData };
+        processedLevel.spells = levelData.spells.map((spell) => {
           const spellUuid = spell.uuid || spell.compendiumUuid;
           const processedSpell = { ...spell };
           processedSpell.selectRemoveCheckboxHtml = this._createSpellSelectCheckbox(spell, 'remove', this.selectedSpellsToRemove.has(spellUuid));
           return processedSpell;
         });
-      }
+        return processedLevel;
+      });
     }
-
     if (this.selectedSpellList) context.selectedSpellList = formattingUtils.processSpellListForDisplay(this.selectedSpellList);
     return context;
-  }
-
-  /**
-   * Organize spells by level for class with lazy loading metadata
-   * @param {Array} spellLevels - Original spell levels structure
-   * @param {string} panelType - 'selected' or 'available'
-   * @returns {Array} Flattened spell array with level metadata for batching
-   * @private
-   */
-  _organizeSpellsByLevelForClass(spellLevels, panelType) {
-    log(1, `Flattening spells for ${panelType} panel from ${spellLevels.length} levels`);
-    const flattenedSpells = [];
-
-    for (const levelData of spellLevels) {
-      const levelNumber = levelData.level;
-      const levelName = levelData.levelName;
-
-      // Add level metadata to each spell
-      for (const spell of levelData.spells) {
-        const processedSpell = foundry.utils.deepClone(spell);
-        processedSpell.levelMetadata = {
-          level: levelNumber,
-          levelName: levelName,
-          needsLevelHeader: false // Will be determined during render
-        };
-        flattenedSpells.push(processedSpell);
-      }
-    }
-
-    log(1, `Flattened ${flattenedSpells.length} spells for ${panelType} panel lazy loading`);
-    return flattenedSpells;
   }
 
   /**
@@ -301,18 +206,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     context.damageTypeOptions = managerHelpers.prepareDamageTypeOptions(this.filterState);
     context.conditionOptions = managerHelpers.prepareConditionOptions(this.filterState);
     const filteredData = this._filterAvailableSpells();
-
-    // Prepare flattened available spells for lazy loading - right panel
     if (this.isEditing && this.selectionMode && filteredData.spells) {
-      context.flattenedAvailableSpells = filteredData.spells.map((spell) => {
-        const processedSpell = foundry.utils.deepClone(spell);
-        processedSpell.selectAddCheckboxHtml = this._createSpellSelectCheckbox(spell, 'add', this.selectedSpellsToAdd.has(spell.uuid));
-        return processedSpell;
+      filteredData.spells = filteredData.spells.map((spell) => {
+        spell.selectAddCheckboxHtml = this._createSpellSelectCheckbox(spell, 'add', this.selectedSpellsToAdd.has(spell.uuid));
+        return spell;
       });
-    } else {
-      context.flattenedAvailableSpells = filteredData.spells || [];
     }
-
     context.filteredSpells = filteredData;
     context.filterFormElements = this._prepareFilterFormElements();
   }
@@ -345,7 +244,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   async loadData() {
     try {
-      log(1, 'Loading spell lists for GM manager');
+      log(3, 'Loading spell lists for GM manager');
       await managerHelpers.getValidCustomListMappings();
       this.availableSpellLists = await managerHelpers.findCompendiumSpellLists(true);
       this.availableSpellLists.sort((a, b) => a.name.localeCompare(b.name));
@@ -365,7 +264,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   async enrichAvailableSpells() {
     if (!this.availableSpells.length) return;
-    log(1, 'Enriching available spells with icons');
+    log(3, 'Enriching available spells with icons');
     for (let spell of this.availableSpells) {
       spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
     }
@@ -391,13 +290,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       this.selectedSpellList.spells = spellDocs;
       this.selectedSpellList.spellsByLevel = spellLevels;
       this.selectedSpellList.isLoadingSpells = false;
-
-      // Reset center panel lazy loading when new spells are loaded
-      this.#lazyResultsCenter = null;
-      this.#lazyRenderIndexCenter = -1;
-
       this.render(false);
-      log(1, `Loaded ${spellDocs.length} spells for selected spell list`);
+      log(3, `Loaded ${spellDocs.length} spells for selected spell list`);
     } catch (error) {
       log(1, 'Error loading spell details:', error);
       this.selectedSpellList.isLoadingSpells = false;
@@ -412,7 +306,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   async selectSpellList(uuid) {
     this._clearSelections();
-    log(1, `Selecting spell list: ${uuid}`);
+    log(3, `Selecting spell list: ${uuid}`);
     const duplicate = await managerHelpers.findDuplicateSpellList(uuid);
     if (duplicate && duplicate.uuid !== uuid) return this.selectSpellList(duplicate.uuid);
     const spellList = await fromUuid(uuid);
@@ -438,7 +332,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   determineSourceFilter(spellList) {
     try {
-      log(1, 'Determining source filter for spell list');
+      log(3, 'Determining source filter for spell list');
       let sourceFilter = 'all';
       const isCustomList = !!spellList.flags?.[MODULE.ID]?.isDuplicate;
       if (isCustomList) {
@@ -447,15 +341,15 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           const parsedUuid = foundry.utils.parseUuid(originalUuid);
           const packageName = parsedUuid.collection.metadata.packageName.split('.')[0];
           sourceFilter = packageName;
-          log(1, `Using original source: ${sourceFilter}`);
+          log(3, `Using original source: ${sourceFilter}`);
         }
       } else if (spellList.pack) {
         const packageName = spellList.pack.split('.')[0];
         sourceFilter = packageName;
-        log(1, `Using current pack source: ${sourceFilter}`);
+        log(3, `Using current pack source: ${sourceFilter}`);
       }
       this.filterState.source = sourceFilter;
-      log(1, `Set source filter to: ${sourceFilter}`);
+      log(3, `Set source filter to: ${sourceFilter}`);
     } catch (error) {
       log(1, 'Error determining source filter:', error);
       this.filterState.source = 'all';
@@ -532,201 +426,20 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   applyFilters() {
     if (this.isUpdatingCheckboxes) return;
-
-    // Reset right panel lazy loading when filters change
-    this.#lazyResultsRight = null;
-    this.#lazyRenderIndexRight = -1;
-
     const filteredData = this._filterAvailableSpells();
-
-    // Store filtered results for lazy loading
-    this.#lazyResultsRight = filteredData.spells || [];
-
-    // Re-render right panel first batch
-    this._renderAvailableSpellsBatch();
-
-    // Update count display
+    const visibleUUIDs = new Set(filteredData.spells.map((spell) => spell.uuid));
+    const spellItems = this.element.querySelectorAll('.available-spells .spell-item');
+    let visibleCount = 0;
+    spellItems.forEach((item) => {
+      const uuid = item.dataset.uuid;
+      const isVisible = visibleUUIDs.has(uuid);
+      item.style.display = isVisible ? '' : 'none';
+      if (isVisible) visibleCount++;
+    });
+    const noResults = this.element.querySelector('.no-spells');
+    if (noResults) noResults.style.display = visibleCount > 0 ? 'none' : 'block';
     const countDisplay = this.element.querySelector('.filter-count');
-    if (countDisplay) countDisplay.textContent = `${filteredData.totalFiltered} spells`;
-  }
-
-  /**
-   * Render next batch of available spells (right panel)
-   * @private
-   */
-  async _renderAvailableSpellsBatch() {
-    if (!this.#lazyResultsRight || this.#lazyRenderThrottleRight) return;
-
-    this.#lazyRenderThrottleRight = true;
-
-    const batchStart = this.#lazyRenderIndexRight + 1;
-    const batchEnd = Math.min(batchStart + this.constructor.BATCHING.SIZE, this.#lazyResultsRight.length);
-
-    if (batchStart >= this.#lazyResultsRight.length) {
-      this.#lazyRenderThrottleRight = false;
-      return;
-    }
-
-    const availableSpellsList = this.element.querySelector('.available-spells');
-    if (!availableSpellsList) {
-      this.#lazyRenderThrottleRight = false;
-      return;
-    }
-
-    // Clear container if this is the first batch
-    if (batchStart === 0) {
-      availableSpellsList.innerHTML = '';
-    }
-
-    for (let i = batchStart; i < batchEnd; i++) {
-      const spell = this.#lazyResultsRight[i];
-      const spellElement = await this._renderAvailableSpellItem(spell);
-      if (spellElement) {
-        availableSpellsList.appendChild(spellElement);
-      }
-    }
-
-    this.#lazyRenderIndexRight = batchEnd - 1;
-    this.#lazyRenderThrottleRight = false;
-
-    log(1, `Rendered available spells batch ${batchStart}-${batchEnd - 1}, total rendered: ${batchEnd}`);
-  }
-
-  /**
-   * Render next batch of selected spells (center panel)
-   * @private
-   */
-  async _renderSelectedSpellsBatch() {
-    if (!this.#lazyResultsCenter || this.#lazyRenderThrottleCenter) return;
-
-    this.#lazyRenderThrottleCenter = true;
-
-    const batchStart = this.#lazyRenderIndexCenter + 1;
-    const batchEnd = Math.min(batchStart + this.constructor.BATCHING.SIZE, this.#lazyResultsCenter.length);
-
-    if (batchStart >= this.#lazyResultsCenter.length) {
-      this.#lazyRenderThrottleCenter = false;
-      return;
-    }
-
-    const selectedSpellsContainer = this.element.querySelector('.selected-list-spells');
-    if (!selectedSpellsContainer) {
-      this.#lazyRenderThrottleCenter = false;
-      return;
-    }
-
-    let currentLevelContainer = null;
-    let lastLevel = null;
-
-    for (let i = batchStart; i < batchEnd; i++) {
-      const spell = this.#lazyResultsCenter[i];
-      const levelMetadata = spell.levelMetadata;
-
-      // Create level header if needed
-      if (levelMetadata && levelMetadata.level !== lastLevel) {
-        currentLevelContainer = this._createLevelContainer(levelMetadata.level, levelMetadata.levelName);
-        selectedSpellsContainer.appendChild(currentLevelContainer);
-        lastLevel = levelMetadata.level;
-      }
-
-      // Render spell item
-      const spellElement = await this._renderSelectedSpellItem(spell);
-      if (currentLevelContainer && spellElement) {
-        const spellList = currentLevelContainer.querySelector('.spell-list') || currentLevelContainer;
-        spellList.appendChild(spellElement);
-      }
-    }
-
-    this.#lazyRenderIndexCenter = batchEnd - 1;
-    this.#lazyRenderThrottleCenter = false;
-
-    log(1, `Rendered selected spells batch ${batchStart}-${batchEnd - 1}, total rendered: ${batchEnd}`);
-  }
-
-  /**
-   * Create a level container element
-   * @param {string|number} level - The spell level
-   * @param {string} levelName - The localized level name
-   * @returns {HTMLElement} The level container element
-   * @private
-   */
-  _createLevelContainer(level, levelName) {
-    const container = document.createElement('div');
-    container.className = 'spell-level';
-    container.dataset.level = level;
-
-    const heading = document.createElement('div');
-    heading.className = 'spell-level-heading';
-    heading.innerHTML = `
-      <h3>${levelName}</h3>
-      <span class="spell-count"></span>
-    `;
-
-    const spellList = document.createElement('ul');
-    spellList.className = 'spell-list';
-
-    container.appendChild(heading);
-    container.appendChild(spellList);
-
-    return container;
-  }
-
-  /**
-   * Render a single available spell item (right panel)
-   * @param {Object} spell - The spell data
-   * @returns {Promise<HTMLElement>} The rendered spell element
-   * @private
-   */
-  async _renderAvailableSpellItem(spell) {
-    const template = 'modules/spell-book/templates/gm/available-spell-item.hbs';
-    const html = await renderTemplate(template, { spell });
-    const tempContainer = document.createElement('div');
-    tempContainer.innerHTML = html;
-    return tempContainer.firstElementChild;
-  }
-
-  /**
-   * Render a single selected spell item (center panel)
-   * @param {Object} spell - The spell data
-   * @returns {Promise<HTMLElement>} The rendered spell element
-   * @private
-   */
-  async _renderSelectedSpellItem(spell) {
-    const template = 'modules/spell-book/templates/gm/selected-spell-item.hbs';
-    const html = await renderTemplate(template, { spell });
-    const tempContainer = document.createElement('div');
-    tempContainer.innerHTML = html;
-    return tempContainer.firstElementChild;
-  }
-
-  /**
-   * Handle scroll events for available spells (right panel)
-   * @param {Event} event - The scroll event
-   * @private
-   */
-  async _onScrollAvailableSpells(event) {
-    if (this.#lazyRenderThrottleRight || !event.target.matches('.available-spells-wrapper')) return;
-    if (!this.#lazyResultsRight || this.#lazyRenderIndexRight >= this.#lazyResultsRight.length - 1) return;
-
-    const { scrollTop, scrollHeight, clientHeight } = event.target;
-    if (scrollTop + clientHeight < scrollHeight - this.constructor.BATCHING.MARGIN) return;
-
-    await this._renderAvailableSpellsBatch();
-  }
-
-  /**
-   * Handle scroll events for selected spells (center panel)
-   * @param {Event} event - The scroll event
-   * @private
-   */
-  async _onScrollSelectedSpells(event) {
-    if (this.#lazyRenderThrottleCenter || !event.target.matches('.selected-list-spells')) return;
-    if (!this.#lazyResultsCenter || this.#lazyRenderIndexCenter >= this.#lazyResultsCenter.length - 1) return;
-
-    const { scrollTop, scrollHeight, clientHeight } = event.target;
-    if (scrollTop + clientHeight < scrollHeight - this.constructor.BATCHING.MARGIN) return;
-
-    await this._renderSelectedSpellsBatch();
+    if (countDisplay) countDisplay.textContent = `${visibleCount} spells`;
   }
 
   /**
@@ -814,12 +527,14 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     addCheckboxes.forEach((checkbox) => {
       const uuid = checkbox.dataset.uuid;
       const shouldBeChecked = this.selectedSpellsToAdd.has(uuid);
+      const wasChecked = checkbox.checked;
       checkbox.checked = shouldBeChecked;
     });
     const removeCheckboxes = this.element.querySelectorAll('.spell-select-cb[data-type="remove"]');
     removeCheckboxes.forEach((checkbox) => {
       const uuid = checkbox.dataset.uuid;
       const shouldBeChecked = this.selectedSpellsToRemove.has(uuid);
+      const wasChecked = checkbox.checked;
       checkbox.checked = shouldBeChecked;
     });
     this.isUpdatingCheckboxes = false;
@@ -1021,10 +736,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @private
    */
   _refreshFilteredContent() {
-    // Reset right panel lazy loading
-    this.#lazyResultsRight = null;
-    this.#lazyRenderIndexRight = -1;
-
     this.render(false, { parts: ['availableSpells'] });
   }
 
@@ -1623,14 +1334,14 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         const entry = index.find((e) => e.type === 'class' && e.system?.identifier?.toLowerCase() === identifier.toLowerCase());
         if (entry) {
           const classItem = await pack.getDocument(entry._id);
-          log(1, `Found class ${classItem.name} in pack ${pack.metadata.label} (folder: ${packTopLevelFolder})`);
+          log(3, `Found class ${classItem.name} in pack ${pack.metadata.label} (folder: ${packTopLevelFolder})`);
           return classItem;
         }
       } catch (err) {
-        log(1, `Error searching pack ${pack.metadata.label}:`, err);
+        log(2, `Error searching pack ${pack.metadata.label}:`, err);
       }
     }
-    log(1, `No class with identifier "${identifier}" found in top-level folder "${topLevelFolderName}"`);
+    log(2, `No class with identifier "${identifier}" found in top-level folder "${topLevelFolderName}"`);
     return null;
   }
 
@@ -1717,13 +1428,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     const isActorSpellbook = !!flags.isActorSpellbook;
     if (!isCustom && !isActorSpellbook) await this._duplicateForEditing();
     this.isEditing = true;
-
-    // Reset both lazy loading panels when entering edit mode
-    this.#lazyResultsCenter = null;
-    this.#lazyRenderIndexCenter = -1;
-    this.#lazyResultsRight = null;
-    this.#lazyRenderIndexRight = -1;
-
     this.render(false);
     setTimeout(() => this.applyFilters(), 100);
   }
@@ -1739,7 +1443,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (!element) return;
     let spellUuid = element.dataset.uuid;
     if (!this.selectedSpellList || !this.isEditing) return;
-    log(1, `Removing spell: ${spellUuid} in pending changes`);
+    log(3, `Removing spell: ${spellUuid} in pending changes`);
     this.pendingChanges.removed.add(spellUuid);
     this.pendingChanges.added.delete(spellUuid);
     const normalizedForms = managerHelpers.normalizeUuid(spellUuid);
@@ -1750,11 +1454,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     });
     this.selectedSpellList.spellsByLevel = actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
     this._ensureSpellIcons();
-
-    // Reset center panel lazy loading after removal
-    this.#lazyResultsCenter = null;
-    this.#lazyRenderIndexCenter = -1;
-
     this.render(false);
     this.applyFilters();
   }
@@ -1781,11 +1480,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     this.selectedSpellList.spells.push(spellCopy);
     this.selectedSpellList.spellsByLevel = actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
     this._ensureSpellIcons();
-
-    // Reset center panel lazy loading after addition
-    this.#lazyResultsCenter = null;
-    this.#lazyRenderIndexCenter = -1;
-
     this.render(false);
     this.applyFilters();
   }
@@ -1799,7 +1493,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   static async handleSaveCustomList(event, _form) {
     if (!this.selectedSpellList || !this.isEditing) return;
-    log(1, 'Saving custom spell list with pending changes');
+    log(3, 'Saving custom spell list with pending changes');
     const document = this.selectedSpellList.document;
     const currentSpells = new Set(document.system.spells || []);
     for (const spellUuid of this.pendingChanges.removed) {
@@ -1808,7 +1502,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         if (normalizedForms.includes(existingUuid)) currentSpells.delete(existingUuid);
       }
     }
-    log(1, `Processing ${this.pendingChanges.added.size} spell additions`);
+    log(3, `Processing ${this.pendingChanges.added.size} spell additions`);
     for (const spellUuid of this.pendingChanges.added) currentSpells.add(spellUuid);
     await document.update({ 'system.spells': Array.from(currentSpells) });
     this.pendingChanges = { added: new Set(), removed: new Set() };
@@ -1987,11 +1681,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
     if (!spellListMeta) return;
     const topLevelFolderName = spellListMeta.pack;
-    log(1, `Searching for class ${identifier} in source: ${topLevelFolderName}`);
+    log(3, `Searching for class ${identifier} in source: ${topLevelFolderName}`);
     const classItem = await this._findClassInTopLevelFolder(identifier, topLevelFolderName);
     if (!classItem) return;
     await classItem.sheet.render(true);
-    log(1, `Opened class sheet for ${classItem.name} from ${topLevelFolderName}`);
+    log(3, `Opened class sheet for ${classItem.name} from ${topLevelFolderName}`);
   }
 
   /**
@@ -2154,7 +1848,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
               this.selectedSpellList.spellUuids.push(spellUuid);
               this.selectedSpellList.spells.push(spellCopy);
             } else {
-              log(1, `Could not find spell with UUID: ${spellUuid}`);
+              log(2, `Could not find spell with UUID: ${spellUuid}`);
             }
             processed++;
           } catch (error) {
@@ -2166,11 +1860,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       this.selectedSpellList.spellsByLevel = actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
       this._ensureSpellIcons();
       this._clearSelections();
-
-      // Reset center panel lazy loading after bulk operations
-      this.#lazyResultsCenter = null;
-      this.#lazyRenderIndexCenter = -1;
-
       if (failed === 0) ui.notifications.info(game.i18n.format('SPELLMANAGER.BulkOps.Completed', { count: processed }));
       else ui.notifications.warn(game.i18n.format('SPELLMANAGER.BulkOps.PartialFailure', { success: processed, total: totalCount, failed }));
       this.render(false);
@@ -2239,51 +1928,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
     this.setupFilterListeners();
     this.setupMultiSelectListeners();
-    this.setupLazyLoadingListeners();
     this.applyCollapsedLevels();
     this.applyCollapsedFolders();
-
-    // Set up initial lazy loading for both panels
-    if (this.isEditing) {
-      this._setupLazyLoadingPanels();
-    }
-  }
-
-  /**
-   * Set up lazy loading for both panels
-   * @private
-   */
-  _setupLazyLoadingPanels() {
-    // Set up center panel lazy loading if we have selected spells
-    if (this.selectedSpellList?.spellsByLevel) {
-      this.#lazyResultsCenter = this._organizeSpellsByLevelForClass(this.selectedSpellList.spellsByLevel, 'selected');
-      this.#lazyRenderIndexCenter = -1;
-      this._renderSelectedSpellsBatch();
-    }
-
-    // Set up right panel lazy loading
-    const filteredData = this._filterAvailableSpells();
-    this.#lazyResultsRight = filteredData.spells || [];
-    this.#lazyRenderIndexRight = -1;
-    this._renderAvailableSpellsBatch();
-  }
-
-  /**
-   * Set up scroll listeners for lazy loading
-   * @private
-   */
-  setupLazyLoadingListeners() {
-    // Center panel scroll listener
-    const selectedSpellsContainer = this.element.querySelector('.selected-list-spells');
-    if (selectedSpellsContainer) {
-      selectedSpellsContainer.addEventListener('scroll', this._onScrollSelectedSpells.bind(this), { passive: true });
-    }
-
-    // Right panel scroll listener
-    const availableSpellsWrapper = this.element.querySelector('.available-spells-wrapper');
-    if (availableSpellsWrapper) {
-      availableSpellsWrapper.addEventListener('scroll', this._onScrollAvailableSpells.bind(this), { passive: true });
-    }
   }
 
   /** @inheritdoc */

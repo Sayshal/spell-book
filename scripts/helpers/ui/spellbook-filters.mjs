@@ -7,7 +7,7 @@ import * as filterUtils from '../filters.mjs';
 export class SpellbookFilterHelper {
   /**
    * Create a new filter helper
-   * @param {PlayerSpellBook|GMSpellListManager} app - The parent application
+   * @param {PlayerSpellBook} app - The parent application
    */
   constructor(app) {
     this.app = app;
@@ -61,25 +61,6 @@ export class SpellbookFilterHelper {
   }
 
   /**
-   * Filter spells array (works with both flattened and level-organized structures)
-   * @param {Array} spells - Array of spells to filter
-   * @param {Object} filterState - Current filter state
-   * @returns {Array} Filtered spells
-   */
-  filterSpells(spells, filterState) {
-    log(1, 'Beginning spell filtering:', spells.length, 'total spells');
-    let remainingSpells = [...spells];
-
-    remainingSpells = this._filterByBasicProperties(remainingSpells, filterState);
-    remainingSpells = this._filterByRange(remainingSpells, filterState);
-    remainingSpells = this._filterByDamageAndConditions(remainingSpells, filterState);
-    remainingSpells = this._filterBySpecialProperties(remainingSpells, filterState);
-
-    log(1, 'Final filtered spells count:', remainingSpells.length);
-    return remainingSpells;
-  }
-
-  /**
    * Filter available spells based on current filter state
    * @param {Array} availableSpells - Array of available spells
    * @param {Set} selectedSpellUUIDs - Set of selected spell UUIDs
@@ -89,7 +70,7 @@ export class SpellbookFilterHelper {
    */
   filterAvailableSpells(availableSpells, selectedSpellUUIDs, isSpellInSelectedList, filterState = null) {
     const filters = filterState || this.getFilterState();
-    log(1, 'Beginning available spells filtering:', selectedSpellUUIDs.size, 'selected spells out of', availableSpells.length, 'total available');
+    log(3, 'Beginning Filtering:', selectedSpellUUIDs.size, 'selected spells out of', availableSpells.length, 'total available');
     let remainingSpells = [...availableSpells];
     remainingSpells = this._filterBySelectedList(remainingSpells, selectedSpellUUIDs, isSpellInSelectedList);
     remainingSpells = this._filterBySource(remainingSpells, filters);
@@ -97,7 +78,7 @@ export class SpellbookFilterHelper {
     remainingSpells = this._filterByRange(remainingSpells, filters);
     remainingSpells = this._filterByDamageAndConditions(remainingSpells, filters);
     remainingSpells = this._filterBySpecialProperties(remainingSpells, filters);
-    log(1, 'Final available spells count:', remainingSpells.length);
+    log(3, 'Final spells count:', remainingSpells.length);
     return { spells: remainingSpells, totalFiltered: remainingSpells.length };
   }
 
@@ -111,7 +92,7 @@ export class SpellbookFilterHelper {
    */
   _filterBySelectedList(spells, selectedSpellUUIDs, isSpellInSelectedList) {
     const filtered = spells.filter((spell) => !isSpellInSelectedList(spell, selectedSpellUUIDs));
-    log(1, 'After in-list filter:', filtered.length, 'spells remaining');
+    log(3, 'After in-list filter:', filtered.length, 'spells remaining');
     return filtered;
   }
 
@@ -132,11 +113,11 @@ export class SpellbookFilterHelper {
       return spellSource.includes(source) || spellSource === source || packName.toLowerCase().includes(source.toLowerCase());
     });
     if (filtered.length === 0 && beforeCount > 0) {
-      log(1, `Source '${source}' filtered out all spells, resetting to show all sources`);
+      log(3, `Source '${source}' filtered out all spells, resetting to show all sources`);
       filterState.source = 'all';
       return spells;
     }
-    log(1, `After source filter: ${filtered.length} spells remaining`);
+    log(3, `After source filter: ${filtered.length} spells remaining`);
     return filtered;
   }
 
@@ -153,9 +134,9 @@ export class SpellbookFilterHelper {
     if (name) filtered = filtered.filter((spell) => spell.name.toLowerCase().includes(name.toLowerCase()));
     if (level) {
       const levelValue = parseInt(level);
-      filtered = filtered.filter((spell) => (spell.system?.level || spell.level) === levelValue);
+      filtered = filtered.filter((spell) => spell.level === levelValue);
     }
-    if (school) filtered = filtered.filter((spell) => (spell.system?.school || spell.school) === school);
+    if (school) filtered = filtered.filter((spell) => spell.school === school);
     if (castingTime) {
       filtered = filtered.filter((spell) => {
         const [filterType, filterValue] = castingTime.split(':');
@@ -188,7 +169,7 @@ export class SpellbookFilterHelper {
       const maxRangeVal = maxRange ? parseInt(maxRange) : Infinity;
       return standardizedRange >= minRangeVal && standardizedRange <= maxRangeVal;
     });
-    log(1, 'After range filter:', filtered.length, 'spells remaining');
+    log(3, 'After range filter:', filtered.length, 'spells remaining');
     return filtered;
   }
 
@@ -250,7 +231,7 @@ export class SpellbookFilterHelper {
   }
 
   /**
-   * Apply filters to the spell list (PlayerSpellBook legacy method)
+   * Apply filters to the spell list
    */
   applyFilters() {
     try {
@@ -370,23 +351,17 @@ export class SpellbookFilterHelper {
    * @returns {Array} Sorted spells
    */
   sortSpells(spells, sortBy) {
-    // Safety check - ensure spells is an array
-    if (!Array.isArray(spells)) {
-      log(1, 'sortSpells called with non-array:', spells);
-      return [];
-    }
-
     return [...spells].sort((a, b) => {
       switch (sortBy) {
         case 'name':
           return a.name.localeCompare(b.name);
         case 'school':
-          const schoolA = a.system?.school || a.school || '';
-          const schoolB = b.system?.school || b.school || '';
+          const schoolA = a.system.school || '';
+          const schoolB = b.system.school || '';
           return schoolA.localeCompare(schoolB) || a.name.localeCompare(b.name);
         case 'prepared':
-          const prepA = a.preparation?.prepared || a.prepared ? 0 : 1;
-          const prepB = b.preparation?.prepared || b.prepared ? 0 : 1;
+          const prepA = a.preparation.prepared ? 0 : 1;
+          const prepB = b.preparation.prepared ? 0 : 1;
           return prepA - prepB || a.name.localeCompare(b.name);
         case 'level':
         default:
