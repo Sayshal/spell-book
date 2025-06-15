@@ -193,6 +193,15 @@ export const MODULE = {
     NONE: 'none',
     PREPARED: 'prepared',
     ALWAYS: 'always'
+  },
+
+  /**
+   * Batching configuration for lazy loading
+   * @type {Object}
+   */
+  BATCHING: {
+    SIZE: 50,
+    MARGIN: 100
   }
 };
 

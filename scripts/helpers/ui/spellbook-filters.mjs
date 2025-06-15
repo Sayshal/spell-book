@@ -415,7 +415,10 @@ export class SpellbookFilterHelper {
         countable: 0,
         countablePrepared: 0
       };
-      container.style.display = levelStats.visible > 0 ? '' : '';
+
+      // Show/hide level container based on visibility
+      container.style.display = levelStats.visible > 0 ? '' : 'none';
+
       const countDisplay = container.querySelector('.spell-count');
       if (countDisplay && levelStats.countable > 0) {
         countDisplay.textContent = `(${levelStats.countablePrepared}/${levelStats.countable})`;

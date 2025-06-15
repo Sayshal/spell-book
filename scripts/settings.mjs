@@ -196,4 +196,22 @@ export function registerSettings() {
       }
     }
   });
+
+  game.settings.register(MODULE.ID, 'LAZY_BATCH_SIZE', {
+    name: 'SPELLBOOK.Settings.LazyBatchSize.Name',
+    hint: 'SPELLBOOK.Settings.LazyBatchSize.Hint',
+    scope: 'client',
+    config: true,
+    type: Number,
+    default: 50,
+    range: {
+      min: 10,
+      max: 200,
+      step: 10
+    },
+    onChange: (value) => {
+      MODULE.BATCHING.SIZE = value;
+      log(3, `Lazy batch size changed to ${value}`);
+    }
+  });
 }
