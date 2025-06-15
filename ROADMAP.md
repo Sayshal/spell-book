@@ -81,24 +81,10 @@ The root cause was identified in `getClassSpellList()` in `spell-discovery.mjs`,
 - **Eliminated sequence dependency**: Learning order (scrolls → free → paid spells) no longer affects spell list display
 - **Enhanced debugging**: Added comprehensive logging to detect and prevent similar spell list corruption issues
 
-#### **Non-Standard Spellcasting Classes Support [High Priority]**
-
-Support homebrew and edge-case spellcasting classes that don't follow standard spell progression patterns, including cantrip-only casters and ritual-only casters.
-
-**Use Cases:**
-
-- **Warmage**: Cantrip-only caster with `cantrips-known` scale but no spell progression
-- **Investigator**: Ritual-only caster with no spell progression
-- **Other homebrew classes**: Custom spellcasting patterns that don't fit standard progressions
-
-**Code justification:** Currently, `spellbook-state.mjs` and `rule-set-manager.mjs` filter out classes where `spellcasting.progression` is missing or set to `'none'`. The detection logic in `detectSpellcastingClasses()` and `_detectSpellcastingClasses()` excludes these classes entirely:
-
 #### **Performance Improvements [Medium Priority]**
 
-- Implement virtual scrolling for large spell lists (1000+ spells)
-- Add lazy loading for spell details and icons
-- Optimize re-render cycles in frequently updated components
-- Cache frequently accessed spell data
+- Add lazy loading for spell lists in PlayerSpellBook & GMSpellListManager
+- Optimize render cycle to reduce redoing the same task
 
 ### v0.9.0 - Enhanced User Experience & Multi 5e System Support
 
@@ -236,35 +222,21 @@ Implement encounter-based spell tracking, player spell usage monitoring, advance
 - Custom spell creation wizard with balance validation
 - Campaign-specific spell availability rules
 
-### Implementation Priority Matrix
+#### **Non-Standard Spellcasting Classes Support [Low Priority]**
 
-### High Impact, Low Effort
+Support homebrew and edge-case spellcasting classes that don't follow standard spell progression patterns, including cantrip-only casters and ritual-only casters.
 
-- **Spell Loadouts** - Builds on existing preparation system, high user value
-- **Multi-select in Spell Manager** - UI enhancement to existing functionality
-- **Class Rules Bug Fix** - Critical stability improvement using existing cleanup patterns
-- **Spell Notes & Favorites** - Simple data extension to existing spell objects
+**Use Cases:**
 
-### High Impact, High Effort
+- **Warmage**: Cantrip-only caster with `cantrips-known` scale but no spell progression
+- **Investigator**: Ritual-only caster with no spell progression
+- **Other homebrew classes**: Custom spellcasting patterns that don't fit standard progressions
 
-- **Advanced Search System** - Requires new recommendation algorithms and enhanced UI
-- **Analytics Dashboard** - Needs data aggregation system and new UI components
-- **GM Enhancement Tools** - Complex new monitoring and analysis systems
-
-### Medium Impact, Low Effort
-
-- **Spell List Hiding** - Simple visibility controls for existing lists
-- **Visual Enhancements** - Incremental improvements to existing interfaces
-- **5e Property Updates** - Critical for compatibility but straightforward changes
-
-### Low Impact, High Effort
-
-- **Advanced Wizard Research** - Complex new mechanics with limited user base
-- **Comprehensive Analytics** - Extensive data processing with uncertain user adoption
+**Code justification:** Currently, `spellbook-state.mjs` and `rule-set-manager.mjs` filter out classes where `spellcasting.progression` is missing or set to `'none'`. The detection logic in `detectSpellcastingClasses()` and `_detectSpellcastingClasses()` excludes these classes entirely:
 
 ### Development Notes
 
-### Code Architecture Status
+#### Code Architecture Status
 
 **Already Implemented Well:**
 
@@ -282,7 +254,7 @@ Implement encounter-based spell tracking, player spell usage monitoring, advance
 - **Mobile/tablet UI optimization** needs attention
 - **Automated testing framework** completely missing
 
-### User Experience Priorities
+#### User Experience Priorities
 
 **Current Strengths:**
 
@@ -298,7 +270,7 @@ Implement encounter-based spell tracking, player spell usage monitoring, advance
 - **Enhance spell discovery** - recommendation system would help new users
 - **Improve loading performance** - virtual scrolling for 1000+ spell lists
 
-### Technical Debt Analysis
+#### Technical Debt Analysis
 
 **Well-Maintained Areas:**
 
@@ -314,7 +286,7 @@ Implement encounter-based spell tracking, player spell usage monitoring, advance
 - **Legacy compatibility code** for dnd5e version differences
 - **Inconsistent async/await patterns** in some older modules
 
-### Performance Optimization Status
+#### Performance Optimization Status
 
 **Current Optimizations:**
 
@@ -330,7 +302,7 @@ Implement encounter-based spell tracking, player spell usage monitoring, advance
 - **IndexedDB integration** for offline spell data caching
 - **Bundle splitting** for faster initial load times
 
-### Integration Patterns
+#### Integration Patterns
 
 **Current Integrations:**
 
