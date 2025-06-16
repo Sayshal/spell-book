@@ -236,7 +236,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         context.classIdentifier = classIdentifier;
         context.className = this._stateManager.classSpellData[classIdentifier].className;
         const flattenedSpells = this._stateManager.classSpellData[classIdentifier].spellLevels;
-        context.spellLevels = this._convertFlattenedToLevels(flattenedSpells);
+        context.spellLevels = flattenedSpells;
         context.spellPreparation = this._stateManager.classSpellData[classIdentifier].spellPreparation;
         context.globalPrepared = this._stateManager.spellPreparation;
       }
@@ -252,37 +252,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       context.isForceWizard = wizardManager?.classItem && genericUtils.isClassWizardEnabled(this.actor, classIdentifier);
       if (this._stateManager.tabData?.[partId]) {
         const flattenedSpells = this._stateManager.tabData[partId].spellLevels;
-        context.spellLevels = this._convertFlattenedToLevels(flattenedSpells);
+        context.spellLevels = flattenedSpells;
         const scrollSpells = this._stateManager.scrollSpells || [];
         context.spellPreparation = this._stateManager.tabData[partId].spellPreparation;
         context.globalPrepared = this._stateManager.spellPreparation;
       }
     }
     return context;
-  }
-
-  /**
-   * Convert flattened spell array back to level structure for templates
-   * @param {Array} flattenedSpells - Flattened spell array
-   * @returns {Array} Level structure for templates
-   */
-  _convertFlattenedToLevels(flattenedSpells) {
-    if (!flattenedSpells || !Array.isArray(flattenedSpells)) return [];
-    const levelMap = new Map();
-    for (const spell of flattenedSpells) {
-      const levelId = spell._levelMetadata.level;
-      const levelName = spell._levelMetadata.levelName;
-      if (!levelMap.has(levelId)) {
-        levelMap.set(levelId, {
-          level: levelId,
-          levelName: levelName,
-          spells: []
-        });
-      }
-      levelMap.get(levelId).spells.push(spell);
-    }
-    const result = Array.from(levelMap.values()).sort((a, b) => Number(a.level) - Number(b.level));
-    return result;
   }
 
   /**

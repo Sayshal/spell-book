@@ -33,10 +33,6 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
           spellData.forEach((spell) => {
             levels.add(spell._levelMetadata.level);
           });
-        } else {
-          spellData.forEach((level) => {
-            levels.add(level.level);
-          });
         }
         Array.from(levels)
           .sort((a, b) => Number(a) - Number(b))
@@ -101,15 +97,7 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
 function getCastingTimeOptions(spellData, filterState) {
   const uniqueActivationTypes = new Set();
   const options = [];
-  let spells = [];
-  if (Array.isArray(spellData)) {
-    if (spellData.length > 0 && spellData[0]._levelMetadata) spells = spellData;
-    else {
-      spellData.forEach((level) => {
-        if (level.spells && Array.isArray(level.spells)) spells.push(...level.spells);
-      });
-    }
-  }
+  const spells = Array.isArray(spellData) ? spellData : [];
   spells.forEach((spell) => {
     const type = spell.system?.activation?.type;
     const value = spell.system?.activation?.value || 1;

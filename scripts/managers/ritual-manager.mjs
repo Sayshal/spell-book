@@ -120,7 +120,7 @@ export class RitualManager {
             'system.preparation.prepared': false,
             'system.sourceClass': classIdentifier
           });
-          log(1, `Updated existing spell ${sourceSpell.name} to ritual mode`);
+          log(3, `Updated existing spell ${sourceSpell.name} to ritual mode`);
         } else if (ritualMode === 'prepared' && !isPrepared && currentMode !== 'ritual') {
           if (currentMode === 'prepared') {
             await existingSpell.update({
@@ -128,7 +128,7 @@ export class RitualManager {
               'system.preparation.prepared': false,
               'system.sourceClass': classIdentifier
             });
-            log(1, `Updated prepared spell ${sourceSpell.name} to ritual mode`);
+            log(3, `Updated prepared spell ${sourceSpell.name} to ritual mode`);
           }
         }
       } else {
