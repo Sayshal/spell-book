@@ -244,6 +244,8 @@ export class SpellbookState {
    * @async
    */
   async loadSpellData() {
+    const startTime = performance.now();
+    log(1, '🔄 loadSpellData starting...');
     RuleSetManager.initializeNewClasses(this.actor);
     const wizardClasses = genericUtils.getWizardEnabledClasses(this.actor);
     for (const { identifier } of wizardClasses) {
@@ -267,6 +269,8 @@ export class SpellbookState {
       this.spellPreparation = this.classSpellData[this.activeClass].spellPreparation || { current: 0, maximum: 0 };
     }
     this.updateGlobalPreparationCount();
+    const elapsed = performance.now() - startTime;
+    log(1, `🏁 loadSpellData total time: ${elapsed.toFixed(2)}ms`);
     return true;
   }
 

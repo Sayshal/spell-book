@@ -130,6 +130,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.#lazyRenderThrottle = false; // Prevent multiple renders
     this._currentLevelHeaders = new Map(); // Track rendered level headers
     this._lastScrollElement = null; // Track last scroll element for cleanup
+    this._isLoadingSpellData = false;
   }
 
   /**
@@ -633,6 +634,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   async _ensureSpellDataAndInitializeLazyLoading() {
+    if (this._isLoadingSpellData) {
+      log(1, 'Skipping duplicate spell data loading');
+      return;
+    }
+    this._isLoadingSpellData = true;
     try {
       // Only initialize state manager if not already done
       if (!this._stateManager._initialized) {
@@ -653,6 +659,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       log(1, 'Error loading spell data:', error);
       // Show error state instead of loading state
       this._showErrorState(error);
+    } finally {
+      this._isLoadingSpellData = false;
     }
   }
 

@@ -38,7 +38,7 @@ export class SpellbookFilterHelper {
    */
   getFilterState() {
     const now = Date.now();
-    if (this._cachedFilterState && now - this._lastFilterUpdate < 100) return this._cachedFilterState;
+    if (this._cachedFilterState && now - this._lastFilterUpdate < 1000) return this._cachedFilterState;
     if (!this.element) return filterUtils.getDefaultFilterState();
     this._cachedFilterState = {
       name: this.element.querySelector('[name="filter-name"]')?.value || '',

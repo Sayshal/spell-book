@@ -10,13 +10,103 @@ import * as formattingUtils from './spell-formatting.mjs';
  * @returns {Promise<Array>} - Array of spell documents
  */
 export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
+  const startTime = performance.now();
+  log(1, '🔄 fetchSpellDocuments starting...');
+
+  // Group UUIDs by compendium for batch fetching
+  const compendiumGroups = new Map();
+  const nonCompendiumUuids = [];
+
+  for (const uuid of spellUuids) {
+    const parsed = foundry.utils.parseUuid(uuid);
+    if (parsed.collection && parsed.id) {
+      const packId = parsed.collection.collection;
+      if (!compendiumGroups.has(packId)) {
+        compendiumGroups.set(packId, []);
+      }
+      compendiumGroups.get(packId).push({ uuid, id: parsed.id });
+    } else {
+      nonCompendiumUuids.push(uuid);
+    }
+  }
+
   const spellItems = [];
   const errors = [];
   const filteredOut = [];
+
   log(3, `Fetching spell documents: ${spellUuids.size} spells, max level ${maxSpellLevel}`);
-  for (const uuid of spellUuids) {
+  log(3, `Grouped into ${compendiumGroups.size} compendiums + ${nonCompendiumUuids.length} non-compendium UUIDs`);
+
+  // Batch fetch from each compendium using Promise.all for parallel processing
+  for (const [packId, uuidData] of compendiumGroups) {
     try {
-      const spell = await fromUuid(uuid);
+      const pack = game.packs.get(packId);
+      if (!pack) {
+        for (const { uuid } of uuidData) {
+          errors.push({ uuid, reason: `Compendium ${packId} not found` });
+        }
+        continue;
+      }
+
+      // Batch fetch all documents from this compendium in parallel
+      const fetchPromises = uuidData.map(async ({ uuid, id }) => {
+        try {
+          const spell = await pack.getDocument(id);
+          return { uuid, id, spell, success: true };
+        } catch (error) {
+          return { uuid, id, error, success: false };
+        }
+      });
+
+      const results = await Promise.all(fetchPromises);
+
+      // Process results
+      for (const result of results) {
+        if (!result.success) {
+          errors.push({ uuid: result.uuid, reason: result.error?.message || 'Failed to fetch from compendium' });
+          continue;
+        }
+
+        const { uuid, spell } = result;
+        if (!spell || spell.type !== 'spell') {
+          errors.push({ uuid, reason: 'Not a valid spell document' });
+          continue;
+        }
+
+        const sourceUuid = spell.parent && spell.flags?.core?.sourceId ? spell.flags.core.sourceId : uuid;
+        if (spell.system.level <= maxSpellLevel) {
+          spellItems.push({ ...spell, compendiumUuid: sourceUuid });
+        } else {
+          filteredOut.push({ ...spell, compendiumUuid: sourceUuid });
+        }
+      }
+    } catch (error) {
+      for (const { uuid } of uuidData) {
+        errors.push({ uuid, reason: error.message || 'Compendium batch fetch error' });
+      }
+    }
+  }
+
+  // Handle non-compendium UUIDs individually (fallback for world items, etc.)
+  if (nonCompendiumUuids.length > 0) {
+    const fallbackPromises = nonCompendiumUuids.map(async (uuid) => {
+      try {
+        const spell = await fromUuid(uuid);
+        return { uuid, spell, success: true };
+      } catch (error) {
+        return { uuid, error, success: false };
+      }
+    });
+
+    const fallbackResults = await Promise.all(fallbackPromises);
+
+    for (const result of fallbackResults) {
+      if (!result.success) {
+        errors.push({ uuid: result.uuid, reason: result.error?.message || 'Unknown error' });
+        continue;
+      }
+
+      const { uuid, spell } = result;
       if (!spell) {
         errors.push({ uuid, reason: 'Document not found' });
         continue;
@@ -25,19 +115,24 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
         errors.push({ uuid, reason: 'Not a valid spell document' });
         continue;
       }
+
       const sourceUuid = spell.parent && spell.flags?.core?.sourceId ? spell.flags.core.sourceId : uuid;
-      if (spell.system.level <= maxSpellLevel) spellItems.push({ ...spell, compendiumUuid: sourceUuid });
-      else filteredOut.push({ ...spell, compendiumUuid: sourceUuid });
-    } catch (error) {
-      errors.push({ uuid, reason: error.message || 'Unknown error' });
+      if (spell.system.level <= maxSpellLevel) {
+        spellItems.push({ ...spell, compendiumUuid: sourceUuid });
+      } else {
+        filteredOut.push({ ...spell, compendiumUuid: sourceUuid });
+      }
     }
   }
+
   if (filteredOut.length > 0) log(3, `Filtered out ${filteredOut.length} spells above level ${maxSpellLevel}.`);
   if (errors.length > 0) log(2, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`, { errors });
   log(3, `Successfully fetched ${spellItems.length}/${spellUuids.size} spells`);
+
+  const elapsed = performance.now() - startTime;
+  log(1, `🏁 fetchSpellDocuments total time: ${elapsed.toFixed(2)}ms`);
   return spellItems;
 }
-
 /**
  * Organize spells by level for display with preparation info
  * @param {Array} spellItems - Array of spell documents
