@@ -1,5 +1,6 @@
 import { createAPI } from './api.mjs';
 import { MODULE, TEMPLATES } from './constants.mjs';
+import { invalidateSpellCache } from './helpers/spell-cache.mjs';
 import { registerDnD5eIntegration } from './integrations/dnd5e.mjs';
 import { registerTidy5eIntegration } from './integrations/tidy5e.mjs';
 import { initializeLogger, log } from './logger.mjs';
@@ -21,6 +22,18 @@ Hooks.once('init', async function () {
 Hooks.once('ready', async function () {
   await unlockModuleCompendium();
   await MacroManager.initializeMacros();
+});
+
+Hooks.on('createItem', (item) => {
+  if (item.type === 'spell' && item.actor?.type === 'character') {
+    invalidateSpellCache(item.actor.id);
+  }
+});
+
+Hooks.on('deleteItem', (item) => {
+  if (item.type === 'spell' && item.actor?.type === 'character') {
+    invalidateSpellCache(item.actor.id);
+  }
 });
 
 /**

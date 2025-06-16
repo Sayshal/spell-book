@@ -203,10 +203,10 @@ export function registerSettings() {
     scope: 'client',
     config: true,
     type: Number,
-    default: 50,
+    default: MODULE.BATCHING.SIZE,
     range: {
-      min: 10,
-      max: 200,
+      min: 20,
+      max: 250,
       step: 10
     },
     onChange: (value) => {

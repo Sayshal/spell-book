@@ -1,6 +1,7 @@
 import { FLAGS, MODULE } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import { SpellManager } from '../managers/spell-manager.mjs';
+import { getCachedSpells } from './spell-cache.mjs';
 import * as formattingUtils from './spell-formatting.mjs';
 
 /**
@@ -9,9 +10,18 @@ import * as formattingUtils from './spell-formatting.mjs';
  * @param {number} maxSpellLevel - Maximum spell level to include
  * @returns {Promise<Array>} - Array of spell documents
  */
-export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
+export async function fetchSpellDocuments(spellUuids, maxSpellLevel, actorId = null) {
+  // Check cache first
+  if (actorId) {
+    const cachedSpells = getCachedSpells(actorId, spellUuids, maxSpellLevel);
+    if (cachedSpells) {
+      return cachedSpells;
+    }
+  }
+
+  // Fallback to your existing optimized fetch logic
   const startTime = performance.now();
-  log(1, '🔄 fetchSpellDocuments starting...');
+  log(1, '🔄 fetchSpellDocuments starting (cache miss)...');
 
   // Group UUIDs by compendium for batch fetching
   const compendiumGroups = new Map();

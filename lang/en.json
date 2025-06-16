@@ -187,6 +187,8 @@
   "SPELLBOOK.Settings.GlobalRules": "Global Rules",
   "SPELLBOOK.Settings.HiddenSpellLists.Hint": "Spell lists that have been hidden from view to reduce clutter.",
   "SPELLBOOK.Settings.HiddenSpellLists.Name": "Hidden Spell Lists",
+  "SPELLBOOK.Settings.LazyBatchSize.Hint": "Controls how many spells are rendered at once when loading the spell book. Higher values show more spells immediately but may cause lag on slower devices. Lower values improve performance but require more scrolling to load additional spells.",
+  "SPELLBOOK.Settings.LazyBatchSize.Name": "Spell Rendering Batch Size",
   "SPELLBOOK.Settings.Logger.Choices.Errors": "Errors",
   "SPELLBOOK.Settings.Logger.Choices.Off": "Off",
   "SPELLBOOK.Settings.Logger.Choices.Verbose": "Verbose",

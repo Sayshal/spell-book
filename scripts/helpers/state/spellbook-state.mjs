@@ -293,7 +293,7 @@ export class SpellbookState {
 
     if (hideCantrips && maxSpellLevel > 0) maxSpellLevel = Math.max(1, maxSpellLevel);
 
-    const spellItems = await actorSpellUtils.fetchSpellDocuments(spellList, maxSpellLevel);
+    const spellItems = await actorSpellUtils.fetchSpellDocuments(spellList, maxSpellLevel, this.actor.id);
 
     if (!spellItems || !spellItems.length) return;
 
