@@ -1,50 +1,48 @@
 <footer role="contentinfo">
-  {{#unless isLoading}}
-    {{#if (isWizardTab activeTab)}}
-      <!-- Wizard Spellbook tab - show free spells remaining or total count -->
-      <div class="spell-book-tracking" aria-live="polite">
-        {{#if wizardHasFreeSpells}}
-          {{localize 'SPELLBOOK.Footer.FreeSpellsRemaining' count=wizardRemainingFreeSpells}}
-        {{else}}
-          {{localize 'SPELLBOOK.Footer.LearnedSpells' count=wizardTotalSpellbookCount}}
-        {{/if}}
-      </div>
-    {{else}}
-      <div class="spell-prep-tracking {{#if (gte globalPrepared.current globalPrepared.maximum)}}at-max{{/if}}"
-        aria-live="polite">
-        <!-- Class-specific preparation counters -->
-        {{#if classPreparationData}}
-          <div class="class-prep-counts">
-            {{#each classPreparationData as |classData|}}
-              <span class="class-prep-count {{#if classData.isActive}}active-class{{/if}}"
-                data-class-identifier="{{classData.identifier}}">
-                <span class="class-name">{{classData.className}}</span>
-                <span class="class-current">{{classData.current}}</span>/{{classData.maximum}}
-              </span>
-            {{/each}}
-          </div>
-        {{/if}}
-
-        <!-- Global total -->
-        <div class="global-prep-count">
-          <span class="global-label">{{localize 'SPELLBOOK.Footer.PreparedLabel'}}</span>
-          <span class="global-current-count" aria-label="{{localize 'SPELLBOOK.Footer.PreparedCount'}}">
-            {{globalPrepared.current}}
-          </span>/{{globalPrepared.maximum}}
-        </div>
-      </div>
-    {{/if}}
-
-    <div class="footer-buttons" role="toolbar" aria-label="{{localize 'SPELLBOOK.Footer.Actions'}}">
-      {{#each buttons as |button|}}
-        <button type="{{button.type}}" {{#if button.name}}name="{{button.name}}" {{/if}}class="{{button.cssClass}}"
-          {{#if button.action}}data-action="{{button.action}}" {{/if}}
-          {{#if button.tooltip}}data-tooltip="{{localize button.tooltip}}" {{/if}} {{disabled button.disabled}}
-          aria-label="{{#if button.ariaLabel}}{{button.ariaLabel}}{{else}}{{localize button.label}}{{/if}}">
-          {{#if button.icon}}<i class="{{button.icon}}" aria-hidden="true"></i>{{/if}}
-          {{#if button.label}}<span>{{localize button.label}}</span>{{/if}}
-        </button>
-      {{/each}}
+  {{#if (isWizardTab activeTab)}}
+    <!-- Wizard Spellbook tab - show free spells remaining or total count -->
+    <div class="spell-book-tracking" aria-live="polite">
+      {{#if wizardHasFreeSpells}}
+        {{localize 'SPELLBOOK.Footer.FreeSpellsRemaining' count=wizardRemainingFreeSpells}}
+      {{else}}
+        {{localize 'SPELLBOOK.Footer.LearnedSpells' count=wizardTotalSpellbookCount}}
+      {{/if}}
     </div>
-  {{/unless}}
+  {{else}}
+    <div class="spell-prep-tracking {{#if (gte globalPrepared.current globalPrepared.maximum)}}at-max{{/if}}"
+      aria-live="polite">
+      <!-- Class-specific preparation counters -->
+      {{#if classPreparationData}}
+        <div class="class-prep-counts">
+          {{#each classPreparationData as |classData|}}
+            <span class="class-prep-count {{#if classData.isActive}}active-class{{/if}}"
+              data-class-identifier="{{classData.identifier}}">
+              <span class="class-name">{{classData.className}}</span>
+              <span class="class-current">{{classData.current}}</span>/{{classData.maximum}}
+            </span>
+          {{/each}}
+        </div>
+      {{/if}}
+
+      <!-- Global total -->
+      <div class="global-prep-count">
+        <span class="global-label">{{localize 'SPELLBOOK.Footer.PreparedLabel'}}</span>
+        <span class="global-current-count" aria-label="{{localize 'SPELLBOOK.Footer.PreparedCount'}}">
+          {{globalPrepared.current}}
+        </span>/{{globalPrepared.maximum}}
+      </div>
+    </div>
+  {{/if}}
+
+  <div class="footer-buttons" role="toolbar" aria-label="{{localize 'SPELLBOOK.Footer.Actions'}}">
+    {{#each buttons as |button|}}
+      <button type="{{button.type}}" {{#if button.name}}name="{{button.name}}" {{/if}}class="{{button.cssClass}}"
+        {{#if button.action}}data-action="{{button.action}}" {{/if}}
+        {{#if button.tooltip}}data-tooltip="{{localize button.tooltip}}" {{/if}} {{disabled button.disabled}}
+        aria-label="{{#if button.ariaLabel}}{{button.ariaLabel}}{{else}}{{localize button.label}}{{/if}}">
+        {{#if button.icon}}<i class="{{button.icon}}" aria-hidden="true"></i>{{/if}}
+        {{#if button.label}}<span>{{localize button.label}}</span>{{/if}}
+      </button>
+    {{/each}}
+  </div>
 </footer>

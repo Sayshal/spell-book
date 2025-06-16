@@ -1,9 +1,7 @@
 <div class="wizardbook tab {{tab.cssClass}}" data-tab="{{tab.id}}" data-group="{{tab.group}}"
 	data-class-identifier="{{classIdentifier}}">
 	<div class="spells-container">
-		{{#if isLoading}}
-			{{> "modules/spell-book/templates/components/loading-spinner.hbs" size=3 message=(localize 'SPELLBOOK.Application.Loading')}}
-		{{else if hasError}}
+		{{#if hasError}}
 			{{> "modules/spell-book/templates/components/error-message.hbs" message=errorMessage}}
 		{{else}}
 			{{#if (or isWizard isForceWizard)}}
@@ -12,45 +10,48 @@
 					<p>{{localize 'SPELLBOOK.Wizard.NewSpellsInfo1'}}</p>
 					<p>{{localize 'SPELLBOOK.Wizard.NewSpellsInfo2'}}</p>
 				</div>
-				{{#if spellLevels.length}}
-					{{#each spellLevels as |levelData|}}
-						{{#> "modules/spell-book/templates/components/spell-level.hbs" level=levelData.level levelName=levelData.levelName spells=levelData.spells}}
-							<li class="{{cssClasses}}" {{{dataAttributes}}} role="listitem">
-								<div class="spell-header">
-									<div class="spell-name">
-										{{{enrichedIcon}}}
-										<div class="name-stacked">
-											<span class="title">{{name}}</span>
-											<span class="subtitle">{{{formattedDetails}}}</span>
+				{{!-- Lazy loading will populate spells dynamically --}}
+				{{#unless (hasLazyLoading)}}
+					{{#if spellLevels.length}}
+						{{#each spellLevels as |levelData|}}
+							{{#> "modules/spell-book/templates/components/spell-level.hbs" level=levelData.level levelName=levelData.levelName spells=levelData.spells}}
+								<li class="{{cssClasses}}" {{{dataAttributes}}} role="listitem">
+									<div class="spell-header">
+										<div class="spell-name">
+											{{{enrichedIcon}}}
+											<div class="name-stacked">
+												<span class="title">{{name}}</span>
+												<span class="subtitle">{{{formattedDetails}}}</span>
+											</div>
+										</div>
+										<div class="wizard-spell-status">
+											{{#if isFromScroll}}
+												<button class="copy-spell-btn scroll-spell-btn" data-action="learnFromScroll"
+													data-uuid="{{spellUuid}}" data-scroll-id="{{scrollId}}" type="button"
+													aria-label="{{localize 'SPELLBOOK.Scrolls.LearnFromScroll' name=name}}">
+													<i class="fas fa-scroll"></i> {{localize 'SPELLBOOK.Wizard.LearnSpell'}}
+												</button>
+											{{else if inWizardSpellbook}}
+												<span class="in-spellbook-tag" aria-label="Spell is in your spellbook">
+													{{localize 'SPELLBOOK.Wizard.InSpellbook'}}
+												</span>
+											{{else}}
+												{{#if (gt system.level 0)}}
+													<button class="copy-spell-btn" data-action="learnSpell" data-uuid="{{compendiumUuid}}"
+														type="button">
+														<i class="fas fa-book"></i> {{localize 'SPELLBOOK.Wizard.LearnSpell'}}
+													</button>
+												{{/if}}
+											{{/if}}
 										</div>
 									</div>
-									<div class="wizard-spell-status">
-										{{#if isFromScroll}}
-											<button class="copy-spell-btn scroll-spell-btn" data-action="learnFromScroll"
-												data-uuid="{{spellUuid}}" data-scroll-id="{{scrollId}}" type="button"
-												aria-label="{{localize 'SPELLBOOK.Scrolls.LearnFromScroll' name=name}}">
-												<i class="fas fa-scroll"></i> {{localize 'SPELLBOOK.Wizard.LearnSpell'}}
-											</button>
-										{{else if inWizardSpellbook}}
-											<span class="in-spellbook-tag" aria-label="Spell is in your spellbook">
-												{{localize 'SPELLBOOK.Wizard.InSpellbook'}}
-											</span>
-										{{else}}
-											{{#if (gt system.level 0)}}
-												<button class="copy-spell-btn" data-action="learnSpell" data-uuid="{{compendiumUuid}}"
-													type="button">
-													<i class="fas fa-book"></i> {{localize 'SPELLBOOK.Wizard.LearnSpell'}}
-												</button>
-											{{/if}}
-										{{/if}}
-									</div>
-								</div>
-							</li>
-							{{/modules/spell-book/templates/components/spell-level.hbs}}
-					{{/each}}
-				{{else}}
-					{{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize 'SPELLBOOK.Errors.NoSpellsFound' actor=actor.name)}}
-				{{/if}}
+								</li>
+								{{/modules/spell-book/templates/components/spell-level.hbs}}
+						{{/each}}
+					{{else}}
+						{{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize 'SPELLBOOK.Errors.NoSpellsFound' actor=actor.name)}}
+					{{/if}}
+				{{/unless}}
 			{{else}}
 				<div class="wizard-unavailable">
 					<p>{{localize 'SPELLBOOK.Wizard.Unavailable'}}</p>

@@ -29,7 +29,6 @@ export class SpellbookState {
     this.classRitualRules = {};
     this.classSpellData = {};
     this.classSwapRules = {};
-    this.isLoading = true;
     this.isLongRest = false;
     this.scrollSpells = [];
     this.spellcastingClasses = {};
@@ -253,7 +252,6 @@ export class SpellbookState {
     }
     if (Object.keys(this.spellcastingClasses).length === 0) {
       log(2, 'No spellcasting classes found for actor');
-      this.isLoading = false;
       return false;
     }
     this.handleCantripLevelUp();
@@ -269,7 +267,6 @@ export class SpellbookState {
       this.spellPreparation = this.classSpellData[this.activeClass].spellPreparation || { current: 0, maximum: 0 };
     }
     this.updateGlobalPreparationCount();
-    this.isLoading = false;
     return true;
   }
 
@@ -309,7 +306,19 @@ export class SpellbookState {
    * @private
    */
   _organizeSpellsByLevelForClass(spellItems, classIdentifier, classItem) {
+    const startTime = performance.now();
+    let lastTime = startTime;
+
+    const logTiming = (description) => {
+      const currentTime = performance.now();
+      const elapsed = currentTime - lastTime;
+      const totalElapsed = currentTime - startTime;
+      log(1, `🕐 _organizeSpells[${classIdentifier}] ${description}: ${elapsed.toFixed(2)}ms (total: ${totalElapsed.toFixed(2)}ms)`);
+      lastTime = currentTime;
+    };
+
     log(1, `Organizing ${spellItems.length} spells by level (flattened) for class ${classIdentifier}`);
+    logTiming('Starting organization');
 
     const spellsByLevel = {};
     const processedSpellIds = new Set();
@@ -318,6 +327,8 @@ export class SpellbookState {
     // Process actor spells first
     if (this.actor) {
       const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
+      logTiming(`Found ${actorSpells.length} actor spells`);
+
       for (const spell of actorSpells) {
         if (spell?.system?.level === undefined) continue;
         const level = spell.system.level;
@@ -327,22 +338,32 @@ export class SpellbookState {
 
         if (!spellsByLevel[level]) spellsByLevel[level] = [];
 
+        const enrichStartTime = performance.now();
+
         const spellData = {
           ...spell,
           preparation: this.app.spellManager.getSpellPreparationStatus(spell, classIdentifier),
           filterData: formattingUtils.extractSpellFilterData(spell),
           formattedDetails: formattingUtils.formatSpellDetails(spell),
-          enrichedIcon: formattingUtils.createSpellIconLink(spell) // Fix enriched icon
+          enrichedIcon: formattingUtils.createSpellIconLink(spell)
         };
+
+        const enrichTime = performance.now() - enrichStartTime;
+        if (enrichTime > 2) {
+          // Log if a single spell takes more than 2ms
+          log(1, `🐌 Slow spell enrichment: ${spell.name} took ${enrichTime.toFixed(2)}ms`);
+        }
 
         if (!isSpecialMode) spellData.sourceClass = classIdentifier;
         spellsByLevel[level].push(spellData);
         processedSpellIds.add(spell.id || spell.uuid);
         processedSpellNames.add(spellName);
       }
+      logTiming(`Processed ${actorSpells.length} actor spells`);
     }
 
     // Process compendium spells
+    let compendiumProcessed = 0;
     for (const spell of spellItems) {
       if (spell?.system?.level === undefined) continue;
       const level = spell.system.level;
@@ -351,26 +372,40 @@ export class SpellbookState {
       if (processedSpellNames.has(spellName)) continue;
       if (!spellsByLevel[level]) spellsByLevel[level] = [];
 
+      const enrichStartTime = performance.now();
+
       const spellData = { ...spell };
       if (this.app.spellManager) spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spell, classIdentifier);
       spellData.sourceClass = classIdentifier;
       spellData.filterData = formattingUtils.extractSpellFilterData(spell);
       spellData.formattedDetails = formattingUtils.formatSpellDetails(spell);
-      spellData.enrichedIcon = formattingUtils.createSpellIconLink(spell); // Fix enriched icon
+      spellData.enrichedIcon = formattingUtils.createSpellIconLink(spell);
+
+      const enrichTime = performance.now() - enrichStartTime;
+      if (enrichTime > 2) {
+        // Log if a single spell takes more than 2ms
+        log(1, `🐌 Slow compendium spell enrichment: ${spell.name} took ${enrichTime.toFixed(2)}ms`);
+      }
 
       spellsByLevel[level].push(spellData);
       processedSpellIds.add(spell.id || spell.compendiumUuid || spell.uuid);
       processedSpellNames.add(spellName);
+      compendiumProcessed++;
     }
+    logTiming(`Processed ${compendiumProcessed} compendium spells`);
 
     // Sort spells within each level
+    const sortStartTime = performance.now();
     for (const level in spellsByLevel) {
       if (spellsByLevel.hasOwnProperty(level)) {
         spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
       }
     }
+    const sortTime = performance.now() - sortStartTime;
+    logTiming(`Sorted spells within levels (${sortTime.toFixed(2)}ms)`);
 
     // Convert to flattened array with level metadata
+    const flattenStartTime = performance.now();
     const flattened = [];
     const sortedLevels = Object.entries(spellsByLevel).sort(([a], [b]) => Number(a) - Number(b));
 
@@ -391,8 +426,12 @@ export class SpellbookState {
         });
       }
     }
+    const flattenTime = performance.now() - flattenStartTime;
+    logTiming(`Flattened to array (${flattenTime.toFixed(2)}ms)`);
 
-    log(1, `Flattened ${flattened.length} spells for lazy loading`);
+    const totalTime = performance.now() - startTime;
+    log(1, `🏁 _organizeSpells[${classIdentifier}] total time: ${totalTime.toFixed(2)}ms for ${flattened.length} spells`);
+
     return flattened;
   }
 

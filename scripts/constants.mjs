@@ -192,7 +192,7 @@ export const MODULE = {
    * @type {Object}
    */
   BATCHING: {
-    SIZE: 50,
+    SIZE: 20,
     MARGIN: 100
   }
 };
