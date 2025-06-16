@@ -8,16 +8,6 @@ import * as discoveryUtils from './spell-discovery.mjs';
 const SPELL_CACHE = new Map();
 
 /**
- * Cache entry structure:
- * {
- *   actorId: string,
- *   timestamp: number,
- *   spellData: { [classId]: Array<spell> },
- *   allSpellUuids: Set<string>
- * }
- */
-
-/**
  * Check if actor has valid cached spell data
  * @param {string} actorId - Actor ID
  * @returns {boolean}
@@ -35,17 +25,11 @@ export function hasCachedSpellData(actorId) {
  */
 export function getCachedSpells(actorId, spellUuids, maxSpellLevel) {
   if (!SPELL_CACHE.has(actorId)) return null;
-
   const cached = SPELL_CACHE.get(actorId);
   const cachedSpells = Object.values(cached.spellData)
     .flat()
     .filter((spell) => spellUuids.has(spell.compendiumUuid) && spell.system.level <= maxSpellLevel);
-
-  if (cachedSpells.length > 0) {
-    log(1, `🎯 Using cached spell data: ${cachedSpells.length} spells for ${actorId}`);
-    return cachedSpells;
-  }
-
+  if (cachedSpells.length > 0) return cachedSpells;
   return null;
 }
 
@@ -59,52 +43,31 @@ export async function preloadSpellDataForActor(actor) {
     log(3, `Spell cache already exists for ${actor.name}`);
     return;
   }
-
-  const startTime = performance.now();
-  log(1, `🔄 Pre-loading spell data for ${actor.name}...`);
-
   try {
-    // Check if actor has spellcasting classes
     const spellcastingClasses = getSpellcastingClasses(actor);
     if (Object.keys(spellcastingClasses).length === 0) {
       log(3, `No spellcasting classes found for ${actor.name}, skipping cache`);
       return;
     }
-
-    const cacheEntry = {
-      actorId: actor.id,
-      timestamp: Date.now(),
-      spellData: {},
-      allSpellUuids: new Set()
-    };
-
-    // Fetch all spell lists for all classes in parallel
+    const cacheEntry = { actorId: actor.id, timestamp: Date.now(), spellData: {}, allSpellUuids: new Set() };
     const fetchPromises = Object.entries(spellcastingClasses).map(async ([classId, classData]) => {
       try {
         const className = classData.name.toLowerCase();
         const classUuid = classData.uuid;
         const spellList = await discoveryUtils.getClassSpellList(className, classUuid, actor);
         const maxLevel = discoveryUtils.calculateMaxSpellLevel(classData.classItem, actor);
-
-        // Use original fetchSpellDocuments to avoid circular dependency
         const spells = await fetchSpellDocumentsOriginal(spellList, maxLevel);
-
         cacheEntry.spellData[classId] = spells;
         spells.forEach((spell) => cacheEntry.allSpellUuids.add(spell.compendiumUuid));
-
         return { classId, spellCount: spells.length };
       } catch (error) {
         log(1, `Error preloading spells for class ${classId}:`, error);
         return { classId, spellCount: 0 };
       }
     });
-
     const results = await Promise.all(fetchPromises);
     SPELL_CACHE.set(actor.id, cacheEntry);
-
-    const elapsed = performance.now() - startTime;
     const totalSpells = Object.values(cacheEntry.spellData).reduce((sum, spells) => sum + spells.length, 0);
-    log(1, `✅ Pre-loaded ${totalSpells} spells for ${actor.name} in ${elapsed.toFixed(2)}ms`);
   } catch (error) {
     log(1, `Error pre-loading spell data for ${actor.name}:`, error);
   }
@@ -152,45 +115,28 @@ function getSpellcastingClasses(actor) {
  * This avoids circular dependency during cache preloading
  */
 async function fetchSpellDocumentsOriginal(spellUuids, maxSpellLevel) {
-  const startTime = performance.now();
-  log(1, '🔄 fetchSpellDocuments starting...');
-
-  // Group UUIDs by compendium for batch fetching
   const compendiumGroups = new Map();
   const nonCompendiumUuids = [];
-
   for (const uuid of spellUuids) {
     const parsed = foundry.utils.parseUuid(uuid);
     if (parsed.collection && parsed.id) {
       const packId = parsed.collection.collection;
-      if (!compendiumGroups.has(packId)) {
-        compendiumGroups.set(packId, []);
-      }
+      if (!compendiumGroups.has(packId)) compendiumGroups.set(packId, []);
       compendiumGroups.get(packId).push({ uuid, id: parsed.id });
-    } else {
-      nonCompendiumUuids.push(uuid);
-    }
+    } else nonCompendiumUuids.push(uuid);
   }
-
   const spellItems = [];
   const errors = [];
   const filteredOut = [];
-
   log(3, `Fetching spell documents: ${spellUuids.size} spells, max level ${maxSpellLevel}`);
   log(3, `Grouped into ${compendiumGroups.size} compendiums + ${nonCompendiumUuids.length} non-compendium UUIDs`);
-
-  // Batch fetch from each compendium using Promise.all for parallel processing
   for (const [packId, uuidData] of compendiumGroups) {
     try {
       const pack = game.packs.get(packId);
       if (!pack) {
-        for (const { uuid } of uuidData) {
-          errors.push({ uuid, reason: `Compendium ${packId} not found` });
-        }
+        for (const { uuid } of uuidData) errors.push({ uuid, reason: `Compendium ${packId} not found` });
         continue;
       }
-
-      // Batch fetch all documents from this compendium in parallel
       const fetchPromises = uuidData.map(async ({ uuid, id }) => {
         try {
           const spell = await pack.getDocument(id);
@@ -199,22 +145,17 @@ async function fetchSpellDocumentsOriginal(spellUuids, maxSpellLevel) {
           return { uuid, id, error, success: false };
         }
       });
-
       const results = await Promise.all(fetchPromises);
-
-      // Process results
       for (const result of results) {
         if (!result.success) {
           errors.push({ uuid: result.uuid, reason: result.error?.message || 'Failed to fetch from compendium' });
           continue;
         }
-
         const { uuid, spell } = result;
         if (!spell || spell.type !== 'spell') {
           errors.push({ uuid, reason: 'Not a valid spell document' });
           continue;
         }
-
         const sourceUuid = spell.parent && spell.flags?.core?.sourceId ? spell.flags.core.sourceId : uuid;
         if (spell.system.level <= maxSpellLevel) {
           spellItems.push({ ...spell, compendiumUuid: sourceUuid });
@@ -228,8 +169,6 @@ async function fetchSpellDocumentsOriginal(spellUuids, maxSpellLevel) {
       }
     }
   }
-
-  // Handle non-compendium UUIDs individually (fallback for world items, etc.)
   if (nonCompendiumUuids.length > 0) {
     const fallbackPromises = nonCompendiumUuids.map(async (uuid) => {
       try {
@@ -239,15 +178,12 @@ async function fetchSpellDocumentsOriginal(spellUuids, maxSpellLevel) {
         return { uuid, error, success: false };
       }
     });
-
     const fallbackResults = await Promise.all(fallbackPromises);
-
     for (const result of fallbackResults) {
       if (!result.success) {
         errors.push({ uuid: result.uuid, reason: result.error?.message || 'Unknown error' });
         continue;
       }
-
       const { uuid, spell } = result;
       if (!spell) {
         errors.push({ uuid, reason: 'Document not found' });
@@ -257,21 +193,13 @@ async function fetchSpellDocumentsOriginal(spellUuids, maxSpellLevel) {
         errors.push({ uuid, reason: 'Not a valid spell document' });
         continue;
       }
-
       const sourceUuid = spell.parent && spell.flags?.core?.sourceId ? spell.flags.core.sourceId : uuid;
-      if (spell.system.level <= maxSpellLevel) {
-        spellItems.push({ ...spell, compendiumUuid: sourceUuid });
-      } else {
-        filteredOut.push({ ...spell, compendiumUuid: sourceUuid });
-      }
+      if (spell.system.level <= maxSpellLevel) spellItems.push({ ...spell, compendiumUuid: sourceUuid });
+      else filteredOut.push({ ...spell, compendiumUuid: sourceUuid });
     }
   }
-
   if (filteredOut.length > 0) log(3, `Filtered out ${filteredOut.length} spells above level ${maxSpellLevel}.`);
   if (errors.length > 0) log(2, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`, { errors });
   log(3, `Successfully fetched ${spellItems.length}/${spellUuids.size} spells`);
-
-  const elapsed = performance.now() - startTime;
-  log(1, `🏁 fetchSpellDocuments total time: ${elapsed.toFixed(2)}ms`);
   return spellItems;
 }

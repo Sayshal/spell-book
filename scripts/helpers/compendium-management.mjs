@@ -559,21 +559,10 @@ export async function getOrCreateSpellListFolder(folderName, localizationKey) {
     log(1, 'Custom spell lists pack not found');
     return null;
   }
-
-  // Check if folder already exists
   const existingFolder = customPack.folders.find((f) => f.name === folderName);
-  if (existingFolder) {
-    return existingFolder;
-  }
-
-  // Create new folder
+  if (existingFolder) return existingFolder;
   try {
-    const folderData = {
-      name: folderName,
-      type: 'JournalEntry',
-      folder: null // Top-level folder
-    };
-
+    const folderData = { name: folderName, type: 'JournalEntry', folder: null };
     const folder = await Folder.create(folderData, { pack: customPack.collection });
     log(3, `Created spell list folder: ${folderName}`);
     return folder;

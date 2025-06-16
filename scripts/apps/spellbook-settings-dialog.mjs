@@ -707,32 +707,11 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       }
     }
     if (Object.keys(cantripVisibilityChanges).length > 0) await SpellbookSettingsDialog._handleCantripVisibilityChanges(actor, cantripVisibilityChanges);
-    if (Object.keys(wizardModeChanges).length > 0) await SpellbookSettingsDialog._handleWizardModeChanges(actor, wizardModeChanges);
     const allInstances = Array.from(foundry.applications.instances.values());
     const openSpellbooks = allInstances.filter((w) => w.constructor.name === 'PlayerSpellBook' && w.actor.id === actor.id);
     for (const spellbook of openSpellbooks) await spellbook.refreshFromSettingsChange();
     ui.notifications.info(game.i18n.format('SPELLBOOK.Settings.Saved', { name: actor.name }));
     return actor;
-  }
-
-  /**
-   * Handle wizard mode changes - create/cleanup wizard spellbooks when enabled/disabled
-   * @param {Actor5e} actor - The actor
-   * @param {Object} changes - Object mapping class IDs to 'enabled'/'disabled'
-   * @returns {Promise<void>}
-   * @private
-   */
-  static async _handleWizardModeChanges(actor, changes) {
-    for (const [classId, changeType] of Object.entries(changes)) {
-      if (changeType === 'enabled') {
-        log(3, `Force wizard mode enabled for class ${classId}`);
-        // Wizard spellbook will be created automatically when the spellbook is opened
-      } else if (changeType === 'disabled') {
-        log(3, `Force wizard mode disabled for class ${classId}`);
-        // Optional: Could cleanup wizard spellbook here, but safer to leave it
-        // in case the user wants to re-enable wizard mode later
-      }
-    }
   }
 
   /**

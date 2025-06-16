@@ -7,8 +7,6 @@ import { log } from '../logger.mjs';
  * @returns {string} - Formatted spell details string
  */
 export function formatSpellDetails(spell) {
-  const startTime = performance.now();
-
   try {
     if (!spell) return '';
     const details = [];
@@ -20,19 +18,9 @@ export function formatSpellDetails(spell) {
     if (schoolStr) details.push(schoolStr);
     const materialsStr = formatMaterialComponents(spell);
     if (materialsStr) details.push(materialsStr);
-
-    const result = details.filter(Boolean).join(' • ');
-
-    const elapsed = performance.now() - startTime;
-    if (elapsed > 1) {
-      // Log if takes more than 1ms
-      log(1, `🐌 formatSpellDetails for ${spell.name}: ${elapsed.toFixed(2)}ms`);
-    }
-
-    return result;
+    return details.filter(Boolean).join(' • ');
   } catch (error) {
-    const elapsed = performance.now() - startTime;
-    log(1, `Error formatting spell details (${elapsed.toFixed(2)}ms):`, error);
+    log(1, 'Error formatting spell details:', error);
     return '';
   }
 }
@@ -81,21 +69,12 @@ export function processSpellItemForDisplay(spell) {
  * @returns {string} - Formatted components string
  */
 function formatSpellComponents(spell) {
-  const startTime = performance.now();
-
   const components = [];
   if (spell.labels?.components?.all) for (const c of spell.labels.components.all) components.push(c.abbr);
   else if (spell.system?.properties?.length) {
     const componentMap = { vocal: 'V', somatic: 'S', material: 'M', concentration: 'C', ritual: 'R' };
     for (const prop of spell.system.properties) if (componentMap[prop]) components.push(componentMap[prop]);
   }
-
-  const elapsed = performance.now() - startTime;
-  if (elapsed > 0.5) {
-    // Log if takes more than 0.5ms
-    log(1, `🐌 formatSpellComponents for ${spell.name}: ${elapsed.toFixed(2)}ms`);
-  }
-
   return components.join(', ');
 }
 
@@ -105,8 +84,6 @@ function formatSpellComponents(spell) {
  * @returns {string} - Formatted activation string
  */
 function formatSpellActivation(spell) {
-  const startTime = performance.now();
-
   let result = '';
   if (spell.labels?.activation) result = spell.labels.activation;
   else if (spell.system?.activation?.type) {
@@ -116,13 +93,6 @@ function formatSpellActivation(spell) {
     if (value === 1 || value === null) result = typeLabel;
     else result = `${value} ${typeLabel}s`;
   }
-
-  const elapsed = performance.now() - startTime;
-  if (elapsed > 0.5) {
-    // Log if takes more than 0.5ms
-    log(1, `🐌 formatSpellActivation for ${spell.name}: ${elapsed.toFixed(2)}ms`);
-  }
-
   return result;
 }
 
@@ -132,18 +102,9 @@ function formatSpellActivation(spell) {
  * @returns {string} - Formatted school string
  */
 function formatSpellSchool(spell) {
-  const startTime = performance.now();
-
   let result = '';
   if (spell.labels?.school) result = spell.labels.school;
   else if (spell.system?.school) result = CONFIG.DND5E.spellSchools[spell.system.school]?.label || spell.system.school;
-
-  const elapsed = performance.now() - startTime;
-  if (elapsed > 0.5) {
-    // Log if takes more than 0.5ms
-    log(1, `🐌 formatSpellSchool for ${spell.name}: ${elapsed.toFixed(2)}ms`);
-  }
-
   return result;
 }
 
@@ -153,8 +114,6 @@ function formatSpellSchool(spell) {
  * @returns {string} - Formatted material components string
  */
 function formatMaterialComponents(spell) {
-  const startTime = performance.now();
-
   const materials = spell.system?.materials;
   let result = '';
   if (materials && materials.consumed) {
@@ -162,13 +121,6 @@ function formatMaterialComponents(spell) {
     else if (materials.value) result = materials.value;
     else result = game.i18n.localize('SPELLBOOK.MaterialComponents.UnknownCost');
   }
-
-  const elapsed = performance.now() - startTime;
-  if (elapsed > 0.5) {
-    // Log if takes more than 0.5ms
-    log(1, `🐌 formatMaterialComponents for ${spell.name}: ${elapsed.toFixed(2)}ms`);
-  }
-
   return result;
 }
 
@@ -189,72 +141,16 @@ export function getLocalizedPreparationMode(mode) {
  * @returns {Object} - Additional data for filtering
  */
 export function extractSpellFilterData(spell) {
-  const startTime = performance.now();
-
-  if (!spell) {
-    const elapsed = performance.now() - startTime;
-    if (elapsed > 0.1) log(1, `🐌 extractSpellFilterData (null spell): ${elapsed.toFixed(2)}ms`);
-    return {};
-  }
-
-  const subStartTime = performance.now();
+  if (!spell) return {};
   const castingTime = extractCastingTime(spell);
-  const castingTimeElapsed = performance.now() - subStartTime;
-
-  const rangeStartTime = performance.now();
   const range = extractRange(spell);
-  const rangeElapsed = performance.now() - rangeStartTime;
-
-  const damageStartTime = performance.now();
   const damageTypes = extractDamageTypes(spell);
-  const damageElapsed = performance.now() - damageStartTime;
-
-  const ritualStartTime = performance.now();
   const isRitual = checkIsRitual(spell);
-  const ritualElapsed = performance.now() - ritualStartTime;
-
-  const concentrationStartTime = performance.now();
   const concentration = checkIsConcentration(spell);
-  const concentrationElapsed = performance.now() - concentrationStartTime;
-
-  const materialStartTime = performance.now();
   const materialComponents = extractMaterialComponents(spell);
-  const materialElapsed = performance.now() - materialStartTime;
-
-  const saveStartTime = performance.now();
   const requiresSave = checkSpellRequiresSave(spell);
-  const saveElapsed = performance.now() - saveStartTime;
-
-  const conditionsStartTime = performance.now();
   const conditions = extractSpellConditions(spell);
-  const conditionsElapsed = performance.now() - conditionsStartTime;
-
-  const result = {
-    castingTime,
-    range,
-    damageTypes,
-    isRitual,
-    concentration,
-    materialComponents,
-    requiresSave,
-    conditions
-  };
-
-  const elapsed = performance.now() - startTime;
-  if (elapsed > 2) {
-    // Log if takes more than 2ms
-    log(1, `🐌 extractSpellFilterData for ${spell.name}: ${elapsed.toFixed(2)}ms total`);
-    log(1, `  - castingTime: ${castingTimeElapsed.toFixed(2)}ms`);
-    log(1, `  - range: ${rangeElapsed.toFixed(2)}ms`);
-    log(1, `  - damageTypes: ${damageElapsed.toFixed(2)}ms`);
-    log(1, `  - ritual: ${ritualElapsed.toFixed(2)}ms`);
-    log(1, `  - concentration: ${concentrationElapsed.toFixed(2)}ms`);
-    log(1, `  - materials: ${materialElapsed.toFixed(2)}ms`);
-    log(1, `  - save: ${saveElapsed.toFixed(2)}ms`);
-    log(1, `  - conditions: ${conditionsElapsed.toFixed(2)}ms`);
-  }
-
-  return result;
+  return { castingTime, range, damageTypes, isRitual, concentration, materialComponents, requiresSave, conditions };
 }
 
 /**
@@ -288,34 +184,21 @@ function extractRange(spell) {
  * @returns {string[]} - Array of damage types
  */
 function extractDamageTypes(spell) {
-  const startTime = performance.now();
-
   const damageTypes = [];
   if (spell.labels?.damages?.length) {
-    for (const damage of spell.labels.damages) {
-      if (damage.damageType && !damageTypes.includes(damage.damageType)) damageTypes.push(damage.damageType);
-    }
+    for (const damage of spell.labels.damages) if (damage.damageType && !damageTypes.includes(damage.damageType)) damageTypes.push(damage.damageType);
   }
   if (spell.system?.activities) {
     for (const [_key, activity] of Object.entries(spell.system.activities)) {
       if (activity.damage?.parts?.length) {
         for (const part of activity.damage.parts) {
           if (part.types && Array.isArray(part.types) && part.types.length) {
-            for (const type of part.types) {
-              if (!damageTypes.includes(type)) damageTypes.push(type);
-            }
+            for (const type of part.types) if (!damageTypes.includes(type)) damageTypes.push(type);
           } else if (part[1] && !damageTypes.includes(part[1])) damageTypes.push(part[1]);
         }
       }
     }
   }
-
-  const elapsed = performance.now() - startTime;
-  if (elapsed > 1) {
-    // Log if takes more than 1ms
-    log(1, `🐌 extractDamageTypes for ${spell.name}: ${elapsed.toFixed(2)}ms`);
-  }
-
   return damageTypes;
 }
 
@@ -358,10 +241,7 @@ function extractMaterialComponents(spell) {
  * @returns {boolean} - Whether the spell requires a save
  */
 function checkSpellRequiresSave(spell) {
-  const startTime = performance.now();
-
   let result = false;
-
   if (spell.system?.activities) {
     for (const [_key, activity] of Object.entries(spell.system.activities)) {
       if (activity.value?.type === 'save') {
@@ -370,20 +250,10 @@ function checkSpellRequiresSave(spell) {
       }
     }
   }
-
   if (!result && spell.system?.description?.value) {
     const saveText = game.i18n.localize('SPELLBOOK.Filters.SavingThrow').toLowerCase();
-    if (spell.system.description.value.toLowerCase().includes(saveText)) {
-      result = true;
-    }
+    if (spell.system.description.value.toLowerCase().includes(saveText)) result = true;
   }
-
-  const elapsed = performance.now() - startTime;
-  if (elapsed > 1) {
-    // Log if takes more than 1ms
-    log(1, `🐌 checkSpellRequiresSave for ${spell.name}: ${elapsed.toFixed(2)}ms`);
-  }
-
   return result;
 }
 
@@ -393,23 +263,12 @@ function checkSpellRequiresSave(spell) {
  * @returns {string[]} - Array of condition keys
  */
 function extractSpellConditions(spell) {
-  const startTime = performance.now();
-
   const conditions = [];
   const description = spell.system?.description?.value || '';
   if (description && CONFIG.DND5E.conditionTypes) {
     const lowerDesc = description.toLowerCase();
-    for (const [key, condition] of Object.entries(CONFIG.DND5E.conditionTypes)) {
-      if (condition?.label && lowerDesc.includes(condition.label.toLowerCase())) conditions.push(key);
-    }
+    for (const [key, condition] of Object.entries(CONFIG.DND5E.conditionTypes)) if (condition?.label && lowerDesc.includes(condition.label.toLowerCase())) conditions.push(key);
   }
-
-  const elapsed = performance.now() - startTime;
-  if (elapsed > 1) {
-    // Log if takes more than 1ms
-    log(1, `🐌 extractSpellConditions for ${spell.name}: ${elapsed.toFixed(2)}ms`);
-  }
-
   return conditions;
 }
 
@@ -419,21 +278,13 @@ function extractSpellConditions(spell) {
  * @returns {string} - HTML string with icon link
  */
 export function createSpellIconLink(spell) {
-  const startTime = performance.now();
-
-  if (!spell) {
-    const elapsed = performance.now() - startTime;
-    if (elapsed > 0.1) log(1, `🐌 createSpellIconLink (null spell): ${elapsed.toFixed(2)}ms`);
-    return '';
-  }
-
+  if (!spell) return '';
   const uuid = spell.compendiumUuid || spell.uuid || spell?._stats?.compendiumSource || spell?.system?.parent?.uuid;
   const parsed = foundry.utils.parseUuid(uuid);
   const itemId = parsed.id || '';
   const entityType = parsed.type || 'Item';
   let packId = '';
   if (parsed.collection) packId = parsed.collection.collection || '';
-
   const result = `<a class="content-link"
   draggable="true"
   data-link=""
@@ -448,12 +299,5 @@ export function createSpellIconLink(spell) {
   icon"></a>`
     .replace(/\s+/g, ' ')
     .trim();
-
-  const elapsed = performance.now() - startTime;
-  if (elapsed > 1) {
-    // Log if takes more than 1ms
-    log(1, `🐌 createSpellIconLink for ${spell.name}: ${elapsed.toFixed(2)}ms`);
-  }
-
   return result;
 }

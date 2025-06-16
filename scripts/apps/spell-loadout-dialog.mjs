@@ -24,16 +24,8 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
       deleteLoadout: SpellLoadoutDialog.deleteLoadout
     },
     classes: ['spell-loadout-dialog'],
-    window: {
-      icon: 'fas fa-toolbox',
-      resizable: true,
-      minimizable: false,
-      positioned: true
-    },
-    position: {
-      width: 600,
-      height: 'auto'
-    }
+    window: { icon: 'fas fa-toolbox', resizable: true, minimizable: false, positioned: true },
+    position: { width: 600, height: 'auto' }
   };
 
   static PARTS = {
@@ -107,19 +99,16 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
     const formData = new FormData(form);
     const name = formData.get('loadout-name')?.trim();
     const description = formData.get('loadout-description')?.trim() || '';
-
     if (!name) {
       ui.notifications.warn(game.i18n.localize('SPELLBOOK.Loadouts.NameRequired'));
       return;
     }
-
     try {
       const spellConfiguration = this.loadoutManager.captureCurrentState(this.classIdentifier);
       if (spellConfiguration.length === 0) {
         ui.notifications.warn(game.i18n.localize('SPELLBOOK.Loadouts.NoSpellsPrepared'));
         return;
       }
-
       const success = await this.loadoutManager.saveLoadout(name, description, spellConfiguration, this.classIdentifier);
       if (success) {
         ui.notifications.info(game.i18n.format('SPELLBOOK.Loadouts.Saved', { name }));
@@ -142,21 +131,13 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
     const loadoutId = target.dataset.loadoutId;
     const loadoutName = target.dataset.loadoutName;
     if (!loadoutId) return;
-
     try {
       const existingLoadout = this.loadoutManager.loadLoadout(loadoutId);
       if (!existingLoadout) return;
-
       const spellConfiguration = this.loadoutManager.captureCurrentState(this.classIdentifier);
       if (spellConfiguration.length === 0) return;
-
       const updatedLoadout = { ...existingLoadout, spellConfiguration, updatedAt: Date.now() };
-
-      // Update the specific loadout entry
-      await this.loadoutManager.actor.update({
-        [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.${loadoutId}`]: updatedLoadout
-      });
-
+      await this.loadoutManager.actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.${loadoutId}`]: updatedLoadout });
       this.loadoutManager._invalidateCache();
       ui.notifications.info(game.i18n.format('SPELLBOOK.Loadouts.Overwritten', { name: loadoutName }));
       await this.render(false);
@@ -175,18 +156,14 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
     const loadoutId = target.dataset.loadoutId;
     const loadoutName = target.dataset.loadoutName;
     if (!loadoutId) return;
-
     const confirmed = await foundry.applications.api.DialogV2.confirm({
       title: game.i18n.localize('SPELLBOOK.Loadouts.ConfirmDelete'),
       content: game.i18n.format('SPELLBOOK.Loadouts.ConfirmDeleteContent', { name: loadoutName })
     });
-
     if (confirmed) {
       try {
         const success = await this.loadoutManager.deleteLoadout(loadoutId);
-        if (success) {
-          await this.render(false);
-        }
+        if (success) await this.render(false);
       } catch (error) {
         log(1, 'Error deleting loadout:', error);
       }
@@ -245,7 +222,6 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
       tooltip.className = 'spell-preview-tooltip';
       document.body.appendChild(tooltip);
     }
-
     try {
       tooltip.innerHTML = `
       <div class="tooltip-content">
@@ -266,7 +242,6 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
           if (a.level !== b.level) return a.level - b.level;
           return a.name.localeCompare(b.name);
         });
-
       if (validSpells.length === 0) {
         tooltip.innerHTML = `
         <div class="tooltip-content">
@@ -286,7 +261,6 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
     `
         )
         .join('');
-
       tooltip.innerHTML = `
       <div class="tooltip-content">
         <div class="tooltip-header">

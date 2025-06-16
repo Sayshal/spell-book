@@ -116,7 +116,6 @@ export class SpellbookFilterHelper {
       filterState.source = 'all';
       return spells;
     }
-    log(3, `After source filter: ${filtered.length} spells remaining`);
     return filtered;
   }
 
@@ -352,22 +351,11 @@ export class SpellbookFilterHelper {
     const levelContainers = this.element.querySelectorAll('.spell-level');
     for (const container of levelContainers) {
       const levelId = container.dataset.level;
-      const levelStats = levelVisibilityMap.get(levelId) || {
-        visible: 0,
-        prepared: 0,
-        countable: 0,
-        countablePrepared: 0
-      };
-
-      // Show/hide level container based on visibility
+      const levelStats = levelVisibilityMap.get(levelId) || { visible: 0, prepared: 0, countable: 0, countablePrepared: 0 };
       container.style.display = levelStats.visible > 0 ? '' : 'none';
-
       const countDisplay = container.querySelector('.spell-count');
-      if (countDisplay && levelStats.countable > 0) {
-        countDisplay.textContent = `(${levelStats.countablePrepared}/${levelStats.countable})`;
-      } else if (countDisplay) {
-        countDisplay.textContent = '';
-      }
+      if (countDisplay && levelStats.countable > 0) countDisplay.textContent = `(${levelStats.countablePrepared}/${levelStats.countable})`;
+      else if (countDisplay) countDisplay.textContent = '';
     }
   }
 }

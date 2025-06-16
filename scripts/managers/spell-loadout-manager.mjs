@@ -51,7 +51,6 @@ export class SpellLoadoutManager {
   async saveLoadout(name, description, spellConfiguration, classIdentifier = null) {
     try {
       if (!name || !name.trim()) throw new Error('Loadout name is required');
-
       const loadoutId = foundry.utils.randomID();
       const loadout = {
         id: loadoutId,
@@ -62,12 +61,7 @@ export class SpellLoadoutManager {
         createdAt: Date.now(),
         updatedAt: Date.now()
       };
-
-      // Update the specific loadout entry, not the entire object
-      await this.actor.update({
-        [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.${loadoutId}`]: loadout
-      });
-
+      await this.actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.${loadoutId}`]: loadout });
       this._invalidateCache();
       log(3, `Saved loadout: ${name} for ${classIdentifier || 'all classes'}`);
       return true;
@@ -123,14 +117,8 @@ export class SpellLoadoutManager {
     try {
       const existingLoadouts = this.actor.getFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS) || {};
       if (!existingLoadouts[loadoutId]) throw new Error('Loadout not found');
-
       const loadoutName = existingLoadouts[loadoutId].name;
-
-      // Use the -= operator to remove the specific loadout
-      await this.actor.update({
-        [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.-=${loadoutId}`]: null
-      });
-
+      await this.actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.-=${loadoutId}`]: null });
       this._invalidateCache();
       log(3, `Deleted loadout: ${loadoutName}`);
       ui.notifications.info(game.i18n.format('SPELLBOOK.Loadouts.Deleted', { name: loadoutName }));

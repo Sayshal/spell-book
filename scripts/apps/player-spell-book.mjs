@@ -42,16 +42,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       openLoadoutDialog: PlayerSpellBook.openLoadoutDialog
     },
     classes: ['spell-book', 'vertical-tabs'],
-    window: {
-      icon: 'fas fa-book-open',
-      resizable: true,
-      minimizable: true,
-      positioned: true
-    },
-    position: {
-      height: '875',
-      width: '600'
-    }
+    window: { icon: 'fas fa-book-open', resizable: true, minimizable: true, positioned: true },
+    position: { height: '875', width: '600' }
   };
 
   static PARTS = {
@@ -125,11 +117,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       }
     });
-    this.#lazyResults = null; // Complete filtered spell array
-    this.#lazyRenderIndex = -1; // Current render position
-    this.#lazyRenderThrottle = false; // Prevent multiple renders
-    this._currentLevelHeaders = new Map(); // Track rendered level headers
-    this._lastScrollElement = null; // Track last scroll element for cleanup
+    this.#lazyResults = null;
+    this.#lazyRenderIndex = -1;
+    this.#lazyRenderThrottle = false;
+    this._currentLevelHeaders = new Map();
+    this._lastScrollElement = null;
     this._isLoadingSpellData = false;
   }
 
@@ -198,54 +190,17 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @inheritdoc */
   async _prepareContext(options) {
-    const startTime = performance.now();
-    let lastTime = startTime;
-
-    const logTiming = (description) => {
-      const currentTime = performance.now();
-      const elapsed = currentTime - lastTime;
-      const totalElapsed = currentTime - startTime;
-      log(1, `🕐 ${description}: ${elapsed.toFixed(2)}ms (total: ${totalElapsed.toFixed(2)}ms)`);
-      lastTime = currentTime;
-    };
-
-    logTiming('Starting _prepareContext');
-
-    // Base context creation
     const context = this._createBaseContext(options);
-    logTiming('_createBaseContext completed');
-
-    // Ensure state manager is ready (but don't wait for full initialization)
-    if (!this._stateManager._classesDetected) {
-      this._stateManager.detectSpellcastingClasses();
-      logTiming('Class detection completed');
-    }
-
-    // Set up basic data without heavy processing
+    if (!this._stateManager._classesDetected) this._stateManager.detectSpellcastingClasses();
     context.spellcastingClasses = this._stateManager.spellcastingClasses;
     context.activeClass = this._stateManager.activeClass;
     context.activeTab = this.tabGroups['spellbook-tabs'];
-    logTiming('Basic data assignment');
-
-    // Tabs preparation
     context.tabs = this._getTabs();
-    logTiming('_getTabs completed');
-
-    // Global preparation data (lightweight)
     context.globalPrepared = this._stateManager.spellPreparation;
     context.classPreparationData = this._prepareClassPreparationData();
-    logTiming('Preparation data');
-
-    // Wizard check
     context.isWizard = !!this.wizardManager?.isWizard;
     context.hasMultipleTabs = Object.keys(context.tabs).length > 1;
-    logTiming('Wizard and tab checks');
-
-    // Filters preparation (keep this fast)
     context.filters = this._prepareFilters();
-    logTiming('_prepareFilters completed');
-
-    // Wizard tab data (if available)
     const activeTab = context.activeTab;
     if (activeTab && (activeTab === 'wizardbook' || activeTab.startsWith('wizardbook-'))) {
       const wizardTabData = this._stateManager.tabData?.[activeTab];
@@ -257,12 +212,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         context.wizardMaxSpellbookCount = wizardTabData.wizardMaxSpellbookCount || 0;
         context.wizardIsAtMax = wizardTabData.wizardIsAtMax || false;
       }
-      logTiming('Wizard tab data processing completed');
     }
-
-    const totalTime = performance.now() - startTime;
-    log(1, `🏁 _prepareContext total time: ${totalTime.toFixed(2)}ms`);
-
     return context;
   }
 
@@ -275,85 +225,39 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @protected
    */
   async _preparePartContext(partId, context, options) {
-    const startTime = performance.now();
-    let lastTime = startTime;
-
-    const logTiming = (description) => {
-      const currentTime = performance.now();
-      const elapsed = currentTime - lastTime;
-      log(1, `🕐 _preparePartContext[${partId}] ${description}: ${elapsed.toFixed(2)}ms`);
-      lastTime = currentTime;
-    };
-
-    logTiming('Starting');
-
     log(3, `Preparing context for part: ${partId}`);
     context = await super._preparePartContext(partId, context, options);
-    logTiming('super._preparePartContext completed');
-
-    if (context.tabs?.[partId]) {
-      context.tab = context.tabs[partId];
-      logTiming('Tab assignment');
-    }
-
+    if (context.tabs?.[partId]) context.tab = context.tabs[partId];
     const classMatch = partId.match(/^([^T]+)Tab$/);
     if (classMatch) {
       const classIdentifier = classMatch[1];
       log(3, `Processing class tab for identifier: ${classIdentifier}`);
-
       if (this._stateManager.classSpellData[classIdentifier]) {
         context.classIdentifier = classIdentifier;
         context.className = this._stateManager.classSpellData[classIdentifier].className;
-        logTiming('Class data assignment');
-
-        // Convert flattened spells back to level structure for template rendering
         const flattenedSpells = this._stateManager.classSpellData[classIdentifier].spellLevels;
         context.spellLevels = this._convertFlattenedToLevels(flattenedSpells);
-        logTiming('_convertFlattenedToLevels completed');
-
         context.spellPreparation = this._stateManager.classSpellData[classIdentifier].spellPreparation;
         context.globalPrepared = this._stateManager.spellPreparation;
-        logTiming('Preparation data assignment');
       }
     }
-
-    // Handle wizard tabs similarly
     const wizardMatch = partId.match(/^wizardbook-(.+)$/);
     if (wizardMatch) {
       const classIdentifier = wizardMatch[1];
       log(3, `Processing wizard tab for identifier: ${classIdentifier}`);
-
       context.classIdentifier = classIdentifier;
       context.className = this._stateManager.classSpellData[classIdentifier]?.className || classIdentifier;
-      logTiming('Wizard class data assignment');
-
       const wizardManager = this.wizardManagers.get(classIdentifier);
       context.isWizard = wizardManager?.isWizard || false;
       context.isForceWizard = wizardManager?.classItem && genericUtils.isClassWizardEnabled(this.actor, classIdentifier);
-      logTiming('Wizard manager checks');
-
       if (this._stateManager.tabData?.[partId]) {
         const flattenedSpells = this._stateManager.tabData[partId].spellLevels;
         context.spellLevels = this._convertFlattenedToLevels(flattenedSpells);
-        logTiming('Wizard spells conversion');
-
-        // Add scroll spells processing...
         const scrollSpells = this._stateManager.scrollSpells || [];
-        if (scrollSpells.length > 0) {
-          // Process scroll spells similarly
-          logTiming('Scroll spells processing');
-        }
-
         context.spellPreparation = this._stateManager.tabData[partId].spellPreparation;
-        // Add wizard-specific context...
         context.globalPrepared = this._stateManager.spellPreparation;
-        logTiming('Wizard context assignment');
       }
     }
-
-    const totalTime = performance.now() - startTime;
-    log(1, `🏁 _preparePartContext[${partId}] total time: ${totalTime.toFixed(2)}ms`);
-
     return context;
   }
 
@@ -363,19 +267,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @returns {Array} Level structure for templates
    */
   _convertFlattenedToLevels(flattenedSpells) {
-    const startTime = performance.now();
-
-    if (!flattenedSpells || !Array.isArray(flattenedSpells)) {
-      log(1, `🕐 _convertFlattenedToLevels: Early return (no spells): ${(performance.now() - startTime).toFixed(2)}ms`);
-      return [];
-    }
-
+    if (!flattenedSpells || !Array.isArray(flattenedSpells)) return [];
     const levelMap = new Map();
-
     for (const spell of flattenedSpells) {
       const levelId = spell._levelMetadata.level;
       const levelName = spell._levelMetadata.levelName;
-
       if (!levelMap.has(levelId)) {
         levelMap.set(levelId, {
           level: levelId,
@@ -383,16 +279,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           spells: []
         });
       }
-
       levelMap.get(levelId).spells.push(spell);
     }
-
-    // Convert to array and sort by level
     const result = Array.from(levelMap.values()).sort((a, b) => Number(a.level) - Number(b.level));
-
-    const totalTime = performance.now() - startTime;
-    log(1, `🕐 _convertFlattenedToLevels: Processed ${flattenedSpells.length} spells into ${result.length} levels: ${totalTime.toFixed(2)}ms`);
-
     return result;
   }
 
@@ -584,25 +473,19 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.ui.setSidebarState();
     this.ui.positionFooter();
     this.ui.setupFilterListeners();
-
     if (!this._preparationListenersSetup) {
       this.setupPreparationListeners();
       this._preparationListenersSetup = true;
     }
-
     this.ui.applyCollapsedLevels();
     this.ui.setupCantripUI();
     this.ui.updateSpellCounts();
-
     if (!this._classColorsApplied || this._classesChanged) {
       await this.ui.applyClassStyling();
       this._classColorsApplied = true;
       this._classesChanged = false;
     }
-
     this._setupLoadoutContextMenu();
-
-    // Initialize lazy loading asynchronously (don't block UI)
     setTimeout(() => {
       this._ensureSpellDataAndInitializeLazyLoading();
     }, 10);
@@ -634,30 +517,19 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   async _ensureSpellDataAndInitializeLazyLoading() {
-    if (this._isLoadingSpellData) {
-      log(1, 'Skipping duplicate spell data loading');
-      return;
-    }
+    if (this._isLoadingSpellData) return;
     this._isLoadingSpellData = true;
     try {
-      // Only initialize state manager if not already done
       if (!this._stateManager._initialized) {
-        log(1, '🔄 Loading spell data asynchronously...');
         await this._stateManager.initialize();
-        log(1, '✅ Spell data loaded successfully');
-
-        // Update UI after data loads
         this.ui.updateSpellPreparationTracking();
         this.ui.updateSpellCounts();
-        this.render(false, { parts: ['footer'] }); // Update footer with real data
+        this.render(false, { parts: ['footer'] });
       }
-
-      // Initialize lazy loading
       this._initializeLazyLoading();
       this._setupScrollListener();
     } catch (error) {
       log(1, 'Error loading spell data:', error);
-      // Show error state instead of loading state
       this._showErrorState(error);
     } finally {
       this._isLoadingSpellData = false;
@@ -673,7 +545,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const activeTab = this.tabGroups['spellbook-tabs'];
     const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
     const spellsContainer = activeTabContent?.querySelector('.spells-container');
-
     if (spellsContainer) {
       const errorHtml = `
       <div class="error-state" role="alert">
@@ -685,8 +556,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       </div>
     `;
       spellsContainer.innerHTML = errorHtml;
-
-      // Add retry listener
       spellsContainer.addEventListener('retry-load', () => {
         this._ensureSpellDataAndInitializeLazyLoading();
       });
@@ -925,21 +794,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _prepareFilters() {
-    const startTime = performance.now();
-    let lastTime = startTime;
-
-    const logTiming = (description) => {
-      const currentTime = performance.now();
-      const elapsed = currentTime - lastTime;
-      log(1, `🕐 _prepareFilters ${description}: ${elapsed.toFixed(2)}ms`);
-      lastTime = currentTime;
-    };
-
-    logTiming('Starting');
-
     let filterConfig = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
-    logTiming('Got filter configuration from settings');
-
     if (Array.isArray(filterConfig) && filterConfig.length > 0) {
       const existingFilters = new Map(filterConfig.map((f) => [f.id, f]));
       for (const defaultFilter of MODULE.DEFAULT_FILTER_CONFIG) {
@@ -951,40 +806,19 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         return true;
       });
       game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, filterConfig);
-      logTiming('Processed filter configuration');
     } else {
       filterConfig = foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG);
-      logTiming('Used default filter configuration');
     }
-
     const sortedFilters = filterConfig.filter((f) => f.enabled).sort((a, b) => a.order - b.order);
     const filterState = this.filterHelper.getFilterState();
-    logTiming('Got filter state');
-
-    // Get current class spell data for filter options
     const activeTab = this.tabGroups['spellbook-tabs'];
     const activeTabContent = this.element?.querySelector(`.tab[data-tab="${activeTab}"]`);
     const classIdentifier = activeTabContent?.dataset.classIdentifier || this._stateManager.activeClass;
-
     let spellData = [];
-    if (classIdentifier && this._stateManager.classSpellData[classIdentifier]) {
-      spellData = this._stateManager.classSpellData[classIdentifier].spellLevels || [];
-    }
-    logTiming('Got spell data for filters');
-
-    log(1, `Preparing ${sortedFilters.length} enabled filters for UI with ${spellData.length} spells`);
-
+    if (classIdentifier && this._stateManager.classSpellData[classIdentifier]) spellData = this._stateManager.classSpellData[classIdentifier].spellLevels || [];
     const result = sortedFilters
       .map((filter) => {
-        const filterStartTime = performance.now();
-
-        const result = {
-          id: filter.id,
-          type: filter.type,
-          name: `filter-${filter.id}`,
-          label: game.i18n.localize(filter.label)
-        };
-
+        const result = { id: filter.id, type: filter.type, name: `filter-${filter.id}`, label: game.i18n.localize(filter.label) };
         let element;
         switch (filter.type) {
           case 'search':
@@ -1021,20 +855,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         }
         if (!element) return null;
         result.elementHtml = formElements.elementToHtml(element);
-
-        const filterTime = performance.now() - filterStartTime;
-        if (filterTime > 5) {
-          // Only log if filter took more than 5ms
-          log(1, `🕐 Filter ${filter.id} (${filter.type}): ${filterTime.toFixed(2)}ms`);
-        }
-
         return result;
       })
       .filter(Boolean);
-
-    const totalTime = performance.now() - startTime;
-    log(1, `🏁 _prepareFilters total time: ${totalTime.toFixed(2)}ms`);
-
     return result;
   }
 
@@ -1085,25 +908,19 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Prepare spell data for lazy loading (now uses flattened structure directly)
+   * Prepare spell data for lazy loading
    * @param {string} classIdentifier - Class identifier
    * @returns {Array} Filtered spell array ready for batching
    */
   _prepareLazySpellData(classIdentifier) {
-    log(1, `Preparing lazy spell data for class ${classIdentifier}`);
-
     const classData = this._stateManager.classSpellData[classIdentifier];
     if (!classData || !classData.spellLevels) {
       log(2, `No spell data found for class ${classIdentifier}`);
       return [];
     }
-
-    // spellLevels is now the flattened array, so filter it directly
     const filteredSpells = classData.spellLevels.filter((spell) => {
       return this._checkSpellVisibilityLazy(spell);
     });
-
-    log(1, `Filtered ${filteredSpells.length} spells for lazy loading`);
     return filteredSpells;
   }
 
@@ -1114,34 +931,49 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _checkSpellVisibilityLazy(spell) {
     const filters = this.filterHelper.getFilterState();
-
-    // Apply name filter
-    if (filters.name && !spell.name.toLowerCase().includes(filters.name.toLowerCase())) {
-      return false;
+    if (filters.name && !spell.name.toLowerCase().includes(filters.name.toLowerCase())) return false;
+    if (filters.level && spell._levelMetadata.level !== filters.level) return false;
+    if (filters.school && spell.system?.school !== filters.school) return false;
+    if (filters.castingTime) {
+      const [filterType, filterValue] = filters.castingTime.split(':');
+      const spellCastingType = spell.filterData?.castingTime?.type || spell.system?.activation?.type || '';
+      const spellCastingValue = String(spell.filterData?.castingTime?.value || spell.system?.activation?.value || '1');
+      if (spellCastingType !== filterType || spellCastingValue !== filterValue) return false;
     }
-
-    // Apply level filter
-    if (filters.level && spell._levelMetadata.level !== filters.level) {
-      return false;
+    if (filters.minRange || filters.maxRange) {
+      const rangeUnits = spell.filterData?.range?.units || spell.system?.range?.units || '';
+      const rangeValue = parseInt(spell.system?.range?.value || 0);
+      if (rangeUnits) {
+        let standardizedRange = rangeValue;
+        if (rangeUnits === 'mi') standardizedRange = rangeValue * 5280;
+        else if (rangeUnits === 'spec') standardizedRange = 0;
+        const minRange = filters.minRange ? parseInt(filters.minRange) : 0;
+        const maxRange = filters.maxRange ? parseInt(filters.maxRange) : Infinity;
+        if (standardizedRange < minRange || standardizedRange > maxRange) return false;
+      }
     }
-
-    // Apply school filter
-    if (filters.school && spell.system?.school !== filters.school) {
-      return false;
+    if (filters.damageType) {
+      const spellDamageTypes = Array.isArray(spell.filterData?.damageTypes) ? spell.filterData.damageTypes : [];
+      if (!spellDamageTypes.includes(filters.damageType)) return false;
     }
-
-    // Apply prepared filter
-    if (filters.prepared && !spell.preparation?.prepared) {
-      return false;
+    if (filters.condition) {
+      const spellConditions = Array.isArray(spell.filterData?.conditions) ? spell.filterData.conditions : [];
+      if (!spellConditions.includes(filters.condition)) return false;
     }
-
-    // Apply ritual filter
-    if (filters.ritual && !spell.filterData?.isRitual) {
-      return false;
+    if (filters.requiresSave) {
+      const spellRequiresSave = spell.filterData?.requiresSave || false;
+      if ((filters.requiresSave === 'true' && !spellRequiresSave) || (filters.requiresSave === 'false' && spellRequiresSave)) return false;
     }
-
-    // Add other filter checks as needed...
-
+    if (filters.concentration) {
+      const requiresConcentration = !!spell.filterData?.concentration;
+      if ((filters.concentration === 'true' && !requiresConcentration) || (filters.concentration === 'false' && requiresConcentration)) return false;
+    }
+    if (filters.materialComponents) {
+      const hasMaterialComponents = spell.filterData?.materialComponents?.hasConsumedMaterials || false;
+      if ((filters.materialComponents === 'consumed' && !hasMaterialComponents) || (filters.materialComponents === 'notConsumed' && hasMaterialComponents)) return false;
+    }
+    if (filters.prepared && !spell.preparation?.prepared) return false;
+    if (filters.ritual && !spell.filterData?.isRitual) return false;
     return true;
   }
 
@@ -1149,7 +981,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Reset lazy loading state
    */
   _resetLazyState() {
-    log(1, `Resetting lazy loading state`);
     this.#lazyResults = null;
     this.#lazyRenderIndex = -1;
     this.#lazyRenderThrottle = false;
@@ -1163,23 +994,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const activeTab = this.tabGroups['spellbook-tabs'];
     const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
     const classIdentifier = activeTabContent?.dataset.classIdentifier;
-
     if (!classIdentifier) {
       log(2, `No class identifier found for lazy loading initialization`);
       return;
     }
-
-    log(1, `Initializing lazy loading for class ${classIdentifier}`);
-
-    // Reset state
     this._resetLazyState();
-
-    // Prepare filtered data
     this.#lazyResults = this._prepareLazySpellData(classIdentifier);
-
     if (!this.#lazyResults || this.#lazyResults.length === 0) {
       log(2, `No spells to render for class ${classIdentifier}`);
-      // Show empty state
       const spellsContainer = activeTabContent.querySelector('.spells-container');
       if (spellsContainer) {
         const emptyState = `<div class="empty-state" role="status">
@@ -1192,23 +1014,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       }
       return;
     }
-
-    // Clear existing spells container but keep class header
     const spellsContainer = activeTabContent.querySelector('.spells-container');
     if (spellsContainer) {
       const classHeader = spellsContainer.querySelector('.class-header');
-      // Clear everything
       spellsContainer.innerHTML = '';
-      // Restore class header
-      if (classHeader) {
-        spellsContainer.appendChild(classHeader);
-      }
+      if (classHeader) spellsContainer.appendChild(classHeader);
     }
-
-    // Render first batch
     this._renderSpellBatch();
-
-    log(1, `Initialized lazy loading with ${this.#lazyResults.length} total spells`);
   }
 
   /**
@@ -1219,77 +1031,43 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   _renderSingleSpell(spell, container) {
     const levelMetadata = spell._levelMetadata;
     const levelId = levelMetadata.level;
-
-    // Create level container if it doesn't exist
     let levelContainer = container.querySelector(`.spell-level[data-level="${levelId}"]`);
-    if (!levelContainer) {
-      levelContainer = this._createLevelHeader(levelMetadata, container);
-    }
-
+    if (!levelContainer) levelContainer = this._createLevelHeader(levelMetadata, container);
     if (!levelContainer) {
       log(2, `Failed to get or create level container for spell ${spell.name}`);
       return;
     }
-
-    // Process spell for display
     const processedSpell = this._processSpellForDisplay(spell);
-
-    // Create spell item HTML
     const spellHtml = this._createSpellItemHtml(processedSpell);
-
-    // Append to level container
     const spellList = levelContainer.querySelector('.spell-list');
-    if (spellList) {
-      spellList.insertAdjacentHTML('beforeend', spellHtml);
-    } else {
-      log(2, `No spell list found in level container for level ${levelId}`);
-    }
+    if (spellList) spellList.insertAdjacentHTML('beforeend', spellHtml);
+    else log(2, `No spell list found in level container for level ${levelId}`);
   }
 
   /**
    * Render next batch of spells
    */
   _renderSpellBatch() {
-    if (this.#lazyRenderThrottle || !this.#lazyResults) {
-      log(3, `Batch render skipped - throttled: ${this.#lazyRenderThrottle}, hasResults: ${!!this.#lazyResults}`);
-      return;
-    }
-
+    if (this.#lazyRenderThrottle || !this.#lazyResults) return;
     const batchStart = this.#lazyRenderIndex + 1;
     const batchEnd = Math.min(batchStart + this.batchSize, this.#lazyResults.length);
-
-    if (batchStart >= this.#lazyResults.length) {
-      log(1, `No more spells to render (${batchStart} >= ${this.#lazyResults.length})`);
-      return;
-    }
-
-    log(1, `Rendering spell batch ${batchStart}-${batchEnd} of ${this.#lazyResults.length}`);
-
+    if (batchStart >= this.#lazyResults.length) return;
     this.#lazyRenderThrottle = true;
-
     const activeTab = this.tabGroups['spellbook-tabs'];
     const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
     const spellsContainer = activeTabContent?.querySelector('.spells-container');
-
     if (!spellsContainer) {
       log(2, `No spells container found for batch rendering`);
       this.#lazyRenderThrottle = false;
       return;
     }
-
-    // Render spells in this batch
     for (let i = batchStart; i < batchEnd; i++) {
       const spell = this.#lazyResults[i];
       this._renderSingleSpell(spell, spellsContainer);
     }
-
     this.#lazyRenderIndex = batchEnd - 1;
     this.#lazyRenderThrottle = false;
-
-    // Update spell counts and UI after rendering batch
     this.ui.updateSpellCounts();
-
-    log(1, `Batch render complete, new index: ${this.#lazyRenderIndex}`);
   }
 
   /**
@@ -1299,8 +1077,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @returns {HTMLElement} Created level container
    */
   _createLevelHeader(levelMetadata, container) {
-    log(1, `Creating level header for level ${levelMetadata.level}`);
-
     const levelHtml = `
     <div class="spell-level" data-level="${levelMetadata.level}">
       <h3 class="spell-level-heading" data-action="toggleSpellLevel" role="button" aria-expanded="true"
@@ -1313,11 +1089,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       </ul>
     </div>
   `;
-
-    // Insert in correct position (levels should be in order)
     let insertPosition = null;
     const existingLevels = container.querySelectorAll('.spell-level');
-
     for (const existingLevel of existingLevels) {
       const existingLevelId = existingLevel.dataset.level;
       if (parseInt(existingLevelId) > parseInt(levelMetadata.level)) {
@@ -1325,23 +1098,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         break;
       }
     }
-
-    if (insertPosition) {
-      insertPosition.insertAdjacentHTML('beforebegin', levelHtml);
-    } else {
-      container.insertAdjacentHTML('beforeend', levelHtml);
-    }
-
-    // Get the newly created element
+    if (insertPosition) insertPosition.insertAdjacentHTML('beforebegin', levelHtml);
+    else container.insertAdjacentHTML('beforeend', levelHtml);
     const levelContainer = container.querySelector(`.spell-level[data-level="${levelMetadata.level}"]`);
-
     if (!levelContainer) {
       log(2, `Failed to create level container for level ${levelMetadata.level}`);
       return null;
     }
-
     this._currentLevelHeaders.set(levelMetadata.level, levelContainer);
-
     return levelContainer;
   }
 
@@ -1352,15 +1116,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _createSpellItemHtml(spell) {
     const tagHtml = spell.tag ? `<span class="tag ${spell.tag.cssClass}" ${spell.tag.tooltip ? `data-tooltip="${spell.tag.tooltip}"` : ''}>${spell.tag.text}</span>` : '';
-
-    // Ensure we have safe values for all properties
     const enrichedIcon = spell.enrichedIcon || '';
     const name = spell.name || 'Unknown Spell';
     const formattedDetails = spell.formattedDetails || '';
     const cssClasses = spell.cssClasses || 'spell-item';
     const dataAttributes = spell.dataAttributes || '';
     const preparationCheckboxHtml = spell.preparationCheckboxHtml || '';
-
     return `
     <li class="${cssClasses}" ${dataAttributes} role="listitem">
       <div class="spell-name">
@@ -1383,38 +1144,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   _setupScrollListener() {
     const activeTab = this.tabGroups['spellbook-tabs'];
     const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
-
     if (!activeTabContent) {
       log(2, `No active tab content found for scroll listener setup`);
       return;
     }
 
-    log(1, `Setting up scroll listener for lazy loading on tab ${activeTab}`);
-
-    // Remove existing listener
-    if (this._scrollListener && this._lastScrollElement) {
-      this._lastScrollElement.removeEventListener('scroll', this._scrollListener);
-    }
-
-    // Find the scrollable container - try spells-container first, fall back to tab content
+    if (this._scrollListener && this._lastScrollElement) this._lastScrollElement.removeEventListener('scroll', this._scrollListener);
     let scrollContainer = activeTabContent.querySelector('.spells-container');
-
-    // If spells-container doesn't have overflow, use the tab content itself
     if (scrollContainer) {
       const computedStyle = window.getComputedStyle(scrollContainer);
-      if (computedStyle.overflowY === 'visible' || computedStyle.overflowY === 'initial') {
-        scrollContainer = activeTabContent;
-      }
-    } else {
-      scrollContainer = activeTabContent;
-    }
-
-    // Add new listener to the scrollable container
+      if (computedStyle.overflowY === 'visible' || computedStyle.overflowY === 'initial') scrollContainer = activeTabContent;
+    } else scrollContainer = activeTabContent;
     this._scrollListener = this._onScrollSpells.bind(this);
     scrollContainer.addEventListener('scroll', this._scrollListener, { passive: true });
     this._lastScrollElement = scrollContainer;
-
-    log(1, `Scroll listener attached to element: ${scrollContainer.className || scrollContainer.tagName}`);
   }
 
   /**
@@ -1423,21 +1166,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _onScrollSpells(event) {
     if (this.#lazyRenderThrottle || !this.#lazyResults) return;
-
     const container = event.target;
     const { scrollTop, scrollHeight, clientHeight } = container;
-
-    // Log scroll position occasionally for debugging
-    if (Math.random() < 0.05) {
-      // 5% chance to log
-      log(3, `Scroll: ${Math.round(scrollTop + clientHeight)}/${scrollHeight}, margin: ${this.constructor.BATCHING.MARGIN}`);
-    }
-
-    // Check if we're near the bottom
-    if (scrollTop + clientHeight >= scrollHeight - this.constructor.BATCHING.MARGIN) {
-      log(1, `Scroll threshold reached, triggering next batch render`);
-      this._renderSpellBatch();
-    }
+    if (scrollTop + clientHeight >= scrollHeight - this.constructor.BATCHING.MARGIN) this._renderSpellBatch();
   }
 
   /**
@@ -1445,11 +1176,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _applyFilters() {
-    log(1, `Applying filters and reinitializing lazy loading`);
-    // Reset and reinitialize when filters change
     this._resetLazyState();
     this._initializeLazyLoading();
-    // Set up scroll listener for the new content
     setTimeout(() => {
       this._setupScrollListener();
     }, 50);
@@ -1821,10 +1549,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const wizardMatch = activeTab.match(/^wizardbook-(.+)$/);
     const classIdentifier = wizardMatch ? wizardMatch[1] : 'wizard';
     const wizardManager = this.wizardManagers.get(classIdentifier);
-    if (!wizardManager) {
-      ui.notifications.error('No wizard manager found for this class');
-      return;
-    }
+    if (!wizardManager) return;
     const spell = await fromUuid(spellUuid);
     if (!spell) return;
     const costInfo = await wizardManager.getCopyingCostWithFree(spell);
@@ -1854,7 +1579,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       default: 'confirm',
       rejectClose: false
     });
-
     if (result === 'confirm') {
       const success = await wizardManager.copySpell(spellUuid, costInfo.cost, time, costInfo.isFree);
       if (success) {

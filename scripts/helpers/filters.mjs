@@ -25,25 +25,19 @@ export function convertRangeToStandardUnit(units, value) {
  */
 export function getOptionsForFilter(filterId, filterState, spellData) {
   const options = [{ value: '', label: game.i18n.localize('SPELLBOOK.Filters.All') }];
-
   switch (filterId) {
     case 'level':
       if (spellData && Array.isArray(spellData)) {
         const levels = new Set();
-
-        // Handle both flattened and level structures
         if (spellData.length > 0 && spellData[0]._levelMetadata) {
-          // Flattened structure
           spellData.forEach((spell) => {
             levels.add(spell._levelMetadata.level);
           });
         } else {
-          // Level structure
           spellData.forEach((level) => {
             levels.add(level.level);
           });
         }
-
         Array.from(levels)
           .sort((a, b) => Number(a) - Number(b))
           .forEach((level) => {
@@ -55,20 +49,17 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
           });
       }
       break;
-
     case 'school':
       Object.entries(CONFIG.DND5E.spellSchools).forEach(([key, school]) => {
         options.push({ value: key, label: school.label, selected: filterState.school === key });
       });
       break;
-
     case 'castingTime':
       if (spellData) {
         const uniqueTypes = getCastingTimeOptions(spellData, filterState);
         options.push(...uniqueTypes);
       }
       break;
-
     case 'damageType':
       const damageTypes = { ...CONFIG.DND5E.damageTypes, healing: { label: game.i18n.localize('DND5E.Healing') } };
       Object.entries(damageTypes)
@@ -77,7 +68,6 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
           options.push({ value: key, label: type.label, selected: filterState.damageType === key });
         });
       break;
-
     case 'condition':
       Object.entries(CONFIG.DND5E.conditionTypes)
         .filter(([_key, condition]) => !condition.pseudo)
@@ -85,7 +75,6 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
           options.push({ value: key, label: condition.label, selected: filterState.condition === key });
         });
       break;
-
     case 'requiresSave':
     case 'concentration':
       options.push(
@@ -93,7 +82,6 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
         { value: 'false', label: game.i18n.localize('SPELLBOOK.Filters.False'), selected: filterState[filterId] === 'false' }
       );
       break;
-
     case 'materialComponents':
       options.push(
         { value: 'consumed', label: game.i18n.localize('SPELLBOOK.Filters.MaterialComponents.Consumed'), selected: filterState.materialComponents === 'consumed' },
@@ -113,30 +101,20 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
 function getCastingTimeOptions(spellData, filterState) {
   const uniqueActivationTypes = new Set();
   const options = [];
-
-  // Handle both flattened array and level structure
   let spells = [];
   if (Array.isArray(spellData)) {
-    // Check if it's flattened (has _levelMetadata) or level structure
-    if (spellData.length > 0 && spellData[0]._levelMetadata) {
-      // Flattened structure - spellData is already the spells array
-      spells = spellData;
-    } else {
-      // Level structure - extract spells from levels
+    if (spellData.length > 0 && spellData[0]._levelMetadata) spells = spellData;
+    else {
       spellData.forEach((level) => {
-        if (level.spells && Array.isArray(level.spells)) {
-          spells.push(...level.spells);
-        }
+        if (level.spells && Array.isArray(level.spells)) spells.push(...level.spells);
       });
     }
   }
-
   spells.forEach((spell) => {
     const type = spell.system?.activation?.type;
     const value = spell.system?.activation?.value || 1;
     if (type) uniqueActivationTypes.add(`${type}:${value}`);
   });
-
   const typeOrder = {
     action: 1,
     bonus: 2,
@@ -151,7 +129,6 @@ function getCastingTimeOptions(spellData, filterState) {
     special: 11,
     none: 12
   };
-
   Array.from(uniqueActivationTypes)
     .map((combo) => {
       const [type, value] = combo.split(':');
