@@ -197,7 +197,7 @@ export function registerSettings() {
     }
   });
 
-  game.settings.register(MODULE.ID, 'LAZY_BATCH_SIZE', {
+  game.settings.register(MODULE.ID, SETTINGS.LAZY_BATCH_SIZE, {
     name: 'SPELLBOOK.Settings.LazyBatchSize.Name',
     hint: 'SPELLBOOK.Settings.LazyBatchSize.Hint',
     scope: 'client',

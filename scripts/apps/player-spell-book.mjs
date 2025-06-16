@@ -137,7 +137,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @returns {number}
    */
   get batchSize() {
-    return game.settings.get(MODULE.ID, 'LAZY_BATCH_SIZE') || this.constructor.BATCHING.SIZE;
+    return game.settings.get(MODULE.ID, SETTINGS.LAZY_BATCH_SIZE) || this.constructor.BATCHING.SIZE;
   }
 
   /**

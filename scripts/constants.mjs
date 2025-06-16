@@ -192,7 +192,7 @@ export const MODULE = {
    * @type {Object}
    */
   BATCHING: {
-    SIZE: 20,
+    SIZE: 30,
     MARGIN: 100
   }
 };
@@ -279,6 +279,7 @@ export const SETTINGS = {
   ENABLE_JOURNAL_BUTTON: 'enableJournalButton',
   FILTER_CONFIGURATION: 'filterConfiguration',
   HIDDEN_SPELL_LISTS: 'hiddenSpellLists',
+  LAZY_BATCH_SIZE: 'lazyBatchSize',
   LOGGING_LEVEL: 'loggingLevel',
   OPEN_SPELL_MANAGER: 'openSpellListManager',
   RUN_MIGRATIONS: 'runMigrations',
