@@ -33,7 +33,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     actions: {
       toggleSidebar: PlayerSpellBook.toggleSidebar,
       filterSpells: PlayerSpellBook.filterSpells,
-      sortSpells: PlayerSpellBook.sortSpells,
       reset: PlayerSpellBook.handleReset,
       toggleSpellLevel: PlayerSpellBook.toggleSpellLevel,
       configureFilters: PlayerSpellBook.configureFilters,
@@ -1046,15 +1045,27 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
     if (!this.#lazyResults || this.#lazyResults.length === 0) {
       log(2, `No spells to render for class ${classIdentifier}`);
+      // Show empty state
+      const spellsContainer = activeTabContent.querySelector('.spells-container');
+      if (spellsContainer) {
+        const emptyState = `<div class="empty-state" role="status">
+        <p>${game.i18n.localize('SPELLBOOK.Errors.NoSpellsFound')}</p>
+      </div>`;
+        const classHeader = spellsContainer.querySelector('.class-header');
+        spellsContainer.innerHTML = '';
+        if (classHeader) spellsContainer.appendChild(classHeader);
+        spellsContainer.insertAdjacentHTML('beforeend', emptyState);
+      }
       return;
     }
 
-    // Clear existing spells container
+    // Clear existing spells container but keep class header
     const spellsContainer = activeTabContent.querySelector('.spells-container');
     if (spellsContainer) {
-      // Clear all content except class header
       const classHeader = spellsContainer.querySelector('.class-header');
+      // Clear everything
       spellsContainer.innerHTML = '';
+      // Restore class header
       if (classHeader) {
         spellsContainer.appendChild(classHeader);
       }
@@ -1062,6 +1073,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
     // Render first batch
     this._renderSpellBatch();
+
+    log(1, `Initialized lazy loading with ${this.#lazyResults.length} total spells`);
   }
 
   /**
@@ -1100,10 +1113,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Render next batch of spells (remove async since we don't need it)
+   * Render next batch of spells
    */
   _renderSpellBatch() {
-    if (this.#lazyRenderThrottle || !this.#lazyResults) return;
+    if (this.#lazyRenderThrottle || !this.#lazyResults) {
+      log(3, `Batch render skipped - throttled: ${this.#lazyRenderThrottle}, hasResults: ${!!this.#lazyResults}`);
+      return;
+    }
 
     const batchStart = this.#lazyRenderIndex + 1;
     const batchEnd = Math.min(batchStart + this.batchSize, this.#lazyResults.length);
@@ -1136,10 +1152,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.#lazyRenderIndex = batchEnd - 1;
     this.#lazyRenderThrottle = false;
 
-    // Update spell counts after rendering batch
+    // Update spell counts and UI after rendering batch
     this.ui.updateSpellCounts();
 
-    log(1, `Finished rendering batch, new index: ${this.#lazyRenderIndex}`);
+    log(1, `Batch render complete, new index: ${this.#lazyRenderIndex}`);
   }
 
   /**
@@ -1228,7 +1244,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Set up scroll listener for lazy loading (fix scroll detection)
+   * Set up scroll listener for lazy loading
    */
   _setupScrollListener() {
     const activeTab = this.tabGroups['spellbook-tabs'];
@@ -1242,25 +1258,33 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     log(1, `Setting up scroll listener for lazy loading on tab ${activeTab}`);
 
     // Remove existing listener
-    if (this._scrollListener) {
-      if (this._lastScrollElement) {
-        this._lastScrollElement.removeEventListener('scroll', this._scrollListener);
-      }
+    if (this._scrollListener && this._lastScrollElement) {
+      this._lastScrollElement.removeEventListener('scroll', this._scrollListener);
     }
 
-    // Find the scrollable container - look for .spells-container
-    const scrollContainer = activeTabContent.querySelector('.spells-container') || activeTabContent;
+    // Find the scrollable container - try spells-container first, fall back to tab content
+    let scrollContainer = activeTabContent.querySelector('.spells-container');
+
+    // If spells-container doesn't have overflow, use the tab content itself
+    if (scrollContainer) {
+      const computedStyle = window.getComputedStyle(scrollContainer);
+      if (computedStyle.overflowY === 'visible' || computedStyle.overflowY === 'initial') {
+        scrollContainer = activeTabContent;
+      }
+    } else {
+      scrollContainer = activeTabContent;
+    }
 
     // Add new listener to the scrollable container
     this._scrollListener = this._onScrollSpells.bind(this);
     scrollContainer.addEventListener('scroll', this._scrollListener, { passive: true });
     this._lastScrollElement = scrollContainer;
 
-    log(1, `Scroll listener attached to container with class: ${scrollContainer.className}`);
+    log(1, `Scroll listener attached to element: ${scrollContainer.className || scrollContainer.tagName}`);
   }
 
   /**
-   * Handle scroll events for lazy loading (improved logging)
+   * Handle scroll events for lazy loading
    * @param {Event} event - Scroll event
    */
   _onScrollSpells(event) {
@@ -1269,14 +1293,15 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const container = event.target;
     const { scrollTop, scrollHeight, clientHeight } = container;
 
-    // Only log occasionally to avoid spam
-    if (Math.random() < 0.1) {
-      log(3, `Scroll detected: ${Math.round(scrollTop + clientHeight)} / ${scrollHeight} (margin: ${this.constructor.BATCHING.MARGIN})`);
+    // Log scroll position occasionally for debugging
+    if (Math.random() < 0.05) {
+      // 5% chance to log
+      log(3, `Scroll: ${Math.round(scrollTop + clientHeight)}/${scrollHeight}, margin: ${this.constructor.BATCHING.MARGIN}`);
     }
 
     // Check if we're near the bottom
     if (scrollTop + clientHeight >= scrollHeight - this.constructor.BATCHING.MARGIN) {
-      log(1, `Scroll threshold reached, loading next batch`);
+      log(1, `Scroll threshold reached, triggering next batch render`);
       this._renderSpellBatch();
     }
   }
@@ -1286,8 +1311,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _applyFilters() {
-    // For lazy loading, we need to re-initialize when filters change
+    log(1, `Applying filters and reinitializing lazy loading`);
+    // Reset and reinitialize when filters change
+    this._resetLazyState();
     this._initializeLazyLoading();
+    // Set up scroll listener for the new content
+    setTimeout(() => {
+      this._setupScrollListener();
+    }, 50);
   }
 
   /**
@@ -1545,17 +1576,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.filterHelper.invalidateFilterCache();
     this._resetLazyState();
     this._initializeLazyLoading();
-  }
-
-  /**
-   * Apply sorting to spells
-   * @param {Event} event - The change event
-   * @param {HTMLElement} _form - The form element
-   * @static
-   */
-  static sortSpells(event, _form) {
-    const sortBy = event.target.value;
-    this.filterHelper.applySorting(sortBy);
   }
 
   /**

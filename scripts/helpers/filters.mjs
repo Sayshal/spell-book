@@ -100,15 +100,6 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
         { value: 'notConsumed', label: game.i18n.localize('SPELLBOOK.Filters.MaterialComponents.NotConsumed'), selected: filterState.materialComponents === 'notConsumed' }
       );
       break;
-
-    case 'sortBy':
-      options.push(
-        { value: 'level', label: game.i18n.localize('SPELLBOOK.Sort.ByLevel'), selected: filterState.sortBy === 'level' },
-        { value: 'name', label: game.i18n.localize('SPELLBOOK.Sort.ByName'), selected: filterState.sortBy === 'name' },
-        { value: 'school', label: game.i18n.localize('SPELLBOOK.Sort.BySchool'), selected: filterState.sortBy === 'school' },
-        { value: 'prepared', label: game.i18n.localize('SPELLBOOK.Sort.ByPrepared'), selected: filterState.sortBy === 'prepared' }
-      );
-      break;
   }
   return options;
 }
@@ -199,7 +190,6 @@ export function getDefaultFilterState() {
     prepared: false,
     ritual: false,
     concentration: '',
-    materialComponents: '',
-    sortBy: 'level'
+    materialComponents: ''
   };
 }

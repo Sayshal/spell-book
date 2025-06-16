@@ -113,7 +113,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   _prepareFilterConfigFormData() {
     try {
       return this.config.map((filter) => {
-        const sortable = !(filter.id === 'name' || filter.id === 'prepared' || filter.id === 'ritual' || filter.id === 'sortBy');
+        const sortable = !(filter.id === 'name' || filter.id === 'prepared' || filter.id === 'ritual');
         const checkbox = formElements.createCheckbox({
           name: `enabled-${filter.id}`,
           checked: filter.enabled,
@@ -408,7 +408,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       for (const filter of filterConfig) {
         const enabledKey = `enabled-${filter.id}`;
         const enabled = formData[enabledKey] === true;
-        const sortable = filter.sortable !== undefined ? filter.sortable : !['name', 'prepared', 'ritual', 'sortBy'].includes(filter.id);
+        const sortable = filter.sortable !== undefined ? filter.sortable : !['name', 'prepared', 'ritual'].includes(filter.id);
 
         const updatedFilter = {
           ...filter,

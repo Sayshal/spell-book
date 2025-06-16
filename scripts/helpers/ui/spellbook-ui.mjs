@@ -81,7 +81,6 @@ export class SpellbookUI {
       const target = event.target;
       if (target.matches('dnd5e-checkbox') || target.matches('select')) {
         this.app._applyFilters();
-        if (target.name === 'sort-by') this.app._applySorting(target.value);
         this.app.filterHelper.invalidateFilterCache();
       }
     });

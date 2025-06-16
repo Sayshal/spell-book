@@ -94,14 +94,6 @@ export const MODULE = {
       sortable: true
     },
     {
-      id: 'sortBy',
-      type: 'dropdown',
-      enabled: true,
-      order: 1000,
-      label: 'SPELLBOOK.Filters.SortBy',
-      sortable: false
-    },
-    {
       id: 'prepared',
       type: 'checkbox',
       enabled: true,
@@ -292,15 +284,4 @@ export const SETTINGS = {
   RUN_MIGRATIONS: 'runMigrations',
   SPELL_BOOK_POSITION: 'spellBookPositionn',
   SPELLCASTING_RULE_SET: 'spellcastingRuleSet'
-};
-
-/**
- * Sort options for spell display
- * @type {Object}
- */
-export const SORT_BY = {
-  LEVEL: 'level',
-  NAME: 'name',
-  PREPARED: 'prepared',
-  SCHOOL: 'school'
 };

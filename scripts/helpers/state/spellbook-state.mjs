@@ -419,10 +419,8 @@ export class SpellbookState {
     // Create flattened spell array (this is now the primary structure)
     const spellLevels = this._organizeSpellsByLevelForClass(spellItems, identifier, classItem);
 
-    const sortBy = this.app.filterHelper?.getFilterState()?.sortBy || 'level';
-    // Note: sorting is already handled in the flattened structure
+    // Level-based organization is hardcoded - no sorting options
 
-    // Use the renamed method
     const prepStats = this.calculatePreparationStats(identifier, spellLevels, classItem);
 
     this.classSpellData[identifier] = {
@@ -645,8 +643,6 @@ export class SpellbookState {
     const maxSpellsAllowed = wizardManager.getMaxSpellsAllowed();
     const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
 
-    const sortBy = this.app.filterHelper?.getFilterState()?.sortBy || 'level';
-
     // Filter cantrips if needed
     let finalPrepLevels = prepLevelsFlattened;
     if (shouldHideCantrips) {
@@ -654,8 +650,8 @@ export class SpellbookState {
     }
 
     log(1, `Enriching spell data for ${classIdentifier}`);
-    this.enrichWizardBookSpells(finalPrepLevels, personalSpellbook, sortBy);
-    this.enrichWizardBookSpells(wizardLevelsFlattened, personalSpellbook, sortBy, true, isAtMaxSpells);
+    this.enrichWizardBookSpells(finalPrepLevels, personalSpellbook, (isWizardBook = false), (isAtMaxSpells = false));
+    this.enrichWizardBookSpells(wizardLevelsFlattened, personalSpellbook, (isWizardBook = true), isAtMaxSpells);
 
     const prepStats = this.calculatePreparationStats(classIdentifier, finalPrepLevels, classItem);
 
@@ -694,11 +690,10 @@ export class SpellbookState {
    * Enrich wizard tab spells with additional data
    * @param {Array} flattenedSpells - Flattened spell array
    * @param {Array} personalSpellbook - The personal spellbook spell UUIDs
-   * @param {string} sortBy - Sort criteria
    * @param {boolean} isWizardBook - Whether this is for the wizard tab
    * @param {boolean} isAtMaxSpells - Whether maximum spells are reached
    */
-  enrichWizardBookSpells(flattenedSpells, personalSpellbook, sortBy, isWizardBook = false, isAtMaxSpells = false) {
+  enrichWizardBookSpells(flattenedSpells, personalSpellbook, isWizardBook = false, isAtMaxSpells = false) {
     for (const spell of flattenedSpells) {
       spell.isWizardClass = true;
       spell.inWizardSpellbook = personalSpellbook.includes(spell.compendiumUuid || spell.spellUuid);
