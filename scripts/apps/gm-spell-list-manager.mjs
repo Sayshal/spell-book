@@ -88,7 +88,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @param {Object} options - Application options
    */
   constructor(options) {
+    log(1, 'GMSpellListManager: Constructor called with options:', options);
     super(options);
+
+    log(1, 'GMSpellListManager: Initializing properties...');
     this.availableSpellLists = [];
     this.selectedSpellList = null;
     this.availableSpells = [];
@@ -99,6 +102,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     this.selectionMode = false;
     this.lastSelectedIndex = { add: -1, remove: -1 };
     this.isSelectingAll = false;
+
+    log(1, 'GMSpellListManager: Initializing filter state...');
     this.filterState = {
       name: '',
       level: '',
@@ -115,8 +120,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       prepared: false,
       ritual: false
     };
+
+    log(1, 'GMSpellListManager: Creating filter helper...');
     this.filterHelper = new SpellbookFilterHelper(this);
     this.isUpdatingCheckboxes = false;
+
+    log(1, 'GMSpellListManager: Initializing lazy loading properties...');
     this.#lazyAvailableResults = null;
     this.#lazyAvailableRenderIndex = -1;
     this.#lazyAvailableRenderThrottle = false;
@@ -126,6 +135,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     this._currentSelectedLevelHeaders = new Map();
     this._lastScrollElementAvailable = null;
     this._lastScrollElementSelected = null;
+
+    log(1, 'GMSpellListManager: Constructor completed successfully');
+
+    log(1, 'GMSpellListManager: Starting spell lists load (Phase 1)');
+    this.loadSpellLists();
   }
 
   /**
@@ -145,7 +159,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
   /** @inheritdoc */
   async _prepareContext(options) {
+    log(1, 'GMSpellListManager: _prepareContext() called with options:', options);
     const context = await super._prepareContext(options);
+    log(1, 'GMSpellListManager: Base context prepared');
     context.isEditing = this.isEditing;
     context.selectedSpellList = this.selectedSpellList;
     context.availableSpells = this.availableSpells;
@@ -159,15 +175,39 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     context.totalSelectedCount = this.selectedSpellsToAdd.size + this.selectedSpellsToRemove.size;
     context.spellSchools = CONFIG.DND5E.spellSchools;
     context.spellLevels = CONFIG.DND5E.spellLevels;
+
+    log(1, `GMSpellListManager: Context properties set - availableSpellLists length: ${this.availableSpellLists?.length || 0}`);
+    log(1, `GMSpellListManager: Context - isEditing: ${context.isEditing}, selectedSpellList: ${!!context.selectedSpellList}`);
+
     if (this.isEditing && this.selectionMode) {
+      log(1, 'GMSpellListManager: Creating select all checkboxes for selection mode');
       context.selectAllAddCheckboxHtml = this._createSelectAllCheckbox('add');
       context.selectAllRemoveCheckboxHtml = this._createSelectAllCheckbox('remove');
     }
-    if (this.availableSpellLists?.length) this._organizeSpellListsContext(context);
+
+    if (this.availableSpellLists?.length) {
+      log(1, 'GMSpellListManager: Organizing spell lists context...');
+      this._organizeSpellListsContext(context);
+      log(1, 'GMSpellListManager: Spell lists organized successfully');
+    } else {
+      log(1, 'GMSpellListManager: CRITICAL - No availableSpellLists to organize! This explains the empty sidebar.');
+    }
+
     const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
     context.customListMap = customMappings;
-    if (this.availableSpells.length > 0) this._prepareFilterContext(context);
-    if (this.isEditing && this.selectedSpellList) await this._addEditingContext(context);
+
+    if (this.availableSpells.length > 0) {
+      log(1, 'GMSpellListManager: Preparing filter context...');
+      this._prepareFilterContext(context);
+    } else {
+      log(1, 'GMSpellListManager: No available spells - skipping filter context preparation');
+    }
+
+    if (this.isEditing && this.selectedSpellList) {
+      log(1, 'GMSpellListManager: Adding editing context...');
+      await this._addEditingContext(context);
+    }
+
     if (this.selectedSpellList?.spellsByLevel && this.isEditing && this.selectionMode) {
       this.selectedSpellList.spellsByLevel = this.selectedSpellList.spellsByLevel.map((levelData) => {
         const processedLevel = { ...levelData };
@@ -180,7 +220,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         return processedLevel;
       });
     }
-    if (this.selectedSpellList) context.selectedSpellList = formattingUtils.processSpellListForDisplay(this.selectedSpellList);
+    if (this.selectedSpellList) {
+      log(1, 'GMSpellListManager: Processing selected spell list for display...');
+      context.selectedSpellList = formattingUtils.processSpellListForDisplay(this.selectedSpellList);
+    }
+
+    log(1, 'GMSpellListManager: _prepareContext() completed, returning context');
     return context;
   }
 
@@ -190,16 +235,30 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @private
    */
   _organizeSpellListsContext(context) {
+    log(1, 'GMSpellListManager: _organizeSpellListsContext() called');
+    log(1, `GMSpellListManager: Input availableSpellLists length: ${this.availableSpellLists.length}`);
+
     const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
+    log(1, `GMSpellListManager: Hidden lists count: ${hiddenLists.length}`);
+
     const actorOwnedLists = this.availableSpellLists.filter((list) => list.isActorOwned);
+    log(1, `GMSpellListManager: Actor owned lists: ${actorOwnedLists.length}`);
+
     const hiddenSpellLists = this.availableSpellLists.filter((list) => !list.isActorOwned && hiddenLists.includes(list.uuid));
+    log(1, `GMSpellListManager: Hidden spell lists: ${hiddenSpellLists.length}`);
+
     const mergedLists = this.availableSpellLists.filter((list) => !list.isActorOwned && list.isMerged && !hiddenLists.includes(list.uuid));
+    log(1, `GMSpellListManager: Merged lists: ${mergedLists.length}`);
+
     const customLists = this.availableSpellLists.filter(
       (list) => !list.isActorOwned && !list.isMerged && (list.isCustom || list.document?.flags?.[MODULE.ID]?.isNewList) && !hiddenLists.includes(list.uuid)
     );
+    log(1, `GMSpellListManager: Custom lists: ${customLists.length}`);
+
     const standardLists = this.availableSpellLists.filter(
       (list) => !list.isActorOwned && !list.isCustom && !list.isMerged && !list.document?.flags?.[MODULE.ID]?.isNewList && !hiddenLists.includes(list.uuid)
     );
+    log(1, `GMSpellListManager: Standard lists: ${standardLists.length}`);
     actorOwnedLists.sort((a, b) => {
       if (a.actorName && b.actorName) return a.actorName.localeCompare(b.actorName);
       if (a.actorName) return -1;
@@ -222,6 +281,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     context.hasHiddenLists = hiddenSpellLists.length > 0;
     context.availableSpellLists = this.availableSpellLists;
     context.hiddenListUuids = hiddenLists;
+
+    log(1, 'GMSpellListManager: Context organization completed');
+    log(1, `GMSpellListManager: Final context has ${context.availableSpellLists.length} total lists`);
+    log(
+      1,
+      `GMSpellListManager: Categories - Actor: ${context.hasActorOwnedLists}, Custom: ${context.hasCustomLists}, Merged: ${context.hasMergedLists}, Standard: ${context.hasStandardLists}, Hidden: ${context.hasHiddenLists}`
+    );
   }
 
   /**
@@ -619,21 +685,115 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   // ========================================
 
   /**
-   * Load spell lists and available spells
+   * Phase 1: Load spell lists quickly for sidebar (constructor)
    * @returns {Promise<void>}
    */
-  async loadData() {
+  async loadSpellLists() {
     try {
-      log(3, 'Loading spell lists for GM manager');
+      log(1, 'GMSpellListManager: loadSpellLists() - loading sidebar data only');
+
+      log(1, 'GMSpellListManager: Getting valid custom list mappings...');
       await managerHelpers.getValidCustomListMappings();
+      log(1, 'GMSpellListManager: Custom list mappings loaded successfully');
+
+      log(1, 'GMSpellListManager: Finding compendium spell lists...');
       this.availableSpellLists = await managerHelpers.findCompendiumSpellLists(true);
+      log(1, `GMSpellListManager: Found ${this.availableSpellLists?.length || 0} spell lists`);
+
+      if (!this.availableSpellLists || this.availableSpellLists.length === 0) {
+        log(1, 'GMSpellListManager: WARNING - No spell lists found! This is the main issue.');
+        log(1, 'GMSpellListManager: managerHelpers.findCompendiumSpellLists returned:', this.availableSpellLists);
+      } else {
+        log(
+          1,
+          'GMSpellListManager: Spell lists found, sample:',
+          this.availableSpellLists.slice(0, 3).map((list) => ({ name: list.name, uuid: list.uuid }))
+        );
+      }
+
+      log(1, 'GMSpellListManager: Sorting spell lists...');
       this.availableSpellLists.sort((a, b) => a.name.localeCompare(b.name));
-      this.availableSpells = await managerHelpers.fetchAllCompendiumSpells();
-      await this.enrichAvailableSpells();
+
+      // Keep available spells empty for now - Phase 2 will load them
+      this.availableSpells = [];
+      log(1, 'GMSpellListManager: Available spells kept empty for lazy loading');
     } catch (error) {
-      log(1, 'Error loading spell lists:', error);
+      log(1, 'GMSpellListManager: ERROR in loadSpellLists():', error);
+      log(1, 'GMSpellListManager: Error stack:', error.stack);
     } finally {
+      log(1, 'GMSpellListManager: loadSpellLists() completed, calling render...');
       this.render(false);
+      log(1, 'GMSpellListManager: render() call completed');
+    }
+  }
+
+  /**
+   * Phase 2: Load available spells for editing mode (when edit button clicked)
+   * @returns {Promise<void>}
+   */
+  async loadAvailableSpells() {
+    if (this.availableSpells.length > 0) {
+      log(1, 'GMSpellListManager: Available spells already loaded, skipping');
+      return;
+    }
+
+    try {
+      log(1, 'GMSpellListManager: loadAvailableSpells() - loading editing mode data');
+
+      log(1, 'GMSpellListManager: Fetching all compendium spells...');
+      this.availableSpells = await managerHelpers.fetchAllCompendiumSpells();
+      log(1, `GMSpellListManager: Found ${this.availableSpells?.length || 0} available spells`);
+
+      if (!this.availableSpells || this.availableSpells.length === 0) {
+        log(1, 'GMSpellListManager: WARNING - No available spells found!');
+      }
+
+      log(1, 'GMSpellListManager: Enriching available spells...');
+      await this.enrichAvailableSpells();
+      log(1, 'GMSpellListManager: Available spells enriched');
+    } catch (error) {
+      log(1, 'GMSpellListManager: ERROR in loadAvailableSpells():', error);
+      log(1, 'GMSpellListManager: Error stack:', error.stack);
+    }
+  }
+
+  /**
+   * Phase 3: Load specific spell list data (when list selected)
+   * @param {Array} spellUuids - Array of spell UUIDs to load
+   * @returns {Promise<void>}
+   */
+  async loadSelectedListSpells(spellUuids) {
+    if (!this.selectedSpellList || !spellUuids?.length) {
+      log(1, 'GMSpellListManager: No selected list or UUIDs, skipping spell loading');
+      return;
+    }
+
+    try {
+      log(1, `GMSpellListManager: loadSelectedListSpells() - Loading ${spellUuids.length} spells for selected list`);
+
+      this.selectedSpellList.isLoadingSpells = true;
+      this.render(false, { parts: ['listContent'] }); // Show loading in center panel
+
+      const spellDocs = await this._fetchSpellDocuments(new Set(spellUuids), 9);
+      const spellLevels = this._organizeSpellsByLevel(spellDocs, null);
+
+      // Enrich only the spells in this list
+      for (const level of spellLevels) {
+        for (const spell of level.spells) {
+          spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
+        }
+      }
+
+      this.selectedSpellList.spells = spellDocs;
+      this.selectedSpellList.spellsByLevel = spellLevels;
+      this.selectedSpellList.isLoadingSpells = false;
+
+      log(1, `GMSpellListManager: Loaded ${spellDocs.length} spells for selected spell list`);
+    } catch (error) {
+      log(1, 'GMSpellListManager: ERROR loading selected list spells:', error);
+      this.selectedSpellList.isLoadingSpells = false;
+    } finally {
+      this.render(false, { parts: ['listContent'] }); // Update center panel
     }
   }
 
@@ -752,13 +912,17 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   async selectSpellList(uuid) {
     this._clearSelections();
-    log(3, `Selecting spell list: ${uuid}`);
+    log(1, `GMSpellListManager: Selecting spell list: ${uuid}`);
+
     const duplicate = await managerHelpers.findDuplicateSpellList(uuid);
     if (duplicate && duplicate.uuid !== uuid) return this.selectSpellList(duplicate.uuid);
+
     const spellList = await fromUuid(uuid);
     if (!spellList) return;
+
     this.isEditing = false;
     const spellUuids = Array.from(spellList.system.spells || []);
+
     this.selectedSpellList = {
       document: spellList,
       uuid: spellList.uuid,
@@ -767,9 +931,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       spells: [],
       isLoadingSpells: true
     };
+
     this.determineSourceFilter(spellList);
     this.render(false);
-    await this.loadSpellDetails(spellUuids);
+
+    // Phase 3: Load only this list's spells
+    await this.loadSelectedListSpells(spellUuids);
   }
 
   /**
@@ -1785,7 +1952,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     const source = game.i18n.localize('SPELLMANAGER.CreateList.Custom');
     const newList = await managerHelpers.createNewSpellList(name, identifier, source);
     if (newList) {
-      await this.loadData();
+      log(1, 'GMSpellListManager: New list created, refreshing spell lists');
+      await this.loadSpellLists(); // Only reload spell lists, not all spells
       await this.selectSpellList(newList.uuid);
     }
   }
@@ -1804,19 +1972,28 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       const mergedList = await managerHelpers.createMergedSpellList(sourceListUuid, copyFromListUuid, mergedListName);
       if (mergedList) {
         ui.notifications.info(game.i18n.format('SPELLMANAGER.MergeLists.SuccessMessage', { name: mergedListName }));
+
         if (hideSourceLists) {
           const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
           const sourceList = this.availableSpellLists.find((l) => l.uuid === sourceListUuid);
           const copyFromList = this.availableSpellLists.find((l) => l.uuid === copyFromListUuid);
           const listsToHide = [];
-          if (sourceList && !sourceList.isActorOwned && !hiddenLists.includes(sourceListUuid)) listsToHide.push(sourceListUuid);
-          if (copyFromList && !copyFromList.isActorOwned && !hiddenLists.includes(copyFromListUuid)) listsToHide.push(copyFromListUuid);
+
+          if (sourceList && !sourceList.isActorOwned && !hiddenLists.includes(sourceListUuid)) {
+            listsToHide.push(sourceListUuid);
+          }
+          if (copyFromList && !copyFromList.isActorOwned && !hiddenLists.includes(copyFromListUuid)) {
+            listsToHide.push(copyFromListUuid);
+          }
+
           if (listsToHide.length > 0) {
             await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, [...hiddenLists, ...listsToHide]);
             ui.notifications.info(game.i18n.format('SPELLMANAGER.MergeLists.SourceListsHidden', { count: listsToHide.length }));
           }
         }
-        await this.loadData();
+
+        log(1, 'GMSpellListManager: Merged list created, refreshing spell lists');
+        await this.loadSpellLists(); // Only reload spell lists, not all spells
         await this.selectSpellList(mergedList.uuid);
       }
     } catch (error) {
@@ -1837,9 +2014,15 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @returns {Promise<void>}
    */
   static async handleSelectSpellList(event, _form) {
+    log(1, 'GMSpellListManager: handleSelectSpellList called');
     const element = event.target.closest('[data-uuid]');
-    if (!element) return;
+    if (!element) {
+      log(1, 'GMSpellListManager: No element with data-uuid found');
+      return;
+    }
+    log(1, `GMSpellListManager: Selecting spell list with UUID: ${element.dataset.uuid}`);
     await this.selectSpellList(element.dataset.uuid);
+    log(1, 'GMSpellListManager: selectSpellList completed');
   }
 
   /**
@@ -1851,6 +2034,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   static async handleEditSpellList(_event, _form) {
     if (!this.selectedSpellList) return;
+    log(1, 'GMSpellListManager: Entering edit mode - loading available spells');
+    await this.loadAvailableSpells();
     this.pendingChanges = { added: new Set(), removed: new Set() };
     const flags = this.selectedSpellList.document.flags?.[MODULE.ID] || {};
     const isCustom = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList;
@@ -1860,7 +2045,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     this.render(false);
     setTimeout(() => {
       this._initializeLazyLoadingAvailable();
-      this._initializeLazyLoadingSelected();
+      if (this.selectedSpellList) this._initializeLazyLoadingSelected();
       this.setupFilterListeners();
       this._setupScrollListeners();
     }, 100);
@@ -2361,18 +2546,41 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
   /** @inheritdoc */
   _onRender(context, options) {
+    log(1, 'GMSpellListManager: _onRender() called');
+    log(1, 'GMSpellListManager: Context at render time:', {
+      hasAvailableSpellLists: !!context.availableSpellLists,
+      availableSpellListsLength: context.availableSpellLists?.length || 0,
+      hasStandardLists: context.hasStandardLists,
+      hasCustomLists: context.hasCustomLists,
+      isEditing: context.isEditing
+    });
+
     super._onRender(context, options);
+
+    log(1, 'GMSpellListManager: Setting up filter listeners...');
     this.setupFilterListeners();
+
+    log(1, 'GMSpellListManager: Setting up multi-select listeners...');
     this.setupMultiSelectListeners();
+
+    log(1, 'GMSpellListManager: Applying collapsed levels...');
     this.applyCollapsedLevels();
+
+    log(1, 'GMSpellListManager: Applying collapsed folders...');
     this.applyCollapsedFolders();
+
     if (this.isEditing) {
+      log(1, 'GMSpellListManager: Initializing lazy loading for editing mode...');
       setTimeout(() => {
         this._initializeLazyLoadingAvailable();
         if (this.selectedSpellList) this._initializeLazyLoadingSelected();
+        this.setupFilterListeners();
         this._setupScrollListeners();
+        log(1, 'GMSpellListManager: Lazy loading initialization completed');
       }, 100);
     }
+
+    log(1, 'GMSpellListManager: _onRender() completed');
   }
 
   /** @inheritdoc */
