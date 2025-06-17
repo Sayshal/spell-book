@@ -1,5 +1,4 @@
 import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
-import * as actorSpellUtils from '../helpers/actor-spells.mjs';
 import * as managerHelpers from '../helpers/compendium-management.mjs';
 import * as formElements from '../helpers/form-elements.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
@@ -10,7 +9,7 @@ const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applicat
 
 /**
  * GM Spell List Manager application for viewing, editing, and creating spell lists
- * with comprehensive multi-select functionality for bulk operations
+ * with comprehensive multi-select functionality for bulk operations and lazy loading
  */
 export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2) {
   // ========================================
@@ -55,6 +54,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   };
 
+  static BATCHING = {
+    SIZE: 50,
+    MARGIN: 100
+  };
+
   /** @override */
   static PARTS = {
     container: { template: TEMPLATES.GM.MAIN },
@@ -72,12 +76,19 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
+   * Get batch size from settings
+   * @returns {number}
+   */
+  get batchSize() {
+    return game.settings.get(MODULE.ID, SETTINGS.LAZY_BATCH_SIZE) || this.constructor.BATCHING.SIZE;
+  }
+
+  /**
    * Initialize the GM Spell List Manager
    * @param {Object} options - Application options
    */
   constructor(options) {
     super(options);
-    this.isLoading = true;
     this.availableSpellLists = [];
     this.selectedSpellList = null;
     this.availableSpells = [];
@@ -106,7 +117,27 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     };
     this.filterHelper = new SpellbookFilterHelper(this);
     this.isUpdatingCheckboxes = false;
+    this.#lazyAvailableResults = null;
+    this.#lazyAvailableRenderIndex = -1;
+    this.#lazyAvailableRenderThrottle = false;
+    this.#lazySelectedResults = null;
+    this.#lazySelectedRenderIndex = -1;
+    this.#lazySelectedRenderThrottle = false;
+    this._currentSelectedLevelHeaders = new Map();
+    this._lastScrollElementAvailable = null;
+    this._lastScrollElementSelected = null;
   }
+
+  /**
+   * Lazy loading state properties
+   */
+  #lazyAvailableResults = null;
+  #lazyAvailableRenderIndex = -1;
+  #lazyAvailableRenderThrottle = false;
+
+  #lazySelectedResults = null;
+  #lazySelectedRenderIndex = -1;
+  #lazySelectedRenderThrottle = false;
 
   // ========================================
   // Context Preparation
@@ -115,7 +146,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /** @inheritdoc */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    context.isLoading = this.isLoading;
     context.isEditing = this.isEditing;
     context.selectedSpellList = this.selectedSpellList;
     context.availableSpells = this.availableSpells;
@@ -133,8 +163,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       context.selectAllAddCheckboxHtml = this._createSelectAllCheckbox('add');
       context.selectAllRemoveCheckboxHtml = this._createSelectAllCheckbox('remove');
     }
-    if (!this.isLoading && this.availableSpellLists?.length) this._organizeSpellListsContext(context);
-    if (this.isLoading) return context;
+    if (this.availableSpellLists?.length) this._organizeSpellListsContext(context);
     const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
     context.customListMap = customMappings;
     if (this.availableSpells.length > 0) this._prepareFilterContext(context);
@@ -205,14 +234,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     context.castingTimeOptions = managerHelpers.prepareCastingTimeOptions(this.availableSpells, this.filterState);
     context.damageTypeOptions = managerHelpers.prepareDamageTypeOptions(this.filterState);
     context.conditionOptions = managerHelpers.prepareConditionOptions(this.filterState);
-    const filteredData = this._filterAvailableSpells();
-    if (this.isEditing && this.selectionMode && filteredData.spells) {
-      filteredData.spells = filteredData.spells.map((spell) => {
-        spell.selectAddCheckboxHtml = this._createSpellSelectCheckbox(spell, 'add', this.selectedSpellsToAdd.has(spell.uuid));
-        return spell;
-      });
-    }
-    context.filteredSpells = filteredData;
     context.filterFormElements = this._prepareFilterFormElements();
   }
 
@@ -235,6 +256,365 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   // ========================================
+  // Lazy Loading Implementation
+  // ========================================
+
+  /**
+   * Reset lazy loading state for both panels
+   * @param {string} panel - 'available', 'selected', or 'both'
+   */
+  _resetLazyState(panel = 'both') {
+    log(1, `Resetting lazy state for ${panel} panel(s)`);
+    if (panel === 'available' || panel === 'both') {
+      this.#lazyAvailableResults = null;
+      this.#lazyAvailableRenderIndex = -1;
+      this.#lazyAvailableRenderThrottle = false;
+    }
+    if (panel === 'selected' || panel === 'both') {
+      this.#lazySelectedResults = null;
+      this.#lazySelectedRenderIndex = -1;
+      this.#lazySelectedRenderThrottle = false;
+      this._currentSelectedLevelHeaders.clear();
+    }
+  }
+
+  /**
+   * Prepare lazy spell data for available spells (right panel)
+   * @returns {Array} Filtered spell array ready for batching
+   */
+  _prepareLazyAvailableSpellData() {
+    log(1, `Preparing lazy data for available spells`);
+    const selectedSpellUUIDs = this.getSelectedSpellUUIDs();
+    const filteredData = this.filterHelper.filterAvailableSpells(this.availableSpells, selectedSpellUUIDs, this.isSpellInSelectedList.bind(this), this.filterState);
+    const spellsWithSelection = filteredData.spells.map((spell) => {
+      const processedSpell = { ...spell };
+      if (this.isEditing && this.selectionMode) processedSpell.selectAddCheckboxHtml = this._createSpellSelectCheckbox(spell, 'add', this.selectedSpellsToAdd.has(spell.uuid));
+      return processedSpell;
+    });
+    log(1, `Prepared ${spellsWithSelection.length} available spells for lazy loading`);
+    return spellsWithSelection;
+  }
+
+  /**
+   * Prepare lazy spell data for selected spells (center panel) - flatten level organization
+   * @returns {Array} Flattened spell array with level metadata ready for batching
+   */
+  _prepareLazySelectedSpellData() {
+    log(1, `Preparing lazy data for selected spells`);
+    if (!this.selectedSpellList?.spellsByLevel) {
+      log(2, `No spell data found for selected list`);
+      return [];
+    }
+    const flattened = [];
+    const sortedLevels = [...this.selectedSpellList.spellsByLevel].sort((a, b) => Number(a.level) - Number(b.level));
+    for (const levelData of sortedLevels) {
+      const levelName = levelData.levelName || CONFIG.DND5E.spellLevels[levelData.level];
+      for (let i = 0; i < levelData.spells.length; i++) {
+        const spell = levelData.spells[i];
+        const processedSpell = { ...spell };
+        processedSpell._levelMetadata = {
+          level: levelData.level,
+          levelName: levelName,
+          isFirstInLevel: i === 0,
+          levelSpellCount: levelData.spells.length,
+          levelIndex: i
+        };
+        if (this.isEditing && this.selectionMode) {
+          const spellUuid = spell.uuid || spell.compendiumUuid;
+          processedSpell.selectRemoveCheckboxHtml = this._createSpellSelectCheckbox(spell, 'remove', this.selectedSpellsToRemove.has(spellUuid));
+        }
+        flattened.push(processedSpell);
+      }
+    }
+    log(1, `Prepared ${flattened.length} selected spells for lazy loading across ${sortedLevels.length} levels`);
+    return flattened;
+  }
+
+  /**
+   * Initialize lazy loading for available spells panel
+   */
+  _initializeLazyLoadingAvailable() {
+    log(1, `Initializing lazy loading for available spells`);
+    this._resetLazyState('available');
+    this.#lazyAvailableResults = this._prepareLazyAvailableSpellData();
+    if (!this.#lazyAvailableResults || this.#lazyAvailableResults.length === 0) {
+      log(2, `No available spells to render`);
+      const availableSpellsList = this.element.querySelector('.available-spells');
+      if (availableSpellsList) {
+        availableSpellsList.innerHTML = '';
+        const emptyState = `<div class="empty-state" role="status">
+          <p>${game.i18n.localize('SPELLMANAGER.Columns.NoMatchingSpells')}</p>
+        </div>`;
+        availableSpellsList.insertAdjacentHTML('beforeend', emptyState);
+      }
+      return;
+    }
+    const availableSpellsList = this.element.querySelector('.available-spells');
+    if (availableSpellsList) availableSpellsList.innerHTML = '';
+    this._renderAvailableSpellsBatch();
+  }
+
+  /**
+   * Initialize lazy loading for selected spells panel
+   */
+  _initializeLazyLoadingSelected() {
+    log(1, `Initializing lazy loading for selected spells`);
+    this._resetLazyState('selected');
+    this.#lazySelectedResults = this._prepareLazySelectedSpellData();
+    if (!this.#lazySelectedResults || this.#lazySelectedResults.length === 0) {
+      log(2, `No selected spells to render`);
+      const spellsContainer = this.element.querySelector('.selected-list-spells .spells-container');
+      if (spellsContainer) {
+        spellsContainer.innerHTML = '';
+        const emptyState = `<div class="empty-state" role="status">
+          <p>${this.isEditing ? game.i18n.localize('SPELLMANAGER.Columns.AddSpellsPrompt') : game.i18n.localize('SPELLMANAGER.Columns.NoSpells')}</p>
+        </div>`;
+        spellsContainer.insertAdjacentHTML('beforeend', emptyState);
+      }
+      return;
+    }
+    const spellsContainer = this.element.querySelector('.selected-list-spells .spells-container');
+    if (spellsContainer) spellsContainer.innerHTML = '';
+    this._renderSelectedSpellsBatch();
+  }
+
+  /**
+   * Render next batch of available spells
+   */
+  _renderAvailableSpellsBatch() {
+    if (this.#lazyAvailableRenderThrottle || !this.#lazyAvailableResults) return;
+    const batchStart = this.#lazyAvailableRenderIndex + 1;
+    const batchEnd = Math.min(batchStart + this.batchSize, this.#lazyAvailableResults.length);
+    if (batchStart >= this.#lazyAvailableResults.length) return;
+    log(1, `Rendering available spells batch ${batchStart} to ${batchEnd - 1}`);
+    this.#lazyAvailableRenderThrottle = true;
+    const availableSpellsList = this.element.querySelector('.available-spells');
+    if (!availableSpellsList) {
+      log(2, `No available spells list found for batch rendering`);
+      this.#lazyAvailableRenderThrottle = false;
+      return;
+    }
+    for (let i = batchStart; i < batchEnd; i++) {
+      const spell = this.#lazyAvailableResults[i];
+      const spellHtml = this._createAvailableSpellItemHtml(spell);
+      availableSpellsList.insertAdjacentHTML('beforeend', spellHtml);
+    }
+    this.#lazyAvailableRenderIndex = batchEnd - 1;
+    this.#lazyAvailableRenderThrottle = false;
+    log(1, `Rendered ${batchEnd - batchStart} available spells, index now at ${this.#lazyAvailableRenderIndex}`);
+  }
+
+  /**
+   * Render next batch of selected spells with dynamic level headers
+   */
+  _renderSelectedSpellsBatch() {
+    if (this.#lazySelectedRenderThrottle || !this.#lazySelectedResults) return;
+    const batchStart = this.#lazySelectedRenderIndex + 1;
+    const batchEnd = Math.min(batchStart + this.batchSize, this.#lazySelectedResults.length);
+    if (batchStart >= this.#lazySelectedResults.length) return;
+    log(1, `Rendering selected spells batch ${batchStart} to ${batchEnd - 1}`);
+    this.#lazySelectedRenderThrottle = true;
+    const spellsContainer = this.element.querySelector('.selected-list-spells .spells-container');
+    if (!spellsContainer) {
+      log(2, `No spells container found for batch rendering`);
+      this.#lazySelectedRenderThrottle = false;
+      return;
+    }
+    for (let i = batchStart; i < batchEnd; i++) {
+      const spell = this.#lazySelectedResults[i];
+      this._renderSingleSelectedSpell(spell, spellsContainer);
+    }
+    this.#lazySelectedRenderIndex = batchEnd - 1;
+    this.#lazySelectedRenderThrottle = false;
+    log(1, `Rendered ${batchEnd - batchStart} selected spells, index now at ${this.#lazySelectedRenderIndex}`);
+  }
+
+  /**
+   * Render a single selected spell with level header if needed
+   * @param {Object} spell - Spell with level metadata
+   * @param {HTMLElement} container - Spells container
+   */
+  _renderSingleSelectedSpell(spell, container) {
+    const levelMetadata = spell._levelMetadata;
+    const levelId = levelMetadata.level;
+    let levelContainer = container.querySelector(`.spell-level[data-level="${levelId}"]`);
+    if (!levelContainer) levelContainer = this._createSelectedLevelHeader(levelMetadata, container);
+    if (!levelContainer) {
+      log(2, `Failed to get or create level container for spell ${spell.name}`);
+      return;
+    }
+    const spellHtml = this._createSelectedSpellItemHtml(spell);
+    const spellList = levelContainer.querySelector('.spell-list');
+    if (spellList) spellList.insertAdjacentHTML('beforeend', spellHtml);
+    else log(2, `No spell list found in level container for level ${levelId}`);
+  }
+
+  /**
+   * Create level header for selected spells dynamically
+   * @param {Object} levelMetadata - Level metadata
+   * @param {HTMLElement} container - Container to append to
+   * @returns {HTMLElement} Created level container
+   */
+  _createSelectedLevelHeader(levelMetadata, container) {
+    const levelHtml = `
+      <div class="spell-level" data-level="${levelMetadata.level}">
+        <h3 class="spell-level-heading" data-action="toggleSpellLevel" role="button" aria-expanded="true"
+            aria-controls="spell-list-${levelMetadata.level}">
+          <i class="fas fa-caret-down collapse-indicator" aria-hidden="true"></i>
+          ${levelMetadata.levelName}
+          <span class="spell-count" aria-label="${game.i18n.localize('SPELLBOOK.UI.SpellCount')}"></span>
+        </h3>
+        <ul id="spell-list-${levelMetadata.level}" class="spell-list" role="list">
+        </ul>
+      </div>
+    `;
+    let insertPosition = null;
+    const existingLevels = container.querySelectorAll('.spell-level');
+    for (const existingLevel of existingLevels) {
+      const existingLevelId = existingLevel.dataset.level;
+      if (parseInt(existingLevelId) > parseInt(levelMetadata.level)) {
+        insertPosition = existingLevel;
+        break;
+      }
+    }
+    if (insertPosition) insertPosition.insertAdjacentHTML('beforebegin', levelHtml);
+    else container.insertAdjacentHTML('beforeend', levelHtml);
+    const levelContainer = container.querySelector(`.spell-level[data-level="${levelMetadata.level}"]`);
+    if (!levelContainer) {
+      log(2, `Failed to create level container for level ${levelMetadata.level}`);
+      return null;
+    }
+    this._currentSelectedLevelHeaders.set(levelMetadata.level, levelContainer);
+    return levelContainer;
+  }
+
+  /**
+   * Create HTML for an available spell item
+   * @param {Object} spell - Processed spell
+   * @returns {string} HTML string
+   */
+  _createAvailableSpellItemHtml(spell) {
+    const enrichedIcon = spell.enrichedIcon || formattingUtils.createSpellIconLink(spell);
+    const name = spell.name || 'Unknown Spell';
+    const formattedDetails = spell.formattedDetails || formattingUtils.formatSpellDetails(spell);
+    const selectionClass = this.selectionMode && this.selectedSpellsToAdd.has(spell.uuid) ? ' selected' : '';
+    const selectionModeClass = this.selectionMode ? ' selectable' : '';
+    const dataAttributes = `data-uuid="${spell.uuid}" data-spell-level="${spell.level}" data-spell-school="${spell.school}" data-selection-type="add"`;
+    let actionHtml = '';
+    if (this.selectionMode) {
+      actionHtml = spell.selectAddCheckboxHtml || '';
+    } else {
+      actionHtml = `<button type="button" class="add-spell" data-action="addSpell" data-uuid="${spell.uuid}"
+        aria-label="${game.i18n.format('SPELLMANAGER.Buttons.AddSpell', { name: spell.name })}">
+        <i class="fas fa-plus" aria-hidden="true"></i>
+      </button>`;
+    }
+    return `
+      <li class="spell-item available${selectionModeClass}${selectionClass}" ${dataAttributes} role="listitem">
+        <div class="spell-name">
+          ${enrichedIcon}
+          <div class="name-stacked">
+            <span class="title">${name}</span>
+            <span class="subtitle">${formattedDetails}</span>
+          </div>
+        </div>
+        <div class="spell-meta">
+          ${actionHtml}
+        </div>
+      </li>
+    `;
+  }
+
+  /**
+   * Create HTML for a selected spell item
+   * @param {Object} spell - Processed spell
+   * @returns {string} HTML string
+   */
+  _createSelectedSpellItemHtml(spell) {
+    const enrichedIcon = spell.enrichedIcon || formattingUtils.createSpellIconLink(spell);
+    const name = spell.name || 'Unknown Spell';
+    const formattedDetails = spell.formattedDetails || formattingUtils.formatSpellDetails(spell);
+    const spellUuid = spell.uuid || spell.compendiumUuid;
+    const selectionClass = this.selectionMode && this.selectedSpellsToRemove.has(spellUuid) ? ' selected' : '';
+    const selectionModeClass = this.selectionMode ? ' selectable' : '';
+    const dataAttributes = `data-uuid="${spellUuid}" data-selection-type="remove"`;
+    let actionHtml = '';
+    if (this.isEditing) {
+      if (this.selectionMode) {
+        actionHtml = spell.selectRemoveCheckboxHtml || '';
+      } else {
+        actionHtml = `<button type="button" class="remove-spell" data-action="removeSpell"
+          data-uuid="${spellUuid}"
+          aria-label="${game.i18n.format('SPELLMANAGER.Buttons.RemoveSpell', { name: spell.name })}">
+          <i class="fas fa-trash" aria-hidden="true"></i>
+        </button>`;
+      }
+    }
+    return `
+      <li class="spell-item${selectionModeClass}${selectionClass}" ${dataAttributes} role="listitem">
+        <div class="spell-name">
+          ${enrichedIcon}
+          <div class="name-stacked">
+            <span class="title">${name}</span>
+            <span class="subtitle">${formattedDetails}</span>
+          </div>
+        </div>
+        ${actionHtml ? `<div class="spell-preparation">${actionHtml}</div>` : ''}
+      </li>
+    `;
+  }
+
+  /**
+   * Set up scroll listeners for both panels
+   */
+  _setupScrollListeners() {
+    if (this._lastScrollElementAvailable) this._lastScrollElementAvailable.removeEventListener('scroll', this._onScrollAvailable);
+    const availableWrapper = this.element.querySelector('.available-spells-wrapper');
+    if (availableWrapper) {
+      this._onScrollAvailable = this._onScrollAvailableSpells.bind(this);
+      availableWrapper.addEventListener('scroll', this._onScrollAvailable, { passive: true });
+      this._lastScrollElementAvailable = availableWrapper;
+      log(1, `Set up scroll listener for available spells`);
+    }
+    if (this._lastScrollElementSelected) this._lastScrollElementSelected.removeEventListener('scroll', this._onScrollSelected);
+    const selectedSpellsContainer = this.element.querySelector('.selected-list-spells');
+    if (selectedSpellsContainer) {
+      this._onScrollSelected = this._onScrollSelectedSpells.bind(this);
+      selectedSpellsContainer.addEventListener('scroll', this._onScrollSelected, { passive: true });
+      this._lastScrollElementSelected = selectedSpellsContainer;
+      log(1, `Set up scroll listener for selected spells`);
+    }
+  }
+
+  /**
+   * Handle scroll events for available spells (right panel)
+   * @param {Event} event - Scroll event
+   */
+  _onScrollAvailableSpells(event) {
+    if (this.#lazyAvailableRenderThrottle || !this.#lazyAvailableResults) return;
+    const container = event.target;
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    if (scrollTop + clientHeight >= scrollHeight - this.constructor.BATCHING.MARGIN) {
+      log(1, `Available spells scroll threshold reached, rendering next batch`);
+      this._renderAvailableSpellsBatch();
+    }
+  }
+
+  /**
+   * Handle scroll events for selected spells (center panel)
+   * @param {Event} event - Scroll event
+   */
+  _onScrollSelectedSpells(event) {
+    if (this.#lazySelectedRenderThrottle || !this.#lazySelectedResults) return;
+    const container = event.target;
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    if (scrollTop + clientHeight >= scrollHeight - this.constructor.BATCHING.MARGIN) {
+      log(1, `Selected spells scroll threshold reached, rendering next batch`);
+      this._renderSelectedSpellsBatch();
+    }
+  }
+
+  // ========================================
   // Data Loading and Management
   // ========================================
 
@@ -253,7 +633,6 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     } catch (error) {
       log(1, 'Error loading spell lists:', error);
     } finally {
-      this.isLoading = false;
       this.render(false);
     }
   }
@@ -280,8 +659,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     try {
       this.selectedSpellList.isLoadingSpells = true;
       this.render(false);
-      const spellDocs = await actorSpellUtils.fetchSpellDocuments(new Set(spellUuids), 9);
-      const spellLevels = actorSpellUtils.organizeSpellsByLevel(spellDocs, null);
+      const spellDocs = await this._fetchSpellDocuments(new Set(spellUuids), 9);
+      const spellLevels = this._organizeSpellsByLevel(spellDocs, null);
       for (const level of spellLevels) {
         for (const spell of level.spells) {
           spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
@@ -297,6 +676,73 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       this.selectedSpellList.isLoadingSpells = false;
       this.render(false);
     }
+  }
+
+  /**
+   * Fetch spell documents from UUIDs (simplified version)
+   * @param {Set<string>} spellUuids - Set of spell UUIDs
+   * @param {number} maxSpellLevel - Maximum spell level to include
+   * @returns {Promise<Array>} - Array of spell documents
+   */
+  async _fetchSpellDocuments(spellUuids, maxSpellLevel) {
+    const spellItems = [];
+    const errors = [];
+    log(3, `Fetching spell documents: ${spellUuids.size} spells, max level ${maxSpellLevel}`);
+    for (const uuid of spellUuids) {
+      try {
+        const spell = await fromUuid(uuid);
+        if (!spell) {
+          errors.push({ uuid, reason: 'Document not found' });
+          continue;
+        }
+        if (spell.type !== 'spell') {
+          errors.push({ uuid, reason: 'Not a valid spell document' });
+          continue;
+        }
+        const sourceUuid = spell.parent && spell.flags?.core?.sourceId ? spell.flags.core.sourceId : uuid;
+        if (spell.system.level <= maxSpellLevel) spellItems.push({ ...spell, compendiumUuid: sourceUuid });
+      } catch (error) {
+        errors.push({ uuid, reason: error.message || 'Unknown error' });
+      }
+    }
+    if (errors.length > 0) log(2, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`, { errors });
+    log(3, `Successfully fetched ${spellItems.length}/${spellUuids.size} spells`);
+    return spellItems;
+  }
+
+  /**
+   * Organize spells by level (simplified version)
+   * @param {Array} spellItems - Array of spell documents
+   * @param {*} actor - Actor (unused here)
+   * @returns {Array} - Array of level objects with spells
+   */
+  _organizeSpellsByLevel(spellItems, actor) {
+    const spellsByLevel = {};
+    for (const spell of spellItems) {
+      if (spell?.system?.level === undefined) continue;
+      const level = spell.system.level;
+      if (!spellsByLevel[level]) spellsByLevel[level] = [];
+      const spellData = {
+        ...spell,
+        formattedDetails: formattingUtils.formatSpellDetails(spell),
+        enrichedIcon: formattingUtils.createSpellIconLink(spell)
+      };
+      spellsByLevel[level].push(spellData);
+    }
+    for (const level in spellsByLevel) {
+      if (spellsByLevel.hasOwnProperty(level)) spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
+    }
+    const levelArray = [];
+    const sortedLevels = Object.keys(spellsByLevel).sort((a, b) => Number(a) - Number(b));
+    for (const level of sortedLevels) {
+      const levelName = CONFIG.DND5E.spellLevels[level];
+      levelArray.push({
+        level: level,
+        levelName: levelName,
+        spells: spellsByLevel[level]
+      });
+    }
+    return levelArray;
   }
 
   /**
@@ -361,14 +807,15 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   // ========================================
 
   /**
-   * Filter available spells using the filter helper
-   * @returns {Object} Filtered spells with count
+   * Store filtered available spells in lazy state instead of returning
    * @private
    */
   _filterAvailableSpells() {
     try {
-      const selectedSpellUUIDs = this.getSelectedSpellUUIDs();
-      return this.filterHelper.filterAvailableSpells(this.availableSpells, selectedSpellUUIDs, this.isSpellInSelectedList.bind(this), this.filterState);
+      log(1, `Filtering available spells and storing in lazy state`);
+      this._resetLazyState('available');
+      this.#lazyAvailableResults = this._prepareLazyAvailableSpellData();
+      return { spells: [], totalFiltered: this.#lazyAvailableResults.length };
     } catch (error) {
       log(1, 'Error filtering available spells:', error);
       return { spells: [], totalFiltered: 0 };
@@ -422,24 +869,18 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Apply filters to the DOM elements in the UI
+   * Apply filters with lazy loading support
    */
   applyFilters() {
     if (this.isUpdatingCheckboxes) return;
-    const filteredData = this._filterAvailableSpells();
-    const visibleUUIDs = new Set(filteredData.spells.map((spell) => spell.uuid));
-    const spellItems = this.element.querySelectorAll('.available-spells .spell-item');
-    let visibleCount = 0;
-    spellItems.forEach((item) => {
-      const uuid = item.dataset.uuid;
-      const isVisible = visibleUUIDs.has(uuid);
-      item.style.display = isVisible ? '' : 'none';
-      if (isVisible) visibleCount++;
-    });
-    const noResults = this.element.querySelector('.no-spells');
-    if (noResults) noResults.style.display = visibleCount > 0 ? 'none' : 'block';
+    log(1, `Applying filters with lazy loading`);
+    this._resetLazyState('available');
+    this._initializeLazyLoadingAvailable();
     const countDisplay = this.element.querySelector('.filter-count');
-    if (countDisplay) countDisplay.textContent = `${visibleCount} spells`;
+    if (countDisplay && this.#lazyAvailableResults) countDisplay.textContent = `${this.#lazyAvailableResults.length} spells`;
+    setTimeout(() => {
+      this._setupScrollListeners();
+    }, 50);
   }
 
   /**
@@ -527,14 +968,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     addCheckboxes.forEach((checkbox) => {
       const uuid = checkbox.dataset.uuid;
       const shouldBeChecked = this.selectedSpellsToAdd.has(uuid);
-      const wasChecked = checkbox.checked;
       checkbox.checked = shouldBeChecked;
     });
     const removeCheckboxes = this.element.querySelectorAll('.spell-select-cb[data-type="remove"]');
     removeCheckboxes.forEach((checkbox) => {
       const uuid = checkbox.dataset.uuid;
       const shouldBeChecked = this.selectedSpellsToRemove.has(uuid);
-      const wasChecked = checkbox.checked;
       checkbox.checked = shouldBeChecked;
     });
     this.isUpdatingCheckboxes = false;
@@ -583,8 +1022,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @private
    */
   _getVisibleSpells() {
-    const filteredData = this._filterAvailableSpells();
-    return filteredData.spells || [];
+    return this.#lazyAvailableResults || [];
   }
 
   // ========================================
@@ -643,8 +1081,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         element.addEventListener('change', (event) => {
           if (this.filterState[property] !== event.target.value) {
             this.filterState[property] = event.target.value;
-            if (property === 'level' || property === 'source') this._refreshFilteredContent();
-            else this.applyFilters();
+            this.applyFilters();
           }
         });
       }
@@ -728,15 +1165,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     checkboxes.forEach((checkbox) => {
       checkbox.checked = false;
     });
-    this._refreshFilteredContent();
-  }
-
-  /**
-   * Refresh filtered content by re-rendering available spells part
-   * @private
-   */
-  _refreshFilteredContent() {
-    this.render(false, { parts: ['availableSpells'] });
+    this.applyFilters();
   }
 
   // ========================================
@@ -1429,7 +1858,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (!isCustom && !isActorSpellbook) await this._duplicateForEditing();
     this.isEditing = true;
     this.render(false);
-    setTimeout(() => this.applyFilters(), 100);
+    setTimeout(() => {
+      this._initializeLazyLoadingAvailable();
+      this._initializeLazyLoadingSelected();
+      this.setupFilterListeners();
+      this._setupScrollListeners();
+    }, 100);
   }
 
   /**
@@ -1443,7 +1877,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (!element) return;
     let spellUuid = element.dataset.uuid;
     if (!this.selectedSpellList || !this.isEditing) return;
-    log(3, `Removing spell: ${spellUuid} in pending changes`);
+    log(1, `Removing spell: ${spellUuid} in pending changes`);
     this.pendingChanges.removed.add(spellUuid);
     this.pendingChanges.added.delete(spellUuid);
     const normalizedForms = managerHelpers.normalizeUuid(spellUuid);
@@ -1452,10 +1886,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       const spellUuids = [spell.uuid, spell.compendiumUuid, ...(spell._id ? [spell._id] : [])];
       return !spellUuids.some((id) => normalizedForms.includes(id));
     });
-    this.selectedSpellList.spellsByLevel = actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
+    this.selectedSpellList.spellsByLevel = this._organizeSpellsByLevel(this.selectedSpellList.spells, null);
     this._ensureSpellIcons();
     this.render(false);
-    this.applyFilters();
+    setTimeout(() => {
+      this._initializeLazyLoadingSelected();
+      this._setupScrollListeners();
+    }, 50);
   }
 
   /**
@@ -1478,10 +1915,13 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (!spellCopy.enrichedIcon) spellCopy.enrichedIcon = formattingUtils.createSpellIconLink(spellCopy);
     this.selectedSpellList.spellUuids.push(spellUuid);
     this.selectedSpellList.spells.push(spellCopy);
-    this.selectedSpellList.spellsByLevel = actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
+    this.selectedSpellList.spellsByLevel = this._organizeSpellsByLevel(this.selectedSpellList.spells, null);
     this._ensureSpellIcons();
     this.render(false);
-    this.applyFilters();
+    setTimeout(() => {
+      this._initializeLazyLoadingSelected();
+      this._setupScrollListeners();
+    }, 50);
   }
 
   /**
@@ -1493,7 +1933,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   static async handleSaveCustomList(event, _form) {
     if (!this.selectedSpellList || !this.isEditing) return;
-    log(3, 'Saving custom spell list with pending changes');
+    log(1, 'Saving custom spell list with pending changes');
     const document = this.selectedSpellList.document;
     const currentSpells = new Set(document.system.spells || []);
     for (const spellUuid of this.pendingChanges.removed) {
@@ -1502,7 +1942,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         if (normalizedForms.includes(existingUuid)) currentSpells.delete(existingUuid);
       }
     }
-    log(3, `Processing ${this.pendingChanges.added.size} spell additions`);
+    log(1, `Processing ${this.pendingChanges.added.size} spell additions`);
     for (const spellUuid of this.pendingChanges.added) currentSpells.add(spellUuid);
     await document.update({ 'system.spells': Array.from(currentSpells) });
     this.pendingChanges = { added: new Set(), removed: new Set() };
@@ -1857,7 +2297,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           }
         }
       }
-      this.selectedSpellList.spellsByLevel = actorSpellUtils.organizeSpellsByLevel(this.selectedSpellList.spells, null);
+      this.selectedSpellList.spellsByLevel = this._organizeSpellsByLevel(this.selectedSpellList.spells, null);
       this._ensureSpellIcons();
       this._clearSelections();
       if (failed === 0) ui.notifications.info(game.i18n.format('SPELLMANAGER.BulkOps.Completed', { count: processed }));
@@ -1922,14 +2362,17 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   /** @inheritdoc */
   _onRender(context, options) {
     super._onRender(context, options);
-    if (this.isLoading) {
-      this.loadData();
-      return;
-    }
     this.setupFilterListeners();
     this.setupMultiSelectListeners();
     this.applyCollapsedLevels();
     this.applyCollapsedFolders();
+    if (this.isEditing) {
+      setTimeout(() => {
+        this._initializeLazyLoadingAvailable();
+        if (this.selectedSpellList) this._initializeLazyLoadingSelected();
+        this._setupScrollListeners();
+      }, 100);
+    }
   }
 
   /** @inheritdoc */
