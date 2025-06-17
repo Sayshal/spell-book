@@ -1,7 +1,8 @@
-<div class="gm-spell-list-manager-container {{#if hasError}}error-state{{/if}}" role="application">
-	{{#if hasError}}
-		{{> "modules/spell-book/templates/components/error-message.hbs" message=errorMessage}}
-	{{else}}
+<div class="gm-spell-list-manager-container {{#if isLoading}}loading-state{{else if hasError}}error-state{{/if}}"
+	role="application">
+	{{#if isLoading}}
 		{{> "modules/spell-book/templates/components/loading-spinner.hbs" size=3 message=(localize "SPELLMANAGER.Application.Loading")}}
+	{{else if hasError}}
+		{{> "modules/spell-book/templates/components/error-message.hbs" message=errorMessage}}
 	{{/if}}
 </div>
