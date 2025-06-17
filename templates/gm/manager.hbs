@@ -1,7 +1,7 @@
-<div class="gm-spell-list-manager-container" role="application">
+<div class="gm-spell-list-manager-container {{#if hasError}}error-state{{/if}}" role="application">
 	{{#if hasError}}
 		{{> "modules/spell-book/templates/components/error-message.hbs" message=errorMessage}}
 	{{else}}
-		<!-- The PARTS system will render spellLists, listContent, availableSpells, footer here -->
+		{{> "modules/spell-book/templates/components/loading-spinner.hbs" size=3 message=(localize "SPELLMANAGER.Application.Loading")}}
 	{{/if}}
 </div>
