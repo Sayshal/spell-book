@@ -1,100 +1,5 @@
 # Spell Book Roadmap
 
-### v0.8.0 - Quality of Life & Bug Fixes (Current Release)
-
-**Priority: Critical Bug Fixes & User Requests**
-
-#### **Fixed: Class Rules Cleanup Bug [Critical]**
-
-Resolved an issue where outdated class rules and spell data were not purged when switching classes or when a class was removed from an actor. Improved detection and cleanup logic to ensure data consistency.
-
-**Fix details:**
-Previously, `detectSpellcastingClasses()` in `spellbook-state.mjs` failed to remove stale entries from `classSpellData` and `spellcastingClasses`. Likewise, `getClassRules()` in `rule-set-manager.mjs` would fall back to defaults but retained invalid rules. The `_stateManager._classesChanged` flag in `player-spell-book.mjs` indicated awareness of the issue but lacked proper cleanup logic.
-
-**Fix summary:**
-
-- Added cleanup logic to `detectSpellcastingClasses()`
-- Validated class data on actor updates
-
-#### **Completed: Spell Loadouts System [High Priority]**
-
-Implemented preset spell configurations for different scenarios with quick-switch functionality and save/load custom loadouts per character. Users can now save their current spell preparation state and quickly apply different loadouts for various situations.
-
-**Implementation details:**
-Built a comprehensive loadout management system using `SpellLoadoutManager` in `spell-loadout-manager.mjs` and `SpellLoadoutDialog` in `spell-loadout-dialog.mjs`. The system integrates with the existing `PlayerSpellBook.formHandler()` in `player-spell-book.mjs` to capture and apply spell preparation states. Added proper flag management using `actor.update()` instead of the problematic `unsetFlag`/`setFlag` pattern to prevent data corruption during save/delete operations.
-
-**Implementation summary:**
-
-- Custom loadout creation with names, descriptions, and spell configuration storage
-- Spell preview tooltips displaying spell icons, names, and levels on hover
-- Right-click context menu on the "Spell Loadouts" button for quick loadout access
-- Loadout management dialog with apply, overwrite, and delete functionality
-- Proper data persistence using actor flags with conflict-free update operations
-- UI integration with existing spell preparation tracking and validation systems
-
-#### **Completed: Multi-Select in Spell Manager [High Priority]**
-
-Implemented comprehensive batch operations for spell list management, enabling efficient multi-spell selection and bulk operations with visual feedback and confirmation dialogs.
-
-**Implementation details:**
-Enhanced the `GMSpellListManager` class in `gm-spell-list-manager.mjs` with a complete multi-select system. Added selection state management through `selectedSpellsToAdd` and `selectedSpellsToRemove` Set objects, along with `selectionMode` boolean to control UI behavior. Implemented checkbox-based selection for both available spells (to add) and current spells (to remove) with proper ARIA labeling and accessibility support.
-
-**Implementation summary:**
-
-- **Selection Modes**: Toggle between normal and selection mode via footer button
-- **Multiple Selection Patterns**: Individual checkbox clicks, Shift+click for range selection, and select-all functionality
-- **Visual Feedback**: Checkboxes with indeterminate states, selected item highlighting, and real-time selection count displays
-- **Bulk Operations**: Confirmation dialogs with detailed counts, batch processing with error handling, and success/failure reporting
-- **Keyboard Support**: Escape to cancel selection, Enter to execute bulk save operations
-- **Template Integration**: Updated Handlebars templates with conditional checkbox rendering and selection UI elements
-- **Error Handling**: Graceful handling of partial failures with detailed user feedback
-
-#### **Completed: Spell List Hiding [Medium Priority]**
-
-Implemented comprehensive spell list visibility management with toggle controls, dedicated hidden lists folder, and optional auto-hide functionality after merge operations to reduce interface clutter and improve organization.
-
-**Implementation details:**
-Added a new world setting `HIDDEN_SPELL_LISTS` for storing hidden list UUIDs and enhanced `findCompendiumSpellLists()` in `compendium-management.mjs` to filter hidden lists for non-GM users. Updated `GMSpellListManager` in `gm-spell-list-manager.mjs` with visibility toggle handlers and reorganized context preparation to separate hidden lists into their own folder. Enhanced form elements helper with optgroup support for cleaner dropdown organization in merge dialogs and spellbook settings.
-
-**Implementation summary:**
-
-- **Visibility Controls**: Eye/eye-slash icons on each spell list (except actor spellbooks) for instant hide/unhide functionality
-- **Hidden Lists Folder**: Dedicated collapsible folder in GM interface for managing archived spell lists
-- **Merge Integration**: Optional checkbox in merge dialog to automatically hide source lists after successful merge
-- **Player Filtering**: Hidden lists automatically excluded from player spell list selections and custom spell list dropdowns
-- **Organized Dropdowns**: Implemented optgroup support with proper semantic grouping in merge dialogs and character settings
-- **GM Override**: GMs retain full visibility of hidden lists while maintaining clean player interfaces
-- **Persistent State**: Hidden status preserved across sessions with proper world-level settings storage
-
-#### **Fixed: Wizard Scroll Learning Sequence Break [Critical Priority]**
-
-Resolved an issue where learning spells from spell scrolls before selecting a wizard's free spells causes the spellbook to display only scroll-learned spells, hiding all other available spells from both the main spell list and learning interface.
-
-**Fix details:**
-The root cause was identified in `getClassSpellList()` in `spell-discovery.mjs`, which incorrectly returned the wizard's personal spellbook instead of the full class spell list when called for wizard classes. This caused the wizard learning tab to show only spells the wizard already knew (typically 2-6 spells) rather than the complete class spell list (hundreds of spells). The problematic logic `if (actor && genericUtils.isWizard(actor)) { return manager.getSpellbookSpells(); }` was confusing "spells the wizard knows" with "spells the wizard can learn."
-
-**Fix summary:**
-
-- **Corrected spell list retrieval**: Removed wizard personal spellbook logic from `getClassSpellList()` function
-- **Restored full spell availability**: Wizard learning tab now displays complete class spell list regardless of learning sequence
-- **Preserved scroll integration**: Scroll spells continue to appear in dedicated "Scrolls" section with functional "Learn from Scroll" buttons
-- **Eliminated sequence dependency**: Learning order (scrolls → free → paid spells) no longer affects spell list display
-- **Enhanced debugging**: Added comprehensive logging to detect and prevent similar spell list corruption issues
-
-#### **Completed: Lazy Loading for PlayerSpellBook [Medium Priority]**
-
-Implemented lazy loading functionality for the PlayerSpellBook to improve performance and reduce initial load times, especially for characters with access to large spell lists.
-
-**Implementation details:**
-Enhanced the `PlayerSpellBook` class in `player-spell-book.mjs` with lazy loading capabilities that defer expensive spell list processing until actually needed. The system intelligently loads spell data on-demand when users switch tabs or apply filters, rather than processing all available spells during initial render. This significantly improves performance for characters with access to extensive spell libraries while maintaining full functionality once data is loaded.
-
-**Implementation summary:**
-
-- **On-demand loading**: Spell lists load only when accessed, reducing initial render time
-- **Progressive enhancement**: Core UI renders immediately while spell data loads in background
-- **Caching strategy**: Loaded spell data cached for subsequent access with proper invalidation
-- **Loading indicators**: Visual feedback during spell list loading operations
-
 ### v0.9.0 - Enhanced User Experience & Multi 5e System Support (Next Release)
 
 **Priority: Usability & Interface Improvements**
@@ -156,7 +61,7 @@ Implement side-by-side spell comparison view for detailed analysis of similar sp
 
 #### **Update Properties for 5.X [Critical]**
 
-Update various `CONFIG.DND5E` references to new 5e standard for full compatibility with dnd5e v4.0+.
+Update various `CONFIG.DND5E` references to new 5e standard for full compatibility with dnd5e v5.0+.
 
 **Code justification:** Many instances of `label` → `name`, and `icon` → `img`, etc. need updating throughout the codebase.
 

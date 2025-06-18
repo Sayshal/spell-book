@@ -1,7 +1,9 @@
+import { PlayerSpellBook } from '../../apps/player-spell-book.mjs';
 import { FLAGS, MODULE } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
 import { RuleSetManager } from '../../managers/rule-set-manager.mjs';
 import * as colorUtils from '../color-utils.mjs';
+import { AdvancedSearchManager } from './advanced-search-manager.mjs';
 
 /**
  * Helper class for UI-related functionality in the spellbook application
@@ -15,6 +17,7 @@ export class SpellbookUI {
     this.app = app;
     this.actor = app.actor;
     this._colorApplicationCount = 0;
+    this.advancedSearchManager = new AdvancedSearchManager(app);
   }
 
   /**
@@ -32,9 +35,9 @@ export class SpellbookUI {
     this.setSidebarState();
     this.positionFooter();
     this.setupFilterListeners();
-    this.setupPreparationListeners();
     this.applyCollapsedLevels();
     this.setupCantripUI();
+    this.setupAdvancedSearch();
   }
 
   /**
@@ -65,41 +68,27 @@ export class SpellbookUI {
     if (isSidebarCollapsed && collapsedFooter) {
       collapsedFooter.appendChild(footer);
       collapsedFooter.classList.remove('hidden');
-    } else if (sidebarFooterContainer) {
-      sidebarFooterContainer.appendChild(footer);
+      if (sidebarFooterContainer) sidebarFooterContainer.classList.add('hidden');
+    } else {
+      if (sidebarFooterContainer) {
+        sidebarFooterContainer.appendChild(footer);
+        sidebarFooterContainer.classList.remove('hidden');
+      }
       if (collapsedFooter) collapsedFooter.classList.add('hidden');
     }
   }
 
   /**
-   * Set up event listeners for filter controls
+   * Set up filter change listeners
    */
   setupFilterListeners() {
-    const filtersContainer = this.element?.querySelector('.spell-filters');
-    if (!filtersContainer) return;
-    filtersContainer.addEventListener('change', (event) => {
-      const target = event.target;
-      if (target.matches('dnd5e-checkbox') || target.matches('select')) {
-        this.app._applyFilters();
+    const filterInputs = this.element.querySelectorAll('.spell-filters input, .spell-filters select');
+    filterInputs.forEach((input) => {
+      const eventType = input.type === 'checkbox' ? 'change' : 'input';
+      input.addEventListener(eventType, () => {
         this.app.filterHelper.invalidateFilterCache();
-      }
-    });
-
-    filtersContainer.addEventListener('input', (event) => {
-      const target = event.target;
-      if (target.matches('input[type="text"]')) {
-        clearTimeout(this.app._searchTimer);
-        this.app._searchTimer = setTimeout(() => {
-          this.app.filterHelper.invalidateFilterCache();
-          this.app._applyFilters();
-        }, 200);
-      } else if (target.matches('input[type="number"]')) {
-        clearTimeout(this.app._rangeTimer);
-        this.app._rangeTimer = setTimeout(() => {
-          this.app.filterHelper.invalidateFilterCache();
-          this.app._applyFilters();
-        }, 200);
-      }
+        PlayerSpellBook.filterSpells.call(this.app, null, null);
+      });
     });
   }
 
@@ -331,6 +320,14 @@ export class SpellbookUI {
       this.setupSpellLocks(true);
       this._cantripUIInitialized = true;
     }
+  }
+
+  /**
+   * Setup advanced search functionality
+   */
+  setupAdvancedSearch() {
+    this.advancedSearchManager.initialize();
+    log(3, 'Advanced search initialized successfully');
   }
 
   /**

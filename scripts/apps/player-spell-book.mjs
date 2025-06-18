@@ -462,6 +462,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       this._classesChanged = false;
     }
     this._setupLoadoutContextMenu();
+    this.ui.setupAdvancedSearch();
     setTimeout(() => {
       this._ensureSpellDataAndInitializeLazyLoading();
     }, 10);
@@ -573,6 +574,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this._isLongRest) this.actor.unsetFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);
     if (this._flagChangeHook) Hooks.off('updateActor', this._flagChangeHook);
     document.removeEventListener('click', this._hideLoadoutContextMenu.bind(this));
+    if (this.ui?.advancedSearchManager) this.ui.advancedSearchManager.cleanup();
     super._onClose();
   }
 
@@ -805,7 +807,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
               name: `filter-${filter.id}`,
               value: filterState[filter.id] || '',
               placeholder: game.i18n.localize(filter.label),
-              ariaLabel: game.i18n.localize(filter.label)
+              ariaLabel: game.i18n.localize(filter.label),
+              cssClass: 'advanced-search-input'
             });
             break;
           case 'dropdown':
@@ -984,6 +987,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Initialize lazy loading for current tab
    */
   _initializeLazyLoading() {
+    const filterState = this.filterHelper.getFilterState();
+    const hasActiveSearch = filterState.name && filterState.name.trim();
+    if (hasActiveSearch) return;
     const activeTab = this.tabGroups['spellbook-tabs'];
     const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
     const classIdentifier = activeTabContent?.dataset.classIdentifier;
@@ -998,7 +1004,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const spellsContainer = activeTabContent.querySelector('.spells-container');
       if (spellsContainer) {
         const emptyState = `<div class="empty-state" role="status">
-          <p>${game.i18n.localize('SPELLBOOK.Errors.NoSpellsFound')}</p>
+          <p>${game.i18n.format('SPELLBOOK.Errors.NoSpellsFound', { actor: this.actor.name })}</p>
         </div>`;
         const classHeader = spellsContainer.querySelector('.class-header');
         const spellbookRules = spellsContainer.querySelector('.spellbook-rules');

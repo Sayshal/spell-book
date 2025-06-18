@@ -220,6 +220,7 @@ export const FLAGS = {
   PREPARED_SPELLS: 'preparedSpells',
   PREVIOUS_CANTRIP_MAX: 'previousCantripMax',
   PREVIOUS_LEVEL: 'previousLevel',
+  RECENT_SEARCHES: 'recentSearches',
   RULE_SET_OVERRIDE: 'ruleSetOverride',
   SIDEBAR_COLLAPSED: 'sidebarCollapsed',
   SPELL_LOADOUTS: 'spellLoadouts',

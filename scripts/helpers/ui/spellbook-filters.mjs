@@ -129,7 +129,7 @@ export class SpellbookFilterHelper {
   _filterByBasicProperties(spells, filterState) {
     const { name, level, school, castingTime } = filterState;
     let filtered = spells;
-    if (name) filtered = filtered.filter((spell) => spell.name.toLowerCase().includes(name.toLowerCase()));
+    if (name) filtered = this._filterByEnhancedName(filtered, name);
     if (level) {
       const levelValue = parseInt(level);
       filtered = filtered.filter((spell) => spell.level === levelValue);
@@ -143,6 +143,55 @@ export class SpellbookFilterHelper {
         return spellCastingType === filterType && spellCastingValue === filterValue;
       });
     }
+    return filtered;
+  }
+
+  /**
+   * Enhanced name filtering with fuzzy search and advanced syntax
+   * @param {Array} spells - Spells to filter
+   * @param {string} searchQuery - Search query
+   * @returns {Array} Filtered spells
+   * @private
+   */
+  _filterByEnhancedName(spells, searchQuery) {
+    if (!searchQuery || !searchQuery.trim()) return spells;
+    const query = searchQuery.trim();
+    log(3, 'Enhanced name filter called with:', {
+      query: query,
+      spellsCount: spells.length,
+      sampleSpellNames: spells.slice(0, 5).map((s) => s.name)
+    });
+    const exactPhraseMatch = query.match(/^["'](.+?)["']$/);
+    if (exactPhraseMatch) {
+      const phrase = exactPhraseMatch[1].toLowerCase();
+      log(3, 'Exact phrase search for:', phrase);
+      const filtered = spells.filter((spell) => {
+        const spellName = spell.name ? spell.name.toLowerCase() : '';
+        const matches = spellName.includes(phrase);
+        if (matches) log(3, 'Exact phrase match found:', spell.name);
+        return matches;
+      });
+      log(3, 'Exact phrase search results:', filtered.length);
+      return filtered;
+    }
+    const queryWords = query
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((word) => word.length > 0);
+    const filtered = spells.filter((spell) => {
+      const spellName = spell.name ? spell.name.toLowerCase() : '';
+      if (queryWords.length === 1) {
+        const matches = spellName.includes(queryWords[0]);
+        if (matches) log(3, 'Single word match found:', spell.name);
+        return matches;
+      }
+      const allWordsMatch = queryWords.every((word) => spellName.includes(word));
+      const phraseMatch = spellName.includes(query.toLowerCase());
+      const matches = allWordsMatch || phraseMatch;
+      if (matches) log(3, 'Multi-word match found:', spell.name, 'allWords:', allWordsMatch, 'phrase:', phraseMatch);
+      return matches;
+    });
+    log(3, 'Enhanced name filter results:', filtered.length);
     return filtered;
   }
 
@@ -238,13 +287,24 @@ export class SpellbookFilterHelper {
       let visibleCount = 0;
       const levelVisibilityMap = new Map();
       for (const item of spellItems) {
-        const name = item.querySelector('.spell-name')?.textContent.toLowerCase() || '';
+        const nameElement = item.querySelector('.spell-name');
+        const fullText = nameElement?.textContent || '';
+        let extractedName = '';
+        const componentMatch = fullText.match(/([A-Za-z\s'.-]+?)(?:\s*\n\s*[VSM]|$)/);
+        if (componentMatch) extractedName = componentMatch[1].trim();
+        else {
+          const cleaned = fullText.replace(/\s+/g, ' ').trim();
+          const parts = cleaned.split('•');
+          extractedName = parts[0].trim();
+        }
+        const name = extractedName.toLowerCase();
         const isPrepared = item.classList.contains('prepared-spell');
         const level = item.dataset.spellLevel || '';
         const school = item.dataset.spellSchool || '';
         const castingTimeType = item.dataset.castingTimeType || '';
         const castingTimeValue = item.dataset.castingTimeValue || '';
         const rangeUnits = item.dataset.rangeUnits || '';
+        const rangeValue = item.dataset.rangeValue || '0';
         const damageTypes = (item.dataset.damageTypes || '').split(',');
         const isRitual = item.dataset.ritual === 'true';
         const isConcentration = item.dataset.concentration === 'true';
@@ -262,7 +322,7 @@ export class SpellbookFilterHelper {
           castingTimeType,
           castingTimeValue,
           rangeUnits,
-          rangeValue: item.dataset.rangeValue || '0',
+          rangeValue,
           damageTypes,
           isRitual,
           isConcentration,
@@ -306,13 +366,13 @@ export class SpellbookFilterHelper {
    * @private
    */
   _checkSpellVisibility(filters, spell) {
-    if (filters.name && !spell.name.includes(filters.name.toLowerCase())) return false;
+    if (filters.name && !this._checkEnhancedNameMatch(filters.name, spell.name)) return false;
     if (filters.level && spell.level !== filters.level) return false;
     if (filters.school && spell.school !== filters.school) return false;
     if (filters.castingTime) {
       const [filterType, filterValue] = filters.castingTime.split(':');
       const itemType = spell.castingTimeType;
-      const itemValue = spell.castingTimeValue === '' || spell.castingTimeValue === null ? '1' : spell.castingTimeValue;
+      const itemValue = spell.castingTimeValue || '1';
       if (itemType !== filterType || itemValue !== filterValue) return false;
     }
     if ((filters.minRange || filters.maxRange) && spell.rangeUnits) {
@@ -325,21 +385,47 @@ export class SpellbookFilterHelper {
     if (filters.damageType && !spell.damageTypes.includes(filters.damageType)) return false;
     if (filters.condition && !spell.conditions.includes(filters.condition)) return false;
     if (filters.requiresSave) {
-      if (filters.requiresSave === 'true' && !spell.requiresSave) return false;
-      if (filters.requiresSave === 'false' && spell.requiresSave) return false;
+      const expected = filters.requiresSave === 'true';
+      if (spell.requiresSave !== expected) return false;
     }
-    if (filters.prepared && !spell.isPrepared) return false;
-    if (filters.ritual && !spell.isRitual) return false;
     if (filters.concentration) {
-      if (filters.concentration === 'true' && !spell.isConcentration) return false;
-      if (filters.concentration === 'false' && spell.isConcentration) return false;
+      const expected = filters.concentration === 'true';
+      if (spell.isConcentration !== expected) return false;
     }
     if (filters.materialComponents) {
-      if (filters.materialComponents === 'consumed' && !spell.hasMaterialComponents) return false;
-      if (filters.materialComponents === 'notConsumed' && spell.hasMaterialComponents) return false;
+      const consumed = filters.materialComponents === 'consumed';
+      if (spell.hasMaterialComponents === consumed) return false;
     }
-
+    if (filters.ritual && !spell.isRitual) return false;
+    if (filters.prepared && !spell.isPrepared) return false;
     return true;
+  }
+
+  /**
+   * Check if spell name matches the search query with enhanced syntax support
+   * @param {string} searchQuery - The search query
+   * @param {string} spellName - The spell name to check
+   * @returns {boolean} Whether the spell name matches
+   * @private
+   */
+  _checkEnhancedNameMatch(searchQuery, spellName) {
+    if (!searchQuery || !searchQuery.trim()) return true;
+    if (!spellName) return false;
+    const query = searchQuery.trim();
+    const spellNameLower = spellName.toLowerCase().trim();
+    const exactPhraseMatch = query.match(/^["'](.+?)["']$/);
+    if (exactPhraseMatch) {
+      const phrase = exactPhraseMatch[1].toLowerCase().trim();
+      return spellNameLower === phrase;
+    }
+    const queryWords = query
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((word) => word.length > 0);
+    if (queryWords.length === 1) return spellNameLower.includes(queryWords[0]);
+    const allWordsMatch = queryWords.every((word) => spellNameLower.includes(word));
+    const phraseMatch = spellNameLower.includes(query.toLowerCase());
+    return allWordsMatch || phraseMatch;
   }
 
   /**
