@@ -19,7 +19,8 @@ export const MODULE = {
       enabled: true,
       order: 10,
       label: 'SPELLBOOK.Filters.SearchPlaceholder',
-      sortable: false
+      sortable: false,
+      searchAliases: ['NAME']
     },
     {
       id: 'level',
@@ -27,7 +28,8 @@ export const MODULE = {
       enabled: true,
       order: 20,
       label: 'SPELLBOOK.Filters.Level',
-      sortable: true
+      sortable: true,
+      searchAliases: ['LEVEL', 'LVL']
     },
     {
       id: 'school',
@@ -35,7 +37,8 @@ export const MODULE = {
       enabled: true,
       order: 30,
       label: 'SPELLBOOK.Filters.School',
-      sortable: true
+      sortable: true,
+      searchAliases: ['SCHOOL']
     },
     {
       id: 'castingTime',
@@ -43,7 +46,8 @@ export const MODULE = {
       enabled: true,
       order: 40,
       label: 'SPELLBOOK.Filters.CastingTime',
-      sortable: true
+      sortable: true,
+      searchAliases: ['CASTTIME', 'CASTING']
     },
     {
       id: 'range',
@@ -51,7 +55,8 @@ export const MODULE = {
       enabled: true,
       order: 50,
       label: 'SPELLBOOK.Filters.Range',
-      sortable: true
+      sortable: true,
+      searchAliases: ['RANGE']
     },
     {
       id: 'damageType',
@@ -59,7 +64,8 @@ export const MODULE = {
       enabled: true,
       order: 60,
       label: 'SPELLBOOK.Filters.DamageType',
-      sortable: true
+      sortable: true,
+      searchAliases: ['DAMAGE', 'DAMAGETYPE']
     },
     {
       id: 'condition',
@@ -67,7 +73,8 @@ export const MODULE = {
       enabled: true,
       order: 70,
       label: 'SPELLBOOK.Filters.Condition',
-      sortable: true
+      sortable: true,
+      searchAliases: ['CONDITION']
     },
     {
       id: 'requiresSave',
@@ -75,7 +82,8 @@ export const MODULE = {
       enabled: true,
       order: 80,
       label: 'SPELLBOOK.Filters.RequiresSave',
-      sortable: true
+      sortable: true,
+      searchAliases: ['SAVE', 'REQUIRESSAVE']
     },
     {
       id: 'concentration',
@@ -83,7 +91,8 @@ export const MODULE = {
       enabled: true,
       order: 90,
       label: 'SPELLBOOK.Filters.RequiresConcentration',
-      sortable: true
+      sortable: true,
+      searchAliases: ['CON', 'CONCENTRATION']
     },
     {
       id: 'materialComponents',
@@ -91,7 +100,8 @@ export const MODULE = {
       enabled: true,
       order: 100,
       label: 'SPELLBOOK.Filters.MaterialComponents.Title',
-      sortable: true
+      sortable: true,
+      searchAliases: ['MATERIALS', 'COMPONENTS']
     },
     {
       id: 'prepared',
@@ -99,7 +109,8 @@ export const MODULE = {
       enabled: true,
       order: 2000,
       label: 'SPELLBOOK.Filters.PreparedOnly',
-      sortable: false
+      sortable: false,
+      searchAliases: ['PREPARED']
     },
     {
       id: 'ritual',
@@ -107,7 +118,8 @@ export const MODULE = {
       enabled: true,
       order: 3000,
       label: 'SPELLBOOK.Filters.RitualOnly',
-      sortable: false
+      sortable: false,
+      searchAliases: ['RITUAL']
     }
   ],
 

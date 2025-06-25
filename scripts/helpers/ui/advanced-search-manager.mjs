@@ -1,6 +1,9 @@
 import { PlayerSpellBook } from '../../apps/player-spell-book.mjs';
 import { FLAGS, MODULE } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
+import { FieldDefinitions } from './field-definitions.mjs';
+import { QueryExecutor } from './query-executor.mjs';
+import { QueryParser } from './query-parser.mjs';
 
 /**
  * Advanced search manager for handling Google-style search with recent searches and fuzzy matching
@@ -16,6 +19,13 @@ export class AdvancedSearchManager {
     this.searchTimeout = null;
     this.isDropdownVisible = false;
     this.selectedSuggestionIndex = -1;
+
+    // Initialize advanced query components
+    this.fieldDefinitions = new FieldDefinitions();
+    this.queryParser = new QueryParser(this.fieldDefinitions);
+    this.queryExecutor = new QueryExecutor();
+    this.isAdvancedQuery = false;
+    this.parsedQuery = null;
   }
 
   /**
@@ -39,37 +49,97 @@ export class AdvancedSearchManager {
    * Setup the enhanced search interface
    */
   setupSearchInterface() {
+    log(3, 'Starting setupSearchInterface...');
+
     const searchInput = this.element.querySelector('input[name="filter-name"]');
-    if (!searchInput) return;
-    if (searchInput.classList.contains('advanced-search-input')) return;
-    log(3, 'Found search input:', searchInput);
+    log(3, 'Search input found:', !!searchInput, searchInput);
+    if (!searchInput) {
+      log(1, 'No search input found, aborting setupSearchInterface');
+      return;
+    }
+
+    // Don't skip if class exists - we need to ensure dropdown exists too
+    const hasAdvancedClass = searchInput.classList.contains('advanced-search-input');
+    log(3, 'Search input has advanced class:', hasAdvancedClass);
+
     const existingDropdown = document.querySelector('.search-dropdown');
-    if (existingDropdown) existingDropdown.remove();
+    log(3, 'Existing dropdown found:', !!existingDropdown, existingDropdown);
+
+    // If we have the class but no dropdown, we need to recreate the dropdown
+    if (hasAdvancedClass && existingDropdown) {
+      log(3, 'Setup already complete and dropdown exists, skipping');
+      this.searchInputElement = searchInput;
+      this.clearButtonElement = searchInput.parentNode.querySelector('.search-input-clear');
+      return;
+    }
+
+    if (existingDropdown) {
+      log(3, 'Removing existing dropdown...');
+      existingDropdown.remove();
+      log(3, 'Existing dropdown removed');
+    }
+
     const filterItem = searchInput.closest('.filter-item');
-    if (!filterItem) return;
-    const existingClearButton = filterItem.querySelector('.search-input-clear');
-    if (existingClearButton) existingClearButton.remove();
-    const clearButton = document.createElement('button');
-    clearButton.className = 'search-input-clear';
-    clearButton.type = 'button';
-    clearButton.innerHTML = '<i class="fas fa-times" aria-hidden="true"></i>';
-    clearButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Search.ClearInput'));
-    clearButton.setAttribute('title', game.i18n.localize('SPELLBOOK.Search.ClearInput'));
-    clearButton.style.display = 'none';
-    searchInput.parentNode.insertBefore(clearButton, searchInput.nextSibling);
+    log(3, 'Filter item found:', !!filterItem, filterItem);
+    if (!filterItem) {
+      log(1, 'No filter item found, aborting setupSearchInterface');
+      return;
+    }
+
+    // Only create clear button if it doesn't exist
+    let clearButton = filterItem.querySelector('.search-input-clear');
+    if (!clearButton) {
+      log(3, 'Creating clear button...');
+      clearButton = document.createElement('button');
+      clearButton.className = 'search-input-clear';
+      clearButton.type = 'button';
+      clearButton.innerHTML = '<i class="fas fa-times" aria-hidden="true"></i>';
+      clearButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Search.ClearInput'));
+      clearButton.setAttribute('title', game.i18n.localize('SPELLBOOK.Search.ClearInput'));
+      clearButton.style.display = 'none';
+      log(3, 'Clear button created:', clearButton);
+
+      log(3, 'Inserting clear button after search input...');
+      searchInput.parentNode.insertBefore(clearButton, searchInput.nextSibling);
+      log(3, 'Clear button inserted');
+    } else {
+      log(3, 'Clear button already exists:', clearButton);
+    }
+
+    log(3, 'Creating dropdown element...');
     const dropdownElement = document.createElement('div');
     dropdownElement.className = 'search-dropdown';
     dropdownElement.setAttribute('role', 'region');
     dropdownElement.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Search.Dropdown'));
+    log(3, 'Dropdown element created:', dropdownElement);
+
+    log(3, 'Appending dropdown to document.body...');
     document.body.appendChild(dropdownElement);
-    searchInput.classList.add('advanced-search-input');
-    searchInput.setAttribute('autocomplete', 'off');
-    searchInput.setAttribute('aria-expanded', 'false');
-    searchInput.setAttribute('aria-haspopup', 'listbox');
-    filterItem.classList.add('has-advanced-search');
+    log(3, 'Dropdown appended to body');
+
+    // Verify dropdown was actually added
+    const verifyDropdown = document.querySelector('.search-dropdown');
+    log(3, 'Verification - dropdown in DOM:', !!verifyDropdown, verifyDropdown);
+
+    // Only add classes if not already present
+    if (!hasAdvancedClass) {
+      log(3, 'Adding classes and attributes to search input...');
+      searchInput.classList.add('advanced-search-input');
+      searchInput.setAttribute('autocomplete', 'off');
+      searchInput.setAttribute('aria-expanded', 'false');
+      searchInput.setAttribute('aria-haspopup', 'listbox');
+      filterItem.classList.add('has-advanced-search');
+      log(3, 'Classes and attributes added');
+    } else {
+      log(3, 'Search input already has advanced setup');
+    }
+
     this.searchInputElement = searchInput;
     this.clearButtonElement = clearButton;
-    log(3, 'Advanced search interface setup complete. Search input classes:', searchInput.className);
+    log(3, 'References stored');
+
+    log(3, 'Advanced search interface setup complete');
+    log(3, 'Final verification - dropdown in DOM:', !!document.querySelector('.search-dropdown'));
   }
 
   /**
@@ -140,58 +210,29 @@ export class AdvancedSearchManager {
         (event) => {
           event.preventDefault();
           event.stopPropagation();
-          newSearchInput.value = '';
-          log(3, 'Input cleared - new value:', newSearchInput.value);
-          this.app.filterHelper.invalidateFilterCache();
-          PlayerSpellBook.filterSpells.call(this.app, null, null);
-          newSearchInput.focus();
-          this.updateClearButtonVisibility();
-          this.showDropdown();
+          log(3, 'Clear button clicked');
+          this.clearSearch();
         },
         true
       );
-    } else {
-      log(2, 'Clear button not found for event listener setup');
     }
-    dropdown.addEventListener(
-      'mousedown',
-      (event) => {
-        const clearButton = event.target.closest('.clear-recent-search');
-        if (clearButton) {
-          event.preventDefault();
-          event.stopPropagation();
-          event.stopImmediatePropagation();
-          this.isDeletingRecentSearch = true;
-          let query = clearButton.dataset.query;
-          query = query.replace(/&quot;/g, '"').replace(/&#39;/g, "'");
-          log(3, 'Deleting recent search:', query);
-          this.removeRecentSearch(query)
-            .then(() => {
-              log(3, 'Recent search deleted, updating dropdown');
-              this.updateDropdownContent(this.getCurrentQuery());
-              this.showDropdown();
-              setTimeout(() => {
-                const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
-                if (searchInput) searchInput.focus();
-                this.isDeletingRecentSearch = false;
-              }, 10);
-            })
-            .catch((error) => {
-              log(1, 'Error deleting recent search:', error);
-              this.isDeletingRecentSearch = false;
-            });
-          return false;
-        } else {
-          event.preventDefault();
-        }
-      },
-      true
-    );
     dropdown.addEventListener(
       'click',
       (event) => {
         const clearButton = event.target.closest('.clear-recent-search');
-        if (clearButton) return;
+        if (clearButton) {
+          // FIX: Handle the clear button click instead of just returning
+          event.preventDefault();
+          event.stopPropagation();
+          const query = clearButton.dataset.search;
+          log(3, 'Removing recent search:', query);
+          this.removeFromRecentSearches(query);
+          // Update dropdown content to reflect the removal
+          const currentQuery = this.searchInputElement?.value || '';
+          this.updateDropdownContent(currentQuery);
+          return;
+        }
+
         const suggestion = event.target.closest('.search-suggestion');
         if (suggestion) {
           event.stopPropagation();
@@ -246,6 +287,7 @@ export class AdvancedSearchManager {
   handleSearchKeydown(event) {
     const dropdown = document.querySelector('.search-dropdown');
     const suggestions = dropdown ? dropdown.querySelectorAll('.search-suggestion') : [];
+
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
@@ -260,20 +302,18 @@ export class AdvancedSearchManager {
       case 'Enter':
         event.preventDefault();
         event.stopPropagation();
-        if (this.selectedSuggestionIndex >= 0 && suggestions[this.selectedSuggestionIndex]) {
+        if (this.selectedSuggestionIndex >= 0 && this.selectedSuggestionIndex < suggestions.length) {
           this.selectSuggestion(suggestions[this.selectedSuggestionIndex]);
         } else {
-          const currentQuery = this.getCurrentQuery();
-          if (currentQuery && currentQuery.trim()) {
-            this.addToRecentSearches(currentQuery.trim());
-            this.performSearch(currentQuery.trim());
-            this.updateClearButtonVisibility();
+          const query = event.target.value;
+          if (query) {
+            this.addToRecentSearches(query);
+            this.hideDropdown();
+            this.performSearch(query);
           }
-          this.hideDropdown();
         }
         break;
       case 'Escape':
-        event.preventDefault();
         this.hideDropdown();
         break;
     }
@@ -285,13 +325,9 @@ export class AdvancedSearchManager {
    */
   handleSearchBlur(event) {
     if (this.isDeletingRecentSearch) return;
-    const currentQuery = this.getCurrentQuery();
-    if (currentQuery && currentQuery.trim()) this.addToRecentSearches(currentQuery.trim());
+
     setTimeout(() => {
-      if (!this.isDeletingRecentSearch) {
-        const dropdown = document.querySelector('.search-dropdown');
-        if (!dropdown || !dropdown.matches(':hover')) this.hideDropdown();
-      }
+      this.hideDropdown();
     }, 150);
   }
 
@@ -302,18 +338,21 @@ export class AdvancedSearchManager {
     const dropdown = document.querySelector('.search-dropdown');
     const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
     if (!dropdown || !searchInput) return;
-    const inputRect = searchInput.getBoundingClientRect();
+
+    const rect = searchInput.getBoundingClientRect();
     dropdown.style.position = 'fixed';
-    dropdown.style.top = `${inputRect.bottom + 2}px`;
-    dropdown.style.left = `${inputRect.left}px`;
-    dropdown.style.width = `${inputRect.width}px`;
-    dropdown.style.zIndex = '10000';
+    dropdown.style.top = `${rect.bottom + 2}px`;
+    dropdown.style.left = `${rect.left}px`;
+    dropdown.style.width = `${rect.width}px`;
+    dropdown.style.display = 'block';
+    dropdown.style.zIndex = '1000';
     dropdown.classList.add('visible');
+
+    searchInput.setAttribute('aria-expanded', 'true');
     this.isDropdownVisible = true;
     this.selectedSuggestionIndex = -1;
-    this.updateDropdownContent(this.getCurrentQuery());
-    if (searchInput) searchInput.setAttribute('aria-expanded', 'true');
-    log(3, 'Dropdown shown and positioned');
+
+    log(3, 'Search dropdown shown');
   }
 
   /**
@@ -321,262 +360,322 @@ export class AdvancedSearchManager {
    */
   hideDropdown() {
     const dropdown = document.querySelector('.search-dropdown');
+    const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
     if (!dropdown) return;
+
+    dropdown.style.display = 'none';
     dropdown.classList.remove('visible');
+    if (searchInput) searchInput.setAttribute('aria-expanded', 'false');
     this.isDropdownVisible = false;
     this.selectedSuggestionIndex = -1;
-    const searchInput = document.querySelector('input[name="filter-name"]');
-    if (searchInput) searchInput.setAttribute('aria-expanded', 'false');
+
+    log(3, 'Search dropdown hidden');
   }
 
   /**
    * Update dropdown content based on current query
    * @param {string} query - Current search query
    */
-  updateDropdownContent(query) {
+  async updateDropdownContent(query) {
     const dropdown = document.querySelector('.search-dropdown');
     if (!dropdown) return;
-    const suggestions = this.generateSuggestions(query);
-    dropdown.innerHTML = this.createSuggestionsHtml(suggestions, query);
-    log(3, 'Dropdown content updated:', {
-      query: query,
-      suggestionsCount: suggestions.length,
-      recentSearches: this.getRecentSearches().length
-    });
+
+    let content = '';
+
+    // Check if this is an advanced query
+    this.isAdvancedQuery = query.startsWith('^');
+
+    if (this.isAdvancedQuery) {
+      content += this._generateAdvancedQueryContent(query);
+    } else {
+      content += this._generateStandardQueryContent(query);
+    }
+
+    dropdown.innerHTML = content;
+    log(3, 'Dropdown content updated for query:', query);
   }
 
   /**
-   * Generate search suggestions based on query
-   * @param {string} query - Current search query
-   * @returns {Array} Array of suggestion objects
+   * Generate content for advanced queries
+   * @param {string} query - The query string
+   * @returns {string} HTML content
+   * @private
    */
-  generateSuggestions(query) {
-    const suggestions = [];
-    const recentSearches = this.getRecentSearches();
-    if (!query || query.length < 3) {
-      recentSearches.forEach((search) => {
-        suggestions.push({
-          type: 'recent',
-          query: search.query,
-          label: search.query,
-          timestamp: search.timestamp
+  _generateAdvancedQueryContent(query) {
+    const queryWithoutTrigger = query.substring(1); // Remove ^
+    let content = '<div class="search-section-header">Advanced Search Mode</div>';
+
+    // Show field suggestions if query is incomplete
+    if (!queryWithoutTrigger.includes(':')) {
+      const fieldAliases = this.fieldDefinitions.getAllFieldAliases();
+      const matchingFields = fieldAliases.filter((alias) => alias.toLowerCase().includes(queryWithoutTrigger.toLowerCase())).slice(0, 5);
+
+      if (matchingFields.length > 0) {
+        content += '<div class="search-section-header">Available Fields</div>';
+        matchingFields.forEach((field) => {
+          content += `<div class="search-suggestion" data-query="^${field}:">
+            <span class="suggestion-text">${field}</span>
+          </div>`;
         });
-      });
+      }
     } else {
-      recentSearches.forEach((search) => {
-        if (search.query.toLowerCase().includes(query.toLowerCase()) && search.query.toLowerCase() !== query.toLowerCase()) {
-          suggestions.push({
-            type: 'recent',
-            query: search.query,
-            label: search.query,
-            timestamp: search.timestamp
-          });
+      // Try to parse the query and show status
+      try {
+        this.parsedQuery = this.queryParser.parseQuery(queryWithoutTrigger);
+        if (this.parsedQuery) {
+          content += '<div class="search-status success">✓ Valid query syntax</div>';
         }
-      });
-      const isQuotedSearch = query.match(/^["'](.+?)["']$/);
-      if (isQuotedSearch) {
-        const phrase = isQuotedSearch[1];
-        const exactMatches = this.generateExactPhraseMatches(phrase);
-        exactMatches.slice(0, 5).forEach((match) => {
-          suggestions.push({
-            type: 'exact',
-            query: match.name,
-            label: match.name,
-            score: match.score
-          });
-        });
-      } else {
-        const fuzzyMatches = this.generateFuzzyMatches(query);
-        fuzzyMatches.slice(0, 5).forEach((match) => {
-          suggestions.push({
-            type: 'fuzzy',
-            query: match.name,
-            label: match.name,
-            score: match.score
-          });
-        });
+      } catch (error) {
+        content += `<div class="search-status error">✗ ${error.message}</div>`;
+        this.parsedQuery = null;
       }
     }
-    return suggestions;
+
+    return content;
   }
 
   /**
-   * Generate exact phrase matches for quoted searches using complete spell data
-   * @param {string} phrase - Search phrase (without quotes)
-   * @returns {Array} Array of exact matches with scores
+   * Generate content for standard queries
+   * @param {string} query - The query string
+   * @returns {string} HTML content
+   * @private
    */
-  generateExactPhraseMatches(phrase) {
-    if (!phrase || phrase.length < 1) return [];
-    let availableSpells = [];
-    if (this.app.availableSpells && this.app.availableSpells.length > 0) availableSpells = this.app.availableSpells;
-    else if (this.app._stateManager?.classSpellData) {
-      const activeClass = this.app._stateManager.activeClass;
-      if (activeClass && this.app._stateManager.classSpellData[activeClass]?.spellLevels) availableSpells = this.app._stateManager.classSpellData[activeClass].spellLevels;
+  _generateStandardQueryContent(query) {
+    let content = '';
+
+    if (!query || query.length < 3) {
+      content += this._generateRecentSearches();
     } else {
-      const spellItems = document.querySelectorAll('.spell-item .spell-name');
-      availableSpells = Array.from(spellItems).map((item) => {
-        const fullText = item.textContent.trim();
-        const componentMatch = fullText.match(/([A-Za-z\s'.-]+?)(?:\s*\n\s*[VSM]|$)/);
-        const spellName = componentMatch ? componentMatch[1].trim() : fullText.trim().split('\n')[0];
-        return { name: spellName };
-      });
+      content += this._generateFuzzyMatches(query);
     }
-    log(3, 'Exact phrase search data:', {
-      phrase: phrase,
-      availableSpellsCount: availableSpells.length,
-      source:
-        this.app.availableSpells?.length > 0 ? 'app.availableSpells'
-        : this.app._stateManager?.classSpellData ? 'stateManager.complete'
-        : 'DOM'
-    });
-    const matches = [];
-    const phraseLower = phrase.toLowerCase().trim();
-    availableSpells.forEach((spell) => {
-      const spellName = spell.name || spell.system?.name || '';
-      if (!spellName) return;
-      const spellNameLower = spellName.toLowerCase().trim();
-      if (spellNameLower === phraseLower) {
-        matches.push({ name: spellName, score: 100 });
-      }
-    });
-    const sortedMatches = matches.sort((a, b) => b.score - a.score);
-    log(3, 'Exact phrase matches found:', sortedMatches.length, 'for phrase:', phrase);
-    return sortedMatches;
+
+    return content;
   }
 
   /**
-   * Generate fuzzy search matches using complete spell data
-   * @param {string} query - Search query
-   * @returns {Array} Array of fuzzy matches with scores
+   * Generate recent searches content
+   * @returns {string} HTML content
+   * @private
    */
-  generateFuzzyMatches(query) {
-    if (!query || query.length < 3) return [];
-    let availableSpells = [];
-    if (this.app.availableSpells && this.app.availableSpells.length > 0) availableSpells = this.app.availableSpells;
-    else if (this.app._stateManager?.classSpellData) {
-      const activeClass = this.app._stateManager.activeClass;
-      if (activeClass && this.app._stateManager.classSpellData[activeClass]?.spellLevels) availableSpells = this.app._stateManager.classSpellData[activeClass].spellLevels;
-    } else {
-      const spellItems = document.querySelectorAll('.spell-item .spell-name');
-      availableSpells = Array.from(spellItems).map((item) => {
-        const fullText = item.textContent.trim();
-        const componentMatch = fullText.match(/([A-Za-z\s'.-]+?)(?:\s*\n\s*[VSM]|$)/);
-        const spellName = componentMatch ? componentMatch[1].trim() : fullText.trim().split('\n')[0];
-        return { name: spellName };
-      });
+  _generateRecentSearches() {
+    const recentSearches = this.getRecentSearches();
+    if (recentSearches.length === 0) {
+      return '<div class="search-section-header">No recent searches</div>';
     }
-    log(3, 'Fuzzy search data:', {
-      query: query,
-      availableSpellsCount: availableSpells.length,
-      source:
-        this.app.availableSpells?.length > 0 ? 'app.availableSpells'
-        : this.app._stateManager?.classSpellData ? 'stateManager.complete'
-        : 'DOM'
-    });
-    if (availableSpells.length === 0) return [];
-    const matches = [];
-    const queryLower = query.toLowerCase();
-    const queryWords = queryLower.split(/\s+/).filter((word) => word.length > 0);
-    availableSpells.forEach((spell) => {
-      const spellName = spell.name || spell.system?.name || '';
-      if (!spellName) return;
-      const spellNameLower = spellName.toLowerCase();
-      let score = 0;
-      if (spellNameLower === queryLower) score = 100;
-      else if (spellNameLower.startsWith(queryLower)) score = 80;
-      else if (spellNameLower.includes(queryLower)) score = 60;
-      else {
-        let wordMatches = 0;
-        queryWords.forEach((word) => {
-          if (spellNameLower.includes(word)) wordMatches++;
-        });
-        if (wordMatches > 0) score = (wordMatches / queryWords.length) * 40;
-      }
-      if (score > 0) matches.push({ name: spellName, score: score });
-    });
-    const sortedMatches = matches.sort((a, b) => b.score - a.score);
-    log(3, 'Fuzzy matches found:', sortedMatches.length, 'for query:', query);
-    return sortedMatches;
-  }
 
-  /**
-   * Create HTML for search suggestions
-   * @param {Array} suggestions - Array of suggestion objects
-   * @param {string} currentQuery - Current search query
-   * @returns {string} HTML string for suggestions
-   */
-  createSuggestionsHtml(suggestions, currentQuery) {
-    let html = '<div class="search-suggestions" role="listbox">';
-    const recentSuggestions = suggestions.filter((s) => s.type === 'recent');
-    const fuzzyMatches = suggestions.filter((s) => s.type === 'fuzzy');
-    const exactMatches = suggestions.filter((s) => s.type === 'exact');
-    if (recentSuggestions.length > 0) {
-      html += `<div class="suggestion-group">
-      <div class="suggestion-header">${game.i18n.localize('SPELLBOOK.Search.RecentSearches')}</div>`;
-      recentSuggestions.forEach((suggestion) => {
-        const escapedQuery = suggestion.query.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        const displayQuery = suggestion.label || suggestion.query;
-        html += `<div class="search-suggestion recent-search" role="option" data-query="${escapedQuery}">
-        <i class="fas fa-history" aria-hidden="true"></i>
-        <span class="suggestion-text">${displayQuery}</span>
-        <button class="clear-recent-search" data-query="${escapedQuery}"
-                aria-label="${game.i18n.localize('SPELLBOOK.Search.ClearRecent')}"
-                title="${game.i18n.localize('SPELLBOOK.Search.ClearRecent')}"
-                type="button">
+    let content = '<div class="search-section-header">Recent Searches</div>';
+    recentSearches.forEach((search) => {
+      content += `<div class="search-suggestion recent-search" data-query="${search}">
+        <span class="suggestion-text">${this.highlightText(search, '')}</span>
+        <button class="clear-recent-search" data-search="${search}" aria-label="Remove from recent searches">
           <i class="fas fa-times" aria-hidden="true"></i>
         </button>
       </div>`;
-      });
-      html += '</div>';
-    }
-    if (exactMatches.length > 0) {
-      html += `<div class="suggestion-group">
-      <div class="suggestion-header">${game.i18n.localize('SPELLBOOK.Search.ExactMatches')}</div>`;
-      exactMatches.forEach((suggestion) => {
-        const escapedQuery = suggestion.query.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        html += `<div class="search-suggestion exact-match" role="option" data-query="${escapedQuery}">
-        <i class="fas fa-quote-left" aria-hidden="true"></i>
-        <span class="suggestion-text">${suggestion.label}</span>
-      </div>`;
-      });
-      html += '</div>';
-    }
-    if (fuzzyMatches.length > 0 && currentQuery && currentQuery.length >= 3) {
-      html += `<div class="suggestion-group">
-      <div class="suggestion-header">${game.i18n.localize('SPELLBOOK.Search.Suggestions')}</div>`;
-      fuzzyMatches.forEach((suggestion) => {
-        const escapedQuery = suggestion.query.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        html += `<div class="search-suggestion fuzzy-match" role="option" data-query="${escapedQuery}">
-        <i class="fas fa-search" aria-hidden="true"></i>
-        <span class="suggestion-text">${this.highlightMatch(suggestion.label, currentQuery)}</span>
-      </div>`;
-      });
-      html += '</div>';
-    }
-    if (suggestions.length === 0) {
-      if (!currentQuery || currentQuery.length < 3) {
-        html += `<div class="no-suggestions" role="status">
-        <p>${game.i18n.localize('SPELLBOOK.Search.StartTyping')}</p>
-      </div>`;
-      } else {
-        html += `<div class="no-suggestions" role="status">
-        <p>${game.i18n.localize('SPELLBOOK.Search.NoSuggestions')}</p>
-      </div>`;
-      }
-    }
-    html += '</div>';
-    return html;
+    });
+
+    return content;
   }
 
   /**
-   * Highlight matching text in suggestions
-   * @param {string} text - Text to highlight
-   * @param {string} query - Search query
-   * @returns {string} Text with highlighted matches
+   * Generate fuzzy match suggestions
+   * @param {string} query - The search query
+   * @returns {string} HTML content
+   * @private
    */
-  highlightMatch(text, query) {
-    if (!query) return text;
-    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  _generateFuzzyMatches(query) {
+    const matches = this.getFuzzyMatches(query);
+    if (matches.length === 0) {
+      return '<div class="search-section-header">No suggestions found</div>';
+    }
+
+    let content = '<div class="search-section-header">Suggestions</div>';
+    matches.forEach((match) => {
+      content += `<div class="search-suggestion fuzzy-match" data-query="${match.name}">
+        <span class="suggestion-text">${this.highlightText(match.name, query)}</span>
+        <span class="suggestion-score">${match.score}</span>
+      </div>`;
+    });
+
+    return content;
+  }
+
+  /**
+   * Clear the search input and reset
+   */
+  clearSearch() {
+    const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
+    if (searchInput) {
+      searchInput.value = '';
+      searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+      searchInput.focus();
+    }
+    this.isAdvancedQuery = false;
+    this.parsedQuery = null;
+    this.updateClearButtonVisibility();
+    this.hideDropdown();
+    this.performSearch('');
+  }
+
+  /**
+   * Update visibility of clear button
+   */
+  updateClearButtonVisibility() {
+    const clearButton = this.clearButtonElement;
+    const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
+    if (!clearButton || !searchInput) return;
+
+    const hasValue = searchInput.value && searchInput.value.trim() !== '';
+    clearButton.style.display = hasValue ? 'block' : 'none';
+  }
+
+  /**
+   * Get recent searches from actor flags
+   * @returns {Array<string>} Array of recent searches
+   */
+  getRecentSearches() {
+    try {
+      const recent = this.actor.getFlag(MODULE.ID, FLAGS.RECENT_SEARCHES) || [];
+      return Array.isArray(recent) ? recent : [];
+    } catch (error) {
+      log(2, 'Error getting recent searches:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Add a search to recent searches
+   * @param {string} query - The search query to add
+   */
+  addToRecentSearches(query) {
+    if (!query || !query.trim()) return;
+
+    try {
+      const recentSearches = this.getRecentSearches();
+      const trimmedQuery = query.trim();
+
+      // Remove if already exists
+      const existingIndex = recentSearches.indexOf(trimmedQuery);
+      if (existingIndex !== -1) {
+        recentSearches.splice(existingIndex, 1);
+      }
+
+      // Add to beginning
+      recentSearches.unshift(trimmedQuery);
+
+      // Keep only last 8
+      const limitedSearches = recentSearches.slice(0, 8);
+
+      this.actor.setFlag(MODULE.ID, FLAGS.RECENT_SEARCHES, limitedSearches);
+      log(3, 'Added to recent searches:', trimmedQuery);
+    } catch (error) {
+      log(2, 'Error adding to recent searches:', error);
+    }
+  }
+
+  /**
+   * Remove a search from recent searches
+   * @param {string} query - The search query to remove
+   */
+  removeFromRecentSearches(query) {
+    try {
+      const recentSearches = this.getRecentSearches();
+      const updatedSearches = recentSearches.filter((search) => search !== query);
+      this.actor.setFlag(MODULE.ID, FLAGS.RECENT_SEARCHES, updatedSearches);
+      log(3, 'Removed from recent searches:', query);
+    } catch (error) {
+      log(2, 'Error removing from recent searches:', error);
+    }
+  }
+
+  /**
+   * Get fuzzy matches for a query
+   * @param {string} query - The search query
+   * @returns {Array} Array of matching spell names with scores
+   */
+  getFuzzyMatches(query) {
+    try {
+      if (!query || query.length < 3) return [];
+
+      const activeClass = this.app._stateManager?.activeClass;
+      if (!activeClass || !this.app._stateManager.classSpellData[activeClass]?.spellLevels) return [];
+
+      const spells = this.app._stateManager.classSpellData[activeClass].spellLevels;
+      const matches = [];
+      const queryLower = query.toLowerCase();
+
+      for (const spell of spells) {
+        if (!spell.name) continue;
+
+        const spellNameLower = spell.name.toLowerCase();
+        let score = 0;
+
+        // Exact match
+        if (spellNameLower === queryLower) {
+          score = 100;
+        }
+        // Starts with query
+        else if (spellNameLower.startsWith(queryLower)) {
+          score = 90;
+        }
+        // Contains exact query
+        else if (spellNameLower.includes(queryLower)) {
+          score = 80;
+        }
+        // Fuzzy word matching
+        else {
+          const queryWords = queryLower.split(/\s+/);
+          const spellWords = spellNameLower.split(/\s+/);
+
+          let wordMatches = 0;
+          for (const queryWord of queryWords) {
+            for (const spellWord of spellWords) {
+              if (spellWord.includes(queryWord)) {
+                wordMatches++;
+                break;
+              }
+            }
+          }
+
+          if (wordMatches > 0) {
+            score = 60 + (wordMatches / queryWords.length) * 20;
+          }
+        }
+
+        if (score > 0) {
+          matches.push({
+            name: spell.name,
+            score: Math.round(score)
+          });
+        }
+      }
+
+      // Sort by score and return top 5
+      matches.sort((a, b) => b.score - a.score);
+      return matches.slice(0, 5);
+    } catch (error) {
+      log(2, 'Error getting fuzzy matches:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Highlight matching text in search results
+   * @param {string} text - The text to highlight
+   * @param {string} query - The search query
+   * @returns {string} HTML with highlighted text
+   */
+  highlightText(text, query) {
+    if (!query || !query.trim()) return text;
+
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(
+      `(${escapedQuery
+        .split(/\s+/)
+        .filter((word) => word.length > 0)
+        .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('|')})`,
+      'gi'
+    );
     return text.replace(regex, '<mark>$1</mark>');
   }
 
@@ -614,15 +713,27 @@ export class AdvancedSearchManager {
    */
   async performSearch(query) {
     try {
-      if (query && query.trim()) await this.ensureSpellsLoadedForSearch(query);
-      this.app.filterHelper.invalidateFilterCache();
-      const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
-      if (searchInput && query) searchInput.value = query;
+      // Ensure spells are loaded FIRST
+      if (query && query.trim()) {
+        await this.ensureSpellsLoadedForSearch(query);
+      }
 
+      // Make sure the search input has the correct value
+      const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
+      if (searchInput) {
+        searchInput.value = query || '';
+        log(3, 'Set search input value to:', searchInput.value);
+      }
+
+      // Invalidate cache and apply filters
+      this.app.filterHelper.invalidateFilterCache();
+
+      // Apply filters after a small delay to ensure DOM is ready
       setTimeout(() => {
         this.app.filterHelper.applyFilters();
         log(3, 'Search filtering completed for query:', query);
       }, 50);
+
       log(3, 'Search performed for query:', query);
     } catch (error) {
       log(1, 'Error performing search:', error);
@@ -636,53 +747,58 @@ export class AdvancedSearchManager {
   async ensureSpellsLoadedForSearch(query) {
     let allSpells = [];
     const activeClass = this.app._stateManager?.activeClass;
-    if (activeClass && this.app._stateManager.classSpellData[activeClass]?.spellLevels) allSpells = this.app._stateManager.classSpellData[activeClass].spellLevels;
+    if (activeClass && this.app._stateManager.classSpellData[activeClass]?.spellLevels) {
+      allSpells = this.app._stateManager.classSpellData[activeClass].spellLevels;
+    }
     if (allSpells.length === 0) return;
+
     const matchingIndices = [];
     const queryLower = query.toLowerCase().trim();
     const exactPhraseMatch = query.match(/^["'](.+?)["']$/);
     const isExactSearch = !!exactPhraseMatch;
     const searchTerm = isExactSearch ? exactPhraseMatch[1].toLowerCase() : queryLower;
+
     allSpells.forEach((spell, index) => {
-      const spellName = spell.name || '';
-      if (!spellName) return;
-      const spellNameLower = spellName.toLowerCase();
+      if (!spell || !spell.name) return;
+      const spellName = spell.name.toLowerCase();
       let matches = false;
-      if (isExactSearch) matches = spellNameLower === searchTerm;
-      else {
-        matches = spellNameLower.includes(searchTerm);
-        if (!matches) {
-          const queryWords = searchTerm.split(/\s+/).filter((word) => word.length > 0);
-          if (queryWords.length > 1) matches = queryWords.every((word) => spellNameLower.includes(word)) || spellNameLower.includes(searchTerm);
-        }
+
+      if (isExactSearch) {
+        matches = spellName.includes(searchTerm);
+      } else {
+        const queryWords = searchTerm.split(/\s+/).filter((word) => word.length > 0);
+        matches = queryWords.every((word) => spellName.includes(word)) || queryWords.some((word) => spellName.includes(word));
       }
+
       if (matches) matchingIndices.push(index);
     });
 
     log(3, 'Found matching spells at indices:', matchingIndices, 'for query:', query);
     if (matchingIndices.length === 0) return;
+
     const maxIndex = Math.max(...matchingIndices);
     const currentlyLoaded = document.querySelectorAll('.spell-item').length;
     log(3, 'Need to load up to index:', maxIndex, 'currently loaded:', currentlyLoaded);
+
     if (maxIndex >= currentlyLoaded) {
       log(3, 'Triggering lazy loading to load more spells');
-      const originalQuery = query;
-      const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
-      if (searchInput) {
-        const originalValue = searchInput.value;
-        searchInput.value = '';
-        this.app.filterHelper.invalidateFilterCache();
-      }
+
       try {
+        // DON'T clear the search input - this was causing the filter confusion
         await this.app._ensureSpellDataAndInitializeLazyLoading();
         let attempts = 0;
         const maxAttempts = 10;
+
         while (document.querySelectorAll('.spell-item').length <= maxIndex && attempts < maxAttempts) {
-          if (this.app._renderSpellBatch) this.app._renderSpellBatch();
-          else if (this.app._initializeLazyLoading) this.app._initializeLazyLoading();
+          if (this.app._renderSpellBatch) {
+            this.app._renderSpellBatch();
+          } else if (this.app._initializeLazyLoading) {
+            this.app._initializeLazyLoading();
+          }
           await new Promise((resolve) => setTimeout(resolve, 100));
           attempts++;
         }
+
         log(3, 'After lazy loading attempts:', {
           attempts,
           loadedSpells: document.querySelectorAll('.spell-item').length,
@@ -691,105 +807,53 @@ export class AdvancedSearchManager {
       } catch (error) {
         log(2, 'Error during lazy loading:', error);
       }
-      if (searchInput) {
-        searchInput.value = originalQuery;
-        this.app.filterHelper.invalidateFilterCache();
-      }
     }
   }
 
   /**
-   * Get current search query
-   * @returns {string} Current search query
+   * Check if current query is an advanced query
+   * @returns {boolean} Whether the current query uses advanced syntax
    */
-  getCurrentQuery() {
-    const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
-    return searchInput ? searchInput.value : '';
+  isCurrentQueryAdvanced() {
+    return this.isAdvancedQuery && this.parsedQuery !== null;
   }
 
   /**
-   * Get recent searches from actor flags
-   * @returns {Array} Array of recent search objects
+   * Get the parsed query object for advanced queries
+   * @returns {Object|null} The parsed query or null
    */
-  getRecentSearches() {
-    const recentSearches = this.actor.getFlag(MODULE.ID, FLAGS.RECENT_SEARCHES) || [];
-    return recentSearches.sort((a, b) => b.timestamp - a.timestamp);
+  getParsedQuery() {
+    return this.parsedQuery;
   }
 
   /**
-   * Add query to recent searches
-   * @param {string} query - Search query to add
+   * Execute advanced query against spells
+   * @param {Array} spells - Spells to filter
+   * @returns {Array} Filtered spells
    */
-  async addToRecentSearches(query) {
-    if (!query || !query.trim()) return;
-    const trimmedQuery = query.trim();
-    let recentSearches = this.getRecentSearches();
-    recentSearches = recentSearches.filter((search) => search.query !== trimmedQuery);
-    recentSearches.unshift({ query: trimmedQuery, timestamp: Date.now() });
-    recentSearches = recentSearches.slice(0, 8);
-    await this.actor.setFlag(MODULE.ID, FLAGS.RECENT_SEARCHES, recentSearches);
-  }
-
-  /**
-   * Remove a query from recent searches
-   * @param {string} query - Search query to remove
-   */
-  async removeRecentSearch(query) {
-    let recentSearches = this.getRecentSearches();
-    recentSearches = recentSearches.filter((search) => search.query !== query);
-    await this.actor.setFlag(MODULE.ID, FLAGS.RECENT_SEARCHES, recentSearches);
-  }
-
-  /**
-   * Clear all recent searches
-   */
-  async clearAllRecentSearches() {
-    await this.actor.setFlag(MODULE.ID, FLAGS.RECENT_SEARCHES, []);
-  }
-
-  /**
-   * Create search dropdown HTML structure
-   * @returns {string} HTML for search dropdown
-   */
-  createSearchDropdownHtml() {
-    return `
-      <div class="search-dropdown" role="region" aria-label="${game.i18n.localize('SPELLBOOK.Search.Dropdown')}">
-        <!-- Content will be populated dynamically -->
-      </div>
-    `;
-  }
-
-  /**
-   * Update clear button visibility based on input content and focus
-   */
-  updateClearButtonVisibility() {
-    const clearButton = this.clearButtonElement || document.querySelector('.search-input-clear');
-    const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
-    if (clearButton && searchInput) {
-      const hasValue = searchInput.value.length > 0;
-      const isFocused = document.activeElement === searchInput;
-      clearButton.style.display = hasValue && isFocused ? 'block' : 'none';
+  executeAdvancedQuery(spells) {
+    if (!this.isCurrentQueryAdvanced() || !this.parsedQuery) {
+      return spells;
     }
+
+    return this.queryExecutor.executeQuery(this.parsedQuery, spells);
   }
 
   /**
-   * Clean up dropdown and any setup when application closes or reinitializes
+   * Cleanup advanced search resources
    */
   cleanup() {
-    const dropdown = document.querySelector('.search-dropdown');
-    if (dropdown) dropdown.remove();
-    const clearButton = document.querySelector('.search-input-clear');
-    if (clearButton) clearButton.remove();
-    const searchInput = document.querySelector('input[name="filter-name"]');
-    if (searchInput) searchInput.classList.remove('advanced-search-input');
-    const filterItem = document.querySelector('.filter-item.has-advanced-search');
-    if (filterItem) filterItem.classList.remove('has-advanced-search');
-    const containers = document.querySelectorAll('.search-input-container');
-    containers.forEach((container) => {
-      if (container.parentNode) {
-        while (container.firstChild) container.parentNode.insertBefore(container.firstChild, container);
-        container.remove();
-      }
-    });
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = null;
+    }
+
+    this.isAdvancedQuery = false;
+    this.parsedQuery = null;
+    this.selectedSuggestionIndex = -1;
+    this.isDropdownVisible = false;
+
+    const existingDropdown = document.querySelector('.search-dropdown');
+    if (existingDropdown) existingDropdown.remove();
   }
 }

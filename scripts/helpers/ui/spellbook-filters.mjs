@@ -161,6 +161,23 @@ export class SpellbookFilterHelper {
       spellsCount: spells.length,
       sampleSpellNames: spells.slice(0, 5).map((s) => s.name)
     });
+
+    // Check for advanced query syntax
+    if (query.startsWith('^')) {
+      const advancedSearchManager = this.app.ui?.advancedSearchManager;
+      if (advancedSearchManager && advancedSearchManager.isCurrentQueryAdvanced()) {
+        log(3, 'Using advanced query execution');
+        const filtered = advancedSearchManager.executeAdvancedQuery(spells);
+        log(3, 'Advanced query results:', filtered.length);
+        return filtered;
+      } else {
+        // Advanced syntax detected but failed to parse - return empty results
+        log(3, 'Advanced syntax detected but query failed to parse');
+        return [];
+      }
+    }
+
+    // Handle exact phrase matching
     const exactPhraseMatch = query.match(/^["'](.+?)["']$/);
     if (exactPhraseMatch) {
       const phrase = exactPhraseMatch[1].toLowerCase();
@@ -174,24 +191,26 @@ export class SpellbookFilterHelper {
       log(3, 'Exact phrase search results:', filtered.length);
       return filtered;
     }
+
+    // Handle standard fuzzy search
     const queryWords = query
       .toLowerCase()
       .split(/\s+/)
       .filter((word) => word.length > 0);
     const filtered = spells.filter((spell) => {
       const spellName = spell.name ? spell.name.toLowerCase() : '';
-      if (queryWords.length === 1) {
-        const matches = spellName.includes(queryWords[0]);
-        if (matches) log(3, 'Single word match found:', spell.name);
-        return matches;
-      }
+      const exactMatch = spellName === query.toLowerCase();
+      if (exactMatch) return true;
+      const startsWithQuery = spellName.startsWith(query.toLowerCase());
+      if (startsWithQuery) return true;
+      const containsQuery = spellName.includes(query.toLowerCase());
+      if (containsQuery) return true;
       const allWordsMatch = queryWords.every((word) => spellName.includes(word));
-      const phraseMatch = spellName.includes(query.toLowerCase());
-      const matches = allWordsMatch || phraseMatch;
-      if (matches) log(3, 'Multi-word match found:', spell.name, 'allWords:', allWordsMatch, 'phrase:', phraseMatch);
-      return matches;
+      if (allWordsMatch) return true;
+      const anyWordMatches = queryWords.some((word) => spellName.includes(word));
+      return anyWordMatches;
     });
-    log(3, 'Enhanced name filter results:', filtered.length);
+    log(3, 'Fuzzy search results:', filtered.length);
     return filtered;
   }
 
