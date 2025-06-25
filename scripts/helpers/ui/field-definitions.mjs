@@ -37,17 +37,17 @@ export class FieldDefinitions {
     switch (fieldId) {
       case 'level':
         this.valueValidators.set(fieldId, (value) => {
-          const validLevels = Object.keys(CONFIG.DND5E.spellLevels || {});
+          const validLevels = Object.keys(CONFIG.DND5E.spellLevels);
           return validLevels.includes(String(value));
         });
         break;
 
       case 'school':
         this.valueValidators.set(fieldId, (value) => {
-          const schools = Object.keys(CONFIG.DND5E.spellSchools || {})
+          const schools = Object.keys(CONFIG.DND5E.spellSchools)
             .map((key) => key.toUpperCase())
             .concat(
-              Object.values(CONFIG.DND5E.spellSchools || {})
+              Object.values(CONFIG.DND5E.spellSchools)
                 .map((school) => school.fullKey?.toUpperCase() || school.label?.toUpperCase())
                 .filter(Boolean)
             );
@@ -58,21 +58,22 @@ export class FieldDefinitions {
       case 'castingTime':
         this.valueValidators.set(fieldId, (value) => {
           const parts = value.split(':');
-          const validTypes = Object.keys(CONFIG.DND5E.abilityActivationTypes || {}).map((key) => key.toUpperCase());
+          const validTypes = Object.keys(CONFIG.DND5E.abilityActivationTypes).map((key) => key.toUpperCase());
           return parts.length >= 1 && validTypes.includes(parts[0].toUpperCase());
         });
         break;
 
       case 'damageType':
         this.valueValidators.set(fieldId, (value) => {
-          const types = Object.keys(CONFIG.DND5E.damageTypes || {}).map((key) => key.toUpperCase());
-          return value.split(',').every((v) => types.includes(v.trim().toUpperCase()));
+          const damageTypesWithHealing = { ...CONFIG.DND5E.damageTypes, healing: { label: game.i18n.localize('DND5E.Healing') } };
+          const validTypes = Object.keys(damageTypesWithHealing).map((key) => key.toUpperCase());
+          return value.split(',').every((v) => validTypes.includes(v.trim().toUpperCase()));
         });
         break;
 
       case 'condition':
         this.valueValidators.set(fieldId, (value) => {
-          const conditions = Object.keys(CONFIG.DND5E.conditionTypes || {}).map((key) => key.toUpperCase());
+          const conditions = Object.keys(CONFIG.DND5E.conditionTypes).map((key) => key.toUpperCase());
           return value.split(',').every((v) => conditions.includes(v.trim().toUpperCase()));
         });
         break;
@@ -100,7 +101,7 @@ export class FieldDefinitions {
           if (!isNaN(parseInt(value))) return true;
 
           // Check against CONFIG.DND5E.rangeTypes
-          const rangeTypes = Object.keys(CONFIG.DND5E.rangeTypes || {}).map((key) => key.toUpperCase());
+          const rangeTypes = Object.keys(CONFIG.DND5E.rangeTypes).map((key) => key.toUpperCase());
           return rangeTypes.includes(value.toUpperCase());
         });
         break;
@@ -156,44 +157,57 @@ export class FieldDefinitions {
    * @returns {Array<string>} Array of valid values
    */
   getValidValuesForField(fieldId) {
-    switch (fieldId) {
-      case 'level':
-        return Object.keys(CONFIG.DND5E.spellLevels || {});
+    const baseValues = (() => {
+      switch (fieldId) {
+        case 'level':
+          return Object.keys(CONFIG.DND5E.spellLevels || {});
 
-      case 'school':
-        return Object.keys(CONFIG.DND5E.spellSchools || {})
-          .map((key) => key.toUpperCase())
-          .concat(
-            Object.values(CONFIG.DND5E.spellSchools || {})
-              .map((school) => school.fullKey?.toUpperCase())
-              .filter(Boolean)
-          );
+        case 'school':
+          return Object.keys(CONFIG.DND5E.spellSchools || {})
+            .map((key) => key.toUpperCase())
+            .concat(
+              Object.values(CONFIG.DND5E.spellSchools || {})
+                .map((school) => school.fullKey?.toUpperCase())
+                .filter(Boolean)
+            );
 
-      case 'castingTime':
-        return Object.keys(CONFIG.DND5E.abilityActivationTypes || {}).map((key) => key.toUpperCase());
+        case 'castingTime':
+          return Object.keys(CONFIG.DND5E.abilityActivationTypes || {}).map((key) => key.toUpperCase());
 
-      case 'damageType':
-        return Object.keys(CONFIG.DND5E.damageTypes || {}).map((key) => key.toUpperCase());
+        case 'damageType':
+          // Include healing and sort alphabetically by label
+          const damageTypesWithHealing = { ...CONFIG.DND5E.damageTypes, healing: { label: game.i18n.localize('DND5E.Healing') } };
+          return Object.entries(damageTypesWithHealing)
+            .sort((a, b) => a[1].label.localeCompare(b[1].label)) // Sort by label
+            .map(([key]) => key.toUpperCase());
 
-      case 'condition':
-        return Object.keys(CONFIG.DND5E.conditionTypes || {}).map((key) => key.toUpperCase());
+        case 'condition':
+          return Object.keys(CONFIG.DND5E.conditionTypes || {}).map((key) => key.toUpperCase());
 
-      case 'range':
-        return Object.keys(CONFIG.DND5E.rangeTypes || {})
-          .map((key) => key.toUpperCase())
-          .concat(['UNLIMITED', 'SIGHT']);
+        case 'range':
+          return Object.keys(CONFIG.DND5E.rangeTypes || {})
+            .map((key) => key.toUpperCase())
+            .concat(['UNLIMITED', 'SIGHT']);
 
-      case 'requiresSave':
-      case 'concentration':
-      case 'prepared':
-      case 'ritual':
-        return ['TRUE', 'FALSE', 'YES', 'NO'];
+        case 'requiresSave':
+        case 'concentration':
+        case 'prepared':
+        case 'ritual':
+          return ['TRUE', 'FALSE', 'YES', 'NO'];
 
-      case 'materialComponents':
-        return ['CONSUMED', 'NOTCONSUMED'];
+        case 'materialComponents':
+          return ['CONSUMED', 'NOTCONSUMED'];
 
-      default:
-        return [];
+        default:
+          return [];
+      }
+    })();
+
+    // Add 'ALL' as the first option for applicable fields
+    if (['level', 'school', 'castingTime', 'damageType', 'condition', 'range'].includes(fieldId)) {
+      return ['ALL', ...baseValues];
     }
+
+    return baseValues;
   }
 }

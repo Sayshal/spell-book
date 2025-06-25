@@ -829,7 +829,6 @@ export class AdvancedSearchManager {
     return text.replace(regex, '<mark>$1</mark>');
   }
 
-  // Update the selectSuggestion method:
   /**
    * Select a suggestion from the dropdown
    * @param {HTMLElement} suggestionElement - The selected suggestion element
@@ -848,11 +847,8 @@ export class AdvancedSearchManager {
       if (query.endsWith(':')) {
         setTimeout(() => {
           this.updateDropdownContent(query);
-          // Keep dropdown open for value suggestions
-          if (!this.isDropdownVisible) {
-            this.showDropdown();
-          }
-        }, 50);
+          this.showDropdown();
+        }, 100);
       } else {
         this.hideDropdown();
         this.performSearch(query);
@@ -878,59 +874,42 @@ export class AdvancedSearchManager {
     try {
       const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
 
-      // FIX: Handle advanced queries by setting filter values directly
-      if (query && query.startsWith('^') && this.isCurrentQueryAdvanced() && this.parsedQuery) {
-        log(3, 'Executing advanced query by setting filter values:', this.parsedQuery);
+      // Handle advanced queries by setting filter values directly
+      if (query && query.startsWith('^')) {
+        const parsedQuery = this.queryParser.parseQuery(query.substring(1));
+        if (parsedQuery) {
+          this.parsedQuery = parsedQuery;
+          // Apply the advanced query to filters (even if hidden)
+          this.applyAdvancedQueryToFilters(parsedQuery);
 
-        // FIX: Clear the search input FIRST to prevent name filter interference
-        if (searchInput) {
-          searchInput.value = '';
-          // Force update the cached filter state
+          // FIX: Use the correct method name
           this.app.filterHelper.invalidateFilterCache();
+
+          // Apply filters using the correct method
+          setTimeout(() => {
+            this.app.filterHelper.applyFilters(); // FIX: Use applyFilters() not _applyFiltersAndRender()
+          }, 50);
+
+          return;
         }
-
-        // Apply the advanced query by setting filter form values
-        this.applyAdvancedQueryToFilters(this.parsedQuery);
-
-        // Add to recent searches
-        this.addToRecentSearches(query);
-
-        // Clear the advanced query state and hide dropdown
-        this.isAdvancedQuery = false;
-        this.parsedQuery = null;
-        this.hideDropdown();
-
-        return;
       }
 
-      // For regular queries, ensure spells are loaded first
-      if (query && query.trim() && !query.startsWith('^')) {
-        await this.ensureSpellsLoadedForSearch(query);
-      }
+      // Handle regular search
+      this.isAdvancedQuery = false;
+      this.parsedQuery = null;
 
-      // Make sure the search input has the correct value for regular searches
-      if (searchInput && !query.startsWith('^')) {
-        searchInput.value = query || '';
-        log(3, 'Set search input value to:', searchInput.value);
-      }
-
-      // Invalidate cache and apply filters
+      // For regular searches, just trigger normal filtering
       this.app.filterHelper.invalidateFilterCache();
-
-      // Apply filters after a small delay to ensure DOM is ready
       setTimeout(() => {
-        this.app.filterHelper.applyFilters();
-        log(3, 'Search filtering completed for query:', query);
+        this.app.filterHelper.applyFilters(); // FIX: Use applyFilters() not _applyFiltersAndRender()
       }, 50);
-
-      log(3, 'Search performed for query:', query);
     } catch (error) {
-      log(1, 'Error performing search:', error);
+      log(1, 'Error in performSearch:', error);
     }
   }
 
   /**
-   * Apply advanced query to filter form elements
+   * Apply advanced query results to filter state even when filters are hidden
    * @param {Object} parsedQuery - The parsed query object
    */
   applyAdvancedQueryToFilters(parsedQuery) {
@@ -941,29 +920,28 @@ export class AdvancedSearchManager {
     }
 
     if (parsedQuery.type === 'field') {
+      // Set the filter value directly (works even if UI element is hidden)
       this.setFilterValue(parsedQuery.field, parsedQuery.value);
+
+      // FIX: Also update the app's internal filter state directly
+      if (!this.app.filterHelper._cachedFilterState) {
+        this.app.filterHelper._cachedFilterState = {};
+      }
+      this.app.filterHelper._cachedFilterState[parsedQuery.field] = parsedQuery.value;
     } else if (parsedQuery.type === 'boolean') {
       // Handle boolean operations (AND, OR, NOT)
       if (parsedQuery.operator === 'AND') {
         this.applyAdvancedQueryToFilters(parsedQuery.left);
         this.applyAdvancedQueryToFilters(parsedQuery.right);
       } else if (parsedQuery.operator === 'OR') {
-        // For OR operations, we can't easily represent this in the UI
-        // For now, just apply the left side
         log(2, 'OR operations not fully supported in UI, applying left side only');
         this.applyAdvancedQueryToFilters(parsedQuery.left);
       } else if (parsedQuery.operator === 'NOT') {
-        // NOT operations are complex, log for now
         log(2, 'NOT operations not supported in current UI');
       }
     }
 
-    // FIX: Call the proper filter method that triggers lazy loading re-initialization
-    this.app.filterHelper.invalidateFilterCache();
-    this.app._resetLazyState();
-    this.app._initializeLazyLoading();
-
-    log(3, 'Advanced query filters applied and rendered');
+    log(3, 'Advanced query filters applied');
   }
 
   /**
