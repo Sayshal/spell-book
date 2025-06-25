@@ -580,8 +580,9 @@ export class AdvancedSearchManager {
       if (uniqueFields.length > 0) {
         content += '<div class="search-section-header">Fields</div>';
         uniqueFields.forEach((field) => {
+          const tooltipAttr = field.length > 32 ? `data-tooltip="${field}"` : '';
           content += `<div class="search-suggestion" data-query="${query}${field}:">
-          <span class="suggestion-text">${field}</span>
+          <span class="suggestion-text" ${tooltipAttr}>${field}</span>
         </div>`;
         });
       }
@@ -601,8 +602,9 @@ export class AdvancedSearchManager {
         if (validValues.length > 0) {
           content += '<div class="search-section-header">Values</div>';
           validValues.forEach((value) => {
+            const tooltipAttr = value.length > 32 ? `data-tooltip="${value}"` : '';
             content += `<div class="search-suggestion" data-query="${query}${value}">
-            <span class="suggestion-text">${value}</span>
+            <span class="suggestion-text" ${tooltipAttr}>${value}</span>
           </div>`;
           });
         }
@@ -630,8 +632,9 @@ export class AdvancedSearchManager {
       if (matchingFields.length > 0) {
         content += '<div class="search-section-header">Fields</div>';
         matchingFields.forEach((field) => {
+          const tooltipAttr = field.length > 32 ? `data-tooltip="${field}"` : '';
           content += `<div class="search-suggestion" data-query="^${field}:">
-          <span class="suggestion-text">${field}</span>
+          <span class="suggestion-text" ${tooltipAttr}>${field}</span>
         </div>`;
         });
       } else if (queryWithoutTrigger.length > 0) {
@@ -661,8 +664,9 @@ export class AdvancedSearchManager {
           if (validValues.length > 0) {
             content += '<div class="search-section-header">Values</div>';
             validValues.forEach((value) => {
+              const tooltipAttr = value.length > 32 ? `data-tooltip="${value}"` : '';
               content += `<div class="search-suggestion" data-query="^${fieldPart}:${value}">
-              <span class="suggestion-text">${value}</span>
+              <span class="suggestion-text" ${tooltipAttr}>${value}</span>
             </div>`;
             });
           }
@@ -683,21 +687,21 @@ export class AdvancedSearchManager {
           if (this.parsedQuery) {
             content += '<div class="search-status success">✓ Valid</div>';
 
-            // If this is a simple field:value without operators, show operator suggestions
-            if (!this.hasOperators(query)) {
-              content += '<div class="search-section-header">Add</div>';
-              content += `<div class="search-suggestion" data-query="${query} AND ">
-              <span class="suggestion-text">+ AND</span>
-            </div>`;
-              content += `<div class="search-suggestion" data-query="${query} OR ">
-              <span class="suggestion-text">+ OR</span>
-            </div>`;
-              content += '<div class="search-section-header">Execute</div>';
-            }
-
-            content += `<div class="search-suggestion submit-query" data-query="${query}">
-            <span class="suggestion-text">🔍 Run Query</span>
+            // FIXED: Always show operator suggestions for valid queries
+            // regardless of whether operators already exist
+            content += '<div class="search-section-header">Add</div>';
+            content += `<div class="search-suggestion" data-query="${query} AND ">
+            <span class="suggestion-text">+ AND</span>
           </div>`;
+            content += `<div class="search-suggestion" data-query="${query} OR ">
+            <span class="suggestion-text">+ OR</span>
+          </div>`;
+
+            // Always show execute option for valid queries
+            content += '<div class="search-section-header">Execute</div>';
+            content += `<div class="search-suggestion submit-query" data-query="${query}">
+              <span class="suggestion-text">🔍 Run Query</span>
+            </div>`;
           }
         } catch (error) {
           // Graceful error handling - don't spam console
@@ -710,8 +714,9 @@ export class AdvancedSearchManager {
             if (validValues.length > 0) {
               content += '<div class="search-section-header">Valid Values</div>';
               validValues.slice(0, 6).forEach((value) => {
+                const tooltipAttr = value.length > 32 ? `data-tooltip="${value}"` : '';
                 content += `<div class="search-suggestion" data-query="^${fieldPart}:${value}">
-                <span class="suggestion-text">${value}</span>
+                <span class="suggestion-text" ${tooltipAttr}>${value}</span>
               </div>`;
               });
             }
@@ -793,11 +798,11 @@ export class AdvancedSearchManager {
     let content = '<div class="search-section-header">Recent</div>';
     recentSearches.forEach((search) => {
       // Add tooltip for long searches that might be truncated
-      const titleAttr = search.length > 25 ? `title="${search}"` : '';
-      content += `<div class="search-suggestion recent-search" data-query="${search}" ${titleAttr}>
-      <span class="suggestion-text">${this.highlightText(search, '')}</span>
-      <button class="clear-recent-search" data-search="${search}" aria-label="Remove">
-        <i class="fas fa-times" aria-hidden="true"></i>
+      const tooltipAttr = search.length > 32 ? `data-tooltip="${search}"` : '';
+      content += `<div class="search-suggestion" data-query="${search}">
+      <span class="suggestion-text" ${tooltipAttr}>${search}</span>
+      <button class="clear-recent-search" data-search="${search}" aria-label="Delete search">
+        <i class="fas fa-times"></i>
       </button>
     </div>`;
     });
@@ -1025,6 +1030,17 @@ export class AdvancedSearchManager {
       searchInput.value = query;
       this.updateClearButtonVisibility();
 
+      // Check if this is a "submit-query" suggestion (explicit execute)
+      const isSubmitQuery = suggestionElement.classList.contains('submit-query');
+
+      if (isSubmitQuery) {
+        // User explicitly chose to execute - do it immediately
+        this.addToRecentSearches(query);
+        this.hideDropdown();
+        this.performSearch(query);
+        return;
+      }
+
       // FIXED: Handle different types of suggestions
       if (query.endsWith(':')) {
         // This is a field suggestion - show value suggestions immediately
@@ -1048,8 +1064,9 @@ export class AdvancedSearchManager {
         setTimeout(() => {
           this.isFieldSuggestionActive = false;
         }, 100);
-      } else if (this.isCompleteFieldValue(query) && !this.hasOperators(query)) {
-        // This is a complete field:value without operators - show operator suggestions
+      } else if (this.isAdvancedQueryComplete(query)) {
+        // FIXED: For complete advanced queries, always show expansion options
+        // instead of auto-executing
         this.isFieldSuggestionActive = true;
         this.updateDropdownContent(query);
         if (!this.isDropdownVisible) {
@@ -1060,7 +1077,7 @@ export class AdvancedSearchManager {
           this.isFieldSuggestionActive = false;
         }, 100);
       } else {
-        // This is a complete query or regular suggestion - execute immediately
+        // This is a regular/incomplete suggestion - execute immediately
         this.addToRecentSearches(query);
         this.hideDropdown();
         this.performSearch(query);
