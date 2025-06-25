@@ -174,7 +174,13 @@ export class QueryParser {
       log(3, `Missing value for field ${fieldAlias} (enter a value after the colon)`);
       return { type: 'field', field: fieldId, value: this._normalizeValue(fieldId, value) };
     }
-    if (!this.fieldDefinitions.validateValue(fieldId, value)) throw new Error(`Invalid value for field ${fieldAlias}: ${value}`);
+
+    if (fieldId === 'range' && value.match(/^\d+$/)) {
+      log(3, `Partial range value detected: ${value}`);
+    } else if (!this.fieldDefinitions.validateValue(fieldId, value)) {
+      throw new Error(`Invalid value for field ${fieldAlias}: ${value}`);
+    }
+
     return { type: 'field', field: fieldId, value: this._normalizeValue(fieldId, value) };
   }
 

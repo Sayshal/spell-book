@@ -97,12 +97,17 @@ export class FieldDefinitions {
 
       case 'range':
         this.valueValidators.set(fieldId, (value) => {
-          // Check if it's a number
+          if (value.includes('-')) {
+            const parts = value.split('-');
+            if (parts.length === 2) {
+              const min = parts[0].trim();
+              const max = parts[1].trim();
+              return (min === '' || !isNaN(parseInt(min))) && (max === '' || !isNaN(parseInt(max)));
+            }
+          }
           if (!isNaN(parseInt(value))) return true;
-
-          // Check against CONFIG.DND5E.rangeTypes
           const rangeTypes = Object.keys(CONFIG.DND5E.rangeTypes).map((key) => key.toUpperCase());
-          return rangeTypes.includes(value.toUpperCase());
+          return rangeTypes.includes(value.toUpperCase()) || ['UNLIMITED', 'SIGHT'].includes(value.toUpperCase());
         });
         break;
 
@@ -157,6 +162,7 @@ export class FieldDefinitions {
    * @returns {Array<string>} Array of valid values
    */
   getValidValuesForField(fieldId) {
+    if (fieldId === 'range') return [];
     const baseValues = (() => {
       switch (fieldId) {
         case 'level':
@@ -183,11 +189,6 @@ export class FieldDefinitions {
 
         case 'condition':
           return Object.keys(CONFIG.DND5E.conditionTypes || {}).map((key) => key.toUpperCase());
-
-        case 'range':
-          return Object.keys(CONFIG.DND5E.rangeTypes || {})
-            .map((key) => key.toUpperCase())
-            .concat(['UNLIMITED', 'SIGHT']);
 
         case 'requiresSave':
         case 'concentration':
