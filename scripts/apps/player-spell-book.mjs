@@ -790,7 +790,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     } else {
       filterConfig = foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG);
     }
-    const sortedFilters = filterConfig.filter((f) => f.enabled).sort((a, b) => a.order - b.order);
+    const sortedFilters = filterConfig.sort((a, b) => a.order - b.order);
     const filterState = this.filterHelper.getFilterState();
     const activeTab = this.tabGroups['spellbook-tabs'];
     const activeTabContent = this.element?.querySelector(`.tab[data-tab="${activeTab}"]`);
@@ -799,7 +799,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (classIdentifier && this._stateManager.classSpellData[classIdentifier]) spellData = this._stateManager.classSpellData[classIdentifier].spellLevels || [];
     const result = sortedFilters
       .map((filter) => {
-        const result = { id: filter.id, type: filter.type, name: `filter-${filter.id}`, label: game.i18n.localize(filter.label) };
+        const result = { id: filter.id, type: filter.type, name: `filter-${filter.id}`, label: game.i18n.localize(filter.label), enabled: filter.enabled };
         let element;
         switch (filter.type) {
           case 'search':

@@ -25,7 +25,8 @@
 
   <div class="spell-filters" role="search" aria-label="{{localize 'SPELLBOOK.UI.SpellFilters'}}">
     {{#each filters as |filter|}}
-      <div class="filter-item filter-{{filter.type}}" data-filter-id="{{filter.id}}">
+      <div class="filter-item filter-{{filter.type}}" data-filter-id="{{filter.id}}"
+        {{#unless filter.enabled}}style="display: none;" {{/unless}}>
         {{#if (ne filter.type "checkbox")}}
           <label for="{{filter.id}}">{{filter.label}}</label>
         {{/if}}
