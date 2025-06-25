@@ -249,16 +249,31 @@ export class AdvancedSearchManager {
 
           const query = clearButton.dataset.search;
           log(3, 'Removing recent search (mousedown):', query);
+
+          // FIX: Immediately hide the row for instant visual feedback
+          const recentSearchRow = clearButton.closest('.search-suggestion.recent-search');
+          if (recentSearchRow) {
+            recentSearchRow.style.opacity = '0.3';
+            recentSearchRow.style.pointerEvents = 'none';
+            // Animate it out
+            setTimeout(() => {
+              if (recentSearchRow.parentNode) {
+                recentSearchRow.style.display = 'none';
+              }
+            }, 150);
+          }
+
+          // Remove from actor flags
           this.removeFromRecentSearches(query);
 
-          // Keep dropdown open and refresh content immediately
-          const currentQuery = this.searchInputElement?.value || '';
-          this.updateDropdownContent(currentQuery);
-
-          // Reset flag after dropdown content is updated
+          // FIX: Force immediate re-render of dropdown content
           setTimeout(() => {
+            const currentQuery = this.searchInputElement?.value || '';
+            this.updateDropdownContent(currentQuery);
+
+            // Reset flag after dropdown content is updated
             this.isDeletingRecentSearch = false;
-          }, 100);
+          }, 200);
 
           return false;
         }
