@@ -161,28 +161,14 @@ export class QueryParser {
    */
   _parseFieldExpression(token) {
     const parts = token.split(':');
-    if (parts.length < 2) {
-      throw new Error(`Invalid field expression: ${token}`);
-    }
-
+    if (parts.length < 2) throw new Error(`Invalid field expression: ${token}`);
     const fieldAlias = parts[0].toUpperCase();
     const fieldId = this.fieldDefinitions.getFieldId(fieldAlias);
-
-    if (!fieldId) {
-      throw new Error(`Unknown field: ${fieldAlias}`);
-    }
-
+    if (!fieldId) throw new Error(`Unknown field: ${fieldAlias}`);
     const value = parts.slice(1).join(':');
-
-    if (!this.fieldDefinitions.validateValue(fieldId, value)) {
-      throw new Error(`Invalid value for field ${fieldAlias}: ${value}`);
-    }
-
-    return {
-      type: 'field',
-      field: fieldId,
-      value: this._normalizeValue(fieldId, value)
-    };
+    if (!value || value.trim() === '') throw new Error(`Missing value for field ${fieldAlias}`);
+    if (!this.fieldDefinitions.validateValue(fieldId, value)) throw new Error(`Invalid value for field ${fieldAlias}: ${value}`);
+    return { type: 'field', field: fieldId, value: this._normalizeValue(fieldId, value) };
   }
 
   /**

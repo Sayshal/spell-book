@@ -152,14 +152,20 @@ export class AdvancedSearchManager {
       log(2, 'Advanced search setup incomplete:', { searchInput: !!searchInput, dropdown: !!dropdown });
       return;
     }
+
     log(3, 'Setting up advanced search event listeners');
+
+    // Clone and replace the search input to remove any existing listeners
     const clonedInput = searchInput.cloneNode(true);
     searchInput.parentNode.replaceChild(clonedInput, searchInput);
     const newSearchInput = this.element.querySelector('input[name="filter-name"]');
     this.searchInputElement = newSearchInput;
+
     const clearButton = newSearchInput.parentNode.querySelector('.search-input-clear');
     this.clearButtonElement = clearButton;
     this.isDeletingRecentSearch = false;
+
+    // Search input focus event
     newSearchInput.addEventListener(
       'focus',
       (event) => {
@@ -169,6 +175,8 @@ export class AdvancedSearchManager {
       },
       true
     );
+
+    // Search input click event
     newSearchInput.addEventListener(
       'click',
       (event) => {
@@ -177,6 +185,8 @@ export class AdvancedSearchManager {
       },
       true
     );
+
+    // Search input change event
     newSearchInput.addEventListener(
       'input',
       (event) => {
@@ -186,7 +196,11 @@ export class AdvancedSearchManager {
       },
       true
     );
+
+    // Search input keydown event
     newSearchInput.addEventListener('keydown', (event) => this.handleSearchKeydown(event), true);
+
+    // Search input blur event
     newSearchInput.addEventListener(
       'blur',
       (event) => {
@@ -195,6 +209,8 @@ export class AdvancedSearchManager {
       },
       true
     );
+
+    // Clear button events (if exists)
     if (clearButton) {
       clearButton.addEventListener(
         'mousedown',
@@ -205,6 +221,7 @@ export class AdvancedSearchManager {
         },
         true
       );
+
       clearButton.addEventListener(
         'click',
         (event) => {
@@ -216,21 +233,49 @@ export class AdvancedSearchManager {
         true
       );
     }
+
+    // Dropdown mousedown event - Critical for preventing blur when deleting recent searches
+    dropdown.addEventListener(
+      'mousedown',
+      (event) => {
+        const clearButton = event.target.closest('.clear-recent-search');
+        if (clearButton) {
+          // FIX: Prevent blur by handling mousedown and setting flag
+          event.preventDefault();
+          event.stopPropagation();
+
+          // Set flag to prevent blur from hiding dropdown
+          this.isDeletingRecentSearch = true;
+
+          const query = clearButton.dataset.search;
+          log(3, 'Removing recent search (mousedown):', query);
+          this.removeFromRecentSearches(query);
+
+          // Keep dropdown open and refresh content immediately
+          const currentQuery = this.searchInputElement?.value || '';
+          this.updateDropdownContent(currentQuery);
+
+          // Reset flag after dropdown content is updated
+          setTimeout(() => {
+            this.isDeletingRecentSearch = false;
+          }, 100);
+
+          return false;
+        }
+      },
+      true
+    );
+
+    // Dropdown click event - Handle suggestion selection
     dropdown.addEventListener(
       'click',
       (event) => {
         const clearButton = event.target.closest('.clear-recent-search');
         if (clearButton) {
-          // FIX: Handle the clear button click instead of just returning
+          // Already handled in mousedown, just prevent bubbling
           event.preventDefault();
           event.stopPropagation();
-          const query = clearButton.dataset.search;
-          log(3, 'Removing recent search:', query);
-          this.removeFromRecentSearches(query);
-          // Update dropdown content to reflect the removal
-          const currentQuery = this.searchInputElement?.value || '';
-          this.updateDropdownContent(currentQuery);
-          return;
+          return false;
         }
 
         const suggestion = event.target.closest('.search-suggestion');
@@ -241,13 +286,26 @@ export class AdvancedSearchManager {
       },
       true
     );
+
+    // Document click event - Hide dropdown when clicking outside
     document.addEventListener(
       'click',
       (event) => {
-        if (!newSearchInput.contains(event.target) && !dropdown.contains(event.target) && !clearButton?.contains(event.target)) this.hideDropdown();
+        // FIX: More precise targeting and don't use capture phase
+        if (
+          !newSearchInput.contains(event.target) &&
+          !dropdown.contains(event.target) &&
+          !clearButton?.contains(event.target) &&
+          !event.target.closest('.search-dropdown') &&
+          !event.target.closest('.filter-item') &&
+          !this.isDeletingRecentSearch
+        ) {
+          this.hideDropdown();
+        }
       },
-      true
+      false // Use bubble phase instead of capture
     );
+
     log(3, 'Advanced search event listeners attached');
   }
 
@@ -257,7 +315,14 @@ export class AdvancedSearchManager {
    */
   handleSearchFocus(event) {
     log(3, 'Handling search focus');
-    this.showDropdown();
+
+    // FIX: Add delay to ensure any conflicting blur events have finished
+    setTimeout(() => {
+      this.showDropdown();
+      // Update dropdown content to show recent searches immediately
+      const currentQuery = event.target.value || '';
+      this.updateDropdownContent(currentQuery);
+    }, 10);
   }
 
   /**
@@ -324,10 +389,17 @@ export class AdvancedSearchManager {
    * @param {Event} event - Blur event
    */
   handleSearchBlur(event) {
-    if (this.isDeletingRecentSearch) return;
+    log(3, 'Search blur event, isDeletingRecentSearch:', this.isDeletingRecentSearch);
+
+    if (this.isDeletingRecentSearch) {
+      log(3, 'Preventing blur hide due to recent search deletion');
+      return;
+    }
 
     setTimeout(() => {
-      this.hideDropdown();
+      if (!this.isDeletingRecentSearch) {
+        this.hideDropdown();
+      }
     }, 150);
   }
 
@@ -405,29 +477,92 @@ export class AdvancedSearchManager {
     const queryWithoutTrigger = query.substring(1); // Remove ^
     let content = '<div class="search-section-header">Advanced Search Mode</div>';
 
-    // Show field suggestions if query is incomplete
+    // Show field suggestions if query is incomplete (no colon)
     if (!queryWithoutTrigger.includes(':')) {
       const fieldAliases = this.fieldDefinitions.getAllFieldAliases();
-      const matchingFields = fieldAliases.filter((alias) => alias.toLowerCase().includes(queryWithoutTrigger.toLowerCase())).slice(0, 5);
+
+      // Show all unique fields (remove aliases, show only first entry per field)
+      const uniqueFields = [];
+      const seenFields = new Set();
+
+      for (const alias of fieldAliases) {
+        const fieldId = this.fieldDefinitions.getFieldId(alias);
+        if (fieldId && !seenFields.has(fieldId)) {
+          seenFields.add(fieldId);
+          uniqueFields.push(alias);
+        }
+      }
+
+      const matchingFields = uniqueFields.filter((alias) => alias.toLowerCase().includes(queryWithoutTrigger.toLowerCase()));
 
       if (matchingFields.length > 0) {
         content += '<div class="search-section-header">Available Fields</div>';
         matchingFields.forEach((field) => {
           content += `<div class="search-suggestion" data-query="^${field}:">
-            <span class="suggestion-text">${field}</span>
-          </div>`;
+          <span class="suggestion-text">${field}</span>
+        </div>`;
         });
+      } else if (queryWithoutTrigger.length > 0) {
+        content += '<div class="search-section-header">No matching fields found</div>';
       }
-    } else {
-      // Try to parse the query and show status
-      try {
-        this.parsedQuery = this.queryParser.parseQuery(queryWithoutTrigger);
-        if (this.parsedQuery) {
-          content += '<div class="search-status success">✓ Valid query syntax</div>';
-        }
-      } catch (error) {
-        content += `<div class="search-status error">✗ ${error.message}</div>`;
+    }
+    // Handle field with colon
+    else {
+      const colonIndex = queryWithoutTrigger.indexOf(':');
+      const fieldPart = queryWithoutTrigger.substring(0, colonIndex);
+      const valuePart = queryWithoutTrigger.substring(colonIndex + 1);
+
+      // Check if field exists
+      const fieldId = this.fieldDefinitions.getFieldId(fieldPart);
+
+      if (!fieldId) {
+        content += '<div class="search-status error">✗ Unknown field</div>';
         this.parsedQuery = null;
+      }
+      // Field exists but no value yet (ends with colon)
+      else if (valuePart === '') {
+        content += '<div class="search-status info">→ Enter a value for this field</div>';
+
+        // Show valid values for this field
+        const validValues = this.fieldDefinitions.getValidValuesForField(fieldId);
+        if (validValues.length > 0) {
+          content += '<div class="search-section-header">Valid Values</div>';
+          validValues.forEach((value) => {
+            content += `<div class="search-suggestion" data-query="^${fieldPart}:${value}">
+            <span class="suggestion-text">${value}</span>
+          </div>`;
+          });
+        }
+        this.parsedQuery = null;
+      }
+      // Field and value provided - try to parse
+      else {
+        try {
+          this.parsedQuery = this.queryParser.parseQuery(queryWithoutTrigger);
+          if (this.parsedQuery) {
+            content += '<div class="search-status success">✓ Valid query syntax</div>';
+
+            // Show additional suggestions for combining with AND/OR
+            content += '<div class="search-section-header">Query Actions</div>';
+            content += `<div class="search-suggestion" data-query="${query}">
+            <span class="suggestion-text">Execute: ${queryWithoutTrigger}</span>
+          </div>`;
+          }
+        } catch (error) {
+          content += `<div class="search-status error">✗ ${error.message}</div>`;
+          this.parsedQuery = null;
+
+          // Show valid values if it's a validation error
+          const validValues = this.fieldDefinitions.getValidValuesForField(fieldId);
+          if (validValues.length > 0) {
+            content += '<div class="search-section-header">Valid Values</div>';
+            validValues.slice(0, 6).forEach((value) => {
+              content += `<div class="search-suggestion" data-query="^${fieldPart}:${value}">
+              <span class="suggestion-text">${value}</span>
+            </div>`;
+            });
+          }
+        }
       }
     }
 
@@ -679,6 +814,7 @@ export class AdvancedSearchManager {
     return text.replace(regex, '<mark>$1</mark>');
   }
 
+  // Update the selectSuggestion method:
   /**
    * Select a suggestion from the dropdown
    * @param {HTMLElement} suggestionElement - The selected suggestion element
@@ -692,8 +828,20 @@ export class AdvancedSearchManager {
       this.addToRecentSearches(query);
       searchInput.focus();
       this.updateClearButtonVisibility();
-      this.hideDropdown();
-      this.performSearch(query);
+
+      // FIX: If this is a field suggestion (ends with :), immediately update dropdown with value suggestions
+      if (query.endsWith(':')) {
+        setTimeout(() => {
+          this.updateDropdownContent(query);
+          // Keep dropdown open for value suggestions
+          if (!this.isDropdownVisible) {
+            this.showDropdown();
+          }
+        }, 50);
+      } else {
+        this.hideDropdown();
+        this.performSearch(query);
+      }
     }
   }
 
@@ -713,14 +861,40 @@ export class AdvancedSearchManager {
    */
   async performSearch(query) {
     try {
-      // Ensure spells are loaded FIRST
-      if (query && query.trim()) {
+      const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
+
+      // FIX: Handle advanced queries by setting filter values directly
+      if (query && query.startsWith('^') && this.isCurrentQueryAdvanced() && this.parsedQuery) {
+        log(3, 'Executing advanced query by setting filter values:', this.parsedQuery);
+
+        // FIX: Clear the search input FIRST to prevent name filter interference
+        if (searchInput) {
+          searchInput.value = '';
+          // Force update the cached filter state
+          this.app.filterHelper.invalidateFilterCache();
+        }
+
+        // Apply the advanced query by setting filter form values
+        this.applyAdvancedQueryToFilters(this.parsedQuery);
+
+        // Add to recent searches
+        this.addToRecentSearches(query);
+
+        // Clear the advanced query state and hide dropdown
+        this.isAdvancedQuery = false;
+        this.parsedQuery = null;
+        this.hideDropdown();
+
+        return;
+      }
+
+      // For regular queries, ensure spells are loaded first
+      if (query && query.trim() && !query.startsWith('^')) {
         await this.ensureSpellsLoadedForSearch(query);
       }
 
-      // Make sure the search input has the correct value
-      const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
-      if (searchInput) {
+      // Make sure the search input has the correct value for regular searches
+      if (searchInput && !query.startsWith('^')) {
         searchInput.value = query || '';
         log(3, 'Set search input value to:', searchInput.value);
       }
@@ -741,6 +915,101 @@ export class AdvancedSearchManager {
   }
 
   /**
+   * Apply advanced query to filter form elements
+   * @param {Object} parsedQuery - The parsed query object
+   */
+  applyAdvancedQueryToFilters(parsedQuery) {
+    // Clear search input to prevent name filter interference
+    const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
+    if (searchInput && searchInput.value) {
+      searchInput.value = '';
+    }
+
+    if (parsedQuery.type === 'field') {
+      this.setFilterValue(parsedQuery.field, parsedQuery.value);
+    } else if (parsedQuery.type === 'boolean') {
+      // Handle boolean operations (AND, OR, NOT)
+      if (parsedQuery.operator === 'AND') {
+        this.applyAdvancedQueryToFilters(parsedQuery.left);
+        this.applyAdvancedQueryToFilters(parsedQuery.right);
+      } else if (parsedQuery.operator === 'OR') {
+        // For OR operations, we can't easily represent this in the UI
+        // For now, just apply the left side
+        log(2, 'OR operations not fully supported in UI, applying left side only');
+        this.applyAdvancedQueryToFilters(parsedQuery.left);
+      } else if (parsedQuery.operator === 'NOT') {
+        // NOT operations are complex, log for now
+        log(2, 'NOT operations not supported in current UI');
+      }
+    }
+
+    // FIX: Call the proper filter method that triggers lazy loading re-initialization
+    this.app.filterHelper.invalidateFilterCache();
+    this.app._resetLazyState();
+    this.app._initializeLazyLoading();
+
+    log(3, 'Advanced query filters applied and rendered');
+  }
+
+  /**
+   * Clear all filter form elements
+   */
+  clearAllFilters() {
+    // Clear dropdowns
+    const dropdowns = this.element.querySelectorAll('select[name^="filter-"]');
+    dropdowns.forEach((select) => {
+      select.value = '';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    // Clear checkboxes
+    const checkboxes = this.element.querySelectorAll('input[type="checkbox"][name^="filter-"]');
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = false;
+      checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    // Clear range inputs
+    const rangeInputs = this.element.querySelectorAll('input[type="number"][name^="filter-"]');
+    rangeInputs.forEach((input) => {
+      input.value = '';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    log(3, 'All filters cleared');
+  }
+
+  /**
+   * Set a specific filter value in the UI
+   * @param {string} fieldId - The field ID
+   * @param {string} value - The value to set
+   */
+  setFilterValue(fieldId, value) {
+    const filterElement = this.element.querySelector(`[name="filter-${fieldId}"]`);
+    if (!filterElement) {
+      log(2, `No filter element found for field: ${fieldId}`);
+      return;
+    }
+
+    // Set the value based on element type
+    if (filterElement.type === 'checkbox') {
+      filterElement.checked = value === 'true';
+      // Trigger change event for checkboxes
+      filterElement.dispatchEvent(new Event('change', { bubbles: true }));
+    } else if (filterElement.tagName === 'SELECT') {
+      filterElement.value = value;
+      // Trigger change event for selects
+      filterElement.dispatchEvent(new Event('change', { bubbles: true }));
+    } else {
+      filterElement.value = value;
+      // Trigger input event for text inputs
+      filterElement.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    log(3, `Set filter ${fieldId} to: ${value}`);
+  }
+
+  /**
    * Ensure spells matching the search query are loaded in the DOM
    * @param {string} query - Search query
    */
@@ -753,6 +1022,48 @@ export class AdvancedSearchManager {
     if (allSpells.length === 0) return;
 
     const matchingIndices = [];
+
+    // FIX: Handle advanced queries differently
+    if (query.startsWith('^') && this.isCurrentQueryAdvanced()) {
+      // For advanced queries, we need to load all spells to properly filter
+      // Advanced filtering happens in the filter step, not here
+      log(3, 'Advanced query detected, ensuring all spells are loaded for filtering');
+
+      // Load all spells for advanced queries
+      const totalSpells = allSpells.length;
+      const currentlyLoaded = document.querySelectorAll('.spell-item').length;
+
+      if (totalSpells > currentlyLoaded) {
+        log(3, 'Loading all spells for advanced query filtering');
+
+        try {
+          await this.app._ensureSpellDataAndInitializeLazyLoading();
+          let attempts = 0;
+          const maxAttempts = 15; // Increase attempts for loading all spells
+
+          while (document.querySelectorAll('.spell-item').length < totalSpells && attempts < maxAttempts) {
+            if (this.app._renderSpellBatch) {
+              this.app._renderSpellBatch();
+            } else if (this.app._initializeLazyLoading) {
+              this.app._initializeLazyLoading();
+            }
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            attempts++;
+          }
+
+          log(3, 'Advanced query spell loading complete:', {
+            attempts,
+            loadedSpells: document.querySelectorAll('.spell-item').length,
+            totalSpells
+          });
+        } catch (error) {
+          log(2, 'Error during advanced query lazy loading:', error);
+        }
+      }
+      return;
+    }
+
+    // Original fuzzy search logic for regular queries
     const queryLower = query.toLowerCase().trim();
     const exactPhraseMatch = query.match(/^["'](.+?)["']$/);
     const isExactSearch = !!exactPhraseMatch;
@@ -784,7 +1095,6 @@ export class AdvancedSearchManager {
       log(3, 'Triggering lazy loading to load more spells');
 
       try {
-        // DON'T clear the search input - this was causing the filter confusion
         await this.app._ensureSpellDataAndInitializeLazyLoading();
         let attempts = 0;
         const maxAttempts = 10;
