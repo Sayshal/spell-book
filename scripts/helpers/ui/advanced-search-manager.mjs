@@ -19,6 +19,7 @@ export class AdvancedSearchManager {
     this.searchTimeout = null;
     this.isDropdownVisible = false;
     this.selectedSuggestionIndex = -1;
+    this.isFieldSuggestionActive = false;
 
     // Initialize advanced query components
     this.fieldDefinitions = new FieldDefinitions();
@@ -345,8 +346,14 @@ export class AdvancedSearchManager {
    * @param {Event} event - Input event
    */
   handleSearchInput(event) {
+    // FIXED: Don't process input events when a field suggestion was just selected
+    if (this.isFieldSuggestionActive) {
+      return;
+    }
+
     const query = event.target.value;
     if (this.searchTimeout) clearTimeout(this.searchTimeout);
+
     this.searchTimeout = setTimeout(async () => {
       try {
         await this.app._ensureSpellDataAndInitializeLazyLoading();
@@ -357,6 +364,7 @@ export class AdvancedSearchManager {
       this.updateDropdownContent(query);
       this.performSearch(query);
     }, 300);
+
     if (!this.isDropdownVisible) this.showDropdown();
   }
 
@@ -404,15 +412,16 @@ export class AdvancedSearchManager {
    * @param {Event} event - Blur event
    */
   handleSearchBlur(event) {
-    log(3, 'Search blur event, isDeletingRecentSearch:', this.isDeletingRecentSearch);
+    log(3, 'Search blur event, isDeletingRecentSearch:', this.isDeletingRecentSearch, 'isFieldSuggestionActive:', this.isFieldSuggestionActive);
 
-    if (this.isDeletingRecentSearch) {
-      log(3, 'Preventing blur hide due to recent search deletion');
+    // FIXED: Don't hide dropdown if we just selected a field suggestion or are deleting recent search
+    if (this.isDeletingRecentSearch || this.isFieldSuggestionActive) {
+      log(3, 'Preventing blur hide due to recent search deletion or field suggestion');
       return;
     }
 
     setTimeout(() => {
-      if (!this.isDeletingRecentSearch) {
+      if (!this.isDeletingRecentSearch && !this.isFieldSuggestionActive) {
         this.hideDropdown();
       }
     }, 150);
@@ -837,19 +846,40 @@ export class AdvancedSearchManager {
     const query = suggestionElement.dataset.query;
     const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
     if (searchInput && query) {
+      // FIXED: Clear any pending search timeout to prevent conflicts
+      if (this.searchTimeout) {
+        clearTimeout(this.searchTimeout);
+        this.searchTimeout = null;
+      }
+
       searchInput.value = query;
-      searchInput.dispatchEvent(new Event('input', { bubbles: true }));
       this.addToRecentSearches(query);
-      searchInput.focus();
       this.updateClearButtonVisibility();
 
-      // FIX: If this is a field suggestion (ends with :), immediately update dropdown with value suggestions
+      // FIXED: Handle field suggestions differently from regular suggestions
       if (query.endsWith(':')) {
-        setTimeout(() => {
-          this.updateDropdownContent(query);
+        // This is a field suggestion - show value suggestions immediately
+        this.isFieldSuggestionActive = true;
+
+        // Don't dispatch input event to avoid triggering handleSearchInput
+        // Update dropdown content immediately
+        this.updateDropdownContent(query);
+
+        // Ensure dropdown stays visible for value suggestions
+        if (!this.isDropdownVisible) {
           this.showDropdown();
+        }
+
+        // Keep focus on input for immediate typing
+        searchInput.focus();
+
+        // Reset flag after a short delay
+        setTimeout(() => {
+          this.isFieldSuggestionActive = false;
         }, 100);
       } else {
+        // This is a regular suggestion - dispatch input event and hide dropdown
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
         this.hideDropdown();
         this.performSearch(query);
       }
