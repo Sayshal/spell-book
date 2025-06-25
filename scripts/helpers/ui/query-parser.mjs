@@ -37,7 +37,7 @@ export class QueryParser {
    */
   _tokenize(query) {
     const tokens = [];
-    const regex = /([A-Z]+:[^(\s)]+(?:\([^)]*\))?|\(|\)|AND|OR|NOT|\w+)/gi;
+    const regex = /([A-Z]+:[^(\s)]*(?:\([^)]*\))?|\(|\)|AND|OR|NOT|\w+)/gi;
     let match;
 
     while ((match = regex.exec(query)) !== null) {
@@ -149,6 +149,10 @@ export class QueryParser {
     if (token.includes(':')) {
       return this._parseFieldExpression(token);
     }
+    const fieldId = this.fieldDefinitions.getFieldId(token.toUpperCase());
+    if (fieldId) {
+      throw new Error(`Incomplete field expression: ${token.toUpperCase()} (missing value after colon)`);
+    }
 
     throw new Error(`Unexpected token: ${token}`);
   }
@@ -166,7 +170,10 @@ export class QueryParser {
     const fieldId = this.fieldDefinitions.getFieldId(fieldAlias);
     if (!fieldId) throw new Error(`Unknown field: ${fieldAlias}`);
     const value = parts.slice(1).join(':');
-    if (!value || value.trim() === '') throw new Error(`Missing value for field ${fieldAlias}`);
+    if (!value || value.trim() === '') {
+      log(3, `Missing value for field ${fieldAlias} (enter a value after the colon)`);
+      return { type: 'field', field: fieldId, value: this._normalizeValue(fieldId, value) };
+    }
     if (!this.fieldDefinitions.validateValue(fieldId, value)) throw new Error(`Invalid value for field ${fieldAlias}: ${value}`);
     return { type: 'field', field: fieldId, value: this._normalizeValue(fieldId, value) };
   }
