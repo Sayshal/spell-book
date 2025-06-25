@@ -74,7 +74,7 @@
       }
     ]
   },
-  "styles": ["styles/spell-book.css", "styles/gm-spell-list-manager.css", "styles/advanced-search.css"],
+  "styles": ["styles/spell-book.css", "styles/gm-spell-list-manager.css"],
   "title": "Spell Book",
   "url": "https://github.com/Sayshal/spell-book",
   "version": "",
