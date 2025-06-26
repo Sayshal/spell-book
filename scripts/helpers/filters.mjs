@@ -27,23 +27,13 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
   const options = [{ value: '', label: game.i18n.localize('SPELLBOOK.Filters.All') }];
   switch (filterId) {
     case 'level':
-      if (spellData && Array.isArray(spellData)) {
-        const levels = new Set();
-        if (spellData.length > 0 && spellData[0]._levelMetadata) {
-          spellData.forEach((spell) => {
-            levels.add(spell._levelMetadata.level);
-          });
-        }
-        Array.from(levels)
-          .sort((a, b) => Number(a) - Number(b))
-          .forEach((level) => {
-            options.push({
-              value: level,
-              label: CONFIG.DND5E.spellLevels[level],
-              selected: filterState.level === level
-            });
-          });
-      }
+      Object.entries(CONFIG.DND5E.spellLevels).forEach(([level, label]) => {
+        options.push({
+          value: level,
+          label: label,
+          selected: filterState.level === level
+        });
+      });
       break;
     case 'school':
       Object.entries(CONFIG.DND5E.spellSchools).forEach(([key, school]) => {
