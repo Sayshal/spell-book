@@ -41,10 +41,8 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
       });
       break;
     case 'castingTime':
-      if (spellData) {
-        const uniqueTypes = getCastingTimeOptions(spellData, filterState);
-        options.push(...uniqueTypes);
-      }
+      const uniqueTypes = getCastingTimeOptions(filterState);
+      options.push(...uniqueTypes);
       break;
     case 'damageType':
       const damageTypes = { ...CONFIG.DND5E.damageTypes, healing: { label: game.i18n.localize('DND5E.Healing') } };
@@ -79,49 +77,29 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
 }
 
 /**
- * Get casting time options from spell levels
- * @param {Array} spellData - Spell data
+ * Get casting time options
  * @param {Object} filterState - Current filter state
  * @returns {Array} Casting time options
  */
-function getCastingTimeOptions(spellData, filterState) {
-  const uniqueActivationTypes = new Set();
+function getCastingTimeOptions(filterState) {
+  const castingTimes = [
+    { type: 'action', value: 1, priority: 1 },
+    { type: 'bonus', value: 1, priority: 2 },
+    { type: 'reaction', value: 1, priority: 3 },
+    { type: 'minute', value: 1, priority: 4 },
+    { type: 'minute', value: 10, priority: 4 },
+    { type: 'hour', value: 1, priority: 5 },
+    { type: 'hour', value: 8, priority: 5 },
+    { type: 'hour', value: 24, priority: 6 },
+    { type: 'special', value: 1, priority: 7 }
+  ];
   const options = [];
-  const spells = Array.isArray(spellData) ? spellData : [];
-  spells.forEach((spell) => {
-    const type = spell.system?.activation?.type;
-    const value = spell.system?.activation?.value || 1;
-    if (type) uniqueActivationTypes.add(`${type}:${value}`);
-  });
-  const typeOrder = {
-    action: 1,
-    bonus: 2,
-    reaction: 3,
-    minute: 4,
-    hour: 5,
-    day: 6,
-    legendary: 7,
-    mythic: 8,
-    lair: 9,
-    crew: 10,
-    special: 11,
-    none: 12
-  };
-  Array.from(uniqueActivationTypes)
-    .map((combo) => {
-      const [type, value] = combo.split(':');
-      return [combo, type, parseInt(value) || 1];
-    })
-    .sort((a, b) => {
-      const [, typeA, valueA] = a;
-      const [, typeB, valueB] = b;
-      const priorityA = typeOrder[typeA] || 999;
-      const priorityB = typeOrder[typeB] || 999;
-      return priorityA !== priorityB ? priorityA - priorityB : valueA - valueB;
-    })
-    .forEach(([combo, type, value]) => {
+  castingTimes
+    .sort((a, b) => (a.priority !== b.priority ? a.priority - b.priority : a.value - b.value))
+    .forEach(({ type, value }) => {
       const typeLabel = CONFIG.DND5E.abilityActivationTypes[type] || type;
       const label = value === 1 ? typeLabel : `${value} ${typeLabel}${value !== 1 ? 's' : ''}`;
+      const combo = `${type}:${value}`;
       options.push({ value: combo, label, selected: filterState.castingTime === combo });
     });
   return options;

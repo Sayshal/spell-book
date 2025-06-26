@@ -166,7 +166,8 @@ export class FieldDefinitions {
                 .filter(Boolean)
             );
         case 'castingTime':
-          return Object.keys(CONFIG.DND5E.abilityActivationTypes || {}).map((key) => key.toUpperCase());
+          const commonCastingTimes = ['ACTION:1', 'BONUS:1', 'REACTION:1', 'MINUTE:1', 'MINUTE:10', 'HOUR:1', 'HOUR:8', 'HOUR:24', 'SPECIAL:1'];
+          return [...commonCastingTimes];
         case 'damageType':
           const damageTypesWithHealing = { ...CONFIG.DND5E.damageTypes, healing: { label: game.i18n.localize('DND5E.Healing') } };
           return Object.entries(damageTypesWithHealing)

@@ -837,7 +837,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       name: 'spell-materialComponents',
       options: materialComponentsOptions,
       disabled: !this.isEditing,
-      ariaLabel: game.i18n.localize('SPELLBOOK.Filters.MaterialComponents')
+      ariaLabel: game.i18n.localize('SPELLBOOK.Filters.Materials.Title')
     });
     materialComponentsSelect.id = 'spell-materialComponents';
     const ritualCheckbox = formElements.createCheckbox({
@@ -2083,9 +2083,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       checked: isChecked,
       cssClass: 'spell-select-cb',
       ariaLabel:
-        type === 'add' ?
-          game.i18n.format('SPELLMANAGER.Selection.SelectSpellToAdd', { name: spell.name })
-        : game.i18n.format('SPELLMANAGER.Selection.SelectSpellToRemove', { name: spell.name })
+        type === 'add' ? game.i18n.format('SPELLMANAGER.Selection.SelectSpellToAdd', { name: spell.name }) : game.i18n.format('SPELLMANAGER.Selection.SelectSpellToRemove', { name: spell.name })
     });
     checkbox.dataset.type = type;
     checkbox.dataset.uuid = spell.uuid || spell.compendiumUuid;
