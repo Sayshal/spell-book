@@ -445,6 +445,7 @@ export class SpellbookUI {
     const classPreparedSpells = preparedByClass[classIdentifier] || [];
     const classSpellKey = `${classIdentifier}:${uuid}`;
     const isSavedAsPrepared = classPreparedSpells.includes(classSpellKey);
+    /** TODO: Replace case strings with constants */
     switch (settings.cantripSwapping) {
       case 'none':
         if (isSavedAsPrepared) {
@@ -534,9 +535,7 @@ export class SpellbookUI {
         if (canChange.message) {
           let tooltipText = game.i18n.localize(canChange.message);
           if (canChange.message === 'SPELLBOOK.Preparation.ClassAtMaximum') {
-            tooltipText = game.i18n.format('SPELLBOOK.Preparation.ClassAtMaximum', {
-              class: classData.className || classIdentifier
-            });
+            tooltipText = game.i18n.format('SPELLBOOK.Preparation.ClassAtMaximum', { class: classData.className || classIdentifier });
           }
           checkbox.dataset.tooltip = tooltipText;
         }
@@ -567,6 +566,7 @@ export class SpellbookUI {
    */
   _applyRuleBasedSpellLocks(item, checkbox, classIdentifier, classRules, isLevelUp, isLongRest) {
     const spellSwapping = classRules.spellSwapping || 'none';
+    /** TODO: Replace case strings with constants */
     switch (spellSwapping) {
       case 'levelUp':
         if (!isLevelUp) {

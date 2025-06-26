@@ -13,114 +13,18 @@ export const MODULE = {
    * @type {Array}
    */
   DEFAULT_FILTER_CONFIG: [
-    {
-      id: 'name',
-      type: 'search',
-      enabled: true,
-      order: 10,
-      label: 'SPELLBOOK.Filters.SearchPlaceholder',
-      sortable: false,
-      searchAliases: ['NAME']
-    },
-    {
-      id: 'level',
-      type: 'dropdown',
-      enabled: true,
-      order: 20,
-      label: 'SPELLBOOK.Filters.Level',
-      sortable: true,
-      searchAliases: ['LEVEL', 'LVL']
-    },
-    {
-      id: 'school',
-      type: 'dropdown',
-      enabled: true,
-      order: 30,
-      label: 'SPELLBOOK.Filters.School',
-      sortable: true,
-      searchAliases: ['SCHOOL']
-    },
-    {
-      id: 'castingTime',
-      type: 'dropdown',
-      enabled: true,
-      order: 40,
-      label: 'SPELLBOOK.Filters.CastingTime',
-      sortable: true,
-      searchAliases: ['CASTTIME', 'CASTING']
-    },
-    {
-      id: 'range',
-      type: 'range',
-      enabled: true,
-      order: 50,
-      label: 'SPELLBOOK.Filters.Range',
-      sortable: true,
-      searchAliases: ['RANGE']
-    },
-    {
-      id: 'damageType',
-      type: 'dropdown',
-      enabled: true,
-      order: 60,
-      label: 'SPELLBOOK.Filters.DamageType',
-      sortable: true,
-      searchAliases: ['DAMAGE', 'DAMAGETYPE']
-    },
-    {
-      id: 'condition',
-      type: 'dropdown',
-      enabled: true,
-      order: 70,
-      label: 'SPELLBOOK.Filters.Condition',
-      sortable: true,
-      searchAliases: ['CONDITION']
-    },
-    {
-      id: 'requiresSave',
-      type: 'dropdown',
-      enabled: true,
-      order: 80,
-      label: 'SPELLBOOK.Filters.RequiresSave',
-      sortable: true,
-      searchAliases: ['SAVE', 'REQUIRESSAVE']
-    },
-    {
-      id: 'concentration',
-      type: 'dropdown',
-      enabled: true,
-      order: 90,
-      label: 'SPELLBOOK.Filters.RequiresConcentration',
-      sortable: true,
-      searchAliases: ['CON', 'CONCENTRATION']
-    },
-    {
-      id: 'materialComponents',
-      type: 'dropdown',
-      enabled: true,
-      order: 100,
-      label: 'SPELLBOOK.Filters.MaterialComponents.Title',
-      sortable: true,
-      searchAliases: ['MATERIALS', 'COMPONENTS']
-    },
-    {
-      id: 'prepared',
-      type: 'checkbox',
-      enabled: true,
-      order: 2000,
-      label: 'SPELLBOOK.Filters.PreparedOnly',
-      sortable: false,
-      searchAliases: ['PREPARED']
-    },
-    {
-      id: 'ritual',
-      type: 'checkbox',
-      enabled: true,
-      order: 3000,
-      label: 'SPELLBOOK.Filters.RitualOnly',
-      sortable: false,
-      searchAliases: ['RITUAL']
-    }
+    { id: 'name', type: 'search', enabled: true, order: 10, label: 'SPELLBOOK.Filters.SearchPlaceholder', sortable: false, searchAliases: ['NAME'] },
+    { id: 'level', type: 'dropdown', enabled: true, order: 20, label: 'SPELLBOOK.Filters.Level', sortable: true, searchAliases: ['LEVEL', 'LVL'] },
+    { id: 'school', type: 'dropdown', enabled: true, order: 30, label: 'SPELLBOOK.Filters.School', sortable: true, searchAliases: ['SCHOOL'] },
+    { id: 'castingTime', type: 'dropdown', enabled: true, order: 40, label: 'SPELLBOOK.Filters.CastingTime', sortable: true, searchAliases: ['CASTTIME', 'CASTING'] },
+    { id: 'range', type: 'range', enabled: true, order: 50, label: 'SPELLBOOK.Filters.Range', sortable: true, searchAliases: ['RANGE'] },
+    { id: 'damageType', type: 'dropdown', enabled: true, order: 60, label: 'SPELLBOOK.Filters.DamageType', sortable: true, searchAliases: ['DAMAGE', 'DMG'] },
+    { id: 'condition', type: 'dropdown', enabled: true, order: 70, label: 'SPELLBOOK.Filters.Condition', sortable: true, searchAliases: ['CONDITION'] },
+    { id: 'requiresSave', type: 'dropdown', enabled: true, order: 80, label: 'SPELLBOOK.Filters.RequiresSave', sortable: true, searchAliases: ['SAVE', 'REQUIRESSAVE'] },
+    { id: 'concentration', type: 'dropdown', enabled: true, order: 90, label: 'SPELLBOOK.Filters.RequiresConcentration', sortable: true, searchAliases: ['CON', 'CONCENTRATION'] },
+    { id: 'materialComponents', type: 'dropdown', enabled: true, order: 100, label: 'SPELLBOOK.Filters.Materials.Title', sortable: true, searchAliases: ['MATERIALS', 'COMPONENTS'] },
+    { id: 'prepared', type: 'checkbox', enabled: true, order: 2000, label: 'SPELLBOOK.Filters.PreparedOnly', sortable: false, searchAliases: ['PREPARED'] },
+    { id: 'ritual', type: 'checkbox', enabled: true, order: 3000, label: 'SPELLBOOK.Filters.RitualOnly', sortable: false, searchAliases: ['RITUAL'] }
   ],
 
   /**

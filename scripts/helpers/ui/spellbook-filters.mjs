@@ -161,8 +161,6 @@ export class SpellbookFilterHelper {
       spellsCount: spells.length,
       sampleSpellNames: spells.slice(0, 5).map((s) => s.name)
     });
-
-    // Check for advanced query syntax
     if (query.startsWith('^')) {
       const advancedSearchManager = this.app.ui?.advancedSearchManager;
       if (advancedSearchManager && advancedSearchManager.isCurrentQueryAdvanced()) {
@@ -170,14 +168,8 @@ export class SpellbookFilterHelper {
         const filtered = advancedSearchManager.executeAdvancedQuery(spells);
         log(3, 'Advanced query results:', filtered.length);
         return filtered;
-      } else {
-        // Advanced syntax detected but failed to parse - return empty results
-        log(3, 'Advanced syntax detected but query failed to parse');
-        return [];
-      }
+      } else return [];
     }
-
-    // Handle exact phrase matching
     const exactPhraseMatch = query.match(/^["'](.+?)["']$/);
     if (exactPhraseMatch) {
       const phrase = exactPhraseMatch[1].toLowerCase();
@@ -192,7 +184,6 @@ export class SpellbookFilterHelper {
       return filtered;
     }
 
-    // Handle standard fuzzy search
     const queryWords = query
       .toLowerCase()
       .split(/\s+/)

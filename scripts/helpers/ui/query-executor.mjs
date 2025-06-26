@@ -148,32 +148,15 @@ export class QueryExecutor {
    */
   _evaluateRange(value, spell) {
     const rangeValue = parseInt(value);
-    if (!isNaN(rangeValue)) {
-      // For numeric ranges, we could implement distance comparison here
-      // For now, just return true as placeholder
-      return true;
-    }
-
-    // Check against spell's range units using CONFIG.DND5E.rangeTypes
+    if (!isNaN(rangeValue)) return true;
     const spellRangeUnits = spell.filterData?.range?.units || spell.system?.range?.units || '';
     const normalizedSpellRange = spellRangeUnits.toLowerCase();
     const normalizedSearchRange = value.toLowerCase();
-
-    // Direct match
     if (normalizedSpellRange === normalizedSearchRange) return true;
-
-    // Check if the search range is a valid range type from CONFIG
     const validRangeTypes = Object.keys(CONFIG.DND5E.rangeTypes || {});
-    if (validRangeTypes.includes(normalizedSearchRange)) {
-      return normalizedSpellRange === normalizedSearchRange;
-    }
-
-    // Handle special cases like 'sight', 'unlimited'
+    if (validRangeTypes.includes(normalizedSearchRange)) return normalizedSpellRange === normalizedSearchRange;
     const specialRanges = ['sight', 'unlimited'];
-    if (specialRanges.includes(normalizedSearchRange)) {
-      return normalizedSpellRange.includes(normalizedSearchRange);
-    }
-
+    if (specialRanges.includes(normalizedSearchRange)) return normalizedSpellRange.includes(normalizedSearchRange);
     return false;
   }
 
@@ -187,7 +170,6 @@ export class QueryExecutor {
   _evaluateDamageType(value, spell) {
     const expectedTypes = value.split(',').map((t) => t.trim().toLowerCase());
     const spellDamageTypes = spell.filterData?.damageTypes || [];
-
     return expectedTypes.some((expectedType) => spellDamageTypes.some((spellType) => spellType.toLowerCase() === expectedType));
   }
 
@@ -201,7 +183,6 @@ export class QueryExecutor {
   _evaluateCondition(value, spell) {
     const expectedConditions = value.split(',').map((c) => c.trim().toLowerCase());
     const spellConditions = spell.filterData?.conditions || [];
-
     return expectedConditions.some((expectedCondition) => spellConditions.some((spellCondition) => spellCondition.toLowerCase() === expectedCondition));
   }
 

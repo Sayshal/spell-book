@@ -80,8 +80,8 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
       break;
     case 'materialComponents':
       options.push(
-        { value: 'consumed', label: game.i18n.localize('SPELLBOOK.Filters.MaterialComponents.Consumed'), selected: filterState.materialComponents === 'consumed' },
-        { value: 'notConsumed', label: game.i18n.localize('SPELLBOOK.Filters.MaterialComponents.NotConsumed'), selected: filterState.materialComponents === 'notConsumed' }
+        { value: 'consumed', label: game.i18n.localize('SPELLBOOK.Filters.Materials.Consumed'), selected: filterState.materialComponents === 'consumed' },
+        { value: 'notConsumed', label: game.i18n.localize('SPELLBOOK.Filters.Materials.NotConsumed'), selected: filterState.materialComponents === 'notConsumed' }
       );
       break;
   }

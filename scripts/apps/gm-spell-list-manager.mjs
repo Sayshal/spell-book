@@ -830,8 +830,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     concentrationSelect.id = 'spell-concentration';
     const materialComponentsOptions = [
       { value: '', label: game.i18n.localize('SPELLBOOK.Filters.All'), selected: !this.filterState.materialComponents },
-      { value: 'consumed', label: game.i18n.localize('SPELLBOOK.Filters.MaterialComponents.Consumed'), selected: this.filterState.materialComponents === 'consumed' },
-      { value: 'notConsumed', label: game.i18n.localize('SPELLBOOK.Filters.MaterialComponents.NotConsumed'), selected: this.filterState.materialComponents === 'notConsumed' }
+      { value: 'consumed', label: game.i18n.localize('SPELLBOOK.Filters.Materials.Consumed'), selected: this.filterState.materialComponents === 'consumed' },
+      { value: 'notConsumed', label: game.i18n.localize('SPELLBOOK.Filters.Materials.NotConsumed'), selected: this.filterState.materialComponents === 'notConsumed' }
     ];
     const materialComponentsSelect = formElements.createSelect({
       name: 'spell-materialComponents',

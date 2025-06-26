@@ -18,9 +18,7 @@ export class FieldDefinitions {
   _initializeFields() {
     for (const filter of MODULE.DEFAULT_FILTER_CONFIG) {
       if (filter.searchAliases) {
-        for (const alias of filter.searchAliases) {
-          this.fieldMap.set(alias.toUpperCase(), filter.id);
-        }
+        for (const alias of filter.searchAliases) this.fieldMap.set(alias.toUpperCase(), filter.id);
         this._setupValueValidator(filter.id, filter.type);
       }
     }
@@ -41,7 +39,6 @@ export class FieldDefinitions {
           return validLevels.includes(String(value));
         });
         break;
-
       case 'school':
         this.valueValidators.set(fieldId, (value) => {
           const schools = Object.keys(CONFIG.DND5E.spellSchools)
@@ -54,7 +51,6 @@ export class FieldDefinitions {
           return schools.includes(value.toUpperCase());
         });
         break;
-
       case 'castingTime':
         this.valueValidators.set(fieldId, (value) => {
           const parts = value.split(':');
@@ -62,7 +58,6 @@ export class FieldDefinitions {
           return parts.length >= 1 && validTypes.includes(parts[0].toUpperCase());
         });
         break;
-
       case 'damageType':
         this.valueValidators.set(fieldId, (value) => {
           const damageTypesWithHealing = { ...CONFIG.DND5E.damageTypes, healing: { label: game.i18n.localize('DND5E.Healing') } };
@@ -70,14 +65,12 @@ export class FieldDefinitions {
           return value.split(',').every((v) => validTypes.includes(v.trim().toUpperCase()));
         });
         break;
-
       case 'condition':
         this.valueValidators.set(fieldId, (value) => {
           const conditions = Object.keys(CONFIG.DND5E.conditionTypes).map((key) => key.toUpperCase());
           return value.split(',').every((v) => conditions.includes(v.trim().toUpperCase()));
         });
         break;
-
       case 'requiresSave':
       case 'concentration':
       case 'prepared':
@@ -87,14 +80,12 @@ export class FieldDefinitions {
           return ['TRUE', 'FALSE', 'YES', 'NO'].includes(val);
         });
         break;
-
       case 'materialComponents':
         this.valueValidators.set(fieldId, (value) => {
           const val = value.toUpperCase();
           return ['CONSUMED', 'NOTCONSUMED'].includes(val);
         });
         break;
-
       case 'range':
         this.valueValidators.set(fieldId, (value) => {
           if (value.includes('-')) {
@@ -110,7 +101,6 @@ export class FieldDefinitions {
           return rangeTypes.includes(value.toUpperCase()) || ['UNLIMITED', 'SIGHT'].includes(value.toUpperCase());
         });
         break;
-
       default:
         this.valueValidators.set(fieldId, () => true);
     }
@@ -167,7 +157,6 @@ export class FieldDefinitions {
       switch (fieldId) {
         case 'level':
           return Object.keys(CONFIG.DND5E.spellLevels || {});
-
         case 'school':
           return Object.keys(CONFIG.DND5E.spellSchools || {})
             .map((key) => key.toUpperCase())
@@ -176,39 +165,27 @@ export class FieldDefinitions {
                 .map((school) => school.fullKey?.toUpperCase())
                 .filter(Boolean)
             );
-
         case 'castingTime':
           return Object.keys(CONFIG.DND5E.abilityActivationTypes || {}).map((key) => key.toUpperCase());
-
         case 'damageType':
-          // Include healing and sort alphabetically by label
           const damageTypesWithHealing = { ...CONFIG.DND5E.damageTypes, healing: { label: game.i18n.localize('DND5E.Healing') } };
           return Object.entries(damageTypesWithHealing)
-            .sort((a, b) => a[1].label.localeCompare(b[1].label)) // Sort by label
+            .sort((a, b) => a[1].label.localeCompare(b[1].label))
             .map(([key]) => key.toUpperCase());
-
         case 'condition':
           return Object.keys(CONFIG.DND5E.conditionTypes || {}).map((key) => key.toUpperCase());
-
         case 'requiresSave':
         case 'concentration':
         case 'prepared':
         case 'ritual':
           return ['TRUE', 'FALSE', 'YES', 'NO'];
-
         case 'materialComponents':
           return ['CONSUMED', 'NOTCONSUMED'];
-
         default:
           return [];
       }
     })();
-
-    // Add 'ALL' as the first option for applicable fields
-    if (['level', 'school', 'castingTime', 'damageType', 'condition', 'range'].includes(fieldId)) {
-      return ['ALL', ...baseValues];
-    }
-
+    if (['level', 'school', 'castingTime', 'damageType', 'condition', 'range'].includes(fieldId)) return ['ALL', ...baseValues];
     return baseValues;
   }
 }
