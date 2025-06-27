@@ -25,6 +25,11 @@ export class AdvancedSearchManager {
     this.queryExecutor = new QueryExecutor();
     this.isAdvancedQuery = false;
     this.parsedQuery = null;
+    this.queryCache = new Map();
+    this.lastParsedQuery = null;
+    this.focusDebounceTimeout = null;
+    this.lastDropdownQuery = null;
+    this.isProcessingFocusEvent = false;
   }
 
   /**
@@ -42,6 +47,23 @@ export class AdvancedSearchManager {
     this.cleanup();
     this.setupSearchInterface();
     this.setupEventListeners();
+  }
+
+  /**
+   * Parse and cache query to avoid redundant parsing
+   * @param {string} query - Query string without the ^ prefix
+   * @returns {Object|null} Parsed query object or null
+   */
+  parseAndCacheQuery(query) {
+    if (this.queryCache.has(query)) return this.queryCache.get(query);
+    try {
+      const parsed = this.queryParser.parseQuery(query);
+      this.queryCache.set(query, parsed);
+      return parsed;
+    } catch (error) {
+      this.queryCache.set(query, null);
+      return null;
+    }
   }
 
   /**
@@ -152,8 +174,10 @@ export class AdvancedSearchManager {
     newSearchInput.addEventListener(
       'click',
       (event) => {
-        log(3, 'Search input clicked');
-        this.handleSearchFocus(event);
+        if (document.activeElement !== newSearchInput) {
+          log(3, 'Search input clicked');
+          this.handleSearchFocus(event);
+        }
       },
       true
     );
@@ -268,11 +292,16 @@ export class AdvancedSearchManager {
    * @param {Event} event - Focus event
    */
   handleSearchFocus(event) {
-    log(3, 'Handling search focus');
-    setTimeout(() => {
+    if (this.isProcessingFocusEvent) return;
+    this.isProcessingFocusEvent = true;
+    if (this.focusDebounceTimeout) clearTimeout(this.focusDebounceTimeout);
+    this.focusDebounceTimeout = setTimeout(() => {
+      log(3, 'Handling search focus');
       this.showDropdown();
       const currentQuery = event.target.value || '';
       this.updateDropdownContent(currentQuery);
+      this.isProcessingFocusEvent = false;
+      this.focusDebounceTimeout = null;
     }, 10);
   }
 
@@ -320,7 +349,7 @@ export class AdvancedSearchManager {
     if (!query.startsWith('^')) return false;
     const queryWithoutTrigger = query.substring(1);
     try {
-      const parsed = this.queryParser.parseQuery(queryWithoutTrigger);
+      const parsed = this.parseAndCacheQuery(queryWithoutTrigger);
       return parsed !== null;
     } catch (error) {
       log(3, 'Query validation failed:', error.message);
@@ -436,6 +465,8 @@ export class AdvancedSearchManager {
    * @param {string} query - Current search query
    */
   async updateDropdownContent(query) {
+    if (this.lastDropdownQuery === query) return;
+    this.lastDropdownQuery = query;
     const dropdown = document.querySelector('.search-dropdown');
     if (!dropdown) return;
     let content = '';
@@ -494,110 +525,68 @@ export class AdvancedSearchManager {
           });
         }
       }
-
       return content;
     }
-    if (!queryWithoutTrigger.includes(':')) {
-      const fieldAliases = this.fieldDefinitions.getAllFieldAliases();
-      const uniqueFields = [];
-      const seenFields = new Set();
-      for (const alias of fieldAliases) {
-        const fieldId = this.fieldDefinitions.getFieldId(alias);
-        if (fieldId && !seenFields.has(fieldId)) {
-          seenFields.add(fieldId);
-          uniqueFields.push(alias);
-        }
-      }
-      const matchingFields = uniqueFields.filter((alias) => alias.toLowerCase().includes(queryWithoutTrigger.toLowerCase()));
-      if (matchingFields.length > 0) {
-        content += '<div class="search-section-header">Fields</div>';
-        matchingFields.forEach((field) => {
-          const tooltipAttr = field.length > 32 ? `data-tooltip="${field}"` : '';
-          content += `<div class="search-suggestion" data-query="^${field}:">
-          <span class="suggestion-text" ${tooltipAttr}>${field}</span>
+    const incompleteValueMatch = this.isIncompleteValue(queryWithoutTrigger);
+    if (incompleteValueMatch) {
+      const { field: fieldId, value: currentValue } = incompleteValueMatch;
+      content += '<div class="search-status info">→ Complete value</div>';
+      const validValues = this.fieldDefinitions.getValidValuesForField(fieldId);
+      const matchingValues = validValues.filter((value) => value.toLowerCase().startsWith(currentValue.toLowerCase()));
+      if (matchingValues.length > 0) {
+        content += '<div class="search-section-header">Matching Values</div>';
+        matchingValues.forEach((value) => {
+          const beforeColon = queryWithoutTrigger.substring(0, queryWithoutTrigger.lastIndexOf(':') + 1);
+          const fullQuery = `^${beforeColon}${value}`;
+          const tooltipAttr = value.length > 32 ? `data-tooltip="${value}"` : '';
+          content += `<div class="search-suggestion" data-query="${fullQuery}">
+          <span class="suggestion-text" ${tooltipAttr}>${value}</span>
         </div>`;
         });
-      } else if (queryWithoutTrigger.length > 0) {
-        content += '<div class="search-section-header">No matches</div>';
       }
-    } else {
-      const colonIndex = queryWithoutTrigger.indexOf(':');
-      const fieldPart = queryWithoutTrigger.substring(0, colonIndex);
-      const valuePart = queryWithoutTrigger.substring(colonIndex + 1);
-      const fieldId = this.fieldDefinitions.getFieldId(fieldPart);
-      if (!fieldId) {
-        content += '<div class="search-status error">✗ Unknown field</div>';
-        this.parsedQuery = null;
-      } else if (valuePart === '') {
-        content += '<div class="search-status info">→ Enter value</div>';
-        if (fieldId !== 'range') {
-          const validValues = this.fieldDefinitions.getValidValuesForField(fieldId);
-          if (validValues.length > 0) {
-            content += '<div class="search-section-header">Values</div>';
-            validValues.forEach((value) => {
-              const tooltipAttr = value.length > 32 ? `data-tooltip="${value}"` : '';
-              content += `<div class="search-suggestion" data-query="^${fieldPart}:${value}">
-              <span class="suggestion-text" ${tooltipAttr}>${value}</span>
-            </div>`;
-            });
-          }
-        }
-        this.parsedQuery = null;
-      } else {
-        try {
-          if (this.isIncompleteValue(fieldId, valuePart)) {
-            content += '<div class="search-status info">→ Continue typing...</div>';
-            this.parsedQuery = null;
-            return content;
-          }
-
-          this.parsedQuery = this.queryParser.parseQuery(queryWithoutTrigger);
-          if (this.parsedQuery) {
-            content += '<div class="search-status success">✓ Valid</div>';
-            content += '<div class="search-section-header">Add</div>';
-            content += `<div class="search-suggestion" data-query="${query} AND ">
-            <span class="suggestion-text">+ AND</span>
-          </div>`;
-            content += `<div class="search-suggestion" data-query="${query} OR ">
-            <span class="suggestion-text">+ OR</span>
-          </div>`;
-            content += '<div class="search-section-header">Execute</div>';
-            content += `<div class="search-suggestion submit-query" data-query="${query}">
-              <span class="suggestion-text">🔍 Run Query</span>
-            </div>`;
-          }
-        } catch (error) {
-          content += '<div class="search-status error">✗ Invalid</div>';
-          this.parsedQuery = null;
-          if (fieldId && fieldId !== 'range') {
-            const validValues = this.fieldDefinitions.getValidValuesForField(fieldId);
-            if (validValues.length > 0) {
-              content += '<div class="search-section-header">Valid Values</div>';
-              validValues.slice(0, 6).forEach((value) => {
-                const tooltipAttr = value.length > 32 ? `data-tooltip="${value}"` : '';
-                content += `<div class="search-suggestion" data-query="^${fieldPart}:${value}">
-                <span class="suggestion-text" ${tooltipAttr}>${value}</span>
-              </div>`;
-              });
-            }
-          }
-        }
-      }
+      return content;
+    }
+    if (this.isAdvancedQueryComplete(query)) {
+      content += `<div class="search-suggestion submit-query" data-query="${query}">
+        <span class="suggestion-text">Execute Query</span>
+        <span class="suggestion-execute">⏎</span>
+      </div>`;
     }
     return content;
   }
 
   /**
-   * Check if a query ends with FIELD: in complex expressions
-   * @param {string} queryWithoutTrigger - Query without the ^ prefix
-   * @returns {string|null} Field name if ends with field:, null otherwise
+   * Check if query ends with a field name followed by a colon
+   * @param {string} query - Query without the ^ prefix
+   * @returns {string|null} Field name if found, null otherwise
    */
-  queryEndsWithFieldColon(queryWithoutTrigger) {
-    const match = queryWithoutTrigger.match(/\b([A-Z]+):$/i);
-    if (match) {
-      const potentialField = match[1].toUpperCase();
-      const fieldId = this.fieldDefinitions.getFieldId(potentialField);
-      return fieldId ? potentialField : null;
+  queryEndsWithFieldColon(query) {
+    const parts = query.split(/[\s()]+/);
+    const lastPart = parts[parts.length - 1];
+    if (lastPart && lastPart.endsWith(':')) {
+      const potentialField = lastPart.slice(0, -1);
+      return this.fieldDefinitions.getFieldId(potentialField) ? potentialField : null;
+    }
+    return null;
+  }
+
+  /**
+   * Check if a value appears to be incomplete while typing
+   * @param {string} queryWithoutTrigger - Query without ^ prefix
+   * @returns {Object|null} Object with field and value if incomplete, null otherwise
+   */
+  isIncompleteValue(queryWithoutTrigger) {
+    const parts = queryWithoutTrigger.split(/[\s()]+/);
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const part = parts[i];
+      const colonIndex = part.indexOf(':');
+      if (colonIndex !== -1) {
+        const field = part.substring(0, colonIndex);
+        const value = part.substring(colonIndex + 1);
+        const fieldId = this.fieldDefinitions.getFieldId(field);
+        if (fieldId && value && this.isIncompleteValueForField(fieldId, value)) return { field: fieldId, value };
+        break;
+      }
     }
     return null;
   }
@@ -608,7 +597,7 @@ export class AdvancedSearchManager {
    * @param {string} value - The value being typed
    * @returns {boolean} Whether the value appears incomplete
    */
-  isIncompleteValue(fieldId, value) {
+  isIncompleteValueForField(fieldId, value) {
     if (['requiresSave', 'concentration', 'prepared', 'ritual'].includes(fieldId)) {
       const upperValue = value.toUpperCase();
       const validValues = ['TRUE', 'FALSE', 'YES', 'NO'];
@@ -671,134 +660,13 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Clear the search input and reset
-   */
-  clearSearch() {
-    const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
-    if (searchInput) {
-      searchInput.value = '';
-      searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-      searchInput.focus();
-    }
-    this.isAdvancedQuery = false;
-    this.parsedQuery = null;
-    this.updateClearButtonVisibility();
-    this.hideDropdown();
-    this.performSearch('');
-  }
-
-  /**
-   * Update visibility of clear button
-   */
-  updateClearButtonVisibility() {
-    const clearButton = this.clearButtonElement;
-    const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
-    if (!clearButton || !searchInput) return;
-    const hasValue = searchInput.value && searchInput.value.trim() !== '';
-    clearButton.style.display = hasValue ? 'block' : 'none';
-  }
-
-  /**
-   * Get recent searches from actor flags
-   * @returns {Array<string>} Array of recent searches
-   */
-  getRecentSearches() {
-    try {
-      const recent = this.actor.getFlag(MODULE.ID, FLAGS.RECENT_SEARCHES) || [];
-      return Array.isArray(recent) ? recent : [];
-    } catch (error) {
-      log(2, 'Error getting recent searches:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Add a search to recent searches
-   * @param {string} query - The search query to add
-   */
-  addToRecentSearches(query) {
-    if (!query || !query.trim()) return;
-    try {
-      const recentSearches = this.getRecentSearches();
-      const trimmedQuery = query.trim();
-      const existingIndex = recentSearches.indexOf(trimmedQuery);
-      if (existingIndex !== -1) recentSearches.splice(existingIndex, 1);
-      recentSearches.unshift(trimmedQuery);
-      const limitedSearches = recentSearches.slice(0, 8);
-      this.actor.setFlag(MODULE.ID, FLAGS.RECENT_SEARCHES, limitedSearches);
-      log(3, 'Added to recent searches:', trimmedQuery);
-    } catch (error) {
-      log(2, 'Error adding to recent searches:', error);
-    }
-  }
-
-  /**
-   * Remove a search from recent searches
-   * @param {string} query - The search query to remove
-   */
-  removeFromRecentSearches(query) {
-    try {
-      const recentSearches = this.getRecentSearches();
-      const updatedSearches = recentSearches.filter((search) => search !== query);
-      this.actor.setFlag(MODULE.ID, FLAGS.RECENT_SEARCHES, updatedSearches);
-      log(3, 'Removed from recent searches:', query);
-    } catch (error) {
-      log(2, 'Error removing from recent searches:', error);
-    }
-  }
-
-  /**
-   * Get fuzzy matches for a query
-   * @param {string} query - The search query
-   * @returns {Array} Array of matching spell names with scores
-   */
-  getFuzzyMatches(query) {
-    try {
-      if (!query || query.length < 3) return [];
-      const activeClass = this.app._stateManager?.activeClass;
-      if (!activeClass || !this.app._stateManager.classSpellData[activeClass]?.spellLevels) return [];
-      const spells = this.app._stateManager.classSpellData[activeClass].spellLevels;
-      const matches = [];
-      const queryLower = query.toLowerCase();
-      for (const spell of spells) {
-        if (!spell.name) continue;
-        const spellNameLower = spell.name.toLowerCase();
-        let score = 0;
-        if (spellNameLower === queryLower) score = 100;
-        else if (spellNameLower.startsWith(queryLower)) score = 90;
-        else if (spellNameLower.includes(queryLower)) score = 80;
-        else {
-          const queryWords = queryLower.split(/\s+/);
-          const spellWords = spellNameLower.split(/\s+/);
-          let wordMatches = 0;
-          for (const queryWord of queryWords) {
-            for (const spellWord of spellWords) {
-              if (spellWord.includes(queryWord)) {
-                wordMatches++;
-                break;
-              }
-            }
-          }
-          if (wordMatches > 0) score = 60 + (wordMatches / queryWords.length) * 20;
-        }
-        if (score > 0) matches.push({ name: spell.name, score: Math.round(score) });
-      }
-      matches.sort((a, b) => b.score - a.score);
-      return matches.slice(0, 5);
-    } catch (error) {
-      log(2, 'Error getting fuzzy matches:', error);
-      return [];
-    }
-  }
-
-  /**
    * Highlight matching text in search results
-   * @param {string} text - The text to highlight
-   * @param {string} query - The search query
-   * @returns {string} HTML with highlighted text
+   * @param {string} text - Text to highlight
+   * @param {string} query - Search query
+   * @returns {string} Text with highlighted matches
    */
   highlightText(text, query) {
-    if (!query || !query.trim()) return text;
+    if (!query || query.length < 2) return text;
     const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(
       `(${escapedQuery
@@ -852,7 +720,6 @@ export class AdvancedSearchManager {
         this.isFieldSuggestionActive = true;
         this.updateDropdownContent(query);
         if (!this.isDropdownVisible) this.showDropdown();
-
         searchInput.focus();
         setTimeout(() => {
           this.isFieldSuggestionActive = false;
@@ -934,16 +801,16 @@ export class AdvancedSearchManager {
    */
   async performSearch(query) {
     try {
-      const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
       if (query && query.startsWith('^')) {
-        const parsedQuery = this.queryParser.parseQuery(query.substring(1));
+        const parsedQuery = this.parseAndCacheQuery(query.substring(1));
         if (parsedQuery) {
+          this.isAdvancedQuery = true;
           this.parsedQuery = parsedQuery;
           this.applyAdvancedQueryToFilters(parsedQuery);
           this.app.filterHelper.invalidateFilterCache();
           setTimeout(() => {
             this.app.filterHelper.applyFilters();
-          }, 50);
+          }, 100);
           return;
         }
       }
@@ -952,7 +819,7 @@ export class AdvancedSearchManager {
       this.app.filterHelper.invalidateFilterCache();
       setTimeout(() => {
         this.app.filterHelper.applyFilters();
-      }, 50);
+      }, 100);
     } catch (error) {
       log(1, 'Error in performSearch:', error);
     }
@@ -974,6 +841,16 @@ export class AdvancedSearchManager {
         this.app.filterHelper._cachedFilterState[parsedQuery.field] = parsedQuery.value;
         this.setFilterValue(parsedQuery.field, parsedQuery.value);
       }
+    } else if (parsedQuery.type === 'boolean') {
+      if (parsedQuery.operator === 'AND') {
+        this.applyAdvancedQueryToFilters(parsedQuery.left);
+        this.applyAdvancedQueryToFilters(parsedQuery.right);
+      } else if (parsedQuery.operator === 'OR') {
+        log(2, 'OR operations not fully supported in UI, applying left side only');
+        this.applyAdvancedQueryToFilters(parsedQuery.left);
+      } else if (parsedQuery.operator === 'NOT') {
+        log(2, 'NOT operations not supported in current UI');
+      }
     }
     const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]') || document.querySelector('input[name="spell-search"]');
     if (searchInput && searchInput.value) {
@@ -981,10 +858,7 @@ export class AdvancedSearchManager {
       searchInput.dispatchEvent(new Event('input', { bubbles: true }));
       this.updateClearButtonVisibility();
     }
-    setTimeout(() => {
-      this.app.filterHelper.invalidateFilterCache();
-      this.app.filterHelper.applyFilters();
-    }, 100);
+    log(3, 'Advanced query filters applied');
   }
 
   /**
@@ -1181,6 +1055,117 @@ export class AdvancedSearchManager {
   }
 
   /**
+   * Clear the search input and reset
+   */
+  clearSearch() {
+    const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
+    if (searchInput) {
+      searchInput.value = '';
+      searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+      searchInput.focus();
+    }
+    this.isAdvancedQuery = false;
+    this.parsedQuery = null;
+    this.updateClearButtonVisibility();
+    this.hideDropdown();
+    this.performSearch('');
+  }
+
+  /**
+   * Update visibility of clear button
+   */
+  updateClearButtonVisibility() {
+    const clearButton = this.clearButtonElement;
+    const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
+    if (!clearButton || !searchInput) return;
+    const hasValue = searchInput.value && searchInput.value.trim() !== '';
+    clearButton.style.display = hasValue ? 'block' : 'none';
+  }
+
+  /**
+   * Get recent searches from actor flags
+   * @returns {Array<string>} Array of recent searches
+   */
+  getRecentSearches() {
+    try {
+      const recent = this.actor.getFlag(MODULE.ID, FLAGS.RECENT_SEARCHES) || [];
+      return Array.isArray(recent) ? recent : [];
+    } catch (error) {
+      log(2, 'Error getting recent searches:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Add a search to recent searches
+   * @param {string} query - The search query to add
+   */
+  addToRecentSearches(query) {
+    if (!query || !query.trim()) return;
+    try {
+      const recentSearches = this.getRecentSearches();
+      const trimmedQuery = query.trim();
+      const existingIndex = recentSearches.indexOf(trimmedQuery);
+      if (existingIndex !== -1) recentSearches.splice(existingIndex, 1);
+      recentSearches.unshift(trimmedQuery);
+      const limitedSearches = recentSearches.slice(0, 8);
+      this.actor.setFlag(MODULE.ID, FLAGS.RECENT_SEARCHES, limitedSearches);
+      log(3, 'Added to recent searches:', trimmedQuery);
+    } catch (error) {
+      log(2, 'Error adding to recent searches:', error);
+    }
+  }
+
+  /**
+   * Remove a search from recent searches
+   * @param {string} query - The search query to remove
+   */
+  removeFromRecentSearches(query) {
+    try {
+      const recentSearches = this.getRecentSearches();
+      const updatedSearches = recentSearches.filter((search) => search !== query);
+      this.actor.setFlag(MODULE.ID, FLAGS.RECENT_SEARCHES, updatedSearches);
+      log(3, 'Removed from recent searches:', query);
+    } catch (error) {
+      log(2, 'Error removing from recent searches:', error);
+    }
+  }
+
+  /**
+   * Get fuzzy matches for a query
+   * @param {string} query - The search query
+   * @returns {Array} Array of matching spell names with scores
+   */
+  getFuzzyMatches(query) {
+    try {
+      if (!query || query.length < 3) return [];
+      const activeClass = this.app._stateManager?.activeClass;
+      if (!activeClass || !this.app._stateManager.classSpellData[activeClass]?.spellLevels) return [];
+      const spells = this.app._stateManager.classSpellData[activeClass].spellLevels;
+      const matches = [];
+      const queryLower = query.toLowerCase();
+      for (const spell of spells) {
+        if (!spell.name) continue;
+        const spellNameLower = spell.name.toLowerCase();
+        let score = 0;
+        if (spellNameLower === queryLower) score = 100;
+        else if (spellNameLower.startsWith(queryLower)) score = 90;
+        else if (spellNameLower.includes(queryLower)) score = 80;
+        else {
+          const words = queryLower.split(/\s+/);
+          const matchedWords = words.filter((word) => spellNameLower.includes(word));
+          if (matchedWords.length > 0) score = Math.floor((matchedWords.length / words.length) * 70);
+        }
+        if (score > 0) matches.push({ name: spell.name, score });
+      }
+      return matches.sort((a, b) => b.score - a.score).slice(0, 10);
+    } catch (error) {
+      log(2, 'Error getting fuzzy matches:', error);
+      return [];
+    }
+  }
+
+  /**
    * Cleanup advanced search resources
    */
   cleanup() {
@@ -1188,10 +1173,17 @@ export class AdvancedSearchManager {
       clearTimeout(this.searchTimeout);
       this.searchTimeout = null;
     }
+    if (this.focusDebounceTimeout) {
+      clearTimeout(this.focusDebounceTimeout);
+      this.focusDebounceTimeout = null;
+    }
     this.isAdvancedQuery = false;
     this.parsedQuery = null;
     this.selectedSuggestionIndex = -1;
     this.isDropdownVisible = false;
+    this.isProcessingFocusEvent = false;
+    this.lastDropdownQuery = null;
+    this.queryCache.clear();
     const existingDropdown = document.querySelector('.search-dropdown');
     if (existingDropdown) existingDropdown.remove();
   }
