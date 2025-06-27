@@ -359,9 +359,19 @@ export class AdvancedSearchManager {
       this.hideDropdown();
       log(3, `[${suggestionId}] Submit query completed`);
     } else {
-      log(3, `[${suggestionId}] Not submit query - updating dropdown`);
-      this.updateDropdownContent(query);
-      log(3, `[${suggestionId}] Dropdown content updated`);
+      log(3, `[${suggestionId}] Not submit query - updating dropdown content`);
+
+      // Trigger input event to properly handle the new query
+      this.searchInputElement.dispatchEvent(new Event('input', { bubbles: true }));
+
+      // Update dropdown content and ensure it stays visible
+      setTimeout(() => {
+        this.updateDropdownContent(query);
+        if (!this.isDropdownVisible) {
+          this.showDropdown();
+        }
+        log(3, `[${suggestionId}] Dropdown content updated and shown`);
+      }, 10);
     }
   }
 
@@ -425,7 +435,7 @@ export class AdvancedSearchManager {
   _generateAdvancedQueryContent(query) {
     const queryWithoutTrigger = query.substring(1);
     let content = `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Advanced')}</div>`;
-    if (this.isIncompleteAndQuery(query)) {
+    if (!queryWithoutTrigger.trim() || this.isIncompleteAndQuery(query)) {
       content += `<div class="search-status info">${game.i18n.localize('SPELLBOOK.Search.EnterField')}</div>`;
       const fieldAliases = this.fieldDefinitions.getAllFieldAliases();
       const uniqueFields = [];
@@ -736,14 +746,29 @@ export class AdvancedSearchManager {
 
   /**
    * Parse a range value string into min and max components
-   * @param {string} rangeValue - Range value like "0-30" or "5-100"
+   * @param {string} rangeValue - Range value like "0-30", "30", "*-30", "30-*"
    * @returns {Array} [min, max] values
    */
   parseRangeValue(rangeValue) {
-    if (!rangeValue || !rangeValue.includes('-')) return [null, null];
+    if (!rangeValue) return [null, null];
+    if (!rangeValue.includes('-')) {
+      const num = parseInt(rangeValue);
+      return isNaN(num) ? [null, null] : [num, null];
+    }
     const parts = rangeValue.split('-');
-    const min = parts[0] ? parseInt(parts[0]) : null;
-    const max = parts[1] ? parseInt(parts[1]) : null;
+    if (parts.length !== 2) return [null, null];
+    const minPart = parts[0].trim();
+    const maxPart = parts[1].trim();
+    let min = null;
+    if (minPart && minPart !== '*') {
+      const parsedMin = parseInt(minPart);
+      if (!isNaN(parsedMin)) min = parsedMin;
+    }
+    let max = null;
+    if (maxPart && maxPart !== '*') {
+      const parsedMax = parseInt(maxPart);
+      if (!isNaN(parsedMax)) max = parsedMax;
+    }
     return [min, max];
   }
 
@@ -761,6 +786,8 @@ export class AdvancedSearchManager {
       const maxInput = document.querySelector('input[name="filter-max-range"]');
       if (maxInput) maxInput.value = max;
     }
+    const minInput = document.querySelector('input[name="filter-min-range"]');
+    if (minInput) minInput.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
   /**
