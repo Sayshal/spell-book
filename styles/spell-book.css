@@ -444,7 +444,7 @@
       padding-right: 1.75rem; /* Make room for clear button */
     }
 
-    /* Search input clear button - works for both advanced and simple search */
+    /* Search input clear button - match clear-recent-search styling */
     .search-input-clear {
       position: absolute;
       right: 0.5rem;
@@ -452,8 +452,12 @@
       transform: translateY(-50%);
       width: 1rem;
       height: 1rem;
+      padding: 0.125rem;
+      margin: 0;
+      min-width: 0;
       border: none;
-      background: transparent;
+      background: none;
+      color: var(--color-text-dark-secondary, rgb(102 102 102));
       cursor: pointer;
       border-radius: 0.125rem;
       display: none;
@@ -462,14 +466,15 @@
       font-size: 0.75rem;
       z-index: 2;
       pointer-events: auto;
-      color: var(--color-text-dark-secondary, rgb(102 102 102));
       transition:
-        background-color 0.15s ease,
-        color 0.15s ease;
+        opacity 0.15s ease,
+        background-color 0.15s ease;
+      flex-shrink: 0;
 
       &:hover {
         background: var(--color-bg-option, rgb(0 0 0 / 10%));
         color: var(--color-text-dark-primary, rgb(0 0 0));
+        box-shadow: none;
       }
 
       &:focus {
@@ -480,6 +485,8 @@
       i {
         font-size: 0.625rem;
         line-height: 1;
+        margin: 0;
+        width: auto;
       }
     }
 

@@ -116,7 +116,7 @@ export class AdvancedSearchManager {
     const clearButton = document.createElement('button');
     clearButton.type = 'button';
     clearButton.className = 'search-input-clear';
-    clearButton.innerHTML = '×';
+    clearButton.innerHTML = '<i class="fa-solid fa-square-xmark"></i>';
     clearButton.style.display = 'none';
     clearButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Search.ClearSearch'));
     clearButton.setAttribute('tabindex', '-1');
@@ -293,21 +293,28 @@ export class AdvancedSearchManager {
 
     const dropdown = document.querySelector('.search-dropdown');
 
+    // Check for clear-recent-search FIRST (before search-suggestion)
+    if (event.target.closest('.clear-recent-search')) {
+      log(3, 'Handling clear recent search click');
+      event.preventDefault();
+      event.stopPropagation();
+      const suggestionElement = event.target.closest('.search-suggestion');
+      const searchText = suggestionElement.dataset.query;
+
+      // Hide the element immediately for better UX
+      suggestionElement.style.display = 'none';
+
+      this.removeFromRecentSearches(searchText);
+      this.updateDropdownContent(this.searchInputElement.value);
+      return;
+    }
+
+    // Then check for search suggestion click
     if (event.target.closest('.search-suggestion')) {
       log(3, `[${clickId}] Handling search suggestion click`);
       event.preventDefault();
       event.stopPropagation();
       this.selectSuggestion(event.target.closest('.search-suggestion'));
-      return;
-    }
-
-    if (event.target.closest('.clear-recent-search')) {
-      log(3, 'Handling clear recent search click');
-      event.preventDefault();
-      event.stopPropagation();
-      const searchText = event.target.closest('.search-suggestion').dataset.query;
-      this.removeFromRecentSearches(searchText);
-      this.updateDropdownContent(this.searchInputElement.value);
       return;
     }
 
@@ -686,13 +693,6 @@ export class AdvancedSearchManager {
           log(3, `[${searchId}] Calling applyAdvancedQueryToFilters`);
           this.applyAdvancedQueryToFilters(parsedQuery);
           this.app.filterHelper.invalidateFilterCache();
-
-          // Remove this delayed call - filtering is already handled by applyAdvancedQueryToFilters
-          // setTimeout(() => {
-          //   log(3, `[${searchId}] Delayed applyFilters executing`);
-          //   this.app.filterHelper.applyFilters();
-          //   this.isProcessingSearch = false;
-          // }, 100);
 
           this.isProcessingSearch = false; // Reset immediately since filtering is handled by dispatchEvent
           log(3, `[${searchId}] Advanced query processing completed`);
