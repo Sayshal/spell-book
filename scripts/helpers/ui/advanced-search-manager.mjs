@@ -661,14 +661,14 @@ export class AdvancedSearchManager {
   setRangeFilterValue(rangeValue) {
     const [min, max] = this.parseRangeValue(rangeValue);
     if (min !== null) {
-      const minInput = document.querySelector('input[name="min-range"]');
+      const minInput = document.querySelector('input[name="filter-min-range"]');
       if (minInput) {
         minInput.value = min;
         minInput.dispatchEvent(new Event('input', { bubbles: true }));
       }
     }
     if (max !== null) {
-      const maxInput = document.querySelector('input[name="max-range"]');
+      const maxInput = document.querySelector('input[name="filter-max-range"]');
       if (maxInput) {
         maxInput.value = max;
         maxInput.dispatchEvent(new Event('input', { bubbles: true }));
