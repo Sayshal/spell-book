@@ -2,21 +2,19 @@ import { log } from '../../logger.mjs';
 
 /**
  * Executes parsed queries against spell data
+ * Supports only AND operations between field conditions
  */
 export class QueryExecutor {
-  constructor() {}
-
   /**
    * Execute parsed query against spells
-   * @param {Object} queryTree - Parsed query tree
+   * @param {Object} queryObject - Parsed query object
    * @param {Array} spells - Array of spells to filter
    * @returns {Array} Filtered spells
    */
-  executeQuery(queryTree, spells) {
-    if (!queryTree || !spells) return spells;
-
+  executeQuery(queryObject, spells) {
+    if (!queryObject || !spells || queryObject.type !== 'conjunction') return spells;
     try {
-      return spells.filter((spell) => this._evaluateExpression(queryTree, spell));
+      return spells.filter((spell) => this._evaluateSpell(queryObject.conditions, spell));
     } catch (error) {
       log(2, 'Query execution failed:', error);
       return [];
@@ -24,99 +22,56 @@ export class QueryExecutor {
   }
 
   /**
-   * Evaluate expression against a spell
-   * @param {Object} expression - Expression tree node
+   * Evaluate all conditions against a spell (AND logic)
+   * @param {Array} conditions - Array of field conditions
    * @param {Object} spell - Spell to evaluate against
-   * @returns {boolean} Whether the spell matches the expression
+   * @returns {boolean} Whether the spell matches all conditions
    * @private
    */
-  _evaluateExpression(expression, spell) {
-    switch (expression.type) {
-      case 'field':
-        return this._evaluateField(expression, spell);
-      case 'boolean':
-        return this._evaluateBoolean(expression, spell);
-      default:
-        log(2, 'Unknown expression type:', expression.type);
-        return false;
-    }
+  _evaluateSpell(conditions, spell) {
+    return conditions.every((condition) => this._evaluateCondition(condition, spell));
   }
 
   /**
-   * Evaluate field expression
-   * @param {Object} fieldExpr - Field expression
+   * Evaluate single field condition
+   * @param {Object} condition - Field condition
    * @param {Object} spell - Spell to evaluate
-   * @returns {boolean} Whether the spell matches the field criteria
+   * @returns {boolean} Whether the spell matches the condition
    * @private
    */
-  _evaluateField(fieldExpr, spell) {
-    const { field, value } = fieldExpr;
-
+  _evaluateCondition(condition, spell) {
+    if (condition.type !== 'field') {
+      log(2, 'Unknown condition type:', condition.type);
+      return false;
+    }
+    const { field, value } = condition;
     switch (field) {
       case 'name':
         return spell.name.toLowerCase().includes(value.toLowerCase());
-
       case 'level':
         return spell.level === parseInt(value);
-
       case 'school':
-        return spell.school === value.toLowerCase();
-
+        return spell.school?.toLowerCase() === value.toLowerCase();
       case 'castingTime':
         return this._evaluateCastingTime(value, spell);
-
       case 'range':
         return this._evaluateRange(value, spell);
-
       case 'damageType':
         return this._evaluateDamageType(value, spell);
-
       case 'condition':
         return this._evaluateCondition(value, spell);
-
       case 'requiresSave':
         return this._evaluateRequiresSave(value, spell);
-
       case 'concentration':
         return this._evaluateConcentration(value, spell);
-
-      case 'materialComponents':
-        return this._evaluateMaterialComponents(value, spell);
-
       case 'prepared':
         return this._evaluatePrepared(value, spell);
-
       case 'ritual':
         return this._evaluateRitual(value, spell);
-
+      case 'materialComponents':
+        return this._evaluateMaterialComponents(value, spell);
       default:
         log(2, 'Unknown field:', field);
-        return false;
-    }
-  }
-
-  /**
-   * Evaluate Boolean expression
-   * @param {Object} boolExpr - Boolean expression
-   * @param {Object} spell - Spell to evaluate
-   * @returns {boolean} Result of Boolean evaluation
-   * @private
-   */
-  _evaluateBoolean(boolExpr, spell) {
-    const { operator } = boolExpr;
-
-    switch (operator) {
-      case 'AND':
-        return this._evaluateExpression(boolExpr.left, spell) && this._evaluateExpression(boolExpr.right, spell);
-
-      case 'OR':
-        return this._evaluateExpression(boolExpr.left, spell) || this._evaluateExpression(boolExpr.right, spell);
-
-      case 'NOT':
-        return !this._evaluateExpression(boolExpr.operand, spell);
-
-      default:
-        log(2, 'Unknown Boolean operator:', operator);
         return false;
     }
   }
@@ -132,10 +87,8 @@ export class QueryExecutor {
     const parts = value.split(':');
     const expectedType = parts[0];
     const expectedValue = parts[1] || '1';
-
     const spellType = spell.filterData?.castingTime?.type || spell.system?.activation?.type || '';
     const spellValue = String(spell.filterData?.castingTime?.value || spell.system?.activation?.value || '1');
-
     return spellType.toLowerCase() === expectedType && spellValue === expectedValue;
   }
 
@@ -208,20 +161,8 @@ export class QueryExecutor {
    */
   _evaluateConcentration(value, spell) {
     const expectedConcentration = value === 'true';
-    const requiresConcentration = !!spell.filterData?.concentration;
+    const requiresConcentration = !!(spell.filterData?.concentration || spell.system?.properties?.concentration);
     return expectedConcentration === requiresConcentration;
-  }
-
-  /**
-   * Evaluate material components criteria
-   * @param {string} value - Expected material component type
-   * @param {Object} spell - Spell to check
-   * @returns {boolean} Whether material component requirement matches
-   * @private
-   */
-  _evaluateMaterialComponents(value, spell) {
-    const hasMaterialComponents = spell.filterData?.materialComponents?.hasConsumedMaterials || false;
-    return (value === 'consumed' && hasMaterialComponents) || (value === 'notconsumed' && !hasMaterialComponents);
   }
 
   /**
@@ -233,20 +174,34 @@ export class QueryExecutor {
    */
   _evaluatePrepared(value, spell) {
     const expectedPrepared = value === 'true';
-    const isPrepared = spell.preparation?.prepared || false;
+    const isPrepared = !!(spell.system?.preparation?.prepared || spell.prepared);
     return expectedPrepared === isPrepared;
   }
 
   /**
    * Evaluate ritual criteria
-   * @param {string} value - Expected ritual status (true/false)
+   * @param {string} value - Expected ritual capability (true/false)
    * @param {Object} spell - Spell to check
-   * @returns {boolean} Whether ritual status matches
+   * @returns {boolean} Whether ritual capability matches
    * @private
    */
   _evaluateRitual(value, spell) {
     const expectedRitual = value === 'true';
-    const isRitual = !!spell.filterData?.isRitual;
+    const isRitual = !!(spell.filterData?.ritual || spell.system?.properties?.ritual);
     return expectedRitual === isRitual;
+  }
+
+  /**
+   * Evaluate material components criteria
+   * @param {string} value - Expected material component status
+   * @param {Object} spell - Spell to check
+   * @returns {boolean} Whether material component status matches
+   * @private
+   */
+  _evaluateMaterialComponents(value, spell) {
+    const expectedConsumed = value.toLowerCase() === 'consumed';
+    const materialComponents = spell.filterData?.materialComponents || {};
+    const isConsumed = !!materialComponents.consumed;
+    return expectedConsumed === isConsumed;
   }
 }

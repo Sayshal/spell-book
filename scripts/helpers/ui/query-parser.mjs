@@ -2,6 +2,7 @@ import { log } from '../../logger.mjs';
 
 /**
  * Parser for advanced search query syntax
+ * Supports only FIELD:VALUE syntax with AND operations
  */
 export class QueryParser {
   constructor(fieldDefinitions) {
@@ -16,9 +17,9 @@ export class QueryParser {
   parseQuery(query) {
     try {
       if (!query || !query.trim()) return null;
-      const tokens = this._tokenize(query.trim());
-      if (!tokens || tokens.length === 0) return null;
-      const parsed = this._parseExpression(tokens);
+      const conditions = this._parseConditions(query.trim());
+      if (!conditions || conditions.length === 0) return null;
+      const parsed = { type: 'conjunction', conditions: conditions };
       log(3, 'Query parsed successfully:', parsed);
       return parsed;
     } catch (error) {
@@ -28,114 +29,38 @@ export class QueryParser {
   }
 
   /**
-   * Tokenize the query string
+   * Parse query into field conditions
    * @param {string} query - The query string
-   * @returns {Array} Array of tokens
+   * @returns {Array} Array of field condition objects
    * @private
    */
-  _tokenize(query) {
-    const tokens = [];
-    const regex = /([A-Z]+:[^(\s)]*(?:\([^)]*\))?|\(|\)|AND|OR|NOT|\w+)/gi;
-    let match;
-    while ((match = regex.exec(query)) !== null) tokens.push(match[0].trim());
-    return tokens;
-  }
-
-  /**
-   * Parse expression with Boolean operators
-   * @param {Array} tokens - Array of tokens
-   * @returns {Object} Parsed expression tree
-   * @private
-   */
-  _parseExpression(tokens) {
-    return this._parseOrExpression(tokens);
-  }
-
-  /**
-   * Parse OR expressions (lowest precedence)
-   * @param {Array} tokens - Array of tokens
-   * @returns {Object} Parsed expression
-   * @private
-   */
-  _parseOrExpression(tokens) {
-    let left = this._parseAndExpression(tokens);
-    while (tokens.length > 0 && tokens[0].toUpperCase() === 'OR') {
-      tokens.shift();
-      const right = this._parseAndExpression(tokens);
-      left = { type: 'boolean', operator: 'OR', left: left, right: right };
+  _parseConditions(query) {
+    const conditions = [];
+    const parts = query.split(/\s+AND\s+/i);
+    for (const part of parts) {
+      const trimmedPart = part.trim();
+      if (!trimmedPart) continue;
+      const fieldCondition = this._parseFieldExpression(trimmedPart);
+      if (fieldCondition) conditions.push(fieldCondition);
     }
-    return left;
-  }
-
-  /**
-   * Parse AND expressions (medium precedence)
-   * @param {Array} tokens - Array of tokens
-   * @returns {Object} Parsed expression
-   * @private
-   */
-  _parseAndExpression(tokens) {
-    let left = this._parseNotExpression(tokens);
-    while (tokens.length > 0 && (tokens[0].toUpperCase() === 'AND' || this._isFieldOrParenthesis(tokens[0]))) {
-      if (tokens[0].toUpperCase() === 'AND') tokens.shift();
-      const right = this._parseNotExpression(tokens);
-      left = { type: 'boolean', operator: 'AND', left: left, right: right };
-    }
-    return left;
-  }
-
-  /**
-   * Parse NOT expressions (highest precedence)
-   * @param {Array} tokens - Array of tokens
-   * @returns {Object} Parsed expression
-   * @private
-   */
-  _parseNotExpression(tokens) {
-    if (tokens.length > 0 && tokens[0].toUpperCase() === 'NOT') {
-      tokens.shift();
-      const expression = this._parsePrimaryExpression(tokens);
-      return { type: 'boolean', operator: 'NOT', operand: expression };
-    }
-    return this._parsePrimaryExpression(tokens);
-  }
-
-  /**
-   * Parse primary expressions (fields and parentheses)
-   * @param {Array} tokens - Array of tokens
-   * @returns {Object} Parsed expression
-   * @private
-   */
-  _parsePrimaryExpression(tokens) {
-    if (tokens.length === 0) throw new Error('Unexpected end of query');
-    const token = tokens.shift();
-    if (token === '(') {
-      const expression = this._parseExpression(tokens);
-      if (tokens.length === 0 || tokens.shift() !== ')') throw new Error('Missing closing parenthesis');
-      return expression;
-    }
-    if (token.includes(':')) return this._parseFieldExpression(token);
-    const fieldId = this.fieldDefinitions.getFieldId(token.toUpperCase());
-    if (fieldId) throw new Error(`Incomplete field expression: ${token.toUpperCase()} (missing value after colon)`);
-    throw new Error(`Unexpected token: ${token}`);
+    return conditions;
   }
 
   /**
    * Parse field:value expression
-   * @param {string} token - The field:value token
-   * @returns {Object} Parsed field expression
+   * @param {string} expression - The field:value expression
+   * @returns {Object|null} Parsed field condition or null if invalid
    * @private
    */
-  _parseFieldExpression(token) {
-    const parts = token.split(':');
-    if (parts.length < 2) throw new Error(`Invalid field expression: ${token}`);
-    const fieldAlias = parts[0].toUpperCase();
+  _parseFieldExpression(expression) {
+    const colonIndex = expression.indexOf(':');
+    if (colonIndex === -1) throw new Error(`Invalid field expression: ${expression} (missing colon)`);
+    const fieldAlias = expression.substring(0, colonIndex).trim().toUpperCase();
+    const value = expression.substring(colonIndex + 1).trim();
     const fieldId = this.fieldDefinitions.getFieldId(fieldAlias);
     if (!fieldId) throw new Error(`Unknown field: ${fieldAlias}`);
-    const value = parts.slice(1).join(':');
-    if (!value || value.trim() === '') {
-      log(3, `Missing value for field ${fieldAlias} (enter a value after the colon)`);
-      return { type: 'field', field: fieldId, value: this._normalizeValue(fieldId, value) };
-    }
-    if (fieldId === 'range' && value.match(/^\d+$/)) log(3, `Partial range value detected: ${value}`);
+    if (!value || value === '') throw new Error(`Missing value for field ${fieldAlias} (enter a value after the colon)`);
+    if (fieldId === 'range' && value.match(/^\d+-?$/)) log(3, `Partial range value detected: ${value}`);
     else if (!this.fieldDefinitions.validateValue(fieldId, value)) throw new Error(`Invalid value for field ${fieldAlias}: ${value}`);
     return { type: 'field', field: fieldId, value: this._normalizeValue(fieldId, value) };
   }
@@ -169,15 +94,5 @@ export class QueryParser {
       return `${parts[0].toLowerCase()}:${parts[1] || '1'}`;
     }
     return value.toLowerCase();
-  }
-
-  /**
-   * Check if token is a field expression or opening parenthesis
-   * @param {string} token - The token to check
-   * @returns {boolean} Whether it's a field or parenthesis
-   * @private
-   */
-  _isFieldOrParenthesis(token) {
-    return token.includes(':') || token === '(';
   }
 }

@@ -80,229 +80,65 @@ export class AdvancedSearchManager {
     const hasAdvancedClass = searchInput.classList.contains('advanced-search-input');
     log(3, 'Search input has advanced class:', hasAdvancedClass);
     const existingDropdown = document.querySelector('.search-dropdown');
-    log(3, 'Existing dropdown found:', !!existingDropdown, existingDropdown);
-    if (hasAdvancedClass && existingDropdown) {
-      log(3, 'Setup already complete and dropdown exists, skipping');
-      this.searchInputElement = searchInput;
-      this.clearButtonElement = searchInput.parentNode.querySelector('.search-input-clear');
-      return;
-    }
-    if (existingDropdown) {
-      log(3, 'Removing existing dropdown...');
-      existingDropdown.remove();
-      log(3, 'Existing dropdown removed');
-    }
-    const filterItem = searchInput.closest('.filter-item');
-    log(3, 'Filter item found:', !!filterItem, filterItem);
-    if (!filterItem) {
-      log(1, 'No filter item found, aborting setupSearchInterface');
-      return;
-    }
-    let clearButton = filterItem.querySelector('.search-input-clear');
-    if (!clearButton) {
-      log(3, 'Creating clear button...');
-      clearButton = document.createElement('button');
-      clearButton.className = 'search-input-clear';
-      clearButton.type = 'button';
-      clearButton.innerHTML = '<i class="fas fa-times" aria-hidden="true"></i>';
-      clearButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Search.ClearInput'));
-      clearButton.setAttribute('title', game.i18n.localize('SPELLBOOK.Search.ClearInput'));
-      clearButton.style.display = 'none';
-      log(3, 'Clear button created:', clearButton);
-      log(3, 'Inserting clear button after search input...');
-      searchInput.parentNode.insertBefore(clearButton, searchInput.nextSibling);
-      log(3, 'Clear button inserted');
-    } else {
-      log(3, 'Clear button already exists:', clearButton);
-    }
-    log(3, 'Creating dropdown element...');
-    const dropdownElement = document.createElement('div');
-    dropdownElement.className = 'search-dropdown';
-    dropdownElement.setAttribute('role', 'region');
-    dropdownElement.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Search.Dropdown'));
-    log(3, 'Dropdown element created:', dropdownElement);
-    log(3, 'Appending dropdown to document.body...');
-    document.body.appendChild(dropdownElement);
-    log(3, 'Dropdown appended to body');
-    const verifyDropdown = document.querySelector('.search-dropdown');
-    log(3, 'Verification - dropdown in DOM:', !!verifyDropdown, verifyDropdown);
+    log(3, 'Existing dropdown found:', !!existingDropdown);
     if (!hasAdvancedClass) {
-      log(3, 'Adding classes and attributes to search input...');
       searchInput.classList.add('advanced-search-input');
+      searchInput.setAttribute('placeholder', 'Search spells... (Type ^ for advanced search)');
       searchInput.setAttribute('autocomplete', 'off');
+      searchInput.setAttribute('spellcheck', 'false');
       searchInput.setAttribute('aria-expanded', 'false');
       searchInput.setAttribute('aria-haspopup', 'listbox');
-      filterItem.classList.add('has-advanced-search');
-      log(3, 'Classes and attributes added');
-    } else {
-      log(3, 'Search input already has advanced setup');
+      searchInput.setAttribute('role', 'combobox');
+      searchInput.setAttribute('aria-label', 'Search spells with advanced syntax support');
     }
     this.searchInputElement = searchInput;
-    this.clearButtonElement = clearButton;
-    log(3, 'References stored');
-    log(3, 'Advanced search interface setup complete');
-    log(3, 'Final verification - dropdown in DOM:', !!document.querySelector('.search-dropdown'));
+    this.createClearButton();
+    this.createDropdown();
+    log(3, 'Search interface setup complete');
   }
 
   /**
-   * Setup event listeners for search functionality
+   * Create clear button for search input
+   */
+  createClearButton() {
+    if (this.clearButtonElement) return;
+    const searchContainer = this.searchInputElement.parentElement;
+    const clearButton = document.createElement('button');
+    clearButton.type = 'button';
+    clearButton.className = 'search-clear-button';
+    clearButton.innerHTML = '×';
+    clearButton.style.display = 'none';
+    clearButton.setAttribute('aria-label', 'Clear search');
+    clearButton.setAttribute('tabindex', '-1');
+    searchContainer.appendChild(clearButton);
+    this.clearButtonElement = clearButton;
+  }
+
+  /**
+   * Create dropdown container
+   */
+  createDropdown() {
+    if (document.querySelector('.search-dropdown')) return;
+    const dropdown = document.createElement('div');
+    dropdown.className = 'search-dropdown';
+    dropdown.style.display = 'none';
+    dropdown.setAttribute('role', 'listbox');
+    dropdown.setAttribute('aria-label', 'Search suggestions');
+    document.body.appendChild(dropdown);
+  }
+
+  /**
+   * Setup event listeners
    */
   setupEventListeners() {
-    const searchInput = this.element.querySelector('input[name="filter-name"]');
-    const dropdown = document.querySelector('.search-dropdown');
-    if (!searchInput || !dropdown) {
-      log(2, 'Advanced search setup incomplete:', { searchInput: !!searchInput, dropdown: !!dropdown });
-      return;
-    }
-    log(3, 'Setting up advanced search event listeners');
-    const clonedInput = searchInput.cloneNode(true);
-    searchInput.parentNode.replaceChild(clonedInput, searchInput);
-    const newSearchInput = this.element.querySelector('input[name="filter-name"]');
-    this.searchInputElement = newSearchInput;
-    const clearButton = newSearchInput.parentNode.querySelector('.search-input-clear');
-    this.clearButtonElement = clearButton;
-    this.isDeletingRecentSearch = false;
-    newSearchInput.addEventListener(
-      'focus',
-      (event) => {
-        log(3, 'Search input focused');
-        this.handleSearchFocus(event);
-        this.updateClearButtonVisibility();
-      },
-      true
-    );
-    newSearchInput.addEventListener(
-      'click',
-      (event) => {
-        if (document.activeElement !== newSearchInput) {
-          log(3, 'Search input clicked');
-          this.handleSearchFocus(event);
-        }
-      },
-      true
-    );
-    newSearchInput.addEventListener(
-      'input',
-      (event) => {
-        log(3, 'Search input changed:', event.target.value);
-        this.handleSearchInput(event);
-        this.updateClearButtonVisibility();
-      },
-      true
-    );
-    newSearchInput.addEventListener('keydown', (event) => this.handleSearchKeydown(event), true);
-    newSearchInput.addEventListener(
-      'blur',
-      (event) => {
-        this.handleSearchBlur(event);
-        this.updateClearButtonVisibility();
-      },
-      true
-    );
-    if (clearButton) {
-      clearButton.addEventListener(
-        'mousedown',
-        (event) => {
-          log(3, 'Clear button mousedown');
-          event.preventDefault();
-          event.stopPropagation();
-        },
-        true
-      );
-      clearButton.addEventListener(
-        'click',
-        (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          log(3, 'Clear button clicked');
-          this.clearSearch();
-        },
-        true
-      );
-    }
-    dropdown.addEventListener(
-      'mousedown',
-      (event) => {
-        const clearButton = event.target.closest('.clear-recent-search');
-        if (clearButton) {
-          event.preventDefault();
-          event.stopPropagation();
-          this.isDeletingRecentSearch = true;
-          const query = clearButton.dataset.search;
-          log(3, 'Removing recent search (mousedown):', query);
-          const recentSearchRow = clearButton.closest('.search-suggestion.recent-search');
-          if (recentSearchRow) {
-            recentSearchRow.style.opacity = '0.3';
-            recentSearchRow.style.pointerEvents = 'none';
-            setTimeout(() => {
-              if (recentSearchRow.parentNode) {
-                recentSearchRow.style.display = 'none';
-              }
-            }, 150);
-          }
-          this.removeFromRecentSearches(query);
-          setTimeout(() => {
-            const currentQuery = this.searchInputElement?.value || '';
-            this.updateDropdownContent(currentQuery);
-            this.isDeletingRecentSearch = false;
-          }, 200);
-          return false;
-        }
-      },
-      true
-    );
-    dropdown.addEventListener(
-      'click',
-      (event) => {
-        const clearButton = event.target.closest('.clear-recent-search');
-        if (clearButton) {
-          event.preventDefault();
-          event.stopPropagation();
-          return false;
-        }
-        const suggestion = event.target.closest('.search-suggestion');
-        if (suggestion) {
-          event.stopPropagation();
-          this.selectSuggestion(suggestion);
-        }
-      },
-      true
-    );
-    document.addEventListener(
-      'click',
-      (event) => {
-        if (
-          !newSearchInput.contains(event.target) &&
-          !dropdown.contains(event.target) &&
-          !clearButton?.contains(event.target) &&
-          !event.target.closest('.search-dropdown') &&
-          !event.target.closest('.filter-item') &&
-          !this.isDeletingRecentSearch
-        ) {
-          this.hideDropdown();
-        }
-      },
-      false
-    );
-    log(3, 'Advanced search event listeners attached');
-  }
-
-  /**
-   * Handle search input focus
-   * @param {Event} event - Focus event
-   */
-  handleSearchFocus(event) {
-    if (this.isProcessingFocusEvent) return;
-    this.isProcessingFocusEvent = true;
-    if (this.focusDebounceTimeout) clearTimeout(this.focusDebounceTimeout);
-    this.focusDebounceTimeout = setTimeout(() => {
-      log(3, 'Handling search focus');
-      this.showDropdown();
-      const currentQuery = event.target.value || '';
-      this.updateDropdownContent(currentQuery);
-      this.isProcessingFocusEvent = false;
-      this.focusDebounceTimeout = null;
-    }, 10);
+    if (!this.searchInputElement) return;
+    this.searchInputElement.addEventListener('input', this.handleSearchInput.bind(this));
+    this.searchInputElement.addEventListener('focus', this.handleSearchFocus.bind(this));
+    this.searchInputElement.addEventListener('blur', this.handleSearchBlur.bind(this));
+    this.searchInputElement.addEventListener('keydown', this.handleSearchKeydown.bind(this));
+    if (this.clearButtonElement) this.clearButtonElement.addEventListener('click', this.clearSearch.bind(this));
+    document.addEventListener('click', this.handleDocumentClick.bind(this));
+    log(3, 'Event listeners setup complete');
   }
 
   /**
@@ -310,11 +146,10 @@ export class AdvancedSearchManager {
    * @param {Event} event - Input event
    */
   handleSearchInput(event) {
-    if (this.isFieldSuggestionActive) return;
     const query = event.target.value;
+    this.updateClearButtonVisibility();
     if (this.searchTimeout) clearTimeout(this.searchTimeout);
-    const isAdvancedQuery = query.startsWith('^');
-    if (isAdvancedQuery) {
+    if (query.startsWith('^')) {
       this.searchTimeout = setTimeout(async () => {
         try {
           await this.app._ensureSpellDataAndInitializeLazyLoading();
@@ -377,61 +212,96 @@ export class AdvancedSearchManager {
         break;
       case 'Enter':
         event.preventDefault();
-        event.stopPropagation();
-        if (this.searchTimeout) {
-          clearTimeout(this.searchTimeout);
-          this.searchTimeout = null;
-        }
-        if (this.selectedSuggestionIndex >= 0 && this.selectedSuggestionIndex < suggestions.length) {
+        if (this.selectedSuggestionIndex >= 0 && suggestions[this.selectedSuggestionIndex]) {
           this.selectSuggestion(suggestions[this.selectedSuggestionIndex]);
         } else {
           const query = event.target.value;
-          if (query) {
-            if (query.startsWith('^')) {
-              if (this.isAdvancedQueryComplete(query)) {
-                this.addToRecentSearches(query);
-                this.hideDropdown();
-                this.performSearch(query);
-              } else {
-                log(2, 'Advanced query incomplete or invalid:', query);
-              }
-            } else {
-              this.addToRecentSearches(query);
-              this.hideDropdown();
-              this.performSearch(query);
-            }
+          if (query.startsWith('^') && this.isAdvancedQueryComplete(query)) {
+            this.performSearch(query);
+            this.addToRecentSearches(query);
+            this.hideDropdown();
           }
         }
         break;
       case 'Escape':
         this.hideDropdown();
+        event.target.blur();
         break;
     }
   }
 
   /**
-   * Handle search input blur
+   * Handle search focus
+   * @param {Event} event - Focus event
+   */
+  handleSearchFocus(event) {
+    if (this.isProcessingFocusEvent) return;
+    this.isProcessingFocusEvent = true;
+    if (this.focusDebounceTimeout) clearTimeout(this.focusDebounceTimeout);
+    this.focusDebounceTimeout = setTimeout(() => {
+      const query = event.target.value;
+      this.updateDropdownContent(query);
+      this.showDropdown();
+      this.isProcessingFocusEvent = false;
+    }, 50);
+  }
+
+  /**
+   * Handle search blur
    * @param {Event} event - Blur event
    */
   handleSearchBlur(event) {
-    log(3, 'Search blur event, isDeletingRecentSearch:', this.isDeletingRecentSearch, 'isFieldSuggestionActive:', this.isFieldSuggestionActive);
-    if (this.isDeletingRecentSearch || this.isFieldSuggestionActive) {
-      log(3, 'Preventing blur hide due to recent search deletion or field suggestion');
-      return;
-    }
     setTimeout(() => {
-      if (!this.isDeletingRecentSearch && !this.isFieldSuggestionActive) this.hideDropdown();
+      if (!document.querySelector('.search-dropdown:hover')) this.hideDropdown();
     }, 150);
   }
 
   /**
-   * Show the search dropdown
+   * Handle document click
+   * @param {Event} event - Click event
+   */
+  handleDocumentClick(event) {
+    const dropdown = document.querySelector('.search-dropdown');
+    if (event.target.closest('.search-suggestion')) {
+      this.selectSuggestion(event.target.closest('.search-suggestion'));
+      return;
+    }
+    if (event.target.closest('.clear-recent-search')) {
+      const searchText = event.target.closest('.search-suggestion').dataset.query;
+      this.removeFromRecentSearches(searchText);
+      this.updateDropdownContent(this.searchInputElement.value);
+      return;
+    }
+    if (!event.target.closest('.advanced-search-input') && !event.target.closest('.search-dropdown')) this.hideDropdown();
+  }
+
+  /**
+   * Select a suggestion
+   * @param {Element} suggestionElement - The suggestion element
+   */
+  selectSuggestion(suggestionElement) {
+    const query = suggestionElement.dataset.query;
+    if (!query) return;
+    this.searchInputElement.value = query;
+    this.searchInputElement.focus();
+    if (suggestionElement.classList.contains('submit-query')) {
+      this.performSearch(query);
+      this.addToRecentSearches(query);
+      this.hideDropdown();
+    } else {
+      this.updateDropdownContent(query);
+      this.updateClearButtonVisibility();
+    }
+    this.selectedSuggestionIndex = -1;
+  }
+
+  /**
+   * Show dropdown
    */
   showDropdown() {
     const dropdown = document.querySelector('.search-dropdown');
-    const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
-    if (!dropdown || !searchInput) return;
-    const rect = searchInput.getBoundingClientRect();
+    if (!dropdown || this.isDropdownVisible) return;
+    const rect = this.searchInputElement.getBoundingClientRect();
     dropdown.style.position = 'fixed';
     dropdown.style.top = `${rect.bottom + 2}px`;
     dropdown.style.left = `${rect.left}px`;
@@ -439,22 +309,21 @@ export class AdvancedSearchManager {
     dropdown.style.display = 'block';
     dropdown.style.zIndex = '1000';
     dropdown.classList.add('visible');
-    searchInput.setAttribute('aria-expanded', 'true');
+    this.searchInputElement.setAttribute('aria-expanded', 'true');
     this.isDropdownVisible = true;
     this.selectedSuggestionIndex = -1;
     log(3, 'Search dropdown shown');
   }
 
   /**
-   * Hide the search dropdown
+   * Hide dropdown
    */
   hideDropdown() {
     const dropdown = document.querySelector('.search-dropdown');
-    const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
-    if (!dropdown) return;
+    if (!dropdown || !this.isDropdownVisible) return;
     dropdown.style.display = 'none';
     dropdown.classList.remove('visible');
-    if (searchInput) searchInput.setAttribute('aria-expanded', 'false');
+    this.searchInputElement.setAttribute('aria-expanded', 'false');
     this.isDropdownVisible = false;
     this.selectedSuggestionIndex = -1;
     log(3, 'Search dropdown hidden');
@@ -486,7 +355,7 @@ export class AdvancedSearchManager {
   _generateAdvancedQueryContent(query) {
     const queryWithoutTrigger = query.substring(1);
     let content = '<div class="search-section-header">Advanced</div>';
-    if (this.isIncompleteOperatorQuery(query)) {
+    if (this.isIncompleteAndQuery(query)) {
       content += '<div class="search-status info">→ Enter field</div>';
       const fieldAliases = this.fieldDefinitions.getAllFieldAliases();
       const uniqueFields = [];
@@ -503,8 +372,8 @@ export class AdvancedSearchManager {
         uniqueFields.forEach((field) => {
           const tooltipAttr = field.length > 32 ? `data-tooltip="${field}"` : '';
           content += `<div class="search-suggestion" data-query="${query}${field}:">
-          <span class="suggestion-text" ${tooltipAttr}>${field}</span>
-        </div>`;
+            <span class="suggestion-text" ${tooltipAttr}>${field}</span>
+          </div>`;
         });
       }
       return content;
@@ -520,8 +389,8 @@ export class AdvancedSearchManager {
           validValues.forEach((value) => {
             const tooltipAttr = value.length > 32 ? `data-tooltip="${value}"` : '';
             content += `<div class="search-suggestion" data-query="${query}${value}">
-            <span class="suggestion-text" ${tooltipAttr}>${value}</span>
-          </div>`;
+              <span class="suggestion-text" ${tooltipAttr}>${value}</span>
+            </div>`;
           });
         }
       }
@@ -540,8 +409,8 @@ export class AdvancedSearchManager {
           const fullQuery = `^${beforeColon}${value}`;
           const tooltipAttr = value.length > 32 ? `data-tooltip="${value}"` : '';
           content += `<div class="search-suggestion" data-query="${fullQuery}">
-          <span class="suggestion-text" ${tooltipAttr}>${value}</span>
-        </div>`;
+            <span class="suggestion-text" ${tooltipAttr}>${value}</span>
+          </div>`;
         });
       }
       return content;
@@ -556,13 +425,25 @@ export class AdvancedSearchManager {
   }
 
   /**
+   * Check if query ends with AND and needs a field
+   * @param {string} query - The query to check
+   * @returns {boolean} Whether it ends with AND
+   */
+  isIncompleteAndQuery(query) {
+    if (!query.startsWith('^')) return false;
+    const queryWithoutTrigger = query.substring(1);
+    const trimmed = queryWithoutTrigger.trim();
+    return trimmed.endsWith(' AND') || queryWithoutTrigger.endsWith(' AND ');
+  }
+
+  /**
    * Check if query ends with a field name followed by a colon
    * @param {string} query - Query without the ^ prefix
    * @returns {string|null} Field name if found, null otherwise
    */
   queryEndsWithFieldColon(query) {
-    const parts = query.split(/[\s()]+/);
-    const lastPart = parts[parts.length - 1];
+    const parts = query.split(/\s+AND\s+/i);
+    const lastPart = parts[parts.length - 1].trim();
     if (lastPart && lastPart.endsWith(':')) {
       const potentialField = lastPart.slice(0, -1);
       return this.fieldDefinitions.getFieldId(potentialField) ? potentialField : null;
@@ -576,17 +457,14 @@ export class AdvancedSearchManager {
    * @returns {Object|null} Object with field and value if incomplete, null otherwise
    */
   isIncompleteValue(queryWithoutTrigger) {
-    const parts = queryWithoutTrigger.split(/[\s()]+/);
-    for (let i = parts.length - 1; i >= 0; i--) {
-      const part = parts[i];
-      const colonIndex = part.indexOf(':');
-      if (colonIndex !== -1) {
-        const field = part.substring(0, colonIndex);
-        const value = part.substring(colonIndex + 1);
-        const fieldId = this.fieldDefinitions.getFieldId(field);
-        if (fieldId && value && this.isIncompleteValueForField(fieldId, value)) return { field: fieldId, value };
-        break;
-      }
+    const parts = queryWithoutTrigger.split(/\s+AND\s+/i);
+    const lastPart = parts[parts.length - 1].trim();
+    const colonIndex = lastPart.indexOf(':');
+    if (colonIndex !== -1) {
+      const field = lastPart.substring(0, colonIndex);
+      const value = lastPart.substring(colonIndex + 1);
+      const fieldId = this.fieldDefinitions.getFieldId(field);
+      if (fieldId && value && this.isIncompleteValueForField(fieldId, value)) return { field: fieldId, value };
     }
     return null;
   }
@@ -631,126 +509,32 @@ export class AdvancedSearchManager {
     recentSearches.forEach((search) => {
       const tooltipAttr = search.length > 32 ? `data-tooltip="${search}"` : '';
       content += `<div class="search-suggestion" data-query="${search}">
-      <span class="suggestion-text" ${tooltipAttr}>${search}</span>
-      <button class="clear-recent-search" data-search="${search}" aria-label="Delete search">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>`;
-    });
-    return content;
-  }
-
-  /**
-   * Generate fuzzy match suggestions
-   * @param {string} query - The search query
-   * @returns {string} HTML content
-   * @private
-   */
-  _generateFuzzyMatches(query) {
-    const matches = this.getFuzzyMatches(query);
-    if (matches.length === 0) return '<div class="search-section-header">No suggestions found</div>';
-    let content = '<div class="search-section-header">Suggestions</div>';
-    matches.forEach((match) => {
-      content += `<div class="search-suggestion fuzzy-match" data-query="${match.name}">
-        <span class="suggestion-text">${this.highlightText(match.name, query)}</span>
-        <span class="suggestion-score">${match.score}</span>
+        <span class="suggestion-text" ${tooltipAttr}>${search}</span>
+        <button class="clear-recent-search" aria-label="Remove">&times;</button>
       </div>`;
     });
     return content;
   }
 
   /**
-   * Highlight matching text in search results
-   * @param {string} text - Text to highlight
-   * @param {string} query - Search query
-   * @returns {string} Text with highlighted matches
+   * Generate fuzzy matches content
+   * @param {string} query - The query string
+   * @returns {string} HTML content
+   * @private
    */
-  highlightText(text, query) {
-    if (!query || query.length < 2) return text;
-    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(
-      `(${escapedQuery
-        .split(/\s+/)
-        .filter((word) => word.length > 0)
-        .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-        .join('|')})`,
-      'gi'
-    );
-    return text.replace(regex, '<mark>$1</mark>');
-  }
-
-  /**
-   * Select a suggestion from the dropdown
-   * @param {HTMLElement} suggestionElement - The selected suggestion element
-   */
-  selectSuggestion(suggestionElement) {
-    const query = suggestionElement.dataset.query;
-    const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
-    if (searchInput && query) {
-      if (this.searchTimeout) {
-        clearTimeout(this.searchTimeout);
-        this.searchTimeout = null;
-      }
-      searchInput.value = query;
-      this.updateClearButtonVisibility();
-      const isSubmitQuery = suggestionElement.classList.contains('submit-query');
-      if (isSubmitQuery) {
-        this.addToRecentSearches(query);
-        this.hideDropdown();
-        this.performSearch(query);
-        return;
-      }
-      if (query.endsWith(':')) {
-        this.isFieldSuggestionActive = true;
-        this.updateDropdownContent(query);
-        if (!this.isDropdownVisible) this.showDropdown();
-        searchInput.focus();
-        setTimeout(() => {
-          this.isFieldSuggestionActive = false;
-        }, 100);
-      } else if (this.isIncompleteOperatorQuery(query)) {
-        this.isFieldSuggestionActive = true;
-        this.updateDropdownContent(query);
-        if (!this.isDropdownVisible) this.showDropdown();
-        searchInput.focus();
-        setTimeout(() => {
-          this.isFieldSuggestionActive = false;
-        }, 100);
-      } else if (this.isAdvancedQueryComplete(query)) {
-        this.isFieldSuggestionActive = true;
-        this.updateDropdownContent(query);
-        if (!this.isDropdownVisible) this.showDropdown();
-        searchInput.focus();
-        setTimeout(() => {
-          this.isFieldSuggestionActive = false;
-        }, 100);
-      } else {
-        this.addToRecentSearches(query);
-        this.hideDropdown();
-        this.performSearch(query);
-      }
-    }
-  }
-
-  /**
-   * Check if query is an incomplete operator query (ends with operators)
-   * @param {string} query - The query to check
-   * @returns {boolean} Whether it's an incomplete operator query
-   */
-  isIncompleteOperatorQuery(query) {
-    if (!query.startsWith('^')) return false;
-    const queryWithoutTrigger = query.substring(1);
-    const trimmed = queryWithoutTrigger.trim();
-    return (
-      trimmed.endsWith(' AND') ||
-      trimmed.endsWith(' OR') ||
-      trimmed.endsWith(' NOT') ||
-      trimmed.endsWith('(') ||
-      queryWithoutTrigger.endsWith(' AND ') ||
-      queryWithoutTrigger.endsWith(' OR ') ||
-      queryWithoutTrigger.endsWith(' NOT ') ||
-      queryWithoutTrigger.endsWith('( ')
-    );
+  _generateFuzzyMatches(query) {
+    let content = '<div class="search-section-header">Suggestions</div>';
+    const spells = this.app._stateManager?.getCurrentSpellList() || [];
+    const matches = spells.filter((spell) => spell.name.toLowerCase().includes(query.toLowerCase())).slice(0, 5);
+    if (matches.length > 0) {
+      matches.forEach((spell) => {
+        const tooltipAttr = spell.name.length > 32 ? `data-tooltip="${spell.name}"` : '';
+        content += `<div class="search-suggestion" data-query="${spell.name}">
+          <span class="suggestion-text" ${tooltipAttr}>${spell.name}</span>
+        </div>`;
+      });
+    } else content += '<div class="search-status">No matches found</div>';
+    return content;
   }
 
   /**
@@ -776,13 +560,13 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Check if query contains boolean operators
+   * Check if query contains AND operators
    * @param {string} query - The query to check
-   * @returns {boolean} Whether it contains operators
+   * @returns {boolean} Whether it contains AND operators
    */
-  hasOperators(query) {
+  hasAndOperators(query) {
     const upperQuery = query.toUpperCase();
-    return upperQuery.includes(' AND ') || upperQuery.includes(' OR ') || upperQuery.includes(' NOT ') || upperQuery.includes('(') || upperQuery.includes(')');
+    return upperQuery.includes(' AND ');
   }
 
   /**
@@ -826,30 +610,24 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Apply advanced query results to filter state even when filters are hidden
+   * Apply advanced query results to filter state
    * @param {Object} parsedQuery - The parsed query object
    */
   applyAdvancedQueryToFilters(parsedQuery) {
     if (!this.app.filterHelper._cachedFilterState) this.app.filterHelper._cachedFilterState = {};
-    if (parsedQuery.type === 'field') {
-      if (parsedQuery.field === 'range') {
-        const [min, max] = this.parseRangeValue(parsedQuery.value);
-        this.app.filterHelper._cachedFilterState.minRange = min;
-        this.app.filterHelper._cachedFilterState.maxRange = max;
-        this.setRangeFilterValue(parsedQuery.value);
-      } else {
-        this.app.filterHelper._cachedFilterState[parsedQuery.field] = parsedQuery.value;
-        this.setFilterValue(parsedQuery.field, parsedQuery.value);
-      }
-    } else if (parsedQuery.type === 'boolean') {
-      if (parsedQuery.operator === 'AND') {
-        this.applyAdvancedQueryToFilters(parsedQuery.left);
-        this.applyAdvancedQueryToFilters(parsedQuery.right);
-      } else if (parsedQuery.operator === 'OR') {
-        log(2, 'OR operations not fully supported in UI, applying left side only');
-        this.applyAdvancedQueryToFilters(parsedQuery.left);
-      } else if (parsedQuery.operator === 'NOT') {
-        log(2, 'NOT operations not supported in current UI');
+    if (parsedQuery.type === 'conjunction') {
+      for (const condition of parsedQuery.conditions) {
+        if (condition.type === 'field') {
+          if (condition.field === 'range') {
+            const [min, max] = this.parseRangeValue(condition.value);
+            this.app.filterHelper._cachedFilterState.minRange = min;
+            this.app.filterHelper._cachedFilterState.maxRange = max;
+            this.setRangeFilterValue(condition.value);
+          } else {
+            this.app.filterHelper._cachedFilterState[condition.field] = condition.value;
+            this.setFilterValue(condition.field, condition.value);
+          }
+        }
       }
     }
     const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]') || document.querySelector('input[name="spell-search"]');
@@ -867,71 +645,44 @@ export class AdvancedSearchManager {
    * @returns {Array} [min, max] values
    */
   parseRangeValue(rangeValue) {
-    if (!rangeValue || typeof rangeValue !== 'string') return ['', ''];
-    if (!rangeValue.includes('-')) return [rangeValue, rangeValue];
+    if (!rangeValue || !rangeValue.includes('-')) return [null, null];
     const parts = rangeValue.split('-');
-    const min = parts[0]?.trim() || '';
-    const max = parts[1]?.trim() || '';
+    const min = parts[0] ? parseInt(parts[0]) : null;
+    const max = parts[1] ? parseInt(parts[1]) : null;
     return [min, max];
   }
 
   /**
-   * Set range filter values for both min and max inputs
+   * Set range filter values in the UI
    * @param {string} rangeValue - Range value like "0-30"
    */
   setRangeFilterValue(rangeValue) {
     const [min, max] = this.parseRangeValue(rangeValue);
-    const minInput = this.element.querySelector('input[name="filter-min-range"]');
-    if (minInput) {
-      minInput.value = min;
-      minInput.dispatchEvent(new Event('input', { bubbles: true }));
-      log(3, `Set min range to: ${min}`);
+    if (min !== null) {
+      const minInput = document.querySelector('input[name="min-range"]');
+      if (minInput) {
+        minInput.value = min;
+        minInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
     }
-    const maxInput = this.element.querySelector('input[name="filter-max-range"]');
-    if (maxInput) {
-      maxInput.value = max;
-      maxInput.dispatchEvent(new Event('input', { bubbles: true }));
-      log(3, `Set max range to: ${max}`);
+    if (max !== null) {
+      const maxInput = document.querySelector('input[name="max-range"]');
+      if (maxInput) {
+        maxInput.value = max;
+        maxInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
     }
   }
 
   /**
-   * Clear all filter form elements
-   */
-  clearAllFilters() {
-    const dropdowns = this.element.querySelectorAll('select[name^="filter-"]');
-    dropdowns.forEach((select) => {
-      select.value = '';
-      select.dispatchEvent(new Event('change', { bubbles: true }));
-    });
-    const checkboxes = this.element.querySelectorAll('input[type="checkbox"][name^="filter-"]');
-    checkboxes.forEach((checkbox) => {
-      checkbox.checked = false;
-      checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-    });
-
-    const minRangeInput = this.element.querySelector('input[name="filter-min-range"]');
-    const maxRangeInput = this.element.querySelector('input[name="filter-max-range"]');
-    if (minRangeInput) {
-      minRangeInput.value = '';
-      minRangeInput.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-    if (maxRangeInput) {
-      maxRangeInput.value = '';
-      maxRangeInput.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-    log(3, 'All filters cleared');
-  }
-
-  /**
-   * Set a specific filter value in the UI
-   * @param {string} fieldId - The field ID
-   * @param {string} value - The value to set
+   * Set filter value in the UI
+   * @param {string} fieldId - Field identifier
+   * @param {string} value - Value to set
    */
   setFilterValue(fieldId, value) {
     const filterElement = this.element.querySelector(`[name="filter-${fieldId}"]`);
     if (!filterElement) {
-      log(2, `No filter element found for field: ${fieldId}`);
+      log(3, `Filter element not found for field: ${fieldId}`);
       return;
     }
     if (filterElement.type === 'checkbox') {
@@ -992,7 +743,6 @@ export class AdvancedSearchManager {
       if (!spell || !spell.name) return;
       const spellName = spell.name.toLowerCase();
       let matches = false;
-
       if (isExactSearch) matches = spellName.includes(searchTerm);
       else {
         const queryWords = searchTerm.split(/\s+/).filter((word) => word.length > 0);
@@ -1132,41 +882,7 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Get fuzzy matches for a query
-   * @param {string} query - The search query
-   * @returns {Array} Array of matching spell names with scores
-   */
-  getFuzzyMatches(query) {
-    try {
-      if (!query || query.length < 3) return [];
-      const activeClass = this.app._stateManager?.activeClass;
-      if (!activeClass || !this.app._stateManager.classSpellData[activeClass]?.spellLevels) return [];
-      const spells = this.app._stateManager.classSpellData[activeClass].spellLevels;
-      const matches = [];
-      const queryLower = query.toLowerCase();
-      for (const spell of spells) {
-        if (!spell.name) continue;
-        const spellNameLower = spell.name.toLowerCase();
-        let score = 0;
-        if (spellNameLower === queryLower) score = 100;
-        else if (spellNameLower.startsWith(queryLower)) score = 90;
-        else if (spellNameLower.includes(queryLower)) score = 80;
-        else {
-          const words = queryLower.split(/\s+/);
-          const matchedWords = words.filter((word) => spellNameLower.includes(word));
-          if (matchedWords.length > 0) score = Math.floor((matchedWords.length / words.length) * 70);
-        }
-        if (score > 0) matches.push({ name: spell.name, score });
-      }
-      return matches.sort((a, b) => b.score - a.score).slice(0, 10);
-    } catch (error) {
-      log(2, 'Error getting fuzzy matches:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Cleanup advanced search resources
+   * Cleanup event listeners and elements
    */
   cleanup() {
     if (this.searchTimeout) {
@@ -1177,14 +893,11 @@ export class AdvancedSearchManager {
       clearTimeout(this.focusDebounceTimeout);
       this.focusDebounceTimeout = null;
     }
-    this.isAdvancedQuery = false;
-    this.parsedQuery = null;
-    this.selectedSuggestionIndex = -1;
-    this.isDropdownVisible = false;
-    this.isProcessingFocusEvent = false;
-    this.lastDropdownQuery = null;
-    this.queryCache.clear();
     const existingDropdown = document.querySelector('.search-dropdown');
     if (existingDropdown) existingDropdown.remove();
+    this.isDropdownVisible = false;
+    this.selectedSuggestionIndex = -1;
+    this.queryCache.clear();
+    log(3, 'Advanced search manager cleaned up');
   }
 }
