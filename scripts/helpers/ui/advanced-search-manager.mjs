@@ -16,22 +16,23 @@ export class AdvancedSearchManager {
   constructor(app) {
     this.actor = app.actor;
     this.app = app;
+    this.clearButtonElement = null;
     this.fieldDefinitions = new FieldDefinitions();
     this.focusDebounceTimeout = null;
     this.isAdvancedQuery = false;
     this.isDropdownVisible = false;
-    this.isFieldSuggestionActive = false;
     this.isInitialized = false;
     this.isProcessingFocusEvent = false;
     this.isProcessingSearch = false;
+    this.isProcessingSuggestion = false;
     this.lastDropdownQuery = null;
-    this.lastParsedQuery = null;
     this.lastProcessedQuery = null;
-    this.lastProcessedTime = 0;
+    this.lastProcessedTime = null;
     this.parsedQuery = null;
     this.queryCache = new Map();
     this.queryExecutor = new QueryExecutor();
     this.queryParser = new QueryParser(this.fieldDefinitions);
+    this.searchInputElement = null;
     this.searchTimeout = null;
     this.selectedSuggestionIndex = -1;
   }
@@ -160,9 +161,18 @@ export class AdvancedSearchManager {
    */
   handleSearchInput(event) {
     const query = event.target.value;
+
+    // Skip processing if we're in the middle of processing a suggestion
+    if (this.isProcessingSuggestion) {
+      return;
+    }
+
     if (this.isProcessingSearch || (query === '' && this.isAdvancedQuery)) return;
+
     this.updateClearButtonVisibility();
+
     if (this.searchTimeout) clearTimeout(this.searchTimeout);
+
     if (query.startsWith('^')) {
       this.searchTimeout = setTimeout(async () => {
         try {
@@ -265,8 +275,15 @@ export class AdvancedSearchManager {
    * @param {Event} event - Blur event
    */
   handleSearchBlur(event) {
+    // Don't hide dropdown if we're processing a suggestion
+    if (this.isProcessingSuggestion) {
+      return;
+    }
+
     setTimeout(() => {
-      if (!document.querySelector('.search-dropdown:hover')) this.hideDropdown();
+      if (!document.querySelector('.search-dropdown:hover') && !this.isProcessingSuggestion) {
+        this.hideDropdown();
+      }
     }, 150);
   }
 
@@ -356,8 +373,11 @@ export class AdvancedSearchManager {
     this.lastProcessedQuery = query;
     this.lastProcessedTime = now;
 
+    // Set flag to prevent input event processing and blur handling
+    this.isProcessingSuggestion = true;
+
+    // Update the input value without triggering events
     this.searchInputElement.value = query;
-    this.searchInputElement.focus();
 
     if (suggestionElement.classList.contains('submit-query')) {
       log(3, `[${suggestionId}] Submit query - calling performSearch`);
@@ -368,18 +388,34 @@ export class AdvancedSearchManager {
     } else {
       log(3, `[${suggestionId}] Not submit query - updating dropdown content`);
 
-      // Trigger input event to properly handle the new query
-      this.searchInputElement.dispatchEvent(new Event('input', { bubbles: true }));
+      // Force clear the last dropdown query to ensure update
+      this.lastDropdownQuery = null;
 
-      // Update dropdown content and ensure it stays visible
-      setTimeout(() => {
-        this.updateDropdownContent(query);
-        if (!this.isDropdownVisible) {
-          this.showDropdown();
-        }
-        log(3, `[${suggestionId}] Dropdown content updated and shown`);
-      }, 10);
+      // Clear any existing search timeout to prevent query validation
+      if (this.searchTimeout) {
+        clearTimeout(this.searchTimeout);
+        this.searchTimeout = null;
+      }
+
+      // Update dropdown content immediately
+      this.updateDropdownContent(query);
+
+      // Ensure dropdown stays visible
+      if (!this.isDropdownVisible) {
+        this.showDropdown();
+      }
+
+      log(3, `[${suggestionId}] Dropdown content updated and shown`);
     }
+
+    // Clear the flag and focus after content is updated
+    setTimeout(() => {
+      this.isProcessingSuggestion = false;
+      // Focus without triggering blur on other elements
+      if (document.activeElement !== this.searchInputElement) {
+        this.searchInputElement.focus();
+      }
+    }, 100);
   }
 
   /**
@@ -408,6 +444,10 @@ export class AdvancedSearchManager {
   hideDropdown() {
     const dropdown = document.querySelector('.search-dropdown');
     if (!dropdown || !this.isDropdownVisible) return;
+
+    // Add stack trace to see what's calling hideDropdown
+    log(3, 'hideDropdown called from:', new Error().stack.split('\n').slice(1, 4).join('\n'));
+
     dropdown.style.display = 'none';
     dropdown.classList.remove('visible');
     this.searchInputElement.setAttribute('aria-expanded', 'false');
@@ -442,6 +482,9 @@ export class AdvancedSearchManager {
   _generateAdvancedQueryContent(query) {
     const queryWithoutTrigger = query.substring(1);
     let content = `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Advanced')}</div>`;
+
+    log(3, `_generateAdvancedQueryContent called with query: "${query}", queryWithoutTrigger: "${queryWithoutTrigger}"`);
+
     if (!queryWithoutTrigger.trim() || this.isIncompleteAndQuery(query)) {
       content += `<div class="search-status info">${game.i18n.localize('SPELLBOOK.Search.EnterField')}</div>`;
       const fieldAliases = this.fieldDefinitions.getAllFieldAliases();
@@ -459,30 +502,58 @@ export class AdvancedSearchManager {
         uniqueFields.forEach((field) => {
           const tooltipAttr = field.length > 32 ? `data-tooltip="${field}"` : '';
           content += `<div class="search-suggestion" data-query="${query}${field}:" role="option" tabindex="-1" aria-selected="false">
-            <span class="suggestion-text" ${tooltipAttr}>${field}</span>
-          </div>`;
+          <span class="suggestion-text" ${tooltipAttr}>${field}</span>
+        </div>`;
         });
       }
       return content;
     }
+
     const endsWithFieldColon = this.queryEndsWithFieldColon(queryWithoutTrigger);
+    log(3, `endsWithFieldColon result: "${endsWithFieldColon}"`);
+
     if (endsWithFieldColon) {
       const fieldId = this.fieldDefinitions.getFieldId(endsWithFieldColon);
+      log(3, `fieldId resolved to: "${fieldId}"`);
+
       content += `<div class="search-status info">${game.i18n.localize('SPELLBOOK.Search.EnterValue')}</div>`;
-      if (fieldId && fieldId !== 'range') {
+
+      // Special handling for NAME field
+      if (fieldId === 'name') {
+        content += `<div class="search-note">
+        <i class="fas fa-info-circle"></i>
+        <span class="suggestion-text">${game.i18n.localize('SPELLBOOK.Search.TypeSpellName')}</span>
+      </div>`;
+        return content;
+      }
+
+      // Special handling for RANGE field
+      if (fieldId === 'range') {
+        content += `<div class="search-note">
+        <i class="fas fa-info-circle"></i>
+        <span class="suggestion-text">${game.i18n.localize('SPELLBOOK.Search.TypeRange')}</span>
+      </div>`;
+        return content;
+      }
+
+      // For other fields, show valid values
+      if (fieldId) {
         const validValues = this.fieldDefinitions.getValidValuesForField(fieldId);
+        log(3, `validValues for ${fieldId}:`, validValues);
+
         if (validValues.length > 0) {
           content += `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Values')}</div>`;
           validValues.forEach((value) => {
             const tooltipAttr = value.length > 32 ? `data-tooltip="${value}"` : '';
             content += `<div class="search-suggestion" data-query="${query}${value}" role="option" tabindex="-1" aria-selected="false">
-              <span class="suggestion-text" ${tooltipAttr}>${value}</span>
-            </div>`;
+            <span class="suggestion-text" ${tooltipAttr}>${value}</span>
+          </div>`;
           });
         }
       }
       return content;
     }
+
     const incompleteValueMatch = this.isIncompleteValue(queryWithoutTrigger);
     if (incompleteValueMatch) {
       const { field: fieldId, value: currentValue } = incompleteValueMatch;
@@ -496,17 +567,18 @@ export class AdvancedSearchManager {
           const fullQuery = `^${beforeColon}${value}`;
           const tooltipAttr = value.length > 32 ? `data-tooltip="${value}"` : '';
           content += `<div class="search-suggestion" data-query="${fullQuery}" role="option" tabindex="-1" aria-selected="false">
-            <span class="suggestion-text" ${tooltipAttr}>${value}</span>
-          </div>`;
+          <span class="suggestion-text" ${tooltipAttr}>${value}</span>
+        </div>`;
         });
       }
       return content;
     }
+
     if (this.isAdvancedQueryComplete(query)) {
       content += `<div class="search-suggestion submit-query" data-query="${query}" role="option" tabindex="-1" aria-selected="false">
-        <span class="suggestion-text">${game.i18n.localize('SPELLBOOK.Search.ExecuteQuery')}</span>
-        <span class="suggestion-execute">⏎</span>
-      </div>`;
+      <span class="suggestion-text">${game.i18n.localize('SPELLBOOK.Search.ExecuteQuery')}</span>
+      <span class="suggestion-execute">⏎</span>
+    </div>`;
     }
     return content;
   }
