@@ -83,13 +83,13 @@ export class AdvancedSearchManager {
     log(3, 'Existing dropdown found:', !!existingDropdown);
     if (!hasAdvancedClass) {
       searchInput.classList.add('advanced-search-input');
-      searchInput.setAttribute('placeholder', 'Search spells... (Type ^ for advanced search)');
+      searchInput.setAttribute('placeholder', game.i18n.localize('SPELLBOOK.Search.AdvancedPlaceholder'));
+      searchInput.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Search.AdvancedSyntaxSupport'));
       searchInput.setAttribute('autocomplete', 'off');
       searchInput.setAttribute('spellcheck', 'false');
       searchInput.setAttribute('aria-expanded', 'false');
       searchInput.setAttribute('aria-haspopup', 'listbox');
       searchInput.setAttribute('role', 'combobox');
-      searchInput.setAttribute('aria-label', 'Search spells with advanced syntax support');
     }
     this.searchInputElement = searchInput;
     this.createClearButton();
@@ -108,7 +108,7 @@ export class AdvancedSearchManager {
     clearButton.className = 'search-clear-button';
     clearButton.innerHTML = '×';
     clearButton.style.display = 'none';
-    clearButton.setAttribute('aria-label', 'Clear search');
+    clearButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Search.ClearSearch'));
     clearButton.setAttribute('tabindex', '-1');
     searchContainer.appendChild(clearButton);
     this.clearButtonElement = clearButton;
@@ -123,7 +123,7 @@ export class AdvancedSearchManager {
     dropdown.className = 'search-dropdown';
     dropdown.style.display = 'none';
     dropdown.setAttribute('role', 'listbox');
-    dropdown.setAttribute('aria-label', 'Search suggestions');
+    dropdown.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Search.SearchSuggestions'));
     document.body.appendChild(dropdown);
   }
 
@@ -354,9 +354,9 @@ export class AdvancedSearchManager {
    */
   _generateAdvancedQueryContent(query) {
     const queryWithoutTrigger = query.substring(1);
-    let content = '<div class="search-section-header">Advanced</div>';
+    let content = `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Advanced')}</div>`;
     if (this.isIncompleteAndQuery(query)) {
-      content += '<div class="search-status info">→ Enter field</div>';
+      content += `<div class="search-status info">${game.i18n.localize('SPELLBOOK.Search.EnterField')}</div>`;
       const fieldAliases = this.fieldDefinitions.getAllFieldAliases();
       const uniqueFields = [];
       const seenFields = new Set();
@@ -368,10 +368,10 @@ export class AdvancedSearchManager {
         }
       }
       if (uniqueFields.length > 0) {
-        content += '<div class="search-section-header">Fields</div>';
+        content += `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Fields')}</div>`;
         uniqueFields.forEach((field) => {
           const tooltipAttr = field.length > 32 ? `data-tooltip="${field}"` : '';
-          content += `<div class="search-suggestion" data-query="${query}${field}:">
+          content += `<div class="search-suggestion" data-query="${query}${field}:" role="option" tabindex="-1" aria-selected="false">
             <span class="suggestion-text" ${tooltipAttr}>${field}</span>
           </div>`;
         });
@@ -381,14 +381,14 @@ export class AdvancedSearchManager {
     const endsWithFieldColon = this.queryEndsWithFieldColon(queryWithoutTrigger);
     if (endsWithFieldColon) {
       const fieldId = this.fieldDefinitions.getFieldId(endsWithFieldColon);
-      content += '<div class="search-status info">→ Enter value</div>';
+      content += `<div class="search-status info">${game.i18n.localize('SPELLBOOK.Search.EnterValue')}</div>`;
       if (fieldId && fieldId !== 'range') {
         const validValues = this.fieldDefinitions.getValidValuesForField(fieldId);
         if (validValues.length > 0) {
-          content += '<div class="search-section-header">Values</div>';
+          content += `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Values')}</div>`;
           validValues.forEach((value) => {
             const tooltipAttr = value.length > 32 ? `data-tooltip="${value}"` : '';
-            content += `<div class="search-suggestion" data-query="${query}${value}">
+            content += `<div class="search-suggestion" data-query="${query}${value}" role="option" tabindex="-1" aria-selected="false">
               <span class="suggestion-text" ${tooltipAttr}>${value}</span>
             </div>`;
           });
@@ -399,16 +399,16 @@ export class AdvancedSearchManager {
     const incompleteValueMatch = this.isIncompleteValue(queryWithoutTrigger);
     if (incompleteValueMatch) {
       const { field: fieldId, value: currentValue } = incompleteValueMatch;
-      content += '<div class="search-status info">→ Complete value</div>';
+      content += `<div class="search-status info">${game.i18n.localize('SPELLBOOK.Search.CompleteValue')}</div>`;
       const validValues = this.fieldDefinitions.getValidValuesForField(fieldId);
       const matchingValues = validValues.filter((value) => value.toLowerCase().startsWith(currentValue.toLowerCase()));
       if (matchingValues.length > 0) {
-        content += '<div class="search-section-header">Matching Values</div>';
+        content += `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.MatchingValues')}</div>`;
         matchingValues.forEach((value) => {
           const beforeColon = queryWithoutTrigger.substring(0, queryWithoutTrigger.lastIndexOf(':') + 1);
           const fullQuery = `^${beforeColon}${value}`;
           const tooltipAttr = value.length > 32 ? `data-tooltip="${value}"` : '';
-          content += `<div class="search-suggestion" data-query="${fullQuery}">
+          content += `<div class="search-suggestion" data-query="${fullQuery}" role="option" tabindex="-1" aria-selected="false">
             <span class="suggestion-text" ${tooltipAttr}>${value}</span>
           </div>`;
         });
@@ -416,8 +416,8 @@ export class AdvancedSearchManager {
       return content;
     }
     if (this.isAdvancedQueryComplete(query)) {
-      content += `<div class="search-suggestion submit-query" data-query="${query}">
-        <span class="suggestion-text">Execute Query</span>
+      content += `<div class="search-suggestion submit-query" data-query="${query}" role="option" tabindex="-1" aria-selected="false">
+        <span class="suggestion-text">${game.i18n.localize('SPELLBOOK.Search.ExecuteQuery')}</span>
         <span class="suggestion-execute">⏎</span>
       </div>`;
     }
@@ -504,13 +504,13 @@ export class AdvancedSearchManager {
    */
   _generateRecentSearches() {
     const recentSearches = this.getRecentSearches();
-    if (recentSearches.length === 0) return '<div class="search-section-header">No recent</div>';
-    let content = '<div class="search-section-header">Recent</div>';
+    if (recentSearches.length === 0) return `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.NoRecent')}</div>`;
+    let content = `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Recent')}</div>`;
     recentSearches.forEach((search) => {
       const tooltipAttr = search.length > 32 ? `data-tooltip="${search}"` : '';
-      content += `<div class="search-suggestion" data-query="${search}">
+      content += `<div class="search-suggestion" data-query="${search}" role="option" tabindex="-1" aria-selected="false">
         <span class="suggestion-text" ${tooltipAttr}>${search}</span>
-        <button class="clear-recent-search" aria-label="Remove">&times;</button>
+        <button class="clear-recent-search" aria-label="${game.i18n.localize('SPELLBOOK.Search.Remove')}">&times;</button>
       </div>`;
     });
     return content;
@@ -523,17 +523,17 @@ export class AdvancedSearchManager {
    * @private
    */
   _generateFuzzyMatches(query) {
-    let content = '<div class="search-section-header">Suggestions</div>';
+    let content = `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Suggestions')}</div>`;
     const spells = this.app._stateManager?.getCurrentSpellList() || [];
     const matches = spells.filter((spell) => spell.name.toLowerCase().includes(query.toLowerCase())).slice(0, 5);
     if (matches.length > 0) {
       matches.forEach((spell) => {
         const tooltipAttr = spell.name.length > 32 ? `data-tooltip="${spell.name}"` : '';
-        content += `<div class="search-suggestion" data-query="${spell.name}">
+        content += `<div class="search-suggestion" data-query="${spell.name}" role="option" tabindex="-1" aria-selected="false">
           <span class="suggestion-text" ${tooltipAttr}>${spell.name}</span>
         </div>`;
       });
-    } else content += '<div class="search-status">No matches found</div>';
+    } else content += `<div class="search-status">${game.i18n.localize('SPELLBOOK.Search.NoMatches')}</div>`;
     return content;
   }
 
@@ -575,7 +575,9 @@ export class AdvancedSearchManager {
    */
   updateSuggestionSelection(suggestions) {
     suggestions.forEach((suggestion, index) => {
-      suggestion.classList.toggle('selected', index === this.selectedSuggestionIndex);
+      const isSelected = index === this.selectedSuggestionIndex;
+      suggestion.classList.toggle('selected', isSelected);
+      suggestion.setAttribute('aria-selected', isSelected.toString());
     });
   }
 

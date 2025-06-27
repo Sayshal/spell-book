@@ -6,8 +6,8 @@
 /* ----------------------------------------- */
 :root {
   /* Layout */
-  --spell-book-manager-sidebar-width: 280px;
-  --spell-book-manager-spells-sidebar-width: 400px;
+  --spell-book-manager-sidebar-width: 17.5rem;
+  --spell-book-manager-spells-sidebar-width: 25rem;
   --spell-book-manager-column-gap: 0.75rem;
 
   /* Colors */
@@ -39,7 +39,7 @@
   --spell-book-manager-font-xs: 0.625rem;
 
   /* Shadows */
-  --spell-book-manager-header-shadow: 0 4px 6px -2px rgb(0 0 0 / 30.2%);
+  --spell-book-manager-header-shadow: 0 0.25rem 0.375rem -0.125rem rgb(0 0 0 / 30.2%);
   --spell-book-manager-item-shadow: 0 0 0.25rem var(--dnd5e-shadow-45);
   --spell-book-manager-sidebar-shadow: 0 0 0.375rem var(--color-shadow-dark);
 
@@ -119,7 +119,7 @@
 /* ----------------------------------------- */
 .gm-spell-list-manager {
   .spell-lists-sidebar {
-    inset: 0 0 60px;
+    inset: 0 0 3.75rem;
     transform-style: preserve-3d;
     display: flex;
     z-index: var(--spell-book-manager-z-sidebar);
@@ -129,7 +129,7 @@
     height: auto;
     margin-left: 0;
     padding: 0;
-    border-right: 1px solid var(--color-border-light);
+    border-right: 0.063rem solid var(--color-border-light);
     background: var(--spell-book-manager-bg-primary);
     box-shadow: var(--spell-book-manager-sidebar-shadow);
     transition: all 450ms ease;
@@ -197,19 +197,19 @@
       &:focus {
         border-color: var(--color-border-highlight);
         outline: none;
-        box-shadow: 0 0 3px var(--color-shadow-highlight);
+        box-shadow: 0 0 0.188rem var(--color-shadow-highlight);
       }
     }
 
     .merge-lists-button {
-      top: 12px;
-      left: 15px;
+      top: 0.75rem;
+      left: 0.938rem;
       order: 1;
     }
 
     .create-new-button {
-      top: 12px;
-      right: 15px;
+      top: 0.75rem;
+      right: 0.938rem;
       order: 3;
     }
 
@@ -238,7 +238,7 @@
         align-items: center;
         margin-bottom: 0.5rem;
         padding: 0.25rem 0.5rem;
-        border-bottom: 1px solid var(--spell-book-manager-border-color);
+        border-bottom: 0.063rem solid var(--spell-book-manager-border-color);
         color: var(--spell-book-manager-text-primary);
         font-weight: bold;
         font-size: 0.9rem;
@@ -288,7 +288,7 @@
       }
 
       .custom-list {
-        border-left: 2px solid rgb(255 201 25);
+        border-left: 0.125rem solid rgb(255 201 25);
 
         &:hover {
           background-color: rgb(255 201 25 / 20%);
@@ -312,7 +312,7 @@
       }
 
       .merged-list {
-        border-left: 2px solid var(--spell-book-manager-merged-color);
+        border-left: 0.125rem solid var(--spell-book-manager-merged-color);
 
         &:hover {
           background-color: rgb(147 51 234 / 20%);
@@ -338,7 +338,7 @@
 
     /* Actor-owned list item styling */
     .actor-owned-list {
-      border-left: 2px solid rgb(107 209 77);
+      border-left: 0.125rem solid rgb(107 209 77);
 
       .list-name i {
         color: rgb(107 209 77) !important;
@@ -362,17 +362,17 @@
     z-index: var(--spell-book-manager-z-control);
     position: absolute;
     top: 0.75rem;
-    right: -16px;
+    right: -1rem;
     width: var(--spell-book-control-width);
-    height: 32px;
+    height: 2rem;
     border-color: var(--spell-book-border-light);
-    border-radius: 0 3px 3px 0;
+    border-radius: 0 0.188rem 0.188rem 0;
     outline: none;
     cursor: pointer;
     background: var(--spell-book-manager-bg-primary);
     box-shadow: var(--spell-book-manager-sidebar-shadow);
     transition: var(--spell-book-manager-transition-normal);
-    transform: translateZ(-1px);
+    transform: translateZ(-0.063rem);
 
     i {
       margin-left: 0.375rem;
@@ -400,7 +400,7 @@
   .spell-list-item {
     margin-bottom: 0.25rem;
     padding: 0.5rem;
-    border-bottom: 1px solid var(--spell-book-border-light);
+    border-bottom: 0.063rem solid var(--spell-book-border-light);
     cursor: pointer;
     transition: all 0.2s ease;
 
@@ -408,7 +408,7 @@
       background: var(--spell-book-manager-bg-item-hover);
 
       .list-name {
-        text-shadow: 0 0 3px var(--color-shadow-highlight);
+        text-shadow: 0 0 0.188rem var(--color-shadow-highlight);
       }
     }
 
@@ -474,7 +474,7 @@
   .list-controls {
     margin-top: 1rem;
     padding: 0.5rem;
-    border-top: 1px solid var(--spell-book-border-light);
+    border-top: 0.063rem solid var(--spell-book-border-light);
     text-align: center;
   }
 }
@@ -494,7 +494,7 @@
 
     .hidden-list {
       opacity: 0.7;
-      border-left: 2px solid var(--spell-book-manager-text-muted);
+      border-left: 0.125rem solid var(--spell-book-manager-text-muted);
 
       &:hover {
         background-color: rgb(186 186 186 / 20%);
@@ -524,12 +524,12 @@
       flex-shrink: 0;
       justify-content: center;
       align-items: center;
-      width: 24px;
-      height: 24px;
+      width: 1.5rem;
+      height: 1.5rem;
       margin-left: 0.5rem;
       padding: 0;
       border: none;
-      border-radius: 3px;
+      border-radius: 0.188rem;
       color: var(--spell-book-manager-text-tertiary);
       cursor: pointer;
       background: none;
@@ -542,8 +542,8 @@
       }
 
       &:focus {
-        outline: 2px solid var(--color-border-highlight);
-        outline-offset: 1px;
+        outline: 0.125rem solid var(--color-border-highlight);
+        outline-offset: 0.063rem;
       }
 
       i {
@@ -578,7 +578,7 @@
 /* ----------------------------------------- */
 .gm-spell-list-manager {
   .selected-list-content {
-    inset: 0 var(--spell-book-manager-spells-sidebar-width) 60px var(--spell-book-manager-sidebar-width);
+    inset: 0 var(--spell-book-manager-spells-sidebar-width) 3.75rem var(--spell-book-manager-sidebar-width);
     display: flex;
     position: absolute;
     flex-direction: column;
@@ -594,7 +594,7 @@
     align-items: center;
     margin-bottom: 1rem;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid rgb(255 255 255 / 10.2%);
+    border-bottom: 0.063rem solid rgb(255 255 255 / 10.2%);
 
     .header-title {
       width: 100%;
@@ -623,7 +623,7 @@
         display: flex;
         position: absolute;
         top: 0;
-        right: 5px;
+        right: 0.313rem;
         align-items: center;
         height: 100%;
         font-size: var(--spell-book-manager-font-sm);
@@ -655,7 +655,7 @@
 
       &:hover {
         border: none;
-        text-shadow: 0 0 8px var(--color-shadow-highlight);
+        text-shadow: 0 0 0.5rem var(--color-shadow-highlight);
         background: none;
         box-shadow: none;
       }
@@ -670,31 +670,31 @@
     .edit-button,
     .save-button {
       &:hover {
-        text-shadow: 0 0 8px var(--spell-book-manager-button-success);
+        text-shadow: 0 0 0.5rem var(--spell-book-manager-button-success);
       }
     }
 
     .restore-button {
       &:hover {
-        text-shadow: 0 0 8px var(--spell-book-manager-button-info);
+        text-shadow: 0 0 0.5rem var(--spell-book-manager-button-info);
       }
     }
 
     .delete-button {
       &:hover {
-        text-shadow: 0 0 8px var(--spell-book-manager-button-danger);
+        text-shadow: 0 0 0.5rem var(--spell-book-manager-button-danger);
       }
     }
 
     .open-actor-button {
       &:hover {
-        text-shadow: 0 0 8px rgb(232 187 78);
+        text-shadow: 0 0 0.5rem rgb(232 187 78);
       }
     }
 
     .open-class-button {
       &:hover {
-        text-shadow: 0 0 8px rgb(78 157 232);
+        text-shadow: 0 0 0.5rem rgb(78 157 232);
       }
     }
   }
@@ -709,7 +709,7 @@
   .update-notice {
     margin-right: 0.5rem;
     padding: 0.25rem 0.5rem;
-    border-radius: 3px;
+    border-radius: 0.188rem;
     color: var(--spell-book-manager-text-notice);
     font-size: 0.8rem;
     background-color: var(--spell-book-manager-button-warning);
@@ -747,7 +747,7 @@
     justify-content: center;
     align-items: center;
     height: 100%;
-    min-height: 400px;
+    min-height: 25rem;
     color: var(--color-text-dark-secondary);
     font-style: italic;
   }
@@ -791,7 +791,7 @@
     align-items: center;
     margin-bottom: 0.5rem;
     padding-bottom: 0.35rem;
-    border-bottom: 1px solid var(--color-border-light);
+    border-bottom: 0.063rem solid var(--color-border-light);
     color: var(--spell-book-manager-text-primary);
     font-size: 1.2em;
     cursor: pointer;
@@ -837,14 +837,14 @@
     align-items: center;
     margin-bottom: 0;
     padding: 0.25rem;
-    border-bottom: 1px solid var(--spell-book-border-light);
+    border-bottom: 0.063rem solid var(--spell-book-border-light);
     border-radius: var(--spell-book-border-radius);
 
     &:hover {
       background: var(--spell-book-manager-bg-item-hover);
 
       .name-stacked .title {
-        text-shadow: 0 0 3px var(--color-shadow-highlight);
+        text-shadow: 0 0 0.188rem var(--color-shadow-highlight);
       }
     }
 
@@ -887,9 +887,9 @@
 
     .spell-icon {
       object-fit: cover;
-      width: 32px;
-      height: 32px;
-      border: 2px solid var(--dnd5e-color-gold);
+      width: 2rem;
+      height: 2rem;
+      border: 0.125rem solid var(--dnd5e-color-gold);
       border-radius: 0.25rem;
       vertical-align: middle;
       background-color: var(--dnd5e-color-light-gray);
@@ -918,20 +918,20 @@
     .remove-spell {
       padding: 0.25rem 0.5rem;
       border: none;
-      border-radius: 3px;
+      border-radius: 0.188rem;
       cursor: pointer;
       background: none;
     }
 
     .add-spell:hover {
       border: none;
-      text-shadow: 0 0 8px var(--spell-book-manager-button-success);
+      text-shadow: 0 0 0.5rem var(--spell-book-manager-button-success);
       box-shadow: none;
     }
 
     .remove-spell:hover {
       border: none;
-      text-shadow: 0 0 8px var(--spell-book-manager-button-danger);
+      text-shadow: 0 0 0.5rem var(--spell-book-manager-button-danger);
       box-shadow: none;
     }
   }
@@ -987,7 +987,7 @@
 
       &:hover {
         color: var(--spell-book-manager-text-primary);
-        text-shadow: 0 0 8px var(--spell-book-manager-button-danger);
+        text-shadow: 0 0 0.5rem var(--spell-book-manager-button-danger);
       }
     }
   }
@@ -999,7 +999,7 @@
       cursor: pointer; /* Space for checkbox */
 
       &.selected {
-        border-left: 3px solid var(--color-border-highlight);
+        border-left: 0.188rem solid var(--color-border-highlight);
         background-color: var(--color-bg-option);
       }
 
@@ -1015,7 +1015,7 @@
     user-select: none;
 
     &.selected {
-      border-left: 3px solid var(--color-border-highlight);
+      border-left: 0.188rem solid var(--color-border-highlight);
       background-color: var(--color-bg-option);
     }
 
@@ -1042,10 +1042,10 @@
     position: absolute;
     top: 0;
     right: 0;
-    bottom: 60px;
+    bottom: 3.75rem;
     flex-direction: column;
     width: var(--spell-book-manager-spells-sidebar-width);
-    border-left: 1px solid var(--spell-book-manager-border-color);
+    border-left: 0.063rem solid var(--spell-book-manager-border-color);
     overflow: hidden;
 
     h2 {
@@ -1069,7 +1069,7 @@
     margin-right: 0.85rem;
     margin-bottom: 0.25rem;
     padding-bottom: 0.25rem;
-    border-bottom: 1px solid var(--spell-book-border-light);
+    border-bottom: 0.063rem solid var(--spell-book-border-light);
     border-radius: var(--spell-book-border-radius);
     font-size: var(--spell-book-manager-font-sm);
 
@@ -1112,14 +1112,14 @@
   .available-spells-wrapper {
     flex: 1;
     min-height: 0;
-    max-height: calc(100vh - 500px);
+    max-height: calc(100vh - 31.25rem);
     margin-bottom: 0.3rem;
     overflow-y: auto;
   }
 
   .filter-count-display {
     padding: 0.5rem;
-    border-top: 1px solid var(--spell-book-manager-border-color);
+    border-top: 0.063rem solid var(--spell-book-manager-border-color);
     color: var(--spell-book-manager-text-tertiary);
     font-size: 0.9rem;
     text-align: center;
@@ -1136,7 +1136,7 @@
 
       &:focus {
         border-color: var(--color-border-highlight);
-        box-shadow: 0 0 3px var(--color-shadow-highlight);
+        box-shadow: 0 0 0.188rem var(--color-shadow-highlight);
       }
     }
   }
@@ -1161,7 +1161,7 @@
 
       &:focus {
         border-color: var(--color-border-highlight);
-        box-shadow: 0 0 3px var(--color-shadow-highlight);
+        box-shadow: 0 0 0.188rem var(--color-shadow-highlight);
       }
     }
   }
@@ -1243,8 +1243,8 @@
     right: 0;
     bottom: 0;
     left: 0;
-    height: 60px;
-    border-top: 1px solid var(--spell-book-manager-border-color);
+    height: 3.75rem;
+    border-top: 0.063rem solid var(--spell-book-manager-border-color);
     background: var(--spell-book-manager-bg-item);
 
     .footer-content {
@@ -1274,8 +1274,8 @@
     button {
       width: auto;
       padding: 0.25rem 0.5rem;
-      border: 1px solid var(--spell-book-manager-border-color);
-      border-radius: 3px;
+      border: 0.063rem solid var(--spell-book-manager-border-color);
+      border-radius: 0.188rem;
       cursor: pointer;
       background-color: var(--spell-book-manager-bg-item);
     }
@@ -1302,8 +1302,8 @@
     .bulk-save-btn,
     .cancel-selection-btn {
       padding: 0.5rem 1rem;
-      border: 1px solid var(--spell-book-manager-border-color);
-      border-radius: 4px;
+      border: 0.063rem solid var(--spell-book-manager-border-color);
+      border-radius: 0.25rem;
       font-size: var(--spell-book-manager-font-sm);
       white-space: nowrap;
       cursor: pointer;
@@ -1314,7 +1314,7 @@
       }
 
       &:hover:not(:disabled) {
-        transform: translateY(-1px);
+        transform: translateY(-0.063rem);
       }
     }
 
@@ -1356,7 +1356,7 @@
       cursor: pointer; /* Space for checkbox */
 
       &.selected {
-        border-left: 3px solid var(--color-border-highlight);
+        border-left: 0.188rem solid var(--color-border-highlight);
         background-color: var(--color-bg-option);
       }
 
@@ -1372,7 +1372,7 @@
     align-items: center;
     margin-bottom: 0.5rem;
     padding: 0.5rem;
-    border-bottom: 1px solid var(--spell-book-manager-border-color);
+    border-bottom: 0.063rem solid var(--spell-book-manager-border-color);
     font-size: var(--spell-book-manager-font-sm);
     background: var(--spell-book-manager-bg-item);
 
@@ -1392,7 +1392,7 @@
     user-select: none;
 
     &.selected {
-      border-left: 3px solid var(--color-border-highlight);
+      border-left: 0.188rem solid var(--color-border-highlight);
       background-color: var(--color-bg-option);
     }
 
@@ -1426,8 +1426,8 @@
       flex-shrink: 0;
       margin-bottom: 0;
       padding: 0.25rem 0.5rem;
-      border: 1px solid var(--spell-book-manager-border-color);
-      border-radius: 4px;
+      border: 0.063rem solid var(--spell-book-manager-border-color);
+      border-radius: 0.25rem;
     }
   }
 }
@@ -1498,7 +1498,7 @@
 
   select {
     width: auto;
-    min-width: 200px;
+    min-width: 12.5rem;
     max-width: 100%;
   }
 
@@ -1529,7 +1529,7 @@
 
     h3 {
       margin: 1rem 0 0.5rem;
-      border-bottom: 1px solid var(--color-border-light-tertiary);
+      border-bottom: 0.063rem solid var(--color-border-light-tertiary);
 
       &:first-of-type {
         margin-top: 0;
@@ -1771,17 +1771,17 @@
 /* ----------------------------------------- */
 /*  Responsive Design                        */
 /* ----------------------------------------- */
-@media (width <= 1400px) {
+@media (width <= 87.5rem) {
   :root {
-    --spell-book-manager-sidebar-width: 220px;
-    --spell-book-manager-spells-sidebar-width: 350px;
+    --spell-book-manager-sidebar-width: 13.75rem;
+    --spell-book-manager-spells-sidebar-width: 21.875rem;
   }
 }
 
-@media (width <= 1200px) {
+@media (width <= 75rem) {
   :root {
-    --spell-book-manager-sidebar-width: 200px;
-    --spell-book-manager-spells-sidebar-width: 300px;
+    --spell-book-manager-sidebar-width: 12.5rem;
+    --spell-book-manager-spells-sidebar-width: 18.75rem;
   }
 
   .gm-spell-list-manager {
@@ -1796,10 +1796,10 @@
   }
 }
 
-@media (width <= 1024px) {
+@media (width <= 64rem) {
   :root {
-    --spell-book-manager-sidebar-width: 180px;
-    --spell-book-manager-spells-sidebar-width: 250px;
+    --spell-book-manager-sidebar-width: 11.25rem;
+    --spell-book-manager-spells-sidebar-width: 15.625rem;
   }
 
   .gm-spell-list-manager {
@@ -1809,8 +1809,8 @@
     }
 
     .spell-icon {
-      width: 28px;
-      height: 28px;
+      width: 1.75rem;
+      height: 1.75rem;
     }
 
     .name-stacked .subtitle {
