@@ -963,29 +963,28 @@ export class AdvancedSearchManager {
    * @param {Object} parsedQuery - The parsed query object
    */
   applyAdvancedQueryToFilters(parsedQuery) {
-    const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
-    if (searchInput && searchInput.value) searchInput.value = '';
+    if (!this.app.filterHelper._cachedFilterState) this.app.filterHelper._cachedFilterState = {};
     if (parsedQuery.type === 'field') {
-      if (parsedQuery.field === 'range') this.setRangeFilterValue(parsedQuery.value);
-      else this.setFilterValue(parsedQuery.field, parsedQuery.value);
-      if (!this.app.filterHelper._cachedFilterState) this.app.filterHelper._cachedFilterState = {};
       if (parsedQuery.field === 'range') {
         const [min, max] = this.parseRangeValue(parsedQuery.value);
         this.app.filterHelper._cachedFilterState.minRange = min;
         this.app.filterHelper._cachedFilterState.maxRange = max;
-      } else this.app.filterHelper._cachedFilterState[parsedQuery.field] = parsedQuery.value;
-    } else if (parsedQuery.type === 'boolean') {
-      if (parsedQuery.operator === 'AND') {
-        this.applyAdvancedQueryToFilters(parsedQuery.left);
-        this.applyAdvancedQueryToFilters(parsedQuery.right);
-      } else if (parsedQuery.operator === 'OR') {
-        log(2, 'OR operations not fully supported in UI, applying left side only');
-        this.applyAdvancedQueryToFilters(parsedQuery.left);
-      } else if (parsedQuery.operator === 'NOT') {
-        log(2, 'NOT operations not supported in current UI');
+        this.setRangeFilterValue(parsedQuery.value);
+      } else {
+        this.app.filterHelper._cachedFilterState[parsedQuery.field] = parsedQuery.value;
+        this.setFilterValue(parsedQuery.field, parsedQuery.value);
       }
     }
-    log(3, 'Advanced query filters applied');
+    const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]') || document.querySelector('input[name="spell-search"]');
+    if (searchInput && searchInput.value) {
+      searchInput.value = '';
+      searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+      this.updateClearButtonVisibility();
+    }
+    setTimeout(() => {
+      this.app.filterHelper.invalidateFilterCache();
+      this.app.filterHelper.applyFilters();
+    }, 100);
   }
 
   /**
