@@ -105,7 +105,7 @@ export class AdvancedSearchManager {
     const searchContainer = this.searchInputElement.parentElement;
     const clearButton = document.createElement('button');
     clearButton.type = 'button';
-    clearButton.className = 'search-clear-button';
+    clearButton.className = 'search-input-clear';
     clearButton.innerHTML = '×';
     clearButton.style.display = 'none';
     clearButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Search.ClearSearch'));
@@ -510,7 +510,7 @@ export class AdvancedSearchManager {
       const tooltipAttr = search.length > 32 ? `data-tooltip="${search}"` : '';
       content += `<div class="search-suggestion" data-query="${search}" role="option" tabindex="-1" aria-selected="false">
         <span class="suggestion-text" ${tooltipAttr}>${search}</span>
-        <button class="clear-recent-search" aria-label="${game.i18n.localize('SPELLBOOK.Search.Remove')}">&times;</button>
+        <button class="clear-recent-search" aria-label="${game.i18n.localize('SPELLBOOK.Search.Remove')}"><i class="fa-solid fa-square-xmark"></i></button>
       </div>`;
     });
     return content;
