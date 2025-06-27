@@ -14,22 +14,26 @@ export class AdvancedSearchManager {
    * @param {PlayerSpellBook} app - The parent application
    */
   constructor(app) {
-    this.app = app;
     this.actor = app.actor;
-    this.searchTimeout = null;
-    this.isDropdownVisible = false;
-    this.selectedSuggestionIndex = -1;
-    this.isFieldSuggestionActive = false;
+    this.app = app;
     this.fieldDefinitions = new FieldDefinitions();
-    this.queryParser = new QueryParser(this.fieldDefinitions);
-    this.queryExecutor = new QueryExecutor();
+    this.focusDebounceTimeout = null;
     this.isAdvancedQuery = false;
+    this.isDropdownVisible = false;
+    this.isFieldSuggestionActive = false;
+    this.isInitialized = false;
+    this.isProcessingFocusEvent = false;
+    this.isProcessingSearch = false;
+    this.lastDropdownQuery = null;
+    this.lastParsedQuery = null;
+    this.lastProcessedQuery = null;
+    this.lastProcessedTime = 0;
     this.parsedQuery = null;
     this.queryCache = new Map();
-    this.lastParsedQuery = null;
-    this.focusDebounceTimeout = null;
-    this.lastDropdownQuery = null;
-    this.isProcessingFocusEvent = false;
+    this.queryExecutor = new QueryExecutor();
+    this.queryParser = new QueryParser(this.fieldDefinitions);
+    this.searchTimeout = null;
+    this.selectedSuggestionIndex = -1;
   }
 
   /**
@@ -44,9 +48,15 @@ export class AdvancedSearchManager {
    * Initialize advanced search functionality
    */
   initialize() {
+    if (this.isInitialized) {
+      log(3, 'AdvancedSearchManager already initialized, skipping');
+      return;
+    }
+    log(3, 'AdvancedSearchManager.initialize() called');
     this.cleanup();
     this.setupSearchInterface();
     this.setupEventListeners();
+    this.isInitialized = true;
   }
 
   /**
@@ -132,12 +142,15 @@ export class AdvancedSearchManager {
    */
   setupEventListeners() {
     if (!this.searchInputElement) return;
+    log(1, 'AdvancedSearchManager.setupEventListeners() called - Call stack:', new Error().stack);
     this.searchInputElement.addEventListener('input', this.handleSearchInput.bind(this));
     this.searchInputElement.addEventListener('focus', this.handleSearchFocus.bind(this));
     this.searchInputElement.addEventListener('blur', this.handleSearchBlur.bind(this));
     this.searchInputElement.addEventListener('keydown', this.handleSearchKeydown.bind(this));
     if (this.clearButtonElement) this.clearButtonElement.addEventListener('click', this.clearSearch.bind(this));
-    document.addEventListener('click', this.handleDocumentClick.bind(this));
+    log(1, 'Attaching document click listener');
+    this.boundHandleDocumentClick = this.handleDocumentClick.bind(this);
+    document.addEventListener('click', this.boundHandleDocumentClick);
     log(3, 'Event listeners setup complete');
   }
 
@@ -147,6 +160,7 @@ export class AdvancedSearchManager {
    */
   handleSearchInput(event) {
     const query = event.target.value;
+    if (this.isProcessingSearch || (query === '' && this.isAdvancedQuery)) return;
     this.updateClearButtonVisibility();
     if (this.searchTimeout) clearTimeout(this.searchTimeout);
     if (query.startsWith('^')) {
@@ -261,18 +275,46 @@ export class AdvancedSearchManager {
    * @param {Event} event - Click event
    */
   handleDocumentClick(event) {
+    // Generate unique click ID
+    const clickId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    log(3, `handleDocumentClick [${clickId}] triggered by:`, {
+      target: event.target,
+      targetClass: event.target.className,
+      targetId: event.target.id,
+      path: event
+        .composedPath()
+        .map((el) => el.tagName || el.toString())
+        .slice(0, 5),
+      isTrusted: event.isTrusted,
+      timeStamp: event.timeStamp,
+      eventPhase: event.eventPhase,
+      bubbles: event.bubbles
+    });
+
     const dropdown = document.querySelector('.search-dropdown');
+
     if (event.target.closest('.search-suggestion')) {
+      log(3, `[${clickId}] Handling search suggestion click`);
+      event.preventDefault();
+      event.stopPropagation();
       this.selectSuggestion(event.target.closest('.search-suggestion'));
       return;
     }
+
     if (event.target.closest('.clear-recent-search')) {
+      log(3, 'Handling clear recent search click');
+      event.preventDefault();
+      event.stopPropagation();
       const searchText = event.target.closest('.search-suggestion').dataset.query;
       this.removeFromRecentSearches(searchText);
       this.updateDropdownContent(this.searchInputElement.value);
       return;
     }
-    if (!event.target.closest('.advanced-search-input') && !event.target.closest('.search-dropdown')) this.hideDropdown();
+
+    if (!event.target.closest('.advanced-search-input') && !event.target.closest('.search-dropdown')) {
+      log(3, 'Hiding dropdown due to outside click');
+      this.hideDropdown();
+    }
   }
 
   /**
@@ -280,19 +322,47 @@ export class AdvancedSearchManager {
    * @param {Element} suggestionElement - The suggestion element
    */
   selectSuggestion(suggestionElement) {
+    const suggestionId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     const query = suggestionElement.dataset.query;
-    if (!query) return;
+    const now = Date.now();
+
+    log(3, `selectSuggestion [${suggestionId}] called with:`, {
+      query,
+      element: suggestionElement,
+      elementClass: suggestionElement.className,
+      isSubmitQuery: suggestionElement.classList.contains('submit-query'),
+      lastProcessedQuery: this.lastProcessedQuery,
+      timeSinceLastProcessed: this.lastProcessedTime ? now - this.lastProcessedTime : 'never'
+    });
+
+    if (!query) {
+      log(3, `[${suggestionId}] No query found, returning`);
+      return;
+    }
+
+    // Prevent duplicate processing of same query within 500ms
+    if (this.lastProcessedQuery === query && now - this.lastProcessedTime < 500) {
+      log(3, `[${suggestionId}] DUPLICATE PREVENTION - ignoring duplicate query: ${query} (${now - this.lastProcessedTime}ms since last)`);
+      return;
+    }
+
+    this.lastProcessedQuery = query;
+    this.lastProcessedTime = now;
+
     this.searchInputElement.value = query;
     this.searchInputElement.focus();
+
     if (suggestionElement.classList.contains('submit-query')) {
+      log(3, `[${suggestionId}] Submit query - calling performSearch`);
       this.performSearch(query);
       this.addToRecentSearches(query);
       this.hideDropdown();
+      log(3, `[${suggestionId}] Submit query completed`);
     } else {
+      log(3, `[${suggestionId}] Not submit query - updating dropdown`);
       this.updateDropdownContent(query);
-      this.updateClearButtonVisibility();
+      log(3, `[${suggestionId}] Dropdown content updated`);
     }
-    this.selectedSuggestionIndex = -1;
   }
 
   /**
@@ -586,28 +656,51 @@ export class AdvancedSearchManager {
    * @param {string} query - Search query
    */
   async performSearch(query) {
+    const searchId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+
+    if (this.isProcessingSearch) {
+      log(3, `performSearch [${searchId}] - already processing, skipping. Query: ${query}`);
+      return;
+    }
+
+    log(3, `performSearch [${searchId}] started with query: "${query}"`);
+    this.isProcessingSearch = true;
+
     try {
       if (query && query.startsWith('^')) {
+        log(3, `[${searchId}] Processing advanced query`);
         const parsedQuery = this.parseAndCacheQuery(query.substring(1));
         if (parsedQuery) {
           this.isAdvancedQuery = true;
           this.parsedQuery = parsedQuery;
+          log(3, `[${searchId}] Calling applyAdvancedQueryToFilters`);
           this.applyAdvancedQueryToFilters(parsedQuery);
           this.app.filterHelper.invalidateFilterCache();
-          setTimeout(() => {
-            this.app.filterHelper.applyFilters();
-          }, 100);
+
+          // Remove this delayed call - filtering is already handled by applyAdvancedQueryToFilters
+          // setTimeout(() => {
+          //   log(3, `[${searchId}] Delayed applyFilters executing`);
+          //   this.app.filterHelper.applyFilters();
+          //   this.isProcessingSearch = false;
+          // }, 100);
+
+          this.isProcessingSearch = false; // Reset immediately since filtering is handled by dispatchEvent
+          log(3, `[${searchId}] Advanced query processing completed`);
           return;
         }
       }
       this.isAdvancedQuery = false;
       this.parsedQuery = null;
       this.app.filterHelper.invalidateFilterCache();
+
+      // Keep this setTimeout for non-advanced queries if needed
       setTimeout(() => {
         this.app.filterHelper.applyFilters();
+        this.isProcessingSearch = false;
       }, 100);
     } catch (error) {
-      log(1, 'Error in performSearch:', error);
+      log(1, `performSearch [${searchId}] error:`, error);
+      this.isProcessingSearch = false;
     }
   }
 
@@ -662,17 +755,11 @@ export class AdvancedSearchManager {
     const [min, max] = this.parseRangeValue(rangeValue);
     if (min !== null) {
       const minInput = document.querySelector('input[name="filter-min-range"]');
-      if (minInput) {
-        minInput.value = min;
-        minInput.dispatchEvent(new Event('input', { bubbles: true }));
-      }
+      if (minInput) minInput.value = min;
     }
     if (max !== null) {
       const maxInput = document.querySelector('input[name="filter-max-range"]');
-      if (maxInput) {
-        maxInput.value = max;
-        maxInput.dispatchEvent(new Event('input', { bubbles: true }));
-      }
+      if (maxInput) maxInput.value = max;
     }
   }
 
@@ -887,6 +974,8 @@ export class AdvancedSearchManager {
    * Cleanup event listeners and elements
    */
   cleanup() {
+    log(3, 'AdvancedSearchManager cleanup called');
+
     if (this.searchTimeout) {
       clearTimeout(this.searchTimeout);
       this.searchTimeout = null;
@@ -895,11 +984,20 @@ export class AdvancedSearchManager {
       clearTimeout(this.focusDebounceTimeout);
       this.focusDebounceTimeout = null;
     }
+
+    // Remove the existing document click listener if it exists
+    if (this.boundHandleDocumentClick) {
+      document.removeEventListener('click', this.boundHandleDocumentClick);
+      log(3, 'Removed existing document click listener');
+    }
+
     const existingDropdown = document.querySelector('.search-dropdown');
     if (existingDropdown) existingDropdown.remove();
+
     this.isDropdownVisible = false;
     this.selectedSuggestionIndex = -1;
     this.queryCache.clear();
+    this.isInitialized = false; // Reset the flag
     log(3, 'Advanced search manager cleaned up');
   }
 }

@@ -201,13 +201,7 @@ export class SpellbookUI {
       const spellLevel = spellItem.dataset.spellLevel;
       const spellSourceClass = checkbox.dataset.sourceClass;
       if (spellLevel === '0' || (spellSourceClass && spellSourceClass !== classIdentifier)) return;
-      if (
-        spellItem.querySelector('.tag.always-prepared') ||
-        spellItem.querySelector('.tag.granted') ||
-        spellItem.querySelector('.tag.innate') ||
-        spellItem.querySelector('.tag.atwill')
-      )
-        return;
+      if (spellItem.querySelector('.tag.always-prepared') || spellItem.querySelector('.tag.granted') || spellItem.querySelector('.tag.innate') || spellItem.querySelector('.tag.atwill')) return;
       if (isClassAtMax && !checkbox.checked) {
         checkbox.disabled = true;
         checkbox.dataset.tooltip = game.i18n.format('SPELLBOOK.Preparation.ClassAtMaximum', { class: classData?.className || classIdentifier });
@@ -326,6 +320,10 @@ export class SpellbookUI {
    * Setup advanced search functionality
    */
   setupAdvancedSearch() {
+    if (this.advancedSearchManager && this.advancedSearchManager.isInitialized) {
+      log(3, 'Advanced search already initialized, skipping');
+      return;
+    }
     this.advancedSearchManager.initialize();
     log(3, 'Advanced search initialized successfully');
   }
