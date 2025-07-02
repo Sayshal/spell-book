@@ -1,26 +1,217 @@
-import { DEPRECATED_FLAGS, MODULE, SETTINGS } from './constants.mjs';
+// scripts/migrations.mjs
+import { DEPRECATED_FLAGS, FLAGS, MODULE } from './constants.mjs';
 import * as managerHelpers from './helpers/compendium-management.mjs';
 import { log } from './logger.mjs';
 
 /**
- * Register migration setting and hook
+ * Register migration hook to run all migrations every time
  */
 export function registerMigration() {
-  game.settings.register(MODULE.ID, SETTINGS.RUN_MIGRATIONS, {
-    name: 'SPELLBOOK.Settings.Migration.Name',
-    scope: 'world',
-    config: false,
-    type: Boolean,
-    default: true,
-    onChange: (value) => {
-      if (value && game.user.isGM) {
-        log(2, 'Migration setting enabled, running migration...');
-        runMigration();
+  Hooks.once('ready', runAllMigrations);
+}
+
+/**
+ * Run all migration processes every time
+ */
+async function runAllMigrations() {
+  if (!game.user.isGM) return;
+
+  log(2, 'Running all migrations...');
+
+  // Run all migration types
+  const deprecatedFlagResults = await migrateDeprecatedFlags();
+  const folderResults = await migrateSpellListFolders();
+  const userDataResults = await migrateAllUserSpellData();
+
+  // Calculate totals
+  const totalProcessed = deprecatedFlagResults.processed + folderResults.processed + userDataResults.processed;
+
+  if (totalProcessed > 0) {
+    ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.StartNotification'));
+    logMigrationResults(deprecatedFlagResults, folderResults, userDataResults);
+    ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.CompleteNotification'));
+  } else {
+    log(3, 'No migrations needed');
+  }
+}
+
+/**
+ * Migrate deprecated flags from actors and compendiums
+ */
+async function migrateDeprecatedFlags() {
+  const results = { processed: 0, invalidFlagRemovals: 0, actors: [] };
+
+  log(3, 'Migrating world actors and compendium for deprecated flags');
+
+  // Migrate world actors
+  await migrateCollection(game.actors, results);
+
+  // Migrate module compendium
+  const modulePack = game.packs.get(MODULE.PACK.SPELLS);
+  if (modulePack) {
+    const documents = await modulePack.getDocuments();
+    await migrateCollection(documents, results, modulePack.collection);
+  }
+
+  return results;
+}
+
+/**
+ * Migrate all users' spell data
+ */
+async function migrateAllUserSpellData() {
+  const results = { processed: 0, users: [] };
+
+  log(3, 'Migrating user spell data');
+
+  for (const user of game.users) {
+    const userResult = await migrateUserSpellData(user.id);
+    if (userResult.wasUpdated) {
+      results.processed++;
+      results.users.push({
+        name: user.name,
+        id: user.id,
+        errors: userResult.errors,
+        cleaned: userResult.cleanedEntries
+      });
+    }
+  }
+
+  if (results.processed > 0) {
+    log(2, `Migrated spell user data for ${results.processed} users`);
+  }
+
+  return results;
+}
+
+/**
+ * Migrate user data to new format if needed
+ * @param {string} userId - The user ID to migrate
+ * @returns {Promise<Object>} Migration result with status and details
+ */
+async function migrateUserSpellData(userId) {
+  try {
+    const user = game.users.get(userId);
+    if (!user) return { wasUpdated: false, errors: ['User not found'] };
+
+    const userData = user.getFlag(MODULE.ID, FLAGS.SPELL_USER_DATA);
+    if (!userData) return { wasUpdated: false, errors: [] }; // No data to migrate
+
+    const validation = validateUserSpellData(userData);
+    if (validation.isValid) return { wasUpdated: false, errors: [] }; // Already valid
+
+    log(3, `Migrating user spell data for user ${userId}: ${validation.errors.length} issues found`);
+
+    // Clean up invalid entries
+    const cleanedData = {};
+    let cleanedEntries = 0;
+
+    for (const [uuid, spellData] of Object.entries(userData)) {
+      if (typeof spellData === 'object' && spellData !== null) {
+        const cleanedSpellData = {};
+
+        // Migrate notes
+        if (spellData.notes && typeof spellData.notes === 'string') {
+          const maxLength = game.settings.get(MODULE.ID, 'spellNotesMaxLength') || 240;
+          cleanedSpellData.notes = spellData.notes.substring(0, maxLength);
+        }
+
+        // Migrate favorited status
+        if (spellData.favorited !== undefined) {
+          cleanedSpellData.favorited = !!spellData.favorited;
+        }
+
+        // Migrate usage stats
+        if (spellData.usageStats && typeof spellData.usageStats === 'object') {
+          cleanedSpellData.usageStats = {
+            count: Math.max(0, Math.floor(spellData.usageStats.count || 0)),
+            lastUsed: spellData.usageStats.lastUsed || null,
+            contextUsage: {
+              combat: Math.max(0, Math.floor(spellData.usageStats.contextUsage?.combat || 0)),
+              exploration: Math.max(0, Math.floor(spellData.usageStats.contextUsage?.exploration || 0))
+            }
+          };
+        }
+
+        if (Object.keys(cleanedSpellData).length > 0) {
+          cleanedData[uuid] = cleanedSpellData;
+          cleanedEntries++;
+        }
       }
     }
-  });
 
-  Hooks.once('ready', checkAndRunMigration);
+    await user.setFlag(MODULE.ID, FLAGS.SPELL_USER_DATA, cleanedData);
+    log(3, `Successfully migrated user spell data for user ${userId}: ${cleanedEntries} entries cleaned`);
+
+    return {
+      wasUpdated: true,
+      errors: [],
+      cleanedEntries
+    };
+  } catch (error) {
+    log(1, `Error migrating user spell data for user ${userId}:`, error);
+    return {
+      wasUpdated: false,
+      errors: [error.message]
+    };
+  }
+}
+
+/**
+ * Validate user spell data structure
+ * @param {Object} data - The data to validate
+ * @returns {Object} Validation result with isValid and errors
+ */
+function validateUserSpellData(data) {
+  const result = { isValid: true, errors: [] };
+
+  try {
+    if (!data || typeof data !== 'object') {
+      result.isValid = false;
+      result.errors.push('Data must be an object');
+      return result;
+    }
+
+    for (const [uuid, spellData] of Object.entries(data)) {
+      if (typeof spellData !== 'object') {
+        result.errors.push(`Invalid data type for spell ${uuid}`);
+        continue;
+      }
+
+      // Validate notes length if present
+      if (spellData.notes && typeof spellData.notes === 'string') {
+        const maxLength = game.settings.get(MODULE.ID, 'spellNotesMaxLength') || 240;
+        if (spellData.notes.length > maxLength) {
+          result.errors.push(`Notes too long for spell ${uuid}`);
+        }
+      }
+
+      // Validate favorited is boolean if present
+      if (spellData.favorited !== undefined && typeof spellData.favorited !== 'boolean') {
+        result.errors.push(`Invalid favorited value for spell ${uuid}`);
+      }
+
+      // Validate usage stats structure if present
+      if (spellData.usageStats) {
+        const stats = spellData.usageStats;
+        if (typeof stats.count !== 'number' || stats.count < 0) {
+          result.errors.push(`Invalid usage count for spell ${uuid}`);
+        }
+        if (stats.contextUsage) {
+          if (typeof stats.contextUsage.combat !== 'number' || typeof stats.contextUsage.exploration !== 'number') {
+            result.errors.push(`Invalid context usage for spell ${uuid}`);
+          }
+        }
+      }
+    }
+
+    result.isValid = result.errors.length === 0;
+  } catch (error) {
+    result.isValid = false;
+    result.errors.push(`Validation error: ${error.message}`);
+  }
+
+  return result;
 }
 
 async function checkFolderMigrationNeeded() {
@@ -38,19 +229,6 @@ async function checkFolderMigrationNeeded() {
   const migrationNeeded = topLevelSpellJournals.length > 0;
   log(migrationNeeded ? 2 : 3, migrationNeeded ? `Folder migration needed: found ${topLevelSpellJournals.length} top-level spell journals` : 'No folder migration needed');
   return migrationNeeded;
-}
-
-async function checkAndRunMigration() {
-  if (!game.user.isGM) return;
-  const folderMigrationNeeded = await checkFolderMigrationNeeded();
-  const regularMigrationNeeded = game.settings.get(MODULE.ID, SETTINGS.RUN_MIGRATIONS);
-  if (folderMigrationNeeded || regularMigrationNeeded) {
-    log(2, 'Running data migration...', { folderMigrationNeeded, regularMigrationNeeded });
-    ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.StartNotification'));
-    await runMigration();
-    if (regularMigrationNeeded) await game.settings.set(MODULE.ID, SETTINGS.RUN_MIGRATIONS, false);
-    ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.CompleteNotification'));
-  }
 }
 
 async function migrateCollection(documents, results, packName = null) {
@@ -144,28 +322,70 @@ async function migrateJournalToFolder(journal, customFolder, mergedFolder) {
   return { success: true, type: moveType };
 }
 
-function logMigrationResults(results, folderResults = null) {
-  const totalProcessed = results.processed + (folderResults?.processed || 0);
+function logMigrationResults(deprecatedResults, folderResults, userDataResults) {
+  const totalProcessed = deprecatedResults.processed + folderResults.processed + userDataResults.processed;
   if (totalProcessed === 0) {
     log(2, 'No migration updates needed');
     return;
   }
-  let content = buildChatContent(results, folderResults, totalProcessed);
+
+  let content = buildChatContent(deprecatedResults, folderResults, userDataResults, totalProcessed);
   ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id });
   log(2, `Migration complete: ${totalProcessed} documents updated`);
 }
 
-function buildChatContent(results, folderResults, totalProcessed) {
+function buildChatContent(deprecatedResults, folderResults, userDataResults, totalProcessed) {
   let content = `
     <h2>${game.i18n.localize('SPELLBOOK.Migrations.ChatTitle')}</h2>
     <p>${game.i18n.localize('SPELLBOOK.Migrations.ChatDescription')}</p>
     <p>${game.i18n.format('SPELLBOOK.Migrations.TotalUpdated', { count: totalProcessed })}</p>`;
-  if (results.invalidFlagRemovals > 0) {
-    content += `<p><strong>${game.i18n.localize('SPELLBOOK.Migrations.InvalidFlagsRemoved')}:</strong> ${game.i18n.format('SPELLBOOK.Migrations.InvalidFlagsRemovedCount', { count: results.invalidFlagRemovals })}</p>`;
+
+  // Deprecated flags results
+  if (deprecatedResults.invalidFlagRemovals > 0) {
+    content += `<p><strong>${game.i18n.localize('SPELLBOOK.Migrations.InvalidFlagsRemoved')}:</strong> ${game.i18n.format('SPELLBOOK.Migrations.InvalidFlagsRemovedCount', { count: deprecatedResults.invalidFlagRemovals })}</p>`;
   }
-  if (folderResults && folderResults.processed > 0) content += buildFolderMigrationContent(folderResults);
-  if (results.actors.length > 0) content += buildActorListContent(results.actors);
+
+  // Folder migration results
+  if (folderResults && folderResults.processed > 0) {
+    content += buildFolderMigrationContent(folderResults);
+  }
+
+  // User data migration results
+  if (userDataResults && userDataResults.processed > 0) {
+    content += buildUserDataMigrationContent(userDataResults);
+  }
+
+  // Actor list
+  if (deprecatedResults.actors.length > 0) {
+    content += buildActorListContent(deprecatedResults.actors);
+  }
+
   content += `<p>${game.i18n.localize('SPELLBOOK.Migrations.Apology')}</p>`;
+  return content;
+}
+
+function buildUserDataMigrationContent(userDataResults) {
+  let content = `<p><strong>User Spell Data Migration:</strong> Updated data for ${userDataResults.processed} users</p>`;
+
+  if (userDataResults.users.length > 0) {
+    content += '<ul>';
+    for (const user of userDataResults.users.slice(0, 5)) {
+      // Show max 5 users
+      content += `<li>${user.name}`;
+      if (user.cleaned > 0) {
+        content += ` (${user.cleaned} entries cleaned)`;
+      }
+      if (user.errors.length > 0) {
+        content += ` (${user.errors.length} errors)`;
+      }
+      content += '</li>';
+    }
+    if (userDataResults.users.length > 5) {
+      content += `<li>... and ${userDataResults.users.length - 5} more users</li>`;
+    }
+    content += '</ul>';
+  }
+
   return content;
 }
 
@@ -189,9 +409,7 @@ function buildFolderMigrationContent(folderResults) {
   content += `<p><strong>${game.i18n.localize('SPELLBOOK.Migrations.SpellListFolderMigration')}:</strong> ${folderMigrationText}</p>`;
   if (folderResults.foldersCreated.length > 0) {
     const folderNames = folderResults.foldersCreated
-      .map((folder) =>
-        folder === 'custom' ? game.i18n.localize('SPELLMANAGER.Folders.CustomSpellListsFolder') : game.i18n.localize('SPELLMANAGER.Folders.MergedSpellListsFolder')
-      )
+      .map((folder) => (folder === 'custom' ? game.i18n.localize('SPELLMANAGER.Folders.CustomSpellListsFolder') : game.i18n.localize('SPELLMANAGER.Folders.MergedSpellListsFolder')))
       .join(', ');
     content += `<p><strong>${game.i18n.localize('SPELLBOOK.Migrations.FoldersCreated')}:</strong> ${folderNames}</p>`;
   }
@@ -219,28 +437,6 @@ function buildActorListContent(actors) {
  */
 export async function forceMigration() {
   log(2, 'Force running migration for testing...');
-  await game.settings.set(MODULE.ID, SETTINGS.RUN_MIGRATIONS, true);
-  await runMigration();
-  await game.settings.set(MODULE.ID, SETTINGS.RUN_MIGRATIONS, false);
+  await runAllMigrations();
   log(2, 'Migration test complete.');
-}
-
-/**
- * Run the migration process
- */
-async function runMigration() {
-  const regularMigrationNeeded = game.settings.get(MODULE.ID, SETTINGS.RUN_MIGRATIONS);
-  const migrationResults = { processed: 0, invalidFlagRemovals: 0, actors: [] };
-  if (regularMigrationNeeded) {
-    log(3, 'Migrating world actors and compendium');
-    await migrateCollection(game.actors, migrationResults);
-    const modulePack = game.packs.get(MODULE.PACK.SPELLS);
-    if (modulePack) {
-      const documents = await modulePack.getDocuments();
-      await migrateCollection(documents, migrationResults, modulePack.collection);
-    }
-  } else log(3, 'Skipping regular migrations (already completed)');
-  log(3, 'Running spell list folder migration check');
-  const folderResults = await migrateSpellListFolders();
-  logMigrationResults(migrationResults, folderResults);
 }

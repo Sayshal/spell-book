@@ -214,4 +214,18 @@ export function registerSettings() {
       log(3, `Lazy batch size changed to ${value}`);
     }
   });
+
+  game.settings.register(MODULE.ID, 'spellNotesMaxLength', {
+    name: 'SPELLBOOK.Settings.NotesMaxLength.Name',
+    hint: 'SPELLBOOK.Settings.NotesMaxLength.Hint',
+    scope: 'world',
+    config: true,
+    type: Number,
+    default: 240,
+    range: {
+      min: 10,
+      max: 1000,
+      step: 10
+    }
+  });
 }

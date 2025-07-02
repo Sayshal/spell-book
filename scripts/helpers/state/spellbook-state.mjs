@@ -6,6 +6,7 @@ import * as genericUtils from '../generic-utils.mjs';
 import { ScrollScanner } from '../scroll-scanner.mjs';
 import * as discoveryUtils from '../spell-discovery.mjs';
 import * as formattingUtils from '../spell-formatting.mjs';
+import * as spellUserData from '../spell-user-data.mjs';
 
 /**
  * Manages state for the spellbook application with cached calculations
@@ -336,6 +337,8 @@ export class SpellbookState {
       spellData.filterData = formattingUtils.extractSpellFilterData(spell);
       spellData.formattedDetails = formattingUtils.formatSpellDetails(spell);
       spellData.enrichedIcon = formattingUtils.createSpellIconLink(spell);
+      const enhancedSpell = spellUserData.enhanceSpellWithUserData(spellData, game.user.id);
+      Object.assign(spellData, enhancedSpell);
       spellsByLevel[level].push(spellData);
       processedSpellIds.add(spell.id || spell.compendiumUuid || spell.uuid);
       processedSpellNames.add(spellName);
@@ -561,9 +564,7 @@ export class SpellbookState {
       .filter(Boolean);
     for (const spell of allSpellItems) spell.sourceClass = classIdentifier;
     const prepTabSpells = allSpellItems.filter(
-      (spell) =>
-        (!shouldHideCantrips && spell.system.level === 0) ||
-        (spell.system.level !== 0 && (personalSpellbook.includes(spell.compendiumUuid) || grantedSpells.includes(spell.compendiumUuid)))
+      (spell) => (!shouldHideCantrips && spell.system.level === 0) || (spell.system.level !== 0 && (personalSpellbook.includes(spell.compendiumUuid) || grantedSpells.includes(spell.compendiumUuid)))
     );
     const wizardbookSpells = allSpellItems.filter((spell) => this._fullWizardSpellLists.get(classIdentifier).has(spell.compendiumUuid) && spell.system.level !== 0);
     const prepLevelsFlattened = this._organizeSpellsByLevelForClass(prepTabSpells, classIdentifier, classItem);
@@ -909,8 +910,7 @@ export class SpellbookState {
    * @returns {Promise<void>}
    */
   async sendGMNotifications(spellDataByClass, allCantripChangesByClass) {
-    const globalBehavior =
-      this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM;
+    const globalBehavior = this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM;
     if (globalBehavior !== MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM) return;
     const notificationData = { actorName: this.actor.name, classChanges: {} };
     for (const [classIdentifier, classSpellData] of Object.entries(spellDataByClass)) {

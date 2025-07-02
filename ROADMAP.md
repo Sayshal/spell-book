@@ -21,7 +21,7 @@ Implemented advanced Google-style search with syntax support, search history, an
 - ✅ Integration with existing filter system for seamless user experience
 - ✅ Debounced search performance with caching for optimal responsiveness
 
-#### **Spell Notes & Favorites [High Priority]**
+#### **Spell Notes & Favorites [IN PROGRESS]**
 
 Add personal notes on spells, favorite spell marking system, and spell usage history tracking.
 

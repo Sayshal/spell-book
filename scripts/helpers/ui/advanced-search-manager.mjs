@@ -143,13 +143,11 @@ export class AdvancedSearchManager {
    */
   setupEventListeners() {
     if (!this.searchInputElement) return;
-    log(1, 'AdvancedSearchManager.setupEventListeners() called - Call stack:', new Error().stack);
     this.searchInputElement.addEventListener('input', this.handleSearchInput.bind(this));
     this.searchInputElement.addEventListener('focus', this.handleSearchFocus.bind(this));
     this.searchInputElement.addEventListener('blur', this.handleSearchBlur.bind(this));
     this.searchInputElement.addEventListener('keydown', this.handleSearchKeydown.bind(this));
     if (this.clearButtonElement) this.clearButtonElement.addEventListener('click', this.clearSearch.bind(this));
-    log(1, 'Attaching document click listener');
     this.boundHandleDocumentClick = this.handleDocumentClick.bind(this);
     document.addEventListener('click', this.boundHandleDocumentClick);
     log(3, 'Event listeners setup complete');

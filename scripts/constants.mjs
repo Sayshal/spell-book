@@ -140,6 +140,7 @@ export const FLAGS = {
   RULE_SET_OVERRIDE: 'ruleSetOverride',
   SIDEBAR_COLLAPSED: 'sidebarCollapsed',
   SPELL_LOADOUTS: 'spellLoadouts',
+  SPELL_USER_DATA: 'spellUserData',
   SWAP_TRACKING: 'swapTracking',
   WIZARD_COPIED_SPELLS: 'wizardCopiedSpells',
   WIZARD_RITUAL_CASTING: 'wizardRitualCasting'
@@ -199,7 +200,6 @@ export const SETTINGS = {
   LAZY_BATCH_SIZE: 'lazyBatchSize',
   LOGGING_LEVEL: 'loggingLevel',
   OPEN_SPELL_MANAGER: 'openSpellListManager',
-  RUN_MIGRATIONS: 'runMigrations',
   SPELL_BOOK_POSITION: 'spellBookPositionn',
   SPELLCASTING_RULE_SET: 'spellcastingRuleSet'
 };
