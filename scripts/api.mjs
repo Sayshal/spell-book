@@ -10,6 +10,7 @@ import * as formElements from './helpers/form-elements.mjs';
 import * as genericUtils from './helpers/generic-utils.mjs';
 import * as discoveryUtils from './helpers/spell-discovery.mjs';
 import * as formattingUtils from './helpers/spell-formatting.mjs';
+import * as spellUserData from './helpers/spell-user-data.mjs';
 import { SpellbookState } from './helpers/state/spellbook-state.mjs';
 import { SpellbookFilterHelper } from './helpers/ui/spellbook-filters.mjs';
 import { SpellbookUI } from './helpers/ui/spellbook-ui.mjs';
@@ -42,7 +43,8 @@ export function createAPI() {
         formatting: { ...formattingUtils },
         management: { ...managerHelpers },
         forms: { ...formElements },
-        generic: { ...genericUtils }
+        generic: { ...genericUtils },
+        spellUserData: { ...spellUserData }
       },
       helpers: {
         state: { SpellbookState },

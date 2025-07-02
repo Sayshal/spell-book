@@ -140,3 +140,94 @@ export async function syncFavoritesOnSave(actor, spellData) {
     log(1, 'Error syncing favorites on save:', error);
   }
 }
+
+/**
+ * Process favorites from form state and update both user data and actor.system.favorites
+ * @param {HTMLFormElement} form - The form element
+ * @param {Actor} actor - The actor to update
+ * @returns {Promise<void>}
+ */
+export async function processFavoritesFromForm(form, actor) {
+  try {
+    const spellUserData = await import('./spell-user-data.mjs');
+
+    // Get all favorite buttons and their current state
+    const favoriteButtons = form.querySelectorAll('.spell-favorite-toggle');
+    const favoritedUuids = [];
+    const unfavoritedUuids = [];
+
+    favoriteButtons.forEach((button) => {
+      const uuid = button.dataset.uuid;
+      if (!uuid) return;
+
+      if (button.classList.contains('favorited')) {
+        favoritedUuids.push(uuid);
+      } else {
+        unfavoritedUuids.push(uuid);
+      }
+    });
+
+    // Update user data for all spells
+    for (const uuid of favoritedUuids) {
+      await spellUserData.setSpellFavorite(uuid, true);
+    }
+    for (const uuid of unfavoritedUuids) {
+      await spellUserData.setSpellFavorite(uuid, false);
+    }
+
+    // Update actor.system.favorites
+    await updateActorFavorites(favoritedUuids, actor);
+
+    log(3, `Processed favorites: ${favoritedUuids.length} favorited, ${unfavoritedUuids.length} unfavorited`);
+  } catch (error) {
+    log(1, 'Error processing favorites in form:', error);
+  }
+}
+
+/**
+ * Update actor.system.favorites based on favorited spell UUIDs
+ * @param {Array<string>} favoritedUuids - Array of favorited spell UUIDs
+ * @param {Actor} actor - The actor to update
+ * @returns {Promise<void>}
+ */
+export async function updateActorFavorites(favoritedUuids, actor) {
+  try {
+    const newFavorites = [];
+
+    // Process each favorited UUID
+    for (const spellUuid of favoritedUuids) {
+      const actorSpell = findActorSpellByUuid(spellUuid, actor);
+      if (actorSpell) {
+        const favoriteId = `.Item.${actorSpell.id}`;
+        newFavorites.push({
+          type: 'item',
+          id: favoriteId,
+          sort: 100000 + newFavorites.length
+        });
+      }
+    }
+
+    // Update actor favorites
+    await actor.update({ 'system.favorites': newFavorites });
+    log(3, `Updated actor.system.favorites with ${newFavorites.length} spells`);
+  } catch (error) {
+    log(1, 'Error updating actor favorites:', error);
+  }
+}
+
+/**
+ * Find actor spell by UUID (including compendium source)
+ * @param {string} spellUuid - The spell UUID to find
+ * @param {Actor} actor - The actor to search
+ * @returns {Item|null} The actor's spell item
+ */
+export function findActorSpellByUuid(spellUuid, actor) {
+  // Direct UUID match
+  let spell = actor.items.get(spellUuid);
+  if (spell && spell.type === 'spell') return spell;
+
+  // Source ID match
+  spell = actor.items.find((item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid));
+
+  return spell || null;
+}

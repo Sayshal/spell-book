@@ -3,6 +3,7 @@ import * as filterUtils from '../helpers/filters.mjs';
 import * as formElements from '../helpers/form-elements.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
 import { ScrollScanner } from '../helpers/scroll-scanner.mjs';
+import * as spellFavorites from '../helpers/spell-favorites.mjs';
 import { SpellbookState } from '../helpers/state/spellbook-state.mjs';
 import { SpellbookFilterHelper } from '../helpers/ui/spellbook-filters.mjs';
 import { SpellbookUI } from '../helpers/ui/spellbook-ui.mjs';
@@ -1163,14 +1164,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   _createSpellItemHtml(spell) {
     const tagHtml = spell.tag ? `<span class="tag ${spell.tag.cssClass}" ${spell.tag.tooltip ? `data-tooltip="${spell.tag.tooltip}"` : ''}>${spell.tag.text}</span>` : '';
     const enrichedIcon = spell.enrichedIcon || '';
-    const name = spell.name || 'Unknown Spell';
+    const name = spell.name || game.i18n.localize('SPELLBOOK.UI.UnknownSpell');
     const formattedDetails = spell.formattedDetails || '';
     const cssClasses = spell.cssClasses || 'spell-item';
     const dataAttributes = spell.dataAttributes || '';
     const activeTab = this.tabGroups['spellbook-tabs'];
     const isWizardTab = activeTab && activeTab.startsWith('wizardbook-');
-
-    // Favorite star HTML - now positioned to prefix the spell name
     const spellUuid = spell.uuid || spell.compendiumUuid;
     const favoriteStarHtml =
       spellUuid ?
@@ -1178,13 +1177,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       <button type="button" class="spell-favorite-toggle ${spell.favorited ? 'favorited' : ''}"
               data-action="toggleFavorite"
               data-uuid="${spellUuid}"
-              data-tooltip="${spell.favorited ? 'Remove from Favorites' : 'Add to Favorites'}"
-              aria-label="${spell.favorited ? 'Remove from Favorites' : 'Add to Favorites'}">
+              data-tooltip="${spell.favorited ? game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites') : game.i18n.localize('SPELLBOOK.UI.AddToFavorites')}"
+              aria-label="${spell.favorited ? game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites') : game.i18n.localize('SPELLBOOK.UI.AddToFavorites')}">
         <i class="${spell.favorited ? 'fas' : 'far'} fa-star" aria-hidden="true"></i>
       </button>
     `
       : '';
-
     let actionHtml = '';
     if (isWizardTab) {
       if (spell.isFromScroll) {
@@ -1199,7 +1197,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       } else if (spell.inWizardSpellbook) {
         actionHtml = `
           <div class="wizard-spell-status">
-            <span class="in-spellbook-tag" aria-label="Spell is in your spellbook">
+            <span class="in-spellbook-tag" aria-label="${game.i18n.localize('SPELLBOOK.Wizard.InSpellbook')}">
               ${game.i18n.localize('SPELLBOOK.Wizard.InSpellbook')}
             </span>
           </div>`;
@@ -1218,13 +1216,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           ${preparationCheckboxHtml}
         </div>`;
     }
-
     return `
       <li class="${cssClasses}" ${dataAttributes} role="listitem">
         <div class="spell-name">
           ${enrichedIcon}
           <div class="name-stacked">
-            <span class="title">${favoriteStarHtml}${name}${tagHtml}</span>
+            <span class="title">${name}${favoriteStarHtml}${tagHtml}</span>
             <span class="subtitle">${formattedDetails}</span>
           </div>
         </div>
@@ -1753,30 +1750,35 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Handle toggling spell favorite status
-   * @param {Event} event - The click event
-   * @param {HTMLElement} target - The clicked element
-   * @static
    */
   static async handleToggleFavorite(event, target) {
     event.preventDefault();
-    const spellUuid = target.dataset.uuid;
-    if (!spellUuid) return;
-    const success = await this.spellManager.toggleSpellFavorite(spellUuid);
-    if (success) this.render(false);
+    target.classList.toggle('favorited');
+    const icon = target.querySelector('i');
+    if (icon) {
+      if (target.classList.contains('favorited')) {
+        icon.classList.remove('far');
+        icon.classList.add('fas');
+        target.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
+        target.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
+      } else {
+        icon.classList.remove('fas');
+        icon.classList.add('far');
+        target.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
+        target.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
+      }
+    }
   }
 
   /**
    * Handle opening spell notes dialog
-   * @param {Event} event - The click event
-   * @param {HTMLElement} target - The clicked element
-   * @static
    */
   static async handleEditNotes(event, target) {
     event.preventDefault();
     const spellUuid = target.dataset.uuid;
     if (!spellUuid) return;
     const spellElement = target.closest('.spell-item');
-    const spellName = spellElement?.querySelector('.title')?.textContent?.trim() || 'Unknown Spell';
+    const spellName = spellElement?.querySelector('.title')?.textContent?.trim() || game.i18n.localize('SPELLBOOK.UI.UnknownSpell');
     new SpellNotesDialog({ spellUuid, spellName }).render(true);
   }
 
@@ -1880,7 +1882,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Form handler for saving spellbook settings with class-specific preparation
+   * Form handler for saving spellbook settings with class-specific preparation AND favorites
    * @param {Event} _event - The form submission event
    * @param {HTMLElement} form - The form element
    * @param {Object} formData - The form data
@@ -1932,6 +1934,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       };
       log(3, `Processed spell: ${name} (${uuid}) - prepared: ${isPrepared}, ritual: ${isRitual}, class: ${sourceClass}, mode: ${preparationMode}`);
     }
+    await spellFavorites.processFavoritesFromForm(form, actor);
     await this._stateManager.addMissingRitualSpells(spellDataByClass);
     const allCantripChangesByClass = {};
     for (const [classIdentifier, classSpellData] of Object.entries(spellDataByClass)) {

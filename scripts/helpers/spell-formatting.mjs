@@ -2,13 +2,14 @@ import { MODULE } from '../constants.mjs';
 import { log } from '../logger.mjs';
 
 /**
- * Format spell details for display with notes icon
+ * Format spell details for display with notes icon at the beginning
  * @param {Object} spell - The spell object
  * @returns {string} - Formatted spell details string with notes icon
  */
 export function formatSpellDetails(spell) {
   try {
     if (!spell) return '';
+    const notesIcon = createNotesIcon(spell);
     const details = [];
     const componentsStr = formatSpellComponents(spell);
     if (componentsStr) details.push(componentsStr);
@@ -19,8 +20,9 @@ export function formatSpellDetails(spell) {
     const materialsStr = formatMaterialComponents(spell);
     if (materialsStr) details.push(materialsStr);
     const baseDetails = details.filter(Boolean).join(' • ');
-    const notesIcon = createNotesIcon(spell);
-    return notesIcon ? `${baseDetails} ${notesIcon}` : baseDetails;
+    if (notesIcon && baseDetails) return `${notesIcon} ${baseDetails}`;
+    else if (notesIcon) return notesIcon;
+    else return baseDetails;
   } catch (error) {
     log(1, 'Error formatting spell details:', error);
     return '';
@@ -127,15 +129,14 @@ function formatMaterialComponents(spell) {
 }
 
 /**
- * Create notes icon for spell if it has notes
+ * Create notes icon for spell - always shows, empty or filled based on notes
  * @param {Object} spell - The spell object
- * @returns {string} - HTML for notes icon or empty string
+ * @returns {string} - HTML for notes icon
  */
 function createNotesIcon(spell) {
-  if (!spell.hasNotes && !spell.userData?.notes) return '';
-  const hasNotes = !!(spell.hasNotes || (spell.userData?.notes && spell.userData.notes.trim()));
   const spellUuid = spell.uuid || spell.compendiumUuid;
   if (!spellUuid) return '';
+  const hasNotes = !!(spell.hasNotes || (spell.userData?.notes && spell.userData.notes.trim()));
   const iconClass = hasNotes ? 'fas fa-sticky-note' : 'far fa-sticky-note';
   const tooltip = hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes');
   return `<i class="${iconClass} spell-notes-icon" data-uuid="${spellUuid}" data-action="editNotes" data-tooltip="${tooltip}" aria-label="${tooltip}"></i>`;

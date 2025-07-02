@@ -324,6 +324,7 @@
   "SPELLBOOK.UI.SpellPreparation": "Spell Preparation",
   "SPELLBOOK.UI.SpellSettings": "Spell Book Settings",
   "SPELLBOOK.UI.ToggleSidebar": "Toggle Sidebar",
+  "SPELLBOOK.UI.UnknownSpell": "Unknown Spell",
   "SPELLBOOK.Units.Hours": "hours",
   "SPELLBOOK.Wizard.CopyPrompt": "Do you want to copy <strong>{name}</strong> to your spellbook?",
   "SPELLBOOK.Wizard.CostLabel": "Cost",

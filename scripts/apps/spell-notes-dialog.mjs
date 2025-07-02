@@ -24,7 +24,7 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
       width: 400,
       height: 'auto'
     },
-    classes: ['spell-book', 'spell-notes-dialog']
+    classes: ['application', 'spell-book', 'spell-notes-dialog']
   };
 
   static PARTS = {
@@ -32,6 +32,14 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
       template: TEMPLATES.DIALOGS.SPELL_NOTES
     }
   };
+
+  /**
+   * Get the window title for this application
+   * @returns {string} The formatted title including actor name
+   */
+  get title() {
+    return game.i18n.format('SPELLBOOK.UI.EditNotesTitle', { spell: this.spellName });
+  }
 
   constructor(options = {}) {
     super(options);
@@ -44,9 +52,6 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
   /** @override */
   _configureRenderOptions(options) {
     super._configureRenderOptions(options);
-    options.window.title = game.i18n.format('SPELLBOOK.UI.EditNotesTitle', {
-      spell: this.spellName
-    });
     return options;
   }
 
