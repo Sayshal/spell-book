@@ -52,6 +52,7 @@ export class SpellbookFilterHelper {
       requiresSave: this.element.querySelector('[name="filter-requiresSave"]')?.value || '',
       prepared: this.element.querySelector('[name="filter-prepared"]')?.checked || false,
       ritual: this.element.querySelector('[name="filter-ritual"]')?.checked || false,
+      favorited: this.element.querySelector('[name="filter-favorited"]')?.checked || false,
       concentration: this.element.querySelector('[name="filter-concentration"]')?.value || '',
       materialComponents: this.element.querySelector('[name="filter-materialComponents"]')?.value || ''
     };
@@ -263,7 +264,7 @@ export class SpellbookFilterHelper {
    * @private
    */
   _filterBySpecialProperties(spells, filterState) {
-    const { requiresSave, concentration, ritual, materialComponents } = filterState;
+    const { requiresSave, concentration, ritual, favorited, materialComponents } = filterState;
     let filtered = spells;
     if (requiresSave) {
       filtered = filtered.filter((spell) => {
@@ -283,6 +284,7 @@ export class SpellbookFilterHelper {
         return (materialComponents === 'consumed' && hasMaterialComponents) || (materialComponents === 'notConsumed' && !hasMaterialComponents);
       });
     }
+    if (favorited) filtered = filtered.filter((spell) => !!spell.favorited);
     if (ritual) filtered = filtered.filter((spell) => !!spell.filterData?.isRitual);
     return filtered;
   }

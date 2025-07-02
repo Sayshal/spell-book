@@ -13,6 +13,7 @@ import { SpellManager } from '../managers/spell-manager.mjs';
 import { WizardSpellbookManager } from '../managers/wizard-spellbook-manager.mjs';
 import { PlayerFilterConfiguration } from './player-filter-configuration.mjs';
 import { SpellLoadoutDialog } from './spell-loadout-dialog.mjs';
+import { SpellNotesDialog } from './spell-notes-dialog.mjs';
 import { SpellbookSettingsDialog } from './spellbook-settings-dialog.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -39,7 +40,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       configureCantripSettings: PlayerSpellBook.configureCantripSettings,
       learnSpell: PlayerSpellBook.learnSpell,
       learnFromScroll: PlayerSpellBook.handleLearnFromScroll,
-      openLoadoutDialog: PlayerSpellBook.openLoadoutDialog
+      openLoadoutDialog: PlayerSpellBook.openLoadoutDialog,
+      toggleFavorite: PlayerSpellBook.handleToggleFavorite,
+      editNotes: PlayerSpellBook.handleEditNotes
     },
     classes: ['spell-book', 'vertical-tabs'],
     window: { icon: 'fas fa-book-open', resizable: true, minimizable: true, positioned: true },
@@ -334,10 +337,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     processedSpell.cssClasses = this._getSpellCssClasses(spell);
     processedSpell.dataAttributes = this._getSpellDataAttributes(spell);
     processedSpell.tag = this._getSpellPreparationTag(spell);
-    const ariaLabel =
-      spell.preparation.prepared ?
-        game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name })
-      : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
+    const ariaLabel = spell.preparation.prepared ? game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name }) : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
     const checkbox = formElements.createCheckbox({
       name: `spellPreparation.${spell.compendiumUuid}`,
       checked: spell.preparation.prepared,
@@ -551,11 +551,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const tabsNav = this.element.querySelector('.window-content > nav.tabs.tabs-right');
       const wrapper = document.createElement('div');
       wrapper.className = 'content-wrapper';
-      const elementsToWrap = [
-        this.element.querySelector('.sidebar'),
-        this.element.querySelector('.spell-book-container'),
-        this.element.querySelector('.window-content > footer')
-      ].filter((el) => el);
+      const elementsToWrap = [this.element.querySelector('.sidebar'), this.element.querySelector('.spell-book-container'), this.element.querySelector('.window-content > footer')].filter((el) => el);
       if (elementsToWrap.length && elementsToWrap[0].parentNode) {
         elementsToWrap[0].parentNode.insertBefore(wrapper, elementsToWrap[0]);
         elementsToWrap.forEach((el) => wrapper.appendChild(el));
@@ -1173,6 +1169,22 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const dataAttributes = spell.dataAttributes || '';
     const activeTab = this.tabGroups['spellbook-tabs'];
     const isWizardTab = activeTab && activeTab.startsWith('wizardbook-');
+
+    // Favorite star HTML - now positioned to prefix the spell name
+    const spellUuid = spell.uuid || spell.compendiumUuid;
+    const favoriteStarHtml =
+      spellUuid ?
+        `
+      <button type="button" class="spell-favorite-toggle ${spell.favorited ? 'favorited' : ''}"
+              data-action="toggleFavorite"
+              data-uuid="${spellUuid}"
+              data-tooltip="${spell.favorited ? 'Remove from Favorites' : 'Add to Favorites'}"
+              aria-label="${spell.favorited ? 'Remove from Favorites' : 'Add to Favorites'}">
+        <i class="${spell.favorited ? 'fas' : 'far'} fa-star" aria-hidden="true"></i>
+      </button>
+    `
+      : '';
+
     let actionHtml = '';
     if (isWizardTab) {
       if (spell.isFromScroll) {
@@ -1212,7 +1224,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         <div class="spell-name">
           ${enrichedIcon}
           <div class="name-stacked">
-            <span class="title">${name}${tagHtml}</span>
+            <span class="title">${favoriteStarHtml}${name}${tagHtml}</span>
             <span class="subtitle">${formattedDetails}</span>
           </div>
         </div>
@@ -1737,6 +1749,35 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!classIdentifier) return;
     const dialog = new SpellLoadoutDialog(this.actor, this, classIdentifier);
     dialog.render(true);
+  }
+
+  /**
+   * Handle toggling spell favorite status
+   * @param {Event} event - The click event
+   * @param {HTMLElement} target - The clicked element
+   * @static
+   */
+  static async handleToggleFavorite(event, target) {
+    event.preventDefault();
+    const spellUuid = target.dataset.uuid;
+    if (!spellUuid) return;
+    const success = await this.spellManager.toggleSpellFavorite(spellUuid);
+    if (success) this.render(false);
+  }
+
+  /**
+   * Handle opening spell notes dialog
+   * @param {Event} event - The click event
+   * @param {HTMLElement} target - The clicked element
+   * @static
+   */
+  static async handleEditNotes(event, target) {
+    event.preventDefault();
+    const spellUuid = target.dataset.uuid;
+    if (!spellUuid) return;
+    const spellElement = target.closest('.spell-item');
+    const spellName = spellElement?.querySelector('.title')?.textContent?.trim() || 'Unknown Spell';
+    new SpellNotesDialog({ spellUuid, spellName }).render(true);
   }
 
   /**

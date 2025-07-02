@@ -1233,6 +1233,59 @@
 }
 
 /* ----------------------------------------- */
+/*  Spell Favorite Star Button              */
+/* ----------------------------------------- */
+.spell-book {
+  .spell-favorite-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    margin-right: 0.15rem;
+    margin-left: 0.05rem;
+    padding: 0;
+    border: none;
+    color: var(--spell-book-text-secondary);
+    font-size: 1rem;
+    cursor: pointer;
+    background: none;
+    transition: color 0.2s ease;
+
+    &:hover {
+      border: none;
+      color: var(--dnd5e-color-gold);
+      text-shadow: none;
+      box-shadow: none;
+      background: none;
+    }
+
+    &:focus {
+      border: none;
+      outline: none;
+      box-shadow: none;
+      background: none;
+    }
+
+    &.favorited {
+      color: var(--dnd5e-color-gold);
+
+      &:hover {
+        color: var(--spell-book-text-secondary);
+      }
+    }
+
+    i {
+      width: 1rem;
+      height: 1rem;
+      font-size: 1rem;
+      line-height: 1;
+    }
+  }
+}
+
+/* ----------------------------------------- */
 /*  Footer Components                        */
 /* ----------------------------------------- */
 .spell-book {

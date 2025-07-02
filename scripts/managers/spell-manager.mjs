@@ -1,5 +1,6 @@
 import { FLAGS, MODULE, SETTINGS } from '../constants.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
+import * as spellFavorites from '../helpers/spell-favorites.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { log } from '../logger.mjs';
 import { CantripManager } from './cantrip-manager.mjs';
@@ -41,8 +42,7 @@ export class SpellManager {
         spellSwapping: 'none',
         ritualCasting: 'none',
         showCantrips: true,
-        behavior:
-          this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM
+        behavior: this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM
       };
     }
 
@@ -52,8 +52,7 @@ export class SpellManager {
       spellSwapping: classRules.spellSwapping || 'none',
       ritualCasting: classRules.ritualCasting || 'none',
       showCantrips: classRules.showCantrips !== false,
-      behavior:
-        this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM
+      behavior: this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM
     };
   }
 
@@ -137,10 +136,7 @@ export class SpellManager {
     if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
     const spellUuid = spell.compendiumUuid || spell.uuid;
     const actualSpell = this.actor.items.find(
-      (item) =>
-        item.type === 'spell' &&
-        (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) &&
-        (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
+      (item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
     );
     if (actualSpell) return this._getOwnedSpellPreparationStatus(actualSpell, classIdentifier);
     const unassignedSpell = this.actor.items.find(
@@ -157,8 +153,7 @@ export class SpellManager {
       return this._getOwnedSpellPreparationStatus(unassignedSpell, classIdentifier);
     }
     const otherClassSpell = this.actor.items.find(
-      (item) =>
-        item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && item.system?.sourceClass && item.system.sourceClass !== classIdentifier
+      (item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && item.system?.sourceClass && item.system.sourceClass !== classIdentifier
     );
     if (otherClassSpell) return defaultStatus;
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
@@ -420,6 +415,7 @@ export class SpellManager {
       }
     }
     preparedByClass[classIdentifier] = newClassPrepared;
+    await spellFavorites.syncFavoritesOnSave(this.actor, classSpellData);
     await this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
     if (spellIdsToRemove.length > 0) {
       log(3, `Removing ${spellIdsToRemove.length} spells from actor`);
@@ -717,5 +713,14 @@ export class SpellManager {
       }
     }
     return { allowed: true };
+  }
+
+  /**
+   * Toggle spell favorite status
+   * @param {string} spellUuid - The spell UUID
+   * @returns {Promise<boolean>} Success status
+   */
+  async toggleSpellFavorite(spellUuid) {
+    return await spellFavorites.toggleSpellFavorite(spellUuid, this.actor);
   }
 }

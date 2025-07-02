@@ -319,6 +319,8 @@ export class SpellbookState {
           formattedDetails: formattingUtils.formatSpellDetails(spell),
           enrichedIcon: formattingUtils.createSpellIconLink(spell)
         };
+        const enhancedSpell = spellUserData.enhanceSpellWithUserData(spellData, game.user.id);
+        Object.assign(spellData, enhancedSpell);
         if (!isSpecialMode) spellData.sourceClass = classIdentifier;
         spellsByLevel[level].push(spellData);
         processedSpellIds.add(spell.id || spell.uuid);

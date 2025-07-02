@@ -2,9 +2,9 @@ import { MODULE } from '../constants.mjs';
 import { log } from '../logger.mjs';
 
 /**
- * Format spell details for display
+ * Format spell details for display with notes icon
  * @param {Object} spell - The spell object
- * @returns {string} - Formatted spell details string
+ * @returns {string} - Formatted spell details string with notes icon
  */
 export function formatSpellDetails(spell) {
   try {
@@ -18,7 +18,9 @@ export function formatSpellDetails(spell) {
     if (schoolStr) details.push(schoolStr);
     const materialsStr = formatMaterialComponents(spell);
     if (materialsStr) details.push(materialsStr);
-    return details.filter(Boolean).join(' • ');
+    const baseDetails = details.filter(Boolean).join(' • ');
+    const notesIcon = createNotesIcon(spell);
+    return notesIcon ? `${baseDetails} ${notesIcon}` : baseDetails;
   } catch (error) {
     log(1, 'Error formatting spell details:', error);
     return '';
@@ -122,6 +124,21 @@ function formatMaterialComponents(spell) {
     else result = game.i18n.localize('SPELLBOOK.MaterialComponents.UnknownCost');
   }
   return result;
+}
+
+/**
+ * Create notes icon for spell if it has notes
+ * @param {Object} spell - The spell object
+ * @returns {string} - HTML for notes icon or empty string
+ */
+function createNotesIcon(spell) {
+  if (!spell.hasNotes && !spell.userData?.notes) return '';
+  const hasNotes = !!(spell.hasNotes || (spell.userData?.notes && spell.userData.notes.trim()));
+  const spellUuid = spell.uuid || spell.compendiumUuid;
+  if (!spellUuid) return '';
+  const iconClass = hasNotes ? 'fas fa-sticky-note' : 'far fa-sticky-note';
+  const tooltip = hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes');
+  return `<i class="${iconClass} spell-notes-icon" data-uuid="${spellUuid}" data-action="editNotes" data-tooltip="${tooltip}" aria-label="${tooltip}"></i>`;
 }
 
 /**

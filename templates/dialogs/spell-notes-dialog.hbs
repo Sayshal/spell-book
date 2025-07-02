@@ -1,0 +1,30 @@
+<div class="spell-notes-dialog-content">
+  <div class="dialog-header">
+    <h3>{{localize "SPELLBOOK.UI.NotesFor"}} {{spellName}}</h3>
+  </div>
+  <div class="dialog-body">
+    <div class="form-group">
+      <label for="spell-notes">{{localize "SPELLBOOK.UI.Notes"}}</label>
+      <textarea name="notes" id="spell-notes" maxlength="{{maxLength}}"
+        placeholder="{{localize 'SPELLBOOK.UI.NotesPlaceholder'}}" rows="4">{{notes}}</textarea>
+      <div class="form-footer">
+        <span
+          class="character-counter {{#if (lt charactersRemaining 20)}}warning{{/if}} {{#if (lt charactersRemaining 0)}}error{{/if}}">
+          {{charactersRemaining}}
+        </span>
+        <span class="counter-label">{{localize "SPELLBOOK.UI.CharactersRemaining"}}</span>
+      </div>
+    </div>
+    <input type="hidden" name="spellUuid" value="{{spellUuid}}">
+  </div>
+  <div class="dialog-buttons">
+    <button type="submit" class="save-notes">
+      <i class="fas fa-save"></i>
+      {{localize "SPELLBOOK.UI.Save"}}
+    </button>
+    <button type="button" class="cancel-notes" data-action="close">
+      <i class="fas fa-times"></i>
+      {{localize "SPELLBOOK.UI.Cancel"}}
+    </button>
+  </div>
+</div>

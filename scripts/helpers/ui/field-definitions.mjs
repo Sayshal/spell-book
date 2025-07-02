@@ -74,6 +74,7 @@ export class FieldDefinitions {
       case 'requiresSave':
       case 'concentration':
       case 'prepared':
+      case 'favorited':
       case 'ritual':
         this.valueValidators.set(fieldId, (value) => {
           const val = value.toUpperCase();
@@ -178,6 +179,7 @@ export class FieldDefinitions {
         case 'requiresSave':
         case 'concentration':
         case 'prepared':
+        case 'favorited':
         case 'ritual':
           return ['TRUE', 'FALSE', 'YES', 'NO'];
         case 'materialComponents':

@@ -633,7 +633,7 @@ export class AdvancedSearchManager {
    * @returns {boolean} Whether the value appears incomplete
    */
   isIncompleteValueForField(fieldId, value) {
-    if (['requiresSave', 'concentration', 'prepared', 'ritual'].includes(fieldId)) {
+    if (['requiresSave', 'concentration', 'prepared', 'favorited', 'ritual'].includes(fieldId)) {
       const upperValue = value.toUpperCase();
       const validValues = ['TRUE', 'FALSE', 'YES', 'NO'];
       if (!validValues.includes(upperValue)) return validValues.some((valid) => valid.startsWith(upperValue));
