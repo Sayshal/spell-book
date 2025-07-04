@@ -4,6 +4,7 @@ import * as formElements from '../helpers/form-elements.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
 import { ScrollScanner } from '../helpers/scroll-scanner.mjs';
 import * as spellFavorites from '../helpers/spell-favorites.mjs';
+import * as spellUserData from '../helpers/spell-user-data.mjs';
 import { SpellbookState } from '../helpers/state/spellbook-state.mjs';
 import { SpellbookFilterHelper } from '../helpers/ui/spellbook-filters.mjs';
 import { SpellbookUI } from '../helpers/ui/spellbook-ui.mjs';
@@ -1753,10 +1754,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static async handleToggleFavorite(event, target) {
     event.preventDefault();
+    const spellUuid = target.dataset.uuid;
+    if (!spellUuid) return;
+    const currentlyFavorited = target.classList.contains('favorited');
+    const newFavoriteStatus = !currentlyFavorited;
     target.classList.toggle('favorited');
     const icon = target.querySelector('i');
     if (icon) {
-      if (target.classList.contains('favorited')) {
+      if (newFavoriteStatus) {
         icon.classList.remove('far');
         icon.classList.add('fas');
         target.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
@@ -1766,6 +1771,38 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         icon.classList.add('far');
         target.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
         target.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
+      }
+    }
+    try {
+      await spellUserData.setSpellFavorite(spellUuid, newFavoriteStatus);
+      log(3, `Persisted favorite status for ${spellUuid}: ${newFavoriteStatus}`);
+      const spellBookApps = this;
+      if (spellBookApps.length > 0) {
+        const app = spellBookApps[0];
+        if (app._stateManager?.classSpellData) {
+          Object.values(app._stateManager.classSpellData).forEach((classData) => {
+            const allSpells = classData.spellLevels?.flat?.() || [];
+            const spell = allSpells.find((s) => (s.uuid || s.compendiumUuid) === spellUuid);
+            if (spell) {
+              spell.favorited = newFavoriteStatus;
+              if (spell.userData) {
+                spell.userData.favorited = newFavoriteStatus;
+              }
+            }
+          });
+        }
+      }
+    } catch (error) {
+      log(1, 'Failed to persist favorite status:', error);
+      target.classList.toggle('favorited');
+      if (icon) {
+        if (currentlyFavorited) {
+          icon.classList.remove('far');
+          icon.classList.add('fas');
+        } else {
+          icon.classList.remove('fas');
+          icon.classList.add('far');
+        }
       }
     }
   }

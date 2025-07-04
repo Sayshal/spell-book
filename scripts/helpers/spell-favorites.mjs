@@ -106,23 +106,6 @@ async function removeSpellFromActorFavorites(spellUuid, actor) {
 }
 
 /**
- * Find actor spell item by compendium UUID or actor UUID
- * @param {string} spellUuid - The spell UUID to find
- * @param {Actor} actor - The actor to search
- * @returns {Item|null} The actor's spell item or null
- */
-function findActorSpellByUuid(spellUuid, actor) {
-  // First try direct UUID match (for actor items)
-  let spell = actor.items.get(spellUuid);
-  if (spell && spell.type === 'spell') return spell;
-
-  // Try by source ID (for compendium-sourced items)
-  spell = actor.items.find((item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid));
-
-  return spell || null;
-}
-
-/**
  * Sync favorites on spell preparation save
  * @param {Actor} actor - The actor
  * @param {Object} spellData - Spell preparation data

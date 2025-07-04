@@ -290,51 +290,26 @@ export class AdvancedSearchManager {
    * @param {Event} event - Click event
    */
   handleDocumentClick(event) {
-    // Generate unique click ID
-    const clickId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-    log(3, `handleDocumentClick [${clickId}] triggered by:`, {
-      target: event.target,
-      targetClass: event.target.className,
-      targetId: event.target.id,
-      path: event
-        .composedPath()
-        .map((el) => el.tagName || el.toString())
-        .slice(0, 5),
-      isTrusted: event.isTrusted,
-      timeStamp: event.timeStamp,
-      eventPhase: event.eventPhase,
-      bubbles: event.bubbles
-    });
-
     const dropdown = document.querySelector('.search-dropdown');
-
-    // Check for clear-recent-search FIRST (before search-suggestion)
     if (event.target.closest('.clear-recent-search')) {
       log(3, 'Handling clear recent search click');
       event.preventDefault();
       event.stopPropagation();
       const suggestionElement = event.target.closest('.search-suggestion');
       const searchText = suggestionElement.dataset.query;
-
-      // Hide the element immediately for better UX
       suggestionElement.style.display = 'none';
-
       this.removeFromRecentSearches(searchText);
       this.updateDropdownContent(this.searchInputElement.value);
       return;
     }
-
-    // Then check for search suggestion click
     if (event.target.closest('.search-suggestion')) {
-      log(3, `[${clickId}] Handling search suggestion click`);
       event.preventDefault();
       event.stopPropagation();
       this.selectSuggestion(event.target.closest('.search-suggestion'));
       return;
     }
-
+    // TODO: If dropdown is already closed, skip this.
     if (!event.target.closest('.advanced-search-input') && !event.target.closest('.search-dropdown')) {
-      log(3, 'Hiding dropdown due to outside click');
       this.hideDropdown();
     }
   }
