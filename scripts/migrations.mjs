@@ -1,5 +1,5 @@
 // scripts/migrations.mjs
-import { DEPRECATED_FLAGS, FLAGS, MODULE } from './constants.mjs';
+import { DEPRECATED_FLAGS, MODULE } from './constants.mjs';
 import * as managerHelpers from './helpers/compendium-management.mjs';
 import { log } from './logger.mjs';
 
@@ -21,14 +21,13 @@ async function runAllMigrations() {
   // Run all migration types
   const deprecatedFlagResults = await migrateDeprecatedFlags();
   const folderResults = await migrateSpellListFolders();
-  const userDataResults = await migrateAllUserSpellData();
 
   // Calculate totals
-  const totalProcessed = deprecatedFlagResults.processed + folderResults.processed + userDataResults.processed;
+  const totalProcessed = deprecatedFlagResults.processed + folderResults.processed;
 
   if (totalProcessed > 0) {
     ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.StartNotification'));
-    logMigrationResults(deprecatedFlagResults, folderResults, userDataResults);
+    logMigrationResults(deprecatedFlagResults, folderResults);
     ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.CompleteNotification'));
   } else {
     log(3, 'No migrations needed');
@@ -56,164 +55,6 @@ async function migrateDeprecatedFlags() {
   return results;
 }
 
-/**
- * Migrate all users' spell data
- */
-async function migrateAllUserSpellData() {
-  const results = { processed: 0, users: [] };
-
-  log(3, 'Migrating user spell data');
-
-  for (const user of game.users) {
-    const userResult = await migrateUserSpellData(user.id);
-    if (userResult.wasUpdated) {
-      results.processed++;
-      results.users.push({
-        name: user.name,
-        id: user.id,
-        errors: userResult.errors,
-        cleaned: userResult.cleanedEntries
-      });
-    }
-  }
-
-  if (results.processed > 0) {
-    log(2, `Migrated spell user data for ${results.processed} users`);
-  }
-
-  return results;
-}
-
-/**
- * Migrate user data to new format if needed
- * @param {string} userId - The user ID to migrate
- * @returns {Promise<Object>} Migration result with status and details
- */
-async function migrateUserSpellData(userId) {
-  try {
-    const user = game.users.get(userId);
-    if (!user) return { wasUpdated: false, errors: ['User not found'] };
-
-    const userData = user.getFlag(MODULE.ID, FLAGS.SPELL_USER_DATA);
-    if (!userData) return { wasUpdated: false, errors: [] }; // No data to migrate
-
-    const validation = validateUserSpellData(userData);
-    if (validation.isValid) return { wasUpdated: false, errors: [] }; // Already valid
-
-    log(3, `Migrating user spell data for user ${userId}: ${validation.errors.length} issues found`);
-
-    // Clean up invalid entries
-    const cleanedData = {};
-    let cleanedEntries = 0;
-
-    for (const [uuid, spellData] of Object.entries(userData)) {
-      if (typeof spellData === 'object' && spellData !== null) {
-        const cleanedSpellData = {};
-
-        // Migrate notes
-        if (spellData.notes && typeof spellData.notes === 'string') {
-          const maxLength = game.settings.get(MODULE.ID, 'spellNotesMaxLength') || 240;
-          cleanedSpellData.notes = spellData.notes.substring(0, maxLength);
-        }
-
-        // Migrate favorited status
-        if (spellData.favorited !== undefined) {
-          cleanedSpellData.favorited = !!spellData.favorited;
-        }
-
-        // Migrate usage stats
-        if (spellData.usageStats && typeof spellData.usageStats === 'object') {
-          cleanedSpellData.usageStats = {
-            count: Math.max(0, Math.floor(spellData.usageStats.count || 0)),
-            lastUsed: spellData.usageStats.lastUsed || null,
-            contextUsage: {
-              combat: Math.max(0, Math.floor(spellData.usageStats.contextUsage?.combat || 0)),
-              exploration: Math.max(0, Math.floor(spellData.usageStats.contextUsage?.exploration || 0))
-            }
-          };
-        }
-
-        if (Object.keys(cleanedSpellData).length > 0) {
-          cleanedData[uuid] = cleanedSpellData;
-          cleanedEntries++;
-        }
-      }
-    }
-
-    await user.setFlag(MODULE.ID, FLAGS.SPELL_USER_DATA, cleanedData);
-    log(3, `Successfully migrated user spell data for user ${userId}: ${cleanedEntries} entries cleaned`);
-
-    return {
-      wasUpdated: true,
-      errors: [],
-      cleanedEntries
-    };
-  } catch (error) {
-    log(1, `Error migrating user spell data for user ${userId}:`, error);
-    return {
-      wasUpdated: false,
-      errors: [error.message]
-    };
-  }
-}
-
-/**
- * Validate user spell data structure
- * @param {Object} data - The data to validate
- * @returns {Object} Validation result with isValid and errors
- */
-function validateUserSpellData(data) {
-  const result = { isValid: true, errors: [] };
-
-  try {
-    if (!data || typeof data !== 'object') {
-      result.isValid = false;
-      result.errors.push('Data must be an object');
-      return result;
-    }
-
-    for (const [uuid, spellData] of Object.entries(data)) {
-      if (typeof spellData !== 'object') {
-        result.errors.push(`Invalid data type for spell ${uuid}`);
-        continue;
-      }
-
-      // Validate notes length if present
-      if (spellData.notes && typeof spellData.notes === 'string') {
-        const maxLength = game.settings.get(MODULE.ID, 'spellNotesMaxLength') || 240;
-        if (spellData.notes.length > maxLength) {
-          result.errors.push(`Notes too long for spell ${uuid}`);
-        }
-      }
-
-      // Validate favorited is boolean if present
-      if (spellData.favorited !== undefined && typeof spellData.favorited !== 'boolean') {
-        result.errors.push(`Invalid favorited value for spell ${uuid}`);
-      }
-
-      // Validate usage stats structure if present
-      if (spellData.usageStats) {
-        const stats = spellData.usageStats;
-        if (typeof stats.count !== 'number' || stats.count < 0) {
-          result.errors.push(`Invalid usage count for spell ${uuid}`);
-        }
-        if (stats.contextUsage) {
-          if (typeof stats.contextUsage.combat !== 'number' || typeof stats.contextUsage.exploration !== 'number') {
-            result.errors.push(`Invalid context usage for spell ${uuid}`);
-          }
-        }
-      }
-    }
-
-    result.isValid = result.errors.length === 0;
-  } catch (error) {
-    result.isValid = false;
-    result.errors.push(`Validation error: ${error.message}`);
-  }
-
-  return result;
-}
-
 async function checkFolderMigrationNeeded() {
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
   if (!customPack) return false;
@@ -227,7 +68,7 @@ async function checkFolderMigrationNeeded() {
     return flags.isMerged || flags.isCustom || flags.isNewList;
   });
   const migrationNeeded = topLevelSpellJournals.length > 0;
-  log(migrationNeeded ? 2 : 3, migrationNeeded ? `Folder migration needed: found ${topLevelSpellJournals.length} top-level spell journals` : 'No folder migration needed');
+  log(migrationNeeded ? 3 : 3, migrationNeeded ? `Folder migration needed: found ${topLevelSpellJournals.length} top-level spell journals` : 'No folder migration needed');
   return migrationNeeded;
 }
 
@@ -322,14 +163,14 @@ async function migrateJournalToFolder(journal, customFolder, mergedFolder) {
   return { success: true, type: moveType };
 }
 
-function logMigrationResults(deprecatedResults, folderResults, userDataResults) {
-  const totalProcessed = deprecatedResults.processed + folderResults.processed + userDataResults.processed;
+function logMigrationResults(deprecatedResults, folderResults) {
+  const totalProcessed = deprecatedResults.processed + folderResults.processed;
   if (totalProcessed === 0) {
     log(2, 'No migration updates needed');
     return;
   }
 
-  let content = buildChatContent(deprecatedResults, folderResults, userDataResults, totalProcessed);
+  let content = buildChatContent(deprecatedResults, folderResults, totalProcessed);
   ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id });
   log(2, `Migration complete: ${totalProcessed} documents updated`);
 }

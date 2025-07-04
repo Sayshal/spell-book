@@ -696,6 +696,7 @@ export class SpellbookState {
     });
     if (!this.app._tabStateCache) this.app._tabStateCache = new Map();
     this.app._tabStateCache.set(tabName, tabState);
+    this.preserveFavoriteStates(tabName);
     log(3, `Preserved state for tab ${tabName} with ${tabState.checkboxStates.size} checkboxes`);
   }
 
@@ -723,6 +724,7 @@ export class SpellbookState {
         }
       }
     });
+    this.restoreFavoriteStates(tabName);
     log(3, `Restored state for tab ${tabName}, ${restoredCount} checkboxes restored`);
   }
 
@@ -942,5 +944,77 @@ export class SpellbookState {
       };
     }
     await this.app.spellManager.cantripManager.sendComprehensiveGMNotification(notificationData);
+  }
+
+  /**
+   * Preserve favorite star states for a tab
+   * @param {string} tabName - The tab to preserve state for
+   */
+  preserveFavoriteStates(tabName) {
+    const tabElement = this.app.element.querySelector(`.tab[data-tab="${tabName}"]`);
+    if (!tabElement) return;
+
+    const favoriteButtons = tabElement.querySelectorAll('.spell-favorite-toggle[data-uuid]');
+    const favoriteStates = new Map();
+
+    favoriteButtons.forEach((button) => {
+      const uuid = button.dataset.uuid;
+      if (uuid) {
+        favoriteStates.set(uuid, {
+          favorited: button.classList.contains('favorited'),
+          timestamp: Date.now()
+        });
+      }
+    });
+
+    if (!this.app._favoriteStateCache) this.app._favoriteStateCache = new Map();
+    this.app._favoriteStateCache.set(tabName, favoriteStates);
+
+    log(3, `Preserved favorite states for tab ${tabName} with ${favoriteStates.size} buttons`);
+  }
+
+  /**
+   * Restore favorite star states for a tab
+   * @param {string} tabName - The tab to restore state for
+   */
+  restoreFavoriteStates(tabName) {
+    if (!this.app._favoriteStateCache || !this.app._favoriteStateCache.has(tabName)) return;
+
+    const tabElement = this.app.element.querySelector(`.tab[data-tab="${tabName}"]`);
+    if (!tabElement) return;
+
+    const favoriteStates = this.app._favoriteStateCache.get(tabName);
+    const favoriteButtons = tabElement.querySelectorAll('.spell-favorite-toggle[data-uuid]');
+    let restoredCount = 0;
+
+    favoriteButtons.forEach((button) => {
+      const uuid = button.dataset.uuid;
+      const savedState = favoriteStates.get(uuid);
+
+      if (savedState) {
+        const icon = button.querySelector('i');
+
+        if (savedState.favorited) {
+          button.classList.add('favorited');
+          if (icon) {
+            icon.classList.remove('far');
+            icon.classList.add('fas');
+          }
+          button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
+          button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
+        } else {
+          button.classList.remove('favorited');
+          if (icon) {
+            icon.classList.remove('fas');
+            icon.classList.add('far');
+          }
+          button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
+          button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
+        }
+        restoredCount++;
+      }
+    });
+
+    log(3, `Restored favorite states for tab ${tabName}, ${restoredCount} buttons restored`);
   }
 }

@@ -5,6 +5,7 @@ import { registerDnD5eIntegration } from './integrations/dnd5e.mjs';
 import { registerTidy5eIntegration } from './integrations/tidy5e.mjs';
 import { initializeLogger, log } from './logger.mjs';
 import { MacroManager } from './managers/macro-manager.mjs';
+import { UserSpellDataManager } from './managers/user-spell-data-manager.mjs';
 import { registerMigration } from './migrations.mjs';
 import { registerSettings } from './settings.mjs';
 
@@ -22,6 +23,7 @@ Hooks.once('init', async function () {
 Hooks.once('ready', async function () {
   await unlockModuleCompendium();
   await MacroManager.initializeMacros();
+  await UserSpellDataManager.initializeUserSpellData();
 });
 
 Hooks.on('createItem', (item) => {

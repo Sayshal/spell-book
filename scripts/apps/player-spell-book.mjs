@@ -468,6 +468,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     setTimeout(() => {
       this._ensureSpellDataAndInitializeLazyLoading();
     }, 10);
+    requestAnimationFrame(() => {
+      this._applyFavoriteStatesAfterRender();
+    });
   }
 
   /** @inheritdoc */
@@ -541,6 +544,92 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       spellsContainer.addEventListener('retry-load', () => {
         this._ensureSpellDataAndInitializeLazyLoading();
       });
+    }
+  }
+
+  /**
+   * Apply favorite states after render based on user data
+   * @private
+   */
+  _applyFavoriteStatesAfterRender() {
+    const favoriteButtons = this.element.querySelectorAll('.spell-favorite-toggle[data-uuid]');
+
+    log(3, `Applying favorite states to ${favoriteButtons.length} buttons after render`);
+
+    if (favoriteButtons.length === 0) {
+      // If no buttons found, try again after a short delay
+      setTimeout(() => {
+        const retryButtons = this.element.querySelectorAll('.spell-favorite-toggle[data-uuid]');
+        if (retryButtons.length > 0) {
+          log(3, `Retry: Found ${retryButtons.length} favorite buttons on second attempt`);
+          this._applyFavoriteStatesToButtons(retryButtons);
+        } else {
+          log(2, 'No favorite buttons found even after retry');
+        }
+      }, 100);
+      return;
+    }
+
+    this._applyFavoriteStatesToButtons(favoriteButtons);
+  }
+
+  /**
+   * Apply favorite states to a set of buttons (enhanced debugging)
+   * @param {NodeList} buttons - The buttons to update
+   * @private
+   */
+  _applyFavoriteStatesToButtons(buttons) {
+    let updatedCount = 0;
+    let debugInfo = [];
+
+    buttons.forEach((button, index) => {
+      const spellUuid = button.dataset.uuid;
+      if (!spellUuid) return;
+
+      // Get user data using enhanced lookup
+      const userData = spellUserData.getUserDataForSpell(spellUuid);
+      const isFavorited = userData?.favorited || false;
+
+      const icon = button.querySelector('i');
+      const currentlyFavorited = button.classList.contains('favorited');
+
+      debugInfo.push({
+        index,
+        uuid: spellUuid,
+        currentState: currentlyFavorited,
+        dataState: isFavorited,
+        userData: userData,
+        needsUpdate: currentlyFavorited !== isFavorited
+      });
+
+      // Only update if state is different
+      if (currentlyFavorited !== isFavorited) {
+        if (isFavorited) {
+          button.classList.add('favorited');
+          if (icon) {
+            icon.classList.remove('far');
+            icon.classList.add('fas');
+          }
+          button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
+          button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
+        } else {
+          button.classList.remove('favorited');
+          if (icon) {
+            icon.classList.remove('fas');
+            icon.classList.add('far');
+          }
+          button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
+          button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
+        }
+        updatedCount++;
+      }
+    });
+
+    log(3, `Applied favorite states: ${updatedCount} buttons updated out of ${buttons.length}`);
+
+    // Debug logging for first few buttons
+    if (debugInfo.length > 0) {
+      log(4, 'Button state details:', debugInfo.slice(0, 3));
     }
   }
 
@@ -1756,8 +1845,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     event.preventDefault();
     const spellUuid = target.dataset.uuid;
     if (!spellUuid) return;
+
     const currentlyFavorited = target.classList.contains('favorited');
     const newFavoriteStatus = !currentlyFavorited;
+
+    // Update UI immediately for responsiveness
     target.classList.toggle('favorited');
     const icon = target.querySelector('i');
     if (icon) {
@@ -1773,36 +1865,37 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         target.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
       }
     }
+
     try {
-      await spellUserData.setSpellFavorite(spellUuid, newFavoriteStatus);
-      log(3, `Persisted favorite status for ${spellUuid}: ${newFavoriteStatus}`);
-      const spellBookApps = this;
-      if (spellBookApps.length > 0) {
-        const app = spellBookApps[0];
-        if (app._stateManager?.classSpellData) {
-          Object.values(app._stateManager.classSpellData).forEach((classData) => {
-            const allSpells = classData.spellLevels?.flat?.() || [];
-            const spell = allSpells.find((s) => (s.uuid || s.compendiumUuid) === spellUuid);
-            if (spell) {
-              spell.favorited = newFavoriteStatus;
-              if (spell.userData) {
-                spell.userData.favorited = newFavoriteStatus;
-              }
-            }
-          });
+      // WAIT for the save to complete before logging success
+      const saveSuccess = await spellUserData.setSpellFavorite(spellUuid, newFavoriteStatus);
+
+      if (saveSuccess) {
+        log(3, `Persisted favorite status for ${spellUuid}: ${newFavoriteStatus}`);
+
+        // Verify the save worked by checking immediately
+        const verifyData = spellUserData.getUserDataForSpell(spellUuid);
+        if (verifyData?.favorited === newFavoriteStatus) {
+          log(3, `Verified favorite status was saved correctly`);
+        } else {
+          log(2, `Warning: Favorite status verification failed. Expected: ${newFavoriteStatus}, Got: ${verifyData?.favorited}`);
+        }
+      } else {
+        log(1, `Failed to persist favorite status for ${spellUuid}`);
+        // Revert UI on failure
+        target.classList.toggle('favorited');
+        if (icon) {
+          icon.classList.toggle('fas');
+          icon.classList.toggle('far');
         }
       }
     } catch (error) {
-      log(1, 'Failed to persist favorite status:', error);
+      log(1, 'Error toggling favorite:', error);
+      // Revert UI on error
       target.classList.toggle('favorited');
       if (icon) {
-        if (currentlyFavorited) {
-          icon.classList.remove('far');
-          icon.classList.add('fas');
-        } else {
-          icon.classList.remove('fas');
-          icon.classList.add('far');
-        }
+        icon.classList.toggle('fas');
+        icon.classList.toggle('far');
       }
     }
   }

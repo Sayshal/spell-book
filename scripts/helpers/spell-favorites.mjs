@@ -199,7 +199,7 @@ export async function updateActorFavorites(favoritedUuids, actor) {
 }
 
 /**
- * Find actor spell by UUID (including compendium source)
+ * Find actor spell by UUID with enhanced UUID matching
  * @param {string} spellUuid - The spell UUID to find
  * @param {Actor} actor - The actor to search
  * @returns {Item|null} The actor's spell item
@@ -209,8 +209,53 @@ export function findActorSpellByUuid(spellUuid, actor) {
   let spell = actor.items.get(spellUuid);
   if (spell && spell.type === 'spell') return spell;
 
-  // Source ID match
-  spell = actor.items.find((item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid));
+  // Source ID match - try both directions
+  spell = actor.items.find((item) => {
+    if (item.type !== 'spell') return false;
+
+    // Check if actor spell's sourceId matches our UUID
+    if (item.flags?.core?.sourceId === spellUuid) return true;
+
+    // Check if our UUID matches actor spell's UUID
+    if (item.uuid === spellUuid) return true;
+
+    // Check by exact name match as fallback
+    // Get the source spell to compare names
+    if (spellUuid.startsWith('Compendium.')) {
+      // This is a compendium UUID, check by source ID relationship
+      const sourceSpell = fromUuidSync(spellUuid);
+      if (sourceSpell && sourceSpell.name === item.name) {
+        return true;
+      }
+    }
+
+    return false;
+  });
 
   return spell || null;
+}
+
+/**
+ * Get canonical UUID for spell favorites (prefers compendium UUID)
+ * @param {string|Object} spellOrUuid - Spell object or UUID
+ * @returns {string} Canonical UUID for favorites storage
+ */
+export function getCanonicalSpellUuid(spellOrUuid) {
+  if (typeof spellOrUuid === 'string') {
+    // If it's already a compendium UUID, use it
+    if (spellOrUuid.startsWith('Compendium.')) {
+      return spellOrUuid;
+    }
+    // Otherwise try to get the source
+    const spell = fromUuidSync(spellOrUuid);
+    if (spell?.flags?.core?.sourceId) {
+      return spell.flags.core.sourceId;
+    }
+    return spellOrUuid;
+  }
+
+  // For spell objects, prefer compendium UUID
+  if (spellOrUuid?.compendiumUuid) return spellOrUuid.compendiumUuid;
+  if (spellOrUuid?.flags?.core?.sourceId) return spellOrUuid.flags.core.sourceId;
+  return spellOrUuid?.uuid || '';
 }

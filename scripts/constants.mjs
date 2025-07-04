@@ -141,7 +141,6 @@ export const FLAGS = {
   RULE_SET_OVERRIDE: 'ruleSetOverride',
   SIDEBAR_COLLAPSED: 'sidebarCollapsed',
   SPELL_LOADOUTS: 'spellLoadouts',
-  SPELL_USER_DATA: 'spellUserData',
   SWAP_TRACKING: 'swapTracking',
   WIZARD_COPIED_SPELLS: 'wizardCopiedSpells',
   WIZARD_RITUAL_CASTING: 'wizardRitualCasting'
