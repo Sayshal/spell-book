@@ -496,6 +496,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       }
     }
+    this._stateManager.clearFavoriteSessionState();
+    await this._syncJournalToActorState();
   }
 
   /**
@@ -578,7 +580,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Apply favorite states to a set of buttons
+   * Apply favorite states with actor state validation
    * @param {NodeList} buttons - The buttons to update
    * @private
    */
@@ -588,10 +590,28 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const button of buttons) {
       const spellUuid = button.dataset.uuid;
       if (!spellUuid) continue;
+
+      // 1. Check session state first (immediate changes during editing)
       let isFavorited = this._stateManager.getFavoriteSessionState(spellUuid);
+
+      // 2. If no session state, check journal data with actor validation
       if (isFavorited === null) {
         const userData = await spellUserData.getUserDataForSpell(spellUuid);
-        isFavorited = userData?.favorited || false;
+        const journalFavorited = userData?.favorited || false;
+
+        // 3. Validate against actor state
+        const isOnActor = this._isSpellOnActor(spellUuid);
+
+        if (isOnActor && journalFavorited) {
+          // Spell is on actor and favorited in journal - show as favorited
+          isFavorited = true;
+        } else if (isOnActor && !journalFavorited) {
+          // Spell is on actor but not favorited in journal - show as unfavorited
+          isFavorited = false;
+        } else if (!isOnActor) {
+          // Spell is not on actor - preserve journal state regardless
+          isFavorited = journalFavorited;
+        }
       }
 
       const icon = button.querySelector('i');
@@ -622,6 +642,123 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
     if (updatedCount > 0) {
       log(3, `Applied favorite states: ${updatedCount} buttons updated`);
+    }
+  }
+
+  /**
+   * Check if a spell UUID is currently on the actor
+   * @param {string} spellUuid - The spell UUID to check
+   * @returns {boolean} Whether the spell is on the actor
+   * @private
+   */
+  _isSpellOnActor(spellUuid) {
+    return this.actor.items.some((item) => {
+      if (item.type !== 'spell') return false;
+
+      // Check source ID match
+      if (item.flags?.core?.sourceId === spellUuid) return true;
+
+      // Check direct UUID match
+      if (item.uuid === spellUuid) return true;
+
+      return false;
+    });
+  }
+
+  /**
+   * Sync journal favorites to match current actor.system.favorites state
+   * This handles the case where user closed without saving - journal is "ahead" of actor
+   * @private
+   */
+  async _syncJournalToActorState() {
+    try {
+      log(3, 'Syncing journal favorites to current actor state...');
+
+      // Get actor's current favorites from system.favorites
+      const actorFavorites = this.actor.system.favorites || [];
+      const actorFavoriteSpellIds = new Set(actorFavorites.filter((fav) => fav.type === 'item' && fav.id.startsWith('.Item.')).map((fav) => fav.id.replace('.Item.', '')));
+
+      // Get all spells on the actor
+      const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
+
+      const spellUserData = await import('../helpers/spell-user-data.mjs');
+      let syncCount = 0;
+      const changedSpells = []; // Track which spells changed for UI update
+
+      for (const spell of actorSpells) {
+        const spellUuid = spell.flags?.core?.sourceId || spell.uuid;
+        if (!spellUuid) continue;
+
+        // Check if spell is favorited in actor.system.favorites
+        const isFavoritedInActor = actorFavoriteSpellIds.has(spell.id);
+
+        // Check if spell is favorited in journal
+        const userData = await spellUserData.getUserDataForSpell(spellUuid);
+        const isFavoritedInJournal = userData?.favorited || false;
+
+        // If journal says favorited but actor doesn't have it, unfavorite in journal
+        if (isFavoritedInJournal && !isFavoritedInActor) {
+          log(3, `Unfavoriting ${spell.name} in journal to match actor state`);
+          await spellUserData.setSpellFavorite(spellUuid, false);
+          changedSpells.push({ uuid: spellUuid, newState: false });
+          syncCount++;
+        }
+
+        // If journal says unfavorited but actor has it, favorite in journal
+        if (!isFavoritedInJournal && isFavoritedInActor) {
+          log(3, `Favoriting ${spell.name} in journal to match actor state`);
+          await spellUserData.setSpellFavorite(spellUuid, true);
+          changedSpells.push({ uuid: spellUuid, newState: true });
+          syncCount++;
+        }
+      }
+
+      // Immediately update UI for changed spells
+      if (changedSpells.length > 0) {
+        this._applyImmediateFavoriteChanges(changedSpells);
+      }
+
+      log(3, `Journal sync complete: ${syncCount} spells synchronized`);
+    } catch (error) {
+      log(1, 'Error syncing journal to actor state:', error);
+    }
+  }
+
+  /**
+   * Immediately apply favorite changes to UI without waiting for next render
+   * @param {Array} changedSpells - Array of {uuid, newState} objects
+   * @private
+   */
+  _applyImmediateFavoriteChanges(changedSpells) {
+    for (const { uuid, newState } of changedSpells) {
+      const button = this.element.querySelector(`.spell-favorite-toggle[data-uuid="${uuid}"]`);
+      if (!button) continue;
+
+      const icon = button.querySelector('i');
+
+      if (newState) {
+        // Favorite it
+        button.classList.add('favorited');
+        if (icon) {
+          icon.classList.remove('far');
+          icon.classList.add('fas');
+        }
+        button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
+        button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
+      } else {
+        // Unfavorite it
+        button.classList.remove('favorited');
+        if (icon) {
+          icon.classList.remove('fas');
+          icon.classList.add('far');
+        }
+        button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
+        button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
+      }
+    }
+
+    if (changedSpells.length > 0) {
+      log(3, `Applied immediate UI changes for ${changedSpells.length} favorite buttons`);
     }
   }
 
