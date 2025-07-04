@@ -465,12 +465,16 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     this._setupLoadoutContextMenu();
     this.ui.setupAdvancedSearch();
-    setTimeout(() => {
-      this._ensureSpellDataAndInitializeLazyLoading();
+    setTimeout(async () => {
+      await this._ensureSpellDataAndInitializeLazyLoading();
+      setTimeout(async () => {
+        const favoriteButtons = this.element.querySelectorAll('.spell-favorite-toggle[data-uuid]');
+        if (favoriteButtons.length > 0) {
+          await this._applyFavoriteStatesToButtons(favoriteButtons);
+          favoriteButtons.forEach((button) => button.setAttribute('data-favorites-applied', 'true'));
+        }
+      }, 50);
     }, 10);
-    requestAnimationFrame(() => {
-      this._applyFavoriteStatesAfterRender();
-    });
   }
 
   /** @inheritdoc */
@@ -551,18 +555,18 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Apply favorite states after render based on user data
    * @private
    */
-  _applyFavoriteStatesAfterRender() {
+  async _applyFavoriteStatesAfterRender() {
     const favoriteButtons = this.element.querySelectorAll('.spell-favorite-toggle[data-uuid]');
 
     log(3, `Applying favorite states to ${favoriteButtons.length} buttons after render`);
 
     if (favoriteButtons.length === 0) {
       // If no buttons found, try again after a short delay
-      setTimeout(() => {
+      setTimeout(async () => {
         const retryButtons = this.element.querySelectorAll('.spell-favorite-toggle[data-uuid]');
         if (retryButtons.length > 0) {
           log(3, `Retry: Found ${retryButtons.length} favorite buttons on second attempt`);
-          this._applyFavoriteStatesToButtons(retryButtons);
+          await this._applyFavoriteStatesToButtons(retryButtons);
         } else {
           log(2, 'No favorite buttons found even after retry');
         }
@@ -570,37 +574,28 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       return;
     }
 
-    this._applyFavoriteStatesToButtons(favoriteButtons);
+    await this._applyFavoriteStatesToButtons(favoriteButtons);
   }
 
   /**
-   * Apply favorite states to a set of buttons (enhanced debugging)
+   * Apply favorite states to a set of buttons
    * @param {NodeList} buttons - The buttons to update
    * @private
    */
-  _applyFavoriteStatesToButtons(buttons) {
+  async _applyFavoriteStatesToButtons(buttons) {
     let updatedCount = 0;
-    let debugInfo = [];
 
-    buttons.forEach((button, index) => {
+    for (const button of buttons) {
       const spellUuid = button.dataset.uuid;
-      if (!spellUuid) return;
-
-      // Get user data using enhanced lookup
-      const userData = spellUserData.getUserDataForSpell(spellUuid);
-      const isFavorited = userData?.favorited || false;
+      if (!spellUuid) continue;
+      let isFavorited = this._stateManager.getFavoriteSessionState(spellUuid);
+      if (isFavorited === null) {
+        const userData = await spellUserData.getUserDataForSpell(spellUuid);
+        isFavorited = userData?.favorited || false;
+      }
 
       const icon = button.querySelector('i');
       const currentlyFavorited = button.classList.contains('favorited');
-
-      debugInfo.push({
-        index,
-        uuid: spellUuid,
-        currentState: currentlyFavorited,
-        dataState: isFavorited,
-        userData: userData,
-        needsUpdate: currentlyFavorited !== isFavorited
-      });
 
       // Only update if state is different
       if (currentlyFavorited !== isFavorited) {
@@ -623,13 +618,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         }
         updatedCount++;
       }
-    });
+    }
 
-    log(3, `Applied favorite states: ${updatedCount} buttons updated out of ${buttons.length}`);
-
-    // Debug logging for first few buttons
-    if (debugInfo.length > 0) {
-      log(4, 'Button state details:', debugInfo.slice(0, 3));
+    if (updatedCount > 0) {
+      log(3, `Applied favorite states: ${updatedCount} buttons updated`);
     }
   }
 
@@ -1171,6 +1163,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.#lazyRenderThrottle = false;
     this._applyCollapsedStateToExistingHeaders();
     this.ui.updateSpellCounts();
+    setTimeout(async () => {
+      const newButtons = this.element.querySelectorAll('.spell-favorite-toggle[data-uuid]:not([data-favorites-applied])');
+      if (newButtons.length > 0) {
+        await this._applyFavoriteStatesToButtons(newButtons);
+        newButtons.forEach((button) => button.setAttribute('data-favorites-applied', 'true'));
+      }
+    }, 0);
+
     const cantripLevel = spellsContainer.querySelector('.spell-level[data-level="0"]');
     if (cantripLevel) this.ui.updateCantripCounter(cantripLevel, true);
   }
@@ -1865,6 +1865,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         target.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
       }
     }
+    this._stateManager.updateFavoriteSessionState(spellUuid, newFavoriteStatus);
 
     try {
       // WAIT for the save to complete before logging success
@@ -1873,8 +1874,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (saveSuccess) {
         log(3, `Persisted favorite status for ${spellUuid}: ${newFavoriteStatus}`);
 
-        // Verify the save worked by checking immediately
-        const verifyData = spellUserData.getUserDataForSpell(spellUuid);
+        const verifyData = await spellUserData.getUserDataForSpell(spellUuid);
         if (verifyData?.favorited === newFavoriteStatus) {
           log(3, `Verified favorite status was saved correctly`);
         } else {
@@ -1888,6 +1888,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           icon.classList.toggle('fas');
           icon.classList.toggle('far');
         }
+        this._stateManager.updateFavoriteSessionState(spellUuid, currentlyFavorited);
       }
     } catch (error) {
       log(1, 'Error toggling favorite:', error);
@@ -1897,6 +1898,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         icon.classList.toggle('fas');
         icon.classList.toggle('far');
       }
+      this._stateManager.updateFavoriteSessionState(spellUuid, currentlyFavorited);
     }
   }
 
@@ -2065,6 +2067,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       log(3, `Processed spell: ${name} (${uuid}) - prepared: ${isPrepared}, ritual: ${isRitual}, class: ${sourceClass}, mode: ${preparationMode}`);
     }
     await spellFavorites.processFavoritesFromForm(form, actor);
+    this._stateManager.clearFavoriteSessionState();
     await this._stateManager.addMissingRitualSpells(spellDataByClass);
     const allCantripChangesByClass = {};
     for (const [classIdentifier, classSpellData] of Object.entries(spellDataByClass)) {

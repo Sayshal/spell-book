@@ -316,3 +316,20 @@ export function enhanceSpellWithUserData(spell, userId = null) {
     lastUsed: userData?.usageStats?.lastUsed || null
   };
 }
+
+// Add async version for when you need fresh data
+export async function enhanceSpellWithUserDataAsync(spell, userId = null) {
+  const spellUuid = spell?.uuid || spell?.compendiumUuid;
+  if (!spellUuid) return spell;
+
+  const userData = await spellUserDataJournal.getUserDataForSpell(spellUuid, userId);
+
+  return {
+    ...spell,
+    userData: userData,
+    favorited: userData?.favorited || false,
+    hasNotes: !!(userData?.notes && userData.notes.trim()),
+    usageCount: userData?.usageStats?.count || 0,
+    lastUsed: userData?.usageStats?.lastUsed || null
+  };
+}

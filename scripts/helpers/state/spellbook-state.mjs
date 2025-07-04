@@ -1017,4 +1017,35 @@ export class SpellbookState {
 
     log(3, `Restored favorite states for tab ${tabName}, ${restoredCount} buttons restored`);
   }
+
+  /**
+   * Update favorite session state (like checkboxes)
+   * @param {string} spellUuid - The spell UUID
+   * @param {boolean} favorited - Favorite status
+   */
+  updateFavoriteSessionState(spellUuid, favorited) {
+    if (!this.app._favoriteSessionState) {
+      this.app._favoriteSessionState = new Map();
+    }
+    this.app._favoriteSessionState.set(spellUuid, favorited);
+    log(3, `Updated session favorite state for ${spellUuid}: ${favorited}`);
+  }
+
+  /**
+   * Get favorite session state
+   * @param {string} spellUuid - The spell UUID
+   * @returns {boolean|null} Session favorite state or null if not set
+   */
+  getFavoriteSessionState(spellUuid) {
+    return this.app._favoriteSessionState?.get(spellUuid) || null;
+  }
+
+  /**
+   * Clear favorite session state (called on form submit)
+   */
+  clearFavoriteSessionState() {
+    if (this.app._favoriteSessionState) {
+      this.app._favoriteSessionState.clear();
+    }
+  }
 }

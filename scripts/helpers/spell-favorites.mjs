@@ -132,36 +132,44 @@ export async function syncFavoritesOnSave(actor, spellData) {
  */
 export async function processFavoritesFromForm(form, actor) {
   try {
-    const spellUserData = await import('./spell-user-data.mjs');
-
-    // Get all favorite buttons and their current state
+    // Get all favorite buttons and track changes
     const favoriteButtons = form.querySelectorAll('.spell-favorite-toggle');
-    const favoritedUuids = [];
-    const unfavoritedUuids = [];
+    const changedSpells = [];
 
-    favoriteButtons.forEach((button) => {
+    for (const button of favoriteButtons) {
       const uuid = button.dataset.uuid;
-      if (!uuid) return;
+      if (!uuid) continue;
 
-      if (button.classList.contains('favorited')) {
-        favoritedUuids.push(uuid);
-      } else {
-        unfavoritedUuids.push(uuid);
+      const currentUiState = button.classList.contains('favorited');
+
+      // Get the original journal state
+      const userData = await spellUserData.getUserDataForSpell(uuid);
+      const originalState = userData?.favorited || false;
+
+      // Only process if changed
+      if (currentUiState !== originalState) {
+        changedSpells.push({
+          uuid,
+          favorited: currentUiState
+        });
       }
-    });
-
-    // Update user data for all spells
-    for (const uuid of favoritedUuids) {
-      await spellUserData.setSpellFavorite(uuid, true);
-    }
-    for (const uuid of unfavoritedUuids) {
-      await spellUserData.setSpellFavorite(uuid, false);
     }
 
-    // Update actor.system.favorites
-    await updateActorFavorites(favoritedUuids, actor);
+    log(3, `Processing ${changedSpells.length} changed favorites out of ${favoriteButtons.length} total spells`);
 
-    log(3, `Processed favorites: ${favoritedUuids.length} favorited, ${unfavoritedUuids.length} unfavorited`);
+    // Update only changed spells
+    for (const { uuid, favorited } of changedSpells) {
+      await spellUserData.setSpellFavorite(uuid, favorited);
+    }
+
+    // Update actor.system.favorites for favorited spells
+    const favoritedUuids = changedSpells.filter((spell) => spell.favorited).map((spell) => spell.uuid);
+
+    if (favoritedUuids.length > 0) {
+      await updateActorFavorites(favoritedUuids, actor);
+    }
+
+    log(3, `Processed favorites: ${changedSpells.length} changed spells`);
   } catch (error) {
     log(1, 'Error processing favorites in form:', error);
   }
