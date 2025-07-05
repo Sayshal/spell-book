@@ -68,6 +68,8 @@ async function unlockModuleCompendium() {
   if (spellsPack && spellsPack.locked) await spellsPack.configure({ locked: false });
   const macrosPack = game.packs.find((p) => p.collection === MODULE.PACK.MACROS);
   if (macrosPack && macrosPack.locked) await macrosPack.configure({ locked: false });
+  const userdataPack = game.packs.find((p) => p.collection === MODULE.PACK.USERDATA);
+  if (userdataPack && userdataPack.locked) await userdataPack.configure({ locked: false });
   await createActorSpellbooksFolder(spellsPack);
 }
 

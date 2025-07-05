@@ -7,7 +7,7 @@ import { log } from '../logger.mjs';
 class SpellUserDataJournal {
   constructor() {
     this.cache = new Map(); // Cache parsed data for performance
-    this.journalName = 'Spell User Data';
+    this.journalName = 'User Spell Data';
   }
 
   /**
@@ -15,7 +15,7 @@ class SpellUserDataJournal {
    * @returns {Promise<JournalEntry|null>}
    */
   async _getJournal() {
-    const pack = game.packs.get(MODULE.PACK.SPELLS);
+    const pack = game.packs.get(MODULE.PACK.USERDATA);
     if (!pack) return null;
 
     const documents = await pack.getDocuments();

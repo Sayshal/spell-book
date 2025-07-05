@@ -44,9 +44,9 @@ export class UserSpellDataManager {
    */
   async _ensureJournalSetup() {
     this.folderName = game.i18n.localize('SPELLBOOK.UserData.FolderName');
-    this.journalName = game.i18n.localize('SPELLBOOK.UserData.JournalName');
+    this.journalName = game.i18n.localize('SPELLBOOK.UserData.FolderName');
 
-    const pack = game.packs.get(MODULE.PACK.SPELLS);
+    const pack = game.packs.get(MODULE.PACK.USERDATA);
     if (!pack) {
       log(1, 'Spells pack not found for user data setup');
       return;
@@ -134,7 +134,7 @@ export class UserSpellDataManager {
     const user = game.users.get(userId);
     if (!user) return false;
 
-    const pack = game.packs.get(MODULE.PACK.SPELLS);
+    const pack = game.packs.get(MODULE.PACK.USERDATA);
     if (!pack) return false;
 
     const documents = await pack.getDocuments();

@@ -36,7 +36,7 @@
   "packFolders": [
     {
       "name": "Spell Book",
-      "packs": ["custom-spell-lists", "spell-book-macros"],
+      "packs": ["custom-spell-lists", "spell-book-macros", "user-spell-data"],
       "sorting": "a"
     }
   ],
@@ -49,6 +49,16 @@
         "PLAYER": "OBSERVER"
       },
       "path": "storage/custom-spell-lists",
+      "type": "JournalEntry"
+    },
+    {
+      "label": "User Spell Data",
+      "name": "user-spell-data",
+      "ownership": {
+        "PLAYER": "OWNER",
+        "ASSISTANT": "OWNER"
+      },
+      "path": "/storage/user-spell-data",
       "type": "JournalEntry"
     },
     {
