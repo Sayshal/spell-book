@@ -2433,6 +2433,23 @@
 }
 
 /* ----------------------------------------- */
+/*  Spell Description Notes Injection        */
+/* ----------------------------------------- */
+.spell-book-personal-notes {
+  border-left: 0.188rem solid var(--user-color);
+  padding: 0.25rem;
+  margin: 0;
+  border-radius: 0 var(--spell-book-border-radius) var(--spell-book-border-radius) 0;
+  font-style: italic;
+
+  strong {
+    color: var(--user-color);
+    font-style: normal;
+    display: block;
+  }
+}
+
+/* ----------------------------------------- */
 /*  Spell Preview Tooltip                    */
 /* ----------------------------------------- */
 .spell-preview-tooltip {

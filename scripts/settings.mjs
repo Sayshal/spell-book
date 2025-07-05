@@ -1,5 +1,6 @@
 import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
 import { MODULE, SETTINGS } from './constants.mjs';
+import { SpellDescriptionInjection } from './helpers/spell-description-injection.mjs';
 import { log } from './logger.mjs';
 
 /**
@@ -215,7 +216,7 @@ export function registerSettings() {
     }
   });
 
-  game.settings.register(MODULE.ID, 'spellNotesMaxLength', {
+  game.settings.register(MODULE.ID, SETTINGS.SPELL_NOTES_LENGTH, {
     name: 'SPELLBOOK.Settings.NotesMaxLength.Name',
     hint: 'SPELLBOOK.Settings.NotesMaxLength.Hint',
     scope: 'world',
@@ -226,6 +227,23 @@ export function registerSettings() {
       min: 10,
       max: 1000,
       step: 10
+    }
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.SPELL_NOTES_DESC_INJECTION, {
+    name: 'SPELLBOOK.Settings.InjectNotesIntoDescriptions.Name',
+    hint: 'SPELLBOOK.Settings.InjectNotesIntoDescriptions.Hint',
+    scope: 'client',
+    config: true,
+    type: String,
+    choices: {
+      off: 'SPELLBOOK.Settings.InjectNotesIntoDescriptions.Off',
+      before: 'SPELLBOOK.Settings.InjectNotesIntoDescriptions.Before',
+      after: 'SPELLBOOK.Settings.InjectNotesIntoDescriptions.After'
+    },
+    default: 'off',
+    onChange: async (value) => {
+      await SpellDescriptionInjection.handleSettingChange(value);
     }
   });
 }

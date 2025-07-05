@@ -1,5 +1,5 @@
-// Create scripts/apps/spell-notes-dialog.mjs
-import { MODULE, TEMPLATES } from '../constants.mjs';
+import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import { SpellDescriptionInjection } from '../helpers/spell-description-injection.mjs';
 import * as spellFavorites from '../helpers/spell-favorites.mjs';
 import * as spellUserData from '../helpers/spell-user-data.mjs';
 import { log } from '../logger.mjs';
@@ -44,7 +44,7 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
     this.spellUuid = spellFavorites.getCanonicalSpellUuid(options.spellUuid);
     this.spellName = fromUuidSync(this.spellUuid).name;
     this.currentNotes = '';
-    this.maxLength = game.settings.get(MODULE.ID, 'spellNotesMaxLength') || 240;
+    this.maxLength = game.settings.get(MODULE.ID, SETTINGS.SPELL_NOTES_LENGTH) || 240;
     log(1, 'DEBUG:', { options: options, spelluuid: this.spellUuid });
   }
 
@@ -142,30 +142,27 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
   static async formHandler(event, form, formData) {
     const notes = formData.object.notes || '';
     const spellUuid = formData.object.spellUuid;
-
-    // Ensure we're using canonical UUID for consistency
     const canonicalUuid = spellFavorites.getCanonicalSpellUuid(spellUuid);
-
     try {
       await spellUserData.setSpellNotes(canonicalUuid, notes);
-
-      // Clear the cache for this spell so it gets fresh data
       const targetUserId = game.user.id;
       const cacheKey = `${targetUserId}:${canonicalUuid}`;
-
-      // Access the journal singleton to clear cache
-      const spellUserDataJournal = spellUserData.spellUserDataJournal || (await import('../helpers/spell-user-data.mjs')).spellUserDataJournal;
-
-      if (spellUserDataJournal?.cache) {
-        spellUserDataJournal.cache.delete(cacheKey);
+      const spellbookApp = Array.from(foundry.applications.instances.values()).find((app) => app.constructor.name === 'PlayerSpellBook');
+      if (spellbookApp) {
+        await spellbookApp._stateManager.refreshSpellEnhancements();
+        spellbookApp.render(false);
       }
-
-      // Force full refresh of spellbook to update icons and data
-      const spellbook = Object.values(ui.windows).find((app) => app.constructor.name === 'PlayerSpellBook');
-      if (spellbook) {
-        await spellbook.render(true); // Force full re-render
-      }
-
+      if (spellUserData.spellUserDataJournal?.cache) spellUserData.spellUserDataJournal.cache.delete(cacheKey);
+      const hasNotes = !!(notes && notes.trim());
+      const notesIcons = document.querySelectorAll(`[data-uuid="${canonicalUuid}"][data-action="editNotes"]`);
+      notesIcons.forEach((icon) => {
+        const newIconClass = hasNotes ? 'fas fa-sticky-note' : 'far fa-sticky-note';
+        const newTooltip = hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes');
+        icon.className = `${newIconClass} spell-notes-icon`;
+        icon.setAttribute('data-tooltip', newTooltip);
+        icon.setAttribute('aria-label', newTooltip);
+      });
+      await SpellDescriptionInjection.handleNotesChange(canonicalUuid);
       ui.notifications.info(game.i18n.localize('SPELLBOOK.UI.NotesUpdated'));
     } catch (error) {
       log(1, 'Error saving spell notes:', error);

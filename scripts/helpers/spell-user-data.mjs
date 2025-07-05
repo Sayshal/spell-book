@@ -1,4 +1,4 @@
-import { MODULE } from '../constants.mjs';
+import { MODULE, SETTINGS } from '../constants.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -289,7 +289,7 @@ export async function setSpellFavorite(spellOrUuid, favorited, userId = null) {
 }
 
 export async function setSpellNotes(spellOrUuid, notes, userId = null) {
-  const maxLength = game.settings.get(MODULE.ID, 'spellNotesMaxLength') || 240;
+  const maxLength = game.settings.get(MODULE.ID, SETTINGS.SPELL_NOTES_LENGTH) || 240;
   const trimmedNotes = notes ? notes.substring(0, maxLength) : '';
   return await setUserDataForSpell(spellOrUuid, { notes: trimmedNotes }, userId);
 }

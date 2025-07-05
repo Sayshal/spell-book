@@ -202,5 +202,7 @@ export const SETTINGS = {
   LOGGING_LEVEL: 'loggingLevel',
   OPEN_SPELL_MANAGER: 'openSpellListManager',
   SPELL_BOOK_POSITION: 'spellBookPositionn',
-  SPELLCASTING_RULE_SET: 'spellcastingRuleSet'
+  SPELLCASTING_RULE_SET: 'spellcastingRuleSet',
+  SPELL_NOTES_LENGTH: 'spellNotesMaxLength',
+  SPELL_NOTES_DESC_INJECTION: 'injectNotesIntoDescriptions'
 };

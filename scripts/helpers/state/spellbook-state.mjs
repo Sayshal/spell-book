@@ -1050,4 +1050,27 @@ export class SpellbookState {
       this.app._favoriteSessionState.clear();
     }
   }
+
+  /**
+   * Refresh spell enhancements (notes, favorites) without full reload
+   * @returns {Promise<void>}
+   */
+  async refreshSpellEnhancements() {
+    const targetUserId = game.user.id;
+    if (spellUserData.spellUserDataJournal?.cache) {
+      for (const key of spellUserData.spellUserDataJournal.cache.keys()) {
+        if (key.startsWith(`${targetUserId}:`)) spellUserData.spellUserDataJournal.cache.delete(key);
+      }
+    }
+    for (const [classIdentifier, classData] of Object.entries(this.classSpellData)) {
+      if (classData.spellLevels) {
+        for (const spell of classData.spellLevels) {
+          const enhancedSpell = spellUserData.enhanceSpellWithUserData(spell, game.user.id);
+          Object.assign(spell, enhancedSpell);
+          spell.formattedDetails = formattingUtils.formatSpellDetails(spell);
+        }
+      }
+    }
+    log(3, 'Refreshed spell enhancements');
+  }
 }
