@@ -274,6 +274,28 @@ class SpellUserDataJournal {
       return false;
     }
   }
+
+  /**
+   * Set usage statistics for a spell
+   * @param {string|Object} spellOrUuid - Spell UUID or spell object
+   * @param {Object} usageStats - Usage statistics object
+   * @param {string} userId - User ID (optional)
+   * @returns {Promise<boolean>} Success status
+   */
+  async setSpellUsageStats(spellOrUuid, usageStats, userId = null) {
+    return await this.setUserDataForSpell(spellOrUuid, { usageStats }, userId);
+  }
+
+  /**
+   * Get usage statistics for a spell
+   * @param {string|Object} spellOrUuid - Spell UUID or spell object
+   * @param {string} userId - User ID (optional)
+   * @returns {Promise<Object|null>} Usage statistics
+   */
+  async getSpellUsageStats(spellOrUuid, userId = null) {
+    const userData = await this.getUserDataForSpell(spellOrUuid, userId);
+    return userData?.usageStats || null;
+  }
 }
 
 export async function getUserDataForSpell(spellOrUuid, userId = null) {
@@ -319,22 +341,12 @@ export function enhanceSpellWithUserData(spell, userId = null) {
   };
 }
 
-export async function enhanceSpellWithUserDataAsync(spell, userId = null) {
-  const spellUuid = spell?.uuid || spell?.compendiumUuid;
-  if (!spellUuid) return spell;
-
-  const userData = await spellUserDataJournal.getUserDataForSpell(spellUuid, userId);
-
-  return {
-    ...spell,
-    userData: userData,
-    favorited: userData?.favorited || false,
-    hasNotes: !!(userData?.notes && userData.notes.trim()),
-    usageCount: userData?.usageStats?.count || 0,
-    lastUsed: userData?.usageStats?.lastUsed || null
-  };
+export async function setSpellUsageStats(spellOrUuid, usageStats, userId = null) {
+  return await spellUserDataJournal.setSpellUsageStats(spellOrUuid, usageStats, userId);
 }
 
-// Export singleton instance
-const spellUserDataJournal = new SpellUserDataJournal();
-export { spellUserDataJournal };
+export async function getSpellUsageStats(spellOrUuid, userId = null) {
+  return await spellUserDataJournal.getSpellUsageStats(spellOrUuid, userId);
+}
+
+export const spellUserDataJournal = new SpellUserDataJournal();

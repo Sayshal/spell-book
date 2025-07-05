@@ -1,0 +1,127 @@
+<div class="analytics-dashboard">
+  <header class="dashboard-header">
+    <h1>{{localize "SPELLBOOK.Analytics.DashboardTitle"}}</h1>
+
+    <div class="view-controls">
+      {{#if isGM}}
+        <button type="button" class="view-toggle {{#if (eq viewMode 'personal')}}active{{/if}}" data-action="switchView"
+          data-view-mode="personal">
+          {{localize "SPELLBOOK.Analytics.PersonalView"}}
+        </button>
+        <button type="button" class="view-toggle {{#if (eq viewMode 'gm')}}active{{/if}}" data-action="switchView"
+          data-view-mode="gm">
+          {{localize "SPELLBOOK.Analytics.GMView"}}
+        </button>
+      {{/if}}
+
+      <button type="button" class="refresh-btn" data-action="refreshStats">
+        <i class="fas fa-sync-alt"></i> {{localize "SPELLBOOK.Analytics.Refresh"}}
+      </button>
+    </div>
+  </header>
+
+  <div class="dashboard-content">
+    <!-- Summary Statistics -->
+    <section class="stats-summary">
+      <div class="stat-card">
+        {{log 'DEBUG' analytics}}
+        <div class="stat-value">{{analytics.totalSpells}}</div>
+        <div class="stat-label">{{localize "SPELLBOOK.Analytics.TotalSpells"}}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{analytics.totalCasts}}</div>
+        <div class="stat-label">{{localize "SPELLBOOK.Analytics.TotalCasts"}}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{analytics.totalFavorites}}</div>
+        <div class="stat-label">{{localize "SPELLBOOK.Analytics.TotalFavorites"}}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{analytics.totalNotes}}</div>
+        <div class="stat-label">{{localize "SPELLBOOK.Analytics.TotalNotes"}}</div>
+      </div>
+    </section>
+
+    <!-- Context Usage Breakdown -->
+    <section class="context-breakdown">
+      <h2>{{localize "SPELLBOOK.Analytics.ContextUsage"}}</h2>
+      <div class="context-chart">
+        <div class="context-bar">
+          <div class="context-combat" style="width: {{analytics.contextBreakdown.combatPercent}}%">
+            {{analytics.contextBreakdown.combat}} {{localize "SPELLBOOK.Analytics.Combat"}}
+          </div>
+          <div class="context-exploration" style="width: {{analytics.contextBreakdown.explorationPercent}}%">
+            {{analytics.contextBreakdown.exploration}} {{localize "SPELLBOOK.Analytics.Exploration"}}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="dashboard-grid">
+      <!-- Most Used Spells -->
+      <section class="most-used-spells">
+        <h2>{{localize "SPELLBOOK.Analytics.MostUsedSpells"}}</h2>
+        <div class="spell-list">
+          {{#each analytics.mostUsedSpells}}
+            <div class="spell-usage-item">
+              <span class="spell-name">{{this.name}}</span>
+              <span class="usage-count">{{this.count}}</span>
+            </div>
+          {{/each}}
+        </div>
+      </section>
+
+      <!-- Recent Activity -->
+      <section class="recent-activity">
+        <h2>{{localize "SPELLBOOK.Analytics.RecentActivity"}}</h2>
+        <div class="activity-list">
+          {{#each analytics.recentActivity}}
+            <div class="activity-item">
+              <span class="spell-name">{{this.name}}</span>
+              <span class="last-used">{{formatDate this.lastUsed}}</span>
+            </div>
+          {{/each}}
+        </div>
+      </section>
+
+      {{#if (eq viewMode 'gm')}}
+        <!-- User Breakdown (GM View) -->
+        <section class="user-breakdown">
+          <h2>{{localize "SPELLBOOK.Analytics.UserBreakdown"}}</h2>
+          <div class="user-list">
+            {{#each analytics.userBreakdown}}
+              <div class="user-stats" data-action="viewUserData" data-user-id="{{@key}}">
+                <div class="user-name">{{this.name}}</div>
+                <div class="user-stats-grid">
+                  <span>{{this.totalCasts}} {{localize "SPELLBOOK.Analytics.Casts"}}</span>
+                  <span>{{this.totalFavorites}} {{localize "SPELLBOOK.Analytics.Favorites"}}</span>
+                </div>
+              </div>
+            {{/each}}
+          </div>
+        </section>
+      {{/if}}
+    </div>
+
+    <!-- Data Management -->
+    <section class="data-management">
+      <h2>{{localize "SPELLBOOK.Analytics.DataManagement"}}</h2>
+      <div class="management-controls">
+        <button type="button" class="export-btn" data-action="exportData">
+          <i class="fas fa-download"></i> {{localize "SPELLBOOK.Analytics.ExportData"}}
+        </button>
+        <button type="button" class="import-btn" data-action="importData">
+          <i class="fas fa-upload"></i> {{localize "SPELLBOOK.Analytics.ImportData"}}
+        </button>
+        {{#if isGM}}
+          <button type="button" class="clear-btn" data-action="clearData">
+            <i class="fas fa-trash"></i> {{localize "SPELLBOOK.Analytics.ClearData"}}
+          </button>
+        {{/if}}
+      </div>
+      {{#if lastRefresh}}
+        <p class="last-refresh">{{localize "SPELLBOOK.Analytics.LastRefresh"}}: {{lastRefresh}}</p>
+      {{/if}}
+    </section>
+  </div>
+</div>

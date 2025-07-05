@@ -14,6 +14,7 @@ import { SpellLoadoutManager } from '../managers/spell-loadout-manager.mjs';
 import { SpellManager } from '../managers/spell-manager.mjs';
 import { WizardSpellbookManager } from '../managers/wizard-spellbook-manager.mjs';
 import { PlayerFilterConfiguration } from './player-filter-configuration.mjs';
+import { SpellAnalyticsDashboard } from './spell-analytics-dashboard.mjs';
 import { SpellLoadoutDialog } from './spell-loadout-dialog.mjs';
 import { SpellNotesDialog } from './spell-notes-dialog.mjs';
 import { SpellbookSettingsDialog } from './spellbook-settings-dialog.mjs';
@@ -44,7 +45,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       learnFromScroll: PlayerSpellBook.handleLearnFromScroll,
       openLoadoutDialog: PlayerSpellBook.openLoadoutDialog,
       toggleFavorite: PlayerSpellBook.handleToggleFavorite,
-      editNotes: PlayerSpellBook.handleEditNotes
+      editNotes: PlayerSpellBook.handleEditNotes,
+      openAnalyticsDashboard: PlayerSpellBook.handleOpenAnalyticsDashboard
     },
     classes: ['spell-book', 'vertical-tabs'],
     window: { icon: 'fas fa-book-open', resizable: true, minimizable: true, positioned: true },
@@ -289,6 +291,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         label: 'SPELLBOOK.UI.Reset',
         tooltip: 'SPELLBOOK.UI.ResetTooltip',
         cssClass: 'reset-button'
+      },
+      {
+        type: 'button',
+        action: 'openAnalyticsDashboard',
+        icon: 'fas fa-chart-bar',
+        label: 'SPELLBOOK.Analytics.OpenDashboard',
+        tooltip: 'SPELLBOOK.Analytics.OpenDashboardTooltip',
+        cssClass: 'analytics-button'
       },
       {
         type: 'button',
@@ -2049,6 +2059,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const spellElement = target.closest('.spell-item');
     const spellName = fromUuidSync(spellUuid).name;
     new SpellNotesDialog({ spellUuid, spellName }).render(true);
+  }
+
+  static async handleOpenAnalyticsDashboard(event, target) {
+    new SpellAnalyticsDashboard().render({ force: true });
   }
 
   /**

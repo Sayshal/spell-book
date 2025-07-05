@@ -151,6 +151,9 @@ export const FLAGS = {
  * @type {Object}
  */
 export const TEMPLATES = {
+  ANALYTICS: {
+    DASHBOARD: 'modules/spell-book/templates/analytics/dashboard.hbs'
+  },
   COMPONENTS: {
     EMPTY: 'modules/spell-book/templates/components/empty-state.hbs',
     ERROR: 'modules/spell-book/templates/components/error-message.hbs',
