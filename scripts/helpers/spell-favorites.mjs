@@ -125,51 +125,41 @@ export async function syncFavoritesOnSave(actor, spellData) {
 }
 
 /**
- * Process favorites from form state and update both user data and actor.system.favorites
+ * Process favorites from form state and update actor.system.favorites to match journal
  * @param {HTMLFormElement} form - The form element
  * @param {Actor} actor - The actor to update
  * @returns {Promise<void>}
  */
 export async function processFavoritesFromForm(form, actor) {
   try {
-    // Get all favorite buttons and track changes
-    const favoriteButtons = form.querySelectorAll('.spell-favorite-toggle');
-    const changedSpells = [];
-
-    for (const button of favoriteButtons) {
-      const uuid = button.dataset.uuid;
-      if (!uuid) continue;
-
-      const currentUiState = button.classList.contains('favorited');
-
-      // Get the original journal state
-      const userData = await spellUserData.getUserDataForSpell(uuid);
-      const originalState = userData?.favorited || false;
-
-      // Only process if changed
-      if (currentUiState !== originalState) {
-        changedSpells.push({
-          uuid,
-          favorited: currentUiState
-        });
+    const actorSpells = actor.items.filter((item) => item.type === 'spell');
+    const favoritesToAdd = [];
+    log(3, `Checking ${actorSpells.length} spells on actor for favorite status`);
+    for (const spell of actorSpells) {
+      const canonicalUuid = getCanonicalSpellUuid(spell.uuid);
+      const userData = await spellUserData.getUserDataForSpell(canonicalUuid);
+      const isFavoritedInJournal = userData?.favorited || false;
+      if (isFavoritedInJournal) {
+        favoritesToAdd.push(spell);
+        log(3, `Spell ${spell.name} is favorited in journal, adding to actor favorites`);
       }
     }
-
-    log(3, `Processing ${changedSpells.length} changed favorites out of ${favoriteButtons.length} total spells`);
-
-    // Update only changed spells
-    for (const { uuid, favorited } of changedSpells) {
-      await spellUserData.setSpellFavorite(uuid, favorited);
+    if (favoritesToAdd.length > 0) {
+      const newFavorites = favoritesToAdd.map((spell, index) => ({ type: 'item', id: `.Item.${spell.id}`, sort: 100000 + index }));
+      const existingFavorites = actor.system.favorites || [];
+      const nonSpellFavorites = existingFavorites.filter((fav) => fav.type !== 'item' || !fav.id.startsWith('.Item.'));
+      const allFavorites = [...nonSpellFavorites, ...newFavorites];
+      await actor.update({ 'system.favorites': allFavorites });
+      log(3, `Updated actor.system.favorites with ${newFavorites.length} spell favorites`);
+    } else {
+      const existingFavorites = actor.system.favorites || [];
+      const nonSpellFavorites = existingFavorites.filter((fav) => fav.type !== 'item' || !fav.id.startsWith('.Item.'));
+      if (nonSpellFavorites.length !== existingFavorites.length) {
+        await actor.update({ 'system.favorites': nonSpellFavorites });
+        log(3, `Removed all spell favorites from actor.system.favorites`);
+      }
     }
-
-    // Update actor.system.favorites for favorited spells
-    const favoritedUuids = changedSpells.filter((spell) => spell.favorited).map((spell) => spell.uuid);
-
-    if (favoritedUuids.length > 0) {
-      await updateActorFavorites(favoritedUuids, actor);
-    }
-
-    log(3, `Processed favorites: ${changedSpells.length} changed spells`);
+    log(3, `Processed favorites: ${favoritesToAdd.length} spells favorited`);
   } catch (error) {
     log(1, 'Error processing favorites in form:', error);
   }
@@ -184,21 +174,13 @@ export async function processFavoritesFromForm(form, actor) {
 export async function updateActorFavorites(favoritedUuids, actor) {
   try {
     const newFavorites = [];
-
-    // Process each favorited UUID
     for (const spellUuid of favoritedUuids) {
       const actorSpell = findActorSpellByUuid(spellUuid, actor);
       if (actorSpell) {
         const favoriteId = `.Item.${actorSpell.id}`;
-        newFavorites.push({
-          type: 'item',
-          id: favoriteId,
-          sort: 100000 + newFavorites.length
-        });
+        newFavorites.push({ type: 'item', id: favoriteId, sort: 100000 + newFavorites.length });
       }
     }
-
-    // Update actor favorites
     await actor.update({ 'system.favorites': newFavorites });
     log(3, `Updated actor.system.favorites with ${newFavorites.length} spells`);
   } catch (error) {

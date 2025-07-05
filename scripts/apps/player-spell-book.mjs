@@ -2203,7 +2203,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       };
       log(3, `Processed spell: ${name} (${uuid}) - prepared: ${isPrepared}, ritual: ${isRitual}, class: ${sourceClass}, mode: ${preparationMode}`);
     }
-    await spellFavorites.processFavoritesFromForm(form, actor);
     this._stateManager.clearFavoriteSessionState();
     await this._stateManager.addMissingRitualSpells(spellDataByClass);
     const allCantripChangesByClass = {};
@@ -2217,6 +2216,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     await this._stateManager.handlePostProcessing(actor);
     this._newlyCheckedCantrips.clear();
     this._clearTabStateCache();
+    await spellFavorites.processFavoritesFromForm(form, actor);
     if (actor.sheet.rendered) actor.sheet.render(true);
     if (this.ui && this.rendered) {
       this.ui.setupCantripUI();
