@@ -1,12 +1,9 @@
 <div class="spell-notes-dialog-content">
-  <div class="dialog-header">
-    <h3>{{localize "SPELLBOOK.UI.NotesFor"}} {{spellName}}</h3>
-  </div>
   <div class="dialog-body">
     <div class="form-group">
       <label for="spell-notes">{{localize "SPELLBOOK.UI.Notes"}}</label>
       <textarea name="notes" id="spell-notes" maxlength="{{maxLength}}"
-        placeholder="{{localize 'SPELLBOOK.UI.NotesPlaceholder'}}" rows="4">{{notes}}</textarea>
+        placeholder="{{localize 'SPELLBOOK.UI.NotesPlaceholder'}}" rows="{{rows}}">{{notes}}</textarea>
       <div class="form-footer">
         <span
           class="character-counter {{#if (lt charactersRemaining 20)}}warning{{/if}} {{#if (lt charactersRemaining 0)}}error{{/if}}">

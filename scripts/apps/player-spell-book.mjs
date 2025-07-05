@@ -2047,7 +2047,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const spellUuid = target.dataset.uuid;
     if (!spellUuid) return;
     const spellElement = target.closest('.spell-item');
-    const spellName = spellElement?.querySelector('.title')?.textContent?.trim() || game.i18n.localize('SPELLBOOK.UI.UnknownSpell');
+    const spellName = fromUuidSync(spellUuid).name;
     new SpellNotesDialog({ spellUuid, spellName }).render(true);
   }
 

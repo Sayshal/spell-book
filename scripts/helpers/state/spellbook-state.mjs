@@ -312,15 +312,17 @@ export class SpellbookState {
         const preparationMode = spell.system.preparation?.mode;
         const isSpecialMode = ['innate', 'pact', 'atwill', 'always'].includes(preparationMode);
         if (!spellsByLevel[level]) spellsByLevel[level] = [];
+        const compendiumUuid = spell.flags?.core?.sourceId || spell.uuid;
         const spellData = {
           ...spell,
+          compendiumUuid: compendiumUuid,
           preparation: this.app.spellManager.getSpellPreparationStatus(spell, classIdentifier),
           filterData: formattingUtils.extractSpellFilterData(spell),
-          formattedDetails: formattingUtils.formatSpellDetails(spell),
           enrichedIcon: formattingUtils.createSpellIconLink(spell)
         };
         const enhancedSpell = spellUserData.enhanceSpellWithUserData(spellData, game.user.id);
         Object.assign(spellData, enhancedSpell);
+        spellData.formattedDetails = formattingUtils.formatSpellDetails(spellData);
         if (!isSpecialMode) spellData.sourceClass = classIdentifier;
         spellsByLevel[level].push(spellData);
         processedSpellIds.add(spell.id || spell.uuid);
@@ -337,10 +339,10 @@ export class SpellbookState {
       if (this.app.spellManager) spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spell, classIdentifier);
       spellData.sourceClass = classIdentifier;
       spellData.filterData = formattingUtils.extractSpellFilterData(spell);
-      spellData.formattedDetails = formattingUtils.formatSpellDetails(spell);
       spellData.enrichedIcon = formattingUtils.createSpellIconLink(spell);
       const enhancedSpell = spellUserData.enhanceSpellWithUserData(spellData, game.user.id);
       Object.assign(spellData, enhancedSpell);
+      spellData.formattedDetails = formattingUtils.formatSpellDetails(spellData);
       spellsByLevel[level].push(spellData);
       processedSpellIds.add(spell.id || spell.compendiumUuid || spell.uuid);
       processedSpellNames.add(spellName);
@@ -625,7 +627,7 @@ export class SpellbookState {
         }
       }
       if (!spell.enrichedIcon) spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
-      if (!spell.formattedDetails) spell.formattedDetails = formattingUtils.formatSpellDetails(spell);
+      spell.formattedDetails = formattingUtils.formatSpellDetails(spell);
     }
   }
 

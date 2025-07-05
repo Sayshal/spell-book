@@ -276,10 +276,6 @@ class SpellUserDataJournal {
   }
 }
 
-// Export singleton instance
-const spellUserDataJournal = new SpellUserDataJournal();
-
-// Export API functions that match existing interface
 export async function getUserDataForSpell(spellOrUuid, userId = null) {
   return await spellUserDataJournal.getUserDataForSpell(spellOrUuid, userId);
 }
@@ -299,14 +295,20 @@ export async function setSpellNotes(spellOrUuid, notes, userId = null) {
 }
 
 export function enhanceSpellWithUserData(spell, userId = null) {
-  // This becomes async in the new system, but we'll cache for sync access
-  const spellUuid = spell?.uuid || spell?.compendiumUuid;
+  const spellUuid = spell?.compendiumUuid || spell?.uuid;
   if (!spellUuid) return spell;
-
+  let canonicalUuid = spellUuid;
+  if (spellUuid.startsWith('Actor.')) {
+    try {
+      const spellDoc = fromUuidSync(spellUuid);
+      if (spellDoc?.flags?.core?.sourceId) canonicalUuid = spellDoc.flags.core.sourceId;
+    } catch (error) {
+      canonicalUuid = spellUuid;
+    }
+  }
   const targetUserId = userId || game.user.id;
-  const cacheKey = `${targetUserId}:${spellUuid}`;
+  const cacheKey = `${targetUserId}:${canonicalUuid}`;
   const userData = spellUserDataJournal.cache.get(cacheKey) || null;
-
   return {
     ...spell,
     userData: userData,
@@ -317,7 +319,6 @@ export function enhanceSpellWithUserData(spell, userId = null) {
   };
 }
 
-// Add async version for when you need fresh data
 export async function enhanceSpellWithUserDataAsync(spell, userId = null) {
   const spellUuid = spell?.uuid || spell?.compendiumUuid;
   if (!spellUuid) return spell;
@@ -333,3 +334,7 @@ export async function enhanceSpellWithUserDataAsync(spell, userId = null) {
     lastUsed: userData?.usageStats?.lastUsed || null
   };
 }
+
+// Export singleton instance
+const spellUserDataJournal = new SpellUserDataJournal();
+export { spellUserDataJournal };

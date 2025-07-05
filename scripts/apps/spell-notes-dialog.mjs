@@ -1,5 +1,6 @@
 // Create scripts/apps/spell-notes-dialog.mjs
 import { MODULE, TEMPLATES } from '../constants.mjs';
+import * as spellFavorites from '../helpers/spell-favorites.mjs';
 import * as spellUserData from '../helpers/spell-user-data.mjs';
 import { log } from '../logger.mjs';
 
@@ -12,10 +13,7 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
   static DEFAULT_OPTIONS = {
     id: 'spell-notes-dialog',
     tag: 'form',
-    window: {
-      frame: false,
-      positioned: true
-    },
+    window: { icon: 'far fa-sticky-note', resizable: true, minimizable: true, positioned: true },
     form: {
       handler: SpellNotesDialog.formHandler,
       closeOnSubmit: true
@@ -43,10 +41,11 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
 
   constructor(options = {}) {
     super(options);
-    this.spellUuid = options.spellUuid;
-    this.spellName = options.spellName || 'Unknown Spell'; //TODO: Localize
+    this.spellUuid = spellFavorites.getCanonicalSpellUuid(options.spellUuid);
+    this.spellName = fromUuidSync(this.spellUuid).name;
     this.currentNotes = '';
     this.maxLength = game.settings.get(MODULE.ID, 'spellNotesMaxLength') || 240;
+    log(1, 'DEBUG:', { options: options, spelluuid: this.spellUuid });
   }
 
   /** @override */
@@ -57,16 +56,18 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /** @override */
   async _prepareContext(_options) {
-    // Load current notes
-    const userData = spellUserData.getUserDataForSpell(this.spellUuid);
+    const userData = await spellUserData.getUserDataForSpell(this.spellUuid);
     this.currentNotes = userData?.notes || '';
-
+    const charactersPerRow = 60;
+    const calculatedRows = Math.ceil(this.maxLength / charactersPerRow);
+    const rows = Math.max(3, Math.min(20, calculatedRows));
     return {
       spellName: this.spellName,
       spellUuid: this.spellUuid,
       notes: this.currentNotes,
       maxLength: this.maxLength,
-      charactersRemaining: this.maxLength - this.currentNotes.length
+      charactersRemaining: this.maxLength - this.currentNotes.length,
+      rows: rows
     };
   }
 
@@ -76,15 +77,28 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
 
     const textarea = this.element.querySelector('textarea[name="notes"]');
     const counter = this.element.querySelector('.character-counter');
+    const saveButton = this.element.querySelector('button.save-notes');
 
-    if (textarea && counter) {
-      // Update character counter on input
-      textarea.addEventListener('input', (event) => {
-        const remaining = this.maxLength - event.target.value.length;
+    if (textarea && counter && saveButton) {
+      // Function to update button state and counter
+      const updateFormState = () => {
+        const remaining = this.maxLength - textarea.value.length;
+        const hasContent = textarea.value.trim().length > 0;
+
+        // Update character counter
         counter.textContent = remaining;
         counter.classList.toggle('warning', remaining < 20);
         counter.classList.toggle('error', remaining < 0);
-      });
+
+        // Enable/disable save button based on content
+        saveButton.disabled = !hasContent || remaining < 0;
+      };
+
+      // Update on input
+      textarea.addEventListener('input', updateFormState);
+
+      // Set initial state
+      updateFormState();
 
       // Focus the textarea
       textarea.focus();
@@ -129,13 +143,27 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
     const notes = formData.object.notes || '';
     const spellUuid = formData.object.spellUuid;
 
-    try {
-      await spellUserData.setSpellNotes(spellUuid, notes);
+    // Ensure we're using canonical UUID for consistency
+    const canonicalUuid = spellFavorites.getCanonicalSpellUuid(spellUuid);
 
-      // Refresh the spellbook if it's open
+    try {
+      await spellUserData.setSpellNotes(canonicalUuid, notes);
+
+      // Clear the cache for this spell so it gets fresh data
+      const targetUserId = game.user.id;
+      const cacheKey = `${targetUserId}:${canonicalUuid}`;
+
+      // Access the journal singleton to clear cache
+      const spellUserDataJournal = spellUserData.spellUserDataJournal || (await import('../helpers/spell-user-data.mjs')).spellUserDataJournal;
+
+      if (spellUserDataJournal?.cache) {
+        spellUserDataJournal.cache.delete(cacheKey);
+      }
+
+      // Force full refresh of spellbook to update icons and data
       const spellbook = Object.values(ui.windows).find((app) => app.constructor.name === 'PlayerSpellBook');
       if (spellbook) {
-        spellbook.render(false);
+        await spellbook.render(true); // Force full re-render
       }
 
       ui.notifications.info(game.i18n.localize('SPELLBOOK.UI.NotesUpdated'));
