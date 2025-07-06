@@ -5,6 +5,7 @@ import * as formElements from '../helpers/form-elements.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { SpellbookFilterHelper } from '../helpers/ui/spellbook-filters.mjs';
 import { log } from '../logger.mjs';
+import { SpellAnalyticsDashboard } from './spell-analytics-dashboard.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -41,7 +42,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       selectAll: GMSpellListManager.handleSelectAll,
       bulkSave: GMSpellListManager.handleBulkSave,
       cancelSelection: GMSpellListManager.handleCancelSelection,
-      toggleListVisibility: GMSpellListManager.handleToggleListVisibility
+      toggleListVisibility: GMSpellListManager.handleToggleListVisibility,
+      openAnalyticsDashboard: GMSpellListManager.handleOpenAnalyticsDashboard
     },
     classes: ['gm-spell-list-manager'],
     window: {
@@ -1913,6 +1915,15 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       log(1, 'Error toggling list visibility:', error);
       ui.notifications.clear();
       ui.notifications.error(game.i18n.localize('SPELLMANAGER.HideList.ToggleError'));
+    }
+  }
+
+  static async handleOpenAnalyticsDashboard(event, target) {
+    if (globalThis.SPELLBOOK) {
+      SPELLBOOK.openAnalyticsDashboard({ viewMode: 'gm' });
+    } else {
+      const dashboard = new SpellAnalyticsDashboard({ viewMode: 'gm' });
+      dashboard.render(true);
     }
   }
 

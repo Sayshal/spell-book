@@ -92,14 +92,29 @@ function addJournalSpellBookButton(app, html, data) {
   const footer = html.find('.directory-footer');
   if (!footer.length) return;
   if (footer.find('.spell-book-journal-button').length) return;
-  const button = document.createElement('button');
-  button.classList.add('spell-book-journal-button');
-  button.innerHTML = `<i class="fas fa-bars-progress"></i> ${game.i18n.localize('SPELLBOOK.UI.JournalButton')}`;
-  button.addEventListener('click', () => {
-    const manager = new GMSpellListManager();
-    manager.render(true);
+  const managerButton = document.createElement('button');
+  managerButton.classList.add('spell-book-journal-button');
+  managerButton.innerHTML = `<i class="fas fa-bars-progress"></i> ${game.i18n.localize('SPELLBOOK.UI.JournalButton')}`;
+  managerButton.addEventListener('click', () => {
+    if (globalThis.SPELLBOOK) {
+      SPELLBOOK.openSpellListManager();
+    } else {
+      const manager = new GMSpellListManager();
+      manager.render(true);
+    }
   });
-  footer[0].appendChild(button);
+  footer[0].appendChild(managerButton);
+  const analyticsButton = document.createElement('button');
+  analyticsButton.classList.add('spell-book-analytics-button');
+  analyticsButton.innerHTML = `<i class="fas fa-chart-bar"></i> ${game.i18n.localize('SPELLBOOK.Analytics.OpenDashboard')}`;
+  analyticsButton.addEventListener('click', () => {
+    if (globalThis.SPELLBOOK) {
+      SPELLBOOK.openAnalyticsDashboard({ viewMode: 'gm' });
+    } else {
+      ui.notifications.error('Analytics dashboard unavailable');
+    }
+  });
+  footer[0].appendChild(analyticsButton);
 }
 
 /**
