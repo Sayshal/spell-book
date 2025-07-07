@@ -1,7 +1,7 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import { SpellDescriptionInjection } from '../helpers/spell-description-injection.mjs';
 import * as spellFavorites from '../helpers/spell-favorites.mjs';
-import * as spellUserData from '../helpers/spell-user-data.mjs';
+import { SpellUserDataJournal } from '../helpers/spell-user-data.mjs';
 import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -18,10 +18,7 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
       handler: SpellNotesDialog.formHandler,
       closeOnSubmit: true
     },
-    position: {
-      width: 400,
-      height: 'auto'
-    },
+    position: { width: 400, height: 'auto' },
     classes: ['application', 'spell-book', 'spell-notes-dialog']
   };
 
@@ -56,7 +53,7 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /** @override */
   async _prepareContext(_options) {
-    const userData = await spellUserData.getUserDataForSpell(this.spellUuid);
+    const userData = await SpellUserDataJournal.getUserDataForSpell(this.spellUuid);
     this.currentNotes = userData?.notes || '';
     const charactersPerRow = 60;
     const calculatedRows = Math.ceil(this.maxLength / charactersPerRow);
@@ -74,38 +71,23 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
   /** @override */
   _onRender(context, options) {
     super._onRender(context, options);
-
     const textarea = this.element.querySelector('textarea[name="notes"]');
     const counter = this.element.querySelector('.character-counter');
     const saveButton = this.element.querySelector('button.save-notes');
-
     if (textarea && counter && saveButton) {
-      // Function to update button state and counter
       const updateFormState = () => {
         const remaining = this.maxLength - textarea.value.length;
         const hasContent = textarea.value.trim().length > 0;
-
-        // Update character counter
         counter.textContent = remaining;
         counter.classList.toggle('warning', remaining < 20);
         counter.classList.toggle('error', remaining < 0);
-
-        // Enable/disable save button based on content
         saveButton.disabled = !hasContent || remaining < 0;
       };
-
-      // Update on input
       textarea.addEventListener('input', updateFormState);
-
-      // Set initial state
       updateFormState();
-
-      // Focus the textarea
       textarea.focus();
       textarea.setSelectionRange(textarea.value.length, textarea.value.length);
     }
-
-    // Position dialog near the notes icon if possible
     this._positionNearIcon();
   }
 
@@ -116,19 +98,11 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
   _positionNearIcon() {
     const icon = document.querySelector(`[data-uuid="${this.spellUuid}"][data-action="editNotes"]`);
     if (!icon) return;
-
     const iconRect = icon.getBoundingClientRect();
     const dialogRect = this.element.getBoundingClientRect();
-
-    // Position to the right of the icon, or left if not enough space
     let left = iconRect.right + 10;
-    if (left + dialogRect.width > window.innerWidth) {
-      left = iconRect.left - dialogRect.width - 10;
-    }
-
-    // Center vertically on the icon
+    if (left + dialogRect.width > window.innerWidth) left = iconRect.left - dialogRect.width - 10;
     const top = iconRect.top + iconRect.height / 2 - dialogRect.height / 2;
-
     this.setPosition({ left, top });
   }
 
@@ -144,7 +118,7 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
     const spellUuid = formData.object.spellUuid;
     const canonicalUuid = spellFavorites.getCanonicalSpellUuid(spellUuid);
     try {
-      await spellUserData.setSpellNotes(canonicalUuid, notes);
+      await SpellUserDataJournal.setSpellNotes(canonicalUuid, notes);
       const targetUserId = game.user.id;
       const cacheKey = `${targetUserId}:${canonicalUuid}`;
       const spellbookApp = Array.from(foundry.applications.instances.values()).find((app) => app.constructor.name === 'PlayerSpellBook');
@@ -152,7 +126,7 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
         await spellbookApp._stateManager.refreshSpellEnhancements();
         spellbookApp.render(false);
       }
-      if (spellUserData.spellUserDataJournal?.cache) spellUserData.spellUserDataJournal.cache.delete(cacheKey);
+      if (SpellUserDataJournal?.cache) SpellUserDataJournal.cache.delete(cacheKey);
       const hasNotes = !!(notes && notes.trim());
       const notesIcons = document.querySelectorAll(`[data-uuid="${canonicalUuid}"][data-action="editNotes"]`);
       notesIcons.forEach((icon) => {

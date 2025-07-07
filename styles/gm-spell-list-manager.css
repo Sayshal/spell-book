@@ -686,6 +686,12 @@
       }
     }
 
+    .rename-button {
+      &:hover {
+        text-shadow: 0 0 0.5rem var(--color-secondary);
+      }
+    }
+
     .open-actor-button {
       &:hover {
         text-shadow: 0 0 0.5rem rgb(232 187 78);
@@ -1483,7 +1489,6 @@
   }
 }
 
-/* Merge spell lists dialog styling */
 .merge-spell-lists-form {
   .form-group {
     margin-bottom: 1rem;
@@ -1584,6 +1589,69 @@
     /* Last element cleanup */
     > *:last-child {
       margin-bottom: 0;
+    }
+  }
+}
+
+/* ----------------------------------------- */
+/*  Rename Dialog Styles                     */
+/* ----------------------------------------- */
+.rename-spell-list-dialog {
+  .dialog-form {
+    padding: 1rem;
+
+    .form-group {
+      margin-bottom: 1rem;
+
+      label {
+        display: block;
+        margin-bottom: 0.25rem;
+        color: var(--spell-book-manager-text-primary);
+        font-weight: bold;
+        font-size: var(--spell-book-manager-font-md);
+      }
+
+      input[type='text'] {
+        width: 100%;
+        padding: 0.5rem;
+        border: 0.063rem solid var(--spell-book-manager-border-color);
+        border-radius: 0.25rem;
+        background-color: var(--spell-book-manager-bg-input);
+        color: var(--spell-book-manager-text-primary);
+        font-size: var(--spell-book-manager-font-md);
+        transition: all 0.2s ease;
+
+        &:focus {
+          border-color: var(--color-border-highlight);
+          outline: none;
+          box-shadow: 0 0 0.188rem var(--color-shadow-highlight);
+        }
+
+        &[readonly] {
+          background-color: var(--color-bg-btn);
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+
+        &.error {
+          border-color: var(--color-text-danger);
+          box-shadow: 0 0 0.313rem rgb(255 0 0 / 30%);
+        }
+      }
+    }
+
+    .validation-error {
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      border: 0.063rem solid var(--color-text-danger);
+      border-radius: 0.25rem;
+      background-color: var(--color-bg-danger);
+
+      .error-message {
+        margin: 0;
+        color: var(--color-text-danger);
+        font-size: var(--spell-book-manager-font-sm);
+      }
     }
   }
 }

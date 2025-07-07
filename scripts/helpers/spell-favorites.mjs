@@ -1,5 +1,5 @@
 import { log } from '../logger.mjs';
-import * as spellUserData from './spell-user-data.mjs';
+import { SpellUserDataJournal } from './spell-user-data.mjs';
 
 /**
  * Utilities for managing spell favorites integration with D&D5e system
@@ -13,12 +13,12 @@ import * as spellUserData from './spell-user-data.mjs';
  */
 export async function toggleSpellFavorite(spellUuid, actor) {
   try {
-    const userData = spellUserData.getUserDataForSpell(spellUuid);
+    const userData = SpellUserDataJournal.getUserDataForSpell(spellUuid);
     const currentlyFavorited = userData?.favorited || false;
     const newFavoriteStatus = !currentlyFavorited;
 
     // Update user data
-    await spellUserData.setSpellFavorite(spellUuid, newFavoriteStatus);
+    await SpellUserDataJournal.setSpellFavorite(spellUuid, newFavoriteStatus);
 
     // Update actor favorites if favoriting
     if (newFavoriteStatus) {
@@ -114,7 +114,7 @@ async function removeSpellFromActorFavorites(spellUuid, actor) {
 export async function syncFavoritesOnSave(actor, spellData) {
   try {
     for (const [uuid, data] of Object.entries(spellData)) {
-      const userData = spellUserData.getUserDataForSpell(uuid);
+      const userData = SpellUserDataJournal.getUserDataForSpell(uuid);
       if (userData?.favorited) {
         await addSpellToActorFavorites(uuid, actor);
       }
@@ -137,7 +137,7 @@ export async function processFavoritesFromForm(form, actor) {
     log(3, `Checking ${actorSpells.length} spells on actor for favorite status`);
     for (const spell of actorSpells) {
       const canonicalUuid = getCanonicalSpellUuid(spell.uuid);
-      const userData = await spellUserData.getUserDataForSpell(canonicalUuid);
+      const userData = await SpellUserDataJournal.getUserDataForSpell(canonicalUuid);
       const isFavoritedInJournal = userData?.favorited || false;
       if (isFavoritedInJournal) {
         favoritesToAdd.push(spell);

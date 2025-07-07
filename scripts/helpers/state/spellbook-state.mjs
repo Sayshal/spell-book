@@ -6,7 +6,7 @@ import * as genericUtils from '../generic-utils.mjs';
 import { ScrollScanner } from '../scroll-scanner.mjs';
 import * as discoveryUtils from '../spell-discovery.mjs';
 import * as formattingUtils from '../spell-formatting.mjs';
-import * as spellUserData from '../spell-user-data.mjs';
+import { SpellUserDataJournal } from '../spell-user-data.mjs';
 
 /**
  * Manages state for the spellbook application with cached calculations
@@ -320,7 +320,7 @@ export class SpellbookState {
           filterData: formattingUtils.extractSpellFilterData(spell),
           enrichedIcon: formattingUtils.createSpellIconLink(spell)
         };
-        const enhancedSpell = spellUserData.enhanceSpellWithUserData(spellData, game.user.id);
+        const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spellData, game.user.id);
         Object.assign(spellData, enhancedSpell);
         spellData.formattedDetails = formattingUtils.formatSpellDetails(spellData);
         if (!isSpecialMode) spellData.sourceClass = classIdentifier;
@@ -340,7 +340,7 @@ export class SpellbookState {
       spellData.sourceClass = classIdentifier;
       spellData.filterData = formattingUtils.extractSpellFilterData(spell);
       spellData.enrichedIcon = formattingUtils.createSpellIconLink(spell);
-      const enhancedSpell = spellUserData.enhanceSpellWithUserData(spellData, game.user.id);
+      const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spellData, game.user.id);
       Object.assign(spellData, enhancedSpell);
       spellData.formattedDetails = formattingUtils.formatSpellDetails(spellData);
       spellsByLevel[level].push(spellData);
@@ -1057,15 +1057,15 @@ export class SpellbookState {
    */
   async refreshSpellEnhancements() {
     const targetUserId = game.user.id;
-    if (spellUserData.spellUserDataJournal?.cache) {
-      for (const key of spellUserData.spellUserDataJournal.cache.keys()) {
-        if (key.startsWith(`${targetUserId}:`)) spellUserData.spellUserDataJournal.cache.delete(key);
+    if (SpellUserDataJournal?.cache) {
+      for (const key of SpellUserDataJournal.cache.keys()) {
+        if (key.startsWith(`${targetUserId}:`)) SpellUserDataJournal.cache.delete(key);
       }
     }
     for (const [classIdentifier, classData] of Object.entries(this.classSpellData)) {
       if (classData.spellLevels) {
         for (const spell of classData.spellLevels) {
-          const enhancedSpell = spellUserData.enhanceSpellWithUserData(spell, game.user.id);
+          const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spell, game.user.id);
           Object.assign(spell, enhancedSpell);
           spell.formattedDetails = formattingUtils.formatSpellDetails(spell);
         }

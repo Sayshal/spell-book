@@ -16,7 +16,7 @@ import * as spellCache from './helpers/spell-cache.mjs';
 import { SpellDescriptionInjection } from './helpers/spell-description-injection.mjs';
 import * as discoveryUtils from './helpers/spell-discovery.mjs';
 import * as formattingUtils from './helpers/spell-formatting.mjs';
-import * as spellUserData from './helpers/spell-user-data.mjs';
+import { SpellUserDataJournal } from './helpers/spell-user-data.mjs';
 import { SpellbookState } from './helpers/state/spellbook-state.mjs';
 import { SpellbookFilterHelper } from './helpers/ui/spellbook-filters.mjs';
 import { SpellbookUI } from './helpers/ui/spellbook-ui.mjs';
@@ -27,7 +27,7 @@ import { RitualManager } from './managers/ritual-manager.mjs';
 import { RuleSetManager } from './managers/rule-set-manager.mjs';
 import { SpellLoadoutManager } from './managers/spell-loadout-manager.mjs';
 import { SpellManager } from './managers/spell-manager.mjs';
-import { spellUsageTracker } from './managers/spell-usage-tracker.mjs';
+import { SpellUsageTracker } from './managers/spell-usage-tracker.mjs';
 import { UserSpellDataManager } from './managers/user-spell-data-manager.mjs';
 import { WizardSpellbookManager } from './managers/wizard-spellbook-manager.mjs';
 import { forceMigration } from './migrations.mjs';
@@ -57,7 +57,7 @@ export function createAPI() {
         management: { ...managerHelpers },
         forms: { ...formElements },
         generic: { ...genericUtils },
-        spellUserData: { ...spellUserData },
+        SpellUserDataJournal,
         spellCache: { ...spellCache }
       },
       helpers: {
@@ -78,7 +78,7 @@ export function createAPI() {
         SpellLoadoutManager,
         MacroManager,
         UserSpellDataManager,
-        spellUsageTracker
+        SpellUsageTracker
       },
       migrations: {
         forceMigration

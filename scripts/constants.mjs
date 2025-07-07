@@ -165,6 +165,7 @@ export const TEMPLATES = {
     CREATE_SPELL_LIST: 'modules/spell-book/templates/dialogs/create-spell-list.hbs',
     FILTER_CONFIG: 'modules/spell-book/templates/dialogs/filter-configuration.hbs',
     MANAGER_DOCUMENTATION: 'modules/spell-book/templates/dialogs/spell-list-manager-documentation.hbs',
+    RENAME_SPELL_LIST: `modules/spell-book/templates/dialogs/rename-spell-list.hbs`,
     MERGE_SPELL_LISTS: 'modules/spell-book/templates/dialogs/merge-spell-lists.hbs',
     SPELL_LOADOUT: 'modules/spell-book/templates/dialogs/spell-loadout.hbs',
     SPELL_NOTES: 'modules/spell-book/templates/dialogs/spell-notes-dialog.hbs',

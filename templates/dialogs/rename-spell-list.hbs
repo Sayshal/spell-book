@@ -1,0 +1,16 @@
+<div class="rename-spell-list-dialog">
+  <div class="dialog-form">
+    <div class="form-group">
+      <label for="current-name">{{localize "SPELLMANAGER.Rename.CurrentNameLabel"}}</label>
+      <input type="text" id="current-name" name="currentName" value="{{currentName}}" readonly disabled>
+    </div>
+    <div class="form-group">
+      <label for="new-name">{{localize "SPELLMANAGER.Rename.NewNameLabel"}}</label>
+      <input type="text" id="new-name" name="newName" value="{{currentName}}"
+        placeholder="{{localize 'SPELLMANAGER.Rename.NewNamePlaceholder'}}" maxlength="100" required>
+    </div>
+    <div class="validation-error" style="display: none;">
+      <p class="error-message">{{localize "SPELLMANAGER.Rename.ValidationError"}}</p>
+    </div>
+  </div>
+</div>

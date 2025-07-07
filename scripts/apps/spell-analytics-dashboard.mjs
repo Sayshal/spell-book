@@ -1,5 +1,5 @@
 import { MODULE, TEMPLATES } from '../constants.mjs';
-import { spellUserDataJournal } from '../helpers/spell-user-data.mjs';
+import { SpellUserDataJournal } from '../helpers/spell-user-data.mjs';
 import { log } from '../logger.mjs';
 import { UserSpellDataManager } from '../managers/user-spell-data-manager.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -39,7 +39,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
 
   constructor(options = {}) {
     super(options);
-    this.viewMode = options.viewMode || 'personal'; // 'personal' or 'gm'
+    this.viewMode = options.viewMode || 'personal';
     this.selectedUserId = options.userId || game.user.id;
     this.analytics = null;
     this.lastRefresh = null;
@@ -74,19 +74,13 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   /** @override */
   async _onRender(context, options) {
     await super._onRender(context, options);
-
-    // Set CSS custom properties for context bar percentages
     const combatElement = this.element.querySelector('.context-combat');
     const explorationElement = this.element.querySelector('.context-exploration');
-
     if (combatElement && explorationElement) {
       const combatPercent = this.analytics.contextBreakdown.combatPercent || 0;
       const explorationPercent = this.analytics.contextBreakdown.explorationPercent || 0;
-
       combatElement.style.width = `${combatPercent}%`;
       explorationElement.style.width = `${explorationPercent}%`;
-
-      // Dynamically adjust font sizes based on width
       this._adjustContextBarFontSizes(combatElement, combatPercent);
       this._adjustContextBarFontSizes(explorationElement, explorationPercent);
     }
@@ -101,20 +95,12 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   _adjustContextBarFontSizes(element, percent) {
     const label = element.querySelector('.context-label');
     if (!label) return;
-
     let fontSize;
-    if (percent <= 5) {
-      fontSize = '0.65rem';
-    } else if (percent <= 10) {
-      fontSize = '0.7rem';
-    } else if (percent <= 20) {
-      fontSize = '0.75rem';
-    } else if (percent <= 30) {
-      fontSize = '0.8rem';
-    } else {
-      fontSize = '0.875rem';
-    }
-
+    if (percent <= 5) fontSize = '0.65rem';
+    else if (percent <= 10) fontSize = '0.7rem';
+    else if (percent <= 20) fontSize = '0.75rem';
+    else if (percent <= 30) fontSize = '0.8rem';
+    else fontSize = '0.875rem';
     label.style.fontSize = fontSize;
   }
 
@@ -126,7 +112,6 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   async _computeAnalytics() {
     try {
       log(3, 'Computing analytics data...');
-
       const analytics = {
         totalSpells: 0,
         totalCasts: 0,
@@ -138,17 +123,10 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
         contextBreakdown: { combat: 0, exploration: 0 },
         spellsBySchool: new Map(),
         spellsByLevel: new Map(),
-        userBreakdown: new Map() // For GM view
+        userBreakdown: new Map()
       };
-
-      if (this.viewMode === 'gm' && game.user.isGM) {
-        // GM view: aggregate all user data
-        await this._computeGMAnalytics(analytics);
-      } else {
-        // Personal view: current user only
-        await this._computePersonalAnalytics(analytics, this.selectedUserId);
-      }
-
+      if (this.viewMode === 'gm' && game.user.isGM) await this._computeGMAnalytics(analytics);
+      else await this._computePersonalAnalytics(analytics, this.selectedUserId);
       this.lastRefresh = Date.now();
       return analytics;
     } catch (error) {
@@ -253,42 +231,27 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
    */
   async _getAllUserSpellData(userId) {
     try {
-      // Get the user page from journal
-      const page = await spellUserDataJournal._getUserPage(userId);
+      const page = await SpellUserDataJournal._getUserPage(userId);
       if (!page) return {};
-
-      // Parse the HTML content using existing pattern
-      const spellData = spellUserDataJournal._parseSpellDataFromHTML(page.text.content);
-
-      // Aggregate actor data into user-level data for analytics
+      const spellData = SpellUserDataJournal._parseSpellDataFromHTML(page.text.content);
       const aggregatedData = {};
-
       for (const [spellUuid, data] of Object.entries(spellData)) {
         aggregatedData[spellUuid] = {
           notes: data.notes || '',
-          favorited: false, // Will be true if ANY actor has it favorited
+          favorited: false,
           usageStats: {
             count: 0,
             lastUsed: null,
             contextUsage: { combat: 0, exploration: 0 }
           }
         };
-
-        // Aggregate across all actors for this user
         if (data.actorData) {
           for (const [actorId, actorData] of Object.entries(data.actorData)) {
-            // If any actor has it favorited, consider it favorited for the user
-            if (actorData.favorited) {
-              aggregatedData[spellUuid].favorited = true;
-            }
-
-            // Aggregate usage stats across actors
+            if (actorData.favorited) aggregatedData[spellUuid].favorited = true;
             if (actorData.usageStats) {
               aggregatedData[spellUuid].usageStats.count += actorData.usageStats.count || 0;
               aggregatedData[spellUuid].usageStats.contextUsage.combat += actorData.usageStats.contextUsage?.combat || 0;
               aggregatedData[spellUuid].usageStats.contextUsage.exploration += actorData.usageStats.contextUsage?.exploration || 0;
-
-              // Use the most recent lastUsed across all actors
               if (actorData.usageStats.lastUsed) {
                 if (!aggregatedData[spellUuid].usageStats.lastUsed || actorData.usageStats.lastUsed > aggregatedData[spellUuid].usageStats.lastUsed) {
                   aggregatedData[spellUuid].usageStats.lastUsed = actorData.usageStats.lastUsed;
@@ -298,7 +261,6 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
           }
         }
       }
-
       return aggregatedData;
     } catch (error) {
       log(1, 'Error fetching user spell data:', error);
@@ -356,7 +318,6 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
     };
   }
 
-  // Action handlers
   static async handleSwitchView(event, target) {
     const viewMode = target.dataset.viewMode;
     this.viewMode = viewMode;
@@ -394,22 +355,18 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   async _exportUserData() {
     try {
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-
       const exportData = {
-        version: MODULE.VERSION || '1.0.0',
+        version: game.modules.get(MODULE.ID).version,
         timestamp: Date.now(),
         exportedAt: new Date().toISOString(),
         exportedBy: game.user.name,
         viewMode: this.viewMode,
         userData: {}
       };
-
       if (this.viewMode === 'gm' && game.user.isGM) {
-        // GM View: Export all users' data
         const users = game.users.filter((u) => !u.isGM);
-
         for (const user of users) {
-          const page = await spellUserDataJournal._getUserPage(user.id);
+          const page = await SpellUserDataJournal._getUserPage(user.id);
           if (page) {
             exportData.userData[user.id] = {
               userId: user.id,
@@ -419,15 +376,12 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
             };
           }
         }
-
         const filename = `all-users-spell-data-${timestamp}.json`;
         const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
         saveDataToFile(blob, { type: 'application/json' }, filename);
       } else {
-        // Personal View: Export current user's data
         const user = game.users.get(this.selectedUserId);
-        const page = await spellUserDataJournal._getUserPage(this.selectedUserId);
-
+        const page = await SpellUserDataJournal._getUserPage(this.selectedUserId);
         if (page && user) {
           exportData.userData[user.id] = {
             userId: user.id,
@@ -435,7 +389,6 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
             htmlContent: page.text.content,
             lastUpdated: page.flags?.[MODULE.ID]?.lastUpdated || null
           };
-
           const filename = `${user.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-spell-data-${timestamp}.json`;
           const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
           saveDataToFile(blob, { type: 'application/json' }, filename);
@@ -443,7 +396,6 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
           throw new Error('No data found for selected user');
         }
       }
-
       ui.notifications.info(game.i18n.localize('SPELLBOOK.Analytics.ExportSuccess'));
     } catch (error) {
       log(1, 'Error exporting data:', error);
@@ -460,33 +412,24 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
-
     input.onchange = async (event) => {
       const file = event.target.files[0];
       if (!file) return;
-
       try {
         const text = await file.text();
         let importData;
-
         try {
           importData = JSON.parse(text);
         } catch (parseError) {
           throw new Error('Invalid JSON format');
         }
-
-        // Validate data structure
-        if (!importData.version || !importData.userData || typeof importData.userData !== 'object') {
-          throw new Error('Invalid spell data format');
-        }
-
-        // Show import summary
+        if (!importData.version || !importData.userData || typeof importData.userData !== 'object') throw new Error('Invalid spell data format');
         const userCount = Object.keys(importData.userData).length;
         const userNames = Object.values(importData.userData)
           .map((u) => u.userName)
           .join(', ');
         const exportDate = importData.exportedAt ? new Date(importData.exportedAt).toLocaleDateString() : 'Unknown';
-
+        //TODO: Localize the below
         const summaryContent = `
         <div class="import-summary">
           <p><strong>Export Date:</strong> ${exportDate}</p>
@@ -496,8 +439,6 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
         </div>
         <p class="warning"><strong>Warning:</strong> This will overwrite existing spell data for these users.</p>
       `;
-
-        // Confirm import using DialogV2
         const confirmed = await foundry.applications.api.DialogV2.wait({
           window: { title: game.i18n.localize('SPELLBOOK.Analytics.ImportConfirmTitle') },
           content: summaryContent,
@@ -508,43 +449,31 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
           default: 'cancel',
           rejectClose: false
         });
-
         if (confirmed !== 'confirm') return;
-
         let importedCount = 0;
         let skippedCount = 0;
-
         for (const [userId, userData] of Object.entries(importData.userData)) {
-          // Verify user exists
           const user = game.users.get(userId);
           if (!user) {
             log(2, `Skipping import for non-existent user: ${userData.userName} (${userId})`);
             skippedCount++;
             continue;
           }
-
-          // Get or create user page
-          let page = await spellUserDataJournal._getUserPage(userId);
+          let page = await SpellUserDataJournal._getUserPage(userId);
           if (!page) {
             log(2, `No existing page found for user ${user.name}, skipping import`);
             skippedCount++;
             continue;
           }
-
-          // Update page with imported HTML content
           await page.update({
             'text.content': userData.htmlContent,
             [`flags.${MODULE.ID}.lastUpdated`]: Date.now(),
             [`flags.${MODULE.ID}.importedAt`]: Date.now(),
             [`flags.${MODULE.ID}.importedFrom`]: file.name
           });
-
           importedCount++;
         }
-
-        // Clear cache
-        spellUserDataJournal.cache.clear();
-
+        SpellUserDataJournal.cache.clear();
         const message =
           importedCount > 0 ?
             game.i18n.format('SPELLBOOK.Analytics.ImportSuccessWithCount', {
@@ -552,19 +481,13 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
               skipped: skippedCount
             })
           : game.i18n.localize('SPELLBOOK.Analytics.ImportSuccess');
-
         ui.notifications.info(message);
         this.render();
       } catch (error) {
         log(1, 'Error importing data:', error);
-        ui.notifications.error(
-          game.i18n.format('SPELLBOOK.Analytics.ImportErrorWithDetail', {
-            error: error.message
-          })
-        );
+        ui.notifications.error(game.i18n.format('SPELLBOOK.Analytics.ImportErrorWithDetail', { error: error.message }));
       }
     };
-
     input.click();
   }
 
@@ -589,10 +512,9 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
       const manager = new UserSpellDataManager();
       let clearedCount = 0;
       if (this.viewMode === 'gm' && game.user.isGM) {
-        // Clear all users' data (excluding gamemaster)
         const users = game.users.filter((u) => !u.isGM);
         for (const user of users) {
-          const page = await spellUserDataJournal._getUserPage(user.id);
+          const page = await SpellUserDataJournal._getUserPage(user.id);
           if (page) {
             const emptyContent = manager._generateEmptyTablesHTML(user.name, user.id);
             await page.update({
@@ -604,10 +526,9 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
           }
         }
       } else {
-        // Clear current user's data (only if not gamemaster)
         const user = game.users.get(this.selectedUserId);
         if (user && !user.isGM) {
-          const page = await spellUserDataJournal._getUserPage(this.selectedUserId);
+          const page = await SpellUserDataJournal._getUserPage(this.selectedUserId);
           if (page) {
             const emptyContent = manager._generateEmptyTablesHTML(user.name, user.id);
             await page.update({
@@ -619,7 +540,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
           }
         }
       }
-      spellUserDataJournal.cache.clear();
+      SpellUserDataJournal.cache.clear();
       const message = clearedCount > 0 ? game.i18n.format('SPELLBOOK.Analytics.ClearDataSuccessWithCount', { count: clearedCount }) : game.i18n.localize('SPELLBOOK.Analytics.ClearDataSuccess');
       ui.notifications.info(message);
       this.render();

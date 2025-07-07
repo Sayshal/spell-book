@@ -4,7 +4,7 @@ import * as formElements from '../helpers/form-elements.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
 import { ScrollScanner } from '../helpers/scroll-scanner.mjs';
 import * as spellFavorites from '../helpers/spell-favorites.mjs';
-import * as spellUserData from '../helpers/spell-user-data.mjs';
+import { SpellUserDataJournal } from '../helpers/spell-user-data.mjs';
 import { SpellbookState } from '../helpers/state/spellbook-state.mjs';
 import { SpellbookFilterHelper } from '../helpers/ui/spellbook-filters.mjs';
 import { SpellbookUI } from '../helpers/ui/spellbook-ui.mjs';
@@ -606,7 +606,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
       // 2. If no session state, check journal data with actor validation
       if (isFavorited === null) {
-        const userData = await spellUserData.getUserDataForSpell(spellUuid);
+        const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid);
         const journalFavorited = userData?.favorited || false;
 
         // 3. Validate against actor state
@@ -702,13 +702,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const isFavoritedInActor = actorFavoriteSpellIds.has(spell.id);
 
         // Check if spell is favorited in journal
-        const userData = await spellUserData.getUserDataForSpell(spellUuid);
+        const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid);
         const isFavoritedInJournal = userData?.favorited || false;
 
         // If journal says favorited but actor doesn't have it, unfavorite in journal
         if (isFavoritedInJournal && !isFavoritedInActor) {
           log(3, `Unfavoriting ${spell.name} in journal to match actor state`);
-          await spellUserData.setSpellFavorite(spellUuid, false);
+          await SpellUserDataJournal.setSpellFavorite(spellUuid, false);
           changedSpells.push({ uuid: spellUuid, newState: false });
           syncCount++;
         }
@@ -716,7 +716,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         // If journal says unfavorited but actor has it, favorite in journal
         if (!isFavoritedInJournal && isFavoritedInActor) {
           log(3, `Favoriting ${spell.name} in journal to match actor state`);
-          await spellUserData.setSpellFavorite(spellUuid, true);
+          await SpellUserDataJournal.setSpellFavorite(spellUuid, true);
           changedSpells.push({ uuid: spellUuid, newState: true });
           syncCount++;
         }
@@ -2015,12 +2015,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
     try {
       // WAIT for the save to complete before logging success
-      const saveSuccess = await spellUserData.setSpellFavorite(spellUuid, newFavoriteStatus);
+      const saveSuccess = await SpellUserDataJournal.setSpellFavorite(spellUuid, newFavoriteStatus);
 
       if (saveSuccess) {
         log(3, `Persisted favorite status for ${spellUuid}: ${newFavoriteStatus}`);
 
-        const verifyData = await spellUserData.getUserDataForSpell(spellUuid);
+        const verifyData = await SpellUserDataJournal.getUserDataForSpell(spellUuid);
         if (verifyData?.favorited === newFavoriteStatus) {
           log(3, `Verified favorite status was saved correctly`);
         } else {

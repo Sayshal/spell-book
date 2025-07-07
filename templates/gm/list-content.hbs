@@ -11,6 +11,13 @@
 						data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Edit'}}">
 						<i class="fas fa-edit" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Edit"}}
 					</button>
+					{{#if selectedSpellList.isRenameable}}
+						<button type="button" class="rename-button action-button" data-action="renameSpellList"
+							data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Rename'}}"
+							data-tooltip="{{localize 'SPELLMANAGER.Tooltips.Rename'}}">
+							<i class="fas fa-pen" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Rename"}}
+						</button>
+					{{/if}}
 					{{#if selectedSpellList.isPlayerSpellbook}}
 						<button type="button" class="open-actor-button action-button" data-action="openActor"
 							aria-label="{{localize 'SPELLMANAGER.Buttons.OpenActor'}}">

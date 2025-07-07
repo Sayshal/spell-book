@@ -1,7 +1,7 @@
 import { MODULE } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import * as spellFavorites from './spell-favorites.mjs';
-import * as spellUserData from './spell-user-data.mjs';
+import { SpellUserDataJournal } from './spell-user-data.mjs';
 
 /**
  * Class to handle injecting notes into spell descriptions on actor items
@@ -71,7 +71,7 @@ export class SpellDescriptionInjection {
     const injectionMode = game.settings.get(MODULE.ID, 'injectNotesIntoDescriptions');
     if (injectionMode === 'off') return;
     const canonicalUuid = spellFavorites.getCanonicalSpellUuid(spellItem.uuid);
-    const userData = await spellUserData.getUserDataForSpell(canonicalUuid);
+    const userData = await SpellUserDataJournal.getUserDataForSpell(canonicalUuid);
     if (!userData?.notes || !userData.notes.trim()) {
       await this.removeNotesFromDescription(spellItem);
       return;

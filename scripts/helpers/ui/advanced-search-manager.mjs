@@ -417,10 +417,6 @@ export class AdvancedSearchManager {
   hideDropdown() {
     const dropdown = document.querySelector('.search-dropdown');
     if (!dropdown || !this.isDropdownVisible) return;
-
-    // Add stack trace to see what's calling hideDropdown
-    log(3, 'hideDropdown called from:', new Error().stack.split('\n').slice(1, 4).join('\n'));
-
     dropdown.style.display = 'none';
     dropdown.classList.remove('visible');
     this.searchInputElement.setAttribute('aria-expanded', 'false');
@@ -455,9 +451,6 @@ export class AdvancedSearchManager {
   _generateAdvancedQueryContent(query) {
     const queryWithoutTrigger = query.substring(1);
     let content = `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Advanced')}</div>`;
-
-    log(3, `_generateAdvancedQueryContent called with query: "${query}", queryWithoutTrigger: "${queryWithoutTrigger}"`);
-
     if (!queryWithoutTrigger.trim() || this.isIncompleteAndQuery(query)) {
       content += `<div class="search-status info">${game.i18n.localize('SPELLBOOK.Search.EnterField')}</div>`;
       const fieldAliases = this.fieldDefinitions.getAllFieldAliases();
@@ -481,17 +474,12 @@ export class AdvancedSearchManager {
       }
       return content;
     }
-
     const endsWithFieldColon = this.queryEndsWithFieldColon(queryWithoutTrigger);
     log(3, `endsWithFieldColon result: "${endsWithFieldColon}"`);
-
     if (endsWithFieldColon) {
       const fieldId = this.fieldDefinitions.getFieldId(endsWithFieldColon);
       log(3, `fieldId resolved to: "${fieldId}"`);
-
       content += `<div class="search-status info">${game.i18n.localize('SPELLBOOK.Search.EnterValue')}</div>`;
-
-      // Special handling for NAME field
       if (fieldId === 'name') {
         content += `<div class="search-note">
         <i class="fas fa-info-circle"></i>
@@ -499,8 +487,6 @@ export class AdvancedSearchManager {
       </div>`;
         return content;
       }
-
-      // Special handling for RANGE field
       if (fieldId === 'range') {
         content += `<div class="search-note">
         <i class="fas fa-info-circle"></i>
@@ -508,12 +494,9 @@ export class AdvancedSearchManager {
       </div>`;
         return content;
       }
-
-      // For other fields, show valid values
       if (fieldId) {
         const validValues = this.fieldDefinitions.getValidValuesForField(fieldId);
         log(3, `validValues for ${fieldId}:`, validValues);
-
         if (validValues.length > 0) {
           content += `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Values')}</div>`;
           validValues.forEach((value) => {
@@ -526,7 +509,6 @@ export class AdvancedSearchManager {
       }
       return content;
     }
-
     const incompleteValueMatch = this.isIncompleteValue(queryWithoutTrigger);
     if (incompleteValueMatch) {
       const { field: fieldId, value: currentValue } = incompleteValueMatch;
@@ -546,7 +528,6 @@ export class AdvancedSearchManager {
       }
       return content;
     }
-
     if (this.isAdvancedQueryComplete(query)) {
       content += `<div class="search-suggestion submit-query" data-query="${query}" role="option" tabindex="-1" aria-selected="false">
       <span class="suggestion-text">${game.i18n.localize('SPELLBOOK.Search.ExecuteQuery')}</span>
@@ -719,15 +700,9 @@ export class AdvancedSearchManager {
    */
   async performSearch(query) {
     const searchId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-
-    if (this.isProcessingSearch) {
-      log(3, `performSearch [${searchId}] - already processing, skipping. Query: ${query}`);
-      return;
-    }
-
+    if (this.isProcessingSearch) return;
     log(3, `performSearch [${searchId}] started with query: "${query}"`);
     this.isProcessingSearch = true;
-
     try {
       if (query && query.startsWith('^')) {
         log(3, `[${searchId}] Processing advanced query`);
@@ -738,8 +713,7 @@ export class AdvancedSearchManager {
           log(3, `[${searchId}] Calling applyAdvancedQueryToFilters`);
           this.applyAdvancedQueryToFilters(parsedQuery);
           this.app.filterHelper.invalidateFilterCache();
-
-          this.isProcessingSearch = false; // Reset immediately since filtering is handled by dispatchEvent
+          this.isProcessingSearch = false;
           log(3, `[${searchId}] Advanced query processing completed`);
           return;
         }
@@ -747,8 +721,6 @@ export class AdvancedSearchManager {
       this.isAdvancedQuery = false;
       this.parsedQuery = null;
       this.app.filterHelper.invalidateFilterCache();
-
-      // Keep this setTimeout for non-advanced queries if needed
       setTimeout(() => {
         this.app.filterHelper.applyFilters();
         this.isProcessingSearch = false;
@@ -1047,7 +1019,6 @@ export class AdvancedSearchManager {
    */
   cleanup() {
     log(3, 'AdvancedSearchManager cleanup called');
-
     if (this.searchTimeout) {
       clearTimeout(this.searchTimeout);
       this.searchTimeout = null;
@@ -1056,20 +1027,13 @@ export class AdvancedSearchManager {
       clearTimeout(this.focusDebounceTimeout);
       this.focusDebounceTimeout = null;
     }
-
-    // Remove the existing document click listener if it exists
-    if (this.boundHandleDocumentClick) {
-      document.removeEventListener('click', this.boundHandleDocumentClick);
-      log(3, 'Removed existing document click listener');
-    }
-
+    if (this.boundHandleDocumentClick) document.removeEventListener('click', this.boundHandleDocumentClick);
     const existingDropdown = document.querySelector('.search-dropdown');
     if (existingDropdown) existingDropdown.remove();
-
     this.isDropdownVisible = false;
     this.selectedSuggestionIndex = -1;
     this.queryCache.clear();
-    this.isInitialized = false; // Reset the flag
+    this.isInitialized = false;
     log(3, 'Advanced search manager cleaned up');
   }
 }

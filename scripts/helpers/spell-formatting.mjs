@@ -4,12 +4,12 @@ import { log } from '../logger.mjs';
 /**
  * Format spell details for display with notes icon at the beginning
  * @param {Object} spell - The spell object
+ * @param {Boolean} includeNotes - Optional flag to disable including notes
  * @returns {string} - Formatted spell details string with notes icon
  */
-export function formatSpellDetails(spell) {
+export function formatSpellDetails(spell, includeNotes = true) {
   try {
     if (!spell) return '';
-    const notesIcon = createNotesIcon(spell);
     const details = [];
     const componentsStr = formatSpellComponents(spell);
     if (componentsStr) details.push(componentsStr);
@@ -20,6 +20,8 @@ export function formatSpellDetails(spell) {
     const materialsStr = formatMaterialComponents(spell);
     if (materialsStr) details.push(materialsStr);
     const baseDetails = details.filter(Boolean).join(' • ');
+    if (!includeNotes) return baseDetails;
+    const notesIcon = createNotesIcon(spell);
     if (notesIcon && baseDetails) return `${notesIcon} ${baseDetails}`;
     else if (notesIcon) return notesIcon;
     else return baseDetails;

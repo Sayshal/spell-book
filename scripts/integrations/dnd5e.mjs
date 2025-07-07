@@ -1,4 +1,6 @@
+import { GMSpellListManager } from '../apps/gm-spell-list-manager.mjs';
 import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
+import { SpellAnalyticsDashboard } from '../apps/spell-analytics-dashboard.mjs';
 import { FLAGS, MODULE, SETTINGS } from '../constants.mjs';
 import { preloadSpellDataForActor } from '../helpers/spell-cache.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
@@ -100,14 +102,16 @@ function addJournalSpellBookButton(app, html, data) {
   const managerButton = document.createElement('button');
   managerButton.classList.add('spell-book-journal-button');
   managerButton.innerHTML = `<i class="fas fa-bars-progress"></i> ${game.i18n.localize('SPELLBOOK.UI.JournalButton')}`;
+  const manager = new GMSpellListManager();
   managerButton.addEventListener('click', () => {
-    SPELLBOOK.openSpellListManager();
+    manager.render(true);
   });
   const analyticsButton = document.createElement('button');
   analyticsButton.classList.add('spell-book-analytics-button');
   analyticsButton.innerHTML = `<i class="fas fa-chart-bar"></i> ${game.i18n.localize('SPELLBOOK.Analytics.OpenDashboard')}`;
+  const dashboard = new SpellAnalyticsDashboard({ viewMode: 'gm', userId: game.user.id });
   analyticsButton.addEventListener('click', () => {
-    SPELLBOOK.openAnalyticsDashboard({ viewMode: 'gm' });
+    dashboard.render(true);
   });
 
   analyticsButton.addEventListener('contextmenu', async (event) => {
