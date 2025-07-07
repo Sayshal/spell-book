@@ -34,6 +34,11 @@ export class SpellUsageTracker {
    */
   async _handleActivityConsumption(activity, usageConfig, messageConfig, updates) {
     try {
+      // Check if tracking is enabled
+      if (!game.settings.get(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING)) {
+        return;
+      }
+
       // Only track spell activities
       if (activity.parent?.parent?.type !== 'spell') return;
 
@@ -54,13 +59,13 @@ export class SpellUsageTracker {
       // Detect usage context
       const context = this._detectUsageContext(actor);
 
-      // Record the usage
+      // Record the usage for the actor (not user)
       await this._recordSpellUsage(canonicalUuid, context, actor);
 
       // Clean up tracking after a short delay
       setTimeout(() => this.activeTracking.delete(trackingKey), 1000);
 
-      log(3, `Tracked spell usage: ${spell.name} (${context})`);
+      log(3, `Tracked spell usage for actor ${actor.name}: ${spell.name} (${context})`);
     } catch (error) {
       log(1, 'Error tracking spell usage:', error);
     }
@@ -84,17 +89,21 @@ export class SpellUsageTracker {
   }
 
   /**
-   * Record spell usage in user data
+   * Record spell usage in actor data
    * @param {string} spellUuid - Canonical spell UUID
    * @param {string} context - 'combat' or 'exploration'
-   * @param {Actor} actor - The casting actor (for user ID)
+   * @param {Actor} actor - The casting actor
    * @returns {Promise<void>}
    * @private
    */
   async _recordSpellUsage(spellUuid, context, actor) {
     try {
-      // Get current usage stats
-      const userData = (await spellUserData.getUserDataForSpell(spellUuid)) || {};
+      // Find the user who owns this actor
+      const owningUser = game.users.find((user) => user.character?.id === actor.id);
+      const targetUserId = owningUser?.id || game.user.id; // Fallback to current user if no owner found
+
+      // Get current usage stats for this actor
+      const userData = (await spellUserData.getUserDataForSpell(spellUuid, targetUserId, actor.id)) || {};
       const currentStats = userData.usageStats || {
         count: 0,
         lastUsed: null,
@@ -112,10 +121,15 @@ export class SpellUsageTracker {
       };
 
       // Save updated data
-      await spellUserData.setUserDataForSpell(spellUuid, {
-        ...userData,
-        usageStats: newStats
-      });
+      await spellUserData.setUserDataForSpell(
+        spellUuid,
+        {
+          ...userData,
+          usageStats: newStats
+        },
+        targetUserId,
+        actor.id
+      );
     } catch (error) {
       log(1, 'Error recording spell usage:', error);
     }

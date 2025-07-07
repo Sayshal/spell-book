@@ -691,7 +691,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       // Get all spells on the actor
       const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
 
-      const spellUserData = await import('../helpers/spell-user-data.mjs');
       let syncCount = 0;
       const changedSpells = []; // Track which spells changed for UI update
 

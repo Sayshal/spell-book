@@ -1,6 +1,7 @@
 import { MODULE, TEMPLATES } from '../constants.mjs';
 import { spellUserDataJournal } from '../helpers/spell-user-data.mjs';
 import { log } from '../logger.mjs';
+import { UserSpellDataManager } from '../managers/user-spell-data-manager.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
@@ -14,7 +15,8 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
       resizable: true,
       minimizable: true,
       positioned: true,
-      title: 'SPELLBOOK.Analytics.DashboardTitle'
+      title: 'SPELLBOOK.Analytics.DashboardTitle',
+      icon: 'fas fa-chart-bar'
     },
     position: {
       width: 800,
@@ -52,20 +54,68 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   /** @override */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-
-    // Compute analytics data
     this.analytics = await this._computeAnalytics();
-
+    const analyticsForTemplate = {
+      ...this.analytics,
+      userBreakdown: this.analytics.userBreakdown instanceof Map ? Object.fromEntries(this.analytics.userBreakdown) : this.analytics.userBreakdown
+    };
     return {
       ...context,
       viewMode: this.viewMode,
       isGM: game.user.isGM,
-      analytics: this.analytics,
-      users: game.users.filter((u) => !u.isGM), // For GM view user selection
+      analytics: analyticsForTemplate,
+      users: game.users.filter((u) => !u.isGM),
       selectedUserId: this.selectedUserId,
       selectedUser: game.users.get(this.selectedUserId),
-      lastRefresh: this.lastRefresh ? new Date(this.lastRefresh).toLocaleString() : null
+      lastRefresh: this.lastRefresh ? foundry.utils.timeSince(this.lastRefresh) : null
     };
+  }
+
+  /** @override */
+  async _onRender(context, options) {
+    await super._onRender(context, options);
+
+    // Set CSS custom properties for context bar percentages
+    const combatElement = this.element.querySelector('.context-combat');
+    const explorationElement = this.element.querySelector('.context-exploration');
+
+    if (combatElement && explorationElement) {
+      const combatPercent = this.analytics.contextBreakdown.combatPercent || 0;
+      const explorationPercent = this.analytics.contextBreakdown.explorationPercent || 0;
+
+      combatElement.style.width = `${combatPercent}%`;
+      explorationElement.style.width = `${explorationPercent}%`;
+
+      // Dynamically adjust font sizes based on width
+      this._adjustContextBarFontSizes(combatElement, combatPercent);
+      this._adjustContextBarFontSizes(explorationElement, explorationPercent);
+    }
+  }
+
+  /**
+   * Adjust font size of context bar labels based on available width
+   * @param {HTMLElement} element - The context bar element
+   * @param {number} percent - The percentage width
+   * @private
+   */
+  _adjustContextBarFontSizes(element, percent) {
+    const label = element.querySelector('.context-label');
+    if (!label) return;
+
+    let fontSize;
+    if (percent <= 5) {
+      fontSize = '0.65rem';
+    } else if (percent <= 10) {
+      fontSize = '0.7rem';
+    } else if (percent <= 20) {
+      fontSize = '0.75rem';
+    } else if (percent <= 30) {
+      fontSize = '0.8rem';
+    } else {
+      fontSize = '0.875rem';
+    }
+
+    label.style.fontSize = fontSize;
   }
 
   /**
@@ -164,50 +214,92 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
    */
   async _computeGMAnalytics(analytics) {
     const users = game.users.filter((u) => !u.isGM);
-
     for (const user of users) {
       const userAnalytics = this._getEmptyAnalytics();
       await this._computePersonalAnalytics(userAnalytics, user.id);
-
-      // Aggregate into main analytics
       analytics.totalSpells += userAnalytics.totalSpells;
       analytics.totalCasts += userAnalytics.totalCasts;
       analytics.totalFavorites += userAnalytics.totalFavorites;
       analytics.totalNotes += userAnalytics.totalNotes;
       analytics.contextBreakdown.combat += userAnalytics.contextBreakdown.combat;
       analytics.contextBreakdown.exploration += userAnalytics.contextBreakdown.exploration;
-
-      // Store user breakdown
       analytics.userBreakdown.set(user.id, {
         name: user.name,
-        totalSpells: userAnalytics.totalSpells,
-        totalCasts: userAnalytics.totalCasts,
-        totalFavorites: userAnalytics.totalFavorites,
-        totalNotes: userAnalytics.totalNotes
+        totalSpells: userAnalytics.totalSpells || 0,
+        totalCasts: userAnalytics.totalCasts || 0,
+        totalFavorites: userAnalytics.totalFavorites || 0,
+        totalNotes: userAnalytics.totalNotes || 0
       });
-
-      // Merge usage lists
       analytics.mostUsedSpells = analytics.mostUsedSpells.concat(userAnalytics.mostUsedSpells);
       analytics.recentActivity = analytics.recentActivity.concat(userAnalytics.recentActivity);
     }
-
-    // Sort and limit
+    const totalContextUsage = analytics.contextBreakdown.combat + analytics.contextBreakdown.exploration;
+    if (totalContextUsage > 0) {
+      analytics.contextBreakdown.combatPercent = Math.round((analytics.contextBreakdown.combat / totalContextUsage) * 100);
+      analytics.contextBreakdown.explorationPercent = Math.round((analytics.contextBreakdown.exploration / totalContextUsage) * 100);
+    } else {
+      analytics.contextBreakdown.combatPercent = 0;
+      analytics.contextBreakdown.explorationPercent = 0;
+    }
     analytics.mostUsedSpells.sort((a, b) => b.count - a.count).splice(20);
     analytics.recentActivity.sort((a, b) => b.lastUsed - a.lastUsed).splice(20);
   }
 
   /**
-   * Get all spell data for a user
+   * Get all spell data for a user (updated for per-actor aggregation)
    * @param {string} userId - User ID
-   * @returns {Promise<Object>} User spell data
+   * @returns {Promise<Object>} Aggregated user spell data
    * @private
    */
   async _getAllUserSpellData(userId) {
     try {
+      // Get the user page from journal
       const page = await spellUserDataJournal._getUserPage(userId);
       if (!page) return {};
+
+      // Parse the HTML content using existing pattern
       const spellData = spellUserDataJournal._parseSpellDataFromHTML(page.text.content);
-      return spellData;
+
+      // Aggregate actor data into user-level data for analytics
+      const aggregatedData = {};
+
+      for (const [spellUuid, data] of Object.entries(spellData)) {
+        aggregatedData[spellUuid] = {
+          notes: data.notes || '',
+          favorited: false, // Will be true if ANY actor has it favorited
+          usageStats: {
+            count: 0,
+            lastUsed: null,
+            contextUsage: { combat: 0, exploration: 0 }
+          }
+        };
+
+        // Aggregate across all actors for this user
+        if (data.actorData) {
+          for (const [actorId, actorData] of Object.entries(data.actorData)) {
+            // If any actor has it favorited, consider it favorited for the user
+            if (actorData.favorited) {
+              aggregatedData[spellUuid].favorited = true;
+            }
+
+            // Aggregate usage stats across actors
+            if (actorData.usageStats) {
+              aggregatedData[spellUuid].usageStats.count += actorData.usageStats.count || 0;
+              aggregatedData[spellUuid].usageStats.contextUsage.combat += actorData.usageStats.contextUsage?.combat || 0;
+              aggregatedData[spellUuid].usageStats.contextUsage.exploration += actorData.usageStats.contextUsage?.exploration || 0;
+
+              // Use the most recent lastUsed across all actors
+              if (actorData.usageStats.lastUsed) {
+                if (!aggregatedData[spellUuid].usageStats.lastUsed || actorData.usageStats.lastUsed > aggregatedData[spellUuid].usageStats.lastUsed) {
+                  aggregatedData[spellUuid].usageStats.lastUsed = actorData.usageStats.lastUsed;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      return aggregatedData;
     } catch (error) {
       log(1, 'Error fetching user spell data:', error);
       return {};
@@ -295,44 +387,60 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Export user data to HTML files
+   * Export user data to JSON with embedded HTML
    * @returns {Promise<void>}
    * @private
    */
   async _exportUserData() {
     try {
-      const { spellUserDataJournal } = await import('../helpers/spell-user-data.mjs');
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+
+      const exportData = {
+        version: MODULE.VERSION || '1.0.0',
+        timestamp: Date.now(),
+        exportedAt: new Date().toISOString(),
+        exportedBy: game.user.name,
+        viewMode: this.viewMode,
+        userData: {}
+      };
 
       if (this.viewMode === 'gm' && game.user.isGM) {
         // GM View: Export all users' data
-        const zip = new JSZip();
         const users = game.users.filter((u) => !u.isGM);
 
         for (const user of users) {
           const page = await spellUserDataJournal._getUserPage(user.id);
           if (page) {
-            zip.file(`${user.name}-spell-data.html`, page.text.content);
+            exportData.userData[user.id] = {
+              userId: user.id,
+              userName: user.name,
+              htmlContent: page.text.content,
+              lastUpdated: page.flags?.[MODULE.ID]?.lastUpdated || null
+            };
           }
         }
 
-        const content = await zip.generateAsync({ type: 'blob' });
-        const url = URL.createObjectURL(content);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `all-users-spell-data-${new Date().toISOString().split('T')[0]}.zip`;
-        a.click();
-        URL.revokeObjectURL(url);
+        const filename = `all-users-spell-data-${timestamp}.json`;
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        saveDataToFile(blob, { type: 'application/json' }, filename);
       } else {
         // Personal View: Export current user's data
+        const user = game.users.get(this.selectedUserId);
         const page = await spellUserDataJournal._getUserPage(this.selectedUserId);
-        if (page) {
-          const blob = new Blob([page.text.content], { type: 'text/html' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `${game.users.get(this.selectedUserId)?.name || 'user'}-spell-data-${new Date().toISOString().split('T')[0]}.html`;
-          a.click();
-          URL.revokeObjectURL(url);
+
+        if (page && user) {
+          exportData.userData[user.id] = {
+            userId: user.id,
+            userName: user.name,
+            htmlContent: page.text.content,
+            lastUpdated: page.flags?.[MODULE.ID]?.lastUpdated || null
+          };
+
+          const filename = `${user.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-spell-data-${timestamp}.json`;
+          const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+          saveDataToFile(blob, { type: 'application/json' }, filename);
+        } else {
+          throw new Error('No data found for selected user');
         }
       }
 
@@ -344,91 +452,178 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Import user data from HTML files
+   * Import user data from JSON with embedded HTML
    * @returns {Promise<void>}
    * @private
    */
   async _importUserData() {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.html';
-    input.multiple = this.viewMode === 'gm';
+    input.accept = '.json';
+
     input.onchange = async (event) => {
-      const files = Array.from(event.target.files);
-      if (!files.length) return;
+      const file = event.target.files[0];
+      if (!file) return;
+
       try {
-        const confirmed = await Dialog.confirm({
-          title: game.i18n.localize('SPELLBOOK.Analytics.ImportConfirmTitle'),
-          content: game.i18n.localize('SPELLBOOK.Analytics.ImportConfirmContent'),
-          defaultYes: false
-        });
-        if (!confirmed) return;
-        const { spellUserDataJournal } = await import('../helpers/spell-user-data.mjs');
-        for (const file of files) {
-          const htmlContent = await file.text();
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(htmlContent, 'text/html');
-          const table = doc.querySelector('table[data-user-id]');
-          const userId = table?.dataset.userId;
-          if (userId) {
-            const page = await spellUserDataJournal._getUserPage(userId);
-            if (page) {
-              await page.update({
-                'text.content': htmlContent,
-                [`flags.${MODULE.ID}.lastUpdated`]: Date.now()
-              });
-            }
-          }
+        const text = await file.text();
+        let importData;
+
+        try {
+          importData = JSON.parse(text);
+        } catch (parseError) {
+          throw new Error('Invalid JSON format');
         }
-        ui.notifications.info(game.i18n.localize('SPELLBOOK.Analytics.ImportSuccess'));
+
+        // Validate data structure
+        if (!importData.version || !importData.userData || typeof importData.userData !== 'object') {
+          throw new Error('Invalid spell data format');
+        }
+
+        // Show import summary
+        const userCount = Object.keys(importData.userData).length;
+        const userNames = Object.values(importData.userData)
+          .map((u) => u.userName)
+          .join(', ');
+        const exportDate = importData.exportedAt ? new Date(importData.exportedAt).toLocaleDateString() : 'Unknown';
+
+        const summaryContent = `
+        <div class="import-summary">
+          <p><strong>Export Date:</strong> ${exportDate}</p>
+          <p><strong>Exported By:</strong> ${importData.exportedBy || 'Unknown'}</p>
+          <p><strong>Users:</strong> ${userCount}</p>
+          <p><strong>Names:</strong> ${userNames}</p>
+        </div>
+        <p class="warning"><strong>Warning:</strong> This will overwrite existing spell data for these users.</p>
+      `;
+
+        // Confirm import using DialogV2
+        const confirmed = await foundry.applications.api.DialogV2.wait({
+          window: { title: game.i18n.localize('SPELLBOOK.Analytics.ImportConfirmTitle') },
+          content: summaryContent,
+          buttons: [
+            { icon: 'fas fa-check', label: game.i18n.localize('SPELLBOOK.UI.Confirm'), action: 'confirm', className: 'dialog-button' },
+            { icon: 'fas fa-times', label: game.i18n.localize('SPELLBOOK.UI.Cancel'), action: 'cancel', className: 'dialog-button' }
+          ],
+          default: 'cancel',
+          rejectClose: false
+        });
+
+        if (confirmed !== 'confirm') return;
+
+        let importedCount = 0;
+        let skippedCount = 0;
+
+        for (const [userId, userData] of Object.entries(importData.userData)) {
+          // Verify user exists
+          const user = game.users.get(userId);
+          if (!user) {
+            log(2, `Skipping import for non-existent user: ${userData.userName} (${userId})`);
+            skippedCount++;
+            continue;
+          }
+
+          // Get or create user page
+          let page = await spellUserDataJournal._getUserPage(userId);
+          if (!page) {
+            log(2, `No existing page found for user ${user.name}, skipping import`);
+            skippedCount++;
+            continue;
+          }
+
+          // Update page with imported HTML content
+          await page.update({
+            'text.content': userData.htmlContent,
+            [`flags.${MODULE.ID}.lastUpdated`]: Date.now(),
+            [`flags.${MODULE.ID}.importedAt`]: Date.now(),
+            [`flags.${MODULE.ID}.importedFrom`]: file.name
+          });
+
+          importedCount++;
+        }
+
+        // Clear cache
+        spellUserDataJournal.cache.clear();
+
+        const message =
+          importedCount > 0 ?
+            game.i18n.format('SPELLBOOK.Analytics.ImportSuccessWithCount', {
+              imported: importedCount,
+              skipped: skippedCount
+            })
+          : game.i18n.localize('SPELLBOOK.Analytics.ImportSuccess');
+
+        ui.notifications.info(message);
         this.render();
       } catch (error) {
         log(1, 'Error importing data:', error);
-        ui.notifications.error(game.i18n.localize('SPELLBOOK.Analytics.ImportError'));
+        ui.notifications.error(
+          game.i18n.format('SPELLBOOK.Analytics.ImportErrorWithDetail', {
+            error: error.message
+          })
+        );
       }
     };
+
     input.click();
   }
 
   /**
-   * Clear user data with confirmation
+   * Clear user data with confirmation (updated for per-actor structure)
    * @returns {Promise<void>}
    * @private
    */
   async _clearUserData() {
-    const confirmed = await Dialog.confirm({
-      title: game.i18n.localize('SPELLBOOK.Analytics.ClearDataTitle'),
-      content: game.i18n.localize('SPELLBOOK.Analytics.ClearDataContent'),
-      defaultYes: false
+    const confirmed = await foundry.applications.api.DialogV2.wait({
+      window: { title: game.i18n.localize('SPELLBOOK.Analytics.ClearDataTitle') },
+      content: `<p>${game.i18n.localize('SPELLBOOK.Analytics.ClearDataContent')}</p>`,
+      buttons: [
+        { icon: 'fas fa-trash', label: game.i18n.localize('SPELLBOOK.Analytics.ClearData'), action: 'confirm', className: 'dialog-button danger' },
+        { icon: 'fas fa-times', label: game.i18n.localize('SPELLBOOK.UI.Cancel'), action: 'cancel', className: 'dialog-button' }
+      ],
+      default: 'cancel',
+      rejectClose: false
     });
-    if (!confirmed) return;
+    if (confirmed !== 'confirm') return;
     try {
-      const { spellUserDataJournal } = await import('../helpers/spell-user-data.mjs');
+      const manager = new UserSpellDataManager();
+      let clearedCount = 0;
       if (this.viewMode === 'gm' && game.user.isGM) {
+        // Clear all users' data (excluding gamemaster)
         const users = game.users.filter((u) => !u.isGM);
         for (const user of users) {
           const page = await spellUserDataJournal._getUserPage(user.id);
           if (page) {
-            const emptyContent = this._generateEmptyTablesHTML(user.name);
+            const emptyContent = manager._generateEmptyTablesHTML(user.name, user.id);
             await page.update({
               'text.content': emptyContent,
-              [`flags.${MODULE.ID}.lastUpdated`]: Date.now()
+              [`flags.${MODULE.ID}.lastUpdated`]: Date.now(),
+              [`flags.${MODULE.ID}.clearedAt`]: Date.now()
             });
+            clearedCount++;
           }
         }
       } else {
-        const page = await spellUserDataJournal._getUserPage(this.selectedUserId);
-        if (page) {
-          const user = game.users.get(this.selectedUserId);
-          const emptyContent = this._generateEmptyTablesHTML(user.name);
-          await page.update({
-            'text.content': emptyContent,
-            [`flags.${MODULE.ID}.lastUpdated`]: Date.now()
-          });
+        // Clear current user's data (only if not gamemaster)
+        const user = game.users.get(this.selectedUserId);
+        if (user && !user.isGM) {
+          const page = await spellUserDataJournal._getUserPage(this.selectedUserId);
+          if (page) {
+            const emptyContent = manager._generateEmptyTablesHTML(user.name, user.id);
+            await page.update({
+              'text.content': emptyContent,
+              [`flags.${MODULE.ID}.lastUpdated`]: Date.now(),
+              [`flags.${MODULE.ID}.clearedAt`]: Date.now()
+            });
+            clearedCount = 1;
+          }
         }
       }
       spellUserDataJournal.cache.clear();
-      ui.notifications.info(game.i18n.localize('SPELLBOOK.Analytics.ClearDataSuccess'));
+
+      const message = clearedCount > 0 ? game.i18n.format('SPELLBOOK.Analytics.ClearDataSuccessWithCount', { count: clearedCount }) : game.i18n.localize('SPELLBOOK.Analytics.ClearDataSuccess');
+
+      ui.notifications.info(message);
       this.render();
     } catch (error) {
       log(1, 'Error clearing data:', error);

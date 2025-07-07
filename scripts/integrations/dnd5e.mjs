@@ -1,4 +1,3 @@
-import { GMSpellListManager } from '../apps/gm-spell-list-manager.mjs';
 import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
 import { FLAGS, MODULE, SETTINGS } from '../constants.mjs';
 import { preloadSpellDataForActor } from '../helpers/spell-cache.mjs';
@@ -91,30 +90,45 @@ function addJournalSpellBookButton(app, html, data) {
   if (!game.user.isGM) return;
   const footer = html.find('.directory-footer');
   if (!footer.length) return;
-  if (footer.find('.spell-book-journal-button').length) return;
+  if (footer.find('.spell-book-buttons-container').length) return;
+  const container = document.createElement('div');
+  container.classList.add('spell-book-buttons-container');
+  container.style.display = 'flex';
+  container.style.gap = '0.5rem';
+  container.style.justifyContent = 'center';
+  container.style.alignItems = 'center';
   const managerButton = document.createElement('button');
   managerButton.classList.add('spell-book-journal-button');
   managerButton.innerHTML = `<i class="fas fa-bars-progress"></i> ${game.i18n.localize('SPELLBOOK.UI.JournalButton')}`;
   managerButton.addEventListener('click', () => {
-    if (globalThis.SPELLBOOK) {
-      SPELLBOOK.openSpellListManager();
-    } else {
-      const manager = new GMSpellListManager();
-      manager.render(true);
-    }
+    SPELLBOOK.openSpellListManager();
   });
-  footer[0].appendChild(managerButton);
   const analyticsButton = document.createElement('button');
   analyticsButton.classList.add('spell-book-analytics-button');
   analyticsButton.innerHTML = `<i class="fas fa-chart-bar"></i> ${game.i18n.localize('SPELLBOOK.Analytics.OpenDashboard')}`;
   analyticsButton.addEventListener('click', () => {
-    if (globalThis.SPELLBOOK) {
-      SPELLBOOK.openAnalyticsDashboard({ viewMode: 'gm' });
-    } else {
-      ui.notifications.error('Analytics dashboard unavailable');
+    SPELLBOOK.openAnalyticsDashboard({ viewMode: 'gm' });
+  });
+
+  analyticsButton.addEventListener('contextmenu', async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const currentSetting = game.settings.get(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING);
+    const newSetting = !currentSetting;
+    try {
+      await game.settings.set(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING, newSetting);
+      analyticsButton.style.opacity = newSetting ? '1' : '0.6';
+      analyticsButton.title = newSetting ? game.i18n.localize('SPELLBOOK.Analytics.TrackingEnabled') : game.i18n.localize('SPELLBOOK.Analytics.TrackingDisabled');
+    } catch (error) {
+      ui.notifications.error('Failed to toggle spell usage tracking');
     }
   });
-  footer[0].appendChild(analyticsButton);
+  const trackingEnabled = game.settings.get(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING);
+  analyticsButton.style.opacity = trackingEnabled ? '1' : '0.6';
+  analyticsButton.title = trackingEnabled ? game.i18n.localize('SPELLBOOK.Analytics.TrackingEnabled') : game.i18n.localize('SPELLBOOK.Analytics.TrackingDisabled');
+  container.appendChild(managerButton);
+  container.appendChild(analyticsButton);
+  footer[0].appendChild(container);
 }
 
 /**

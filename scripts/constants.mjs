@@ -199,13 +199,14 @@ export const SETTINGS = {
   DISABLE_LONG_REST_SWAP_PROMPT: 'disableLongRestSwapPrompt',
   DISTANCE_UNIT: 'distanceUnit',
   ENABLE_JOURNAL_BUTTON: 'enableJournalButton',
+  ENABLE_SPELL_USAGE_TRACKING: 'enableSpellUsageTracking',
   FILTER_CONFIGURATION: 'filterConfiguration',
   HIDDEN_SPELL_LISTS: 'hiddenSpellLists',
   LAZY_BATCH_SIZE: 'lazyBatchSize',
   LOGGING_LEVEL: 'loggingLevel',
   OPEN_SPELL_MANAGER: 'openSpellListManager',
   SPELL_BOOK_POSITION: 'spellBookPositionn',
-  SPELLCASTING_RULE_SET: 'spellcastingRuleSet',
+  SPELL_NOTES_DESC_INJECTION: 'injectNotesIntoDescriptions',
   SPELL_NOTES_LENGTH: 'spellNotesMaxLength',
-  SPELL_NOTES_DESC_INJECTION: 'injectNotesIntoDescriptions'
+  SPELLCASTING_RULE_SET: 'spellcastingRuleSet'
 };

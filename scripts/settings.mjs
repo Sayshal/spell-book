@@ -246,4 +246,16 @@ export function registerSettings() {
       await SpellDescriptionInjection.handleSettingChange(value);
     }
   });
+
+  game.settings.register(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING, {
+    name: 'SPELLBOOK.Settings.EnableSpellUsageTracking.Name',
+    hint: 'SPELLBOOK.Settings.EnableSpellUsageTracking.Hint',
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: true,
+    onChange: (value) => {
+      ui.notifications.info(value ? game.i18n.localize('SPELLBOOK.Settings.SpellUsageTrackingEnabled') : game.i18n.localize('SPELLBOOK.Settings.SpellUsageTrackingDisabled'));
+    }
+  });
 }
