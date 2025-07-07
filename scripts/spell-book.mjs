@@ -27,7 +27,7 @@ Hooks.once('ready', async function () {
   await unlockModuleCompendium();
   await MacroManager.initializeMacros();
   await UserSpellDataManager.initializeUserSpellData();
-  SpellUsageTracker.initialize();
+  await SpellUsageTracker.initialize();
 });
 
 Hooks.on('createItem', (item) => {

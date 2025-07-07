@@ -1,3 +1,4 @@
+import { MODULE, SETTINGS } from '../constants.mjs';
 import { SpellUserDataJournal } from '../helpers/spell-user-data.mjs';
 import { log } from '../logger.mjs';
 
@@ -5,19 +6,31 @@ import { log } from '../logger.mjs';
  * Manager for tracking spell usage from D&D5e activity consumption
  */
 export class SpellUsageTracker {
+  static _instance = null;
+  static _initialized = false;
+
   constructor() {
-    this.initialized = false;
     this.activeTracking = new Map();
   }
 
   /**
-   * Initialize the usage tracking system
+   * Get singleton instance
+   * @returns {SpellUsageTracker}
+   */
+  static getInstance() {
+    if (!this._instance) this._instance = new SpellUsageTracker();
+    return this._instance;
+  }
+
+  /**
+   * Initialize the usage tracking system (static method)
    * @returns {Promise<void>}
    */
-  async initialize() {
-    if (this.initialized) return;
-    Hooks.on('dnd5e.activityConsumption', this._handleActivityConsumption.bind(this));
-    this.initialized = true;
+  static async initialize() {
+    if (this._initialized) return;
+    const instance = this.getInstance();
+    Hooks.on('dnd5e.activityConsumption', instance._handleActivityConsumption.bind(instance));
+    this._initialized = true;
     log(3, 'Spell usage tracker initialized');
   }
 
@@ -96,7 +109,7 @@ export class SpellUsageTracker {
    * @param {string} userId - User ID (optional)
    * @returns {Promise<Object|null>} Usage statistics
    */
-  async getSpellUsageStats(spellUuid, userId = null) {
+  static async getSpellUsageStats(spellUuid, userId = null) {
     try {
       const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid, userId);
       return userData?.usageStats || null;
@@ -113,7 +126,7 @@ export class SpellUsageTracker {
    * @param {string} userId - User ID (optional)
    * @returns {Promise<boolean>} Success status
    */
-  async setSpellUsageStats(spellUuid, usageStats, userId = null) {
+  static async setSpellUsageStats(spellUuid, usageStats, userId = null) {
     try {
       const userData = (await SpellUserDataJournal.getUserDataForSpell(spellUuid, userId)) || {};
       return await SpellUserDataJournal.setUserDataForSpell(spellUuid, { ...userData, usageStats }, userId);
