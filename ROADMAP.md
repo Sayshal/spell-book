@@ -54,7 +54,7 @@ Implement ability to rename custom spell lists after creation, providing better 
 - Implement rename dialog with validation for duplicate names
 - Update compendium metadata and refresh displays
 - Preserve spell list references and actor associations during rename
-- Add rename functionality to both GM interface and player dropdowns
+- Add rename functionality to  GM interface
 
 #### **Visual Enhancements [Medium Priority]**
 
