@@ -1,30 +1,32 @@
 <div class="spell-comparison-content">
   {{#if spells.length}}
-    <div class="comparison-header">
-      <div class="spells-header">
-        <div class="property-column"><!-- Empty for property names --></div>
-        {{#each spells}}
-          <div class="spell-column">
-            <div class="spell-info">
-              <img src="{{img}}" alt="{{name}}" class="spell-icon">
-              <span class="spell-name">{{name}}</span>
-            </div>
-          </div>
-        {{/each}}
-      </div>
-    </div>
-    <div class="comparison-table">
-      {{#each comparisonData.properties}}
-        <div class="comparison-row">
-          <div class="property-name">{{name}}</div>
-          {{#each values}}
-            <div class="property-value {{#if highlight}}highlighted{{/if}}">
-              {{value}}
-            </div>
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th></th> <!-- Empty header for property names column -->
+          {{#each spells}}
+            <th class="spell-header">
+              <div class="spell-info">
+                {{{enrichedIcon}}}
+                <span class="spell-name">{{name}}</span>
+              </div>
+            </th>
           {{/each}}
-        </div>
-      {{/each}}
-    </div>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each comparisonData.properties}}
+          <tr>
+            <td class="property-name">{{name}}</td>
+            {{#each values}}
+              <td class="property-value {{#if highlight}}highlighted{{/if}}">
+                {{value}}
+              </td>
+            {{/each}}
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
   {{else}}
     <div class="empty-comparison">
       <p>{{localize "SPELLBOOK.Comparison.NoSpellsSelected"}}</p>

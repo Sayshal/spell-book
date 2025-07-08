@@ -1,3 +1,4 @@
+/* stylelint-disable selector-max-compound-selectors */
 /* stylelint-disable no-duplicate-selectors */
 /* stylelint-disable comment-empty-line-before */
 
@@ -889,72 +890,128 @@
 }
 
 /* ----------------------------------------- */
-/*  Spell Comparison Dialog                  */
+/*  Spell Comparison Features                */
 /* ----------------------------------------- */
+
+/* Compare Button Styling */
+.subtitle {
+  .compare-button {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: var(--color-text-hyperlink);
+    cursor: pointer;
+    display: inline;
+    line-height: inherit;
+    vertical-align: baseline;
+    outline-offset: 2px;
+    width: fit-content;
+    text-decoration: none;
+
+    &:hover {
+      background: none;
+      border: none;
+      outline: none;
+      box-shadow: none;
+      text-decoration: underline;
+    }
+
+    &.active {
+      color: var(--color-text-highlight);
+      background: none;
+      border: none;
+      box-shadow: none;
+      text-shadow: none;
+    }
+
+    &:focus {
+      outline: 1px solid var(--color-border-highlight);
+    }
+  }
+}
+
+/* Spell Comparison Dialog */
 .spell-comparison-dialog {
-  .comparison-header {
-    border-bottom: 1px solid var(--color-border-light-primary);
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
-  }
-
-  .spells-header {
-    display: grid;
-    grid-template-columns: 200px repeat(auto-fit, minmax(150px, 1fr));
-    gap: 0.5rem;
-    align-items: center;
-  }
-
-  .spell-column {
-    text-align: center;
-
-    .spell-info {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .spell-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 4px;
-    }
-
-    .spell-name {
-      font-weight: bold;
-      font-size: 0.9rem;
-    }
+  .spell-comparison-content {
+    min-width: 0;
+    overflow-x: auto; /* Allow horizontal scroll if needed */
+    max-width: 100%;
   }
 
   .comparison-table {
-    .comparison-row {
-      display: grid;
-      grid-template-columns: 200px repeat(auto-fit, minmax(150px, 1fr));
-      gap: 0.5rem;
-      align-items: center;
-      padding: 0.5rem 0;
-      border-bottom: 1px solid var(--color-border-light-tertiary);
+    width: 100%;
+    max-width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed; /* Force equal column widths */
 
-      &:last-child {
-        border-bottom: none;
+    th,
+    td {
+      padding: 0.5rem;
+      border: 1px solid var(--color-border-light-tertiary);
+      text-align: center;
+      vertical-align: middle;
+      word-wrap: break-word; /* Allow text to wrap if needed */
+      overflow: hidden;
+    }
+
+    th {
+      background-color: var(--color-bg-alt);
+      font-weight: bold;
+
+      &:first-child {
+        background: none; /* No background for empty corner cell */
+        width: 120px; /* Fixed width for property names */
+        min-width: 120px;
+      }
+
+      &.spell-header {
+        width: auto; /* Let spell columns share remaining space */
+        min-width: 100px;
+
+        .spell-info {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.25rem;
+
+          a {
+            border: none;
+          }
+
+          .spell-icon {
+            width: 24px; /* Slightly smaller icons */
+            height: 24px;
+            border: none;
+          }
+
+          .spell-name {
+            font-weight: bold;
+            font-size: 0.8rem; /* Slightly smaller text */
+            line-height: 1.2;
+          }
+        }
       }
     }
 
-    .property-name {
-      font-weight: bold;
-      padding-right: 1rem;
-    }
-
-    .property-value {
-      text-align: center;
-      padding: 0.25rem;
-      border-radius: 3px;
-
-      &.highlighted {
-        background-color: var(--color-bg-option);
-        border: 1px solid var(--color-border-highlight);
+    td {
+      &.property-name {
+        text-align: left;
         font-weight: bold;
+        white-space: nowrap;
+        background-color: var(--color-bg-alt);
+        width: 120px; /* Match header width */
+        min-width: 120px;
+      }
+
+      &.property-value {
+        font-size: 0.9rem;
+
+        &.highlighted {
+          background-color: var(--color-bg-option);
+          font-weight: bold;
+        }
       }
     }
   }
@@ -964,60 +1021,6 @@
     padding: 2rem;
     color: var(--color-text-dark-secondary);
   }
-}
-
-/* Compare Links */
-.compare-link {
-  color: var(--color-text-hyperlink);
-  text-decoration: none;
-  font-size: 0.8rem;
-  padding: 0.2rem 0.4rem;
-  border-radius: 3px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: var(--color-bg-option);
-    text-decoration: none;
-  }
-
-  &.active {
-    background-color: var(--color-bg-option);
-    color: var(--color-text-highlight);
-    font-weight: bold;
-  }
-}
-
-/* Ensure it flows properly with the subtitle text */
-.subtitle .compare-button {
-  background: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  font: inherit;
-  color: var(--color-text-hyperlink);
-  cursor: pointer;
-  display: inline;
-  line-height: inherit;
-  vertical-align: baseline;
-  outline-offset: 2px;
-}
-
-.subtitle button {
-  width: fit-content;
-}
-
-.subtitle .compare-button:hover {
-  background: none;
-  border: none;
-  outline: none;
-  box-shadow: none;
-}
-
-.spell-meta {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  flex-wrap: wrap;
 }
 
 /* ----------------------------------------- */

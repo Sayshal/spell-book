@@ -1,5 +1,5 @@
 import { TEMPLATES } from '../constants.mjs';
-import * as spellFormatting from '../helpers/spell-formatting.mjs';
+import { formatSpellActivation, formatSpellComponents, formatSpellSchool } from '../helpers/spell-formatting.mjs';
 import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -14,7 +14,7 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
       minimizable: true,
       positioned: true
     },
-    position: { width: 800, height: 600 },
+    position: { width: 'auto', height: 'auto' },
     classes: ['spell-comparison-dialog']
   };
 
@@ -29,6 +29,64 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
 
   get title() {
     return game.i18n.localize('SPELLBOOK.Comparison.DialogTitle');
+  }
+
+  /** @override */
+  _onFirstRender(context, options) {
+    super._onFirstRender(context, options);
+    this._positionRelativeToParent();
+  }
+
+  /**
+   * Position the dialog smartly relative to the parent PlayerSpellBook
+   * @private
+   */
+  _positionRelativeToParent() {
+    if (!this.parentApp?.element) return;
+
+    // Get number of spells to calculate optimal width
+    const spellCount = this.parentApp.comparisonSpells.size;
+    const estimatedWidth = Math.min(800, 200 + spellCount * 150); // Base width + column width per spell
+
+    const parentRect = this.parentApp.element.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    let left, top;
+
+    // Try to position to the right of parent
+    const rightSpace = viewportWidth - parentRect.right;
+    if (rightSpace >= estimatedWidth + 20) {
+      left = parentRect.right + 10;
+    } else {
+      // Try to position to the left of parent
+      const leftSpace = parentRect.left;
+      if (leftSpace >= estimatedWidth + 20) {
+        left = parentRect.left - estimatedWidth - 10;
+      } else {
+        // Fallback: center in viewport
+        left = Math.max(10, (viewportWidth - estimatedWidth) / 2);
+      }
+    }
+
+    // Vertical positioning - try to align with top of parent
+    top = parentRect.top;
+
+    // Make sure it doesn't go off-screen
+    const estimatedHeight = 400; // Rough estimate
+    if (top + estimatedHeight > viewportHeight) {
+      top = viewportHeight - estimatedHeight - 20;
+    }
+    if (top < 20) {
+      top = 20;
+    }
+
+    this.setPosition({
+      left,
+      top,
+      width: estimatedWidth,
+      height: 'auto'
+    });
   }
 
   async _prepareContext(options) {
@@ -53,15 +111,34 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
       uuid: spell.uuid,
       name: spell.name,
       img: spell.img,
+      enrichedIcon: this._createEnrichedSpellIcon(spell),
       level: spell.system.level,
-      school: spellFormatting.formatSpellSchool(spell),
-      castingTime: spell.labels?.activation || spellFormatting.formatSpellActivation(spell),
+      school: formatSpellSchool(spell),
+      castingTime: spell.labels?.activation || formatSpellActivation(spell),
       range: spell.labels?.range || spell.system.range?.value + ' ' + spell.system.range?.units,
       duration: spell.labels?.duration || spell.system.duration?.value,
-      components: spellFormatting.formatSpellComponents(spell),
+      components: formatSpellComponents(spell),
       damage: this._extractDamageInfo(spell),
       description: spell.system.description?.value || ''
     };
+  }
+
+  /**
+   * Create enriched spell icon link
+   * @param {Object} spell - The spell document
+   * @returns {string} HTML for enriched icon
+   * @private
+   */
+  _createEnrichedSpellIcon(spell) {
+    const uuid = spell.uuid;
+    const parsed = foundry.utils.parseUuid(uuid);
+    const itemId = parsed.id || '';
+    const entityType = parsed.type || 'Item';
+    let packId = '';
+    if (parsed.collection) packId = parsed.collection.collection || '';
+    return `<a class="content-link" draggable="true" data-link="" data-uuid="${uuid}" data-id="${itemId}" data-type="${entityType}" data-pack="${packId}" data-tooltip="${spell.name}">
+      <img src="${spell.img}" class="spell-icon" alt="${spell.name} icon">
+    </a>`;
   }
 
   _extractDamageInfo(spell) {
