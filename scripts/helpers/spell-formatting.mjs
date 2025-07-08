@@ -74,7 +74,7 @@ export function processSpellItemForDisplay(spell) {
  * @param {Object} spell - The spell object
  * @returns {string} - Formatted components string
  */
-function formatSpellComponents(spell) {
+export function formatSpellComponents(spell) {
   const components = [];
   if (spell.labels?.components?.all) for (const c of spell.labels.components.all) components.push(c.abbr);
   else if (spell.system?.properties?.length) {
@@ -89,7 +89,7 @@ function formatSpellComponents(spell) {
  * @param {Object} spell - The spell object
  * @returns {string} - Formatted activation string
  */
-function formatSpellActivation(spell) {
+export function formatSpellActivation(spell) {
   let result = '';
   if (spell.labels?.activation) result = spell.labels.activation;
   else if (spell.system?.activation?.type) {
@@ -107,7 +107,7 @@ function formatSpellActivation(spell) {
  * @param {Object} spell - The spell object
  * @returns {string} - Formatted school string
  */
-function formatSpellSchool(spell) {
+export function formatSpellSchool(spell) {
   let result = '';
   if (spell.labels?.school) result = spell.labels.school;
   else if (spell.system?.school) result = CONFIG.DND5E.spellSchools[spell.system.school]?.label || spell.system.school;
@@ -119,7 +119,7 @@ function formatSpellSchool(spell) {
  * @param {Object} spell - The spell object
  * @returns {string} - Formatted material components string
  */
-function formatMaterialComponents(spell) {
+export function formatMaterialComponents(spell) {
   const materials = spell.system?.materials;
   let result = '';
   if (materials && materials.consumed) {
@@ -135,7 +135,7 @@ function formatMaterialComponents(spell) {
  * @param {Object} spell - The spell object
  * @returns {string} - HTML for notes icon
  */
-function createNotesIcon(spell) {
+export function createNotesIcon(spell) {
   const spellUuid = spell.uuid || spell.compendiumUuid;
   if (!spellUuid) return '';
   const hasNotes = !!(spell.hasNotes || (spell.userData?.notes && spell.userData.notes.trim()));
@@ -178,7 +178,7 @@ export function extractSpellFilterData(spell) {
  * @param {Object} spell - The spell document
  * @returns {Object} - Casting time data
  */
-function extractCastingTime(spell) {
+export function extractCastingTime(spell) {
   return {
     value: spell.system?.activation?.value || '',
     type: spell.system?.activation?.type || '',
@@ -191,7 +191,7 @@ function extractCastingTime(spell) {
  * @param {Object} spell - The spell document
  * @returns {Object} - Range data
  */
-function extractRange(spell) {
+export function extractRange(spell) {
   return {
     units: spell.system?.range?.units || '',
     label: spell.labels?.range || ''
@@ -203,7 +203,7 @@ function extractRange(spell) {
  * @param {Object} spell - The spell document
  * @returns {string[]} - Array of damage types
  */
-function extractDamageTypes(spell) {
+export function extractDamageTypes(spell) {
   const damageTypes = [];
   if (spell.labels?.damages?.length) {
     for (const damage of spell.labels.damages) if (damage.damageType && !damageTypes.includes(damage.damageType)) damageTypes.push(damage.damageType);
@@ -227,7 +227,7 @@ function extractDamageTypes(spell) {
  * @param {Object} spell - The spell document
  * @returns {boolean} - Whether the spell is a ritual
  */
-function checkIsRitual(spell) {
+export function checkIsRitual(spell) {
   return Boolean(
     spell.labels?.components?.tags?.includes(game.i18n.localize('DND5E.Item.Property.Ritual')) ||
       (spell.system.properties && Array.isArray(spell.system.properties) && spell.system.properties.includes('ritual')) ||
@@ -240,7 +240,7 @@ function checkIsRitual(spell) {
  * @param {Object} spell - The spell document
  * @returns {boolean} - Whether the spell requires concentration
  */
-function checkIsConcentration(spell) {
+export function checkIsConcentration(spell) {
   if (spell.system.duration?.concentration) return true;
   return spell.system.properties && Array.isArray(spell.system.properties) && spell.system.properties.includes('concentration');
 }
@@ -250,7 +250,7 @@ function checkIsConcentration(spell) {
  * @param {Object} spell - The spell document
  * @returns {Object} - Material component data
  */
-function extractMaterialComponents(spell) {
+export function extractMaterialComponents(spell) {
   const materials = spell.system?.materials || {};
   return { consumed: !!materials.consumed, cost: materials.cost || 0, value: materials.value || '', hasConsumedMaterials: !!materials.consumed };
 }
@@ -260,7 +260,7 @@ function extractMaterialComponents(spell) {
  * @param {Object} spell - The spell document
  * @returns {boolean} - Whether the spell requires a save
  */
-function checkSpellRequiresSave(spell) {
+export function checkSpellRequiresSave(spell) {
   let result = false;
   if (spell.system?.activities) {
     for (const [_key, activity] of Object.entries(spell.system.activities)) {
@@ -282,7 +282,7 @@ function checkSpellRequiresSave(spell) {
  * @param {Object} spell - The spell document
  * @returns {string[]} - Array of condition keys
  */
-function extractSpellConditions(spell) {
+export function extractSpellConditions(spell) {
   const conditions = [];
   const description = spell.system?.description?.value || '';
   if (description && CONFIG.DND5E.conditionTypes) {

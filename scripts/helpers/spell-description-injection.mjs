@@ -8,6 +8,8 @@ import { SpellUserDataJournal } from './spell-user-data.mjs';
  */
 export class SpellDescriptionInjection {
   static NOTES_WRAPPER_CLASS = 'spell-book-personal-notes';
+  static MODULE_UPDATE_FLAG = 'spellBookModuleUpdate';
+  static _updatingSpells = new Set(); // Track spells currently being updated
 
   /**
    * Initialize hooks for spell description injection
@@ -57,11 +59,25 @@ export class SpellDescriptionInjection {
   }
 
   /**
-   * Handle item updates
+   * Handle item updates - with recursion prevention
    */
   static async onUpdateItem(item, changes, options, userId) {
     if (item.type !== 'spell' || !item.parent || item.parent.documentName !== 'Actor') return;
-    if (changes.system?.description) await this.updateSpellDescription(item);
+
+    // Skip if this update was made by our module
+    if (options[this.MODULE_UPDATE_FLAG]) {
+      return;
+    }
+
+    // Skip if we're already updating this specific spell
+    const spellKey = `${item.parent.id}-${item.id}`;
+    if (this._updatingSpells.has(spellKey)) {
+      return;
+    }
+
+    if (changes.system?.description) {
+      await this.updateSpellDescription(item);
+    }
   }
 
   /**
@@ -70,16 +86,37 @@ export class SpellDescriptionInjection {
   static async updateSpellDescription(spellItem) {
     const injectionMode = game.settings.get(MODULE.ID, 'injectNotesIntoDescriptions');
     if (injectionMode === 'off') return;
-    const canonicalUuid = spellFavorites.getCanonicalSpellUuid(spellItem.uuid);
-    const userData = await SpellUserDataJournal.getUserDataForSpell(canonicalUuid);
-    if (!userData?.notes || !userData.notes.trim()) {
-      await this.removeNotesFromDescription(spellItem);
+
+    const spellKey = `${spellItem.parent.id}-${spellItem.id}`;
+
+    // Prevent recursion
+    if (this._updatingSpells.has(spellKey)) {
       return;
     }
-    const currentDescription = spellItem.system.description?.value || '';
-    const notesHtml = this.formatNotesForDescription(userData.notes);
-    if (currentDescription.includes(`class="${this.NOTES_WRAPPER_CLASS}"`)) await this.replaceNotesInDescription(spellItem, notesHtml, injectionMode);
-    else await this.addNotesToDescription(spellItem, notesHtml, injectionMode, currentDescription);
+
+    try {
+      this._updatingSpells.add(spellKey);
+
+      const canonicalUuid = spellFavorites.getCanonicalSpellUuid(spellItem.uuid);
+      const userData = await SpellUserDataJournal.getUserDataForSpell(canonicalUuid);
+
+      if (!userData?.notes || !userData.notes.trim()) {
+        await this.removeNotesFromDescription(spellItem);
+        return;
+      }
+
+      const currentDescription = spellItem.system.description?.value || '';
+      const notesHtml = this.formatNotesForDescription(userData.notes);
+
+      if (currentDescription.includes(`class="${this.NOTES_WRAPPER_CLASS}"`)) {
+        await this.replaceNotesInDescription(spellItem, notesHtml, injectionMode);
+      } else {
+        await this.addNotesToDescription(spellItem, notesHtml, injectionMode, currentDescription);
+      }
+    } finally {
+      // Always remove from tracking set
+      this._updatingSpells.delete(spellKey);
+    }
   }
 
   /**
@@ -88,7 +125,7 @@ export class SpellDescriptionInjection {
   static formatNotesForDescription(notes) {
     const escapedNotes = notes.replace(/\n/g, '<br>');
     const personalNotesLabel = game.i18n.localize('SPELLBOOK.UI.PersonalNotes');
-    return `<div class="${this.NOTES_WRAPPER_CLASS}"><strong>${personalNotesLabel}:</strong>${escapedNotes}</div>`;
+    return `<div class="${this.NOTES_WRAPPER_CLASS}"><strong>${personalNotesLabel}:</strong> ${escapedNotes}</div>`;
   }
 
   /**
@@ -96,9 +133,13 @@ export class SpellDescriptionInjection {
    */
   static async addNotesToDescription(spellItem, notesHtml, injectionMode, currentDescription) {
     let newDescription;
-    if (injectionMode === 'before') newDescription = notesHtml + currentDescription;
-    else newDescription = currentDescription + notesHtml;
-    await spellItem.update({ 'system.description.value': newDescription });
+    if (injectionMode === 'before') {
+      newDescription = notesHtml + currentDescription;
+    } else {
+      newDescription = currentDescription + notesHtml;
+    }
+
+    await spellItem.update({ 'system.description.value': newDescription }, { [this.MODULE_UPDATE_FLAG]: true });
     log(3, `Added notes to spell description: ${spellItem.name}`);
   }
 
@@ -109,9 +150,14 @@ export class SpellDescriptionInjection {
     const currentDescription = spellItem.system.description?.value || '';
     const notesRegex = new RegExp(`<div class="${this.NOTES_WRAPPER_CLASS}"[^>]*>.*?</div>`, 'gs');
     let newDescription = currentDescription.replace(notesRegex, '');
-    if (injectionMode === 'before') newDescription = notesHtml + newDescription;
-    else newDescription = newDescription + notesHtml;
-    await spellItem.update({ 'system.description.value': newDescription });
+
+    if (injectionMode === 'before') {
+      newDescription = notesHtml + newDescription;
+    } else {
+      newDescription = newDescription + notesHtml;
+    }
+
+    await spellItem.update({ 'system.description.value': newDescription }, { [this.MODULE_UPDATE_FLAG]: true });
     log(3, `Updated notes in spell description: ${spellItem.name}`);
   }
 
@@ -121,10 +167,15 @@ export class SpellDescriptionInjection {
   static async removeNotesFromDescription(spellItem) {
     const currentDescription = spellItem.system.description?.value || '';
     if (!currentDescription.includes(`class="${this.NOTES_WRAPPER_CLASS}"`)) return;
+
     const notesRegex = new RegExp(`<div class="${this.NOTES_WRAPPER_CLASS}"[^>]*>.*?</div>`, 'gs');
     const newDescription = currentDescription.replace(notesRegex, '');
-    await spellItem.update({ 'system.description.value': newDescription });
-    log(3, `Removed notes from spell description: ${spellItem.name}`);
+
+    // Only update if there's actually a change
+    if (newDescription !== currentDescription) {
+      await spellItem.update({ 'system.description.value': newDescription }, { [this.MODULE_UPDATE_FLAG]: true });
+      log(3, `Removed notes from spell description: ${spellItem.name}`);
+    }
   }
 
   /**
@@ -132,13 +183,19 @@ export class SpellDescriptionInjection {
    */
   static async handleNotesChange(spellUuid) {
     const canonicalUuid = spellFavorites.getCanonicalSpellUuid(spellUuid);
+
+    // Process actors sequentially to avoid overwhelming the system
     for (const actor of game.actors) {
       const matchingSpells = actor.items.filter((item) => {
         if (item.type !== 'spell') return false;
         const itemCanonicalUuid = spellFavorites.getCanonicalSpellUuid(item.uuid);
         return itemCanonicalUuid === canonicalUuid;
       });
-      for (const spell of matchingSpells) await this.updateSpellDescription(spell);
+
+      // Process spells sequentially for this actor
+      for (const spell of matchingSpells) {
+        await this.updateSpellDescription(spell);
+      }
     }
   }
 }

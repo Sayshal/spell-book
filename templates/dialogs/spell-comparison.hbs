@@ -1,0 +1,33 @@
+<div class="spell-comparison-content">
+  {{#if spells.length}}
+    <div class="comparison-header">
+      <div class="spells-header">
+        <div class="property-column"><!-- Empty for property names --></div>
+        {{#each spells}}
+          <div class="spell-column">
+            <div class="spell-info">
+              <img src="{{img}}" alt="{{name}}" class="spell-icon">
+              <span class="spell-name">{{name}}</span>
+            </div>
+          </div>
+        {{/each}}
+      </div>
+    </div>
+    <div class="comparison-table">
+      {{#each comparisonData.properties}}
+        <div class="comparison-row">
+          <div class="property-name">{{name}}</div>
+          {{#each values}}
+            <div class="property-value {{#if highlight}}highlighted{{/if}}">
+              {{value}}
+            </div>
+          {{/each}}
+        </div>
+      {{/each}}
+    </div>
+  {{else}}
+    <div class="empty-comparison">
+      <p>{{localize "SPELLBOOK.Comparison.NoSpellsSelected"}}</p>
+    </div>
+  {{/if}}
+</div>

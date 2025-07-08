@@ -158,7 +158,6 @@ export const TEMPLATES = {
     EMPTY: 'modules/spell-book/templates/components/empty-state.hbs',
     ERROR: 'modules/spell-book/templates/components/error-message.hbs',
     LOADING: 'modules/spell-book/templates/components/loading-spinner.hbs',
-    SPELL_ITEM: 'modules/spell-book/templates/components/spell-item.hbs',
     SPELL_LEVEL: 'modules/spell-book/templates/components/spell-level.hbs'
   },
   DIALOGS: {
@@ -167,6 +166,7 @@ export const TEMPLATES = {
     MANAGER_DOCUMENTATION: 'modules/spell-book/templates/dialogs/spell-list-manager-documentation.hbs',
     RENAME_SPELL_LIST: `modules/spell-book/templates/dialogs/rename-spell-list.hbs`,
     MERGE_SPELL_LISTS: 'modules/spell-book/templates/dialogs/merge-spell-lists.hbs',
+    SPELL_COMPARISON: 'modules/spell-book/templates/dialogs/spell-comparison.hbs',
     SPELL_LOADOUT: 'modules/spell-book/templates/dialogs/spell-loadout.hbs',
     SPELL_NOTES: 'modules/spell-book/templates/dialogs/spell-notes-dialog.hbs',
     SPELLBOOK_SETTINGS: 'modules/spell-book/templates/dialogs/spellbook-settings.hbs'
@@ -207,6 +207,7 @@ export const SETTINGS = {
   LOGGING_LEVEL: 'loggingLevel',
   OPEN_SPELL_MANAGER: 'openSpellListManager',
   SPELL_BOOK_POSITION: 'spellBookPositionn',
+  SPELL_COMPARISON_MAX: 'spellComparisonMax',
   SPELL_NOTES_DESC_INJECTION: 'injectNotesIntoDescriptions',
   SPELL_NOTES_LENGTH: 'spellNotesMaxLength',
   SPELLCASTING_RULE_SET: 'spellcastingRuleSet'

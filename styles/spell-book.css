@@ -452,7 +452,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Advanced Search Components              */
+/*  Advanced Search Components               */
 /* ----------------------------------------- */
 .spell-book {
   /* Search input container - target the actual DOM structure */
@@ -886,6 +886,138 @@
       }
     }
   }
+}
+
+/* ----------------------------------------- */
+/*  Spell Comparison Dialog                  */
+/* ----------------------------------------- */
+.spell-comparison-dialog {
+  .comparison-header {
+    border-bottom: 1px solid var(--color-border-light-primary);
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .spells-header {
+    display: grid;
+    grid-template-columns: 200px repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .spell-column {
+    text-align: center;
+
+    .spell-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .spell-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+    }
+
+    .spell-name {
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+  }
+
+  .comparison-table {
+    .comparison-row {
+      display: grid;
+      grid-template-columns: 200px repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--color-border-light-tertiary);
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+
+    .property-name {
+      font-weight: bold;
+      padding-right: 1rem;
+    }
+
+    .property-value {
+      text-align: center;
+      padding: 0.25rem;
+      border-radius: 3px;
+
+      &.highlighted {
+        background-color: var(--color-bg-option);
+        border: 1px solid var(--color-border-highlight);
+        font-weight: bold;
+      }
+    }
+  }
+
+  .empty-comparison {
+    text-align: center;
+    padding: 2rem;
+    color: var(--color-text-dark-secondary);
+  }
+}
+
+/* Compare Links */
+.compare-link {
+  color: var(--color-text-hyperlink);
+  text-decoration: none;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: var(--color-bg-option);
+    text-decoration: none;
+  }
+
+  &.active {
+    background-color: var(--color-bg-option);
+    color: var(--color-text-highlight);
+    font-weight: bold;
+  }
+}
+
+/* Ensure it flows properly with the subtitle text */
+.subtitle .compare-button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: var(--color-text-hyperlink);
+  cursor: pointer;
+  display: inline;
+  line-height: inherit;
+  vertical-align: baseline;
+  outline-offset: 2px;
+}
+
+.subtitle button {
+  width: fit-content;
+}
+
+.subtitle .compare-button:hover {
+  background: none;
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+
+.spell-meta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 /* ----------------------------------------- */

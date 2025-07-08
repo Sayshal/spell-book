@@ -258,4 +258,14 @@ export function registerSettings() {
       ui.notifications.info(value ? game.i18n.localize('SPELLBOOK.Settings.SpellUsageTrackingEnabled') : game.i18n.localize('SPELLBOOK.Settings.SpellUsageTrackingDisabled'));
     }
   });
+
+  game.settings.register(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX, {
+    name: 'SPELLBOOK.Settings.SpellComparisonMax.Name',
+    hint: 'SPELLBOOK.Settings.SpellComparisonMax.Hint',
+    scope: 'world',
+    config: true,
+    type: Number,
+    default: 3,
+    range: { min: 2, max: 7, step: 1 }
+  });
 }

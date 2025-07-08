@@ -42,7 +42,6 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
     this.spellName = fromUuidSync(this.spellUuid).name;
     this.currentNotes = '';
     this.maxLength = game.settings.get(MODULE.ID, SETTINGS.SPELL_NOTES_LENGTH) || 240;
-    log(1, 'DEBUG:', { options: options, spelluuid: this.spellUuid });
   }
 
   /** @override */
