@@ -13,10 +13,14 @@ import { SpellManager } from '../managers/spell-manager.mjs';
  */
 export function registerDnD5eIntegration() {
   try {
-    if (!MODULE.ISV13) Hooks.on('renderActorSheet5e', addSpellbookButton);
-    else Hooks.on('renderActorSheetV2', addSpellbookButton);
+    if (!MODULE.ISV13) {
+      Hooks.on('renderActorSheet5e', addSpellbookButton);
+      Hooks.on('renderSidebarTab', addJournalSpellBookButton);
+    } else {
+      Hooks.on('renderActorSheetV2', addSpellbookButton);
+      Hooks.on('activateJournalDirectory', addJournalSpellBookButtonV13);
+    }
     Hooks.on('dnd5e.restCompleted', handleRestCompleted);
-    Hooks.on('renderSidebarTab', addJournalSpellBookButton);
     log(3, 'Registering DnD5e system integration');
   } catch (error) {
     log(1, 'Error registering DnD5e integration:', error);
@@ -97,27 +101,54 @@ async function handleRestCompleted(actor, result, config) {
 }
 
 /**
- * Add spellbook button to journal sidebar footer
+ * Add spellbook button to journal sidebar footer (v12)
  */
 function addJournalSpellBookButton(app, html, data) {
   if (app.tabName !== 'journal') return;
   if (!game.settings.get(MODULE.ID, SETTINGS.ENABLE_JOURNAL_BUTTON)) return;
   if (!game.user.isGM) return;
-  const htmlElement = genericUtils.getHtmlElement(html);
-  const footer = MODULE.ISV13 ? htmlElement.querySelector('.directory-footer') : html.find('.directory-footer');
-  if (MODULE.ISV13) {
-    if (!footer) return;
-    if (footer.querySelector('.spell-book-buttons-container')) return;
-  } else {
-    if (!footer.length) return;
-    if (footer.find('.spell-book-buttons-container').length) return;
-  }
+  const footer = html.find('.directory-footer');
+  if (!footer.length) return;
+  if (footer.find('.spell-book-buttons-container').length) return;
+  const container = createJournalButtonsContainer();
+  footer[0].appendChild(container);
+}
+
+/**
+ * Add spellbook button to journal sidebar footer (v13)
+ */
+function addJournalSpellBookButtonV13(app) {
+  if (!game.settings.get(MODULE.ID, SETTINGS.ENABLE_JOURNAL_BUTTON)) return;
+  if (!game.user.isGM) return;
+  const htmlElement = genericUtils.getHtmlElement(app.element);
+  const footer = htmlElement.querySelector('.directory-footer');
+  if (!footer) return;
+  if (footer.querySelector('.spell-book-buttons-container')) return;
+  const container = createJournalButtonsContainer();
+  footer.appendChild(container);
+}
+
+/**
+ * Create the container and buttons for journal sidebar
+ */
+function createJournalButtonsContainer() {
   const container = document.createElement('div');
   container.classList.add('spell-book-buttons-container');
   container.style.display = 'flex';
   container.style.gap = '0.5rem';
   container.style.justifyContent = 'center';
   container.style.alignItems = 'center';
+  const managerButton = createJournalManagerButton();
+  const analyticsButton = createJournalAnalyticsButton();
+  container.appendChild(managerButton);
+  container.appendChild(analyticsButton);
+  return container;
+}
+
+/**
+ * Create the spell list manager button
+ */
+function createJournalManagerButton() {
   const managerButton = document.createElement('button');
   managerButton.classList.add('spell-book-journal-button');
   managerButton.innerHTML = `<i class="fas fa-bars-progress"></i> ${game.i18n.localize('SPELLBOOK.UI.JournalButton')}`;
@@ -125,6 +156,13 @@ function addJournalSpellBookButton(app, html, data) {
   managerButton.addEventListener('click', () => {
     manager.render(true);
   });
+  return managerButton;
+}
+
+/**
+ * Create the analytics button
+ */
+function createJournalAnalyticsButton() {
   const analyticsButton = document.createElement('button');
   analyticsButton.classList.add('spell-book-analytics-button');
   analyticsButton.innerHTML = `<i class="fas fa-chart-bar"></i> ${game.i18n.localize('SPELLBOOK.Analytics.OpenDashboard')}`;
@@ -132,7 +170,6 @@ function addJournalSpellBookButton(app, html, data) {
   analyticsButton.addEventListener('click', () => {
     dashboard.render(true);
   });
-
   analyticsButton.addEventListener('contextmenu', async (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -143,16 +180,13 @@ function addJournalSpellBookButton(app, html, data) {
       analyticsButton.style.opacity = newSetting ? '1' : '0.6';
       analyticsButton.title = newSetting ? game.i18n.localize('SPELLBOOK.Analytics.TrackingEnabled') : game.i18n.localize('SPELLBOOK.Analytics.TrackingDisabled');
     } catch (error) {
-      ui.notifications.error('Failed to toggle spell usage tracking');
+      ui.notifications.error('Failed to toggle spell usage tracking'); //TODO: Localize
     }
   });
   const trackingEnabled = game.settings.get(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING);
   analyticsButton.style.opacity = trackingEnabled ? '1' : '0.6';
   analyticsButton.title = trackingEnabled ? game.i18n.localize('SPELLBOOK.Analytics.TrackingEnabled') : game.i18n.localize('SPELLBOOK.Analytics.TrackingDisabled');
-  container.appendChild(managerButton);
-  container.appendChild(analyticsButton);
-  if (MODULE.ISV13) footer.appendChild(container);
-  else footer[0].appendChild(container);
+  return analyticsButton;
 }
 
 /**
