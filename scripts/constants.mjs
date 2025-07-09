@@ -7,6 +7,7 @@ export const MODULE = {
   NAME: 'Spell Book',
   PACK: { SPELLS: 'spell-book.custom-spell-lists', MACROS: 'spell-book.spell-book-macros', USERDATA: 'spell-book.user-spell-data' },
   LOG_LEVEL: 0,
+  ISV13: foundry.utils.isNewerVersion(game.version, '12.999'),
 
   /**
    * Default filter configuration

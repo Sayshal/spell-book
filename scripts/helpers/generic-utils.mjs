@@ -93,3 +93,10 @@ export function isClassWizardEnabled(actor, classIdentifier) {
   const hasForceWizard = classRules[classIdentifier]?.forceWizardMode === true;
   return isNaturalWizard || hasForceWizard;
 }
+
+/**
+ * Get HTML element from jQuery object or direct HTML based on version
+ */
+export function getHtmlElement(html) {
+  return MODULE.ISV13 ? html : html[0];
+}
