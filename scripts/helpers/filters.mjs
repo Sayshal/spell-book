@@ -1,4 +1,5 @@
 import { MODULE, SETTINGS } from '../constants.mjs';
+import * as genericUtils from './generic-utils.mjs';
 
 /**
  * Convert a spell range to feet (or meters based on settings)
@@ -37,7 +38,8 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
       break;
     case 'school':
       Object.entries(CONFIG.DND5E.spellSchools).forEach(([key, school]) => {
-        options.push({ value: key, label: school.label, selected: filterState.school === key });
+        const label = genericUtils.getConfigLabel(CONFIG.DND5E.spellSchools, key);
+        options.push({ value: key, label, selected: filterState.school === key });
       });
       break;
     case 'castingTime':
@@ -45,18 +47,36 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
       options.push(...uniqueTypes);
       break;
     case 'damageType':
-      const damageTypes = { ...CONFIG.DND5E.damageTypes, healing: { label: game.i18n.localize('DND5E.Healing') } };
+      // Handle healing separately since it's not in CONFIG.DND5E.damageTypes
+      const damageTypes = {
+        ...CONFIG.DND5E.damageTypes,
+        healing: {
+          label: game.i18n.localize('DND5E.Healing'),
+          name: game.i18n.localize('DND5E.Healing')
+        }
+      };
       Object.entries(damageTypes)
-        .sort((a, b) => a[1].label.localeCompare(b[1].label))
+        .sort((a, b) => {
+          const labelA = a[0] === 'healing' ? damageTypes.healing.label : genericUtils.getConfigLabel(CONFIG.DND5E.damageTypes, a[0]) || a[0];
+          const labelB = b[0] === 'healing' ? damageTypes.healing.label : genericUtils.getConfigLabel(CONFIG.DND5E.damageTypes, b[0]) || b[0];
+          return labelA.localeCompare(labelB);
+        })
         .forEach(([key, type]) => {
-          options.push({ value: key, label: type.label, selected: filterState.damageType === key });
+          const label = key === 'healing' ? damageTypes.healing.label : genericUtils.getConfigLabel(CONFIG.DND5E.damageTypes, key) || key;
+          options.push({ value: key, label, selected: filterState.damageType === key });
         });
       break;
     case 'condition':
       Object.entries(CONFIG.DND5E.conditionTypes)
         .filter(([_key, condition]) => !condition.pseudo)
+        .sort((a, b) => {
+          const labelA = genericUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, a[0]);
+          const labelB = genericUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, b[0]);
+          return labelA.localeCompare(labelB);
+        })
         .forEach(([key, condition]) => {
-          options.push({ value: key, label: condition.label, selected: filterState.condition === key });
+          const label = genericUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, key);
+          options.push({ value: key, label, selected: filterState.condition === key });
         });
       break;
     case 'requiresSave':

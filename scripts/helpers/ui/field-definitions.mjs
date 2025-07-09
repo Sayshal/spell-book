@@ -1,5 +1,6 @@
 import { MODULE } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
+import * as genericUtils from '../generic-utils.mjs';
 
 /**
  * Field definitions for advanced search syntax
@@ -45,7 +46,16 @@ export class FieldDefinitions {
             .map((key) => key.toUpperCase())
             .concat(
               Object.values(CONFIG.DND5E.spellSchools)
-                .map((school) => school.fullKey?.toUpperCase() || school.label?.toUpperCase())
+                .map((school) => {
+                  const fullKey = school.fullKey?.toUpperCase();
+                  const label = genericUtils
+                    .getConfigLabel(
+                      CONFIG.DND5E.spellSchools,
+                      Object.keys(CONFIG.DND5E.spellSchools).find((k) => CONFIG.DND5E.spellSchools[k] === school)
+                    )
+                    ?.toUpperCase();
+                  return fullKey || label;
+                })
                 .filter(Boolean)
             );
           return schools.includes(value.toUpperCase());
@@ -60,7 +70,13 @@ export class FieldDefinitions {
         break;
       case 'damageType':
         this.valueValidators.set(fieldId, (value) => {
-          const damageTypesWithHealing = { ...CONFIG.DND5E.damageTypes, healing: { label: game.i18n.localize('DND5E.Healing') } };
+          const damageTypesWithHealing = {
+            ...CONFIG.DND5E.damageTypes,
+            healing: {
+              label: game.i18n.localize('DND5E.Healing'),
+              name: game.i18n.localize('DND5E.Healing')
+            }
+          };
           const validTypes = Object.keys(damageTypesWithHealing).map((key) => key.toUpperCase());
           return value.split(',').every((v) => validTypes.includes(v.trim().toUpperCase()));
         });
@@ -170,9 +186,19 @@ export class FieldDefinitions {
           const commonCastingTimes = ['ACTION:1', 'BONUS:1', 'REACTION:1', 'MINUTE:1', 'MINUTE:10', 'HOUR:1', 'HOUR:8', 'HOUR:24', 'SPECIAL:1'];
           return [...commonCastingTimes];
         case 'damageType':
-          const damageTypesWithHealing = { ...CONFIG.DND5E.damageTypes, healing: { label: game.i18n.localize('DND5E.Healing') } };
+          const damageTypesWithHealing = {
+            ...CONFIG.DND5E.damageTypes,
+            healing: {
+              label: game.i18n.localize('DND5E.Healing'),
+              name: game.i18n.localize('DND5E.Healing')
+            }
+          };
           return Object.entries(damageTypesWithHealing)
-            .sort((a, b) => a[1].label.localeCompare(b[1].label))
+            .sort((a, b) => {
+              const labelA = a[0] === 'healing' ? damageTypesWithHealing.healing.label : genericUtils.getConfigLabel(CONFIG.DND5E.damageTypes, a[0]);
+              const labelB = b[0] === 'healing' ? damageTypesWithHealing.healing.label : genericUtils.getConfigLabel(CONFIG.DND5E.damageTypes, b[0]);
+              return labelA.localeCompare(labelB);
+            })
             .map(([key]) => key.toUpperCase());
         case 'condition':
           return Object.keys(CONFIG.DND5E.conditionTypes || {}).map((key) => key.toUpperCase());

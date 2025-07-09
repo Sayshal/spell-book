@@ -100,3 +100,18 @@ export function isClassWizardEnabled(actor, classIdentifier) {
 export function getHtmlElement(html) {
   return MODULE.ISV13 ? html : html[0];
 }
+
+/**
+ * Get the appropriate label/name from a CONFIG object, handling V12/V13 compatibility
+ * @param {Object} configObject - The CONFIG object (e.g., CONFIG.DND5E.spellSchools)
+ * @param {string} key - The key to look up
+ * @returns {string} The label/name or empty string if not found
+ */
+export function getConfigLabel(configObject, key) {
+  if (!configObject || !configObject[key]) return '';
+  const item = configObject[key];
+  if (item.label) return item.label;
+  if (item.name) return item.name;
+  if (typeof item === 'string') return item;
+  return '';
+}

@@ -1,5 +1,6 @@
 import { MODULE, SETTINGS } from '../constants.mjs';
 import { log } from '../logger.mjs';
+import * as genericUtils from './generic-utils.mjs';
 import * as formattingUtils from './spell-formatting.mjs';
 
 /**
@@ -320,7 +321,7 @@ async function fetchSpellsFromPack(pack, maxLevel) {
     if (!entry.labels) {
       entry.labels = {};
       if (entry.system?.level !== undefined) entry.labels.level = CONFIG.DND5E.spellLevels[entry.system.level];
-      if (entry.system?.school) entry.labels.school = CONFIG.DND5E.spellSchools[entry.system.school]?.label || entry.system.school;
+      if (entry.system?.school) entry.labels.school = genericUtils.getConfigLabel(CONFIG.DND5E.spellSchools, entry.system.school);
     }
     const spell = formatSpellEntry(entry, pack);
     packSpells.push(spell);
@@ -447,11 +448,20 @@ export function prepareCastingTimeOptions(availableSpells, filterState) {
  */
 export function prepareDamageTypeOptions(filterState) {
   const options = [{ value: '', label: game.i18n.localize('SPELLBOOK.Filters.All'), selected: !filterState.damageType }];
-  const damageTypesWithHealing = { ...CONFIG.DND5E.damageTypes, healing: { label: game.i18n.localize('DND5E.Healing') } };
+  const damageTypesWithHealing = {
+    ...CONFIG.DND5E.damageTypes,
+    healing: { label: game.i18n.localize('DND5E.Healing') }
+  };
+
   Object.entries(damageTypesWithHealing)
-    .sort((a, b) => a[1].label.localeCompare(b[1].label))
+    .sort((a, b) => {
+      const labelA = a[0] === 'healing' ? damageTypesWithHealing.healing.label : genericUtils.getConfigLabel(CONFIG.DND5E.damageTypes, a[0]);
+      const labelB = b[0] === 'healing' ? damageTypesWithHealing.healing.label : genericUtils.getConfigLabel(CONFIG.DND5E.damageTypes, b[0]);
+      return labelA.localeCompare(labelB);
+    })
     .forEach(([key, damageType]) => {
-      options.push({ value: key, label: damageType.label, selected: filterState.damageType === key });
+      const label = key === 'healing' ? damageTypesWithHealing.healing.label : genericUtils.getConfigLabel(CONFIG.DND5E.damageTypes, key);
+      options.push({ value: key, label, selected: filterState.damageType === key });
     });
   return options;
 }
@@ -465,9 +475,14 @@ export function prepareConditionOptions(filterState) {
   const options = [{ value: '', label: game.i18n.localize('SPELLBOOK.Filters.All'), selected: !filterState.condition }];
   Object.entries(CONFIG.DND5E.conditionTypes)
     .filter(([_key, condition]) => !condition.pseudo)
-    .sort((a, b) => a[1].label.localeCompare(b[1].label))
+    .sort((a, b) => {
+      const labelA = genericUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, a[0]);
+      const labelB = genericUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, b[0]);
+      return labelA.localeCompare(labelB);
+    })
     .forEach(([key, condition]) => {
-      options.push({ value: key, label: condition.label, selected: filterState.condition === key });
+      const label = genericUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, key);
+      options.push({ value: key, label, selected: filterState.condition === key });
     });
   return options;
 }

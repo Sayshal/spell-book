@@ -3,6 +3,7 @@ import * as formElements from '../helpers/form-elements.mjs';
 import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const DragDropClass = MODULE.ISV13 ? foundry.applications.ux.DragDrop.implementation : DragDrop;
 
 /**
  * Application to configure which filters are displayed in the spell browser
@@ -199,7 +200,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
         drop: this.onDrop.bind(this)
       };
 
-      const dragDropHandler = new DragDrop(dragDropOptions);
+      const dragDropHandler = new DragDropClass(dragDropOptions);
       dragDropHandler.bind(this.element);
     });
   }

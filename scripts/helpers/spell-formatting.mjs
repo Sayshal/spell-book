@@ -1,5 +1,6 @@
 import { MODULE } from '../constants.mjs';
 import { log } from '../logger.mjs';
+import * as genericUtils from './generic-utils.mjs';
 
 /**
  * Format spell details for display with notes icon at the beginning
@@ -110,7 +111,7 @@ export function formatSpellActivation(spell) {
 export function formatSpellSchool(spell) {
   let result = '';
   if (spell.labels?.school) result = spell.labels.school;
-  else if (spell.system?.school) result = CONFIG.DND5E.spellSchools[spell.system.school]?.label || spell.system.school;
+  else if (spell.system?.school) result = genericUtils.getConfigLabel(CONFIG.DND5E.spellSchools, spell.system.school) || spell.system.school;
   return result;
 }
 
@@ -151,7 +152,8 @@ export function createNotesIcon(spell) {
  */
 export function getLocalizedPreparationMode(mode) {
   if (!mode) return '';
-  if (CONFIG.DND5E.spellPreparationModes[mode]?.label) return CONFIG.DND5E.spellPreparationModes[mode].label;
+  const label = genericUtils.getConfigLabel(CONFIG.DND5E.spellPreparationModes, mode);
+  if (label) return label;
   return mode.charAt(0).toUpperCase() + mode.slice(1);
 }
 
@@ -287,7 +289,12 @@ export function extractSpellConditions(spell) {
   const description = spell.system?.description?.value || '';
   if (description && CONFIG.DND5E.conditionTypes) {
     const lowerDesc = description.toLowerCase();
-    for (const [key, condition] of Object.entries(CONFIG.DND5E.conditionTypes)) if (condition?.label && lowerDesc.includes(condition.label.toLowerCase())) conditions.push(key);
+    for (const [key, condition] of Object.entries(CONFIG.DND5E.conditionTypes)) {
+      const conditionLabel = genericUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, key);
+      if (conditionLabel && lowerDesc.includes(conditionLabel.toLowerCase())) {
+        conditions.push(key);
+      }
+    }
   }
   return conditions;
 }

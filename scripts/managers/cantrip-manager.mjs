@@ -263,9 +263,7 @@ export class CantripManager {
     let tracking = this.actor.getFlag(MODULE.ID, flagName);
     if (!tracking) {
       const preparedCantrips = this.actor.items
-        .filter(
-          (i) => i.type === 'spell' && i.system.level === 0 && i.system.preparation?.prepared && (i.sourceClass === classIdentifier || i.system.sourceClass === classIdentifier)
-        )
+        .filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.preparation?.prepared && (i.sourceClass === classIdentifier || i.system.sourceClass === classIdentifier))
         .map((i) => genericUtils.getSpellUuid(i));
       tracking = { hasUnlearned: false, unlearned: null, hasLearned: false, learned: null, originalChecked: preparedCantrips };
       this.actor.setFlag(MODULE.ID, flagName, tracking);
@@ -447,15 +445,14 @@ export class CantripManager {
   async sendComprehensiveGMNotification(notificationData) {
     const { actorName, classChanges } = notificationData;
     const hasChanges = Object.values(classChanges).some(
-      (classData) =>
-        classData.cantripChanges.added.length > 0 || classData.cantripChanges.removed.length > 0 || classData.overLimits.cantrips.isOver || classData.overLimits.spells.isOver
+      (classData) => classData.cantripChanges.added.length > 0 || classData.cantripChanges.removed.length > 0 || classData.overLimits.cantrips.isOver || classData.overLimits.spells.isOver
     );
     if (!hasChanges) return;
-    let content = `<h2>${game.i18n.format('SPELLBOOK.Notifications.ComprehensiveTitle', { name: actorName })}</h2>`;
+    let content = `<h4>${game.i18n.format('SPELLBOOK.Notifications.ComprehensiveTitle', { name: actorName })}</h4>`;
     for (const [classIdentifier, classData] of Object.entries(classChanges)) {
       const { className, cantripChanges, overLimits } = classData;
       if (cantripChanges.added.length === 0 && cantripChanges.removed.length === 0 && !overLimits.cantrips.isOver && !overLimits.spells.isOver) continue;
-      content += `<h3>${className}</h3>`;
+      content += `<h5>${className}</h5>`;
       if (cantripChanges.added.length > 0 || cantripChanges.removed.length > 0) {
         content += `<p><strong>${game.i18n.localize('SPELLBOOK.Notifications.CantripChanges')}:</strong></p><ul>`;
         if (cantripChanges.removed.length > 0) {

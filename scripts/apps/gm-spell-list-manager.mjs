@@ -2,6 +2,7 @@ import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as actorSpellUtils from '../helpers/actor-spells.mjs';
 import * as managerHelpers from '../helpers/compendium-management.mjs';
 import * as formElements from '../helpers/form-elements.mjs';
+import * as genericUtils from '../helpers/generic-utils.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { SpellbookFilterHelper } from '../helpers/ui/spellbook-filters.mjs';
 import { log } from '../logger.mjs';
@@ -780,7 +781,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     levelSelect.id = 'spell-level';
     const schoolOptions = [{ value: '', label: game.i18n.localize('SPELLMANAGER.Filters.AllSchools'), selected: !this.filterState.school }];
     Object.entries(CONFIG.DND5E.spellSchools).forEach(([key, school]) => {
-      schoolOptions.push({ value: key, label: school.label, selected: this.filterState.school === key });
+      const label = genericUtils.getConfigLabel(CONFIG.DND5E.spellSchools, key);
+      schoolOptions.push({ value: key, label, selected: this.filterState.school === key });
     });
     const schoolSelect = formElements.createSelect({
       name: 'spell-school',

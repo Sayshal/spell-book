@@ -1,4 +1,5 @@
 import { log } from '../../logger.mjs';
+import * as genericUtils from '../generic-utils.mjs';
 
 /**
  * Parser for advanced search query syntax
@@ -91,7 +92,8 @@ export class QueryParser {
       const schoolKeys = Object.keys(CONFIG.DND5E.spellSchools || {});
       if (schoolKeys.includes(normalizedValue)) return normalizedValue;
       for (const [key, school] of Object.entries(CONFIG.DND5E.spellSchools || {})) {
-        if (school.fullKey === normalizedValue || school.label?.toLowerCase() === normalizedValue) return key;
+        const schoolLabel = genericUtils.getConfigLabel(CONFIG.DND5E.spellSchools, key);
+        if (school.fullKey === normalizedValue || schoolLabel?.toLowerCase() === normalizedValue) return key;
       }
       return normalizedValue;
     }

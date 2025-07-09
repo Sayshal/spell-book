@@ -1,42 +1,3 @@
-// TODO: dropping 3.3.1 support: use dnd5e.applications.fields methods directly
-// The below methods are taken directly from the 4.X branch of github.com/foundryvtt/dnd5e in order to backport to 3.3.1
-
-function setInputAttributes(input, config) {
-  input.toggleAttribute('required', config.required === true);
-  input.toggleAttribute('disabled', config.disabled === true);
-  input.toggleAttribute('readonly', config.readonly === true);
-  input.toggleAttribute('autofocus', config.autofocus === true);
-  if (config.placeholder) input.setAttribute('placeholder', config.placeholder);
-  if ('dataset' in config) {
-    for (const [k, v] of Object.entries(config.dataset)) input.dataset[k] = v;
-  }
-}
-
-function _createCheckboxInput(field, config) {
-  const input = document.createElement('dnd5e-checkbox');
-  input.name = config.name;
-  if (config.value) input.checked = true;
-  setInputAttributes(input, config);
-  if ('ariaLabel' in config) input.ariaLabel = config.ariaLabel;
-  if ('classes' in config) input.className = config.classes;
-  return input;
-}
-
-function _createNumberInput(field, config) {
-  delete config.input;
-  const input = field.toInput(config);
-  if ('ariaLabel' in config) input.ariaLabel = config.ariaLabel;
-  if ('classes' in config) input.className = config.classes;
-  return input;
-}
-
-function _createTextInput(field, config) {
-  delete config.input;
-  const input = field.toInput(config);
-  if ('classes' in config) input.className = config.classes;
-  return input;
-}
-
 /**
  * Create a checkbox input using DnD5e styling
  * @param {Object} config - Configuration options
@@ -51,7 +12,7 @@ function _createTextInput(field, config) {
 export function createCheckbox(config) {
   const field = new foundry.data.fields.BooleanField();
   const fieldConfig = { name: config.name, value: config.checked || false, disabled: config.disabled, ariaLabel: config.ariaLabel, classes: config.cssClass };
-  const checkbox = _createCheckboxInput(field, fieldConfig);
+  const checkbox = dnd5e.applications.fields.createCheckboxInput(field, fieldConfig);
   if (config.label) {
     const label = document.createElement('label');
     label.classList.add('checkbox');
@@ -81,7 +42,7 @@ export function createCheckbox(config) {
 export function createNumberInput(config) {
   const field = new foundry.data.fields.NumberField({ min: config.min, max: config.max, step: config.step });
   const fieldConfig = { name: config.name, value: config.value, placeholder: config.placeholder, disabled: config.disabled, ariaLabel: config.ariaLabel, classes: config.cssClass };
-  return _createNumberInput(field, fieldConfig);
+  return dnd5e.applications.fields.createNumberInput(field, fieldConfig);
 }
 
 /**
@@ -97,15 +58,8 @@ export function createNumberInput(config) {
  */
 export function createTextInput(config) {
   const field = new foundry.data.fields.StringField();
-  const fieldConfig = {
-    name: config.name,
-    value: config.value || '',
-    placeholder: config.placeholder,
-    disabled: config.disabled,
-    ariaLabel: config.ariaLabel,
-    classes: config.cssClass
-  };
-  return _createTextInput(field, fieldConfig);
+  const fieldConfig = { name: config.name, value: config.value || '', placeholder: config.placeholder, disabled: config.disabled, ariaLabel: config.ariaLabel, classes: config.cssClass };
+  return dnd5e.applications.fields.createTextInput(field, fieldConfig);
 }
 
 /**
