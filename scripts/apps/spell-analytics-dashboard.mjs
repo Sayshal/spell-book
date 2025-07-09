@@ -428,16 +428,15 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
         const userNames = Object.values(importData.userData)
           .map((u) => u.userName)
           .join(', ');
-        const exportDate = importData.exportedAt ? new Date(importData.exportedAt).toLocaleDateString() : 'Unknown';
-        //TODO: Localize the below
+        const exportDate = importData.exportedAt ? new Date(importData.exportedAt).toLocaleDateString() : game.i18n.localize('SPELLBOOK.Analytics.ImportSummaryUnknown');
         const summaryContent = `
         <div class="import-summary">
-          <p><strong>Export Date:</strong> ${exportDate}</p>
-          <p><strong>Exported By:</strong> ${importData.exportedBy || 'Unknown'}</p>
-          <p><strong>Users:</strong> ${userCount}</p>
-          <p><strong>Names:</strong> ${userNames}</p>
+          <p><strong>${game.i18n.localize('SPELLBOOK.Analytics.ImportSummaryExportDate')}:</strong> ${exportDate}</p>
+          <p><strong>${game.i18n.localize('SPELLBOOK.Analytics.ImportSummaryExportedBy')}:</strong> ${importData.exportedBy || game.i18n.localize('SPELLBOOK.Analytics.ImportSummaryUnknown')}</p>
+          <p><strong>${game.i18n.localize('SPELLBOOK.Analytics.ImportSummaryUsers')}:</strong> ${userCount}</p>
+          <p><strong>${game.i18n.localize('SPELLBOOK.Analytics.ImportSummaryNames')}:</strong> ${userNames}</p>
         </div>
-        <p class="warning"><strong>Warning:</strong> This will overwrite existing spell data for these users.</p>
+        <p class="warning"><strong>${game.i18n.localize('SPELLBOOK.Analytics.ImportWarningTitle')}:</strong> ${game.i18n.localize('SPELLBOOK.Analytics.ImportWarningMessage')}</p>
       `;
         const confirmed = await foundry.applications.api.DialogV2.wait({
           window: { title: game.i18n.localize('SPELLBOOK.Analytics.ImportConfirmTitle') },

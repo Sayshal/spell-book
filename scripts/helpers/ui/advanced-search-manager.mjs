@@ -308,10 +308,7 @@ export class AdvancedSearchManager {
       this.selectSuggestion(event.target.closest('.search-suggestion'));
       return;
     }
-    // TODO: If dropdown is already closed, skip this.
-    if (!event.target.closest('.advanced-search-input') && !event.target.closest('.search-dropdown')) {
-      this.hideDropdown();
-    }
+    if (this.isDropdownVisible && !event.target.closest('.advanced-search-input') && !event.target.closest('.search-dropdown')) this.hideDropdown();
   }
 
   /**

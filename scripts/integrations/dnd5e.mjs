@@ -180,7 +180,7 @@ function createJournalAnalyticsButton() {
       analyticsButton.style.opacity = newSetting ? '1' : '0.6';
       analyticsButton.title = newSetting ? game.i18n.localize('SPELLBOOK.Analytics.TrackingEnabled') : game.i18n.localize('SPELLBOOK.Analytics.TrackingDisabled');
     } catch (error) {
-      ui.notifications.error('Failed to toggle spell usage tracking'); //TODO: Localize
+      ui.notifications.error(game.i18n.localize('SPELLBOOK.Analytics.TrackingToggleError'));
     }
   });
   const trackingEnabled = game.settings.get(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING);

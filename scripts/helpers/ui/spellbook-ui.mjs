@@ -443,23 +443,22 @@ export class SpellbookUI {
     const classPreparedSpells = preparedByClass[classIdentifier] || [];
     const classSpellKey = `${classIdentifier}:${uuid}`;
     const isSavedAsPrepared = classPreparedSpells.includes(classSpellKey);
-    /** TODO: Replace case strings with constants */
     switch (settings.cantripSwapping) {
-      case 'none':
+      case MODULE.SWAP_MODES.NONE:
         if (isSavedAsPrepared) {
           checkbox.disabled = true;
           checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedLegacy');
           item.classList.add('cantrip-locked');
         }
         break;
-      case 'levelUp':
+      case MODULE.SWAP_MODES.LEVEL_UP:
         if (!isLevelUp && isSavedAsPrepared) {
           checkbox.disabled = true;
           checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Cantrips.LockedOutsideLevelUp');
           item.classList.add('cantrip-locked');
         }
         break;
-      case 'longRest':
+      case MODULE.SWAP_MODES.LONG_REST:
         const isWizard = classIdentifier === 'wizard';
         if (!isWizard) {
           checkbox.disabled = true;
@@ -563,24 +562,23 @@ export class SpellbookUI {
    * @private
    */
   _applyRuleBasedSpellLocks(item, checkbox, classIdentifier, classRules, isLevelUp, isLongRest) {
-    const spellSwapping = classRules.spellSwapping || 'none';
-    /** TODO: Replace case strings with constants */
+    const spellSwapping = classRules.spellSwapping || MODULE.SWAP_MODES.NONE;
     switch (spellSwapping) {
-      case 'levelUp':
+      case MODULE.SWAP_MODES.LEVEL_UP:
         if (!isLevelUp) {
           checkbox.disabled = true;
           checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Spells.LockedOutsideLevelUp');
           item.classList.add('spell-locked');
         }
         break;
-      case 'longRest':
+      case MODULE.SWAP_MODES.LONG_REST:
         if (!isLongRest) {
           checkbox.disabled = true;
           checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Spells.LockedOutsideLongRest');
           item.classList.add('spell-locked');
         }
         break;
-      case 'none':
+      case MODULE.SWAP_MODES.NONE:
         checkbox.disabled = true;
         checkbox.dataset.tooltip = game.i18n.localize('SPELLBOOK.Spells.LockedNoSwapping');
         item.classList.add('spell-locked');

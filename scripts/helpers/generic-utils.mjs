@@ -50,7 +50,12 @@ export function findWizardClass(actor) {
   const spellcastingClasses = actor.items.filter((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
   if (spellcastingClasses.length === 1) return spellcastingClasses[0];
   if (spellcastingClasses.length >= 2) {
-    // TODO: Check actor flags for DM-forced wizard class when that feature is re-added
+    const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+    const forcedWizardClass = spellcastingClasses.find((classItem) => {
+      const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
+      return classRules[identifier]?.forceWizardMode === true;
+    });
+    if (forcedWizardClass) return forcedWizardClass;
     const wizardByIdentifier = spellcastingClasses.find((i) => i.system.identifier?.toLowerCase() === 'wizard');
     if (wizardByIdentifier) return wizardByIdentifier;
     const localizedWizardName = game.i18n.localize('SPELLBOOK.Classes.Wizard').toLowerCase();
