@@ -934,26 +934,34 @@
 
 /* Spell Comparison Dialog */
 .spell-comparison-dialog {
+  .window-content {
+    overflow: hidden; /* Prevent content from spilling out */
+  }
+
   .spell-comparison-content {
     min-width: 0;
-    overflow-x: auto; /* Allow horizontal scroll if needed */
     max-width: 100%;
+    overflow: auto visible; /* Allow horizontal scroll as last resort */
   }
 
   .comparison-table {
     width: 100%;
+    margin: 0;
+    margin-bottom: 0.25rem;
+    padding-bottom: 0.25rem;
     max-width: 100%;
+    min-width: 100%;
     border-collapse: collapse;
-    table-layout: fixed; /* Force equal column widths */
+    table-layout: fixed; /* Keep fixed layout for equal spacing */
 
     th,
     td {
-      padding: 0.5rem;
-      border: 1px solid var(--color-border-light-tertiary);
+      padding: 0.25rem;
       text-align: center;
       vertical-align: middle;
-      word-wrap: break-word; /* Allow text to wrap if needed */
+      word-wrap: break-word;
       overflow: hidden;
+      text-overflow: ellipsis; /* Add ellipsis for very long text */
     }
 
     th {
@@ -961,14 +969,14 @@
       font-weight: bold;
 
       &:first-child {
-        background: none; /* No background for empty corner cell */
-        width: 120px; /* Fixed width for property names */
+        width: 120px;
         min-width: 120px;
+        max-width: 120px;
       }
 
       &.spell-header {
-        width: auto; /* Let spell columns share remaining space */
-        min-width: 100px;
+        min-width: 120px;
+        max-width: none;
 
         .spell-info {
           display: flex;
@@ -978,18 +986,32 @@
 
           a {
             border: none;
+            background: none;
+            padding: 0;
+            margin: 0;
+            scroll-padding-bottom: 0;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
           }
 
           .spell-icon {
-            width: 24px; /* Slightly smaller icons */
-            height: 24px;
+            width: 32px;
+            height: 32px;
             border: none;
+            background: none;
+            padding: 0;
+            margin: 0;
+            scroll-padding-bottom: 0;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
           }
 
           .spell-name {
             font-weight: bold;
-            font-size: 0.8rem; /* Slightly smaller text */
+            font-size: 0.8rem;
             line-height: 1.2;
+            word-break: break-word; /* Allow long spell names to wrap */
+            hyphens: auto; /* Add hyphenation */
           }
         }
       }
@@ -1001,13 +1023,13 @@
         font-weight: bold;
         white-space: nowrap;
         background-color: var(--color-bg-alt);
-        width: 120px; /* Match header width */
+        width: 120px;
+        padding-left: 5px;
         min-width: 120px;
+        max-width: 120px; /* Enforce the width */
       }
 
       &.property-value {
-        font-size: 0.9rem;
-
         &.highlighted {
           background-color: var(--color-bg-option);
           font-weight: bold;

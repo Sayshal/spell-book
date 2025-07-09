@@ -10,11 +10,11 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
     tag: 'div',
     window: {
       icon: 'fas fa-balance-scale',
-      resizable: true,
+      resizable: false,
       minimizable: true,
       positioned: true
     },
-    position: { width: 'auto', height: 'auto' },
+    position: { width: 600, height: 'auto' },
     classes: ['spell-comparison-dialog']
   };
 
@@ -34,7 +34,41 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
   /** @override */
   _onFirstRender(context, options) {
     super._onFirstRender(context, options);
+    this._calculateOptimalSize();
     this._positionRelativeToParent();
+  }
+
+  /**
+   * Calculate and set optimal dialog size based on content
+   * @private
+   */
+  _calculateOptimalSize() {
+    if (!this.parentApp?.comparisonSpells) return;
+
+    const spellCount = this.parentApp.comparisonSpells.size;
+
+    // Calculate width: base property column + spell columns + padding
+    // Property column: 120px
+    // Each spell column: minimum 150px for comfortable reading
+    // Dialog padding and borders: ~40px
+    const minSpellColumnWidth = 150;
+    const propertyColumnWidth = 120;
+    const dialogPadding = 40;
+
+    const calculatedWidth = propertyColumnWidth + spellCount * minSpellColumnWidth + dialogPadding;
+
+    // Constrain to reasonable bounds
+    const minWidth = 400;
+    const maxWidth = Math.min(window.innerWidth * 0.9, 1200);
+    const optimalWidth = Math.max(minWidth, Math.min(maxWidth, calculatedWidth));
+
+    // Update the dialog's position
+    this.options.position.width = optimalWidth;
+
+    // Apply the width to the element if it exists
+    if (this.element) {
+      this.element.style.width = `${optimalWidth}px`;
+    }
   }
 
   /**
@@ -44,10 +78,7 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
   _positionRelativeToParent() {
     if (!this.parentApp?.element) return;
 
-    // Get number of spells to calculate optimal width
-    const spellCount = this.parentApp.comparisonSpells.size;
-    const estimatedWidth = Math.min(800, 200 + spellCount * 150); // Base width + column width per spell
-
+    const dialogWidth = this.options.position.width;
     const parentRect = this.parentApp.element.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
@@ -56,37 +87,32 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
 
     // Try to position to the right of parent
     const rightSpace = viewportWidth - parentRect.right;
-    if (rightSpace >= estimatedWidth + 20) {
+    if (rightSpace >= dialogWidth + 20) {
       left = parentRect.right + 10;
     } else {
       // Try to position to the left of parent
       const leftSpace = parentRect.left;
-      if (leftSpace >= estimatedWidth + 20) {
-        left = parentRect.left - estimatedWidth - 10;
+      if (leftSpace >= dialogWidth + 20) {
+        left = leftSpace - dialogWidth - 10;
       } else {
-        // Fallback: center in viewport
-        left = Math.max(10, (viewportWidth - estimatedWidth) / 2);
+        // Center on screen if no space on either side
+        left = (viewportWidth - dialogWidth) / 2;
       }
     }
 
-    // Vertical positioning - try to align with top of parent
-    top = parentRect.top;
+    // Position vertically centered to parent
+    top = Math.max(50, parentRect.top + (parentRect.height - 400) / 2);
 
-    // Make sure it doesn't go off-screen
-    const estimatedHeight = 400; // Rough estimate
-    if (top + estimatedHeight > viewportHeight) {
-      top = viewportHeight - estimatedHeight - 20;
-    }
-    if (top < 20) {
-      top = 20;
+    // Ensure dialog stays within viewport
+    if (left < 20) left = 20;
+    if (left + dialogWidth > viewportWidth - 20) {
+      left = viewportWidth - dialogWidth - 20;
     }
 
-    this.setPosition({
-      left,
-      top,
-      width: estimatedWidth,
-      height: 'auto'
-    });
+    if (top < 50) top = 50;
+    if (top > viewportHeight - 100) top = viewportHeight - 100;
+
+    this.setPosition({ left, top });
   }
 
   async _prepareContext(options) {
