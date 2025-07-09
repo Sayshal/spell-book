@@ -906,7 +906,7 @@
     display: inline;
     line-height: inherit;
     vertical-align: baseline;
-    outline-offset: 2px;
+    outline-offset: 0.125rem;
     width: fit-content;
     text-decoration: none;
 
@@ -927,7 +927,7 @@
     }
 
     &:focus {
-      outline: 1px solid var(--color-border-highlight);
+      outline: 0.063rem solid var(--color-border-highlight);
     }
   }
 }
@@ -969,13 +969,13 @@
       font-weight: bold;
 
       &:first-child {
-        width: 120px;
-        min-width: 120px;
-        max-width: 120px;
+        width: 7.5rem;
+        min-width: 7.5rem;
+        max-width: 7.5rem;
       }
 
       &.spell-header {
-        min-width: 120px;
+        min-width: 7.5rem;
         max-width: none;
 
         .spell-info {
@@ -995,8 +995,8 @@
           }
 
           .spell-icon {
-            width: 32px;
-            height: 32px;
+            width: 2rem;
+            height: 2rem;
             border: none;
             background: none;
             padding: 0;
@@ -1010,7 +1010,6 @@
             font-weight: bold;
             font-size: 0.8rem;
             line-height: 1.2;
-            word-break: break-word; /* Allow long spell names to wrap */
             hyphens: auto; /* Add hyphenation */
           }
         }
@@ -1023,10 +1022,10 @@
         font-weight: bold;
         white-space: nowrap;
         background-color: var(--color-bg-alt);
-        width: 120px;
-        padding-left: 5px;
-        min-width: 120px;
-        max-width: 120px; /* Enforce the width */
+        width: 7.5rem;
+        padding-left: 0.313rem;
+        min-width: 7.5rem;
+        max-width: 7.5rem; /* Enforce the width */
       }
 
       &.property-value {
