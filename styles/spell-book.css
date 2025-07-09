@@ -462,7 +462,7 @@
 
     /* Search input styling */
     .advanced-search-input {
-      padding-right: 1.75rem; /* Make room for clear button */
+      padding-right: 1.75rem;
     }
 
     /* Search input clear button - match clear-recent-search styling */
@@ -935,13 +935,13 @@
 /* Spell Comparison Dialog */
 .spell-comparison-dialog {
   .window-content {
-    overflow: hidden; /* Prevent content from spilling out */
+    overflow: hidden;
   }
 
   .spell-comparison-content {
     min-width: 0;
     max-width: 100%;
-    overflow: auto visible; /* Allow horizontal scroll as last resort */
+    overflow: auto visible;
   }
 
   .comparison-table {
@@ -952,7 +952,7 @@
     max-width: 100%;
     min-width: 100%;
     border-collapse: collapse;
-    table-layout: fixed; /* Keep fixed layout for equal spacing */
+    table-layout: fixed;
 
     th,
     td {
@@ -961,7 +961,7 @@
       vertical-align: middle;
       word-wrap: break-word;
       overflow: hidden;
-      text-overflow: ellipsis; /* Add ellipsis for very long text */
+      text-overflow: ellipsis;
     }
 
     th {
@@ -1010,7 +1010,7 @@
             font-weight: bold;
             font-size: 0.8rem;
             line-height: 1.2;
-            hyphens: auto; /* Add hyphenation */
+            hyphens: auto;
           }
         }
       }
@@ -1025,7 +1025,7 @@
         width: 7.5rem;
         padding-left: 0.313rem;
         min-width: 7.5rem;
-        max-width: 7.5rem; /* Enforce the width */
+        max-width: 7.5rem;
       }
 
       &.property-value {
@@ -1616,7 +1616,7 @@
       .context-label {
         white-space: nowrap;
         padding: 0 0.25rem;
-        font-size: 0.875rem; /* Default size, will be overridden by JS */
+        font-size: 0.875rem;
       }
     }
 
