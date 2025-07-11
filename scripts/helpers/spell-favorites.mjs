@@ -9,16 +9,18 @@ import { SpellUserDataJournal } from './spell-user-data.mjs';
  * Toggle favorite status for a spell
  * @param {string} spellUuid - The spell UUID
  * @param {Actor} actor - The actor who owns the spell
+ * @param {string} userId - Target user ID (optional)
+ * @param {string} actorId - Target actor ID (optional)
  * @returns {Promise<boolean>} Success status
  */
-export async function toggleSpellFavorite(spellUuid, actor) {
+export async function toggleSpellFavorite(spellUuid, actor, userId = null, actorId = null) {
   try {
-    const userData = SpellUserDataJournal.getUserDataForSpell(spellUuid);
+    const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid, userId, actorId);
     const currentlyFavorited = userData?.favorited || false;
     const newFavoriteStatus = !currentlyFavorited;
 
-    // Update user data
-    await SpellUserDataJournal.setSpellFavorite(spellUuid, newFavoriteStatus);
+    // Update user data with target user/actor
+    await SpellUserDataJournal.setSpellFavorite(spellUuid, newFavoriteStatus, userId, actorId);
 
     // Update actor favorites if favoriting
     if (newFavoriteStatus) {
@@ -40,7 +42,7 @@ export async function toggleSpellFavorite(spellUuid, actor) {
  * @param {Actor} actor - The actor
  * @returns {Promise<boolean>} Success status
  */
-async function addSpellToActorFavorites(spellUuid, actor) {
+export async function addSpellToActorFavorites(spellUuid, actor) {
   try {
     // Find the actor's version of this spell
     const actorSpell = findActorSpellByUuid(spellUuid, actor);
@@ -81,7 +83,7 @@ async function addSpellToActorFavorites(spellUuid, actor) {
  * @param {Actor} actor - The actor
  * @returns {Promise<boolean>} Success status
  */
-async function removeSpellFromActorFavorites(spellUuid, actor) {
+export async function removeSpellFromActorFavorites(spellUuid, actor) {
   try {
     const actorSpell = findActorSpellByUuid(spellUuid, actor);
     if (!actorSpell) {

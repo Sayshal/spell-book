@@ -2069,60 +2069,59 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     event.preventDefault();
     const spellUuid = target.dataset.uuid;
     if (!spellUuid) return;
+    try {
+      let targetUserId = game.user.id;
+      let targetActorId = this.actor.id;
+      if (game.user.isActiveGM) {
+        const actorOwner = game.users.find((user) => user.character?.id === this.actor.id);
+        if (actorOwner) targetUserId = actorOwner.id;
+        else log(2, `No owner found for actor ${this.actor.name}, applying to GM`);
+      }
+      const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid, targetUserId, targetActorId);
+      const currentlyFavorited = userData?.favorited || false;
+      const newFavoriteStatus = !currentlyFavorited;
+      this._stateManager.updateFavoriteSessionState(spellUuid, newFavoriteStatus);
+      const success = await SpellUserDataJournal.setSpellFavorite(spellUuid, newFavoriteStatus, targetUserId, targetActorId);
+      if (!success) {
+        log(1, `Failed to persist favorite status for ${spellUuid}`);
+        this._stateManager.updateFavoriteSessionState(spellUuid, currentlyFavorited);
+        return;
+      }
+      if (newFavoriteStatus) await spellFavorites.addSpellToActorFavorites(spellUuid, this.actor);
+      else await spellFavorites.removeSpellFromActorFavorites(spellUuid, this.actor);
+      PlayerSpellBook._updateFavoriteButtonState(target, newFavoriteStatus);
+      log(3, `Successfully toggled favorite for spell ${spellUuid}: ${newFavoriteStatus}`);
+    } catch (error) {
+      log(1, 'Error in handleToggleFavorite:', error);
+      const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid);
+      this._stateManager.updateFavoriteSessionState(spellUuid, userData?.favorited || false);
+    }
+  }
 
-    const currentlyFavorited = target.classList.contains('favorited');
-    const newFavoriteStatus = !currentlyFavorited;
-
-    // Update UI immediately for responsiveness
-    target.classList.toggle('favorited');
-    const icon = target.querySelector('i');
-    if (icon) {
-      if (newFavoriteStatus) {
+  /**
+   * Update favorite button state immediately
+   * @param {HTMLElement} button - The favorite button element
+   * @param {boolean} isFavorited - Whether the spell is favorited
+   * @private
+   */
+  static _updateFavoriteButtonState(button, isFavorited) {
+    const icon = button.querySelector('i');
+    if (isFavorited) {
+      button.classList.add('favorited');
+      if (icon) {
         icon.classList.remove('far');
         icon.classList.add('fas');
-        target.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
-        target.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
-      } else {
+      }
+      button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
+      button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
+    } else {
+      button.classList.remove('favorited');
+      if (icon) {
         icon.classList.remove('fas');
         icon.classList.add('far');
-        target.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
-        target.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
       }
-    }
-    this._stateManager.updateFavoriteSessionState(spellUuid, newFavoriteStatus);
-
-    try {
-      // WAIT for the save to complete before logging success
-      const saveSuccess = await SpellUserDataJournal.setSpellFavorite(spellUuid, newFavoriteStatus);
-
-      if (saveSuccess) {
-        log(3, `Persisted favorite status for ${spellUuid}: ${newFavoriteStatus}`);
-
-        const verifyData = await SpellUserDataJournal.getUserDataForSpell(spellUuid);
-        if (verifyData?.favorited === newFavoriteStatus) {
-          log(3, `Verified favorite status was saved correctly`);
-        } else {
-          log(2, `Warning: Favorite status verification failed. Expected: ${newFavoriteStatus}, Got: ${verifyData?.favorited}`);
-        }
-      } else {
-        log(1, `Failed to persist favorite status for ${spellUuid}`);
-        // Revert UI on failure
-        target.classList.toggle('favorited');
-        if (icon) {
-          icon.classList.toggle('fas');
-          icon.classList.toggle('far');
-        }
-        this._stateManager.updateFavoriteSessionState(spellUuid, currentlyFavorited);
-      }
-    } catch (error) {
-      log(1, 'Error toggling favorite:', error);
-      // Revert UI on error
-      target.classList.toggle('favorited');
-      if (icon) {
-        icon.classList.toggle('fas');
-        icon.classList.toggle('far');
-      }
-      this._stateManager.updateFavoriteSessionState(spellUuid, currentlyFavorited);
+      button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
+      button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
     }
   }
 
