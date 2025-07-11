@@ -558,7 +558,7 @@ export class AdvancedSearchManager {
   _prepareStandardQueryData(query) {
     return {
       recentSearches: query.length < 3 ? this.getRecentSearches() : [],
-      fuzzyMatches: query.length >= 3 ? this._getFuzzyMatches(query) : []
+      fuzzyMatches: query.length >= 3 ? this._generateFuzzyMatches(query) : []
     };
   }
 
