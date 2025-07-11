@@ -1033,6 +1033,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @private
    */
   async _showCreateListDialog(identifierOptions) {
+    const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
     let formData = null;
     const formElements = this._prepareCreateListFormData(identifierOptions);
     const content = await renderTemplate(TEMPLATES.DIALOGS.CREATE_SPELL_LIST, {
@@ -1040,7 +1041,14 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       formElements
     });
     const result = await DialogV2.wait({
-      window: { title: game.i18n.localize('SPELLMANAGER.Buttons.CreateNew'), icon: 'fas fa-star' },
+      window: {
+        title: game.i18n.localize('SPELLMANAGER.Buttons.CreateNew'),
+        icon: 'fas fa-star',
+        resizable: false,
+        minimizable: false,
+        positioned: true
+      },
+      position: { width: 650, height: 'auto' },
       content: content,
       buttons: [
         {
@@ -1048,9 +1056,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           icon: 'fas fa-check',
           action: 'create',
           callback: (event, target, form) => {
-            const nameInput = form.querySelector('[name="name"]');
-            const identifierSelect = form.querySelector('[name="identifier"]');
-            const customIdentifierInput = form.querySelector('[name="customIdentifier"]');
+            // V12/V13 compatibility - form might be undefined in V13
+            const formElement = form?.querySelector ? form : form.element;
+            const nameInput = formElement.querySelector('[name="name"]');
+            const identifierSelect = formElement.querySelector('[name="identifier"]');
+            const customIdentifierInput = formElement.querySelector('[name="customIdentifier"]');
             if (!identifierSelect) return false;
             let name = nameInput.value.trim();
             let identifier = '';
@@ -1059,7 +1069,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
               identifier = customIdentifierInput?.value || '';
               const identifierPattern = /^[a-z0-9_-]+$/;
               if (!identifierPattern.test(identifier)) {
-                const errorElement = form.querySelector('.validation-error');
+                const errorElement = formElement.querySelector('.validation-error');
                 if (errorElement) errorElement.style.display = 'block';
                 customIdentifierInput.focus();
                 return false;
@@ -1085,7 +1095,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       default: 'cancel',
       rejectClose: false,
       render: (event, target, form) => {
-        this._setupCreateListDialogListeners(target);
+        // Handle V12/V13 compatibility - target might be DOM element or application instance
+        const dialogElement = target.querySelector ? target : target.element;
+        this._setupCreateListDialogListeners(dialogElement);
       }
     });
 
@@ -1115,6 +1127,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     context.hasCustomLists = context.customLists.length > 0;
     context.hasMergedLists = context.mergedLists.length > 0;
     context.hasStandardLists = context.standardLists.length > 0;
+
+    // V12/V13 compatibility for renderTemplate
+    const renderTemplate = MODULE.ISV13 ? foundry.applications.handlebars.renderTemplate : globalThis.renderTemplate;
     const content = await renderTemplate(TEMPLATES.DIALOGS.MERGE_SPELL_LISTS, context);
     const result = await DialogV2.wait({
       window: { title: game.i18n.localize('SPELLMANAGER.MergeLists.DialogTitle'), icon: 'fas fa-code-merge' },
@@ -1125,13 +1140,15 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           icon: 'fas fa-code-merge',
           action: 'merge',
           callback: (event, target, form) => {
-            const sourceListSelect = form.querySelector('[name="sourceList"]');
-            const copyFromListSelect = form.querySelector('[name="copyFromList"]');
-            const mergedListNameInput = form.querySelector('[name="mergedListName"]');
-            const hideSourceListsCheckbox = form.querySelector('[name="hideSourceLists"]');
+            // V12/V13 compatibility - form might be undefined in V13
+            const formElement = form?.querySelector ? form : form.element;
+            const sourceListSelect = formElement.querySelector('[name="sourceList"]');
+            const copyFromListSelect = formElement.querySelector('[name="copyFromList"]');
+            const mergedListNameInput = formElement.querySelector('[name="mergedListName"]');
+            const hideSourceListsCheckbox = formElement.querySelector('[name="hideSourceLists"]');
             if (!sourceListSelect.value || !copyFromListSelect.value) return false;
             if (sourceListSelect.value === copyFromListSelect.value) {
-              const errorElement = form.querySelector('.validation-error');
+              const errorElement = formElement.querySelector('.validation-error');
               if (errorElement) errorElement.style.display = 'block';
               return false;
             }
@@ -1160,7 +1177,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       default: 'cancel',
       rejectClose: false,
       render: (event, target, form) => {
-        this._setupMergeListsDialogListeners(target);
+        // V12/V13 compatibility for target parameter
+        const dialogElement = target.querySelector ? target : target.element;
+        this._setupMergeListsDialogListeners(dialogElement);
       }
     });
     return { result, formData };
@@ -1602,6 +1621,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @param {HTMLElement} _form - The form element
    */
   static async handleShowDocumentation(_event, _form) {
+    const renderTemplate = MODULE.ISV13 ? foundry.applications.handlebars.renderTemplate : globalThis.renderTemplate;
     const content = await renderTemplate(TEMPLATES.DIALOGS.MANAGER_DOCUMENTATION, {});
     await DialogV2.wait({
       window: { title: game.i18n.localize('SPELLMANAGER.Documentation.Title') },
@@ -1752,6 +1772,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   async _showRenameDialog(currentName) {
     let formData = null;
     let isValid = false;
+    const renderTemplate = MODULE.ISV13 ? foundry.applications.handlebars.renderTemplate : globalThis.renderTemplate;
     const content = await renderTemplate(TEMPLATES.DIALOGS.RENAME_SPELL_LIST, { currentName });
     const result = await DialogV2.wait({
       window: {
@@ -1765,7 +1786,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           icon: 'fas fa-check',
           action: 'rename',
           callback: (event, target, form) => {
-            const newNameInput = form.querySelector('[name="newName"]');
+            // V12/V13 compatibility - form might be undefined in V13
+            const formElement = form?.querySelector ? form : form.element;
+            const newNameInput = formElement.querySelector('[name="newName"]');
             const newName = newNameInput?.value.trim();
             if (!isValid || !newName || newName === currentName) return false;
             formData = { newName };
@@ -1781,7 +1804,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       default: 'cancel',
       rejectClose: false,
       render: (event, target, form) => {
-        this._setupRenameDialogListeners(target, currentName, (valid) => {
+        const dialogElement = target.querySelector ? target : target.element;
+        this._setupRenameDialogListeners(dialogElement, currentName, (valid) => {
           isValid = valid;
         });
       }
