@@ -1,0 +1,17 @@
+<p><strong>{{localize 'SPELLBOOK.Migrations.UserDataMigration'}}</strong>
+  {{localize 'SPELLBOOK.Migrations.UserDataUpdated' count=userDataResults.processed}}</p>
+{{#if userDataResults.users.length}}
+  <ul>
+    {{#each userDataResults.users}}
+      {{#if (lt @index 5)}}
+        <li>{{this.name}}
+          {{#if this.cleaned}}({{localize 'SPELLBOOK.Migrations.EntriesCleaned' count=this.cleaned}}){{/if}}
+          {{#if this.errors.length}}({{localize 'SPELLBOOK.Migrations.ErrorsFound' count=this.errors.length}}){{/if}}
+        </li>
+      {{/if}}
+    {{/each}}
+    {{#if (gt userDataResults.users.length 5)}}
+      <li>{{localize 'SPELLBOOK.Migrations.AndMoreUsers' count=(subtract userDataResults.users.length 5)}}</li>
+    {{/if}}
+  </ul>
+{{/if}}

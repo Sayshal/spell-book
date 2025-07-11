@@ -1,5 +1,5 @@
 // scripts/migrations.mjs
-import { DEPRECATED_FLAGS, MODULE } from './constants.mjs';
+import { DEPRECATED_FLAGS, MODULE, TEMPLATES } from './constants.mjs';
 import * as managerHelpers from './helpers/compendium-management.mjs';
 import { log } from './logger.mjs';
 
@@ -175,102 +175,29 @@ function logMigrationResults(deprecatedResults, folderResults) {
   log(2, `Migration complete: ${totalProcessed} documents updated`);
 }
 
-function buildChatContent(deprecatedResults, folderResults, userDataResults, totalProcessed) {
-  let content = `
-    <h2>${game.i18n.localize('SPELLBOOK.Migrations.ChatTitle')}</h2>
-    <p>${game.i18n.localize('SPELLBOOK.Migrations.ChatDescription')}</p>
-    <p>${game.i18n.format('SPELLBOOK.Migrations.TotalUpdated', { count: totalProcessed })}</p>`;
-
-  // Deprecated flags results
-  if (deprecatedResults.invalidFlagRemovals > 0) {
-    content += `<p><strong>${game.i18n.localize('SPELLBOOK.Migrations.InvalidFlagsRemoved')}:</strong> ${game.i18n.format('SPELLBOOK.Migrations.InvalidFlagsRemovedCount', { count: deprecatedResults.invalidFlagRemovals })}</p>`;
-  }
-
-  // Folder migration results
-  if (folderResults && folderResults.processed > 0) {
-    content += buildFolderMigrationContent(folderResults);
-  }
-
-  // User data migration results
-  if (userDataResults && userDataResults.processed > 0) {
-    content += buildUserDataMigrationContent(userDataResults);
-  }
-
-  // Actor list
-  if (deprecatedResults.actors.length > 0) {
-    content += buildActorListContent(deprecatedResults.actors);
-  }
-
-  content += `<p>${game.i18n.localize('SPELLBOOK.Migrations.Apology')}</p>`;
-  return content;
+async function buildChatContent(deprecatedResults, folderResults, userDataResults, totalProcessed) {
+  const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
+  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_REPORT, {
+    deprecatedResults,
+    folderResults,
+    userDataResults,
+    totalProcessed
+  });
 }
 
 function buildUserDataMigrationContent(userDataResults) {
-  let content = `<p><strong>User Spell Data Migration:</strong> Updated data for ${userDataResults.processed} users</p>`;
-
-  if (userDataResults.users.length > 0) {
-    content += '<ul>';
-    for (const user of userDataResults.users.slice(0, 5)) {
-      // Show max 5 users
-      content += `<li>${user.name}`;
-      if (user.cleaned > 0) {
-        content += ` (${user.cleaned} entries cleaned)`;
-      }
-      if (user.errors.length > 0) {
-        content += ` (${user.errors.length} errors)`;
-      }
-      content += '</li>';
-    }
-    if (userDataResults.users.length > 5) {
-      content += `<li>... and ${userDataResults.users.length - 5} more users</li>`;
-    }
-    content += '</ul>';
-  }
-
-  return content;
+  const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
+  return renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_USER_DATA, { userDataResults });
 }
 
 function buildFolderMigrationContent(folderResults) {
-  let content = '';
-  let folderMigrationText = game.i18n.format('SPELLBOOK.Migrations.SpellListFolderMigrationCount', { count: folderResults.processed });
-  if (folderResults.customMoved > 0 && folderResults.mergedMoved > 0) {
-    folderMigrationText += ` ${game.i18n.format('SPELLBOOK.Migrations.FolderMigrationBothTypes', {
-      customCount: folderResults.customMoved,
-      mergedCount: folderResults.mergedMoved
-    })}`;
-  } else if (folderResults.customMoved > 0) {
-    folderMigrationText += ` ${game.i18n.format('SPELLBOOK.Migrations.FolderMigrationCustomOnly', {
-      customCount: folderResults.customMoved
-    })}`;
-  } else if (folderResults.mergedMoved > 0) {
-    folderMigrationText += ` ${game.i18n.format('SPELLBOOK.Migrations.FolderMigrationMergedOnly', {
-      mergedCount: folderResults.mergedMoved
-    })}`;
-  }
-  content += `<p><strong>${game.i18n.localize('SPELLBOOK.Migrations.SpellListFolderMigration')}:</strong> ${folderMigrationText}</p>`;
-  if (folderResults.foldersCreated.length > 0) {
-    const folderNames = folderResults.foldersCreated
-      .map((folder) => (folder === 'custom' ? game.i18n.localize('SPELLMANAGER.Folders.CustomSpellListsFolder') : game.i18n.localize('SPELLMANAGER.Folders.MergedSpellListsFolder')))
-      .join(', ');
-    content += `<p><strong>${game.i18n.localize('SPELLBOOK.Migrations.FoldersCreated')}:</strong> ${folderNames}</p>`;
-  }
-  if (folderResults.errors.length > 0) {
-    content += `<p><strong>${game.i18n.localize('SPELLBOOK.Migrations.MigrationErrors')}:</strong> ${game.i18n.format('SPELLBOOK.Migrations.MigrationErrorsCount', { count: folderResults.errors.length })}</p>`;
-  }
-  return content;
+  const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
+  return renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_FOLDER, { folderResults });
 }
 
 function buildActorListContent(actors) {
-  let content = `<h3>${game.i18n.format('SPELLBOOK.Migrations.UpdatedActors', { count: actors.length })}</h3><ul>`;
-  actors.slice(0, 10).forEach((actor) => {
-    let actorLine = actor.name;
-    if (actor.hadInvalidFlags) actorLine += ` (${game.i18n.localize('SPELLBOOK.Migrations.InvalidFlagsDetail')})`;
-    if (actor.pack) actorLine += ` - ${game.i18n.format('SPELLBOOK.Migrations.Compendium', { name: actor.pack })}`;
-    content += `<li>${actorLine}</li>`;
-  });
-  if (actors.length > 10) content += `<li>${game.i18n.format('SPELLBOOK.Migrations.AndMore', { count: actors.length - 10 })}</li>`;
-  content += `</ul>`;
-  return content;
+  const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
+  return renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_ACTORS, { actors });
 }
 
 /**

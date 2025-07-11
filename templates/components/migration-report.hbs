@@ -1,0 +1,17 @@
+<h2>{{localize 'SPELLBOOK.Migrations.ChatTitle'}}</h2>
+<p>{{localize 'SPELLBOOK.Migrations.ChatDescription'}}</p>
+<p>{{localize 'SPELLBOOK.Migrations.TotalUpdated' count=totalProcessed}}</p>
+{{#if deprecatedResults.invalidFlagRemovals}}
+  <p><strong>{{localize 'SPELLBOOK.Migrations.InvalidFlagsRemoved'}}:</strong>
+    {{localize 'SPELLBOOK.Migrations.InvalidFlagsRemovedCount' count=deprecatedResults.invalidFlagRemovals}}</p>
+{{/if}}
+{{#if folderResults.processed}}
+  {{> migration-folder-results folderResults=folderResults}}
+{{/if}}
+{{#if userDataResults.processed}}
+  {{> migration-user-data-results userDataResults=userDataResults}}
+{{/if}}
+{{#if deprecatedResults.actors.length}}
+  {{> migration-actor-list actors=deprecatedResults.actors}}
+{{/if}}
+<p>{{localize 'SPELLBOOK.Migrations.Apology'}}</p>

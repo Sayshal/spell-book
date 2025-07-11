@@ -1,4 +1,4 @@
-import { FLAGS, MODULE, SETTINGS } from '../constants.mjs';
+import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
 import { log } from '../logger.mjs';
 import { RuleSetManager } from './rule-set-manager.mjs';
@@ -448,29 +448,18 @@ export class CantripManager {
       (classData) => classData.cantripChanges.added.length > 0 || classData.cantripChanges.removed.length > 0 || classData.overLimits.cantrips.isOver || classData.overLimits.spells.isOver
     );
     if (!hasChanges) return;
-    let content = `<h4>${game.i18n.format('SPELLBOOK.Notifications.ComprehensiveTitle', { name: actorName })}</h4>`;
-    for (const [classIdentifier, classData] of Object.entries(classChanges)) {
-      const { className, cantripChanges, overLimits } = classData;
-      if (cantripChanges.added.length === 0 && cantripChanges.removed.length === 0 && !overLimits.cantrips.isOver && !overLimits.spells.isOver) continue;
-      content += `<h5>${className}</h5>`;
-      if (cantripChanges.added.length > 0 || cantripChanges.removed.length > 0) {
-        content += `<p><strong>${game.i18n.localize('SPELLBOOK.Notifications.CantripChanges')}:</strong></p><ul>`;
-        if (cantripChanges.removed.length > 0) {
-          content += `<li><strong>${game.i18n.localize('SPELLBOOK.Notifications.Removed')}:</strong> ${cantripChanges.removed.map((c) => c.name).join(', ')}</li>`;
-        }
-        if (cantripChanges.added.length > 0) {
-          content += `<li><strong>${game.i18n.localize('SPELLBOOK.Notifications.Added')}:</strong> ${cantripChanges.added.map((c) => c.name).join(', ')}</li>`;
-        }
-        content += `</ul>`;
-      }
-      if (overLimits.cantrips.isOver) {
-        content += `<p><strong>${game.i18n.localize('SPELLBOOK.Notifications.CantripOverLimit')}:</strong> ${overLimits.cantrips.current}/${overLimits.cantrips.max} (${overLimits.cantrips.current - overLimits.cantrips.max} over)</p>`;
-      }
-      if (overLimits.spells.isOver) {
-        content += `<p><strong>${game.i18n.localize('SPELLBOOK.Notifications.SpellOverLimit')}:</strong> ${overLimits.spells.current}/${overLimits.spells.max} (${overLimits.spells.current - overLimits.spells.max} over)</p>`;
-      }
-      content += `<hr>`;
-    }
-    await ChatMessage.create({ content: content, whisper: game.users.filter((u) => u.isGM).map((u) => u.id) });
+    const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
+    const content = await renderTemplate(TEMPLATES.COMPONENTS.CANTRIP_NOTIFICATION, {
+      actorName,
+      classChanges: Object.entries(classChanges).map(([key, data]) => ({
+        classIdentifier: key,
+        ...data
+      }))
+    });
+
+    await ChatMessage.create({
+      content,
+      whisper: game.users.filter((u) => u.isGM).map((u) => u.id)
+    });
   }
 }

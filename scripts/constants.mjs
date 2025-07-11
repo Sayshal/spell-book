@@ -162,17 +162,28 @@ export const TEMPLATES = {
     DASHBOARD: 'modules/spell-book/templates/analytics/dashboard.hbs'
   },
   COMPONENTS: {
+    CANTRIP_NOTIFICATION: 'modules/spell-book/templates/components/cantrip-notification.hbs',
     EMPTY: 'modules/spell-book/templates/components/empty-state.hbs',
     ERROR: 'modules/spell-book/templates/components/error-message.hbs',
     LOADING: 'modules/spell-book/templates/components/loading-spinner.hbs',
-    SPELL_LEVEL: 'modules/spell-book/templates/components/spell-level.hbs'
+    MIGRATION_ACTORS: 'modules/spell-book/templates/components/migration-actor-list.hbs',
+    MIGRATION_FOLDER: 'modules/spell-book/templates/components/migration-folder-results.hbs',
+    MIGRATION_REPORT: 'modules/spell-book/templates/components/migration-report.hbs',
+    MIGRATION_USER_DATA: 'modules/spell-book/templates/components/migration-user-data-results.hbs',
+    SEARCH_DROPDOWN_ADVANCED: 'modules/spell-book/templates/components/search-dropdown-advanced.hbs',
+    SEARCH_DROPDOWN_STANDARD: 'modules/spell-book/templates/components/search-dropdown-standard.hbs',
+    SPELL_LEVEL: 'modules/spell-book/templates/components/spell-level.hbs',
+    USER_DATA_INTRO: 'modules/spell-book/templates/components/user-data-intro.hbs'
   },
   DIALOGS: {
     CREATE_SPELL_LIST: 'modules/spell-book/templates/dialogs/create-spell-list.hbs',
     FILTER_CONFIG: 'modules/spell-book/templates/dialogs/filter-configuration.hbs',
+    LEARN_FROM_SCROLL: 'modules/spell-book/templates/dialogs/learn-from-scroll.hbs',
+    LONG_REST_SWAP: 'modules/spell-book/templates/dialogs/long-rest-swap.hbs',
     MANAGER_DOCUMENTATION: 'modules/spell-book/templates/dialogs/spell-list-manager-documentation.hbs',
-    RENAME_SPELL_LIST: `modules/spell-book/templates/dialogs/rename-spell-list.hbs`,
     MERGE_SPELL_LISTS: 'modules/spell-book/templates/dialogs/merge-spell-lists.hbs',
+    RENAME_SPELL_LIST: `modules/spell-book/templates/dialogs/rename-spell-list.hbs`,
+    SCROLL_SCANNER_RESULTS: 'modules/spell-book/templates/dialogs/scroll-scanner-results.hbs',
     SPELL_COMPARISON: 'modules/spell-book/templates/dialogs/spell-comparison.hbs',
     SPELL_LOADOUT: 'modules/spell-book/templates/dialogs/spell-loadout.hbs',
     SPELL_NOTES: 'modules/spell-book/templates/dialogs/spell-notes-dialog.hbs',

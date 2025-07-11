@@ -1,0 +1,17 @@
+<p><strong>{{localize 'SPELLBOOK.Migrations.SpellListFolderMigration'}}:</strong>
+  {{localize 'SPELLBOOK.Migrations.SpellListFolderMigrationCount' count=folderResults.processed}}
+  {{#if (and folderResults.customMoved folderResults.mergedMoved)}}
+    {{localize 'SPELLBOOK.Migrations.FolderMigrationBothTypes' customCount=folderResults.customMoved mergedCount=folderResults.mergedMoved}}
+  {{else if folderResults.customMoved}}
+    {{localize 'SPELLBOOK.Migrations.FolderMigrationCustomOnly' customCount=folderResults.customMoved}}
+  {{else if folderResults.mergedMoved}}
+    {{localize 'SPELLBOOK.Migrations.FolderMigrationMergedOnly' mergedCount=folderResults.mergedMoved}}
+  {{/if}}
+</p>
+{{#if folderResults.foldersCreated.length}}
+  <p><strong>{{localize 'SPELLBOOK.Migrations.FoldersCreated'}}:</strong> {{join folderResults.foldersCreated ', '}}</p>
+{{/if}}
+{{#if folderResults.errors.length}}
+  <p><strong>{{localize 'SPELLBOOK.Migrations.MigrationErrors'}}:</strong>
+    {{localize 'SPELLBOOK.Migrations.MigrationErrorsCount' count=folderResults.errors.length}}</p>
+{{/if}}

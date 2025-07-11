@@ -1,0 +1,30 @@
+<h4>{{localize 'SPELLBOOK.Notifications.ComprehensiveTitle' name=actorName}}</h4>
+{{#each classChanges}}
+  {{#if (or this.cantripChanges.added.length this.cantripChanges.removed.length this.overLimits.cantrips.isOver this.overLimits.spells.isOver)}}
+    <h5>{{this.className}}</h5>
+    {{#if (or this.cantripChanges.added.length this.cantripChanges.removed.length)}}
+      <p><strong>{{localize 'SPELLBOOK.Notifications.CantripChanges'}}:</strong></p>
+      <ul>
+        {{#if this.cantripChanges.removed.length}}
+          <li><strong>{{localize 'SPELLBOOK.Notifications.Removed'}}:</strong>
+            {{join (pluck this.cantripChanges.removed 'name') ', '}}</li>
+        {{/if}}
+        {{#if this.cantripChanges.added.length}}
+          <li><strong>{{localize 'SPELLBOOK.Notifications.Added'}}:</strong>
+            {{join (pluck this.cantripChanges.added 'name') ', '}}</li>
+        {{/if}}
+      </ul>
+    {{/if}}
+    {{#if this.overLimits.cantrips.isOver}}
+      <p><strong>{{localize 'SPELLBOOK.Notifications.CantripOverLimit'}}:</strong>
+        {{this.overLimits.cantrips.current}}/{{this.overLimits.cantrips.max}}
+        ({{subtract this.overLimits.cantrips.current this.overLimits.cantrips.max}} over)</p>
+    {{/if}}
+    {{#if this.overLimits.spells.isOver}}
+      <p><strong>{{localize 'SPELLBOOK.Notifications.SpellOverLimit'}}:</strong>
+        {{this.overLimits.spells.current}}/{{this.overLimits.spells.max}}
+        ({{subtract this.overLimits.spells.current this.overLimits.spells.max}} over)</p>
+    {{/if}}
+    <hr>
+  {{/if}}
+{{/each}}

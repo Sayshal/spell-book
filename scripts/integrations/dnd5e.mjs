@@ -1,7 +1,7 @@
 import { GMSpellListManager } from '../apps/gm-spell-list-manager.mjs';
 import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
 import { SpellAnalyticsDashboard } from '../apps/spell-analytics-dashboard.mjs';
-import { FLAGS, MODULE, SETTINGS } from '../constants.mjs';
+import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
 import { preloadSpellDataForActor } from '../helpers/spell-cache.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
@@ -212,23 +212,8 @@ async function handleLongRestSwapPrompt(actor, longRestClasses) {
  * Show the long rest swap dialog with dynamic content
  */
 async function showLongRestSwapDialog(longRestClasses) {
-  let content = `<div class="long-rest-swap-info">`;
-  content += `<p>${game.i18n.localize('SPELLBOOK.LongRest.SwapPromptIntro')}</p>`;
-  if (longRestClasses.cantripSwapping.length > 0) {
-    content += `<div class="swap-category">`;
-    content += `<ul>`;
-    for (const classInfo of longRestClasses.cantripSwapping) content += `<li>${game.i18n.format('SPELLBOOK.LongRest.CantripSwappingClass', { className: classInfo.name })}</li>`;
-    content += `</ul>`;
-    content += `</div>`;
-  }
-  if (longRestClasses.spellSwapping.length > 0) {
-    content += `<div class="swap-category">`;
-    content += `<ul>`;
-    for (const classInfo of longRestClasses.spellSwapping) content += `<li>${game.i18n.format('SPELLBOOK.LongRest.SpellSwappingClass', { className: classInfo.name })}</li>`;
-    content += `</ul>`;
-    content += `</div>`;
-  }
-  content += `</div>`;
+  const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
+  const content = await renderTemplate(TEMPLATES.DIALOGS.LONG_REST_SWAP, { longRestClasses });
   return foundry.applications.api.DialogV2.wait({
     content: content,
     window: { icon: 'fas fa-bed', resizable: false, minimizable: false, positioned: true, title: game.i18n.localize('SPELLBOOK.LongRest.SwapTitle') },

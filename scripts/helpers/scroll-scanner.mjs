@@ -1,4 +1,4 @@
-import { MODULE, SETTINGS } from '../constants.mjs';
+import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import * as genericUtils from './generic-utils.mjs';
 import * as discoveryUtils from './spell-discovery.mjs';
@@ -147,25 +147,16 @@ export class ScrollScanner {
    * @private
    */
   static async _showLearnFromScrollDialog(spell, cost, time, isFree, isAlreadyInSpellbook) {
-    const costText = isFree ? game.i18n.localize('SPELLBOOK.Wizard.SpellCopyFree') : game.i18n.format('SPELLBOOK.Wizard.SpellCopyCost', { cost: cost });
+    const costText = isFree ? game.i18n.localize('SPELLBOOK.Wizard.SpellCopyFree') : game.i18n.format('SPELLBOOK.Wizard.SpellCopyCost', { cost });
     const shouldConsume = game.settings.get(MODULE.ID, SETTINGS.CONSUME_SCROLLS_WHEN_LEARNING);
-    let content = `
-    <form class="wizard-copy-form">
-      <p>${game.i18n.format('SPELLBOOK.Wizard.LearnSpellPrompt', { name: spell.name })}</p>`;
-    if (isAlreadyInSpellbook) content += `<p class="notification warning">${game.i18n.localize('SPELLBOOK.Wizard.SpellAlreadyKnown')}</p>`;
-    content += `
-      <div class="copy-details">
-        <div class="form-group">
-          <label>${game.i18n.localize('SPELLBOOK.Wizard.CostLabel')}:</label>
-          <span>${costText}</span>
-        </div>
-        <div class="form-group">
-          <label>${game.i18n.localize('SPELLBOOK.Wizard.TimeLabel')}:</label>
-          <span>${game.i18n.format('SPELLBOOK.Wizard.SpellCopyTime', { hours: time })}</span>
-        </div>
-      </div>`;
-    if (shouldConsume) content += `<p class="notification info">${game.i18n.localize('SPELLBOOK.Scrolls.ScrollWillBeConsumed')}</p>`;
-    content += `</form>`;
+    const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
+    const content = await renderTemplate(TEMPLATES.DIALOGS.LEARN_FROM_SCROLL, {
+      spell,
+      costText,
+      time,
+      isAlreadyInSpellbook,
+      shouldConsume
+    });
     try {
       const result = await foundry.applications.api.DialogV2.wait({
         title: game.i18n.format('SPELLBOOK.Wizard.LearnSpellTitle', { name: spell.name }),

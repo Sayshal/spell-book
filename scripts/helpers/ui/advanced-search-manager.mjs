@@ -1,5 +1,5 @@
 import { PlayerSpellBook } from '../../apps/player-spell-book.mjs';
-import { FLAGS, MODULE } from '../../constants.mjs';
+import { FLAGS, MODULE, TEMPLATES } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
 import { FieldDefinitions } from './field-definitions.mjs';
 import { QueryExecutor } from './query-executor.mjs';
@@ -157,7 +157,7 @@ export class AdvancedSearchManager {
    * Handle search input changes
    * @param {Event} event - Input event
    */
-  handleSearchInput(event) {
+  async handleSearchInput(event) {
     const query = event.target.value;
 
     // Skip processing if we're in the middle of processing a suggestion
@@ -179,7 +179,7 @@ export class AdvancedSearchManager {
         } catch (error) {
           log(2, 'Error ensuring spell data for advanced search:', error);
         }
-        this.updateDropdownContent(query);
+        await this.updateDropdownContent(query);
         if (this.isAdvancedQueryComplete(query)) log(3, 'Advanced query appears complete, but waiting for Enter key');
       }, 150);
     } else {
@@ -190,7 +190,7 @@ export class AdvancedSearchManager {
         } catch (error) {
           log(2, 'Error ensuring spell data for fuzzy search:', error);
         }
-        this.updateDropdownContent(query);
+        await this.updateDropdownContent(query);
         this.performSearch(query);
       }, 800);
     }
@@ -256,13 +256,13 @@ export class AdvancedSearchManager {
    * Handle search focus
    * @param {Event} event - Focus event
    */
-  handleSearchFocus(event) {
+  async handleSearchFocus(event) {
     if (this.isProcessingFocusEvent) return;
     this.isProcessingFocusEvent = true;
     if (this.focusDebounceTimeout) clearTimeout(this.focusDebounceTimeout);
-    this.focusDebounceTimeout = setTimeout(() => {
+    this.focusDebounceTimeout = setTimeout(async () => {
       const query = event.target.value;
-      this.updateDropdownContent(query);
+      await this.updateDropdownContent(query);
       this.showDropdown();
       this.isProcessingFocusEvent = false;
     }, 50);
@@ -289,7 +289,7 @@ export class AdvancedSearchManager {
    * Handle document click
    * @param {Event} event - Click event
    */
-  handleDocumentClick(event) {
+  async handleDocumentClick(event) {
     const dropdown = document.querySelector('.search-dropdown');
     if (event.target.closest('.clear-recent-search')) {
       log(3, 'Handling clear recent search click');
@@ -299,7 +299,7 @@ export class AdvancedSearchManager {
       const searchText = suggestionElement.dataset.query;
       suggestionElement.style.display = 'none';
       this.removeFromRecentSearches(searchText);
-      this.updateDropdownContent(this.searchInputElement.value);
+      await this.updateDropdownContent(this.searchInputElement.value);
       return;
     }
     if (event.target.closest('.search-suggestion')) {
@@ -315,7 +315,7 @@ export class AdvancedSearchManager {
    * Select a suggestion
    * @param {Element} suggestionElement - The suggestion element
    */
-  selectSuggestion(suggestionElement) {
+  async selectSuggestion(suggestionElement) {
     const suggestionId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     const query = suggestionElement.dataset.query;
     const now = Date.now();
@@ -369,7 +369,7 @@ export class AdvancedSearchManager {
       }
 
       // Update dropdown content immediately
-      this.updateDropdownContent(query);
+      await this.updateDropdownContent(query);
 
       // Ensure dropdown stays visible
       if (!this.isDropdownVisible) {
@@ -434,8 +434,8 @@ export class AdvancedSearchManager {
     if (!dropdown) return;
     let content = '';
     this.isAdvancedQuery = query.startsWith('^');
-    if (this.isAdvancedQuery) content += this._generateAdvancedQueryContent(query);
-    else content += this._generateStandardQueryContent(query);
+    if (this.isAdvancedQuery) content = await this._generateAdvancedQueryContent(query);
+    else content = await this._generateStandardQueryContent(query);
     dropdown.innerHTML = content;
     log(3, 'Dropdown content updated for query:', query);
   }
@@ -446,86 +446,10 @@ export class AdvancedSearchManager {
    * @returns {string} HTML content
    * @private
    */
-  _generateAdvancedQueryContent(query) {
-    const queryWithoutTrigger = query.substring(1);
-    let content = `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Advanced')}</div>`;
-    if (!queryWithoutTrigger.trim() || this.isIncompleteAndQuery(query)) {
-      content += `<div class="search-status info">${game.i18n.localize('SPELLBOOK.Search.EnterField')}</div>`;
-      const fieldAliases = this.fieldDefinitions.getAllFieldAliases();
-      const uniqueFields = [];
-      const seenFields = new Set();
-      for (const alias of fieldAliases) {
-        const fieldId = this.fieldDefinitions.getFieldId(alias);
-        if (fieldId && !seenFields.has(fieldId)) {
-          seenFields.add(fieldId);
-          uniqueFields.push(alias);
-        }
-      }
-      if (uniqueFields.length > 0) {
-        content += `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Fields')}</div>`;
-        uniqueFields.forEach((field) => {
-          const tooltipAttr = field.length > 32 ? `data-tooltip="${field}"` : '';
-          content += `<div class="search-suggestion" data-query="${query}${field}:" role="option" tabindex="-1" aria-selected="false">
-          <span class="suggestion-text" ${tooltipAttr}>${field}</span>
-        </div>`;
-        });
-      }
-      return content;
-    }
-    const endsWithFieldColon = this.queryEndsWithFieldColon(queryWithoutTrigger);
-    log(3, `endsWithFieldColon result: "${endsWithFieldColon}"`);
-    if (endsWithFieldColon) {
-      const fieldId = this.fieldDefinitions.getFieldId(endsWithFieldColon);
-      log(3, `fieldId resolved to: "${fieldId}"`);
-      content += `<div class="search-status info">${game.i18n.localize('SPELLBOOK.Search.EnterValue')}</div>`;
-      if (fieldId === 'range') {
-        content += `<div class="search-note">
-        <i class="fas fa-info-circle"></i>
-        <span class="suggestion-text">${game.i18n.localize('SPELLBOOK.Search.TypeRange')}</span>
-      </div>`;
-        return content;
-      }
-      if (fieldId) {
-        const validValues = this.fieldDefinitions.getValidValuesForField(fieldId);
-        log(3, `validValues for ${fieldId}:`, validValues);
-        if (validValues.length > 0) {
-          content += `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Values')}</div>`;
-          validValues.forEach((value) => {
-            const tooltipAttr = value.length > 32 ? `data-tooltip="${value}"` : '';
-            content += `<div class="search-suggestion" data-query="${query}${value}" role="option" tabindex="-1" aria-selected="false">
-            <span class="suggestion-text" ${tooltipAttr}>${value}</span>
-          </div>`;
-          });
-        }
-      }
-      return content;
-    }
-    const incompleteValueMatch = this.isIncompleteValue(queryWithoutTrigger);
-    if (incompleteValueMatch) {
-      const { field: fieldId, value: currentValue } = incompleteValueMatch;
-      content += `<div class="search-status info">${game.i18n.localize('SPELLBOOK.Search.CompleteValue')}</div>`;
-      const validValues = this.fieldDefinitions.getValidValuesForField(fieldId);
-      const matchingValues = validValues.filter((value) => value.toLowerCase().startsWith(currentValue.toLowerCase()));
-      if (matchingValues.length > 0) {
-        content += `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.MatchingValues')}</div>`;
-        matchingValues.forEach((value) => {
-          const beforeColon = queryWithoutTrigger.substring(0, queryWithoutTrigger.lastIndexOf(':') + 1);
-          const fullQuery = `^${beforeColon}${value}`;
-          const tooltipAttr = value.length > 32 ? `data-tooltip="${value}"` : '';
-          content += `<div class="search-suggestion" data-query="${fullQuery}" role="option" tabindex="-1" aria-selected="false">
-          <span class="suggestion-text" ${tooltipAttr}>${value}</span>
-        </div>`;
-        });
-      }
-      return content;
-    }
-    if (this.isAdvancedQueryComplete(query)) {
-      content += `<div class="search-suggestion submit-query" data-query="${query}" role="option" tabindex="-1" aria-selected="false">
-      <span class="suggestion-text">${game.i18n.localize('SPELLBOOK.Search.ExecuteQuery')}</span>
-      <span class="suggestion-execute">⏎</span>
-    </div>`;
-    }
-    return content;
+  async _generateAdvancedQueryContent(query) {
+    const data = this._prepareAdvancedQueryData(query);
+    const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
+    return await renderTemplate(TEMPLATES.COMPONENTS.SEARCH_DROPDOWN_ADVANCED, data);
   }
 
   /**
@@ -594,11 +518,10 @@ export class AdvancedSearchManager {
    * @returns {string} HTML content
    * @private
    */
-  _generateStandardQueryContent(query) {
-    let content = '';
-    if (!query || query.length < 3) content += this._generateRecentSearches();
-    else content += this._generateFuzzyMatches(query);
-    return content;
+  async _generateStandardQueryContent(query) {
+    const data = this._prepareStandardQueryData(query);
+    const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
+    return await renderTemplate(TEMPLATES.COMPONENTS.SEARCH_DROPDOWN_STANDARD, data);
   }
 
   /**
@@ -639,6 +562,25 @@ export class AdvancedSearchManager {
       });
     } else content += `<div class="search-status">${game.i18n.localize('SPELLBOOK.Search.NoMatches')}</div>`;
     return content;
+  }
+
+  _prepareAdvancedQueryData(query) {
+    const queryWithoutTrigger = query.substring(1);
+    const showFieldList = !queryWithoutTrigger.trim() || this.isIncompleteAndQuery(query);
+
+    return {
+      showFieldList,
+      fields: showFieldList ? this._getUniqueFields() : [],
+      incompleteValue: this.isIncompleteValue(queryWithoutTrigger),
+      queryResult: this._processQuery(query)
+    };
+  }
+
+  _prepareStandardQueryData(query) {
+    return {
+      recentSearches: query.length < 3 ? this.getRecentSearches() : [],
+      fuzzyMatches: query.length >= 3 ? this._getFuzzyMatches(query) : []
+    };
   }
 
   /**

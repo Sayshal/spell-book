@@ -1,0 +1,22 @@
+<div class="long-rest-swap-dialog">
+  <p>{{localize 'SPELLBOOK.LongRest.SwapPromptIntro'}}</p>
+  {{#if longRestClasses.cantripSwapping.length}}
+    <div class="swap-category">
+      <h4>{{localize 'SPELLBOOK.LongRest.CantripSwapping'}}</h4>
+      <ul>
+        {{#each longRestClasses.cantripSwapping}}
+          <li>{{localize 'SPELLBOOK.LongRest.CantripSwappingClass' className=this.name}}</li>
+        {{/each}}
+      </ul>
+    </div>
+  {{/if}}
+  {{#if longRestClasses.spellSwapping.length}}
+    <div class="swap-category">
+      <ul>
+        {{#each longRestClasses.spellSwapping}}
+          <li>{{localize 'SPELLBOOK.LongRest.SpellSwappingClass' className=this.name}}</li>
+        {{/each}}
+      </ul>
+    </div>
+  {{/if}}
+</div>

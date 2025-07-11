@@ -1,0 +1,22 @@
+<div class="scroll-scanner">
+  <p>{{{localize 'SPELLBOOK.ScrollScanner.ResultsHeader' count=scrolls.length}}}</p>
+  <div>
+    <table>
+      <thead>
+        <tr>
+          <th>{{localize 'SPELLBOOK.ScrollScanner.TableHeaderName'}}</th>
+          <th>{{localize 'SPELLBOOK.ScrollScanner.TableHeaderUUID'}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each scrolls}}
+          <tr>
+            <td>{{this.name}}</td>
+            <td>{{this.uuid}}</td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+  <p><em>{{localize 'SPELLBOOK.ScrollScanner.ResultsFooter'}}</em></p>
+</div>
