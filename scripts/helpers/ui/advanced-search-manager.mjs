@@ -117,7 +117,7 @@ export class AdvancedSearchManager {
     const clearButton = document.createElement('button');
     clearButton.type = 'button';
     clearButton.className = 'search-input-clear';
-    clearButton.innerHTML = '<i class="fa-solid fa-square-xmark"></i>';
+    clearButton.innerHTML = '<i class="fa-solid fa-xmark"></i>';
     clearButton.style.display = 'none';
     clearButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Search.ClearSearch'));
     clearButton.setAttribute('tabindex', '-1');
