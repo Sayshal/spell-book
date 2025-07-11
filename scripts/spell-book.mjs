@@ -98,7 +98,11 @@ async function preloadTemplates() {
     return result;
   }
   const templatePaths = flattenTemplateObject(TEMPLATES);
-  return loadTemplates(templatePaths);
+
+  // Use the appropriate loadTemplates method based on version
+  // TODO: Remove when V12 support is dropped
+  if (MODULE.ISV13) return foundry?.applications?.handlebars?.loadTemplates(templatePaths);
+  else return loadTemplates(templatePaths);
 }
 
 function registerHandlebarsHelpers() {
