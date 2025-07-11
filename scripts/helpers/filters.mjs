@@ -29,11 +29,7 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
   switch (filterId) {
     case 'level':
       Object.entries(CONFIG.DND5E.spellLevels).forEach(([level, label]) => {
-        options.push({
-          value: level,
-          label: label,
-          selected: filterState.level === level
-        });
+        options.push({ value: level, label: label, selected: filterState.level === level });
       });
       break;
     case 'school':
@@ -47,13 +43,9 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
       options.push(...uniqueTypes);
       break;
     case 'damageType':
-      // Handle healing separately since it's not in CONFIG.DND5E.damageTypes
       const damageTypes = {
         ...CONFIG.DND5E.damageTypes,
-        healing: {
-          label: game.i18n.localize('DND5E.Healing'),
-          name: game.i18n.localize('DND5E.Healing')
-        }
+        healing: { label: game.i18n.localize('DND5E.Healing'), name: game.i18n.localize('DND5E.Healing') }
       };
       Object.entries(damageTypes)
         .sort((a, b) => {

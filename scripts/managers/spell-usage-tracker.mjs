@@ -14,8 +14,9 @@ export class SpellUsageTracker {
   }
 
   /**
-   * Get singleton instance
-   * @returns {SpellUsageTracker}
+   * Get singleton instance of the spell usage tracker
+   * @static
+   * @returns {SpellUsageTracker} The singleton instance
    */
   static getInstance() {
     if (!this._instance) this._instance = new SpellUsageTracker();
@@ -23,7 +24,9 @@ export class SpellUsageTracker {
   }
 
   /**
-   * Initialize the usage tracking system (static method)
+   * Initialize the usage tracking system with D&D5e activity hooks
+   * @async
+   * @static
    * @returns {Promise<void>}
    */
   static async initialize() {
@@ -35,12 +38,14 @@ export class SpellUsageTracker {
   }
 
   /**
-   * Handle D&D5e activity consumption events
-   * @param {Activity} activity - The activity being consumed
-   * @param {Object} usageConfig - Usage configuration
-   * @param {Object} messageConfig - Message configuration
-   * @param {Object} updates - Document updates
+   * Handle D&D5e activity consumption events for spell usage tracking
+   * @async
    * @private
+   * @param {Activity} activity - The activity being consumed
+   * @param {Object} usageConfig - Usage configuration data
+   * @param {Object} messageConfig - Message configuration data
+   * @param {Object} updates - Document updates object
+   * @returns {Promise<void>}
    */
   async _handleActivityConsumption(activity, usageConfig, messageConfig, updates) {
     try {
@@ -63,10 +68,10 @@ export class SpellUsageTracker {
   }
 
   /**
-   * Detect usage context (combat vs exploration)
-   * @param {Actor} actor - The casting actor
-   * @returns {string} 'combat' or 'exploration'
+   * Detect usage context based on combat state
    * @private
+   * @param {Actor} actor - The casting actor
+   * @returns {string} Either 'combat' or 'exploration'
    */
   _detectUsageContext(actor) {
     if (!game.combat) return 'exploration';
@@ -77,11 +82,12 @@ export class SpellUsageTracker {
 
   /**
    * Record spell usage in actor data
+   * @async
+   * @private
    * @param {string} spellUuid - Canonical spell UUID
-   * @param {string} context - 'combat' or 'exploration'
+   * @param {string} context - Either 'combat' or 'exploration'
    * @param {Actor} actor - The casting actor
    * @returns {Promise<void>}
-   * @private
    */
   async _recordSpellUsage(spellUuid, context, actor) {
     try {
@@ -104,10 +110,12 @@ export class SpellUsageTracker {
   }
 
   /**
-   * Get usage statistics for a spell
-   * @param {string} spellUuid - Spell UUID
-   * @param {string} userId - User ID (optional)
-   * @returns {Promise<Object|null>} Usage statistics
+   * Get usage statistics for a specific spell
+   * @async
+   * @static
+   * @param {string} spellUuid - Spell UUID to get stats for
+   * @param {string|null} [userId] - User ID, defaults to current user
+   * @returns {Promise<Object|null>} Usage statistics or null if not found
    */
   static async getSpellUsageStats(spellUuid, userId = null) {
     try {
@@ -120,10 +128,12 @@ export class SpellUsageTracker {
   }
 
   /**
-   * Set usage statistics for a spell (for data management)
-   * @param {string} spellUuid - Spell UUID
-   * @param {Object} usageStats - Usage statistics
-   * @param {string} userId - User ID (optional)
+   * Set usage statistics for a spell
+   * @async
+   * @static
+   * @param {string} spellUuid - Spell UUID to set stats for
+   * @param {Object} usageStats - Usage statistics data
+   * @param {string|null} [userId] - User ID, defaults to current user
    * @returns {Promise<boolean>} Success status
    */
   static async setSpellUsageStats(spellUuid, usageStats, userId = null) {

@@ -2,10 +2,6 @@ import { log } from '../logger.mjs';
 import { SpellUserDataJournal } from './spell-user-data.mjs';
 
 /**
- * Utilities for managing spell favorites integration with D&D5e system
- */
-
-/**
  * Toggle favorite status for a spell
  * @param {string} spellUuid - The spell UUID
  * @param {Actor} actor - The actor who owns the spell
@@ -18,17 +14,9 @@ export async function toggleSpellFavorite(spellUuid, actor, userId = null, actor
     const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid, userId, actorId);
     const currentlyFavorited = userData?.favorited || false;
     const newFavoriteStatus = !currentlyFavorited;
-
-    // Update user data with target user/actor
     await SpellUserDataJournal.setSpellFavorite(spellUuid, newFavoriteStatus, userId, actorId);
-
-    // Update actor favorites if favoriting
-    if (newFavoriteStatus) {
-      await addSpellToActorFavorites(spellUuid, actor);
-    } else {
-      await removeSpellFromActorFavorites(spellUuid, actor);
-    }
-
+    if (newFavoriteStatus) await addSpellToActorFavorites(spellUuid, actor);
+    else await removeSpellFromActorFavorites(spellUuid, actor);
     return true;
   } catch (error) {
     log(1, 'Error toggling spell favorite:', error);
@@ -44,31 +32,17 @@ export async function toggleSpellFavorite(spellUuid, actor, userId = null, actor
  */
 export async function addSpellToActorFavorites(spellUuid, actor) {
   try {
-    // Find the actor's version of this spell
     const actorSpell = findActorSpellByUuid(spellUuid, actor);
     if (!actorSpell) {
       log(2, 'Cannot add to favorites: spell not found on actor');
       return false;
     }
-
     const currentFavorites = actor.system.favorites || [];
     const favoriteId = `.Item.${actorSpell.id}`;
-
-    // Check if already in favorites
-    if (currentFavorites.some((fav) => fav.id === favoriteId)) {
-      return true; // Already favorited
-    }
-
-    // Add to favorites
-    const newFavorite = {
-      type: 'item',
-      id: favoriteId,
-      sort: 100000 + currentFavorites.length
-    };
-
+    if (currentFavorites.some((fav) => fav.id === favoriteId)) return true;
+    const newFavorite = { type: 'item', id: favoriteId, sort: 100000 + currentFavorites.length };
     const updatedFavorites = [...currentFavorites, newFavorite];
     await actor.update({ 'system.favorites': updatedFavorites });
-
     log(3, `Added spell ${actorSpell.name} to actor favorites`);
     return true;
   } catch (error) {
@@ -86,20 +60,11 @@ export async function addSpellToActorFavorites(spellUuid, actor) {
 export async function removeSpellFromActorFavorites(spellUuid, actor) {
   try {
     const actorSpell = findActorSpellByUuid(spellUuid, actor);
-    if (!actorSpell) {
-      return true; // Not on actor, nothing to remove
-    }
-
+    if (!actorSpell) return true;
     const currentFavorites = actor.system.favorites || [];
     const favoriteId = `.Item.${actorSpell.id}`;
-
     const updatedFavorites = currentFavorites.filter((fav) => fav.id !== favoriteId);
-
-    if (updatedFavorites.length !== currentFavorites.length) {
-      await actor.update({ 'system.favorites': updatedFavorites });
-      log(3, `Removed spell ${actorSpell.name} from actor favorites`);
-    }
-
+    if (updatedFavorites.length !== currentFavorites.length) await actor.update({ 'system.favorites': updatedFavorites });
     return true;
   } catch (error) {
     log(1, 'Error removing spell from actor favorites:', error);
@@ -117,9 +82,7 @@ export async function syncFavoritesOnSave(actor, spellData) {
   try {
     for (const [uuid, data] of Object.entries(spellData)) {
       const userData = SpellUserDataJournal.getUserDataForSpell(uuid);
-      if (userData?.favorited) {
-        await addSpellToActorFavorites(uuid, actor);
-      }
+      if (userData?.favorited) await addSpellToActorFavorites(uuid, actor);
     }
   } catch (error) {
     log(1, 'Error syncing favorites on save:', error);
@@ -141,10 +104,7 @@ export async function processFavoritesFromForm(form, actor) {
       const canonicalUuid = getCanonicalSpellUuid(spell.uuid);
       const userData = await SpellUserDataJournal.getUserDataForSpell(canonicalUuid);
       const isFavoritedInJournal = userData?.favorited || false;
-      if (isFavoritedInJournal) {
-        favoritesToAdd.push(spell);
-        log(3, `Spell ${spell.name} is favorited in journal, adding to actor favorites`);
-      }
+      if (isFavoritedInJournal) favoritesToAdd.push(spell);
     }
     if (favoritesToAdd.length > 0) {
       const newFavorites = favoritesToAdd.map((spell, index) => ({ type: 'item', id: `.Item.${spell.id}`, sort: 100000 + index }));
@@ -156,10 +116,7 @@ export async function processFavoritesFromForm(form, actor) {
     } else {
       const existingFavorites = actor.system.favorites || [];
       const nonSpellFavorites = existingFavorites.filter((fav) => fav.type !== 'item' || !fav.id.startsWith('.Item.'));
-      if (nonSpellFavorites.length !== existingFavorites.length) {
-        await actor.update({ 'system.favorites': nonSpellFavorites });
-        log(3, `Removed all spell favorites from actor.system.favorites`);
-      }
+      if (nonSpellFavorites.length !== existingFavorites.length) await actor.update({ 'system.favorites': nonSpellFavorites });
     }
     log(3, `Processed favorites: ${favoritesToAdd.length} spells favorited`);
   } catch (error) {
@@ -197,33 +154,18 @@ export async function updateActorFavorites(favoritedUuids, actor) {
  * @returns {Item|null} The actor's spell item
  */
 export function findActorSpellByUuid(spellUuid, actor) {
-  // Direct UUID match
   let spell = actor.items.get(spellUuid);
   if (spell && spell.type === 'spell') return spell;
-
-  // Source ID match - try both directions
   spell = actor.items.find((item) => {
     if (item.type !== 'spell') return false;
-
-    // Check if actor spell's sourceId matches our UUID
     if (item.flags?.core?.sourceId === spellUuid) return true;
-
-    // Check if our UUID matches actor spell's UUID
     if (item.uuid === spellUuid) return true;
-
-    // Check by exact name match as fallback
-    // Get the source spell to compare names
     if (spellUuid.startsWith('Compendium.')) {
-      // This is a compendium UUID, check by source ID relationship
       const sourceSpell = fromUuidSync(spellUuid);
-      if (sourceSpell && sourceSpell.name === item.name) {
-        return true;
-      }
+      if (sourceSpell && sourceSpell.name === item.name) return true;
     }
-
     return false;
   });
-
   return spell || null;
 }
 
@@ -234,19 +176,11 @@ export function findActorSpellByUuid(spellUuid, actor) {
  */
 export function getCanonicalSpellUuid(spellOrUuid) {
   if (typeof spellOrUuid === 'string') {
-    // If it's already a compendium UUID, use it
-    if (spellOrUuid.startsWith('Compendium.')) {
-      return spellOrUuid;
-    }
-    // Otherwise try to get the source
+    if (spellOrUuid.startsWith('Compendium.')) return spellOrUuid;
     const spell = fromUuidSync(spellOrUuid);
-    if (spell?.flags?.core?.sourceId) {
-      return spell.flags.core.sourceId;
-    }
+    if (spell?.flags?.core?.sourceId) return spell.flags.core.sourceId;
     return spellOrUuid;
   }
-
-  // For spell objects, prefer compendium UUID
   if (spellOrUuid?.compendiumUuid) return spellOrUuid.compendiumUuid;
   if (spellOrUuid?.flags?.core?.sourceId) return spellOrUuid.flags.core.sourceId;
   return spellOrUuid?.uuid || '';

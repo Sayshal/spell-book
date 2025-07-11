@@ -207,16 +207,17 @@ export function extractRange(spell) {
  */
 export function extractDamageTypes(spell) {
   const damageTypes = [];
-  if (spell.labels?.damages?.length) {
-    for (const damage of spell.labels.damages) if (damage.damageType && !damageTypes.includes(damage.damageType)) damageTypes.push(damage.damageType);
-  }
+  if (spell.labels?.damages?.length) for (const damage of spell.labels.damages) if (damage.damageType && !damageTypes.includes(damage.damageType)) damageTypes.push(damage.damageType);
   if (spell.system?.activities) {
     for (const [_key, activity] of Object.entries(spell.system.activities)) {
       if (activity.damage?.parts?.length) {
         for (const part of activity.damage.parts) {
           if (part.types && Array.isArray(part.types) && part.types.length) {
-            for (const type of part.types) if (!damageTypes.includes(type)) damageTypes.push(type);
-          } else if (part[1] && !damageTypes.includes(part[1])) damageTypes.push(part[1]);
+            for (const type of part.types) {
+              if (!damageTypes.includes(type)) damageTypes.push(type);
+              else if (part[1] && !damageTypes.includes(part[1])) damageTypes.push(part[1]);
+            }
+          }
         }
       }
     }
@@ -292,9 +293,7 @@ export function extractSpellConditions(spell) {
     for (const [key, condition] of Object.entries(CONFIG.DND5E.conditionTypes)) {
       if (condition.pseudo) continue;
       const conditionLabel = genericUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, key);
-      if (conditionLabel && lowerDesc.includes(conditionLabel.toLowerCase())) {
-        conditions.push(key);
-      }
+      if (conditionLabel && lowerDesc.includes(conditionLabel.toLowerCase())) conditions.push(key);
     }
   }
   return conditions;

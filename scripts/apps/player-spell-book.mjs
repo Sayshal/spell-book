@@ -577,23 +577,15 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   async _applyFavoriteStatesAfterRender() {
     const favoriteButtons = this.element.querySelectorAll('.spell-favorite-toggle[data-uuid]');
-
     log(3, `Applying favorite states to ${favoriteButtons.length} buttons after render`);
-
     if (favoriteButtons.length === 0) {
-      // If no buttons found, try again after a short delay
       setTimeout(async () => {
         const retryButtons = this.element.querySelectorAll('.spell-favorite-toggle[data-uuid]');
-        if (retryButtons.length > 0) {
-          log(3, `Retry: Found ${retryButtons.length} favorite buttons on second attempt`);
-          await this._applyFavoriteStatesToButtons(retryButtons);
-        } else {
-          log(2, 'No favorite buttons found even after retry');
-        }
+        if (retryButtons.length > 0) await this._applyFavoriteStatesToButtons(retryButtons);
+        else log(2, 'No favorite buttons found even after retry');
       }, 100);
       return;
     }
-
     await this._applyFavoriteStatesToButtons(favoriteButtons);
   }
 
@@ -604,38 +596,20 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   async _applyFavoriteStatesToButtons(buttons) {
     let updatedCount = 0;
-
     for (const button of buttons) {
       const spellUuid = button.dataset.uuid;
       if (!spellUuid) continue;
-
-      // 1. Check session state first (immediate changes during editing)
       let isFavorited = this._stateManager.getFavoriteSessionState(spellUuid);
-
-      // 2. If no session state, check journal data with actor validation
       if (isFavorited === null) {
         const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid);
         const journalFavorited = userData?.favorited || false;
-
-        // 3. Validate against actor state
         const isOnActor = this._isSpellOnActor(spellUuid);
-
-        if (isOnActor && journalFavorited) {
-          // Spell is on actor and favorited in journal - show as favorited
-          isFavorited = true;
-        } else if (isOnActor && !journalFavorited) {
-          // Spell is on actor but not favorited in journal - show as unfavorited
-          isFavorited = false;
-        } else if (!isOnActor) {
-          // Spell is not on actor - preserve journal state regardless
-          isFavorited = journalFavorited;
-        }
+        if (isOnActor && journalFavorited) isFavorited = true;
+        else if (isOnActor && !journalFavorited) isFavorited = false;
+        else if (!isOnActor) isFavorited = journalFavorited;
       }
-
       const icon = button.querySelector('i');
       const currentlyFavorited = button.classList.contains('favorited');
-
-      // Only update if state is different
       if (currentlyFavorited !== isFavorited) {
         if (isFavorited) {
           button.classList.add('favorited');
@@ -657,10 +631,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         updatedCount++;
       }
     }
-
-    if (updatedCount > 0) {
-      log(3, `Applied favorite states: ${updatedCount} buttons updated`);
-    }
+    if (updatedCount > 0) log(3, `Applied favorite states: ${updatedCount} buttons updated`);
   }
 
   /**
@@ -672,13 +643,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   _isSpellOnActor(spellUuid) {
     return this.actor.items.some((item) => {
       if (item.type !== 'spell') return false;
-
-      // Check source ID match
       if (item.flags?.core?.sourceId === spellUuid) return true;
-
-      // Check direct UUID match
       if (item.uuid === spellUuid) return true;
-
       return false;
     });
   }
@@ -691,37 +657,23 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   async _syncJournalToActorState() {
     try {
       log(3, 'Syncing journal favorites to current actor state...');
-
-      // Get actor's current favorites from system.favorites
       const actorFavorites = this.actor.system.favorites || [];
       const actorFavoriteSpellIds = new Set(actorFavorites.filter((fav) => fav.type === 'item' && fav.id.startsWith('.Item.')).map((fav) => fav.id.replace('.Item.', '')));
-
-      // Get all spells on the actor
       const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
-
       let syncCount = 0;
-      const changedSpells = []; // Track which spells changed for UI update
-
+      const changedSpells = [];
       for (const spell of actorSpells) {
         const spellUuid = spell.flags?.core?.sourceId || spell.uuid;
         if (!spellUuid) continue;
-
-        // Check if spell is favorited in actor.system.favorites
         const isFavoritedInActor = actorFavoriteSpellIds.has(spell.id);
-
-        // Check if spell is favorited in journal
         const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid);
         const isFavoritedInJournal = userData?.favorited || false;
-
-        // If journal says favorited but actor doesn't have it, unfavorite in journal
         if (isFavoritedInJournal && !isFavoritedInActor) {
           log(3, `Unfavoriting ${spell.name} in journal to match actor state`);
           await SpellUserDataJournal.setSpellFavorite(spellUuid, false);
           changedSpells.push({ uuid: spellUuid, newState: false });
           syncCount++;
         }
-
-        // If journal says unfavorited but actor has it, favorite in journal
         if (!isFavoritedInJournal && isFavoritedInActor) {
           log(3, `Favoriting ${spell.name} in journal to match actor state`);
           await SpellUserDataJournal.setSpellFavorite(spellUuid, true);
@@ -729,12 +681,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           syncCount++;
         }
       }
-
-      // Immediately update UI for changed spells
-      if (changedSpells.length > 0) {
-        this._applyImmediateFavoriteChanges(changedSpells);
-      }
-
+      if (changedSpells.length > 0) this._applyImmediateFavoriteChanges(changedSpells);
       log(3, `Journal sync complete: ${syncCount} spells synchronized`);
     } catch (error) {
       log(1, 'Error syncing journal to actor state:', error);
@@ -750,11 +697,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const { uuid, newState } of changedSpells) {
       const button = this.element.querySelector(`.spell-favorite-toggle[data-uuid="${uuid}"]`);
       if (!button) continue;
-
       const icon = button.querySelector('i');
-
       if (newState) {
-        // Favorite it
         button.classList.add('favorited');
         if (icon) {
           icon.classList.remove('far');
@@ -763,7 +707,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
         button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
       } else {
-        // Unfavorite it
         button.classList.remove('favorited');
         if (icon) {
           icon.classList.remove('fas');
@@ -773,10 +716,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
       }
     }
-
-    if (changedSpells.length > 0) {
-      log(3, `Applied immediate UI changes for ${changedSpells.length} favorite buttons`);
-    }
+    if (changedSpells.length > 0) log(3, `Applied immediate UI changes for ${changedSpells.length} favorite buttons`);
   }
 
   /**
@@ -1426,6 +1366,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @returns {string} HTML string
    */
   _createSpellItemHtml(spell) {
+    //TODO: Convert this back to a template
     const tagHtml = spell.tag ? `<span class="tag ${spell.tag.cssClass}" ${spell.tag.tooltip ? `data-tooltip="${spell.tag.tooltip}"` : ''}>${spell.tag.text}</span>` : '';
     const enrichedIcon = spell.enrichedIcon || '';
     const name = spell.name || game.i18n.localize('SPELLBOOK.UI.UnknownSpell');
@@ -1512,7 +1453,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       log(2, `No active tab content found for scroll listener setup`);
       return;
     }
-
     if (this._scrollListener && this._lastScrollElement) this._lastScrollElement.removeEventListener('scroll', this._scrollListener);
     let scrollContainer = activeTabContent.querySelector('.spells-container');
     if (scrollContainer) {
@@ -1712,9 +1652,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       checkbox.checked = !isChecked;
       if (canChange.message) {
         let message = game.i18n.localize(canChange.message);
-        if (canChange.message === 'SPELLBOOK.Preparation.ClassAtMaximum') {
-          message = game.i18n.format('SPELLBOOK.Preparation.ClassAtMaximum', { class: classData?.className || classIdentifier });
-        }
+        if (canChange.message === 'SPELLBOOK.Preparation.ClassAtMaximum') message = game.i18n.format('SPELLBOOK.Preparation.ClassAtMaximum', { class: classData?.className || classIdentifier });
         ui.notifications.warn(message);
       }
       return;
@@ -1952,6 +1890,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @async
    */
   static async learnSpell(event) {
+    //TODO: This should be a template
     const spellUuid = event.target.dataset.uuid;
     if (!spellUuid) return;
     const collapsedLevels = Array.from(this.element.querySelectorAll('.spell-level.collapsed')).map((el) => el.dataset.level);
@@ -2137,17 +2076,32 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     new SpellNotesDialog({ spellUuid, spellName }).render(true);
   }
 
-  static async handleOpenAnalyticsDashboard(event, target) {
+  /**
+   * Handle opening the spell analytics dashboard
+   * @async
+   * @static
+   * @param {MouseEvent} _event - The click event (unused)
+   * @param {HTMLElement} _target - The target element (unused)
+   * @returns {Promise<void>}
+   */
+  static async handleOpenAnalyticsDashboard(_event, _target) {
     new SpellAnalyticsDashboard().render({ force: true });
   }
 
+  /**
+   * Handle spell comparison selection and dialog management
+   * @async
+   * @static
+   * @param {MouseEvent} event - The click event
+   * @param {HTMLFormElement} _form - The form element (unused)
+   * @returns {Promise<void>}
+   */
   static async handleCompareSpell(event, _form) {
     const spellUuid = event.target.dataset.uuid;
     const maxSpells = game.settings.get(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX);
     if (this.comparisonSpells.has(spellUuid)) this.comparisonSpells.delete(spellUuid);
     else if (this.comparisonSpells.size < maxSpells) this.comparisonSpells.add(spellUuid);
     else return;
-
     this.render(false);
     if (this.comparisonSpells.size >= 2) {
       if (!this.comparisonDialog) {

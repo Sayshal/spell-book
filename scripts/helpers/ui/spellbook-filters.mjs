@@ -157,11 +157,6 @@ export class SpellbookFilterHelper {
   _filterByEnhancedName(spells, searchQuery) {
     if (!searchQuery || !searchQuery.trim()) return spells;
     const query = searchQuery.trim();
-    log(3, 'Enhanced name filter called with:', {
-      query: query,
-      spellsCount: spells.length,
-      sampleSpellNames: spells.slice(0, 5).map((s) => s.name)
-    });
     if (query.startsWith('^')) {
       const advancedSearchManager = this.app.ui?.advancedSearchManager;
       if (advancedSearchManager && advancedSearchManager.isCurrentQueryAdvanced()) {
@@ -184,7 +179,6 @@ export class SpellbookFilterHelper {
       log(3, 'Exact phrase search results:', filtered.length);
       return filtered;
     }
-
     const queryWords = query
       .toLowerCase()
       .split(/\s+/)

@@ -12,7 +12,9 @@ export class UserSpellDataManager {
   }
 
   /**
-   * Initialize user spell data journal system for all users
+   * Initialize user spell data management system
+   * @async
+   * @static
    * @returns {Promise<void>}
    */
   static async initializeUserSpellData() {
@@ -59,7 +61,6 @@ export class UserSpellDataManager {
       folder = await Folder.create({ name: this.folderName, type: 'JournalEntry', color: '#4a90e2', sorting: 'm' }, { pack: pack.collection });
       log(3, `Created user data folder: ${this.folderName}`);
     }
-
     return folder;
   }
 
@@ -97,6 +98,7 @@ export class UserSpellDataManager {
    * @private
    */
   _generateEmptyTablesHTML(userName, userId) {
+    //TODO: content should be a template!
     const notesTitle = game.i18n.localize('SPELLBOOK.UserData.SpellNotes');
     const spellCol = game.i18n.localize('SPELLBOOK.UserData.SpellColumn');
     const notesCol = game.i18n.localize('SPELLBOOK.UserData.NotesColumn');
@@ -191,10 +193,7 @@ export class UserSpellDataManager {
       name: user.name,
       type: 'text',
       title: { show: true, level: 1 },
-      text: {
-        format: 1,
-        content: this._generateEmptyTablesHTML(user.name, userId)
-      },
+      text: { format: 1, content: this._generateEmptyTablesHTML(user.name, userId) },
       ownership: { default: 0, [userId]: 3, [game.user.id]: 3 },
       flags: { [MODULE.ID]: { userId: userId, userName: user.name, isUserSpellData: true, created: Date.now(), lastUpdated: Date.now(), dataVersion: '2.0' } },
       sort: 99999

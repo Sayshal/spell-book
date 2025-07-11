@@ -309,7 +309,6 @@ export class SpellbookUI {
         if (levelHeading) levelHeading.appendChild(infoElement);
       }
     }
-
     if (!this._cantripUIInitialized) {
       this.setupSpellLocks(true);
       this._cantripUIInitialized = true;
@@ -320,10 +319,7 @@ export class SpellbookUI {
    * Setup advanced search functionality
    */
   setupAdvancedSearch() {
-    if (this.advancedSearchManager && this.advancedSearchManager.isInitialized) {
-      log(3, 'Advanced search already initialized, skipping');
-      return;
-    }
+    if (this.advancedSearchManager && this.advancedSearchManager.isInitialized) return;
     this.advancedSearchManager.initialize();
     log(3, 'Advanced search initialized successfully');
   }

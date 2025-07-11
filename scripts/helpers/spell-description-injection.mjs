@@ -63,21 +63,10 @@ export class SpellDescriptionInjection {
    */
   static async onUpdateItem(item, changes, options, userId) {
     if (item.type !== 'spell' || !item.parent || item.parent.documentName !== 'Actor') return;
-
-    // Skip if this update was made by our module
-    if (options[this.MODULE_UPDATE_FLAG]) {
-      return;
-    }
-
-    // Skip if we're already updating this specific spell
+    if (options[this.MODULE_UPDATE_FLAG]) return;
     const spellKey = `${item.parent.id}-${item.id}`;
-    if (this._updatingSpells.has(spellKey)) {
-      return;
-    }
-
-    if (changes.system?.description) {
-      await this.updateSpellDescription(item);
-    }
+    if (this._updatingSpells.has(spellKey)) return;
+    if (changes.system?.description) await this.updateSpellDescription(item);
   }
 
   /**
@@ -86,35 +75,21 @@ export class SpellDescriptionInjection {
   static async updateSpellDescription(spellItem) {
     const injectionMode = game.settings.get(MODULE.ID, 'injectNotesIntoDescriptions');
     if (injectionMode === 'off') return;
-
     const spellKey = `${spellItem.parent.id}-${spellItem.id}`;
-
-    // Prevent recursion
-    if (this._updatingSpells.has(spellKey)) {
-      return;
-    }
-
+    if (this._updatingSpells.has(spellKey)) return;
     try {
       this._updatingSpells.add(spellKey);
-
       const canonicalUuid = spellFavorites.getCanonicalSpellUuid(spellItem.uuid);
       const userData = await SpellUserDataJournal.getUserDataForSpell(canonicalUuid);
-
       if (!userData?.notes || !userData.notes.trim()) {
         await this.removeNotesFromDescription(spellItem);
         return;
       }
-
       const currentDescription = spellItem.system.description?.value || '';
       const notesHtml = this.formatNotesForDescription(userData.notes);
-
-      if (currentDescription.includes(`class="${this.NOTES_WRAPPER_CLASS}"`)) {
-        await this.replaceNotesInDescription(spellItem, notesHtml, injectionMode);
-      } else {
-        await this.addNotesToDescription(spellItem, notesHtml, injectionMode, currentDescription);
-      }
+      if (currentDescription.includes(`class="${this.NOTES_WRAPPER_CLASS}"`)) await this.replaceNotesInDescription(spellItem, notesHtml, injectionMode);
+      else await this.addNotesToDescription(spellItem, notesHtml, injectionMode, currentDescription);
     } finally {
-      // Always remove from tracking set
       this._updatingSpells.delete(spellKey);
     }
   }
@@ -133,12 +108,8 @@ export class SpellDescriptionInjection {
    */
   static async addNotesToDescription(spellItem, notesHtml, injectionMode, currentDescription) {
     let newDescription;
-    if (injectionMode === 'before') {
-      newDescription = notesHtml + currentDescription;
-    } else {
-      newDescription = currentDescription + notesHtml;
-    }
-
+    if (injectionMode === 'before') newDescription = notesHtml + currentDescription;
+    else newDescription = currentDescription + notesHtml;
     await spellItem.update({ 'system.description.value': newDescription }, { [this.MODULE_UPDATE_FLAG]: true });
     log(3, `Added notes to spell description: ${spellItem.name}`);
   }
@@ -150,13 +121,8 @@ export class SpellDescriptionInjection {
     const currentDescription = spellItem.system.description?.value || '';
     const notesRegex = new RegExp(`<div class="${this.NOTES_WRAPPER_CLASS}"[^>]*>.*?</div>`, 'gs');
     let newDescription = currentDescription.replace(notesRegex, '');
-
-    if (injectionMode === 'before') {
-      newDescription = notesHtml + newDescription;
-    } else {
-      newDescription = newDescription + notesHtml;
-    }
-
+    if (injectionMode === 'before') newDescription = notesHtml + newDescription;
+    else newDescription = newDescription + notesHtml;
     await spellItem.update({ 'system.description.value': newDescription }, { [this.MODULE_UPDATE_FLAG]: true });
     log(3, `Updated notes in spell description: ${spellItem.name}`);
   }
@@ -167,11 +133,8 @@ export class SpellDescriptionInjection {
   static async removeNotesFromDescription(spellItem) {
     const currentDescription = spellItem.system.description?.value || '';
     if (!currentDescription.includes(`class="${this.NOTES_WRAPPER_CLASS}"`)) return;
-
     const notesRegex = new RegExp(`<div class="${this.NOTES_WRAPPER_CLASS}"[^>]*>.*?</div>`, 'gs');
     const newDescription = currentDescription.replace(notesRegex, '');
-
-    // Only update if there's actually a change
     if (newDescription !== currentDescription) {
       await spellItem.update({ 'system.description.value': newDescription }, { [this.MODULE_UPDATE_FLAG]: true });
       log(3, `Removed notes from spell description: ${spellItem.name}`);
@@ -183,19 +146,13 @@ export class SpellDescriptionInjection {
    */
   static async handleNotesChange(spellUuid) {
     const canonicalUuid = spellFavorites.getCanonicalSpellUuid(spellUuid);
-
-    // Process actors sequentially to avoid overwhelming the system
     for (const actor of game.actors) {
       const matchingSpells = actor.items.filter((item) => {
         if (item.type !== 'spell') return false;
         const itemCanonicalUuid = spellFavorites.getCanonicalSpellUuid(item.uuid);
         return itemCanonicalUuid === canonicalUuid;
       });
-
-      // Process spells sequentially for this actor
-      for (const spell of matchingSpells) {
-        await this.updateSpellDescription(spell);
-      }
+      for (const spell of matchingSpells) await this.updateSpellDescription(spell);
     }
   }
 }

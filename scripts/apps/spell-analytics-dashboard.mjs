@@ -18,10 +18,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
       title: 'SPELLBOOK.Analytics.DashboardTitle',
       icon: 'fas fa-chart-bar'
     },
-    position: {
-      width: 800,
-      height: 'auto'
-    },
+    position: { width: 800, height: 'auto' },
     classes: ['application', 'spell-book', 'analytics-dashboard'],
     actions: {
       switchView: SpellAnalyticsDashboard.handleSwitchView,
@@ -160,11 +157,9 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
           lastUsed: userData.usageStats.lastUsed
         };
         analytics.mostUsedSpells.push(usageData);
-        if (userData.usageStats.lastUsed && Date.now() - userData.usageStats.lastUsed < 30 * 24 * 60 * 60 * 1000) {
-          analytics.recentActivity.push(usageData);
-        }
+        if (userData.usageStats.lastUsed && Date.now() - userData.usageStats.lastUsed < 30 * 24 * 60 * 60 * 1000) analytics.recentActivity.push(usageData);
       }
-      const spell = this._getSpellFromUuid(spellUuid);
+      const spell = fromUuidSync(spellUuid);
       if (spell) {
         const school = spell.system?.school || 'unknown';
         const level = spell.system?.level || 0;
@@ -275,26 +270,8 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
    * @private
    */
   _getSpellNameFromUuid(uuid) {
-    try {
-      const spell = fromUuidSync(uuid);
-      return spell?.name || 'Unknown Spell';
-    } catch {
-      return 'Unknown Spell';
-    }
-  }
-
-  /**
-   * Get spell document from UUID
-   * @param {string} uuid - Spell UUID
-   * @returns {Item|null} Spell document
-   * @private
-   */
-  _getSpellFromUuid(uuid) {
-    try {
-      return fromUuidSync(uuid);
-    } catch {
-      return null;
-    }
+    const spell = fromUuidSync(uuid);
+    return spell?.name;
   }
 
   /**
@@ -409,6 +386,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
    * @private
    */
   async _importUserData() {
+    //TODO: This should use a template.
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';

@@ -20,9 +20,12 @@ export class SpellUserDataJournal {
   }
 
   /**
-   * Get user page from journal
-   * @param {string} userId - User ID
-   * @returns {Promise<JournalEntryPage|null>}
+   * Get user page from journal for spell data storage
+   * @async
+   * @static
+   * @private
+   * @param {string} userId - User ID to get page for
+   * @returns {Promise<JournalEntryPage|null>} The user's page or null if not found
    */
   static async _getUserPage(userId) {
     const journal = await this._getJournal();
@@ -31,9 +34,11 @@ export class SpellUserDataJournal {
   }
 
   /**
-   * Parse spell data from HTML tables (updated for per-actor structure)
-   * @param {string} htmlContent - The page HTML content
-   * @returns {Object} Parsed spell data
+   * Parse spell data from HTML tables with per-actor structure support
+   * @static
+   * @private
+   * @param {string} htmlContent - The page HTML content to parse
+   * @returns {Object} Parsed spell data object
    */
   static _parseSpellDataFromHTML(htmlContent) {
     const parser = new DOMParser();
@@ -103,13 +108,16 @@ export class SpellUserDataJournal {
   }
 
   /**
-   * Generate HTML tables for all spell data
-   * @param {Object} spellData - Complete spell data structure
-   * @param {string} userName - User name for display
-   * @param {string} userId - User ID for finding actors
-   * @returns {string} Complete HTML content
+   * Generate HTML tables from spell data for journal storage
+   * @static
+   * @private
+   * @param {Object} spellData - The spell data to convert to HTML
+   * @param {string} userName - Name of the user for display
+   * @param {string} userId - User ID for the data
+   * @returns {string} Generated HTML tables content
    */
   static _generateTablesHTML(spellData, userName, userId) {
+    //TODO: This should all be a template.
     const notesTitle = game.i18n.localize('SPELLBOOK.UserData.SpellNotes');
     const spellCol = game.i18n.localize('SPELLBOOK.UserData.SpellColumn');
     const notesCol = game.i18n.localize('SPELLBOOK.UserData.NotesColumn');

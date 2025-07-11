@@ -55,26 +55,14 @@ export class QueryParser {
    */
   _parseFieldExpression(expression) {
     const colonIndex = expression.indexOf(':');
-    if (colonIndex === -1) {
-      log(1, `Invalid field expression: ${expression} (missing colon)`);
-      return null;
-    }
+    if (colonIndex === -1) return null;
     const fieldAlias = expression.substring(0, colonIndex).trim().toUpperCase();
     const value = expression.substring(colonIndex + 1).trim();
     const fieldId = this.fieldDefinitions.getFieldId(fieldAlias);
-    if (!fieldId) {
-      log(1, `Unknown field: ${fieldAlias}`);
-      return null;
-    }
-    if (!value || value === '') {
-      log(1, `Missing value for field ${fieldAlias} (enter a value after the colon)`);
-      return null;
-    }
+    if (!fieldId) return null;
+    if (!value || value === '') return null;
     if (fieldId === 'range' && value.match(/^\d+-?$/)) log(3, `Partial range value detected: ${value}`);
-    else if (!this.fieldDefinitions.validateValue(fieldId, value)) {
-      log(1, `Invalid value for field ${fieldAlias}: ${value}`);
-      return null;
-    }
+    else if (!this.fieldDefinitions.validateValue(fieldId, value)) return null;
     return { type: 'field', field: fieldId, value: this._normalizeValue(fieldId, value) };
   }
 

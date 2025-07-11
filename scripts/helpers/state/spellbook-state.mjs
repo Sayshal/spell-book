@@ -955,10 +955,8 @@ export class SpellbookState {
   preserveFavoriteStates(tabName) {
     const tabElement = this.app.element.querySelector(`.tab[data-tab="${tabName}"]`);
     if (!tabElement) return;
-
     const favoriteButtons = tabElement.querySelectorAll('.spell-favorite-toggle[data-uuid]');
     const favoriteStates = new Map();
-
     favoriteButtons.forEach((button) => {
       const uuid = button.dataset.uuid;
       if (uuid) {
@@ -968,10 +966,8 @@ export class SpellbookState {
         });
       }
     });
-
     if (!this.app._favoriteStateCache) this.app._favoriteStateCache = new Map();
     this.app._favoriteStateCache.set(tabName, favoriteStates);
-
     log(3, `Preserved favorite states for tab ${tabName} with ${favoriteStates.size} buttons`);
   }
 
@@ -981,21 +977,16 @@ export class SpellbookState {
    */
   restoreFavoriteStates(tabName) {
     if (!this.app._favoriteStateCache || !this.app._favoriteStateCache.has(tabName)) return;
-
     const tabElement = this.app.element.querySelector(`.tab[data-tab="${tabName}"]`);
     if (!tabElement) return;
-
     const favoriteStates = this.app._favoriteStateCache.get(tabName);
     const favoriteButtons = tabElement.querySelectorAll('.spell-favorite-toggle[data-uuid]');
     let restoredCount = 0;
-
     favoriteButtons.forEach((button) => {
       const uuid = button.dataset.uuid;
       const savedState = favoriteStates.get(uuid);
-
       if (savedState) {
         const icon = button.querySelector('i');
-
         if (savedState.favorited) {
           button.classList.add('favorited');
           if (icon) {
@@ -1016,7 +1007,6 @@ export class SpellbookState {
         restoredCount++;
       }
     });
-
     log(3, `Restored favorite states for tab ${tabName}, ${restoredCount} buttons restored`);
   }
 
@@ -1026,9 +1016,7 @@ export class SpellbookState {
    * @param {boolean} favorited - Favorite status
    */
   updateFavoriteSessionState(spellUuid, favorited) {
-    if (!this.app._favoriteSessionState) {
-      this.app._favoriteSessionState = new Map();
-    }
+    if (!this.app._favoriteSessionState) this.app._favoriteSessionState = new Map();
     this.app._favoriteSessionState.set(spellUuid, favorited);
     log(3, `Updated session favorite state for ${spellUuid}: ${favorited}`);
   }
@@ -1046,9 +1034,7 @@ export class SpellbookState {
    * Clear favorite session state (called on form submit)
    */
   clearFavoriteSessionState() {
-    if (this.app._favoriteSessionState) {
-      this.app._favoriteSessionState.clear();
-    }
+    if (this.app._favoriteSessionState) this.app._favoriteSessionState.clear();
   }
 
   /**
@@ -1058,9 +1044,7 @@ export class SpellbookState {
   async refreshSpellEnhancements() {
     const targetUserId = game.user.id;
     if (SpellUserDataJournal?.cache) {
-      for (const key of SpellUserDataJournal.cache.keys()) {
-        if (key.startsWith(`${targetUserId}:`)) SpellUserDataJournal.cache.delete(key);
-      }
+      for (const key of SpellUserDataJournal.cache.keys()) if (key.startsWith(`${targetUserId}:`)) SpellUserDataJournal.cache.delete(key);
     }
     for (const [classIdentifier, classData] of Object.entries(this.classSpellData)) {
       if (classData.spellLevels) {

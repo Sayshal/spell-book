@@ -40,10 +40,7 @@ export class QueryExecutor {
    * @private
    */
   _evaluateCondition(condition, spell) {
-    if (condition.type !== 'field') {
-      log(2, 'Unknown condition type:', condition.type);
-      return false;
-    }
+    if (condition.type !== 'field') return false;
     const { field, value } = condition;
     switch (field) {
       case 'name':
@@ -71,7 +68,7 @@ export class QueryExecutor {
       case 'materialComponents':
         return this._evaluateMaterialComponents(value, spell);
       default:
-        log(2, 'Unknown field:', field);
+        log(1, 'Unknown field:', field);
         return false;
     }
   }

@@ -44,31 +44,16 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
    */
   _calculateOptimalSize() {
     if (!this.parentApp?.comparisonSpells) return;
-
     const spellCount = this.parentApp.comparisonSpells.size;
-
-    // Calculate width: base property column + spell columns + padding
-    // Property column: 120px
-    // Each spell column: minimum 150px for comfortable reading
-    // Dialog padding and borders: ~40px
     const minSpellColumnWidth = 150;
     const propertyColumnWidth = 120;
     const dialogPadding = 40;
-
     const calculatedWidth = propertyColumnWidth + spellCount * minSpellColumnWidth + dialogPadding;
-
-    // Constrain to reasonable bounds
     const minWidth = 400;
     const maxWidth = Math.min(window.innerWidth * 0.9, 1200);
     const optimalWidth = Math.max(minWidth, Math.min(maxWidth, calculatedWidth));
-
-    // Update the dialog's position
     this.options.position.width = optimalWidth;
-
-    // Apply the width to the element if it exists
-    if (this.element) {
-      this.element.style.width = `${optimalWidth}px`;
-    }
+    if (this.element) this.element.style.width = `${optimalWidth}px`;
   }
 
   /**
@@ -77,44 +62,27 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
    */
   _positionRelativeToParent() {
     if (!this.parentApp?.element) return;
-
     const dialogWidth = this.options.position.width;
     const parentRect = this.parentApp.element.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-
     let left, top;
-
-    // Try to position to the right of parent
     const rightSpace = viewportWidth - parentRect.right;
-    if (rightSpace >= dialogWidth + 20) {
-      left = parentRect.right + 10;
-    } else {
-      // Try to position to the left of parent
+    if (rightSpace >= dialogWidth + 20) left = parentRect.right + 10;
+    else {
       const leftSpace = parentRect.left;
-      if (leftSpace >= dialogWidth + 20) {
-        left = leftSpace - dialogWidth - 10;
-      } else {
-        // Center on screen if no space on either side
-        left = (viewportWidth - dialogWidth) / 2;
-      }
+      if (leftSpace >= dialogWidth + 20) left = leftSpace - dialogWidth - 10;
+      else left = (viewportWidth - dialogWidth) / 2;
     }
-
-    // Position vertically centered to parent
     top = Math.max(50, parentRect.top + (parentRect.height - 400) / 2);
-
-    // Ensure dialog stays within viewport
     if (left < 20) left = 20;
-    if (left + dialogWidth > viewportWidth - 20) {
-      left = viewportWidth - dialogWidth - 20;
-    }
-
+    if (left + dialogWidth > viewportWidth - 20) left = viewportWidth - dialogWidth - 20;
     if (top < 50) top = 50;
     if (top > viewportHeight - 100) top = viewportHeight - 100;
-
     this.setPosition({ left, top });
   }
 
+  /** @override */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const spellUuids = Array.from(this.parentApp.comparisonSpells);
@@ -132,6 +100,24 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
     return context;
   }
 
+  /**
+   * Process a spell object into standardized format for comparison display
+   * @private
+   * @param {Object} spell - The spell document to process
+   * @returns {Object} Processed spell data with standardized properties for comparison
+   * @returns {string} returns.uuid - Spell UUID
+   * @returns {string} returns.name - Spell name
+   * @returns {string} returns.img - Spell image path
+   * @returns {string} returns.enrichedIcon - HTML for enriched spell icon
+   * @returns {number} returns.level - Spell level (0-9)
+   * @returns {string} returns.school - Formatted spell school name
+   * @returns {string} returns.castingTime - Formatted casting time
+   * @returns {string} returns.range - Formatted spell range
+   * @returns {string} returns.duration - Spell duration
+   * @returns {string} returns.components - Formatted spell components (V, S, M, etc.)
+   * @returns {Object} returns.damage - Extracted damage information
+   * @returns {string} returns.description - Spell description HTML
+   */
   _processSpellForComparison(spell) {
     return {
       uuid: spell.uuid,
@@ -167,6 +153,15 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
     </a>`;
   }
 
+  /**
+   * Extract damage information from a spell for comparison purposes
+   * @private
+   * @param {Object} spell - The spell document to extract damage from
+   * @returns {Object} Damage information object
+   * @returns {string} returns.formula - Damage formula string (e.g., "1d8 + 2d6")
+   * @returns {string[]} returns.types - Array of damage type strings
+   * @returns {number} returns.maxDice - Maximum possible dice damage value
+   */
   _extractDamageInfo(spell) {
     const damageInfo = { formula: '', types: [], maxDice: 0 };
     if (spell.labels?.damages?.length) {
@@ -200,6 +195,19 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
     return damageInfo;
   }
 
+  /**
+   * Build comparison table data structure from processed spells
+   * @private
+   * @param {Object[]} spells - Array of processed spell objects
+   * @returns {Object} Comparison table data
+   * @returns {Object[]} returns.properties - Array of property comparison objects
+   * @returns {string} returns.properties[].name - Localized property name
+   * @returns {string} returns.properties[].key - Property key identifier
+   * @returns {Object[]} returns.properties[].values - Array of value objects for each spell
+   * @returns {string} returns.properties[].values[].value - Display value for the property
+   * @returns {boolean} returns.properties[].values[].highlight - Whether to highlight this value
+   * @returns {number} returns.maxDamage - Maximum damage value across all spells
+   */
   _buildComparisonTable(spells) {
     if (!spells.length) return { properties: [] };
     const maxDamage = Math.max(...spells.map((s) => s.damage.maxDice).filter((d) => d > 0));

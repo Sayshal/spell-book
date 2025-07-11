@@ -31,7 +31,6 @@ export class SpellLoadoutManager {
       log(3, `Loaded loadouts from cache:`, this._loadoutsCache);
     }
     const allLoadouts = Object.values(this._loadoutsCache);
-    log(3, `All loadouts:`, allLoadouts);
     if (classIdentifier) {
       const filtered = allLoadouts.filter((loadout) => !loadout.classIdentifier || loadout.classIdentifier === classIdentifier);
       log(3, `Filtered loadouts for ${classIdentifier}:`, filtered);
