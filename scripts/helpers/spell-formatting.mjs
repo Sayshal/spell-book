@@ -290,6 +290,7 @@ export function extractSpellConditions(spell) {
   if (description && CONFIG.DND5E.conditionTypes) {
     const lowerDesc = description.toLowerCase();
     for (const [key, condition] of Object.entries(CONFIG.DND5E.conditionTypes)) {
+      if (condition.pseudo) continue;
       const conditionLabel = genericUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, key);
       if (conditionLabel && lowerDesc.includes(conditionLabel.toLowerCase())) {
         conditions.push(key);

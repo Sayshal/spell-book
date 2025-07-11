@@ -83,7 +83,9 @@ export class FieldDefinitions {
         break;
       case 'condition':
         this.valueValidators.set(fieldId, (value) => {
-          const conditions = Object.keys(CONFIG.DND5E.conditionTypes).map((key) => key.toUpperCase());
+          const conditions = Object.entries(CONFIG.DND5E.conditionTypes)
+            .filter(([_key, condition]) => !condition.pseudo)
+            .map(([key]) => key.toUpperCase());
           return value.split(',').every((v) => conditions.includes(v.trim().toUpperCase()));
         });
         break;
@@ -201,7 +203,9 @@ export class FieldDefinitions {
             })
             .map(([key]) => key.toUpperCase());
         case 'condition':
-          return Object.keys(CONFIG.DND5E.conditionTypes || {}).map((key) => key.toUpperCase());
+          return Object.entries(CONFIG.DND5E.conditionTypes || {})
+            .filter(([_key, condition]) => !condition.pseudo)
+            .map(([key]) => key.toUpperCase());
         case 'requiresSave':
         case 'concentration':
         case 'prepared':
