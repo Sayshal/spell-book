@@ -6,12 +6,13 @@ import { QueryExecutor } from './query-executor.mjs';
 import { QueryParser } from './query-parser.mjs';
 
 /**
- * Advanced search manager for handling Google-style search with recent searches and fuzzy matching
+ * Advanced search manager for handling Google-style search with recent searches and fuzzy matching.
+ * Provides intelligent autocomplete, field-based search syntax, and search history management.
  */
 export class AdvancedSearchManager {
   /**
-   * Create a new advanced search manager
-   * @param {PlayerSpellBook} app - The parent application
+   * Create a new advanced search manager instance
+   * @param {PlayerSpellBook} app - The parent application instance
    */
   constructor(app) {
     this.actor = app.actor;
@@ -38,22 +39,19 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Get the application's element
-   * @returns {HTMLElement|null} The application element
+   * Get the application's DOM element
+   * @returns {HTMLElement|null} The application element or null if not available
    */
   get element() {
     return this.app.element;
   }
 
   /**
-   * Initialize advanced search functionality
+   * Initialize advanced search functionality and set up the interface
+   * @returns {void}
    */
   initialize() {
-    if (this.isInitialized) {
-      log(3, 'AdvancedSearchManager already initialized, skipping');
-      return;
-    }
-    log(3, 'AdvancedSearchManager.initialize() called');
+    if (this.isInitialized) return;
     this.cleanup();
     this.setupSearchInterface();
     this.setupEventListeners();
@@ -61,9 +59,9 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Parse and cache query to avoid redundant parsing
+   * Parse and cache query to avoid redundant parsing operations
    * @param {string} query - Query string without the ^ prefix
-   * @returns {Object|null} Parsed query object or null
+   * @returns {Object|null} Parsed query object or null if parsing failed
    */
   parseAndCacheQuery(query) {
     if (this.queryCache.has(query)) return this.queryCache.get(query);
@@ -78,20 +76,19 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Setup the enhanced search interface
+   * Setup the enhanced search interface with accessibility features
+   * @private
+   * @returns {void}
    */
   setupSearchInterface() {
     log(3, 'Starting setupSearchInterface...');
     const searchInput = this.element.querySelector('input[name="filter-name"]');
-    log(3, 'Search input found:', !!searchInput, searchInput);
     if (!searchInput) {
       log(1, 'No search input found, aborting setupSearchInterface');
       return;
     }
     const hasAdvancedClass = searchInput.classList.contains('advanced-search-input');
-    log(3, 'Search input has advanced class:', hasAdvancedClass);
     const existingDropdown = document.querySelector('.search-dropdown');
-    log(3, 'Existing dropdown found:', !!existingDropdown);
     if (!hasAdvancedClass) {
       searchInput.classList.add('advanced-search-input');
       searchInput.setAttribute('placeholder', game.i18n.localize('SPELLBOOK.Search.AdvancedPlaceholder'));
@@ -109,7 +106,9 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Create clear button for search input
+   * Create clear button for search input with accessibility attributes
+   * @private
+   * @returns {void}
    */
   createClearButton() {
     if (this.clearButtonElement) return;
@@ -126,7 +125,9 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Create dropdown container
+   * Create dropdown container for search suggestions
+   * @private
+   * @returns {void}
    */
   createDropdown() {
     if (document.querySelector('.search-dropdown')) return;
@@ -139,7 +140,9 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Setup event listeners
+   * Set up event listeners for search functionality
+   * @private
+   * @returns {void}
    */
   setupEventListeners() {
     if (!this.searchInputElement) return;
@@ -154,23 +157,18 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Handle search input changes
-   * @param {Event} event - Input event
+   * Handle search input changes with debouncing and query processing
+   * @async
+   * @param {InputEvent} event - Input event from search field
+   * @returns {Promise<void>}
    */
   async handleSearchInput(event) {
     const query = event.target.value;
-
-    // Skip processing if we're in the middle of processing a suggestion
-    if (this.isProcessingSuggestion) {
-      return;
-    }
-
+    if (this.isProcessingSuggestion) return;
     if (this.isProcessingSearch || (query === '' && this.isAdvancedQuery)) return;
-
     this.updateClearButtonVisibility();
-
     if (this.searchTimeout) clearTimeout(this.searchTimeout);
-
+    //TODO: Make this configurable
     if (query.startsWith('^')) {
       this.searchTimeout = setTimeout(async () => {
         try {
@@ -188,7 +186,7 @@ export class AdvancedSearchManager {
           await this.app._ensureSpellDataAndInitializeLazyLoading();
           await new Promise((resolve) => setTimeout(resolve, 50));
         } catch (error) {
-          log(2, 'Error ensuring spell data for fuzzy search:', error);
+          log(1, 'Error ensuring spell data for fuzzy search:', error);
         }
         await this.updateDropdownContent(query);
         this.performSearch(query);
@@ -198,9 +196,9 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Check if an advanced query appears to be complete
-   * @param {string} query - The query to check
-   * @returns {boolean} Whether the query seems complete
+   * Check if an advanced query appears to be syntactically complete
+   * @param {string} query - The query string to validate
+   * @returns {boolean} Whether the query is complete and valid
    */
   isAdvancedQueryComplete(query) {
     if (!query.startsWith('^')) return false;
@@ -209,14 +207,15 @@ export class AdvancedSearchManager {
       const parsed = this.parseAndCacheQuery(queryWithoutTrigger);
       return parsed !== null;
     } catch (error) {
-      log(3, 'Query validation failed:', error.message);
+      log(1, 'Query validation failed:', error.message);
       return false;
     }
   }
 
   /**
-   * Handle keyboard navigation in search
-   * @param {Event} event - Keydown event
+   * Handle keyboard navigation in search dropdown
+   * @param {KeyboardEvent} event - Keydown event from search field
+   * @returns {void}
    */
   handleSearchKeydown(event) {
     const dropdown = document.querySelector('.search-dropdown');
@@ -253,8 +252,10 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Handle search focus
-   * @param {Event} event - Focus event
+   * Handle search input focus events with debouncing
+   * @async
+   * @param {FocusEvent} event - Focus event from search field
+   * @returns {Promise<void>}
    */
   async handleSearchFocus(event) {
     if (this.isProcessingFocusEvent) return;
@@ -269,25 +270,22 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Handle search blur
-   * @param {Event} event - Blur event
+   * Handle search input blur events
+   * @param {FocusEvent} event - Blur event from search field
+   * @returns {void}
    */
   handleSearchBlur(event) {
-    // Don't hide dropdown if we're processing a suggestion
-    if (this.isProcessingSuggestion) {
-      return;
-    }
-
+    if (this.isProcessingSuggestion) return;
     setTimeout(() => {
-      if (!document.querySelector('.search-dropdown:hover') && !this.isProcessingSuggestion) {
-        this.hideDropdown();
-      }
+      if (!document.querySelector('.search-dropdown:hover') && !this.isProcessingSuggestion) this.hideDropdown();
     }, 150);
   }
 
   /**
-   * Handle document click
-   * @param {Event} event - Click event
+   * Handle document click events for dropdown interaction and cleanup
+   * @async
+   * @param {MouseEvent} event - Click event from document
+   * @returns {Promise<void>}
    */
   async handleDocumentClick(event) {
     const dropdown = document.querySelector('.search-dropdown');
@@ -312,44 +310,22 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Select a suggestion
-   * @param {Element} suggestionElement - The suggestion element
+   * Select a suggestion from the dropdown and update search state
+   * @async
+   * @param {HTMLElement} suggestionElement - The suggestion DOM element
+   * @returns {Promise<void>}
    */
   async selectSuggestion(suggestionElement) {
     const suggestionId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     const query = suggestionElement.dataset.query;
     const now = Date.now();
-
-    log(3, `selectSuggestion [${suggestionId}] called with:`, {
-      query,
-      element: suggestionElement,
-      elementClass: suggestionElement.className,
-      isSubmitQuery: suggestionElement.classList.contains('submit-query'),
-      lastProcessedQuery: this.lastProcessedQuery,
-      timeSinceLastProcessed: this.lastProcessedTime ? now - this.lastProcessedTime : 'never'
-    });
-
-    if (!query) {
-      log(3, `[${suggestionId}] No query found, returning`);
-      return;
-    }
-
-    // Prevent duplicate processing of same query within 500ms
-    if (this.lastProcessedQuery === query && now - this.lastProcessedTime < 500) {
-      log(3, `[${suggestionId}] DUPLICATE PREVENTION - ignoring duplicate query: ${query} (${now - this.lastProcessedTime}ms since last)`);
-      return;
-    }
-
+    if (!query) return;
+    if (this.lastProcessedQuery === query && now - this.lastProcessedTime < 500) return;
     this.lastProcessedQuery = query;
     this.lastProcessedTime = now;
-
-    // Set flag to prevent input event processing and blur handling
     this.isProcessingSuggestion = true;
-
-    // Set input value and trigger search
     this.searchInputElement.value = query;
     this.searchInputElement.dispatchEvent(new Event('input', { bubbles: true }));
-
     if (suggestionElement.classList.contains('submit-query')) {
       log(3, `[${suggestionId}] Submit query - calling performSearch`);
       this.performSearch(query);
@@ -358,39 +334,24 @@ export class AdvancedSearchManager {
       log(3, `[${suggestionId}] Submit query completed`);
     } else {
       log(3, `[${suggestionId}] Not submit query - updating dropdown content`);
-
-      // Force clear the last dropdown query to ensure update
       this.lastDropdownQuery = null;
-
-      // Clear any existing search timeout to prevent query validation
       if (this.searchTimeout) {
         clearTimeout(this.searchTimeout);
         this.searchTimeout = null;
       }
-
-      // Update dropdown content immediately
       await this.updateDropdownContent(query);
-
-      // Ensure dropdown stays visible
-      if (!this.isDropdownVisible) {
-        this.showDropdown();
-      }
-
+      if (!this.isDropdownVisible) this.showDropdown();
       log(3, `[${suggestionId}] Dropdown content updated and shown`);
     }
-
-    // Clear the flag and focus after content is updated
     setTimeout(() => {
       this.isProcessingSuggestion = false;
-      // Focus without triggering blur on other elements
-      if (document.activeElement !== this.searchInputElement) {
-        this.searchInputElement.focus();
-      }
+      if (document.activeElement !== this.searchInputElement) this.searchInputElement.focus();
     }, 100);
   }
 
   /**
-   * Show dropdown
+   * Show the search dropdown with proper positioning and accessibility
+   * @returns {void}
    */
   showDropdown() {
     const dropdown = document.querySelector('.search-dropdown');
@@ -410,7 +371,8 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Hide dropdown
+   * Hide the search dropdown and reset selection state
+   * @returns {void}
    */
   hideDropdown() {
     const dropdown = document.querySelector('.search-dropdown');
@@ -424,8 +386,10 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Update dropdown content based on current query
-   * @param {string} query - Current search query
+   * Update dropdown content based on current query type
+   * @async
+   * @param {string} query - Current search query string
+   * @returns {Promise<void>}
    */
   async updateDropdownContent(query) {
     if (this.lastDropdownQuery === query) return;
@@ -441,10 +405,11 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Generate content for advanced queries
-   * @param {string} query - The query string
-   * @returns {string} HTML content
+   * Generate content for advanced query suggestions
+   * @async
    * @private
+   * @param {string} query - The advanced query string
+   * @returns {Promise<string>} HTML content for dropdown
    */
   async _generateAdvancedQueryContent(query) {
     const data = this._prepareAdvancedQueryData(query);
@@ -453,9 +418,9 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Check if query ends with AND and needs a field
-   * @param {string} query - The query to check
-   * @returns {boolean} Whether it ends with AND
+   * Check if query ends with AND operator and needs a field suggestion
+   * @param {string} query - The query string to check
+   * @returns {boolean} Whether query ends with AND operator
    */
   isIncompleteAndQuery(query) {
     if (!query.startsWith('^')) return false;
@@ -466,7 +431,7 @@ export class AdvancedSearchManager {
 
   /**
    * Check if query ends with a field name followed by a colon
-   * @param {string} query - Query without the ^ prefix
+   * @param {string} query - Query string without the ^ prefix
    * @returns {string|null} Field name if found, null otherwise
    */
   queryEndsWithFieldColon(query) {
@@ -513,10 +478,11 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Generate content for standard queries
-   * @param {string} query - The query string
-   * @returns {string} HTML content
+   * Generate content for standard query suggestions
+   * @async
    * @private
+   * @param {string} query - The standard query string
+   * @returns {Promise<string>} HTML content for dropdown
    */
   async _generateStandardQueryContent(query) {
     const data = this._prepareStandardQueryData(query);
@@ -525,11 +491,12 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Generate recent searches content
-   * @returns {string} HTML content
+   * Generate HTML content for recent searches section
    * @private
+   * @returns {string} HTML content for recent searches
    */
   _generateRecentSearches() {
+    //TODO: This should be a template file.
     const recentSearches = this.getRecentSearches();
     if (recentSearches.length === 0) return `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.NoRecent')}</div>`;
     let content = `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Recent')}</div>`;
@@ -544,12 +511,13 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Generate fuzzy matches content
-   * @param {string} query - The query string
-   * @returns {string} HTML content
+   * Generate HTML content for fuzzy spell name matches
    * @private
+   * @param {string} query - The search query string
+   * @returns {string} HTML content for fuzzy matches
    */
   _generateFuzzyMatches(query) {
+    //TODO: This should be a template file.
     let content = `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Suggestions')}</div>`;
     const spells = this.app._stateManager?.getCurrentSpellList() || [];
     const matches = spells.filter((spell) => spell.name.toLowerCase().includes(query.toLowerCase())).slice(0, 5);
@@ -564,10 +532,15 @@ export class AdvancedSearchManager {
     return content;
   }
 
+  /**
+   * Prepare data object for advanced query dropdown content
+   * @private
+   * @param {string} query - The advanced query string
+   * @returns {Object} Data object for template rendering
+   */
   _prepareAdvancedQueryData(query) {
     const queryWithoutTrigger = query.substring(1);
     const showFieldList = !queryWithoutTrigger.trim() || this.isIncompleteAndQuery(query);
-
     return {
       showFieldList,
       fields: showFieldList ? this._getUniqueFields() : [],
@@ -576,6 +549,12 @@ export class AdvancedSearchManager {
     };
   }
 
+  /**
+   * Prepare data object for standard query dropdown content
+   * @private
+   * @param {string} query - The standard query string
+   * @returns {Object} Data object for template rendering
+   */
   _prepareStandardQueryData(query) {
     return {
       recentSearches: query.length < 3 ? this.getRecentSearches() : [],
@@ -585,8 +564,8 @@ export class AdvancedSearchManager {
 
   /**
    * Check if query is a complete field:value expression
-   * @param {string} query - The query to check
-   * @returns {boolean} Whether it's a complete field:value
+   * @param {string} query - The query string to check
+   * @returns {boolean} Whether it's a complete field:value pair
    */
   isCompleteFieldValue(query) {
     if (!query.startsWith('^')) return false;
@@ -607,7 +586,7 @@ export class AdvancedSearchManager {
 
   /**
    * Check if query contains AND operators
-   * @param {string} query - The query to check
+   * @param {string} query - The query string to check
    * @returns {boolean} Whether it contains AND operators
    */
   hasAndOperators(query) {
@@ -616,8 +595,9 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Update visual selection of suggestions
-   * @param {NodeList} suggestions - List of suggestion elements
+   * Update visual selection state of dropdown suggestions
+   * @param {NodeList} suggestions - List of suggestion DOM elements
+   * @returns {void}
    */
   updateSuggestionSelection(suggestions) {
     suggestions.forEach((suggestion, index) => {
@@ -628,8 +608,10 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Perform the actual search
-   * @param {string} query - Search query
+   * Perform the actual search operation based on query type
+   * @async
+   * @param {string} query - Search query string
+   * @returns {Promise<void>}
    */
   async performSearch(query) {
     const searchId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
@@ -665,8 +647,9 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Apply advanced query results to filter state
-   * @param {Object} parsedQuery - The parsed query object
+   * Apply advanced query results to current filter state
+   * @param {Object} parsedQuery - The parsed query object with filters
+   * @returns {void}
    */
   applyAdvancedQueryToFilters(parsedQuery) {
     if (!this.app.filterHelper._cachedFilterState) this.app.filterHelper._cachedFilterState = {};
@@ -695,9 +678,9 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Parse a range value string into min and max components
+   * Parse a range value string into minimum and maximum components
    * @param {string} rangeValue - Range value like "0-30", "30", "*-30", "30-*"
-   * @returns {Array} [min, max] values
+   * @returns {Array<number|null>} Array containing [min, max] values
    */
   parseRangeValue(rangeValue) {
     if (!rangeValue) return [null, null];
@@ -723,8 +706,9 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Set range filter values in the UI
+   * Set range filter values in the UI elements
    * @param {string} rangeValue - Range value like "0-30"
+   * @returns {void}
    */
   setRangeFilterValue(rangeValue) {
     const [min, max] = this.parseRangeValue(rangeValue);
@@ -741,9 +725,10 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Set filter value in the UI
-   * @param {string} fieldId - Field identifier
-   * @param {string} value - Value to set
+   * Set filter value in the appropriate UI element
+   * @param {string} fieldId - Field identifier for the filter
+   * @param {string} value - Value to set in the filter
+   * @returns {void}
    */
   setFilterValue(fieldId, value) {
     const filterElement = this.element.querySelector(`[name="filter-${fieldId}"]`);
@@ -766,7 +751,9 @@ export class AdvancedSearchManager {
 
   /**
    * Ensure spells matching the search query are loaded in the DOM
-   * @param {string} query - Search query
+   * @async
+   * @param {string} query - Search query string
+   * @returns {Promise<void>}
    */
   async ensureSpellsLoadedForSearch(query) {
     let allSpells = [];
@@ -845,8 +832,8 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Check if current query is an advanced query
-   * @returns {boolean} Whether the current query uses advanced syntax
+   * Check if the current query uses advanced search syntax
+   * @returns {boolean} Whether the current query is an advanced query
    */
   isCurrentQueryAdvanced() {
     return this.isAdvancedQuery && this.parsedQuery !== null;
@@ -854,16 +841,16 @@ export class AdvancedSearchManager {
 
   /**
    * Get the parsed query object for advanced queries
-   * @returns {Object|null} The parsed query or null
+   * @returns {Object|null} The parsed query object or null if not advanced
    */
   getParsedQuery() {
     return this.parsedQuery;
   }
 
   /**
-   * Execute advanced query against spells
-   * @param {Array} spells - Spells to filter
-   * @returns {Array} Filtered spells
+   * Execute advanced query against a collection of spells
+   * @param {Array<Object>} spells - Array of spell objects to filter
+   * @returns {Array<Object>} Filtered array of spells matching the query
    */
   executeAdvancedQuery(spells) {
     if (!this.isCurrentQueryAdvanced() || !this.parsedQuery) return spells;
@@ -871,7 +858,8 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Clear the search input and reset
+   * Clear the search input and reset search state
+   * @returns {void}
    */
   clearSearch() {
     const searchInput = this.searchInputElement || document.querySelector('input[name="filter-name"]');
@@ -888,7 +876,9 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Update visibility of clear button
+   * Update visibility of the clear button based on input content
+   * @private
+   * @returns {void}
    */
   updateClearButtonVisibility() {
     const clearButton = this.clearButtonElement;
@@ -899,22 +889,23 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Get recent searches from actor flags
-   * @returns {Array<string>} Array of recent searches
+   * Get recent search queries from actor flags
+   * @returns {Array<string>} Array of recent search query strings
    */
   getRecentSearches() {
     try {
       const recent = this.actor.getFlag(MODULE.ID, FLAGS.RECENT_SEARCHES) || [];
       return Array.isArray(recent) ? recent : [];
     } catch (error) {
-      log(2, 'Error getting recent searches:', error);
+      log(1, 'Error getting recent searches:', error);
       return [];
     }
   }
 
   /**
-   * Add a search to recent searches
-   * @param {string} query - The search query to add
+   * Add a search query to the recent searches list
+   * @param {string} query - The search query string to add
+   * @returns {void}
    */
   addToRecentSearches(query) {
     if (!query || !query.trim()) return;
@@ -928,13 +919,14 @@ export class AdvancedSearchManager {
       this.actor.setFlag(MODULE.ID, FLAGS.RECENT_SEARCHES, limitedSearches);
       log(3, 'Added to recent searches:', trimmedQuery);
     } catch (error) {
-      log(2, 'Error adding to recent searches:', error);
+      log(1, 'Error adding to recent searches:', error);
     }
   }
 
   /**
-   * Remove a search from recent searches
-   * @param {string} query - The search query to remove
+   * Remove a search query from the recent searches list
+   * @param {string} query - The search query string to remove
+   * @returns {void}
    */
   removeFromRecentSearches(query) {
     try {
@@ -943,12 +935,13 @@ export class AdvancedSearchManager {
       this.actor.setFlag(MODULE.ID, FLAGS.RECENT_SEARCHES, updatedSearches);
       log(3, 'Removed from recent searches:', query);
     } catch (error) {
-      log(2, 'Error removing from recent searches:', error);
+      log(1, 'Error removing from recent searches:', error);
     }
   }
 
   /**
-   * Cleanup event listeners and elements
+   * Clean up event listeners, timeouts, and DOM elements
+   * @returns {void}
    */
   cleanup() {
     log(3, 'AdvancedSearchManager cleanup called');
