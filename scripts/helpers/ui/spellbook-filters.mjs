@@ -299,16 +299,8 @@ export class SpellbookFilterHelper {
       let visibleCount = 0;
       const levelVisibilityMap = new Map();
       for (const item of spellItems) {
-        const nameElement = item.querySelector('.spell-name');
-        const fullText = nameElement?.textContent || '';
-        let extractedName = '';
-        const componentMatch = fullText.match(/([A-Za-z\s'.-]+?)(?:\s*\n\s*[VSM]|$)/);
-        if (componentMatch) extractedName = componentMatch[1].trim();
-        else {
-          const cleaned = fullText.replace(/\s+/g, ' ').trim();
-          const parts = cleaned.split('•');
-          extractedName = parts[0].trim();
-        }
+        const titleElement = item.querySelector('.spell-name .title');
+        const extractedName = titleElement?.textContent?.trim() || item.querySelector('.spell-name')?.textContent?.trim() || '';
         const name = extractedName.toLowerCase();
         const isPrepared = item.classList.contains('prepared-spell');
         const level = item.dataset.spellLevel || '';

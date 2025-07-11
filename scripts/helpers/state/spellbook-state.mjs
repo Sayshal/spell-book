@@ -1073,4 +1073,13 @@ export class SpellbookState {
     }
     log(3, 'Refreshed spell enhancements');
   }
+
+  /**
+   * Get the current spell list for the active class
+   * @returns {Array} Array of spells for the currently active class
+   */
+  getCurrentSpellList() {
+    if (!this.activeClass || !this.classSpellData[this.activeClass]) return [];
+    return this.classSpellData[this.activeClass].spellLevels || [];
+  }
 }

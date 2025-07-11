@@ -14,7 +14,7 @@ export const MODULE = {
    * @type {Array}
    */
   DEFAULT_FILTER_CONFIG: [
-    { id: 'name', type: 'search', enabled: true, order: 10, label: 'SPELLBOOK.Filters.SearchPlaceholder', sortable: false, searchAliases: ['NAME'] },
+    { id: 'name', type: 'search', enabled: true, order: 10, label: 'SPELLBOOK.Filters.SearchPlaceholder', sortable: false },
     { id: 'level', type: 'dropdown', enabled: true, order: 20, label: 'SPELLBOOK.Filters.Level', sortable: true, searchAliases: ['LEVEL', 'LVL'] },
     { id: 'school', type: 'dropdown', enabled: true, order: 30, label: 'SPELLBOOK.Filters.School', sortable: true, searchAliases: ['SCHOOL'] },
     { id: 'castingTime', type: 'dropdown', enabled: true, order: 40, label: 'SPELLBOOK.Filters.CastingTime', sortable: true, searchAliases: ['CASTTIME', 'CASTING'] },

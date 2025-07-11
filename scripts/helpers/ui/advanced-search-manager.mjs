@@ -346,8 +346,9 @@ export class AdvancedSearchManager {
     // Set flag to prevent input event processing and blur handling
     this.isProcessingSuggestion = true;
 
-    // Update the input value without triggering events
+    // Set input value and trigger search
     this.searchInputElement.value = query;
+    this.searchInputElement.dispatchEvent(new Event('input', { bubbles: true }));
 
     if (suggestionElement.classList.contains('submit-query')) {
       log(3, `[${suggestionId}] Submit query - calling performSearch`);
@@ -477,13 +478,6 @@ export class AdvancedSearchManager {
       const fieldId = this.fieldDefinitions.getFieldId(endsWithFieldColon);
       log(3, `fieldId resolved to: "${fieldId}"`);
       content += `<div class="search-status info">${game.i18n.localize('SPELLBOOK.Search.EnterValue')}</div>`;
-      if (fieldId === 'name') {
-        content += `<div class="search-note">
-        <i class="fas fa-info-circle"></i>
-        <span class="suggestion-text">${game.i18n.localize('SPELLBOOK.Search.TypeSpellName')}</span>
-      </div>`;
-        return content;
-      }
       if (fieldId === 'range') {
         content += `<div class="search-note">
         <i class="fas fa-info-circle"></i>
