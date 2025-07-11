@@ -2142,7 +2142,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async handleCompareSpell(event, _form) {
-    log(1, 'DEBUG: This fired!', { event, _form });
     const spellUuid = event.target.dataset.uuid;
     const maxSpells = game.settings.get(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX);
     if (this.comparisonSpells.has(spellUuid)) this.comparisonSpells.delete(spellUuid);
@@ -2156,6 +2155,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         this.comparisonDialog.render(true);
       } else {
         this.comparisonDialog.render(false);
+        this.comparisonDialog.bringToFront();
       }
     }
   }

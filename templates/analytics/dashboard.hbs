@@ -98,7 +98,6 @@
         <ul class="user-list">
           {{#each analytics.userBreakdown}}
             <li class="user-stats" data-action="viewUserData" data-user-id="{{@key}}">
-              {{log 'DEBUG1' this}}
               <strong>{{this.name}}</strong> • {{#if this.totalCasts}}{{this.totalCasts}}{{else}}0{{/if}}
               {{localize "SPELLBOOK.Analytics.Casts"}} •
               {{#if this.totalFavorites}}{{this.totalFavorites}}{{else}}0{{/if}}
