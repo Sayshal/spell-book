@@ -62,8 +62,17 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   initializeConfig() {
     try {
       log(3, 'Initializing filter configuration');
-      let config = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
-      if (!config || !Array.isArray(config) || config.length === 0) {
+      let configData = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
+      if (Array.isArray(configData) || (configData && !configData.version)) {
+        log(2, 'Legacy or unversioned filter configuration detected. Rebuilding...');
+        configData = {
+          version: MODULE.DEFAULT_FILTER_CONFIG_VERSION,
+          filters: foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG)
+        };
+        game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, configData);
+      }
+      let config = configData?.filters || [];
+      if (!config || config.length === 0) {
         log(2, 'No valid configuration found, using defaults');
         config = foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG);
       } else {
@@ -81,7 +90,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
           };
         });
       }
-
       this.config = foundry.utils.deepClone(config);
       log(3, 'Configuration initialized successfully');
     } catch (error) {

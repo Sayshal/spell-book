@@ -1008,31 +1008,51 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _prepareFilters() {
-    let filterConfig = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
-    if (Array.isArray(filterConfig) && filterConfig.length > 0) {
-      const existingFilters = new Map(filterConfig.map((f) => [f.id, f]));
-      for (const defaultFilter of MODULE.DEFAULT_FILTER_CONFIG) {
-        if (!existingFilters.has(defaultFilter.id)) filterConfig.push(foundry.utils.deepClone(defaultFilter));
-      }
-      const defaultFilterIds = new Set(MODULE.DEFAULT_FILTER_CONFIG.map((f) => f.id));
-      filterConfig = filterConfig.filter((filter) => {
-        if (!defaultFilterIds.has(filter.id)) return false;
-        return true;
-      });
-      game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, filterConfig);
-    } else {
-      filterConfig = foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG);
+    let filterConfigData = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
+    if (!filterConfigData || Array.isArray(filterConfigData)) {
+      log(2, 'Legacy filter configuration detected (pre-0.9.0). Rebuilding with defaults...');
+      filterConfigData = {
+        version: MODULE.DEFAULT_FILTER_CONFIG_VERSION,
+        filters: foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG)
+      };
+      game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, filterConfigData);
     }
+    if (!filterConfigData.version) {
+      log(2, 'No version field found in filter configuration. Rebuilding for 0.9.0 upgrade...');
+      filterConfigData = {
+        version: MODULE.DEFAULT_FILTER_CONFIG_VERSION,
+        filters: foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG)
+      };
+      game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, filterConfigData);
+    }
+    let filterConfig = filterConfigData.filters || [];
+    const storedVersion = filterConfigData.version;
+    const currentVersion = MODULE.DEFAULT_FILTER_CONFIG_VERSION;
+    if (storedVersion !== currentVersion) {
+      log(2, `Filter configuration version mismatch. Stored: ${storedVersion}, Current: ${currentVersion}. Updating...`);
+      filterConfig = this._migrateFilterConfiguration(filterConfig, storedVersion, currentVersion);
+      const updatedConfigData = { version: currentVersion, filters: filterConfig };
+      game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, updatedConfigData);
+    } else if (filterConfig.length === 0) filterConfig = foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG);
+    else filterConfig = this._ensureFilterIntegrity(filterConfig);
     const sortedFilters = filterConfig.sort((a, b) => a.order - b.order);
     const filterState = this.filterHelper.getFilterState();
     const activeTab = this.tabGroups['spellbook-tabs'];
     const activeTabContent = this.element?.querySelector(`.tab[data-tab="${activeTab}"]`);
     const classIdentifier = activeTabContent?.dataset.classIdentifier || this._stateManager.activeClass;
     let spellData = [];
-    if (classIdentifier && this._stateManager.classSpellData[classIdentifier]) spellData = this._stateManager.classSpellData[classIdentifier].spellLevels || [];
+    if (classIdentifier && this._stateManager.classSpellData[classIdentifier]) {
+      spellData = this._stateManager.classSpellData[classIdentifier].spellLevels || [];
+    }
     const result = sortedFilters
       .map((filter) => {
-        const result = { id: filter.id, type: filter.type, name: `filter-${filter.id}`, label: game.i18n.localize(filter.label), enabled: filter.enabled };
+        const result = {
+          id: filter.id,
+          type: filter.type,
+          name: `filter-${filter.id}`,
+          label: game.i18n.localize(filter.label),
+          enabled: filter.enabled
+        };
         let element;
         switch (filter.type) {
           case 'search':
@@ -1755,6 +1775,48 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const wizardManager = this.wizardManagers.get(classIdentifier);
       if (wizardManager) wizardManager.invalidateCache();
     }
+  }
+
+  /**
+   * Migrate filter configuration from old version to new version
+   * @param {Array} oldConfig - The old filter configuration
+   * @param {string} oldVersion - The old version
+   * @param {string} newVersion - The new version
+   * @returns {Array} The migrated configuration
+   * @private
+   */
+  _migrateFilterConfiguration(oldConfig, oldVersion, newVersion) {
+    const existingFilters = new Map(oldConfig.map((f) => [f.id, f]));
+    const migratedConfig = MODULE.DEFAULT_FILTER_CONFIG.map((defaultFilter) => {
+      const existingFilter = existingFilters.get(defaultFilter.id);
+      if (existingFilter) {
+        return {
+          ...defaultFilter,
+          enabled: existingFilter.enabled,
+          order: existingFilter.order !== undefined ? existingFilter.order : defaultFilter.order
+        };
+      } else {
+        return foundry.utils.deepClone(defaultFilter);
+      }
+    });
+    log(3, `Migrated filter configuration from version ${oldVersion} to ${newVersion}`);
+    return migratedConfig;
+  }
+
+  /**
+   * Ensure filter configuration integrity by adding missing filters and removing obsolete ones
+   * @param {Array} filterConfig - Current filter configuration
+   * @returns {Array} Updated filter configuration
+   * @private
+   */
+  _ensureFilterIntegrity(filterConfig) {
+    const existingFilters = new Map(filterConfig.map((f) => [f.id, f]));
+    const defaultFilterIds = new Set(MODULE.DEFAULT_FILTER_CONFIG.map((f) => f.id));
+    for (const defaultFilter of MODULE.DEFAULT_FILTER_CONFIG) {
+      if (!existingFilters.has(defaultFilter.id)) filterConfig.push(foundry.utils.deepClone(defaultFilter));
+    }
+    filterConfig = filterConfig.filter((filter) => defaultFilterIds.has(filter.id));
+    return filterConfig;
   }
 
   /* -------------------------------------------- */

@@ -10,6 +10,12 @@ export const MODULE = {
   ISV13: foundry.utils.isNewerVersion(game.version, '12.999'),
 
   /**
+   * Current version of the default filter configuration
+   * Increment this when you make changes to DEFAULT_FILTER_CONFIG
+   */
+  DEFAULT_FILTER_CONFIG_VERSION: '0.9.0',
+
+  /**
    * Default filter configuration
    * @type {Array}
    */

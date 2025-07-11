@@ -73,12 +73,18 @@ export function registerSettings() {
     scope: 'client',
     config: false,
     type: Object,
-    default: MODULE.DEFAULT_FILTER_CONFIG,
+    default: {
+      version: MODULE.DEFAULT_FILTER_CONFIG_VERSION,
+      filters: MODULE.DEFAULT_FILTER_CONFIG
+    },
     onChange: (value) => {
       try {
-        if (!Array.isArray(value)) {
+        if (!value || !Array.isArray(value.filters)) {
           log(2, 'Invalid filter configuration format, resetting to default');
-          game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, MODULE.DEFAULT_FILTER_CONFIG);
+          game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, {
+            version: MODULE.DEFAULT_FILTER_CONFIG_VERSION,
+            filters: MODULE.DEFAULT_FILTER_CONFIG
+          });
         }
       } catch (error) {
         log(1, 'Error validating filter configuration:', error);
