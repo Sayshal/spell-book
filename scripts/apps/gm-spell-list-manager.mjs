@@ -1004,7 +1004,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     content = game.i18n.localize('SPELLMANAGER.Confirm.Content'),
     confirmLabel = game.i18n.localize('SPELLMANAGER.Confirm.Confirm'),
     confirmIcon = 'fas fa-check',
-    cancelLabel = game.i18n.localize('SPELLMANAGER.Confirm.Cancel'),
+    cancelLabel = game.i18n.localize('SPELLBOOK.UI.Cancel'),
     cancelIcon = 'fas fa-times',
     confirmCssClass = ''
   }) {
@@ -1087,7 +1087,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           }
         },
         {
-          label: game.i18n.localize('SPELLMANAGER.Confirm.Cancel'),
+          label: game.i18n.localize('SPELLBOOK.UI.Cancel'),
           icon: 'fas fa-times',
           action: 'cancel'
         }
@@ -1169,7 +1169,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           }
         },
         {
-          label: game.i18n.localize('SPELLMANAGER.Confirm.Cancel'),
+          label: game.i18n.localize('SPELLBOOK.UI.Cancel'),
           icon: 'fas fa-times',
           action: 'cancel'
         }
@@ -1796,7 +1796,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
           }
         },
         {
-          label: game.i18n.localize('SPELLMANAGER.Confirm.Cancel'),
+          label: game.i18n.localize('SPELLBOOK.UI.Cancel'),
           icon: 'fas fa-times',
           action: 'cancel'
         }
