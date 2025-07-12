@@ -396,6 +396,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       `data-range-value="${spell.system?.range?.value || ''}"`,
       `data-damage-types="${spell.filterData?.damageTypes || ''}"`,
       `data-ritual="${spell.filterData?.isRitual || false}"`,
+      `data-favorited="${spell.favorited || false}"`, // ADD THIS LINE
       `data-concentration="${spell.filterData?.concentration || false}"`,
       `data-requires-save="${spell.filterData?.requiresSave || false}"`,
       `data-conditions="${spell.filterData?.conditions || ''}"`,
@@ -755,7 +756,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Set up event listeners for spell preparation checkboxes
+   * Set up event listeners for spell preparation checkboxes and filter checkboxes
    * Only set up once to prevent multiple handlers
    */
   setupPreparationListeners() {
@@ -763,6 +764,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this._preparationListener = async (event) => {
       const target = event.target;
       if (target.matches('dnd5e-checkbox[data-uuid]')) await this._handlePreparationChange(event);
+      else if (target.matches('dnd5e-checkbox[name^="filter-"]')) PlayerSpellBook.filterSpells.call(this);
     };
     document.addEventListener('change', this._preparationListener);
   }
@@ -1166,6 +1168,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     if (filters.prepared && !spell.preparation?.prepared) return false;
     if (filters.ritual && !spell.filterData?.isRitual) return false;
+    if (filters.favorited && !spell.favorited) return false;
     return true;
   }
 
@@ -1802,9 +1805,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (isShiftReset) {
       const checkboxes = this.element.querySelectorAll('dnd5e-checkbox[data-uuid]:not([disabled])');
       checkboxes.forEach((checkbox) => (checkbox.checked = false));
-      const filters = this.element.querySelectorAll('.spell-filters input, .spell-filters select');
+      const filters = this.element.querySelectorAll('.spell-filters input, .spell-filters select, .spell-filters dnd5e-checkbox');
       filters.forEach((filter) => {
-        if (filter.type === 'checkbox') filter.checked = false;
+        if (filter.type === 'checkbox' || filter.tagName === 'DND5E-CHECKBOX') filter.checked = false;
         else if (filter.type === 'text' || filter.type === 'number') filter.value = '';
         else if (filter.tagName === 'SELECT') filter.selectedIndex = 0;
       });

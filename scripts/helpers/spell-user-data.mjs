@@ -356,13 +356,26 @@ export class SpellUserDataJournal {
     const targetUserId = userId || game.user.id;
     const cacheKey = actorId ? `${targetUserId}:${actorId}:${canonicalUuid}` : `${targetUserId}:${canonicalUuid}`;
     const userData = this.cache.get(cacheKey) || null;
+    let favorited = false;
+    let usageCount = 0;
+    let lastUsed = null;
+    if (actorId && userData?.actorData?.[actorId]) {
+      const actorData = userData.actorData[actorId];
+      favorited = actorData.favorited || false;
+      usageCount = actorData.usageStats?.count || 0;
+      lastUsed = actorData.usageStats?.lastUsed || null;
+    } else if (!actorId) {
+      favorited = userData?.favorited || false;
+      usageCount = userData?.usageStats?.count || 0;
+      lastUsed = userData?.usageStats?.lastUsed || null;
+    }
     return {
       ...spell,
       userData: userData,
-      favorited: userData?.favorited || false,
+      favorited: favorited,
       hasNotes: !!(userData?.notes && userData.notes.trim()),
-      usageCount: userData?.usageStats?.count || 0,
-      lastUsed: userData?.usageStats?.lastUsed || null
+      usageCount: usageCount,
+      lastUsed: lastUsed
     };
   }
 

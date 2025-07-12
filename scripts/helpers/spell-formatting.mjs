@@ -231,11 +231,14 @@ export function extractDamageTypes(spell) {
  * @returns {boolean} - Whether the spell is a ritual
  */
 export function checkIsRitual(spell) {
-  return Boolean(
-    spell.labels?.components?.tags?.includes(game.i18n.localize('DND5E.Item.Property.Ritual')) ||
-      (spell.system.properties && Array.isArray(spell.system.properties) && spell.system.properties.includes('ritual')) ||
-      spell.system.components?.ritual
-  );
+  if (spell.system?.properties && typeof spell.system.properties.has === 'function') return spell.system.properties.has('ritual');
+  if (spell.system?.properties && Array.isArray(spell.system.properties)) {
+    if (spell.system.properties.includes('ritual')) return true;
+    return spell.system.properties.some((prop) => (typeof prop === 'object' && prop.value === 'ritual') || (typeof prop === 'string' && prop === 'ritual'));
+  }
+  if (spell.system?.components?.ritual) return true;
+  if (spell.labels?.components?.tags?.includes(game.i18n.localize('DND5E.Item.Property.Ritual'))) return true;
+  return false;
 }
 
 /**

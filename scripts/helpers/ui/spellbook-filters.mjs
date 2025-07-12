@@ -309,6 +309,7 @@ export class SpellbookFilterHelper {
         const requiresSave = item.dataset.requiresSave === 'true';
         const conditions = (item.dataset.conditions || '').split(',');
         const hasMaterialComponents = item.dataset.materialComponents === 'true';
+        const isFavorited = item.dataset.favorited === 'true';
         const isGranted = !!item.querySelector('.tag.granted');
         const isAlwaysPrepared = !!item.querySelector('.tag.always-prepared');
         const isCountable = !isGranted && !isAlwaysPrepared;
@@ -323,6 +324,7 @@ export class SpellbookFilterHelper {
           rangeValue,
           damageTypes,
           isRitual,
+          isFavorited,
           isConcentration,
           requiresSave,
           conditions,
@@ -396,6 +398,7 @@ export class SpellbookFilterHelper {
     }
     if (filters.ritual && !spell.isRitual) return false;
     if (filters.prepared && !spell.isPrepared) return false;
+    if (filters.favorited && !spell.isFavorited) return false;
     return true;
   }
 
