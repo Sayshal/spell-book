@@ -1,0 +1,14 @@
+{{#if hasRecentSearches}}
+  <div class="search-section-header">{{localize 'SPELLBOOK.Search.Recent'}}</div>
+  {{#each recentSearches as |search|}}
+    <div class="search-suggestion" data-query="{{search.query}}" role="option" tabindex="-1" aria-selected="false">
+      <span class="suggestion-text" {{#if search.hasTooltip}} data-tooltip="{{search.query}}"
+        {{/if}}>{{search.query}}</span>
+      <button class="clear-recent-search" aria-label="{{localize 'SPELLBOOK.Search.Remove'}}">
+        <i class="fa-solid fa-square-xmark"></i>
+      </button>
+    </div>
+  {{/each}}
+{{else}}
+  <div class="search-section-header">{{localize 'SPELLBOOK.Search.NoRecent'}}</div>
+{{/if}}
