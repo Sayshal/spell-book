@@ -49,7 +49,7 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
   /** @override */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    const targetUserId = genericUtils._getTargetUserId();
+    const targetUserId = genericUtils._getTargetUserId(this.actor);
     try {
       const userData = await SpellUserDataJournal.getUserDataForSpell(this.spellUuid, targetUserId, this.actor?.id);
       this.currentNotes = userData?.notes || '';

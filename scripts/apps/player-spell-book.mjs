@@ -596,7 +596,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   async _applyFavoriteStatesToButtons(buttons) {
-    const targetUserId = genericUtils._getTargetUserId();
+    const targetUserId = genericUtils._getTargetUserId(this.actor);
     let updatedCount = 0;
     for (const button of buttons) {
       const spellUuid = button.dataset.uuid;
@@ -662,7 +662,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const actorFavorites = this.actor.system.favorites || [];
       const actorFavoriteSpellIds = new Set(actorFavorites.filter((fav) => fav.type === 'item' && fav.id.startsWith('.Item.')).map((fav) => fav.id.replace('.Item.', '')));
       const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
-      const targetUserId = genericUtils._getTargetUserId();
+      const targetUserId = genericUtils._getTargetUserId(this.actor);
       let syncCount = 0;
       const changedSpells = [];
       for (const spell of actorSpells) {

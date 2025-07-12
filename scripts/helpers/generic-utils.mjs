@@ -126,12 +126,12 @@ export function getConfigLabel(configObject, key) {
  * @returns {string} The user ID to use for spell data
  * @private
  */
-export function _getTargetUserId() {
+export function _getTargetUserId(actor) {
   let targetUserId = game.user.id;
   if (game.user.isActiveGM) {
-    const actorOwner = game.users.find((user) => user.character?.id === this.actor.id);
+    const actorOwner = game.users.find((user) => user?.character?.id === actor?.id);
     if (actorOwner) targetUserId = actorOwner.id;
-    else log(2, `No owner found for actor ${this.actor.name}, using GM`);
+    else log(2, `No owner found for actor ${actor?.name}, using GM`);
   }
   return targetUserId;
 }
