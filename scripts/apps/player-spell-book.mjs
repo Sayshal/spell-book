@@ -396,7 +396,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       `data-range-value="${spell.system?.range?.value || ''}"`,
       `data-damage-types="${spell.filterData?.damageTypes || ''}"`,
       `data-ritual="${spell.filterData?.isRitual || false}"`,
-      `data-favorited="${spell.favorited || false}"`, // ADD THIS LINE
+      `data-favorited="${spell.filterData?.favorited || false}"`,
       `data-concentration="${spell.filterData?.concentration || false}"`,
       `data-requires-save="${spell.filterData?.requiresSave || false}"`,
       `data-conditions="${spell.filterData?.conditions || ''}"`,

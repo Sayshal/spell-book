@@ -359,15 +359,10 @@ export class SpellUserDataJournal {
     let favorited = false;
     let usageCount = 0;
     let lastUsed = null;
-    if (actorId && userData?.actorData?.[actorId]) {
-      const actorData = userData.actorData[actorId];
-      favorited = actorData.favorited || false;
-      usageCount = actorData.usageStats?.count || 0;
-      lastUsed = actorData.usageStats?.lastUsed || null;
-    } else if (!actorId) {
-      favorited = userData?.favorited || false;
-      usageCount = userData?.usageStats?.count || 0;
-      lastUsed = userData?.usageStats?.lastUsed || null;
+    if (userData) {
+      favorited = userData.favorited;
+      usageCount = userData.usageStats?.count || 0;
+      lastUsed = userData.usageStats?.lastUsed || null;
     }
     return {
       ...spell,

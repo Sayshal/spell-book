@@ -172,7 +172,7 @@ export function extractSpellFilterData(spell) {
   const materialComponents = extractMaterialComponents(spell);
   const requiresSave = checkSpellRequiresSave(spell);
   const conditions = extractSpellConditions(spell);
-  return { castingTime, range, damageTypes, isRitual, concentration, materialComponents, requiresSave, conditions };
+  return { castingTime, range, damageTypes, isRitual, concentration, materialComponents, requiresSave, conditions, favorited: false };
 }
 
 /**

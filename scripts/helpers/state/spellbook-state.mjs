@@ -299,12 +299,19 @@ export class SpellbookState {
    * @returns {Array} Flattened array of spells with level metadata
    * @private
    */
-  _organizeSpellsByLevelForClass(spellItems, classIdentifier, classItem) {
+  async _organizeSpellsByLevelForClass(spellItems, classIdentifier, classItem) {
     const spellsByLevel = {};
     const processedSpellIds = new Set();
     const processedSpellNames = new Set();
+    const targetUserId = genericUtils._getTargetUserId(this.actor);
+    const actorId = this.actor?.id;
     if (this.actor) {
       const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
+      const userDataPromises = actorSpells.map((spell) => {
+        const compendiumUuid = spell.flags?.core?.sourceId || spell.uuid;
+        return SpellUserDataJournal.getUserDataForSpell(compendiumUuid, targetUserId, actorId);
+      });
+      await Promise.all(userDataPromises);
       for (const spell of actorSpells) {
         if (spell?.system?.level === undefined) continue;
         const level = spell.system.level;
@@ -320,7 +327,7 @@ export class SpellbookState {
           filterData: formattingUtils.extractSpellFilterData(spell),
           enrichedIcon: formattingUtils.createSpellIconLink(spell)
         };
-        const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spellData, game.user.id);
+        const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
         Object.assign(spellData, enhancedSpell);
         spellData.formattedDetails = formattingUtils.formatSpellDetails(spellData);
         if (!isSpecialMode) spellData.sourceClass = classIdentifier;
@@ -329,6 +336,8 @@ export class SpellbookState {
         processedSpellNames.add(spellName);
       }
     }
+    const compendiumDataPromises = spellItems.map((spell) => SpellUserDataJournal.getUserDataForSpell(spell.uuid || spell.compendiumUuid, targetUserId, actorId));
+    await Promise.all(compendiumDataPromises);
     for (const spell of spellItems) {
       if (spell?.system?.level === undefined) continue;
       const level = spell.system.level;
@@ -340,7 +349,7 @@ export class SpellbookState {
       spellData.sourceClass = classIdentifier;
       spellData.filterData = formattingUtils.extractSpellFilterData(spell);
       spellData.enrichedIcon = formattingUtils.createSpellIconLink(spell);
-      const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spellData, game.user.id);
+      const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
       Object.assign(spellData, enhancedSpell);
       spellData.formattedDetails = formattingUtils.formatSpellDetails(spellData);
       spellsByLevel[level].push(spellData);
@@ -387,7 +396,7 @@ export class SpellbookState {
         if (spell.system && !spell.system.sourceClass) spell.system.sourceClass = identifier;
       }
     }
-    const spellLevels = this._organizeSpellsByLevelForClass(spellItems, identifier, classItem);
+    const spellLevels = await this._organizeSpellsByLevelForClass(spellItems, identifier, classItem);
     const prepStats = this.calculatePreparationStats(identifier, spellLevels, classItem);
     this.classSpellData[identifier] = {
       spellLevels,
@@ -571,8 +580,8 @@ export class SpellbookState {
       (spell) => (!shouldHideCantrips && spell.system.level === 0) || (spell.system.level !== 0 && (personalSpellbook.includes(spell.compendiumUuid) || grantedSpells.includes(spell.compendiumUuid)))
     );
     const wizardbookSpells = allSpellItems.filter((spell) => this._fullWizardSpellLists.get(classIdentifier).has(spell.compendiumUuid) && spell.system.level !== 0);
-    const prepLevelsFlattened = this._organizeSpellsByLevelForClass(prepTabSpells, classIdentifier, classItem);
-    const wizardLevelsFlattened = this._organizeSpellsByLevelForClass(wizardbookSpells, classIdentifier, classItem);
+    const prepLevelsFlattened = await this._organizeSpellsByLevelForClass(prepTabSpells, classIdentifier, classItem);
+    const wizardLevelsFlattened = await this._organizeSpellsByLevelForClass(wizardbookSpells, classIdentifier, classItem);
     const maxSpellsAllowed = wizardManager.getMaxSpellsAllowed();
     const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
     let finalPrepLevels = prepLevelsFlattened;
@@ -1059,6 +1068,8 @@ export class SpellbookState {
     }
     for (const [classIdentifier, classData] of Object.entries(this.classSpellData)) {
       if (classData.spellLevels) {
+        const userDataPromises = classData.spellLevels.map((spell) => SpellUserDataJournal.getUserDataForSpell(spell.uuid || spell.compendiumUuid, targetUserId, this.app.actor?.id));
+        await Promise.all(userDataPromises);
         for (const spell of classData.spellLevels) {
           const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spell, targetUserId, this.app.actor?.id);
           Object.assign(spell, enhancedSpell);
