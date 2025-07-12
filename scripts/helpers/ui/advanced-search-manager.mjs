@@ -253,15 +253,13 @@ export class AdvancedSearchManager {
 
   /**
    * Handle search input focus events with debouncing
-   * @async
    * @param {FocusEvent} event - Focus event from search field
-   * @returns {Promise<void>}
    */
-  async handleSearchFocus(event) {
+  handleSearchFocus(event) {
     if (this.isProcessingFocusEvent) return;
     this.isProcessingFocusEvent = true;
     if (this.focusDebounceTimeout) clearTimeout(this.focusDebounceTimeout);
-    this.focusDebounceTimeout = setTimeout(async () => {
+    this.focusDebounceTimeout = setTimeout(() => {
       const query = event.target.value;
       this.updateDropdownContent(query);
       this.showDropdown();
