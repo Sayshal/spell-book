@@ -119,7 +119,7 @@ export class SpellUsageTracker {
    */
   static async getSpellUsageStats(spellUuid, userId = null) {
     try {
-      const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid, userId);
+      const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid, userId, actorId);
       return userData?.usageStats || null;
     } catch (error) {
       log(1, 'Error getting spell usage stats:', error);
@@ -138,7 +138,7 @@ export class SpellUsageTracker {
    */
   static async setSpellUsageStats(spellUuid, usageStats, userId = null) {
     try {
-      const userData = (await SpellUserDataJournal.getUserDataForSpell(spellUuid, userId)) || {};
+      const userData = (await SpellUserDataJournal.getUserDataForSpell(spellUuid, userId, actorId)) || {};
       return await SpellUserDataJournal.setUserDataForSpell(spellUuid, { ...userData, usageStats }, userId);
     } catch (error) {
       log(1, 'Error setting spell usage stats:', error);

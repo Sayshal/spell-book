@@ -407,7 +407,19 @@ export class SpellUserDataJournal {
       const newContent = this._generateTablesHTML(spellData, user.name, targetUserId);
       await page.update({ 'text.content': newContent, [`flags.${MODULE.ID}.lastUpdated`]: Date.now() });
       const cacheKey = targetActorId ? `${targetUserId}:${targetActorId}:${canonicalUuid}` : `${targetUserId}:${canonicalUuid}`;
-      this.cache.set(cacheKey, spellData[canonicalUuid]);
+      if (targetActorId) {
+        const result = {
+          ...spellData[canonicalUuid].actorData[targetActorId],
+          notes: spellData[canonicalUuid].notes
+        };
+        this.cache.set(cacheKey, result);
+      } else {
+        this.cache.set(cacheKey, {
+          notes: spellData[canonicalUuid].notes || '',
+          favorited: false,
+          usageStats: null
+        });
+      }
       log(3, `Updated spell favorite status for ${canonicalUuid}: ${favorited}`);
       return true;
     } catch (error) {

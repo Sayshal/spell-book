@@ -57,7 +57,7 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
         else log(2, `No owner found via ownership levels, using GM`);
       }
     }
-    const userData = await SpellUserDataJournal.getUserDataForSpell(this.spellUuid, targetUserId);
+    const userData = await SpellUserDataJournal.getUserDataForSpell(this.spellUuid, targetUserId, this.actor?.id);
     this.currentNotes = userData?.notes || '';
     const charactersPerRow = 60;
     const calculatedRows = Math.ceil(this.maxLength / charactersPerRow);

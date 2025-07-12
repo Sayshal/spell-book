@@ -542,6 +542,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       this._showErrorState(error);
     } finally {
       this._isLoadingSpellData = false;
+      await this._applyFavoriteStatesAfterRender();
     }
   }
 
@@ -595,13 +596,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   async _applyFavoriteStatesToButtons(buttons) {
+    const targetUserId = this._getTargetUserId();
     let updatedCount = 0;
     for (const button of buttons) {
       const spellUuid = button.dataset.uuid;
       if (!spellUuid) continue;
       let isFavorited = this._stateManager.getFavoriteSessionState(spellUuid);
       if (isFavorited === null) {
-        const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid);
+        const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid, targetUserId, this.actor.id);
         const journalFavorited = userData?.favorited || false;
         const isOnActor = this._isSpellOnActor(spellUuid);
         if (isOnActor && journalFavorited) isFavorited = true;
@@ -660,13 +662,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const actorFavorites = this.actor.system.favorites || [];
       const actorFavoriteSpellIds = new Set(actorFavorites.filter((fav) => fav.type === 'item' && fav.id.startsWith('.Item.')).map((fav) => fav.id.replace('.Item.', '')));
       const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
+      const targetUserId = this._getTargetUserId();
       let syncCount = 0;
       const changedSpells = [];
       for (const spell of actorSpells) {
         const spellUuid = spell.flags?.core?.sourceId || spell.uuid;
         if (!spellUuid) continue;
         const isFavoritedInActor = actorFavoriteSpellIds.has(spell.id);
-        const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid);
+        const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid, targetUserId, this.actor.id);
         const isFavoritedInJournal = userData?.favorited || false;
         if (isFavoritedInJournal && !isFavoritedInActor) {
           log(3, `Unfavoriting ${spell.name} in journal to match actor state`);
@@ -2032,7 +2035,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       log(3, `Successfully toggled favorite for spell ${spellUuid}: ${newFavoriteStatus}`);
     } catch (error) {
       log(1, 'Error in handleToggleFavorite:', error);
-      const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid);
+      const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid, null, this.actor.id);
       this._stateManager.updateFavoriteSessionState(spellUuid, userData?.favorited || false);
     }
   }
@@ -2062,6 +2065,21 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
       button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
     }
+  }
+
+  /**
+   * Get the target user ID for spell data operations
+   * @returns {string} The user ID to use for spell data
+   * @private
+   */
+  _getTargetUserId() {
+    let targetUserId = game.user.id;
+    if (game.user.isActiveGM) {
+      const actorOwner = game.users.find((user) => user.character?.id === this.actor.id);
+      if (actorOwner) targetUserId = actorOwner.id;
+      else log(2, `No owner found for actor ${this.actor.name}, using GM`);
+    }
+    return targetUserId;
   }
 
   /**

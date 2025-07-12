@@ -81,7 +81,7 @@ export async function removeSpellFromActorFavorites(spellUuid, actor) {
 export async function syncFavoritesOnSave(actor, spellData) {
   try {
     for (const [uuid, data] of Object.entries(spellData)) {
-      const userData = SpellUserDataJournal.getUserDataForSpell(uuid);
+      const userData = await SpellUserDataJournal.getUserDataForSpell(uuid, null, actor.id);
       if (userData?.favorited) await addSpellToActorFavorites(uuid, actor);
     }
   } catch (error) {
@@ -97,13 +97,20 @@ export async function syncFavoritesOnSave(actor, spellData) {
  */
 export async function processFavoritesFromForm(form, actor) {
   try {
+    let targetUserId = game.user.id;
+    if (game.user.isActiveGM) {
+      const actorOwner = game.users.find((user) => user.character?.id === actor.id);
+      if (actorOwner) targetUserId = actorOwner.id;
+    }
     const actorSpells = actor.items.filter((item) => item.type === 'spell');
     const favoritesToAdd = [];
     log(3, `Checking ${actorSpells.length} spells on actor for favorite status`);
     for (const spell of actorSpells) {
       const canonicalUuid = getCanonicalSpellUuid(spell.uuid);
-      const userData = await SpellUserDataJournal.getUserDataForSpell(canonicalUuid);
+      log(1, `Checking spell ${spell.name}: actor UUID = ${spell.uuid}, canonical = ${canonicalUuid}`);
+      const userData = await SpellUserDataJournal.getUserDataForSpell(canonicalUuid, targetUserId, actor.id);
       const isFavoritedInJournal = userData?.favorited || false;
+      log(1, `Journal favorited status: ${isFavoritedInJournal}`);
       if (isFavoritedInJournal) favoritesToAdd.push(spell);
     }
     if (favoritesToAdd.length > 0) {

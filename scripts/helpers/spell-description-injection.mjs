@@ -99,7 +99,7 @@ export class SpellDescriptionInjection {
       }
       const injectionMode = game.settings.get(MODULE.ID, 'injectNotesIntoDescriptions');
       if (injectionMode === 'off') return;
-      const userData = await SpellUserDataJournal.getUserDataForSpell(canonicalUuid, targetUserId);
+      const userData = await SpellUserDataJournal.getUserDataForSpell(canonicalUuid, targetUserId, actor?.id);
       if (!userData?.notes || !userData.notes.trim()) {
         await this.removeNotesFromDescription(spellItem);
         return;
