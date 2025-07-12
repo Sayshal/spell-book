@@ -1,0 +1,13 @@
+<form class="wizard-copy-form">
+  <p>{{localize 'SPELLBOOK.Wizard.LearnSpellPrompt' name=spell.name}}</p>
+  <div class="copy-details">
+    <div class="form-group">
+      <label>{{localize 'SPELLBOOK.Wizard.CostLabel'}}:</label>
+      <span>{{costText}}</span>
+    </div>
+    <div class="form-group">
+      <label>{{localize 'SPELLBOOK.Wizard.TimeLabel'}}:</label>
+      <span>{{localize 'SPELLBOOK.Wizard.SpellCopyTime' hours=time}}</span>
+    </div>
+  </div>
+</form>

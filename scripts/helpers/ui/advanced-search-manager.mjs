@@ -485,7 +485,7 @@ export class AdvancedSearchManager {
    * @returns {Promise<string>} HTML content for dropdown
    */
   async _generateStandardQueryContent(query) {
-    const data = this._prepareStandardQueryData(query);
+    const data = await this._prepareStandardQueryData(query);
     const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
     return await renderTemplate(TEMPLATES.COMPONENTS.SEARCH_DROPDOWN_STANDARD, data);
   }
@@ -495,41 +495,27 @@ export class AdvancedSearchManager {
    * @private
    * @returns {string} HTML content for recent searches
    */
-  _generateRecentSearches() {
-    //TODO: This should be a template file.
+  async _generateRecentSearches() {
     const recentSearches = this.getRecentSearches();
-    if (recentSearches.length === 0) return `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.NoRecent')}</div>`;
-    let content = `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Recent')}</div>`;
-    recentSearches.forEach((search) => {
-      const tooltipAttr = search.length > 32 ? `data-tooltip="${search}"` : '';
-      content += `<div class="search-suggestion" data-query="${search}" role="option" tabindex="-1" aria-selected="false">
-        <span class="suggestion-text" ${tooltipAttr}>${search}</span>
-        <button class="clear-recent-search" aria-label="${game.i18n.localize('SPELLBOOK.Search.Remove')}"><i class="fa-solid fa-square-xmark"></i></button>
-      </div>`;
-    });
-    return content;
+    const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
+    const hasRecentSearches = recentSearches.length > 0;
+    const processedSearches = recentSearches.map((search) => ({ query: search, hasTooltip: search.length > 32 }));
+    return await renderTemplate(TEMPLATES.COMPONENTS.SEARCH_DROPDOWN_RECENT, { hasRecentSearches, recentSearches: processedSearches });
   }
 
   /**
    * Generate HTML content for fuzzy spell name matches
    * @private
    * @param {string} query - The search query string
-   * @returns {string} HTML content for fuzzy matches
+   * @returns {Promise<string>} HTML content for fuzzy matches
    */
-  _generateFuzzyMatches(query) {
-    //TODO: This should be a template file.
-    let content = `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Suggestions')}</div>`;
+  async _generateFuzzyMatches(query) {
+    const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
     const spells = this.app._stateManager?.getCurrentSpellList() || [];
     const matches = spells.filter((spell) => spell.name.toLowerCase().includes(query.toLowerCase())).slice(0, 5);
-    if (matches.length > 0) {
-      matches.forEach((spell) => {
-        const tooltipAttr = spell.name.length > 32 ? `data-tooltip="${spell.name}"` : '';
-        content += `<div class="search-suggestion" data-query="${spell.name}" role="option" tabindex="-1" aria-selected="false">
-          <span class="suggestion-text" ${tooltipAttr}>${spell.name}</span>
-        </div>`;
-      });
-    } else content += `<div class="search-status">${game.i18n.localize('SPELLBOOK.Search.NoMatches')}</div>`;
-    return content;
+    const hasMatches = matches.length > 0;
+    const processedMatches = matches.map((spell) => ({ name: spell.name, hasTooltip: spell.name.length > 32 }));
+    return await renderTemplate(TEMPLATES.COMPONENTS.SEARCH_DROPDOWN_FUZZY, { hasMatches, matches: processedMatches });
   }
 
   /**
@@ -555,10 +541,10 @@ export class AdvancedSearchManager {
    * @param {string} query - The standard query string
    * @returns {Object} Data object for template rendering
    */
-  _prepareStandardQueryData(query) {
+  async _prepareStandardQueryData(query) {
     return {
       recentSearches: query.length < 3 ? this.getRecentSearches() : [],
-      fuzzyMatches: query.length >= 3 ? this._generateFuzzyMatches(query) : []
+      fuzzyMatches: query.length >= 3 ? await this._generateFuzzyMatches(query) : []
     };
   }
 
