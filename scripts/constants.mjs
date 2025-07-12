@@ -171,16 +171,11 @@ export const TEMPLATES = {
     MIGRATION_REPORT: 'modules/spell-book/templates/components/migration-report.hbs',
     MIGRATION_USER_DATA: 'modules/spell-book/templates/components/migration-user-data-results.hbs',
     SEARCH_DROPDOWN_ADVANCED: 'modules/spell-book/templates/components/search-dropdown-advanced.hbs',
-    SEARCH_DROPDOWN_RECENT: 'modules/spell-book/templates/components/search-dropdown-recent.hbs',
-    SEARCH_DROPDOWN_FUZZY: 'modules/spell-book/templates/components/search-dropdown-fuzzy.hbs',
     SEARCH_DROPDOWN_STANDARD: 'modules/spell-book/templates/components/search-dropdown-standard.hbs',
     SPELL_LEVEL: 'modules/spell-book/templates/components/spell-level.hbs',
-    USER_DATA_INTRO: 'modules/spell-book/templates/components/user-data-intro.hbs',
-    USER_SPELL_DATA_EMPTY: 'modules/spell-book/templates/components/user-spell-data-empty.hbs',
-    USER_SPELL_DATA_TABLES: 'modules/spell-book/templates/components/user-spell-data-tables.hbs'
+    USER_DATA_INTRO: 'modules/spell-book/templates/components/user-data-intro.hbs'
   },
   DIALOGS: {
-    ANALYTICS_IMPORT_SUMMARY: 'modules/spell-book/templates/dialogs/analytics-import-summary.hbs',
     CREATE_SPELL_LIST: 'modules/spell-book/templates/dialogs/create-spell-list.hbs',
     FILTER_CONFIG: 'modules/spell-book/templates/dialogs/filter-configuration.hbs',
     LEARN_FROM_SCROLL: 'modules/spell-book/templates/dialogs/learn-from-scroll.hbs',
@@ -192,8 +187,7 @@ export const TEMPLATES = {
     SPELL_COMPARISON: 'modules/spell-book/templates/dialogs/spell-comparison.hbs',
     SPELL_LOADOUT: 'modules/spell-book/templates/dialogs/spell-loadout.hbs',
     SPELL_NOTES: 'modules/spell-book/templates/dialogs/spell-notes-dialog.hbs',
-    SPELLBOOK_SETTINGS: 'modules/spell-book/templates/dialogs/spellbook-settings.hbs',
-    WIZARD_LEARN_SPELL: 'modules/spell-book/templates/dialogs/wizard-learn-spell.hbs'
+    SPELLBOOK_SETTINGS: 'modules/spell-book/templates/dialogs/spellbook-settings.hbs'
   },
   GM: {
     AVAILABLE_SPELLS: 'modules/spell-book/templates/gm/available-spells.hbs',

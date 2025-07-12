@@ -386,6 +386,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
    * @private
    */
   async _importUserData() {
+    //TODO: This should use a template.
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
@@ -406,9 +407,15 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
           .map((u) => u.userName)
           .join(', ');
         const exportDate = importData.exportedAt ? new Date(importData.exportedAt).toLocaleDateString() : game.i18n.localize('SPELLBOOK.Analytics.ImportSummaryUnknown');
-        const exportedBy = importData.exportedBy || game.i18n.localize('SPELLBOOK.Analytics.ImportSummaryUnknown');
-        const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
-        const summaryContent = await renderTemplate(TEMPLATES.DIALOGS.ANALYTICS_IMPORT_SUMMARY, { exportDate, exportedBy, userCount, userNames });
+        const summaryContent = `
+        <div class="import-summary">
+          <p><strong>${game.i18n.localize('SPELLBOOK.Analytics.ImportSummaryExportDate')}:</strong> ${exportDate}</p>
+          <p><strong>${game.i18n.localize('SPELLBOOK.Analytics.ImportSummaryExportedBy')}:</strong> ${importData.exportedBy || game.i18n.localize('SPELLBOOK.Analytics.ImportSummaryUnknown')}</p>
+          <p><strong>${game.i18n.localize('SPELLBOOK.Analytics.ImportSummaryUsers')}:</strong> ${userCount}</p>
+          <p><strong>${game.i18n.localize('SPELLBOOK.Analytics.ImportSummaryNames')}:</strong> ${userNames}</p>
+        </div>
+        <p class="warning"><strong>${game.i18n.localize('SPELLBOOK.Analytics.ImportWarningTitle')}:</strong> ${game.i18n.localize('SPELLBOOK.Analytics.ImportWarningMessage')}</p>
+      `;
         const confirmed = await foundry.applications.api.DialogV2.wait({
           window: { title: game.i18n.localize('SPELLBOOK.Analytics.ImportConfirmTitle') },
           content: summaryContent,
@@ -486,7 +493,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
         for (const user of users) {
           const page = await SpellUserDataJournal._getUserPage(user.id);
           if (page) {
-            const emptyContent = await manager._generateEmptyTablesHTML(user.name, user.id);
+            const emptyContent = manager._generateEmptyTablesHTML(user.name, user.id);
             await page.update({
               'text.content': emptyContent,
               [`flags.${MODULE.ID}.lastUpdated`]: Date.now(),
@@ -500,7 +507,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
         if (user && !user.isGM) {
           const page = await SpellUserDataJournal._getUserPage(this.selectedUserId);
           if (page) {
-            const emptyContent = await manager._generateEmptyTablesHTML(user.name, user.id);
+            const emptyContent = manager._generateEmptyTablesHTML(user.name, user.id);
             await page.update({
               'text.content': emptyContent,
               [`flags.${MODULE.ID}.lastUpdated`]: Date.now(),
