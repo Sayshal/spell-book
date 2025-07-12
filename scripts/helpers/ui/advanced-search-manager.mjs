@@ -411,10 +411,86 @@ export class AdvancedSearchManager {
    * @param {string} query - The advanced query string
    * @returns {Promise<string>} HTML content for dropdown
    */
-  async _generateAdvancedQueryContent(query) {
-    const data = this._prepareAdvancedQueryData(query);
-    const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
-    return await renderTemplate(TEMPLATES.COMPONENTS.SEARCH_DROPDOWN_ADVANCED, data);
+  _generateAdvancedQueryContent(query) {
+    const queryWithoutTrigger = query.substring(1);
+    let content = `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Advanced')}</div>`;
+    if (!queryWithoutTrigger.trim() || this.isIncompleteAndQuery(query)) {
+      content += `<div class="search-status info">${game.i18n.localize('SPELLBOOK.Search.EnterField')}</div>`;
+      const fieldAliases = this.fieldDefinitions.getAllFieldAliases();
+      const uniqueFields = [];
+      const seenFields = new Set();
+      for (const alias of fieldAliases) {
+        const fieldId = this.fieldDefinitions.getFieldId(alias);
+        if (fieldId && !seenFields.has(fieldId)) {
+          seenFields.add(fieldId);
+          uniqueFields.push(alias);
+        }
+      }
+      if (uniqueFields.length > 0) {
+        content += `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Fields')}</div>`;
+        uniqueFields.forEach((field) => {
+          const tooltipAttr = field.length > 32 ? `data-tooltip="${field}"` : '';
+          content += `<div class="search-suggestion" data-query="${query}${field}:" role="option" tabindex="-1" aria-selected="false">
+          <span class="suggestion-text" ${tooltipAttr}>${field}</span>
+        </div>`;
+        });
+      }
+      return content;
+    }
+    const endsWithFieldColon = this.queryEndsWithFieldColon(queryWithoutTrigger);
+    log(3, `endsWithFieldColon result: "${endsWithFieldColon}"`);
+    if (endsWithFieldColon) {
+      const fieldId = this.fieldDefinitions.getFieldId(endsWithFieldColon);
+      log(3, `fieldId resolved to: "${fieldId}"`);
+      content += `<div class="search-status info">${game.i18n.localize('SPELLBOOK.Search.EnterValue')}</div>`;
+      if (fieldId === 'range') {
+        content += `<div class="search-note">
+        <i class="fas fa-info-circle"></i>
+        <span class="suggestion-text">${game.i18n.localize('SPELLBOOK.Search.TypeRange')}</span>
+      </div>`;
+        return content;
+      }
+      if (fieldId) {
+        const validValues = this.fieldDefinitions.getValidValuesForField(fieldId);
+        log(3, `validValues for ${fieldId}:`, validValues);
+        if (validValues.length > 0) {
+          content += `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Values')}</div>`;
+          validValues.forEach((value) => {
+            const tooltipAttr = value.length > 32 ? `data-tooltip="${value}"` : '';
+            content += `<div class="search-suggestion" data-query="${query}${value}" role="option" tabindex="-1" aria-selected="false">
+            <span class="suggestion-text" ${tooltipAttr}>${value}</span>
+          </div>`;
+          });
+        }
+      }
+      return content;
+    }
+    const incompleteValueMatch = this.isIncompleteValue(queryWithoutTrigger);
+    if (incompleteValueMatch) {
+      const { field: fieldId, value: currentValue } = incompleteValueMatch;
+      content += `<div class="search-status info">${game.i18n.localize('SPELLBOOK.Search.CompleteValue')}</div>`;
+      const validValues = this.fieldDefinitions.getValidValuesForField(fieldId);
+      const matchingValues = validValues.filter((value) => value.toLowerCase().startsWith(currentValue.toLowerCase()));
+      if (matchingValues.length > 0) {
+        content += `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.MatchingValues')}</div>`;
+        matchingValues.forEach((value) => {
+          const beforeColon = queryWithoutTrigger.substring(0, queryWithoutTrigger.lastIndexOf(':') + 1);
+          const fullQuery = `^${beforeColon}${value}`;
+          const tooltipAttr = value.length > 32 ? `data-tooltip="${value}"` : '';
+          content += `<div class="search-suggestion" data-query="${fullQuery}" role="option" tabindex="-1" aria-selected="false">
+          <span class="suggestion-text" ${tooltipAttr}>${value}</span>
+        </div>`;
+        });
+      }
+      return content;
+    }
+    if (this.isAdvancedQueryComplete(query)) {
+      content += `<div class="search-suggestion submit-query" data-query="${query}" role="option" tabindex="-1" aria-selected="false">
+      <span class="suggestion-text">${game.i18n.localize('SPELLBOOK.Search.ExecuteQuery')}</span>
+      <span class="suggestion-execute">⏎</span>
+    </div>`;
+    }
+    return content;
   }
 
   /**
@@ -495,12 +571,18 @@ export class AdvancedSearchManager {
    * @private
    * @returns {string} HTML content for recent searches
    */
-  async _generateRecentSearches() {
+  _generateRecentSearches() {
     const recentSearches = this.getRecentSearches();
-    const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
-    const hasRecentSearches = recentSearches.length > 0;
-    const processedSearches = recentSearches.map((search) => ({ query: search, hasTooltip: search.length > 32 }));
-    return await renderTemplate(TEMPLATES.COMPONENTS.SEARCH_DROPDOWN_RECENT, { hasRecentSearches, recentSearches: processedSearches });
+    if (recentSearches.length === 0) return `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.NoRecent')}</div>`;
+    let content = `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Recent')}</div>`;
+    recentSearches.forEach((search) => {
+      const tooltipAttr = search.length > 32 ? `data-tooltip="${search}"` : '';
+      content += `<div class="search-suggestion" data-query="${search}" role="option" tabindex="-1" aria-selected="false">
+        <span class="suggestion-text" ${tooltipAttr}>${search}</span>
+        <button class="clear-recent-search" aria-label="${game.i18n.localize('SPELLBOOK.Search.Remove')}"><i class="fa-solid fa-square-xmark"></i></button>
+      </div>`;
+    });
+    return content;
   }
 
   /**

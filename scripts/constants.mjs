@@ -170,8 +170,6 @@ export const TEMPLATES = {
     MIGRATION_FOLDER: 'modules/spell-book/templates/components/migration-folder-results.hbs',
     MIGRATION_REPORT: 'modules/spell-book/templates/components/migration-report.hbs',
     MIGRATION_USER_DATA: 'modules/spell-book/templates/components/migration-user-data-results.hbs',
-    SEARCH_DROPDOWN_ADVANCED: 'modules/spell-book/templates/components/search-dropdown-advanced.hbs',
-    SEARCH_DROPDOWN_RECENT: 'modules/spell-book/templates/components/search-dropdown-recent.hbs',
     SEARCH_DROPDOWN_FUZZY: 'modules/spell-book/templates/components/search-dropdown-fuzzy.hbs',
     SEARCH_DROPDOWN_STANDARD: 'modules/spell-book/templates/components/search-dropdown-standard.hbs',
     SPELL_LEVEL: 'modules/spell-book/templates/components/spell-level.hbs',
