@@ -1,5 +1,5 @@
 import { PlayerSpellBook } from '../../apps/player-spell-book.mjs';
-import { FLAGS, MODULE, TEMPLATES } from '../../constants.mjs';
+import { FLAGS, MODULE } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
 import { FieldDefinitions } from './field-definitions.mjs';
 import { QueryExecutor } from './query-executor.mjs';
@@ -177,7 +177,7 @@ export class AdvancedSearchManager {
         } catch (error) {
           log(2, 'Error ensuring spell data for advanced search:', error);
         }
-        await this.updateDropdownContent(query);
+        this.updateDropdownContent(query);
         if (this.isAdvancedQueryComplete(query)) log(3, 'Advanced query appears complete, but waiting for Enter key');
       }, 150);
     } else {
@@ -188,7 +188,7 @@ export class AdvancedSearchManager {
         } catch (error) {
           log(1, 'Error ensuring spell data for fuzzy search:', error);
         }
-        await this.updateDropdownContent(query);
+        this.updateDropdownContent(query);
         this.performSearch(query);
       }, 800);
     }
@@ -263,7 +263,7 @@ export class AdvancedSearchManager {
     if (this.focusDebounceTimeout) clearTimeout(this.focusDebounceTimeout);
     this.focusDebounceTimeout = setTimeout(async () => {
       const query = event.target.value;
-      await this.updateDropdownContent(query);
+      this.updateDropdownContent(query);
       this.showDropdown();
       this.isProcessingFocusEvent = false;
     }, 50);
@@ -283,11 +283,9 @@ export class AdvancedSearchManager {
 
   /**
    * Handle document click events for dropdown interaction and cleanup
-   * @async
    * @param {MouseEvent} event - Click event from document
-   * @returns {Promise<void>}
    */
-  async handleDocumentClick(event) {
+  handleDocumentClick(event) {
     const dropdown = document.querySelector('.search-dropdown');
     if (event.target.closest('.clear-recent-search')) {
       log(3, 'Handling clear recent search click');
@@ -297,7 +295,7 @@ export class AdvancedSearchManager {
       const searchText = suggestionElement.dataset.query;
       suggestionElement.style.display = 'none';
       this.removeFromRecentSearches(searchText);
-      await this.updateDropdownContent(this.searchInputElement.value);
+      this.updateDropdownContent(this.searchInputElement.value);
       return;
     }
     if (event.target.closest('.search-suggestion')) {
@@ -311,11 +309,9 @@ export class AdvancedSearchManager {
 
   /**
    * Select a suggestion from the dropdown and update search state
-   * @async
    * @param {HTMLElement} suggestionElement - The suggestion DOM element
-   * @returns {Promise<void>}
    */
-  async selectSuggestion(suggestionElement) {
+  selectSuggestion(suggestionElement) {
     const suggestionId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     const query = suggestionElement.dataset.query;
     const now = Date.now();
@@ -339,7 +335,7 @@ export class AdvancedSearchManager {
         clearTimeout(this.searchTimeout);
         this.searchTimeout = null;
       }
-      await this.updateDropdownContent(query);
+      this.updateDropdownContent(query);
       if (!this.isDropdownVisible) this.showDropdown();
       log(3, `[${suggestionId}] Dropdown content updated and shown`);
     }
@@ -387,19 +383,17 @@ export class AdvancedSearchManager {
 
   /**
    * Update dropdown content based on current query type
-   * @async
    * @param {string} query - Current search query string
-   * @returns {Promise<void>}
    */
-  async updateDropdownContent(query) {
+  updateDropdownContent(query) {
     if (this.lastDropdownQuery === query) return;
     this.lastDropdownQuery = query;
     const dropdown = document.querySelector('.search-dropdown');
     if (!dropdown) return;
     let content = '';
     this.isAdvancedQuery = query.startsWith('^');
-    if (this.isAdvancedQuery) content = await this._generateAdvancedQueryContent(query);
-    else content = await this._generateStandardQueryContent(query);
+    if (this.isAdvancedQuery) content += this._generateAdvancedQueryContent(query);
+    else content += this._generateStandardQueryContent(query);
     dropdown.innerHTML = content;
     log(3, 'Dropdown content updated for query:', query);
   }
@@ -554,16 +548,16 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Generate content for standard query suggestions
-   * @async
+   * Generate content for standard queries
+   * @param {string} query - The query string
+   * @returns {string} HTML content
    * @private
-   * @param {string} query - The standard query string
-   * @returns {Promise<string>} HTML content for dropdown
    */
-  async _generateStandardQueryContent(query) {
-    const data = await this._prepareStandardQueryData(query);
-    const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
-    return await renderTemplate(TEMPLATES.COMPONENTS.SEARCH_DROPDOWN_STANDARD, data);
+  _generateStandardQueryContent(query) {
+    let content = '';
+    if (!query || query.length < 3) content += this._generateRecentSearches();
+    else content += this._generateFuzzyMatches(query);
+    return content;
   }
 
   /**
@@ -589,45 +583,20 @@ export class AdvancedSearchManager {
    * Generate HTML content for fuzzy spell name matches
    * @private
    * @param {string} query - The search query string
-   * @returns {Promise<string>} HTML content for fuzzy matches
    */
-  async _generateFuzzyMatches(query) {
-    const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
+  _generateFuzzyMatches(query) {
+    let content = `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Suggestions')}</div>`;
     const spells = this.app._stateManager?.getCurrentSpellList() || [];
     const matches = spells.filter((spell) => spell.name.toLowerCase().includes(query.toLowerCase())).slice(0, 5);
-    const hasMatches = matches.length > 0;
-    const processedMatches = matches.map((spell) => ({ name: spell.name, hasTooltip: spell.name.length > 32 }));
-    return await renderTemplate(TEMPLATES.COMPONENTS.SEARCH_DROPDOWN_FUZZY, { hasMatches, matches: processedMatches });
-  }
-
-  /**
-   * Prepare data object for advanced query dropdown content
-   * @private
-   * @param {string} query - The advanced query string
-   * @returns {Object} Data object for template rendering
-   */
-  _prepareAdvancedQueryData(query) {
-    const queryWithoutTrigger = query.substring(1);
-    const showFieldList = !queryWithoutTrigger.trim() || this.isIncompleteAndQuery(query);
-    return {
-      showFieldList,
-      fields: showFieldList ? this._getUniqueFields() : [],
-      incompleteValue: this.isIncompleteValue(queryWithoutTrigger),
-      queryResult: this._processQuery(query)
-    };
-  }
-
-  /**
-   * Prepare data object for standard query dropdown content
-   * @private
-   * @param {string} query - The standard query string
-   * @returns {Object} Data object for template rendering
-   */
-  async _prepareStandardQueryData(query) {
-    return {
-      recentSearches: query.length < 3 ? this.getRecentSearches() : [],
-      fuzzyMatches: query.length >= 3 ? await this._generateFuzzyMatches(query) : []
-    };
+    if (matches.length > 0) {
+      matches.forEach((spell) => {
+        const tooltipAttr = spell.name.length > 32 ? `data-tooltip="${spell.name}"` : '';
+        content += `<div class="search-suggestion" data-query="${spell.name}" role="option" tabindex="-1" aria-selected="false">
+          <span class="suggestion-text" ${tooltipAttr}>${spell.name}</span>
+        </div>`;
+      });
+    } else content += `<div class="search-status">${game.i18n.localize('SPELLBOOK.Search.NoMatches')}</div>`;
+    return content;
   }
 
   /**
