@@ -274,4 +274,34 @@ export function registerSettings() {
     default: 3,
     range: { min: 2, max: 7, step: 1 }
   });
+
+  game.settings.register(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, {
+    name: 'SPELLBOOK.Settings.AdvancedSearchPrefix.Name',
+    hint: 'SPELLBOOK.Settings.AdvancedSearchPrefix.Hint',
+    scope: 'client',
+    config: true,
+    type: String,
+    default: '^',
+    onChange: (value) => {
+      try {
+        if (value.length !== 1) {
+          log(2, 'Advanced search prefix must be exactly 1 character, resetting to default');
+          game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
+          ui.notifications.warn('Advanced search prefix must be exactly 1 character');
+          return;
+        }
+        if (/[a-zA-Z0-9]/.test(value)) {
+          log(2, 'Advanced search prefix cannot be a letter or number, resetting to default');
+          game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
+          ui.notifications.warn('Advanced search prefix cannot be a letter or number');
+          return;
+        }
+        log(3, `Advanced search prefix changed to "${value}"`);
+        ui.notifications.info(`Advanced search prefix updated to "${value}"`);
+      } catch (error) {
+        log(1, 'Error validating advanced search prefix:', error);
+        game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
+      }
+    }
+  });
 }

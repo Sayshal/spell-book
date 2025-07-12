@@ -1,5 +1,5 @@
 import { PlayerSpellBook } from '../../apps/player-spell-book.mjs';
-import { FLAGS, MODULE } from '../../constants.mjs';
+import { FLAGS, MODULE, SETTINGS } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
 import { FieldDefinitions } from './field-definitions.mjs';
 import { QueryExecutor } from './query-executor.mjs';
@@ -36,6 +36,7 @@ export class AdvancedSearchManager {
     this.searchInputElement = null;
     this.searchTimeout = null;
     this.selectedSuggestionIndex = -1;
+    this.searchPrefix = game.settings.get(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX);
   }
 
   /**
@@ -168,8 +169,7 @@ export class AdvancedSearchManager {
     if (this.isProcessingSearch || (query === '' && this.isAdvancedQuery)) return;
     this.updateClearButtonVisibility();
     if (this.searchTimeout) clearTimeout(this.searchTimeout);
-    //TODO: Make this configurable
-    if (query.startsWith('^')) {
+    if (query.startsWith(this.searchPrefix)) {
       this.searchTimeout = setTimeout(async () => {
         try {
           await this.app._ensureSpellDataAndInitializeLazyLoading();
@@ -201,7 +201,7 @@ export class AdvancedSearchManager {
    * @returns {boolean} Whether the query is complete and valid
    */
   isAdvancedQueryComplete(query) {
-    if (!query.startsWith('^')) return false;
+    if (!query.startsWith(this.searchPrefix)) return false;
     const queryWithoutTrigger = query.substring(1);
     try {
       const parsed = this.parseAndCacheQuery(queryWithoutTrigger);
@@ -237,7 +237,7 @@ export class AdvancedSearchManager {
           this.selectSuggestion(suggestions[this.selectedSuggestionIndex]);
         } else {
           const query = event.target.value;
-          if (query.startsWith('^') && this.isAdvancedQueryComplete(query)) {
+          if (query.startsWith(this.searchPrefix) && this.isAdvancedQueryComplete(query)) {
             this.performSearch(query);
             this.addToRecentSearches(query);
             this.hideDropdown();
@@ -389,7 +389,7 @@ export class AdvancedSearchManager {
     const dropdown = document.querySelector('.search-dropdown');
     if (!dropdown) return;
     let content = '';
-    this.isAdvancedQuery = query.startsWith('^');
+    this.isAdvancedQuery = query.startsWith(this.searchPrefix);
     if (this.isAdvancedQuery) content += this._generateAdvancedQueryContent(query);
     else content += this._generateStandardQueryContent(query);
     dropdown.innerHTML = content;
@@ -491,7 +491,7 @@ export class AdvancedSearchManager {
    * @returns {boolean} Whether query ends with AND operator
    */
   isIncompleteAndQuery(query) {
-    if (!query.startsWith('^')) return false;
+    if (!query.startsWith(this.searchPrefix)) return false;
     const queryWithoutTrigger = query.substring(1);
     const trimmed = queryWithoutTrigger.trim();
     return trimmed.endsWith(' AND') || queryWithoutTrigger.endsWith(' AND ');
@@ -603,7 +603,7 @@ export class AdvancedSearchManager {
    * @returns {boolean} Whether it's a complete field:value pair
    */
   isCompleteFieldValue(query) {
-    if (!query.startsWith('^')) return false;
+    if (!query.startsWith(this.searchPrefix)) return false;
     const queryWithoutTrigger = query.substring(1);
     const colonIndex = queryWithoutTrigger.indexOf(':');
     if (colonIndex === -1) return false;
@@ -654,7 +654,7 @@ export class AdvancedSearchManager {
     log(3, `performSearch [${searchId}] started with query: "${query}"`);
     this.isProcessingSearch = true;
     try {
-      if (query && query.startsWith('^')) {
+      if (query && query.startsWith(this.searchPrefix)) {
         log(3, `[${searchId}] Processing advanced query`);
         const parsedQuery = this.parseAndCacheQuery(query.substring(1));
         if (parsedQuery) {
@@ -796,7 +796,7 @@ export class AdvancedSearchManager {
     if (activeClass && this.app._stateManager.classSpellData[activeClass]?.spellLevels) allSpells = this.app._stateManager.classSpellData[activeClass].spellLevels;
     if (allSpells.length === 0) return;
     const matchingIndices = [];
-    if (query.startsWith('^') && this.isCurrentQueryAdvanced()) {
+    if (query.startsWith(this.searchPrefix) && this.isCurrentQueryAdvanced()) {
       log(3, 'Advanced query detected, ensuring all spells are loaded for filtering');
       const totalSpells = allSpells.length;
       const currentlyLoaded = document.querySelectorAll('.spell-item').length;

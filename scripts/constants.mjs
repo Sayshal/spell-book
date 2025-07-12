@@ -213,6 +213,7 @@ export const TEMPLATES = {
  * @type {Object}
  */
 export const SETTINGS = {
+  ADVANCED_SEARCH_PREFIX: 'advancedSearchPrefix',
   CANTRIP_SCALE_VALUES: 'cantripScaleValues',
   CONSUME_SCROLLS_WHEN_LEARNING: 'consumeScrollsWhenLearning',
   CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',

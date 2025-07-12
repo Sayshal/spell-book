@@ -107,10 +107,8 @@ export async function processFavoritesFromForm(form, actor) {
     log(3, `Checking ${actorSpells.length} spells on actor for favorite status`);
     for (const spell of actorSpells) {
       const canonicalUuid = getCanonicalSpellUuid(spell.uuid);
-      log(1, `Checking spell ${spell.name}: actor UUID = ${spell.uuid}, canonical = ${canonicalUuid}`);
       const userData = await SpellUserDataJournal.getUserDataForSpell(canonicalUuid, targetUserId, actor.id);
       const isFavoritedInJournal = userData?.favorited || false;
-      log(1, `Journal favorited status: ${isFavoritedInJournal}`);
       if (isFavoritedInJournal) favoritesToAdd.push(spell);
     }
     if (favoritesToAdd.length > 0) {

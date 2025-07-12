@@ -1,3 +1,4 @@
+import { MODULE, SETTINGS } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
 import * as filterUtils from '../filters.mjs';
 
@@ -14,6 +15,7 @@ export class SpellbookFilterHelper {
     this.actor = app.actor;
     this._cachedFilterState = null;
     this._lastFilterUpdate = 0;
+    this.searchPrefix = game.settings.get(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX);
   }
 
   /**
@@ -157,7 +159,7 @@ export class SpellbookFilterHelper {
   _filterByEnhancedName(spells, searchQuery) {
     if (!searchQuery || !searchQuery.trim()) return spells;
     const query = searchQuery.trim();
-    if (query.startsWith('^')) {
+    if (query.startsWith(this.searchPrefix)) {
       const advancedSearchManager = this.app.ui?.advancedSearchManager;
       if (advancedSearchManager && advancedSearchManager.isCurrentQueryAdvanced()) {
         log(3, 'Using advanced query execution');

@@ -232,6 +232,8 @@
   "SPELLBOOK.Search.TypeRange": "Type a range (e.g., 30-60, *-60, or 60-*",
   "SPELLBOOK.Search.TypeSpellName": "Type the exact spell name you're looking for",
   "SPELLBOOK.Search.Values": "Values",
+  "SPELLBOOK.Settings.AdvancedSearchPrefix.Hint": "Single character to trigger advanced search mode. Must not be a letter or number. Common symbols: ^ ! @ # $ % & * + = ? ~ | \\ / < >",
+  "SPELLBOOK.Settings.AdvancedSearchPrefix.Name": "Advanced Search Prefix",
   "SPELLBOOK.Settings.CantripPreparationBonus.Decrease": "Decrease cantrip preparation bonus",
   "SPELLBOOK.Settings.CantripPreparationBonus.Hint": "Bonus to the number of cantrips this class can prepare. Can be negative to reduce the base amount.",
   "SPELLBOOK.Settings.CantripPreparationBonus.Increase": "Increase cantrip preparation bonus",
