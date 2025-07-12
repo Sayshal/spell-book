@@ -1042,20 +1042,30 @@ export class SpellbookState {
    * @returns {Promise<void>}
    */
   async refreshSpellEnhancements() {
-    const targetUserId = game.user.id;
+    let targetUserId = game.user.id;
+    if (game.user.isActiveGM && this.app.actor) {
+      const characterOwner = game.users.find((user) => user.character?.id === this.app.actor.id);
+      if (characterOwner) targetUserId = characterOwner.id;
+      else {
+        const ownershipOwner = game.users.find((user) => this.app.actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+        if (ownershipOwner) targetUserId = ownershipOwner.id;
+        else log(2, `No owner found for actor ${this.app.actor.name}, using GM data for enhancements`);
+      }
+    }
     if (SpellUserDataJournal?.cache) {
-      for (const key of SpellUserDataJournal.cache.keys()) if (key.startsWith(`${targetUserId}:`)) SpellUserDataJournal.cache.delete(key);
+      for (const key of SpellUserDataJournal.cache.keys()) {
+        if (key.startsWith(`${targetUserId}:`)) SpellUserDataJournal.cache.delete(key);
+      }
     }
     for (const [classIdentifier, classData] of Object.entries(this.classSpellData)) {
       if (classData.spellLevels) {
         for (const spell of classData.spellLevels) {
-          const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spell, game.user.id);
+          const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spell, targetUserId, this.app.actor?.id);
           Object.assign(spell, enhancedSpell);
           spell.formattedDetails = formattingUtils.formatSpellDetails(spell);
         }
       }
     }
-    log(3, 'Refreshed spell enhancements');
   }
 
   /**

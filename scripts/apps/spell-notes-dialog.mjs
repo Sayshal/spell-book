@@ -40,19 +40,24 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
     super(options);
     this.spellUuid = spellFavorites.getCanonicalSpellUuid(options.spellUuid);
     this.spellName = fromUuidSync(this.spellUuid).name;
+    this.actor = options.actor;
     this.currentNotes = '';
     this.maxLength = game.settings.get(MODULE.ID, SETTINGS.SPELL_NOTES_LENGTH) || 240;
   }
 
   /** @override */
-  _configureRenderOptions(options) {
-    super._configureRenderOptions(options);
-    return options;
-  }
-
-  /** @override */
   async _prepareContext(_options) {
-    const userData = await SpellUserDataJournal.getUserDataForSpell(this.spellUuid);
+    let targetUserId = game.user.id;
+    if (game.user.isActiveGM && this.actor) {
+      const characterOwner = game.users.find((user) => user.character?.id === this.actor.id);
+      if (characterOwner) targetUserId = characterOwner.id;
+      else {
+        const ownershipOwner = game.users.find((user) => this.actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+        if (ownershipOwner) targetUserId = ownershipOwner.id;
+        else log(2, `No owner found via ownership levels, using GM`);
+      }
+    }
+    const userData = await SpellUserDataJournal.getUserDataForSpell(this.spellUuid, targetUserId);
     this.currentNotes = userData?.notes || '';
     const charactersPerRow = 60;
     const calculatedRows = Math.ceil(this.maxLength / charactersPerRow);
@@ -60,11 +65,18 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
     return {
       spellName: this.spellName,
       spellUuid: this.spellUuid,
+      actorId: this.actor?.id,
       notes: this.currentNotes,
       maxLength: this.maxLength,
       charactersRemaining: this.maxLength - this.currentNotes.length,
       rows: rows
     };
+  }
+
+  /** @override */
+  _configureRenderOptions(options) {
+    super._configureRenderOptions(options);
+    return options;
   }
 
   /** @override */
@@ -106,7 +118,7 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle form submission
+   * Handle form submission with GM-to-player delegation
    * @param {Event} event - The form submission event
    * @param {HTMLFormElement} form - The form element
    * @param {FormDataExtended} formData - The form data
@@ -115,17 +127,30 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
   static async formHandler(event, form, formData) {
     const notes = formData.object.notes || '';
     const spellUuid = formData.object.spellUuid;
+    const actorId = formData.object.actorId;
     const canonicalUuid = spellFavorites.getCanonicalSpellUuid(spellUuid);
     try {
-      await SpellUserDataJournal.setSpellNotes(canonicalUuid, notes);
-      const targetUserId = game.user.id;
+      let targetUserId = game.user.id;
+      if (game.user.isActiveGM && actorId) {
+        const actor = game.actors.get(actorId);
+        if (actor) {
+          const characterOwner = game.users.find((user) => user.character?.id === actor.id);
+          if (characterOwner) targetUserId = characterOwner.id;
+          else {
+            const ownershipOwner = game.users.find((user) => actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+            if (ownershipOwner) targetUserId = ownershipOwner.id;
+            else log(2, `No owner found via ownership levels, using GM`);
+          }
+        }
+      }
+      await SpellUserDataJournal.setSpellNotes(canonicalUuid, notes, targetUserId);
       const cacheKey = `${targetUserId}:${canonicalUuid}`;
+      if (SpellUserDataJournal?.cache) SpellUserDataJournal.cache.delete(cacheKey);
       const spellbookApp = Array.from(foundry.applications.instances.values()).find((app) => app.constructor.name === 'PlayerSpellBook');
       if (spellbookApp) {
         await spellbookApp._stateManager.refreshSpellEnhancements();
         spellbookApp.render(false);
       }
-      if (SpellUserDataJournal?.cache) SpellUserDataJournal.cache.delete(cacheKey);
       const hasNotes = !!(notes && notes.trim());
       const notesIcons = document.querySelectorAll(`[data-uuid="${canonicalUuid}"][data-action="editNotes"]`);
       notesIcons.forEach((icon) => {

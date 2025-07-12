@@ -2073,7 +2073,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!spellUuid) return;
     const spellElement = target.closest('.spell-item');
     const spellName = fromUuidSync(spellUuid).name;
-    new SpellNotesDialog({ spellUuid, spellName }).render(true);
+    new SpellNotesDialog({ spellUuid, spellName, actor: this.actor }).render(true);
   }
 
   /**

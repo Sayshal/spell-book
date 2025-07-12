@@ -73,14 +73,33 @@ export class SpellDescriptionInjection {
    * Update spell description with notes injection
    */
   static async updateSpellDescription(spellItem) {
-    const injectionMode = game.settings.get(MODULE.ID, 'injectNotesIntoDescriptions');
-    if (injectionMode === 'off') return;
     const spellKey = `${spellItem.parent.id}-${spellItem.id}`;
     if (this._updatingSpells.has(spellKey)) return;
     try {
       this._updatingSpells.add(spellKey);
       const canonicalUuid = spellFavorites.getCanonicalSpellUuid(spellItem.uuid);
-      const userData = await SpellUserDataJournal.getUserDataForSpell(canonicalUuid);
+      let targetUserId = game.user.id;
+      const actor = spellItem.parent;
+      if (actor && game.user.isActiveGM) {
+        log(3, `GM updating spell description, finding owner for actor: ${actor.name}`);
+        const characterOwner = game.users.find((user) => user.character?.id === actor.id);
+        if (characterOwner) {
+          targetUserId = characterOwner.id;
+          log(3, `Using character owner for description: ${characterOwner.name} (${characterOwner.id})`);
+        } else {
+          log(3, `No character owner found, checking ownership levels...`);
+          const ownershipOwner = game.users.find((user) => actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+          if (ownershipOwner) {
+            targetUserId = ownershipOwner.id;
+            log(3, `Using ownership owner for description: ${ownershipOwner.name} (${ownershipOwner.id})`);
+          } else {
+            log(3, `No owner found for actor ${actor.name}, using GM data for description`);
+          }
+        }
+      }
+      const injectionMode = game.settings.get(MODULE.ID, 'injectNotesIntoDescriptions');
+      if (injectionMode === 'off') return;
+      const userData = await SpellUserDataJournal.getUserDataForSpell(canonicalUuid, targetUserId);
       if (!userData?.notes || !userData.notes.trim()) {
         await this.removeNotesFromDescription(spellItem);
         return;
