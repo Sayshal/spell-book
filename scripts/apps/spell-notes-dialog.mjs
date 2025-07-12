@@ -1,4 +1,5 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import * as genericUtils from '../helpers/generic-utils.mjs';
 import { SpellDescriptionInjection } from '../helpers/spell-description-injection.mjs';
 import * as spellFavorites from '../helpers/spell-favorites.mjs';
 import { SpellUserDataJournal } from '../helpers/spell-user-data.mjs';
@@ -46,31 +47,26 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /** @override */
-  async _prepareContext(_options) {
-    let targetUserId = game.user.id;
-    if (game.user.isActiveGM && this.actor) {
-      const characterOwner = game.users.find((user) => user.character?.id === this.actor.id);
-      if (characterOwner) targetUserId = characterOwner.id;
-      else {
-        const ownershipOwner = game.users.find((user) => this.actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
-        if (ownershipOwner) targetUserId = ownershipOwner.id;
-        else log(2, `No owner found via ownership levels, using GM`);
-      }
+  async _prepareContext(options) {
+    const context = await super._prepareContext(options);
+    const targetUserId = genericUtils._getTargetUserId();
+    try {
+      const userData = await SpellUserDataJournal.getUserDataForSpell(this.spellUuid, targetUserId, this.actor?.id);
+      this.currentNotes = userData?.notes || '';
+    } catch (error) {
+      this.currentNotes = '';
     }
-    const userData = await SpellUserDataJournal.getUserDataForSpell(this.spellUuid, targetUserId, this.actor?.id);
-    this.currentNotes = userData?.notes || '';
-    const charactersPerRow = 60;
-    const calculatedRows = Math.ceil(this.maxLength / charactersPerRow);
-    const rows = Math.max(3, Math.min(20, calculatedRows));
-    return {
-      spellName: this.spellName,
+    const rows = Math.max(3, Math.min(8, Math.ceil(this.currentNotes.length / 50)));
+    const charactersRemaining = this.maxLength - this.currentNotes.length;
+    return foundry.utils.mergeObject(context, {
       spellUuid: this.spellUuid,
-      actorId: this.actor?.id,
+      spellName: this.spellName,
       notes: this.currentNotes,
       maxLength: this.maxLength,
-      charactersRemaining: this.maxLength - this.currentNotes.length,
-      rows: rows
-    };
+      rows,
+      charactersRemaining,
+      actorId: this.actor?.id
+    });
   }
 
   /** @override */

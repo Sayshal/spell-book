@@ -1,4 +1,4 @@
-import { MODULE } from '../constants.mjs';
+import { MODULE, SETTINGS } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import * as spellFavorites from './spell-favorites.mjs';
 import { SpellUserDataJournal } from './spell-user-data.mjs';
@@ -73,37 +73,37 @@ export class SpellDescriptionInjection {
    * Update spell description with notes injection
    */
   static async updateSpellDescription(spellItem) {
-    const spellKey = `${spellItem.parent.id}-${spellItem.id}`;
-    if (this._updatingSpells.has(spellKey)) return;
-    try {
-      this._updatingSpells.add(spellKey);
-      const canonicalUuid = spellFavorites.getCanonicalSpellUuid(spellItem.uuid);
-      let targetUserId = game.user.id;
-      const actor = spellItem.parent;
-      if (actor && game.user.isActiveGM) {
-        log(3, `GM updating spell description, finding owner for actor: ${actor.name}`);
-        const characterOwner = game.users.find((user) => user.character?.id === actor.id);
-        if (characterOwner) {
-          targetUserId = characterOwner.id;
-          log(3, `Using character owner for description: ${characterOwner.name} (${characterOwner.id})`);
+    if (!spellItem || spellItem.type !== 'spell') return;
+    const canonicalUuid = spellFavorites.getCanonicalSpellUuid(spellItem.uuid);
+    let targetUserId = game.user.id;
+    const actor = spellItem.parent;
+    if (actor && game.user.isActiveGM) {
+      log(3, `GM updating spell description, finding owner for actor: ${actor.name}`);
+      const characterOwner = game.users.find((user) => user.character?.id === actor.id);
+      if (characterOwner) {
+        targetUserId = characterOwner.id;
+        log(3, `Using character owner for description: ${characterOwner.name} (${characterOwner.id})`);
+      } else {
+        log(3, `No character owner found, checking ownership levels...`);
+        const ownershipOwner = game.users.find((user) => actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+        if (ownershipOwner) {
+          targetUserId = ownershipOwner.id;
+          log(3, `Using ownership owner for description: ${ownershipOwner.name} (${ownershipOwner.id})`);
         } else {
-          log(3, `No character owner found, checking ownership levels...`);
-          const ownershipOwner = game.users.find((user) => actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
-          if (ownershipOwner) {
-            targetUserId = ownershipOwner.id;
-            log(3, `Using ownership owner for description: ${ownershipOwner.name} (${ownershipOwner.id})`);
-          } else {
-            log(3, `No owner found for actor ${actor.name}, using GM data for description`);
-          }
+          log(3, `No owner found for actor ${actor.name}, using GM data for description`);
         }
       }
-      const injectionMode = game.settings.get(MODULE.ID, 'injectNotesIntoDescriptions');
+    }
+    const injectionMode = game.settings.get(MODULE.ID, 'injectNotesIntoDescriptions');
+    if (injectionMode === 'off') return;
+    const userData = await SpellUserDataJournal.getUserDataForSpell(canonicalUuid, targetUserId, actor?.id);
+    if (!userData?.notes || !userData.notes.trim()) await this.removeNotesFromDescription(spellItem);
+    const spellKey = `${spellItem.actor?.id || 'unknown'}-${canonicalUuid}`;
+    if (this._updatingSpells.has(spellKey)) return;
+    this._updatingSpells.add(spellKey);
+    try {
+      const injectionMode = game.settings.get(MODULE.ID, SETTINGS.SPELL_NOTES_DESC_INJECTION);
       if (injectionMode === 'off') return;
-      const userData = await SpellUserDataJournal.getUserDataForSpell(canonicalUuid, targetUserId, actor?.id);
-      if (!userData?.notes || !userData.notes.trim()) {
-        await this.removeNotesFromDescription(spellItem);
-        return;
-      }
       const currentDescription = spellItem.system.description?.value || '';
       const notesHtml = this.formatNotesForDescription(userData.notes);
       if (currentDescription.includes(`class="${this.NOTES_WRAPPER_CLASS}"`)) await this.replaceNotesInDescription(spellItem, notesHtml, injectionMode);

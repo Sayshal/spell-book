@@ -596,7 +596,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   async _applyFavoriteStatesToButtons(buttons) {
-    const targetUserId = this._getTargetUserId();
+    const targetUserId = genericUtils._getTargetUserId();
     let updatedCount = 0;
     for (const button of buttons) {
       const spellUuid = button.dataset.uuid;
@@ -662,7 +662,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const actorFavorites = this.actor.system.favorites || [];
       const actorFavoriteSpellIds = new Set(actorFavorites.filter((fav) => fav.type === 'item' && fav.id.startsWith('.Item.')).map((fav) => fav.id.replace('.Item.', '')));
       const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
-      const targetUserId = this._getTargetUserId();
+      const targetUserId = genericUtils._getTargetUserId();
       let syncCount = 0;
       const changedSpells = [];
       for (const spell of actorSpells) {
@@ -2065,21 +2065,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
       button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
     }
-  }
-
-  /**
-   * Get the target user ID for spell data operations
-   * @returns {string} The user ID to use for spell data
-   * @private
-   */
-  _getTargetUserId() {
-    let targetUserId = game.user.id;
-    if (game.user.isActiveGM) {
-      const actorOwner = game.users.find((user) => user.character?.id === this.actor.id);
-      if (actorOwner) targetUserId = actorOwner.id;
-      else log(2, `No owner found for actor ${this.actor.name}, using GM`);
-    }
-    return targetUserId;
   }
 
   /**
