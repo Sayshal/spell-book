@@ -10,21 +10,12 @@ export function registerMigration() {
   Hooks.once('ready', runAllMigrations);
 }
 
-/**
- * Run all migration processes every time
- */
 async function runAllMigrations() {
-  if (!game.user.isGM) return;
-
+  if (!game.user.isActiveGM) return;
   log(2, 'Running all migrations...');
-
-  // Run all migration types
   const deprecatedFlagResults = await migrateDeprecatedFlags();
   const folderResults = await migrateSpellListFolders();
-
-  // Calculate totals
   const totalProcessed = deprecatedFlagResults.processed + folderResults.processed;
-
   if (totalProcessed > 0) {
     ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.StartNotification'));
     logMigrationResults(deprecatedFlagResults, folderResults);
@@ -34,24 +25,15 @@ async function runAllMigrations() {
   }
 }
 
-/**
- * Migrate deprecated flags from actors and compendiums
- */
 async function migrateDeprecatedFlags() {
   const results = { processed: 0, invalidFlagRemovals: 0, actors: [] };
-
   log(3, 'Migrating world actors and compendium for deprecated flags');
-
-  // Migrate world actors
   await migrateCollection(game.actors, results);
-
-  // Migrate module compendium
   const modulePack = game.packs.get(MODULE.PACK.SPELLS);
   if (modulePack) {
     const documents = await modulePack.getDocuments();
     await migrateCollection(documents, results, modulePack.collection);
   }
-
   return results;
 }
 
@@ -90,7 +72,7 @@ async function migrateDocument(doc, deprecatedFlags) {
   let hasRemovals = false;
   for (const [key, value] of Object.entries(flags)) {
     const isDeprecated = deprecatedFlags.some((deprecated) => deprecated.key === key);
-    const isInvalid = value === null || value === undefined || (typeof value === 'object' && Object.keys(value).length === 0);
+    const isInvalid = value === null || value === undefined || (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0);
     if (isDeprecated || isInvalid) {
       updates[`flags.${MODULE.ID}.-=${key}`] = null;
       hasRemovals = true;
@@ -169,7 +151,6 @@ function logMigrationResults(deprecatedResults, folderResults) {
     log(2, 'No migration updates needed');
     return;
   }
-
   let content = buildChatContent(deprecatedResults, folderResults, totalProcessed);
   ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id });
   log(2, `Migration complete: ${totalProcessed} documents updated`);
@@ -187,22 +168,28 @@ async function buildChatContent(deprecatedResults, folderResults, userDataResult
 
 function buildUserDataMigrationContent(userDataResults) {
   const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
-  return renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_USER_DATA, { userDataResults });
+  const visibleUsers = userDataResults.users.slice(0, 5);
+  const hasMoreUsers = userDataResults.users.length > 5;
+  const remainingUserCount = Math.max(0, userDataResults.users.length - 5);
+  const processedResults = { ...userDataResults, visibleUsers, hasMoreUsers, remainingUserCount };
+  return renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_USER_DATA, { userDataResults: processedResults });
 }
 
 function buildFolderMigrationContent(folderResults) {
   const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
-  return renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_FOLDER, { folderResults });
+  const processedResults = { ...folderResults, foldersCreatedNames: folderResults.foldersCreated.length > 0 ? folderResults.foldersCreated.join(', ') : null };
+  return renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_FOLDER, { folderResults: processedResults });
 }
 
 function buildActorListContent(actors) {
   const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
-  return renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_ACTORS, { actors });
+  const visibleActors = actors.slice(0, 10);
+  const hasMoreActors = actors.length > 10;
+  const remainingCount = Math.max(0, actors.length - 10);
+  const context = { actors, visibleActors, hasMoreActors, remainingCount };
+  return renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_ACTORS, context);
 }
 
-/**
- * Force run migration for testing
- */
 export async function forceMigration() {
   log(2, 'Force running migration for testing...');
   await runAllMigrations();

@@ -109,39 +109,4 @@ function registerHandlebarsHelpers() {
   Handlebars.registerHelper('isWizardTab', function (tabName) {
     return tabName && (tabName === 'wizardbook' || tabName.startsWith('wizardbook-'));
   });
-
-  //TODO: Fix name to be spellbook specific and check if any of these exist already.
-
-  // Math helpers
-  Handlebars.registerHelper('subtract', function (a, b) {
-    return a - b;
-  });
-
-  Handlebars.registerHelper('gt', function (a, b) {
-    return a > b;
-  });
-
-  Handlebars.registerHelper('lt', function (a, b) {
-    return a < b;
-  });
-
-  // Array helpers
-  Handlebars.registerHelper('join', function (array, separator) {
-    if (!Array.isArray(array)) return '';
-    return array.join(separator);
-  });
-
-  Handlebars.registerHelper('pluck', function (array, property) {
-    if (!Array.isArray(array)) return [];
-    return array.map((item) => item[property]);
-  });
-
-  // Logic helpers
-  Handlebars.registerHelper('and', function () {
-    return Array.prototype.slice.call(arguments, 0, -1).every(Boolean);
-  });
-
-  Handlebars.registerHelper('or', function () {
-    return Array.prototype.slice.call(arguments, 0, -1).some(Boolean);
-  });
 }

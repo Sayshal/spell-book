@@ -8,10 +8,11 @@
     {{localize 'SPELLBOOK.Migrations.FolderMigrationMergedOnly' mergedCount=folderResults.mergedMoved}}
   {{/if}}
 </p>
-{{#if folderResults.foldersCreated.length}}
-  <p><strong>{{localize 'SPELLBOOK.Migrations.FoldersCreated'}}:</strong> {{join folderResults.foldersCreated ', '}}</p>
+{{#if folderResults.foldersCreatedNames}}
+  <p><strong>{{localize 'SPELLBOOK.Migrations.FoldersCreated'}}:</strong> {{folderResults.foldersCreatedNames}}</p>
 {{/if}}
 {{#if folderResults.errors.length}}
   <p><strong>{{localize 'SPELLBOOK.Migrations.MigrationErrors'}}:</strong>
-    {{localize 'SPELLBOOK.Migrations.MigrationErrorsCount' count=folderResults.errors.length}}</p>
+    {{localize 'SPELLBOOK.Migrations.MigrationErrorsCount' count=folderResults.errors.length}}
+  </p>
 {{/if}}

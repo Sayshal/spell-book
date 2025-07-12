@@ -444,22 +444,25 @@ export class CantripManager {
    */
   async sendComprehensiveGMNotification(notificationData) {
     const { actorName, classChanges } = notificationData;
-    const hasChanges = Object.values(classChanges).some(
-      (classData) => classData.cantripChanges.added.length > 0 || classData.cantripChanges.removed.length > 0 || classData.overLimits.cantrips.isOver || classData.overLimits.spells.isOver
-    );
-    if (!hasChanges) return;
+    const processedClassChanges = Object.entries(classChanges)
+      .map(([key, data]) => {
+        const cantripChanges = {
+          ...data.cantripChanges,
+          removedNames: data.cantripChanges.removed.length > 0 ? data.cantripChanges.removed.map((item) => item.name).join(', ') : null,
+          addedNames: data.cantripChanges.added.length > 0 ? data.cantripChanges.added.map((item) => item.name).join(', ') : null,
+          hasChanges: data.cantripChanges.added.length > 0 || data.cantripChanges.removed.length > 0
+        };
+        const overLimits = {
+          cantrips: { ...data.overLimits.cantrips, overCount: data.overLimits.cantrips.current - data.overLimits.cantrips.max },
+          spells: { ...data.overLimits.spells, overCount: data.overLimits.spells.current - data.overLimits.spells.max }
+        };
+        const hasChanges = cantripChanges.hasChanges || data.overLimits.cantrips.isOver || data.overLimits.spells.isOver;
+        return { classIdentifier: key, ...data, cantripChanges, overLimits, hasChanges };
+      })
+      .filter((classChange) => classChange.hasChanges);
+    if (processedClassChanges.length === 0) return;
     const renderTemplate = MODULE.ISV13 ? foundry?.applications?.handlebars?.renderTemplate : globalThis.renderTemplate;
-    const content = await renderTemplate(TEMPLATES.COMPONENTS.CANTRIP_NOTIFICATION, {
-      actorName,
-      classChanges: Object.entries(classChanges).map(([key, data]) => ({
-        classIdentifier: key,
-        ...data
-      }))
-    });
-
-    await ChatMessage.create({
-      content,
-      whisper: game.users.filter((u) => u.isGM).map((u) => u.id)
-    });
+    const content = await renderTemplate(TEMPLATES.COMPONENTS.CANTRIP_NOTIFICATION, { actorName, classChanges: processedClassChanges });
+    await ChatMessage.create({ content, whisper: game.users.filter((u) => u.isGM).map((u) => u.id) });
   }
 }
