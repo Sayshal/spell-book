@@ -363,6 +363,8 @@
     flex-direction: column;
     border-bottom: 0.063rem solid var(--color-border-light-tertiary);
     background-color: var(--spell-book-bg-disabled);
+    overflow-y: auto;
+    flex-grow: 1;
   }
 
   input[name='filter-name'] {
@@ -1929,7 +1931,7 @@
 /* ----------------------------------------- */
 /*  Tab Navigation                           */
 /* ----------------------------------------- */
-.window-content > .tabs.tabs-right {
+.application.spell-book .window-content > .tabs.tabs-right {
   --icon-fill: var(--dnd5e-color-gold);
   --icon-size: 1rem;
   --tab-full-width: 2.75rem;
