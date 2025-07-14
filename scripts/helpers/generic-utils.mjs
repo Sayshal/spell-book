@@ -1,4 +1,5 @@
 import { FLAGS, MODULE } from '../constants.mjs';
+import { log } from '../logger.mjs';
 
 /**
  * Check if an actor is considered a wizard
