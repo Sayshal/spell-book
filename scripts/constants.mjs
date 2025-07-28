@@ -167,6 +167,7 @@ export const TEMPLATES = {
     LOADING: 'modules/spell-book/templates/components/loading-spinner.hbs',
     MIGRATION_ACTORS: 'modules/spell-book/templates/components/migration-actor-list.hbs',
     MIGRATION_FOLDER: 'modules/spell-book/templates/components/migration-folder-results.hbs',
+    MIGRATION_OWNERSHIP: 'modules/spell-book/templates/components/migration-ownership-results.hbs',
     MIGRATION_REPORT: 'modules/spell-book/templates/components/migration-report.hbs',
     MIGRATION_USER_DATA: 'modules/spell-book/templates/components/migration-user-data-results.hbs',
     SPELL_LEVEL: 'modules/spell-book/templates/components/spell-level.hbs',

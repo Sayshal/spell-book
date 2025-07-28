@@ -1,0 +1,17 @@
+<p><strong>{{localize 'SPELLBOOK.Migrations.OwnershipValidation'}}:</strong>
+  {{localize 'SPELLBOOK.Migrations.OwnershipFixed' count=ownershipResults.processed}}
+</p>
+{{#if ownershipResults.userDataFixed}}
+  <p>• {{localize 'SPELLBOOK.Migrations.UserDataOwnershipFixed' count=ownershipResults.userDataFixed}}</p>
+{{/if}}
+{{#if ownershipResults.spellListsFixed}}
+  <p>• {{localize 'SPELLBOOK.Migrations.SpellListOwnershipFixed' count=ownershipResults.spellListsFixed}}</p>
+{{/if}}
+{{#if ownershipResults.foldersFixed}}
+  <p>• {{localize 'SPELLBOOK.Migrations.FolderOwnershipFixed' count=ownershipResults.foldersFixed}}</p>
+{{/if}}
+{{#if ownershipResults.errors.length}}
+  <p><strong>{{localize 'SPELLBOOK.Migrations.OwnershipErrors'}}:</strong>
+    {{localize 'SPELLBOOK.Migrations.OwnershipErrorsCount' count=ownershipResults.errors.length}}
+  </p>
+{{/if}}

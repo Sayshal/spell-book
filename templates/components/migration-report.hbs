@@ -3,10 +3,14 @@
 <p>{{localize 'SPELLBOOK.Migrations.TotalUpdated' count=totalProcessed}}</p>
 {{#if deprecatedResults.invalidFlagRemovals}}
   <p><strong>{{localize 'SPELLBOOK.Migrations.InvalidFlagsRemoved'}}:</strong>
-    {{localize 'SPELLBOOK.Migrations.InvalidFlagsRemovedCount' count=deprecatedResults.invalidFlagRemovals}}</p>
+    {{localize 'SPELLBOOK.Migrations.InvalidFlagsRemovedCount' count=deprecatedResults.invalidFlagRemovals}}
+  </p>
 {{/if}}
 {{#if folderResults.processed}}
   {{> migration-folder-results folderResults=folderResults}}
+{{/if}}
+{{#if ownershipResults.processed}}
+  {{> migration-ownership-results ownershipResults=ownershipResults}}
 {{/if}}
 {{#if userDataResults.processed}}
   {{> migration-user-data-results userDataResults=userDataResults}}
