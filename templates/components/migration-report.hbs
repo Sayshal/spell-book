@@ -7,15 +7,15 @@
   </p>
 {{/if}}
 {{#if folderResults.processed}}
-  {{> migration-folder-results folderResults=folderResults}}
+  {{> modules/spell-book/templates/components/migration-folder-results.hbs folderResults=folderResults}}
 {{/if}}
 {{#if ownershipResults.processed}}
-  {{> migration-ownership-results ownershipResults=ownershipResults}}
+  {{> modules/spell-book/templates/components/migration-ownership-results.hbs ownershipResults=ownershipResults}}
 {{/if}}
 {{#if userDataResults.processed}}
-  {{> migration-user-data-results userDataResults=userDataResults}}
+  {{> modules/spell-book/templates/components/migration-user-data-results.hbs userDataResults=userDataResults}}
 {{/if}}
 {{#if deprecatedResults.actors.length}}
-  {{> migration-actor-list actors=deprecatedResults.actors}}
+  {{> modules/spell-book/templates/components/migration-actor-list.hbs actors=deprecatedResults.actors}}
 {{/if}}
 <p>{{localize 'SPELLBOOK.Migrations.Apology'}}</p>
