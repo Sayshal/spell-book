@@ -17,7 +17,7 @@ async function runAllMigrations() {
   const totalProcessed = deprecatedFlagResults.processed + folderResults.processed;
   if (totalProcessed > 0) {
     ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.StartNotification'));
-    logMigrationResults(deprecatedFlagResults, folderResults);
+    await logMigrationResults(deprecatedFlagResults, folderResults);
     ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.CompleteNotification'));
   } else {
     log(3, 'No migrations needed');
@@ -144,13 +144,13 @@ async function migrateJournalToFolder(journal, customFolder, mergedFolder) {
   return { success: true, type: moveType };
 }
 
-function logMigrationResults(deprecatedResults, folderResults) {
+async function logMigrationResults(deprecatedResults, folderResults) {
   const totalProcessed = deprecatedResults.processed + folderResults.processed;
   if (totalProcessed === 0) {
     log(2, 'No migration updates needed');
     return;
   }
-  let content = buildChatContent(deprecatedResults, folderResults, totalProcessed);
+  const content = await buildChatContent(deprecatedResults, folderResults, totalProcessed);
   ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id });
   log(2, `Migration complete: ${totalProcessed} documents updated`);
 }
@@ -164,25 +164,25 @@ async function buildChatContent(deprecatedResults, folderResults, userDataResult
   });
 }
 
-function buildUserDataMigrationContent(userDataResults) {
+async function buildUserDataMigrationContent(userDataResults) {
   const visibleUsers = userDataResults.users.slice(0, 5);
   const hasMoreUsers = userDataResults.users.length > 5;
   const remainingUserCount = Math.max(0, userDataResults.users.length - 5);
   const processedResults = { ...userDataResults, visibleUsers, hasMoreUsers, remainingUserCount };
-  return renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_USER_DATA, { userDataResults: processedResults });
+  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_USER_DATA, { userDataResults: processedResults });
 }
 
-function buildFolderMigrationContent(folderResults) {
+async function buildFolderMigrationContent(folderResults) {
   const processedResults = { ...folderResults, foldersCreatedNames: folderResults.foldersCreated.length > 0 ? folderResults.foldersCreated.join(', ') : null };
-  return renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_FOLDER, { folderResults: processedResults });
+  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_FOLDER, { folderResults: processedResults });
 }
 
-function buildActorListContent(actors) {
+async function buildActorListContent(actors) {
   const visibleActors = actors.slice(0, 10);
   const hasMoreActors = actors.length > 10;
   const remainingCount = Math.max(0, actors.length - 10);
   const context = { actors, visibleActors, hasMoreActors, remainingCount };
-  return renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_ACTORS, context);
+  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_ACTORS, context);
 }
 
 export async function forceMigration() {

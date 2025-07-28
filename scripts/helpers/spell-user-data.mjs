@@ -1,5 +1,6 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import { log } from '../logger.mjs';
+import { UserSpellDataManager } from '../managers/user-spell-data-manager.mjs';
 
 /**
  * Journal-based spell user data storage
@@ -191,11 +192,11 @@ export class SpellUserDataJournal {
   }
 
   /**
-   * Get user data for a spell
+   * Get user data for a specific spell, creating missing infrastructure as needed
    * @param {string|Object} spellOrUuid - Spell UUID or spell object
    * @param {string} userId - User ID (optional)
    * @param {string} actorId - Actor ID (optional)
-   * @returns {Promise<Object|null>} User data object
+   * @returns {Promise<Object|null>} User data object or null
    */
   static async getUserDataForSpell(spellOrUuid, userId = null, actorId = null) {
     try {
@@ -212,19 +213,30 @@ export class SpellUserDataJournal {
       }
       const targetUserId = userId || game.user.id;
       const cacheKey = actorId ? `${targetUserId}:${actorId}:${canonicalUuid}` : `${targetUserId}:${canonicalUuid}`;
-      if (this.cache.has(cacheKey)) return this.cache.get(cacheKey);
+      if (this.cache.has(cacheKey)) {
+        const cached = this.cache.get(cacheKey);
+        if (cached === null) return null;
+        return cached;
+      }
+      await this._ensureUserDataInfrastructure(targetUserId);
       const page = await this._getUserPage(targetUserId);
-      if (!page) return null;
+      if (!page) {
+        log(1, `Failed to create or find user page for user ${targetUserId}`);
+        this.cache.set(cacheKey, null);
+        return null;
+      }
       const spellData = this._parseSpellDataFromHTML(page.text.content);
       const userData = spellData[canonicalUuid];
-      if (!userData) return null;
       let result;
-      if (actorId && userData.actorData?.[actorId]) result = { ...userData.actorData[actorId], notes: userData.notes };
+      if (!userData) result = { notes: '', favorited: false, usageStats: null };
+      else if (actorId && userData.actorData?.[actorId]) result = { ...userData.actorData[actorId], notes: userData.notes };
       else result = { notes: userData.notes || '', favorited: false, usageStats: null };
       this.cache.set(cacheKey, result);
       return result;
     } catch (error) {
       log(1, 'Error getting user spell data:', error);
+      const cacheKey = actorId ? `${userId || game.user.id}:${actorId}:${spellOrUuid}` : `${userId || game.user.id}:${spellOrUuid}`;
+      this.cache.set(cacheKey, null);
       return null;
     }
   }
@@ -269,7 +281,7 @@ export class SpellUserDataJournal {
       } else {
         if (data.notes !== undefined) spellData[canonicalUuid].notes = data.notes;
       }
-      const newContent = this._generateTablesHTML(spellData, user.name, targetUserId);
+      const newContent = await this._generateTablesHTML(spellData, user.name, targetUserId);
       await page.update({
         'text.content': newContent,
         [`flags.${MODULE.ID}.lastUpdated`]: Date.now()
@@ -362,7 +374,7 @@ export class SpellUserDataJournal {
         }
         spellData[canonicalUuid].actorData[targetActorId].favorited = favorited;
       }
-      const newContent = this._generateTablesHTML(spellData, user.name, targetUserId);
+      const newContent = await this._generateTablesHTML(spellData, user.name, targetUserId);
       await page.update({ 'text.content': newContent, [`flags.${MODULE.ID}.lastUpdated`]: Date.now() });
       const cacheKey = targetActorId ? `${targetUserId}:${targetActorId}:${canonicalUuid}` : `${targetUserId}:${canonicalUuid}`;
       if (targetActorId) {
@@ -416,7 +428,7 @@ export class SpellUserDataJournal {
       const spellData = this._parseSpellDataFromHTML(page.text.content);
       if (!spellData[canonicalUuid]) spellData[canonicalUuid] = { notes: '', actorData: {} };
       spellData[canonicalUuid].notes = trimmedNotes;
-      const newContent = this._generateTablesHTML(spellData, user.name, targetUserId);
+      const newContent = await this._generateTablesHTML(spellData, user.name, targetUserId);
       await page.update({ 'text.content': newContent, [`flags.${MODULE.ID}.lastUpdated`]: Date.now() });
       const cacheKey = `${targetUserId}:${canonicalUuid}`;
       this.cache.set(cacheKey, spellData[canonicalUuid]);
@@ -464,7 +476,7 @@ export class SpellUserDataJournal {
         };
       }
       spellData[canonicalUuid].actorData[targetActorId].usageStats = usageStats;
-      const newContent = this._generateTablesHTML(spellData, user.name, targetUserId);
+      const newContent = await this._generateTablesHTML(spellData, user.name, targetUserId);
       await page.update({ 'text.content': newContent, [`flags.${MODULE.ID}.lastUpdated`]: Date.now() });
       const cacheKey = `${targetUserId}:${targetActorId}:${canonicalUuid}`;
       this.cache.set(cacheKey, spellData[canonicalUuid]);
@@ -516,6 +528,75 @@ export class SpellUserDataJournal {
       return result;
     } catch (error) {
       log(1, 'Error getting spell usage stats:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Ensure user data infrastructure exists (journal, page, etc.)
+   * @param {string} userId - User ID to ensure data for
+   * @returns {Promise<void>}
+   * @private
+   */
+  static async _ensureUserDataInfrastructure(userId) {
+    try {
+      let journal = await this._getJournal();
+      if (!journal) {
+        const manager = new UserSpellDataManager();
+        await manager._ensureJournalSetup();
+        journal = await this._getJournal();
+      }
+      if (!journal) {
+        log(1, 'Failed to create user spell data journal');
+        return;
+      }
+      const existingPage = await this._getUserPage(userId);
+      if (!existingPage) {
+        const user = game.users.get(userId);
+        if (!user) {
+          log(2, `User ${userId} not found, cannot create user data page`);
+          return;
+        }
+        const pageData = {
+          name: user.name,
+          type: 'text',
+          title: { show: true, level: 1 },
+          text: { format: 1, content: await this._generateEmptyUserDataHTML(user.name, userId) },
+          ownership: { default: 0, [userId]: 3 },
+          flags: {
+            [MODULE.ID]: {
+              userId: userId,
+              userName: user.name,
+              isUserSpellData: true,
+              created: Date.now(),
+              lastUpdated: Date.now(),
+              dataVersion: '2.0'
+            }
+          },
+          sort: 99999
+        };
+        if (game.user.isGM) pageData.ownership[game.user.id] = 3;
+        await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+        log(3, `Created user data page for user: ${user.name}`);
+      }
+    } catch (error) {
+      log(1, 'Error ensuring user data infrastructure:', error);
+    }
+  }
+
+  /**
+   * Generate empty user data HTML structure
+   * @param {string} userName - User display name
+   * @param {string} userId - User ID
+   * @returns {Promise<string>} HTML content
+   * @private
+   */
+  static async _generateEmptyUserDataHTML(userName, userId) {
+    try {
+      const manager = new UserSpellDataManager();
+      return await manager._generateEmptyTablesHTML(userName, userId);
+    } catch (error) {
+      log(1, 'Error generating empty user data HTML:', error);
       return null;
     }
   }
