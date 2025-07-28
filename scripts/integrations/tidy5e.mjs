@@ -9,7 +9,7 @@ import { log } from '../logger.mjs';
  */
 export function registerTidy5eIntegration() {
   Hooks.on('tidy5e-sheet.renderActorSheet', onTidy5eRender);
-  Hooks.on('renderTidy5eCharacterSheet', onTidy5eRender);
+  //Hooks.on('renderTidy5eCharacterSheet', onTidy5eRender);
   Hooks.on('renderTidy5eCharacterSheetQuadrone', onTidy5eQuadroneRender);
   log(3, 'Registered Tidy5e sheet integration');
 }
@@ -24,6 +24,7 @@ function onTidy5eRender(sheet, element, data) {
     log(1, `Failed to preload spell data for ${actor.name}:`, error);
   });
   const htmlElement = genericUtils.getHtmlElement(element);
+  log(1, 'DEBUG - onTidy5eRender', { htmlElement: htmlElement, element: element });
   const spellsTab = htmlElement.querySelector('.spellbook');
   if (!spellsTab) return;
   const utilityToolbar = spellsTab.querySelector('[data-tidy-sheet-part="utility-toolbar"]');
@@ -45,6 +46,7 @@ function onTidy5eQuadroneRender(sheet, element, data) {
     log(1, `Failed to preload spell data for ${actor.name}:`, error);
   });
   const htmlElement = genericUtils.getHtmlElement(element);
+  log(1, 'DEBUG - onTidy5eQuadroneRender', { htmlElement: htmlElement, element: element });
   const spellsTab = htmlElement.querySelector('.tidy-tab.spellbook');
   if (!spellsTab) return;
   const actionBar = spellsTab.querySelector('[data-tidy-sheet-part="action-bar"]');
@@ -63,6 +65,7 @@ function canAddTidySpellbookButton(actor, element) {
   const canCast = discoveryUtils.canCastSpells(actor);
   if (!canCast) return false;
   const htmlElement = genericUtils.getHtmlElement(element);
+  log(1, 'DEBUG - canAddTidySpellbookButton', { htmlElement: htmlElement, element: element });
   const hasSpellbook = htmlElement.querySelector('.spellbook') || htmlElement.querySelector('.tidy-tab.spellbook');
   if (!hasSpellbook) return false;
   return true;
