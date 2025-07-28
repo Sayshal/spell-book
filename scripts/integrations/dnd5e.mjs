@@ -37,7 +37,6 @@ function addSpellbookButton(app, html, data) {
     log(1, `Failed to preload spell data for ${actor.name}:`, error);
   });
   const htmlElement = genericUtils.getHtmlElement(html);
-  log(1, 'DEBUG - addSpellbookButton', { htmlElement: htmlElement, element: html });
   let spellsTab, controlsList;
   if (foundry.utils.isNewerVersion(game.version, '12.999')) {
     spellsTab = htmlElement.querySelector('section.tab[data-tab="spells"]');
@@ -122,7 +121,6 @@ function addJournalSpellBookButtonV13(app) {
   if (!game.settings.get(MODULE.ID, SETTINGS.ENABLE_JOURNAL_BUTTON)) return;
   if (!game.user.isGM) return;
   const htmlElement = genericUtils.getHtmlElement(app.element);
-  log(1, 'DEBUG - addJournalSpellBookButtonV13', { htmlElement: htmlElement, element: app.element });
   const footer = htmlElement.querySelector('.directory-footer');
   if (!footer) return;
   if (footer.querySelector('.spell-book-buttons-container')) return;
@@ -235,7 +233,6 @@ function canAddSpellbookButton(actor, html) {
   const canCast = discoveryUtils.canCastSpells(actor);
   if (!canCast) return false;
   const htmlElement = genericUtils.getHtmlElement(html);
-  log(1, 'DEBUG - canAddSpellbookButton', { htmlElement: htmlElement, element: html });
   let hasSpellsTab;
   if (foundry.utils.isNewerVersion(game.version, '12.999')) hasSpellsTab = htmlElement.querySelector('section.tab[data-tab="spells"]');
   else hasSpellsTab = htmlElement.querySelector('.tab.spells');
