@@ -178,6 +178,7 @@
   "SPELLBOOK.Migrations.MigrationErrorsCount": "{count} errors occurred",
   "SPELLBOOK.Migrations.OwnershipFixed": "Fixed ownership for {count} documents",
   "SPELLBOOK.Migrations.OwnershipValidation": "Ownership Validation",
+  "SPELLBOOK.Migrations.PackOwnershipFixed": "Pack permissions: {count} fixed",
   "SPELLBOOK.Migrations.SpellListFolderMigration": "Spell List Folder Migration",
   "SPELLBOOK.Migrations.SpellListFolderMigrationCount": "Migrated {count} spell lists to folders",
   "SPELLBOOK.Migrations.SpellListOwnershipFixed": "Spell list permissions: {count} fixed",

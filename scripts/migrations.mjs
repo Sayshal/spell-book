@@ -5,27 +5,23 @@ import { log } from './logger.mjs';
 Hooks.on('ready', runAllMigrations);
 
 async function runAllMigrations() {
-  if (!game.user.isGM) {
-    log(3, 'User is not active GM, skipping migrations');
-    return;
-  }
-  log(2, 'Running all migrations...');
+  if (!game.user.isGM) return;
+  log(3, 'Running all migrations...');
   try {
     const deprecatedFlagResults = await migrateDeprecatedFlags();
     const folderResults = await migrateSpellListFolders();
     const ownershipResults = await validateOwnershipLevels();
     const totalProcessed = deprecatedFlagResults.processed + folderResults.processed + ownershipResults.processed;
-    log(2, `Migration results: deprecated=${deprecatedFlagResults.processed}, folders=${folderResults.processed}, ownership=${ownershipResults.processed}`);
+    log(3, `Migration results: deprecated=${deprecatedFlagResults.processed}, folders=${folderResults.processed}, ownership=${ownershipResults.processed}`);
     if (totalProcessed > 0) {
       ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.StartNotification'));
-      await logMigrationResults(deprecatedFlagResults, folderResults, ownershipResults); // FIX: Add await and ownership
+      await logMigrationResults(deprecatedFlagResults, folderResults, ownershipResults);
       ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.CompleteNotification'));
     } else {
       log(3, 'No migrations needed');
     }
   } catch (error) {
     log(1, 'Error during migrations:', error);
-    ui.notifications.error(`Migration error: ${error.message}`);
   }
 }
 
@@ -124,39 +120,24 @@ async function migrateSpellListFolders() {
 }
 
 async function validateOwnershipLevels() {
-  const results = {
-    processed: 0,
-    errors: [],
-    userDataFixed: 0,
-    spellListsFixed: 0,
-    foldersFixed: 0,
-    details: []
-  };
-
+  const results = { processed: 0, errors: [], userDataFixed: 0, spellListsFixed: 0, packsFixed: 0, details: [] };
   log(3, 'Validating ownership levels for spell book documents...');
-
   try {
-    // Fix user data documents
     const userDataResults = await validateUserDataOwnership();
     results.userDataFixed = userDataResults.fixed;
     results.processed += userDataResults.fixed;
     results.errors.push(...userDataResults.errors);
     results.details.push(...userDataResults.details);
-
-    // Fix spell list documents
     const spellListResults = await validateSpellListOwnership();
     results.spellListsFixed = spellListResults.fixed;
     results.processed += spellListResults.fixed;
     results.errors.push(...spellListResults.errors);
     results.details.push(...spellListResults.details);
-
-    // Fix folder ownership
-    const folderResults = await validateFolderOwnership();
-    results.foldersFixed = folderResults.fixed;
-    results.processed += folderResults.fixed;
-    results.errors.push(...folderResults.errors);
-    results.details.push(...folderResults.details);
-
+    const packResults = await validatePackOwnership();
+    results.packsFixed = packResults.fixed;
+    results.processed += packResults.fixed;
+    results.errors.push(...packResults.errors);
+    results.details.push(...packResults.details);
     log(3, `Ownership validation complete: ${results.processed} documents fixed`);
   } catch (error) {
     log(1, 'Error during ownership validation:', error);
@@ -168,90 +149,72 @@ async function validateOwnershipLevels() {
 
 async function validateUserDataOwnership() {
   const results = { fixed: 0, errors: [], details: [] };
-
   const pack = game.packs.get(MODULE.PACK.USERDATA);
   if (!pack) {
     results.errors.push('User data pack not found');
     return results;
   }
-
   try {
     const documents = await pack.getDocuments();
-    const userDataJournal = documents.find((doc) => doc.name === 'User Spell Data' && doc.flags?.[MODULE.ID]?.isUserSpellDataJournal);
-
+    const folderName = game.i18n.localize('SPELLBOOK.UserData.FolderName');
+    const userDataJournal = documents.find((doc) => doc.name === folderName && doc.flags?.[MODULE.ID]?.isUserSpellDataJournal);
     if (userDataJournal) {
-      // Validate journal ownership
-      const correctJournalOwnership = { default: 0, [game.user.id]: 3 };
-      if (!isOwnershipEqual(userDataJournal.ownership, correctJournalOwnership)) {
+      const journalIdentifier = 'User Data Journal';
+      const currentOwnership = userDataJournal.ownership || {};
+      const correctJournalOwnership = { ...currentOwnership, default: 0, [game.user.id]: 3 };
+      if (!isOwnershipEqual(userDataJournal.ownership, correctJournalOwnership, journalIdentifier)) {
         await userDataJournal.update({ ownership: correctJournalOwnership });
         results.fixed++;
-        results.details.push(`Fixed user data journal ownership`);
-        log(3, `Fixed ownership for user data journal`);
+        results.details.push(`Fixed user data journal`);
       }
-
-      // Validate user page ownership
       for (const page of userDataJournal.pages) {
         const userId = page.flags?.[MODULE.ID]?.userId;
         if (userId && page.flags?.[MODULE.ID]?.isUserSpellData) {
           const user = game.users.get(userId);
-          if (!user) continue; // Skip if user no longer exists
-
-          const correctPageOwnership = {
-            default: 0,
-            [userId]: 3,
-            [game.user.id]: 3
-          };
-
-          if (!isOwnershipEqual(page.ownership, correctPageOwnership)) {
+          if (!user) continue;
+          const pageIdentifier = `User Page: ${user.name}`;
+          const currentPageOwnership = page.ownership || {};
+          const correctPageOwnership = { ...currentPageOwnership, default: 0, [userId]: 3, [game.user.id]: 3 };
+          if (!isOwnershipEqual(page.ownership, correctPageOwnership, pageIdentifier)) {
             await page.update({ ownership: correctPageOwnership });
             results.fixed++;
-            results.details.push(`Fixed user page ownership for ${user.name}`);
-            log(3, `Fixed ownership for user page: ${user.name}`);
+            results.details.push(`Fixed user page: ${user.name}`);
           }
         }
       }
+    } else {
+      log(3, 'No user data journal found');
     }
   } catch (error) {
     log(1, 'Error validating user data ownership:', error);
     results.errors.push(`User data ownership error: ${error.message}`);
   }
-
   return results;
 }
 
 async function validateSpellListOwnership() {
   const results = { fixed: 0, errors: [], details: [] };
-
   const pack = game.packs.get(MODULE.PACK.SPELLS);
   if (!pack) {
     results.errors.push('Spell lists pack not found');
     return results;
   }
-
   try {
     const documents = await pack.getDocuments();
-
     for (const journal of documents) {
-      // Skip non-spell list journals
       if (journal.pages.size === 0) continue;
       const page = journal.pages.contents[0];
       if (page.type !== 'spells') continue;
-
       const flags = page.flags?.[MODULE.ID] || {};
       const isSpellList = flags.isMerged || flags.isCustom || flags.isNewList;
-
       if (isSpellList) {
-        // Custom/merged spell lists should be GM-owned with player observer access
-        const correctOwnership = {
-          default: 1, // Observer for all players
-          [game.user.id]: 3 // Owner for GM
-        };
-
-        if (!isOwnershipEqual(journal.ownership, correctOwnership)) {
+        const journalIdentifier = `Spell List: ${journal.name}`;
+        const currentOwnership = journal.ownership || {};
+        const correctOwnership = { ...currentOwnership, default: 1, [game.user.id]: 3 };
+        if (!isOwnershipEqual(journal.ownership, correctOwnership, journalIdentifier)) {
           await journal.update({ ownership: correctOwnership });
           results.fixed++;
-          results.details.push(`Fixed spell list ownership: ${journal.name}`);
-          log(3, `Fixed ownership for spell list: ${journal.name}`);
+          results.details.push(`Fixed spell list: ${journal.name}`);
         }
       }
     }
@@ -259,55 +222,58 @@ async function validateSpellListOwnership() {
     log(1, 'Error validating spell list ownership:', error);
     results.errors.push(`Spell list ownership error: ${error.message}`);
   }
-
   return results;
 }
 
-async function validateFolderOwnership() {
+async function validatePackOwnership() {
   const results = { fixed: 0, errors: [], details: [] };
-
   const userDataPack = game.packs.get(MODULE.PACK.USERDATA);
   const spellsPack = game.packs.get(MODULE.PACK.SPELLS);
-
-  const packs = [userDataPack, spellsPack].filter(Boolean);
-
-  for (const pack of packs) {
+  const macrosPack = game.packs.get(MODULE.PACK.MACROS);
+  const packConfigurations = [
+    { pack: userDataPack, name: 'User Data', expectedOwnership: { PLAYER: 'OWNER', ASSISTANT: 'OWNER' } },
+    { pack: spellsPack, name: 'Spells', expectedOwnership: { PLAYER: 'OBSERVER', ASSISTANT: 'OWNER' } },
+    { pack: macrosPack, name: 'Macros', expectedOwnership: { PLAYER: 'NONE', ASSISTANT: 'OWNER' } }
+  ];
+  for (const config of packConfigurations) {
+    if (!config.pack) continue;
+    const pack = config.pack;
     try {
-      for (const folder of pack.folders) {
-        // Folders should be GM-owned with player observer access
-        const correctOwnership = {
-          default: 1, // Observer for all players
-          [game.user.id]: 3 // Owner for GM
-        };
-
-        if (!isOwnershipEqual(folder.ownership, correctOwnership)) {
-          await folder.update({ ownership: correctOwnership });
-          results.fixed++;
-          results.details.push(`Fixed folder ownership: ${folder.name}`);
-          log(3, `Fixed ownership for folder: ${folder.name} in ${pack.metadata.label}`);
-        }
+      const needsOwnershipUpdate = !isRoleOwnershipEqual(pack.ownership, config.expectedOwnership, `${config.name} Pack`);
+      const needsVisibilityUpdate = !pack.visible || pack.getUserLevel(game.user) < 1;
+      if (needsOwnershipUpdate || needsVisibilityUpdate) {
+        const updateReasons = [];
+        if (needsOwnershipUpdate) updateReasons.push('ownership');
+        if (needsVisibilityUpdate) updateReasons.push('visibility');
+        await pack.configure({ ownership: config.expectedOwnership, locked: false, visible: true });
+        results.fixed++;
+        results.details.push(`Fixed ${config.name} pack ${updateReasons.join(' and ')}`);
+      } else {
+        log(3, `${config.name} pack ownership and visibility are correct`);
       }
     } catch (error) {
-      log(1, `Error validating folder ownership in ${pack.metadata.label}:`, error);
-      results.errors.push(`Folder ownership error in ${pack.metadata.label}: ${error.message}`);
+      log(1, `Error validating ${config.name} pack ownership:`, error);
+      results.errors.push(`${config.name} pack error: ${error.message}`);
     }
   }
-
   return results;
 }
 
-function isOwnershipEqual(ownership1, ownership2) {
+function isOwnershipEqual(ownership1, ownership2, documentName = 'unknown') {
   if (!ownership1 || !ownership2) return false;
-
-  // Get all unique keys from both objects
   const allKeys = new Set([...Object.keys(ownership1), ...Object.keys(ownership2)]);
-
   for (const key of allKeys) {
-    if (ownership1[key] !== ownership2[key]) {
-      return false;
-    }
+    if (ownership1[key] !== ownership2[key]) return false;
   }
+  return true;
+}
 
+function isRoleOwnershipEqual(ownership1, ownership2, documentName = 'unknown') {
+  if (!ownership1 || !ownership2) return false;
+  const allKeys = new Set([...Object.keys(ownership1), ...Object.keys(ownership2)]);
+  for (const key of allKeys) {
+    if (ownership1[key] !== ownership2[key]) return false;
+  }
   return true;
 }
 
@@ -340,21 +306,16 @@ async function migrateJournalToFolder(journal, customFolder, mergedFolder) {
 async function logMigrationResults(deprecatedResults, folderResults, ownershipResults) {
   const totalProcessed = deprecatedResults.processed + folderResults.processed + ownershipResults.processed;
   if (totalProcessed === 0) {
-    log(2, 'No migration updates needed');
+    log(3, 'No migration updates needed');
     return;
   }
   const content = await buildChatContent(deprecatedResults, folderResults, ownershipResults, totalProcessed);
   ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id });
-  log(2, `Migration complete: ${totalProcessed} documents updated`);
+  log(3, `Migration complete: ${totalProcessed} documents updated`);
 }
 
 async function buildChatContent(deprecatedResults, folderResults, ownershipResults, totalProcessed) {
-  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_REPORT, {
-    deprecatedResults,
-    folderResults,
-    ownershipResults,
-    totalProcessed
-  });
+  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_REPORT, { deprecatedResults, folderResults, ownershipResults, totalProcessed });
 }
 
 async function buildUserDataMigrationContent(userDataResults) {
