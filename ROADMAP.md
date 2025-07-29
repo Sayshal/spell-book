@@ -47,8 +47,8 @@ Enable players to discover and use public spell loadouts from other characters, 
 
 - **Public Loadout Discovery**: Browse loadouts marked as "public" by other players in the spell loadouts menu, filtered by matching class
 - **Graceful Spell Handling**: When applying shared loadouts, silently skip spells not available to the current character and apply only compatible spells
-- **Party Coordination Tool**: Integration with group actors to display a comparison matrix showing what spells each party member *knows* versus what they can currently *prepare*
-- **Smart Suggestions**: Highlight spell preparation opportunities where party members could complement each other's spell selections
+- **Party Coordination Tool**: Integration with group actors to display a comparison matrix showing what spells each party member *knows* versus what they can currently *prepare* (If user viewing does not have observer or greater permission to view a character, show a grayed out/blurred out version with a note that you do not have permission to view)
+- **Smart Suggestions**: Highlight spell preparation opportunities where party members could complement each other's spell selections. This should be accomplished by making factual statements (the party has 8 fire-damage spells, 85% of the spells require concentration, etc.)
 
 #### **Post-Encounter Spell Analytics [High Priority]**
 
