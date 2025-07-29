@@ -7,8 +7,7 @@
     {{!-- Global Select All --}}
     <div class="compendium-global-header">
       <label class="checkbox">
-        <input type="checkbox" class="select-all-global" {{#if summary.allSelected}}checked{{/if}}
-          aria-label="{{localize 'SPELLBOOK.Settings.CompendiumSelectionSelectAll'}}">
+        {{{globalSelectAllCheckboxHtml}}}
         <span>{{localize "SPELLBOOK.Settings.CompendiumSelectionSelectAll"}}</span>
       </label>
     </div>
@@ -19,10 +18,7 @@
         <hr>
         <div class="category-group-header">
           <label class="checkbox {{#if category.disabled}}disabled{{/if}}">
-            <input type="checkbox" class="select-all-category" data-organization="{{category.name}}"
-              {{#if (eq category.enabledCount category.totalCount)}}checked{{/if}}
-              {{#if category.disabled}}disabled{{/if}}
-              aria-label="{{localize 'SPELLBOOK.Settings.CompendiumSelectionSelectAllIn'}} {{category.name}}{{#if category.disabled}} ({{localize 'SPELLBOOK.Settings.CompendiumSelectionRequired'}}){{/if}}">
+            {{{category.categorySelectAllCheckboxHtml}}}
             <span>{{category.name}} ({{category.enabledCount}}/{{category.totalCount}})</span>
           </label>
         </div>
@@ -30,10 +26,7 @@
           aria-label="{{category.name}} {{localize 'COMPENDIUM.SidebarTitle'}}">
           {{#each category.packs as |pack|}}
             <label class="checkbox compendium-item {{#if pack.disabled}}disabled{{/if}}">
-              <input type="checkbox" name="compendiumMultiSelect" value="{{pack.id}}"
-                data-organization="{{pack.organizationName}}" {{#if pack.enabled}}checked{{/if}}
-                {{#if pack.disabled}}disabled{{/if}}
-                aria-label="{{pack.label}}{{#if pack.disabled}} ({{localize 'SPELLBOOK.Settings.CompendiumSelectionRequired'}}){{/if}}">
+              {{{pack.checkboxHtml}}}
               <span class="pack-name">{{pack.label}}</span>
               <span class="pack-type-badge {{#if pack.disabled}}required{{/if}}">
                 {{#if pack.disabled}}

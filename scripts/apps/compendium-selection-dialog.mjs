@@ -1,4 +1,5 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import * as formElements from '../helpers/form-elements.mjs';
 import { log } from '../logger.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -147,30 +148,144 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
     const currentSettings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
     const compendiums = await this._getAvailableCompendiums();
     const enabledCompendiums = Object.keys(currentSettings).length > 0 ? new Set(Object.keys(currentSettings)) : new Set(Array.from(game.packs).map((p) => p.collection));
-    context.categories = compendiums.categorizedPacks.map((category) => {
-      const packsInCategory = category.packs.map((pack) => {
-        const isModulePack = pack.packageName === MODULE.ID;
-        return {
-          ...pack,
-          enabled: enabledCompendiums.has(pack.id) || isModulePack,
-          disabled: isModulePack,
-          organizationName: category.name
-        };
-      });
-      const allPacksDisabled = packsInCategory.every((pack) => pack.disabled);
+    context.categories = this._prepareCategories(compendiums.categorizedPacks, enabledCompendiums);
+    const summaryData = this._calculateSummaryData(context.categories);
+    context.globalSelectAllCheckboxHtml = this._createGlobalSelectAllCheckbox(summaryData.allSelected);
+    context.summary = summaryData;
+    return context;
+  }
+
+  /**
+   * Process categories and create form elements for each pack
+   * @param {Array} categorizedPacks - The categorized pack data
+   * @param {Set} enabledCompendiums - Set of enabled compendium IDs
+   * @returns {Array} Processed categories with form elements
+   * @private
+   */
+  _prepareCategories(categorizedPacks, enabledCompendiums) {
+    return categorizedPacks.map((category) => {
+      const packsInCategory = this._preparePacksInCategory(category.packs, enabledCompendiums, category.name);
+      const categoryStats = this._calculateCategoryStats(packsInCategory);
+      const categorySelectAllCheckbox = this._createCategorySelectAllCheckbox(category.name, categoryStats);
       return {
         ...category,
         packs: packsInCategory,
-        enabledCount: packsInCategory.filter((p) => p.enabled).length,
-        totalCount: packsInCategory.length,
-        disabled: allPacksDisabled
+        enabledCount: categoryStats.enabledCount,
+        totalCount: categoryStats.totalCount,
+        disabled: categoryStats.allPacksDisabled,
+        categorySelectAllCheckboxHtml: formElements.elementToHtml(categorySelectAllCheckbox)
       };
     });
-    const totalRelevantPacks = compendiums.categorizedPacks.reduce((sum, cat) => sum + cat.packs.length, 0);
-    const enabledRelevantPacks = context.categories.reduce((sum, cat) => sum + cat.enabledCount, 0);
+  }
+
+  /**
+   * Process packs within a category and create their form elements
+   * @param {Array} packs - The packs in the category
+   * @param {Set} enabledCompendiums - Set of enabled compendium IDs
+   * @param {string} categoryName - Name of the category
+   * @returns {Array} Processed packs with form elements
+   * @private
+   */
+  _preparePacksInCategory(packs, enabledCompendiums, categoryName) {
+    return packs.map((pack) => {
+      const isModulePack = pack.packageName === MODULE.ID;
+      const packData = {
+        ...pack,
+        enabled: enabledCompendiums.has(pack.id) || isModulePack,
+        disabled: isModulePack,
+        organizationName: categoryName
+      };
+      const packCheckbox = this._createPackCheckbox(packData);
+      return {
+        ...packData,
+        checkboxHtml: formElements.elementToHtml(packCheckbox)
+      };
+    });
+  }
+
+  /**
+   * Calculate statistics for a category
+   * @param {Array} packsInCategory - The packs in the category
+   * @returns {Object} Category statistics
+   * @private
+   */
+  _calculateCategoryStats(packsInCategory) {
+    const enabledCount = packsInCategory.filter((p) => p.enabled).length;
+    const totalCount = packsInCategory.length;
+    const allPacksDisabled = packsInCategory.every((pack) => pack.disabled);
+    return { enabledCount, totalCount, allPacksDisabled };
+  }
+
+  /**
+   * Create a checkbox for an individual pack
+   * @param {Object} packData - The pack data
+   * @returns {HTMLElement} The created checkbox element
+   * @private
+   */
+  _createPackCheckbox(packData) {
+    const packCheckbox = formElements.createCheckbox({
+      name: 'compendiumMultiSelect',
+      checked: packData.enabled,
+      disabled: packData.disabled,
+      cssClass: 'compendium-item',
+      ariaLabel: `${packData.label}${packData.disabled ? ` (${game.i18n.localize('SPELLBOOK.Settings.CompendiumSelectionRequired')})` : ''}`
+    });
+    packCheckbox.setAttribute('value', packData.id);
+    packCheckbox.dataset.organization = packData.organizationName;
+    return packCheckbox;
+  }
+
+  /**
+   * Create a category select all checkbox
+   * @param {string} categoryName - Name of the category
+   * @param {Object} categoryStats - Category statistics
+   * @returns {HTMLElement} The created checkbox element
+   * @private
+   */
+  _createCategorySelectAllCheckbox(categoryName, categoryStats) {
+    const { enabledCount, totalCount, allPacksDisabled } = categoryStats;
+    const categorySelectAllCheckbox = formElements.createCheckbox({
+      name: `select-all-category-${categoryName}`,
+      checked: enabledCount === totalCount,
+      disabled: allPacksDisabled,
+      cssClass: 'select-all-category',
+      ariaLabel: `${game.i18n.localize('SPELLBOOK.Settings.CompendiumSelectionSelectAllIn')} ${categoryName}${allPacksDisabled ? ` (${game.i18n.localize('SPELLBOOK.Settings.CompendiumSelectionRequired')})` : ''}`
+    });
+    categorySelectAllCheckbox.dataset.organization = categoryName;
+    return categorySelectAllCheckbox;
+  }
+
+  /**
+   * Calculate summary data for all categories
+   * @param {Array} categories - The processed categories
+   * @returns {Object} Summary data including totals and selection state
+   * @private
+   */
+  _calculateSummaryData(categories) {
+    const totalRelevantPacks = categories.reduce((sum, cat) => sum + cat.totalCount, 0);
+    const enabledRelevantPacks = categories.reduce((sum, cat) => sum + cat.enabledCount, 0);
     const allSelected = totalRelevantPacks === enabledRelevantPacks;
-    context.summary = { totalPacks: totalRelevantPacks, enabledPacks: enabledRelevantPacks, allSelected };
-    return context;
+    return {
+      totalPacks: totalRelevantPacks,
+      enabledPacks: enabledRelevantPacks,
+      allSelected
+    };
+  }
+
+  /**
+   * Create the global select all checkbox
+   * @param {boolean} allSelected - Whether all packs are selected
+   * @returns {string} HTML string for the checkbox
+   * @private
+   */
+  _createGlobalSelectAllCheckbox(allSelected) {
+    const globalSelectAllCheckbox = formElements.createCheckbox({
+      name: 'select-all-global',
+      checked: allSelected,
+      cssClass: 'select-all-global',
+      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.CompendiumSelectionSelectAll')
+    });
+    return formElements.elementToHtml(globalSelectAllCheckbox);
   }
 
   get template() {
@@ -189,19 +304,18 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
    */
   _setupEventListeners() {
     const form = this.element;
-    const allItemCheckboxes = form.querySelectorAll('input[name="compendiumMultiSelect"]');
-    const globalSelectAll = form.querySelector('.select-all-global');
-    const categorySelectAlls = form.querySelectorAll('.select-all-category');
+    const allItemCheckboxes = form.querySelectorAll('dnd5e-checkbox[name="compendiumMultiSelect"]');
+    const globalSelectAll = form.querySelector('dnd5e-checkbox.select-all-global');
+    const categorySelectAlls = form.querySelectorAll('dnd5e-checkbox.select-all-category');
     if (globalSelectAll) {
       globalSelectAll.addEventListener('change', (event) => {
         const isChecked = event.target.checked;
-        allItemCheckboxes.forEach((input) => {
-          if (!input.disabled) input.checked = isChecked;
+        allItemCheckboxes.forEach((checkbox) => {
+          if (!checkbox.disabled) checkbox.checked = isChecked;
         });
-        categorySelectAlls.forEach((input) => {
-          if (!input.disabled) input.checked = isChecked;
+        categorySelectAlls.forEach((checkbox) => {
+          if (!checkbox.disabled) checkbox.checked = isChecked;
         });
-
         this._updateAllCategoryCounts(form);
         this._updateSummaryCount(form, allItemCheckboxes);
       });
@@ -211,9 +325,9 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
       checkbox.addEventListener('change', (event) => {
         const organizationName = event.target.dataset.organization;
         const isChecked = event.target.checked;
-        const categoryCheckboxes = form.querySelectorAll(`input[data-organization="${organizationName}"][name="compendiumMultiSelect"]`);
-        categoryCheckboxes.forEach((input) => {
-          if (!input.disabled) input.checked = isChecked;
+        const categoryCheckboxes = form.querySelectorAll(`dnd5e-checkbox[data-organization="${organizationName}"][name="compendiumMultiSelect"]`);
+        categoryCheckboxes.forEach((checkbox) => {
+          if (!checkbox.disabled) checkbox.checked = isChecked;
         });
         this._updateCategoryCount(form, organizationName);
         this._updateGlobalSelectAll(form, allItemCheckboxes, globalSelectAll);
@@ -223,9 +337,9 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
     allItemCheckboxes.forEach((checkbox) => {
       checkbox.addEventListener('change', (event) => {
         const organizationName = event.target.dataset.organization;
-        const categoryCheckboxes = form.querySelectorAll(`input[data-organization="${organizationName}"][name="compendiumMultiSelect"]`);
-        const selectAllCheckbox = form.querySelector(`.select-all-category[data-organization="${organizationName}"]`);
-        const allChecked = Array.from(categoryCheckboxes).every((input) => input.checked);
+        const categoryCheckboxes = form.querySelectorAll(`dnd5e-checkbox[data-organization="${organizationName}"][name="compendiumMultiSelect"]`);
+        const selectAllCheckbox = form.querySelector(`dnd5e-checkbox.select-all-category[data-organization="${organizationName}"]`);
+        const allChecked = Array.from(categoryCheckboxes).every((checkbox) => checkbox.checked);
         if (selectAllCheckbox) selectAllCheckbox.checked = allChecked;
         this._updateCategoryCount(form, organizationName);
         this._updateGlobalSelectAll(form, allItemCheckboxes, globalSelectAll);
@@ -241,10 +355,10 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
    * @private
    */
   _updateCategoryCount(form, organizationName) {
-    const categoryCheckboxes = form.querySelectorAll(`input[data-organization="${organizationName}"][name="compendiumMultiSelect"]`);
-    const categoryHeader = form.querySelector(`.select-all-category[data-organization="${organizationName}"]`);
+    const categoryCheckboxes = form.querySelectorAll(`dnd5e-checkbox[data-organization="${organizationName}"][name="compendiumMultiSelect"]`);
+    const categoryHeader = form.querySelector(`dnd5e-checkbox.select-all-category[data-organization="${organizationName}"]`);
     if (!categoryHeader) return;
-    const checkedCount = Array.from(categoryCheckboxes).filter((input) => input.checked).length;
+    const checkedCount = Array.from(categoryCheckboxes).filter((checkbox) => checkbox.checked).length;
     const totalCount = categoryCheckboxes.length;
     const categorySpan = categoryHeader.closest('label').querySelector('span');
     if (categorySpan) {
@@ -259,7 +373,7 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
    * @private
    */
   _updateAllCategoryCounts(form) {
-    const categorySelectAlls = form.querySelectorAll('.select-all-category');
+    const categorySelectAlls = form.querySelectorAll('dnd5e-checkbox.select-all-category');
     categorySelectAlls.forEach((checkbox) => {
       const organizationName = checkbox.dataset.organization;
       this._updateCategoryCount(form, organizationName);
@@ -275,7 +389,7 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
   _updateSummaryCount(form, allCheckboxes) {
     const enabledCountSpan = form.querySelector('.enabled-count');
     if (enabledCountSpan) {
-      const checkedCount = Array.from(allCheckboxes).filter((input) => input.checked).length;
+      const checkedCount = Array.from(allCheckboxes).filter((checkbox) => checkbox.checked).length;
       enabledCountSpan.textContent = checkedCount;
     }
   }
@@ -289,7 +403,7 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
    */
   _updateGlobalSelectAll(form, allCheckboxes, globalSelectAll) {
     if (!globalSelectAll) return;
-    const allChecked = Array.from(allCheckboxes).every((input) => input.checked);
+    const allChecked = Array.from(allCheckboxes).every((checkbox) => checkbox.checked);
     globalSelectAll.checked = allChecked;
   }
 
@@ -309,20 +423,21 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
         }
       }
     }
-    const enabledCheckboxes = form.querySelectorAll('input[name="compendiumMultiSelect"]:checked:not(:disabled)');
+    const enabledCheckboxes = form.querySelectorAll('dnd5e-checkbox[name="compendiumMultiSelect"]:not([disabled])');
     let userSelectedCount = 0;
     enabledCheckboxes.forEach((checkbox) => {
-      if (!enabledCompendiums.hasOwnProperty(checkbox.value)) userSelectedCount++;
-      enabledCompendiums[checkbox.value] = true;
+      if (checkbox.checked) {
+        const checkboxValue = checkbox.getAttribute('value') || checkbox.value;
+        if (checkboxValue) {
+          if (!enabledCompendiums.hasOwnProperty(checkboxValue)) userSelectedCount++;
+          enabledCompendiums[checkboxValue] = true;
+        }
+      }
     });
     const settingsChanged = JSON.stringify(originalSettings) !== JSON.stringify(enabledCompendiums);
     await game.settings.set(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS, enabledCompendiums);
     const actualPackCount = userSelectedCount + modulePackCount;
-    ui.notifications.info(
-      game.i18n.format('SPELLBOOK.Settings.CompendiumSelectionUpdated', {
-        count: actualPackCount
-      })
-    );
+    ui.notifications.info(game.i18n.format('SPELLBOOK.Settings.CompendiumSelectionUpdated', { count: actualPackCount }));
     if (settingsChanged) {
       const reload = await DialogV2.confirm({
         id: 'reload-world-confirm',
@@ -333,7 +448,7 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
         content: `<p>${game.i18n.localize('SETTINGS.ReloadPromptBody')}</p>`
       });
       if (!reload) return;
-      if (true && game.user.can('SETTINGS_MODIFY')) game.socket.emit('reload');
+      if (game.user.can('SETTINGS_MODIFY')) game.socket.emit('reload');
       foundry.utils.debouncedReload();
     }
   }
