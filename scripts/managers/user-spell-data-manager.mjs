@@ -175,7 +175,7 @@ export class UserSpellDataManager {
       name: game.i18n.localize('SPELLBOOK.UserData.IntroPageTitle'),
       type: 'text',
       title: { show: true, level: 1 },
-      text: { format: 1, content: this._generateIntroPageHTML() },
+      text: { format: 1, content: await this._generateIntroPageHTML() },
       ownership: { default: 0, [game.user.id]: 3 },
       flags: { [MODULE.ID]: { isIntroPage: true, created: Date.now() } },
       sort: 10

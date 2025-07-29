@@ -1,0 +1,66 @@
+<div class="compendium-selection-dialog">
+  <header class="dialog-header">
+    <p class="instructions">{{localize "SPELLBOOK.Settings.CompendiumSelectionInstructions"}}</p>
+  </header>
+
+  <div class="compendium-categories">
+    {{!-- Global Select All --}}
+    <div class="compendium-global-header">
+      <label class="checkbox">
+        {{{globalSelectAllCheckboxHtml}}}
+        <span>{{localize "SPELLBOOK.Settings.CompendiumSelectionSelectAll"}}</span>
+      </label>
+    </div>
+
+    {{!-- Organization Groups --}}
+    {{#each categories as |category|}}
+      <div class="category-group {{#if category.disabled}}disabled{{/if}}">
+        <hr>
+        <div class="category-group-header">
+          <label class="checkbox {{#if category.disabled}}disabled{{/if}}">
+            {{{category.categorySelectAllCheckboxHtml}}}
+            <span>{{category.name}} ({{category.enabledCount}}/{{category.totalCount}})</span>
+          </label>
+        </div>
+        <div class="category-group-items" role="group"
+          aria-label="{{category.name}} {{localize 'COMPENDIUM.SidebarTitle'}}">
+          {{#each category.packs as |pack|}}
+            <label class="checkbox compendium-item {{#if pack.disabled}}disabled{{/if}}">
+              {{{pack.checkboxHtml}}}
+              <span class="pack-name">{{pack.label}}</span>
+              <span class="pack-type-badge {{#if pack.disabled}}required{{/if}}">
+                {{#if pack.disabled}}
+                  {{localize "SPELLBOOK.Settings.CompendiumSelectionRequired"}}
+                {{else if (eq pack.type "Item")}}
+                  {{localize "SPELLBOOK.Settings.CompendiumSelectionSpells"}}
+                {{else if (eq pack.type "JournalEntry")}}
+                  {{localize "SPELLBOOK.Settings.CompendiumSelectionSpellList"}}
+                {{else}}
+                  {{pack.type}}
+                {{/if}}
+              </span>
+            </label>
+          {{/each}}
+        </div>
+      </div>
+    {{/each}}
+  </div>
+
+  <footer class="dialog-footer">
+    <div class="footer-content">
+      <div class="performance-note">
+        <i class="fas fa-info-circle" aria-hidden="true"></i>
+        {{localize "SPELLBOOK.Settings.CompendiumSelectionPerformanceNote"}}
+      </div>
+      <div class="footer-buttons">
+        <button type="button" data-action="close">
+          {{localize "SPELLBOOK.Settings.CompendiumSelectionCancel"}}
+        </button>
+        <button type="submit" class="primary">
+          <i class="fas fa-save" aria-hidden="true"></i>
+          {{localize "SPELLBOOK.Settings.CompendiumSelectionSave"}}
+        </button>
+      </div>
+    </div>
+  </footer>
+</div>

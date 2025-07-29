@@ -8,7 +8,6 @@ import { initializeLogger, log } from './logger.mjs';
 import { MacroManager } from './managers/macro-manager.mjs';
 import { SpellUsageTracker } from './managers/spell-usage-tracker.mjs';
 import { UserSpellDataManager } from './managers/user-spell-data-manager.mjs';
-import { registerMigration } from './migrations.mjs';
 import { registerSettings } from './settings.mjs';
 
 Hooks.once('init', async function () {
@@ -17,7 +16,6 @@ Hooks.once('init', async function () {
   await initializeModuleComponents();
   await preloadTemplates();
   createAPI();
-  registerMigration();
   registerHandlebarsHelpers();
   log(3, `${MODULE.NAME} initialized!`);
 });

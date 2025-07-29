@@ -2,25 +2,26 @@ import { DEPRECATED_FLAGS, MODULE, TEMPLATES } from './constants.mjs';
 import * as managerHelpers from './helpers/compendium-management.mjs';
 import { log } from './logger.mjs';
 
-/**
- * Register migration hook to run all migrations every time
- */
-export function registerMigration() {
-  Hooks.once('ready', runAllMigrations);
-}
+Hooks.on('ready', runAllMigrations);
 
 async function runAllMigrations() {
-  if (!game.user.isActiveGM) return;
-  log(2, 'Running all migrations...');
-  const deprecatedFlagResults = await migrateDeprecatedFlags();
-  const folderResults = await migrateSpellListFolders();
-  const totalProcessed = deprecatedFlagResults.processed + folderResults.processed;
-  if (totalProcessed > 0) {
-    ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.StartNotification'));
-    logMigrationResults(deprecatedFlagResults, folderResults);
-    ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.CompleteNotification'));
-  } else {
-    log(3, 'No migrations needed');
+  if (!game.user.isGM) return;
+  log(3, 'Running all migrations...');
+  try {
+    const deprecatedFlagResults = await migrateDeprecatedFlags();
+    const folderResults = await migrateSpellListFolders();
+    const ownershipResults = await validateOwnershipLevels();
+    const totalProcessed = deprecatedFlagResults.processed + folderResults.processed + ownershipResults.processed;
+    log(3, `Migration results: deprecated=${deprecatedFlagResults.processed}, folders=${folderResults.processed}, ownership=${ownershipResults.processed}`);
+    if (totalProcessed > 0) {
+      ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.StartNotification'));
+      await logMigrationResults(deprecatedFlagResults, folderResults, ownershipResults);
+      ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.CompleteNotification'));
+    } else {
+      log(3, 'No migrations needed');
+    }
+  } catch (error) {
+    log(1, 'Error during migrations:', error);
   }
 }
 
@@ -118,6 +119,164 @@ async function migrateSpellListFolders() {
   return results;
 }
 
+async function validateOwnershipLevels() {
+  const results = { processed: 0, errors: [], userDataFixed: 0, spellListsFixed: 0, packsFixed: 0, details: [] };
+  log(3, 'Validating ownership levels for spell book documents...');
+  try {
+    const userDataResults = await validateUserDataOwnership();
+    results.userDataFixed = userDataResults.fixed;
+    results.processed += userDataResults.fixed;
+    results.errors.push(...userDataResults.errors);
+    results.details.push(...userDataResults.details);
+    const spellListResults = await validateSpellListOwnership();
+    results.spellListsFixed = spellListResults.fixed;
+    results.processed += spellListResults.fixed;
+    results.errors.push(...spellListResults.errors);
+    results.details.push(...spellListResults.details);
+    const packResults = await validatePackOwnership();
+    results.packsFixed = packResults.fixed;
+    results.processed += packResults.fixed;
+    results.errors.push(...packResults.errors);
+    results.details.push(...packResults.details);
+    log(3, `Ownership validation complete: ${results.processed} documents fixed`);
+  } catch (error) {
+    log(1, 'Error during ownership validation:', error);
+    results.errors.push(`Ownership validation error: ${error.message}`);
+  }
+
+  return results;
+}
+
+async function validateUserDataOwnership() {
+  const results = { fixed: 0, errors: [], details: [] };
+  const pack = game.packs.get(MODULE.PACK.USERDATA);
+  if (!pack) {
+    results.errors.push('User data pack not found');
+    return results;
+  }
+  try {
+    const documents = await pack.getDocuments();
+    const folderName = game.i18n.localize('SPELLBOOK.UserData.FolderName');
+    const userDataJournal = documents.find((doc) => doc.name === folderName && doc.flags?.[MODULE.ID]?.isUserSpellDataJournal);
+    if (userDataJournal) {
+      const journalIdentifier = 'User Data Journal';
+      const currentOwnership = userDataJournal.ownership || {};
+      const correctJournalOwnership = { ...currentOwnership, default: 0, [game.user.id]: 3 };
+      if (!isOwnershipEqual(userDataJournal.ownership, correctJournalOwnership, journalIdentifier)) {
+        await userDataJournal.update({ ownership: correctJournalOwnership });
+        results.fixed++;
+        results.details.push(`Fixed user data journal`);
+      }
+      for (const page of userDataJournal.pages) {
+        const userId = page.flags?.[MODULE.ID]?.userId;
+        if (userId && page.flags?.[MODULE.ID]?.isUserSpellData) {
+          const user = game.users.get(userId);
+          if (!user) continue;
+          const pageIdentifier = `User Page: ${user.name}`;
+          const currentPageOwnership = page.ownership || {};
+          const correctPageOwnership = { ...currentPageOwnership, default: 0, [userId]: 3, [game.user.id]: 3 };
+          if (!isOwnershipEqual(page.ownership, correctPageOwnership, pageIdentifier)) {
+            await page.update({ ownership: correctPageOwnership });
+            results.fixed++;
+            results.details.push(`Fixed user page: ${user.name}`);
+          }
+        }
+      }
+    } else {
+      log(3, 'No user data journal found');
+    }
+  } catch (error) {
+    log(1, 'Error validating user data ownership:', error);
+    results.errors.push(`User data ownership error: ${error.message}`);
+  }
+  return results;
+}
+
+async function validateSpellListOwnership() {
+  const results = { fixed: 0, errors: [], details: [] };
+  const pack = game.packs.get(MODULE.PACK.SPELLS);
+  if (!pack) {
+    results.errors.push('Spell lists pack not found');
+    return results;
+  }
+  try {
+    const documents = await pack.getDocuments();
+    for (const journal of documents) {
+      if (journal.pages.size === 0) continue;
+      const page = journal.pages.contents[0];
+      if (page.type !== 'spells') continue;
+      const flags = page.flags?.[MODULE.ID] || {};
+      const isSpellList = flags.isMerged || flags.isCustom || flags.isNewList;
+      if (isSpellList) {
+        const journalIdentifier = `Spell List: ${journal.name}`;
+        const currentOwnership = journal.ownership || {};
+        const correctOwnership = { ...currentOwnership, default: 1, [game.user.id]: 3 };
+        if (!isOwnershipEqual(journal.ownership, correctOwnership, journalIdentifier)) {
+          await journal.update({ ownership: correctOwnership });
+          results.fixed++;
+          results.details.push(`Fixed spell list: ${journal.name}`);
+        }
+      }
+    }
+  } catch (error) {
+    log(1, 'Error validating spell list ownership:', error);
+    results.errors.push(`Spell list ownership error: ${error.message}`);
+  }
+  return results;
+}
+
+async function validatePackOwnership() {
+  const results = { fixed: 0, errors: [], details: [] };
+  const userDataPack = game.packs.get(MODULE.PACK.USERDATA);
+  const spellsPack = game.packs.get(MODULE.PACK.SPELLS);
+  const macrosPack = game.packs.get(MODULE.PACK.MACROS);
+  const packConfigurations = [
+    { pack: userDataPack, name: 'User Data', expectedOwnership: { PLAYER: 'OWNER', ASSISTANT: 'OWNER' } },
+    { pack: spellsPack, name: 'Spells', expectedOwnership: { PLAYER: 'OBSERVER', ASSISTANT: 'OWNER' } },
+    { pack: macrosPack, name: 'Macros', expectedOwnership: { PLAYER: 'NONE', ASSISTANT: 'OWNER' } }
+  ];
+  for (const config of packConfigurations) {
+    if (!config.pack) continue;
+    const pack = config.pack;
+    try {
+      const needsOwnershipUpdate = !isRoleOwnershipEqual(pack.ownership, config.expectedOwnership, `${config.name} Pack`);
+      const needsVisibilityUpdate = !pack.visible || pack.getUserLevel(game.user) < 1;
+      if (needsOwnershipUpdate || needsVisibilityUpdate) {
+        const updateReasons = [];
+        if (needsOwnershipUpdate) updateReasons.push('ownership');
+        if (needsVisibilityUpdate) updateReasons.push('visibility');
+        await pack.configure({ ownership: config.expectedOwnership, locked: false, visible: true });
+        results.fixed++;
+        results.details.push(`Fixed ${config.name} pack ${updateReasons.join(' and ')}`);
+      } else {
+        log(3, `${config.name} pack ownership and visibility are correct`);
+      }
+    } catch (error) {
+      log(1, `Error validating ${config.name} pack ownership:`, error);
+      results.errors.push(`${config.name} pack error: ${error.message}`);
+    }
+  }
+  return results;
+}
+
+function isOwnershipEqual(ownership1, ownership2, documentName = 'unknown') {
+  if (!ownership1 || !ownership2) return false;
+  const allKeys = new Set([...Object.keys(ownership1), ...Object.keys(ownership2)]);
+  for (const key of allKeys) {
+    if (ownership1[key] !== ownership2[key]) return false;
+  }
+  return true;
+}
+
+function isRoleOwnershipEqual(ownership1, ownership2, documentName = 'unknown') {
+  if (!ownership1 || !ownership2) return false;
+  const allKeys = new Set([...Object.keys(ownership1), ...Object.keys(ownership2)]);
+  for (const key of allKeys) {
+    if (ownership1[key] !== ownership2[key]) return false;
+  }
+  return true;
+}
+
 async function migrateJournalToFolder(journal, customFolder, mergedFolder) {
   if (!journal || journal.pages.size === 0) return { success: false };
   const page = journal.pages.contents[0];
@@ -144,45 +303,40 @@ async function migrateJournalToFolder(journal, customFolder, mergedFolder) {
   return { success: true, type: moveType };
 }
 
-function logMigrationResults(deprecatedResults, folderResults) {
-  const totalProcessed = deprecatedResults.processed + folderResults.processed;
+async function logMigrationResults(deprecatedResults, folderResults, ownershipResults) {
+  const totalProcessed = deprecatedResults.processed + folderResults.processed + ownershipResults.processed;
   if (totalProcessed === 0) {
-    log(2, 'No migration updates needed');
+    log(3, 'No migration updates needed');
     return;
   }
-  let content = buildChatContent(deprecatedResults, folderResults, totalProcessed);
+  const content = await buildChatContent(deprecatedResults, folderResults, ownershipResults, totalProcessed);
   ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id });
-  log(2, `Migration complete: ${totalProcessed} documents updated`);
+  log(3, `Migration complete: ${totalProcessed} documents updated`);
 }
 
-async function buildChatContent(deprecatedResults, folderResults, userDataResults, totalProcessed) {
-  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_REPORT, {
-    deprecatedResults,
-    folderResults,
-    userDataResults,
-    totalProcessed
-  });
+async function buildChatContent(deprecatedResults, folderResults, ownershipResults, totalProcessed) {
+  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_REPORT, { deprecatedResults, folderResults, ownershipResults, totalProcessed });
 }
 
-function buildUserDataMigrationContent(userDataResults) {
+async function buildUserDataMigrationContent(userDataResults) {
   const visibleUsers = userDataResults.users.slice(0, 5);
   const hasMoreUsers = userDataResults.users.length > 5;
   const remainingUserCount = Math.max(0, userDataResults.users.length - 5);
   const processedResults = { ...userDataResults, visibleUsers, hasMoreUsers, remainingUserCount };
-  return renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_USER_DATA, { userDataResults: processedResults });
+  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_USER_DATA, { userDataResults: processedResults });
 }
 
-function buildFolderMigrationContent(folderResults) {
+async function buildFolderMigrationContent(folderResults) {
   const processedResults = { ...folderResults, foldersCreatedNames: folderResults.foldersCreated.length > 0 ? folderResults.foldersCreated.join(', ') : null };
-  return renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_FOLDER, { folderResults: processedResults });
+  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_FOLDER, { folderResults: processedResults });
 }
 
-function buildActorListContent(actors) {
+async function buildActorListContent(actors) {
   const visibleActors = actors.slice(0, 10);
   const hasMoreActors = actors.length > 10;
   const remainingCount = Math.max(0, actors.length - 10);
   const context = { actors, visibleActors, hasMoreActors, remainingCount };
-  return renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_ACTORS, context);
+  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_ACTORS, context);
 }
 
 export async function forceMigration() {
