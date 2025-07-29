@@ -1,172 +1,97 @@
 # Spell Book Roadmap
 
-### v0.9.0 - Enhanced User Experience & Multi 5e System Support (Next Release)
+### v0.10.0 - Performance & UI Polish
 
-**Priority: Usability & Interface Improvements**
+**Priority: Critical Infrastructure Improvements**
 
-#### **Advanced Search & Discovery [COMPLETED]**
+#### **Performance Optimization [Urgent Priority]**
 
-Implemented advanced Google-style search with syntax support, search history, and intelligent suggestions for enhanced spell discovery.
+Implement aggressive session-based caching and lazy loading strategies to eliminate performance bottlenecks when working with large spell databases like Bailywiki, ensuring instantaneous responses after initial data load.
 
-**Implementation summary:** The advanced search system in `advanced-search-manager.mjs` provides a sophisticated search interface with field-based queries, autocomplete suggestions, and search history. The `QueryParser` and `QueryExecutor` classes enable complex filtering using `^field:value` syntax with AND operations. The system integrates seamlessly with existing filters in `spellbook-filters.mjs` and provides real-time suggestions with accessibility support.
+**Code justification:** The current `findCompendiumSpellLists()` function in `compendium-management.mjs` rebuilds indexes on every application open, causing severe delays with large collections. The `spell-cache.mjs` system provides foundational caching but lacks session persistence. The GM Spell List Manager's `loadData()` and `loadSpellDetails()` methods in `gm-spell-list-manager.mjs` repeatedly fetch the same data. The PlayerSpellBook similarly re-processes spell data on each render, creating cumulative performance degradation.
 
-**Features implemented:**
+**Critical optimizations:**
 
-- ✅ Advanced search syntax with `^field:value AND field:value` queries
-- ✅ Recent search history with one-click reapplication and management
-- ✅ Intelligent autocomplete with field and value suggestions
-- ✅ Fuzzy spell name matching with real-time suggestions
-- ✅ Global search across all available spell sources
-- ✅ Accessibility support with proper ARIA labels and keyboard navigation
-- ✅ Integration with existing filter system for seamless user experience
-- ✅ Debounced search performance with caching for optimal responsiveness
+- **Session-Persistent Spell Database Cache**: Implement client-side session storage for all fetched spell data, compendium indexes, and spell list mappings to eliminate redundant network requests and processing
+- **Aggressive Memory Caching**: Cache processed spell objects, filtered results, and rendered content in memory with intelligent cache warming on first application load
+- **Lazy Loading with Predictive Prefetch**: Load spell details on-demand with intelligent prefetching of likely-needed spells based on user interaction patterns
+- **Background Index Rebuilding**: Move all compendium indexing to background workers with progress indicators, preventing UI blocking during initial loads
+- **Smart Cache Invalidation**: Only invalidate cached data when actual compendium content changes, not on every application open
+- **Batch Processing Optimization**: Implement efficient batching for spell document fetching and processing to minimize expensive round-trips to compendium data
 
-#### **Spell Notes & Favorites [COMPLETED]**
+#### **Light Mode Support [Medium Priority]**
 
-Implemented comprehensive spell user data system with personal notes, favorites tracking, automatic usage analytics, and data management dashboard.
+Implement comprehensive light mode theming across all module interfaces, dialogs, and applications for seamless integration with Foundry's light theme.
 
-**Implementation summary:** The spell user data system uses journal-based storage in `spell-user-data.mjs` for persistent per-user spell metadata. The `SpellNotesDialog` ApplicationV2 provides intuitive notes editing, while favorite toggles integrate seamlessly into spell displays. The `SpellUsageTracker` automatically monitors spell casting via the `dnd5e.activityConsumption` hook, detecting combat vs exploration context for detailed analytics. The `SpellAnalyticsDashboard` offers both personal and GM views with comprehensive statistics, export/import functionality, and real-time usage tracking controls.
+**Code justification:** The current styling system in `spell-book.css` and `gm-spell-list-manager.css` uses extensive CSS custom properties but primarily targets dark theme with only partial `.theme-light` implementations. The GM Spell List Manager has basic light mode support, but the main spell book interface, analytics dashboard, and various dialogs lack comprehensive light mode styling. The module's multiple applications need consistent light theme treatment to match Foundry's UI patterns.
 
-**Features implemented:**
+**Light mode implementations needed:**
 
-- ✅ Journal-based user data storage with automatic backup and migration
-- ✅ Personal spell notes with rich text editing and character limits
-- ✅ Favorite spell marking system with star toggles and filter integration
-- ✅ Automatic usage tracking via D&D5e activity consumption hooks
-- ✅ Combat vs exploration context detection for detailed analytics
-- ✅ Comprehensive analytics dashboard with personal and GM views
-- ✅ Most/least used spells analysis and recent activity tracking
-- ✅ Data export/import functionality with JSON backup/restore
-- ✅ Real-time usage statistics and context breakdown visualization
-- ✅ Session state management for immediate UI responsiveness
-- ✅ Canonical UUID handling for consistent cross-compendium tracking
-- ✅ GM monitoring tools for viewing all player spell usage patterns
-
-#### **Spell List Renaming [COMPLETED]**
-
-Implemented ability to rename custom spell lists after creation, providing better organization and management for users who create multiple lists.
-
-**Implementation summary:** The spell list renaming system in `gm-spell-list-manager.mjs` provides comprehensive rename functionality with validation and error handling. The `_performRename()` method updates both journal entry names and parent compendium metadata, while `_checkDuplicateName()` prevents conflicts. The rename dialog template `rename-spell-list.hbs` offers a user-friendly interface with real-time validation. The system preserves all spell list references and actor associations during rename operations, ensuring data integrity across the module.
-
-**Features implemented:**
-
-- ✅ Rename option in spell list context menus with tooltip guidance
-- ✅ Dedicated rename dialog with current name display and validation
-- ✅ Duplicate name detection to prevent conflicts with existing lists
-- ✅ Real-time validation with user-friendly error messages
-- ✅ Comprehensive compendium metadata updates during rename operations
-- ✅ Preservation of spell list references and actor associations
-- ✅ Success/error notifications with detailed feedback
-- ✅ Restriction to renameable list types (custom and merged lists only)
-- ✅ Automatic UI refresh and list re-selection after rename completion
-- ✅ Integration with existing GM spell list manager workflow
-
-#### **Visual Enhancements [COMPLETED]**
-
-Implemented side-by-side spell comparison view for detailed analysis of similar spells.
-
-**Implementation summary:** The spell comparison system provides a comprehensive side-by-side analysis tool through the `SpellComparisonDialog` ApplicationV2 class. The system integrates seamlessly with the existing PlayerSpellBook via always-visible "Compare" links in spell items, using the established data-action pattern. State management maintains comparison selections across renders until dialog closure. The comparison table displays spell properties as rows with spells as columns, highlighting key differences like maximum damage values. The configurable limit system (2-7 spells, default 3) provides flexibility beyond the original scope, while the separate dialog window allows for independent positioning and usage alongside the main spellbook.
-
-**Features implemented:**
-
-- ✅ Side-by-side spell comparison with structured table layout (properties as rows, spells as columns)
-- ✅ Always-visible "Compare" links integrated into spell items with active state indicators
-- ✅ Independent ApplicationV2 comparison dialog that can be positioned anywhere
-- ✅ Configurable spell comparison limit (2-7 spells, default 3, GM configurable via world settings)
-- ✅ State persistence across app renders and tab swaps, cleared only on dialog close
-- ✅ Difference highlighting for highest damage/dice values with extensible framework
-- ✅ Comprehensive spell property comparison (level, school, casting time, range, duration, components, damage)
-- ✅ Error handling and graceful fallbacks for missing spell data
-- ✅ Accessibility support with proper ARIA labels and screen reader compatibility
-- ✅ Integration with existing spell formatting and data extraction systems
-- ✅ Responsive design with proper overflow handling and table layout
-- ✅ Localization support with comprehensive language strings
-
-#### **Update Properties for 5.X [COMPLETED]**
-
-Update various `CONFIG.DND5E` references to new 5e standard for full compatibility with dnd5e v5.0+ and Foundry V13.
-
-**Implementation summary:** The V12/V13 compatibility system implements intelligent property detection through the `genericUtils.getConfigLabel()` helper function, which automatically determines whether CONFIG objects use `.label` (V12) or `.name` (V13) properties. The system updates all filter generation, spell formatting, and field validation functions to use this compatibility layer. The `MODULE.ISV13` flag enables version-specific code paths for deprecation warnings like the DragDrop namespace change. All major functions in `compendium-management.mjs`, `filters.mjs`, `spell-formatting.mjs`, `field-definitions.mjs`, `query-parser.mjs`, and `gm-spell-list-manager.mjs` have been updated to use the new dual-compatibility approach. The form elements system has been modernized to use `dnd5e.applications.fields` methods directly, dropping legacy 3.3.1 support.
-
-**Features implemented:**
-
-- ✅ Intelligent CONFIG property detection with automatic `.label` vs `.name` handling
-- ✅ Universal compatibility helper `genericUtils.getConfigLabel()` for all CONFIG objects
-- ✅ Updated damage type filter generation with dual V12/V13 support
-- ✅ Updated condition filter generation with proper property handling
-- ✅ Updated spell school formatting and validation across all contexts
-- ✅ Updated spell preparation mode localization with version compatibility
-- ✅ Updated advanced search field validation and autocomplete systems
-- ✅ Fixed DragDrop deprecation warnings with V13 namespace compatibility
-- ✅ Modernized form element creation using official dnd5e.applications.fields methods
-- ✅ Comprehensive testing and validation across all filter and search functions
-- ✅ Backward compatibility maintenance for V12 systems
-- ✅ Future-proof architecture supporting potential further CONFIG structure changes
+- **Main Spell Book Interface**: Complete `.theme-light` overrides for the primary spell book application, including sidebar, filters, spell lists, and preparation tracking
+- **Analytics Dashboard**: Light mode styling for charts, statistics cards, context breakdowns, and data management controls
+- **Dialog Applications**: Consistent light theming for SpellNotesDialog, SpellLoadoutDialog, SpellbookSettingsDialog, and SpellComparisonDialog
+- **GM Tools**: Extend existing GM Spell List Manager light mode support and add light theming for filter configuration interfaces
+- **Interactive Elements**: Light mode states for buttons, dropdowns, tooltips, context menus, and hover effects across all components
 
 ### v1.0.0 - Feature Complete Release
 
-**Priority: Advanced Features & Polish**
+**Priority: Advanced Features & Collaboration**
 
 #### **Sharing & Collaboration [High Priority]**
 
-Share spell loadouts between players, export/import spell configurations, and provide template loadouts for common builds.
+Enable players to discover and use public spell loadouts from other characters, with intelligent party coordination tools to optimize spell selection across the group.
 
-**Code justification:** The current system is entirely local to each actor. The `spell-manager.mjs` `saveClassSpecificPreparedSpells()` method creates complex preparation data that could be exported. The loadout system (v0.8.0) would provide the foundation for sharing configurations. The existing compendium system in `compendium-management.mjs` shows how data can be stored and shared between users.
+**Code justification:** The current `SpellLoadoutManager` stores loadouts locally per actor using flags. The `getAvailableLoadouts()` method already filters by class identifier, providing the foundation for cross-player loadout sharing. The existing `saveClassSpecificPreparedSpells()` method in `spell-manager.mjs` tracks preparation data that could be analyzed for party coordination. The system's spell discovery mechanism in `spell-discovery.mjs` shows how to handle spell availability validation.
 
 **Features:**
 
-- Export loadouts to JSON files for sharing
-- Import shared loadouts with validation
-- Community loadout templates for popular builds
-- Party coordination features (avoid spell overlap)
+- **Public Loadout Discovery**: Browse loadouts marked as "public" by other players in the spell loadouts menu, filtered by matching class
+- **Graceful Spell Handling**: When applying shared loadouts, silently skip spells not available to the current character and apply only compatible spells
+- **Party Coordination Tool**: Integration with group actors to display a comparison matrix showing what spells each party member *knows* versus what they can currently *prepare*
+- **Smart Suggestions**: Highlight spell preparation opportunities where party members could complement each other's spell selections
 
-#### **Compendium Indexing Performance [High Priority]**
+#### **Post-Encounter Spell Analytics [High Priority]**
 
-Implement selective compendium indexing and persistent caching to dramatically reduce spell list loading times, especially for users with extensive compendium collections.
+Generate comprehensive chat summaries after combat encounters detailing spellcasting activity, resource expenditure, and tactical insights for all participants.
 
-**Code justification:** The current `findCompendiumSpellLists()` function in `compendium-management.mjs` processes all available compendiums on every spellbook open, causing significant delays for users with large collections like Bailywiki. The indexing process in `indexSpellCompendiums()` rebuilds the entire spell index each time without persistence. The system lacks both compendium filtering and index caching capabilities.
+**Code justification:** The existing `SpellUsageTracker` in `spell-usage-tracker.mjs` already detects combat vs exploration context and monitors spell activity via `dnd5e.activityConsumption` hooks. The `sendComprehensiveGMNotification` system in `cantrip-manager.mjs` demonstrates chat message creation with templated content. Combat state detection and participant tracking provide the foundation for encounter-specific analytics.
 
-**Implementation:**
+**Post-encounter features:**
 
-- **Selective Indexing**: Add world settings for GM to pre-select which compendiums to include in spell indexing
-- **Persistent Cache**: Store compendium indices in world flags or client storage to eliminate re-indexing on every open
-- **Smart Cache Invalidation**: Track compendium modification times and only re-index when content changes
-- **Background Indexing**: Move initial indexing to background process with progress indicators
-- **Index Management**: Provide tools to manually refresh indices and clear cache when needed
-- **Performance Monitoring**: Add metrics to track indexing performance and cache hit rates
+- **Combat Spell Summary**: Automated chat messages after combat ends listing all spells cast by players and NPCs during the encounter
+- **Resource Expenditure Report**: Breakdown of spell slots used, cantrips cast, and concentration spell management throughout the fight
+- **Tactical Analysis**: Identify spell synergies, counter-spellings, and effectiveness patterns from the encounter
+- **NPC Spellcasting Integration**: Track and report enemy spellcaster activity alongside player actions for complete encounter analysis
 
-#### **Analytics & Insights [Medium Priority]**
+#### **Cauldron of Plentiful Resources Compatibility [Medium Priority]**
 
-Provide spell usage statistics, preparation pattern analysis, and optimization suggestions for spell selection.
+Ensure seamless integration with the Cauldron of Plentiful Resources module, providing automatic spell setup and configuration after spells are added to character sheets.
 
-**Code justification:** The system tracks extensive preparation data in `FLAGS.PREPARED_SPELLS_BY_CLASS` and cantrip changes in `cantrip-manager.mjs`, but this data isn't analyzed. The `SpellbookState` class maintains detailed spell data that could be aggregated for insights. The complex rule system in `rule-set-manager.mjs` could suggest optimizations based on class rules and usage patterns.
+**Code justification:** The existing spell management system in `spell-manager.mjs` handles spell addition and configuration through `_ensureSpellOnActor()` and related methods. The module's hook system and spell processing pipeline can be extended to detect and properly configure spells added by external modules. The `SpellbookState` management provides the foundation for triggering post-addition setup routines.
 
-**Analytics to include:**
+**Compatibility features:**
 
-- Most/least used spells over time
-- Spell slot efficiency analysis
-- Preparation pattern insights
-- Spell selection optimization suggestions based on actual usage
-
-#### **Accessibility [Medium Priority]**
-
-Improve contrast between background and text elements throughout the interface and enhance light mode support.
-
-**Code justification:** The current theming system in `color-utils.mjs` focuses on class-specific colors but doesn't ensure sufficient contrast ratios. The `applyClassColors()` function extracts dominant colors but the contrast adjustment in `A()` function may not meet WCAG guidelines. The UI elements in `spellbook-ui.mjs` don't consistently use accessible markup patterns.
-
-**Improvements:**
-
-- Ensure WCAG 2.1 AA compliance for contrast ratios
-
-#### **Styling [Medium Priority]**
-
-Convert to using `dnd5e2` base styling everywhere for seamless integration.
-
-**Code justification:** 5e styling will make Spell Book feel like part of the system itself, which is appealing for various reasons.
+- **Automatic Spell Detection**: Monitor for spells added by Cauldron of Plentiful Resources and trigger appropriate setup procedures
+- **Configuration Sync**: Ensure spells added externally receive proper source class attribution, preparation modes, and other module-specific metadata
+- **Validation Integration**: Run spell validation and rule checking on externally-added spells to maintain data consistency
+- **UI Refresh**: Automatically update spell book interfaces when external modules modify character spell inventories
 
 ### v1.1.0+ - Advanced Features
 
 **Priority: Power User & GM Tools**
+
+#### **Custom Spell Creation Wizard [Medium Priority]**
+
+Implement an intuitive spell creation interface with guided templates, balance validation, and automatic integration into custom spell lists.
+
+**Code justification:** The existing spell list management in `compendium-management.mjs` provides the infrastructure for custom content with `duplicateSpellList()`, `findDuplicateSpellList()`, and mapping systems. The comprehensive spell data structures in the module show the required fields and validation patterns. The GM Spell List Manager already handles custom list creation and management workflows.
+
+**Creation wizard features:**
+
+- **Guided Spell Builder**: Step-by-step interface for creating spells with pre-filled templates based on spell level and school
+- **Balance Validation**: Real-time analysis comparing damage, utility, and resource costs against existing spells of similar level
+- **Component Validation**: Ensure proper spell component combinations and requirements based on D&D5e rules
+- **Auto-Integration**: Seamlessly add created spells to custom spell lists and make them available to appropriate character classes
 
 #### **Advanced Wizard Features [Medium Priority]**
 
@@ -182,25 +107,6 @@ Implement spell research mechanics, spell variant management, advanced spellbook
 - Component tracking and management
 - Enhanced familiar spell sharing
 
-#### **GM Enhancement Tools [High Priority]**
-
-Implement encounter-based spell tracking, player spell usage monitoring, advanced spell list analytics, and custom spell creation tools.
-
-**Code justification:** The current `gm-spell-list-manager.mjs` focuses on list management but lacks player monitoring tools. The notification system in `cantrip-manager.mjs` (`sendComprehensiveGMNotification`) shows the foundation for GM alerts, but it's limited to rule violations. The extensive spell data in the system could power usage analytics. The existing custom spell list creation in `compendium-management.mjs` could be expanded to custom spell creation.
-
-**GM tools to add:**
-
-- Real-time party spell slot tracking dashboard
-- Player spell usage monitoring and analytics
-- Encounter balancing based on available party spells
-- Custom spell creation wizard with balance validation
-- Campaign-specific spell availability rules
-
-#### **Performance Improvements [Low Priority]**
-
-- Add lazy loading for spell lists in GMSpellListManager
-- Optimize render cycle to reduce redoing the same task
-
 #### **Non-Standard Spellcasting Classes Support [Low Priority]**
 
 Support homebrew and edge-case spellcasting classes that don't follow standard spell progression patterns, including cantrip-only casters and ritual-only casters.
@@ -212,22 +118,3 @@ Support homebrew and edge-case spellcasting classes that don't follow standard s
 - **Other homebrew classes**: Custom spellcasting patterns that don't fit standard progressions
 
 **Code justification:** Currently, `spellbook-state.mjs` and `rule-set-manager.mjs` filter out classes where `spellcasting.progression` is missing or set to `'none'`. The detection logic in `detectSpellcastingClasses()` and `_detectSpellcastingClasses()` excludes these classes entirely:
-
-### Development Notes
-
-#### Code Architecture Status
-
-- **Batch operations** in GM Spell List Manager need implementation
-- **Data validation and cleanup** for class rule changes could be more robust
-
-#### User Experience Priorities
-
-- **Streamline filter management** - saved filter presets needed
-- **Enhance spell discovery** - recommendation system would help new users
-
-#### Technical Debt Analysis
-
-- **Code duplication** in spell processing between different managers
-- **Complex interdependencies** between state manager and UI components
-- **Legacy compatibility code** for dnd5e version differences
-- **Inconsistent async/await patterns** in some older modules
