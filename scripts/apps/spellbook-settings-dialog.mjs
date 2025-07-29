@@ -1,4 +1,5 @@
 import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import { shouldIndexCompendium } from '../helpers/compendium-management.mjs';
 import * as formElements from '../helpers/form-elements.mjs';
 import { log } from '../logger.mjs';
 import { RuleSetManager } from '../managers/rule-set-manager.mjs';
@@ -63,9 +64,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     const globalRuleSet = game.settings.get(MODULE.ID, SETTINGS.SPELLCASTING_RULE_SET);
     const globalEnforcementBehavior = game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR);
     const globalRuleSetLabel = game.i18n.localize(`SPELLBOOK.Settings.SpellcastingRuleSet.${globalRuleSet.charAt(0).toUpperCase() + globalRuleSet.slice(1)}`);
-    const globalEnforcementBehaviorLabel = game.i18n.localize(
-      `SPELLBOOK.Settings.EnforcementBehavior.${globalEnforcementBehavior.charAt(0).toUpperCase() + globalEnforcementBehavior.slice(1)}`
-    );
+    const globalEnforcementBehaviorLabel = game.i18n.localize(`SPELLBOOK.Settings.EnforcementBehavior.${globalEnforcementBehavior.charAt(0).toUpperCase() + globalEnforcementBehavior.slice(1)}`);
     const ruleSetValue = ruleSetOverride || 'global';
     const enforcementValue = enforcementBehavior || 'global';
     const ruleSetOptions = [
@@ -415,7 +414,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       const options = [{ value: '', label: game.i18n.localize('SPELLBOOK.Settings.SpellList.AutoDetect') }];
       const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
       const allSpellLists = [];
-      const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
+      const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry' && shouldIndexCompendium(p));
       for (const pack of journalPacks) {
         let topLevelFolderName = pack.metadata.label;
         if (pack.folder) {
@@ -550,9 +549,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellPreparationBonus"]`);
     if (!input) return;
-    const classItem = this.actor.items.find(
-      (item) => item.type === 'class' && (item.system.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier)
-    );
+    const classItem = this.actor.items.find((item) => item.type === 'class' && (item.system.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier));
     const baseMax = classItem?.system?.spellcasting?.preparation?.max || 0;
     const minimumBonus = -baseMax;
     const currentValue = parseInt(input.value) || 0;
@@ -603,9 +600,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.cantripPreparationBonus"]`);
     if (!input) return;
-    const classItem = this.actor.items.find(
-      (item) => item.type === 'class' && (item.system.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier)
-    );
+    const classItem = this.actor.items.find((item) => item.type === 'class' && (item.system.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier));
     let baseMaxCantrips = 0;
     if (classItem) {
       const cantripScaleValuesSetting = game.settings.get(MODULE.ID, SETTINGS.CANTRIP_SCALE_VALUES);

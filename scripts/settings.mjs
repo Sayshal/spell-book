@@ -1,3 +1,4 @@
+import { CompendiumSelectionDialog } from './apps/compendium-selection-dialog.mjs';
 import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
 import { MODULE, SETTINGS } from './constants.mjs';
 import { SpellDescriptionInjection } from './helpers/spell-description-injection.mjs';
@@ -99,6 +100,36 @@ export function registerSettings() {
     icon: 'fas fa-hat-wizard',
     scope: 'world',
     type: GMSpellListManager,
+    restricted: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS, {
+    name: 'SPELLBOOK.Settings.IndexedCompendiumsName',
+    hint: 'SPELLBOOK.Settings.IndexedCompendiumsHint',
+    scope: 'world',
+    config: false,
+    type: Object,
+    default: {},
+    onChange: (value) => {
+      try {
+        if (typeof value !== 'object' || value === null) {
+          log(2, 'Invalid indexed compendiums format, resetting to default');
+          game.settings.set(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS, {});
+        }
+        if (window.spellBookCompendiumCache) window.spellBookCompendiumCache.clear();
+      } catch (error) {
+        log(1, 'Error validating indexed compendiums setting:', error);
+      }
+    }
+  });
+
+  game.settings.registerMenu(MODULE.ID, 'compendiumSelection', {
+    name: 'SPELLBOOK.Settings.CompendiumSelectionName',
+    hint: 'SPELLBOOK.Settings.CompendiumSelectionHint',
+    label: 'SPELLBOOK.Settings.CompendiumSelectionButton',
+    icon: 'fas fa-books',
+    scope: 'world',
+    type: CompendiumSelectionDialog,
     restricted: true
   });
 

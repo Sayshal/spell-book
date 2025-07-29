@@ -178,6 +178,7 @@ export const TEMPLATES = {
   DIALOGS: {
     ANALYTICS_IMPORT_SUMMARY: 'modules/spell-book/templates/dialogs/analytics-import-summary.hbs',
     CREATE_SPELL_LIST: 'modules/spell-book/templates/dialogs/create-spell-list.hbs',
+    COMPENDIUM_SELECTION: 'modules/spell-book/templates/dialogs/compendium-selection.hbs',
     FILTER_CONFIG: 'modules/spell-book/templates/dialogs/filter-configuration.hbs',
     LEARN_FROM_SCROLL: 'modules/spell-book/templates/dialogs/learn-from-scroll.hbs',
     LONG_REST_SWAP: 'modules/spell-book/templates/dialogs/long-rest-swap.hbs',
@@ -224,6 +225,7 @@ export const SETTINGS = {
   ENABLE_SPELL_USAGE_TRACKING: 'enableSpellUsageTracking',
   FILTER_CONFIGURATION: 'filterConfiguration',
   HIDDEN_SPELL_LISTS: 'hiddenSpellLists',
+  INDEXED_COMPENDIUMS: 'indexedCompendiums',
   LAZY_BATCH_SIZE: 'lazyBatchSize',
   LOGGING_LEVEL: 'loggingLevel',
   OPEN_SPELL_MANAGER: 'openSpellListManager',

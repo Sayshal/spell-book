@@ -10,7 +10,8 @@ import * as formattingUtils from './spell-formatting.mjs';
  */
 export async function findCompendiumSpellLists(includeHidden = true) {
   const spellLists = [];
-  const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
+  const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry' && shouldIndexCompendium(p));
+  log(3, `Scanning ${journalPacks.length} enabled journal compendiums for spell lists`);
   await processStandardPacks(journalPacks, spellLists);
   await processCustomPack(spellLists);
   if (!includeHidden && !game.user.isGM) {
@@ -294,7 +295,8 @@ export function normalizeUuid(uuid) {
  */
 export async function fetchAllCompendiumSpells(maxLevel = 9) {
   const spells = [];
-  const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
+  const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item' && shouldIndexCompendium(p));
+  log(3, `Fetching spells from ${itemPacks.length} enabled item compendiums`);
   for (const pack of itemPacks) {
     const packSpells = await fetchSpellsFromPack(pack, maxLevel);
     spells.push(...packSpells);
@@ -303,7 +305,7 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
     if (a.level !== b.level) return a.level - b.level;
     return a.name.localeCompare(b.name);
   });
-  log(3, `Fetched ${spells.length} compendium spells`);
+  log(3, `Fetched ${spells.length} compendium spells from ${itemPacks.length} enabled compendiums`);
   return spells;
 }
 
@@ -603,4 +605,30 @@ export async function getOrCreateCustomFolder() {
 export async function getOrCreateMergedFolder() {
   const folderName = game.i18n.localize('SPELLMANAGER.Folders.MergedSpellListsFolder');
   return getOrCreateSpellListFolder(folderName, 'SPELLMANAGER.Folders.MergedSpellListsFolder');
+}
+
+/**
+ * Get enabled compendiums from settings
+ * @returns {Set<string>} Set of enabled compendium IDs
+ */
+function getEnabledCompendiums() {
+  const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
+
+  // If empty settings object, index all compendiums (default behavior)
+  if (!settings || Object.keys(settings).length === 0) {
+    return new Set(Array.from(game.packs).map((p) => p.collection));
+  }
+
+  return new Set(Object.keys(settings));
+}
+
+/**
+ * Check if a compendium should be indexed
+ * @param {CompendiumCollection} pack - The pack to check
+ * @returns {boolean} Whether the pack should be indexed
+ */
+export function shouldIndexCompendium(pack) {
+  const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
+  if (!settings || Object.keys(settings).length === 0) return true;
+  return settings.hasOwnProperty(pack.collection);
 }
