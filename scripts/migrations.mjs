@@ -232,7 +232,7 @@ async function validatePackOwnership() {
   const macrosPack = game.packs.get(MODULE.PACK.MACROS);
   const packConfigurations = [
     { pack: userDataPack, name: 'User Data', expectedOwnership: { PLAYER: 'OWNER', ASSISTANT: 'OWNER' } },
-    { pack: spellsPack, name: 'Spells', expectedOwnership: { PLAYER: 'OBSERVER', ASSISTANT: 'OWNER' } },
+    { pack: spellsPack, name: 'Spells', expectedOwnership: { PLAYER: 'OWNER', ASSISTANT: 'OWNER' } },
     { pack: macrosPack, name: 'Macros', expectedOwnership: { PLAYER: 'NONE', ASSISTANT: 'OWNER' } }
   ];
   for (const config of packConfigurations) {

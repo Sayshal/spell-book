@@ -10,9 +10,9 @@
   "bugs": "https://github.com/Sayshal/spell-book/issues",
   "changelog": "https://github.com/Sayshal/spell-book/releases",
   "compatibility": {
-    "maximum": "13.999",
-    "minimum": "12.331",
-    "verified": "12.343"
+    "maximum": "13",
+    "minimum": "12",
+    "verified": "13.346"
   },
   "description": "Enhanced spell management for DnD5e. Easily view, prepare, and customize spell lists.",
   "download": "",
@@ -46,7 +46,7 @@
       "name": "custom-spell-lists",
       "ownership": {
         "ASSISTANT": "OWNER",
-        "PLAYER": "OBSERVER"
+        "PLAYER": "OWNER"
       },
       "path": "storage/custom-spell-lists",
       "type": "JournalEntry"
@@ -76,9 +76,9 @@
     "systems": [
       {
         "compatibility": {
-          "minimum": "4.4.3",
+          "minimum": "4",
           "verified": "5.0.4",
-          "maximum": "5.9"
+          "maximum": "5"
         },
         "id": "dnd5e",
         "type": "system"
