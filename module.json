@@ -10,7 +10,7 @@
   "bugs": "https://github.com/Sayshal/spell-book/issues",
   "changelog": "https://github.com/Sayshal/spell-book/releases",
   "compatibility": {
-    "maximum": "13",
+    "maximum": "13.999",
     "minimum": "12",
     "verified": "13.346"
   },
@@ -78,7 +78,7 @@
         "compatibility": {
           "minimum": "4",
           "verified": "5.0.4",
-          "maximum": "5"
+          "maximum": "5.9.9"
         },
         "id": "dnd5e",
         "type": "system"
