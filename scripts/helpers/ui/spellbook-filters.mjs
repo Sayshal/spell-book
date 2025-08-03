@@ -71,17 +71,45 @@ export class SpellbookFilterHelper {
    * @returns {Object} Filtered spells with count
    */
   filterAvailableSpells(availableSpells, selectedSpellUUIDs, isSpellInSelectedList, filterState = null) {
-    const filters = filterState || this.getFilterState();
-    log(3, 'Beginning Filtering:', selectedSpellUUIDs.size, 'selected spells out of', availableSpells.length, 'total available');
-    let remainingSpells = [...availableSpells];
-    remainingSpells = this._filterBySelectedList(remainingSpells, selectedSpellUUIDs, isSpellInSelectedList);
-    remainingSpells = this._filterBySource(remainingSpells, filters);
-    remainingSpells = this._filterByBasicProperties(remainingSpells, filters);
-    remainingSpells = this._filterByRange(remainingSpells, filters);
-    remainingSpells = this._filterByDamageAndConditions(remainingSpells, filters);
-    remainingSpells = this._filterBySpecialProperties(remainingSpells, filters);
-    log(3, 'Final spells count:', remainingSpells.length);
-    return { spells: remainingSpells, totalFiltered: remainingSpells.length };
+    return log(
+      4,
+      'SpellbookFilterHelper Filter Available Spells',
+      () => {
+        const filters = filterState || this.getFilterState();
+        log(3, 'Beginning Filtering:', selectedSpellUUIDs.size, 'selected spells out of', availableSpells.length, 'total available');
+
+        let remainingSpells = [...availableSpells];
+
+        // Apply filters without individual timing (to avoid return value issues)
+        remainingSpells = this._filterBySelectedList(remainingSpells, selectedSpellUUIDs, isSpellInSelectedList);
+        log(4, 'After Selected List Filter:', remainingSpells?.length || 'ERROR');
+
+        remainingSpells = this._filterBySource(remainingSpells, filters);
+        log(4, 'After Source Filter:', remainingSpells?.length || 'ERROR');
+
+        remainingSpells = this._filterByBasicProperties(remainingSpells, filters);
+        log(4, 'After Basic Properties Filter:', remainingSpells?.length || 'ERROR');
+
+        remainingSpells = this._filterByRange(remainingSpells, filters);
+        log(4, 'After Range Filter:', remainingSpells?.length || 'ERROR');
+
+        remainingSpells = this._filterByDamageAndConditions(remainingSpells, filters);
+        log(4, 'After Damage/Conditions Filter:', remainingSpells?.length || 'ERROR');
+
+        remainingSpells = this._filterBySpecialProperties(remainingSpells, filters);
+        log(4, 'After Special Properties Filter:', remainingSpells?.length || 'ERROR');
+
+        log(3, 'Final spells count:', remainingSpells?.length);
+        return { spells: remainingSpells, totalFiltered: remainingSpells?.length || 0 };
+      },
+      {
+        context: {
+          totalSpells: availableSpells.length,
+          selectedSpells: selectedSpellUUIDs.size,
+          hasFilters: Object.values(filterState || {}).some((v) => v && v !== '' && v !== false)
+        }
+      }
+    );
   }
 
   /**
