@@ -120,7 +120,7 @@ async function migrateSpellListFolders() {
 }
 
 async function validateOwnershipLevels() {
-  const results = { processed: 0, errors: [], userDataFixed: 0, spellListsFixed: 0, packsFixed: 0, details: [] };
+  const results = { processed: 0, errors: [], userDataFixed: 0, spellListsFixed: 0, actorSpellbooksFixed: 0, packsFixed: 0, details: [] };
   log(3, 'Validating ownership levels for spell book documents...');
   try {
     const userDataResults = await validateUserDataOwnership();
@@ -133,6 +133,11 @@ async function validateOwnershipLevels() {
     results.processed += spellListResults.fixed;
     results.errors.push(...spellListResults.errors);
     results.details.push(...spellListResults.details);
+    const actorSpellbookResults = await validateActorSpellbookOwnership();
+    results.actorSpellbooksFixed = actorSpellbookResults.fixed;
+    results.processed += actorSpellbookResults.fixed;
+    results.errors.push(...actorSpellbookResults.errors);
+    results.details.push(...actorSpellbookResults.details);
     const packResults = await validatePackOwnership();
     results.packsFixed = packResults.fixed;
     results.processed += packResults.fixed;
@@ -222,6 +227,82 @@ async function validateSpellListOwnership() {
     log(1, 'Error validating spell list ownership:', error);
     results.errors.push(`Spell list ownership error: ${error.message}`);
   }
+  return results;
+}
+
+async function validateActorSpellbookOwnership() {
+  const results = { fixed: 0, errors: [], details: [] };
+  const pack = game.packs.get(MODULE.PACK.SPELLS);
+  if (!pack) {
+    results.errors.push('Spells pack not found');
+    return results;
+  }
+
+  try {
+    // Find the "Actor Spellbooks" folder using localization
+    const actorSpellbooksFolderName = game.i18n.localize('SPELLBOOK.Folders.ActorSpellbooks');
+    const actorSpellbooksFolder = pack.folders.find((f) => f.name === actorSpellbooksFolderName);
+
+    if (!actorSpellbooksFolder) {
+      return results;
+    }
+
+    // Get all documents in the pack and filter to Actor Spellbooks folder
+    const documents = await pack.getDocuments();
+    const folderDocuments = documents.filter((doc) => doc.folder?.id === actorSpellbooksFolder.id);
+
+    for (const doc of folderDocuments) {
+      // Check if it has pages property (journal entries)
+      if (!doc.pages) continue;
+
+      for (const page of doc.pages) {
+        const flags = page.flags?.[MODULE.ID];
+
+        // Check if this is an actor spellbook page
+        if (!flags?.isActorSpellbook || !flags?.actorId) continue;
+
+        const actorId = flags.actorId;
+        const classIdentifier = flags.classIdentifier || 'unknown';
+
+        // Find the actor
+        const actor = game.actors.get(actorId);
+        if (!actor) continue;
+
+        // Find the actor's owners (users with ownership level 3)
+        const actorOwnership = actor.ownership || {};
+        const ownerUserIds = Object.keys(actorOwnership).filter((userId) => userId !== 'default' && actorOwnership[userId] === 3);
+
+        if (ownerUserIds.length === 0) continue;
+
+        // Build the correct ownership object
+        const currentPageOwnership = page.ownership || {};
+        const correctPageOwnership = {
+          default: 0,
+          [game.user.id]: 3 // GM always gets access
+        };
+
+        // Add all actor owners
+        for (const ownerUserId of ownerUserIds) {
+          correctPageOwnership[ownerUserId] = 3;
+        }
+
+        // Update if ownership doesn't match
+        if (!isOwnershipEqual(currentPageOwnership, correctPageOwnership)) {
+          try {
+            await page.update({ ownership: correctPageOwnership });
+            results.fixed++;
+            const ownerNames = ownerUserIds.map((id) => game.users.get(id)?.name || id).join(', ');
+            results.details.push(`Fixed actor spellbook: ${actor.name} (${classIdentifier}) for user(s) ${ownerNames}`);
+          } catch (updateError) {
+            results.errors.push(`Failed to fix ${page.name}: ${updateError.message}`);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    results.errors.push(`Actor spellbook ownership error: ${error.message}`);
+  }
+
   return results;
 }
 
