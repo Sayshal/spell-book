@@ -210,19 +210,34 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @private
    */
   _prepareFilterContext(context) {
-    context.spellSources = managerHelpers.prepareSpellSources(this.availableSpells);
-    context.castingTimeOptions = managerHelpers.prepareCastingTimeOptions(this.availableSpells, this.filterState);
-    context.damageTypeOptions = managerHelpers.prepareDamageTypeOptions(this.filterState);
-    context.conditionOptions = managerHelpers.prepareConditionOptions(this.filterState);
-    const filteredData = this._filterAvailableSpells();
-    if (this.isEditing && this.selectionMode && filteredData.spells) {
-      filteredData.spells = filteredData.spells.map((spell) => {
-        spell.selectAddCheckboxHtml = this._createSpellSelectCheckbox(spell, 'add', this.selectedSpellsToAdd.has(spell.uuid));
-        return spell;
-      });
-    }
-    context.filteredSpells = filteredData;
-    context.filterFormElements = this._prepareFilterFormElements();
+    return log(
+      4,
+      'GM Manager Prepare Filter Context',
+      () => {
+        context.spellSources = managerHelpers.prepareSpellSources(this.availableSpells);
+        context.castingTimeOptions = managerHelpers.prepareCastingTimeOptions(this.availableSpells, this.filterState);
+        context.damageTypeOptions = managerHelpers.prepareDamageTypeOptions(this.filterState);
+        context.conditionOptions = managerHelpers.prepareConditionOptions(this.filterState);
+
+        const filteredData = this._filterAvailableSpells();
+
+        if (this.isEditing && this.selectionMode && filteredData.spells) {
+          filteredData.spells = filteredData.spells.map((spell) => {
+            spell.selectAddCheckboxHtml = this._createSpellSelectCheckbox(spell, 'add', this.selectedSpellsToAdd.has(spell.uuid));
+            return spell;
+          });
+        }
+
+        context.filteredSpells = filteredData;
+        context.filterFormElements = this._prepareFilterFormElements();
+      },
+      {
+        context: {
+          totalSpells: this.availableSpells?.length || 0,
+          isEditing: this.isEditing
+        }
+      }
+    );
   }
 
   /**
@@ -253,19 +268,43 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @returns {Promise<void>}
    */
   async loadData() {
-    try {
-      log(3, 'Loading spell lists for GM manager');
-      await managerHelpers.getValidCustomListMappings();
-      this.availableSpellLists = await managerHelpers.findCompendiumSpellLists(true);
-      this.availableSpellLists.sort((a, b) => a.name.localeCompare(b.name));
-      this.availableSpells = await managerHelpers.fetchAllCompendiumSpells();
-      await this.enrichAvailableSpells();
-    } catch (error) {
-      log(1, 'Error loading spell lists:', error);
-    } finally {
-      this.isLoading = false;
-      this.render(false);
-    }
+    return await log(
+      4,
+      'GM Manager Full Data Load',
+      async () => {
+        try {
+          log(3, 'Loading spell lists for GM manager');
+
+          await log(4, 'Valid Custom List Mappings', () => managerHelpers.getValidCustomListMappings());
+
+          this.availableSpellLists = await log(4, 'Compendium Spell Lists Discovery', () => managerHelpers.findCompendiumSpellLists(true));
+
+          log(
+            4,
+            'Spell Lists Sorting',
+            () => {
+              this.availableSpellLists.sort((a, b) => a.name.localeCompare(b.name));
+            },
+            { context: { listCount: this.availableSpellLists.length } }
+          );
+
+          this.availableSpells = await log(4, 'All Compendium Spells Fetch', () => managerHelpers.fetchAllCompendiumSpells());
+
+          await log(4, 'Available Spells Enrichment', () => this.enrichAvailableSpells());
+        } catch (error) {
+          log(1, 'Error loading spell lists:', error);
+        } finally {
+          this.isLoading = false;
+          this.render(false);
+        }
+      },
+      {
+        context: {
+          spellListCount: this.availableSpellLists?.length || 0,
+          spellCount: this.availableSpells?.length || 0
+        }
+      }
+    );
   }
 
   /**
@@ -273,11 +312,19 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @returns {Promise<void>}
    */
   async enrichAvailableSpells() {
-    if (!this.availableSpells.length) return;
-    log(3, 'Enriching available spells with icons');
-    for (let spell of this.availableSpells) {
-      spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
-    }
+    return await log(
+      4,
+      'Available Spells Icon Enrichment',
+      async () => {
+        if (!this.availableSpells.length) return;
+        log(3, 'Enriching available spells with icons');
+
+        for (let spell of this.availableSpells) {
+          spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
+        }
+      },
+      { context: { spellCount: this.availableSpells?.length || 0 } }
+    );
   }
 
   /**
@@ -287,27 +334,50 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   async loadSpellDetails(spellUuids) {
     if (!this.selectedSpellList) return;
-    try {
-      this.selectedSpellList.isLoadingSpells = true;
-      this.render(false);
-      const spellDocs = await actorSpellUtils.fetchSpellDocuments(new Set(spellUuids), 9);
-      const spellLevels = actorSpellUtils.organizeSpellsByLevel(spellDocs, null);
-      for (const level of spellLevels) {
-        for (const spell of level.spells) {
-          spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
-          spell.formattedDetails = formattingUtils.formatSpellDetails(spell, false);
+
+    return await log(
+      4,
+      'Spell Details Loading',
+      async () => {
+        try {
+          this.selectedSpellList.isLoadingSpells = true;
+          this.render(false);
+
+          const spellDocs = await log(4, 'Spell Documents Fetch', () => actorSpellUtils.fetchSpellDocuments(new Set(spellUuids), 9), { context: { uuidCount: spellUuids.length } });
+
+          const spellLevels = await log(4, 'Spell Level Organization', () => actorSpellUtils.organizeSpellsByLevel(spellDocs, null));
+
+          await log(
+            4,
+            'Spell Details Enrichment',
+            () => {
+              for (const level of spellLevels) {
+                for (const spell of level.spells) {
+                  spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
+                  spell.formattedDetails = formattingUtils.formatSpellDetails(spell, false);
+                }
+              }
+            },
+            { context: { levelCount: spellLevels.length, totalSpells: spellDocs.length } }
+          );
+
+          this.selectedSpellList.spells = spellDocs;
+          this.selectedSpellList.spellsByLevel = spellLevels;
+          this.selectedSpellList.isLoadingSpells = false;
+          this.render(false);
+          log(3, `Loaded ${spellDocs.length} spells for selected spell list`);
+        } catch (error) {
+          log(1, 'Error loading spell details:', error);
+          this.selectedSpellList.isLoadingSpells = false;
+        }
+      },
+      {
+        context: {
+          spellListName: this.selectedSpellList?.name,
+          uuidCount: spellUuids.length
         }
       }
-      this.selectedSpellList.spells = spellDocs;
-      this.selectedSpellList.spellsByLevel = spellLevels;
-      this.selectedSpellList.isLoadingSpells = false;
-      this.render(false);
-      log(3, `Loaded ${spellDocs.length} spells for selected spell list`);
-    } catch (error) {
-      log(1, 'Error loading spell details:', error);
-      this.selectedSpellList.isLoadingSpells = false;
-      this.render(false);
-    }
+    );
   }
 
   /**
@@ -377,13 +447,37 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @private
    */
   _filterAvailableSpells() {
-    try {
-      const selectedSpellUUIDs = this.getSelectedSpellUUIDs();
-      return this.filterHelper.filterAvailableSpells(this.availableSpells, selectedSpellUUIDs, this.isSpellInSelectedList.bind(this), this.filterState);
-    } catch (error) {
-      log(1, 'Error filtering available spells:', error);
-      return { spells: [], totalFiltered: 0 };
-    }
+    return log(
+      4,
+      'GM Manager Filter Available Spells',
+      () => {
+        // Add debug info
+        log(4, 'Filter called - Edit mode check:', {
+          isEditing: this.isEditing,
+          selectionMode: this.selectionMode
+        });
+
+        if (!this.isEditing) {
+          log(4, 'Not in edit mode - skipping filtering');
+          return { spells: [], totalFiltered: 0 };
+        }
+
+        try {
+          const selectedSpellUUIDs = this.getSelectedSpellUUIDs();
+          return this.filterHelper.filterAvailableSpells(this.availableSpells, selectedSpellUUIDs, this.isSpellInSelectedList.bind(this), this.filterState);
+        } catch (error) {
+          log(1, 'Error filtering available spells:', error);
+          return { spells: [], totalFiltered: 0 };
+        }
+      },
+      {
+        context: {
+          totalSpells: this.availableSpells?.length || 0,
+          selectedSpells: this.getSelectedSpellUUIDs?.()?.size || 0,
+          isEditing: this.isEditing
+        }
+      }
+    );
   }
 
   /**
@@ -633,7 +727,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Set up dropdown filter listeners
+   * Set up dropdown filter listeners with debouncing
    * @private
    */
   _setupDropdownFilters() {
@@ -648,14 +742,23 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       { selector: 'select[name="spell-concentration"]', property: 'concentration' },
       { selector: 'select[name="spell-materialComponents"]', property: 'materialComponents' }
     ];
+
     for (const { selector, property } of dropdownSelectors) {
       const element = this.element.querySelector(selector);
       if (element) {
         element.addEventListener('change', (event) => {
           if (this.filterState[property] !== event.target.value) {
             this.filterState[property] = event.target.value;
-            if (property === 'level' || property === 'source') this._refreshFilteredContent();
-            else this.applyFilters();
+
+            // Add debouncing to all dropdown changes
+            clearTimeout(this._dropdownFilterTimer);
+            this._dropdownFilterTimer = setTimeout(() => {
+              if (property === 'level' || property === 'source') {
+                this._refreshFilteredContent();
+              } else {
+                this.applyFilters();
+              }
+            }, 150); // 150ms debounce for dropdowns
           }
         });
       }
@@ -747,7 +850,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @private
    */
   _refreshFilteredContent() {
-    this.render(false, { parts: ['availableSpells'] });
+    return log(4, 'GM Manager Filter Content Refresh', () => {
+      this.render(false, { parts: ['availableSpells'] });
+    });
   }
 
   // ========================================
