@@ -1,6 +1,7 @@
 import { createAPI } from './api.mjs';
 import { MODULE, TEMPLATES } from './constants.mjs';
 import { invalidateSpellCache } from './helpers/spell-cache.mjs';
+import { preloadSpellData } from './helpers/spell-data-preloader.mjs';
 import { SpellDescriptionInjection } from './helpers/spell-description-injection.mjs';
 import { registerDnD5eIntegration } from './integrations/dnd5e.mjs';
 import { registerTidy5eIntegration } from './integrations/tidy5e.mjs';
@@ -26,6 +27,7 @@ Hooks.once('ready', async function () {
   await MacroManager.initializeMacros();
   await UserSpellDataManager.initializeUserSpellData();
   await SpellUsageTracker.initialize();
+  if (game.user.isGM) await preloadSpellData();
 });
 
 Hooks.on('createItem', (item) => {

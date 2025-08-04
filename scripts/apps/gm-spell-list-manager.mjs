@@ -3,6 +3,7 @@ import * as actorSpellUtils from '../helpers/actor-spells.mjs';
 import * as managerHelpers from '../helpers/compendium-management.mjs';
 import * as formElements from '../helpers/form-elements.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
+import { getPreloadedData } from '../helpers/spell-data-preloader.mjs';
 import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { SpellbookFilterHelper } from '../helpers/ui/spellbook-filters.mjs';
 import { log } from '../logger.mjs';
@@ -273,24 +274,40 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       'GM Manager Full Data Load',
       async () => {
         try {
-          log(3, 'Loading spell lists for GM manager');
+          // Check if we have preloaded data
+          const preloadedData = getPreloadedData();
 
-          await log(4, 'Valid Custom List Mappings', () => managerHelpers.getValidCustomListMappings());
+          if (preloadedData) {
+            // Use preloaded data - INSTANT loading!
+            log(3, 'Using preloaded spell data for instant loading');
 
-          this.availableSpellLists = await log(4, 'Compendium Spell Lists Discovery', () => managerHelpers.findCompendiumSpellLists(true));
+            this.availableSpellLists = preloadedData.spellLists;
+            this.availableSpells = preloadedData.enrichedSpells;
 
-          log(
-            4,
-            'Spell Lists Sorting',
-            () => {
-              this.availableSpellLists.sort((a, b) => a.name.localeCompare(b.name));
-            },
-            { context: { listCount: this.availableSpellLists.length } }
-          );
+            log(3, `Loaded ${this.availableSpellLists.length} spell lists and ${this.availableSpells.length} spells from cache`);
+          } else {
+            // Fallback to regular loading
+            log(3, 'Preloaded data not available, loading on demand...');
 
-          this.availableSpells = await log(4, 'All Compendium Spells Fetch', () => managerHelpers.fetchAllCompendiumSpells());
+            log(3, 'Loading spell lists for GM manager');
 
-          await log(4, 'Available Spells Enrichment', () => this.enrichAvailableSpells());
+            await log(4, 'Valid Custom List Mappings', () => managerHelpers.getValidCustomListMappings());
+
+            this.availableSpellLists = await log(4, 'Compendium Spell Lists Discovery', () => managerHelpers.findCompendiumSpellLists(true));
+
+            log(
+              4,
+              'Spell Lists Sorting',
+              () => {
+                this.availableSpellLists.sort((a, b) => a.name.localeCompare(b.name));
+              },
+              { context: { listCount: this.availableSpellLists.length } }
+            );
+
+            this.availableSpells = await log(4, 'All Compendium Spells Fetch', () => managerHelpers.fetchAllCompendiumSpells());
+
+            await this.enrichAvailableSpells();
+          }
         } catch (error) {
           log(1, 'Error loading spell lists:', error);
         } finally {
@@ -447,37 +464,31 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @private
    */
   _filterAvailableSpells() {
-    return log(
-      4,
-      'GM Manager Filter Available Spells',
-      () => {
-        // Add debug info
-        log(4, 'Filter called - Edit mode check:', {
-          isEditing: this.isEditing,
-          selectionMode: this.selectionMode
-        });
+    const startTime = performance.now();
 
-        if (!this.isEditing) {
-          log(4, 'Not in edit mode - skipping filtering');
-          return { spells: [], totalFiltered: 0 };
-        }
+    // Add debug info
+    log(4, 'Filter called - Edit mode check:', {
+      isEditing: this.isEditing,
+      selectionMode: this.selectionMode
+    });
 
-        try {
-          const selectedSpellUUIDs = this.getSelectedSpellUUIDs();
-          return this.filterHelper.filterAvailableSpells(this.availableSpells, selectedSpellUUIDs, this.isSpellInSelectedList.bind(this), this.filterState);
-        } catch (error) {
-          log(1, 'Error filtering available spells:', error);
-          return { spells: [], totalFiltered: 0 };
-        }
-      },
-      {
-        context: {
-          totalSpells: this.availableSpells?.length || 0,
-          selectedSpells: this.getSelectedSpellUUIDs?.()?.size || 0,
-          isEditing: this.isEditing
-        }
-      }
-    );
+    if (!this.isEditing) {
+      log(4, 'Not in edit mode - skipping filtering');
+      return { spells: [], totalFiltered: 0 };
+    }
+
+    try {
+      const selectedSpellUUIDs = this.getSelectedSpellUUIDs();
+      const result = this.filterHelper.filterAvailableSpells(this.availableSpells, selectedSpellUUIDs, this.isSpellInSelectedList.bind(this), this.filterState);
+
+      const duration = performance.now() - startTime;
+      log(4, `GM Manager Filter Available Spells completed in ${duration.toFixed(2)}ms`);
+
+      return result;
+    } catch (error) {
+      log(1, 'Error filtering available spells:', error);
+      return { spells: [], totalFiltered: 0 };
+    }
   }
 
   /**
@@ -531,18 +542,29 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    */
   applyFilters() {
     if (this.isUpdatingCheckboxes) return;
+
     const filteredData = this._filterAvailableSpells();
+
+    // Add safety check
+    if (!filteredData || !filteredData.spells) {
+      log(1, 'ERROR: filteredData is invalid:', filteredData);
+      return;
+    }
+
     const visibleUUIDs = new Set(filteredData.spells.map((spell) => spell.uuid));
     const spellItems = this.element.querySelectorAll('.available-spells .spell-item');
     let visibleCount = 0;
+
     spellItems.forEach((item) => {
       const uuid = item.dataset.uuid;
       const isVisible = visibleUUIDs.has(uuid);
       item.style.display = isVisible ? '' : 'none';
       if (isVisible) visibleCount++;
     });
+
     const noResults = this.element.querySelector('.no-spells');
     if (noResults) noResults.style.display = visibleCount > 0 ? 'none' : 'block';
+
     const countDisplay = this.element.querySelector('.filter-count');
     if (countDisplay) countDisplay.textContent = `${visibleCount} spells`;
   }

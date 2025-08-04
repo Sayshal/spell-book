@@ -83,6 +83,7 @@ export function createAPI() {
       migrations: {
         forceMigration
       },
+      preloadedData: null,
 
       /**
        * Open spell book for a specific actor

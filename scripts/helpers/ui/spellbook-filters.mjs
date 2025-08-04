@@ -71,45 +71,74 @@ export class SpellbookFilterHelper {
    * @returns {Object} Filtered spells with count
    */
   filterAvailableSpells(availableSpells, selectedSpellUUIDs, isSpellInSelectedList, filterState = null) {
-    return log(
-      4,
-      'SpellbookFilterHelper Filter Available Spells',
-      () => {
-        const filters = filterState || this.getFilterState();
-        log(3, 'Beginning Filtering:', selectedSpellUUIDs.size, 'selected spells out of', availableSpells.length, 'total available');
+    const startTime = performance.now();
 
-        let remainingSpells = [...availableSpells];
+    try {
+      const filters = filterState || this.getFilterState();
+      log(3, 'Beginning Filtering:', selectedSpellUUIDs.size, 'selected spells out of', availableSpells.length, 'total available');
 
-        // Apply filters without individual timing (to avoid return value issues)
-        remainingSpells = this._filterBySelectedList(remainingSpells, selectedSpellUUIDs, isSpellInSelectedList);
-        log(4, 'After Selected List Filter:', remainingSpells?.length || 'ERROR');
+      let remainingSpells = [...availableSpells];
 
-        remainingSpells = this._filterBySource(remainingSpells, filters);
-        log(4, 'After Source Filter:', remainingSpells?.length || 'ERROR');
+      // Apply filters with safety checks
+      remainingSpells = this._filterBySelectedList(remainingSpells, selectedSpellUUIDs, isSpellInSelectedList);
+      if (!Array.isArray(remainingSpells)) {
+        log(1, 'ERROR: _filterBySelectedList returned non-array:', typeof remainingSpells);
+        return { spells: [], totalFiltered: 0 };
+      }
+      log(4, 'After Selected List Filter:', remainingSpells.length);
 
-        remainingSpells = this._filterByBasicProperties(remainingSpells, filters);
-        log(4, 'After Basic Properties Filter:', remainingSpells?.length || 'ERROR');
+      remainingSpells = this._filterBySource(remainingSpells, filters);
+      if (!Array.isArray(remainingSpells)) {
+        log(1, 'ERROR: _filterBySource returned non-array:', typeof remainingSpells);
+        return { spells: [], totalFiltered: 0 };
+      }
+      log(4, 'After Source Filter:', remainingSpells.length);
 
-        remainingSpells = this._filterByRange(remainingSpells, filters);
-        log(4, 'After Range Filter:', remainingSpells?.length || 'ERROR');
+      remainingSpells = this._filterByBasicProperties(remainingSpells, filters);
+      if (!Array.isArray(remainingSpells)) {
+        log(1, 'ERROR: _filterByBasicProperties returned non-array:', typeof remainingSpells);
+        return { spells: [], totalFiltered: 0 };
+      }
 
-        remainingSpells = this._filterByDamageAndConditions(remainingSpells, filters);
-        log(4, 'After Damage/Conditions Filter:', remainingSpells?.length || 'ERROR');
+      remainingSpells = this._filterByRange(remainingSpells, filters);
+      if (!Array.isArray(remainingSpells)) {
+        log(1, 'ERROR: _filterByRange returned non-array:', typeof remainingSpells);
+        return { spells: [], totalFiltered: 0 };
+      }
 
-        remainingSpells = this._filterBySpecialProperties(remainingSpells, filters);
-        log(4, 'After Special Properties Filter:', remainingSpells?.length || 'ERROR');
+      remainingSpells = this._filterByDamageAndConditions(remainingSpells, filters);
+      if (!Array.isArray(remainingSpells)) {
+        log(1, 'ERROR: _filterByDamageAndConditions returned non-array:', typeof remainingSpells);
+        return { spells: [], totalFiltered: 0 };
+      }
 
-        log(3, 'Final spells count:', remainingSpells?.length);
-        return { spells: remainingSpells, totalFiltered: remainingSpells?.length || 0 };
-      },
-      {
+      remainingSpells = this._filterBySpecialProperties(remainingSpells, filters);
+      if (!Array.isArray(remainingSpells)) {
+        log(1, 'ERROR: _filterBySpecialProperties returned non-array:', typeof remainingSpells);
+        return { spells: [], totalFiltered: 0 };
+      }
+
+      log(3, 'Final spells count:', remainingSpells.length);
+
+      const result = { spells: remainingSpells, totalFiltered: remainingSpells.length };
+
+      // Manual timing log
+      const duration = performance.now() - startTime;
+      log(4, `SpellbookFilterHelper Filter Available Spells completed in ${duration.toFixed(2)}ms`, {
         context: {
           totalSpells: availableSpells.length,
           selectedSpells: selectedSpellUUIDs.size,
-          hasFilters: Object.values(filterState || {}).some((v) => v && v !== '' && v !== false)
+          hasFilters: Object.values(filterState || {}).some((v) => v && v !== '' && v !== false),
+          resultCount: remainingSpells.length
         }
-      }
-    );
+      });
+
+      return result;
+    } catch (error) {
+      const duration = performance.now() - startTime;
+      log(1, `ERROR in SpellbookFilterHelper Filter Available Spells after ${duration.toFixed(2)}ms:`, error);
+      return { spells: [], totalFiltered: 0 };
+    }
   }
 
   /**
