@@ -274,35 +274,54 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       'GM Manager Full Data Load',
       async () => {
         try {
-          // Check if we have preloaded data
+          // Step 1: Load spell lists (always need all of them)
+          await log(4, 'Valid Custom List Mappings', () => managerHelpers.getValidCustomListMappings());
+
+          this.availableSpellLists = await log(4, 'Compendium Spell Lists Discovery', () => managerHelpers.findCompendiumSpellLists(true));
+
+          log(
+            4,
+            'Spell Lists Sorting',
+            () => {
+              this.availableSpellLists.sort((a, b) => a.name.localeCompare(b.name));
+            },
+            { context: { listCount: this.availableSpellLists.length } }
+          );
+
+          // Step 2: Handle spells efficiently - use preloaded as starting point
           const preloadedData = getPreloadedData();
 
-          if (preloadedData) {
-            // Use preloaded data - INSTANT loading!
-            log(3, 'Using preloaded spell data for instant loading');
+          if (preloadedData && preloadedData.enrichedSpells.length > 0) {
+            log(3, `Starting with ${preloadedData.enrichedSpells.length} preloaded spells`);
 
-            this.availableSpellLists = preloadedData.spellLists;
-            this.availableSpells = preloadedData.enrichedSpells;
+            // Start with preloaded spells
+            this.availableSpells = [...preloadedData.enrichedSpells];
 
-            log(3, `Loaded ${this.availableSpellLists.length} spell lists and ${this.availableSpells.length} spells from cache`);
+            // Get all spells to identify what's missing
+            const allSpells = await log(4, 'All Compendium Spells Fetch', () => managerHelpers.fetchAllCompendiumSpells());
+
+            // Create a Set of preloaded spell UUIDs for fast lookup
+            const preloadedUuids = new Set(this.availableSpells.map((s) => s.uuid));
+
+            // Find missing spells
+            const missingSpells = allSpells.filter((spell) => !preloadedUuids.has(spell.uuid));
+
+            log(3, `Found ${missingSpells.length} missing spells to load`);
+
+            if (missingSpells.length > 0) {
+              // Enrich the missing spells
+              for (let spell of missingSpells) {
+                spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
+              }
+
+              // Add missing spells to complete the set
+              this.availableSpells.push(...missingSpells);
+            }
+
+            log(3, `GM Manager loaded: ${this.availableSpells.length} total spells (${preloadedData.enrichedSpells.length} preloaded + ${missingSpells.length} additional)`);
           } else {
-            // Fallback to regular loading
-            log(3, 'Preloaded data not available, loading on demand...');
-
-            log(3, 'Loading spell lists for GM manager');
-
-            await log(4, 'Valid Custom List Mappings', () => managerHelpers.getValidCustomListMappings());
-
-            this.availableSpellLists = await log(4, 'Compendium Spell Lists Discovery', () => managerHelpers.findCompendiumSpellLists(true));
-
-            log(
-              4,
-              'Spell Lists Sorting',
-              () => {
-                this.availableSpellLists.sort((a, b) => a.name.localeCompare(b.name));
-              },
-              { context: { listCount: this.availableSpellLists.length } }
-            );
+            // No preloaded data - load everything from scratch
+            log(3, 'No preloaded data available, loading all spells from scratch');
 
             this.availableSpells = await log(4, 'All Compendium Spells Fetch', () => managerHelpers.fetchAllCompendiumSpells());
 
