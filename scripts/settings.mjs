@@ -336,4 +336,19 @@ export function registerSettings() {
       }
     }
   });
+
+  game.settings.register(MODULE.ID, SETTINGS.SPELL_PRELOADING_MODE, {
+    name: 'SPELLBOOK.Settings.PreloadingMode.Name',
+    hint: 'SPELLBOOK.Settings.PreloadingMode.Hint',
+    scope: 'world',
+    config: true,
+    type: String,
+    choices: {
+      smart: 'SPELLBOOK.Settings.PreloadingMode.Smart',
+      all: 'SPELLBOOK.Settings.PreloadingMode.All',
+      off: 'SPELLBOOK.Settings.PreloadingMode.Off'
+    },
+    default: 'smart',
+    requiresReload: true
+  });
 }

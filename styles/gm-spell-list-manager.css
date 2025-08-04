@@ -759,8 +759,6 @@
   }
 
   .empty-state {
-    max-width: 80%;
-    padding: 2rem;
     color: var(--spell-book-manager-text-tertiary);
     font-style: italic;
     text-align: center;

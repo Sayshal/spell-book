@@ -233,5 +233,6 @@ export const SETTINGS = {
   SPELL_COMPARISON_MAX: 'spellComparisonMax',
   SPELL_NOTES_DESC_INJECTION: 'injectNotesIntoDescriptions',
   SPELL_NOTES_LENGTH: 'spellNotesMaxLength',
+  SPELL_PRELOADING_MODE: 'spellPreloadingMode',
   SPELLCASTING_RULE_SET: 'spellcastingRuleSet'
 };
