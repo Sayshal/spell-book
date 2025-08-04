@@ -1,6 +1,5 @@
 import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
-import { preloadSpellDataForActor } from '../helpers/spell-cache.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
 import { log } from '../logger.mjs';
 
@@ -20,9 +19,7 @@ export function registerTidy5eIntegration() {
 function onTidy5eRender(sheet, element, data) {
   const actor = data.actor;
   if (!canAddTidySpellbookButton(actor, element)) return;
-  preloadSpellDataForActor(actor).catch((error) => {
-    log(1, `Failed to preload spell data for ${actor.name}:`, error);
-  });
+
   const htmlElement = genericUtils.getHtmlElement(element);
   const spellsTab = htmlElement.querySelector('.spellbook');
   if (!spellsTab) return;
@@ -41,9 +38,6 @@ function onTidy5eRender(sheet, element, data) {
 function onTidy5eQuadroneRender(sheet, element, data) {
   const actor = data.actor;
   if (!canAddTidySpellbookButton(actor, element)) return;
-  preloadSpellDataForActor(actor).catch((error) => {
-    log(1, `Failed to preload spell data for ${actor.name}:`, error);
-  });
   const htmlElement = genericUtils.getHtmlElement(element);
   const spellsTab = htmlElement.querySelector('.tidy-tab.spellbook');
   if (!spellsTab) return;

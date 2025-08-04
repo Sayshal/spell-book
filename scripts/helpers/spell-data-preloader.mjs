@@ -280,3 +280,48 @@ export function hasValidPreloadedData() {
 export function getPreloadedData() {
   return hasValidPreloadedData() ? globalThis.SPELLBOOK.preloadedData : null;
 }
+
+/**
+ * Invalidate spell cache when relevant compendium content changes
+ */
+export function invalidateSpellListCache() {
+  if (globalThis.SPELLBOOK?.preloadedData) {
+    log(3, 'Invalidating preloaded spell data due to compendium changes');
+    globalThis.SPELLBOOK.preloadedData = null;
+    if (game.user.isGM) {
+      setTimeout(async () => {
+        const preloadMode = game.settings.get(MODULE.ID, SETTINGS.SPELL_PRELOADING_MODE);
+        if (preloadMode !== 'off') await preloadSpellData();
+      }, 1000);
+    }
+  }
+}
+
+/**
+ * Check if a journal entry contains spell lists that would affect our cache
+ * @param {JournalEntry} journal - The journal to check
+ * @returns {boolean} Whether this journal affects spell lists
+ */
+export function hasRelevantSpellContent(journal) {
+  if (!journal.pages) return false;
+  return journal.pages.some((page) => {
+    if (page.type !== 'spells') return false;
+    if (page.system?.type === 'other') return false;
+    return true;
+  });
+}
+
+/**
+ * Check if a journal page should trigger cache invalidation
+ * @param {JournalEntryPage} page - The journal page
+ * @returns {boolean} Whether this page affects our spell lists
+ */
+export function shouldInvalidateCacheForPage(page) {
+  if (page.type !== 'spells') return false;
+  if (page.system?.type === 'other') return false;
+  const journal = page.parent;
+  if (!journal?.pack) return false;
+  const pack = game.packs.get(journal.pack);
+  if (!pack || pack.metadata.type !== 'JournalEntry') return false;
+  return managerHelpers.shouldIndexCompendium(pack);
+}
