@@ -211,34 +211,45 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @private
    */
   _prepareFilterContext(context) {
-    return log(
-      4,
-      'GM Manager Prepare Filter Context',
-      () => {
-        context.spellSources = managerHelpers.prepareSpellSources(this.availableSpells);
-        context.castingTimeOptions = managerHelpers.prepareCastingTimeOptions(this.availableSpells, this.filterState);
-        context.damageTypeOptions = managerHelpers.prepareDamageTypeOptions(this.filterState);
-        context.conditionOptions = managerHelpers.prepareConditionOptions(this.filterState);
+    const startTime = performance.now();
+    let stepTime = performance.now();
+    context.spellSources = managerHelpers.prepareSpellSources(this.availableSpells);
+    log(4, `Prepare Spell Sources: ${(performance.now() - stepTime).toFixed(2)}ms`);
+    stepTime = performance.now();
+    context.castingTimeOptions = managerHelpers.prepareCastingTimeOptions(this.availableSpells, this.filterState);
+    log(4, `Prepare Casting Time Options: ${(performance.now() - stepTime).toFixed(2)}ms`);
+    stepTime = performance.now();
+    context.damageTypeOptions = managerHelpers.prepareDamageTypeOptions(this.filterState);
+    log(4, `Prepare Damage Type Options: ${(performance.now() - stepTime).toFixed(2)}ms`);
+    stepTime = performance.now();
+    context.conditionOptions = managerHelpers.prepareConditionOptions(this.filterState);
+    log(4, `Prepare Condition Options: ${(performance.now() - stepTime).toFixed(2)}ms`);
+    stepTime = performance.now();
+    const filteredData = this._filterAvailableSpells();
+    log(4, `Filter Available Spells for Context: ${(performance.now() - stepTime).toFixed(2)}ms`);
+    if (this.isEditing && this.selectionMode && filteredData.spells) {
+      stepTime = performance.now();
+      filteredData.spells = filteredData.spells.map((spell) => {
+        spell.selectAddCheckboxHtml = this._createSpellSelectCheckbox(spell, 'add', this.selectedSpellsToAdd.has(spell.uuid));
+        return spell;
+      });
+      log(4, `Generate Selection Checkboxes: ${(performance.now() - stepTime).toFixed(2)}ms`);
+    }
 
-        const filteredData = this._filterAvailableSpells();
+    context.filteredSpells = filteredData;
 
-        if (this.isEditing && this.selectionMode && filteredData.spells) {
-          filteredData.spells = filteredData.spells.map((spell) => {
-            spell.selectAddCheckboxHtml = this._createSpellSelectCheckbox(spell, 'add', this.selectedSpellsToAdd.has(spell.uuid));
-            return spell;
-          });
-        }
+    stepTime = performance.now();
+    context.filterFormElements = this._prepareFilterFormElements();
+    log(4, `Prepare Filter Form Elements: ${(performance.now() - stepTime).toFixed(2)}ms`);
 
-        context.filteredSpells = filteredData;
-        context.filterFormElements = this._prepareFilterFormElements();
-      },
-      {
-        context: {
-          totalSpells: this.availableSpells?.length || 0,
-          isEditing: this.isEditing
-        }
+    const totalTime = performance.now() - startTime;
+    log(4, `GM Manager Prepare Filter Context Total: ${totalTime.toFixed(2)}ms`, {
+      context: {
+        totalSpells: this.availableSpells?.length || 0,
+        isEditing: this.isEditing,
+        filterCount: Object.keys(this.filterState).length
       }
-    );
+    });
   }
 
   /**
@@ -788,19 +799,46 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       const element = this.element.querySelector(selector);
       if (element) {
         element.addEventListener('change', (event) => {
-          if (this.filterState[property] !== event.target.value) {
-            this.filterState[property] = event.target.value;
+          // Measure from click to paint completion
+          performance.mark('dropdown-interaction-start');
 
-            // Add debouncing to all dropdown changes
+          const eventStartTime = performance.now();
+
+          if (this.filterState[property] !== event.target.value) {
+            const stateUpdateTime = performance.now();
+            this.filterState[property] = event.target.value;
+            log(4, `Filter State Update - ${property}: ${(performance.now() - stateUpdateTime).toFixed(2)}ms`);
+
             clearTimeout(this._dropdownFilterTimer);
             this._dropdownFilterTimer = setTimeout(() => {
+              const actionStartTime = performance.now();
               if (property === 'level' || property === 'source') {
-                this._refreshFilteredContent();
+                log(4, `Refresh Filtered Content - ${property}`, () => {
+                  this._refreshFilteredContent();
+                });
               } else {
-                this.applyFilters();
+                log(4, `Apply Filters - ${property}`, () => {
+                  this.applyFilters();
+                });
               }
-            }, 150); // 150ms debounce for dropdowns
+
+              // Measure total time including browser paint
+              requestAnimationFrame(() => {
+                performance.mark('dropdown-interaction-end');
+                performance.measure('dropdown-total-time', 'dropdown-interaction-start', 'dropdown-interaction-end');
+                const measures = performance.getEntriesByName('dropdown-total-time');
+                if (measures.length > 0) {
+                  log(4, `Total Browser Dropdown Time - ${property}: ${measures[0].duration.toFixed(2)}ms`);
+                }
+                performance.clearMarks();
+                performance.clearMeasures();
+              });
+
+              log(4, `Total Dropdown Action - ${property}: ${(performance.now() - actionStartTime).toFixed(2)}ms`);
+            }, 150);
           }
+
+          log(4, `Dropdown Change Handler - ${property}: ${(performance.now() - eventStartTime).toFixed(2)}ms`);
         });
       }
     }
@@ -2252,21 +2290,37 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
   /** @inheritdoc */
   _onRender(context, options) {
+    const onRenderStartTime = performance.now();
+
     super._onRender(context, options);
+
     if (this.isLoading) {
+      log(4, `OnRender - Loading State: ${(performance.now() - onRenderStartTime).toFixed(2)}ms`);
       this.loadData();
       return;
     }
-    this.setupFilterListeners();
-    this.setupMultiSelectListeners();
-    this.applyCollapsedLevels();
-    this.applyCollapsedFolders();
-  }
 
-  /** @inheritdoc */
-  _configureRenderOptions(options) {
-    super._configureRenderOptions(options);
-    options.parts = ['container', 'spellLists', 'listContent', 'availableSpells', 'footer'];
+    const setupStartTime = performance.now();
+
+    log(4, 'Setup Filter Listeners', () => {
+      this.setupFilterListeners();
+    });
+
+    log(4, 'Setup Multi-Select Listeners', () => {
+      this.setupMultiSelectListeners();
+    });
+
+    log(4, 'Apply Collapsed Levels', () => {
+      this.applyCollapsedLevels();
+    });
+
+    log(4, 'Apply Collapsed Folders', () => {
+      this.applyCollapsedFolders();
+    });
+
+    const setupEndTime = performance.now();
+    log(4, `OnRender - Setup Phase: ${(setupEndTime - setupStartTime).toFixed(2)}ms`);
+    log(4, `OnRender - Total Time: ${(setupEndTime - onRenderStartTime).toFixed(2)}ms`);
   }
 
   /**
