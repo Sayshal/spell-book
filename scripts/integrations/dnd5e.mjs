@@ -3,7 +3,6 @@ import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
 import { SpellAnalyticsDashboard } from '../apps/spell-analytics-dashboard.mjs';
 import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
-import { preloadSpellDataForActor } from '../helpers/spell-cache.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
 import { log } from '../logger.mjs';
 import { SpellManager } from '../managers/spell-manager.mjs';
@@ -33,9 +32,7 @@ export function registerDnD5eIntegration() {
 function addSpellbookButton(app, html, data) {
   const actor = data.actor;
   if (!canAddSpellbookButton(actor, html)) return;
-  preloadSpellDataForActor(actor).catch((error) => {
-    log(1, `Failed to preload spell data for ${actor.name}:`, error);
-  });
+
   const htmlElement = genericUtils.getHtmlElement(html);
   let spellsTab, controlsList;
   if (foundry.utils.isNewerVersion(game.version, '12.999')) {

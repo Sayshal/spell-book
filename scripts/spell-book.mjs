@@ -1,7 +1,6 @@
 import { createAPI } from './api.mjs';
 import { MODULE, TEMPLATES } from './constants.mjs';
-import { invalidateSpellCache } from './helpers/spell-cache.mjs';
-import { preloadSpellData } from './helpers/spell-data-preloader.mjs';
+import * as preloaderUtils from './helpers/spell-data-preloader.mjs';
 import { SpellDescriptionInjection } from './helpers/spell-description-injection.mjs';
 import { registerDnD5eIntegration } from './integrations/dnd5e.mjs';
 import { registerTidy5eIntegration } from './integrations/tidy5e.mjs';
@@ -27,19 +26,19 @@ Hooks.once('ready', async function () {
   await MacroManager.initializeMacros();
   await UserSpellDataManager.initializeUserSpellData();
   await SpellUsageTracker.initialize();
-  if (game.user.isGM) await preloadSpellData();
+  if (game.user.isGM) await preloaderUtils.preloadSpellData();
 });
 
-Hooks.on('createItem', (item) => {
-  if (item.type === 'spell' && item.actor?.type === 'character') {
-    invalidateSpellCache(item.actor.id);
-  }
+Hooks.on('createJournalEntryPage', (page, options, userId) => {
+  if (preloaderUtils.shouldInvalidateCacheForPage(page)) preloaderUtils.invalidateSpellListCache();
 });
 
-Hooks.on('deleteItem', (item) => {
-  if (item.type === 'spell' && item.actor?.type === 'character') {
-    invalidateSpellCache(item.actor.id);
-  }
+Hooks.on('updateJournalEntryPage', (page, changes, options, userId) => {
+  if (preloaderUtils.shouldInvalidateCacheForPage(page)) if (changes.system?.spells || changes.system?.identifier || changes.flags) preloaderUtils.invalidateSpellListCache();
+});
+
+Hooks.on('deleteJournalEntryPage', (page, options, userId) => {
+  if (preloaderUtils.shouldInvalidateCacheForPage(page)) preloaderUtils.invalidateSpellListCache();
 });
 
 /**

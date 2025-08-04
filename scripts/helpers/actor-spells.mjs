@@ -1,5 +1,5 @@
 import { log } from '../logger.mjs';
-import { getCachedSpells } from './spell-cache.mjs';
+import { getPreloadedData } from './spell-data-preloader.mjs';
 
 /**
  * Fast spell document fetching using getIndex instead of getDocument
@@ -9,9 +9,10 @@ import { getCachedSpells } from './spell-cache.mjs';
  * @returns {Promise<Array>} - Array of spell documents
  */
 export async function fetchSpellDocuments(spellUuids, maxSpellLevel, actorId = null) {
-  if (actorId) {
-    const cachedSpells = await getCachedSpells(actorId, spellUuids, maxSpellLevel);
-    if (cachedSpells) return cachedSpells;
+  const preloadedData = getPreloadedData();
+  if (preloadedData && preloadedData.enrichedSpells.length > 0) {
+    const matchingSpells = preloadedData.enrichedSpells.filter((spell) => spellUuids.has(spell.uuid) && spell.system?.level <= maxSpellLevel);
+    if (matchingSpells.length === spellUuids.size) return matchingSpells;
   }
   const compendiumGroups = new Map();
   const nonCompendiumUuids = [];
