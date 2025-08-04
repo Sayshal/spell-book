@@ -71,98 +71,44 @@ export class SpellbookFilterHelper {
    * @returns {Object} Filtered spells with count
    */
   filterAvailableSpells(availableSpells, selectedSpellUUIDs, isSpellInSelectedList, filterState = null) {
-    const startTime = performance.now();
-
     try {
-      const filtersStartTime = performance.now();
       const filters = filterState || this.getFilterState();
-      const filtersEndTime = performance.now();
-      log(4, `Get Filter State: ${(filtersEndTime - filtersStartTime).toFixed(2)}ms`);
-
       log(3, 'Beginning Filtering:', selectedSpellUUIDs.size, 'selected spells out of', availableSpells.length, 'total available');
-
       let remainingSpells = [...availableSpells];
-
-      // Apply filters with safety checks and individual timing
-      let stepStartTime = performance.now();
       remainingSpells = this._filterBySelectedList(remainingSpells, selectedSpellUUIDs, isSpellInSelectedList);
-      let stepEndTime = performance.now();
-      log(4, `Filter By Selected List: ${(stepEndTime - stepStartTime).toFixed(2)}ms - ${remainingSpells.length} spells remaining`);
-
       if (!Array.isArray(remainingSpells)) {
         log(1, 'ERROR: _filterBySelectedList returned non-array:', typeof remainingSpells);
         return { spells: [], totalFiltered: 0 };
       }
-
-      stepStartTime = performance.now();
       remainingSpells = this._filterBySource(remainingSpells, filters);
-      stepEndTime = performance.now();
-      log(4, `Filter By Source: ${(stepEndTime - stepStartTime).toFixed(2)}ms - ${remainingSpells.length} spells remaining`);
-
       if (!Array.isArray(remainingSpells)) {
         log(1, 'ERROR: _filterBySource returned non-array:', typeof remainingSpells);
         return { spells: [], totalFiltered: 0 };
       }
-
-      stepStartTime = performance.now();
       remainingSpells = this._filterByBasicProperties(remainingSpells, filters);
-      stepEndTime = performance.now();
-      log(4, `Filter By Basic Properties: ${(stepEndTime - stepStartTime).toFixed(2)}ms - ${remainingSpells.length} spells remaining`);
-
       if (!Array.isArray(remainingSpells)) {
         log(1, 'ERROR: _filterByBasicProperties returned non-array:', typeof remainingSpells);
         return { spells: [], totalFiltered: 0 };
       }
-
-      stepStartTime = performance.now();
       remainingSpells = this._filterByRange(remainingSpells, filters);
-      stepEndTime = performance.now();
-      log(4, `Filter By Range: ${(stepEndTime - stepStartTime).toFixed(2)}ms - ${remainingSpells.length} spells remaining`);
-
       if (!Array.isArray(remainingSpells)) {
         log(1, 'ERROR: _filterByRange returned non-array:', typeof remainingSpells);
         return { spells: [], totalFiltered: 0 };
       }
-
-      stepStartTime = performance.now();
       remainingSpells = this._filterByDamageAndConditions(remainingSpells, filters);
-      stepEndTime = performance.now();
-      log(4, `Filter By Damage And Conditions: ${(stepEndTime - stepStartTime).toFixed(2)}ms - ${remainingSpells.length} spells remaining`);
-
       if (!Array.isArray(remainingSpells)) {
         log(1, 'ERROR: _filterByDamageAndConditions returned non-array:', typeof remainingSpells);
         return { spells: [], totalFiltered: 0 };
       }
-
-      stepStartTime = performance.now();
       remainingSpells = this._filterBySpecialProperties(remainingSpells, filters);
-      stepEndTime = performance.now();
-      log(4, `Filter By Special Properties: ${(stepEndTime - stepStartTime).toFixed(2)}ms - ${remainingSpells.length} spells remaining`);
-
       if (!Array.isArray(remainingSpells)) {
         log(1, 'ERROR: _filterBySpecialProperties returned non-array:', typeof remainingSpells);
         return { spells: [], totalFiltered: 0 };
       }
-
       log(3, 'Final spells count:', remainingSpells.length);
-
-      const result = { spells: remainingSpells, totalFiltered: remainingSpells.length };
-
-      // Manual timing log
-      const duration = performance.now() - startTime;
-      log(4, `SpellbookFilterHelper Filter Available Spells completed in ${duration.toFixed(2)}ms`, {
-        context: {
-          totalSpells: availableSpells.length,
-          selectedSpells: selectedSpellUUIDs.size,
-          hasFilters: Object.values(filterState || {}).some((v) => v && v !== '' && v !== false),
-          resultCount: remainingSpells.length
-        }
-      });
-
-      return result;
+      return { spells: remainingSpells, totalFiltered: remainingSpells.length };
     } catch (error) {
-      const duration = performance.now() - startTime;
-      log(1, `ERROR in SpellbookFilterHelper Filter Available Spells after ${duration.toFixed(2)}ms:`, error);
+      log(1, 'ERROR in SpellbookFilterHelper Filter Available Spells:', error);
       return { spells: [], totalFiltered: 0 };
     }
   }

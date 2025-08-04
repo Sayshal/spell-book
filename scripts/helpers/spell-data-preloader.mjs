@@ -10,16 +10,12 @@ import * as formattingUtils from './spell-formatting.mjs';
  */
 export async function preloadSpellData() {
   const preloadMode = game.settings.get(MODULE.ID, SETTINGS.SPELL_PRELOADING_MODE);
-
   if (preloadMode === 'off') {
     log(3, 'Spell preloading disabled by user setting');
     return;
   }
-
-  // Check if we're on V13 for progress notifications
   const hasProgressNotifications = foundry.utils.isNewerVersion(game.version, '12.999');
   let progress = null;
-
   if (hasProgressNotifications) {
     const modeText = preloadMode === 'smart' ? 'character spells' : 'all spells';
     progress = ui.notifications.info(`Loading Spell Book data (${modeText})...`, {
@@ -27,90 +23,42 @@ export async function preloadSpellData() {
       permanent: true
     });
   }
-
   try {
     log(3, `Starting spell data preload in '${preloadMode}' mode...`);
-    const startTime = performance.now();
-
-    // Step 1: Load valid custom list mappings (0% -> 10%)
     if (progress) progress.update({ pct: 0.05, message: 'Initializing...' });
-
-    await log(4, 'Preload Custom List Mappings', () => managerHelpers.getValidCustomListMappings());
-
-    // Step 2: Load spell lists (10% -> 30%)
+    managerHelpers.getValidCustomListMappings();
     if (progress) progress.update({ pct: 0.1, message: 'Discovering spell lists...' });
-
-    const allSpellLists = await log(4, 'Preload Spell Lists Discovery', async () => {
-      const lists = await managerHelpers.findCompendiumSpellLists(true);
-      lists.sort((a, b) => a.name.localeCompare(b.name));
-      return lists;
-    });
-
+    const allSpellLists = await managerHelpers.findCompendiumSpellLists(true);
+    allSpellLists.sort((a, b) => a.name.localeCompare(b.name));
     if (progress) progress.update({ pct: 0.3, message: `Found ${allSpellLists.length} spell lists` });
-
-    // Step 3: Determine what spells to load based on mode
     let spellLists, allSpells;
-
-    if (preloadMode === 'smart') {
-      ({ spellLists, allSpells } = await loadSmartSpells(allSpellLists, progress));
-    } else {
-      ({ spellLists, allSpells } = await loadAllSpells(allSpellLists, progress));
-    }
-
-    // Step 4: Enrich with icons (80% -> 95%)
+    if (preloadMode === 'smart') ({ spellLists, allSpells } = await loadSmartSpells(allSpellLists, progress));
+    else ({ spellLists, allSpells } = await loadAllSpells(allSpellLists, progress));
     if (progress) progress.update({ pct: 0.85, message: 'Enriching spell icons...' });
-
-    const enrichedSpells = await log(4, 'Preload Spell Icon Enrichment', async () => {
-      if (!allSpells.length) return allSpells;
-
-      for (let spell of allSpells) {
-        spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
-      }
-      return allSpells;
-    });
-
+    const enrichedSpells = allSpells.slice();
+    if (allSpells.length) {
+      for (let spell of enrichedSpells) spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
+    }
     if (progress) progress.update({ pct: 0.95, message: 'Caching spell data...' });
-
-    // Step 5: Store in API nested data (95% -> 100%)
-    globalThis.SPELLBOOK.preloadedData = {
-      spellLists,
-      enrichedSpells,
-      timestamp: Date.now(),
-      version: game.modules.get(MODULE.ID).version,
-      mode: preloadMode
-    };
-
-    const totalTime = performance.now() - startTime;
+    globalThis.SPELLBOOK.preloadedData = { spellLists, enrichedSpells, timestamp: Date.now(), version: game.modules.get(MODULE.ID).version, mode: preloadMode };
     if (progress) {
-      // Kill the progress notification immediately
       ui.notifications.remove(progress);
-
-      // Show completion notification
       const modeText = preloadMode === 'smart' ? ' (smart mode)' : '';
       if (ui.notifications.success) {
-        ui.notifications.success(`Spell Book ready! (${spellLists.length} lists, ${enrichedSpells.length} spells, ${Math.round(totalTime)}ms)${modeText}`, { console: false });
+        ui.notifications.success(`Spell Book ready! (${spellLists.length} lists, ${enrichedSpells.length} spells)${modeText}`, { console: false });
       } else {
-        ui.notifications.info(`Spell Book ready! (${spellLists.length} lists, ${enrichedSpells.length} spells, ${Math.round(totalTime)}ms)${modeText}`, { console: false });
+        ui.notifications.info(`Spell Book ready! (${spellLists.length} lists, ${enrichedSpells.length} spells)${modeText}`, { console: false });
       }
     }
-
-    log(3, `Spell data preload completed in ${Math.round(totalTime)}ms (${preloadMode} mode)`);
+    log(3, `Spell data preload completed (${preloadMode} mode)`);
   } catch (error) {
     log(1, 'Error during spell data preload:', error);
-
     if (progress) {
-      progress.update({
-        pct: 1.0,
-        message: 'Spell Book loading failed - will load on demand'
-      });
+      progress.update({ pct: 1.0, message: 'Spell Book loading failed - will load on demand' });
       setTimeout(() => {
-        if (ui.notifications.has(progress)) {
-          ui.notifications.remove(progress);
-        }
+        if (ui.notifications.has(progress)) ui.notifications.remove(progress);
       }, 3000);
     }
-
-    // Clear any partial data
     globalThis.SPELLBOOK.preloadedData = null;
   }
 }
@@ -123,14 +71,9 @@ export async function preloadSpellData() {
  */
 async function loadAllSpells(allSpellLists, progress) {
   if (progress) progress.update({ pct: 0.4, message: 'Fetching all compendium spells...' });
-
-  const allSpells = await log(4, 'Preload All Compendium Spells', async () => {
-    return await managerHelpers.fetchAllCompendiumSpells();
-  });
-
+  const allSpells = await managerHelpers.fetchAllCompendiumSpells();
   if (progress) progress.update({ pct: 0.8, message: `Loaded ${allSpells.length} spells` });
   log(3, `Preloaded ${allSpells.length} compendium spells (all mode)`);
-
   return { spellLists: allSpellLists, allSpells };
 }
 

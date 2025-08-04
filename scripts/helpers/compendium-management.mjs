@@ -9,65 +9,40 @@ import * as formattingUtils from './spell-formatting.mjs';
  * @returns {Promise<Array>} Array of spell list objects with metadata
  */
 export async function findCompendiumSpellLists(includeHidden = true) {
-  return await log(
-    4,
-    'Compendium Spell Lists Discovery',
-    async () => {
-      const spellLists = [];
-
-      const journalPacks = await log(4, 'Journal Packs Filtering', () => {
-        return Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry' && shouldIndexCompendium(p));
-      });
-
-      log(3, `Scanning ${journalPacks.length} enabled journal compendiums for spell lists`);
-
-      await log(4, 'Standard Packs Processing', () => processStandardPacks(journalPacks, spellLists));
-
-      await log(4, 'Custom Pack Processing', () => processCustomPack(spellLists));
-
-      if (!includeHidden && !game.user.isGM) {
-        await log(4, 'Hidden Lists Filtering', () => {
-          const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
-          const filteredLists = spellLists.filter((list) => !hiddenLists.includes(list.uuid));
-          log(3, `Filtered out ${spellLists.length - filteredLists.length} hidden spell lists.`);
-          spellLists.length = 0;
-          spellLists.push(...filteredLists);
-        });
-      }
-
-      await log(4, 'Spell Lists Metadata Enhancement', async () => {
-        for (const list of spellLists) {
-          const document = await fromUuid(list.uuid);
-          if (document.system?.identifier && !list.identifier) list.identifier = document.system.identifier;
-          if (document?.flags?.[MODULE.ID]?.actorId) {
-            list.isActorOwned = true;
-            list.actorId = document.flags[MODULE.ID].actorId;
-            const actor = game.actors.get(list.actorId);
-            if (actor) list.actorName = actor.name;
-          } else if (document?.folder) {
-            const folderName = document.folder.name.toLowerCase();
-            if (folderName.includes('actor') || folderName.includes('character')) {
-              list.isActorOwned = true;
-              const possibleActor = game.actors.find((a) => folderName.includes(a.name.toLowerCase()));
-              if (possibleActor) {
-                list.actorName = possibleActor.name;
-                list.actorId = possibleActor.id;
-              }
-            }
-          }
+  const spellLists = [];
+  const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry' && shouldIndexCompendium(p));
+  log(3, `Scanning ${journalPacks.length} enabled journal compendiums for spell lists`);
+  await processStandardPacks(journalPacks, spellLists);
+  await processCustomPack(spellLists);
+  if (!includeHidden && !game.user.isGM) {
+    const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
+    const filteredLists = spellLists.filter((list) => !hiddenLists.includes(list.uuid));
+    log(3, `Filtered out ${spellLists.length - filteredLists.length} hidden spell lists.`);
+    spellLists.length = 0;
+    spellLists.push(...filteredLists);
+  }
+  for (const list of spellLists) {
+    const document = await fromUuid(list.uuid);
+    if (document.system?.identifier && !list.identifier) list.identifier = document.system.identifier;
+    if (document?.flags?.[MODULE.ID]?.actorId) {
+      list.isActorOwned = true;
+      list.actorId = document.flags[MODULE.ID].actorId;
+      const actor = game.actors.get(list.actorId);
+      if (actor) list.actorName = actor.name;
+    } else if (document?.folder) {
+      const folderName = document.folder.name.toLowerCase();
+      if (folderName.includes('actor') || folderName.includes('character')) {
+        list.isActorOwned = true;
+        const possibleActor = game.actors.find((a) => folderName.includes(a.name.toLowerCase()));
+        if (possibleActor) {
+          list.actorName = possibleActor.name;
+          list.actorId = possibleActor.id;
         }
-      });
-
-      log(3, `Found ${spellLists.length} total spell lists (${spellLists.filter((l) => l.isActorOwned).length} actor-owned)`);
-      return spellLists;
-    },
-    {
-      context: {
-        journalPacksCount: Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry').length,
-        includeHidden
       }
     }
-  );
+  }
+  log(3, `Found ${spellLists.length} total spell lists (${spellLists.filter((l) => l.isActorOwned).length} actor-owned)`);
+  return spellLists;
 }
 
 /**
@@ -98,56 +73,32 @@ export function prepareSpellSources(availableSpells) {
  * @param {Array} spellLists - Array to store results
  */
 async function processStandardPacks(journalPacks, spellLists) {
-  return await log(
-    4,
-    'Standard Journal Packs Processing',
-    async () => {
-      for (const pack of journalPacks) {
-        if (pack.metadata.id === MODULE.PACK.SPELLS) continue;
-
-        await log(
-          4,
-          `Journal Pack Processing: ${pack.metadata.label}`,
-          async () => {
-            let topLevelFolderName;
-            if (pack.folder) {
-              if (pack.folder.depth !== 1) topLevelFolderName = pack.folder.getParentFolders().at(-1).name;
-              else topLevelFolderName = pack.folder.name;
-            }
-
-            const index = await log(4, `Journal Index Load: ${pack.metadata.label}`, () => pack.getIndex());
-
-            await log(
-              4,
-              `Journal Documents Processing: ${pack.metadata.label}`,
-              async () => {
-                for (const journalData of index) {
-                  const journal = await pack.getDocument(journalData._id);
-                  for (const page of journal.pages) {
-                    if (page.type !== 'spells' || page.system?.type === 'other') continue;
-                    spellLists.push({
-                      uuid: page.uuid,
-                      name: page.name,
-                      journal: journal.name,
-                      pack: topLevelFolderName || pack.metadata.label,
-                      packageName: pack.metadata.packageName,
-                      system: page.system,
-                      spellCount: page.system.spells?.size || 0,
-                      identifier: page.system.identifier,
-                      document: page
-                    });
-                  }
-                }
-              },
-              { context: { journalCount: index.length } }
-            );
-          },
-          { context: { packId: pack.collection, packLabel: pack.metadata.label } }
-        );
+  for (const pack of journalPacks) {
+    if (pack.metadata.id === MODULE.PACK.SPELLS) continue;
+    let topLevelFolderName;
+    if (pack.folder) {
+      if (pack.folder.depth !== 1) topLevelFolderName = pack.folder.getParentFolders().at(-1).name;
+      else topLevelFolderName = pack.folder.name;
+    }
+    const index = await pack.getIndex();
+    for (const journalData of index) {
+      const journal = await pack.getDocument(journalData._id);
+      for (const page of journal.pages) {
+        if (page.type !== 'spells' || page.system?.type === 'other') continue;
+        spellLists.push({
+          uuid: page.uuid,
+          name: page.name,
+          journal: journal.name,
+          pack: topLevelFolderName || pack.metadata.label,
+          packageName: pack.metadata.packageName,
+          system: page.system,
+          spellCount: page.system.spells?.size || 0,
+          identifier: page.system.identifier,
+          document: page
+        });
       }
-    },
-    { context: { journalPackCount: journalPacks.length } }
-  );
+    }
+  }
 }
 
 /**
@@ -344,47 +295,19 @@ export function normalizeUuid(uuid) {
  * @returns {Promise<Array>} Array of spell items
  */
 export async function fetchAllCompendiumSpells(maxLevel = 9) {
-  return await log(
-    4,
-    'All Compendium Spells Fetch',
-    async () => {
-      const spells = [];
-
-      const itemPacks = await log(4, 'Item Packs Filtering', () => {
-        return Array.from(game.packs).filter((p) => p.metadata.type === 'Item' && shouldIndexCompendium(p));
-      });
-
-      log(3, `Fetching spells from ${itemPacks.length} enabled item compendiums`);
-
-      for (const pack of itemPacks) {
-        const packSpells = await log(4, `Pack Spells Fetch: ${pack.metadata.label}`, () => fetchSpellsFromPack(pack, maxLevel), {
-          context: { packId: pack.collection, packLabel: pack.metadata.label }
-        });
-        spells.push(...packSpells);
-      }
-
-      await log(
-        4,
-        'All Spells Sorting',
-        () => {
-          spells.sort((a, b) => {
-            if (a.level !== b.level) return a.level - b.level;
-            return a.name.localeCompare(b.name);
-          });
-        },
-        { context: { spellCount: spells.length } }
-      );
-
-      log(3, `Fetched ${spells.length} compendium spells from ${itemPacks.length} enabled compendiums`);
-      return spells;
-    },
-    {
-      context: {
-        maxLevel,
-        totalPacksAvailable: Array.from(game.packs).filter((p) => p.metadata.type === 'Item').length
-      }
-    }
-  );
+  const spells = [];
+  const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item' && shouldIndexCompendium(p));
+  log(3, `Fetching spells from ${itemPacks.length} enabled item compendiums`);
+  for (const pack of itemPacks) {
+    const packSpells = await fetchSpellsFromPack(pack, maxLevel);
+    spells.push(...packSpells);
+  }
+  spells.sort((a, b) => {
+    if (a.level !== b.level) return a.level - b.level;
+    return a.name.localeCompare(b.name);
+  });
+  log(3, `Fetched ${spells.length} compendium spells from ${itemPacks.length} enabled compendiums`);
+  return spells;
 }
 
 /**
@@ -394,50 +317,19 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
  * @returns {Promise<Array>} Array of spell items
  */
 async function fetchSpellsFromPack(pack, maxLevel) {
-  return await log(
-    4,
-    `Pack Processing: ${pack.metadata.label}`,
-    async () => {
-      const packSpells = [];
-
-      const index = await log(4, `Pack Index Load: ${pack.metadata.label}`, () => pack.getIndex({ fields: ['type', 'system', 'labels'] }));
-
-      const spellEntries = await log(
-        4,
-        `Spell Entries Filter: ${pack.metadata.label}`,
-        () => {
-          return index.filter((e) => e.type === 'spell' && (!maxLevel || e.system?.level <= maxLevel));
-        },
-        { context: { totalEntries: index.length, maxLevel } }
-      );
-
-      await log(
-        4,
-        `Spell Objects Creation: ${pack.metadata.label}`,
-        () => {
-          for (const entry of spellEntries) {
-            if (!entry.labels) {
-              entry.labels = {};
-              if (entry.system?.level !== undefined) entry.labels.level = CONFIG.DND5E.spellLevels[entry.system.level];
-              if (entry.system?.school) entry.labels.school = genericUtils.getConfigLabel(CONFIG.DND5E.spellSchools, entry.system.school);
-            }
-            const spell = formatSpellEntry(entry, pack);
-            packSpells.push(spell);
-          }
-        },
-        { context: { spellEntryCount: spellEntries.length } }
-      );
-
-      return packSpells;
-    },
-    {
-      context: {
-        packId: pack.collection,
-        packLabel: pack.metadata.label,
-        maxLevel
-      }
+  const packSpells = [];
+  const index = await pack.getIndex({ fields: ['type', 'system', 'labels'] });
+  const spellEntries = index.filter((e) => e.type === 'spell' && (!maxLevel || e.system?.level <= maxLevel));
+  for (const entry of spellEntries) {
+    if (!entry.labels) {
+      entry.labels = {};
+      if (entry.system?.level !== undefined) entry.labels.level = CONFIG.DND5E.spellLevels[entry.system.level];
+      if (entry.system?.school) entry.labels.school = genericUtils.getConfigLabel(CONFIG.DND5E.spellSchools, entry.system.school);
     }
-  );
+    const spell = formatSpellEntry(entry, pack);
+    packSpells.push(spell);
+  }
+  return packSpells;
 }
 
 /**
