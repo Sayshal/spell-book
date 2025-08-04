@@ -1,6 +1,7 @@
 import { MODULE, SETTINGS } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import * as managerHelpers from './compendium-management.mjs';
+import * as discoveryUtils from './spell-discovery.mjs';
 import * as formattingUtils from './spell-formatting.mjs';
 
 /**
@@ -142,109 +143,57 @@ async function loadAllSpells(allSpellLists, progress) {
 async function loadSmartSpells(allSpellLists, progress) {
   if (progress) progress.update({ pct: 0.35, message: 'Analyzing player characters...' });
 
-  // Find player-owned characters with better logging
+  // Find player-owned characters
   const allActors = Array.from(game.actors);
-  const playerCharacters = allActors.filter((a) => {
-    const hasOwner = a.hasPlayerOwner;
-    const isCharacter = a.type === 'character';
-    const result = hasOwner && isCharacter;
+  const playerCharacters = allActors.filter((a) => a.hasPlayerOwner && a.type === 'character');
 
-    if (result) {
-      log(
-        3,
-        `Found player character: ${a.name} (owners: ${
-          a.ownership ?
-            Object.keys(a.ownership)
-              .filter((k) => k !== 'default' && a.ownership[k] >= 3)
-              .join(', ')
-          : 'none'
-        })`
-      );
-    }
-
-    return result;
-  });
-
-  log(3, `Smart preloading: Found ${playerCharacters.length} player characters out of ${allActors.length} total actors`);
-  playerCharacters.forEach((char) => {
-    log(3, `- ${char.name}: ${char.classes ? Object.keys(char.classes).join(', ') : 'no classes detected'}`);
-  });
+  log(3, `Smart preloading: Found ${playerCharacters.length} player characters`);
 
   if (playerCharacters.length === 0) {
-    log(3, 'No player characters found - loading nothing (smart mode)');
-    if (progress) progress.update({ pct: 0.8, message: 'No players - loading nothing' });
-    return { spellLists: [], allSpells: [] };
+    log(3, 'No player characters found - loading all lists but no spells (smart mode)');
+    if (progress) progress.update({ pct: 0.8, message: 'No players - loading lists only' });
+    return { spellLists: allSpellLists, allSpells: [] };
   }
 
-  // Determine relevant spell lists for player characters
-  const relevantSpellLists = new Set();
+  // Step 1: Get spell UUIDs that would be used by player characters
+  const playerSpellUuids = await getPlayerCharacterSpellUuids(playerCharacters);
 
-  for (const actor of playerCharacters) {
-    log(3, `Analyzing ${actor.name}:`);
+  // Step 2: Get spell UUIDs from Actor Spellbooks folder
+  const actorSpellbookUuids = await getActorSpellbookSpellUuids();
 
-    // Check actor.classes (v12/v13 format)
-    if (actor.classes) {
-      for (const [key, cls] of Object.entries(actor.classes)) {
-        const identifier = cls.identifier || cls.system?.identifier || key;
-        log(3, `  - Class: ${cls.name || key} (identifier: ${identifier})`);
+  // Step 3: Combine and deduplicate
+  const allRelevantUuids = new Set([...playerSpellUuids, ...actorSpellbookUuids]);
 
-        if (identifier) {
-          // Find spell lists for this class
-          const classLists = allSpellLists.filter((list) => {
-            const match = list.identifier === identifier || list.name.toLowerCase().includes(identifier.toLowerCase());
-            if (match) {
-              log(3, `    -> Found spell list: ${list.name}`);
-            }
-            return match;
-          });
-          classLists.forEach((list) => relevantSpellLists.add(list));
-        }
-      }
-    }
-
-    // Fallback: check actor.items for class items
-    if (relevantSpellLists.size === 0) {
-      const classItems = actor.items.filter((i) => i.type === 'class');
-      log(3, `  - Checking ${classItems.length} class items`);
-
-      for (const classItem of classItems) {
-        const identifier = classItem.system?.identifier || classItem.identifier;
-        if (identifier) {
-          log(3, `    - Class item: ${classItem.name} (${identifier})`);
-          const classLists = allSpellLists.filter((list) => list.identifier === identifier || list.name.toLowerCase().includes(identifier.toLowerCase()));
-          classLists.forEach((list) => {
-            log(3, `      -> Found spell list: ${list.name}`);
-            relevantSpellLists.add(list);
-          });
-        }
-      }
-    }
-  }
-
-  const relevantListsArray = Array.from(relevantSpellLists);
-  log(3, `Smart preloading identified ${relevantListsArray.length} relevant spell lists:`);
-  relevantListsArray.forEach((list) => log(3, `  - ${list.name} (${list.identifier || 'no identifier'})`));
-
-  if (relevantListsArray.length === 0) {
-    log(3, 'No relevant spell lists found for player characters - loading nothing (smart mode)');
-    if (progress) progress.update({ pct: 0.8, message: 'No relevant spells - loading nothing' });
-    return { spellLists: [], allSpells: [] };
-  }
-
-  if (progress) progress.update({ pct: 0.5, message: `Loading spells for ${playerCharacters.length} characters...` });
-
-  const relevantSpells = await log(4, 'Preload Smart Compendium Spells', async () => {
-    return await fetchSpellsForLists(relevantListsArray);
+  // Remove ".Item" from UUIDs to match compendium spell format
+  const normalizedUuids = new Set();
+  allRelevantUuids.forEach((uuid) => {
+    const normalizedUuid = uuid.replace('.Item.', '.');
+    normalizedUuids.add(normalizedUuid);
   });
 
-  if (progress) progress.update({ pct: 0.8, message: `Loaded ${relevantSpells.length} relevant spells` });
-  log(3, `Smart preloading completed: ${relevantSpells.length} spells for ${playerCharacters.length} player characters`);
+  log(3, `Total unique spell UUIDs (normalized): ${normalizedUuids.size}`);
 
-  return { spellLists: relevantListsArray, allSpells: relevantSpells };
+  if (normalizedUuids.size === 0) {
+    log(3, 'No relevant spells found - loading all lists but no spells (smart mode)');
+    if (progress) progress.update({ pct: 0.8, message: 'No relevant spells found - loading lists only' });
+    return { spellLists: allSpellLists, allSpells: [] };
+  }
+
+  if (progress) progress.update({ pct: 0.5, message: `Loading ${normalizedUuids.size} relevant spells...` });
+
+  // Step 4: Load all spells and filter to only relevant ones
+  const allSpells = await managerHelpers.fetchAllCompendiumSpells();
+  const relevantSpells = allSpells.filter((spell) => normalizedUuids.has(spell.uuid));
+
+  if (progress) progress.update({ pct: 0.8, message: `Loaded ${relevantSpells.length} relevant spells` });
+  log(3, `Smart preloading completed: ${relevantSpells.length} spells from ${allRelevantUuids.size} spell UUIDs`);
+
+  // Return ALL spell lists (for GM manager) but only relevant spells (for memory)
+  return { spellLists: allSpellLists, allSpells: relevantSpells };
 }
 
 /**
- * Fetch spells for specific spell lists - NO FALLBACK VERSION
+ * Fetch spells for specific spell lists
  * @param {Array} spellLists - Spell lists to fetch spells for
  * @returns {Promise<Array>} Array of spell objects
  */
@@ -284,6 +233,87 @@ async function fetchSpellsForLists(spellLists) {
 
   log(3, `Filtered ${filteredSpells.length} spells from ${allSpells.length} total based on spell list UUIDs`);
   return filteredSpells;
+}
+
+/**
+ * Get spell UUIDs from Actor Spellbooks folder in module pack
+ * @returns {Set<string>} Set of actor spellbook spell UUIDs
+ */
+async function getActorSpellbookSpellUuids() {
+  const actorSpellbookSpellUuids = new Set();
+
+  const spellsPack = game.packs.get(MODULE.PACK.SPELLS);
+  if (!spellsPack) {
+    log(2, 'Module spells pack not found');
+    return actorSpellbookSpellUuids;
+  }
+
+  // Find Actor Spellbooks folder
+  const actorSpellbooksFolderName = game.i18n.localize('SPELLBOOK.Folders.ActorSpellbooks');
+  const actorSpellbooksFolder = spellsPack.folders.find((f) => f.name === actorSpellbooksFolderName);
+
+  if (!actorSpellbooksFolder) {
+    log(3, 'Actor Spellbooks folder not found in module pack');
+    return actorSpellbookSpellUuids;
+  }
+
+  // Get all documents in the Actor Spellbooks folder
+  const documents = await spellsPack.getDocuments();
+  const folderDocuments = documents.filter((doc) => doc.folder?.id === actorSpellbooksFolder.id);
+
+  for (const doc of folderDocuments) {
+    if (!doc.pages) continue;
+
+    for (const page of doc.pages) {
+      if (page.type === 'spells' && page.system?.spells) {
+        log(3, `Found actor spellbook: ${page.name} with ${page.system.spells.size} spells`);
+        // Add all spell UUIDs from this spellbook
+        page.system.spells.forEach((uuid) => actorSpellbookSpellUuids.add(uuid));
+      }
+    }
+  }
+
+  log(3, `Found ${actorSpellbookSpellUuids.size} spell UUIDs in Actor Spellbooks folder`);
+  return actorSpellbookSpellUuids;
+}
+
+/**
+ * Find spell UUIDs that would be used by player characters - NO FALLBACKS
+ * @param {Array} playerCharacters - Player characters to analyze
+ * @returns {Promise<Set<string>>} Set of relevant spell UUIDs
+ */
+async function getPlayerCharacterSpellUuids(playerCharacters) {
+  const relevantSpellUuids = new Set();
+
+  for (const actor of playerCharacters) {
+    log(3, `Analyzing ${actor.name} for spell UUIDs:`);
+
+    // Check actor.classes for spell lists (NO FALLBACKS)
+    if (actor.classes) {
+      for (const [key, cls] of Object.entries(actor.classes)) {
+        const identifier = cls.identifier || cls.system?.identifier || key;
+        const className = cls.name || key;
+        const classUuid = cls.uuid || cls.system?.uuid;
+
+        if (identifier && classUuid) {
+          try {
+            // Use existing getClassSpellList - it returns spell UUIDs!
+            const spellUuids = await discoveryUtils.getClassSpellList(className, classUuid, actor);
+
+            log(3, `  - Found ${spellUuids.size} spells for ${identifier}`);
+
+            // Add all spell UUIDs to our set (Set automatically handles duplicates)
+            spellUuids.forEach((uuid) => relevantSpellUuids.add(uuid));
+          } catch (error) {
+            log(2, `Error getting spells for ${identifier}:`, error);
+          }
+        }
+      }
+    }
+  }
+
+  log(3, `Found ${relevantSpellUuids.size} total unique spell UUIDs from player characters`);
+  return relevantSpellUuids;
 }
 
 /**
