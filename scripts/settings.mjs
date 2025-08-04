@@ -18,8 +18,7 @@ export function registerSettings() {
       0: 'SPELLBOOK.Settings.Logger.Choices.Off',
       1: 'SPELLBOOK.Settings.Logger.Choices.Errors',
       2: 'SPELLBOOK.Settings.Logger.Choices.Warnings',
-      3: 'SPELLBOOK.Settings.Logger.Choices.Verbose',
-      4: 'TIMING DEBUG'
+      3: 'SPELLBOOK.Settings.Logger.Choices.Verbose'
     },
     default: 2,
     onChange: (value) => {
