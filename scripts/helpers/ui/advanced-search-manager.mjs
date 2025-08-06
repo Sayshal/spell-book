@@ -172,7 +172,7 @@ export class AdvancedSearchManager {
     if (query.startsWith(this.searchPrefix)) {
       this.searchTimeout = setTimeout(async () => {
         try {
-          await this.app._ensureSpellDataAndInitializeLazyLoading();
+          await this.app._ensureSpellData();
           await new Promise((resolve) => setTimeout(resolve, 50));
         } catch (error) {
           log(2, 'Error ensuring spell data for advanced search:', error);
@@ -183,7 +183,7 @@ export class AdvancedSearchManager {
     } else {
       this.searchTimeout = setTimeout(async () => {
         try {
-          await this.app._ensureSpellDataAndInitializeLazyLoading();
+          await this.app._ensureSpellData();
           await new Promise((resolve) => setTimeout(resolve, 50));
         } catch (error) {
           log(1, 'Error ensuring spell data for fuzzy search:', error);
@@ -663,6 +663,7 @@ export class AdvancedSearchManager {
           log(3, `[${searchId}] Calling applyAdvancedQueryToFilters`);
           this.applyAdvancedQueryToFilters(parsedQuery);
           this.app.filterHelper.invalidateFilterCache();
+          this.app.filterHelper.applyFilters();
           this.isProcessingSearch = false;
           log(3, `[${searchId}] Advanced query processing completed`);
           return;
@@ -671,10 +672,8 @@ export class AdvancedSearchManager {
       this.isAdvancedQuery = false;
       this.parsedQuery = null;
       this.app.filterHelper.invalidateFilterCache();
-      setTimeout(() => {
-        this.app.filterHelper.applyFilters();
-        this.isProcessingSearch = false;
-      }, 100);
+      this.app.filterHelper.applyFilters();
+      this.isProcessingSearch = false;
     } catch (error) {
       log(1, `performSearch [${searchId}] error:`, error);
       this.isProcessingSearch = false;
@@ -782,88 +781,6 @@ export class AdvancedSearchManager {
       filterElement.dispatchEvent(new Event('input', { bubbles: true }));
     }
     log(3, `Set filter ${fieldId} to: ${value}`);
-  }
-
-  /**
-   * Ensure spells matching the search query are loaded in the DOM
-   * @async
-   * @param {string} query - Search query string
-   * @returns {Promise<void>}
-   */
-  async ensureSpellsLoadedForSearch(query) {
-    let allSpells = [];
-    const activeClass = this.app._stateManager?.activeClass;
-    if (activeClass && this.app._stateManager.classSpellData[activeClass]?.spellLevels) allSpells = this.app._stateManager.classSpellData[activeClass].spellLevels;
-    if (allSpells.length === 0) return;
-    const matchingIndices = [];
-    if (query.startsWith(this.searchPrefix) && this.isCurrentQueryAdvanced()) {
-      log(3, 'Advanced query detected, ensuring all spells are loaded for filtering');
-      const totalSpells = allSpells.length;
-      const currentlyLoaded = document.querySelectorAll('.spell-item').length;
-      if (totalSpells > currentlyLoaded) {
-        log(3, 'Loading all spells for advanced query filtering');
-        try {
-          await this.app._ensureSpellDataAndInitializeLazyLoading();
-          let attempts = 0;
-          const maxAttempts = 15;
-          while (document.querySelectorAll('.spell-item').length < totalSpells && attempts < maxAttempts) {
-            if (this.app._renderSpellBatch) this.app._renderSpellBatch();
-            else if (this.app._initializeLazyLoading) this.app._initializeLazyLoading();
-            await new Promise((resolve) => setTimeout(resolve, 100));
-            attempts++;
-          }
-          log(3, 'Advanced query spell loading complete:', {
-            attempts,
-            loadedSpells: document.querySelectorAll('.spell-item').length,
-            totalSpells
-          });
-        } catch (error) {
-          log(2, 'Error during advanced query lazy loading:', error);
-        }
-      }
-      return;
-    }
-    const queryLower = query.toLowerCase().trim();
-    const exactPhraseMatch = query.match(/^["'](.+?)["']$/);
-    const isExactSearch = !!exactPhraseMatch;
-    const searchTerm = isExactSearch ? exactPhraseMatch[1].toLowerCase() : queryLower;
-    allSpells.forEach((spell, index) => {
-      if (!spell || !spell.name) return;
-      const spellName = spell.name.toLowerCase();
-      let matches = false;
-      if (isExactSearch) matches = spellName.includes(searchTerm);
-      else {
-        const queryWords = searchTerm.split(/\s+/).filter((word) => word.length > 0);
-        matches = queryWords.every((word) => spellName.includes(word)) || queryWords.some((word) => spellName.includes(word));
-      }
-      if (matches) matchingIndices.push(index);
-    });
-    log(3, 'Found matching spells at indices:', matchingIndices, 'for query:', query);
-    if (matchingIndices.length === 0) return;
-    const maxIndex = Math.max(...matchingIndices);
-    const currentlyLoaded = document.querySelectorAll('.spell-item').length;
-    log(3, 'Need to load up to index:', maxIndex, 'currently loaded:', currentlyLoaded);
-    if (maxIndex >= currentlyLoaded) {
-      log(3, 'Triggering lazy loading to load more spells');
-      try {
-        await this.app._ensureSpellDataAndInitializeLazyLoading();
-        let attempts = 0;
-        const maxAttempts = 10;
-        while (document.querySelectorAll('.spell-item').length <= maxIndex && attempts < maxAttempts) {
-          if (this.app._renderSpellBatch) this.app._renderSpellBatch();
-          else if (this.app._initializeLazyLoading) this.app._initializeLazyLoading();
-          await new Promise((resolve) => setTimeout(resolve, 100));
-          attempts++;
-        }
-        log(3, 'After lazy loading attempts:', {
-          attempts,
-          loadedSpells: document.querySelectorAll('.spell-item').length,
-          targetIndex: maxIndex
-        });
-      } catch (error) {
-        log(2, 'Error during lazy loading:', error);
-      }
-    }
   }
 
   /**

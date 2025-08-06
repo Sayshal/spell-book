@@ -108,15 +108,6 @@ export const MODULE = {
     NONE: 'none',
     PREPARED: 'prepared',
     ALWAYS: 'always'
-  },
-
-  /**
-   * Batching configuration for lazy loading
-   * @type {Object}
-   */
-  BATCHING: {
-    SIZE: 30,
-    MARGIN: 100
   }
 };
 
@@ -226,7 +217,6 @@ export const SETTINGS = {
   FILTER_CONFIGURATION: 'filterConfiguration',
   HIDDEN_SPELL_LISTS: 'hiddenSpellLists',
   INDEXED_COMPENDIUMS: 'indexedCompendiums',
-  LAZY_BATCH_SIZE: 'lazyBatchSize',
   LOGGING_LEVEL: 'loggingLevel',
   OPEN_SPELL_MANAGER: 'openSpellListManager',
   SPELL_BOOK_POSITION: 'spellBookPositionn',

@@ -292,11 +292,11 @@ export class SpellbookState {
   }
 
   /**
-   * Organize spells into flattened array with level metadata for lazy loading
+   * Organize spells into levels with grouped structure
    * @param {Array} spellItems - Array of spell documents
    * @param {string} classIdentifier - The class identifier
    * @param {Item} classItem - The class item
-   * @returns {Array} Flattened array of spells with level metadata
+   * @returns {Array} Array of level objects, each containing its spells
    * @private
    */
   async _organizeSpellsByLevelForClass(spellItems, classIdentifier, classItem) {
@@ -318,7 +318,7 @@ export class SpellbookState {
         const spellName = spell.name.toLowerCase();
         const preparationMode = spell.system.preparation?.mode;
         const isSpecialMode = ['innate', 'pact', 'atwill', 'always'].includes(preparationMode);
-        if (!spellsByLevel[level]) spellsByLevel[level] = [];
+        if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
         const compendiumUuid = spell.flags?.core?.sourceId || spell.uuid;
         const spellData = {
           ...spell,
@@ -331,7 +331,7 @@ export class SpellbookState {
         Object.assign(spellData, enhancedSpell);
         spellData.formattedDetails = formattingUtils.formatSpellDetails(spellData);
         if (!isSpecialMode) spellData.sourceClass = classIdentifier;
-        spellsByLevel[level].push(spellData);
+        spellsByLevel[level].spells.push(spellData);
         processedSpellIds.add(spell.id || spell.uuid);
         processedSpellNames.add(spellName);
       }
@@ -343,7 +343,7 @@ export class SpellbookState {
       const level = spell.system.level;
       const spellName = spell.name.toLowerCase();
       if (processedSpellNames.has(spellName)) continue;
-      if (!spellsByLevel[level]) spellsByLevel[level] = [];
+      if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
       const spellData = { ...spell };
       if (this.app.spellManager) spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spell, classIdentifier);
       spellData.sourceClass = classIdentifier;
@@ -352,34 +352,35 @@ export class SpellbookState {
       const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
       Object.assign(spellData, enhancedSpell);
       spellData.formattedDetails = formattingUtils.formatSpellDetails(spellData);
-      spellsByLevel[level].push(spellData);
+      spellsByLevel[level].spells.push(spellData);
       processedSpellIds.add(spell.id || spell.compendiumUuid || spell.uuid);
       processedSpellNames.add(spellName);
     }
-    for (const level in spellsByLevel) if (spellsByLevel.hasOwnProperty(level)) spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
-    const flattened = [];
-    const sortedLevels = Object.entries(spellsByLevel).sort(([a], [b]) => Number(a) - Number(b));
-    for (const [level, spells] of sortedLevels) {
-      const levelName = CONFIG.DND5E.spellLevels[level];
-      for (let i = 0; i < spells.length; i++) {
-        const spell = spells[i];
-        flattened.push({
-          ...spell,
-          _levelMetadata: {
-            level: level,
-            levelName: levelName,
-            isFirstInLevel: i === 0,
-            levelSpellCount: spells.length,
-            levelIndex: i
-          }
-        });
-      }
+    for (const level in spellsByLevel) {
+      if (spellsByLevel.hasOwnProperty(level)) spellsByLevel[level].spells.sort((a, b) => a.name.localeCompare(b.name));
     }
-    return flattened;
+    const sortedLevels = Object.entries(spellsByLevel)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([level, data]) => {
+        // Ensure each level object has the expected structure
+        if (!data.spells) {
+          log(2, `_organizeSpellsByLevelForClass: Missing spells array for level ${level}`, data);
+          return {
+            level: level,
+            name: CONFIG.DND5E.spellLevels[level] || `Level ${level}`,
+            spells: []
+          };
+        }
+        return data;
+      });
+
+    log(3, `_organizeSpellsByLevelForClass: Returning ${sortedLevels.length} levels for ${classIdentifier}`);
+
+    return sortedLevels;
   }
 
   /**
-   * Process and organize spells for a specific class with flattened structure
+   * Process and organize spells for a specific class with grouped structure
    * @param {string} identifier - Identifier of the class
    * @param {Array} spellItems - Array of spell items
    * @param {Item} classItem - The class item
@@ -397,40 +398,95 @@ export class SpellbookState {
       }
     }
     const spellLevels = await this._organizeSpellsByLevelForClass(spellItems, identifier, classItem);
-    const prepStats = this.calculatePreparationStats(identifier, spellLevels, classItem);
-    this.classSpellData[identifier] = {
-      spellLevels,
-      className: classItem.name,
-      spellPreparation: prepStats,
-      classItem,
-      identifier
-    };
-    if (this._shouldHideCantrips(identifier)) {
-      this.classSpellData[identifier].spellLevels = spellLevels.filter((spell) => spell._levelMetadata.level !== '0' && spell._levelMetadata.level !== 0);
-    }
+    const allSpells = spellLevels.flatMap((level) => level.spells);
+    const prepStats = this.calculatePreparationStats(identifier, allSpells, classItem);
+    this.classSpellData[identifier] = { spellLevels, className: classItem.name, spellPreparation: prepStats, classItem, identifier };
+    if (this._shouldHideCantrips(identifier)) this.classSpellData[identifier].spellLevels = spellLevels.filter((levelData) => levelData.level !== '0' && levelData.level !== 0);
   }
 
   /**
    * Calculate preparation statistics for a specific class
    * @param {string} classIdentifier - The class identifier
-   * @param {Array} spellLevels - Flattened spell array
+   * @param {Array} spellLevels - Array of level objects with grouped spells
    * @param {Item} classItem - The spellcasting class item
    * @returns {Object} Preparation stats object
    */
   calculatePreparationStats(classIdentifier, spellLevels, classItem) {
-    const cacheKey = `${classIdentifier}-${spellLevels.length}-${classItem.system.levels}`;
-    if (this._preparationStatsCache.has(cacheKey)) return this._preparationStatsCache.get(cacheKey);
+    // Add validation
+    if (!spellLevels || !Array.isArray(spellLevels)) {
+      log(2, `calculatePreparationStats: Invalid spellLevels structure`, spellLevels);
+      return { current: 0, maximum: 0 };
+    }
+
+    // Check if we have the expected structure
+    const isGroupedStructure = spellLevels.length > 0 && spellLevels[0] && 'spells' in spellLevels[0];
+
+    // If not grouped, it might still be a flat array
+    const isFlatStructure = spellLevels.length > 0 && spellLevels[0] && ('system' in spellLevels[0] || 'level' in spellLevels[0]);
+
+    let totalSpellCount = 0;
     let preparedCount = 0;
+
+    if (isGroupedStructure) {
+      // Handle grouped structure
+      totalSpellCount = spellLevels.reduce((count, level) => count + (Array.isArray(level.spells) ? level.spells.length : 0), 0);
+
+      const cacheKey = `${classIdentifier}-${totalSpellCount}-${classItem.system.levels}`;
+      if (this._preparationStatsCache.has(cacheKey)) {
+        return this._preparationStatsCache.get(cacheKey);
+      }
+
+      // Iterate through grouped structure
+      for (const levelData of spellLevels) {
+        // Skip cantrips for preparation count
+        if (levelData.level === '0' || levelData.level === 0) continue;
+
+        // Ensure spells is an array
+        if (!Array.isArray(levelData.spells)) {
+          log(2, `calculatePreparationStats: levelData.spells is not an array`, levelData);
+          continue;
+        }
+
+        // Count prepared spells in this level
+        for (const spell of levelData.spells) {
+          if (spell.preparation?.prepared && spell.sourceClass === classIdentifier && !spell.preparation?.alwaysPrepared) {
+            preparedCount++;
+          }
+        }
+      }
+    } else if (isFlatStructure) {
+      // Handle flat structure (fallback for compatibility)
+      totalSpellCount = spellLevels.length;
+
+      const cacheKey = `${classIdentifier}-${totalSpellCount}-${classItem.system.levels}`;
+      if (this._preparationStatsCache.has(cacheKey)) {
+        return this._preparationStatsCache.get(cacheKey);
+      }
+
+      for (const spell of spellLevels) {
+        const spellLevel = spell.system?.level ?? spell.level ?? spell._levelMetadata?.level;
+
+        // Skip cantrips
+        if (spellLevel === 0 || spellLevel === '0') continue;
+
+        if (spell.preparation?.prepared && spell.sourceClass === classIdentifier && !spell.preparation?.alwaysPrepared) {
+          preparedCount++;
+        }
+      }
+    } else {
+      log(1, `calculatePreparationStats: Unknown structure for spellLevels`, spellLevels);
+    }
+
     const baseMaxPrepared = classItem?.system?.spellcasting?.preparation?.max || 0;
     const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
     const preparationBonus = classRules?.spellPreparationBonus || 0;
     const maxPrepared = baseMaxPrepared + preparationBonus;
-    for (const spell of spellLevels) {
-      if (spell._levelMetadata.level === '0' || spell._levelMetadata.level === 0) continue;
-      if (spell.preparation?.prepared && spell.sourceClass === classIdentifier && !spell.preparation?.alwaysPrepared) preparedCount++;
-    }
+
     const result = { current: preparedCount, maximum: maxPrepared };
+
+    const cacheKey = `${classIdentifier}-${totalSpellCount}-${classItem.system.levels}`;
     this._preparationStatsCache.set(cacheKey, result);
+
     return result;
   }
 
@@ -580,19 +636,22 @@ export class SpellbookState {
       (spell) => (!shouldHideCantrips && spell.system.level === 0) || (spell.system.level !== 0 && (personalSpellbook.includes(spell.compendiumUuid) || grantedSpells.includes(spell.compendiumUuid)))
     );
     const wizardbookSpells = allSpellItems.filter((spell) => this._fullWizardSpellLists.get(classIdentifier).has(spell.compendiumUuid) && spell.system.level !== 0);
-    const prepLevelsFlattened = await this._organizeSpellsByLevelForClass(prepTabSpells, classIdentifier, classItem);
-    const wizardLevelsFlattened = await this._organizeSpellsByLevelForClass(wizardbookSpells, classIdentifier, classItem);
+    const prepLevelsGrouped = await this._organizeSpellsByLevelForClass(prepTabSpells, classIdentifier, classItem);
+    const wizardLevelsGrouped = await this._organizeSpellsByLevelForClass(wizardbookSpells, classIdentifier, classItem);
     const maxSpellsAllowed = wizardManager.getMaxSpellsAllowed();
     const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
-    let finalPrepLevels = prepLevelsFlattened;
-    if (shouldHideCantrips) finalPrepLevels = prepLevelsFlattened.filter((spell) => spell._levelMetadata.level !== '0' && spell._levelMetadata.level !== 0);
+    let finalPrepLevels = prepLevelsGrouped;
+    if (shouldHideCantrips) finalPrepLevels = prepLevelsGrouped.filter((levelData) => levelData.level !== '0' && levelData.level !== 0);
     this.enrichWizardBookSpells(finalPrepLevels, personalSpellbook, false, false);
-    this.enrichWizardBookSpells(wizardLevelsFlattened, personalSpellbook, true, isAtMaxSpells);
+    this.enrichWizardBookSpells(wizardLevelsGrouped, personalSpellbook, true, isAtMaxSpells);
     const prepStats = this.calculatePreparationStats(classIdentifier, finalPrepLevels, classItem);
     const tabData = {
-      [spellsTabId]: { spellLevels: finalPrepLevels, spellPreparation: prepStats },
+      [spellsTabId]: {
+        spellLevels: finalPrepLevels,
+        spellPreparation: prepStats
+      },
       [wizardTabId]: {
-        spellLevels: wizardLevelsFlattened,
+        spellLevels: wizardLevelsGrouped,
         spellPreparation: prepStats,
         wizardTotalSpellbookCount: totalSpells,
         wizardFreeSpellbookCount: totalFreeSpells,
@@ -615,28 +674,30 @@ export class SpellbookState {
 
   /**
    * Enrich wizard tab spells with additional data
-   * @param {Array} flattenedSpells - Flattened spell array
+   * @param {Array} spellLevelsGrouped - Grouped spell levels array
    * @param {Array} personalSpellbook - The personal spellbook spell UUIDs
    * @param {boolean} isWizardBook - Whether this is for the wizard tab
    * @param {boolean} isAtMaxSpells - Whether maximum spells are reached
    */
-  enrichWizardBookSpells(flattenedSpells, personalSpellbook, isWizardBook = false, isAtMaxSpells = false) {
-    for (const spell of flattenedSpells) {
-      spell.isWizardClass = true;
-      spell.inWizardSpellbook = personalSpellbook.includes(spell.compendiumUuid || spell.spellUuid);
-      if (isWizardBook) {
-        spell.canAddToSpellbook = !spell.inWizardSpellbook && spell.system.level > 0;
-        spell.isAtMaxSpells = isAtMaxSpells;
-        if (spell.isFromScroll) {
-          spell.canLearnFromScroll = !spell.inWizardSpellbook;
-          spell.scrollMetadata = {
-            scrollId: spell.scrollId,
-            scrollName: spell.scrollName
-          };
+  enrichWizardBookSpells(spellLevelsGrouped, personalSpellbook, isWizardBook = false, isAtMaxSpells = false) {
+    for (const levelData of spellLevelsGrouped) {
+      for (const spell of levelData.spells) {
+        spell.isWizardClass = true;
+        spell.inWizardSpellbook = personalSpellbook.includes(spell.compendiumUuid || spell.spellUuid);
+        if (isWizardBook) {
+          spell.canAddToSpellbook = !spell.inWizardSpellbook && spell.system.level > 0;
+          spell.isAtMaxSpells = isAtMaxSpells;
+          if (spell.isFromScroll) {
+            spell.canLearnFromScroll = !spell.inWizardSpellbook;
+            spell.scrollMetadata = {
+              scrollId: spell.scrollId,
+              scrollName: spell.scrollName
+            };
+          }
         }
+        if (!spell.enrichedIcon) spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
+        spell.formattedDetails = formattingUtils.formatSpellDetails(spell);
       }
-      if (!spell.enrichedIcon) spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
-      spell.formattedDetails = formattingUtils.formatSpellDetails(spell);
     }
   }
 

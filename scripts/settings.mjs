@@ -235,24 +235,6 @@ export function registerSettings() {
     }
   });
 
-  game.settings.register(MODULE.ID, SETTINGS.LAZY_BATCH_SIZE, {
-    name: 'SPELLBOOK.Settings.LazyBatchSize.Name',
-    hint: 'SPELLBOOK.Settings.LazyBatchSize.Hint',
-    scope: 'client',
-    config: true,
-    type: Number,
-    default: MODULE.BATCHING.SIZE,
-    range: {
-      min: 20,
-      max: 250,
-      step: 10
-    },
-    onChange: (value) => {
-      MODULE.BATCHING.SIZE = value;
-      log(3, `Lazy batch size changed to ${value}`);
-    }
-  });
-
   game.settings.register(MODULE.ID, SETTINGS.SPELL_NOTES_LENGTH, {
     name: 'SPELLBOOK.Settings.NotesMaxLength.Name',
     hint: 'SPELLBOOK.Settings.NotesMaxLength.Hint',
