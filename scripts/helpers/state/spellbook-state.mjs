@@ -752,55 +752,6 @@ export class SpellbookState {
   }
 
   /**
-   * Preserve tab state
-   * @param {string} tabName - The tab to preserve state for
-   */
-  preserveTabState(tabName) {
-    const tabElement = this.app.element.querySelector(`.tab[data-tab="${tabName}"]`);
-    if (!tabElement) return;
-    const checkboxes = tabElement.querySelectorAll('dnd5e-checkbox[data-uuid]');
-    const tabState = { checkboxStates: new Map(), timestamp: Date.now() };
-    checkboxes.forEach((checkbox) => {
-      const uuid = checkbox.dataset.uuid;
-      const sourceClass = checkbox.dataset.sourceClass;
-      const key = `${sourceClass}:${uuid}`;
-      tabState.checkboxStates.set(key, { checked: checkbox.checked, disabled: checkbox.disabled, wasPrepared: checkbox.dataset.wasPrepared === 'true' });
-    });
-    if (!this.app._tabStateCache) this.app._tabStateCache = new Map();
-    this.app._tabStateCache.set(tabName, tabState);
-    this.preserveFavoriteStates(tabName);
-    log(3, `Preserved state for tab ${tabName} with ${tabState.checkboxStates.size} checkboxes`);
-  }
-
-  /**
-   * Restore tab state
-   * @param {string} tabName - The tab to restore state for
-   */
-  restoreTabState(tabName) {
-    if (!this.app._tabStateCache || !this.app._tabStateCache.has(tabName)) return;
-    const tabElement = this.app.element.querySelector(`.tab[data-tab="${tabName}"]`);
-    if (!tabElement) return;
-    const tabState = this.app._tabStateCache.get(tabName);
-    const checkboxes = tabElement.querySelectorAll('dnd5e-checkbox[data-uuid]');
-    let restoredCount = 0;
-    checkboxes.forEach((checkbox) => {
-      const uuid = checkbox.dataset.uuid;
-      const sourceClass = checkbox.dataset.sourceClass;
-      const key = `${sourceClass}:${uuid}`;
-      const savedState = tabState.checkboxStates.get(key);
-      if (savedState) {
-        const currentWasPrepared = checkbox.dataset.wasPrepared === 'true';
-        if (savedState.wasPrepared === currentWasPrepared) {
-          checkbox.checked = savedState.checked;
-          restoredCount++;
-        }
-      }
-    });
-    this.restoreFavoriteStates(tabName);
-    log(3, `Restored state for tab ${tabName}, ${restoredCount} checkboxes restored`);
-  }
-
-  /**
    * Handle post-processing after spell save
    * @param {Actor} actor - The actor
    * @returns {Promise<void>}
