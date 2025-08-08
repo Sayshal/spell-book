@@ -26,7 +26,7 @@ Hooks.once('ready', async function () {
   await MacroManager.initializeMacros();
   await UserSpellDataManager.initializeUserSpellData();
   await SpellUsageTracker.initialize();
-  if (game.user.isGM) await preloaderUtils.preloadSpellData();
+  await preloaderUtils.preloadSpellData();
 });
 
 Hooks.on('createJournalEntryPage', (page, options, userId) => {

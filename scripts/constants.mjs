@@ -219,10 +219,10 @@ export const SETTINGS = {
   INDEXED_COMPENDIUMS: 'indexedCompendiums',
   LOGGING_LEVEL: 'loggingLevel',
   OPEN_SPELL_MANAGER: 'openSpellListManager',
+  SETUP_MODE: 'setupMode',
   SPELL_BOOK_POSITION: 'spellBookPositionn',
   SPELL_COMPARISON_MAX: 'spellComparisonMax',
   SPELL_NOTES_DESC_INJECTION: 'injectNotesIntoDescriptions',
   SPELL_NOTES_LENGTH: 'spellNotesMaxLength',
-  SPELL_PRELOADING_MODE: 'spellPreloadingMode',
   SPELLCASTING_RULE_SET: 'spellcastingRuleSet'
 };
