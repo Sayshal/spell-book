@@ -1,6 +1,7 @@
 import { MODULE, SETTINGS } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import { RuleSetManager } from '../managers/rule-set-manager.mjs';
+import * as preloaderUtils from './spell-data-preloader.mjs';
 
 /**
  * Get a class's spell list from compendium journals
@@ -28,6 +29,28 @@ export async function getClassSpellList(className, classUuid, actor) {
   const classIdentifier = classItem?.system?.identifier?.toLowerCase();
   const topLevelFolderName = getTopLevelFolderFromCompendiumSource(classItem?._stats?.compendiumSource);
   if (!classIdentifier) return new Set();
+  const preloadedData = preloaderUtils.getPreloadedData();
+  if (preloadedData && preloadedData.spellLists.length > 0) {
+    log(3, `Checking ${preloadedData.spellLists.length} preloaded spell lists for ${classIdentifier}`);
+    const preloadedMatch = preloadedData.spellLists.find((list) => {
+      if (list.identifier?.toLowerCase() === classIdentifier) {
+        if (topLevelFolderName && list.pack) return list.pack.toLowerCase().includes(topLevelFolderName.toLowerCase());
+        return true;
+      }
+      return false;
+    });
+    if (preloadedMatch && preloadedMatch.spellCount > 0) {
+      log(3, `Found preloaded spell list for ${classIdentifier}: ${preloadedMatch.name} (${preloadedMatch.spellCount} spells)`);
+      try {
+        const document = await fromUuid(preloadedMatch.uuid);
+        if (document?.system?.spells && document.system.spells.size > 0) {
+          return document.system.spells;
+        }
+      } catch (error) {
+        log(2, `Error loading preloaded spell list ${preloadedMatch.uuid}:`, error);
+      }
+    }
+  }
   const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
   if (topLevelFolderName) {
     const folderMatch = await findSpellListByTopLevelFolder(topLevelFolderName, classIdentifier, customMappings);
