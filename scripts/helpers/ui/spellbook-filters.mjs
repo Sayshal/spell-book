@@ -319,74 +319,86 @@ export class SpellbookFilterHelper {
    */
   applyFilters() {
     try {
+      if (!this.element) return;
       const filters = this.getFilterState();
       const spellItems = this.element.querySelectorAll('.spell-item');
       let visibleCount = 0;
       const levelVisibilityMap = new Map();
       for (const item of spellItems) {
-        const titleElement = item.querySelector('.spell-name .title');
-        const extractedName = titleElement?.textContent?.trim() || item.querySelector('.spell-name')?.textContent?.trim() || '';
-        const name = extractedName.toLowerCase();
-        const isPrepared = item.classList.contains('prepared-spell');
-        const level = item.dataset.spellLevel || '';
-        const school = item.dataset.spellSchool || '';
-        const castingTimeType = item.dataset.castingTimeType || '';
-        const castingTimeValue = item.dataset.castingTimeValue || '';
-        const rangeUnits = item.dataset.rangeUnits || '';
-        const rangeValue = item.dataset.rangeValue || '0';
-        const damageTypes = (item.dataset.damageTypes || '').split(',');
-        const isRitual = item.dataset.ritual === 'true';
-        const isConcentration = item.dataset.concentration === 'true';
-        const requiresSave = item.dataset.requiresSave === 'true';
-        const conditions = (item.dataset.conditions || '').split(',');
-        const hasMaterialComponents = item.dataset.materialComponents === 'true';
-        const isFavorited = item.dataset.favorited === 'true';
-        const isGranted = !!item.querySelector('.tag.granted');
-        const isAlwaysPrepared = !!item.querySelector('.tag.always-prepared');
-        const isCountable = !isGranted && !isAlwaysPrepared;
-        const visible = this._checkSpellVisibility(filters, {
-          name,
-          isPrepared,
-          level,
-          school,
-          castingTimeType,
-          castingTimeValue,
-          rangeUnits,
-          rangeValue,
-          damageTypes,
-          isRitual,
-          isFavorited,
-          isConcentration,
-          requiresSave,
-          conditions,
-          hasMaterialComponents
-        });
+        const spellData = this._extractSpellDataFromElement(item);
+        const visible = this._checkSpellVisibility(filters, spellData);
         item.style.display = visible ? '' : 'none';
         if (visible) {
           visibleCount++;
-          if (!levelVisibilityMap.has(level)) {
-            levelVisibilityMap.set(level, {
-              visible: 0,
-              prepared: 0,
-              countable: 0,
-              countablePrepared: 0
-            });
-          }
-          const levelStats = levelVisibilityMap.get(level);
-          levelStats.visible++;
-          if (isCountable) {
-            levelStats.countable++;
-            if (isPrepared) levelStats.countablePrepared++;
-          }
-          if (isPrepared) levelStats.prepared++;
+          this._updateLevelVisibilityStats(levelVisibilityMap, spellData, item);
         }
       }
-      const noResults = this.element.querySelector('.no-filter-results');
-      if (noResults) noResults.style.display = visibleCount > 0 ? 'none' : 'block';
+      this._updateNoResultsDisplay(visibleCount);
       this._updateLevelContainers(levelVisibilityMap);
     } catch (error) {
       log(1, 'Error applying filters:', error);
     }
+  }
+
+  /**
+   * Extract spell data from DOM element for filtering
+   * @param {HTMLElement} item - The spell item element
+   * @returns {Object} Extracted spell data
+   * @private
+   */
+  _extractSpellDataFromElement(item) {
+    const titleElement = item.querySelector('.spell-name .title');
+    const extractedName = titleElement?.textContent?.trim() || item.querySelector('.spell-name')?.textContent?.trim() || '';
+
+    return {
+      name: extractedName.toLowerCase(),
+      isPrepared: item.classList.contains('prepared-spell'),
+      level: item.dataset.spellLevel || '',
+      school: item.dataset.spellSchool || '',
+      castingTimeType: item.dataset.castingTimeType || '',
+      castingTimeValue: item.dataset.castingTimeValue || '',
+      rangeUnits: item.dataset.rangeUnits || '',
+      rangeValue: item.dataset.rangeValue || '0',
+      damageTypes: (item.dataset.damageTypes || '').split(',').filter(Boolean),
+      isRitual: item.dataset.ritual === 'true',
+      isConcentration: item.dataset.concentration === 'true',
+      requiresSave: item.dataset.requiresSave === 'true',
+      conditions: (item.dataset.conditions || '').split(',').filter(Boolean),
+      hasMaterialComponents: item.dataset.materialComponents === 'true',
+      isFavorited: item.dataset.favorited === 'true'
+    };
+  }
+
+  /**
+   * Update level visibility statistics
+   * @param {Map} levelVisibilityMap - Map to track level statistics
+   * @param {Object} spellData - Spell data
+   * @param {HTMLElement} item - Spell item element
+   * @private
+   */
+  _updateLevelVisibilityStats(levelVisibilityMap, spellData, item) {
+    const level = spellData.level;
+    const isGranted = !!item.querySelector('.tag.granted');
+    const isAlwaysPrepared = !!item.querySelector('.tag.always-prepared');
+    const isCountable = !isGranted && !isAlwaysPrepared;
+    if (!levelVisibilityMap.has(level)) levelVisibilityMap.set(level, { visible: 0, prepared: 0, countable: 0, countablePrepared: 0 });
+    const levelStats = levelVisibilityMap.get(level);
+    levelStats.visible++;
+    if (isCountable) {
+      levelStats.countable++;
+      if (spellData.isPrepared) levelStats.countablePrepared++;
+    }
+    if (spellData.isPrepared) levelStats.prepared++;
+  }
+
+  /**
+   * Update the "no results" display
+   * @param {number} visibleCount - Number of visible spells
+   * @private
+   */
+  _updateNoResultsDisplay(visibleCount) {
+    const noResults = this.element.querySelector('.no-filter-results');
+    if (noResults) noResults.style.display = visibleCount > 0 ? 'none' : 'block';
   }
 
   /**

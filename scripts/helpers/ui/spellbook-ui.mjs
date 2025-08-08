@@ -87,7 +87,7 @@ export class SpellbookUI {
       const eventType = input.type === 'checkbox' ? 'change' : 'input';
       input.addEventListener(eventType, () => {
         this.app.filterHelper.invalidateFilterCache();
-        PlayerSpellBook.filterSpells.call(this.app, null, null);
+        this.app._applyFilters();
       });
     });
   }

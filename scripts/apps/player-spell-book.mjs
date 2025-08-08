@@ -1303,27 +1303,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   async _applyFilters() {
-    log(1, 'DEBUG - FILTERS CALLED');
+    if (!this.element) return;
     this.filterHelper.applyFilters();
-    // const activeTab = this.tabGroups['spellbook-tabs'];
-    // const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
-    // if (!activeTabContent) return;
-    // const filterState = this.filterHelper.getFilterState();
-    // const spellItems = activeTabContent.querySelectorAll('.spell-item');
-    // let visibleCount = 0;
-    // spellItems.forEach((item) => {
-    //   const spell = this._getSpellDataFromElement(item);
-    //   const matchesFilter = this._matchesFilters(spell, filterState);
-    //   if (matchesFilter) {
-    //     item.style.display = '';
-    //     visibleCount++;
-    //   } else {
-    //     item.style.display = 'none';
-    //   }
-    // });
-    // const noResultsElement = activeTabContent.querySelector('.no-filter-results');
-    // if (noResultsElement) noResultsElement.style.display = visibleCount === 0 ? 'block' : 'none';
-    this.ui.updateSpellCounts();
+    this.ui.updateSpellPreparationTracking();
+    this.ui.updateCantripCounter();
   }
 
   /**
