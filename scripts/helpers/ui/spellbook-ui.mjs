@@ -93,33 +93,6 @@ export class SpellbookUI {
   }
 
   /**
-   * Get a random wizard book image
-   * @returns {Promise<string>} Path to a random book image
-   */
-  async getRandomWizardBookImage() {
-    try {
-      const folderPath = 'icons/sundries/books';
-      const browseResult = await FilePicker.browse('public', folderPath);
-      if (!browseResult || !browseResult.files) {
-        log(2, `Could not browse folder ${folderPath}, using fallback`);
-        return 'icons/svg/book.svg';
-      }
-      const webpFiles = browseResult.files.filter((filePath) => filePath.toLowerCase().endsWith('.webp'));
-      if (webpFiles.length === 0) {
-        log(2, `No .webp files found in ${folderPath}, using fallback`);
-        return 'icons/svg/book.svg';
-      }
-      const randomIndex = Math.floor(Math.random() * webpFiles.length);
-      const selectedFile = webpFiles[randomIndex];
-      log(3, `Selected random wizard book image: ${selectedFile} (${randomIndex + 1} of ${webpFiles.length})`);
-      return selectedFile;
-    } catch (error) {
-      log(1, `Error selecting random wizard book image:`, error);
-      return 'icons/svg/book.svg';
-    }
-  }
-
-  /**
    * Enhanced spell preparation tracking that enforces per-class limits
    */
   updateSpellPreparationTracking() {

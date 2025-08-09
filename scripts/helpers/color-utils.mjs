@@ -2,14 +2,17 @@
 
 import { log } from '../logger.mjs';
 const T = { light: '#f4f4f4', dark: '#1b1d24' };
+
 function d() {
   if (!foundry.utils.isNewerVersion(game.version, '12.999')) return game.settings.get('core', 'colorScheme');
   else return game.settings.get('core', 'uiConfig').colorScheme.applications;
 }
+
 function h(x) {
   const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(x);
   return r ? { r: parseInt(r[1], 16), g: parseInt(r[2], 16), b: parseInt(r[3], 16) } : null;
 }
+
 function rgbToHsl(r, g, b) {
   r /= 255;
   g /= 255;
@@ -37,6 +40,7 @@ function rgbToHsl(r, g, b) {
   }
   return { h: h * 360, s: s * 100, l: l * 100 };
 }
+
 function hslToRgb(h, s, l) {
   h /= 360;
   s /= 100;
@@ -60,6 +64,7 @@ function hslToRgb(h, s, l) {
   }
   return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
 }
+
 function L(r, g, b) {
   const [x, y, z] = [r, g, b].map((c) => {
     c /= 255;
@@ -67,6 +72,7 @@ function L(r, g, b) {
   });
   return 0.2126 * x + 0.7152 * y + 0.0722 * z;
 }
+
 function C(a, b) {
   const x = h(a),
     y = h(b);
@@ -77,6 +83,7 @@ function C(a, b) {
     dr = Math.min(l1, l2);
   return (br + 0.05) / (dr + 0.05);
 }
+
 function A(c, bg, t = 4.5) {
   const rgb = h(c);
   if (!rgb) return c;
@@ -104,6 +111,7 @@ function A(c, bg, t = 4.5) {
   const fRgb = hslToRgb(hsl.h, hsl.s, aL);
   return `#${((1 << 24) + (fRgb.r << 16) + (fRgb.g << 8) + fRgb.b).toString(16).slice(1)}`;
 }
+
 export async function extractDominantColor(src) {
   try {
     return new Promise((resolve) => {
@@ -205,5 +213,56 @@ export async function applyClassColors(sc) {
     log(3, 'Applied class-specific colors to CSS with contrast adjustment');
   } catch (e) {
     log(1, 'Error applying class colors:', e);
+  }
+}
+
+export async function applyColorOverlay(imagePath, overlayColor) {
+  log(1, `applyColorOverlay called with imagePath: ${imagePath}, overlayColor: ${overlayColor}`);
+  try {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      log(1, `Creating image element for: ${imagePath}`);
+      const timeout = setTimeout(() => {
+        log(1, `TIMEOUT applying color overlay to: ${imagePath}`);
+        resolve(imagePath);
+      }, 5000);
+      img.onload = () => {
+        log(1, `Image loaded successfully: ${imagePath}, dimensions: ${img.width}x${img.height}`);
+        clearTimeout(timeout);
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          log(1, `Created canvas: ${canvas.width}x${canvas.height}`);
+          ctx.drawImage(img, 0, 0);
+          log(1, `Drew original image to canvas`);
+          ctx.globalCompositeOperation = 'multiply';
+          ctx.fillStyle = overlayColor;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          log(1, `Applied multiply overlay with color: ${overlayColor}`);
+          ctx.globalCompositeOperation = 'destination-atop';
+          ctx.drawImage(img, 0, 0);
+          log(1, `Applied destination-atop composition`);
+          const dataURL = canvas.toDataURL();
+          log(1, `Generated dataURL, length: ${dataURL.length}, starts with: ${dataURL.substring(0, 50)}`);
+          resolve(dataURL);
+        } catch (e) {
+          log(1, 'ERROR in canvas operations:', e);
+          resolve(imagePath);
+        }
+      };
+      img.onerror = (error) => {
+        clearTimeout(timeout);
+        log(1, `ERROR loading image: ${imagePath}`, error);
+        resolve(imagePath);
+      };
+      log(1, `Setting img.src to: ${imagePath}`);
+      img.src = imagePath;
+    });
+  } catch (e) {
+    log(1, 'ERROR in applyColorOverlay outer try-catch:', e);
+    return imagePath;
   }
 }

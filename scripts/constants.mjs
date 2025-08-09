@@ -226,3 +226,12 @@ export const SETTINGS = {
   SPELL_NOTES_LENGTH: 'spellNotesMaxLength',
   SPELLCASTING_RULE_SET: 'spellcastingRuleSet'
 };
+
+/**
+ * Asset paths used by the module
+ * @type {Object}
+ */
+export const ASSETS = {
+  WIZARDBOOK_ICON: 'modules/spell-book/assets/icon.webp',
+  MODULE_ICON: 'modules/spell-book/assets/icon_colored.webp'
+};
