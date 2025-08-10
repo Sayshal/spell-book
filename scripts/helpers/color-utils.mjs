@@ -217,12 +217,10 @@ export async function applyClassColors(sc) {
 }
 
 export async function applyColorOverlay(imagePath, overlayColor) {
-  log(1, `applyColorOverlay called with imagePath: ${imagePath}, overlayColor: ${overlayColor}`);
   try {
     return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
-      log(1, `Creating image element for: ${imagePath}`);
       const timeout = setTimeout(() => {
         log(1, `TIMEOUT applying color overlay to: ${imagePath}`);
         resolve(imagePath);
@@ -235,18 +233,13 @@ export async function applyColorOverlay(imagePath, overlayColor) {
           const ctx = canvas.getContext('2d');
           canvas.width = img.width;
           canvas.height = img.height;
-          log(1, `Created canvas: ${canvas.width}x${canvas.height}`);
           ctx.drawImage(img, 0, 0);
-          log(1, `Drew original image to canvas`);
           ctx.globalCompositeOperation = 'multiply';
           ctx.fillStyle = overlayColor;
           ctx.fillRect(0, 0, canvas.width, canvas.height);
-          log(1, `Applied multiply overlay with color: ${overlayColor}`);
           ctx.globalCompositeOperation = 'destination-atop';
           ctx.drawImage(img, 0, 0);
-          log(1, `Applied destination-atop composition`);
           const dataURL = canvas.toDataURL();
-          log(1, `Generated dataURL, length: ${dataURL.length}, starts with: ${dataURL.substring(0, 50)}`);
           resolve(dataURL);
         } catch (e) {
           log(1, 'ERROR in canvas operations:', e);
@@ -258,7 +251,6 @@ export async function applyColorOverlay(imagePath, overlayColor) {
         log(1, `ERROR loading image: ${imagePath}`, error);
         resolve(imagePath);
       };
-      log(1, `Setting img.src to: ${imagePath}`);
       img.src = imagePath;
     });
   } catch (e) {

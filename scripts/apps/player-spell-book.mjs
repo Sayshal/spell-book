@@ -470,34 +470,16 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   async _onFirstRender(context, options) {
     await super._onFirstRender(context, options);
-
-    log(1, `_onFirstRender: wizardManagers.size = ${this.wizardManagers.size}`);
-
     if (this.wizardManagers.size > 0) {
       this._wizardBookImages = new Map();
       for (const [identifier, wizardManager] of this.wizardManagers) {
-        log(1, `Processing wizard manager for identifier: ${identifier}, isWizard: ${wizardManager.isWizard}`);
-
         if (wizardManager.isWizard) {
           let wizardBookImage;
-
-          // Use spellcastingClasses instead of classSpellData to get the class image
           const classData = this._stateManager.spellcastingClasses[identifier];
-
-          log(1, `Class data from spellcastingClasses for ${identifier}:`, classData);
-          log(1, `Class image path: ${classData?.img}`);
-
           if (classData && classData.img) {
             try {
-              log(1, `Extracting dominant color from: ${classData.img}`);
               const dominantColor = await colorUtils.extractDominantColor(classData.img);
-              log(1, `Extracted dominant color for ${identifier}: ${dominantColor}`);
-
-              log(1, `Applying color overlay - Base image: ${ASSETS.WIZARDBOOK_ICON}, Color: ${dominantColor}`);
               wizardBookImage = await colorUtils.applyColorOverlay(ASSETS.WIZARDBOOK_ICON, dominantColor);
-              log(1, `Color overlay result type: ${typeof wizardBookImage}, length: ${wizardBookImage?.length || 'N/A'}`);
-              log(1, `Color overlay result preview: ${wizardBookImage?.substring(0, 50)}...`);
-
               log(3, `Applied ${dominantColor} color overlay to wizardbook for class ${identifier}`);
             } catch (error) {
               log(1, `Failed to apply color overlay for class ${identifier}:`, error);
@@ -507,15 +489,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             log(1, `No class data or img for ${identifier}, using default icon`);
             wizardBookImage = ASSETS.WIZARDBOOK_ICON;
           }
-
-          log(1, `Final wizardBookImage for ${identifier}: ${wizardBookImage?.substring(0, 50)}...`);
+          log(3, `Final wizardBookImage for ${identifier}: ${wizardBookImage?.substring(0, 50)}...`);
           this._wizardBookImages.set(identifier, wizardBookImage);
         }
       }
-
-      log(1, `Final _wizardBookImages map:`, Array.from(this._wizardBookImages.entries()));
     }
-
     this._stateManager.clearFavoriteSessionState();
     await this._syncJournalToActorState();
   }
@@ -839,9 +817,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     } else if (!this.tabGroups[tabGroup] && Object.keys(this._stateManager.spellcastingClasses || {}).length > 0) {
       this.tabGroups[tabGroup] = `${Object.keys(this._stateManager.spellcastingClasses)[0]}Tab`;
     }
-
-    log(1, `_getTabs called, _wizardBookImages map:`, this._wizardBookImages);
-
     if (this._stateManager.spellcastingClasses) {
       const sortedClassIdentifiers = Object.keys(this._stateManager.spellcastingClasses).sort();
       for (const identifier of sortedClassIdentifiers) {
@@ -864,16 +839,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         if (wizardManager && wizardManager.isWizard) {
           const wizardTabId = `wizardbook-${identifier}`;
           const className = classData.name;
-
-          log(1, `Processing wizardbook tab for ${identifier}`);
-          log(1, `_wizardBookImages has key ${identifier}:`, this._wizardBookImages?.has(identifier));
-          log(1, `_wizardBookImages.get(${identifier}):`, this._wizardBookImages?.get(identifier)?.substring(0, 50) + '...');
-
           const wizardBookImage = this._wizardBookImages?.get(identifier) || ASSETS.WIZARDBOOK_ICON;
-
-          log(1, `Final wizardBookImage for tab ${wizardTabId}:`, wizardBookImage?.substring(0, 50) + '...');
-          log(1, `Is wizardBookImage a data URL?`, wizardBookImage?.startsWith('data:'));
-
           tabs[wizardTabId] = {
             id: wizardTabId,
             label: game.i18n.format('SPELLBOOK.Tabs.WizardSpells', { class: className }),
@@ -886,13 +852,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
               className: className
             }
           };
-
-          log(1, `Created wizardbook tab:`, tabs[wizardTabId]);
         }
       }
     }
-
-    log(1, `Final tabs object:`, tabs);
     return tabs;
   }
 
