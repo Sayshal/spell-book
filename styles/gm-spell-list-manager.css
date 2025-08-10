@@ -107,10 +107,6 @@
       margin-left: calc(var(--spell-book-manager-sidebar-width) * -1);
       border: none;
     }
-
-    .sidebar-collapser i {
-      transform: rotate(180deg);
-    }
   }
 }
 
@@ -222,10 +218,6 @@
       margin-bottom: 0.75rem;
 
       &.collapsed {
-        .collapse-indicator {
-          transform: rotate(-90deg);
-        }
-
         .folder-content {
           display: none;
           max-height: 0;
@@ -779,10 +771,6 @@
     margin-bottom: 1rem;
 
     &.collapsed {
-      .collapse-indicator {
-        transform: rotate(-90deg);
-      }
-
       .spell-list {
         display: none;
         max-height: 0;

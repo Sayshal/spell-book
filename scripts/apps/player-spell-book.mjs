@@ -1654,7 +1654,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const isCollapsing = !this.element.classList.contains('sidebar-collapsed');
     this.element.classList.toggle('sidebar-collapsed');
     const caretIcon = event.currentTarget.querySelector('i');
-    if (caretIcon) caretIcon.style.transform = isCollapsing ? 'rotate(180deg)' : 'rotate(0)';
+    if (caretIcon) caretIcon.className = isCollapsing ? 'fas fa-caret-right' : 'fas fa-caret-left';
     this.ui.positionFooter();
     game.user.setFlag(MODULE.ID, FLAGS.SIDEBAR_COLLAPSED, isCollapsing);
   }
@@ -1739,6 +1739,16 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (isCollapsed && !collapsedLevels.includes(levelId)) collapsedLevels.push(levelId);
     else if (!isCollapsed && collapsedLevels.includes(levelId)) collapsedLevels.splice(collapsedLevels.indexOf(levelId), 1);
     game.user.setFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS, collapsedLevels);
+    const header = levelContainer.querySelector('.spell-level-heading');
+    const spellList = levelContainer.querySelector('.spell-list');
+    const collapseIcon = header?.querySelector('.collapse-indicator');
+    if (header) {
+      header.setAttribute('aria-expanded', !isCollapsed);
+      if (isCollapsed) header.classList.add('collapsed');
+      else header.classList.remove('collapsed');
+    }
+    if (spellList) spellList.style.display = isCollapsed ? 'none' : '';
+    if (collapseIcon) collapseIcon.className = `fas fa-caret-${isCollapsed ? 'right' : 'down'} collapse-indicator`;
   }
 
   /**

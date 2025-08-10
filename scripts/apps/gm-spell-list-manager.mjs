@@ -498,7 +498,18 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS) || [];
     for (const levelId of collapsedLevels) {
       const levelContainer = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
-      if (levelContainer) levelContainer.classList.add('collapsed');
+      if (levelContainer) {
+        levelContainer.classList.add('collapsed');
+        const header = levelContainer.querySelector('.spell-level-heading');
+        const spellList = levelContainer.querySelector('.spell-list');
+        const collapseIcon = header?.querySelector('.collapse-indicator');
+        if (header) {
+          header.setAttribute('aria-expanded', 'false');
+          header.classList.add('collapsed');
+        }
+        if (spellList) spellList.style.display = 'none';
+        if (collapseIcon) collapseIcon.className = 'fas fa-caret-right collapse-indicator';
+      }
     }
   }
 
@@ -509,7 +520,15 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     const collapsedFolders = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_FOLDERS) || [];
     for (const folderId of collapsedFolders) {
       const folderContainer = this.element.querySelector(`.list-folder[data-folder-id="${folderId}"]`);
-      if (folderContainer) folderContainer.classList.add('collapsed');
+      if (folderContainer) {
+        folderContainer.classList.add('collapsed');
+        const header = folderContainer.querySelector('.folder-header');
+        const content = folderContainer.querySelector('.folder-content');
+        const collapseIcon = header?.querySelector('.collapse-indicator');
+        if (header) header.setAttribute('aria-expanded', 'false');
+        if (content) content.style.display = 'none';
+        if (collapseIcon) collapseIcon.className = 'fas fa-chevron-right collapse-indicator';
+      }
     }
   }
 
@@ -1673,7 +1692,10 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
    * @param {HTMLElement} _form - The form element
    */
   static handleToggleSidebar(event, _form) {
+    const isCollapsing = !this.element.classList.contains('sidebar-collapsed');
     this.element.classList.toggle('sidebar-collapsed');
+    const caretIcon = event.currentTarget.querySelector('i');
+    if (caretIcon) caretIcon.className = isCollapsing ? 'fas fa-caret-right' : 'fas fa-caret-left';
   }
 
   /**
@@ -1692,6 +1714,16 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (isCollapsed && !collapsedLevels.includes(levelId)) collapsedLevels.push(levelId);
     else if (!isCollapsed && collapsedLevels.includes(levelId)) collapsedLevels.splice(collapsedLevels.indexOf(levelId), 1);
     game.user.setFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS, collapsedLevels);
+    const header = levelContainer.querySelector('.spell-level-heading');
+    const spellList = levelContainer.querySelector('.spell-list');
+    const collapseIcon = header?.querySelector('.collapse-indicator');
+    if (header) {
+      header.setAttribute('aria-expanded', !isCollapsed);
+      if (isCollapsed) header.classList.add('collapsed');
+      else header.classList.remove('collapsed');
+    }
+    if (spellList) spellList.style.display = isCollapsed ? 'none' : '';
+    if (collapseIcon) collapseIcon.className = `fas fa-caret-${isCollapsed ? 'right' : 'down'} collapse-indicator`;
   }
 
   /**
@@ -1711,6 +1743,12 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     if (isCollapsed && !collapsedFolders.includes(folderId)) collapsedFolders.push(folderId);
     else if (!isCollapsed && collapsedFolders.includes(folderId)) collapsedFolders.splice(collapsedFolders.indexOf(folderId), 1);
     game.user.setFlag(MODULE.ID, FLAGS.COLLAPSED_FOLDERS, collapsedFolders);
+    const header = folderContainer.querySelector('.folder-header');
+    const content = folderContainer.querySelector('.folder-content');
+    const collapseIcon = header?.querySelector('.collapse-indicator');
+    if (header) header.setAttribute('aria-expanded', !isCollapsed);
+    if (content) content.style.display = isCollapsed ? 'none' : '';
+    if (collapseIcon) collapseIcon.className = `fas fa-chevron-${isCollapsed ? 'right' : 'down'} collapse-indicator`;
   }
 
   /**

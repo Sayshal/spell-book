@@ -199,10 +199,6 @@
       border: none;
     }
 
-    .sidebar-collapser i {
-      transform: rotate(180deg);
-    }
-
     .filter-config-button {
       display: none;
     }
@@ -1110,10 +1106,6 @@
     align-items: center;
 
     &.collapsed {
-      .collapse-indicator {
-        transform: rotate(-90deg);
-      }
-
       .spell-list {
         display: none;
         max-height: 0;
