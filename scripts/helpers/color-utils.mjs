@@ -216,7 +216,7 @@ export async function applyClassColors(sc) {
   }
 }
 
-export async function applyColorOverlay(imagePath, overlayColor) {
+export async function applyColorOverlay(imagePath, overlayColor, opacity = 0.75) {
   try {
     return new Promise((resolve) => {
       const img = new Image();
@@ -234,9 +234,11 @@ export async function applyColorOverlay(imagePath, overlayColor) {
           canvas.height = img.height;
           ctx.drawImage(img, 0, 0);
           ctx.globalCompositeOperation = 'multiply';
+          ctx.globalAlpha = opacity;
           ctx.fillStyle = overlayColor;
           ctx.fillRect(0, 0, canvas.width, canvas.height);
           ctx.globalCompositeOperation = 'destination-atop';
+          ctx.globalAlpha = 1.0;
           ctx.drawImage(img, 0, 0);
           const dataURL = canvas.toDataURL();
           resolve(dataURL);

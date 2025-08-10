@@ -523,27 +523,30 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     await super._onFirstRender(context, options);
     if (this.wizardManagers.size > 0) {
       this._wizardBookImages = new Map();
+      const colorPromises = [];
       for (const [identifier, wizardManager] of this.wizardManagers) {
         if (wizardManager.isWizard) {
-          let wizardBookImage;
           const classData = this._stateManager.spellcastingClasses[identifier];
           if (classData && classData.img) {
-            try {
-              const dominantColor = await colorUtils.extractDominantColor(classData.img);
-              wizardBookImage = await colorUtils.applyColorOverlay(ASSETS.WIZARDBOOK_ICON, dominantColor);
-              log(3, `Applied ${dominantColor} color overlay to wizardbook for class ${identifier}`);
-            } catch (error) {
-              log(1, `Failed to apply color overlay for class ${identifier}:`, error);
-              wizardBookImage = ASSETS.WIZARDBOOK_ICON;
-            }
+            const colorPromise = (async () => {
+              try {
+                const dominantColor = await colorUtils.extractDominantColor(classData.img);
+                const wizardBookImage = await colorUtils.applyColorOverlay(ASSETS.WIZARDBOOK_ICON, dominantColor);
+                this._wizardBookImages.set(identifier, wizardBookImage);
+                log(3, `Applied ${dominantColor} color overlay to wizardbook for class ${identifier}`);
+              } catch (error) {
+                log(1, `Failed to apply color overlay for class ${identifier}:`, error);
+                this._wizardBookImages.set(identifier, ASSETS.WIZARDBOOK_ICON);
+              }
+            })();
+            colorPromises.push(colorPromise);
           } else {
-            log(1, `No class data or img for ${identifier}, using default icon`);
-            wizardBookImage = ASSETS.WIZARDBOOK_ICON;
+            this._wizardBookImages.set(identifier, ASSETS.WIZARDBOOK_ICON);
           }
-          log(3, `Final wizardBookImage for ${identifier}: ${wizardBookImage?.substring(0, 50)}...`);
-          this._wizardBookImages.set(identifier, wizardBookImage);
         }
       }
+      await Promise.all(colorPromises);
+      this.render(false, { parts: ['navigation'] });
     }
     this._stateManager.clearFavoriteSessionState();
     await this._syncJournalToActorState();
