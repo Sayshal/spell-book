@@ -226,7 +226,6 @@ export async function applyColorOverlay(imagePath, overlayColor) {
         resolve(imagePath);
       }, 5000);
       img.onload = () => {
-        log(1, `Image loaded successfully: ${imagePath}, dimensions: ${img.width}x${img.height}`);
         clearTimeout(timeout);
         try {
           const canvas = document.createElement('canvas');
