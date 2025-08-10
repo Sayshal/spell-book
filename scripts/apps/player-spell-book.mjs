@@ -60,7 +60,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     container: { template: TEMPLATES.PLAYER.CONTAINER },
     sidebar: { template: TEMPLATES.PLAYER.SIDEBAR },
     navigation: { template: TEMPLATES.PLAYER.TAB_NAV },
-    wizardbook: { template: TEMPLATES.PLAYER.TAB_WIZARD_SPELLBOOK, scrollable: [''] },
     footer: { template: TEMPLATES.PLAYER.FOOTER }
   };
 
@@ -232,12 +231,21 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const wizardManager = this.wizardManagers.get(classIdentifier);
       context.isWizard = wizardManager?.isWizard || false;
       context.isForceWizard = wizardManager?.classItem && genericUtils.isClassWizardEnabled(this.actor, classIdentifier);
-      if (this._stateManager.tabData?.[partId]) {
-        const flattenedSpells = this._stateManager.tabData[partId].spellLevels;
-        context.spellLevels = flattenedSpells;
-        const scrollSpells = this._stateManager.scrollSpells || [];
-        context.spellPreparation = this._stateManager.tabData[partId].spellPreparation;
-        context.globalPrepared = this._stateManager.spellPreparation;
+      const wizardTabData = this._stateManager.tabData?.[partId];
+      if (wizardTabData) {
+        context.spellLevels = wizardTabData.spellLevels || [];
+        context.spellPreparation = wizardTabData.spellPreparation;
+        context.wizardTotalSpellbookCount = wizardTabData.wizardTotalSpellbookCount || 0;
+        context.wizardFreeSpellbookCount = wizardTabData.wizardFreeSpellbookCount || 0;
+        context.wizardRemainingFreeSpells = wizardTabData.wizardRemainingFreeSpells || 0;
+        context.wizardHasFreeSpells = wizardTabData.wizardHasFreeSpells || false;
+        context.wizardMaxSpellbookCount = wizardTabData.wizardMaxSpellbookCount || 0;
+        context.wizardIsAtMax = wizardTabData.wizardIsAtMax || false;
+        log(3, `Wizard tab context: ${context.spellLevels.length} spell levels, ${context.wizardRemainingFreeSpells} free spells remaining`);
+      } else {
+        log(1, `No wizard tab data found for ${partId}`);
+        context.spellLevels = [];
+        context.spellPreparation = { current: 0, maximum: 0 };
       }
     }
     return context;
@@ -510,7 +518,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         await this._stateManager.initialize();
         this.ui.updateSpellPreparationTracking();
         this.ui.updateSpellCounts();
-        this.render(false, { parts: ['footer'] });
+        this.render(false);
+        return;
       }
       await this._renderAllSpells();
       this.ui.updateSpellPreparationTracking();

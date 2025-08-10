@@ -604,6 +604,7 @@ export class SpellbookState {
    * @async
    */
   async loadWizardSpellData(classItem, classIdentifier) {
+    log(3, `loadWizardSpellData called for ${classIdentifier}`);
     const className = classItem.name.toLowerCase();
     const classUuid = classItem.uuid;
     const maxSpellLevel = discoveryUtils.calculateMaxSpellLevel(classItem, this.actor);
@@ -629,7 +630,11 @@ export class SpellbookState {
         spellItems = [...preloadedSpells, ...additionalSpells];
       } else spellItems = preloadedSpells;
     } else spellItems = await actorSpellUtils.fetchSpellDocuments(allUuids, effectiveMaxLevel);
-    if (!spellItems || !spellItems.length) return;
+    if (!spellItems || !spellItems.length) {
+      log(1, `No spell items found for wizard ${classIdentifier}`);
+      return;
+    }
+    log(3, `About to call processWizardSpells with ${spellItems.length} spell items`);
     await this.processWizardSpells(spellItems, classItem, personalSpellbook, classIdentifier);
   }
 
@@ -643,33 +648,171 @@ export class SpellbookState {
    * @async
    */
   async processWizardSpells(allSpellItems, classItem, personalSpellbook, classIdentifier) {
+    log(1, `=== processWizardSpells START for ${classIdentifier} ===`);
+
     const spellsTabId = `${classIdentifier}Tab`;
     const wizardTabId = `wizardbook-${classIdentifier}`;
+
+    log(1, `spellsTabId: ${spellsTabId}`);
+    log(1, `wizardTabId: ${wizardTabId}`);
+    log(1, `allSpellItems count: ${allSpellItems.length}`);
+    log(1, `personalSpellbook count: ${personalSpellbook.length}`);
+    log(1, `personalSpellbook contents: [${personalSpellbook.join(', ')}]`);
+
     const shouldHideCantrips = this._shouldHideCantrips(classIdentifier);
+    log(1, `shouldHideCantrips: ${shouldHideCantrips}`);
+
     const wizardManager = this.app.wizardManagers.get(classIdentifier);
+    log(1, `wizardManager exists: ${!!wizardManager}`);
+
+    if (!wizardManager) {
+      log(1, `ERROR: No wizard manager found for ${classIdentifier}`);
+      return;
+    }
+
     const totalFreeSpells = wizardManager.getTotalFreeSpells();
     const usedFreeSpells = await wizardManager.getUsedFreeSpells();
     const remainingFreeSpells = Math.max(0, totalFreeSpells - usedFreeSpells);
     const totalSpells = personalSpellbook.length;
+
+    log(1, `totalFreeSpells: ${totalFreeSpells}`);
+    log(1, `usedFreeSpells: ${usedFreeSpells}`);
+    log(1, `remainingFreeSpells: ${remainingFreeSpells}`);
+    log(1, `totalSpells: ${totalSpells}`);
+
     this.scrollSpells = await ScrollScanner.scanForScrollSpells(this.actor);
+    log(1, `scrollSpells found: ${this.scrollSpells ? this.scrollSpells.length : 0}`);
+
     const grantedSpells = this.actor.items
       .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.preparation?.mode && ['pact', 'innate', 'atwill'].includes(i.system.preparation.mode))))
       .map((i) => i.flags?.core?.sourceId || i.uuid)
       .filter(Boolean);
-    for (const spell of allSpellItems) spell.sourceClass = classIdentifier;
-    const prepTabSpells = allSpellItems.filter(
-      (spell) => (!shouldHideCantrips && spell.system.level === 0) || (spell.system.level !== 0 && (personalSpellbook.includes(spell.compendiumUuid) || grantedSpells.includes(spell.compendiumUuid)))
-    );
-    const wizardbookSpells = allSpellItems.filter((spell) => this._fullWizardSpellLists.get(classIdentifier).has(spell.compendiumUuid) && spell.system.level !== 0);
+
+    log(1, `grantedSpells count: ${grantedSpells.length}`);
+    log(1, `grantedSpells: [${grantedSpells.join(', ')}]`);
+
+    // Check full wizard spell list
+    const fullWizardSpellList = this._fullWizardSpellLists.get(classIdentifier);
+    log(1, `fullWizardSpellList exists: ${!!fullWizardSpellList}`);
+    log(1, `fullWizardSpellList size: ${fullWizardSpellList ? fullWizardSpellList.size : 0}`);
+
+    if (fullWizardSpellList && fullWizardSpellList.size > 0) {
+      const fullListSample = Array.from(fullWizardSpellList).slice(0, 5);
+      log(1, `fullWizardSpellList sample: [${fullListSample.join(', ')}]`);
+    }
+
+    // Log sample allSpellItems
+    if (allSpellItems.length > 0) {
+      log(1, `=== Sample allSpellItems (first 3) ===`);
+      allSpellItems.slice(0, 3).forEach((spell, i) => {
+        log(1, `  Spell ${i}: name="${spell.name}", uuid="${spell.uuid}", compendiumUuid="${spell.compendiumUuid}", level=${spell.system.level}`);
+      });
+    }
+
+    // Filter spells for preparation tab (actor's known/prepared spells + cantrips if not hidden)
+    log(1, `=== Filtering prepTabSpells ===`);
+    for (const spell of allSpellItems) {
+      spell.sourceClass = classIdentifier;
+    }
+
+    const prepTabSpells = allSpellItems.filter((spell) => {
+      const isCantrip = spell.system.level === 0;
+      const isNonCantrip = spell.system.level !== 0;
+      const inPersonalSpellbook = personalSpellbook.includes(spell.compendiumUuid);
+      const inGrantedSpells = grantedSpells.includes(spell.compendiumUuid);
+
+      const shouldInclude = (!shouldHideCantrips && isCantrip) || (isNonCantrip && (inPersonalSpellbook || inGrantedSpells));
+
+      if (shouldInclude) {
+        log(1, `  Including in prepTab: ${spell.name} (level ${spell.system.level}) - cantrip=${isCantrip}, inPersonal=${inPersonalSpellbook}, inGranted=${inGrantedSpells}`);
+      }
+
+      return shouldInclude;
+    });
+
+    log(1, `prepTabSpells count: ${prepTabSpells.length}`);
+
+    // Filter spells for wizardbook tab (learnable spells from full class list, non-cantrips)
+    log(1, `=== Filtering wizardbookSpells ===`);
+    const wizardbookSpells = allSpellItems.filter((spell) => {
+      const isNonCantrip = spell.system.level !== 0;
+      const inFullWizardList = fullWizardSpellList && fullWizardSpellList.has(spell.compendiumUuid);
+      const inFullWizardListUuid = fullWizardSpellList && fullWizardSpellList.has(spell.uuid);
+
+      log(1, `  Checking ${spell.name}: level=${spell.system.level}, compendiumUuid="${spell.compendiumUuid}", uuid="${spell.uuid}"`);
+      log(1, `    isNonCantrip=${isNonCantrip}, inFullWizardList(compendiumUuid)=${inFullWizardList}, inFullWizardList(uuid)=${inFullWizardListUuid}`);
+
+      const shouldInclude = isNonCantrip && (inFullWizardList || inFullWizardListUuid);
+
+      if (shouldInclude) {
+        log(1, `    ✓ Including in wizardbook: ${spell.name}`);
+      } else {
+        log(1, `    ✗ Excluding from wizardbook: ${spell.name}`);
+      }
+
+      return shouldInclude;
+    });
+
+    log(1, `wizardbookSpells count: ${wizardbookSpells.length}`);
+
+    if (wizardbookSpells.length === 0) {
+      log(1, `WARNING: No wizardbook spells found! Investigating...`);
+
+      // Check non-cantrip spells
+      const nonCantrips = allSpellItems.filter((spell) => spell.system.level > 0);
+      log(1, `  Non-cantrip spells available: ${nonCantrips.length}`);
+
+      if (nonCantrips.length > 0) {
+        log(1, `  Sample non-cantrips:`);
+        nonCantrips.slice(0, 3).forEach((spell, i) => {
+          const inList1 = fullWizardSpellList && fullWizardSpellList.has(spell.compendiumUuid);
+          const inList2 = fullWizardSpellList && fullWizardSpellList.has(spell.uuid);
+          log(1, `    ${i}: ${spell.name} - compendiumUuid="${spell.compendiumUuid}" (in list: ${inList1}), uuid="${spell.uuid}" (in list: ${inList2})`);
+        });
+      }
+    }
+
+    // Organize spells by level
+    log(1, `=== Organizing spells by level ===`);
     const prepLevelsGrouped = await this._organizeSpellsByLevelForClass(prepTabSpells, classIdentifier, classItem);
     const wizardLevelsGrouped = await this._organizeSpellsByLevelForClass(wizardbookSpells, classIdentifier, classItem);
+
+    log(1, `prepLevelsGrouped: ${prepLevelsGrouped.length} levels`);
+    log(1, `wizardLevelsGrouped: ${wizardLevelsGrouped.length} levels`);
+
+    prepLevelsGrouped.forEach((level, i) => {
+      log(1, `  prepLevel ${i}: level ${level.level}, ${level.spells ? level.spells.length : 0} spells`);
+    });
+
+    wizardLevelsGrouped.forEach((level, i) => {
+      log(1, `  wizardLevel ${i}: level ${level.level}, ${level.spells ? level.spells.length : 0} spells`);
+    });
+
     const maxSpellsAllowed = wizardManager.getMaxSpellsAllowed();
     const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
+
+    log(1, `maxSpellsAllowed: ${maxSpellsAllowed}`);
+    log(1, `isAtMaxSpells: ${isAtMaxSpells}`);
+
+    // Filter out cantrips from preparation spells if needed
     let finalPrepLevels = prepLevelsGrouped;
-    if (shouldHideCantrips) finalPrepLevels = prepLevelsGrouped.filter((levelData) => levelData.level !== '0' && levelData.level !== 0);
+    if (shouldHideCantrips) {
+      finalPrepLevels = prepLevelsGrouped.filter((levelData) => levelData.level !== '0' && levelData.level !== 0);
+      log(1, `Filtered out cantrips, finalPrepLevels: ${finalPrepLevels.length} levels`);
+    }
+
+    // Enrich spell data
+    log(1, `=== Enriching spell data ===`);
     this.enrichWizardBookSpells(finalPrepLevels, personalSpellbook, false, false);
     this.enrichWizardBookSpells(wizardLevelsGrouped, personalSpellbook, true, isAtMaxSpells);
+    log(1, `Spell enrichment complete`);
+
+    // Calculate preparation stats
     const prepStats = this.calculatePreparationStats(classIdentifier, finalPrepLevels, classItem);
+    log(1, `prepStats: current=${prepStats.current}, maximum=${prepStats.maximum}`);
+
+    // Create tab data
+    log(1, `=== Creating tabData ===`);
     const tabData = {
       [spellsTabId]: {
         spellLevels: finalPrepLevels,
@@ -686,6 +829,12 @@ export class SpellbookState {
         wizardIsAtMax: isAtMaxSpells
       }
     };
+
+    log(1, `Created tabData with keys: [${Object.keys(tabData).join(', ')}]`);
+    log(1, `${spellsTabId} has ${tabData[spellsTabId].spellLevels.length} spell levels`);
+    log(1, `${wizardTabId} has ${tabData[wizardTabId].spellLevels.length} spell levels`);
+
+    // Store class spell data
     this.classSpellData[classIdentifier] = {
       spellLevels: finalPrepLevels,
       className: classItem.name,
@@ -694,7 +843,21 @@ export class SpellbookState {
       tabData,
       identifier: classIdentifier
     };
+
+    log(1, `Set classSpellData[${classIdentifier}] with ${finalPrepLevels.length} spell levels`);
+
+    // Assign tab data
     Object.assign(this.tabData, tabData);
+    log(1, `this.tabData now has keys: [${Object.keys(this.tabData).join(', ')}]`);
+
+    // Verify final tabData
+    if (this.tabData[wizardTabId]) {
+      log(1, `✓ Final verification: this.tabData[${wizardTabId}] exists with ${this.tabData[wizardTabId].spellLevels.length} levels`);
+    } else {
+      log(1, `✗ Final verification: this.tabData[${wizardTabId}] is missing!`);
+    }
+
+    log(1, `=== processWizardSpells END for ${classIdentifier} ===`);
   }
 
   /**
