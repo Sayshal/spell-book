@@ -10,9 +10,7 @@
 					<p>{{localize 'SPELLBOOK.Wizard.NewSpellsInfo1'}}</p>
 					<p>{{localize 'SPELLBOOK.Wizard.NewSpellsInfo2'}}</p>
 				</div>
-				{{#each spellLevels as |level|}}
-					{{> "modules/spell-book/templates/components/spell-level.hbs" level=level}}
-				{{/each}}
+				{{!-- Spell levels will be rendered dynamically by JavaScript, just like regular spell tabs --}}
 			{{else}}
 				<div class="wizard-unavailable">
 					<p>{{localize 'SPELLBOOK.Wizard.Unavailable'}}</p>

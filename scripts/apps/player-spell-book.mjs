@@ -172,6 +172,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   async _prepareContext(options) {
     const context = this._createBaseContext(options);
+    await this._ensureAllSpellDataLoaded();
     if (!this._stateManager._classesDetected) this._stateManager.detectSpellcastingClasses();
     context.spellcastingClasses = this._stateManager.spellcastingClasses;
     context.activeClass = this._stateManager.activeClass;
@@ -179,7 +180,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     context.tabs = this._getTabs();
     context.globalPrepared = this._stateManager.spellPreparation;
     context.classPreparationData = this._prepareClassPreparationData();
-    context.isWizard = !!this.wizardManager?.isWizard;
+    context.isWizard = !this.wizardManager?.isWizard;
     context.hasMultipleTabs = Object.keys(context.tabs).length > 1;
     context.filters = this._prepareFilters();
     const activeTab = context.activeTab;
@@ -304,6 +305,48 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       spellPreparation: this.spellPreparation || { current: 0, maximum: 0 },
       isGM: game.user.isGM
     };
+  }
+
+  /**
+   * Ensure all spell data (including wizard data) is loaded before rendering
+   * @private
+   * @async
+   */
+  async _ensureAllSpellDataLoaded() {
+    if (this._isLoadingSpellData) return;
+    this._isLoadingSpellData = true;
+
+    try {
+      if (!this._stateManager._initialized) {
+        log(3, 'Initializing state manager and waiting for wizard data completion');
+        await this._stateManager.initialize();
+
+        // Force completion of any remaining wizard data loading
+        await this._stateManager.waitForWizardDataCompletion();
+
+        this.ui.updateSpellPreparationTracking();
+        this.ui.updateSpellCounts();
+        log(3, 'State manager initialization and wizard data loading completed');
+        return;
+      }
+
+      // If already initialized, ensure wizard data is still available
+      await this._stateManager.waitForWizardDataCompletion();
+
+      await this._renderAllSpells();
+      this.ui.updateSpellPreparationTracking();
+      this.ui.updateSpellCounts();
+      this.ui.setupCantripUI();
+    } catch (error) {
+      log(1, 'Error ensuring all spell data is loaded:', error);
+      this._showErrorState(error);
+    } finally {
+      this._isLoadingSpellData = false;
+      // Only apply favorite states if the element exists (i.e., after actual rendering)
+      if (this.element) {
+        await this._applyFavoriteStatesAfterRender();
+      }
+    }
   }
 
   /** @inheritDoc */
@@ -543,7 +586,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const existingSpellLevels = spellsContainer.querySelectorAll('.spell-level');
     existingSpellLevels.forEach((el) => el.remove());
     const classIdentifier = activeTabContent.dataset.classIdentifier;
-    const tabData = this._stateManager.getClassTabData(classIdentifier);
+    let tabData;
+    if (activeTab.startsWith('wizardbook-')) tabData = this._stateManager.tabData[activeTab];
+    else tabData = this._stateManager.getClassTabData(classIdentifier);
     if (!tabData || !tabData.spellLevels) return;
     for (const levelData of tabData.spellLevels) {
       const levelHtml = this._createSpellLevelHtml(levelData);
