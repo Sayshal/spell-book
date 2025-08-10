@@ -1896,6 +1896,105 @@
       transition: all 0.4s ease;
     }
   }
+
+  /* Collapsed footer styles */
+  .collapsed-footer {
+    display: none;
+    z-index: var(--spell-book-z-index-footer);
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: 0.5rem;
+    border-top: 0.063rem solid var(--color-border-light-tertiary);
+    background: var(--spell-book-bg-primary);
+    box-shadow: var(--spell-book-shadow-top);
+
+    &.hidden {
+      display: none;
+    }
+
+    .spell-prep-tracking,
+    .spell-book-tracking {
+      margin-bottom: 0.25rem;
+      font-size: var(--spell-book-font-xl);
+    }
+
+    /* Search filter container above buttons */
+    .collapsed-footer-search {
+      margin-bottom: 0.5rem;
+
+      .filter-item {
+        margin-bottom: 0.25rem;
+      }
+
+      /* Adjust search input for collapsed footer */
+      .advanced-search-input {
+        width: 100%;
+        font-size: var(--spell-book-font-sm);
+      }
+
+      label {
+        font-size: var(--spell-book-font-sm);
+        margin-bottom: 0.25rem;
+      }
+    }
+
+    .footer-buttons {
+      /* Force buttons onto one line */
+      flex-wrap: nowrap;
+      justify-content: space-between;
+      gap: 0.25rem;
+
+      button {
+        /* Remove fixed width, let buttons size to content */
+        flex: 1 1 auto;
+        min-width: 3.75rem;
+        max-width: 7.5rem;
+        padding: 0.25rem 0.5rem;
+        font-size: var(--spell-book-font-sm);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        /* Handle very long button text */
+        span {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+      }
+    }
+
+    /* Adjust overall layout for smaller screens */
+    @media (width <= 37.5rem) {
+      padding: 0.375rem;
+
+      .collapsed-footer-search {
+        margin-bottom: 0.375rem;
+
+        .advanced-search-input {
+          font-size: var(--spell-book-font-xs);
+        }
+      }
+
+      .footer-buttons button {
+        min-width: 3.125rem;
+        max-width: 6.25rem;
+
+        /* Icon only on very small sizes */
+        @media (width <= 25rem) {
+          span {
+            display: none;
+          }
+
+          i {
+            margin: 0;
+          }
+        }
+      }
+    }
+  }
 }
 
 /* ----------------------------------------- */

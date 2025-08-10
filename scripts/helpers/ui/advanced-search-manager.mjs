@@ -350,18 +350,21 @@ export class AdvancedSearchManager {
   showDropdown() {
     const dropdown = document.querySelector('.search-dropdown');
     if (!dropdown || this.isDropdownVisible) return;
-    const rect = this.searchInputElement.getBoundingClientRect();
+    const activeInput = this.getActiveSearchInput();
+    if (!activeInput) return;
+    const rect = activeInput.getBoundingClientRect();
     dropdown.style.position = 'fixed';
-    dropdown.style.top = `${rect.bottom + 2}px`;
     dropdown.style.left = `${rect.left}px`;
     dropdown.style.width = `${rect.width}px`;
+    dropdown.style.top = `${rect.bottom + 2}px`;
+    dropdown.style.transform = 'none';
     dropdown.style.display = 'block';
     dropdown.style.zIndex = '1000';
     dropdown.classList.add('visible');
-    this.searchInputElement.setAttribute('aria-expanded', 'true');
+    activeInput.setAttribute('aria-expanded', 'true');
     this.isDropdownVisible = true;
     this.selectedSuggestionIndex = -1;
-    log(3, 'Search dropdown shown');
+    log(3, 'Search dropdown shown below input');
   }
 
   /**
@@ -781,6 +784,43 @@ export class AdvancedSearchManager {
       filterElement.dispatchEvent(new Event('input', { bubbles: true }));
     }
     log(3, `Set filter ${fieldId} to: ${value}`);
+  }
+
+  /**
+   * Setup search functionality for collapsed footer
+   * @param {HTMLElement} searchInput - The search input in collapsed footer
+   */
+  setupCollapsedFooterSearch(searchInput) {
+    this.collapsedFooterSearchInput = searchInput;
+    searchInput.addEventListener('input', this.handleSearchInput.bind(this));
+    searchInput.addEventListener('focus', this.handleSearchFocus.bind(this));
+    searchInput.addEventListener('blur', this.handleSearchBlur.bind(this));
+    searchInput.addEventListener('keydown', this.handleSearchKeydown.bind(this));
+  }
+
+  /**
+   * Get the currently active search input element
+   * @returns {HTMLElement|null} The active search input
+   */
+  getActiveSearchInput() {
+    const isCollapsed = this.app.element.classList.contains('sidebar-collapsed');
+    if (isCollapsed && this.collapsedFooterSearchInput) return this.collapsedFooterSearchInput;
+    return this.searchInputElement;
+  }
+
+  /**
+   * Update dropdown positioning based on current footer state
+   */
+  updateDropdownPositioning() {
+    const dropdown = document.querySelector('.search-dropdown');
+    if (!dropdown || !this.isDropdownVisible) return;
+    const activeInput = this.getActiveSearchInput();
+    if (!activeInput) return;
+    const rect = activeInput.getBoundingClientRect();
+    dropdown.style.left = `${rect.left}px`;
+    dropdown.style.width = `${rect.width}px`;
+    dropdown.style.top = `${rect.bottom + 2}px`;
+    dropdown.style.transform = 'none';
   }
 
   /**

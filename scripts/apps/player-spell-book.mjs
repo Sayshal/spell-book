@@ -1050,7 +1050,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             element = formElements.createTextInput({
               name: `filter-${filter.id}`,
               value: filterState[filter.id] || '',
-              placeholder: game.i18n.localize(filter.label),
+              placeholder: `${game.i18n.localize(filter.label)}...`,
               ariaLabel: game.i18n.localize(filter.label),
               cssClass: 'advanced-search-input'
             });

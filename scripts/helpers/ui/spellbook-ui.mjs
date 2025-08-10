@@ -65,17 +65,63 @@ export class SpellbookUI {
     const isSidebarCollapsed = this.element.classList.contains('sidebar-collapsed');
     const sidebarFooterContainer = this.element.querySelector('.sidebar-footer-container');
     const collapsedFooter = this.element.querySelector('.collapsed-footer');
+    const collapsedFooterSearch = this.element.querySelector('.collapsed-footer-search');
+    const sidebarSearchFilter = this.element.querySelector('.sidebar .filter-item.filter-search[data-filter-id="name"]');
     if (isSidebarCollapsed && collapsedFooter) {
       collapsedFooter.appendChild(footer);
       collapsedFooter.classList.remove('hidden');
       if (sidebarFooterContainer) sidebarFooterContainer.classList.add('hidden');
+      if (sidebarSearchFilter && collapsedFooterSearch) {
+        if (!collapsedFooterSearch.querySelector('.filter-item.filter-search')) {
+          const searchClone = sidebarSearchFilter.cloneNode(true);
+          collapsedFooterSearch.appendChild(searchClone);
+          this.setupCollapsedFooterSearch(searchClone);
+        }
+      }
     } else {
       if (sidebarFooterContainer) {
         sidebarFooterContainer.appendChild(footer);
         sidebarFooterContainer.classList.remove('hidden');
       }
       if (collapsedFooter) collapsedFooter.classList.add('hidden');
+      if (collapsedFooterSearch) collapsedFooterSearch.innerHTML = '';
     }
+    this.updateSearchDropdownPositioning();
+  }
+
+  /**
+   * Setup search functionality for collapsed footer search
+   * @param {HTMLElement} searchElement - The cloned search element
+   */
+  setupCollapsedFooterSearch(searchElement) {
+    const searchInput = searchElement.querySelector('.advanced-search-input');
+    const clearButton = searchElement.querySelector('.search-input-clear');
+    if (searchInput) {
+      const originalInput = this.element.querySelector('.sidebar .advanced-search-input');
+      if (originalInput) searchInput.value = originalInput.value;
+      searchInput.addEventListener('input', (event) => {
+        if (originalInput) {
+          originalInput.value = event.target.value;
+          originalInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+      if (this.advancedSearchManager) this.advancedSearchManager.setupCollapsedFooterSearch(searchInput);
+    }
+    if (clearButton) {
+      clearButton.addEventListener('click', () => {
+        if (searchInput) {
+          searchInput.value = '';
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+    }
+  }
+
+  /**
+   * Update search dropdown positioning based on footer state
+   */
+  updateSearchDropdownPositioning() {
+    if (this.advancedSearchManager) this.advancedSearchManager.updateDropdownPositioning();
   }
 
   /**
