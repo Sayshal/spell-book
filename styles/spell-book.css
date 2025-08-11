@@ -30,17 +30,18 @@
   --spell-book-text-tertiary: rgb(153 153 153 / 100%);
   --spell-book-text-muted: rgb(119 119 119 / 100%);
   --spell-book-text-disabled: rgb(102 102 102 / 100%);
-  --spell-book-text-accent: rgb(255 201 25 / 100%);
+  --spell-book-text-accent: rgb(159 146 117);
   --spell-book-text-notice: rgb(0 0 0 / 100%);
   --spell-book-text-hyperlink: rgb(85 170 255 / 100%);
   --spell-book-text-highlight: rgb(255 255 0 / 100%);
+  --spell-book-text-active: rgb(76 175 80 / 100%);
 
   /* ======= Border Colors ======= */
   --spell-book-border-light: rgb(201 199 184 / 16.5%);
   --spell-book-border-light-theme: rgb(90 90 90 / 36.9%);
   --spell-book-border-medium: rgb(153 153 153 / 25.1%);
   --spell-book-border-dark: rgb(85 85 85 / 50.2%);
-  --spell-book-border-highlight: rgb(255 201 25 / 100%);
+  --spell-book-border-highlight: rgb(159 146 117);
   --spell-book-border-focus: rgb(85 170 255 / 100%);
 
   /* ======= Interactive State Colors ======= */
@@ -81,7 +82,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Layout & Spacing Variables              */
+/*  Layout & Spacing Variables               */
 /* ----------------------------------------- */
 :root {
   /* ======= Sidebar & Controls ======= */
@@ -120,7 +121,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Color System Variables                  */
+/*  Color System Variables                   */
 /* ----------------------------------------- */
 :root {
   /* ======= Manager Specific Colors ======= */
@@ -131,7 +132,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Typography Variables                    */
+/*  Typography Variables                     */
 /* ----------------------------------------- */
 :root {
   /* ======= Font Sizes ======= */
@@ -156,7 +157,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Animation & Transition Variables        */
+/*  Animation & Transition Variables         */
 /* ----------------------------------------- */
 :root {
   --spell-book-transition-fast: all 150ms ease;
@@ -166,7 +167,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Z-Index Variables                       */
+/*  Z-Index Variables                        */
 /* ----------------------------------------- */
 :root {
   --spell-book-z-index-controls: 1;
@@ -180,7 +181,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Light Theme Overrides                   */
+/*  Light Theme Overrides                    */
 /* ----------------------------------------- */
 .theme-light {
   /* ======= Background Colors ======= */
@@ -225,7 +226,7 @@
 }
 
 /* ========================================= */
-/*  SPELL BOOK APPLICATION                  */
+/*  SPELL BOOK APPLICATION                   */
 /* ========================================= */
 
 .application.spell-book {
@@ -260,7 +261,7 @@
       inset: 0 0 1.25rem var(--spell-book-sidebar-width);
       display: none;
       position: absolute;
-      padding: 0.375rem 0.375rem 0.375rem 1.5rem;
+      padding: 0.375rem 0.375rem 0.375rem 1.55rem;
       overflow-y: auto;
       scrollbar-gutter: stable;
     }
@@ -458,7 +459,6 @@
     transition: var(--spell-book-transition-normal);
 
     i {
-      margin-left: 0.375rem;
       font-size: 0.75rem;
     }
   }
@@ -979,10 +979,11 @@
     }
 
     &.active {
-      color: var(--spell-book-text-highlight);
+      color: var(--spell-book-text-active);
       background: none;
       border: none;
       box-shadow: none;
+      outline: none;
       text-shadow: none;
     }
 
@@ -1025,7 +1026,6 @@
     }
 
     th {
-      background-color: var(--spell-book-bg-secondary);
       font-weight: bold;
 
       &:first-child {
@@ -1081,7 +1081,6 @@
         text-align: left;
         font-weight: bold;
         white-space: nowrap;
-        background-color: var(--spell-book-bg-secondary);
         width: 7.5rem;
         padding-left: 0.313rem;
         min-width: 7.5rem;
@@ -1090,7 +1089,6 @@
 
       &.property-value {
         &.highlighted {
-          background-color: var(--spell-book-bg-option-hover);
           font-weight: bold;
         }
       }
@@ -1100,7 +1098,6 @@
   .empty-comparison {
     text-align: center;
     padding: 2rem;
-    color: var(--spell-book-text-tertiary);
   }
 }
 
@@ -1327,6 +1324,7 @@
       font-size: var(--spell-book-font-2xl);
       font-family: var(--dnd5e-font-roboto-slab, serif);
       text-overflow: ellipsis;
+      max-height: 1.5rem;
       white-space: nowrap;
       transition: text-shadow 250ms ease;
     }
@@ -1465,7 +1463,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Spell Favorite Star Button              */
+/*  Spell Favorite Star Button               */
 /* ----------------------------------------- */
 .spell-book {
   .spell-favorite-toggle {
@@ -2054,7 +2052,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Character Sheet Button (Classic Tidy)   */
+/*  Character Sheet Button (Classic Tidy)    */
 /* ----------------------------------------- */
 .utility-toolbar .spell-book-button,
 .inline-icon-button.spell-book-button {
@@ -2283,7 +2281,7 @@
 }
 
 /* ========================================= */
-/*  GM SPELL LIST MANAGER                   */
+/*  GM SPELL LIST MANAGER                    */
 /* ========================================= */
 
 /* ----------------------------------------- */
@@ -2704,7 +2702,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Hidden Lists Folder                     */
+/*  Hidden Lists Folder                      */
 /* ----------------------------------------- */
 .gm-spell-list-manager {
   .hidden-lists-folder {
@@ -2995,7 +2993,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Spell Level Sections (GM Manager)       */
+/*  Spell Level Sections (GM Manager)        */
 /* ----------------------------------------- */
 .gm-spell-list-manager {
   .spell-level {
@@ -3045,7 +3043,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Spell Items (GM Manager)                */
+/*  Spell Items (GM Manager)                 */
 /* ----------------------------------------- */
 .gm-spell-list-manager {
   .selected-spells,
@@ -3457,7 +3455,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Footer (GM Manager)                     */
+/*  Footer (GM Manager)                      */
 /* ----------------------------------------- */
 .gm-spell-list-manager {
   .manager-footer {
@@ -3645,7 +3643,7 @@
 }
 
 /* ========================================= */
-/*  DIALOG COMPONENTS                       */
+/*  DIALOG COMPONENTS                        */
 /* ========================================= */
 
 /* ----------------------------------------- */
@@ -3751,7 +3749,9 @@
 
     .footer-buttons {
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
       width: 100%;
     }
   }
@@ -4606,7 +4606,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Documentation Dialog Styles             */
+/*  Documentation Dialog Styles              */
 /* ----------------------------------------- */
 .application.dialog.gm-spell-list-manager-helper {
   .spell-manager-documentation {
@@ -4909,11 +4909,11 @@
 }
 
 /* ========================================= */
-/*  RESPONSIVE DESIGN                       */
+/*  RESPONSIVE DESIGN                        */
 /* ========================================= */
 
 /* ----------------------------------------- */
-/*  Medium Screens (1200px)                 */
+/*  Medium Screens (1200px)                  */
 /* ----------------------------------------- */
 @media (width <= 75rem) {
   :root {
@@ -4933,7 +4933,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Small Screens (1024px)                  */
+/*  Small Screens (1024px)                   */
 /* ----------------------------------------- */
 @media (width <= 64rem) {
   :root {
@@ -4978,7 +4978,7 @@
 }
 
 /* ----------------------------------------- */
-/*  GM Manager Responsive (1400px)          */
+/*  GM Manager Responsive (1400px)           */
 /* ----------------------------------------- */
 @media (width <= 87.5rem) {
   :root {
@@ -4988,7 +4988,7 @@
 }
 
 /* ----------------------------------------- */
-/*  GM Manager Responsive (1200px)          */
+/*  GM Manager Responsive (1200px)           */
 /* ----------------------------------------- */
 @media (width <= 75rem) {
   :root {
@@ -5009,7 +5009,7 @@
 }
 
 /* ----------------------------------------- */
-/*  GM Manager Responsive (1024px)          */
+/*  GM Manager Responsive (1024px)           */
 /* ----------------------------------------- */
 @media (width <= 64rem) {
   :root {

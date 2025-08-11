@@ -129,6 +129,7 @@
   "SPELLBOOK.Loadouts.LoadoutDescription": "Loadout Description",
   "SPELLBOOK.Loadouts.LoadoutName": "Loadout Name",
   "SPELLBOOK.Loadouts.ManageLoadouts": "Manage Spell Loadouts (right click to quick-select)",
+  "SPELLBOOK.Loadouts.ManageLoadoutsTitle": "Spell Loadouts",
   "SPELLBOOK.Loadouts.NamePlaceholder": "Enter loadout name...",
   "SPELLBOOK.Loadouts.NameRequired": "Loadout name is required",
   "SPELLBOOK.Loadouts.NoActiveClass": "No active class selected",
