@@ -14,6 +14,7 @@
   /* ======= Background Colors ======= */
   --spell-book-bg-primary: rgb(27 29 36 / 90.2%);
   --spell-book-bg-primary-opaque: rgb(27 29 36 / 100%);
+  --spell-book-tab-bg: rgb(11 10 19 / 90.2%);
   --spell-book-bg-secondary: rgb(42 44 51 / 95%);
   --spell-book-bg-tertiary: rgb(58 60 67 / 90%);
   --spell-book-bg-item: rgb(0 0 0 / 5.1%);
@@ -39,6 +40,7 @@
 
   /* ======= Border Colors ======= */
   --spell-book-border-light: rgb(201 199 184 / 16.5%);
+  --spell-book-nav-border: rgb(255 255 255 / 0%);
   --spell-book-border-light-theme: rgb(90 90 90 / 36.9%);
   --spell-book-border-medium: rgb(153 153 153 / 25.1%);
   --spell-book-border-dark: rgb(85 85 85 / 50.2%);
@@ -188,6 +190,7 @@
   /* ======= Background Colors ======= */
   --spell-book-bg-primary: rgb(244 244 244 / 90.2%);
   --spell-book-bg-primary-opaque: rgb(244 244 244 / 100%);
+  --spell-book-tab-bg: url('../../../systems/dnd5e/ui/parchment.jpg') repeat;
   --spell-book-bg-secondary: rgb(250 250 250 / 95%);
   --spell-book-bg-tertiary: rgb(255 255 255 / 90%);
   --spell-book-bg-item: rgb(0 0 0 / 3.1%);
@@ -213,6 +216,7 @@
   /* ======= Border Colors ======= */
   --spell-book-border-light: rgb(221 221 221 / 50.2%);
   --spell-book-border-light-theme: rgb(204 204 204 / 75.3%);
+  --spell-book-nav-border: rgb(48 47 43);
   --spell-book-border-medium: rgb(170 170 170 / 50.2%);
   --spell-book-border-dark: rgb(136 136 136 / 75.3%);
   --spell-book-border-highlight: rgb(191 143 32 / 100%);
@@ -435,16 +439,17 @@
       border-radius: 0 0.5rem 0.5rem 0;
       color: var(--spell-book-text-accent);
       cursor: pointer;
-      background: var(--spell-book-bg-primary);
+      background: var(--spell-book-tab-bg);
       box-shadow: var(--spell-book-shadow-normal);
       transition: all 250ms ease;
       transform: translateZ(-0.063rem);
 
-      &.active,
-      &:hover {
-        border-color: var(--spell-book-text-accent);
-        text-shadow: none;
-        box-shadow: var(--spell-book-glow-gold);
+      &.active {
+        img.tab-icon {
+          border-color: var(--spell-book-text-accent);
+          text-shadow: none;
+          box-shadow: var(--spell-book-glow-gold);
+        }
       }
 
       /* Class Icon Images Styling */
@@ -452,7 +457,7 @@
         object-fit: cover;
         width: 2rem;
         height: 2rem;
-        border: none;
+        border: 0.1rem solid var(--spell-book-nav-border);
         border-radius: 50%;
       }
 
