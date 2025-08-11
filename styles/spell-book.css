@@ -1542,294 +1542,6 @@
 }
 
 /* ----------------------------------------- */
-/*  Analytics Dashboard                      */
-/* ----------------------------------------- */
-.analytics-dashboard {
-  overflow-y: auto;
-  scrollbar-gutter: stable;
-
-  .dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 1rem;
-    border-bottom: 0.0625rem solid var(--spell-book-border-dark);
-    margin-bottom: 1.25rem;
-
-    .header-content {
-      flex-grow: 1;
-
-      h1 {
-        margin: 0 0 0.25rem;
-        font-size: 1.5rem;
-        font-weight: bold;
-      }
-
-      .last-refresh {
-        font-size: 0.75rem;
-        margin: 0;
-        font-style: italic;
-        opacity: 0.7;
-      }
-    }
-  }
-
-  .view-controls {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    flex-shrink: 0;
-    white-space: nowrap;
-
-    button {
-      width: fit-content;
-    }
-  }
-
-  .view-toggle,
-  .refresh-btn {
-    padding: 0.25rem 0.75rem;
-    border: 0.0625rem solid var(--spell-book-border-dark);
-    background: var(--spell-book-bg-option);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .view-toggle.active {
-    background: var(--spell-book-bg-option-active);
-    border-color: var(--spell-book-border-highlight);
-  }
-
-  .dashboard-content {
-    padding: 0 1rem 1rem;
-    max-height: calc(100vh - 15.625rem);
-  }
-
-  /* Stats Summary Grid */
-  .stats-summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(9.375rem, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.25rem;
-  }
-
-  .stat-card {
-    text-align: center;
-    padding: 1.5rem 1rem;
-    border: 0.0625rem solid var(--spell-book-border-dark);
-    border-radius: 0.25rem;
-    background: var(--spell-book-bg-option);
-
-    .stat-value {
-      font-size: 2rem;
-      font-weight: bold;
-      margin-bottom: 0.5rem;
-      color: var(--spell-book-text-primary);
-    }
-
-    .stat-label {
-      font-size: 0.875rem;
-      text-transform: uppercase;
-      letter-spacing: 0.0313rem;
-    }
-  }
-
-  /* Context Breakdown */
-  .context-breakdown {
-    margin-bottom: 1.25rem;
-
-    h2 {
-      margin-bottom: 1rem;
-      font-size: 1.25rem;
-      color: var(--spell-book-text-primary);
-    }
-
-    .context-chart {
-      border: 0.0625rem solid var(--spell-book-border-dark);
-      border-radius: 0.25rem;
-      overflow: hidden;
-    }
-
-    .context-bar {
-      display: flex;
-      height: 3rem;
-      width: 100%;
-    }
-
-    .context-combat,
-    .context-exploration {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: rgb(255 255 255 / 100%);
-      font-weight: bold;
-      text-shadow: 0.0625rem 0.0625rem 0.125rem rgb(0 0 0 / 70%);
-      transition: all 0.3s ease;
-      min-width: 5rem;
-
-      .context-label {
-        white-space: nowrap;
-        padding: 0 0.25rem;
-        font-size: 0.875rem;
-      }
-    }
-
-    .context-combat {
-      background: rgb(133 5 5 / 100%);
-    }
-
-    .context-exploration {
-      background: rgb(22 75 43 / 100%);
-    }
-  }
-
-  /* Dashboard Grid */
-  .dashboard-grid {
-    gap: 1rem;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    margin-bottom: 1.25rem;
-  }
-
-  .most-used-spells,
-  .recent-activity {
-    border: 0.0625rem solid var(--spell-book-border-dark);
-    border-radius: 0.25rem;
-    padding: 1rem;
-    background: var(--spell-book-bg-option);
-
-    legend {
-      font-size: 1.125rem;
-      color: var(--spell-book-text-primary);
-      font-weight: bold;
-      padding: 0 0.5rem;
-    }
-  }
-
-  /* User Breakdown - Full Width */
-  .user-breakdown {
-    border: 0.0625rem solid var(--spell-book-border-dark);
-    border-radius: 0.25rem;
-    padding: 1rem;
-    background: var(--spell-book-bg-option);
-    margin-bottom: 1.25rem;
-
-    legend {
-      font-size: 1.125rem;
-      color: var(--spell-book-text-primary);
-      font-weight: bold;
-      padding: 0 0.5rem;
-    }
-
-    .user-list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      max-height: 18.75rem;
-      overflow-y: auto;
-    }
-
-    .user-stats {
-      display: block;
-      cursor: pointer;
-      padding: 0.25rem;
-      transition: background-color 0.2s ease;
-    }
-  }
-
-  .spell-list,
-  .activity-list {
-    max-height: 18.75rem;
-    overflow-y: auto;
-  }
-
-  .spell-usage-item,
-  .activity-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 0;
-  }
-
-  .spell-name {
-    font-weight: 500;
-    color: var(--spell-book-text-primary);
-  }
-
-  .usage-count,
-  .last-used {
-    font-size: 0.875rem;
-    color: var(--spell-book-text-tertiary);
-  }
-
-  /* Data Management Footer */
-  .data-management {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    padding: 1rem;
-    border-top: 0.0625rem solid var(--spell-book-border-dark);
-    background: var(--spell-book-bg-option);
-    flex-shrink: 0;
-    white-space: nowrap;
-    justify-content: center;
-
-    button {
-      width: fit-content;
-    }
-
-    .export-btn,
-    .import-btn,
-    .clear-btn {
-      padding: 0.25rem 0.75rem;
-      border: 0.0625rem solid var(--spell-book-border-dark);
-      background: var(--spell-book-bg-option);
-      cursor: pointer;
-      border-radius: 0.25rem;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    .export-btn:hover,
-    .import-btn:hover {
-      background: var(--spell-book-bg-option-hover);
-    }
-
-    .clear-btn:hover {
-      background: var(--spell-book-color-error);
-      border-color: var(--spell-book-color-error);
-      color: rgb(255 255 255 / 100%);
-    }
-  }
-
-  /* Responsive Design */
-  @media (width <= 48rem) {
-    .dashboard-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .stats-summary {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .view-controls {
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .data-management {
-      flex-direction: column;
-    }
-  }
-}
-
-/* ----------------------------------------- */
 /*  Footer Components                        */
 /* ----------------------------------------- */
 .spell-book {
@@ -4542,6 +4254,294 @@
         white-space: nowrap;
         min-width: fit-content;
       }
+    }
+  }
+}
+
+/* ----------------------------------------- */
+/*  Analytics Dashboard                      */
+/* ----------------------------------------- */
+.analytics-dashboard {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1rem;
+    border-bottom: 0.0625rem solid var(--spell-book-border-dark);
+    margin-bottom: 1.25rem;
+
+    .header-content {
+      flex-grow: 1;
+
+      h1 {
+        margin: 0 0 0.25rem;
+        font-size: 1.5rem;
+        font-weight: bold;
+      }
+
+      .last-refresh {
+        font-size: 0.75rem;
+        margin: 0;
+        font-style: italic;
+        opacity: 0.7;
+      }
+    }
+  }
+
+  .view-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-shrink: 0;
+    white-space: nowrap;
+
+    button {
+      width: fit-content;
+    }
+  }
+
+  .view-toggle,
+  .refresh-btn {
+    padding: 0.25rem 0.75rem;
+    border: 0.0625rem solid var(--spell-book-border-dark);
+    background: var(--spell-book-bg-option);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .view-toggle.active {
+    background: var(--spell-book-bg-option-active);
+    border-color: var(--spell-book-border-highlight);
+  }
+
+  .dashboard-content {
+    padding: 0 1rem 1rem;
+    max-height: calc(100vh - 15.625rem);
+  }
+
+  /* Stats Summary Grid */
+  .stats-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.375rem, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .stat-card {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    border: 0.0625rem solid var(--spell-book-border-dark);
+    border-radius: 0.25rem;
+    background: var(--spell-book-bg-option);
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      color: var(--spell-book-text-primary);
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.0313rem;
+    }
+  }
+
+  /* Context Breakdown */
+  .context-breakdown {
+    margin-bottom: 1.25rem;
+
+    h2 {
+      margin-bottom: 1rem;
+      font-size: 1.25rem;
+      color: var(--spell-book-text-primary);
+    }
+
+    .context-chart {
+      border: 0.0625rem solid var(--spell-book-border-dark);
+      border-radius: 0.25rem;
+      overflow: hidden;
+    }
+
+    .context-bar {
+      display: flex;
+      height: 3rem;
+      width: 100%;
+    }
+
+    .context-combat,
+    .context-exploration {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgb(255 255 255 / 100%);
+      font-weight: bold;
+      text-shadow: 0.0625rem 0.0625rem 0.125rem rgb(0 0 0 / 70%);
+      transition: all 0.3s ease;
+      min-width: 5rem;
+
+      .context-label {
+        white-space: nowrap;
+        padding: 0 0.25rem;
+        font-size: 0.875rem;
+      }
+    }
+
+    .context-combat {
+      background: rgb(133 5 5 / 100%);
+    }
+
+    .context-exploration {
+      background: rgb(22 75 43 / 100%);
+    }
+  }
+
+  /* Dashboard Grid */
+  .dashboard-grid {
+    gap: 1rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 1.25rem;
+  }
+
+  .most-used-spells,
+  .recent-activity {
+    border: 0.0625rem solid var(--spell-book-border-dark);
+    border-radius: 0.25rem;
+    padding: 1rem;
+    background: var(--spell-book-bg-option);
+
+    legend {
+      font-size: 1.125rem;
+      color: var(--spell-book-text-primary);
+      font-weight: bold;
+      padding: 0 0.5rem;
+    }
+  }
+
+  /* User Breakdown - Full Width */
+  .user-breakdown {
+    border: 0.0625rem solid var(--spell-book-border-dark);
+    border-radius: 0.25rem;
+    padding: 1rem;
+    background: var(--spell-book-bg-option);
+    margin-bottom: 1.25rem;
+
+    legend {
+      font-size: 1.125rem;
+      color: var(--spell-book-text-primary);
+      font-weight: bold;
+      padding: 0 0.5rem;
+    }
+
+    .user-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: 18.75rem;
+      overflow-y: auto;
+    }
+
+    .user-stats {
+      display: block;
+      cursor: pointer;
+      padding: 0.25rem;
+      transition: background-color 0.2s ease;
+    }
+  }
+
+  .spell-list,
+  .activity-list {
+    max-height: 18.75rem;
+    overflow-y: auto;
+  }
+
+  .spell-usage-item,
+  .activity-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+  }
+
+  .spell-name {
+    font-weight: 500;
+    color: var(--spell-book-text-primary);
+  }
+
+  .usage-count,
+  .last-used {
+    font-size: 0.875rem;
+    color: var(--spell-book-text-tertiary);
+  }
+
+  /* Data Management Footer */
+  .data-management {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 1rem;
+    border-top: 0.0625rem solid var(--spell-book-border-dark);
+    background: var(--spell-book-bg-option);
+    flex-shrink: 0;
+    white-space: nowrap;
+    justify-content: center;
+
+    button {
+      width: fit-content;
+    }
+
+    .export-btn,
+    .import-btn,
+    .clear-btn {
+      padding: 0.25rem 0.75rem;
+      border: 0.0625rem solid var(--spell-book-border-dark);
+      background: var(--spell-book-bg-option);
+      cursor: pointer;
+      border-radius: 0.25rem;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .export-btn:hover,
+    .import-btn:hover {
+      background: var(--spell-book-bg-option-hover);
+    }
+
+    .clear-btn:hover {
+      background: var(--spell-book-color-error);
+      border-color: var(--spell-book-color-error);
+      color: rgb(255 255 255 / 100%);
+    }
+  }
+
+  /* Responsive Design */
+  @media (width <= 48rem) {
+    .dashboard-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .stats-summary {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .view-controls {
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .data-management {
+      flex-direction: column;
     }
   }
 }
