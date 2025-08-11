@@ -19,7 +19,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
       icon: 'fas fa-chart-bar'
     },
     position: { width: 800, height: 'auto' },
-    classes: ['application', 'spell-book', 'analytics-dashboard'],
+    classes: ['spell-book', 'analytics-dashboard'],
     actions: {
       switchView: SpellAnalyticsDashboard.handleSwitchView,
       exportData: SpellAnalyticsDashboard.handleExportData,

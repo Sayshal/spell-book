@@ -1188,6 +1188,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     const result = await DialogV2.wait({
       window: { title: game.i18n.localize('SPELLMANAGER.MergeLists.DialogTitle'), icon: 'fas fa-code-merge' },
       content: content,
+      classes: ['spell-book', 'merge-spell-lists-form'],
       buttons: [
         {
           label: game.i18n.localize('SPELLMANAGER.Buttons.MergeLists'),
@@ -1675,11 +1676,11 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
   static async handleShowDocumentation(_event, _form) {
     const content = await renderTemplate(TEMPLATES.DIALOGS.MANAGER_DOCUMENTATION, {});
     await DialogV2.wait({
-      window: { title: game.i18n.localize('SPELLMANAGER.Documentation.Title') },
+      window: { title: game.i18n.localize('SPELLMANAGER.Documentation.Title'), icon: 'fas fa-question-circle' },
       content: content,
-      classes: ['gm-spell-list-manager-helper'],
+      classes: ['spell-book', 'spell-manager-documentation'],
       buttons: [{ icon: 'fas fa-check', label: game.i18n.localize('SPELLMANAGER.Buttons.Close'), action: 'close' }],
-      position: { width: 650, height: 800 },
+      position: { width: 650, height: 'auto' },
       default: 'close',
       rejectClose: false
     });
@@ -1850,13 +1851,14 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
         icon: 'fas fa-pen'
       },
       content: content,
+      position: { width: 'auto', height: 'auto' },
+      classes: ['spell-book', 'rename-spell-list-dialog'],
       buttons: [
         {
           label: game.i18n.localize('SPELLMANAGER.Buttons.Rename'),
           icon: 'fas fa-check',
           action: 'rename',
           callback: (event, target, form) => {
-            // V12/V13 compatibility - form might be undefined in V13
             const formElement = form?.querySelector ? form : form.element;
             const newNameInput = formElement.querySelector('[name="newName"]');
             const newName = newNameInput?.value.trim();

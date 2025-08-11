@@ -20,7 +20,7 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
       closeOnSubmit: true
     },
     position: { width: 400, height: 'auto' },
-    classes: ['application', 'spell-book', 'spell-notes-dialog']
+    classes: ['spell-book', 'spell-notes-dialog']
   };
 
   static PARTS = {

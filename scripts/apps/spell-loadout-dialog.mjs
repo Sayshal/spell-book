@@ -23,7 +23,7 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
       overwriteLoadout: SpellLoadoutDialog.overwriteLoadout,
       deleteLoadout: SpellLoadoutDialog.deleteLoadout
     },
-    classes: ['spell-loadout-dialog'],
+    classes: ['spell-book', 'spell-loadout-dialog'],
     window: { icon: 'fas fa-toolbox', resizable: true, minimizable: false, positioned: true },
     position: { width: 600, height: 'auto' }
   };

@@ -19,7 +19,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       resizable: false,
       minimizable: true
     },
-    classes: ['filter-configuration'],
+    classes: ['spell-book', 'filter-configuration'],
     form: {
       handler: PlayerFilterConfiguration.formHandler,
       closeOnSubmit: true,

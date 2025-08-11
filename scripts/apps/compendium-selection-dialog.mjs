@@ -20,6 +20,7 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
       width: 'auto',
       height: 'auto'
     },
+    classes: ['spell-book', 'compendium-selection-dialog'],
     form: {
       handler: CompendiumSelectionDialog.formHandler,
       submitOnChange: false,

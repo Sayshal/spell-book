@@ -15,7 +15,7 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
       positioned: true
     },
     position: { width: 600, height: 'auto' },
-    classes: ['spell-comparison-dialog']
+    classes: ['spell-book', 'spell-comparison-dialog']
   };
 
   static PARTS = {
