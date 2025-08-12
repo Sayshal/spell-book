@@ -640,6 +640,22 @@ export class SpellbookState {
     const shouldHideCantrips = this._shouldHideCantrips(classIdentifier);
     const wizardManager = this.app.wizardManagers.get(classIdentifier);
     if (!wizardManager) log(1, `No wizard manager found for ${classIdentifier}`);
+    const getSpellUuids = (spell) => {
+      const uuids = [];
+      if (spell?.compendiumUuid) uuids.push(spell.compendiumUuid);
+      if (spell?.spellUuid) uuids.push(spell.spellUuid);
+      if (spell?.uuid) uuids.push(spell.uuid);
+      if (spell?.flags?.core?.sourceId) uuids.push(spell.flags.core.sourceId);
+      return uuids;
+    };
+    const isSpellInCollection = (spell, collection) => {
+      const spellUuids = getSpellUuids(spell);
+      return spellUuids.some((uuid) => {
+        if (Array.isArray(collection)) return collection.includes(uuid);
+        else if (collection && collection.has) return collection.has(uuid);
+        return false;
+      });
+    };
     const totalFreeSpells = wizardManager.getTotalFreeSpells();
     const usedFreeSpells = await wizardManager.getUsedFreeSpells();
     const remainingFreeSpells = Math.max(0, totalFreeSpells - usedFreeSpells);
@@ -647,7 +663,14 @@ export class SpellbookState {
     this.scrollSpells = await ScrollScanner.scanForScrollSpells(this.actor);
     const grantedSpells = this.actor.items
       .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.preparation?.mode && ['pact', 'innate', 'atwill'].includes(i.system.preparation.mode))))
-      .map((i) => i.flags?.core?.sourceId || i.uuid)
+      .flatMap((i) => {
+        const uuids = [];
+        if (i?.flags?.core?.sourceId) uuids.push(i.flags.core.sourceId);
+        if (i?.uuid) uuids.push(i.uuid);
+        if (i?.compendiumUuid) uuids.push(i.compendiumUuid);
+        if (i?.spellUuid) uuids.push(i.spellUuid);
+        return uuids;
+      })
       .filter(Boolean);
     const fullWizardSpellList = this._fullWizardSpellLists.get(classIdentifier);
     if (fullWizardSpellList && fullWizardSpellList.size > 0) {
@@ -657,16 +680,15 @@ export class SpellbookState {
     const prepTabSpells = allSpellItems.filter((spell) => {
       const isCantrip = spell.system.level === 0;
       const isNonCantrip = spell.system.level !== 0;
-      const inPersonalSpellbook = personalSpellbook.includes(spell.compendiumUuid);
-      const inGrantedSpells = grantedSpells.includes(spell.compendiumUuid);
+      const inPersonalSpellbook = isSpellInCollection(spell, personalSpellbook);
+      const inGrantedSpells = isSpellInCollection(spell, grantedSpells);
       const shouldInclude = (!shouldHideCantrips && isCantrip) || (isNonCantrip && (inPersonalSpellbook || inGrantedSpells));
       return shouldInclude;
     });
     const wizardbookSpells = allSpellItems.filter((spell) => {
       const isNonCantrip = spell.system.level !== 0;
-      const inFullWizardList = fullWizardSpellList && fullWizardSpellList.has(spell.compendiumUuid);
-      const inFullWizardListUuid = fullWizardSpellList && fullWizardSpellList.has(spell.uuid);
-      const shouldInclude = isNonCantrip && (inFullWizardList || inFullWizardListUuid);
+      const inFullWizardList = fullWizardSpellList && isSpellInCollection(spell, fullWizardSpellList);
+      const shouldInclude = isNonCantrip && inFullWizardList;
       return shouldInclude;
     });
     const prepLevelsGrouped = await this._organizeSpellsByLevelForClass(prepTabSpells, classIdentifier, classItem);
