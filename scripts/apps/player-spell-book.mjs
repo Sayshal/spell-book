@@ -1576,6 +1576,14 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const checkbox = item.querySelector('dnd5e-checkbox');
         if (checkbox && !checkbox.disabled) item.classList.remove('prepared-spell');
       });
+      const favoriteButtons = this.element.querySelectorAll('.spell-favorite-toggle[data-uuid]');
+      favoriteButtons.forEach((button) => {
+        const spellUuid = button.dataset.uuid;
+        if (spellUuid) {
+          PlayerSpellBook._updateFavoriteButtonState(button, false);
+          this._stateManager.updateFavoriteSessionState(spellUuid, false);
+        }
+      });
       const collapsedLevels = this.element.querySelectorAll('.spell-level.collapsed');
       collapsedLevels.forEach((level) => {
         level.classList.remove('collapsed');
@@ -1583,12 +1591,19 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         if (heading) heading.setAttribute('aria-expanded', 'true');
       });
       game.user.setFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS, []);
+      this.filterHelper.invalidateFilterCache();
       this._applyFilters();
       this.ui.updateSpellPreparationTracking();
       this.ui.updateCantripCounter();
       event.preventDefault();
     } else {
       setTimeout(() => {
+        const filters = this.element.querySelectorAll('.spell-filters input, .spell-filters select, .spell-filters dnd5e-checkbox');
+        filters.forEach((filter) => {
+          if (filter.type === 'checkbox' || filter.tagName === 'DND5E-CHECKBOX') filter.checked = false;
+          else if (filter.type === 'text' || filter.type === 'number') filter.value = '';
+          else if (filter.tagName === 'SELECT') filter.selectedIndex = 0;
+        });
         const spellItems = this.element.querySelectorAll('.spell-item');
         spellItems.forEach((item) => {
           const checkbox = item.querySelector('dnd5e-checkbox');
@@ -1601,6 +1616,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           if (heading) heading.setAttribute('aria-expanded', 'true');
         });
         game.user.setFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS, []);
+        this.filterHelper.invalidateFilterCache();
         this._applyFilters();
         this.ui.updateSpellPreparationTracking();
         this.ui.updateCantripCounter();
