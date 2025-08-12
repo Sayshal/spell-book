@@ -6,11 +6,12 @@ import * as genericUtils from './generic-utils.mjs';
  * Format spell details for display with notes icon at the beginning
  * @param {Object} spell - The spell object
  * @param {Boolean} includeNotes - Optional flag to disable including notes
- * @returns {string} - Formatted spell details string with notes icon
+ * @param {Boolean} includeTooltip - Flag to include tooltip data for material components
+ * @returns {string|Object} - Formatted spell details string with notes icon, or object with content and tooltip
  */
-export function formatSpellDetails(spell, includeNotes = true) {
+export function formatSpellDetails(spell, includeNotes = true, includeTooltip = false) {
   try {
-    if (!spell) return '';
+    if (!spell) return includeTooltip ? { content: '', tooltip: '' } : '';
     const details = [];
     const componentsStr = formatSpellComponents(spell);
     if (componentsStr) details.push(componentsStr);
@@ -21,14 +22,21 @@ export function formatSpellDetails(spell, includeNotes = true) {
     const materialsStr = formatMaterialComponents(spell);
     if (materialsStr) details.push(materialsStr);
     const baseDetails = details.filter(Boolean).join(' • ');
-    if (!includeNotes) return baseDetails;
-    const notesIcon = createNotesIcon(spell);
-    if (notesIcon && baseDetails) return `${notesIcon} ${baseDetails}`;
-    else if (notesIcon) return notesIcon;
-    else return baseDetails;
+    let finalContent = baseDetails;
+    if (includeNotes) {
+      const notesIcon = createNotesIcon(spell);
+      if (notesIcon && baseDetails) finalContent = `${notesIcon} ${baseDetails}`;
+      else if (notesIcon) finalContent = notesIcon;
+    }
+    if (includeTooltip) {
+      const hasMaterialComponents = componentsStr && componentsStr.includes('M');
+      const tooltip = hasMaterialComponents ? finalContent : '';
+      return { content: finalContent, tooltip };
+    }
+    return finalContent;
   } catch (error) {
     log(1, 'Error formatting spell details:', error);
-    return '';
+    return includeTooltip ? { content: '', tooltip: '' } : '';
   }
 }
 
@@ -258,7 +266,8 @@ export function checkIsConcentration(spell) {
  */
 export function extractMaterialComponents(spell) {
   const materials = spell.system?.materials || {};
-  return { consumed: !!materials.consumed, cost: materials.cost || 0, value: materials.value || '', hasConsumedMaterials: !!materials.consumed };
+  const result = { consumed: materials.consumed, cost: materials.cost || 0, value: materials.value || '', hasConsumedMaterials: !!materials.consumed };
+  return result;
 }
 
 /**

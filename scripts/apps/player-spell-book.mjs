@@ -315,24 +315,17 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   async _ensureAllSpellDataLoaded() {
     if (this._isLoadingSpellData) return;
     this._isLoadingSpellData = true;
-
     try {
       if (!this._stateManager._initialized) {
         log(3, 'Initializing state manager and waiting for wizard data completion');
         await this._stateManager.initialize();
-
-        // Force completion of any remaining wizard data loading
         await this._stateManager.waitForWizardDataCompletion();
-
         this.ui.updateSpellPreparationTracking();
         this.ui.updateSpellCounts();
         log(3, 'State manager initialization and wizard data loading completed');
         return;
       }
-
-      // If already initialized, ensure wizard data is still available
       await this._stateManager.waitForWizardDataCompletion();
-
       await this._renderAllSpells();
       this.ui.updateSpellPreparationTracking();
       this.ui.updateSpellCounts();
@@ -342,10 +335,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       this._showErrorState(error);
     } finally {
       this._isLoadingSpellData = false;
-      // Only apply favorite states if the element exists (i.e., after actual rendering)
-      if (this.element) {
-        await this._applyFavoriteStatesAfterRender();
-      }
+      if (this.element) await this._applyFavoriteStatesAfterRender();
     }
   }
 
@@ -1134,60 +1124,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Check if spell should be visible based on current filters
-   * @param {Object} spell - Spell with level metadata
-   * @returns {boolean}
-   */
-  _checkSpellVisibilityLazy(spell) {
-    const filters = this.filterHelper.getFilterState();
-    if (filters.name && !spell.name.toLowerCase().includes(filters.name.toLowerCase())) return false;
-    if (filters.level && spell._levelMetadata.level !== filters.level) return false;
-    if (filters.school && spell.system?.school !== filters.school) return false;
-    if (filters.castingTime) {
-      const [filterType, filterValue] = filters.castingTime.split(':');
-      const spellCastingType = spell.filterData?.castingTime?.type || spell.system?.activation?.type || '';
-      const spellCastingValue = String(spell.filterData?.castingTime?.value || spell.system?.activation?.value || '1');
-      if (spellCastingType !== filterType || spellCastingValue !== filterValue) return false;
-    }
-    if (filters.minRange || filters.maxRange) {
-      const rangeUnits = spell.filterData?.range?.units || spell.system?.range?.units || '';
-      const rangeValue = parseInt(spell.system?.range?.value || 0);
-      if (rangeUnits) {
-        let standardizedRange = rangeValue;
-        if (rangeUnits === 'mi') standardizedRange = rangeValue * 5280;
-        else if (rangeUnits === 'spec') standardizedRange = 0;
-        const minRange = filters.minRange ? parseInt(filters.minRange) : 0;
-        const maxRange = filters.maxRange ? parseInt(filters.maxRange) : Infinity;
-        if (standardizedRange < minRange || standardizedRange > maxRange) return false;
-      }
-    }
-    if (filters.damageType) {
-      const spellDamageTypes = Array.isArray(spell.filterData?.damageTypes) ? spell.filterData.damageTypes : [];
-      if (!spellDamageTypes.includes(filters.damageType)) return false;
-    }
-    if (filters.condition) {
-      const spellConditions = Array.isArray(spell.filterData?.conditions) ? spell.filterData.conditions : [];
-      if (!spellConditions.includes(filters.condition)) return false;
-    }
-    if (filters.requiresSave) {
-      const spellRequiresSave = spell.filterData?.requiresSave || false;
-      if ((filters.requiresSave === 'true' && !spellRequiresSave) || (filters.requiresSave === 'false' && spellRequiresSave)) return false;
-    }
-    if (filters.concentration) {
-      const requiresConcentration = !!spell.filterData?.concentration;
-      if ((filters.concentration === 'true' && !requiresConcentration) || (filters.concentration === 'false' && requiresConcentration)) return false;
-    }
-    if (filters.materialComponents) {
-      const hasMaterialComponents = spell.filterData?.materialComponents?.hasConsumedMaterials || false;
-      if ((filters.materialComponents === 'consumed' && !hasMaterialComponents) || (filters.materialComponents === 'notConsumed' && hasMaterialComponents)) return false;
-    }
-    if (filters.prepared && !spell.preparation?.prepared) return false;
-    if (filters.ritual && !spell.filterData?.isRitual) return false;
-    if (filters.favorited && !spell.favorited) return false;
-    return true;
-  }
-
-  /**
    * Apply collapsed state to any existing level headers
    * @private
    */
@@ -1277,91 +1213,26 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       </div>`;
     }
     const subtitleContent = comparisonLinkHtml + (comparisonLinkHtml && formattedDetails ? ' ' : '') + formattedDetails;
+    const hasMaterialComponents = spell.filterData?.materialComponents?.hasConsumedMaterials === true;
+    let tooltipAttr = '';
+    if (hasMaterialComponents) {
+      const lastIconIndex = subtitleContent.lastIndexOf('</i>');
+      const tooltipContent = lastIconIndex !== -1 ? subtitleContent.substring(lastIconIndex + 4).trim() : subtitleContent;
+      tooltipAttr = ` data-tooltip="${tooltipContent.replace(/"/g, '&quot;')}"`;
+    }
+
     return `
     <li class="${cssClasses}" ${dataAttributes} role="listitem">
       <div class="spell-name">
         ${enrichedIcon}
         <div class="name-stacked">
           <span class="title">${name}${favoriteStarHtml}${tagHtml}</span>
-          <span class="subtitle">${subtitleContent}</span>
+          <span class="subtitle"${tooltipAttr}>${subtitleContent}</span>
         </div>
       </div>
       ${actionHtml}
     </li>
   `;
-  }
-
-  /**
-   * Extract spell data from a DOM element
-   * @param {HTMLElement} element - The spell item element
-   * @returns {Object} Spell data object
-   * @private
-   */
-  _getSpellDataFromElement(element) {
-    const spell = {
-      uuid: element.dataset.uuid,
-      compendiumUuid: element.dataset.compendiumUuid || element.dataset.uuid,
-      spellId: element.dataset.spellId,
-      name: element.querySelector('.title')?.textContent || '',
-      level: parseInt(element.dataset.spellLevel) || 0,
-      school: element.dataset.school,
-      favorited: element.classList.contains('favorited'),
-      sourceClass: element.dataset.sourceClass
-    };
-    const checkbox = element.querySelector('dnd5e-checkbox');
-    if (checkbox) {
-      spell.preparation = {
-        prepared: checkbox.checked,
-        alwaysPrepared: element.classList.contains('always-prepared'),
-        disabled: checkbox.disabled
-      };
-    }
-    spell.filterData = {
-      isRitual: element.dataset.ritual === 'true',
-      concentration: element.dataset.concentration === 'true',
-      castingTime: {
-        type: element.dataset.castingTime,
-        value: parseInt(element.dataset.castingTimeValue) || 0
-      },
-      range: {
-        value: parseInt(element.dataset.rangeValue) || 0,
-        units: element.dataset.rangeUnits
-      },
-      damageTypes: element.dataset.damageTypes?.split(',').filter(Boolean) || [],
-      conditions: element.dataset.conditions?.split(',').filter(Boolean) || [],
-      requiresSave: element.dataset.requiresSave === 'true',
-      materialComponents: {
-        hasConsumedMaterials: element.dataset.consumedMaterials === 'true',
-        consumed: element.dataset.consumedMaterials === 'true'
-      }
-    };
-    spell.inWizardSpellbook = element.classList.contains('in-wizard-spellbook');
-    spell.isFromScroll = element.classList.contains('from-scroll');
-
-    return spell;
-  }
-
-  /**
-   * Extract basic filter data from element
-   * @param {HTMLElement} element - The spell item element
-   * @returns {Object} Basic filter data
-   * @private
-   */
-  _extractBasicFilterData(element) {
-    const details = element.querySelector('.subtitle')?.textContent || '';
-
-    return {
-      isRitual: element.classList.contains('ritual') || details.includes('Ritual'),
-      concentration: details.includes('C'),
-      castingTime: element.dataset.castingTime,
-      range: element.dataset.range,
-      damageTypes: element.dataset.damageTypes?.split(',').filter(Boolean) || [],
-      conditions: element.dataset.conditions?.split(',').filter(Boolean) || [],
-      requiresSave: element.dataset.requiresSave === 'true',
-      materialComponents: {
-        hasConsumedMaterials: element.dataset.consumedMaterials === 'true'
-      }
-    };
   }
 
   /**
@@ -1987,24 +1858,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       } else {
         this.comparisonDialog.render(false);
         this.comparisonDialog.bringToFront();
-      }
-    }
-  }
-
-  /**
-   * Handle class rule changes and re-render accordingly
-   * @param {string} classIdentifier - The class that had rules changed
-   * @returns {Promise<void>}
-   */
-  async handleClassRulesChange(classIdentifier) {
-    log(3, `Handling class rules change for ${classIdentifier}`);
-    if (this._stateManager.spellcastingClasses[classIdentifier]) {
-      const classData = this._stateManager.spellcastingClasses[classIdentifier];
-      const classItem = this.actor.items.get(classData.id);
-      if (classItem) {
-        await this._stateManager.loadClassSpellData(classIdentifier, classItem);
-        this._stateManager.updateGlobalPreparationCount();
-        this.render(false);
       }
     }
   }

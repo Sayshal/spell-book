@@ -437,7 +437,7 @@ export class SpellbookFilterHelper {
     }
     if (filters.materialComponents) {
       const consumed = filters.materialComponents === 'consumed';
-      if (spell.hasMaterialComponents === consumed) return false;
+      if (spell.hasMaterialComponents !== consumed) return false;
     }
     if (filters.ritual && !spell.isRitual) return false;
     if (filters.prepared && !spell.isPrepared) return false;

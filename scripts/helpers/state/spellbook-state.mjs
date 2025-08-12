@@ -461,7 +461,7 @@ export class SpellbookState {
         }
       }
     } else if (isFlatStructure) {
-      log(1, 'ERROR: FLAT STRUCTURE DETECTED!', { class: classIdentifier, spells: spellLevels, classItem: classItem });
+      log(2, 'FLAT STRUCTURE DETECTED!', { class: classIdentifier, spells: spellLevels, classItem: classItem });
       totalSpellCount = spellLevels.length;
       const cacheKey = `${classIdentifier}-${totalSpellCount}-${classItem.system.levels}`;
       if (this._preparationStatsCache.has(cacheKey)) return this._preparationStatsCache.get(cacheKey);
@@ -880,7 +880,7 @@ export class SpellbookState {
    * @private
    */
   async _addWizardRitualSpells(classIdentifier, spellDataByClass) {
-    const ritualManager = this.app.getRitualManager();
+    const ritualManager = this.app.getRitualManager(classIdentifier);
     if (!ritualManager?.isWizard) return;
     const spellbookSpells = await this.app.wizardManager.getSpellbookSpells();
     const processedUuids = new Set();

@@ -56,7 +56,7 @@ export class QueryExecutor {
       case 'damageType':
         return this._evaluateDamageType(value, spell);
       case 'condition':
-        return this._evaluateCondition(value, spell);
+        return this._evaluateConditionProperty(value, spell);
       case 'requiresSave':
         return this._evaluateRequiresSave(value, spell);
       case 'concentration':
@@ -130,7 +130,7 @@ export class QueryExecutor {
    * @returns {boolean} Whether any condition matches
    * @private
    */
-  _evaluateCondition(value, spell) {
+  _evaluateConditionProperty(value, spell) {
     const expectedConditions = value.split(',').map((c) => c.trim().toLowerCase());
     const spellConditions = spell.filterData?.conditions || [];
     return expectedConditions.some((expectedCondition) => spellConditions.some((spellCondition) => spellCondition.toLowerCase() === expectedCondition));
