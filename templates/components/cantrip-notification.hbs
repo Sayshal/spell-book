@@ -1,34 +1,36 @@
-<h4>{{localize 'SPELLBOOK.Notifications.ComprehensiveTitle' name=actorName}}</h4>
-{{#each classChanges}}
-  {{#if this.hasChanges}}
-    <h5>{{this.className}}</h5>
-    {{#if this.cantripChanges.hasChanges}}
-      <p><strong>{{localize 'SPELLBOOK.Notifications.CantripChanges'}}:</strong></p>
-      <ul>
-        {{#if this.cantripChanges.removedNames}}
-          <li><strong>{{localize 'SPELLBOOK.Notifications.Removed'}}:</strong>
-            {{this.cantripChanges.removedNames}}
-          </li>
-        {{/if}}
-        {{#if this.cantripChanges.addedNames}}
-          <li><strong>{{localize 'SPELLBOOK.Notifications.Added'}}:</strong>
-            {{this.cantripChanges.addedNames}}
-          </li>
-        {{/if}}
-      </ul>
+<div class="spell-book-chat-message spell-book-update-report">
+  <h4>{{localize 'SPELLBOOK.Notifications.ComprehensiveTitle' name=actorName}}</h4>
+  {{#each classChanges}}
+    {{#if this.hasChanges}}
+      <h5>{{this.className}}</h5>
+      {{#if this.cantripChanges.hasChanges}}
+        <p><strong>{{localize 'SPELLBOOK.Notifications.CantripChanges'}}:</strong></p>
+        <ul>
+          {{#if this.cantripChanges.removedNames}}
+            <li><strong>{{localize 'SPELLBOOK.Notifications.Removed'}}:</strong>
+              {{this.cantripChanges.removedNames}}
+            </li>
+          {{/if}}
+          {{#if this.cantripChanges.addedNames}}
+            <li><strong>{{localize 'SPELLBOOK.Notifications.Added'}}:</strong>
+              {{this.cantripChanges.addedNames}}
+            </li>
+          {{/if}}
+        </ul>
+      {{/if}}
+      {{#if this.overLimits.cantrips.isOver}}
+        <p><strong>{{localize 'SPELLBOOK.Notifications.CantripOverLimit'}}:</strong>
+          {{this.overLimits.cantrips.current}}/{{this.overLimits.cantrips.max}}
+          ({{this.overLimits.cantrips.overCount}} over)
+        </p>
+      {{/if}}
+      {{#if this.overLimits.spells.isOver}}
+        <p><strong>{{localize 'SPELLBOOK.Notifications.SpellOverLimit'}}:</strong>
+          {{this.overLimits.spells.current}}/{{this.overLimits.spells.max}}
+          ({{this.overLimits.spells.overCount}} over)
+        </p>
+      {{/if}}
+      <hr>
     {{/if}}
-    {{#if this.overLimits.cantrips.isOver}}
-      <p><strong>{{localize 'SPELLBOOK.Notifications.CantripOverLimit'}}:</strong>
-        {{this.overLimits.cantrips.current}}/{{this.overLimits.cantrips.max}}
-        ({{this.overLimits.cantrips.overCount}} over)
-      </p>
-    {{/if}}
-    {{#if this.overLimits.spells.isOver}}
-      <p><strong>{{localize 'SPELLBOOK.Notifications.SpellOverLimit'}}:</strong>
-        {{this.overLimits.spells.current}}/{{this.overLimits.spells.max}}
-        ({{this.overLimits.spells.overCount}} over)
-      </p>
-    {{/if}}
-    <hr>
-  {{/if}}
-{{/each}}
+  {{/each}}
+</div>

@@ -463,6 +463,6 @@ export class CantripManager {
     if (processedClassChanges.length === 0) return;
 
     const content = await renderTemplate(TEMPLATES.COMPONENTS.CANTRIP_NOTIFICATION, { actorName, classChanges: processedClassChanges });
-    await ChatMessage.create({ content, whisper: game.users.filter((u) => u.isGM).map((u) => u.id) });
+    await ChatMessage.create({ content, whisper: game.users.filter((u) => u.isGM).map((u) => u.id), flags: { 'spell-book': { messageType: 'update-report' } } });
   }
 }

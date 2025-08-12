@@ -487,16 +487,16 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
     log(3, 'No migration updates needed');
     return;
   }
-  console.group('🔧 Spell Book Migration Results');
+  console.group('Spell Book Migration Results');
   if (deprecatedResults.processed > 0) {
-    console.group('📋 Deprecated Flags Migration');
+    console.group('Deprecated Flags Migration');
     console.log(`Processed: ${deprecatedResults.processed} documents`);
     console.log(`Invalid flags removed: ${deprecatedResults.invalidFlagRemovals}`);
     console.log('Affected documents:', deprecatedResults.affectedDocuments);
     console.groupEnd();
   }
   if (folderResults.processed > 0) {
-    console.group('📁 Folder Migration');
+    console.group('Folder Migration');
     console.log(`Processed: ${folderResults.processed} journals`);
     console.log(`Custom moved: ${folderResults.customMoved}`);
     console.log(`Merged moved: ${folderResults.mergedMoved}`);
@@ -505,7 +505,7 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
     console.groupEnd();
   }
   if (ownershipResults.processed > 0) {
-    console.group('🔐 Ownership Validation');
+    console.group('Ownership Validation');
     console.log(`Total fixed: ${ownershipResults.processed} documents`);
     console.log(`User data fixed: ${ownershipResults.userDataFixed}`);
     console.log(`Spell lists fixed: ${ownershipResults.spellListsFixed}`);
@@ -517,7 +517,7 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
   }
   console.groupEnd();
   const content = await buildChatContent(deprecatedResults, folderResults, ownershipResults, totalProcessed);
-  ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id });
+  ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id, flags: { 'spell-book': { messageType: 'migration-report' } } });
   log(3, `Migration complete: ${totalProcessed} documents updated`);
 }
 

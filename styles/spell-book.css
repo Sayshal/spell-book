@@ -5355,6 +5355,84 @@
     }
   }
 }
+
+/* ========================================= */
+/*  CHAT MESSAGES                            */
+/* ========================================= */
+.chat-message {
+  .spell-book-chat-message {
+    font-family: inherit;
+    color: var(--spell-book-text-primary);
+    line-height: 1.4;
+  }
+
+  .spell-book-migration-report {
+    h4 {
+      margin: 0 0 0.75rem;
+      color: var(--spell-book-color-info);
+      font-size: 1.125rem;
+      font-weight: bold;
+    }
+
+    h3 {
+      margin: 1rem 0 0.5rem;
+      color: var(--spell-book-text-primary);
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0.5rem 0;
+    }
+
+    ul {
+      margin: 0.5rem 0;
+      padding-left: 1.5rem;
+    }
+
+    strong {
+      color: var(--spell-book-text-accent);
+    }
+  }
+
+  .spell-book-update-report {
+    h4 {
+      margin: 0;
+      color: var(--spell-book-color-error);
+      font-size: 1rem;
+      font-weight: bold;
+    }
+
+    h5 {
+      color: var(--spell-book-text-primary);
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05rem;
+    }
+
+    p {
+      margin: 0.25rem 0;
+    }
+
+    ul {
+      margin: 0.25rem 0 0.5rem;
+      padding-left: 1.5rem;
+    }
+
+    hr {
+      margin: 0.75rem 0 0.5rem;
+      border: none;
+      border-top: 0.0625rem solid var(--spell-book-border-light);
+      opacity: 0.5;
+    }
+
+    strong {
+      color: var(--spell-book-text-accent);
+    }
+  }
+}
+
 /* ========================================= */
 /*  MISC COMPONENTS                          */
 /* ========================================= */
