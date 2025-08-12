@@ -52,7 +52,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       compareSpell: PlayerSpellBook.handleCompareSpell
     },
     classes: ['spell-book', 'vertical-tabs'],
-    window: { icon: 'fas fa-book-open', resizable: true, minimizable: true, positioned: true },
+    window: { icon: 'spell-book-module-icon', resizable: true, minimizable: true, positioned: true },
     position: { height: '875', width: '600' }
   };
 
@@ -875,7 +875,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           label: game.i18n.format('SPELLBOOK.Tabs.ClassSpells', { class: classData.name }),
           group: tabGroup,
           cssClass: this.tabGroups[tabGroup] === classTabId ? 'active' : '',
-          icon: 'fa-solid fa-book-open',
+          icon: 'spell-book-module-icon',
           data: {
             classImg: iconPath,
             classIdentifier: identifier,
