@@ -1,6 +1,7 @@
 import { MODULE } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import * as genericUtils from './generic-utils.mjs';
+import { UICustomizationHelper } from './ui-customization.mjs';
 
 /**
  * Format spell details for display with notes icon at the beginning
@@ -46,9 +47,8 @@ export function formatSpellDetails(spell, includeNotes = true, includeTooltip = 
  * @returns {Object} Processed spell list with display data
  */
 export function processSpellListForDisplay(spellList) {
-  if (!spellList) return null;
   const processed = foundry.utils.deepClone(spellList);
-  processed.isCustomList = !!spellList.document.flags?.[MODULE.ID]?.isDuplicate;
+  processed.isCustomList = !!spellList.document?.flags?.[MODULE.ID]?.isCustom || !!spellList.document?.flags?.[MODULE.ID]?.isDuplicate;
   processed.canRestore = !!(processed.isCustomList && spellList.document.flags?.[MODULE.ID]?.originalUuid);
   processed.originalUuid = spellList.document.flags?.[MODULE.ID]?.originalUuid;
   processed.actorId = spellList.document.flags?.[MODULE.ID]?.actorId;
@@ -75,6 +75,8 @@ export function processSpellItemForDisplay(spell) {
   const processed = foundry.utils.deepClone(spell);
   processed.cssClasses = 'spell-item';
   processed.dataAttributes = `data-uuid="${spell.compendiumUuid}"`;
+  processed.showCompare = UICustomizationHelper.isGMElementEnabled('compare');
+  processed.formattedDetails = UICustomizationHelper.buildGMMetadata(spell);
   return processed;
 }
 

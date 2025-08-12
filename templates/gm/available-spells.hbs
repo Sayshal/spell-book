@@ -94,7 +94,12 @@
 									{{{spell.enrichedIcon}}}
 									<div class="name-stacked">
 										<span class="title">{{spell.name}}</span>
-										<span class="subtitle">{{spell.formattedDetails}}</span>
+										<span class="subtitle">{{#if spell.showCompareLink}}{{#if spell.showCompare}}<button
+														class="compare-button compare-link{{#if spell.isInComparison}} active{{/if}}"
+														data-action="compareSpell" data-uuid="{{spell.uuid}}"
+														aria-label="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=spell.name}}">
+														{{localize "SPELLBOOK.Comparison.Compare"}}
+													</button> {{/if}}{{/if}}{{spell.formattedDetails}}</span>
 									</div>
 								</div>
 

@@ -8,6 +8,8 @@ import * as formattingUtils from '../helpers/spell-formatting.mjs';
 import { SpellbookFilterHelper } from '../helpers/ui/spellbook-filters.mjs';
 import { log } from '../logger.mjs';
 import { SpellAnalyticsDashboard } from './spell-analytics-dashboard.mjs';
+import { SpellComparisonDialog } from './spell-comparison-dialog.mjs';
+import { SpellDetailsCustomization } from './spell-details-customization.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -46,7 +48,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
       bulkSave: GMSpellListManager.handleBulkSave,
       cancelSelection: GMSpellListManager.handleCancelSelection,
       toggleListVisibility: GMSpellListManager.handleToggleListVisibility,
-      openAnalyticsDashboard: GMSpellListManager.handleOpenAnalyticsDashboard
+      openAnalyticsDashboard: GMSpellListManager.handleOpenAnalyticsDashboard,
+      openCustomization: GMSpellListManager.handleOpenCustomization,
+      compareSpell: GMSpellListManager.handleCompareSpell
     },
     classes: ['gm-spell-list-manager'],
     window: {
@@ -93,6 +97,8 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     this.selectionMode = false;
     this.lastSelectedIndex = { add: -1, remove: -1 };
     this.isSelectingAll = false;
+    this.comparisonSpells = new Set();
+    this.comparisonDialog = null;
     this.filterState = {
       name: '',
       level: '',
@@ -134,6 +140,9 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     context.totalSelectedCount = this.selectedSpellsToAdd.size + this.selectedSpellsToRemove.size;
     context.spellSchools = CONFIG.DND5E.spellSchools;
     context.spellLevels = CONFIG.DND5E.spellLevels;
+    context.comparisonSpells = this.comparisonSpells;
+    const maxSpells = game.settings.get(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX);
+    const comparisonFull = this.comparisonSpells.size >= maxSpells;
     if (this.isEditing && this.selectionMode) {
       context.selectAllAddCheckboxHtml = this._createSelectAllCheckbox('add');
       context.selectAllRemoveCheckboxHtml = this._createSelectAllCheckbox('remove');
@@ -144,23 +153,41 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     context.customListMap = customMappings;
     if (this.availableSpells.length > 0) this._prepareFilterContext(context);
     if (this.isEditing && this.selectedSpellList) await this._addEditingContext(context);
-    if (this.selectedSpellList?.spellsByLevel && this.isEditing && this.selectionMode) {
-      this.selectedSpellList.spellsByLevel = this.selectedSpellList.spellsByLevel.map((levelData) => {
-        const processedLevel = { ...levelData };
-        processedLevel.spells = levelData.spells.map((spell) => {
-          const spellUuid = spell.uuid || spell.compendiumUuid;
-          const processedSpell = { ...spell };
-          processedSpell.selectRemoveCheckboxHtml = this._createSpellSelectCheckbox(spell, 'remove', this.selectedSpellsToRemove.has(spellUuid));
-          return processedSpell;
-        });
-        return processedLevel;
-      });
-    }
     if (this.selectedSpellList) {
       context.selectedSpellList = formattingUtils.processSpellListForDisplay(this.selectedSpellList);
       const flags = this.selectedSpellList.document.flags?.[MODULE.ID] || {};
       const isCustomList = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList;
       context.selectedSpellList.isRenameable = isCustomList || this.selectedSpellList.isMerged;
+    }
+    if (context.selectedSpellList?.spellsByLevel) {
+      if (this.isEditing && this.selectionMode) {
+        context.selectedSpellList.spellsByLevel = context.selectedSpellList.spellsByLevel.map((levelData) => {
+          const processedLevel = { ...levelData };
+          processedLevel.spells = levelData.spells.map((spell) => {
+            const rawSpellUuid = spell.uuid || spell.compendiumUuid;
+            const normalizedSpellUuid = this._normalizeUuid(rawSpellUuid);
+            const processedSpell = { ...spell };
+            processedSpell.selectRemoveCheckboxHtml = this._createSpellSelectCheckbox(spell, 'remove', this.selectedSpellsToRemove.has(normalizedSpellUuid));
+            processedSpell.isInComparison = this.comparisonSpells.has(normalizedSpellUuid);
+            processedSpell.showCompareLink = !comparisonFull || processedSpell.isInComparison;
+            return processedSpell;
+          });
+          return processedLevel;
+        });
+      } else {
+        context.selectedSpellList.spellsByLevel = context.selectedSpellList.spellsByLevel.map((levelData) => {
+          const processedLevel = { ...levelData };
+          processedLevel.spells = levelData.spells.map((spell) => {
+            const rawSpellUuid = spell.uuid || spell.compendiumUuid;
+            const normalizedSpellUuid = this._normalizeUuid(rawSpellUuid);
+            const processedSpell = { ...spell };
+            processedSpell.isInComparison = this.comparisonSpells.has(normalizedSpellUuid);
+            processedSpell.showCompareLink = !comparisonFull || processedSpell.isInComparison;
+            return processedSpell;
+          });
+          return processedLevel;
+        });
+      }
     }
     return context;
   }
@@ -216,12 +243,28 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     context.damageTypeOptions = managerHelpers.prepareDamageTypeOptions(this.filterState);
     context.conditionOptions = managerHelpers.prepareConditionOptions(this.filterState);
     const filteredData = this._filterAvailableSpells();
+
+    const maxSpells = game.settings.get(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX);
+    const comparisonFull = this.comparisonSpells.size >= maxSpells;
+
     if (this.isEditing && this.selectionMode && filteredData.spells) {
       filteredData.spells = filteredData.spells.map((spell) => {
-        spell.selectAddCheckboxHtml = this._createSpellSelectCheckbox(spell, 'add', this.selectedSpellsToAdd.has(spell.uuid));
+        const normalizedSpellUuid = this._normalizeUuid(spell.uuid);
+        spell.selectAddCheckboxHtml = this._createSpellSelectCheckbox(spell, 'add', this.selectedSpellsToAdd.has(normalizedSpellUuid));
+        spell.isInComparison = this.comparisonSpells.has(normalizedSpellUuid);
+        spell.showCompareLink = !comparisonFull || spell.isInComparison;
+        return spell;
+      });
+    } else if (filteredData.spells) {
+      // Add comparison state even when not in selection mode
+      filteredData.spells = filteredData.spells.map((spell) => {
+        const normalizedSpellUuid = this._normalizeUuid(spell.uuid);
+        spell.isInComparison = this.comparisonSpells.has(normalizedSpellUuid);
+        spell.showCompareLink = !comparisonFull || spell.isInComparison;
         return spell;
       });
     }
+
     context.filteredSpells = filteredData;
     context.filterFormElements = this._prepareFilterFormElements();
   }
@@ -1667,6 +1710,15 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     this.close();
   }
 
+  async close(options = {}) {
+    if (this.comparisonDialog) {
+      await this.comparisonDialog.close();
+      this.comparisonDialog = null;
+    }
+    this.comparisonSpells.clear();
+    return super.close(options);
+  }
+
   /**
    * Handle showing the documentation dialog
    * @static
@@ -2181,6 +2233,41 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     }
   }
 
+  static async handleOpenCustomization(event, target) {
+    const dialog = new SpellDetailsCustomization();
+    dialog.render(true);
+  }
+
+  /**
+   * Handle spell comparison selection and dialog management
+   * @async
+   * @static
+   * @param {MouseEvent} event - The click event
+   * @param {HTMLFormElement} _form - The form element (unused)
+   * @returns {Promise<void>}
+   */
+  static async handleCompareSpell(event, _form) {
+    const rawSpellUuid = event.target.dataset.uuid;
+    const spellUuid = this._normalizeUuid(rawSpellUuid);
+    const maxSpells = game.settings.get(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX);
+    if (this.comparisonSpells.has(spellUuid)) this.comparisonSpells.delete(spellUuid);
+    else if (this.comparisonSpells.size < maxSpells) this.comparisonSpells.add(spellUuid);
+    else return;
+    this.render(false);
+    if (this.comparisonSpells.size >= 2) {
+      if (!this.comparisonDialog) {
+        this.comparisonDialog = new SpellComparisonDialog(this);
+        this.comparisonDialog.render(true);
+      } else {
+        this.comparisonDialog.render(false);
+        this.comparisonDialog.bringToFront();
+      }
+    } else if (this.comparisonDialog && this.comparisonSpells.size < 2) {
+      this.comparisonDialog.close();
+      this.comparisonDialog = null;
+    }
+  }
+
   // ========================================
   // Render and Lifecycle Methods
   // ========================================
@@ -2363,5 +2450,16 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     checkbox.dataset.action = 'selectAll';
     checkbox.dataset.type = type;
     return formElements.elementToHtml(checkbox);
+  }
+
+  /**
+   * Normalize UUID to consistent format (remove .Item. if present)
+   * @param {string} uuid - The UUID to normalize
+   * @returns {string} Normalized UUID
+   * @private
+   */
+  _normalizeUuid(uuid) {
+    if (!uuid) return uuid;
+    return uuid.replace(/\.Item\./g, '.');
   }
 }

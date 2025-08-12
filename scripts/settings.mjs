@@ -1,5 +1,6 @@
 import { CompendiumSelectionDialog } from './apps/compendium-selection-dialog.mjs';
 import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
+import { SpellDetailsCustomization } from './apps/spell-details-customization.mjs';
 import { MODULE, SETTINGS } from './constants.mjs';
 import { SpellDescriptionInjection } from './helpers/spell-description-injection.mjs';
 import { log } from './logger.mjs';
@@ -267,6 +268,196 @@ export function registerSettings() {
       max: 1000,
       step: 10
     }
+  });
+
+  //========================================//
+  //  UI Customization                      //
+  //========================================//
+
+  game.settings.registerMenu(MODULE.ID, 'spellDetailsCustomization', {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.MenuName',
+    hint: 'SPELLBOOK.Settings.DetailsCustomization.MenuHint',
+    icon: 'fa-solid fa-palette',
+    label: 'SPELLBOOK.Settings.DetailsCustomization.MenuLabel',
+    type: SpellDetailsCustomization,
+    restricted: false
+  });
+
+  // Player UI Settings
+  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.Favorites',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_COMPARE, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.Compare',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_NOTES, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.Notes',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_SPELL_LEVEL, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.SpellLevel',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_SCHOOL, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.School',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_CASTING_TIME, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.CastingTime',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_RANGE, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.Range',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_DAMAGE_TYPES, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.DamageTypes',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_CONDITIONS, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.Conditions',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_SAVE, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.Save',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_CONCENTRATION, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.Concentration',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_MATERIAL_COMPONENTS, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.MaterialComponents',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.GM_UI_COMPARE, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.Compare',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.GM_UI_SPELL_LEVEL, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.SpellLevel',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.GM_UI_SCHOOL, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.School',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.GM_UI_CASTING_TIME, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.CastingTime',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.GM_UI_RANGE, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.Range',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.GM_UI_DAMAGE_TYPES, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.DamageTypes',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.GM_UI_CONDITIONS, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.Conditions',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.GM_UI_SAVE, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.Save',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.GM_UI_CONCENTRATION, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.Concentration',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.GM_UI_MATERIAL_COMPONENTS, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.MaterialComponents',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
   });
 
   //========================================//
