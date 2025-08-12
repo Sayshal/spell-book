@@ -568,7 +568,7 @@ export class AdvancedSearchManager {
    */
   _generateRecentSearches() {
     const recentSearches = this.getRecentSearches();
-    if (recentSearches.length === 0) return `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.NoRecent')}</div>`;
+    if (recentSearches.length === 0) return '';
     let content = `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Recent')}</div>`;
     recentSearches.forEach((search) => {
       const tooltipAttr = search.length > 32 ? `data-tooltip="${search}"` : '';
