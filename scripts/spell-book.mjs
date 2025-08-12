@@ -1,5 +1,6 @@
 import { createAPI } from './api.mjs';
-import { MODULE, TEMPLATES } from './constants.mjs';
+import { PlayerSpellBook } from './apps/player-spell-book.mjs';
+import { MODULE, SETTINGS, TEMPLATES } from './constants.mjs';
 import * as preloaderUtils from './helpers/spell-data-preloader.mjs';
 import { SpellDescriptionInjection } from './helpers/spell-description-injection.mjs';
 import { registerDnD5eIntegration } from './integrations/dnd5e.mjs';
@@ -18,6 +19,12 @@ Hooks.once('init', async function () {
   createAPI();
   registerHandlebarsHelpers();
   log(3, `${MODULE.NAME} initialized!`);
+});
+
+Hooks.on('setup', () => {
+  let position = game.settings.get(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION);
+  if (!position || (typeof position === 'object' && Object.keys(position).length === 0)) position = { height: 875, width: 600 };
+  PlayerSpellBook.DEFAULT_OPTIONS.position = position;
 });
 
 Hooks.once('ready', async function () {

@@ -56,7 +56,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     },
     classes: ['spell-book', 'vertical-tabs'],
     window: { icon: 'spell-book-module-icon', resizable: true, minimizable: true, positioned: true },
-    position: { height: '875', width: '600' }
+    position: { height: 875, width: 600 }
   };
 
   static PARTS = {
@@ -99,7 +99,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this._stateManager = new SpellbookState(this);
     this.ui = new SpellbookUI(this);
     this.filterHelper = new SpellbookFilterHelper(this);
-    this.lastPosition = {};
     this.ritualManagers = new Map();
     this.spellLevels = [];
     this.className = '';
@@ -345,15 +344,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritDoc */
   _initializeApplicationOptions(options) {
     options = super._initializeApplicationOptions(options);
-    this.lastPosition = game.settings.get(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION);
-    if (this.lastPosition) Object.assign(options.position, this.lastPosition);
+    const lastPosition = game.settings.get(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION);
+    if (lastPosition) Object.assign(options.position, lastPosition);
     return options;
-  }
-
-  /** @inheritDoc */
-  setPosition(options) {
-    options = super.setPosition(options);
-    this.lastPosition = options;
   }
 
   /**
@@ -825,8 +818,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /** @inheritdoc */
-  _onClose() {
-    game.settings.set(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION, this.lastPosition);
+  _onClose(options) {
+    game.settings.set(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION, this.position);
+    PlayerSpellBook.DEFAULT_OPTIONS.position = this.position;
     if (this._preparationListener) {
       document.removeEventListener('change', this._preparationListener);
       this._preparationListener = null;
