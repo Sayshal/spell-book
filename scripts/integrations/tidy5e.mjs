@@ -1,4 +1,5 @@
 import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
+import { ASSETS } from '../constants.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
 import { log } from '../logger.mjs';
@@ -71,7 +72,7 @@ function createTidySpellbookButton(actor) {
   button.className = 'inline-icon-button spell-book-button';
   button.title = game.i18n.localize('SPELLBOOK.UI.OpenSpellBook');
   button.setAttribute('tabindex', '-1');
-  button.innerHTML = '<i class="fas fa-book-open"></i>';
+  button.innerHTML = `<img src="${ASSETS.MODULE_ICON}" alt=${game.i18n.localize('SPELLBOOK.LongRest.SwapConfirm')} class="spell-book-icon">`;
   button.addEventListener('click', (event) => openSpellbook(event, actor));
   return button;
 }
@@ -84,7 +85,7 @@ function createTidySpellbookButtonQuadrone(actor) {
   button.type = 'button';
   button.className = 'button button-icon-only spell-book-button';
   button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.OpenSpellBook'));
-  button.innerHTML = '<i class="fas fa-book-open"></i>';
+  button.innerHTML = `<img src="${ASSETS.MODULE_ICON}" alt=${game.i18n.localize('SPELLBOOK.LongRest.SwapConfirm')} class="spell-book-icon">`;
   button.addEventListener('click', (event) => openSpellbook(event, actor));
   return button;
 }

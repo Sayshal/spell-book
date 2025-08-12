@@ -1,7 +1,7 @@
 import { GMSpellListManager } from '../apps/gm-spell-list-manager.mjs';
 import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
 import { SpellAnalyticsDashboard } from '../apps/spell-analytics-dashboard.mjs';
-import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
 import * as discoveryUtils from '../helpers/spell-discovery.mjs';
 import { log } from '../logger.mjs';
@@ -246,7 +246,7 @@ function createSpellBookButton(actor) {
   button.className = 'unbutton filter-control always-interactive spell-book-button';
   button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.OpenSpellBook'));
   button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.OpenSpellBook'));
-  button.innerHTML = '<i class="fas fa-book-open"></i>';
+  button.innerHTML = `<img src="${ASSETS.MODULE_ICON}" alt=${game.i18n.localize('SPELLBOOK.LongRest.SwapConfirm')} class="spell-book-icon">`;
   button.addEventListener('click', onSpellBookButtonClick.bind(null, actor));
   return button;
 }
