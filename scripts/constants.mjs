@@ -207,6 +207,7 @@ export const TEMPLATES = {
 export const SETTINGS = {
   ADVANCED_SEARCH_PREFIX: 'advancedSearchPrefix',
   CANTRIP_SCALE_VALUES: 'cantripScaleValues',
+  COMPENDIUM_SELECTION: 'compendiumSelection',
   CONSUME_SCROLLS_WHEN_LEARNING: 'consumeScrollsWhenLearning',
   CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',
   DEFAULT_ENFORCEMENT_BEHAVIOR: 'defaultEnforcementBehavior',
