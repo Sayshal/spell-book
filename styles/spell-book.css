@@ -69,6 +69,7 @@
   --spell-book-tag-ritual: rgb(241 196 15 / 100%);
   --spell-book-tag-atwill: rgb(230 126 34 / 100%);
   --spell-book-tag-prepared: rgb(76 175 80 / 100%);
+  --spell-book-tag-learned: rgb(119 34 61 / 100%);
 
   /* ======= Shadow Effects ======= */
   --spell-book-shadow-light: 0 0 0.25rem rgb(0 0 0 / 25.1%);
@@ -1644,10 +1645,9 @@
     .in-spellbook-tag {
       padding: 0.2rem 0.5rem;
       border-radius: var(--spell-book-radius-md);
-      color: rgb(0 0 0 / 100%);
-      font-weight: bold;
+      color: rgb(255 255 255 / 100%);
       font-size: 0.8em;
-      background-color: var(--spell-book-tag-always);
+      background-color: var(--spell-book-tag-learned);
     }
 
     .copy-spell-btn {
