@@ -3,6 +3,8 @@ import * as genericUtils from '../helpers/generic-utils.mjs';
 import { log } from '../logger.mjs';
 import { RuleSetManager } from './rule-set-manager.mjs';
 
+const { renderTemplate } = foundry.applications.handlebars;
+
 /**
  * Manages cantrip-specific functionality - Single source of truth for cantrip calculations
  */
@@ -120,16 +122,10 @@ export class CantripManager {
    */
   getCurrentCount(classIdentifier = null) {
     if (!classIdentifier) {
-      return this.actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.preparation?.prepared && !i.system.preparation?.alwaysPrepared).length;
+      return this.actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1).length;
     }
-    return this.actor.items.filter(
-      (i) =>
-        i.type === 'spell' &&
-        i.system.level === 0 &&
-        i.system.preparation?.prepared &&
-        !i.system.preparation?.alwaysPrepared &&
-        (i.system.sourceClass === classIdentifier || i.sourceClass === classIdentifier)
-    ).length;
+    return this.actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1 && (i.system.sourceClass === classIdentifier || i.sourceClass === classIdentifier))
+      .length;
   }
 
   /**
@@ -263,7 +259,7 @@ export class CantripManager {
     let tracking = this.actor.getFlag(MODULE.ID, flagName);
     if (!tracking) {
       const preparedCantrips = this.actor.items
-        .filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.preparation?.prepared && (i.sourceClass === classIdentifier || i.system.sourceClass === classIdentifier))
+        .filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1 && (i.sourceClass === classIdentifier || i.system.sourceClass === classIdentifier))
         .map((i) => genericUtils.getSpellUuid(i));
       tracking = { hasUnlearned: false, unlearned: null, hasLearned: false, learned: null, originalChecked: preparedCantrips };
       this.actor.setFlag(MODULE.ID, flagName, tracking);

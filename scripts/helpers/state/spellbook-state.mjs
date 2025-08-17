@@ -345,7 +345,7 @@ export class SpellbookState {
         if (spell?.system?.level === undefined) continue;
         const level = spell.system.level;
         const spellName = spell.name.toLowerCase();
-        const preparationMode = spell.system.preparation?.mode;
+        const preparationMode = spell.system.method;
         const isSpecialMode = ['innate', 'pact', 'atwill', 'always'].includes(preparationMode);
         if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
         const compendiumUuid = spell.flags?.core?.sourceId || spell.uuid;
@@ -418,7 +418,7 @@ export class SpellbookState {
    */
   async processAndOrganizeSpellsForClass(identifier, spellItems, classItem) {
     for (const spell of spellItems) {
-      const preparationMode = spell.system?.preparation?.mode;
+      const preparationMode = spell.system.method;
       const isSpecialMode = ['innate', 'pact', 'atwill', 'always'].includes(preparationMode);
       const isGranted = !!spell.flags?.dnd5e?.cachedFor;
       if (!isSpecialMode && !isGranted) {
@@ -457,7 +457,7 @@ export class SpellbookState {
         if (levelData.level === '0' || levelData.level === 0) continue;
         if (!Array.isArray(levelData.spells)) continue;
         for (const spell of levelData.spells) {
-          if (spell.preparation?.prepared && spell.sourceClass === classIdentifier && !spell.preparation?.alwaysPrepared) preparedCount++;
+          if (spell.system.prepared === 1 && spell.sourceClass === classIdentifier && spell.system.prepared !== 2) preparedCount++;
         }
       }
     } else if (isFlatStructure) {
@@ -468,7 +468,7 @@ export class SpellbookState {
       for (const spell of spellLevels) {
         const spellLevel = spell.system?.level ?? spell.level ?? spell._levelMetadata?.level;
         if (spellLevel === 0 || spellLevel === '0') continue;
-        if (spell.preparation?.prepared && spell.sourceClass === classIdentifier && !spell.preparation?.alwaysPrepared) preparedCount++;
+        if (spell.system.prepared === 1 && spell.sourceClass === classIdentifier && spell.system.prepared !== 2) preparedCount++;
       }
     } else {
       log(1, `calculatePreparationStats: Unknown structure for spellLevels`, spellLevels);
@@ -662,7 +662,7 @@ export class SpellbookState {
     const totalSpells = personalSpellbook.length;
     this.scrollSpells = await ScrollScanner.scanForScrollSpells(this.actor);
     const grantedSpells = this.actor.items
-      .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.preparation?.mode && ['pact', 'innate', 'atwill'].includes(i.system.preparation.mode))))
+      .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.method && ['pact', 'innate', 'atwill'].includes(i.system.method))))
       .flatMap((i) => {
         const uuids = [];
         if (i?.flags?.core?.sourceId) uuids.push(i.flags.core.sourceId);
@@ -880,7 +880,7 @@ export class SpellbookState {
         const moduleRitualSpells = this.actor.items.filter(
           (item) =>
             item.type === 'spell' &&
-            item.system?.preparation?.mode === 'ritual' &&
+            item.system?.method === 'ritual' &&
             (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier) &&
             item.flags?.[MODULE.ID]?.isModuleRitual === true
         );
@@ -993,7 +993,7 @@ export class SpellbookState {
           item.type === 'spell' &&
           (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) &&
           (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier) &&
-          item.system?.preparation?.mode === 'ritual'
+          item.system?.method === 'ritual'
       );
       if (existingRitualSpell) continue;
       if (!spellDataByClass[classIdentifier]) spellDataByClass[classIdentifier] = {};

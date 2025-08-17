@@ -143,9 +143,9 @@ export class SpellManager {
       (item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && !item.system?.sourceClass && !item.sourceClass
     );
     if (unassignedSpell && classIdentifier) {
-      const isAlwaysPrepared = unassignedSpell.system.preparation?.mode === 'always';
+      const isAlwaysPrepared = unassignedSpell.system.prepared === 2;
       const isGranted = !!unassignedSpell.flags?.dnd5e?.cachedFor;
-      const isSpecialMode = ['innate', 'pact', 'atwill', 'ritual'].includes(unassignedSpell.system.preparation?.mode);
+      const isSpecialMode = ['innate', 'pact', 'atwill', 'ritual'].includes(unassignedSpell.system.method);
       if (!isAlwaysPrepared && !isGranted && !isSpecialMode) {
         unassignedSpell.sourceClass = classIdentifier;
         if (unassignedSpell.system) unassignedSpell.system.sourceClass = classIdentifier;
@@ -205,15 +205,15 @@ export class SpellManager {
    * @private
    */
   _getOwnedSpellPreparationStatus(spell, classIdentifier) {
-    const preparationMode = spell.system.preparation?.mode;
-    const alwaysPrepared = preparationMode === 'always';
+    const preparationMode = spell.system.method;
+    const alwaysPrepared = spell.system.prepared === 2;
     const isInnateCasting = preparationMode === 'innate';
     const isAtWill = preparationMode === 'atwill';
     const localizedPreparationMode = formattingUtils.getLocalizedPreparationMode(preparationMode);
     const sourceInfo = this._determineSpellSource(spell);
     const isGranted = !!sourceInfo && !!spell.flags?.dnd5e?.cachedFor;
     const isCantrip = spell.system.level === 0;
-    const actuallyPrepared = !!(isGranted || alwaysPrepared || isInnateCasting || isAtWill || spell.system.preparation?.prepared);
+    const actuallyPrepared = !!(isGranted || alwaysPrepared || isInnateCasting || isAtWill || spell.system.prepared === 1);
     let isDisabled = isGranted || alwaysPrepared || isInnateCasting || isAtWill;
     let disabledReason = '';
     if (isGranted) disabledReason = 'SPELLBOOK.SpellSource.GrantedTooltip';
@@ -261,7 +261,7 @@ export class SpellManager {
       const item = activity?.item;
       if (item) return { name: item.name, type: item.type, id: item.id };
     }
-    const preparationMode = spell.system.preparation?.mode;
+    const preparationMode = spell.system.method;
     if (preparationMode === 'always') {
       const subclass = this.actor.items.find((i) => i.type === 'subclass');
       if (subclass) return { name: subclass.name, type: 'subclass', id: subclass.id };
@@ -306,7 +306,7 @@ export class SpellManager {
       const spellSourceClass = data.sourceClass || '';
       if (!data.isPrepared) {
         if (data.wasPrepared && existingSpell) {
-          if (existingSpell.system.preparation?.mode === 'prepared' && !existingSpell.system.preparation?.alwaysPrepared) {
+          if (existingSpell.system.method === 'spell' && existingSpell.system.prepared !== 2) {
             spellIdsToRemove.push(existingSpell.id);
             if (existingSpell.system.level === 0) {
               cantripChanges.removed.push({ name: existingSpell.name, uuid: uuid });
@@ -316,16 +316,15 @@ export class SpellManager {
         }
       } else {
         if (existingSpell) {
-          const updateData = { '_id': existingSpell.id, 'system.preparation.mode': 'prepared', 'system.preparation.prepared': true };
+          const updateData = { '_id': existingSpell.id, 'system.method': 'spell', 'system.prepared': 1 };
           if (spellSourceClass && existingSpell.system.sourceClass !== spellSourceClass) updateData['system.sourceClass'] = spellSourceClass;
           spellsToUpdate.push(updateData);
         } else {
           const sourceSpell = await fromUuid(uuid);
           if (sourceSpell) {
             const newSpellData = sourceSpell.toObject();
-            if (!newSpellData.system.preparation) newSpellData.system.preparation = {};
-            newSpellData.system.preparation.mode = 'prepared';
-            newSpellData.system.preparation.prepared = true;
+            newSpellData.system.method = 'spell';
+            newSpellData.system.prepared = 1;
             newSpellData.flags = newSpellData.flags || {};
             newSpellData.flags.core = newSpellData.flags.core || {};
             newSpellData.flags.core.sourceId = uuid;
@@ -444,7 +443,7 @@ export class SpellManager {
     const moduleRitualSpells = this.actor.items.filter(
       (item) =>
         item.type === 'spell' &&
-        item.system?.preparation?.mode === 'ritual' &&
+        item.system?.method === 'ritual' &&
         (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier) &&
         item.flags?.[MODULE.ID]?.isModuleRitual === true
     );
@@ -471,11 +470,11 @@ export class SpellManager {
       (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
     );
     if (existingSpell) {
-      if (existingSpell.system.preparation?.mode !== 'ritual') {
+      if (existingSpell.system.method !== 'ritual') {
         const updateData = {
           '_id': existingSpell.id,
-          'system.preparation.mode': 'ritual',
-          'system.preparation.prepared': false,
+          'system.method': 'ritual',
+          'system.prepared': 0,
           'system.sourceClass': sourceClass,
           [`flags.${MODULE.ID}.isModuleRitual`]: true
         };
@@ -485,9 +484,8 @@ export class SpellManager {
       const sourceSpell = await fromUuid(uuid);
       if (sourceSpell) {
         const newSpellData = sourceSpell.toObject();
-        if (!newSpellData.system.preparation) newSpellData.system.preparation = {};
-        newSpellData.system.preparation.mode = 'ritual';
-        newSpellData.system.preparation.prepared = false;
+        newSpellData.system.method = 'ritual';
+        newSpellData.system.prepared = 0;
         newSpellData.flags = newSpellData.flags || {};
         newSpellData.flags.core = newSpellData.flags.core || {};
         newSpellData.flags.core.sourceId = uuid;
@@ -528,21 +526,20 @@ export class SpellManager {
     );
     if (existingSpell) {
       let targetMode = preparationMode;
-      let targetPrepared = true;
-      if (existingSpell.system.preparation?.mode === 'ritual') {
-        targetMode = 'prepared';
-        targetPrepared = true;
+      let targetPrepared = 1;
+      if (existingSpell.system.method === 'ritual') {
+        targetMode = 'spell';
+        targetPrepared = 1;
       }
-      const updateData = { '_id': existingSpell.id, 'system.preparation.mode': targetMode, 'system.preparation.prepared': targetPrepared };
+      const updateData = { '_id': existingSpell.id, 'system.method': targetMode, 'system.prepared': targetPrepared };
       if (existingSpell.system.sourceClass !== sourceClass) updateData['system.sourceClass'] = sourceClass;
       spellsToUpdate.push(updateData);
     } else {
       const sourceSpell = await fromUuid(uuid);
       if (sourceSpell) {
         const newSpellData = sourceSpell.toObject();
-        if (!newSpellData.system.preparation) newSpellData.system.preparation = {};
-        newSpellData.system.preparation.mode = preparationMode;
-        newSpellData.system.preparation.prepared = true;
+        newSpellData.system.method = preparationMode;
+        newSpellData.system.prepared = 1;
         newSpellData.flags = newSpellData.flags || {};
         newSpellData.flags.core = newSpellData.flags.core || {};
         newSpellData.flags.core.sourceId = uuid;
@@ -581,15 +578,15 @@ export class SpellManager {
       (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
     );
     if (!targetSpell) return;
-    const isAlwaysPrepared = targetSpell.system.preparation?.alwaysPrepared;
+    const isAlwaysPrepared = targetSpell.system.prepared === 2;
     const isGranted = !!targetSpell.flags?.dnd5e?.cachedFor;
-    const isFromClassFeature = targetSpell.system.preparation?.mode === 'always';
+    const isFromClassFeature = targetSpell.system.prepared === 2; // This covers the "always" case
     if (isAlwaysPrepared || isGranted || isFromClassFeature) return;
     const isRitualSpell = targetSpell.system.components?.ritual;
     const isWizard = genericUtils.isWizard(this.actor);
     const ritualCastingEnabled = this.ritualManager?.isRitualCastingEnabled();
     if (isRitualSpell && isWizard && ritualCastingEnabled && targetSpell.system.level > 0) {
-      spellsToUpdate.push({ '_id': targetSpell.id, 'system.preparation.mode': 'ritual', 'system.preparation.prepared': false });
+      spellsToUpdate.push({ '_id': targetSpell.id, 'system.method': 'ritual', 'system.prepared': 0 });
       log(3, `Converting wizard spell back to ritual mode: ${targetSpell.name}`);
       return;
     }

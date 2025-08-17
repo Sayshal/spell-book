@@ -53,7 +53,7 @@ Hooks.on('deleteJournalEntryPage', (page, options, userId) => {
  */
 function initializeFoundryConfiguration() {
   CONFIG.JournalEntry.compendiumIndexFields = ['_id', 'name', 'pages', 'type', 'uuid'];
-  CONFIG.Item.compendiumIndexFields = ['system.spellcasting.progression', 'system.spellcasting.preparation.mode'];
+  CONFIG.Item.compendiumIndexFields = ['system.spellcasting.progression', 'system.spellcasting.type'];
 }
 
 /**
@@ -104,8 +104,7 @@ async function preloadTemplates() {
     return result;
   }
   const templatePaths = flattenTemplateObject(TEMPLATES);
-  if (foundry.utils.isNewerVersion(game.version, '12.999')) return foundry?.applications?.handlebars?.loadTemplates(templatePaths);
-  else return loadTemplates(templatePaths);
+  return foundry?.applications?.handlebars?.loadTemplates(templatePaths);
 }
 
 function registerHandlebarsHelpers() {

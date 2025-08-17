@@ -2,7 +2,9 @@ import { MODULE, TEMPLATES } from '../constants.mjs';
 import { SpellUserDataJournal } from '../helpers/spell-user-data.mjs';
 import { log } from '../logger.mjs';
 import { UserSpellDataManager } from '../managers/user-spell-data-manager.mjs';
+
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const { renderTemplate } = foundry.applications.handlebars;
 
 /**
  * Analytics Dashboard for viewing spell usage statistics and data management

@@ -12,6 +12,7 @@ import { SpellComparisonDialog } from './spell-comparison-dialog.mjs';
 import { SpellDetailsCustomization } from './spell-details-customization.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const { renderTemplate } = foundry.applications.handlebars;
 
 /**
  * GM Spell List Manager application for viewing, editing, and creating spell lists

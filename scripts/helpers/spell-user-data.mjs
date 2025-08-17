@@ -2,6 +2,8 @@ import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import { UserSpellDataManager } from '../managers/user-spell-data-manager.mjs';
 
+const { renderTemplate } = foundry.applications.handlebars;
+
 /**
  * Journal-based spell user data storage
  */

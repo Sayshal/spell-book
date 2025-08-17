@@ -162,7 +162,7 @@ export function createNotesIcon(spell) {
  */
 export function getLocalizedPreparationMode(mode) {
   if (!mode) return '';
-  const label = genericUtils.getConfigLabel(CONFIG.DND5E.spellPreparationModes, mode);
+  const label = genericUtils.getConfigLabel(CONFIG.DND5E.spellcasting, mode);
   if (label) return label;
   return mode.charAt(0).toUpperCase() + mode.slice(1);
 }

@@ -4,6 +4,8 @@ import * as genericUtils from './generic-utils.mjs';
 import * as discoveryUtils from './spell-discovery.mjs';
 import * as formattingUtils from './spell-formatting.mjs';
 
+const { renderTemplate } = foundry.applications.handlebars;
+
 /**
  * Scanner for spell scrolls in actor inventory
  */

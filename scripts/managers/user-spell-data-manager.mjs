@@ -1,6 +1,8 @@
 import { MODULE, TEMPLATES } from '../constants.mjs';
 import { log } from '../logger.mjs';
 
+const { renderTemplate } = foundry.applications.handlebars;
+
 /**
  * Manager for journal-based user spell data storage
  */

@@ -24,6 +24,7 @@ import { SpellNotesDialog } from './spell-notes-dialog.mjs';
 import { SpellbookSettingsDialog } from './spellbook-settings-dialog.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const { renderTemplate } = foundry.applications.handlebars;
 
 /**
  * Player-facing spell book application for managing prepared spells

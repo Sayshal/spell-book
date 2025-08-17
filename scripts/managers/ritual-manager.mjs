@@ -73,7 +73,7 @@ export class RitualManager {
       case 'always':
         return true;
       case 'prepared':
-        return spell.system.preparation?.prepared || spell.system.preparation?.mode === 'prepared';
+        return spell.system.prepared === 1 || spell.system.method === 'spell';
       case 'none':
       default:
         return false;
@@ -97,8 +97,7 @@ export class RitualManager {
     let ritualSpellsToCreate = 0;
     for (const spellUuid of spellbookSpells) {
       const existingSpell = this.actor.items.find(
-        (i) =>
-          i.type === 'spell' && (i.flags?.core?.sourceId === spellUuid || i.uuid === spellUuid) && (i.system?.sourceClass === classIdentifier || i.sourceClass === classIdentifier)
+        (i) => i.type === 'spell' && (i.flags?.core?.sourceId === spellUuid || i.uuid === spellUuid) && (i.system?.sourceClass === classIdentifier || i.sourceClass === classIdentifier)
       );
       const sourceSpell = await fromUuid(spellUuid);
       if (!sourceSpell) {
@@ -111,21 +110,21 @@ export class RitualManager {
       log(3, `Found ritual spell: ${sourceSpell.name} (${spellUuid}), exists on actor: ${!!existingSpell}`);
       if (existingSpell) {
         ritualSpellsAlreadyExist++;
-        const isPrepared = existingSpell.system.preparation?.prepared;
-        const currentMode = existingSpell.system.preparation?.mode;
+        const isPrepared = existingSpell.system.prepared === 1;
+        const currentMode = existingSpell.system.method;
         log(3, `Existing spell ${sourceSpell.name} - prepared: ${isPrepared}, mode: ${currentMode}`);
         if (ritualMode === 'always' && currentMode !== 'ritual') {
           await existingSpell.update({
-            'system.preparation.mode': 'ritual',
-            'system.preparation.prepared': false,
+            'system.method': 'ritual',
+            'system.prepared': 0,
             'system.sourceClass': classIdentifier
           });
           log(3, `Updated existing spell ${sourceSpell.name} to ritual mode`);
         } else if (ritualMode === 'prepared' && !isPrepared && currentMode !== 'ritual') {
-          if (currentMode === 'prepared') {
+          if (currentMode === 'spell') {
             await existingSpell.update({
-              'system.preparation.mode': 'ritual',
-              'system.preparation.prepared': false,
+              'system.method': 'ritual',
+              'system.prepared': 0,
               'system.sourceClass': classIdentifier
             });
             log(3, `Updated prepared spell ${sourceSpell.name} to ritual mode`);
@@ -135,9 +134,8 @@ export class RitualManager {
         if (ritualMode === 'always') {
           ritualSpellsToCreate++;
           const newSpellData = sourceSpell.toObject();
-          if (!newSpellData.system.preparation) newSpellData.system.preparation = {};
-          newSpellData.system.preparation.mode = 'ritual';
-          newSpellData.system.preparation.prepared = false;
+          newSpellData.system.method = 'ritual';
+          newSpellData.system.prepared = 0;
           newSpellData.flags = newSpellData.flags || {};
           newSpellData.flags.core = newSpellData.flags.core || {};
           newSpellData.flags.core.sourceId = spellUuid;
@@ -159,11 +157,7 @@ export class RitualManager {
   async removeAllRitualOnlySpells(classIdentifier = 'wizard') {
     if (!this.isWizard) return;
     const ritualOnlySpells = this.actor.items.filter(
-      (i) =>
-        i.type === 'spell' &&
-        i.system.preparation?.mode === 'ritual' &&
-        !i.system.preparation?.prepared &&
-        (i.system?.sourceClass === classIdentifier || i.sourceClass === classIdentifier)
+      (i) => i.type === 'spell' && i.system.method === 'ritual' && i.system.prepared !== 1 && (i.system?.sourceClass === classIdentifier || i.sourceClass === classIdentifier)
     );
     if (ritualOnlySpells.length > 0) {
       const idsToRemove = ritualOnlySpells.map((s) => s.id);
@@ -208,9 +202,9 @@ export class RitualManager {
       if (spellClass && spellClass !== classIdentifier) return false;
       switch (ritualMode) {
         case 'always':
-          return spell.system.preparation?.mode === 'ritual' || spell.system.preparation?.prepared;
+          return spell.system.method === 'ritual' || spell.system.prepared === 1;
         case 'prepared':
-          return spell.system.preparation?.prepared || spell.system.preparation?.mode === 'ritual';
+          return spell.system.prepared === 1 || spell.system.method === 'ritual';
         default:
           return false;
       }

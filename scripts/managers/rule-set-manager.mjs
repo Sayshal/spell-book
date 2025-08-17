@@ -310,8 +310,7 @@ export class RuleSetManager {
    * @private
    */
   static async _confirmSpellListChange(actor, classIdentifier, affectedSpells) {
-    const className =
-      actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier))?.name || classIdentifier;
+    const className = actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier))?.name || classIdentifier;
     const cantripCount = affectedSpells.filter((s) => s.level === 0).length;
     const spellCount = affectedSpells.filter((s) => s.level > 0).length;
     let content = `<div class="spell-list-change-warning">
@@ -382,8 +381,8 @@ export class RuleSetManager {
       );
       if (spellItem) {
         const isGranted = !!spellItem.flags?.dnd5e?.cachedFor;
-        const isAlwaysPrepared = spellItem.system.preparation?.mode === 'always';
-        const isSpecialMode = ['innate', 'pact', 'atwill'].includes(spellItem.system.preparation?.mode);
+        const isAlwaysPrepared = spellItem.system.prepared === 2;
+        const isSpecialMode = ['innate', 'pact', 'atwill'].includes(spellItem.system.method);
         if (!isGranted && !isAlwaysPrepared && !isSpecialMode) spellIdsToRemove.push(spellItem.id);
       }
     }
