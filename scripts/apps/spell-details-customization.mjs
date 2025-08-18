@@ -5,10 +5,6 @@ import { log } from '../logger.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 export class SpellDetailsCustomization extends HandlebarsApplicationMixin(ApplicationV2) {
-  /* -------------------------------------------- */
-  /*  Static Properties                           */
-  /* -------------------------------------------- */
-
   static DEFAULT_OPTIONS = {
     id: 'spell-details-customization',
     classes: ['spell-book', 'spell-details-customization'],
@@ -18,7 +14,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
       closeOnSubmit: true,
       submitOnChange: false
     },
-    position: { height: 'auto', width: 'auto' },
+    position: { height: 'auto', width: 700 },
     window: { icon: 'fa-solid fa-palette', resizable: false }
   };
 
@@ -31,34 +27,24 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
     return game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.Title');
   }
 
-  /* -------------------------------------------- */
-  /*  Protected Methods                           */
-  /* -------------------------------------------- */
-
-  /**
-   * Prepares context data for the customization settings application
-   * @param {object} _options - Application render options
-   * @returns {object} Context data for template rendering
-   * @protected
-   */
+  /** @inheritdoc */
   async _prepareContext(_options) {
     const context = await super._prepareContext(_options);
     const isGM = game.user.isGM;
     const playerSettings = this._getPlayerSettings();
     const gmSettings = isGM ? this._getGMSettings() : null;
-
-    // Generate form elements for player sections
     const playerUIElements = this._prepareUIElementsWithCheckboxes('player', playerSettings);
     const playerMetadataElements = this._prepareMetadataElementsWithCheckboxes('player', playerSettings);
-
-    // Generate form elements for GM sections (if GM)
     let gmUIElements = null;
     let gmMetadataElements = null;
     if (isGM) {
       gmUIElements = this._prepareUIElementsWithCheckboxes('gm', gmSettings);
       gmMetadataElements = this._prepareMetadataElementsWithCheckboxes('gm', gmSettings);
     }
-
+    const selectAllPlayerUICheckbox = this._createSelectAllCheckbox('select-all-player-ui', 'player-ui');
+    const selectAllPlayerMetadataCheckbox = this._createSelectAllCheckbox('select-all-player-metadata', 'player-metadata');
+    const selectAllGMUICheckbox = isGM ? this._createSelectAllCheckbox('select-all-gm-ui', 'gm-ui') : null;
+    const selectAllGMMetadataCheckbox = isGM ? this._createSelectAllCheckbox('select-all-gm-metadata', 'gm-metadata') : null;
     return {
       ...context,
       isGM,
@@ -67,7 +53,11 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
       playerUIElements,
       gmUIElements,
       playerMetadataElements,
-      gmMetadataElements
+      gmMetadataElements,
+      selectAllPlayerUICheckbox,
+      selectAllPlayerMetadataCheckbox,
+      selectAllGMUICheckbox,
+      selectAllGMMetadataCheckbox
     };
   }
 
@@ -81,17 +71,9 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   _prepareUIElementsWithCheckboxes(type, settings) {
     const elements = this._getUIElementsConfig(type);
     return elements.map((element) => {
-      const checkbox = formElements.createCheckbox({
-        name: `${type}_${element.key}`,
-        checked: settings[element.key] || false,
-        ariaLabel: game.i18n.localize(element.label)
-      });
+      const checkbox = formElements.createCheckbox({ name: `${type}_${element.key}`, checked: settings[element.key] || false, ariaLabel: game.i18n.localize(element.label) });
       checkbox.id = `${type}-${element.key}`;
-
-      return {
-        ...element,
-        checkboxHtml: formElements.elementToHtml(checkbox)
-      };
+      return { ...element, checkboxHtml: formElements.elementToHtml(checkbox) };
     });
   }
 
@@ -105,17 +87,130 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   _prepareMetadataElementsWithCheckboxes(type, settings) {
     const elements = this._getMetadataElementsConfig(type);
     return elements.map((element) => {
-      const checkbox = formElements.createCheckbox({
-        name: `${type}_${element.key}`,
-        checked: settings[element.key] || false,
-        ariaLabel: game.i18n.localize(element.label)
-      });
+      const checkbox = formElements.createCheckbox({ name: `${type}_${element.key}`, checked: settings[element.key] || false, ariaLabel: game.i18n.localize(element.label) });
       checkbox.id = `${type}-${element.key}`;
+      return { ...element, checkboxHtml: formElements.elementToHtml(checkbox) };
+    });
+  }
 
-      return {
-        ...element,
-        checkboxHtml: formElements.elementToHtml(checkbox)
-      };
+  /**
+   * Create a select-all checkbox for a group
+   * @param {string} id - The checkbox ID
+   * @param {string} group - The group identifier
+   * @returns {string} HTML for the select-all checkbox
+   * @private
+   */
+  _createSelectAllCheckbox(id, group) {
+    const checkbox = formElements.createCheckbox({ name: id, checked: false, ariaLabel: game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.SelectAll') });
+    checkbox.id = id;
+    checkbox.dataset.action = 'selectAll';
+    checkbox.dataset.group = group;
+    checkbox.classList.add('select-all-checkbox');
+    return formElements.elementToHtml(checkbox);
+  }
+
+  /** @inheritdoc */
+  _onRender(context, options) {
+    super._onRender(context, options);
+    this._setupClickableSettings();
+    this._setupSelectAllListeners();
+    this._updateSelectAllStates();
+  }
+
+  /**
+   * Setup clickable setting items
+   * @private
+   */
+  _setupClickableSettings() {
+    const clickableSettings = this.element.querySelectorAll('.clickable-setting');
+    clickableSettings.forEach((setting) => {
+      setting.addEventListener('click', (event) => {
+        if (event.target.matches('dnd5e-checkbox, input[type="checkbox"]')) return;
+        const checkboxId = setting.dataset.checkboxId;
+        const checkbox = this.element.querySelector(`#${checkboxId}`);
+        if (checkbox) {
+          checkbox.checked = !checkbox.checked;
+          checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+          this._updateSelectAllState(setting.dataset.group);
+        }
+      });
+      setting.addEventListener('mouseenter', () => {
+        setting.classList.add('setting-hover');
+      });
+      setting.addEventListener('mouseleave', () => {
+        setting.classList.remove('setting-hover');
+      });
+    });
+  }
+
+  /**
+   * Setup select-all checkbox listeners
+   * @private
+   */
+  _setupSelectAllListeners() {
+    const selectAllCheckboxes = this.element.querySelectorAll('.select-all-checkbox');
+    selectAllCheckboxes.forEach((checkbox) => {
+      checkbox.addEventListener('change', (event) => {
+        const group = checkbox.dataset.group;
+        const isChecked = checkbox.checked;
+        this._setGroupCheckboxes(group, isChecked);
+      });
+    });
+    const individualCheckboxes = this.element.querySelectorAll('.setting-item dnd5e-checkbox');
+    individualCheckboxes.forEach((checkbox) => {
+      checkbox.addEventListener('change', (event) => {
+        const settingItem = checkbox.closest('.setting-item');
+        const group = settingItem?.dataset.group;
+        if (group) this._updateSelectAllState(group);
+      });
+    });
+  }
+
+  /**
+   * Set all checkboxes in a group to checked/unchecked
+   * @param {string} group - The group identifier
+   * @param {boolean} checked - Whether to check or uncheck
+   * @private
+   */
+  _setGroupCheckboxes(group, checked) {
+    const groupItems = this.element.querySelectorAll(`[data-group="${group}"]`);
+    groupItems.forEach((item) => {
+      if (item.classList.contains('setting-item')) {
+        const checkbox = item.querySelector('dnd5e-checkbox');
+        if (checkbox) checkbox.checked = checked;
+      }
+    });
+  }
+
+  /**
+   * Update the select-all checkbox state based on group items
+   * @param {string} group - The group identifier
+   * @private
+   */
+  _updateSelectAllState(group) {
+    const selectAllCheckbox = this.element.querySelector(`[data-group="${group}"].select-all-checkbox`);
+    const groupCheckboxes = this.element.querySelectorAll(`[data-group="${group}"].setting-item dnd5e-checkbox`);
+    if (!selectAllCheckbox || groupCheckboxes.length === 0) return;
+    const checkedCount = Array.from(groupCheckboxes).filter((cb) => cb.checked).length;
+    if (checkedCount === 0) {
+      selectAllCheckbox.checked = false;
+      selectAllCheckbox.indeterminate = false;
+    } else if (checkedCount === groupCheckboxes.length) {
+      selectAllCheckbox.checked = true;
+      selectAllCheckbox.indeterminate = false;
+    } else {
+      selectAllCheckbox.checked = false;
+      selectAllCheckbox.indeterminate = true;
+    }
+  }
+
+  /**
+   * Update all select-all checkbox states
+   * @private
+   */
+  _updateSelectAllStates() {
+    ['player-ui', 'player-metadata', 'gm-ui', 'gm-metadata'].forEach((group) => {
+      this._updateSelectAllState(group);
     });
   }
 
@@ -170,12 +265,30 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   _getUIElementsConfig(type) {
     if (type === 'player') {
       return [
-        { key: 'favorites', label: 'SPELLBOOK.Settings.DetailsCustomization.Favorites', description: 'SPELLBOOK.Settings.DetailsCustomization.FavoritesDesc' },
-        { key: 'compare', label: 'SPELLBOOK.Settings.DetailsCustomization.Compare', description: 'SPELLBOOK.Settings.DetailsCustomization.CompareDesc' },
-        { key: 'notes', label: 'SPELLBOOK.Settings.DetailsCustomization.Notes', description: 'SPELLBOOK.Settings.DetailsCustomization.NotesDesc' }
+        {
+          key: 'favorites',
+          label: 'SPELLBOOK.Settings.DetailsCustomization.Favorites',
+          description: '<i class="fas fa-star"></i> ' + game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.FavoritesDesc')
+        },
+        {
+          key: 'compare',
+          label: 'SPELLBOOK.Settings.DetailsCustomization.Compare',
+          description: game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.CompareDesc')
+        },
+        {
+          key: 'notes',
+          label: 'SPELLBOOK.Settings.DetailsCustomization.Notes',
+          description: '<i class="fas fa-sticky-note"></i> ' + game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.NotesDesc')
+        }
       ];
     } else {
-      return [{ key: 'compare', label: 'SPELLBOOK.Settings.DetailsCustomization.Compare', description: 'SPELLBOOK.Settings.DetailsCustomization.CompareDesc' }];
+      return [
+        {
+          key: 'compare',
+          label: 'SPELLBOOK.Settings.DetailsCustomization.Compare',
+          description: 'SPELLBOOK.Settings.DetailsCustomization.CompareDesc'
+        }
+      ];
     }
   }
 
@@ -214,15 +327,11 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   static async formHandler(_event, _form, formData) {
     try {
       const expandedData = foundry.utils.expandObject(formData.object);
-
-      // Handle player settings
       if (expandedData.player) {
         await Promise.all([
-          // UI Elements
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES, expandedData.player.favorites || false),
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_COMPARE, expandedData.player.compare || false),
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_NOTES, expandedData.player.notes || false),
-          // Metadata Elements
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_SPELL_LEVEL, expandedData.player.spellLevel || false),
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_SCHOOL, expandedData.player.school || false),
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_CASTING_TIME, expandedData.player.castingTime || false),
@@ -235,12 +344,9 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
         ]);
       }
 
-      // Handle GM settings (only if user is GM)
       if (game.user.isGM && expandedData.gm) {
         await Promise.all([
-          // UI Elements
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_COMPARE, expandedData.gm.compare || false),
-          // Metadata Elements
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_SPELL_LEVEL, expandedData.gm.spellLevel || false),
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_SCHOOL, expandedData.gm.school || false),
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_CASTING_TIME, expandedData.gm.castingTime || false),
@@ -252,7 +358,6 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_MATERIAL_COMPONENTS, expandedData.gm.materialComponents || false)
         ]);
       }
-
       ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.Saved'));
       log(3, 'Spell details customization settings saved successfully');
     } catch (error) {

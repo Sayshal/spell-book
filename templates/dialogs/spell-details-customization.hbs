@@ -1,7 +1,4 @@
 <div class="spell-details-customization-content">
-  <p class="customization-description">
-    {{localize "SPELLBOOK.Settings.DetailsCustomization.Description"}}
-  </p>
 
   <!-- Player Spell Book Settings -->
   <section class="customization-section player-section">
@@ -12,15 +9,25 @@
 
     <!-- UI Elements -->
     <div class="settings-group">
-      <h4 class="group-title">{{localize "SPELLBOOK.Settings.DetailsCustomization.UIElements"}}</h4>
+      <h4 class="group-title">
+        <span class="group-title-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.UIElements"}}</span>
+        <label class="select-all-label" for="select-all-player-ui">
+          <span class="select-all-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.SelectAll"}}</span>
+          {{{selectAllPlayerUICheckbox}}}
+        </label>
+      </h4>
       <div class="settings-grid">
         {{#each playerUIElements as |element|}}
-          <div class="setting-item">
-            <label class="setting-label" for="{{element.key}}">
-              {{{element.checkboxHtml}}}
-              <span class="setting-name">{{localize element.label}}</span>
-            </label>
-            <p class="setting-description">{{localize element.description}}</p>
+          <div class="setting-item clickable-setting" data-checkbox-id="player-{{element.key}}" data-group="player-ui">
+            <div class="setting-item-content">
+              <div class="setting-checkbox">
+                {{{element.checkboxHtml}}}
+              </div>
+              <div class="setting-content">
+                <span class="setting-name">{{localize element.label}}</span>
+                <p class="setting-description">{{{element.description}}}</p>
+              </div>
+            </div>
           </div>
         {{/each}}
       </div>
@@ -28,15 +35,26 @@
 
     <!-- Metadata Elements -->
     <div class="settings-group">
-      <h4 class="group-title">{{localize "SPELLBOOK.Settings.DetailsCustomization.MetadataElements"}}</h4>
+      <h4 class="group-title">
+        <span class="group-title-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.MetadataElements"}}</span>
+        <label class="select-all-label" for="select-all-player-metadata">
+          <span class="select-all-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.SelectAll"}}</span>
+          {{{selectAllPlayerMetadataCheckbox}}}
+        </label>
+      </h4>
       <div class="settings-grid">
         {{#each playerMetadataElements as |element|}}
-          <div class="setting-item">
-            <label class="setting-label" for="{{element.key}}">
-              {{{element.checkboxHtml}}}
-              <span class="setting-name">{{localize element.label}}</span>
-            </label>
-            <p class="setting-description">{{localize element.description}}</p>
+          <div class="setting-item clickable-setting" data-checkbox-id="player-{{element.key}}"
+            data-group="player-metadata">
+            <div class="setting-item-content">
+              <div class="setting-checkbox">
+                {{{element.checkboxHtml}}}
+              </div>
+              <div class="setting-content">
+                <span class="setting-name">{{localize element.label}}</span>
+                <p class="setting-description">{{localize element.description}}</p>
+              </div>
+            </div>
           </div>
         {{/each}}
       </div>
@@ -47,21 +65,31 @@
   {{#if isGM}}
     <section class="customization-section gm-section">
       <h3 class="section-title">
-        <i class="fas fa-crown" aria-hidden="true"></i>
-        {{localize "SPELLBOOK.Settings.DetailsCustomization.GMSpellListManager"}}
+        <i class="fas fa-bars-progress" aria-hidden="true"></i>
+        {{localize "SPELLBOOK.Settings.DetailsCustomization.SpellListManager"}}
       </h3>
 
       <!-- UI Elements -->
       <div class="settings-group">
-        <h4 class="group-title">{{localize "SPELLBOOK.Settings.DetailsCustomization.UIElements"}}</h4>
+        <h4 class="group-title">
+          <span class="group-title-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.UIElements"}}</span>
+          <label class="select-all-label" for="select-all-gm-ui">
+            <span class="select-all-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.SelectAll"}}</span>
+            {{{selectAllGMUICheckbox}}}
+          </label>
+        </h4>
         <div class="settings-grid">
           {{#each gmUIElements as |element|}}
-            <div class="setting-item">
-              <label class="setting-label" for="{{element.key}}">
-                {{{element.checkboxHtml}}}
-                <span class="setting-name">{{localize element.label}}</span>
-              </label>
-              <p class="setting-description">{{localize element.description}}</p>
+            <div class="setting-item clickable-setting" data-checkbox-id="gm-{{element.key}}" data-group="gm-ui">
+              <div class="setting-item-content">
+                <div class="setting-checkbox">
+                  {{{element.checkboxHtml}}}
+                </div>
+                <div class="setting-content">
+                  <span class="setting-name">{{localize element.label}}</span>
+                  <p class="setting-description">{{localize element.description}}</p>
+                </div>
+              </div>
             </div>
           {{/each}}
         </div>
@@ -69,19 +97,32 @@
 
       <!-- Metadata Elements -->
       <div class="settings-group">
-        <h4 class="group-title">{{localize "SPELLBOOK.Settings.DetailsCustomization.MetadataElements"}}</h4>
+        <h4 class="group-title">
+          <span class="group-title-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.MetadataElements"}}</span>
+          <label class="select-all-label" for="select-all-gm-metadata">
+            <span class="select-all-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.SelectAll"}}</span>
+            {{{selectAllGMMetadataCheckbox}}}
+          </label>
+        </h4>
         <div class="settings-grid">
           {{#each gmMetadataElements as |element|}}
-            <div class="setting-item">
-              <label class="setting-label" for="{{element.key}}">
-                {{{element.checkboxHtml}}}
-                <span class="setting-name">{{localize element.label}}</span>
-              </label>
-              <p class="setting-description">{{localize element.description}}</p>
+            <div class="setting-item clickable-setting" data-checkbox-id="gm-{{element.key}}" data-group="gm-metadata">
+              <div class="setting-item-content">
+                <div class="setting-checkbox">
+                  {{{element.checkboxHtml}}}
+                </div>
+                <div class="setting-content">
+                  <span class="setting-name">{{localize element.label}}</span>
+                  <p class="setting-description">{{localize element.description}}</p>
+                </div>
+              </div>
             </div>
           {{/each}}
         </div>
       </div>
     </section>
   {{/if}}
+  <p class="customization-description">
+    {{localize "SPELLBOOK.Settings.DetailsCustomization.Description"}}
+  </p>
 </div>

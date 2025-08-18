@@ -5222,11 +5222,12 @@
     }
 
     .customization-description {
-      margin-bottom: 0.5rem;
-      padding: 1rem;
-      border-left: 0.25rem solid rgb(0 123 255);
+      margin: 1rem 0 0;
+      padding-right: 0.5rem;
+      border-right: 0.25rem solid rgb(0 123 255);
       border-radius: var(--spell-book-radius-md);
       font-size: 0.875rem;
+      text-align: right;
     }
 
     .section-title {
@@ -5241,49 +5242,113 @@
       }
     }
 
+    /* Updated group title to support select-all */
     .group-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin: 1rem;
+
+      .group-title-text {
+        font-weight: inherit;
+      }
+
+      .select-all-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        margin: 0;
+
+        .select-all-text {
+          font-size: 0.8125rem;
+          color: var(--spell-book-text-secondary);
+          white-space: nowrap;
+        }
+
+        dnd5e-checkbox {
+          width: 1rem;
+          height: 1rem;
+        }
+      }
     }
 
+    /* Updated settings grid - force 3 columns with content-based sizing */
     .settings-grid {
       gap: 0.5rem;
-      grid-template-columns: repeat(auto-fit, minmax(18.75rem, 1fr));
+      grid-template-columns: repeat(3, minmax(max-content, 1fr));
       display: grid;
+      align-items: start;
     }
 
+    /* Updated setting item to support new layout and equal heights */
     .setting-item {
-      padding: 0.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 0.5rem;
+      padding: 0.5rem;
       border: 0.0625rem solid var(--spell-book-border-light);
       border-radius: var(--spell-book-radius-md);
       transition: var(--spell-book-transition-normal);
+      min-height: fit-content;
+      width: 100%;
 
       &:hover {
         border-color: var(--spell-book-border-focus);
       }
+
+      &.clickable-setting {
+        cursor: pointer;
+
+        &:hover,
+        &.setting-hover {
+          background-color: var(--spell-book-bg-item-hover);
+          border-color: var(--spell-book-border-focus);
+        }
+
+        &:active {
+          background-color: var(--spell-book-bg-item-active);
+        }
+      }
     }
 
-    .setting-label {
-      gap: 0.25rem;
+    /* Checkbox and content horizontal layout within each item */
+    .setting-item-content {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    /* New checkbox container for left-aligned layout */
+    .setting-checkbox {
       display: flex;
       align-items: center;
-      font-weight: 500;
-      cursor: pointer;
+      flex-shrink: 0;
+    }
 
-      input[type='checkbox'] {
-        flex-shrink: 0;
-        margin: 0;
-      }
+    /* Content area for title and description */
+    .setting-content {
+      flex: 1;
+      min-width: 0;
 
       .setting-name {
+        display: block;
+        font-weight: 500;
         color: var(--spell-book-text-primary);
-        line-height: 1;
+      }
+
+      .setting-description {
+        margin: 0;
+        font-size: 0.8125rem;
+        color: var(--spell-book-text-secondary);
+        line-height: 1.3;
       }
     }
 
-    .setting-description {
-      margin: 0;
-      font-size: 0.8125rem;
-      line-height: 1.3;
+    /* Hide legacy label styling */
+    .setting-label {
+      display: none;
     }
 
     .gm-section {
@@ -5314,6 +5379,41 @@
           i {
             font-size: 0.875em;
           }
+        }
+      }
+    }
+
+    /* Responsive adjustments */
+    @media (width <= 64rem) {
+      .settings-grid {
+        grid-template-columns: repeat(2, minmax(max-content, 1fr));
+      }
+    }
+
+    @media (width <= 48rem) {
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .group-title {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+
+        .select-all-label {
+          align-self: flex-end;
+        }
+      }
+
+      .setting-item {
+        gap: 0.5rem;
+        padding: 0.5rem;
+      }
+
+      .setting-checkbox {
+        dnd5e-checkbox {
+          width: 1rem;
+          height: 1rem;
         }
       }
     }
