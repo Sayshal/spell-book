@@ -250,19 +250,21 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
 
     if (this.isEditing && this.selectionMode && filteredData.spells) {
       filteredData.spells = filteredData.spells.map((spell) => {
+        const processedSpell = formattingUtils.processSpellItemForDisplay(spell);
         const normalizedSpellUuid = this._normalizeUuid(spell.uuid);
-        spell.selectAddCheckboxHtml = this._createSpellSelectCheckbox(spell, 'add', this.selectedSpellsToAdd.has(normalizedSpellUuid));
-        spell.isInComparison = this.comparisonSpells.has(normalizedSpellUuid);
-        spell.showCompareLink = !comparisonFull || spell.isInComparison;
-        return spell;
+        processedSpell.selectAddCheckboxHtml = this._createSpellSelectCheckbox(spell, 'add', this.selectedSpellsToAdd.has(normalizedSpellUuid));
+        processedSpell.isInComparison = this.comparisonSpells.has(normalizedSpellUuid);
+        processedSpell.showCompareLink = !comparisonFull || processedSpell.isInComparison;
+        return processedSpell;
       });
     } else if (filteredData.spells) {
       // Add comparison state even when not in selection mode
       filteredData.spells = filteredData.spells.map((spell) => {
+        const processedSpell = formattingUtils.processSpellItemForDisplay(spell);
         const normalizedSpellUuid = this._normalizeUuid(spell.uuid);
-        spell.isInComparison = this.comparisonSpells.has(normalizedSpellUuid);
-        spell.showCompareLink = !comparisonFull || spell.isInComparison;
-        return spell;
+        processedSpell.isInComparison = this.comparisonSpells.has(normalizedSpellUuid);
+        processedSpell.showCompareLink = !comparisonFull || processedSpell.isInComparison;
+        return processedSpell;
       });
     }
 
