@@ -1882,7 +1882,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const maxSpells = game.settings.get(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX);
     if (this.comparisonSpells.has(spellUuid)) this.comparisonSpells.delete(spellUuid);
     else if (this.comparisonSpells.size < maxSpells) this.comparisonSpells.add(spellUuid);
-    else return;
     this.render(false);
     if (this.comparisonSpells.size >= 2) {
       if (!this.comparisonDialog) {
