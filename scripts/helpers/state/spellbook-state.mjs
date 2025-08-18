@@ -693,6 +693,7 @@ export class SpellbookState {
     });
     const prepLevelsGrouped = await this._organizeSpellsByLevelForClass(prepTabSpells, classIdentifier, classItem);
     const wizardLevelsGrouped = await this._organizeSpellsByLevelForClass(wizardbookSpells, classIdentifier, classItem);
+    const filteredWizardLevelsGrouped = wizardLevelsGrouped.filter((levelData) => levelData.level !== '0' && levelData.level !== 0);
     const maxSpellsAllowed = wizardManager.getMaxSpellsAllowed();
     const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
     let finalPrepLevels = prepLevelsGrouped;
@@ -706,7 +707,7 @@ export class SpellbookState {
         spellPreparation: prepStats
       },
       [wizardTabId]: {
-        spellLevels: wizardLevelsGrouped,
+        spellLevels: filteredWizardLevelsGrouped,
         spellPreparation: prepStats,
         wizardTotalSpellbookCount: totalSpells,
         wizardFreeSpellbookCount: totalFreeSpells,
@@ -739,6 +740,14 @@ export class SpellbookState {
       for (const spell of levelData.spells) {
         spell.isWizardClass = true;
         spell.inWizardSpellbook = personalSpellbook.includes(spell.compendiumUuid || spell.spellUuid);
+        if (this.app && this.app.comparisonSpells) {
+          const comparisonMax = game.settings.get(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX);
+          if (this.app.comparisonSpells.size < comparisonMax) {
+            spell.showCompareLink = true;
+            spell.isInComparison = this.app.comparisonSpells.has(spell.compendiumUuid || spell.spellUuid);
+          }
+        }
+
         if (isWizardBook) {
           spell.canAddToSpellbook = !spell.inWizardSpellbook && spell.system.level > 0;
           spell.isAtMaxSpells = isAtMaxSpells;

@@ -57,7 +57,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     },
     classes: ['spell-book', 'vertical-tabs'],
     window: { icon: 'spell-book-module-icon', resizable: true, minimizable: true, positioned: true },
-    position: { height: 875, width: 600 }
+    position: { height: 850, width: 600 }
   };
 
   static PARTS = {
@@ -1164,7 +1164,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const isWizardTab = activeTab && activeTab.startsWith('wizardbook-');
     const spellUuid = spell.uuid || spell.compendiumUuid;
     let comparisonLinkHtml = '';
-    if (UICustomizationHelper.isPlayerElementEnabled('compare') && spell.showCompareLink && !isWizardTab) {
+    if (UICustomizationHelper.isPlayerElementEnabled('compare') && spell.showCompareLink) {
       const activeClass = spell.isInComparison ? ' active' : '';
       const compareText = game.i18n.localize('SPELLBOOK.Comparison.Compare');
       const ariaLabel = game.i18n.format('SPELLBOOK.Comparison.CompareSpell', { name: name });
