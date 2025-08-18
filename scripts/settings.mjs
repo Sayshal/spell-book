@@ -111,6 +111,15 @@ export function registerSettings() {
     default: {}
   });
 
+  game.settings.register(MODULE.ID, SETTINGS.SIDEBAR_CONTROLS_BOTTOM, {
+    name: 'SPELLBOOK.Settings.SidebarControlsBottom.Name',
+    hint: 'SPELLBOOK.Settings.SidebarControlsBottom.Hint',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: false
+  });
+
   game.settings.register(MODULE.ID, SETTINGS.ENABLE_JOURNAL_BUTTON, {
     name: 'SPELLBOOK.Settings.EnableJournalButton.Name',
     hint: 'SPELLBOOK.Settings.EnableJournalButton.Hint',

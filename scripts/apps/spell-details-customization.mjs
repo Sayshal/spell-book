@@ -14,7 +14,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
       closeOnSubmit: true,
       submitOnChange: false
     },
-    position: { height: 'auto', width: 700 },
+    position: { height: 'auto', width: 800 },
     window: { icon: 'fa-solid fa-palette', resizable: false }
   };
 
@@ -232,7 +232,8 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
       conditions: game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_CONDITIONS),
       save: game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_SAVE),
       concentration: game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_CONCENTRATION),
-      materialComponents: game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_MATERIAL_COMPONENTS)
+      materialComponents: game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_MATERIAL_COMPONENTS),
+      sidebarControlsBottom: game.settings.get(MODULE.ID, SETTINGS.SIDEBAR_CONTROLS_BOTTOM)
     };
   }
 
@@ -279,6 +280,11 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
           key: 'notes',
           label: 'SPELLBOOK.Settings.DetailsCustomization.Notes',
           description: '<i class="fas fa-sticky-note"></i> ' + game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.NotesDesc')
+        },
+        {
+          key: 'sidebarControlsBottom',
+          label: 'SPELLBOOK.Settings.DetailsCustomization.SidebarControlsBottom',
+          description: game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.SidebarControlsBottomDesc')
         }
       ];
     } else {
@@ -340,7 +346,8 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_CONDITIONS, expandedData.player.conditions || false),
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_SAVE, expandedData.player.save || false),
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_CONCENTRATION, expandedData.player.concentration || false),
-          game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_MATERIAL_COMPONENTS, expandedData.player.materialComponents || false)
+          game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_MATERIAL_COMPONENTS, expandedData.player.materialComponents || false),
+          game.settings.set(MODULE.ID, SETTINGS.SIDEBAR_CONTROLS_BOTTOM, expandedData.player.sidebarControlsBottom || false)
         ]);
       }
 

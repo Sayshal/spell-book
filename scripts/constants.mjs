@@ -244,6 +244,7 @@ export const SETTINGS = {
   PLAYER_UI_SCHOOL: 'playerUISchool',
   PLAYER_UI_SPELL_LEVEL: 'playerUISpellLevel',
   SETUP_MODE: 'setupMode',
+  SIDEBAR_CONTROLS_BOTTOM: 'sidebarControlsBottom',
   SPELL_BOOK_POSITION: 'spellBookPositionn',
   SPELL_COMPARISON_MAX: 'spellComparisonMax',
   SPELL_NOTES_DESC_INJECTION: 'injectNotesIntoDescriptions',

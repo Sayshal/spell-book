@@ -475,6 +475,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   async _onRender(context, options) {
     super._onRender(context, options);
+    const sidebarControlsBottom = game.settings.get(MODULE.ID, SETTINGS.SIDEBAR_CONTROLS_BOTTOM);
+    this.element.dataset.sidebarControlsBottom = sidebarControlsBottom;
     this._setupContentWrapper();
     this.ui.setSidebarState();
     this.ui.positionFooter();
