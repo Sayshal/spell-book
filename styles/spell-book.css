@@ -36,7 +36,7 @@
   --spell-book-text-notice: rgb(0 0 0 / 100%);
   --spell-book-text-hyperlink: rgb(85 170 255 / 100%);
   --spell-book-text-highlight: rgb(255 255 0 / 100%);
-  --spell-book-text-active: rgb(76 175 80 / 100%);
+  --spell-book-text-active: rgb(76 175 80);
 
   /* ======= Border Colors ======= */
   --spell-book-border-light: rgb(201 199 184 / 16.5%);
@@ -213,6 +213,7 @@
   --spell-book-text-notice: rgb(255 255 255 / 100%);
   --spell-book-text-hyperlink: rgb(0 102 204 / 100%);
   --spell-book-text-highlight: rgb(255 201 25 / 100%);
+  --spell-book-text-active: rgb(76 175 80 / 100%);
 
   /* ======= Border Colors ======= */
   --spell-book-border-light: rgb(221 221 221 / 50.2%);
@@ -1372,11 +1373,11 @@
       }
 
       &.at-max {
-        color: rgb(159 214 143 / 100%);
+        color: var(--spell-book-text-active);
         font-weight: bold;
 
         .class-current {
-          color: rgb(159 214 143 / 100%);
+          color: var(--spell-book-text-active);
         }
       }
 
@@ -1398,11 +1399,11 @@
       border-top: 0.063rem solid var(--spell-book-border-light);
 
       &.at-max {
-        color: rgb(159 214 143 / 100%);
+        color: var(--spell-book-text-active);
         font-weight: bold;
 
         .global-current-count {
-          color: rgb(159 214 143 / 100%);
+          color: var(--spell-book-text-active);
         }
       }
 
