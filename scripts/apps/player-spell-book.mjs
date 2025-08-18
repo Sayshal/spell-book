@@ -519,8 +519,40 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           if (classData && classData.img) {
             const colorPromise = (async () => {
               try {
-                const dominantColor = await colorUtils.extractDominantColor(classData.img);
-                const wizardBookImage = await colorUtils.applyColorOverlay(ASSETS.WIZARDBOOK_ICON, dominantColor);
+                let dominantColor;
+                const customColor = game.settings.get(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR);
+
+                // ColorField returns null when not set, or a valid color string when set
+                if (customColor && customColor !== null && customColor !== '') {
+                  dominantColor = customColor.css;
+                  log(3, `Using custom color ${dominantColor} for wizard book ${identifier}`);
+                } else {
+                  dominantColor = await colorUtils.extractDominantColor(classData.img);
+                  log(3, `Extracted color ${dominantColor} from class image for wizard book ${identifier}`);
+                }
+
+                // Add contrast debugging
+                const theme = colorUtils.d ? colorUtils.d() : 'dark';
+                const background = theme === 'light' ? '#f4f4f4' : '#1b1d24';
+                const contrast = colorUtils.getContrastRatio ? colorUtils.getContrastRatio(dominantColor, background, true) : 'unavailable';
+
+                log(3, `Wizard book color debug for ${identifier}:`, {
+                  dominantColor,
+                  theme,
+                  background,
+                  contrast,
+                  isCustom: !!(customColor && customColor !== null && customColor !== ''),
+                  customColorSetting: customColor
+                });
+
+                // Use enhanced color overlay with debugging
+                const wizardBookImage = await colorUtils.applyWizardBookColor(
+                  ASSETS.WIZARDBOOK_ICON,
+                  dominantColor,
+                  0.75,
+                  true // Enable debugging
+                );
+
                 this._wizardBookImages.set(identifier, wizardBookImage);
                 log(3, `Applied ${dominantColor} color overlay to wizardbook for class ${identifier}`);
               } catch (error) {

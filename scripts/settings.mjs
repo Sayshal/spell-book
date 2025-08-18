@@ -140,6 +140,20 @@ export function registerSettings() {
     range: { min: 2, max: 7, step: 1 }
   });
 
+  game.settings.register(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.WizardBookIconColor',
+    scope: 'client',
+    config: false,
+    type: new foundry.data.fields.ColorField({
+      required: false,
+      nullable: true,
+      blank: true,
+      initial: null,
+      label: 'SPELLBOOK.Settings.DetailsCustomization.WizardBookIconColor'
+    }),
+    default: null
+  });
+
   game.settings.register(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, {
     name: 'SPELLBOOK.Settings.AdvancedSearchPrefix.Name',
     hint: 'SPELLBOOK.Settings.AdvancedSearchPrefix.Hint',

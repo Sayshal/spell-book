@@ -30,6 +30,33 @@
             </div>
           </div>
         {{/each}}
+
+        {{!-- Wizard Book Icon Color - Added as grid item --}}
+        <div class="setting-item wizard-book-color-item">
+          <div class="setting-item-content">
+            <div class="setting-content">
+              <span
+                class="setting-name">{{localize "SPELLBOOK.Settings.DetailsCustomization.WizardBookIconColor"}}</span>
+              <div class="wizard-book-color-controls">
+                <color-picker name="wizardBookIconColor" value="{{wizardBookIconColor}}"
+                  placeholder="{{userColor}}"></color-picker>
+
+                <div class="wizard-book-buttons">
+                  <button type="button" class="use-user-color-btn" data-action="useUserColor"
+                    data-user-color="{{userColor}}"
+                    data-tooltip="{{localize 'SPELLBOOK.Settings.DetailsCustomization.WizardBookUseUserColor'}}">
+                    <i class="fas fa-user"></i>
+                  </button>
+
+                  <button type="button" class="reset-default-btn" data-action="resetToDefault"
+                    data-tooltip="{{localize 'SPELLBOOK.Settings.DetailsCustomization.WizardBookResetDefault'}}">
+                    <i class="fas fa-undo"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

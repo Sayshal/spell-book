@@ -249,7 +249,8 @@ export const SETTINGS = {
   SPELL_COMPARISON_MAX: 'spellComparisonMax',
   SPELL_NOTES_DESC_INJECTION: 'injectNotesIntoDescriptions',
   SPELL_NOTES_LENGTH: 'spellNotesMaxLength',
-  SPELLCASTING_RULE_SET: 'spellcastingRuleSet'
+  SPELLCASTING_RULE_SET: 'spellcastingRuleSet',
+  WIZARD_BOOK_ICON_COLOR: 'wizardBookIconColor'
 };
 
 /**

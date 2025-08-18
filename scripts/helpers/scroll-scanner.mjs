@@ -34,7 +34,6 @@ export class ScrollScanner {
    * @private
    */
   static async _extractSpellFromScroll(scroll, actor) {
-    log(1, 'DEBUG', { scroll: scroll });
     const wizardClass = genericUtils.findWizardClass(actor);
     if (!wizardClass) return null;
     const maxSpellLevel = discoveryUtils.calculateMaxSpellLevel(wizardClass, actor);

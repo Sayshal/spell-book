@@ -669,9 +669,7 @@ export class SpellbookState {
     const remainingFreeSpells = Math.max(0, totalFreeSpells - usedFreeSpells);
     const totalSpells = personalSpellbook.length;
     this.scrollSpells = await ScrollScanner.scanForScrollSpells(this.actor);
-    log(1, `ScrollScanner debug: Found ${this.scrollSpells.length} scroll spells for ${classIdentifier}`);
     for (const scrollSpell of this.scrollSpells) {
-      log(1, `ScrollScanner debug: Scroll spell - ${scrollSpell.name} (Level ${scrollSpell.level}) from scroll ${scrollSpell.scrollName} (ID: ${scrollSpell.scrollId})`);
     }
     const grantedSpells = this.actor.items
       .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.method && ['pact', 'innate', 'atwill'].includes(i.system.method))))
@@ -703,9 +701,7 @@ export class SpellbookState {
       const shouldInclude = isNonCantrip && inFullWizardList;
       return shouldInclude;
     });
-    log(1, `ScrollScanner debug: Adding ${this.scrollSpells.length} scroll spells to wizardbook display`);
     const combinedWizardbookSpells = [...wizardbookSpells, ...this.scrollSpells];
-    log(1, `ScrollScanner debug: Combined wizard book spells: ${combinedWizardbookSpells.length} (${wizardbookSpells.length} regular + ${this.scrollSpells.length} scroll)`);
     const prepLevelsGrouped = await this._organizeSpellsByLevelForClass(prepTabSpells, classIdentifier, classItem);
     const wizardLevelsGrouped = await this._organizeSpellsByLevelForClass(combinedWizardbookSpells, classIdentifier, classItem);
     const scrollSpellsForLevel = [];
@@ -715,7 +711,6 @@ export class SpellbookState {
       scrollSpell.inWizardSpellbook = personalSpellbook.includes(scrollSpell.compendiumUuid || scrollSpell.spellUuid);
       scrollSpellsForLevel.push(scrollSpell);
     }
-    log(1, `ScrollScanner debug: Prepared ${scrollSpellsForLevel.length} scroll spells for Learn From Scroll section`);
     if (scrollSpellsForLevel.length > 0) {
       const learnFromScrollLevel = {
         level: 'scroll',
@@ -723,13 +718,10 @@ export class SpellbookState {
         spells: scrollSpellsForLevel
       };
       wizardLevelsGrouped.unshift(learnFromScrollLevel);
-      log(1, `ScrollScanner debug: Added "Learn From Scroll" section with ${scrollSpellsForLevel.length} spells at beginning of wizard levels`);
     }
     const filteredWizardLevelsGrouped = wizardLevelsGrouped.filter((levelData) => {
       return levelData.level === 'scroll' || (levelData.level !== '0' && levelData.level !== 0);
     });
-    log(1, `ScrollScanner debug: Final filtered wizard levels: ${filteredWizardLevelsGrouped.length} levels`);
-    for (const level of filteredWizardLevelsGrouped) log(1, `ScrollScanner debug: Level ${level.level} (${level.name}): ${level.spells.length} spells`);
     const maxSpellsAllowed = wizardManager.getMaxSpellsAllowed();
     const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
     let finalPrepLevels = prepLevelsGrouped;

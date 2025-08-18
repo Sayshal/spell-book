@@ -14,6 +14,10 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
       closeOnSubmit: true,
       submitOnChange: false
     },
+    actions: {
+      useUserColor: SpellDetailsCustomization.useUserColor,
+      resetToDefault: SpellDetailsCustomization.resetToDefault
+    },
     position: { height: 'auto', width: 800 },
     window: { icon: 'fa-solid fa-palette', resizable: false }
   };
@@ -45,6 +49,8 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
     const selectAllPlayerMetadataCheckbox = this._createSelectAllCheckbox('select-all-player-metadata', 'player-metadata');
     const selectAllGMUICheckbox = isGM ? this._createSelectAllCheckbox('select-all-gm-ui', 'gm-ui') : null;
     const selectAllGMMetadataCheckbox = isGM ? this._createSelectAllCheckbox('select-all-gm-metadata', 'gm-metadata') : null;
+    const wizardBookIconColor = game.settings.get(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR);
+
     return {
       ...context,
       isGM,
@@ -57,7 +63,9 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
       selectAllPlayerUICheckbox,
       selectAllPlayerMetadataCheckbox,
       selectAllGMUICheckbox,
-      selectAllGMMetadataCheckbox
+      selectAllGMMetadataCheckbox,
+      wizardBookIconColor: wizardBookIconColor || '',
+      userColor: game.user.color
     };
   }
 
@@ -333,6 +341,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   static async formHandler(_event, _form, formData) {
     try {
       const expandedData = foundry.utils.expandObject(formData.object);
+
       if (expandedData.player) {
         await Promise.all([
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES, expandedData.player.favorites || false),
@@ -351,7 +360,14 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
         ]);
       }
 
-      if (game.user.isGM && expandedData.gm) {
+      // Handle wizard book icon color with proper null handling
+      if (expandedData.wizardBookIconColor !== undefined) {
+        const colorValue = expandedData.wizardBookIconColor || null;
+        await game.settings.set(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR, colorValue);
+      }
+
+      // ... existing GM settings handling ...
+      if (expandedData.gm && game.user.isGM) {
         await Promise.all([
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_COMPARE, expandedData.gm.compare || false),
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_SPELL_LEVEL, expandedData.gm.spellLevel || false),
@@ -365,16 +381,42 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_MATERIAL_COMPONENTS, expandedData.gm.materialComponents || false)
         ]);
       }
-      const openApplications = Array.from(foundry.applications.instances.values());
-      const spellbookApps = openApplications.filter((app) => app.constructor.name === 'PlayerSpellBook');
-      for (const app of spellbookApps) app.render(false);
-      const gmSpellListApps = openApplications.filter((app) => app.constructor.name === 'GMSpellListManager');
-      for (const app of gmSpellListApps) app.render(false);
+
       ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.Saved'));
-      log(3, 'Spell details customization settings saved successfully');
     } catch (error) {
-      log(1, 'Error saving spell details customization settings:', error);
+      log(1, 'Error saving spell customization settings:', error);
       ui.notifications.error(game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.ErrorSaving'));
+    }
+  }
+
+  /**
+   * Action handler to set wizard book color to user color
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} target - The target element
+   * @static
+   */
+  static async useUserColor(event, target) {
+    const userColor = target.dataset.userColor || game.user.color;
+    const colorPicker = target.closest('.wizard-book-color-controls').querySelector('color-picker[name="wizardBookIconColor"]');
+    if (colorPicker) {
+      colorPicker.value = userColor;
+      log(3, `Set wizard book color to user color: ${userColor}`);
+    }
+  }
+
+  /**
+   * Action handler to reset wizard book color to default/saved setting
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} target - The target element
+   * @static
+   */
+  static async resetToDefault(event, target) {
+    const colorPicker = target.closest('.wizard-book-color-controls').querySelector('color-picker[name="wizardBookIconColor"]');
+    if (colorPicker) {
+      // Get the last saved setting value
+      const savedColor = game.settings.get(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR);
+      colorPicker.value = savedColor || '';
+      log(3, `Reset wizard book color to default: ${savedColor || 'empty'}`);
     }
   }
 }
