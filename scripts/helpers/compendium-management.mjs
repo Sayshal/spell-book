@@ -614,13 +614,9 @@ export async function getOrCreateMergedFolder() {
  */
 function getEnabledCompendiums() {
   const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
-
-  // If empty settings object, index all compendiums (default behavior)
-  if (!settings || Object.keys(settings).length === 0) {
-    return new Set(Array.from(game.packs).map((p) => p.collection));
-  }
-
-  return new Set(Object.keys(settings));
+  const enabledCompendiums = new Set();
+  for (const pack of game.packs) if (settings?.[pack.collection] !== false) enabledCompendiums.add(pack.collection);
+  return enabledCompendiums;
 }
 
 /**
@@ -630,6 +626,6 @@ function getEnabledCompendiums() {
  */
 export function shouldIndexCompendium(pack) {
   const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
-  if (!settings || Object.keys(settings).length === 0) return true;
-  return settings.hasOwnProperty(pack.collection);
+  if (settings && settings.hasOwnProperty(pack.collection)) return settings[pack.collection] === true;
+  return true;
 }

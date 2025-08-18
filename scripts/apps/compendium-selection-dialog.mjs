@@ -148,7 +148,8 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
     const context = await super._prepareContext(options);
     const currentSettings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
     const compendiums = await this._getAvailableCompendiums();
-    const enabledCompendiums = Object.keys(currentSettings).length > 0 ? new Set(Object.keys(currentSettings)) : new Set(Array.from(game.packs).map((p) => p.collection));
+    const enabledCompendiums = new Set();
+    for (const pack of game.packs) if (currentSettings[pack.collection] !== false) enabledCompendiums.add(pack.collection);
     context.categories = this._prepareCategories(compendiums.categorizedPacks, enabledCompendiums);
     const summaryData = this._calculateSummaryData(context.categories);
     context.globalSelectAllCheckboxHtml = this._createGlobalSelectAllCheckbox(summaryData.allSelected);
@@ -424,20 +425,18 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
         }
       }
     }
-    const enabledCheckboxes = form.querySelectorAll('dnd5e-checkbox[name="compendiumMultiSelect"]:not([disabled])');
+    const relevantCheckboxes = form.querySelectorAll('dnd5e-checkbox[name="compendiumMultiSelect"]:not([disabled])');
     let userSelectedCount = 0;
-    enabledCheckboxes.forEach((checkbox) => {
-      if (checkbox.checked) {
-        const checkboxValue = checkbox.getAttribute('value') || checkbox.value;
-        if (checkboxValue) {
-          if (!enabledCompendiums.hasOwnProperty(checkboxValue)) userSelectedCount++;
-          enabledCompendiums[checkboxValue] = true;
-        }
+    relevantCheckboxes.forEach((checkbox) => {
+      const checkboxValue = checkbox.getAttribute('value') || checkbox.value;
+      if (checkboxValue) {
+        enabledCompendiums[checkboxValue] = checkbox.checked;
+        if (checkbox.checked && !enabledCompendiums.hasOwnProperty(checkboxValue)) userSelectedCount++;
       }
     });
     const settingsChanged = JSON.stringify(originalSettings) !== JSON.stringify(enabledCompendiums);
     await game.settings.set(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS, enabledCompendiums);
-    const actualPackCount = userSelectedCount + modulePackCount;
+    const actualPackCount = Object.values(enabledCompendiums).filter((enabled) => enabled === true).length;
     ui.notifications.info(game.i18n.format('SPELLBOOK.Settings.CompendiumSelectionUpdated', { count: actualPackCount }));
     if (settingsChanged) {
       const reload = await DialogV2.confirm({
