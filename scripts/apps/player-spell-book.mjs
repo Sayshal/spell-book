@@ -1547,6 +1547,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static filterSpells(_event, _form) {
     this.filterHelper.invalidateFilterCache();
+    this.filterHelper.applyFilters();
   }
 
   /**
