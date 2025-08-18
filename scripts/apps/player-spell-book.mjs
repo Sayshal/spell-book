@@ -655,6 +655,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   async _applyFavoriteStatesAfterRender() {
+    const favoritesEnabled = game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES);
+    if (!favoritesEnabled) return;
     const favoriteButtons = this.element.querySelectorAll('.spell-favorite-toggle[data-uuid]');
     log(3, `Applying favorite states to ${favoriteButtons.length} buttons after render`);
     if (favoriteButtons.length === 0) {
@@ -1025,12 +1027,17 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     const result = sortedFilters
       .map((filter) => {
+        let filterEnabled = filter.enabled;
+        if (filter.id === 'favorited') {
+          const favoritesUIEnabled = game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES);
+          filterEnabled = filter.enabled && favoritesUIEnabled;
+        }
         const result = {
           id: filter.id,
           type: filter.type,
           name: `filter-${filter.id}`,
           label: game.i18n.localize(filter.label),
-          enabled: filter.enabled
+          enabled: filterEnabled
         };
         let element;
         switch (filter.type) {

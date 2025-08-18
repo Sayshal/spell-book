@@ -71,7 +71,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   _prepareUIElementsWithCheckboxes(type, settings) {
     const elements = this._getUIElementsConfig(type);
     return elements.map((element) => {
-      const checkbox = formElements.createCheckbox({ name: `${type}_${element.key}`, checked: settings[element.key] || false, ariaLabel: game.i18n.localize(element.label) });
+      const checkbox = formElements.createCheckbox({ name: `${type}.${element.key}`, checked: settings[element.key] || false, ariaLabel: game.i18n.localize(element.label) });
       checkbox.id = `${type}-${element.key}`;
       return { ...element, checkboxHtml: formElements.elementToHtml(checkbox) };
     });
@@ -87,7 +87,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   _prepareMetadataElementsWithCheckboxes(type, settings) {
     const elements = this._getMetadataElementsConfig(type);
     return elements.map((element) => {
-      const checkbox = formElements.createCheckbox({ name: `${type}_${element.key}`, checked: settings[element.key] || false, ariaLabel: game.i18n.localize(element.label) });
+      const checkbox = formElements.createCheckbox({ name: `${type}.${element.key}`, checked: settings[element.key] || false, ariaLabel: game.i18n.localize(element.label) });
       checkbox.id = `${type}-${element.key}`;
       return { ...element, checkboxHtml: formElements.elementToHtml(checkbox) };
     });
@@ -358,6 +358,11 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_MATERIAL_COMPONENTS, expandedData.gm.materialComponents || false)
         ]);
       }
+      const openApplications = Array.from(foundry.applications.instances.values());
+      const spellbookApps = openApplications.filter((app) => app.constructor.name === 'PlayerSpellBook');
+      for (const app of spellbookApps) app.render(false);
+      const gmSpellListApps = openApplications.filter((app) => app.constructor.name === 'GMSpellListManager');
+      for (const app of gmSpellListApps) app.render(false);
       ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.Saved'));
       log(3, 'Spell details customization settings saved successfully');
     } catch (error) {

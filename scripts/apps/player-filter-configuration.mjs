@@ -498,7 +498,8 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
         ...sortedFilters,
         ...nonSortableFilters.filter((f) => f.id !== 'name').map((f, idx) => ({ ...f, order: 1000 + idx * 10 }))
       ];
-      game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, updatedConfig);
+      const configToSave = { version: MODULE.DEFAULT_FILTER_CONFIG_VERSION, filters: updatedConfig };
+      game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, configToSave);
       if (this.parentApp) this.parentApp.render(false);
       return true;
     } catch (error) {
