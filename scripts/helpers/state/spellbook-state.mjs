@@ -54,18 +54,26 @@ export class SpellbookState {
     await this.loadSpellData();
     const wizardClasses = genericUtils.getWizardEnabledClasses(this.actor);
     if (wizardClasses.length > 0) {
-      log(3, `Loading wizard data for ${wizardClasses.length} wizard classes`);
-      const wizardPromises = wizardClasses.map((wizardClass) => {
-        log(3, `Starting wizard data load for ${wizardClass.identifier}`);
-        return this.loadWizardSpellData(wizardClass.classItem, wizardClass.identifier);
-      });
-      await Promise.all(wizardPromises);
+      log(3, `Checking wizard data for ${wizardClasses.length} wizard classes`);
+      const wizardPromises = wizardClasses
+        .filter((wizardClass) => {
+          const wizardTabId = `wizardbook-${wizardClass.identifier}`;
+          const alreadyLoaded = !!this.tabData[wizardTabId];
+          if (alreadyLoaded) log(3, `Wizard data already loaded for ${wizardClass.identifier}`);
+          return !alreadyLoaded;
+        })
+        .map((wizardClass) => {
+          log(3, `Loading wizard data for ${wizardClass.identifier}`);
+          return this.loadWizardSpellData(wizardClass.classItem, wizardClass.identifier);
+        });
+      if (wizardPromises.length > 0) await Promise.all(wizardPromises);
       for (const wizardClass of wizardClasses) {
         const wizardTabId = `wizardbook-${wizardClass.identifier}`;
-        if (this.tabData[wizardTabId]) log(3, `✓ Verified wizard tab data exists for ${wizardClass.identifier}`);
+        if (this.tabData[wizardTabId]) log(3, `Verified wizard tab data exists for ${wizardClass.identifier}`);
         else log(1, `Missing wizard tab data for ${wizardClass.identifier} after initialization`);
       }
     }
+
     this._initialized = true;
     log(3, 'Spellbook state initialization completed');
     return true;
@@ -661,6 +669,10 @@ export class SpellbookState {
     const remainingFreeSpells = Math.max(0, totalFreeSpells - usedFreeSpells);
     const totalSpells = personalSpellbook.length;
     this.scrollSpells = await ScrollScanner.scanForScrollSpells(this.actor);
+    log(1, `ScrollScanner debug: Found ${this.scrollSpells.length} scroll spells for ${classIdentifier}`);
+    for (const scrollSpell of this.scrollSpells) {
+      log(1, `ScrollScanner debug: Scroll spell - ${scrollSpell.name} (Level ${scrollSpell.level}) from scroll ${scrollSpell.scrollName} (ID: ${scrollSpell.scrollId})`);
+    }
     const grantedSpells = this.actor.items
       .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.method && ['pact', 'innate', 'atwill'].includes(i.system.method))))
       .flatMap((i) => {
@@ -691,15 +703,39 @@ export class SpellbookState {
       const shouldInclude = isNonCantrip && inFullWizardList;
       return shouldInclude;
     });
+    log(1, `ScrollScanner debug: Adding ${this.scrollSpells.length} scroll spells to wizardbook display`);
+    const combinedWizardbookSpells = [...wizardbookSpells, ...this.scrollSpells];
+    log(1, `ScrollScanner debug: Combined wizard book spells: ${combinedWizardbookSpells.length} (${wizardbookSpells.length} regular + ${this.scrollSpells.length} scroll)`);
     const prepLevelsGrouped = await this._organizeSpellsByLevelForClass(prepTabSpells, classIdentifier, classItem);
-    const wizardLevelsGrouped = await this._organizeSpellsByLevelForClass(wizardbookSpells, classIdentifier, classItem);
-    const filteredWizardLevelsGrouped = wizardLevelsGrouped.filter((levelData) => levelData.level !== '0' && levelData.level !== 0);
+    const wizardLevelsGrouped = await this._organizeSpellsByLevelForClass(combinedWizardbookSpells, classIdentifier, classItem);
+    const scrollSpellsForLevel = [];
+    for (const scrollSpell of this.scrollSpells) {
+      scrollSpell.sourceClass = classIdentifier;
+      scrollSpell.isWizardClass = true;
+      scrollSpell.inWizardSpellbook = personalSpellbook.includes(scrollSpell.compendiumUuid || scrollSpell.spellUuid);
+      scrollSpellsForLevel.push(scrollSpell);
+    }
+    log(1, `ScrollScanner debug: Prepared ${scrollSpellsForLevel.length} scroll spells for Learn From Scroll section`);
+    if (scrollSpellsForLevel.length > 0) {
+      const learnFromScrollLevel = {
+        level: 'scroll',
+        name: game.i18n.localize('SPELLBOOK.Scrolls.LearnFromScroll'),
+        spells: scrollSpellsForLevel
+      };
+      wizardLevelsGrouped.unshift(learnFromScrollLevel);
+      log(1, `ScrollScanner debug: Added "Learn From Scroll" section with ${scrollSpellsForLevel.length} spells at beginning of wizard levels`);
+    }
+    const filteredWizardLevelsGrouped = wizardLevelsGrouped.filter((levelData) => {
+      return levelData.level === 'scroll' || (levelData.level !== '0' && levelData.level !== 0);
+    });
+    log(1, `ScrollScanner debug: Final filtered wizard levels: ${filteredWizardLevelsGrouped.length} levels`);
+    for (const level of filteredWizardLevelsGrouped) log(1, `ScrollScanner debug: Level ${level.level} (${level.name}): ${level.spells.length} spells`);
     const maxSpellsAllowed = wizardManager.getMaxSpellsAllowed();
     const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
     let finalPrepLevels = prepLevelsGrouped;
     if (shouldHideCantrips) finalPrepLevels = prepLevelsGrouped.filter((levelData) => levelData.level !== '0' && levelData.level !== 0);
     this.enrichWizardBookSpells(finalPrepLevels, personalSpellbook, false, false);
-    this.enrichWizardBookSpells(wizardLevelsGrouped, personalSpellbook, true, isAtMaxSpells);
+    this.enrichWizardBookSpells(filteredWizardLevelsGrouped, personalSpellbook, true, isAtMaxSpells);
     const prepStats = this.calculatePreparationStats(classIdentifier, finalPrepLevels, classItem);
     const tabData = {
       [spellsTabId]: {

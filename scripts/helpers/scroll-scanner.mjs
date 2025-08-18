@@ -34,15 +34,29 @@ export class ScrollScanner {
    * @private
    */
   static async _extractSpellFromScroll(scroll, actor) {
+    log(1, 'DEBUG', { scroll: scroll });
     const wizardClass = genericUtils.findWizardClass(actor);
     if (!wizardClass) return null;
     const maxSpellLevel = discoveryUtils.calculateMaxSpellLevel(wizardClass, actor);
-    if (scroll.system?.activities?.contents) {
-      for (const [index, activity] of scroll.system.activities.contents.entries()) {
-        if (activity.type === 'cast' && activity.spell?.uuid) {
+    if (scroll.system?.activities) {
+      const activitiesArray = Array.from(scroll.system.activities.values());
+      for (const [activityIndex, activity] of activitiesArray.entries()) {
+        if (activity?.spell?.uuid) {
           const spellUuid = activity.spell.uuid;
           const result = await this._processScrollSpell(scroll, spellUuid, maxSpellLevel);
           if (result) return result;
+        }
+        if (activity?.effects && Array.isArray(activity.effects)) {
+          for (const [effectIndex, effectRef] of activity.effects.entries()) {
+            if (effectRef._id && scroll.effects) {
+              const matchingEffect = scroll.effects.find((effect) => effect._id === effectRef._id);
+              if (matchingEffect?.origin) {
+                const spellUuid = matchingEffect.origin;
+                const result = await this._processScrollSpell(scroll, spellUuid, maxSpellLevel);
+                if (result) return result;
+              }
+            }
+          }
         }
       }
     }
