@@ -447,7 +447,7 @@
   "SPELLBOOK.Spells.LockedOutsideLongRest": "This spell can only be swapped during a long rest",
   "SPELLBOOK.Tabs.ClassSpells": "{class} Spells",
   "SPELLBOOK.Tabs.WizardSpells": "{class} Spell List",
-  "SPELLBOOK.UI.AddNotes": "Click to Add Notes",
+  "SPELLBOOK.UI.AddNotes": "Add a note",
   "SPELLBOOK.UI.AddToFavorites": "Add to Favorites",
   "SPELLBOOK.UI.Cancel": "Cancel",
   "SPELLBOOK.UI.CharactersRemaining": "characters remaining",

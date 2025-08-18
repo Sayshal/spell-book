@@ -1189,11 +1189,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {Object} spell - Processed spell
    * @returns {string} HTML string
    */
-  /**
-   * Create HTML for a spell item (ensure enriched icon is handled properly)
-   * @param {Object} spell - Processed spell
-   * @returns {string} HTML string
-   */
   _createSpellItemHtml(spell) {
     const tagHtml = spell.tag ? `<span class="tag ${spell.tag.cssClass}" ${spell.tag.tooltip ? `data-tooltip="${spell.tag.tooltip}"` : ''}>${spell.tag.text}</span>` : '';
     const enrichedIcon = spell.enrichedIcon || '';
@@ -1204,65 +1199,66 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const activeTab = this.tabGroups['spellbook-tabs'];
     const isWizardTab = activeTab && activeTab.startsWith('wizardbook-');
     const spellUuid = spell.uuid || spell.compendiumUuid;
-    let comparisonLinkHtml = '';
+    let comparisonIconHtml = '';
     if (UICustomizationHelper.isPlayerElementEnabled('compare') && spell.showCompareLink) {
       const activeClass = spell.isInComparison ? ' active' : '';
       const compareText = game.i18n.localize('SPELLBOOK.Comparison.Compare');
       const ariaLabel = game.i18n.format('SPELLBOOK.Comparison.CompareSpell', { name: name });
-      comparisonLinkHtml = `<button class="compare-button compare-link${activeClass}" data-action="compareSpell" data-uuid="${spell.compendiumUuid}" aria-label="${ariaLabel}">${compareText}</button>`;
+      comparisonIconHtml = `<i class="fa-solid fa-clipboard-question spell-compare-icon${activeClass}" data-action="compareSpell" data-uuid="${spell.compendiumUuid}" data-tooltip="${compareText}" aria-label="${ariaLabel}"></i>`;
     }
+
     const favoriteStarHtml =
       UICustomizationHelper.isPlayerElementEnabled('favorites') && spellUuid ?
         `<button type="button" class="spell-favorite-toggle ${spell.favorited ? 'favorited' : ''}"
-          data-action="toggleFavorite"
-          data-uuid="${spellUuid}"
-          data-tooltip="${spell.favorited ? game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites') : game.i18n.localize('SPELLBOOK.UI.AddToFavorites')}"
-          aria-label="${spell.favorited ? game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites') : game.i18n.localize('SPELLBOOK.UI.AddToFavorites')}">
-          <i class="${spell.favorited ? 'fas' : 'far'} fa-star" aria-hidden="true"></i>
-        </button>`
+        data-action="toggleFavorite"
+        data-uuid="${spellUuid}"
+        data-tooltip="${spell.favorited ? game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites') : game.i18n.localize('SPELLBOOK.UI.AddToFavorites')}"
+        aria-label="${spell.favorited ? game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites') : game.i18n.localize('SPELLBOOK.UI.AddToFavorites')}">
+        <i class="${spell.favorited ? 'fas' : 'far'} fa-star" aria-hidden="true"></i>
+      </button>`
       : '';
     const notesIconHtml =
       UICustomizationHelper.isPlayerElementEnabled('notes') && spellUuid ?
         `<i class="${spell.hasNotes ? 'fas fa-sticky-note' : 'far fa-sticky-note'} spell-notes-icon"
-          data-uuid="${spellUuid}" data-action="editNotes"
-          data-tooltip="${spell.hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes')}"
-          aria-label="${spell.hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes')}"></i>`
+        data-uuid="${spellUuid}" data-action="editNotes"
+        data-tooltip="${spell.hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes')}"
+        aria-label="${spell.hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes')}"></i>`
       : '';
     let actionHtml = '';
     if (isWizardTab) {
       if (spell.isFromScroll) {
         actionHtml = `
-      <div class="wizard-spell-status">
-        <button class="copy-spell-btn scroll-spell-btn" data-action="learnFromScroll"
-          data-uuid="${spell.spellUuid || spell.compendiumUuid}" data-scroll-id="${spell.scrollId}" type="button"
-          aria-label="${game.i18n.format('SPELLBOOK.Scrolls.LearnFromScroll', { name })}">
-          <i class="fas fa-scroll"></i> ${game.i18n.localize('SPELLBOOK.Wizard.LearnSpell')}
-        </button>
-      </div>`;
+    <div class="wizard-spell-status">
+      <button class="copy-spell-btn scroll-spell-btn" data-action="learnFromScroll"
+        data-uuid="${spell.spellUuid || spell.compendiumUuid}" data-scroll-id="${spell.scrollId}" type="button"
+        aria-label="${game.i18n.format('SPELLBOOK.Scrolls.LearnFromScroll', { name })}">
+        <i class="fas fa-scroll"></i> ${game.i18n.localize('SPELLBOOK.Wizard.LearnSpell')}
+      </button>
+    </div>`;
       } else if (spell.inWizardSpellbook) {
         actionHtml = `
-      <div class="wizard-spell-status">
-        <span class="in-spellbook-tag" aria-label="${game.i18n.localize('SPELLBOOK.Wizard.InSpellbook')}">
-          ${game.i18n.localize('SPELLBOOK.Wizard.InSpellbook')}
-        </span>
-      </div>`;
+    <div class="wizard-spell-status">
+      <span class="in-spellbook-tag" aria-label="${game.i18n.localize('SPELLBOOK.Wizard.InSpellbook')}">
+        ${game.i18n.localize('SPELLBOOK.Wizard.InSpellbook')}
+      </span>
+    </div>`;
       } else if (spell.system?.level > 0) {
         actionHtml = `
-      <div class="wizard-spell-status">
-        <button class="copy-spell-btn" data-action="learnSpell" data-uuid="${spell.compendiumUuid}" type="button">
-          <i class="fas fa-book"></i> ${game.i18n.localize('SPELLBOOK.Wizard.LearnSpell')}
-        </button>
-      </div>`;
+    <div class="wizard-spell-status">
+      <button class="copy-spell-btn" data-action="learnSpell" data-uuid="${spell.compendiumUuid}" type="button">
+        <i class="fas fa-book"></i> ${game.i18n.localize('SPELLBOOK.Wizard.LearnSpell')}
+      </button>
+    </div>`;
       }
     } else {
       const preparationCheckboxHtml = spell.preparationCheckboxHtml || '';
       actionHtml = `
-    <div class="spell-preparation dnd5e2">
-      ${preparationCheckboxHtml}
-    </div>`;
+  <div class="spell-preparation dnd5e2">
+    ${preparationCheckboxHtml}
+  </div>`;
     }
     const subtitleParts = [];
-    if (comparisonLinkHtml) subtitleParts.push(comparisonLinkHtml);
+    if (comparisonIconHtml) subtitleParts.push(comparisonIconHtml);
     if (notesIconHtml) subtitleParts.push(notesIconHtml);
     if (formattedDetails) subtitleParts.push(formattedDetails);
     const subtitleContent = subtitleParts.join(' ');
@@ -1274,15 +1270,15 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       tooltipAttr = tooltipContent ? `data-tooltip="${tooltipContent}"` : '';
     }
     return `<li class="${cssClasses}" ${dataAttributes}>
-    <div class="spell-name">
-      ${enrichedIcon}
-      <div class="name-stacked">
-        <span class="title">${name}${favoriteStarHtml ? ` ${favoriteStarHtml}` : ''}${tagHtml ? ` ${tagHtml}` : ''}</span>
-        ${subtitleContent ? `<span class="subtitle" ${tooltipAttr}>${subtitleContent}</span>` : ''}
-      </div>
+  <div class="spell-name">
+    ${enrichedIcon}
+    <div class="name-stacked">
+      <span class="title">${name}${favoriteStarHtml ? ` ${favoriteStarHtml}` : ''}${tagHtml ? ` ${tagHtml}` : ''}</span>
+      ${subtitleContent ? `<span class="subtitle" ${tooltipAttr}>${subtitleContent}</span>` : ''}
     </div>
-    ${actionHtml}
-  </li>`;
+  </div>
+  ${actionHtml}
+</li>`;
   }
 
   /**

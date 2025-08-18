@@ -223,6 +223,12 @@
   --spell-book-border-highlight: rgb(191 143 32 / 100%);
   --spell-book-border-focus: rgb(0 102 204 / 100%);
 
+  /* ======= Component-Specific Colors ======= */
+  --spell-book-color-success: rgb(22 50 23 / 100%);
+  --spell-book-color-warning: rgb(177 137 5 / 100%);
+  --spell-book-color-error: rgb(92 11 5 / 100%);
+  --spell-book-color-info: rgb(4 44 78 / 100%);
+
   /* ======= Shadow Effects ======= */
   --spell-book-shadow-light: 0 0 0.25rem rgb(0 0 0 / 10.2%);
   --spell-book-shadow-normal: 0 0 0.375rem rgb(0 0 0 / 20%);
@@ -1040,6 +1046,7 @@
 
   .name-stacked {
     display: flex;
+    gap: 0.15rem;
     flex: 1;
     flex-direction: column;
     min-width: 0;
@@ -1058,7 +1065,6 @@
     }
 
     .subtitle {
-      margin-left: 0.125rem;
       overflow: hidden;
       color: var(--spell-book-text-secondary);
       font-size: var(--spell-book-font-xs);
@@ -1067,20 +1073,17 @@
       white-space: nowrap;
 
       /* Compare Button Styling */
-      .compare-button {
-        display: inline;
-        width: fit-content;
-        margin: 0;
-        padding: 0;
-        border: none;
-        outline-offset: 0.125rem;
+      .spell-compare-icon {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        width: 0.75rem;
+        height: 0.75rem;
+        margin-right: 0.25rem;
         color: var(--spell-book-text-hyperlink);
-        font: inherit;
-        line-height: inherit;
-        text-decoration: none;
-        vertical-align: baseline;
+        font-size: 0.75rem;
         cursor: pointer;
-        background: none;
+        transition: color 0.2s ease;
 
         &:hover {
           border: none;

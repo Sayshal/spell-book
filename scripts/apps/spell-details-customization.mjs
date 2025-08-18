@@ -366,7 +366,6 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
         await game.settings.set(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR, colorValue);
       }
 
-      // ... existing GM settings handling ...
       if (expandedData.gm && game.user.isGM) {
         await Promise.all([
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_COMPARE, expandedData.gm.compare || false),
@@ -381,6 +380,12 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_MATERIAL_COMPONENTS, expandedData.gm.materialComponents || false)
         ]);
       }
+
+      const openApplications = Array.from(foundry.applications.instances.values());
+      const spellbookApps = openApplications.filter((app) => app.constructor.name === 'PlayerSpellBook');
+      for (const app of spellbookApps) app.render(false);
+      const gmSpellListApps = openApplications.filter((app) => app.constructor.name === 'GMSpellListManager');
+      for (const app of gmSpellListApps) app.render(false);
 
       ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.Saved'));
     } catch (error) {

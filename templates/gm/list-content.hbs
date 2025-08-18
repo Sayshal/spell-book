@@ -83,8 +83,8 @@
 										<span class="subtitle">{{#if showCompareLink}}{{#if showCompare}}<button
 														class="compare-button compare-link{{#if isInComparison}} active{{/if}}"
 														data-action="compareSpell" data-uuid="{{compendiumUuid}}"
-														aria-label="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=name}}">
-														{{localize "SPELLBOOK.Comparison.Compare"}}
+														aria-label="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=name}}" data-tooltip="{{localize "SPELLBOOK.Comparison.Compare"}}">
+														<i class="fa-solid fa-clipboard-question"></i>
 													</button> {{/if}}{{/if}}{{formattedDetails}}</span>
 									</div>
 								</div>

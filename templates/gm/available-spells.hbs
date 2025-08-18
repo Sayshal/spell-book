@@ -97,8 +97,9 @@
 										<span class="subtitle">{{#if spell.showCompareLink}}{{#if spell.showCompare}}<button
 														class="compare-button compare-link{{#if spell.isInComparison}} active{{/if}}"
 														data-action="compareSpell" data-uuid="{{spell.uuid}}"
-														aria-label="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=spell.name}}">
-														{{localize "SPELLBOOK.Comparison.Compare"}}
+														aria-label="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=spell.name}}"
+														data-tooltip="{{localize "SPELLBOOK.Comparison.Compare"}}">
+														<i class="fa-solid fa-clipboard-question"></i>
 													</button> {{/if}}{{/if}}{{spell.formattedDetails}}</span>
 									</div>
 								</div>
