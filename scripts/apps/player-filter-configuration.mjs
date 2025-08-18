@@ -3,7 +3,7 @@ import * as formElements from '../helpers/form-elements.mjs';
 import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
-const { DragDrop } = foundry.applications.ux.DragDrop.implementation;
+const { DragDrop } = foundry.applications.ux;
 
 /**
  * Application to configure which filters are displayed in the spell browser
