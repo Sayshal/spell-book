@@ -129,3 +129,13 @@ export function _getTargetUserId(actor) {
   }
   return targetUserId;
 }
+
+/**
+ * Check if metric units should be used based on dnd5e system settings
+ * @returns {boolean} True if either length or volume units are set to metric
+ */
+export function shouldUseMetricUnits() {
+  const metricLength = game.settings.get('dnd5e', 'metricLengthUnits') ?? false;
+  const metricVolume = game.settings.get('dnd5e', 'metricVolumeUnits') ?? false;
+  return metricLength || metricVolume;
+}

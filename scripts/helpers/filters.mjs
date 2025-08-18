@@ -1,8 +1,7 @@
-import { MODULE, SETTINGS } from '../constants.mjs';
 import * as genericUtils from './generic-utils.mjs';
 
 /**
- * Convert a spell range to feet (or meters based on settings)
+ * Convert a spell range to feet (or meters based on dnd5e system settings)
  * @param {string} units - The range units (feet, miles, etc)
  * @param {number} value - The range value
  * @returns {number} - The converted range value
@@ -14,7 +13,7 @@ export function convertRangeToStandardUnit(units, value) {
     : units === 'mi' ? value * 5280
     : units === 'spec' ? 0
     : value;
-  return game.settings.get(MODULE.ID, SETTINGS.DISTANCE_UNIT) === 'meters' ? Math.round(inFeet * 0.3048) : inFeet;
+  return genericUtils.shouldUseMetricUnits() ? Math.round(inFeet * 0.3048) : inFeet;
 }
 
 /**

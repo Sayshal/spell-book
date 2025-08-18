@@ -111,19 +111,6 @@ export function registerSettings() {
     default: {}
   });
 
-  game.settings.register(MODULE.ID, SETTINGS.DISTANCE_UNIT, {
-    name: 'SPELLBOOK.Settings.DistanceUnit.Name',
-    hint: 'SPELLBOOK.Settings.DistanceUnit.Hint',
-    scope: 'client',
-    config: true,
-    type: String,
-    choices: {
-      feet: 'SPELLBOOK.Settings.DistanceUnit.Feet',
-      meters: 'SPELLBOOK.Settings.DistanceUnit.Meters'
-    },
-    default: 'feet'
-  });
-
   game.settings.register(MODULE.ID, SETTINGS.ENABLE_JOURNAL_BUTTON, {
     name: 'SPELLBOOK.Settings.EnableJournalButton.Name',
     hint: 'SPELLBOOK.Settings.EnableJournalButton.Hint',

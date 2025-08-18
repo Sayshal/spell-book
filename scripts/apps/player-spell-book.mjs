@@ -1061,7 +1061,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             break;
           case 'range':
             element = this._createRangeFilterElement(filter.id, filterState);
-            result.unit = game.settings.get(MODULE.ID, SETTINGS.DISTANCE_UNIT);
+            result.unit = genericUtils.shouldUseMetricUnits() ? 'meters' : 'feet';
             break;
           default:
             log(2, `Unknown filter type: ${filter.type} for filter ${filter.id}`);

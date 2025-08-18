@@ -1,5 +1,5 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
-import { UICustomizationHelper } from '../helpers/ui-customization.mjs';
+import * as formElements from '../helpers/form-elements.mjs';
 import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -46,21 +46,82 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
     const isGM = game.user.isGM;
     const playerSettings = this._getPlayerSettings();
     const gmSettings = isGM ? this._getGMSettings() : null;
+
+    // Generate form elements for player sections
+    const playerUIElements = this._prepareUIElementsWithCheckboxes('player', playerSettings);
+    const playerMetadataElements = this._prepareMetadataElementsWithCheckboxes('player', playerSettings);
+
+    // Generate form elements for GM sections (if GM)
+    let gmUIElements = null;
+    let gmMetadataElements = null;
+    if (isGM) {
+      gmUIElements = this._prepareUIElementsWithCheckboxes('gm', gmSettings);
+      gmMetadataElements = this._prepareMetadataElementsWithCheckboxes('gm', gmSettings);
+    }
+
     return {
       ...context,
       isGM,
       playerSettings,
       gmSettings,
-      playerUIElements: this._getUIElementsConfig('player'),
-      gmUIElements: isGM ? this._getUIElementsConfig('gm') : null,
-      playerMetadataElements: this._getMetadataElementsConfig('player'),
-      gmMetadataElements: isGM ? this._getMetadataElementsConfig('gm') : null
+      playerUIElements,
+      gmUIElements,
+      playerMetadataElements,
+      gmMetadataElements
     };
   }
 
   /**
-   * Get player UI settings
-   * @returns {object} Player settings object
+   * Prepare UI elements with generated checkboxes
+   * @param {string} type - 'player' or 'gm'
+   * @param {Object} settings - Current settings object
+   * @returns {Array} Array of UI element configurations with checkboxes
+   * @private
+   */
+  _prepareUIElementsWithCheckboxes(type, settings) {
+    const elements = this._getUIElementsConfig(type);
+    return elements.map((element) => {
+      const checkbox = formElements.createCheckbox({
+        name: `${type}_${element.key}`,
+        checked: settings[element.key] || false,
+        ariaLabel: game.i18n.localize(element.label)
+      });
+      checkbox.id = `${type}-${element.key}`;
+
+      return {
+        ...element,
+        checkboxHtml: formElements.elementToHtml(checkbox)
+      };
+    });
+  }
+
+  /**
+   * Prepare metadata elements with generated checkboxes
+   * @param {string} type - 'player' or 'gm'
+   * @param {Object} settings - Current settings object
+   * @returns {Array} Array of metadata element configurations with checkboxes
+   * @private
+   */
+  _prepareMetadataElementsWithCheckboxes(type, settings) {
+    const elements = this._getMetadataElementsConfig(type);
+    return elements.map((element) => {
+      const checkbox = formElements.createCheckbox({
+        name: `${type}_${element.key}`,
+        checked: settings[element.key] || false,
+        ariaLabel: game.i18n.localize(element.label)
+      });
+      checkbox.id = `${type}-${element.key}`;
+
+      return {
+        ...element,
+        checkboxHtml: formElements.elementToHtml(checkbox)
+      };
+    });
+  }
+
+  /**
+   * Get player UI customization settings
+   * @returns {Object} Player settings object
    * @private
    */
   _getPlayerSettings() {
@@ -81,8 +142,8 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Get GM UI settings
-   * @returns {object} GM settings object
+   * Get GM UI customization settings
+   * @returns {Object} GM settings object
    * @private
    */
   _getGMSettings() {
@@ -139,55 +200,64 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   }
 
   /* -------------------------------------------- */
-  /*  Static Public Methods                       */
+  /*  Event Handlers                             */
   /* -------------------------------------------- */
 
   /**
-   * Processes form submission for customization settings
+   * Handle form submission to save settings
    * @param {Event} _event - The form submission event
    * @param {HTMLFormElement} _form - The form element
-   * @param {FormDataExtended} formData - The processed form data
-   * @returns {Promise<boolean|void>} Returns false if validation fails
+   * @param {Object} formData - The submitted form data
+   * @returns {Promise<void>}
    * @static
    */
   static async formHandler(_event, _form, formData) {
     try {
-      const changedSettings = {};
-      const isGM = game.user.isGM;
-      const playerKeys = ['favorites', 'compare', 'notes', 'spellLevel', 'school', 'castingTime', 'range', 'damageTypes', 'conditions', 'save', 'concentration', 'materialComponents'];
-      for (const key of playerKeys) {
-        const settingKeySuffix = UICustomizationHelper._convertToSettingKey ? UICustomizationHelper._convertToSettingKey(key) : key.toUpperCase().replace(/([a-z])([A-Z])/g, '$1_$2');
-        const settingKey = `PLAYER_UI_${settingKeySuffix}`;
-        if (!SETTINGS[settingKey]) continue;
-        const currentValue = game.settings.get(MODULE.ID, SETTINGS[settingKey]);
-        const newValue = formData.object[`player_${key}`] ?? false;
-        if (currentValue !== newValue) {
-          await game.settings.set(MODULE.ID, SETTINGS[settingKey], newValue);
-          changedSettings[settingKey] = true;
-        }
+      const expandedData = foundry.utils.expandObject(formData.object);
+
+      // Handle player settings
+      if (expandedData.player) {
+        await Promise.all([
+          // UI Elements
+          game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES, expandedData.player.favorites || false),
+          game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_COMPARE, expandedData.player.compare || false),
+          game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_NOTES, expandedData.player.notes || false),
+          // Metadata Elements
+          game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_SPELL_LEVEL, expandedData.player.spellLevel || false),
+          game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_SCHOOL, expandedData.player.school || false),
+          game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_CASTING_TIME, expandedData.player.castingTime || false),
+          game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_RANGE, expandedData.player.range || false),
+          game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_DAMAGE_TYPES, expandedData.player.damageTypes || false),
+          game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_CONDITIONS, expandedData.player.conditions || false),
+          game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_SAVE, expandedData.player.save || false),
+          game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_CONCENTRATION, expandedData.player.concentration || false),
+          game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_MATERIAL_COMPONENTS, expandedData.player.materialComponents || false)
+        ]);
       }
-      if (isGM) {
-        const gmKeys = ['compare', 'spellLevel', 'school', 'castingTime', 'range', 'damageTypes', 'conditions', 'save', 'concentration', 'materialComponents'];
-        for (const key of gmKeys) {
-          const settingKeySuffix = UICustomizationHelper._convertToSettingKey ? UICustomizationHelper._convertToSettingKey(key) : key.toUpperCase().replace(/([a-z])([A-Z])/g, '$1_$2');
-          const settingKey = `GM_UI_${settingKeySuffix}`;
-          if (!SETTINGS[settingKey]) continue;
-          const currentValue = game.settings.get(MODULE.ID, SETTINGS[settingKey]);
-          const newValue = formData.object[`gm_${key}`] ?? false;
-          if (currentValue !== newValue) {
-            await game.settings.set(MODULE.ID, SETTINGS[settingKey], newValue);
-            changedSettings[settingKey] = true;
-          }
-        }
+
+      // Handle GM settings (only if user is GM)
+      if (game.user.isGM && expandedData.gm) {
+        await Promise.all([
+          // UI Elements
+          game.settings.set(MODULE.ID, SETTINGS.GM_UI_COMPARE, expandedData.gm.compare || false),
+          // Metadata Elements
+          game.settings.set(MODULE.ID, SETTINGS.GM_UI_SPELL_LEVEL, expandedData.gm.spellLevel || false),
+          game.settings.set(MODULE.ID, SETTINGS.GM_UI_SCHOOL, expandedData.gm.school || false),
+          game.settings.set(MODULE.ID, SETTINGS.GM_UI_CASTING_TIME, expandedData.gm.castingTime || false),
+          game.settings.set(MODULE.ID, SETTINGS.GM_UI_RANGE, expandedData.gm.range || false),
+          game.settings.set(MODULE.ID, SETTINGS.GM_UI_DAMAGE_TYPES, expandedData.gm.damageTypes || false),
+          game.settings.set(MODULE.ID, SETTINGS.GM_UI_CONDITIONS, expandedData.gm.conditions || false),
+          game.settings.set(MODULE.ID, SETTINGS.GM_UI_SAVE, expandedData.gm.save || false),
+          game.settings.set(MODULE.ID, SETTINGS.GM_UI_CONCENTRATION, expandedData.gm.concentration || false),
+          game.settings.set(MODULE.ID, SETTINGS.GM_UI_MATERIAL_COMPONENTS, expandedData.gm.materialComponents || false)
+        ]);
       }
-      if (Object.keys(changedSettings).length > 0) {
-        for (const app of foundry.applications.instances.values()) if (app.constructor.name === 'PlayerSpellBook' || app.constructor.name === 'GMSpellListManager') app.render(false);
-        ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.Saved'));
-      }
+
+      ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.Saved'));
+      log(3, 'Spell details customization settings saved successfully');
     } catch (error) {
-      log(1, `Error in spell details customization formHandler: ${error.message}`);
+      log(1, 'Error saving spell details customization settings:', error);
       ui.notifications.error(game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.ErrorSaving'));
-      return false;
     }
   }
 }

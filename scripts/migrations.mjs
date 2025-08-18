@@ -98,19 +98,32 @@ async function migrateDocument(doc, deprecatedFlags) {
   const updates = {};
   const removedFlags = [];
   let hasRemovals = false;
+  const nullValidFlags = ['ruleSetOverride', 'enforcementBehavior'];
   for (const [key, value] of Object.entries(flags)) {
     const isDeprecated = deprecatedFlags.some((deprecated) => deprecated.key === key);
-    const isInvalid = value === null || value === undefined || (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0);
+    const isInvalid =
+      nullValidFlags.includes(key) ?
+        value === undefined || (typeof value === 'object' && value !== null && !Array.isArray(value) && Object.keys(value).length === 0)
+      : value === null || value === undefined || (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0);
     if (isDeprecated || isInvalid) {
       updates[`flags.${MODULE.ID}.-=${key}`] = null;
       hasRemovals = true;
-      const reason = isDeprecated ? deprecatedFlags.find((d) => d.key === key)?.reason : 'Invalid value (null/undefined/empty object)';
+      const reason = isDeprecated ? `Deprecated flag (removed in ${deprecatedFlags.find((d) => d.key === key)?.removedInVersion || 'unknown version'})` : 'Invalid value (null/undefined/empty object)';
       removedFlags.push({ key, value, reason });
-      log(3, `Removing flag "${key}" from ${doc.documentName} "${doc.name}": ${reason}`);
     }
   }
-  if (hasRemovals) await doc.update(updates);
-  return { wasUpdated: hasRemovals, invalidFlags: hasRemovals, removedFlags };
+
+  if (hasRemovals) {
+    try {
+      await doc.update(updates);
+      return { wasUpdated: true, invalidFlags: true, removedFlags };
+    } catch (error) {
+      log(1, `Failed to migrate document ${doc.name}:`, error);
+      return { wasUpdated: false, invalidFlags: false, removedFlags: [] };
+    }
+  }
+
+  return { wasUpdated: false, invalidFlags: false, removedFlags: [] };
 }
 
 /**

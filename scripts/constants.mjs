@@ -214,7 +214,6 @@ export const SETTINGS = {
   CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',
   DEFAULT_ENFORCEMENT_BEHAVIOR: 'defaultEnforcementBehavior',
   DISABLE_LONG_REST_SWAP_PROMPT: 'disableLongRestSwapPrompt',
-  DISTANCE_UNIT: 'distanceUnit',
   ENABLE_JOURNAL_BUTTON: 'enableJournalButton',
   ENABLE_SPELL_USAGE_TRACKING: 'enableSpellUsageTracking',
   FILTER_CONFIGURATION: 'filterConfiguration',

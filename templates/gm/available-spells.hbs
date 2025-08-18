@@ -50,7 +50,7 @@
 
 		<div class="filter-range">
 			<label id="range-filter-label">{{localize "SPELLBOOK.Filters.Range"}}
-				({{#if (eq (lookup @root.settings "distanceUnit") "meters")}}{{localize "SPELLBOOK.Settings.DistanceUnit.Meters"}}{{else}}{{localize "SPELLBOOK.Settings.DistanceUnit.Feet"}}{{/if}})</label>
+				({{#if @root.settings.useMetricUnits}}{{localize "DND5E.DistM"}}{{else}}{{localize "DND5E.DistFt"}}{{/if}})</label>
 			<div class="range-inputs" role="group" aria-labelledby="range-filter-label">
 				{{{filterFormElements.minRangeInputHtml}}}
 				<div class="range-separator" aria-hidden="true">

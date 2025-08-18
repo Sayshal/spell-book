@@ -132,7 +132,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     context.selectedSpellList = this.selectedSpellList;
     context.availableSpells = this.availableSpells;
     context.filterState = this.filterState;
-    context.settings = { distanceUnit: game.settings.get(MODULE.ID, SETTINGS.DISTANCE_UNIT) };
+    context.settings = { useMetricUnits: genericUtils.shouldUseMetricUnits() };
     context.selectionMode = this.selectionMode;
     context.selectedSpellsToAdd = this.selectedSpellsToAdd;
     context.selectedSpellsToRemove = this.selectedSpellsToRemove;
