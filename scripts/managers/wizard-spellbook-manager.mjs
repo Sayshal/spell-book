@@ -54,9 +54,7 @@ export class WizardSpellbookManager {
    * @private
    */
   _findWizardClass() {
-    const classItem = this.actor.items.find(
-      (i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === this.classIdentifier || i.name.toLowerCase() === this.classIdentifier)
-    );
+    const classItem = this.actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === this.classIdentifier || i.name.toLowerCase() === this.classIdentifier));
     if (!classItem) return null;
     if (genericUtils.isClassWizardEnabled(this.actor, this.classIdentifier)) return classItem;
     return null;
@@ -235,9 +233,14 @@ export class WizardSpellbookManager {
     const folder = this.getSpellbooksFolder();
     const className = this.classItem?.name || this.classIdentifier;
     const journalName = this.classIdentifier === 'wizard' ? this.actor.name : `${this.actor.name} (${className})`;
+    const actorOwnership = this.actor.ownership || {};
+    const ownerUserIds = Object.keys(actorOwnership).filter((userId) => userId !== 'default' && actorOwnership[userId] === 3);
+    const correctOwnership = { default: 0, [game.user.id]: 3 };
+    for (const ownerUserId of ownerUserIds) correctOwnership[ownerUserId] = 3;
     const journalData = {
       name: journalName,
       folder: folder ? folder.id : null,
+      ownership: correctOwnership,
       flags: {
         [MODULE.ID]: {
           actorId: this.actor.id,
@@ -250,6 +253,7 @@ export class WizardSpellbookManager {
         {
           name: game.i18n.format('SPELLBOOK.Journal.PageTitle', { name: journalName }),
           type: 'spells',
+          ownership: correctOwnership,
           flags: {
             [MODULE.ID]: {
               isActorSpellbook: true,
