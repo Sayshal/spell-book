@@ -1533,8 +1533,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   static toggleSidebar(event, _form) {
     const isCollapsing = !this.element.classList.contains('sidebar-collapsed');
     this.element.classList.toggle('sidebar-collapsed');
-    const caretIcon = event.currentTarget.querySelector('i');
-    if (caretIcon) caretIcon.className = isCollapsing ? 'fas fa-caret-right' : 'fas fa-caret-left';
+    const caretIcon = event.currentTarget.querySelector('.collapse-indicator');
+    if (caretIcon) caretIcon.className = isCollapsing ? 'fas fa-caret-right collapse-indicator' : 'fas fa-caret-left collapse-indicator';
     this.ui.positionFooter();
     game.user.setFlag(MODULE.ID, FLAGS.SIDEBAR_COLLAPSED, isCollapsing);
   }
