@@ -332,10 +332,40 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     try {
       this.selectedSpellList.isLoadingSpells = true;
       this.render(false);
+      const maxSpellLevel = 9;
+      const preloadedData = getPreloadedData();
+      let spellItems = [];
+      if (preloadedData && preloadedData.enrichedSpells.length > 0) {
+        log(3, 'Using preloaded spell data for GM spell list');
+        const spellUuidsSet = new Set(spellUuids);
+        const preloadedSpells = preloadedData.enrichedSpells.filter((spell) => spellUuidsSet.has(spell.uuid));
+        const missingSpells = spellUuids.filter((uuid) => !preloadedSpells.some((spell) => spell.uuid === uuid));
+        if (missingSpells.length > 0) {
+          log(3, `Loading ${missingSpells.length} missing spells from compendiums`);
+          const additionalSpells = await actorSpellUtils.fetchSpellDocuments(new Set(missingSpells), maxSpellLevel);
+          spellItems = [...preloadedSpells, ...additionalSpells];
+        } else {
+          spellItems = preloadedSpells;
+        }
+      } else {
+        spellItems = await actorSpellUtils.fetchSpellDocuments(new Set(spellUuids), maxSpellLevel);
+      }
+      for (const spell of spellItems) {
+        if (!spell.enrichedIcon) spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
+
+        if (!spell.compendiumUuid) spell.compendiumUuid = spell.uuid;
+      }
+
+      this.selectedSpellList.spells = spellItems;
+      this.selectedSpellList.spellsByLevel = actorSpellUtils.organizeSpellsByLevel(spellItems, null);
+      this.selectedSpellList.isLoadingSpells = false;
+      log(3, `Loaded ${spellItems.length} spells for spell list`);
     } catch (error) {
       log(1, 'Error loading spell details:', error);
       this.selectedSpellList.isLoadingSpells = false;
+      this.selectedSpellList.hasError = true;
     }
+    this.render(false);
   }
 
   /**
