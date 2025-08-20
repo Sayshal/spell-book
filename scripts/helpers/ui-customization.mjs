@@ -9,7 +9,6 @@ export class UICustomizationHelper {
    * Convert element name to setting key format
    * @param {string} element - The element name
    * @returns {string} The setting key suffix
-   * @private
    */
   static _convertToSettingKey(element) {
     const settingKeyMap = {
@@ -57,7 +56,6 @@ export class UICustomizationHelper {
    * @param {Object} spell - The spell object
    * @param {string} property - The property to check for
    * @returns {boolean} Whether the spell has the property
-   * @private
    */
   static _spellHasProperty(spell, property) {
     if (!spell?.system?.properties) return false;
@@ -157,7 +155,6 @@ export class UICustomizationHelper {
    * Format spell level for display
    * @param {Object} spell - The spell object
    * @returns {string} Formatted spell level
-   * @private
    */
   static _formatSpellLevel(spell) {
     if (spell.system?.level === undefined) return '';
@@ -170,7 +167,6 @@ export class UICustomizationHelper {
    * Format spell range for display
    * @param {Object} spell - The spell object
    * @returns {string} Formatted range
-   * @private
    */
   static _formatSpellRange(spell) {
     if (!spell.system?.range) return '';

@@ -28,7 +28,6 @@ export async function preloadSpellData() {
 /**
  * Preload all spell data for GM setup mode
  * @returns {Promise<void>}
- * @private
  */
 async function preloadForGMSetupMode() {
   log(3, 'Starting GM setup mode preload - loading all spells and lists');
@@ -43,14 +42,13 @@ async function preloadForGMSetupMode() {
     else ui.notifications.info(message, { console: false });
     log(3, `GM setup preload completed: ${allSpellLists.length} lists, ${enrichedSpells.length} spells`);
   } catch (error) {
-    handlePreloadError(error, 'GM setup mode');
+    log(1, 'Error during GM setup mode preload', error);
   }
 }
 
 /**
  * Preload relevant spell data for player characters
  * @returns {Promise<void>}
- * @private
  */
 async function preloadForPlayer() {
   log(3, 'Starting player preload - loading assigned spell lists and wizard spellbook');
@@ -72,14 +70,13 @@ async function preloadForPlayer() {
     else ui.notifications.info(message, { console: false });
     log(3, `Player preload completed: ${enrichedSpells.length} spells`);
   } catch (error) {
-    handlePreloadError(error, 'player');
+    log(1, 'Error during player preload', error);
   }
 }
 
 /**
  * Get the current player's assigned character
  * @returns {Actor5e|null} The player's character or null if none assigned
- * @private
  */
 function getCurrentPlayerActor() {
   const currentPlayer = game.users.players.find((player) => player._id === game.user.id);
@@ -90,7 +87,6 @@ function getCurrentPlayerActor() {
  * Collect all relevant spell UUIDs for a player actor
  * @param {Actor5e} actor - The player's actor
  * @returns {Promise<Set<string>>} Set of spell UUIDs
- * @private
  */
 async function collectPlayerSpellUuids(actor) {
   let spellUuids = new Set();
@@ -107,7 +103,6 @@ async function collectPlayerSpellUuids(actor) {
  * Get spell UUIDs from spell lists assigned to actor's classes
  * @param {Actor5e} actor - The actor to check
  * @returns {Promise<Array<string>>} Array of spell UUIDs
- * @private
  */
 async function getSpellsFromActorSpellLists(actor) {
   const spellUuids = [];
@@ -133,7 +128,6 @@ async function getSpellsFromActorSpellLists(actor) {
  * Get spell UUIDs from actor's wizard spellbook
  * @param {Actor5e} actor - The actor to check
  * @returns {Promise<Array<string>>} Array of spell UUIDs
- * @private
  */
 async function getActorSpellbookSpells(actor) {
   const spellUuids = [];
@@ -185,7 +179,6 @@ export function getPreloadedData() {
  * @param {Array} spellLists - Array of spell list objects
  * @param {Array} enrichedSpells - Array of enriched spell objects
  * @param {string} mode - The preload mode used
- * @private
  */
 function cachePreloadedData(spellLists, enrichedSpells, mode) {
   globalThis.SPELLBOOK.preloadedData = { spellLists, enrichedSpells, timestamp: Date.now(), version: game.modules.get(MODULE.ID).version, mode };
@@ -226,7 +219,6 @@ export function shouldInvalidateCacheForPage(page) {
  * Normalize spell UUIDs to match compendium format
  * @param {Set<string>} spellUuids - Set of spell UUIDs to normalize
  * @returns {Set<string>} Set of normalized UUIDs
- * @private
  */
 function normalizeSpellUuids(spellUuids) {
   const normalizedUuids = new Set();
@@ -241,22 +233,9 @@ function normalizeSpellUuids(spellUuids) {
  * Enrich spells with icon links
  * @param {Array} spells - Array of spell objects
  * @returns {Array} Array of spells with enriched icons
- * @private
  */
 function enrichSpellsWithIcons(spells) {
   const enrichedSpells = spells.slice();
   if (spells.length > 0) for (let spell of enrichedSpells) spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
   return enrichedSpells;
-}
-
-/**
- * Handle preload errors with appropriate logging and user feedback
- * @param {Error} error - The error that occurred
- * @param {string} context - Context description for the error
- * @private
- */
-function handlePreloadError(error, context) {
-  log(1, `Error during ${context} preload:`, error);
-  ui.notifications.error('Spell Book loading failed - will load on demand'); // Localize
-  globalThis.SPELLBOOK.preloadedData = null;
 }

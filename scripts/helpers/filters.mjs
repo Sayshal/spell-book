@@ -115,25 +115,3 @@ function getCastingTimeOptions(filterState) {
     });
   return options;
 }
-
-/**
- * Create the default filter state object
- * @returns {Object} Default filter state
- */
-export function getDefaultFilterState() {
-  return {
-    name: '',
-    level: '',
-    school: '',
-    castingTime: '',
-    minRange: '',
-    maxRange: '',
-    damageType: '',
-    condition: '',
-    requiresSave: '',
-    prepared: false,
-    ritual: false,
-    concentration: '',
-    materialComponents: ''
-  };
-}

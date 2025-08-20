@@ -24,24 +24,6 @@ export function getSpellUuid(spell) {
 }
 
 /**
- * Find a spellcasting class for an actor
- * @param {Actor5e} actor - The actor to check
- * @returns {Item5e|null} - The spellcasting class item or null
- */
-export function findSpellcastingClass(actor) {
-  return actor.items.find((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
-}
-
-/**
- * Check if an item is a granted spell (from class features, etc.)
- * @param {Item5e} spell - The spell to check
- * @returns {boolean} Whether the spell is granted
- */
-export function isGrantedSpell(spell) {
-  return !!spell.flags?.dnd5e?.cachedFor;
-}
-
-/**
  * Find the wizard class item for an actor
  * @param {Actor5e} actor - The actor to check
  * @returns {Item5e|null} The wizard class item or null
@@ -117,8 +99,8 @@ export function getConfigLabel(configObject, key) {
 
 /**
  * Get the target user ID for spell data operations
+ * @todo - Should be an easier way within dnd5e/foundry to get this done
  * @returns {string} The user ID to use for spell data
- * @private
  */
 export function _getTargetUserId(actor) {
   let targetUserId = game.user.id;

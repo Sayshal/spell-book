@@ -50,7 +50,6 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
     const selectAllGMUICheckbox = isGM ? this._createSelectAllCheckbox('select-all-gm-ui', 'gm-ui') : null;
     const selectAllGMMetadataCheckbox = isGM ? this._createSelectAllCheckbox('select-all-gm-metadata', 'gm-metadata') : null;
     const wizardBookIconColor = game.settings.get(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR);
-
     return {
       ...context,
       isGM,
@@ -69,12 +68,19 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
     };
   }
 
+  /** @inheritdoc */
+  _onRender(context, options) {
+    super._onRender(context, options);
+    this._setupClickableSettings();
+    this._setupSelectAllListeners();
+    this._updateSelectAllStates();
+  }
+
   /**
    * Prepare UI elements with generated checkboxes
    * @param {string} type - 'player' or 'gm'
    * @param {Object} settings - Current settings object
    * @returns {Array} Array of UI element configurations with checkboxes
-   * @private
    */
   _prepareUIElementsWithCheckboxes(type, settings) {
     const elements = this._getUIElementsConfig(type);
@@ -90,7 +96,6 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
    * @param {string} type - 'player' or 'gm'
    * @param {Object} settings - Current settings object
    * @returns {Array} Array of metadata element configurations with checkboxes
-   * @private
    */
   _prepareMetadataElementsWithCheckboxes(type, settings) {
     const elements = this._getMetadataElementsConfig(type);
@@ -106,7 +111,6 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
    * @param {string} id - The checkbox ID
    * @param {string} group - The group identifier
    * @returns {string} HTML for the select-all checkbox
-   * @private
    */
   _createSelectAllCheckbox(id, group) {
     const checkbox = formElements.createCheckbox({ name: id, checked: false, ariaLabel: game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.SelectAll') });
@@ -117,17 +121,8 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
     return formElements.elementToHtml(checkbox);
   }
 
-  /** @inheritdoc */
-  _onRender(context, options) {
-    super._onRender(context, options);
-    this._setupClickableSettings();
-    this._setupSelectAllListeners();
-    this._updateSelectAllStates();
-  }
-
   /**
    * Setup clickable setting items
-   * @private
    */
   _setupClickableSettings() {
     const clickableSettings = this.element.querySelectorAll('.clickable-setting');
@@ -153,7 +148,6 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
 
   /**
    * Setup select-all checkbox listeners
-   * @private
    */
   _setupSelectAllListeners() {
     const selectAllCheckboxes = this.element.querySelectorAll('.select-all-checkbox');
@@ -178,7 +172,6 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
    * Set all checkboxes in a group to checked/unchecked
    * @param {string} group - The group identifier
    * @param {boolean} checked - Whether to check or uncheck
-   * @private
    */
   _setGroupCheckboxes(group, checked) {
     const groupItems = this.element.querySelectorAll(`[data-group="${group}"]`);
@@ -193,7 +186,6 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   /**
    * Update the select-all checkbox state based on group items
    * @param {string} group - The group identifier
-   * @private
    */
   _updateSelectAllState(group) {
     const selectAllCheckbox = this.element.querySelector(`[data-group="${group}"].select-all-checkbox`);
@@ -214,7 +206,6 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
 
   /**
    * Update all select-all checkbox states
-   * @private
    */
   _updateSelectAllStates() {
     ['player-ui', 'player-metadata', 'gm-ui', 'gm-metadata'].forEach((group) => {
@@ -225,7 +216,6 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   /**
    * Get player UI customization settings
    * @returns {Object} Player settings object
-   * @private
    */
   _getPlayerSettings() {
     return {
@@ -248,7 +238,6 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   /**
    * Get GM UI customization settings
    * @returns {Object} GM settings object
-   * @private
    */
   _getGMSettings() {
     return {
@@ -269,7 +258,6 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
    * Get UI elements configuration
    * @param {string} type - 'player' or 'gm'
    * @returns {Array} Array of UI element configurations
-   * @private
    */
   _getUIElementsConfig(type) {
     if (type === 'player') {
@@ -310,7 +298,6 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
    * Get metadata elements configuration
    * @param {string} type - 'player' or 'gm'
    * @returns {Array} Array of metadata element configurations
-   * @private
    */
   _getMetadataElementsConfig(type) {
     return [
@@ -326,9 +313,33 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
     ];
   }
 
-  /* -------------------------------------------- */
-  /*  Event Handlers                             */
-  /* -------------------------------------------- */
+  /**
+   * Action handler to set wizard book color to user color
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} target - The target element
+   */
+  static async useUserColor(event, target) {
+    const userColor = target.dataset.userColor || game.user.color;
+    const colorPicker = target.closest('.wizard-book-color-controls').querySelector('color-picker[name="wizardBookIconColor"]');
+    if (colorPicker) {
+      colorPicker.value = userColor;
+      log(3, `Set wizard book color to user color: ${userColor}`);
+    }
+  }
+
+  /**
+   * Action handler to reset wizard book color to default/saved setting
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} target - The target element
+   */
+  static async resetToDefault(event, target) {
+    const colorPicker = target.closest('.wizard-book-color-controls').querySelector('color-picker[name="wizardBookIconColor"]');
+    if (colorPicker) {
+      const savedColor = game.settings.get(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR);
+      colorPicker.value = savedColor || '';
+      log(3, `Reset wizard book color to default: ${savedColor || 'empty'}`);
+    }
+  }
 
   /**
    * Handle form submission to save settings
@@ -336,12 +347,10 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
    * @param {HTMLFormElement} _form - The form element
    * @param {Object} formData - The submitted form data
    * @returns {Promise<void>}
-   * @static
    */
   static async formHandler(_event, _form, formData) {
     try {
       const expandedData = foundry.utils.expandObject(formData.object);
-
       if (expandedData.player) {
         await Promise.all([
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES, expandedData.player.favorites || false),
@@ -359,13 +368,10 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
           game.settings.set(MODULE.ID, SETTINGS.SIDEBAR_CONTROLS_BOTTOM, expandedData.player.sidebarControlsBottom || false)
         ]);
       }
-
-      // Handle wizard book icon color with proper null handling
       if (expandedData.wizardBookIconColor !== undefined) {
         const colorValue = expandedData.wizardBookIconColor || null;
         await game.settings.set(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR, colorValue);
       }
-
       if (expandedData.gm && game.user.isGM) {
         await Promise.all([
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_COMPARE, expandedData.gm.compare || false),
@@ -380,48 +386,15 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_MATERIAL_COMPONENTS, expandedData.gm.materialComponents || false)
         ]);
       }
-
       const openApplications = Array.from(foundry.applications.instances.values());
       const spellbookApps = openApplications.filter((app) => app.constructor.name === 'PlayerSpellBook');
       for (const app of spellbookApps) app.render(false);
       const gmSpellListApps = openApplications.filter((app) => app.constructor.name === 'GMSpellListManager');
       for (const app of gmSpellListApps) app.render(false);
-
       ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.Saved'));
     } catch (error) {
       log(1, 'Error saving spell customization settings:', error);
       ui.notifications.error(game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.ErrorSaving'));
-    }
-  }
-
-  /**
-   * Action handler to set wizard book color to user color
-   * @param {Event} event - The triggering event
-   * @param {HTMLElement} target - The target element
-   * @static
-   */
-  static async useUserColor(event, target) {
-    const userColor = target.dataset.userColor || game.user.color;
-    const colorPicker = target.closest('.wizard-book-color-controls').querySelector('color-picker[name="wizardBookIconColor"]');
-    if (colorPicker) {
-      colorPicker.value = userColor;
-      log(3, `Set wizard book color to user color: ${userColor}`);
-    }
-  }
-
-  /**
-   * Action handler to reset wizard book color to default/saved setting
-   * @param {Event} event - The triggering event
-   * @param {HTMLElement} target - The target element
-   * @static
-   */
-  static async resetToDefault(event, target) {
-    const colorPicker = target.closest('.wizard-book-color-controls').querySelector('color-picker[name="wizardBookIconColor"]');
-    if (colorPicker) {
-      // Get the last saved setting value
-      const savedColor = game.settings.get(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR);
-      colorPicker.value = savedColor || '';
-      log(3, `Reset wizard book color to default: ${savedColor || 'empty'}`);
     }
   }
 }

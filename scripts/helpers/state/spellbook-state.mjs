@@ -17,14 +17,10 @@ export class SpellbookState {
   constructor(app) {
     this.app = app;
     this.actor = app.actor;
-    this._cantripTracking = { originalChecked: new Set(), hasUnlearned: false, hasLearned: false, unlearned: null, learned: null };
     this._classDetectionCache = new Map();
     this._classesDetected = false;
     this._initialized = false;
-    this._newlyCheckedCantrips = new Set();
     this._preparationStatsCache = new Map();
-    this._spellsTabNeedsReload = false;
-    this._uiCantripCount = 0;
     this.activeClass = null;
     this.className = '';
     this.classPrepModes = {};
@@ -43,7 +39,6 @@ export class SpellbookState {
   /**
    * Initialize state manager and load spell data
    * @returns {Promise<boolean>} Success status
-   * @async
    */
   async initialize() {
     if (this._initialized) return true;
@@ -126,7 +121,6 @@ export class SpellbookState {
    * Clean up all stored data for class identifiers that don't match current actor classes
    * @param {Array<string>} currentClassIds - Array of current valid class identifiers
    * @returns {Promise<void>}
-   * @private
    */
   _cleanupStaleClassData(currentClassIds) {
     this._cleanupStaleFlags(currentClassIds);
@@ -137,7 +131,6 @@ export class SpellbookState {
    * Clean up all flag-based data for non-existent classes
    * @param {Array<string>} currentClassIds - Array of current valid class identifiers
    * @returns {Promise<void>}
-   * @private
    */
   _cleanupStaleFlags(currentClassIds) {
     const actorFlags = this.actor.flags?.[MODULE.ID] || {};
@@ -193,7 +186,6 @@ export class SpellbookState {
   /**
    * Clean up manager caches and maps for non-existent classes
    * @param {Array<string>} currentClassIds - Array of current valid class identifiers
-   * @private
    */
   _cleanupStaleManagers(currentClassIds) {
     if (this.app.wizardManagers) {
@@ -220,6 +212,7 @@ export class SpellbookState {
 
   /**
    * Determine the preparation mode for a given class
+   * @todo - 5.1 I don't think prepared is correct anymore.
    * @param {Item} classItem - The class item
    * @returns {string} The preparation mode
    */
@@ -267,7 +260,6 @@ export class SpellbookState {
   /**
    * Load spell data for the actor
    * @returns {Promise<boolean>} Success status
-   * @async
    */
   async loadSpellData() {
     RuleSetManager.initializeNewClasses(this.actor);
@@ -301,7 +293,6 @@ export class SpellbookState {
    * @param {string} identifier - Identifier of the class
    * @param {Item} classItem - The class item
    * @returns {Promise<void>}
-   * @async
    */
   async loadClassSpellData(identifier, classItem) {
     const className = classItem.name.toLowerCase();
@@ -334,7 +325,6 @@ export class SpellbookState {
    * @param {string} classIdentifier - The class identifier
    * @param {Item} classItem - The class item
    * @returns {Array} Array of level objects, each containing its spells
-   * @private
    */
   async _organizeSpellsByLevelForClass(spellItems, classIdentifier, classItem) {
     const spellsByLevel = {};
@@ -422,7 +412,6 @@ export class SpellbookState {
    * @param {Array} spellItems - Array of spell items
    * @param {Item} classItem - The class item
    * @returns {Promise<void>}
-   * @async
    */
   async processAndOrganizeSpellsForClass(identifier, spellItems, classItem) {
     for (const spell of spellItems) {
@@ -458,6 +447,7 @@ export class SpellbookState {
     let totalSpellCount = 0;
     let preparedCount = 0;
     if (isGroupedStructure) {
+      log(2, 'GROUPED STRUCTURE DETECTED!', { class: classIdentifier, spells: spellLevels, classItem: classItem });
       totalSpellCount = spellLevels.reduce((count, level) => count + (Array.isArray(level.spells) ? level.spells.length : 0), 0);
       const cacheKey = `${classIdentifier}-${totalSpellCount}-${classItem.system.levels}`;
       if (this._preparationStatsCache.has(cacheKey)) return this._preparationStatsCache.get(cacheKey);
@@ -514,7 +504,6 @@ export class SpellbookState {
    * Determine if cantrips should be hidden for a class (with caching)
    * @param {string} identifier - Identifier of the class
    * @returns {boolean} Whether cantrips should be hidden
-   * @private
    */
   _shouldHideCantrips(identifier) {
     if (this._classDetectionCache.has(identifier)) return this._classDetectionCache.get(identifier);
@@ -540,21 +529,6 @@ export class SpellbookState {
   }
 
   /**
-   * Enrich spell data with formatted information
-   * @param {Array} spellLevels - Spell level groups
-   * @returns {Promise<void>}
-   * @async
-   */
-  async enrichSpellData(spellLevels) {
-    for (const level of spellLevels) {
-      for (const spell of level.spells) {
-        spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
-        spell.formattedDetails = formattingUtils.formatSpellDetails(spell);
-      }
-    }
-  }
-
-  /**
    * Handle cantrip level-up notification if needed
    */
   handleCantripLevelUp() {
@@ -572,7 +546,6 @@ export class SpellbookState {
    * Cache wizard spellbook spells for a specific class
    * @param {string} classIdentifier - The class identifier
    * @returns {Promise<void>}
-   * @async
    */
   async cacheWizardSpellbook(classIdentifier) {
     const wizardManager = this.app.wizardManagers.get(classIdentifier);
@@ -589,10 +562,8 @@ export class SpellbookState {
    * @param {Item} classItem - The class item
    * @param {string} classIdentifier - The class identifier
    * @returns {Promise<void>}
-   * @async
    */
   async loadWizardSpellData(classItem, classIdentifier) {
-    log(3, `loadWizardSpellData called for ${classIdentifier}`);
     const className = classItem.name.toLowerCase();
     const classUuid = classItem.uuid;
     const maxSpellLevel = discoveryUtils.calculateMaxSpellLevel(classItem, this.actor);
@@ -622,11 +593,10 @@ export class SpellbookState {
       log(1, `No spell items found for wizard ${classIdentifier}`);
       return;
     }
-    log(3, `About to call processWizardSpells with ${spellItems.length} spell items`);
     await this.processWizardSpells(spellItems, classItem, personalSpellbook, classIdentifier);
     const wizardTabId = `wizardbook-${classIdentifier}`;
     if (!this.tabData[wizardTabId]) {
-      log(1, `Failed to create wizard tab data for ${classIdentifier} after processWizardSpells`);
+      log(1, `Failed to create wizard tab data for ${classIdentifier}.`);
     } else {
       const tabData = this.tabData[wizardTabId];
       log(3, `Wizard tab data successfully created for ${classIdentifier}: ${tabData.spellLevels?.length || 0} spell levels`);
@@ -640,7 +610,6 @@ export class SpellbookState {
    * @param {Array} personalSpellbook - The personal spellbook spell UUIDs
    * @param {string} classIdentifier - The class identifier
    * @returns {Promise<void>}
-   * @async
    */
   async processWizardSpells(allSpellItems, classItem, personalSpellbook, classIdentifier) {
     const spellsTabId = `${classIdentifier}Tab`;
@@ -775,7 +744,6 @@ export class SpellbookState {
             spell.isInComparison = this.app.comparisonSpells.has(spell.compendiumUuid || spell.spellUuid);
           }
         }
-
         if (isWizardBook) {
           spell.canAddToSpellbook = !spell.inWizardSpellbook && spell.system.level > 0;
           spell.isAtMaxSpells = isAtMaxSpells;
@@ -796,12 +764,9 @@ export class SpellbookState {
   /**
    * Wait for all wizard data to be fully loaded and available
    * @returns {Promise<void>}
-   * @async
    */
   async waitForWizardDataCompletion() {
-    // If already initialized, wizard data should be available
     if (this._initialized) {
-      // Double-check that wizard tab data exists for all wizard classes
       const wizardClasses = genericUtils.getWizardEnabledClasses(this.actor);
       for (const { identifier } of wizardClasses) {
         const wizardTabId = `wizardbook-${identifier}`;
@@ -810,16 +775,12 @@ export class SpellbookState {
           const classData = this.spellcastingClasses[identifier];
           if (classData) {
             const classItem = this.actor.items.get(classData.id);
-            if (classItem) {
-              await this.loadWizardSpellData(classItem, identifier);
-            }
+            if (classItem) await this.loadWizardSpellData(classItem, identifier);
           }
         }
       }
       return;
     }
-
-    // If not initialized, force full initialization
     log(3, 'State not initialized, forcing complete initialization');
     await this.initialize();
   }
@@ -842,19 +803,9 @@ export class SpellbookState {
   }
 
   /**
-   * Set long rest context for the spellbook
-   * @param {boolean} isLongRest - Whether in long rest mode
-   */
-  setLongRestContext(isLongRest) {
-    this.isLongRest = !!isLongRest;
-    if (this.isLongRest) this.actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
-  }
-
-  /**
    * Refresh spell data for a specific class after changes (e.g., learning new spells)
    * @param {string} classIdentifier - The identifier of the class to refresh
    * @returns {Promise<void>}
-   * @async
    */
   async refreshClassSpellData(classIdentifier) {
     const classData = this.spellcastingClasses[classIdentifier];
@@ -890,6 +841,7 @@ export class SpellbookState {
 
   /**
    * Add missing ritual spells for all classes with ritual casting enabled
+   * @todo - Is the hard call to 'wizard' correct here?
    * @param {Object} spellDataByClass - The spell data grouped by class
    * @returns {Promise<void>}
    */
@@ -907,7 +859,6 @@ export class SpellbookState {
   /**
    * Clean up module-created ritual spells for classes that no longer support ritual casting
    * @returns {Promise<void>}
-   * @private
    */
   async _cleanupDisabledRitualSpells() {
     const spellIdsToRemove = [];
@@ -936,11 +887,9 @@ export class SpellbookState {
    * @param {string} classIdentifier - The class identifier (should be 'wizard')
    * @param {Object} spellDataByClass - The spell data grouped by class
    * @returns {Promise<void>}
-   * @private
    */
   async _addWizardRitualSpells(classIdentifier, spellDataByClass) {
-    const ritualManager = this.app.getRitualManager(classIdentifier);
-    if (!ritualManager?.isWizard) return;
+    if (!this.app.wizardManager.isWizard) return;
     const spellbookSpells = await this.app.wizardManager.getSpellbookSpells();
     const processedUuids = new Set();
     if (spellDataByClass[classIdentifier]) {
@@ -980,7 +929,6 @@ export class SpellbookState {
    * @param {Object} classData - The class data from spellcastingClasses
    * @param {Object} spellDataByClass - The spell data grouped by class
    * @returns {Promise<void>}
-   * @private
    */
   async _addClassRitualSpells(classIdentifier, classData, spellDataByClass) {
     const className = classData.name.toLowerCase();
@@ -1090,68 +1038,6 @@ export class SpellbookState {
       };
     }
     await this.app.spellManager.cantripManager.sendComprehensiveGMNotification(notificationData);
-  }
-
-  /**
-   * Preserve favorite star states for a tab
-   * @param {string} tabName - The tab to preserve state for
-   */
-  preserveFavoriteStates(tabName) {
-    const tabElement = this.app.element.querySelector(`.tab[data-tab="${tabName}"]`);
-    if (!tabElement) return;
-    const favoriteButtons = tabElement.querySelectorAll('.spell-favorite-toggle[data-uuid]');
-    const favoriteStates = new Map();
-    favoriteButtons.forEach((button) => {
-      const uuid = button.dataset.uuid;
-      if (uuid) {
-        favoriteStates.set(uuid, {
-          favorited: button.classList.contains('favorited'),
-          timestamp: Date.now()
-        });
-      }
-    });
-    if (!this.app._favoriteStateCache) this.app._favoriteStateCache = new Map();
-    this.app._favoriteStateCache.set(tabName, favoriteStates);
-    log(3, `Preserved favorite states for tab ${tabName} with ${favoriteStates.size} buttons`);
-  }
-
-  /**
-   * Restore favorite star states for a tab
-   * @param {string} tabName - The tab to restore state for
-   */
-  restoreFavoriteStates(tabName) {
-    if (!this.app._favoriteStateCache || !this.app._favoriteStateCache.has(tabName)) return;
-    const tabElement = this.app.element.querySelector(`.tab[data-tab="${tabName}"]`);
-    if (!tabElement) return;
-    const favoriteStates = this.app._favoriteStateCache.get(tabName);
-    const favoriteButtons = tabElement.querySelectorAll('.spell-favorite-toggle[data-uuid]');
-    let restoredCount = 0;
-    favoriteButtons.forEach((button) => {
-      const uuid = button.dataset.uuid;
-      const savedState = favoriteStates.get(uuid);
-      if (savedState) {
-        const icon = button.querySelector('i');
-        if (savedState.favorited) {
-          button.classList.add('favorited');
-          if (icon) {
-            icon.classList.remove('far');
-            icon.classList.add('fas');
-          }
-          button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
-          button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
-        } else {
-          button.classList.remove('favorited');
-          if (icon) {
-            icon.classList.remove('fas');
-            icon.classList.add('far');
-          }
-          button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
-          button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
-        }
-        restoredCount++;
-      }
-    });
-    log(3, `Restored favorite states for tab ${tabName}, ${restoredCount} buttons restored`);
   }
 
   /**

@@ -28,10 +28,10 @@ export class ScrollScanner {
 
   /**
    * Extract spell data from a scroll item
+   * @todo - This seems way more complicated then it should be.
    * @param {Item5e} scroll - The scroll item
    * @param {Actor5e} actor - The actor who owns the scroll
    * @returns {Promise<Object|null>} Spell data or null if no valid spell found
-   * @private
    */
   static async _extractSpellFromScroll(scroll, actor) {
     const wizardClass = genericUtils.findWizardClass(actor);
@@ -68,7 +68,6 @@ export class ScrollScanner {
    * @param {string} spellUuid - The spell UUID
    * @param {number} maxSpellLevel - Maximum spell level the actor can cast
    * @returns {Promise<Object|null>} Processed spell data or null
-   * @private
    */
   static async _processScrollSpell(scroll, spellUuid, maxSpellLevel) {
     try {
@@ -119,7 +118,7 @@ export class ScrollScanner {
   static async learnSpellFromScroll(actor, scrollSpellData, wizardManager) {
     const { spell, scrollItem, spellUuid } = scrollSpellData;
     const isAlreadyInSpellbook = await wizardManager.isSpellInSpellbook(spellUuid);
-    const { cost, isFree } = await wizardManager.getCopyingCostWithFree(spell);
+    const { cost, isFree } = await wizardManager.getCopyingCost(spell);
     const time = wizardManager.getCopyingTime(spell);
     const shouldProceed = await this._showLearnFromScrollDialog(spell, cost, time, isFree, isAlreadyInSpellbook);
     if (!shouldProceed) return false;
@@ -128,12 +127,7 @@ export class ScrollScanner {
       const shouldConsume = game.settings.get(MODULE.ID, SETTINGS.CONSUME_SCROLLS_WHEN_LEARNING);
       if (shouldConsume) {
         await actor.deleteEmbeddedDocuments('Item', [scrollItem.id]);
-        ui.notifications.info(
-          game.i18n.format('SPELLBOOK.Scrolls.ScrollConsumed', {
-            scroll: scrollItem.name,
-            spell: spell.name
-          })
-        );
+        ui.notifications.info(game.i18n.format('SPELLBOOK.Scrolls.ScrollConsumed', { scroll: scrollItem.name, spell: spell.name }));
       }
       ui.notifications.info(game.i18n.format('SPELLBOOK.Wizard.SpellLearned', { name: spell.name }));
     }
@@ -148,19 +142,11 @@ export class ScrollScanner {
    * @param {boolean} isFree - Whether the spell is free
    * @param {boolean} isAlreadyInSpellbook - Whether spell is already known
    * @returns {Promise<boolean>} Whether to proceed
-   * @private
    */
   static async _showLearnFromScrollDialog(spell, cost, time, isFree, isAlreadyInSpellbook) {
     const costText = isFree ? game.i18n.localize('SPELLBOOK.Wizard.SpellCopyFree') : game.i18n.format('SPELLBOOK.Wizard.SpellCopyCost', { cost });
     const shouldConsume = game.settings.get(MODULE.ID, SETTINGS.CONSUME_SCROLLS_WHEN_LEARNING);
-
-    const content = await renderTemplate(TEMPLATES.DIALOGS.LEARN_FROM_SCROLL, {
-      spell,
-      costText,
-      time,
-      isAlreadyInSpellbook,
-      shouldConsume
-    });
+    const content = await renderTemplate(TEMPLATES.DIALOGS.LEARN_FROM_SCROLL, { spell, costText, time, isAlreadyInSpellbook, shouldConsume });
     try {
       const result = await foundry.applications.api.DialogV2.wait({
         title: game.i18n.format('SPELLBOOK.Wizard.LearnSpellTitle', { name: spell.name }),

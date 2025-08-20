@@ -24,9 +24,6 @@ export class SpellUserDataJournal {
 
   /**
    * Get user page from journal for spell data storage
-   * @async
-   * @static
-   * @private
    * @param {string} userId - User ID to get page for
    * @returns {Promise<JournalEntryPage|null>} The user's page or null if not found
    */
@@ -38,8 +35,6 @@ export class SpellUserDataJournal {
 
   /**
    * Parse spell data from HTML tables with per-actor structure support
-   * @static
-   * @private
    * @param {string} htmlContent - The page HTML content to parse
    * @returns {Object} Parsed spell data object
    */
@@ -112,8 +107,6 @@ export class SpellUserDataJournal {
 
   /**
    * Generate HTML tables from spell data for journal storage
-   * @static
-   * @private
    * @param {Object} spellData - The spell data to convert to HTML
    * @param {string} userName - Name of the user for display
    * @param {string} userId - User ID for the data
@@ -443,102 +436,9 @@ export class SpellUserDataJournal {
   }
 
   /**
-   * Set usage statistics for a spell
-   * @param {string|Object} spellOrUuid - Spell UUID or spell object
-   * @param {Object} usageStats - Usage statistics object
-   * @param {string} userId - User ID (optional)
-   * @param {string} actorId - Actor ID (optional)
-   * @returns {Promise<boolean>} Success status
-   */
-  static async setSpellUsageStats(spellOrUuid, usageStats, userId = null, actorId = null) {
-    try {
-      const spellUuid = typeof spellOrUuid === 'string' ? spellOrUuid : spellOrUuid?.uuid || spellOrUuid?.compendiumUuid;
-      if (!spellUuid) return false;
-      let canonicalUuid = spellUuid;
-      if (spellUuid.startsWith('Actor.')) {
-        try {
-          const spellDoc = fromUuidSync(spellUuid);
-          if (spellDoc?.flags?.core?.sourceId) canonicalUuid = spellDoc.flags.core.sourceId;
-        } catch (error) {
-          canonicalUuid = spellUuid;
-        }
-      }
-      const targetUserId = userId || game.user.id;
-      const targetActorId = actorId || game.user.character?.id;
-      const user = game.users.get(targetUserId);
-      if (!user || !targetActorId) return false;
-      const page = await this._getUserPage(targetUserId);
-      if (!page) return false;
-      const spellData = this._parseSpellDataFromHTML(page.text.content);
-      if (!spellData[canonicalUuid]) spellData[canonicalUuid] = { notes: '', actorData: {} };
-      if (!spellData[canonicalUuid].actorData[targetActorId]) {
-        spellData[canonicalUuid].actorData[targetActorId] = {
-          favorited: false,
-          usageStats: { count: 0, lastUsed: null, contextUsage: { combat: 0, exploration: 0 } }
-        };
-      }
-      spellData[canonicalUuid].actorData[targetActorId].usageStats = usageStats;
-      const newContent = await this._generateTablesHTML(spellData, user.name, targetUserId);
-      await page.update({ 'text.content': newContent, [`flags.${MODULE.ID}.lastUpdated`]: Date.now() });
-      const cacheKey = `${targetUserId}:${targetActorId}:${canonicalUuid}`;
-      this.cache.set(cacheKey, spellData[canonicalUuid]);
-      log(3, `Updated spell usage stats for ${canonicalUuid}`);
-      return true;
-    } catch (error) {
-      log(1, 'Error setting spell usage stats:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Get usage statistics for a spell
-   * @param {string|Object} spellOrUuid - Spell UUID or spell object
-   * @param {string} userId - User ID (optional)
-   * @param {string} actorId - Actor ID (optional)
-   * @returns {Promise<Object|null>} Usage statistics
-   */
-  static async getSpellUsageStats(spellOrUuid, userId = null, actorId = null) {
-    try {
-      const spellUuid = typeof spellOrUuid === 'string' ? spellOrUuid : spellOrUuid?.uuid || spellOrUuid?.compendiumUuid;
-      if (!spellUuid) return null;
-      let canonicalUuid = spellUuid;
-      if (spellUuid.startsWith('Actor.')) {
-        try {
-          const spellDoc = fromUuidSync(spellUuid);
-          if (spellDoc?.flags?.core?.sourceId) canonicalUuid = spellDoc.flags.core.sourceId;
-        } catch (error) {
-          canonicalUuid = spellUuid;
-        }
-      }
-      const targetUserId = userId || game.user.id;
-      const targetActorId = actorId || game.user.character?.id;
-      const cacheKey = targetActorId ? `${targetUserId}:${targetActorId}:${canonicalUuid}` : `${targetUserId}:${canonicalUuid}`;
-      if (this.cache.has(cacheKey)) {
-        const cached = this.cache.get(cacheKey);
-        return cached.usageStats || null;
-      }
-      const page = await this._getUserPage(targetUserId);
-      if (!page) return null;
-      const spellData = this._parseSpellDataFromHTML(page.text.content);
-      const userData = spellData[canonicalUuid];
-      if (!userData) return null;
-      let result = null;
-      if (targetActorId && userData.actorData?.[targetActorId]) {
-        result = userData.actorData[targetActorId].usageStats || null;
-        this.cache.set(cacheKey, { ...userData.actorData[targetActorId], notes: userData.notes });
-      }
-      return result;
-    } catch (error) {
-      log(1, 'Error getting spell usage stats:', error);
-      return null;
-    }
-  }
-
-  /**
    * Ensure user data infrastructure exists (journal, page, etc.)
    * @param {string} userId - User ID to ensure data for
    * @returns {Promise<void>}
-   * @private
    */
   static async _ensureUserDataInfrastructure(userId) {
     try {
@@ -591,7 +491,6 @@ export class SpellUserDataJournal {
    * @param {string} userName - User display name
    * @param {string} userId - User ID
    * @returns {Promise<string>} HTML content
-   * @private
    */
   static async _generateEmptyUserDataHTML(userName, userId) {
     try {

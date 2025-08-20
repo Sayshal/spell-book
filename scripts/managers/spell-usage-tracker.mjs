@@ -15,7 +15,6 @@ export class SpellUsageTracker {
 
   /**
    * Get singleton instance of the spell usage tracker
-   * @static
    * @returns {SpellUsageTracker} The singleton instance
    */
   static getInstance() {
@@ -25,8 +24,6 @@ export class SpellUsageTracker {
 
   /**
    * Initialize the usage tracking system with D&D5e activity hooks
-   * @async
-   * @static
    * @returns {Promise<void>}
    */
   static async initialize() {
@@ -39,8 +36,6 @@ export class SpellUsageTracker {
 
   /**
    * Handle D&D5e activity consumption events for spell usage tracking
-   * @async
-   * @private
    * @param {Activity} activity - The activity being consumed
    * @param {Object} usageConfig - Usage configuration data
    * @param {Object} messageConfig - Message configuration data
@@ -69,7 +64,6 @@ export class SpellUsageTracker {
 
   /**
    * Detect usage context based on combat state
-   * @private
    * @param {Actor} actor - The casting actor
    * @returns {string} Either 'combat' or 'exploration'
    */
@@ -82,8 +76,6 @@ export class SpellUsageTracker {
 
   /**
    * Record spell usage in actor data
-   * @async
-   * @private
    * @param {string} spellUuid - Canonical spell UUID
    * @param {string} context - Either 'combat' or 'exploration'
    * @param {Actor} actor - The casting actor
@@ -106,43 +98,6 @@ export class SpellUsageTracker {
       await SpellUserDataJournal.setUserDataForSpell(spellUuid, { ...userData, usageStats: newStats }, targetUserId, actor.id);
     } catch (error) {
       log(1, 'Error recording spell usage:', error);
-    }
-  }
-
-  /**
-   * Get usage statistics for a specific spell
-   * @async
-   * @static
-   * @param {string} spellUuid - Spell UUID to get stats for
-   * @param {string|null} [userId] - User ID, defaults to current user
-   * @returns {Promise<Object|null>} Usage statistics or null if not found
-   */
-  static async getSpellUsageStats(spellUuid, userId = null) {
-    try {
-      const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid, userId, actorId);
-      return userData?.usageStats || null;
-    } catch (error) {
-      log(1, 'Error getting spell usage stats:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Set usage statistics for a spell
-   * @async
-   * @static
-   * @param {string} spellUuid - Spell UUID to set stats for
-   * @param {Object} usageStats - Usage statistics data
-   * @param {string|null} [userId] - User ID, defaults to current user
-   * @returns {Promise<boolean>} Success status
-   */
-  static async setSpellUsageStats(spellUuid, usageStats, userId = null) {
-    try {
-      const userData = (await SpellUserDataJournal.getUserDataForSpell(spellUuid, userId, actorId)) || {};
-      return await SpellUserDataJournal.setUserDataForSpell(spellUuid, { ...userData, usageStats }, userId);
-    } catch (error) {
-      log(1, 'Error setting spell usage stats:', error);
-      return false;
     }
   }
 }

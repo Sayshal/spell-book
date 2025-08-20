@@ -116,7 +116,6 @@ export class RuleSetManager {
    * Detect spellcasting classes on an actor
    * @param {Actor5e} actor - The actor to check
    * @returns {Object} Map of class identifiers to class data
-   * @private
    */
   static _detectSpellcastingClasses(actor) {
     const classes = {};
@@ -134,7 +133,6 @@ export class RuleSetManager {
    * @param {string} classIdentifier - The class identifier
    * @param {string} ruleSet - The rule set to use
    * @returns {Object} Default rules for the class
-   * @private
    */
   static _getClassDefaults(classIdentifier, ruleSet) {
     const defaults = {
@@ -156,7 +154,6 @@ export class RuleSetManager {
    * Apply legacy rule set defaults for a class
    * @param {string} classIdentifier - The class identifier
    * @param {Object} defaults - The defaults object to modify
-   * @private
    */
   static _applyLegacyDefaults(classIdentifier, defaults) {
     defaults.cantripSwapping = MODULE.SWAP_MODES.NONE;
@@ -203,7 +200,6 @@ export class RuleSetManager {
    * Apply modern rule set defaults for a class
    * @param {string} classIdentifier - The class identifier
    * @param {Object} defaults - The defaults object to modify
-   * @private
    */
   static _applyModernDefaults(classIdentifier, defaults) {
     defaults.cantripSwapping = MODULE.SWAP_MODES.LEVEL_UP;
@@ -254,7 +250,6 @@ export class RuleSetManager {
    * @param {string} oldSpellListUuid - UUID of the old spell list
    * @param {string} newSpellListUuid - UUID of the new spell list
    * @returns {Promise<Array>} Array of affected spell data
-   * @private
    */
   static async _getAffectedSpellsByListChange(actor, classIdentifier, oldSpellListUuid, newSpellListUuid) {
     const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
@@ -307,7 +302,6 @@ export class RuleSetManager {
    * @param {string} classIdentifier - The class identifier
    * @param {Array} affectedSpells - Array of spells that will be unprepared
    * @returns {Promise<boolean>} Whether the user confirmed the change
-   * @private
    */
   static async _confirmSpellListChange(actor, classIdentifier, affectedSpells) {
     const className = actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier))?.name || classIdentifier;
@@ -356,7 +350,6 @@ export class RuleSetManager {
    * @param {string} classIdentifier - The class identifier
    * @param {Array} affectedSpells - Array of spells to unprepare
    * @returns {Promise<void>}
-   * @private
    */
   static async _unprepareAffectedSpells(actor, classIdentifier, affectedSpells) {
     const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};

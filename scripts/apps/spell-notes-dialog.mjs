@@ -24,9 +24,7 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
   };
 
   static PARTS = {
-    form: {
-      template: TEMPLATES.DIALOGS.SPELL_NOTES
-    }
+    form: { template: TEMPLATES.DIALOGS.SPELL_NOTES }
   };
 
   /**
@@ -100,7 +98,6 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Position dialog near the notes icon that opened it
-   * @private
    */
   _positionNearIcon() {
     const icon = document.querySelector(`[data-uuid="${this.spellUuid}"][data-action="editNotes"]`);
@@ -118,7 +115,6 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
    * @param {Event} event - The form submission event
    * @param {HTMLFormElement} form - The form element
    * @param {FormDataExtended} formData - The form data
-   * @static
    */
   static async formHandler(event, form, formData) {
     const notes = formData.object.notes || '';

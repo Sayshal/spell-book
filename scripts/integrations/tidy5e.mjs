@@ -1,6 +1,5 @@
 import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
 import { ASSETS } from '../constants.mjs';
-import * as discoveryUtils from '../helpers/spell-discovery.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -51,7 +50,7 @@ function onTidy5eQuadroneRender(sheet, element, data) {
  * Check if Tidy5e spellbook button can be added
  */
 function canAddTidySpellbookButton(actor, element) {
-  const canCast = discoveryUtils.canCastSpells(actor);
+  const canCast = Object.keys(actor?.spellcastingClasses || {}).length > 0;
   if (!canCast) return false;
   const hasSpellbook = element.querySelector('.spellbook') || htmlElement.querySelector('.tidy-tab.spellbook');
   if (!hasSpellbook) return false;

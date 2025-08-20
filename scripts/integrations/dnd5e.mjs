@@ -2,7 +2,6 @@ import { GMSpellListManager } from '../apps/gm-spell-list-manager.mjs';
 import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
 import { SpellAnalyticsDashboard } from '../apps/spell-analytics-dashboard.mjs';
 import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
-import * as discoveryUtils from '../helpers/spell-discovery.mjs';
 import { log } from '../logger.mjs';
 import { SpellManager } from '../managers/spell-manager.mjs';
 
@@ -199,7 +198,7 @@ async function showLongRestSwapDialog(longRestClasses) {
  * Check if spellbook button can be added
  */
 function canAddSpellbookButton(actor, html) {
-  const canCast = discoveryUtils.canCastSpells(actor);
+  const canCast = Object.keys(actor?.spellcastingClasses || {}).length > 0;
   if (!canCast) return false;
   const hasSpellsTab = html.querySelector('section.tab[data-tab="spells"]');
   if (!hasSpellsTab) return false;
@@ -240,7 +239,7 @@ async function onSpellBookButtonClick(actor, event) {
     }
     if (hasCompletedSwaps) {
       const spellManager = new SpellManager(actor);
-      await spellManager.resetSwapTracking();
+      await spellManager.cantripManager.resetSwapTracking();
     }
     if (longRestFlagValue === undefined || longRestFlagValue === null) actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
   }

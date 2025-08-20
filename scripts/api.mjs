@@ -22,7 +22,6 @@ import { SpellbookUI } from './helpers/ui/spellbook-ui.mjs';
 import { log } from './logger.mjs';
 import { CantripManager } from './managers/cantrip-manager.mjs';
 import { MacroManager } from './managers/macro-manager.mjs';
-import { RitualManager } from './managers/ritual-manager.mjs';
 import { RuleSetManager } from './managers/rule-set-manager.mjs';
 import { SpellLoadoutManager } from './managers/spell-loadout-manager.mjs';
 import { SpellManager } from './managers/spell-manager.mjs';
@@ -70,7 +69,6 @@ export function createAPI() {
       managers: {
         SpellManager,
         CantripManager,
-        RitualManager,
         RuleSetManager,
         WizardSpellbookManager,
         SpellLoadoutManager,

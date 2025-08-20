@@ -216,7 +216,7 @@
   --spell-book-text-active: rgb(76 175 80 / 100%);
 
   /* ======= Border Colors ======= */
-  --spell-book-border-light: rgb(221 221 221 / 50.2%);
+  --spell-book-border-light: rgb(230 230 255);
   --spell-book-border-light-theme: rgb(204 204 204 / 75.3%);
   --spell-book-nav-border: rgb(48 47 43);
   --spell-book-border-medium: rgb(170 170 170 / 50.2%);
@@ -304,15 +304,6 @@
         justify-content: center;
       }
     }
-  }
-
-  /* Content wrapper - manages overflow */
-  .content-wrapper {
-    inset: 0;
-    display: flex;
-    position: absolute;
-    flex-direction: column;
-    overflow: hidden;
   }
 
   /* Main container - positioned relative to sidebar */

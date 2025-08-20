@@ -78,7 +78,6 @@ export class AdvancedSearchManager {
 
   /**
    * Setup the enhanced search interface with accessibility features
-   * @private
    * @returns {void}
    */
   setupSearchInterface() {
@@ -108,7 +107,6 @@ export class AdvancedSearchManager {
 
   /**
    * Create clear button for search input with accessibility attributes
-   * @private
    * @returns {void}
    */
   createClearButton() {
@@ -127,7 +125,6 @@ export class AdvancedSearchManager {
 
   /**
    * Create dropdown container for search suggestions
-   * @private
    * @returns {void}
    */
   createDropdown() {
@@ -142,7 +139,6 @@ export class AdvancedSearchManager {
 
   /**
    * Set up event listeners for search functionality
-   * @private
    * @returns {void}
    */
   setupEventListeners() {
@@ -159,7 +155,6 @@ export class AdvancedSearchManager {
 
   /**
    * Handle search input changes with debouncing and query processing
-   * @async
    * @param {InputEvent} event - Input event from search field
    * @returns {Promise<void>}
    */
@@ -401,8 +396,6 @@ export class AdvancedSearchManager {
 
   /**
    * Generate content for advanced query suggestions
-   * @async
-   * @private
    * @param {string} query - The advanced query string
    * @returns {Promise<string>} HTML content for dropdown
    */
@@ -552,7 +545,6 @@ export class AdvancedSearchManager {
    * Generate content for standard queries
    * @param {string} query - The query string
    * @returns {string} HTML content
-   * @private
    */
   _generateStandardQueryContent(query) {
     let content = '';
@@ -563,7 +555,6 @@ export class AdvancedSearchManager {
 
   /**
    * Generate HTML content for recent searches section
-   * @private
    * @returns {string} HTML content for recent searches
    */
   _generateRecentSearches() {
@@ -582,7 +573,6 @@ export class AdvancedSearchManager {
 
   /**
    * Generate HTML content for fuzzy spell name matches
-   * @private
    * @param {string} query - The search query string
    */
   _generateFuzzyMatches(query) {
@@ -601,38 +591,6 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Check if query is a complete field:value expression
-   * @param {string} query - The query string to check
-   * @returns {boolean} Whether it's a complete field:value pair
-   */
-  isCompleteFieldValue(query) {
-    if (!query.startsWith(this.searchPrefix)) return false;
-    const queryWithoutTrigger = query.substring(1);
-    const colonIndex = queryWithoutTrigger.indexOf(':');
-    if (colonIndex === -1) return false;
-    const fieldPart = queryWithoutTrigger.substring(0, colonIndex);
-    const valuePart = queryWithoutTrigger.substring(colonIndex + 1);
-    if (!fieldPart || !valuePart) return false;
-    const fieldId = this.fieldDefinitions.getFieldId(fieldPart);
-    if (!fieldId) return false;
-    try {
-      return this.fieldDefinitions.validateValue(fieldId, valuePart);
-    } catch {
-      return false;
-    }
-  }
-
-  /**
-   * Check if query contains AND operators
-   * @param {string} query - The query string to check
-   * @returns {boolean} Whether it contains AND operators
-   */
-  hasAndOperators(query) {
-    const upperQuery = query.toUpperCase();
-    return upperQuery.includes(' AND ');
-  }
-
-  /**
    * Update visual selection state of dropdown suggestions
    * @param {NodeList} suggestions - List of suggestion DOM elements
    * @returns {void}
@@ -647,7 +605,6 @@ export class AdvancedSearchManager {
 
   /**
    * Perform the actual search operation based on query type
-   * @async
    * @param {string} query - Search query string
    * @returns {Promise<void>}
    */
@@ -769,10 +726,7 @@ export class AdvancedSearchManager {
    */
   setFilterValue(fieldId, value) {
     const filterElement = this.element.querySelector(`[name="filter-${fieldId}"]`);
-    if (!filterElement) {
-      log(3, `Filter element not found for field: ${fieldId}`);
-      return;
-    }
+    if (!filterElement) return;
     if (filterElement.type === 'checkbox') {
       filterElement.checked = value === 'true';
       filterElement.dispatchEvent(new Event('change', { bubbles: true }));
@@ -832,14 +786,6 @@ export class AdvancedSearchManager {
   }
 
   /**
-   * Get the parsed query object for advanced queries
-   * @returns {Object|null} The parsed query object or null if not advanced
-   */
-  getParsedQuery() {
-    return this.parsedQuery;
-  }
-
-  /**
    * Execute advanced query against a collection of spells
    * @param {Array<Object>} spells - Array of spell objects to filter
    * @returns {Array<Object>} Filtered array of spells matching the query
@@ -869,7 +815,6 @@ export class AdvancedSearchManager {
 
   /**
    * Update visibility of the clear button based on input content
-   * @private
    * @returns {void}
    */
   updateClearButtonVisibility() {
@@ -921,14 +866,10 @@ export class AdvancedSearchManager {
    * @returns {void}
    */
   removeFromRecentSearches(query) {
-    try {
-      const recentSearches = this.getRecentSearches();
-      const updatedSearches = recentSearches.filter((search) => search !== query);
-      this.actor.setFlag(MODULE.ID, FLAGS.RECENT_SEARCHES, updatedSearches);
-      log(3, 'Removed from recent searches:', query);
-    } catch (error) {
-      log(1, 'Error removing from recent searches:', error);
-    }
+    const recentSearches = this.getRecentSearches();
+    const updatedSearches = recentSearches.filter((search) => search !== query);
+    this.actor.setFlag(MODULE.ID, FLAGS.RECENT_SEARCHES, updatedSearches);
+    log(3, 'Removed from recent searches:', query);
   }
 
   /**

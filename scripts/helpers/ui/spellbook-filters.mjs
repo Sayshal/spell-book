@@ -12,7 +12,6 @@ export class SpellbookFilterHelper {
    */
   constructor(app) {
     this.app = app;
-    this.actor = app.actor;
     this._cachedFilterState = null;
     this._lastFilterUpdate = 0;
     this.searchPrefix = game.settings.get(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX);
@@ -41,7 +40,23 @@ export class SpellbookFilterHelper {
   getFilterState() {
     const now = Date.now();
     if (this._cachedFilterState && now - this._lastFilterUpdate < 1000) return this._cachedFilterState;
-    if (!this.element) return filterUtils.getDefaultFilterState();
+    if (!this.element)
+      return {
+        name: '',
+        level: '',
+        school: '',
+        castingTime: '',
+        minRange: '',
+        maxRange: '',
+        damageType: '',
+        condition: '',
+        requiresSave: '',
+        prepared: false,
+        ritual: false,
+        favorited: false,
+        concentration: '',
+        materialComponents: ''
+      };
     this._cachedFilterState = {
       name: this.element.querySelector('[name="filter-name"]')?.value || '',
       level: this.element.querySelector('[name="filter-level"]')?.value || '',
@@ -76,35 +91,11 @@ export class SpellbookFilterHelper {
       log(3, 'Beginning Filtering:', selectedSpellUUIDs.size, 'selected spells out of', availableSpells.length, 'total available');
       let remainingSpells = [...availableSpells];
       remainingSpells = this._filterBySelectedList(remainingSpells, selectedSpellUUIDs, isSpellInSelectedList);
-      if (!Array.isArray(remainingSpells)) {
-        log(1, 'ERROR: _filterBySelectedList returned non-array:', typeof remainingSpells);
-        return { spells: [], totalFiltered: 0 };
-      }
       remainingSpells = this._filterBySource(remainingSpells, filters);
-      if (!Array.isArray(remainingSpells)) {
-        log(1, 'ERROR: _filterBySource returned non-array:', typeof remainingSpells);
-        return { spells: [], totalFiltered: 0 };
-      }
       remainingSpells = this._filterByBasicProperties(remainingSpells, filters);
-      if (!Array.isArray(remainingSpells)) {
-        log(1, 'ERROR: _filterByBasicProperties returned non-array:', typeof remainingSpells);
-        return { spells: [], totalFiltered: 0 };
-      }
       remainingSpells = this._filterByRange(remainingSpells, filters);
-      if (!Array.isArray(remainingSpells)) {
-        log(1, 'ERROR: _filterByRange returned non-array:', typeof remainingSpells);
-        return { spells: [], totalFiltered: 0 };
-      }
       remainingSpells = this._filterByDamageAndConditions(remainingSpells, filters);
-      if (!Array.isArray(remainingSpells)) {
-        log(1, 'ERROR: _filterByDamageAndConditions returned non-array:', typeof remainingSpells);
-        return { spells: [], totalFiltered: 0 };
-      }
       remainingSpells = this._filterBySpecialProperties(remainingSpells, filters);
-      if (!Array.isArray(remainingSpells)) {
-        log(1, 'ERROR: _filterBySpecialProperties returned non-array:', typeof remainingSpells);
-        return { spells: [], totalFiltered: 0 };
-      }
       log(3, 'Final spells count:', remainingSpells.length);
       return { spells: remainingSpells, totalFiltered: remainingSpells.length };
     } catch (error) {
@@ -119,7 +110,6 @@ export class SpellbookFilterHelper {
    * @param {Set} selectedSpellUUIDs - UUIDs in selected list
    * @param {Function} isSpellInSelectedList - Function to check if spell is in list
    * @returns {Array} Filtered spells
-   * @private
    */
   _filterBySelectedList(spells, selectedSpellUUIDs, isSpellInSelectedList) {
     const filtered = spells.filter((spell) => !isSpellInSelectedList(spell, selectedSpellUUIDs));
@@ -132,7 +122,6 @@ export class SpellbookFilterHelper {
    * @param {Array} spells - Spells to filter
    * @param {Object} filterState - Current filter state
    * @returns {Array} Filtered spells
-   * @private
    */
   _filterBySource(spells, filterState) {
     const { source } = filterState;
@@ -156,7 +145,6 @@ export class SpellbookFilterHelper {
    * @param {Array} spells - Spells to filter
    * @param {Object} filterState - Current filter state
    * @returns {Array} Filtered spells
-   * @private
    */
   _filterByBasicProperties(spells, filterState) {
     const { name, level, school, castingTime } = filterState;
@@ -183,7 +171,6 @@ export class SpellbookFilterHelper {
    * @param {Array} spells - Spells to filter
    * @param {string} searchQuery - Search query
    * @returns {Array} Filtered spells
-   * @private
    */
   _filterByEnhancedName(spells, searchQuery) {
     if (!searchQuery || !searchQuery.trim()) return spells;
@@ -236,7 +223,6 @@ export class SpellbookFilterHelper {
    * @param {Array} spells - Spells to filter
    * @param {Object} filterState - Current filter state
    * @returns {Array} Filtered spells
-   * @private
    */
   _filterByRange(spells, filterState) {
     const { minRange, maxRange } = filterState;
@@ -261,7 +247,6 @@ export class SpellbookFilterHelper {
    * @param {Array} spells - Spells to filter
    * @param {Object} filterState - Current filter state
    * @returns {Array} Filtered spells
-   * @private
    */
   _filterByDamageAndConditions(spells, filterState) {
     const { damageType, condition } = filterState;
@@ -286,7 +271,6 @@ export class SpellbookFilterHelper {
    * @param {Array} spells - Spells to filter
    * @param {Object} filterState - Current filter state
    * @returns {Array} Filtered spells
-   * @private
    */
   _filterBySpecialProperties(spells, filterState) {
     const { requiresSave, concentration, ritual, favorited, materialComponents } = filterState;
@@ -344,12 +328,10 @@ export class SpellbookFilterHelper {
    * Extract spell data from DOM element for filtering
    * @param {HTMLElement} item - The spell item element
    * @returns {Object} Extracted spell data
-   * @private
    */
   _extractSpellDataFromElement(item) {
     const titleElement = item.querySelector('.spell-name .title');
     const extractedName = titleElement?.textContent?.trim() || item.querySelector('.spell-name')?.textContent?.trim() || '';
-
     return {
       name: extractedName.toLowerCase(),
       isPrepared: item.classList.contains('prepared-spell'),
@@ -374,7 +356,6 @@ export class SpellbookFilterHelper {
    * @param {Map} levelVisibilityMap - Map to track level statistics
    * @param {Object} spellData - Spell data
    * @param {HTMLElement} item - Spell item element
-   * @private
    */
   _updateLevelVisibilityStats(levelVisibilityMap, spellData, item) {
     const level = spellData.level;
@@ -394,7 +375,6 @@ export class SpellbookFilterHelper {
   /**
    * Update the "no results" display
    * @param {number} visibleCount - Number of visible spells
-   * @private
    */
   _updateNoResultsDisplay(visibleCount) {
     const noResults = this.element.querySelector('.no-filter-results');
@@ -406,7 +386,6 @@ export class SpellbookFilterHelper {
    * @param {Object} filters - The current filter state
    * @param {Object} spell - The spell to check
    * @returns {boolean} Whether the spell should be visible
-   * @private
    */
   _checkSpellVisibility(filters, spell) {
     if (filters.name && !this._checkEnhancedNameMatch(filters.name, spell.name)) return false;
@@ -450,7 +429,6 @@ export class SpellbookFilterHelper {
    * @param {string} searchQuery - The search query
    * @param {string} spellName - The spell name to check
    * @returns {boolean} Whether the spell name matches
-   * @private
    */
   _checkEnhancedNameMatch(searchQuery, spellName) {
     if (!searchQuery || !searchQuery.trim()) return true;
@@ -475,7 +453,6 @@ export class SpellbookFilterHelper {
   /**
    * Update level container visibility and counts
    * @param {Map} levelVisibilityMap - Map of level visibility data
-   * @private
    */
   _updateLevelContainers(levelVisibilityMap) {
     const levelContainers = this.element.querySelectorAll('.spell-level');

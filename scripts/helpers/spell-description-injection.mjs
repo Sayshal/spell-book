@@ -7,8 +7,6 @@ import { SpellUserDataJournal } from './spell-user-data.mjs';
  * Class to handle injecting notes into spell descriptions on actor items
  */
 export class SpellDescriptionInjection {
-  static NOTES_WRAPPER_CLASS = 'spell-book-personal-notes';
-  static MODULE_UPDATE_FLAG = 'spellBookModuleUpdate';
   static _updatingSpells = new Set();
 
   /**
@@ -63,7 +61,7 @@ export class SpellDescriptionInjection {
    */
   static async onUpdateItem(item, changes, options, userId) {
     if (item.type !== 'spell' || !item.parent || item.parent.documentName !== 'Actor') return;
-    if (options[this.MODULE_UPDATE_FLAG]) return;
+    if (options['spellBookModuleUpdate']) return;
     const spellKey = `${item.parent.id}-${item.id}`;
     if (this._updatingSpells.has(spellKey)) return;
     if (changes.system?.description) await this.updateSpellDescription(item);
@@ -106,7 +104,7 @@ export class SpellDescriptionInjection {
       if (injectionMode === 'off') return;
       const currentDescription = spellItem.system.description?.value || '';
       const notesHtml = this.formatNotesForDescription(userData.notes);
-      if (currentDescription.includes(`class="${this.NOTES_WRAPPER_CLASS}"`)) await this.replaceNotesInDescription(spellItem, notesHtml, injectionMode);
+      if (currentDescription.includes(`class='spell-book-personal-notes'`)) await this.replaceNotesInDescription(spellItem, notesHtml, injectionMode);
       else await this.addNotesToDescription(spellItem, notesHtml, injectionMode, currentDescription);
     } finally {
       this._updatingSpells.delete(spellKey);
@@ -119,7 +117,7 @@ export class SpellDescriptionInjection {
   static formatNotesForDescription(notes) {
     const escapedNotes = notes.replace(/\n/g, '<br>');
     const personalNotesLabel = game.i18n.localize('SPELLBOOK.UI.PersonalNotes');
-    return `<div class="${this.NOTES_WRAPPER_CLASS}"><strong>${personalNotesLabel}:</strong> ${escapedNotes}</div>`;
+    return `<div class='spell-book-personal-notes'><strong>${personalNotesLabel}:</strong> ${escapedNotes}</div>`;
   }
 
   /**
@@ -129,7 +127,7 @@ export class SpellDescriptionInjection {
     let newDescription;
     if (injectionMode === 'before') newDescription = notesHtml + currentDescription;
     else newDescription = currentDescription + notesHtml;
-    await spellItem.update({ 'system.description.value': newDescription }, { [this.MODULE_UPDATE_FLAG]: true });
+    await spellItem.update({ 'system.description.value': newDescription }, { ['spellBookModuleUpdate']: true });
     log(3, `Added notes to spell description: ${spellItem.name}`);
   }
 
@@ -138,11 +136,11 @@ export class SpellDescriptionInjection {
    */
   static async replaceNotesInDescription(spellItem, notesHtml, injectionMode) {
     const currentDescription = spellItem.system.description?.value || '';
-    const notesRegex = new RegExp(`<div class="${this.NOTES_WRAPPER_CLASS}"[^>]*>.*?</div>`, 'gs');
+    const notesRegex = new RegExp(`<div class='spell-book-personal-notes'[^>]*>.*?</div>`, 'gs');
     let newDescription = currentDescription.replace(notesRegex, '');
     if (injectionMode === 'before') newDescription = notesHtml + newDescription;
     else newDescription = newDescription + notesHtml;
-    await spellItem.update({ 'system.description.value': newDescription }, { [this.MODULE_UPDATE_FLAG]: true });
+    await spellItem.update({ 'system.description.value': newDescription }, { ['spellBookModuleUpdate']: true });
     log(3, `Updated notes in spell description: ${spellItem.name}`);
   }
 
@@ -151,11 +149,11 @@ export class SpellDescriptionInjection {
    */
   static async removeNotesFromDescription(spellItem) {
     const currentDescription = spellItem.system.description?.value || '';
-    if (!currentDescription.includes(`class="${this.NOTES_WRAPPER_CLASS}"`)) return;
-    const notesRegex = new RegExp(`<div class="${this.NOTES_WRAPPER_CLASS}"[^>]*>.*?</div>`, 'gs');
+    if (!currentDescription.includes(`class='spell-book-personal-notes'`)) return;
+    const notesRegex = new RegExp(`<div class='spell-book-personal-notes'[^>]*>.*?</div>`, 'gs');
     const newDescription = currentDescription.replace(notesRegex, '');
     if (newDescription !== currentDescription) {
-      await spellItem.update({ 'system.description.value': newDescription }, { [this.MODULE_UPDATE_FLAG]: true });
+      await spellItem.update({ 'system.description.value': newDescription }, { ['spellBookModuleUpdate']: true });
       log(3, `Removed notes from spell description: ${spellItem.name}`);
     }
   }

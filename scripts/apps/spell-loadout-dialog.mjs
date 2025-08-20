@@ -11,12 +11,7 @@ const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applicat
 export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: 'spell-loadout-dialog',
-    tag: 'form',
-    form: {
-      handler: SpellLoadoutDialog.formHandler,
-      closeOnSubmit: false,
-      submitOnChange: false
-    },
+    tag: 'div',
     actions: {
       saveLoadout: SpellLoadoutDialog.saveLoadout,
       applyLoadout: SpellLoadoutDialog.applyLoadout,
@@ -40,7 +35,6 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
    */
   constructor(actor, spellbook, classIdentifier, options = {}) {
     super(options);
-    this.actor = actor;
     this.spellbook = spellbook;
     this.classIdentifier = classIdentifier;
     this.loadoutManager = new SpellLoadoutManager(actor, spellbook);
@@ -92,7 +86,6 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
    * Save current configuration as a new loadout
    * @param {Event} event - The form event
    * @param {HTMLElement} target - The clicked element
-   * @static
    */
   static async saveLoadout(event, target) {
     const form = target.closest('form');
@@ -125,7 +118,6 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
    * Overwrite an existing loadout with current configuration
    * @param {Event} event - The click event
    * @param {HTMLElement} target - The clicked element
-   * @static
    */
   static async overwriteLoadout(event, target) {
     const loadoutId = target.dataset.loadoutId;
@@ -150,7 +142,6 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
    * Delete a loadout
    * @param {Event} event - The click event
    * @param {HTMLElement} target - The clicked element
-   * @static
    */
   static async deleteLoadout(event, target) {
     const loadoutId = target.dataset.loadoutId;
@@ -174,7 +165,6 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
    * Apply a loadout
    * @param {Event} event - The click event
    * @param {HTMLElement} target - The clicked element
-   * @static
    */
   static applyLoadout(event, target) {
     const loadoutId = target.dataset.loadoutId;
@@ -189,7 +179,6 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Set up spell preview hover handlers
-   * @private
    */
   _setupSpellPreviewHandlers() {
     const previewIcons = this.element.querySelectorAll('.spell-preview-icon');
@@ -209,7 +198,6 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
   /**
    * Show spell preview tooltip
    * @param {Event} event - The mouse event
-   * @private
    */
   async _showSpellPreview(event) {
     const loadoutId = event.target.dataset.loadoutId;
@@ -283,7 +271,6 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Hide spell preview tooltip
-   * @private
    */
   _hideSpellPreview() {
     const tooltip = document.getElementById('spell-preview-tooltip');
@@ -294,7 +281,6 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
    * Position tooltip near cursor
    * @param {Event} event - The mouse event
    * @param {HTMLElement} tooltip - Optional tooltip element
-   * @private
    */
   _positionTooltip(event, tooltip = null) {
     if (!tooltip) tooltip = document.getElementById('spell-preview-tooltip');
@@ -318,16 +304,5 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
     const tooltip = document.getElementById('spell-preview-tooltip');
     if (tooltip) tooltip.remove();
     super._onClose();
-  }
-
-  /**
-   * Form handler for the dialog
-   * @param {Event} event - The form event
-   * @param {HTMLElement} form - The form element
-   * @param {Object} formData - The form data
-   * @static
-   */
-  static async formHandler(event, form, formData) {
-    return;
   }
 }

@@ -102,27 +102,4 @@ export class MacroManager {
       if (isObsolete) await macro.delete();
     }
   }
-
-  /**
-   * Get version information for all managed macros
-   * @returns {Promise<Object>}
-   */
-  static async getMacroVersions() {
-    const versions = {};
-    const managedMacros = await this.getManagedMacros();
-    for (const macro of managedMacros) {
-      const moduleFlags = macro.getFlag(MODULE.ID);
-      for (const [flagKey, flagData] of Object.entries(moduleFlags || {})) {
-        if (flagData.managedByModule) {
-          versions[flagKey] = {
-            name: macro.name,
-            version: flagData.version,
-            created: flagData.created,
-            lastUpdated: flagData.lastUpdated
-          };
-        }
-      }
-    }
-    return versions;
-  }
 }

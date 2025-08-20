@@ -315,63 +315,6 @@ export async function applyColorOverlay(imagePath, overlayColor, opacity = 0.75,
   }
 }
 
-export async function applyLightColorOverlay(imagePath, overlayColor, opacity = 0.75) {
-  try {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      const timeout = setTimeout(() => {
-        log(1, `TIMEOUT applying light color overlay to: ${imagePath}`);
-        resolve(imagePath);
-      }, 5000);
-
-      img.onload = () => {
-        clearTimeout(timeout);
-        try {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          canvas.width = img.width;
-          canvas.height = img.height;
-
-          // Draw the original image
-          ctx.drawImage(img, 0, 0);
-
-          // For very light colors, use screen mode with inverted color
-          const rgb = h(overlayColor);
-          const invertedColor = `#${((1 << 24) + ((255 - rgb.r) << 16) + ((255 - rgb.g) << 8) + (255 - rgb.b)).toString(16).slice(1)}`;
-
-          ctx.globalCompositeOperation = 'screen';
-          ctx.globalAlpha = opacity;
-          ctx.fillStyle = invertedColor;
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-          // Restore with destination-atop
-          ctx.globalCompositeOperation = 'destination-atop';
-          ctx.globalAlpha = 1.0;
-          ctx.drawImage(img, 0, 0);
-
-          const dataURL = canvas.toDataURL();
-          resolve(dataURL);
-        } catch (e) {
-          log(1, 'ERROR in light color overlay operations:', e);
-          resolve(imagePath);
-        }
-      };
-
-      img.onerror = (error) => {
-        clearTimeout(timeout);
-        log(1, `ERROR loading image for light overlay: ${imagePath}`, error);
-        resolve(imagePath);
-      };
-
-      img.src = imagePath;
-    });
-  } catch (e) {
-    log(1, 'ERROR in applyLightColorOverlay outer try-catch:', e);
-    return imagePath;
-  }
-}
-
 export function getContrastRatio(color1, color2, debug = false) {
   const contrast = C(color1, color2);
 
@@ -387,24 +330,6 @@ export function getContrastRatio(color1, color2, debug = false) {
   }
 
   return contrast;
-}
-
-export function adjustColorForContrast(color, background, targetRatio = 4.5, debug = false) {
-  const originalContrast = getContrastRatio(color, background, false);
-  const adjustedColor = A(color, background, targetRatio);
-  const finalContrast = getContrastRatio(adjustedColor, background, false);
-
-  if (debug) {
-    log(1, `Color contrast adjustment:`, {
-      original: { color, contrast: originalContrast.toFixed(2) },
-      adjusted: { color: adjustedColor, contrast: finalContrast.toFixed(2) },
-      background,
-      targetRatio,
-      improvement: `${(((finalContrast - originalContrast) / originalContrast) * 100).toFixed(1)}%`
-    });
-  }
-
-  return adjustedColor;
 }
 
 export async function applyWizardBookColor(imagePath, overlayColor, opacity = 0.75, debug = false) {

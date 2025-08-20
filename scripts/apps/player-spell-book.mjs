@@ -11,7 +11,6 @@ import { UICustomizationHelper } from '../helpers/ui-customization.mjs';
 import { SpellbookFilterHelper } from '../helpers/ui/spellbook-filters.mjs';
 import { SpellbookUI } from '../helpers/ui/spellbook-ui.mjs';
 import { log } from '../logger.mjs';
-import { RitualManager } from '../managers/ritual-manager.mjs';
 import { SpellLoadoutManager } from '../managers/spell-loadout-manager.mjs';
 import { SpellManager } from '../managers/spell-manager.mjs';
 import { WizardSpellbookManager } from '../managers/wizard-spellbook-manager.mjs';
@@ -93,7 +92,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(actor, options = {}) {
     super(options);
     this.actor = actor;
-    this.spellManager = new SpellManager(actor, this);
+    this.spellManager = new SpellManager(actor);
     this.wizardManagers = new Map();
     const wizardClasses = genericUtils.getWizardEnabledClasses(actor);
     for (const { identifier } of wizardClasses) this.wizardManagers.set(identifier, new WizardSpellbookManager(actor, identifier));
@@ -106,7 +105,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.spellPreparation = { current: 0, maximum: 0 };
     this._newlyCheckedCantrips = new Set();
     this._isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED) || false;
-    this._wizardInitialized = false;
     this._registerClassParts();
     this._cantripUIInitialized = false;
     this._classColorsApplied = false;
@@ -127,49 +125,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this._isLoadingSpellData = false;
     this.comparisonSpells = new Set();
     this.comparisonDialog = null;
-  }
-
-  /**
-   * Get or create ritual managers for wizard-enabled classes
-   * @param {string} classIdentifier - The class identifier
-   * @returns {RitualManager|null}
-   */
-  getRitualManager(classIdentifier = 'wizard') {
-    if (!this.ritualManagers.has(classIdentifier)) {
-      const wizardManager = this.wizardManagers.get(classIdentifier);
-      if (wizardManager?.isWizard) this.ritualManagers.set(classIdentifier, new RitualManager(this.actor, wizardManager));
-    }
-    return this.ritualManagers.get(classIdentifier) || null;
-  }
-
-  /**
-   * Register class-specific parts for all spellcasting classes and wizard tabs
-   * @private
-   */
-  _registerClassParts() {
-    if (!this._stateManager._classesDetected) this._stateManager.detectSpellcastingClasses();
-    if (this._stateManager.spellcastingClasses) {
-      for (const [identifier, classData] of Object.entries(this._stateManager.spellcastingClasses)) {
-        const tabId = `${identifier}Tab`;
-        this.constructor.PARTS[tabId] = {
-          template: TEMPLATES.PLAYER.TAB_SPELLS,
-          scrollable: [''],
-          data: { classIdentifier: identifier, className: classData.name }
-        };
-        log(3, `Registered class tab part: ${tabId}`);
-      }
-    }
-    const wizardClasses = genericUtils.getWizardEnabledClasses(this.actor);
-    for (const { identifier } of wizardClasses) {
-      const tabId = `wizardbook-${identifier}`;
-      this.constructor.PARTS[tabId] = {
-        template: TEMPLATES.PLAYER.TAB_WIZARD_SPELLBOOK,
-        scrollable: [''],
-        data: { classIdentifier: identifier }
-      };
-      log(3, `Registered wizard tab part: ${tabId}`);
-    }
-    log(3, `Total registered parts: ${Object.keys(this.constructor.PARTS).join(', ')}`);
   }
 
   /** @inheritdoc */
@@ -207,7 +162,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {object} context - Shared context from _prepareContext
    * @param {object} options - Render options
    * @returns {object} Modified context for the specific part
-   * @protected
    */
   async _preparePartContext(partId, context, options) {
     log(3, `Preparing context for part: ${partId}`);
@@ -259,7 +213,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Create the base context for the application
    * @param {Object} options - The options passed to the context preparation
    * @returns {Object} The base context
-   * @private
    */
   _createBaseContext(options) {
     const context = super._prepareContext(options);
@@ -311,9 +264,37 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Ensure all spell data (including wizard data) is loaded before rendering
+   * Register class-specific parts for all spellcasting classes and wizard tabs
    * @private
-   * @async
+   */
+  _registerClassParts() {
+    if (!this._stateManager._classesDetected) this._stateManager.detectSpellcastingClasses();
+    if (this._stateManager.spellcastingClasses) {
+      for (const [identifier, classData] of Object.entries(this._stateManager.spellcastingClasses)) {
+        const tabId = `${identifier}Tab`;
+        this.constructor.PARTS[tabId] = {
+          template: TEMPLATES.PLAYER.TAB_SPELLS,
+          scrollable: [''],
+          data: { classIdentifier: identifier, className: classData.name }
+        };
+        log(3, `Registered class tab part: ${tabId}`);
+      }
+    }
+    const wizardClasses = genericUtils.getWizardEnabledClasses(this.actor);
+    for (const { identifier } of wizardClasses) {
+      const tabId = `wizardbook-${identifier}`;
+      this.constructor.PARTS[tabId] = {
+        template: TEMPLATES.PLAYER.TAB_WIZARD_SPELLBOOK,
+        scrollable: [''],
+        data: { classIdentifier: identifier }
+      };
+      log(3, `Registered wizard tab part: ${tabId}`);
+    }
+    log(3, `Total registered parts: ${Object.keys(this.constructor.PARTS).join(', ')}`);
+  }
+
+  /**
+   * Ensure all spell data (including wizard data) is loaded before rendering
    */
   async _ensureAllSpellDataLoaded() {
     if (this._isLoadingSpellData) return;
@@ -354,7 +335,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Process a spell for display in the UI
    * @param {Object} spell - The spell to process
    * @returns {Object} The processed spell with UI elements
-   * @private
    */
   _processSpellForDisplay(spell) {
     const processedSpell = foundry.utils.deepClone(spell);
@@ -392,7 +372,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Get data attributes for a spell item
    * @param {Object} spell - The spell object
    * @returns {string} HTML-ready data attributes
-   * @private
    */
   _getSpellDataAttributes(spell) {
     const attributes = [
@@ -419,7 +398,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Get CSS classes for a spell item
    * @param {Object} spell - The spell object
    * @returns {string} Space-separated CSS classes
-   * @private
    */
   _getSpellCssClasses(spell) {
     const classes = ['spell-item'];
@@ -436,7 +414,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Get the preparation tag for a spell
    * @param {Object} spell - The spell object
    * @returns {Object|null} Tag information or null
-   * @private
    */
   _getSpellPreparationTag(spell) {
     if (!spell.preparation) return null;
@@ -477,7 +454,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     super._onRender(context, options);
     const sidebarControlsBottom = game.settings.get(MODULE.ID, SETTINGS.SIDEBAR_CONTROLS_BOTTOM);
     this.element.dataset.sidebarControlsBottom = sidebarControlsBottom;
-    this._setupContentWrapper();
     this.ui.setSidebarState();
     this.ui.positionFooter();
     this.ui.setupFilterListeners();
@@ -495,16 +471,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     this._setupLoadoutContextMenu();
     this.ui.setupAdvancedSearch();
-    setTimeout(async () => {
-      await this._ensureSpellData();
-      setTimeout(async () => {
-        const favoriteButtons = this.element.querySelectorAll('.spell-favorite-toggle[data-uuid]');
-        if (favoriteButtons.length > 0) {
-          await this._applyFavoriteStatesToButtons(favoriteButtons);
-          favoriteButtons.forEach((button) => button.setAttribute('data-favorites-applied', 'true'));
-        }
-      }, 50);
-    }, 10);
+    await this._ensureSpellData();
+    const favoriteButtons = this.element.querySelectorAll('.spell-favorite-toggle[data-uuid]');
+    if (favoriteButtons.length > 0) {
+      await this._applyFavoriteStatesToButtons(favoriteButtons);
+      favoriteButtons.forEach((button) => button.setAttribute('data-favorites-applied', 'true'));
+    }
   }
 
   /** @inheritdoc */
@@ -521,8 +493,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
               try {
                 let dominantColor;
                 const customColor = game.settings.get(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR);
-
-                // ColorField returns null when not set, or a valid color string when set
                 if (customColor && customColor !== null && customColor !== '') {
                   dominantColor = customColor.css;
                   log(3, `Using custom color ${dominantColor} for wizard book ${identifier}`);
@@ -530,12 +500,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
                   dominantColor = await colorUtils.extractDominantColor(classData.img);
                   log(3, `Extracted color ${dominantColor} from class image for wizard book ${identifier}`);
                 }
-
-                // Add contrast debugging
                 const theme = colorUtils.d ? colorUtils.d() : 'dark';
                 const background = theme === 'light' ? '#f4f4f4' : '#1b1d24';
                 const contrast = colorUtils.getContrastRatio ? colorUtils.getContrastRatio(dominantColor, background, true) : 'unavailable';
-
                 log(3, `Wizard book color debug for ${identifier}:`, {
                   dominantColor,
                   theme,
@@ -544,15 +511,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
                   isCustom: !!(customColor && customColor !== null && customColor !== ''),
                   customColorSetting: customColor
                 });
-
-                // Use enhanced color overlay with debugging
-                const wizardBookImage = await colorUtils.applyWizardBookColor(
-                  ASSETS.WIZARDBOOK_ICON,
-                  dominantColor,
-                  0.75,
-                  true // Enable debugging
-                );
-
+                const wizardBookImage = await colorUtils.applyWizardBookColor(ASSETS.WIZARDBOOK_ICON, dominantColor, 0.75, true);
                 this._wizardBookImages.set(identifier, wizardBookImage);
                 log(3, `Applied ${dominantColor} color overlay to wizardbook for class ${identifier}`);
               } catch (error) {
@@ -575,7 +534,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Ensure spell data is loaded
-   * @private
+   * @todo - Why do I need this and _ensureAllSpellDataLoaded
    */
   async _ensureSpellData() {
     if (this._isLoadingSpellData) return;
@@ -661,7 +620,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Show error state if spell loading fails
    * @param {Error} error - The error that occurred
-   * @private
    */
   _showErrorState(error) {
     const activeTab = this.tabGroups['spellbook-tabs'];
@@ -686,7 +644,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Apply favorite states after render based on user data
-   * @private
    */
   async _applyFavoriteStatesAfterRender() {
     const favoritesEnabled = game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES);
@@ -707,7 +664,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Apply favorite states with actor state validation
    * @param {NodeList} buttons - The buttons to update
-   * @private
    */
   async _applyFavoriteStatesToButtons(buttons) {
     const targetUserId = genericUtils._getTargetUserId(this.actor);
@@ -754,7 +710,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Check if a spell UUID is currently on the actor
    * @param {string} spellUuid - The spell UUID to check
    * @returns {boolean} Whether the spell is on the actor
-   * @private
    */
   _isSpellOnActor(spellUuid) {
     return this.actor.items.some((item) => {
@@ -768,7 +723,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Sync journal favorites to match current actor.system.favorites state
    * This handles the case where user closed without saving - journal is "ahead" of actor
-   * @private
    */
   async _syncJournalToActorState() {
     try {
@@ -808,7 +762,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Immediately apply favorite changes to UI without waiting for next render
    * @param {Array} changedSpells - Array of {uuid, newState} objects
-   * @private
    */
   _applyImmediateFavoriteChanges(changedSpells) {
     for (const { uuid, newState } of changedSpells) {
@@ -834,24 +787,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     }
     if (changedSpells.length > 0) log(3, `Applied immediate UI changes for ${changedSpells.length} favorite buttons`);
-  }
-
-  /**
-   * Set up the content wrapper element for proper layout
-   * @private
-   */
-  _setupContentWrapper() {
-    if (!this.element.querySelector('.content-wrapper')) {
-      const tabsNav = this.element.querySelector('.window-content > nav.tabs.tabs-right');
-      const wrapper = document.createElement('div');
-      wrapper.className = 'content-wrapper';
-      const elementsToWrap = [this.element.querySelector('.sidebar'), this.element.querySelector('.spell-book-container'), this.element.querySelector('.window-content > footer')].filter((el) => el);
-      if (elementsToWrap.length && elementsToWrap[0].parentNode) {
-        elementsToWrap[0].parentNode.insertBefore(wrapper, elementsToWrap[0]);
-        elementsToWrap.forEach((el) => wrapper.appendChild(el));
-        if (tabsNav && tabsNav.parentNode === wrapper) this.element.querySelector('.window-content').appendChild(tabsNav);
-      }
-    }
   }
 
   /** @inheritdoc */
@@ -886,7 +821,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Get tabs for the application including multiple wizard tabs
    * @returns {Object} The tab configuration
-   * @private
    */
   _getTabs() {
     const tabGroup = 'spellbook-tabs';
@@ -939,13 +873,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     return tabs;
   }
 
-  /**
-   * Enhanced tab switching that ensures state synchronization before footer render
-   * @param {string} tabName - The name of the tab to activate
-   * @param {string} groupName - The tab group name
-   * @param {Object} options - Additional options
-   * @override
-   */
+  /** @override */
   changeTab(tabName, groupName, options = {}) {
     const currentTab = this.tabGroups[groupName];
     super.changeTab(tabName, groupName, options);
@@ -965,7 +893,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Switch tab visibility without re-rendering
    * @param {string} activeTabName - The tab to make active
-   * @private
    */
   _switchTabVisibility(activeTabName) {
     const allTabs = this.element.querySelectorAll('.tab');
@@ -986,7 +913,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     log(3, `Switched to tab ${activeTabName} without re-rendering`);
   }
 
-  /** @inheritdoc */
+  /**
+   * @inheritdoc
+   * @todo - This semems overly complicated.
+   */
   _configureRenderOptions(options) {
     super._configureRenderOptions(options);
     if (options.parts && Array.isArray(options.parts)) {
@@ -1004,7 +934,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Prepare class-specific preparation data for footer display
    * @returns {Array} Array of class preparation data
-   * @private
    */
   _prepareClassPreparationData() {
     const activeTab = this.tabGroups['spellbook-tabs'];
@@ -1028,7 +957,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Prepare filter data for the UI
    * @returns {Array} The prepared filters
-   * @private
    */
   _prepareFilters() {
     let filterConfigData = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
@@ -1085,7 +1013,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             });
             break;
           case 'dropdown':
-            const options = this._getFilterOptions(filter.id, filterState, spellData);
+            const options = filterUtils.getOptionsForFilter(filter.id, filterState, spellData);
             element = formElements.createSelect({
               name: `filter-${filter.id}`,
               options: options,
@@ -1117,23 +1045,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Get options for a filter dropdown
-   * @param {string} filterId - The filter identifier
-   * @param {Object} filterState - The current filter state
-   * @param {Array} spellData - The current spell data
-   * @returns {Array} The filter options
-   * @private
-   */
-  _getFilterOptions(filterId, filterState, spellData = []) {
-    return filterUtils.getOptionsForFilter(filterId, filterState, spellData);
-  }
-
-  /**
    * Create a range filter element
    * @param {string} filterId - The filter identifier
    * @param {Object} filterState - The current filter state
    * @returns {HTMLElement} The created range filter element
-   * @private
    */
   _createRangeFilterElement(filterId, filterState) {
     const container = document.createElement('div');
@@ -1164,7 +1079,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Apply collapsed state to any existing level headers
-   * @private
    */
   _applyCollapsedStateToExistingHeaders() {
     const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
@@ -1185,7 +1099,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Create HTML for a spell item (ensure enriched icon is handled properly)
+   * Create HTML for a spell item
+   * @todo - Should this be a template? This should be a template.
    * @param {Object} spell - Processed spell
    * @returns {string} HTML string
    */
@@ -1283,7 +1198,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Apply filters to spells
-   * @private
    */
   async _applyFilters() {
     if (!this.element) return;
@@ -1294,7 +1208,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Set up context menu for loadout button
-   * @private
    */
   _setupLoadoutContextMenu() {
     const loadoutButton = this.element.querySelector('[data-action="openLoadoutDialog"]');
@@ -1309,7 +1222,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Show context menu with available loadouts
    * @param {Event} event - The right-click event
-   * @private
    */
   async _showLoadoutContextMenu(event) {
     this._hideLoadoutContextMenu();
@@ -1359,7 +1271,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Position context menu at the left edge of the spell book application
    * @param {Event} event - The click event
    * @param {HTMLElement} menu - The context menu element
-   * @private
    */
   _positionContextMenu(event, menu) {
     const button = event.currentTarget;
@@ -1383,7 +1294,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Hide loadout context menu
-   * @private
    */
   _hideLoadoutContextMenu() {
     const existingMenu = document.getElementById('spell-loadout-context-menu');
@@ -1395,7 +1305,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Handle preparation checkbox change with optimized UI updates
    * @param {Event} event - The change event
    * @returns {Promise<void>}
-   * @async
    */
   async _handlePreparationChange(event) {
     try {
@@ -1431,8 +1340,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {boolean} wasPrepared - Whether the spell was previously prepared
    * @param {boolean} isChecked - Whether the spell is being checked
    * @returns {Promise<void>}
-   * @private
-   * @async
    */
   async _handleSpellPreparationChange(event, uuid, spellItem, sourceClass, wasPrepared, isChecked) {
     const checkbox = event.target;
@@ -1466,8 +1373,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {string} uuid - The spell UUID
    * @param {HTMLElement} spellItem - The spell item element
    * @returns {Promise<void>}
-   * @private
-   * @async
    */
   async _handleCantripPreparationChange(event, uuid, spellItem) {
     const checkbox = event.target;
@@ -1521,7 +1426,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {string} oldVersion - The old version
    * @param {string} newVersion - The new version
    * @returns {Array} The migrated configuration
-   * @private
    */
   _migrateFilterConfiguration(oldConfig, oldVersion, newVersion) {
     const existingFilters = new Map(oldConfig.map((f) => [f.id, f]));
@@ -1545,7 +1449,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Ensure filter configuration integrity by adding missing filters and removing obsolete ones
    * @param {Array} filterConfig - Current filter configuration
    * @returns {Array} Updated filter configuration
-   * @private
    */
   _ensureFilterIntegrity(filterConfig) {
     const existingFilters = new Map(filterConfig.map((f) => [f.id, f]));
@@ -1565,7 +1468,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Toggle sidebar visibility
    * @param {Event} event - The click event
    * @param {HTMLElement} _form - The form element
-   * @static
    */
   static toggleSidebar(event, _form) {
     const isCollapsing = !this.element.classList.contains('sidebar-collapsed');
@@ -1580,7 +1482,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Apply filters to spells
    * @param {Event} _event - The event
    * @param {HTMLElement} _form - The form element
-   * @static
    */
   static filterSpells(_event, _form) {
     this.filterHelper.invalidateFilterCache();
@@ -1591,7 +1492,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Handle reset button click
    * @param {Event} event - The click event
    * @param {HTMLElement} form - The form element
-   * @static
    */
   static handleReset(event, form) {
     const isShiftReset = event.shiftKey;
@@ -1661,7 +1561,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Toggle spell level expansion/collapse
    * @param {Event} _event - The click event
    * @param {HTMLElement} form - The form element
-   * @static
    */
   static toggleSpellLevel(_event, form) {
     const levelContainer = form.parentElement;
@@ -1689,7 +1588,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Open filter configuration dialog
    * @param {Event} _event - The click event
    * @param {HTMLElement} _form - The form element
-   * @static
    */
   static configureFilters(_event, _form) {
     const filterConfig = new PlayerFilterConfiguration(this);
@@ -1700,7 +1598,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Open cantrip settings dialog
    * @param {Event} _event - The click event
    * @param {HTMLElement} _form - The form element
-   * @static
    */
   static configureCantripSettings(_event, _form) {
     const dialog = new SpellbookSettingsDialog(this.actor);
@@ -1711,8 +1608,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Handle learn spell button click
    * @param {Event} event - The click event
    * @returns {Promise<void>}
-   * @static
-   * @async
    */
   static async learnSpell(event) {
     const spellUuid = event.target.dataset.uuid;
@@ -1725,7 +1620,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!wizardManager) return;
     const spell = await fromUuid(spellUuid);
     if (!spell) return;
-    const costInfo = await wizardManager.getCopyingCostWithFree(spell);
+    const costInfo = await wizardManager.getCopyingCost(spell);
     const time = wizardManager.getCopyingTime(spell);
     const costText = costInfo.isFree ? game.i18n.localize('SPELLBOOK.Wizard.SpellCopyFree') : game.i18n.format('SPELLBOOK.Wizard.SpellCopyCost', { cost: costInfo.cost });
     const content = await renderTemplate(TEMPLATES.DIALOGS.WIZARD_LEARN_SPELL, { spell, costText, time });
@@ -1777,7 +1672,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Handle learning a spell from a scroll
-   * @static
    * @param {Event} event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @returns {Promise<void>}
@@ -1801,7 +1695,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Open the spell loadout dialog
    * @param {Event} event - The click event
    * @param {HTMLElement} _form - The form element
-   * @static
    */
   static async openLoadoutDialog(event, _form) {
     const activeTab = this.tabGroups['spellbook-tabs'];
@@ -1852,7 +1745,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Update favorite button state immediately
    * @param {HTMLElement} button - The favorite button element
    * @param {boolean} isFavorited - Whether the spell is favorited
-   * @private
    */
   static _updateFavoriteButtonState(button, isFavorited) {
     const icon = button.querySelector('i');
@@ -1889,8 +1781,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Handle opening the spell analytics dashboard
-   * @async
-   * @static
    * @param {MouseEvent} _event - The click event (unused)
    * @param {HTMLElement} _target - The target element (unused)
    * @returns {Promise<void>}
@@ -1901,8 +1791,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Handle spell comparison selection and dialog management
-   * @async
-   * @static
    * @param {MouseEvent} event - The click event
    * @param {HTMLFormElement} _form - The form element (unused)
    * @returns {Promise<void>}
@@ -1931,6 +1819,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Refresh the spellbook after settings changes
+   * @todo - Can this be replaced since its only called once?
    * @returns {Promise<void>}
    */
   async refreshFromSettingsChange() {
@@ -1947,7 +1836,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this._wizardBookImages?.clear();
     const wizardClasses = genericUtils.getWizardEnabledClasses(this.actor);
     for (const { identifier } of wizardClasses) this.wizardManagers.set(identifier, new WizardSpellbookManager(this.actor, identifier));
-    this._registerClassParts();
     await this._stateManager.initialize();
     if (this.wizardManagers.size > 0) {
       if (!this._wizardBookImages) this._wizardBookImages = new Map();
@@ -2027,8 +1915,6 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {HTMLElement} form - The form element
    * @param {Object} formData - The form data
    * @returns {Promise<Actor|null>} The updated actor or null
-   * @static
-   * @async
    */
   static async formHandler(_event, form, formData) {
     const actor = this.actor;
@@ -2090,7 +1976,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (actor.sheet.rendered) actor.sheet.render(true);
     if (this.ui && this.rendered) {
       this.ui.setupCantripUI();
-      this.ui.setupSpellLocks(true);
+      this.ui.setupSpellLocks();
     }
     return actor;
   }

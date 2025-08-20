@@ -27,7 +27,7 @@ export async function getClassSpellList(className, classUuid, actor) {
   const classItem = await fromUuid(classUuid);
   if (!classItem) return new Set();
   const classIdentifier = classItem?.system?.identifier?.toLowerCase();
-  const topLevelFolderName = getTopLevelFolderFromCompendiumSource(classItem?._stats?.compendiumSource);
+  const topLevelFolderName = getFolderNameFromPack(classItem?._stats?.compendiumSource);
   if (!classIdentifier) return new Set();
   const preloadedData = preloaderUtils.getPreloadedData();
   if (preloadedData && preloadedData.spellLists.length > 0) {
@@ -53,7 +53,7 @@ export async function getClassSpellList(className, classUuid, actor) {
   }
   const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
   if (topLevelFolderName) {
-    const folderMatch = await findSpellListByTopLevelFolder(topLevelFolderName, classIdentifier, customMappings);
+    const folderMatch = await getSpellListFromFolder(topLevelFolderName, classIdentifier, customMappings);
     if (folderMatch && folderMatch.size > 0) return folderMatch;
   }
   const customMatch = await findCustomSpellListByIdentifier(classIdentifier);
@@ -69,7 +69,7 @@ export async function getClassSpellList(className, classUuid, actor) {
  * @param {string} source - Compendium source string
  * @returns {string|null} Top-level folder name or null
  */
-function getTopLevelFolderFromCompendiumSource(source) {
+function getFolderNameFromPack(source) {
   if (!source) return null;
   const packCollection = foundry.utils.parseUuid(source).collection.metadata.id;
   const pack = game.packs.get(packCollection);
@@ -85,23 +85,8 @@ function getTopLevelFolderFromCompendiumSource(source) {
 }
 
 /**
- * Find spell list by pack and identifier
- * @param {string} packName - Pack name to search
- * @param {string} identifier - Class identifier
- * @param {Object} customMappings - Custom spell list mappings
- * @returns {Promise<Set<string>|null>} Matched spell list or null
- */
-async function findSpellListByPack(packName, identifier, customMappings) {
-  const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry' && p.collection.includes(packName));
-  for (const pack of journalPacks) {
-    const spellList = await searchPackForSpellList(pack, identifier, customMappings);
-    if (spellList) return spellList;
-  }
-  return null;
-}
-
-/**
  * Find spell list by identifier across all packs
+ * @todo - Can this be simplified?
  * @param {string} identifier - Class identifier
  * @param {Object} customMappings - Custom spell list mappings
  * @returns {Promise<Set<string>|null>} Matched spell list or null
@@ -213,22 +198,13 @@ export function calculateMaxSpellLevel(classItem, actor) {
 }
 
 /**
- * Check if an actor can cast spells
- * @param {Actor5e} actor - Actor to check
- * @returns {boolean} Whether the actor can cast spells
- */
-export function canCastSpells(actor) {
-  return Object.keys(actor?.spellcastingClasses || {}).length > 0;
-}
-
-/**
  * Find spell list by top-level folder name and identifier
  * @param {string} topLevelFolderName - Top-level folder name to match
  * @param {string} identifier - Class identifier
  * @param {Object} customMappings - Custom spell list mappings
  * @returns {Promise<Set<string>|null>} Matched spell list or null
  */
-async function findSpellListByTopLevelFolder(topLevelFolderName, identifier, customMappings) {
+async function getSpellListFromFolder(topLevelFolderName, identifier, customMappings) {
   const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
   for (const pack of journalPacks) {
     let packTopLevelFolder = null;
