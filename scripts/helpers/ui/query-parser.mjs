@@ -33,7 +33,6 @@ export class QueryParser {
    * Parse query into field conditions
    * @param {string} query - The query string
    * @returns {Array} Array of field condition objects
-   * @private
    */
   _parseConditions(query) {
     const conditions = [];
@@ -51,7 +50,6 @@ export class QueryParser {
    * Parse field:value expression
    * @param {string} expression - The field:value expression
    * @returns {Object|null} Parsed field condition or null if invalid
-   * @private
    */
   _parseFieldExpression(expression) {
     const colonIndex = expression.indexOf(':');
@@ -71,7 +69,6 @@ export class QueryParser {
    * @param {string} fieldId - The field ID
    * @param {string} value - The raw value
    * @returns {string} Normalized value
-   * @private
    */
   _normalizeValue(fieldId, value) {
     if (['requiresSave', 'concentration', 'prepared', 'ritual'].includes(fieldId)) return this.fieldDefinitions.normalizeBooleanValue(value);

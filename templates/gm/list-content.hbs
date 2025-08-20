@@ -80,7 +80,12 @@
 									{{{enrichedIcon}}}
 									<div class="name-stacked">
 										<span class="title">{{name}}</span>
-										<span class="subtitle">{{formattedDetails}}</span>
+										<span class="subtitle">{{#if showCompareLink}}{{#if showCompare}}<button
+														class="compare-button compare-link{{#if isInComparison}} active{{/if}}"
+														data-action="compareSpell" data-uuid="{{compendiumUuid}}"
+														aria-label="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=name}}" data-tooltip="{{localize "SPELLBOOK.Comparison.Compare"}}">
+														<i class="fa-solid fa-clipboard-question"></i>
+													</button> {{/if}}{{/if}}{{formattedDetails}}</span>
 									</div>
 								</div>
 

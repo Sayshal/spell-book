@@ -3,7 +3,7 @@ import * as formElements from '../helpers/form-elements.mjs';
 import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
-const DragDropClass = foundry.utils.isNewerVersion(game.version, '12.999') ? foundry?.applications?.ux?.DragDrop?.implementation : DragDrop;
+const { DragDrop } = foundry.applications.ux;
 
 /**
  * Application to configure which filters are displayed in the spell browser
@@ -12,38 +12,21 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   static DEFAULT_OPTIONS = {
     id: `filter-config-${MODULE.ID}`,
     tag: 'form',
-    window: {
-      title: 'SPELLBOOK.Settings.ConfigureFilters',
-      width: '',
-      height: '',
-      resizable: false,
-      minimizable: true
-    },
-    classes: ['filter-configuration'],
+    window: { title: 'SPELLBOOK.Settings.ConfigureFilters' },
+    modal: true,
+    classes: ['spell-book', 'filter-configuration'],
     form: {
       handler: PlayerFilterConfiguration.formHandler,
       closeOnSubmit: true,
       submitOnChange: false
     },
-    position: {
-      top: 75
-    },
-    actions: {
-      reset: PlayerFilterConfiguration.handleReset
-    },
-    dragDrop: [
-      {
-        dragSelector: '.filter-config-item',
-        dropSelector: '.filter-config-list'
-      }
-    ]
+    position: { top: 75 },
+    actions: { reset: PlayerFilterConfiguration.handleReset },
+    dragDrop: [{ dragSelector: '.filter-config-item', dropSelector: '.filter-config-list' }]
   };
 
   /** @override */
   static PARTS = { form: { template: TEMPLATES.DIALOGS.FILTER_CONFIG } };
-
-  parentApp = null;
-
   config = [];
 
   /**
@@ -64,11 +47,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       log(3, 'Initializing filter configuration');
       let configData = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
       if (Array.isArray(configData) || (configData && !configData.version)) {
-        log(2, 'Legacy or unversioned filter configuration detected. Rebuilding...');
-        configData = {
-          version: MODULE.DEFAULT_FILTER_CONFIG_VERSION,
-          filters: foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG)
-        };
+        configData = { version: MODULE.DEFAULT_FILTER_CONFIG_VERSION, filters: foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG) };
         game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, configData);
       }
       let config = configData?.filters || [];
@@ -78,16 +57,8 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       } else {
         config = config.map((filter) => {
           const defaultFilter = MODULE.DEFAULT_FILTER_CONFIG.find((df) => df.id === filter.id);
-          if (defaultFilter) {
-            return {
-              ...filter,
-              sortable: defaultFilter.sortable !== undefined ? defaultFilter.sortable : true
-            };
-          }
-          return {
-            ...filter,
-            sortable: filter.sortable !== undefined ? filter.sortable : true
-          };
+          if (defaultFilter) return { ...filter, sortable: defaultFilter.sortable !== undefined ? defaultFilter.sortable : true };
+          return { ...filter, sortable: filter.sortable !== undefined ? filter.sortable : true };
         });
       }
       this.config = foundry.utils.deepClone(config);
@@ -101,7 +72,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   /**
    * Get the current valid filter configuration
    * @returns {Array} The current filter configuration or default if invalid
-   * @static
    */
   static getValidConfiguration() {
     try {
@@ -117,72 +87,40 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   /**
    * Prepare filter configuration form data with constructed elements
    * @returns {Array} Array of filter configuration objects with form elements
-   * @private
    */
   _prepareFilterConfigFormData() {
-    try {
-      return this.config.map((filter) => {
-        const sortable = !(filter.id === 'name' || filter.id === 'prepared' || filter.id === 'ritual');
-        const checkbox = formElements.createCheckbox({
-          name: `enabled-${filter.id}`,
-          checked: filter.enabled,
-          ariaLabel: game.i18n.format('SPELLBOOK.Settings.EnableFilter', { name: game.i18n.localize(filter.label) })
-        });
-        checkbox.id = `enabled-${filter.id}`;
-        return {
-          ...filter,
-          sortable: filter.sortable !== undefined ? filter.sortable : sortable,
-          checkboxHtml: formElements.elementToHtml(checkbox)
-        };
+    return this.config.map((filter) => {
+      const sortable = !(filter.id === 'name' || filter.id === 'prepared' || filter.id === 'ritual');
+      const checkbox = formElements.createCheckbox({
+        name: `enabled-${filter.id}`,
+        checked: filter.enabled,
+        ariaLabel: game.i18n.format('SPELLBOOK.Settings.EnableFilter', { name: game.i18n.localize(filter.label) })
       });
-    } catch (error) {
-      log(1, 'Error preparing filter config form data:', error);
-      return [];
-    }
+      checkbox.id = `enabled-${filter.id}`;
+      return {
+        ...filter,
+        sortable: filter.sortable !== undefined ? filter.sortable : sortable,
+        checkboxHtml: formElements.elementToHtml(checkbox)
+      };
+    });
   }
 
   /**
    * Prepare form buttons configuration
    * @returns {Array} Array of button configurations
-   * @private
    */
   _prepareFormButtons() {
     return [
-      {
-        type: 'submit',
-        icon: 'fas fa-save',
-        label: 'SPELLBOOK.UI.Save'
-      },
-      {
-        type: 'button',
-        action: 'reset',
-        icon: 'fas fa-undo',
-        label: 'SPELLBOOK.UI.Reset'
-      }
+      { type: 'submit', icon: 'fas fa-save', label: 'SPELLBOOK.UI.Save' },
+      { type: 'button', action: 'reset', icon: 'fas fa-undo', label: 'SPELLBOOK.UI.Reset' }
     ];
   }
 
   /** @override */
   _prepareContext(options) {
     const context = super._prepareContext(options);
-    try {
-      if (!Array.isArray(this.config) || this.config.length === 0) this.initializeConfig();
-      return {
-        ...context,
-        filterConfig: this._prepareFilterConfigFormData(),
-        buttons: this._prepareFormButtons()
-      };
-    } catch (error) {
-      log(1, 'Error preparing context:', error);
-      return { ...context, filterConfig: [], buttons: [] };
-    }
-  }
-
-  /** @override */
-  _configureRenderOptions(options) {
-    super._configureRenderOptions(options);
-    options.modal = true;
-    return options;
+    if (!Array.isArray(this.config) || this.config.length === 0) this.initializeConfig();
+    return { ...context, filterConfig: this._prepareFilterConfigFormData(), buttons: this._prepareFormButtons() };
   }
 
   /** @override */
@@ -198,8 +136,8 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   setupDragDrop() {
     this.options.dragDrop.forEach((dragDropOptions) => {
       dragDropOptions.permissions = {
-        dragstart: this.canDragStart.bind(this),
-        drop: this.canDragDrop.bind(this)
+        dragstart: true,
+        drop: true
       };
 
       dragDropOptions.callbacks = {
@@ -208,7 +146,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
         drop: this.onDrop.bind(this)
       };
 
-      const dragDropHandler = new DragDropClass(dragDropOptions);
+      const dragDropHandler = new DragDrop(dragDropOptions);
       dragDropHandler.bind(this.element);
     });
   }
@@ -223,26 +161,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       const isSortable = !li.classList.contains('not-sortable');
       item.setAttribute('draggable', isSortable ? 'true' : 'false');
     });
-  }
-
-  /**
-   * Check if dragging is allowed
-   * @param {DragEvent} _event - The drag event
-   * @param {string} _selector - The selector for drag targets
-   * @returns {boolean} Whether dragging is allowed
-   */
-  canDragStart(_event, _selector) {
-    return true;
-  }
-
-  /**
-   * Check if dropping is allowed
-   * @param {DragEvent} _event - The drag event
-   * @param {string} _selector - The selector for drop targets
-   * @returns {boolean} Whether dropping is allowed
-   */
-  canDragDrop(_event, _selector) {
-    return true;
   }
 
   /**
@@ -408,7 +326,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
    * @param {Array} filterConfig - The filter configuration
    * @param {Object} formData - Form data from submission
    * @returns {Object} Sorted filter groups
-   * @static
    */
   static processSortableFilters(filterConfig, formData) {
     try {
@@ -439,7 +356,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
    * @param {Array} sortableFilters - Filters that can be sorted
    * @param {HTMLFormElement} form - The form element
    * @returns {Array} Updated sortable filters
-   * @static
    */
   static updateFilterOrder(sortableFilters, form) {
     try {
@@ -470,7 +386,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
    * Handle form reset action
    * @param {Event} event - The click event
    * @param {HTMLFormElement} _form - The form element
-   * @static
    */
   static handleReset(event, _form) {
     event.preventDefault();
@@ -483,7 +398,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
    * @param {Event} event - The submit event
    * @param {HTMLFormElement} form - The form element
    * @param {FormDataExtended} formData - The processed form data
-   * @static
    */
   static formHandler(event, form, formData) {
     event.preventDefault();
@@ -492,13 +406,13 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       const currentConfig = PlayerFilterConfiguration.getValidConfiguration();
       const { sortableFilters, nonSortableFilters } = PlayerFilterConfiguration.processSortableFilters(currentConfig, formData.object);
       const sortedFilters = PlayerFilterConfiguration.updateFilterOrder(sortableFilters, form);
-
       const updatedConfig = [
         ...nonSortableFilters.filter((f) => f.id === 'name').map((f) => ({ ...f, order: 10 })),
         ...sortedFilters,
         ...nonSortableFilters.filter((f) => f.id !== 'name').map((f, idx) => ({ ...f, order: 1000 + idx * 10 }))
       ];
-      game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, updatedConfig);
+      const configToSave = { version: MODULE.DEFAULT_FILTER_CONFIG_VERSION, filters: updatedConfig };
+      game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, configToSave);
       if (this.parentApp) this.parentApp.render(false);
       return true;
     } catch (error) {

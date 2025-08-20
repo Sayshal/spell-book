@@ -24,24 +24,6 @@ export function getSpellUuid(spell) {
 }
 
 /**
- * Find a spellcasting class for an actor
- * @param {Actor5e} actor - The actor to check
- * @returns {Item5e|null} - The spellcasting class item or null
- */
-export function findSpellcastingClass(actor) {
-  return actor.items.find((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
-}
-
-/**
- * Check if an item is a granted spell (from class features, etc.)
- * @param {Item5e} spell - The spell to check
- * @returns {boolean} Whether the spell is granted
- */
-export function isGrantedSpell(spell) {
-  return !!spell.flags?.dnd5e?.cachedFor;
-}
-
-/**
  * Find the wizard class item for an actor
  * @param {Actor5e} actor - The actor to check
  * @returns {Item5e|null} The wizard class item or null
@@ -101,22 +83,7 @@ export function isClassWizardEnabled(actor, classIdentifier) {
 }
 
 /**
- * Get HTML element from jQuery object or direct HTML based on version
- */
-export function getHtmlElement(html) {
-  let htmlElement;
-  if (foundry.utils.isNewerVersion(game.version, '12.999')) {
-    htmlElement = html;
-  } else {
-    if (html && typeof html.jquery !== 'undefined') htmlElement = html[0];
-    else if (html && html.nodeType === Node.ELEMENT_NODE) htmlElement = html;
-    else htmlElement = html?.[0] || html;
-  }
-  return htmlElement;
-}
-
-/**
- * Get the appropriate label/name from a CONFIG object, handling V12/V13 compatibility
+ * Get the appropriate label/name from a CONFIG object
  * @param {Object} configObject - The CONFIG object (e.g., CONFIG.DND5E.spellSchools)
  * @param {string} key - The key to look up
  * @returns {string} The label/name or empty string if not found
@@ -132,15 +99,25 @@ export function getConfigLabel(configObject, key) {
 
 /**
  * Get the target user ID for spell data operations
+ * @todo - Should be an easier way within dnd5e/foundry to get this done
  * @returns {string} The user ID to use for spell data
- * @private
  */
 export function _getTargetUserId(actor) {
   let targetUserId = game.user.id;
   if (game.user.isActiveGM) {
     const actorOwner = game.users.find((user) => user?.character?.id === actor?.id);
     if (actorOwner) targetUserId = actorOwner.id;
-    else log(2, `No owner found for actor ${actor?.name}, using GM`);
+    else log(3, `No owner found for actor ${actor?.name}, using GM`);
   }
   return targetUserId;
+}
+
+/**
+ * Check if metric units should be used based on dnd5e system settings
+ * @returns {boolean} True if either length or volume units are set to metric
+ */
+export function shouldUseMetricUnits() {
+  const metricLength = game.settings.get('dnd5e', 'metricLengthUnits') ?? false;
+  const metricVolume = game.settings.get('dnd5e', 'metricVolumeUnits') ?? false;
+  return metricLength || metricVolume;
 }

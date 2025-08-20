@@ -9,7 +9,6 @@ export function log(level, ...args) {
   try {
     const stack = new Error().stack.split('\n');
     let callerInfo = '';
-
     if (stack.length > 2) {
       const callerLine = stack[2].trim();
       const callerMatch = callerLine.match(/at\s+([^.]+)\.(\w+)/);
@@ -18,7 +17,6 @@ export function log(level, ...args) {
 
     if (typeof args[0] === 'string') args[0] = callerInfo + args[0];
     else args.unshift(callerInfo);
-
     const now = new Date();
     const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
     const logEntry = {

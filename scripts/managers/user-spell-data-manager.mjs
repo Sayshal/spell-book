@@ -1,6 +1,8 @@
 import { MODULE, TEMPLATES } from '../constants.mjs';
 import { log } from '../logger.mjs';
 
+const { renderTemplate } = foundry.applications.handlebars;
+
 /**
  * Manager for journal-based user spell data storage
  */
@@ -13,8 +15,6 @@ export class UserSpellDataManager {
 
   /**
    * Initialize user spell data management system
-   * @async
-   * @static
    * @returns {Promise<void>}
    */
   static async initializeUserSpellData() {
@@ -35,7 +35,6 @@ export class UserSpellDataManager {
   /**
    * Ensure journal and folder structure exists
    * @returns {Promise<void>}
-   * @private
    */
   async _ensureJournalSetup() {
     this.folderName = game.i18n.localize('SPELLBOOK.UserData.FolderName');
@@ -53,7 +52,6 @@ export class UserSpellDataManager {
    * Ensure folder exists in the pack
    * @param {CompendiumCollection} pack - The spells pack
    * @returns {Promise<Folder>}
-   * @private
    */
   async _ensureFolder(pack) {
     let folder = pack.folders.find((f) => f.name === this.folderName);
@@ -68,7 +66,6 @@ export class UserSpellDataManager {
    * Ensure journal exists in the folder
    * @param {CompendiumCollection} pack - The spells pack
    * @returns {Promise<JournalEntry>}
-   * @private
    */
   async _ensureJournal(pack) {
     const documents = await pack.getDocuments();
@@ -95,7 +92,6 @@ export class UserSpellDataManager {
    * @param {string} userName - User name for display
    * @param {string} userId - User ID for finding actors
    * @returns {Promise<string>} HTML content
-   * @private
    */
   async _generateEmptyTablesHTML(userName, userId) {
     const notesTitle = game.i18n.localize('SPELLBOOK.UserData.SpellNotes');
@@ -135,7 +131,6 @@ export class UserSpellDataManager {
    * Ensure user table exists (updated to pass userId and set sort order)
    * @param {string} userId - User ID
    * @returns {Promise<boolean>} True if created, false if existed
-   * @private
    */
   async _ensureUserTable(userId) {
     const user = game.users.get(userId);
@@ -166,30 +161,21 @@ export class UserSpellDataManager {
    * Create introductory title page for user data journal
    * @param {JournalEntry} journal - The user data journal
    * @returns {Promise<void>}
-   * @private
    */
   async _createIntroductoryPage(journal) {
     const existingIntro = journal.pages.find((page) => page.flags?.[MODULE.ID]?.isIntroPage);
+    const content = await renderTemplate(TEMPLATES.COMPONENTS.USER_DATA_INTRO);
     if (existingIntro) return;
     const pageData = {
       name: game.i18n.localize('SPELLBOOK.UserData.IntroPageTitle'),
       type: 'text',
       title: { show: true, level: 1 },
-      text: { format: 1, content: await this._generateIntroPageHTML() },
+      text: { format: 1, content: content },
       ownership: { default: 0, [game.user.id]: 3 },
       flags: { [MODULE.ID]: { isIntroPage: true, created: Date.now() } },
       sort: 10
     };
     await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
     log(3, 'Created introductory page for user spell data');
-  }
-
-  /**
-   * Generate introductory page HTML content
-   * @returns {string} HTML content
-   * @private
-   */
-  async _generateIntroPageHTML() {
-    return await renderTemplate(TEMPLATES.COMPONENTS.USER_DATA_INTRO);
   }
 }

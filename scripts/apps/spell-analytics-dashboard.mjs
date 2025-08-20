@@ -2,7 +2,9 @@ import { MODULE, TEMPLATES } from '../constants.mjs';
 import { SpellUserDataJournal } from '../helpers/spell-user-data.mjs';
 import { log } from '../logger.mjs';
 import { UserSpellDataManager } from '../managers/user-spell-data-manager.mjs';
+
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const { renderTemplate } = foundry.applications.handlebars;
 
 /**
  * Analytics Dashboard for viewing spell usage statistics and data management
@@ -19,7 +21,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
       icon: 'fas fa-chart-bar'
     },
     position: { width: 800, height: 'auto' },
-    classes: ['application', 'spell-book', 'analytics-dashboard'],
+    classes: ['spell-book', 'analytics-dashboard'],
     actions: {
       switchView: SpellAnalyticsDashboard.handleSwitchView,
       exportData: SpellAnalyticsDashboard.handleExportData,
@@ -87,7 +89,6 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
    * Adjust font size of context bar labels based on available width
    * @param {HTMLElement} element - The context bar element
    * @param {number} percent - The percentage width
-   * @private
    */
   _adjustContextBarFontSizes(element, percent) {
     const label = element.querySelector('.context-label');
@@ -104,7 +105,6 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   /**
    * Compute analytics data for the current view
    * @returns {Promise<Object>} Analytics data
-   * @private
    */
   async _computeAnalytics() {
     try {
@@ -137,7 +137,6 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
    * @param {Object} analytics - Analytics object to populate
    * @param {string} userId - User ID
    * @returns {Promise<void>}
-   * @private
    */
   async _computePersonalAnalytics(analytics, userId) {
     const userSpells = await this._getAllUserSpellData(userId);
@@ -183,7 +182,6 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
    * Compute GM analytics across all users
    * @param {Object} analytics - Analytics object to populate
    * @returns {Promise<void>}
-   * @private
    */
   async _computeGMAnalytics(analytics) {
     const users = game.users.filter((u) => !u.isGM);
@@ -222,7 +220,6 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
    * Get all spell data for a user (updated for per-actor aggregation)
    * @param {string} userId - User ID
    * @returns {Promise<Object>} Aggregated user spell data
-   * @private
    */
   async _getAllUserSpellData(userId) {
     try {
@@ -267,7 +264,6 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
    * Get spell name from UUID
    * @param {string} uuid - Spell UUID
    * @returns {string} Spell name
-   * @private
    */
   _getSpellNameFromUuid(uuid) {
     const spell = fromUuidSync(uuid);
@@ -277,7 +273,6 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   /**
    * Get empty analytics structure
    * @returns {Object} Empty analytics
-   * @private
    */
   _getEmptyAnalytics() {
     return {
@@ -327,7 +322,6 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   /**
    * Export user data to JSON with embedded HTML
    * @returns {Promise<void>}
-   * @private
    */
   async _exportUserData() {
     try {
@@ -383,7 +377,6 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   /**
    * Import user data from JSON with embedded HTML
    * @returns {Promise<void>}
-   * @private
    */
   async _importUserData() {
     const input = document.createElement('input');
@@ -464,7 +457,6 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   /**
    * Clear user data with confirmation (updated to use manager's function)
    * @returns {Promise<void>}
-   * @private
    */
   async _clearUserData() {
     const confirmed = await foundry.applications.api.DialogV2.wait({

@@ -26,7 +26,6 @@ export class QueryExecutor {
    * @param {Array} conditions - Array of field conditions
    * @param {Object} spell - Spell to evaluate against
    * @returns {boolean} Whether the spell matches all conditions
-   * @private
    */
   _evaluateSpell(conditions, spell) {
     return conditions.every((condition) => this._evaluateCondition(condition, spell));
@@ -37,7 +36,6 @@ export class QueryExecutor {
    * @param {Object} condition - Field condition
    * @param {Object} spell - Spell to evaluate
    * @returns {boolean} Whether the spell matches the condition
-   * @private
    */
   _evaluateCondition(condition, spell) {
     if (condition.type !== 'field') return false;
@@ -56,7 +54,7 @@ export class QueryExecutor {
       case 'damageType':
         return this._evaluateDamageType(value, spell);
       case 'condition':
-        return this._evaluateCondition(value, spell);
+        return this._evaluateConditionProperty(value, spell);
       case 'requiresSave':
         return this._evaluateRequiresSave(value, spell);
       case 'concentration':
@@ -78,7 +76,6 @@ export class QueryExecutor {
    * @param {string} value - Expected casting time
    * @param {Object} spell - Spell to check
    * @returns {boolean} Whether casting time matches
-   * @private
    */
   _evaluateCastingTime(value, spell) {
     const parts = value.split(':');
@@ -94,7 +91,6 @@ export class QueryExecutor {
    * @param {string} value - Expected range
    * @param {Object} spell - Spell to check
    * @returns {boolean} Whether range matches
-   * @private
    */
   _evaluateRange(value, spell) {
     const rangeValue = parseInt(value);
@@ -115,7 +111,6 @@ export class QueryExecutor {
    * @param {string} value - Expected damage types (comma-separated)
    * @param {Object} spell - Spell to check
    * @returns {boolean} Whether any damage type matches
-   * @private
    */
   _evaluateDamageType(value, spell) {
     const expectedTypes = value.split(',').map((t) => t.trim().toLowerCase());
@@ -128,9 +123,8 @@ export class QueryExecutor {
    * @param {string} value - Expected conditions (comma-separated)
    * @param {Object} spell - Spell to check
    * @returns {boolean} Whether any condition matches
-   * @private
    */
-  _evaluateCondition(value, spell) {
+  _evaluateConditionProperty(value, spell) {
     const expectedConditions = value.split(',').map((c) => c.trim().toLowerCase());
     const spellConditions = spell.filterData?.conditions || [];
     return expectedConditions.some((expectedCondition) => spellConditions.some((spellCondition) => spellCondition.toLowerCase() === expectedCondition));
@@ -141,7 +135,6 @@ export class QueryExecutor {
    * @param {string} value - Expected save requirement (true/false)
    * @param {Object} spell - Spell to check
    * @returns {boolean} Whether save requirement matches
-   * @private
    */
   _evaluateRequiresSave(value, spell) {
     const expectedSave = value === 'true';
@@ -154,7 +147,6 @@ export class QueryExecutor {
    * @param {string} value - Expected concentration requirement (true/false)
    * @param {Object} spell - Spell to check
    * @returns {boolean} Whether concentration requirement matches
-   * @private
    */
   _evaluateConcentration(value, spell) {
     const expectedConcentration = value === 'true';
@@ -167,7 +159,6 @@ export class QueryExecutor {
    * @param {string} value - Expected preparation status (true/false)
    * @param {Object} spell - Spell to check
    * @returns {boolean} Whether preparation status matches
-   * @private
    */
   _evaluatePrepared(value, spell) {
     const expectedPrepared = value === 'true';
@@ -180,7 +171,6 @@ export class QueryExecutor {
    * @param {string} value - Expected ritual capability (true/false)
    * @param {Object} spell - Spell to check
    * @returns {boolean} Whether ritual capability matches
-   * @private
    */
   _evaluateRitual(value, spell) {
     const expectedRitual = value === 'true';
@@ -193,7 +183,6 @@ export class QueryExecutor {
    * @param {string} value - Expected material component status
    * @param {Object} spell - Spell to check
    * @returns {boolean} Whether material component status matches
-   * @private
    */
   _evaluateMaterialComponents(value, spell) {
     const expectedConsumed = value.toLowerCase() === 'consumed';

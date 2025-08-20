@@ -1,6 +1,5 @@
 import { TEMPLATES } from '../constants.mjs';
 import { formatSpellActivation, formatSpellComponents, formatSpellSchool } from '../helpers/spell-formatting.mjs';
-import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -9,13 +8,13 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
     id: 'spell-comparison-dialog',
     tag: 'div',
     window: {
-      icon: 'fas fa-balance-scale',
+      icon: 'fas fa-clipboard-question',
       resizable: false,
       minimizable: true,
       positioned: true
     },
     position: { width: 600, height: 'auto' },
-    classes: ['spell-comparison-dialog']
+    classes: ['spell-book', 'spell-comparison-dialog']
   };
 
   static PARTS = {
@@ -32,6 +31,24 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
   }
 
   /** @override */
+  async _prepareContext(options) {
+    const context = await super._prepareContext(options);
+    const spellUuids = Array.from(this.parentApp.comparisonSpells);
+    const spells = [];
+    for (const uuid of spellUuids) {
+      try {
+        const spell = fromUuidSync(uuid);
+        if (spell) spells.push(this._processSpellForComparison(spell));
+      } catch (error) {
+        log(1, `Error loading spell for comparison: ${uuid}`, error);
+      }
+    }
+    context.spells = spells;
+    context.comparisonData = this._buildComparisonTable(spells);
+    return context;
+  }
+
+  /** @override */
   _onFirstRender(context, options) {
     super._onFirstRender(context, options);
     this._calculateOptimalSize();
@@ -40,7 +57,6 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
 
   /**
    * Calculate and set optimal dialog size based on content
-   * @private
    */
   _calculateOptimalSize() {
     if (!this.parentApp?.comparisonSpells) return;
@@ -58,7 +74,6 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
 
   /**
    * Position the dialog smartly relative to the parent PlayerSpellBook
-   * @private
    */
   _positionRelativeToParent() {
     if (!this.parentApp?.element) return;
@@ -82,27 +97,8 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
     this.setPosition({ left, top });
   }
 
-  /** @override */
-  async _prepareContext(options) {
-    const context = await super._prepareContext(options);
-    const spellUuids = Array.from(this.parentApp.comparisonSpells);
-    const spells = [];
-    for (const uuid of spellUuids) {
-      try {
-        const spell = fromUuidSync(uuid);
-        if (spell) spells.push(this._processSpellForComparison(spell));
-      } catch (error) {
-        log(1, `Error loading spell for comparison: ${uuid}`, error);
-      }
-    }
-    context.spells = spells;
-    context.comparisonData = this._buildComparisonTable(spells);
-    return context;
-  }
-
   /**
    * Process a spell object into standardized format for comparison display
-   * @private
    * @param {Object} spell - The spell document to process
    * @returns {Object} Processed spell data with standardized properties for comparison
    * @returns {string} returns.uuid - Spell UUID
@@ -139,7 +135,6 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
    * Create enriched spell icon link
    * @param {Object} spell - The spell document
    * @returns {string} HTML for enriched icon
-   * @private
    */
   _createEnrichedSpellIcon(spell) {
     const uuid = spell.uuid;
@@ -155,7 +150,6 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
 
   /**
    * Extract damage information from a spell for comparison purposes
-   * @private
    * @param {Object} spell - The spell document to extract damage from
    * @returns {Object} Damage information object
    * @returns {string} returns.formula - Damage formula string (e.g., "1d8 + 2d6")
@@ -197,7 +191,6 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
 
   /**
    * Build comparison table data structure from processed spells
-   * @private
    * @param {Object[]} spells - Array of processed spell objects
    * @returns {Object} Comparison table data
    * @returns {Object[]} returns.properties - Array of property comparison objects

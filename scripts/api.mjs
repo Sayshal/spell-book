@@ -12,7 +12,6 @@ import * as filterUtils from './helpers/filters.mjs';
 import * as formElements from './helpers/form-elements.mjs';
 import * as genericUtils from './helpers/generic-utils.mjs';
 import { ScrollScanner } from './helpers/scroll-scanner.mjs';
-import * as spellCache from './helpers/spell-cache.mjs';
 import { SpellDescriptionInjection } from './helpers/spell-description-injection.mjs';
 import * as discoveryUtils from './helpers/spell-discovery.mjs';
 import * as formattingUtils from './helpers/spell-formatting.mjs';
@@ -23,7 +22,6 @@ import { SpellbookUI } from './helpers/ui/spellbook-ui.mjs';
 import { log } from './logger.mjs';
 import { CantripManager } from './managers/cantrip-manager.mjs';
 import { MacroManager } from './managers/macro-manager.mjs';
-import { RitualManager } from './managers/ritual-manager.mjs';
 import { RuleSetManager } from './managers/rule-set-manager.mjs';
 import { SpellLoadoutManager } from './managers/spell-loadout-manager.mjs';
 import { SpellManager } from './managers/spell-manager.mjs';
@@ -57,8 +55,7 @@ export function createAPI() {
         management: { ...managerHelpers },
         forms: { ...formElements },
         generic: { ...genericUtils },
-        SpellUserDataJournal,
-        spellCache: { ...spellCache }
+        SpellUserDataJournal
       },
       helpers: {
         state: { SpellbookState },
@@ -72,7 +69,6 @@ export function createAPI() {
       managers: {
         SpellManager,
         CantripManager,
-        RitualManager,
         RuleSetManager,
         WizardSpellbookManager,
         SpellLoadoutManager,
@@ -83,6 +79,7 @@ export function createAPI() {
       migrations: {
         forceMigration
       },
+      preloadedData: null,
 
       /**
        * Open spell book for a specific actor

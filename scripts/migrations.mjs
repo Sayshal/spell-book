@@ -2,6 +2,8 @@ import { DEPRECATED_FLAGS, MODULE, TEMPLATES } from './constants.mjs';
 import * as managerHelpers from './helpers/compendium-management.mjs';
 import { log } from './logger.mjs';
 
+const { renderTemplate } = foundry.applications.handlebars;
+
 Hooks.on('ready', runAllMigrations);
 
 /**
@@ -96,19 +98,32 @@ async function migrateDocument(doc, deprecatedFlags) {
   const updates = {};
   const removedFlags = [];
   let hasRemovals = false;
+  const nullValidFlags = ['ruleSetOverride', 'enforcementBehavior'];
   for (const [key, value] of Object.entries(flags)) {
     const isDeprecated = deprecatedFlags.some((deprecated) => deprecated.key === key);
-    const isInvalid = value === null || value === undefined || (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0);
+    const isInvalid =
+      nullValidFlags.includes(key) ?
+        value === undefined || (typeof value === 'object' && value !== null && !Array.isArray(value) && Object.keys(value).length === 0)
+      : value === null || value === undefined || (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0);
     if (isDeprecated || isInvalid) {
       updates[`flags.${MODULE.ID}.-=${key}`] = null;
       hasRemovals = true;
-      const reason = isDeprecated ? deprecatedFlags.find((d) => d.key === key)?.reason : 'Invalid value (null/undefined/empty object)';
+      const reason = isDeprecated ? `Deprecated flag (removed in ${deprecatedFlags.find((d) => d.key === key)?.removedInVersion || 'unknown version'})` : 'Invalid value (null/undefined/empty object)';
       removedFlags.push({ key, value, reason });
-      log(3, `Removing flag "${key}" from ${doc.documentName} "${doc.name}": ${reason}`);
     }
   }
-  if (hasRemovals) await doc.update(updates);
-  return { wasUpdated: hasRemovals, invalidFlags: hasRemovals, removedFlags };
+
+  if (hasRemovals) {
+    try {
+      await doc.update(updates);
+      return { wasUpdated: true, invalidFlags: true, removedFlags };
+    } catch (error) {
+      log(1, `Failed to migrate document ${doc.name}:`, error);
+      return { wasUpdated: false, invalidFlags: false, removedFlags: [] };
+    }
+  }
+
+  return { wasUpdated: false, invalidFlags: false, removedFlags: [] };
 }
 
 /**
@@ -487,16 +502,16 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
     log(3, 'No migration updates needed');
     return;
   }
-  console.group('🔧 Spell Book Migration Results');
+  console.group('Spell Book Migration Results');
   if (deprecatedResults.processed > 0) {
-    console.group('📋 Deprecated Flags Migration');
+    console.group('Deprecated Flags Migration');
     console.log(`Processed: ${deprecatedResults.processed} documents`);
     console.log(`Invalid flags removed: ${deprecatedResults.invalidFlagRemovals}`);
     console.log('Affected documents:', deprecatedResults.affectedDocuments);
     console.groupEnd();
   }
   if (folderResults.processed > 0) {
-    console.group('📁 Folder Migration');
+    console.group('Folder Migration');
     console.log(`Processed: ${folderResults.processed} journals`);
     console.log(`Custom moved: ${folderResults.customMoved}`);
     console.log(`Merged moved: ${folderResults.mergedMoved}`);
@@ -505,7 +520,7 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
     console.groupEnd();
   }
   if (ownershipResults.processed > 0) {
-    console.group('🔐 Ownership Validation');
+    console.group('Ownership Validation');
     console.log(`Total fixed: ${ownershipResults.processed} documents`);
     console.log(`User data fixed: ${ownershipResults.userDataFixed}`);
     console.log(`Spell lists fixed: ${ownershipResults.spellListsFixed}`);
@@ -517,7 +532,7 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
   }
   console.groupEnd();
   const content = await buildChatContent(deprecatedResults, folderResults, ownershipResults, totalProcessed);
-  ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id });
+  ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id, flags: { 'spell-book': { messageType: 'migration-report' } } });
   log(3, `Migration complete: ${totalProcessed} documents updated`);
 }
 

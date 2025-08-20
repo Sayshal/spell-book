@@ -12,7 +12,6 @@ export class SpellbookFilterHelper {
    */
   constructor(app) {
     this.app = app;
-    this.actor = app.actor;
     this._cachedFilterState = null;
     this._lastFilterUpdate = 0;
     this.searchPrefix = game.settings.get(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX);
@@ -41,7 +40,23 @@ export class SpellbookFilterHelper {
   getFilterState() {
     const now = Date.now();
     if (this._cachedFilterState && now - this._lastFilterUpdate < 1000) return this._cachedFilterState;
-    if (!this.element) return filterUtils.getDefaultFilterState();
+    if (!this.element)
+      return {
+        name: '',
+        level: '',
+        school: '',
+        castingTime: '',
+        minRange: '',
+        maxRange: '',
+        damageType: '',
+        condition: '',
+        requiresSave: '',
+        prepared: false,
+        ritual: false,
+        favorited: false,
+        concentration: '',
+        materialComponents: ''
+      };
     this._cachedFilterState = {
       name: this.element.querySelector('[name="filter-name"]')?.value || '',
       level: this.element.querySelector('[name="filter-level"]')?.value || '',
@@ -71,17 +86,22 @@ export class SpellbookFilterHelper {
    * @returns {Object} Filtered spells with count
    */
   filterAvailableSpells(availableSpells, selectedSpellUUIDs, isSpellInSelectedList, filterState = null) {
-    const filters = filterState || this.getFilterState();
-    log(3, 'Beginning Filtering:', selectedSpellUUIDs.size, 'selected spells out of', availableSpells.length, 'total available');
-    let remainingSpells = [...availableSpells];
-    remainingSpells = this._filterBySelectedList(remainingSpells, selectedSpellUUIDs, isSpellInSelectedList);
-    remainingSpells = this._filterBySource(remainingSpells, filters);
-    remainingSpells = this._filterByBasicProperties(remainingSpells, filters);
-    remainingSpells = this._filterByRange(remainingSpells, filters);
-    remainingSpells = this._filterByDamageAndConditions(remainingSpells, filters);
-    remainingSpells = this._filterBySpecialProperties(remainingSpells, filters);
-    log(3, 'Final spells count:', remainingSpells.length);
-    return { spells: remainingSpells, totalFiltered: remainingSpells.length };
+    try {
+      const filters = filterState || this.getFilterState();
+      log(3, 'Beginning Filtering:', selectedSpellUUIDs.size, 'selected spells out of', availableSpells.length, 'total available');
+      let remainingSpells = [...availableSpells];
+      remainingSpells = this._filterBySelectedList(remainingSpells, selectedSpellUUIDs, isSpellInSelectedList);
+      remainingSpells = this._filterBySource(remainingSpells, filters);
+      remainingSpells = this._filterByBasicProperties(remainingSpells, filters);
+      remainingSpells = this._filterByRange(remainingSpells, filters);
+      remainingSpells = this._filterByDamageAndConditions(remainingSpells, filters);
+      remainingSpells = this._filterBySpecialProperties(remainingSpells, filters);
+      log(3, 'Final spells count:', remainingSpells.length);
+      return { spells: remainingSpells, totalFiltered: remainingSpells.length };
+    } catch (error) {
+      log(1, 'ERROR in SpellbookFilterHelper Filter Available Spells:', error);
+      return { spells: [], totalFiltered: 0 };
+    }
   }
 
   /**
@@ -90,7 +110,6 @@ export class SpellbookFilterHelper {
    * @param {Set} selectedSpellUUIDs - UUIDs in selected list
    * @param {Function} isSpellInSelectedList - Function to check if spell is in list
    * @returns {Array} Filtered spells
-   * @private
    */
   _filterBySelectedList(spells, selectedSpellUUIDs, isSpellInSelectedList) {
     const filtered = spells.filter((spell) => !isSpellInSelectedList(spell, selectedSpellUUIDs));
@@ -103,7 +122,6 @@ export class SpellbookFilterHelper {
    * @param {Array} spells - Spells to filter
    * @param {Object} filterState - Current filter state
    * @returns {Array} Filtered spells
-   * @private
    */
   _filterBySource(spells, filterState) {
     const { source } = filterState;
@@ -127,7 +145,6 @@ export class SpellbookFilterHelper {
    * @param {Array} spells - Spells to filter
    * @param {Object} filterState - Current filter state
    * @returns {Array} Filtered spells
-   * @private
    */
   _filterByBasicProperties(spells, filterState) {
     const { name, level, school, castingTime } = filterState;
@@ -154,7 +171,6 @@ export class SpellbookFilterHelper {
    * @param {Array} spells - Spells to filter
    * @param {string} searchQuery - Search query
    * @returns {Array} Filtered spells
-   * @private
    */
   _filterByEnhancedName(spells, searchQuery) {
     if (!searchQuery || !searchQuery.trim()) return spells;
@@ -207,7 +223,6 @@ export class SpellbookFilterHelper {
    * @param {Array} spells - Spells to filter
    * @param {Object} filterState - Current filter state
    * @returns {Array} Filtered spells
-   * @private
    */
   _filterByRange(spells, filterState) {
     const { minRange, maxRange } = filterState;
@@ -232,7 +247,6 @@ export class SpellbookFilterHelper {
    * @param {Array} spells - Spells to filter
    * @param {Object} filterState - Current filter state
    * @returns {Array} Filtered spells
-   * @private
    */
   _filterByDamageAndConditions(spells, filterState) {
     const { damageType, condition } = filterState;
@@ -257,7 +271,6 @@ export class SpellbookFilterHelper {
    * @param {Array} spells - Spells to filter
    * @param {Object} filterState - Current filter state
    * @returns {Array} Filtered spells
-   * @private
    */
   _filterBySpecialProperties(spells, filterState) {
     const { requiresSave, concentration, ritual, favorited, materialComponents } = filterState;
@@ -290,70 +303,21 @@ export class SpellbookFilterHelper {
    */
   applyFilters() {
     try {
+      if (!this.element) return;
       const filters = this.getFilterState();
       const spellItems = this.element.querySelectorAll('.spell-item');
       let visibleCount = 0;
       const levelVisibilityMap = new Map();
       for (const item of spellItems) {
-        const titleElement = item.querySelector('.spell-name .title');
-        const extractedName = titleElement?.textContent?.trim() || item.querySelector('.spell-name')?.textContent?.trim() || '';
-        const name = extractedName.toLowerCase();
-        const isPrepared = item.classList.contains('prepared-spell');
-        const level = item.dataset.spellLevel || '';
-        const school = item.dataset.spellSchool || '';
-        const castingTimeType = item.dataset.castingTimeType || '';
-        const castingTimeValue = item.dataset.castingTimeValue || '';
-        const rangeUnits = item.dataset.rangeUnits || '';
-        const rangeValue = item.dataset.rangeValue || '0';
-        const damageTypes = (item.dataset.damageTypes || '').split(',');
-        const isRitual = item.dataset.ritual === 'true';
-        const isConcentration = item.dataset.concentration === 'true';
-        const requiresSave = item.dataset.requiresSave === 'true';
-        const conditions = (item.dataset.conditions || '').split(',');
-        const hasMaterialComponents = item.dataset.materialComponents === 'true';
-        const isFavorited = item.dataset.favorited === 'true';
-        const isGranted = !!item.querySelector('.tag.granted');
-        const isAlwaysPrepared = !!item.querySelector('.tag.always-prepared');
-        const isCountable = !isGranted && !isAlwaysPrepared;
-        const visible = this._checkSpellVisibility(filters, {
-          name,
-          isPrepared,
-          level,
-          school,
-          castingTimeType,
-          castingTimeValue,
-          rangeUnits,
-          rangeValue,
-          damageTypes,
-          isRitual,
-          isFavorited,
-          isConcentration,
-          requiresSave,
-          conditions,
-          hasMaterialComponents
-        });
+        const spellData = this._extractSpellDataFromElement(item);
+        const visible = this._checkSpellVisibility(filters, spellData);
         item.style.display = visible ? '' : 'none';
         if (visible) {
           visibleCount++;
-          if (!levelVisibilityMap.has(level)) {
-            levelVisibilityMap.set(level, {
-              visible: 0,
-              prepared: 0,
-              countable: 0,
-              countablePrepared: 0
-            });
-          }
-          const levelStats = levelVisibilityMap.get(level);
-          levelStats.visible++;
-          if (isCountable) {
-            levelStats.countable++;
-            if (isPrepared) levelStats.countablePrepared++;
-          }
-          if (isPrepared) levelStats.prepared++;
+          this._updateLevelVisibilityStats(levelVisibilityMap, spellData, item);
         }
       }
-      const noResults = this.element.querySelector('.no-filter-results');
-      if (noResults) noResults.style.display = visibleCount > 0 ? 'none' : 'block';
+      this._updateNoResultsDisplay(visibleCount);
       this._updateLevelContainers(levelVisibilityMap);
     } catch (error) {
       log(1, 'Error applying filters:', error);
@@ -361,11 +325,67 @@ export class SpellbookFilterHelper {
   }
 
   /**
+   * Extract spell data from DOM element for filtering
+   * @param {HTMLElement} item - The spell item element
+   * @returns {Object} Extracted spell data
+   */
+  _extractSpellDataFromElement(item) {
+    const titleElement = item.querySelector('.spell-name .title');
+    const extractedName = titleElement?.textContent?.trim() || item.querySelector('.spell-name')?.textContent?.trim() || '';
+    return {
+      name: extractedName.toLowerCase(),
+      isPrepared: item.classList.contains('prepared-spell'),
+      level: item.dataset.spellLevel || '',
+      school: item.dataset.spellSchool || '',
+      castingTimeType: item.dataset.castingTimeType || '',
+      castingTimeValue: item.dataset.castingTimeValue || '',
+      rangeUnits: item.dataset.rangeUnits || '',
+      rangeValue: item.dataset.rangeValue || '0',
+      damageTypes: (item.dataset.damageTypes || '').split(',').filter(Boolean),
+      isRitual: item.dataset.ritual === 'true',
+      isConcentration: item.dataset.concentration === 'true',
+      requiresSave: item.dataset.requiresSave === 'true',
+      conditions: (item.dataset.conditions || '').split(',').filter(Boolean),
+      hasMaterialComponents: item.dataset.materialComponents === 'true',
+      isFavorited: item.dataset.favorited === 'true'
+    };
+  }
+
+  /**
+   * Update level visibility statistics
+   * @param {Map} levelVisibilityMap - Map to track level statistics
+   * @param {Object} spellData - Spell data
+   * @param {HTMLElement} item - Spell item element
+   */
+  _updateLevelVisibilityStats(levelVisibilityMap, spellData, item) {
+    const level = spellData.level;
+    const isGranted = !!item.querySelector('.tag.granted');
+    const isAlwaysPrepared = !!item.querySelector('.tag.always-prepared');
+    const isCountable = !isGranted && !isAlwaysPrepared;
+    if (!levelVisibilityMap.has(level)) levelVisibilityMap.set(level, { visible: 0, prepared: 0, countable: 0, countablePrepared: 0 });
+    const levelStats = levelVisibilityMap.get(level);
+    levelStats.visible++;
+    if (isCountable) {
+      levelStats.countable++;
+      if (spellData.isPrepared) levelStats.countablePrepared++;
+    }
+    if (spellData.isPrepared) levelStats.prepared++;
+  }
+
+  /**
+   * Update the "no results" display
+   * @param {number} visibleCount - Number of visible spells
+   */
+  _updateNoResultsDisplay(visibleCount) {
+    const noResults = this.element.querySelector('.no-filter-results');
+    if (noResults) noResults.style.display = visibleCount > 0 ? 'none' : 'block';
+  }
+
+  /**
    * Check if a spell matches the current filters
    * @param {Object} filters - The current filter state
    * @param {Object} spell - The spell to check
    * @returns {boolean} Whether the spell should be visible
-   * @private
    */
   _checkSpellVisibility(filters, spell) {
     if (filters.name && !this._checkEnhancedNameMatch(filters.name, spell.name)) return false;
@@ -396,7 +416,7 @@ export class SpellbookFilterHelper {
     }
     if (filters.materialComponents) {
       const consumed = filters.materialComponents === 'consumed';
-      if (spell.hasMaterialComponents === consumed) return false;
+      if (spell.hasMaterialComponents !== consumed) return false;
     }
     if (filters.ritual && !spell.isRitual) return false;
     if (filters.prepared && !spell.isPrepared) return false;
@@ -409,7 +429,6 @@ export class SpellbookFilterHelper {
    * @param {string} searchQuery - The search query
    * @param {string} spellName - The spell name to check
    * @returns {boolean} Whether the spell name matches
-   * @private
    */
   _checkEnhancedNameMatch(searchQuery, spellName) {
     if (!searchQuery || !searchQuery.trim()) return true;
@@ -434,7 +453,6 @@ export class SpellbookFilterHelper {
   /**
    * Update level container visibility and counts
    * @param {Map} levelVisibilityMap - Map of level visibility data
-   * @private
    */
   _updateLevelContainers(levelVisibilityMap) {
     const levelContainers = this.element.querySelectorAll('.spell-level');

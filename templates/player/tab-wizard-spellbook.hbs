@@ -6,11 +6,13 @@
 		{{else}}
 			{{#if (or isWizard isForceWizard)}}
 				<div class="spellbook-rules">
-					<h3>{{localize 'SPELLBOOK.Wizard.NewSpellsTitle'}}</h3>
-					<p>{{localize 'SPELLBOOK.Wizard.NewSpellsInfo1'}}</p>
-					<p>{{localize 'SPELLBOOK.Wizard.NewSpellsInfo2'}}</p>
+					<div class="spellbook-header">
+						<h2>{{localize 'SPELLBOOK.Wizard.NewSpellsTitle'}}</h2>
+						<i class="fas fa-info-circle spellbook-help-icon"
+							data-tooltip="{{localize 'SPELLBOOK.Wizard.NewSpellsInfo1'}}<br><br>{{localize 'SPELLBOOK.Wizard.NewSpellsInfo2'}}"></i>
+					</div>
 				</div>
-				{{!-- Spells will be populated via lazy loading --}}
+				{{!-- Spell levels will be rendered dynamically by JavaScript, just like regular spell tabs --}}
 			{{else}}
 				<div class="wizard-unavailable">
 					<p>{{localize 'SPELLBOOK.Wizard.Unavailable'}}</p>

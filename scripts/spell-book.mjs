@@ -1,6 +1,7 @@
 import { createAPI } from './api.mjs';
-import { MODULE, TEMPLATES } from './constants.mjs';
-import { invalidateSpellCache } from './helpers/spell-cache.mjs';
+import { PlayerSpellBook } from './apps/player-spell-book.mjs';
+import { MODULE, SETTINGS, TEMPLATES } from './constants.mjs';
+import * as preloaderUtils from './helpers/spell-data-preloader.mjs';
 import { SpellDescriptionInjection } from './helpers/spell-description-injection.mjs';
 import { registerDnD5eIntegration } from './integrations/dnd5e.mjs';
 import { registerTidy5eIntegration } from './integrations/tidy5e.mjs';
@@ -20,24 +21,31 @@ Hooks.once('init', async function () {
   log(3, `${MODULE.NAME} initialized!`);
 });
 
+Hooks.on('setup', () => {
+  let position = game.settings.get(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION);
+  if (!position || (typeof position === 'object' && Object.keys(position).length === 0)) position = { height: 875, width: 600 };
+  PlayerSpellBook.DEFAULT_OPTIONS.position = position;
+});
+
 Hooks.once('ready', async function () {
   SpellDescriptionInjection.initialize();
   await unlockModuleCompendium();
   await MacroManager.initializeMacros();
   await UserSpellDataManager.initializeUserSpellData();
   await SpellUsageTracker.initialize();
+  await preloaderUtils.preloadSpellData();
 });
 
-Hooks.on('createItem', (item) => {
-  if (item.type === 'spell' && item.actor?.type === 'character') {
-    invalidateSpellCache(item.actor.id);
-  }
+Hooks.on('createJournalEntryPage', (page, options, userId) => {
+  if (preloaderUtils.shouldInvalidateCacheForPage(page)) preloaderUtils.invalidateSpellListCache();
 });
 
-Hooks.on('deleteItem', (item) => {
-  if (item.type === 'spell' && item.actor?.type === 'character') {
-    invalidateSpellCache(item.actor.id);
-  }
+Hooks.on('updateJournalEntryPage', (page, changes, options, userId) => {
+  if (preloaderUtils.shouldInvalidateCacheForPage(page)) if (changes.system?.spells || changes.system?.identifier || changes.flags) preloaderUtils.invalidateSpellListCache();
+});
+
+Hooks.on('deleteJournalEntryPage', (page, options, userId) => {
+  if (preloaderUtils.shouldInvalidateCacheForPage(page)) preloaderUtils.invalidateSpellListCache();
 });
 
 /**
@@ -45,7 +53,7 @@ Hooks.on('deleteItem', (item) => {
  */
 function initializeFoundryConfiguration() {
   CONFIG.JournalEntry.compendiumIndexFields = ['_id', 'name', 'pages', 'type', 'uuid'];
-  CONFIG.Item.compendiumIndexFields = ['system.spellcasting.progression', 'system.spellcasting.preparation.mode'];
+  CONFIG.Item.compendiumIndexFields = ['system.spellcasting.progression', 'system.spellcasting.type'];
 }
 
 /**
@@ -96,8 +104,7 @@ async function preloadTemplates() {
     return result;
   }
   const templatePaths = flattenTemplateObject(TEMPLATES);
-  if (foundry.utils.isNewerVersion(game.version, '12.999')) return foundry?.applications?.handlebars?.loadTemplates(templatePaths);
-  else return loadTemplates(templatePaths);
+  return foundry?.applications?.handlebars?.loadTemplates(templatePaths);
 }
 
 function registerHandlebarsHelpers() {

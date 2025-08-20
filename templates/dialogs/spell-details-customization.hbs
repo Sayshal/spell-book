@@ -1,0 +1,155 @@
+<div class="spell-details-customization-content">
+
+  <!-- Player Spell Book Settings -->
+  <section class="customization-section player-section">
+    <h3 class="section-title">
+      <i class="fas fa-user" aria-hidden="true"></i>
+      {{localize "SPELLBOOK.Settings.DetailsCustomization.PlayerSpellBook"}}
+    </h3>
+
+    <!-- UI Elements -->
+    <div class="settings-group">
+      <h4 class="group-title">
+        <span class="group-title-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.UIElements"}}</span>
+        <label class="select-all-label" for="select-all-player-ui">
+          <span class="select-all-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.SelectAll"}}</span>
+          {{{selectAllPlayerUICheckbox}}}
+        </label>
+      </h4>
+      <div class="settings-grid">
+        {{#each playerUIElements as |element|}}
+          <div class="setting-item clickable-setting" data-checkbox-id="player-{{element.key}}" data-group="player-ui">
+            <div class="setting-item-content">
+              <div class="setting-checkbox">
+                {{{element.checkboxHtml}}}
+              </div>
+              <div class="setting-content">
+                <span class="setting-name">{{localize element.label}}</span>
+                <p class="setting-description">{{{element.description}}}</p>
+              </div>
+            </div>
+          </div>
+        {{/each}}
+
+        {{!-- Wizard Book Icon Color - Added as grid item --}}
+        <div class="setting-item wizard-book-color-item">
+          <div class="setting-item-content">
+            <div class="setting-content">
+              <span
+                class="setting-name">{{localize "SPELLBOOK.Settings.DetailsCustomization.WizardBookIconColor"}}</span>
+              <div class="wizard-book-color-controls">
+                <color-picker name="wizardBookIconColor" value="{{wizardBookIconColor}}"
+                  placeholder="{{userColor}}"></color-picker>
+
+                <div class="wizard-book-buttons">
+                  <button type="button" class="use-user-color-btn" data-action="useUserColor"
+                    data-user-color="{{userColor}}"
+                    data-tooltip="{{localize 'SPELLBOOK.Settings.DetailsCustomization.WizardBookUseUserColor'}}">
+                    <i class="fas fa-user"></i>
+                  </button>
+
+                  <button type="button" class="reset-default-btn" data-action="resetToDefault"
+                    data-tooltip="{{localize 'SPELLBOOK.Settings.DetailsCustomization.WizardBookResetDefault'}}">
+                    <i class="fas fa-undo"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metadata Elements -->
+    <div class="settings-group">
+      <h4 class="group-title">
+        <span class="group-title-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.MetadataElements"}}</span>
+        <label class="select-all-label" for="select-all-player-metadata">
+          <span class="select-all-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.SelectAll"}}</span>
+          {{{selectAllPlayerMetadataCheckbox}}}
+        </label>
+      </h4>
+      <div class="settings-grid">
+        {{#each playerMetadataElements as |element|}}
+          <div class="setting-item clickable-setting" data-checkbox-id="player-{{element.key}}"
+            data-group="player-metadata">
+            <div class="setting-item-content">
+              <div class="setting-checkbox">
+                {{{element.checkboxHtml}}}
+              </div>
+              <div class="setting-content">
+                <span class="setting-name">{{localize element.label}}</span>
+                <p class="setting-description">{{localize element.description}}</p>
+              </div>
+            </div>
+          </div>
+        {{/each}}
+      </div>
+    </div>
+  </section>
+
+  <!-- GM Settings (only show if user is GM) -->
+  {{#if isGM}}
+    <section class="customization-section gm-section">
+      <h3 class="section-title">
+        <i class="fas fa-bars-progress" aria-hidden="true"></i>
+        {{localize "SPELLBOOK.Settings.DetailsCustomization.SpellListManager"}}
+      </h3>
+
+      <!-- UI Elements -->
+      <div class="settings-group">
+        <h4 class="group-title">
+          <span class="group-title-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.UIElements"}}</span>
+          <label class="select-all-label" for="select-all-gm-ui">
+            <span class="select-all-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.SelectAll"}}</span>
+            {{{selectAllGMUICheckbox}}}
+          </label>
+        </h4>
+        <div class="settings-grid">
+          {{#each gmUIElements as |element|}}
+            <div class="setting-item clickable-setting" data-checkbox-id="gm-{{element.key}}" data-group="gm-ui">
+              <div class="setting-item-content">
+                <div class="setting-checkbox">
+                  {{{element.checkboxHtml}}}
+                </div>
+                <div class="setting-content">
+                  <span class="setting-name">{{localize element.label}}</span>
+                  <p class="setting-description">{{localize element.description}}</p>
+                </div>
+              </div>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+
+      <!-- Metadata Elements -->
+      <div class="settings-group">
+        <h4 class="group-title">
+          <span class="group-title-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.MetadataElements"}}</span>
+          <label class="select-all-label" for="select-all-gm-metadata">
+            <span class="select-all-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.SelectAll"}}</span>
+            {{{selectAllGMMetadataCheckbox}}}
+          </label>
+        </h4>
+        <div class="settings-grid">
+          {{#each gmMetadataElements as |element|}}
+            <div class="setting-item clickable-setting" data-checkbox-id="gm-{{element.key}}" data-group="gm-metadata">
+              <div class="setting-item-content">
+                <div class="setting-checkbox">
+                  {{{element.checkboxHtml}}}
+                </div>
+                <div class="setting-content">
+                  <span class="setting-name">{{localize element.label}}</span>
+                  <p class="setting-description">{{localize element.description}}</p>
+                </div>
+              </div>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+    </section>
+  {{/if}}
+  <p class="customization-description">
+    {{localize "SPELLBOOK.Settings.DetailsCustomization.Description"}}
+  </p>
+</div>

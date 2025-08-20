@@ -1,6 +1,7 @@
 import { MODULE, SETTINGS } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import { RuleSetManager } from '../managers/rule-set-manager.mjs';
+import * as preloaderUtils from './spell-data-preloader.mjs';
 
 /**
  * Get a class's spell list from compendium journals
@@ -26,11 +27,33 @@ export async function getClassSpellList(className, classUuid, actor) {
   const classItem = await fromUuid(classUuid);
   if (!classItem) return new Set();
   const classIdentifier = classItem?.system?.identifier?.toLowerCase();
-  const topLevelFolderName = getTopLevelFolderFromCompendiumSource(classItem?._stats?.compendiumSource);
+  const topLevelFolderName = getFolderNameFromPack(classItem?._stats?.compendiumSource);
   if (!classIdentifier) return new Set();
+  const preloadedData = preloaderUtils.getPreloadedData();
+  if (preloadedData && preloadedData.spellLists.length > 0) {
+    log(3, `Checking ${preloadedData.spellLists.length} preloaded spell lists for ${classIdentifier}`);
+    const preloadedMatch = preloadedData.spellLists.find((list) => {
+      if (list.identifier?.toLowerCase() === classIdentifier) {
+        if (topLevelFolderName && list.pack) return list.pack.toLowerCase().includes(topLevelFolderName.toLowerCase());
+        return true;
+      }
+      return false;
+    });
+    if (preloadedMatch && preloadedMatch.spellCount > 0) {
+      log(3, `Found preloaded spell list for ${classIdentifier}: ${preloadedMatch.name} (${preloadedMatch.spellCount} spells)`);
+      try {
+        const document = await fromUuid(preloadedMatch.uuid);
+        if (document?.system?.spells && document.system.spells.size > 0) {
+          return document.system.spells;
+        }
+      } catch (error) {
+        log(2, `Error loading preloaded spell list ${preloadedMatch.uuid}:`, error);
+      }
+    }
+  }
   const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
   if (topLevelFolderName) {
-    const folderMatch = await findSpellListByTopLevelFolder(topLevelFolderName, classIdentifier, customMappings);
+    const folderMatch = await getSpellListFromFolder(topLevelFolderName, classIdentifier, customMappings);
     if (folderMatch && folderMatch.size > 0) return folderMatch;
   }
   const customMatch = await findCustomSpellListByIdentifier(classIdentifier);
@@ -46,7 +69,7 @@ export async function getClassSpellList(className, classUuid, actor) {
  * @param {string} source - Compendium source string
  * @returns {string|null} Top-level folder name or null
  */
-function getTopLevelFolderFromCompendiumSource(source) {
+function getFolderNameFromPack(source) {
   if (!source) return null;
   const packCollection = foundry.utils.parseUuid(source).collection.metadata.id;
   const pack = game.packs.get(packCollection);
@@ -62,23 +85,8 @@ function getTopLevelFolderFromCompendiumSource(source) {
 }
 
 /**
- * Find spell list by pack and identifier
- * @param {string} packName - Pack name to search
- * @param {string} identifier - Class identifier
- * @param {Object} customMappings - Custom spell list mappings
- * @returns {Promise<Set<string>|null>} Matched spell list or null
- */
-async function findSpellListByPack(packName, identifier, customMappings) {
-  const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry' && p.collection.includes(packName));
-  for (const pack of journalPacks) {
-    const spellList = await searchPackForSpellList(pack, identifier, customMappings);
-    if (spellList) return spellList;
-  }
-  return null;
-}
-
-/**
  * Find spell list by identifier across all packs
+ * @todo - Can this be simplified?
  * @param {string} identifier - Class identifier
  * @param {Object} customMappings - Custom spell list mappings
  * @returns {Promise<Set<string>|null>} Matched spell list or null
@@ -147,27 +155,23 @@ async function findCustomSpellListByIdentifier(identifier) {
 export function calculateMaxSpellLevel(classItem, actor) {
   const spellcasting = classItem?.system?.spellcasting;
   if (!spellcasting || spellcasting.progression === 'none') return 0;
-
-  if (spellcasting?.type === 'leveled' || spellcasting?.progression !== 'pact') {
-    const progression = { slot: 0, [classItem.identifier || classItem.name?.slugify() || 'class']: classItem.system?.levels || 0 };
-    const maxPossibleSpellLevel = CONFIG.DND5E.SPELL_SLOT_TABLE[CONFIG.DND5E.SPELL_SLOT_TABLE.length - 1].length;
+  const spellcastingType = spellcasting.type;
+  const classKey = classItem.identifier || classItem.name?.slugify() || 'class';
+  const classLevels = classItem.system?.levels || 0;
+  if (spellcastingType === 'spell') {
+    const progression = { spell: 0, [classKey]: classLevels };
+    const spellSlotTable = CONFIG.DND5E.spellcasting.spell.table;
+    if (!spellSlotTable || !spellSlotTable.length) {
+      log(1, 'No spell slot table found');
+      return 0;
+    }
+    const maxPossibleSpellLevel = spellSlotTable[spellSlotTable.length - 1].length;
     const spellLevels = [];
     for (let i = 1; i <= maxPossibleSpellLevel; i++) spellLevels.push(i);
     const spells = Object.fromEntries(spellLevels.map((l) => [`spell${l}`, { level: l }]));
     try {
       actor.constructor.computeClassProgression(progression, classItem, { spellcasting });
-      if (!progression.slot && classItem.system?.levels) {
-        const classLevel = classItem.system.levels;
-        const spellcastingLevel = Math.floor(
-          classLevel *
-            (spellcasting.progression === 'full' ? 1
-            : spellcasting.progression === 'half' ? 0.5
-            : spellcasting.progression === 'third' ? 1 / 3
-            : 0)
-        );
-        progression.slot = Math.max(1, spellcastingLevel);
-      }
-      actor.constructor.prepareSpellcastingSlots(spells, 'leveled', progression);
+      actor.constructor.prepareSpellcastingSlots(spells, 'spell', progression, { actor });
       return Object.values(spells).reduce((maxLevel, spellData) => {
         const max = spellData.max;
         const level = spellData.level;
@@ -178,12 +182,12 @@ export function calculateMaxSpellLevel(classItem, actor) {
       log(1, 'Error calculating spell progression:', error);
       return 0;
     }
-  } else if (spellcasting?.type === 'pact' || spellcasting?.progression === 'pact') {
+  } else if (spellcastingType === 'pact') {
     const spells = { pact: {} };
-    const progression = { pact: 0, [classItem.identifier || classItem.name?.slugify() || 'class']: classItem.system?.levels || 0 };
+    const progression = { pact: 0, [classKey]: classLevels };
     try {
       actor.constructor.computeClassProgression(progression, classItem, { spellcasting });
-      actor.constructor.prepareSpellcastingSlots(spells, 'pact', progression);
+      actor.constructor.prepareSpellcastingSlots(spells, 'pact', progression, { actor });
       return spells.pact.level || 0;
     } catch (error) {
       log(1, 'Error calculating pact spell progression:', error);
@@ -194,22 +198,13 @@ export function calculateMaxSpellLevel(classItem, actor) {
 }
 
 /**
- * Check if an actor can cast spells
- * @param {Actor5e} actor - Actor to check
- * @returns {boolean} Whether the actor can cast spells
- */
-export function canCastSpells(actor) {
-  return Object.keys(actor?.spellcastingClasses || {}).length > 0;
-}
-
-/**
  * Find spell list by top-level folder name and identifier
  * @param {string} topLevelFolderName - Top-level folder name to match
  * @param {string} identifier - Class identifier
  * @param {Object} customMappings - Custom spell list mappings
  * @returns {Promise<Set<string>|null>} Matched spell list or null
  */
-async function findSpellListByTopLevelFolder(topLevelFolderName, identifier, customMappings) {
+async function getSpellListFromFolder(topLevelFolderName, identifier, customMappings) {
   const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
   for (const pack of journalPacks) {
     let packTopLevelFolder = null;

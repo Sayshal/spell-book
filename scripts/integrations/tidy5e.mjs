@@ -1,7 +1,5 @@
 import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
-import * as genericUtils from '../helpers/generic-utils.mjs';
-import { preloadSpellDataForActor } from '../helpers/spell-cache.mjs';
-import * as discoveryUtils from '../helpers/spell-discovery.mjs';
+import { ASSETS } from '../constants.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -20,11 +18,7 @@ export function registerTidy5eIntegration() {
 function onTidy5eRender(sheet, element, data) {
   const actor = data.actor;
   if (!canAddTidySpellbookButton(actor, element)) return;
-  preloadSpellDataForActor(actor).catch((error) => {
-    log(1, `Failed to preload spell data for ${actor.name}:`, error);
-  });
-  const htmlElement = genericUtils.getHtmlElement(element);
-  const spellsTab = htmlElement.querySelector('.spellbook');
+  const spellsTab = element.querySelector('.spellbook');
   if (!spellsTab) return;
   const utilityToolbar = spellsTab.querySelector('[data-tidy-sheet-part="utility-toolbar"]');
   if (!utilityToolbar) return;
@@ -41,11 +35,7 @@ function onTidy5eRender(sheet, element, data) {
 function onTidy5eQuadroneRender(sheet, element, data) {
   const actor = data.actor;
   if (!canAddTidySpellbookButton(actor, element)) return;
-  preloadSpellDataForActor(actor).catch((error) => {
-    log(1, `Failed to preload spell data for ${actor.name}:`, error);
-  });
-  const htmlElement = genericUtils.getHtmlElement(element);
-  const spellsTab = htmlElement.querySelector('.tidy-tab.spellbook');
+  const spellsTab = element.querySelector('.tidy-tab.spellbook');
   if (!spellsTab) return;
   const actionBar = spellsTab.querySelector('[data-tidy-sheet-part="action-bar"]');
   if (!actionBar) return;
@@ -60,10 +50,9 @@ function onTidy5eQuadroneRender(sheet, element, data) {
  * Check if Tidy5e spellbook button can be added
  */
 function canAddTidySpellbookButton(actor, element) {
-  const canCast = discoveryUtils.canCastSpells(actor);
+  const canCast = Object.keys(actor?.spellcastingClasses || {}).length > 0;
   if (!canCast) return false;
-  const htmlElement = genericUtils.getHtmlElement(element);
-  const hasSpellbook = htmlElement.querySelector('.spellbook') || htmlElement.querySelector('.tidy-tab.spellbook');
+  const hasSpellbook = element.querySelector('.spellbook') || htmlElement.querySelector('.tidy-tab.spellbook');
   if (!hasSpellbook) return false;
   return true;
 }
@@ -77,7 +66,7 @@ function createTidySpellbookButton(actor) {
   button.className = 'inline-icon-button spell-book-button';
   button.title = game.i18n.localize('SPELLBOOK.UI.OpenSpellBook');
   button.setAttribute('tabindex', '-1');
-  button.innerHTML = '<i class="fas fa-book-open"></i>';
+  button.innerHTML = `<img src="${ASSETS.MODULE_ICON}" alt=${game.i18n.localize('SPELLBOOK.LongRest.SwapConfirm')} class="spell-book-icon">`;
   button.addEventListener('click', (event) => openSpellbook(event, actor));
   return button;
 }
@@ -90,7 +79,7 @@ function createTidySpellbookButtonQuadrone(actor) {
   button.type = 'button';
   button.className = 'button button-icon-only spell-book-button';
   button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.OpenSpellBook'));
-  button.innerHTML = '<i class="fas fa-book-open"></i>';
+  button.innerHTML = `<img src="${ASSETS.MODULE_ICON}" alt=${game.i18n.localize('SPELLBOOK.LongRest.SwapConfirm')} class="spell-book-icon">`;
   button.addEventListener('click', (event) => openSpellbook(event, actor));
   return button;
 }

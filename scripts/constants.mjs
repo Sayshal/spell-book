@@ -12,14 +12,14 @@ export const MODULE = {
    * Current version of the default filter configuration
    * Increment this when you make changes to DEFAULT_FILTER_CONFIG
    */
-  DEFAULT_FILTER_CONFIG_VERSION: '0.9.0',
+  DEFAULT_FILTER_CONFIG_VERSION: '0.10.0',
 
   /**
    * Default filter configuration
    * @type {Array}
    */
   DEFAULT_FILTER_CONFIG: [
-    { id: 'name', type: 'search', enabled: true, order: 10, label: 'SPELLBOOK.Filters.SearchPlaceholder', sortable: false },
+    { id: 'name', type: 'search', enabled: true, order: 10, label: 'SPELLBOOK.Filters.Search', sortable: false },
     { id: 'level', type: 'dropdown', enabled: true, order: 20, label: 'SPELLBOOK.Filters.Level', sortable: true, searchAliases: ['LEVEL', 'LVL'] },
     { id: 'school', type: 'dropdown', enabled: true, order: 30, label: 'SPELLBOOK.Filters.School', sortable: true, searchAliases: ['SCHOOL'] },
     { id: 'castingTime', type: 'dropdown', enabled: true, order: 40, label: 'SPELLBOOK.Filters.CastingTime', sortable: true, searchAliases: ['CASTTIME', 'CASTING'] },
@@ -108,15 +108,6 @@ export const MODULE = {
     NONE: 'none',
     PREPARED: 'prepared',
     ALWAYS: 'always'
-  },
-
-  /**
-   * Batching configuration for lazy loading
-   * @type {Object}
-   */
-  BATCHING: {
-    SIZE: 30,
-    MARGIN: 100
   }
 };
 
@@ -177,8 +168,8 @@ export const TEMPLATES = {
   },
   DIALOGS: {
     ANALYTICS_IMPORT_SUMMARY: 'modules/spell-book/templates/dialogs/analytics-import-summary.hbs',
-    CREATE_SPELL_LIST: 'modules/spell-book/templates/dialogs/create-spell-list.hbs',
     COMPENDIUM_SELECTION: 'modules/spell-book/templates/dialogs/compendium-selection.hbs',
+    CREATE_SPELL_LIST: 'modules/spell-book/templates/dialogs/create-spell-list.hbs',
     FILTER_CONFIG: 'modules/spell-book/templates/dialogs/filter-configuration.hbs',
     LEARN_FROM_SCROLL: 'modules/spell-book/templates/dialogs/learn-from-scroll.hbs',
     LONG_REST_SWAP: 'modules/spell-book/templates/dialogs/long-rest-swap.hbs',
@@ -187,6 +178,8 @@ export const TEMPLATES = {
     RENAME_SPELL_LIST: `modules/spell-book/templates/dialogs/rename-spell-list.hbs`,
     SCROLL_SCANNER_RESULTS: 'modules/spell-book/templates/dialogs/scroll-scanner-results.hbs',
     SPELL_COMPARISON: 'modules/spell-book/templates/dialogs/spell-comparison.hbs',
+    SPELL_CUSTOMIZATION_BODY: 'modules/spell-book/templates/dialogs/spell-details-customization.hbs',
+    SPELL_CUSTOMIZATION_FOOTER: 'modules/spell-book/templates/dialogs/settings-footer.hbs',
     SPELL_LOADOUT: 'modules/spell-book/templates/dialogs/spell-loadout.hbs',
     SPELL_NOTES: 'modules/spell-book/templates/dialogs/spell-notes-dialog.hbs',
     SPELLBOOK_SETTINGS: 'modules/spell-book/templates/dialogs/spellbook-settings.hbs',
@@ -216,22 +209,57 @@ export const TEMPLATES = {
 export const SETTINGS = {
   ADVANCED_SEARCH_PREFIX: 'advancedSearchPrefix',
   CANTRIP_SCALE_VALUES: 'cantripScaleValues',
+  COMPENDIUM_SELECTION: 'compendiumSelection',
   CONSUME_SCROLLS_WHEN_LEARNING: 'consumeScrollsWhenLearning',
   CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',
   DEFAULT_ENFORCEMENT_BEHAVIOR: 'defaultEnforcementBehavior',
   DISABLE_LONG_REST_SWAP_PROMPT: 'disableLongRestSwapPrompt',
-  DISTANCE_UNIT: 'distanceUnit',
   ENABLE_JOURNAL_BUTTON: 'enableJournalButton',
   ENABLE_SPELL_USAGE_TRACKING: 'enableSpellUsageTracking',
   FILTER_CONFIGURATION: 'filterConfiguration',
+  GM_UI_CASTING_TIME: 'gmUICastingTime',
+  GM_UI_COMPARE: 'gmUICompare',
+  GM_UI_COMPONENTS: 'gmUIComponents',
+  GM_UI_CONCENTRATION: 'gmUIConcentration',
+  GM_UI_CONDITIONS: 'gmUIConditions',
+  GM_UI_DAMAGE_TYPES: 'gmUIDamageTypes',
+  GM_UI_MATERIAL_COMPONENTS: 'gmUIMaterialComponents',
+  GM_UI_RANGE: 'gmUIRange',
+  GM_UI_SAVE: 'gmUISave',
+  GM_UI_SCHOOL: 'gmUISchool',
+  GM_UI_SPELL_LEVEL: 'gmUISpellLevel',
   HIDDEN_SPELL_LISTS: 'hiddenSpellLists',
   INDEXED_COMPENDIUMS: 'indexedCompendiums',
-  LAZY_BATCH_SIZE: 'lazyBatchSize',
   LOGGING_LEVEL: 'loggingLevel',
   OPEN_SPELL_MANAGER: 'openSpellListManager',
+  PLAYER_UI_CASTING_TIME: 'playerUICastingTime',
+  PLAYER_UI_COMPARE: 'playerUICompare',
+  PLAYER_UI_COMPONENTS: 'playerUIComponents',
+  PLAYER_UI_CONCENTRATION: 'playerUIConcentration',
+  PLAYER_UI_CONDITIONS: 'playerUIConditions',
+  PLAYER_UI_DAMAGE_TYPES: 'playerUIDamageTypes',
+  PLAYER_UI_FAVORITES: 'playerUIFavorites',
+  PLAYER_UI_MATERIAL_COMPONENTS: 'playerUIMaterialComponents',
+  PLAYER_UI_NOTES: 'playerUINotes',
+  PLAYER_UI_RANGE: 'playerUIRange',
+  PLAYER_UI_SAVE: 'playerUISave',
+  PLAYER_UI_SCHOOL: 'playerUISchool',
+  PLAYER_UI_SPELL_LEVEL: 'playerUISpellLevel',
+  SETUP_MODE: 'setupMode',
+  SIDEBAR_CONTROLS_BOTTOM: 'sidebarControlsBottom',
   SPELL_BOOK_POSITION: 'spellBookPositionn',
   SPELL_COMPARISON_MAX: 'spellComparisonMax',
   SPELL_NOTES_DESC_INJECTION: 'injectNotesIntoDescriptions',
   SPELL_NOTES_LENGTH: 'spellNotesMaxLength',
-  SPELLCASTING_RULE_SET: 'spellcastingRuleSet'
+  SPELLCASTING_RULE_SET: 'spellcastingRuleSet',
+  WIZARD_BOOK_ICON_COLOR: 'wizardBookIconColor'
+};
+
+/**
+ * Asset paths used by the module
+ * @type {Object}
+ */
+export const ASSETS = {
+  WIZARDBOOK_ICON: 'modules/spell-book/assets/icon.webp',
+  MODULE_ICON: 'modules/spell-book/assets/icon_colored.webp'
 };

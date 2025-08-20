@@ -1,7 +1,6 @@
 import { FLAGS, MODULE } from '../constants.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
 import { log } from '../logger.mjs';
-import { RuleSetManager } from './rule-set-manager.mjs';
 
 /**
  * Manages wizard-specific spellbook functionality for a specific class
@@ -31,7 +30,6 @@ export class WizardSpellbookManager {
 
   /**
    * Initialize cache with pre-calculated values
-   * @private
    */
   async _initializeCache() {
     this._maxSpellsCache = this.getMaxSpellsAllowed();
@@ -50,13 +48,11 @@ export class WizardSpellbookManager {
 
   /**
    * Find the actor's wizard-enabled class for this identifier
+   * @todo - Is this required if we have a genericUtils for it?
    * @returns {Item5e|null} - The wizard-enabled class item or null
-   * @private
    */
   _findWizardClass() {
-    const classItem = this.actor.items.find(
-      (i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === this.classIdentifier || i.name.toLowerCase() === this.classIdentifier)
-    );
+    const classItem = this.actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === this.classIdentifier || i.name.toLowerCase() === this.classIdentifier));
     if (!classItem) return null;
     if (genericUtils.isClassWizardEnabled(this.actor, this.classIdentifier)) return classItem;
     return null;
@@ -65,7 +61,6 @@ export class WizardSpellbookManager {
   /**
    * Initialize wizard flags on the actor for this class
    * @returns {Promise<Object>} Update data applied, if any
-   * @private
    */
   async _initializeFlags() {
     const updateData = {};
@@ -74,26 +69,6 @@ export class WizardSpellbookManager {
     if (!flags[copiedSpellsFlag]) updateData[`flags.${MODULE.ID}.${copiedSpellsFlag}`] = [];
     if (Object.keys(updateData).length > 0) await this.actor.update(updateData);
     return updateData;
-  }
-
-  /**
-   * Get the wizard's cantrip swapping rules from class-specific settings
-   * @returns {string} The current cantrip swapping mode ('none', 'levelUp', 'longRest')
-   */
-  getCantripSwappingMode() {
-    const classRules = RuleSetManager.getClassRules(this.actor, this.classIdentifier);
-    return classRules.cantripSwapping || 'none';
-  }
-
-  /**
-   * Determine if wizard can swap cantrips on long rest
-   * @param {boolean} isLongRest - Whether this is being called during a long rest
-   * @returns {boolean} - Whether cantrip swapping is allowed
-   */
-  canSwapCantripsOnLongRest(isLongRest) {
-    if (!isLongRest) return true;
-    const cantripSwappingMode = this.getCantripSwappingMode();
-    return cantripSwappingMode === 'longRest';
   }
 
   /**
@@ -138,35 +113,15 @@ export class WizardSpellbookManager {
   }
 
   /**
-   * Check if a spell can be prepared by the wizard
-   * @param {string} spellUuid - UUID of the spell
-   * @returns {Promise<boolean>} Whether the spell can be prepared
-   */
-  async canPrepareSpell(spellUuid) {
-    return this.isSpellInSpellbook(spellUuid);
-  }
-
-  /**
-   * Get all ritual spells that can be cast from the spellbook
-   * @returns {Promise<Array<Item5e>>} Array of ritual spell items
-   */
-  async getRitualSpells() {
-    const spellbookSpells = await this.getSpellbookSpells();
-    const ritualSpells = [];
-    for (const uuid of spellbookSpells) {
-      const spell = await fromUuid(uuid);
-      if (spell && spell.system.components?.ritual) ritualSpells.push(spell);
-    }
-    return ritualSpells;
-  }
-
-  /**
-   * Calculate cost to copy a spell
+   * Calculate cost to copy a spell, accounting for free spells
    * @param {Item5e} spell - The spell to copy
-   * @returns {number} Cost in gold pieces
+   * @returns {Promise<{cost: number, isFree: boolean}>} Cost in gold pieces and if it's free
    */
-  getCopyingCost(spell) {
-    return spell.system.level === 0 ? 0 : spell.system.level * 50;
+  async getCopyingCost(spell) {
+    const isFree = await this.isSpellFree(spell);
+    if (isFree) return { cost: 0, isFree: true };
+    const cost = spell.system.level === 0 ? 0 : spell.system.level * 50;
+    return { cost, isFree: false };
   }
 
   /**
@@ -235,9 +190,14 @@ export class WizardSpellbookManager {
     const folder = this.getSpellbooksFolder();
     const className = this.classItem?.name || this.classIdentifier;
     const journalName = this.classIdentifier === 'wizard' ? this.actor.name : `${this.actor.name} (${className})`;
+    const actorOwnership = this.actor.ownership || {};
+    const ownerUserIds = Object.keys(actorOwnership).filter((userId) => userId !== 'default' && actorOwnership[userId] === 3);
+    const correctOwnership = { default: 0, [game.user.id]: 3 };
+    for (const ownerUserId of ownerUserIds) correctOwnership[ownerUserId] = 3;
     const journalData = {
       name: journalName,
       folder: folder ? folder.id : null,
+      ownership: correctOwnership,
       flags: {
         [MODULE.ID]: {
           actorId: this.actor.id,
@@ -250,6 +210,7 @@ export class WizardSpellbookManager {
         {
           name: game.i18n.format('SPELLBOOK.Journal.PageTitle', { name: journalName }),
           type: 'spells',
+          ownership: correctOwnership,
           flags: {
             [MODULE.ID]: {
               isActorSpellbook: true,
@@ -366,17 +327,5 @@ export class WizardSpellbookManager {
     if (spell.system.level === 0) return true;
     const remainingFree = await this.getRemainingFreeSpells();
     return remainingFree > 0;
-  }
-
-  /**
-   * Calculate cost to copy a spell, accounting for free spells
-   * @param {Item5e} spell - The spell to copy
-   * @returns {Promise<{cost: number, isFree: boolean}>} Cost in gold pieces and if it's free
-   */
-  async getCopyingCostWithFree(spell) {
-    const isFree = await this.isSpellFree(spell);
-    if (isFree) return { cost: 0, isFree: true };
-    const cost = this.getCopyingCost(spell);
-    return { cost, isFree: false };
   }
 }

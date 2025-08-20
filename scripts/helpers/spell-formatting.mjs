@@ -1,36 +1,6 @@
 import { MODULE } from '../constants.mjs';
-import { log } from '../logger.mjs';
 import * as genericUtils from './generic-utils.mjs';
-
-/**
- * Format spell details for display with notes icon at the beginning
- * @param {Object} spell - The spell object
- * @param {Boolean} includeNotes - Optional flag to disable including notes
- * @returns {string} - Formatted spell details string with notes icon
- */
-export function formatSpellDetails(spell, includeNotes = true) {
-  try {
-    if (!spell) return '';
-    const details = [];
-    const componentsStr = formatSpellComponents(spell);
-    if (componentsStr) details.push(componentsStr);
-    const activationStr = formatSpellActivation(spell);
-    if (activationStr) details.push(activationStr);
-    const schoolStr = formatSpellSchool(spell);
-    if (schoolStr) details.push(schoolStr);
-    const materialsStr = formatMaterialComponents(spell);
-    if (materialsStr) details.push(materialsStr);
-    const baseDetails = details.filter(Boolean).join(' • ');
-    if (!includeNotes) return baseDetails;
-    const notesIcon = createNotesIcon(spell);
-    if (notesIcon && baseDetails) return `${notesIcon} ${baseDetails}`;
-    else if (notesIcon) return notesIcon;
-    else return baseDetails;
-  } catch (error) {
-    log(1, 'Error formatting spell details:', error);
-    return '';
-  }
-}
+import { UICustomizationHelper } from './ui-customization.mjs';
 
 /**
  * Process spell list data for display
@@ -38,9 +8,8 @@ export function formatSpellDetails(spell, includeNotes = true) {
  * @returns {Object} Processed spell list with display data
  */
 export function processSpellListForDisplay(spellList) {
-  if (!spellList) return null;
   const processed = foundry.utils.deepClone(spellList);
-  processed.isCustomList = !!spellList.document.flags?.[MODULE.ID]?.isDuplicate;
+  processed.isCustomList = !!spellList.document?.flags?.[MODULE.ID]?.isCustom || !!spellList.document?.flags?.[MODULE.ID]?.isDuplicate;
   processed.canRestore = !!(processed.isCustomList && spellList.document.flags?.[MODULE.ID]?.originalUuid);
   processed.originalUuid = spellList.document.flags?.[MODULE.ID]?.originalUuid;
   processed.actorId = spellList.document.flags?.[MODULE.ID]?.actorId;
@@ -67,6 +36,8 @@ export function processSpellItemForDisplay(spell) {
   const processed = foundry.utils.deepClone(spell);
   processed.cssClasses = 'spell-item';
   processed.dataAttributes = `data-uuid="${spell.compendiumUuid}"`;
+  processed.showCompare = UICustomizationHelper.isGMElementEnabled('compare');
+  processed.formattedDetails = UICustomizationHelper.buildGMMetadata(spell);
   return processed;
 }
 
@@ -132,27 +103,13 @@ export function formatMaterialComponents(spell) {
 }
 
 /**
- * Create notes icon for spell - always shows, empty or filled based on notes
- * @param {Object} spell - The spell object
- * @returns {string} - HTML for notes icon
- */
-export function createNotesIcon(spell) {
-  const spellUuid = spell.uuid || spell.compendiumUuid;
-  if (!spellUuid) return '';
-  const hasNotes = !!(spell.hasNotes || (spell.userData?.notes && spell.userData.notes.trim()));
-  const iconClass = hasNotes ? 'fas fa-sticky-note' : 'far fa-sticky-note';
-  const tooltip = hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes');
-  return `<i class="${iconClass} spell-notes-icon" data-uuid="${spellUuid}" data-action="editNotes" data-tooltip="${tooltip}" aria-label="${tooltip}"></i>`;
-}
-
-/**
  * Get localized preparation mode text
  * @param {string} mode - The preparation mode
  * @returns {string} - Localized preparation mode text
  */
 export function getLocalizedPreparationMode(mode) {
   if (!mode) return '';
-  const label = genericUtils.getConfigLabel(CONFIG.DND5E.spellPreparationModes, mode);
+  const label = genericUtils.getConfigLabel(CONFIG.DND5E.spellcasting, mode);
   if (label) return label;
   return mode.charAt(0).toUpperCase() + mode.slice(1);
 }
@@ -258,7 +215,8 @@ export function checkIsConcentration(spell) {
  */
 export function extractMaterialComponents(spell) {
   const materials = spell.system?.materials || {};
-  return { consumed: !!materials.consumed, cost: materials.cost || 0, value: materials.value || '', hasConsumedMaterials: !!materials.consumed };
+  const result = { consumed: materials.consumed, cost: materials.cost || 0, value: materials.value || '', hasConsumedMaterials: !!materials.consumed };
+  return result;
 }
 
 /**

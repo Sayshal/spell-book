@@ -1,25 +1,19 @@
 import { GMSpellListManager } from '../apps/gm-spell-list-manager.mjs';
 import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
 import { SpellAnalyticsDashboard } from '../apps/spell-analytics-dashboard.mjs';
-import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
-import * as genericUtils from '../helpers/generic-utils.mjs';
-import { preloadSpellDataForActor } from '../helpers/spell-cache.mjs';
-import * as discoveryUtils from '../helpers/spell-discovery.mjs';
+import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import { log } from '../logger.mjs';
 import { SpellManager } from '../managers/spell-manager.mjs';
+
+const { renderTemplate } = foundry.applications.handlebars;
 
 /**
  * Register hooks related to DnD5e system integration
  */
 export function registerDnD5eIntegration() {
   try {
-    if (!foundry.utils.isNewerVersion(game.version, '12.999')) {
-      Hooks.on('renderActorSheet5e', addSpellbookButton);
-      Hooks.on('renderSidebarTab', addJournalSpellBookButton);
-    } else {
-      Hooks.on('renderActorSheetV2', addSpellbookButton);
-      Hooks.on('activateJournalDirectory', addJournalSpellBookButtonV13);
-    }
+    Hooks.on('renderActorSheetV2', addSpellbookButton);
+    Hooks.on('activateJournalDirectory', addJournalSpellBookButton);
     Hooks.on('dnd5e.restCompleted', handleRestCompleted);
     log(3, 'Registering DnD5e system integration');
   } catch (error) {
@@ -33,20 +27,9 @@ export function registerDnD5eIntegration() {
 function addSpellbookButton(app, html, data) {
   const actor = data.actor;
   if (!canAddSpellbookButton(actor, html)) return;
-  preloadSpellDataForActor(actor).catch((error) => {
-    log(1, `Failed to preload spell data for ${actor.name}:`, error);
-  });
-  const htmlElement = genericUtils.getHtmlElement(html);
-  let spellsTab, controlsList;
-  if (foundry.utils.isNewerVersion(game.version, '12.999')) {
-    spellsTab = htmlElement.querySelector('section.tab[data-tab="spells"]');
-    if (!spellsTab) return;
-    controlsList = spellsTab.querySelector('item-list-controls search ul.controls');
-  } else {
-    spellsTab = htmlElement.querySelector('.tab.spells');
-    if (!spellsTab) return;
-    controlsList = spellsTab.querySelector('ul.controls');
-  }
+  const spellsTab = html.querySelector('section.tab[data-tab="spells"]');
+  if (!spellsTab) return;
+  const controlsList = spellsTab.querySelector('item-list-controls search ul.controls');
   if (!controlsList) return;
   const filterButton = controlsList.querySelector('button[data-action="filter"]');
   if (!filterButton) return;
@@ -101,27 +84,12 @@ async function handleRestCompleted(actor, result, config) {
 }
 
 /**
- * Add spellbook button to journal sidebar footer (v12)
+ * Add spellbook button to journal sidebar footer
  */
-function addJournalSpellBookButton(app, html, data) {
-  if (app.tabName !== 'journal') return;
+function addJournalSpellBookButton(app) {
   if (!game.settings.get(MODULE.ID, SETTINGS.ENABLE_JOURNAL_BUTTON)) return;
   if (!game.user.isGM) return;
-  const footer = html.find('.directory-footer');
-  if (!footer.length) return;
-  if (footer.find('.spell-book-buttons-container').length) return;
-  const container = createJournalButtonsContainer();
-  footer[0].appendChild(container);
-}
-
-/**
- * Add spellbook button to journal sidebar footer (v13)
- */
-function addJournalSpellBookButtonV13(app) {
-  if (!game.settings.get(MODULE.ID, SETTINGS.ENABLE_JOURNAL_BUTTON)) return;
-  if (!game.user.isGM) return;
-  const htmlElement = genericUtils.getHtmlElement(app.element);
-  const footer = htmlElement.querySelector('.directory-footer');
+  const footer = app.element.querySelector('.directory-footer');
   if (!footer) return;
   if (footer.querySelector('.spell-book-buttons-container')) return;
   const container = createJournalButtonsContainer();
@@ -230,12 +198,9 @@ async function showLongRestSwapDialog(longRestClasses) {
  * Check if spellbook button can be added
  */
 function canAddSpellbookButton(actor, html) {
-  const canCast = discoveryUtils.canCastSpells(actor);
+  const canCast = Object.keys(actor?.spellcastingClasses || {}).length > 0;
   if (!canCast) return false;
-  const htmlElement = genericUtils.getHtmlElement(html);
-  let hasSpellsTab;
-  if (foundry.utils.isNewerVersion(game.version, '12.999')) hasSpellsTab = htmlElement.querySelector('section.tab[data-tab="spells"]');
-  else hasSpellsTab = htmlElement.querySelector('.tab.spells');
+  const hasSpellsTab = html.querySelector('section.tab[data-tab="spells"]');
   if (!hasSpellsTab) return false;
   return true;
 }
@@ -249,7 +214,7 @@ function createSpellBookButton(actor) {
   button.className = 'unbutton filter-control always-interactive spell-book-button';
   button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.OpenSpellBook'));
   button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.OpenSpellBook'));
-  button.innerHTML = '<i class="fas fa-book-open"></i>';
+  button.innerHTML = `<img src="${ASSETS.MODULE_ICON}" alt=${game.i18n.localize('SPELLBOOK.LongRest.SwapConfirm')} class="spell-book-icon">`;
   button.addEventListener('click', onSpellBookButtonClick.bind(null, actor));
   return button;
 }
@@ -274,7 +239,7 @@ async function onSpellBookButtonClick(actor, event) {
     }
     if (hasCompletedSwaps) {
       const spellManager = new SpellManager(actor);
-      await spellManager.resetSwapTracking();
+      await spellManager.cantripManager.resetSwapTracking();
     }
     if (longRestFlagValue === undefined || longRestFlagValue === null) actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
   }

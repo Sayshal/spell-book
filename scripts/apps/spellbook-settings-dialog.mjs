@@ -25,10 +25,10 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       increaseCantripPrepBonus: SpellbookSettingsDialog.increaseCantripPrepBonus,
       decreaseCantripPrepBonus: SpellbookSettingsDialog.decreaseCantripPrepBonus
     },
-    classes: ['spellbook-settings-dialog'],
+    classes: ['spell-book', 'spellbook-settings-dialog'],
     window: {
       icon: 'fas fa-book-spells',
-      resizable: true,
+      resizable: false,
       minimizable: true,
       positioned: true
     },
@@ -56,6 +56,26 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   /** @override */
   get title() {
     return game.i18n.format('SPELLBOOK.Settings.Title', { name: this.actor.name });
+  }
+
+  /** @override */
+  async _prepareContext(options) {
+    const context = await super._prepareContext(options);
+    RuleSetManager.initializeNewClasses(this.actor);
+    const globalSettings = this._prepareGlobalSettingsFormData();
+    const spellcastingClasses = await this._prepareClassSettings();
+    const submitButton = this._prepareSubmitButton();
+    const availableSpellLists = await this._prepareSpellListOptions();
+    context.globalSettings = globalSettings;
+    context.spellcastingClasses = spellcastingClasses;
+    context.hasNotices = spellcastingClasses.some((classData) => classData.rules._noScaleValue || classData.hasCustomSpellList);
+    context.availableSpellLists = availableSpellLists;
+    context.submitButton = submitButton;
+    context.RULE_SETS = MODULE.RULE_SETS;
+    context.RITUAL_CASTING_MODES = MODULE.RITUAL_CASTING_MODES;
+    context.ENFORCEMENT_BEHAVIOR = MODULE.ENFORCEMENT_BEHAVIOR;
+    context.actor = this.actor;
+    return context;
   }
 
   _prepareGlobalSettingsFormData() {
@@ -131,7 +151,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   /**
    * Prepare class settings data including rules and stats
    * @returns {Promise<Array>} Array of class settings data
-   * @private
    */
   async _prepareClassSettings() {
     const classSettings = [];
@@ -190,7 +209,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    * @param {Object} formRules - The form rules configuration (with actual saved values)
    * @param {Array} availableSpellLists - Available spell list options
    * @returns {Object} Object containing all form element HTML for the class
-   * @private
    */
   _prepareClassFormElements(identifier, formRules, availableSpellLists) {
     const showCantripsCheckbox = formElements.createCheckbox({
@@ -309,7 +327,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    * @param {string} identifier - The class identifier
    * @param {number} currentValue - The current spell preparation bonus value
    * @returns {string} HTML string for the spell preparation bonus controls
-   * @private
    */
   _createSpellPreparationBonusControls(identifier, currentValue) {
     const container = document.createElement('div');
@@ -351,7 +368,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    * @param {string} identifier - The class identifier
    * @param {number} currentValue - The current cantrip preparation bonus value
    * @returns {string} HTML string for the cantrip preparation bonus controls
-   * @private
    */
   _createCantripPreparationBonusControls(identifier, currentValue) {
     const container = document.createElement('div');
@@ -407,7 +423,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   /**
    * Prepare available spell list options for custom selection
    * @returns {Promise<Array>} Array of spell list options
-   * @private
    */
   async _prepareSpellListOptions() {
     try {
@@ -481,49 +496,9 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Prepare submit button configuration
-   * @returns {Object} Submit button configuration
-   * @private
-   */
-  _prepareSubmitButton() {
-    const submitButton = document.createElement('button');
-    submitButton.type = 'submit';
-    submitButton.name = 'submit';
-    submitButton.className = 'submit-button';
-    submitButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.SaveButton'));
-    const icon = document.createElement('i');
-    icon.className = 'fas fa-save';
-    icon.setAttribute('aria-hidden', 'true');
-    submitButton.appendChild(icon);
-    submitButton.appendChild(document.createTextNode(` ${game.i18n.localize('SPELLBOOK.Settings.SaveButton')}`));
-    return { submitButtonHtml: formElements.elementToHtml(submitButton) };
-  }
-
-  /** @override */
-  async _prepareContext(options) {
-    const context = await super._prepareContext(options);
-    RuleSetManager.initializeNewClasses(this.actor);
-    const globalSettings = this._prepareGlobalSettingsFormData();
-    const spellcastingClasses = await this._prepareClassSettings();
-    const submitButton = this._prepareSubmitButton();
-    const availableSpellLists = await this._prepareSpellListOptions();
-    context.globalSettings = globalSettings;
-    context.spellcastingClasses = spellcastingClasses;
-    context.hasNotices = spellcastingClasses.some((classData) => classData.rules._noScaleValue || classData.hasCustomSpellList);
-    context.availableSpellLists = availableSpellLists;
-    context.submitButton = submitButton;
-    context.RULE_SETS = MODULE.RULE_SETS;
-    context.RITUAL_CASTING_MODES = MODULE.RITUAL_CASTING_MODES;
-    context.ENFORCEMENT_BEHAVIOR = MODULE.ENFORCEMENT_BEHAVIOR;
-    context.actor = this.actor;
-    return context;
-  }
-
-  /**
    * Increase spell preparation bonus for a specific class
    * @param {Event} event - The click event
    * @param {HTMLElement} target - The clicked button
-   * @static
    */
   static increaseSpellPrepBonus(event, target) {
     const classIdentifier = target.dataset.class;
@@ -542,7 +517,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    * Decrease spell preparation bonus for a specific class
    * @param {Event} event - The click event
    * @param {HTMLElement} target - The clicked button
-   * @static
    */
   static decreaseSpellPrepBonus(event, target) {
     const classIdentifier = target.dataset.class;
@@ -571,10 +545,27 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
+   * Prepare submit button configuration
+   * @returns {Object} Submit button configuration
+   */
+  _prepareSubmitButton() {
+    const submitButton = document.createElement('button');
+    submitButton.type = 'submit';
+    submitButton.name = 'submit';
+    submitButton.className = 'submit-button';
+    submitButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.SaveButton'));
+    const icon = document.createElement('i');
+    icon.className = 'fas fa-save';
+    icon.setAttribute('aria-hidden', 'true');
+    submitButton.appendChild(icon);
+    submitButton.appendChild(document.createTextNode(` ${game.i18n.localize('SPELLBOOK.Settings.SaveButton')}`));
+    return { submitButtonHtml: formElements.elementToHtml(submitButton) };
+  }
+
+  /**
    * Increase cantrip preparation bonus for a specific class
    * @param {Event} event - The click event
    * @param {HTMLElement} target - The clicked button
-   * @static
    */
   static increaseCantripPrepBonus(event, target) {
     const classIdentifier = target.dataset.class;
@@ -593,7 +584,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    * Decrease cantrip preparation bonus for a specific class
    * @param {Event} event - The click event
    * @param {HTMLElement} target - The clicked button
-   * @static
    */
   static decreaseCantripPrepBonus(event, target) {
     const classIdentifier = target.dataset.class;
@@ -642,7 +632,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    * @param {string} classIdentifier - The class identifier
    * @param {string} bonusType - The type of bonus ('spell' or 'cantrip')
    * @param {number} newBonus - The new bonus value
-   * @private
    */
   _updateClassStatsDisplay(classIdentifier, bonusType, newBonus) {
     const classSection = this.element.querySelector(`[data-class="${classIdentifier}"]`);
@@ -654,6 +643,32 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       else if (newBonus < 0) bonusDisplay.textContent = `${newBonus} ${game.i18n.localize(labelKey)}`;
       else bonusDisplay.textContent = `±0 ${game.i18n.localize(labelKey)}`;
       bonusDisplay.classList.toggle('has-bonus', newBonus !== 0);
+    }
+  }
+
+  /**
+   * Handle cantrip visibility changes - cleanup when disabled, restore when enabled
+   * @param {Actor5e} actor - The actor
+   * @param {Object} changes - Object mapping class IDs to 'enabled'/'disabled'
+   * @returns {Promise<void>}
+   */
+  static async _handleCantripVisibilityChanges(actor, changes) {
+    const spellManager = new SpellManager(actor);
+    for (const [classId, changeType] of Object.entries(changes)) {
+      if (changeType === 'disabled') {
+        const cantripsToRemove = actor.items
+          .filter(
+            (item) =>
+              item.type === 'spell' &&
+              item.system.level === 0 &&
+              (item.system.sourceClass === classId || item.sourceClass === classId) &&
+              !item.system.preparation?.alwaysPrepared &&
+              !item.flags?.dnd5e?.cachedFor
+          )
+          .map((item) => item.id);
+        if (cantripsToRemove.length > 0) await actor.deleteEmbeddedDocuments('Item', cantripsToRemove);
+        await spellManager.cleanupCantripsForClass(classId);
+      }
     }
   }
 
@@ -707,32 +722,5 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     for (const spellbook of openSpellbooks) await spellbook.refreshFromSettingsChange();
     ui.notifications.info(game.i18n.format('SPELLBOOK.Settings.Saved', { name: actor.name }));
     return actor;
-  }
-
-  /**
-   * Handle cantrip visibility changes - cleanup when disabled, restore when enabled
-   * @param {Actor5e} actor - The actor
-   * @param {Object} changes - Object mapping class IDs to 'enabled'/'disabled'
-   * @returns {Promise<void>}
-   * @private
-   */
-  static async _handleCantripVisibilityChanges(actor, changes) {
-    const spellManager = new SpellManager(actor);
-    for (const [classId, changeType] of Object.entries(changes)) {
-      if (changeType === 'disabled') {
-        const cantripsToRemove = actor.items
-          .filter(
-            (item) =>
-              item.type === 'spell' &&
-              item.system.level === 0 &&
-              (item.system.sourceClass === classId || item.sourceClass === classId) &&
-              !item.system.preparation?.alwaysPrepared &&
-              !item.flags?.dnd5e?.cachedFor
-          )
-          .map((item) => item.id);
-        if (cantripsToRemove.length > 0) await actor.deleteEmbeddedDocuments('Item', cantripsToRemove);
-        await spellManager.cleanupCantripsForClass(classId);
-      }
-    }
   }
 }

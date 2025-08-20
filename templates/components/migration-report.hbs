@@ -1,21 +1,23 @@
-<h2>{{localize 'SPELLBOOK.Migrations.ChatTitle'}}</h2>
-<p>{{localize 'SPELLBOOK.Migrations.ChatDescription'}}</p>
-<p>{{localize 'SPELLBOOK.Migrations.TotalUpdated' count=totalProcessed}}</p>
-{{#if deprecatedResults.invalidFlagRemovals}}
-  <p><strong>{{localize 'SPELLBOOK.Migrations.InvalidFlagsRemoved'}}:</strong>
-    {{localize 'SPELLBOOK.Migrations.InvalidFlagsRemovedCount' count=deprecatedResults.invalidFlagRemovals}}
-  </p>
-{{/if}}
-{{#if folderResults.processed}}
-  {{> modules/spell-book/templates/components/migration-folder-results.hbs folderResults=folderResults}}
-{{/if}}
-{{#if ownershipResults.processed}}
-  {{> modules/spell-book/templates/components/migration-ownership-results.hbs ownershipResults=ownershipResults}}
-{{/if}}
-{{#if userDataResults.processed}}
-  {{> modules/spell-book/templates/components/migration-user-data-results.hbs userDataResults=userDataResults}}
-{{/if}}
-{{#if deprecatedResults.actors.length}}
-  {{> modules/spell-book/templates/components/migration-actor-list.hbs actors=deprecatedResults.actors}}
-{{/if}}
-<p>{{localize 'SPELLBOOK.Migrations.Apology'}}</p>
+<div class="spell-book-chat-message spell-book-migration-report">
+  <h4>{{localize 'SPELLBOOK.Migrations.ChatTitle'}}</h4>
+  <p>{{localize 'SPELLBOOK.Migrations.ChatDescription'}}</p>
+  <p>{{localize 'SPELLBOOK.Migrations.TotalUpdated' count=totalProcessed}}</p>
+  {{#if deprecatedResults.invalidFlagRemovals}}
+    <p><strong>{{localize 'SPELLBOOK.Migrations.InvalidFlagsRemoved'}}:</strong>
+      {{localize 'SPELLBOOK.Migrations.InvalidFlagsRemovedCount' count=deprecatedResults.invalidFlagRemovals}}
+    </p>
+  {{/if}}
+  {{#if folderResults.processed}}
+    {{> modules/spell-book/templates/components/migration-folder-results.hbs folderResults=folderResults}}
+  {{/if}}
+  {{#if ownershipResults.processed}}
+    {{> modules/spell-book/templates/components/migration-ownership-results.hbs ownershipResults=ownershipResults}}
+  {{/if}}
+  {{#if userDataResults.processed}}
+    {{> modules/spell-book/templates/components/migration-user-data-results.hbs userDataResults=userDataResults}}
+  {{/if}}
+  {{#if deprecatedResults.actors.length}}
+    {{> modules/spell-book/templates/components/migration-actor-list.hbs actors=deprecatedResults.actors}}
+  {{/if}}
+  <p>{{localize 'SPELLBOOK.Migrations.Apology'}}</p>
+</div>

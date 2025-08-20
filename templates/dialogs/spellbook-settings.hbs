@@ -25,16 +25,16 @@
     <legend>{{localize 'SPELLBOOK.Settings.GlobalRules'}}</legend>
 
     <div class="setting-row">
-      <label for="rule-set-override">{{localize 'SPELLBOOK.Settings.RuleSetOverride.Label'}}</label>
       <i class="fas fa-question-circle setting-tooltip"
         data-tooltip="{{localize 'SPELLBOOK.Settings.RuleSetOverride.Hint'}}"></i>
+      <label for="rule-set-override">{{localize 'SPELLBOOK.Settings.RuleSetOverride.Label'}}</label>
       {{{globalSettings.ruleSetSelectHtml}}}
     </div>
 
     <div class="setting-row">
-      <label for="enforcement-behavior">{{localize 'SPELLBOOK.Settings.EnforcementBehavior.Label'}}</label>
       <i class="fas fa-question-circle setting-tooltip"
         data-tooltip="{{localize 'SPELLBOOK.Settings.EnforcementBehavior.Hint'}}"></i>
+      <label for="enforcement-behavior">{{localize 'SPELLBOOK.Settings.EnforcementBehavior.Label'}}</label>
       {{{globalSettings.enforcementSelectHtml}}}
     </div>
   </fieldset>
@@ -72,11 +72,11 @@
 
             <div class="class-settings-list">
               {{!-- Show Cantrips Setting --}}
-              <div class="setting-row {{#if classData.rules._noScaleValue}}disabled{{/if}}">
-                <label
-                  for="show-cantrips-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.ShowCantrips.Label'}}</label>
+              <div class="setting-row{{#if classData.rules._noScaleValue}} disabled{{/if}}">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.ShowCantrips.Hint'}}"></i>
+                <label
+                  for="show-cantrips-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.ShowCantrips.Label'}}</label>
                 {{{classData.formElements.showCantripsCheckboxHtml}}}
                 {{#if classData.rules._noScaleValue}}
                   <small class="setting-note warning">{{localize 'SPELLBOOK.Settings.DisabledNoScaleValue'}}</small>
@@ -85,64 +85,64 @@
 
               {{!-- Force Wizard Mode Setting --}}
               <div class="setting-row">
-                <label
-                  for="force-wizard-mode-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.ForceWizardMode.Label'}}</label>
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.ForceWizardMode.Hint'}}"></i>
+                <label
+                  for="force-wizard-mode-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.ForceWizardMode.Label'}}</label>
                 {{{classData.formElements.forceWizardModeCheckboxHtml}}}
               </div>
 
               {{!-- Cantrip Swapping Setting --}}
-              <div class="setting-row {{#unless classData.rules.showCantrips}}disabled{{/unless}}">
-                <label
-                  for="cantrip-swapping-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.CantripSwapping.Label'}}</label>
+              <div class="setting-row{{#unless classData.rules.showCantrips}} disabled{{/unless}}">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.CantripSwapping.Hint'}}"></i>
+                <label
+                  for="cantrip-swapping-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.CantripSwapping.Label'}}</label>
                 {{{classData.formElements.cantripSwappingSelectHtml}}}
               </div>
 
               {{!-- Spell Swapping Setting --}}
               <div class="setting-row">
-                <label
-                  for="spell-swapping-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.SpellSwapping.Label'}}</label>
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.SpellSwapping.Hint'}}"></i>
+                <label
+                  for="spell-swapping-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.SpellSwapping.Label'}}</label>
                 {{{classData.formElements.spellSwappingSelectHtml}}}
               </div>
 
               {{!-- Ritual Casting Setting --}}
               <div class="setting-row">
-                <label
-                  for="ritual-casting-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.RitualCasting.Label'}}</label>
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.RitualCasting.Hint'}}"></i>
+                <label
+                  for="ritual-casting-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.RitualCasting.Label'}}</label>
                 {{{classData.formElements.ritualCastingSelectHtml}}}
               </div>
 
               {{!-- Custom Spell List Setting --}}
               <div class="setting-row">
-                <label
-                  for="custom-spell-list-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.CustomSpellList.Label'}}</label>
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.CustomSpellList.Hint'}}"></i>
+                <label
+                  for="custom-spell-list-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.CustomSpellList.Label'}}</label>
                 {{{classData.formElements.customSpellListSelectHtml}}}
               </div>
 
               {{!-- Spell Preparation Bonus Setting --}}
               <div class="setting-row">
-                <label
-                  for="spell-preparation-bonus-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.SpellPreparationBonus.Label'}}</label>
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.SpellPreparationBonus.Hint'}}"></i>
+                <label
+                  for="spell-preparation-bonus-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.SpellPreparationBonus.Label'}}</label>
                 {{{classData.formElements.spellPreparationBonusControlsHtml}}}
               </div>
 
               {{!-- Cantrip Preparation Bonus Setting --}}
-              <div class="setting-row {{#unless classData.rules.showCantrips}}disabled{{/unless}}">
-                <label
-                  for="cantrip-preparation-bonus-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.CantripPreparationBonus.Label'}}</label>
+              <div class="setting-row{{#unless classData.rules.showCantrips}} disabled{{/unless}}">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.CantripPreparationBonus.Hint'}}"></i>
+                <label
+                  for="cantrip-preparation-bonus-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.CantripPreparationBonus.Label'}}</label>
                 {{{classData.formElements.cantripPreparationBonusControlsHtml}}}
               </div>
             </div>

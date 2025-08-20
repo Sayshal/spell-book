@@ -157,7 +157,6 @@ export class SpellLoadoutManager {
    * Apply spell configuration to checkboxes
    * @param {Array} spellConfiguration - Array of spell UUIDs to prepare
    * @param {string} classIdentifier - The class identifier
-   * @private
    */
   _applySpellConfiguration(spellConfiguration, classIdentifier) {
     if (!this.spellbook) throw new Error('No spellbook reference available');
@@ -187,7 +186,6 @@ export class SpellLoadoutManager {
 
   /**
    * Invalidate the loadouts cache
-   * @private
    */
   _invalidateCache() {
     this._loadoutsCache = null;

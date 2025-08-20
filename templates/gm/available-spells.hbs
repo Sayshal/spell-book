@@ -50,7 +50,7 @@
 
 		<div class="filter-range">
 			<label id="range-filter-label">{{localize "SPELLBOOK.Filters.Range"}}
-				({{#if (eq (lookup @root.settings "distanceUnit") "meters")}}{{localize "SPELLBOOK.Settings.DistanceUnit.Meters"}}{{else}}{{localize "SPELLBOOK.Settings.DistanceUnit.Feet"}}{{/if}})</label>
+				({{#if @root.settings.useMetricUnits}}{{localize "DND5E.DistM"}}{{else}}{{localize "DND5E.DistFt"}}{{/if}})</label>
 			<div class="range-inputs" role="group" aria-labelledby="range-filter-label">
 				{{{filterFormElements.minRangeInputHtml}}}
 				<div class="range-separator" aria-hidden="true">
@@ -94,7 +94,13 @@
 									{{{spell.enrichedIcon}}}
 									<div class="name-stacked">
 										<span class="title">{{spell.name}}</span>
-										<span class="subtitle">{{spell.formattedDetails}}</span>
+										<span class="subtitle">{{#if spell.showCompareLink}}{{#if spell.showCompare}}<button
+														class="compare-button compare-link{{#if spell.isInComparison}} active{{/if}}"
+														data-action="compareSpell" data-uuid="{{spell.uuid}}"
+														aria-label="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=spell.name}}"
+														data-tooltip="{{localize "SPELLBOOK.Comparison.Compare"}}">
+														<i class="fa-solid fa-clipboard-question"></i>
+													</button> {{/if}}{{/if}}{{spell.formattedDetails}}</span>
 									</div>
 								</div>
 

@@ -14,7 +14,6 @@ export class FieldDefinitions {
 
   /**
    * Initialize field mappings from module config
-   * @private
    */
   _initializeFields() {
     for (const filter of MODULE.DEFAULT_FILTER_CONFIG) {
@@ -30,7 +29,6 @@ export class FieldDefinitions {
    * Setup value validators for different field types
    * @param {string} fieldId - The field ID
    * @param {string} fieldType - The field type
-   * @private
    */
   _setupValueValidator(fieldId, fieldType) {
     switch (fieldId) {

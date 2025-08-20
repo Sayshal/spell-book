@@ -2,29 +2,6 @@ import { log } from '../logger.mjs';
 import { SpellUserDataJournal } from './spell-user-data.mjs';
 
 /**
- * Toggle favorite status for a spell
- * @param {string} spellUuid - The spell UUID
- * @param {Actor} actor - The actor who owns the spell
- * @param {string} userId - Target user ID (optional)
- * @param {string} actorId - Target actor ID (optional)
- * @returns {Promise<boolean>} Success status
- */
-export async function toggleSpellFavorite(spellUuid, actor, userId = null, actorId = null) {
-  try {
-    const userData = await SpellUserDataJournal.getUserDataForSpell(spellUuid, userId, actorId);
-    const currentlyFavorited = userData?.favorited || false;
-    const newFavoriteStatus = !currentlyFavorited;
-    await SpellUserDataJournal.setSpellFavorite(spellUuid, newFavoriteStatus, userId, actorId);
-    if (newFavoriteStatus) await addSpellToActorFavorites(spellUuid, actor);
-    else await removeSpellFromActorFavorites(spellUuid, actor);
-    return true;
-  } catch (error) {
-    log(1, 'Error toggling spell favorite:', error);
-    return false;
-  }
-}
-
-/**
  * Add spell to actor.system.favorites
  * @param {string} spellUuid - The spell UUID (compendium or actor)
  * @param {Actor} actor - The actor
@@ -33,10 +10,7 @@ export async function toggleSpellFavorite(spellUuid, actor, userId = null, actor
 export async function addSpellToActorFavorites(spellUuid, actor) {
   try {
     const actorSpell = findActorSpellByUuid(spellUuid, actor);
-    if (!actorSpell) {
-      log(2, 'Cannot add to favorites: spell not found on actor');
-      return false;
-    }
+    if (!actorSpell) return false;
     const currentFavorites = actor.system.favorites || [];
     const favoriteId = `.Item.${actorSpell.id}`;
     if (currentFavorites.some((fav) => fav.id === favoriteId)) return true;
@@ -126,29 +100,6 @@ export async function processFavoritesFromForm(form, actor) {
     log(3, `Processed favorites: ${favoritesToAdd.length} spells favorited`);
   } catch (error) {
     log(1, 'Error processing favorites in form:', error);
-  }
-}
-
-/**
- * Update actor.system.favorites based on favorited spell UUIDs
- * @param {Array<string>} favoritedUuids - Array of favorited spell UUIDs
- * @param {Actor} actor - The actor to update
- * @returns {Promise<void>}
- */
-export async function updateActorFavorites(favoritedUuids, actor) {
-  try {
-    const newFavorites = [];
-    for (const spellUuid of favoritedUuids) {
-      const actorSpell = findActorSpellByUuid(spellUuid, actor);
-      if (actorSpell) {
-        const favoriteId = `.Item.${actorSpell.id}`;
-        newFavorites.push({ type: 'item', id: favoriteId, sort: 100000 + newFavorites.length });
-      }
-    }
-    await actor.update({ 'system.favorites': newFavorites });
-    log(3, `Updated actor.system.favorites with ${newFavorites.length} spells`);
-  } catch (error) {
-    log(1, 'Error updating actor favorites:', error);
   }
 }
 

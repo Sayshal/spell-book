@@ -18,7 +18,8 @@ export async function findCompendiumSpellLists(includeHidden = true) {
     const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
     const filteredLists = spellLists.filter((list) => !hiddenLists.includes(list.uuid));
     log(3, `Filtered out ${spellLists.length - filteredLists.length} hidden spell lists.`);
-    return filteredLists;
+    spellLists.length = 0;
+    spellLists.push(...filteredLists);
   }
   for (const list of spellLists) {
     const document = await fromUuid(list.uuid);
@@ -142,9 +143,7 @@ async function processCustomPack(spellLists) {
 export async function compareListVersions(originalUuid, customUuid) {
   const original = await fromUuid(originalUuid);
   const custom = await fromUuid(customUuid);
-  if (!original || !custom) {
-    return { canCompare: false, reason: !original ? 'Original not found' : 'Custom not found' };
-  }
+  if (!original || !custom) return { canCompare: false, reason: !original ? 'Original not found' : 'Custom not found' };
   const originalModTime = original._stats?.modifiedTime || 0;
   const customModTime = custom._stats?.modifiedTime || 0;
   const originalVersion = original._stats?.systemVersion || '';
@@ -242,7 +241,7 @@ export async function findDuplicateSpellList(originalUuid) {
  * @param {string} duplicateUuid - UUID of the duplicate spell list
  * @returns {Promise<void>}
  */
-export async function updateSpellListMapping(originalUuid, duplicateUuid) {
+async function updateSpellListMapping(originalUuid, duplicateUuid) {
   const mappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
   mappings[originalUuid] = duplicateUuid;
   await game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, mappings);
@@ -270,6 +269,7 @@ export async function removeCustomSpellList(duplicateUuid) {
 
 /**
  * Normalize a UUID for comparison
+ * @todo I feel like we shouldn't have to do this in foundry anymore.
  * @param {string} uuid - The UUID to normalize
  * @returns {string[]} Array of normalized forms
  */
@@ -338,7 +338,6 @@ async function fetchSpellsFromPack(pack, maxLevel) {
  * @returns {Object} Formatted spell object
  */
 function formatSpellEntry(entry, pack) {
-  const formattedDetails = formattingUtils.formatSpellDetails(entry, false);
   let topLevelFolderName = pack.metadata.label;
   if (pack.folder) {
     if (pack.folder.depth !== 1) topLevelFolderName = pack.folder.getParentFolders().at(-1).name;
@@ -352,7 +351,6 @@ function formatSpellEntry(entry, pack) {
     school: entry.system?.school || '',
     sourceId: topLevelFolderName,
     packName: topLevelFolderName,
-    formattedDetails,
     system: entry.system || {},
     labels: entry.labels
   };
@@ -570,7 +568,7 @@ export async function createMergedSpellList(sourceListUuid, copyFromListUuid, me
  * @param {string} localizationKey - Localization key for the folder name
  * @returns {Promise<Folder|null>} The folder document
  */
-export async function getOrCreateSpellListFolder(folderName, localizationKey) {
+async function getOrCreateSpellListFolder(folderName, localizationKey) {
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
   if (!customPack) {
     log(1, 'Custom spell lists pack not found');
@@ -608,27 +606,12 @@ export async function getOrCreateMergedFolder() {
 }
 
 /**
- * Get enabled compendiums from settings
- * @returns {Set<string>} Set of enabled compendium IDs
- */
-function getEnabledCompendiums() {
-  const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
-
-  // If empty settings object, index all compendiums (default behavior)
-  if (!settings || Object.keys(settings).length === 0) {
-    return new Set(Array.from(game.packs).map((p) => p.collection));
-  }
-
-  return new Set(Object.keys(settings));
-}
-
-/**
  * Check if a compendium should be indexed
  * @param {CompendiumCollection} pack - The pack to check
  * @returns {boolean} Whether the pack should be indexed
  */
 export function shouldIndexCompendium(pack) {
   const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
-  if (!settings || Object.keys(settings).length === 0) return true;
-  return settings.hasOwnProperty(pack.collection);
+  if (settings && settings.hasOwnProperty(pack.collection)) return settings[pack.collection] === true;
+  return true;
 }
