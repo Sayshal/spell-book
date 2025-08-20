@@ -439,7 +439,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         tooltip: spell.preparation.sourceItem?.name || ''
       };
     }
-    if (spell.preparation.preparationMode === 'prepared' && spell.preparation.prepared) {
+    if (spell.preparation.preparationMode === 'spell' && spell.preparation.prepared) {
       return {
         cssClass: 'prepared',
         text: game.i18n.localize('SPELLBOOK.Preparation.Prepared'),
@@ -1940,7 +1940,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const classData = this._stateManager.classSpellData[sourceClass];
       const classItem = classData?.classItem;
       const isPactCaster = classItem?.system?.spellcasting?.type === 'pact';
-      let preparationMode = 'prepared';
+      let preparationMode = 'spell';
       if (isPactCaster && spellLevel > 0) preparationMode = 'pact';
       spellDataByClass[sourceClass][classSpellKey] = {
         uuid,
