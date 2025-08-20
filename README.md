@@ -1,8 +1,12 @@
 # Spell Book
 
 ![GitHub release](https://img.shields.io/github/v/release/Sayshal/spell-book?style=for-the-badge)
-![GitHub all releases](https://img.shields.io/github/downloads/Sayshal/spell-book/total?style=for-the-badge)
+![GitHub Downloads (specific asset, all releases)](https://img.shields.io/github/downloads/Sayshal/spell-book/module.zip?style=for-the-badge&logo=foundryvirtualtabletop&logoColor=white&logoSize=auto&label=Downloads%20(Total)&color=ff144f)
+![GitHub Downloads (specific asset, latest release)](https://img.shields.io/github/downloads/Sayshal/spell-book/latest/module.zip?sort=date&style=for-the-badge&logo=foundryvirtualtabletop&logoColor=white&logoSize=auto&label=Downloads%20(Latest)&color=ff144f)
 ![Github License](https://img.shields.io/github/license/Sayshal/spell-book?style=for-the-badge)
+
+![Foundry Version](https://img.shields.io/endpoint?url=https%3A%2F%2Ffoundryshields.com%2Fversion%3Fstyle%3Dfor-the-badge%26url%3Dhttps%3A%2F%2Fgithub.com%2FSayshal%2Fspell-book%2Freleases%2Flatest%2Fdownload%2Fmodule.json)
+![D&D5E Version](https://img.shields.io/endpoint?url=https%3A%2F%2Ffoundryshields.com%2Fsystem%3FnameType%3Dfoundry%26showVersion%3D1%26style%3Dfor-the-badge%26url%3Dhttps%3A%2F%2Fgithub.com%2FSayshal%2Fspell-book%2Freleases%2Flatest%2Fdownload%2Fmodule.json)
 
 ## Supporting The Module
 
