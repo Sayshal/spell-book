@@ -94,7 +94,7 @@ export function registerSettings() {
     scope: 'world',
     config: true,
     type: Boolean,
-    default: true,
+    default: false,
     requiresReload: true
   });
 
@@ -293,7 +293,6 @@ export function registerSettings() {
     restricted: false
   });
 
-  // Player UI Settings
   game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.Favorites',
     scope: 'client',
@@ -320,6 +319,14 @@ export function registerSettings() {
 
   game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_SPELL_LEVEL, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.SpellLevel',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_COMPONENTS, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.Components',
     scope: 'client',
     config: false,
     type: Boolean,
@@ -400,6 +407,14 @@ export function registerSettings() {
 
   game.settings.register(MODULE.ID, SETTINGS.GM_UI_SPELL_LEVEL, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.SpellLevel',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.GM_UI_COMPONENTS, {
+    name: 'SPELLBOOK.Settings.DetailsCustomization.Components',
     scope: 'client',
     config: false,
     type: Boolean,

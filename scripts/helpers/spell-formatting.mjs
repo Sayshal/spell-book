@@ -1,45 +1,6 @@
 import { MODULE } from '../constants.mjs';
-import { log } from '../logger.mjs';
 import * as genericUtils from './generic-utils.mjs';
 import { UICustomizationHelper } from './ui-customization.mjs';
-
-/**
- * Format spell details for display with notes icon at the beginning
- * @param {Object} spell - The spell object
- * @param {Boolean} includeNotes - Optional flag to disable including notes
- * @param {Boolean} includeTooltip - Flag to include tooltip data for material components
- * @returns {string|Object} - Formatted spell details string with notes icon, or object with content and tooltip
- */
-export function formatSpellDetails(spell, includeNotes = true, includeTooltip = false) {
-  try {
-    if (!spell) return includeTooltip ? { content: '', tooltip: '' } : '';
-    const details = [];
-    const componentsStr = formatSpellComponents(spell);
-    if (componentsStr) details.push(componentsStr);
-    const activationStr = formatSpellActivation(spell);
-    if (activationStr) details.push(activationStr);
-    const schoolStr = formatSpellSchool(spell);
-    if (schoolStr) details.push(schoolStr);
-    const materialsStr = formatMaterialComponents(spell);
-    if (materialsStr) details.push(materialsStr);
-    const baseDetails = details.filter(Boolean).join(' • ');
-    let finalContent = baseDetails;
-    if (includeNotes) {
-      const notesIcon = createNotesIcon(spell);
-      if (notesIcon && baseDetails) finalContent = `${notesIcon} ${baseDetails}`;
-      else if (notesIcon) finalContent = notesIcon;
-    }
-    if (includeTooltip) {
-      const hasMaterialComponents = componentsStr && componentsStr.includes('M');
-      const tooltip = hasMaterialComponents ? finalContent : '';
-      return { content: finalContent, tooltip };
-    }
-    return finalContent;
-  } catch (error) {
-    log(1, 'Error formatting spell details:', error);
-    return includeTooltip ? { content: '', tooltip: '' } : '';
-  }
-}
 
 /**
  * Process spell list data for display
@@ -139,20 +100,6 @@ export function formatMaterialComponents(spell) {
     else result = game.i18n.localize('SPELLBOOK.MaterialComponents.UnknownCost');
   }
   return result;
-}
-
-/**
- * Create notes icon for spell - always shows, empty or filled based on notes
- * @param {Object} spell - The spell object
- * @returns {string} - HTML for notes icon
- */
-export function createNotesIcon(spell) {
-  const spellUuid = spell.uuid || spell.compendiumUuid;
-  if (!spellUuid) return '';
-  const hasNotes = !!(spell.hasNotes || (spell.userData?.notes && spell.userData.notes.trim()));
-  const iconClass = hasNotes ? 'fas fa-sticky-note' : 'far fa-sticky-note';
-  const tooltip = hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes');
-  return `<i class="${iconClass} spell-notes-icon" data-uuid="${spellUuid}" data-action="editNotes" data-tooltip="${tooltip}" aria-label="${tooltip}"></i>`;
 }
 
 /**

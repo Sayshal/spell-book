@@ -356,7 +356,6 @@ export class SpellbookState {
         };
         const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
         Object.assign(spellData, enhancedSpell);
-        spellData.formattedDetails = formattingUtils.formatSpellDetails(spellData);
         if (!isSpecialMode) spellData.sourceClass = classIdentifier;
         spellsByLevel[level].spells.push(spellData);
         processedSpellIds.add(spell.id || spell.uuid);
@@ -378,7 +377,6 @@ export class SpellbookState {
       spellData.enrichedIcon = formattingUtils.createSpellIconLink(spell);
       const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
       Object.assign(spellData, enhancedSpell);
-      spellData.formattedDetails = formattingUtils.formatSpellDetails(spellData);
       spellsByLevel[level].spells.push(spellData);
       processedSpellIds.add(spell.id || spell.compendiumUuid || spell.uuid);
       processedSpellNames.add(spellName);
@@ -756,7 +754,6 @@ export class SpellbookState {
           }
         }
         if (!spell.enrichedIcon) spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
-        spell.formattedDetails = formattingUtils.formatSpellDetails(spell);
       }
     }
   }
@@ -1094,7 +1091,6 @@ export class SpellbookState {
         for (const spell of classData.spellLevels) {
           const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spell, targetUserId, this.app.actor?.id);
           Object.assign(spell, enhancedSpell);
-          spell.formattedDetails = formattingUtils.formatSpellDetails(spell);
         }
       }
     }

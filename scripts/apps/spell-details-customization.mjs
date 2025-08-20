@@ -223,6 +223,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
       compare: game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_COMPARE),
       notes: game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_NOTES),
       spellLevel: game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_SPELL_LEVEL),
+      components: game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_COMPONENTS),
       school: game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_SCHOOL),
       castingTime: game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_CASTING_TIME),
       range: game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_RANGE),
@@ -243,6 +244,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
     return {
       compare: game.settings.get(MODULE.ID, SETTINGS.GM_UI_COMPARE),
       spellLevel: game.settings.get(MODULE.ID, SETTINGS.GM_UI_SPELL_LEVEL),
+      components: game.settings.get(MODULE.ID, SETTINGS.GM_UI_COMPONENTS),
       school: game.settings.get(MODULE.ID, SETTINGS.GM_UI_SCHOOL),
       castingTime: game.settings.get(MODULE.ID, SETTINGS.GM_UI_CASTING_TIME),
       range: game.settings.get(MODULE.ID, SETTINGS.GM_UI_RANGE),
@@ -302,6 +304,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   _getMetadataElementsConfig(type) {
     return [
       { key: 'spellLevel', label: 'SPELLBOOK.Settings.DetailsCustomization.SpellLevel', description: 'SPELLBOOK.Settings.DetailsCustomization.SpellLevelDesc' },
+      { key: 'components', label: 'SPELLBOOK.Settings.DetailsCustomization.Components', description: 'SPELLBOOK.Settings.DetailsCustomization.ComponentsDesc' },
       { key: 'school', label: 'SPELLBOOK.Settings.DetailsCustomization.School', description: 'SPELLBOOK.Settings.DetailsCustomization.SchoolDesc' },
       { key: 'castingTime', label: 'SPELLBOOK.Settings.DetailsCustomization.CastingTime', description: 'SPELLBOOK.Settings.DetailsCustomization.CastingTimeDesc' },
       { key: 'range', label: 'SPELLBOOK.Settings.DetailsCustomization.Range', description: 'SPELLBOOK.Settings.DetailsCustomization.RangeDesc' },
@@ -357,6 +360,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_COMPARE, expandedData.player.compare || false),
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_NOTES, expandedData.player.notes || false),
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_SPELL_LEVEL, expandedData.player.spellLevel || false),
+          game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_COMPONENTS, expandedData.player.components || false),
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_SCHOOL, expandedData.player.school || false),
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_CASTING_TIME, expandedData.player.castingTime || false),
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_RANGE, expandedData.player.range || false),
@@ -376,6 +380,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
         await Promise.all([
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_COMPARE, expandedData.gm.compare || false),
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_SPELL_LEVEL, expandedData.gm.spellLevel || false),
+          game.settings.set(MODULE.ID, SETTINGS.GM_UI_COMPONENTS, expandedData.gm.components || false),
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_SCHOOL, expandedData.gm.school || false),
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_CASTING_TIME, expandedData.gm.castingTime || false),
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_RANGE, expandedData.gm.range || false),

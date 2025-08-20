@@ -76,6 +76,7 @@ export class ScrollScanner {
         return null;
       }
       if (spell.system.level > maxSpellLevel && spell.system.level > 0) return null;
+      const filterData = formattingUtils.extractSpellFilterData(spell);
       let processedResult = {
         scrollItem: scroll,
         spell: spell,
@@ -84,8 +85,8 @@ export class ScrollScanner {
         level: spell.system.level,
         img: spell.img,
         system: spell.system,
+        filterData: filterData,
         enrichedIcon: formattingUtils.createSpellIconLink(spell),
-        formattedDetails: formattingUtils.formatSpellDetails(spell),
         isFromScroll: true,
         scrollId: scroll.id,
         scrollName: scroll.name,

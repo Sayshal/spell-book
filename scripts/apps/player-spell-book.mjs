@@ -790,8 +790,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /** @inheritdoc */
-  _onClose(options) {
-    game.settings.set(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION, this.position);
+  async _onClose(options) {
+    await game.settings.set(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION, this.position);
     PlayerSpellBook.DEFAULT_OPTIONS.position = this.position;
     if (this._preparationListener) {
       document.removeEventListener('change', this._preparationListener);
@@ -801,7 +801,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this._flagChangeHook) Hooks.off('updateActor', this._flagChangeHook);
     document.removeEventListener('click', this._hideLoadoutContextMenu.bind(this));
     if (this.ui?.advancedSearchManager) this.ui.advancedSearchManager.cleanup();
-    super._onClose();
+    super._onClose(options);
   }
 
   /**

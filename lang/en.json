@@ -289,6 +289,8 @@
   "SPELLBOOK.Settings.DetailsCustomization.CastingTimeDesc": "Display spell casting time",
   "SPELLBOOK.Settings.DetailsCustomization.Compare": "Compare Button",
   "SPELLBOOK.Settings.DetailsCustomization.CompareDesc": "Show spell comparison button",
+  "SPELLBOOK.Settings.DetailsCustomization.Components": "Spell Components",
+  "SPELLBOOK.Settings.DetailsCustomization.ComponentsDesc": "Display spell components (V, S, M, etc.)",
   "SPELLBOOK.Settings.DetailsCustomization.Concentration": "Concentration",
   "SPELLBOOK.Settings.DetailsCustomization.ConcentrationDesc": "Show concentration requirement",
   "SPELLBOOK.Settings.DetailsCustomization.Conditions": "Conditions",

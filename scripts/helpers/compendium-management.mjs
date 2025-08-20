@@ -338,7 +338,6 @@ async function fetchSpellsFromPack(pack, maxLevel) {
  * @returns {Object} Formatted spell object
  */
 function formatSpellEntry(entry, pack) {
-  const formattedDetails = formattingUtils.formatSpellDetails(entry, false);
   let topLevelFolderName = pack.metadata.label;
   if (pack.folder) {
     if (pack.folder.depth !== 1) topLevelFolderName = pack.folder.getParentFolders().at(-1).name;
@@ -352,7 +351,6 @@ function formatSpellEntry(entry, pack) {
     school: entry.system?.school || '',
     sourceId: topLevelFolderName,
     packName: topLevelFolderName,
-    formattedDetails,
     system: entry.system || {},
     labels: entry.labels
   };

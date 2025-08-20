@@ -16,6 +16,7 @@ export class UICustomizationHelper {
       compare: 'COMPARE',
       notes: 'NOTES',
       spellLevel: 'SPELL_LEVEL',
+      components: 'COMPONENTS',
       school: 'SCHOOL',
       castingTime: 'CASTING_TIME',
       range: 'RANGE',
@@ -76,6 +77,10 @@ export class UICustomizationHelper {
       const levelText = this._formatSpellLevel(spell);
       if (levelText) metadata.push(levelText);
     }
+    if (this.isPlayerElementEnabled('components')) {
+      const componentsText = formattingUtils.formatSpellComponents(spell);
+      if (componentsText) metadata.push(componentsText);
+    }
     if (this.isPlayerElementEnabled('school')) {
       const schoolText = formattingUtils.formatSpellSchool(spell);
       if (schoolText) metadata.push(schoolText);
@@ -118,6 +123,10 @@ export class UICustomizationHelper {
     if (this.isGMElementEnabled('spellLevel')) {
       const levelText = this._formatSpellLevel(spell);
       if (levelText) metadata.push(levelText);
+    }
+    if (this.isGMElementEnabled('components')) {
+      const componentsText = formattingUtils.formatSpellComponents(spell);
+      if (componentsText) metadata.push(componentsText);
     }
     if (this.isGMElementEnabled('school')) {
       const schoolText = formattingUtils.formatSpellSchool(spell);
