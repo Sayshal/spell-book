@@ -15,7 +15,6 @@
     {{!-- Organization Groups --}}
     {{#each categories as |category|}}
       <div class="category-group {{#if category.disabled}}disabled{{/if}}">
-        <hr>
         <div class="category-group-header">
           <label class="checkbox {{#if category.disabled}}disabled{{/if}}">
             {{{category.categorySelectAllCheckboxHtml}}}

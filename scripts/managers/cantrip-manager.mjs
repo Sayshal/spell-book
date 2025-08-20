@@ -161,6 +161,7 @@ export class CantripManager {
         const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount(classIdentifier);
         const maxCantrips = this._getMaxCantripsForClass(classIdentifier);
         if (currentCount >= maxCantrips) {
+          ui.notifications.clear();
           ui.notifications.info(game.i18n.format('SPELLBOOK.Notifications.OverLimitWarning', { type: 'cantrips', current: currentCount + 1, max: maxCantrips }));
         }
       }

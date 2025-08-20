@@ -353,9 +353,9 @@ export class SpellManager {
    */
   _getClassPreparationMode(classIdentifier) {
     const classItem = this.actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier));
-    if (!classItem) return 'prepared';
+    if (!classItem) return 'spell';
     if (classItem.system.spellcasting?.type === 'pact') return 'pact';
-    return 'prepared';
+    return 'spell';
   }
 
   /**
@@ -516,6 +516,7 @@ export class SpellManager {
     if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.UNENFORCED || settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
       if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM && isChecked) {
         if (currentPrepared >= maxPrepared) {
+          ui.notifications.clear();
           ui.notifications.info(game.i18n.format('SPELLBOOK.Notifications.OverLimitWarning', { type: 'spells', current: currentPrepared + 1, max: maxPrepared }));
         }
       }

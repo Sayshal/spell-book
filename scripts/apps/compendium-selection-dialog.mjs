@@ -16,7 +16,6 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
       icon: 'fas fa-books',
       resizable: false
     },
-    position: { width: 'auto', height: 'auto' },
     classes: ['spell-book', 'compendium-selection-dialog'],
     form: {
       handler: CompendiumSelectionDialog.formHandler,

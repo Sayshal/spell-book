@@ -38,7 +38,7 @@ body:
     attributes:
       label: D&D Version
       description: What version of the system?
-      placeholder: '3.3.1'
+      placeholder: '5.1.2'
     validations:
       required: true
   - type: textarea

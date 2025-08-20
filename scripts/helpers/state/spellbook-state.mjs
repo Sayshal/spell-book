@@ -217,7 +217,7 @@ export class SpellbookState {
    * @returns {string} The preparation mode
    */
   getClassPreparationMode(classItem) {
-    let prepMode = 'prepared';
+    let prepMode = 'spell';
     if (classItem.system.spellcasting?.type === 'pact') prepMode = 'pact';
     return prepMode;
   }
@@ -494,7 +494,7 @@ export class SpellbookState {
     this.spellPreparation = { current: totalPrepared, maximum: totalMaxPrepared };
     log(3, `Updated global preparation count: ${totalPrepared}/${totalMaxPrepared}`);
     if (totalMaxPrepared <= 0) {
-      log(2, `Global max preparation is ${totalMaxPrepared}, this might indicate a data issue. Note: If on 3.3.1, you must set this manually due to system limitations.`);
+      log(2, `Global max preparation is ${totalMaxPrepared}, this might indicate a data issue. `);
     }
   }
 
