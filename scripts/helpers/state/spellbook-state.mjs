@@ -445,7 +445,7 @@ export class SpellbookState {
     let totalSpellCount = 0;
     let preparedCount = 0;
     if (isGroupedStructure) {
-      log(2, 'GROUPED STRUCTURE DETECTED!', { class: classIdentifier, spells: spellLevels, classItem: classItem });
+      log(3, 'GROUPED STRUCTURE DETECTED!', { class: classIdentifier, spells: spellLevels, classItem: classItem });
       totalSpellCount = spellLevels.reduce((count, level) => count + (Array.isArray(level.spells) ? level.spells.length : 0), 0);
       const cacheKey = `${classIdentifier}-${totalSpellCount}-${classItem.system.levels}`;
       if (this._preparationStatsCache.has(cacheKey)) return this._preparationStatsCache.get(cacheKey);
@@ -457,7 +457,7 @@ export class SpellbookState {
         }
       }
     } else if (isFlatStructure) {
-      log(2, 'FLAT STRUCTURE DETECTED!', { class: classIdentifier, spells: spellLevels, classItem: classItem });
+      log(3, 'FLAT STRUCTURE DETECTED!', { class: classIdentifier, spells: spellLevels, classItem: classItem });
       totalSpellCount = spellLevels.length;
       const cacheKey = `${classIdentifier}-${totalSpellCount}-${classItem.system.levels}`;
       if (this._preparationStatsCache.has(cacheKey)) return this._preparationStatsCache.get(cacheKey);
