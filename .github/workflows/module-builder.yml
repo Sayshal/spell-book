@@ -28,10 +28,16 @@ jobs:
           compat_verified=$(echo "${version_data[2]}" | sed 's/COMPAT_VERIFIED://')
           compat_max=$(echo "${version_data[3]}" | sed 's/COMPAT_MAX://')
 
+          module_id=$(echo "${version_data[4]}" | sed 's/MODULE_ID://')
+          module_title=$(echo "${version_data[5]}" | sed 's/MODULE_TITLE://')
+          module_url=$(echo "${version_data[6]}" | sed 's/MODULE_URL://')
           echo "version=$version" >> $GITHUB_OUTPUT
           echo "compat_min=$compat_min" >> $GITHUB_OUTPUT
           echo "compat_verified=$compat_verified" >> $GITHUB_OUTPUT
           echo "compat_max=$compat_max" >> $GITHUB_OUTPUT
+          echo "module_id=$module_id" >> $GITHUB_OUTPUT
+          echo "module_title=$module_title" >> $GITHUB_OUTPUT
+          echo "module_url=$module_url" >> $GITHUB_OUTPUT
 
       - name: Debug Version
         run: |
@@ -111,12 +117,14 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
           VERSION="${{ steps.get-version.outputs.version }}"
+          MODULE_TITLE="${{ steps.get-version.outputs.module_title }}"
+          MODULE_ID="${{ steps.get-version.outputs.module_id }}"
           RELEASE_NOTES=$(< release_notes.txt)
 
           JSON_PAYLOAD=$(jq -n \
-            --arg title "Spell Book Release" \
+            --arg title "$MODULE_TITLE Release" \
             --arg version "$VERSION" \
-            --arg foundry_url "https://foundryvtt.com/packages/spell-book" \
+            --arg foundry_url "https://foundryvtt.com/packages/$MODULE_ID" \
             --arg release_url "${{ env.REPO_URL }}/releases/download/$VERSION/module.json" \
             --arg download_url "${{ env.REPO_URL }}/releases/download/$VERSION/module.zip" \
             --arg release_notes "$RELEASE_NOTES" \
