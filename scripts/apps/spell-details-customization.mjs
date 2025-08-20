@@ -18,8 +18,8 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
       useUserColor: SpellDetailsCustomization.useUserColor,
       resetToDefault: SpellDetailsCustomization.resetToDefault
     },
-    position: { height: 'auto', width: 800 },
-    window: { icon: 'fa-solid fa-palette', resizable: false }
+    position: { height: 600, width: 800 },
+    window: { icon: 'fa-solid fa-palette', resizable: true }
   };
 
   static PARTS = {

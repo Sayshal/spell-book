@@ -5267,6 +5267,7 @@
   &.spell-details-customization {
     .spell-details-customization-content {
       padding: 1rem;
+      overflow-y: auto;
     }
 
     .customization-description {

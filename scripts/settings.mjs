@@ -230,7 +230,7 @@ export function registerSettings() {
   game.settings.register(MODULE.ID, SETTINGS.DISABLE_LONG_REST_SWAP_PROMPT, {
     name: 'SPELLBOOK.Settings.DisableLongRestSwapPrompt.Name',
     hint: 'SPELLBOOK.Settings.DisableLongRestSwapPrompt.Hint',
-    scope: 'world',
+    scope: 'client',
     config: true,
     type: Boolean,
     default: false
@@ -240,9 +240,9 @@ export function registerSettings() {
     name: 'SPELLBOOK.Settings.CantripScaleValues.Name',
     hint: 'SPELLBOOK.Settings.CantripScaleValues.Hint',
     scope: 'world',
-    config: false,
-    type: Object,
-    default: {}
+    config: true,
+    type: String,
+    default: 'cantrips-known, cantrips'
   });
 
   //========================================//
