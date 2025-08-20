@@ -90,7 +90,7 @@ jobs:
         run: |
           cat << EOF > payload.json
           {
-            "id": "spell-book",
+            "id": "$MODULE_ID",
             "release": {
               "version": "${{ steps.get-version.outputs.version }}",
               "manifest": "${{ env.REPO_URL }}/releases/latest/download/module.json",
