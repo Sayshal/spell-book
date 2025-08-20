@@ -123,6 +123,7 @@ jobs:
             --arg compat_min "${{ steps.get-version.outputs.compat_min }}" \
             --arg compat_max "${{ steps.get-version.outputs.compat_max }}" \
             '{
+              content: "<@&1384920094597185556> <@&1384922261408190505>",
               embeds: [{
                 title: $title,
                 fields: [
