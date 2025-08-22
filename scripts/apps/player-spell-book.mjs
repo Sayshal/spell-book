@@ -178,6 +178,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         context.spellLevels = flattenedSpells;
         context.spellPreparation = this._stateManager.classSpellData[classIdentifier].spellPreparation;
         context.globalPrepared = this._stateManager.spellPreparation;
+        const classNotice = this._prepareClassValidationNotice(classIdentifier, context.className);
+        context.hasClassNotice = !!classNotice;
+        context.classNotice = classNotice;
       }
     }
     const wizardMatch = partId.match(/^wizardbook-(.+)$/);
@@ -354,7 +357,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     checkbox.dataset.name = spell.name;
     checkbox.dataset.ritual = spell.filterData?.isRitual || false;
     checkbox.dataset.wasPrepared = spell.preparation.prepared;
-    if (spell.sourceClass) checkbox.dataset.sourceClass = spell.sourceClass;
+    let sourceClass = null;
+    if (spell.system?.sourceClass) sourceClass = spell.system.sourceClass;
+    else if (spell.sourceClass) sourceClass = spell.sourceClass;
+    else if (spell.preparation?.preparedByOtherClass) sourceClass = spell.preparation.preparedByOtherClass;
+    if (sourceClass) checkbox.dataset.sourceClass = sourceClass;
+    else if (spell.preparation?.prepared) log(2, `No source class found for prepared spell: ${spell.name}`);
+    if (spell.preparation?.preparedByOtherClass) checkbox.dataset.crossClass = 'true';
     if (spell.preparation.disabled && spell.preparation.disabledReason) checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
     processedSpell.preparationCheckboxHtml = formElements.elementToHtml(checkbox);
     if (spell.sourceClass && this._stateManager.wizardSpellbookCache) {
@@ -440,10 +449,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       };
     }
     if (spell.preparation.preparationMode === 'spell' && spell.preparation.prepared) {
+      let tooltip = '';
+      if (spell.preparation.disabled && spell.preparation.disabledReason) tooltip = spell.preparation.disabledReason;
       return {
         cssClass: 'prepared',
         text: game.i18n.localize('SPELLBOOK.Preparation.Prepared'),
-        tooltip: ''
+        tooltip: tooltip
       };
     }
     return null;
@@ -502,7 +513,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
                 }
                 const theme = colorUtils.d ? colorUtils.d() : 'dark';
                 const background = theme === 'light' ? '#f4f4f4' : '#1b1d24';
-                const contrast = colorUtils.getContrastRatio ? colorUtils.getContrastRatio(dominantColor, background, true) : 'unavailable';
+                const contrast = colorUtils.getContrastRatio ? colorUtils.getContrastRatio(dominantColor, background) : 'unavailable';
                 log(3, `Wizard book color debug for ${identifier}:`, {
                   dominantColor,
                   theme,
@@ -511,7 +522,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
                   isCustom: !!(customColor && customColor !== null && customColor !== ''),
                   customColorSetting: customColor
                 });
-                const wizardBookImage = await colorUtils.applyWizardBookColor(ASSETS.WIZARDBOOK_ICON, dominantColor, 0.75, true);
+                const wizardBookImage = await colorUtils.applyColorOverlay(ASSETS.WIZARDBOOK_ICON, dominantColor);
                 this._wizardBookImages.set(identifier, wizardBookImage);
                 log(3, `Applied ${dominantColor} color overlay to wizardbook for class ${identifier}`);
               } catch (error) {
@@ -1460,6 +1471,32 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     return filterConfig;
   }
 
+  /**
+   * Check if a specific class needs a validation notice
+   * @param {string} classIdentifier - The class identifier
+   * @param {string} className - The class name
+   * @returns {Object|null} Notice object or null
+   */
+  _prepareClassValidationNotice(classIdentifier, className) {
+    const classItem = this.actor.items.find((item) => item.type === 'class' && (item.system?.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier));
+    const isFromCompendium = !!(classItem._stats?.compendiumSource && classItem._stats.compendiumSource.startsWith('Compendium.'));
+    if (!isFromCompendium) {
+      const customSpellListSetting = this.actor.getFlag(MODULE.ID, `rules.${classIdentifier}.customSpellList`);
+      const hasCustomSpellList = !!(customSpellListSetting && customSpellListSetting !== 'auto');
+      if (!hasCustomSpellList) {
+        return {
+          type: 'warning',
+          icon: 'fas fa-exclamation-triangle',
+          title: game.i18n.localize('SPELLBOOK.Notices.ClassValidationWarning'),
+          message: game.i18n.format('SPELLBOOK.Notices.ClassNotFromCompendium', {
+            className: className
+          })
+        };
+      }
+    }
+    return null;
+  }
+
   /* -------------------------------------------- */
   /*  Static Handler Methods                      */
   /* -------------------------------------------- */
@@ -1919,6 +1956,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   static async formHandler(_event, form, formData) {
     const actor = this.actor;
     if (!actor) return null;
+    const existingPreparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const spellDataByClass = {};
     const checkboxes = form.querySelectorAll('dnd5e-checkbox[data-uuid]');
     for (const checkbox of checkboxes) {
@@ -1968,6 +2006,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (saveResult && saveResult.cantripChanges && saveResult.cantripChanges.hasChanges) {
         allCantripChangesByClass[classIdentifier] = saveResult.cantripChanges;
       }
+      const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
+      for (const [classIdentifier, preparedSpells] of Object.entries(existingPreparedByClass)) {
+        if (!spellDataByClass[classIdentifier]) preparedByClass[classIdentifier] = preparedSpells;
+      }
+      await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
     }
     await this._stateManager.sendGMNotifications(spellDataByClass, allCantripChangesByClass);
     await this._stateManager.handlePostProcessing(actor);
