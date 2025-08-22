@@ -7,6 +7,20 @@
       <div class="class-header">
         <h2>{{localize 'SPELLBOOK.Classes.Tab.Header' class=className}}</h2>
       </div>
+      {{!-- Class Validation Notice --}}
+      {{#if hasClassNotice}}
+        <div class="class-notice">
+          <div class="notice {{classNotice.type}}" role="alert">
+            <i class="{{classNotice.icon}}" aria-hidden="true"></i>
+            <div class="notice-content">
+              <strong>{{classNotice.title}}</strong>
+              {{#if classNotice.message}}
+                <span class="notice-message">{{classNotice.message}}</span>
+              {{/if}}
+            </div>
+          </div>
+        </div>
+      {{/if}}
     {{/if}}
     <div class="no-filter-results" style="display: none;" role="status">
       {{localize 'SPELLBOOK.Filters.NoResults'}}

@@ -154,7 +154,7 @@ export class CantripManager {
       log(2, `No class identifier for cantrip ${spell.name}, allowing change but may cause issues`);
       return { allowed: true };
     }
-    const settings = this.spellManager.getSettings(classIdentifier)(classIdentifier);
+    const settings = this.spellManager.getSettings(classIdentifier);
     const spellName = spell.name;
     if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.UNENFORCED || settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
       if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM && isChecked) {
@@ -234,7 +234,7 @@ export class CantripManager {
         return;
       }
     }
-    const settings = this.spellManager.getSettings(classIdentifier)(classIdentifier);
+    const settings = this.spellManager.getSettings(classIdentifier);
     const cantripSwapping = settings.cantripSwapping || 'none';
     const spellUuid = genericUtils.getSpellUuid(spell);
     if (!isLevelUp && !isLongRest) return;

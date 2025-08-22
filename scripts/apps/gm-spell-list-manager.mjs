@@ -1563,7 +1563,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     const listName = this.selectedSpellList.name;
     const confirmed = await this.confirmDialog({
       title: game.i18n.localize('SPELLMANAGER.Confirm.DeleteTitle'),
-      content: game.i18n.format('SPELLMANAGER.Confirm.DeleteContent', { name: listName }),
+      content: game.i18n.format('SPELLMANAGER.Confirm.DeleteContent', { name: `<strong>${listName}</strong>` }),
       confirmLabel: game.i18n.localize('SPELLMANAGER.Confirm.DeleteButton'),
       confirmIcon: 'fas fa-trash',
       confirmCssClass: 'dialog-button-danger'
@@ -1588,7 +1588,7 @@ export class GMSpellListManager extends HandlebarsApplicationMixin(ApplicationV2
     const listName = this.selectedSpellList.name;
     const confirmed = await this.confirmDialog({
       title: game.i18n.localize('SPELLMANAGER.Confirm.RestoreTitle'),
-      content: game.i18n.format('SPELLMANAGER.Confirm.RestoreContent', { name: listName }),
+      content: game.i18n.format('SPELLMANAGER.Confirm.RestoreContent', { name: `<strong>${listName}</strong>` }),
       confirmLabel: game.i18n.localize('SPELLMANAGER.Confirm.RestoreButton'),
       confirmIcon: 'fas fa-sync',
       confirmCssClass: 'dialog-button-warning'
