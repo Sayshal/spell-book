@@ -332,6 +332,7 @@ export class SpellbookState {
     const processedSpellNames = new Set();
     const targetUserId = genericUtils._getTargetUserId(this.actor);
     const actorId = this.actor?.id;
+    const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     if (this.actor) {
       const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
       const userDataPromises = actorSpells.map((spell) => {
@@ -350,13 +351,25 @@ export class SpellbookState {
         const spellData = {
           ...spell,
           compendiumUuid: compendiumUuid,
-          preparation: this.app.spellManager.getSpellPreparationStatus(spell, classIdentifier),
           filterData: formattingUtils.extractSpellFilterData(spell),
           enrichedIcon: formattingUtils.createSpellIconLink(spell)
         };
+        if (spell.system?.sourceClass) {
+          spellData.sourceClass = spell.system.sourceClass;
+          spellData.system = spellData.system || {};
+          spellData.system.sourceClass = spell.system.sourceClass;
+        } else if (spell.sourceClass) {
+          spellData.sourceClass = spell.sourceClass;
+          spellData.system = spellData.system || {};
+          spellData.system.sourceClass = spell.sourceClass;
+        } else if (!isSpecialMode) {
+          spellData.sourceClass = classIdentifier;
+          spellData.system = spellData.system || {};
+          spellData.system.sourceClass = classIdentifier;
+        }
+        spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, classIdentifier);
         const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
         Object.assign(spellData, enhancedSpell);
-        if (!isSpecialMode) spellData.sourceClass = classIdentifier;
         spellsByLevel[level].spells.push(spellData);
         processedSpellIds.add(spell.id || spell.uuid);
         processedSpellNames.add(spellName);
@@ -370,9 +383,20 @@ export class SpellbookState {
       const spellName = spell.name.toLowerCase();
       if (processedSpellNames.has(spellName)) continue;
       if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
+      const spellUuid = spell.uuid || spell.compendiumUuid;
       const spellData = { ...spell };
-      if (this.app.spellManager) spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spell, classIdentifier);
-      spellData.sourceClass = classIdentifier;
+      let preparedByOtherClass = null;
+      for (const [otherClass, preparedSpells] of Object.entries(preparedByClass)) {
+        if (otherClass === classIdentifier) continue;
+        const otherClassKey = `${otherClass}:${spellUuid}`;
+        if (preparedSpells.includes(otherClassKey)) {
+          preparedByOtherClass = otherClass;
+          break;
+        }
+      }
+      if (preparedByOtherClass) spellData.sourceClass = preparedByOtherClass;
+      else spellData.sourceClass = classIdentifier;
+      if (this.app.spellManager) spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, classIdentifier);
       spellData.filterData = formattingUtils.extractSpellFilterData(spell);
       spellData.enrichedIcon = formattingUtils.createSpellIconLink(spell);
       const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
@@ -387,9 +411,8 @@ export class SpellbookState {
     const sortedLevels = Object.entries(spellsByLevel)
       .sort(([a], [b]) => Number(a) - Number(b))
       .map(([level, data]) => {
-        // Ensure each level object has the expected structure
         if (!data.spells) {
-          log(2, `_organizeSpellsByLevelForClass: Missing spells array for level ${level}`, data);
+          log(2, `Missing spells array for level ${level}`, data);
           return {
             level: level,
             name: CONFIG.DND5E.spellLevels[level] || `Level ${level}`,
@@ -399,7 +422,7 @@ export class SpellbookState {
         return data;
       });
 
-    log(3, `_organizeSpellsByLevelForClass: Returning ${sortedLevels.length} levels for ${classIdentifier}`);
+    log(3, `Returning ${sortedLevels.length} levels for ${classIdentifier}`);
 
     return sortedLevels;
   }

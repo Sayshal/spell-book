@@ -26,6 +26,7 @@
   "SPELLBOOK.Analytics.ImportSuccessWithCount": "Successfully imported data for {imported} users. {skipped} users were skipped.",
   "SPELLBOOK.Analytics.ImportSummaryExportDate": "Export Date",
   "SPELLBOOK.Analytics.ImportSummaryExportedBy": "Exported By",
+  "SPELLBOOK.Preparation.PreparedByOtherClass": "Prepared by {class}",
   "SPELLBOOK.Analytics.ImportSummaryNames": "Names",
   "SPELLBOOK.Analytics.ImportSummaryUnknown": "Unknown",
   "SPELLBOOK.Analytics.ImportSummaryUsers": "Users",

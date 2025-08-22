@@ -354,7 +354,13 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     checkbox.dataset.name = spell.name;
     checkbox.dataset.ritual = spell.filterData?.isRitual || false;
     checkbox.dataset.wasPrepared = spell.preparation.prepared;
-    if (spell.sourceClass) checkbox.dataset.sourceClass = spell.sourceClass;
+    let sourceClass = null;
+    if (spell.system?.sourceClass) sourceClass = spell.system.sourceClass;
+    else if (spell.sourceClass) sourceClass = spell.sourceClass;
+    else if (spell.preparation?.preparedByOtherClass) sourceClass = spell.preparation.preparedByOtherClass;
+    if (sourceClass) checkbox.dataset.sourceClass = sourceClass;
+    else if (spell.preparation?.prepared) log(2, `No source class found for prepared spell: ${spell.name}`);
+    if (spell.preparation?.preparedByOtherClass) checkbox.dataset.crossClass = 'true';
     if (spell.preparation.disabled && spell.preparation.disabledReason) checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
     processedSpell.preparationCheckboxHtml = formElements.elementToHtml(checkbox);
     if (spell.sourceClass && this._stateManager.wizardSpellbookCache) {
@@ -440,10 +446,12 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       };
     }
     if (spell.preparation.preparationMode === 'spell' && spell.preparation.prepared) {
+      let tooltip = '';
+      if (spell.preparation.disabled && spell.preparation.disabledReason) tooltip = spell.preparation.disabledReason;
       return {
         cssClass: 'prepared',
         text: game.i18n.localize('SPELLBOOK.Preparation.Prepared'),
-        tooltip: ''
+        tooltip: tooltip
       };
     }
     return null;
@@ -1919,6 +1927,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   static async formHandler(_event, form, formData) {
     const actor = this.actor;
     if (!actor) return null;
+    const existingPreparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const spellDataByClass = {};
     const checkboxes = form.querySelectorAll('dnd5e-checkbox[data-uuid]');
     for (const checkbox of checkboxes) {
@@ -1968,6 +1977,11 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (saveResult && saveResult.cantripChanges && saveResult.cantripChanges.hasChanges) {
         allCantripChangesByClass[classIdentifier] = saveResult.cantripChanges;
       }
+      const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
+      for (const [classIdentifier, preparedSpells] of Object.entries(existingPreparedByClass)) {
+        if (!spellDataByClass[classIdentifier]) preparedByClass[classIdentifier] = preparedSpells;
+      }
+      await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
     }
     await this._stateManager.sendGMNotifications(spellDataByClass, allCantripChangesByClass);
     await this._stateManager.handlePostProcessing(actor);
