@@ -176,6 +176,8 @@
   "SPELLBOOK.Migrations.UserDataMigration": "User Spell Data Migration:",
   "SPELLBOOK.Migrations.UserDataOwnershipFixed": "User data permissions: {count} fixed",
   "SPELLBOOK.Migrations.UserDataUpdated": "Updated data for {count} users",
+  "SPELLBOOK.Notices.ClassNotFromCompendium": "Class '{className}' is not from a compendium pack. Your DM must use a class from a pack for proper handling.",
+  "SPELLBOOK.Notices.ClassValidationWarning": "Class Validation Warning",
   "SPELLBOOK.Notifications.Added": "Added",
   "SPELLBOOK.Notifications.CantripChanges": "Cantrip Changes",
   "SPELLBOOK.Notifications.CantripOverLimit": "Cantrips Over Limit",

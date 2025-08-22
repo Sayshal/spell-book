@@ -178,6 +178,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         context.spellLevels = flattenedSpells;
         context.spellPreparation = this._stateManager.classSpellData[classIdentifier].spellPreparation;
         context.globalPrepared = this._stateManager.spellPreparation;
+        const classNotice = this._prepareClassValidationNotice(classIdentifier, context.className);
+        context.hasClassNotice = !!classNotice;
+        context.classNotice = classNotice;
       }
     }
     const wizardMatch = partId.match(/^wizardbook-(.+)$/);
@@ -1466,6 +1469,32 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     filterConfig = filterConfig.filter((filter) => defaultFilterIds.has(filter.id));
     return filterConfig;
+  }
+
+  /**
+   * Check if a specific class needs a validation notice
+   * @param {string} classIdentifier - The class identifier
+   * @param {string} className - The class name
+   * @returns {Object|null} Notice object or null
+   */
+  _prepareClassValidationNotice(classIdentifier, className) {
+    const classItem = this.actor.items.find((item) => item.type === 'class' && (item.system?.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier));
+    const isFromCompendium = !!(classItem._stats?.compendiumSource && classItem._stats.compendiumSource.startsWith('Compendium.'));
+    if (!isFromCompendium) {
+      const customSpellListSetting = this.actor.getFlag(MODULE.ID, `rules.${classIdentifier}.customSpellList`);
+      const hasCustomSpellList = !!(customSpellListSetting && customSpellListSetting !== 'auto');
+      if (!hasCustomSpellList) {
+        return {
+          type: 'warning',
+          icon: 'fas fa-exclamation-triangle',
+          title: game.i18n.localize('SPELLBOOK.Notices.ClassValidationWarning'),
+          message: game.i18n.format('SPELLBOOK.Notices.ClassNotFromCompendium', {
+            className: className
+          })
+        };
+      }
+    }
+    return null;
   }
 
   /* -------------------------------------------- */
