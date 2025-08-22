@@ -176,46 +176,42 @@ export async function extractDominantColor(src) {
 }
 
 export async function applyClassColors(sc) {
-  try {
-    const se = document.getElementById('spell-book-class-colors') || document.createElement('style');
-    se.id = 'spell-book-class-colors';
-    const tm = d();
-    const bg = T[tm] || T.light || '#f4f4f4';
-    let css = '';
-    for (const [id, cd] of Object.entries(sc)) {
-      const img = cd.img;
-      let clr = '#8B4513';
-      if (img && img !== 'icons/svg/mystery-man.svg') {
-        try {
-          const ec = await extractDominantColor(img);
-          if (ec && typeof ec === 'string' && ec.match(/^#[0-9A-Fa-f]{6}$/)) {
-            clr = A(ec, bg, 4.5);
-          } else {
-            log(2, `Invalid color extracted for class ${id}, using fallback`);
-            clr = A('#8B4513', bg, 4.5);
-          }
-        } catch (e) {
-          log(2, `Could not extract color for class ${id}, using fallback`);
+  const se = document.getElementById('spell-book-class-colors') || document.createElement('style');
+  se.id = 'spell-book-class-colors';
+  const tm = d();
+  const bg = T[tm] || T.light || '#f4f4f4';
+  let css = '';
+  for (const [id, cd] of Object.entries(sc)) {
+    const img = cd.img;
+    let clr = '#8B4513';
+    if (img && img !== 'icons/svg/mystery-man.svg') {
+      try {
+        const ec = await extractDominantColor(img);
+        if (ec && typeof ec === 'string' && ec.match(/^#[0-9A-Fa-f]{6}$/)) {
+          clr = A(ec, bg, 4.5);
+        } else {
+          log(2, `Invalid color extracted for class ${id}, using fallback`);
           clr = A('#8B4513', bg, 4.5);
         }
-      } else {
+      } catch (e) {
+        log(2, `Could not extract color for class ${id}, using fallback`);
         clr = A('#8B4513', bg, 4.5);
       }
-      if (!clr || typeof clr !== 'string' || !clr.match(/^#[0-9A-Fa-f]{6}$/)) {
-        log(2, `Final color validation failed for class ${id}, using raw fallback`);
-        clr = '#8B4513';
-      }
-      css += `.spell-prep-tracking .class-prep-count[data-class-identifier="${id}"] .class-name{color:${clr}}.spell-prep-tracking .class-prep-count[data-class-identifier="${id}"].active-class{font-weight:bold}.spell-prep-tracking .class-prep-count[data-class-identifier="${id}"].active-class .class-name{color:${clr};text-shadow:0 0 3px ${clr}40}`;
+    } else {
+      clr = A('#8B4513', bg, 4.5);
     }
-    se.textContent = css;
-    if (!se.parentNode) document.head.appendChild(se);
-    log(3, 'Applied class-specific colors to CSS with contrast adjustment');
-  } catch (e) {
-    log(1, 'Error applying class colors:', e);
+    if (!clr || typeof clr !== 'string' || !clr.match(/^#[0-9A-Fa-f]{6}$/)) {
+      log(2, `Final color validation failed for class ${id}, using raw fallback`);
+      clr = '#8B4513';
+    }
+    css += `.spell-prep-tracking .class-prep-count[data-class-identifier="${id}"] .class-name{color:${clr}}.spell-prep-tracking .class-prep-count[data-class-identifier="${id}"].active-class{font-weight:bold}.spell-prep-tracking .class-prep-count[data-class-identifier="${id}"].active-class .class-name{color:${clr};text-shadow:0 0 3px ${clr}40}`;
   }
+  se.textContent = css;
+  if (!se.parentNode) document.head.appendChild(se);
+  log(3, 'Applied class-specific colors to CSS with contrast adjustment');
 }
 
-export async function applyColorOverlay(imagePath, overlayColor, opacity = 0.75, debug = false) {
+export async function applyColorOverlay(imagePath, overlayColor) {
   try {
     return new Promise((resolve) => {
       const img = new Image();
@@ -224,7 +220,6 @@ export async function applyColorOverlay(imagePath, overlayColor, opacity = 0.75,
         log(1, `TIMEOUT applying color overlay to: ${imagePath}`);
         resolve(imagePath);
       }, 5000);
-
       img.onload = () => {
         clearTimeout(timeout);
         try {
@@ -232,67 +227,32 @@ export async function applyColorOverlay(imagePath, overlayColor, opacity = 0.75,
           const ctx = canvas.getContext('2d');
           canvas.width = img.width;
           canvas.height = img.height;
-
-          // Draw the original image
           ctx.drawImage(img, 0, 0);
-
           const isLight = isLightColor(overlayColor);
-
-          if (debug) {
-            log(3, `Color overlay debug:`, {
-              color: overlayColor,
-              isLight,
-              luminance: isLightColor(overlayColor) ? 'light' : 'dark',
-              strategy: isLight ? 'light color technique' : 'standard multiply'
-            });
-          }
-
           if (isLight) {
-            // Strategy for light colors: Use color blend mode with enhanced saturation
             const rgb = h(overlayColor);
             const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
-
-            // Boost saturation for light colors to make them more vibrant
             const enhancedSaturation = Math.min(100, hsl.s * 1.5);
-            // Darken the lightness slightly to make it more visible
             const adjustedLightness = Math.max(30, hsl.l * 0.8);
-
             const enhancedRgb = hslToRgb(hsl.h, enhancedSaturation, adjustedLightness);
             const enhancedColor = `#${((1 << 24) + (enhancedRgb.r << 16) + (enhancedRgb.g << 8) + enhancedRgb.b).toString(16).slice(1)}`;
-
-            if (debug) {
-              log(3, `Light color enhancement:`, {
-                original: overlayColor,
-                enhanced: enhancedColor,
-                saturationBoost: `${hsl.s}% → ${enhancedSaturation}%`,
-                lightnessAdjust: `${hsl.l}% → ${adjustedLightness}%`
-              });
-            }
-
-            // First pass: Create a colored version using 'color' blend mode
             ctx.globalCompositeOperation = 'color';
-            ctx.globalAlpha = opacity;
+            ctx.globalAlpha = 0.75;
             ctx.fillStyle = enhancedColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Second pass: Add some overlay for depth
             ctx.globalCompositeOperation = 'overlay';
-            ctx.globalAlpha = opacity * 0.3; // Reduced opacity for overlay
+            ctx.globalAlpha = 0.75 * 0.3;
             ctx.fillStyle = overlayColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
           } else {
-            // Strategy for dark colors: Use standard multiply (existing approach)
             ctx.globalCompositeOperation = 'multiply';
-            ctx.globalAlpha = opacity;
+            ctx.globalAlpha = 0.75;
             ctx.fillStyle = overlayColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
           }
-
-          // Final pass: Restore the original image on top with destination-atop
           ctx.globalCompositeOperation = 'destination-atop';
           ctx.globalAlpha = 1.0;
           ctx.drawImage(img, 0, 0);
-
           const dataURL = canvas.toDataURL();
           resolve(dataURL);
         } catch (e) {
@@ -300,13 +260,11 @@ export async function applyColorOverlay(imagePath, overlayColor, opacity = 0.75,
           resolve(imagePath);
         }
       };
-
       img.onerror = (error) => {
         clearTimeout(timeout);
         log(1, `ERROR loading image: ${imagePath}`, error);
         resolve(imagePath);
       };
-
       img.src = imagePath;
     });
   } catch (e) {
@@ -315,31 +273,9 @@ export async function applyColorOverlay(imagePath, overlayColor, opacity = 0.75,
   }
 }
 
-export function getContrastRatio(color1, color2, debug = false) {
+export function getContrastRatio(color1, color2) {
   const contrast = C(color1, color2);
-
-  if (debug) {
-    log(1, `Contrast ratio between ${color1} and ${color2}: ${contrast.toFixed(2)}`, {
-      color1,
-      color2,
-      contrast,
-      isAccessible: contrast >= 4.5,
-      isHighContrast: contrast >= 7,
-      recommendation: contrast < 4.5 ? 'Needs adjustment for accessibility' : 'Accessible'
-    });
-  }
-
   return contrast;
-}
-
-export async function applyWizardBookColor(imagePath, overlayColor, opacity = 0.75, debug = false) {
-  if (debug) {
-    const theme = d();
-    const background = T[theme] || T.light || '#f4f4f4';
-    const contrast = C(overlayColor, background);
-    const isLight = isLightColor(overlayColor);
-  }
-  return applyColorOverlay(imagePath, overlayColor, opacity, debug);
 }
 
 function isLightColor(color) {

@@ -510,7 +510,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
                 }
                 const theme = colorUtils.d ? colorUtils.d() : 'dark';
                 const background = theme === 'light' ? '#f4f4f4' : '#1b1d24';
-                const contrast = colorUtils.getContrastRatio ? colorUtils.getContrastRatio(dominantColor, background, true) : 'unavailable';
+                const contrast = colorUtils.getContrastRatio ? colorUtils.getContrastRatio(dominantColor, background) : 'unavailable';
                 log(3, `Wizard book color debug for ${identifier}:`, {
                   dominantColor,
                   theme,
@@ -519,7 +519,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
                   isCustom: !!(customColor && customColor !== null && customColor !== ''),
                   customColorSetting: customColor
                 });
-                const wizardBookImage = await colorUtils.applyWizardBookColor(ASSETS.WIZARDBOOK_ICON, dominantColor, 0.75, true);
+                const wizardBookImage = await colorUtils.applyColorOverlay(ASSETS.WIZARDBOOK_ICON, dominantColor);
                 this._wizardBookImages.set(identifier, wizardBookImage);
                 log(3, `Applied ${dominantColor} color overlay to wizardbook for class ${identifier}`);
               } catch (error) {
