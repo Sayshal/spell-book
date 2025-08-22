@@ -90,7 +90,7 @@ jobs:
         run: |
           cat << EOF > payload.json
           {
-            "id": "$MODULE_ID",
+            "id": "${{ steps.get-version.outputs.module_id }}",
             "release": {
               "version": "${{ steps.get-version.outputs.version }}",
               "manifest": "${{ env.REPO_URL }}/releases/latest/download/module.json",
