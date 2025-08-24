@@ -506,10 +506,9 @@ async function migratePackSorting() {
     for (const [packId, sortValue] of Object.entries(packSortingConfig)) {
       try {
         const pack = game.packs.get(packId);
-        const currentSort = pack.metadata?.sort;
-        if (currentSort !== sortValue) {
+        if (pack.sort !== sortValue) {
           await pack.configure({ sort: sortValue });
-          log(3, `Updated pack ${packId} sort from ${currentSort} to ${sortValue}`);
+          log(3, `Updated pack ${packId} sort from ${pack.sort} to ${sortValue}`);
           results.packsUpdated++;
           results.processed++;
         }
