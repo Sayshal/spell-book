@@ -16,11 +16,12 @@ async function runAllMigrations() {
     const deprecatedFlagResults = await migrateDeprecatedFlags();
     const folderResults = await migrateSpellListFolders();
     const ownershipResults = await validateOwnershipLevels();
-    const totalProcessed = deprecatedFlagResults.processed + folderResults.processed + ownershipResults.processed;
-    log(3, `Migration results: deprecated=${deprecatedFlagResults.processed}, folders=${folderResults.processed}, ownership=${ownershipResults.processed}`);
+    const packSortingResults = await migratePackSorting();
+    const totalProcessed = deprecatedFlagResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed;
+    log(3, `Migration results: deprecated=${deprecatedFlagResults.processed}, folders=${folderResults.processed}, ownership=${ownershipResults.processed}, sorting=${packSortingResults.processed}`);
     if (totalProcessed > 0) {
       ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.StartNotification'));
-      await logMigrationResults(deprecatedFlagResults, folderResults, ownershipResults);
+      await logMigrationResults(deprecatedFlagResults, folderResults, ownershipResults, packSortingResults);
       ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.CompleteNotification'));
     } else {
       log(3, 'No migrations needed');
@@ -491,13 +492,69 @@ async function migrateJournalToFolder(journal, customFolder, mergedFolder) {
 }
 
 /**
+ * Migrate pack sorting and folder sorting for spell book packs
+ * @returns {Promise<Object>} Migration results with processed count and updated items
+ */
+async function migratePackSorting() {
+  const results = { processed: 0, foldersUpdated: 0, packsUpdated: 0, errors: [] };
+  try {
+    const packSortingConfig = {
+      [MODULE.PACK.SPELLS]: 10000,
+      [MODULE.PACK.USERDATA]: 20000,
+      [MODULE.PACK.MACROS]: 30000
+    };
+    for (const [packId, sortValue] of Object.entries(packSortingConfig)) {
+      try {
+        const pack = game.packs.get(packId);
+        const currentSort = pack.metadata?.sort;
+        if (currentSort !== sortValue) {
+          await pack.configure({ sort: sortValue });
+          log(3, `Updated pack ${packId} sort from ${currentSort} to ${sortValue}`);
+          results.packsUpdated++;
+          results.processed++;
+        }
+      } catch (error) {
+        log(1, `Error updating pack ${packId}:`, error);
+        results.errors.push({
+          type: 'pack',
+          packId,
+          error: error.message
+        });
+      }
+    }
+    const customPack = game.packs.get(MODULE.PACK.SPELLS);
+    if (customPack?.folder && customPack.folder.sorting !== 'm') {
+      try {
+        await customPack.folder.update({ sorting: 'm' });
+        log(3, `Updated "${customPack.folder.name}" folder sorting to manual ("m")`);
+        results.foldersUpdated++;
+        results.processed++;
+      } catch (error) {
+        log(1, `Failed to update folder ${customPack.folder.name}:`, error);
+        results.errors.push({
+          type: 'folder',
+          name: customPack.folder.name,
+          error: error.message
+        });
+      }
+    }
+    if (results.packsUpdated > 0) log(3, `Updated ${results.packsUpdated} pack sort values`);
+    if (results.foldersUpdated > 0) log(3, `Updated ${results.foldersUpdated} pack folders to use manual sorting`);
+  } catch (error) {
+    log(1, 'Error during pack sorting migration:', error);
+    results.errors.push({ type: 'generalMigration', error: error.message });
+  }
+  return results;
+}
+
+/**
  * Log detailed migration results to console and create chat message
  * @param {Object} deprecatedResults - Results from deprecated flag migration
  * @param {Object} folderResults - Results from folder migration
  * @param {Object} ownershipResults - Results from ownership validation
  */
-async function logMigrationResults(deprecatedResults, folderResults, ownershipResults) {
-  const totalProcessed = deprecatedResults.processed + folderResults.processed + ownershipResults.processed;
+async function logMigrationResults(deprecatedResults, folderResults, ownershipResults, packSortingResults) {
+  const totalProcessed = deprecatedResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed;
   if (totalProcessed === 0) {
     log(3, 'No migration updates needed');
     return;
@@ -530,10 +587,17 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
     if (ownershipResults.errors.length > 0) console.log('Errors:', ownershipResults.errors);
     console.groupEnd();
   }
+  if (packSortingResults.processed > 0) {
+    console.group('Pack Sorting Migration');
+    console.log(`Packs updated: ${packSortingResults.packsUpdated}`);
+    console.log(`Folders updated: ${packSortingResults.foldersUpdated}`);
+    if (packSortingResults.errors.length > 0) console.log('Errors:', packSortingResults.errors);
+    console.groupEnd();
+  }
   console.groupEnd();
-  const content = await buildChatContent(deprecatedResults, folderResults, ownershipResults, totalProcessed);
+  const content = await buildChatContent(deprecatedResults, folderResults, ownershipResults, packSortingResults, totalProcessed);
   ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id, flags: { 'spell-book': { messageType: 'migration-report' } } });
-  log(3, `Migration complete: ${totalProcessed} documents updated`);
+  log(3, `Migration complete: ${totalProcessed} documents/folders processed`);
 }
 
 /**
@@ -541,11 +605,12 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
  * @param {Object} deprecatedResults - Deprecated flag results
  * @param {Object} folderResults - Folder migration results
  * @param {Object} ownershipResults - Ownership validation results
+ * @param {Object} packSortingResults - Pack sorting results
  * @param {number} totalProcessed - Total processed documents
  * @returns {Promise<string>} Rendered HTML content
  */
-async function buildChatContent(deprecatedResults, folderResults, ownershipResults, totalProcessed) {
-  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_REPORT, { deprecatedResults, folderResults, ownershipResults, totalProcessed });
+async function buildChatContent(deprecatedResults, folderResults, ownershipResults, packSortingResults, totalProcessed) {
+  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_REPORT, { deprecatedResults, folderResults, ownershipResults, packSortingResults, totalProcessed });
 }
 
 /**
