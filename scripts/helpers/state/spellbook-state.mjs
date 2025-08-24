@@ -81,7 +81,6 @@ export class SpellbookState {
   detectSpellcastingClasses() {
     if (this._classesDetected) return;
     const currentClassIds = [];
-    const classItems = this.actor.items.filter((i) => i.type === 'class');
     this.spellcastingClasses = {};
     this.classSpellData = {};
     this.classPrepModes = {};
@@ -89,28 +88,40 @@ export class SpellbookState {
     this.classSwapRules = {};
     this._preparationStatsCache.clear();
     this._classDetectionCache.clear();
-    for (const classItem of classItems) {
-      if (!classItem.system.spellcasting?.progression || classItem.system.spellcasting.progression === 'none') continue;
-      const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
-      currentClassIds.push(identifier);
-      this.spellcastingClasses[identifier] = {
-        name: classItem.name,
-        uuid: classItem.uuid,
-        id: classItem.id,
-        spellcasting: classItem.system.spellcasting,
-        img: classItem.img
-      };
-      this.classSpellData[identifier] = {
-        spellLevels: [],
-        className: classItem.name,
-        spellPreparation: { current: 0, maximum: 0 },
-        classItem: classItem,
-        type: classItem.system.spellcasting?.type || 'leveled',
-        progression: classItem.system.spellcasting?.progression || 'none'
-      };
-      this.classPrepModes[identifier] = this.getClassPreparationMode(classItem);
-      this.classRitualRules[identifier] = this.getClassRitualRules(classItem);
-      this.classSwapRules[identifier] = this.getClassSwapRules(classItem);
+    if (this.actor.spellcastingClasses) {
+      for (const [classKey, spellcastingData] of Object.entries(this.actor.spellcastingClasses)) {
+        const classItem = spellcastingData;
+        let spellcastingConfig = classItem.system?.spellcasting;
+        let spellcastingSource = classItem;
+        if (!spellcastingConfig?.progression || spellcastingConfig.progression === 'none') {
+          const subclassItem = spellcastingData._classLink;
+          if (subclassItem?.system?.spellcasting?.progression && subclassItem.system.spellcasting.progression !== 'none') {
+            spellcastingConfig = subclassItem.system.spellcasting;
+            spellcastingSource = subclassItem;
+          } else continue;
+        }
+        const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
+        currentClassIds.push(identifier);
+        this.spellcastingClasses[identifier] = {
+          name: classItem.name,
+          uuid: classItem.uuid,
+          id: classItem.id,
+          spellcasting: spellcastingConfig,
+          img: classItem.img
+        };
+        this.classSpellData[identifier] = {
+          spellLevels: [],
+          className: classItem.name,
+          spellPreparation: { current: 0, maximum: 0 },
+          classItem: classItem,
+          spellcastingSource: spellcastingSource,
+          type: spellcastingConfig?.type || 'leveled',
+          progression: spellcastingConfig?.progression || 'none'
+        };
+        this.classPrepModes[identifier] = this.getClassPreparationMode(spellcastingSource);
+        this.classRitualRules[identifier] = this.getClassRitualRules(spellcastingSource);
+        this.classSwapRules[identifier] = this.getClassSwapRules(spellcastingSource);
+      }
     }
     this._cleanupStaleClassData(currentClassIds);
     if (Object.keys(this.spellcastingClasses).length > 0 && !this.activeClass) this.activeClass = Object.keys(this.spellcastingClasses)[0];

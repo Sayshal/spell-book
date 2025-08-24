@@ -60,7 +60,7 @@ export async function getClassSpellList(className, classUuid, actor) {
   if (customMatch && customMatch.size > 0) return customMatch;
   const identifierMatch = await findSpellListByIdentifier(classIdentifier, customMappings);
   if (identifierMatch && identifierMatch.size > 0) return identifierMatch;
-  log(1, `No spell list found for class ${className} (${classIdentifier}) from folder "${topLevelFolderName}"`);
+  log(2, `No spell list found for class ${className} (${classIdentifier}) from folder "${topLevelFolderName}"`);
   return new Set();
 }
 
@@ -214,6 +214,6 @@ async function getSpellListFromFolder(topLevelFolderName, identifier, customMapp
     const spellList = await searchPackForSpellList(pack, identifier, customMappings);
     if (spellList) return spellList;
   }
-  log(1, `No spell list found for folder "${topLevelFolderName}", identifier "${identifier}"`);
+  log(2, `No spell list found for folder "${topLevelFolderName}", identifier "${identifier}"`);
   return null;
 }

@@ -154,50 +154,62 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    */
   async _prepareClassSettings() {
     const classSettings = [];
-    const classItems = this.actor.items.filter((item) => item.type === 'class' && item.system.spellcasting?.progression && item.system.spellcasting.progression !== 'none');
     const availableSpellLists = await this._prepareSpellListOptions();
     const currentClassRules = this.actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
-    for (const classItem of classItems) {
-      const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
-      const processedClassRules = RuleSetManager.getClassRules(this.actor, identifier);
-      const savedRules = currentClassRules[identifier] || {};
-      const spellManager = new SpellManager(this.actor);
-      const maxCantrips = spellManager.getMaxAllowed(identifier);
-      const currentCantrips = spellManager.getCurrentCount(identifier);
-      const formRules = {
-        showCantrips: savedRules.hasOwnProperty('showCantrips') ? savedRules.showCantrips : processedClassRules.showCantrips,
-        forceWizardMode: savedRules.hasOwnProperty('forceWizardMode') ? savedRules.forceWizardMode : processedClassRules.forceWizardMode,
-        cantripSwapping: savedRules.cantripSwapping || processedClassRules.cantripSwapping || 'none',
-        spellSwapping: savedRules.spellSwapping || processedClassRules.spellSwapping || 'none',
-        ritualCasting: savedRules.ritualCasting || processedClassRules.ritualCasting || 'none',
-        customSpellList: savedRules.customSpellList || processedClassRules.customSpellList || '',
-        spellPreparationBonus: savedRules.hasOwnProperty('spellPreparationBonus') ? savedRules.spellPreparationBonus : processedClassRules.spellPreparationBonus || 0,
-        cantripPreparationBonus: savedRules.hasOwnProperty('cantripPreparationBonus') ? savedRules.cantripPreparationBonus : processedClassRules.cantripPreparationBonus || 0,
-        _noScaleValue: processedClassRules._noScaleValue
-      };
-      const hasCustomSpellList = !!formRules.customSpellList;
-      let customSpellListName = null;
-      if (hasCustomSpellList) {
-        const customList = await fromUuid(formRules.customSpellList);
-        customSpellListName = customList?.name || game.i18n.localize('SPELLBOOK.Settings.UnknownList');
+    if (this.actor.spellcastingClasses) {
+      for (const [classKey, spellcastingData] of Object.entries(this.actor.spellcastingClasses)) {
+        const classItem = spellcastingData;
+        let spellcastingConfig = classItem.system?.spellcasting;
+        let spellcastingSource = classItem;
+        if (!spellcastingConfig?.progression || spellcastingConfig.progression === 'none') {
+          const subclassItem = spellcastingData._classLink;
+          if (subclassItem?.system?.spellcasting?.progression && subclassItem.system.spellcasting.progression !== 'none') {
+            spellcastingConfig = subclassItem.system.spellcasting;
+            spellcastingSource = subclassItem;
+          } else continue;
+        }
+        const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
+        const processedClassRules = RuleSetManager.getClassRules(this.actor, identifier);
+        const savedRules = currentClassRules[identifier] || {};
+        const spellManager = new SpellManager(this.actor);
+        const maxCantrips = spellManager.getMaxAllowed(identifier);
+        const currentCantrips = spellManager.getCurrentCount(identifier);
+        const formRules = {
+          showCantrips: savedRules.hasOwnProperty('showCantrips') ? savedRules.showCantrips : processedClassRules.showCantrips,
+          forceWizardMode: savedRules.hasOwnProperty('forceWizardMode') ? savedRules.forceWizardMode : processedClassRules.forceWizardMode,
+          cantripSwapping: savedRules.cantripSwapping || processedClassRules.cantripSwapping || 'none',
+          spellSwapping: savedRules.spellSwapping || processedClassRules.spellSwapping || 'none',
+          ritualCasting: savedRules.ritualCasting || processedClassRules.ritualCasting || 'none',
+          customSpellList: savedRules.customSpellList || processedClassRules.customSpellList || '',
+          spellPreparationBonus: savedRules.hasOwnProperty('spellPreparationBonus') ? savedRules.spellPreparationBonus : processedClassRules.spellPreparationBonus || 0,
+          cantripPreparationBonus: savedRules.hasOwnProperty('cantripPreparationBonus') ? savedRules.cantripPreparationBonus : processedClassRules.cantripPreparationBonus || 0,
+          _noScaleValue: processedClassRules._noScaleValue
+        };
+        const hasCustomSpellList = !!formRules.customSpellList;
+        let customSpellListName = null;
+        if (hasCustomSpellList) {
+          const customList = await fromUuid(formRules.customSpellList);
+          customSpellListName = customList?.name || game.i18n.localize('SPELLBOOK.Settings.UnknownList');
+        }
+        const classFormElements = this._prepareClassFormElements(identifier, formRules, availableSpellLists);
+        const classData = {
+          name: classItem.name,
+          identifier: identifier,
+          img: classItem.img,
+          rules: processedClassRules,
+          stats: {
+            currentCantrips: currentCantrips,
+            maxCantrips: maxCantrips,
+            classLevel: classItem.system.levels || 1,
+            basePreparationMax: spellcastingConfig?.preparation?.max || 0
+          },
+          hasCustomSpellList: hasCustomSpellList,
+          customSpellListName: customSpellListName,
+          formElements: classFormElements,
+          spellcastingSource: spellcastingSource
+        };
+        classSettings.push(classData);
       }
-      const classFormElements = this._prepareClassFormElements(identifier, formRules, availableSpellLists);
-      const classData = {
-        name: classItem.name,
-        identifier: identifier,
-        img: classItem.img,
-        rules: processedClassRules,
-        stats: {
-          currentCantrips: currentCantrips,
-          maxCantrips: maxCantrips,
-          classLevel: classItem.system.levels || 1,
-          basePreparationMax: classItem.system.spellcasting?.preparation?.max || 0
-        },
-        hasCustomSpellList: hasCustomSpellList,
-        customSpellListName: customSpellListName,
-        formElements: classFormElements
-      };
-      classSettings.push(classData);
     }
     classSettings.sort((a, b) => a.name.localeCompare(b.name));
     return classSettings;

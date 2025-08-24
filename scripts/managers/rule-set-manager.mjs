@@ -47,13 +47,24 @@ export class RuleSetManager {
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const existingRules = classRules[classIdentifier];
     if (existingRules) {
-      const classExists = actor.items.some(
-        (item) =>
-          item.type === 'class' &&
-          (item.system.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier) &&
-          item.system.spellcasting?.progression &&
-          item.system.spellcasting.progression !== 'none'
-      );
+      let classExists = false;
+      if (actor.spellcastingClasses) {
+        for (const [classKey, spellcastingData] of Object.entries(actor.spellcastingClasses)) {
+          const classItem = spellcastingData;
+          const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
+          if (identifier === classIdentifier) {
+            let hasSpellcasting = classItem.system.spellcasting?.progression && classItem.system.spellcasting.progression !== 'none';
+            if (!hasSpellcasting && spellcastingData._classLink) {
+              const subclassItem = spellcastingData._classLink;
+              hasSpellcasting = subclassItem.system.spellcasting?.progression && subclassItem.system.spellcasting.progression !== 'none';
+            }
+            if (hasSpellcasting) {
+              classExists = true;
+              break;
+            }
+          }
+        }
+      }
       if (!classExists) {
         log(2, `Class rules found for non-existent class: ${classIdentifier}. Will be cleaned up on next spellbook open.`);
         const ruleSet = RuleSetManager.getEffectiveRuleSet(actor);
@@ -119,12 +130,28 @@ export class RuleSetManager {
    */
   static _detectSpellcastingClasses(actor) {
     const classes = {};
-    for (const item of actor.items) {
-      if (item.type !== 'class') continue;
-      if (!item.system.spellcasting?.progression || item.system.spellcasting.progression === 'none') continue;
-      const identifier = item.system.identifier?.toLowerCase() || item.name.toLowerCase();
-      classes[identifier] = { name: item.name, item: item, spellcasting: item.system.spellcasting };
+    if (actor.spellcastingClasses) {
+      for (const [classKey, spellcastingData] of Object.entries(actor.spellcastingClasses)) {
+        const classItem = spellcastingData;
+        let spellcastingConfig = classItem.system?.spellcasting;
+        let spellcastingSource = classItem;
+        if (!spellcastingConfig?.progression || spellcastingConfig.progression === 'none') {
+          const subclassItem = spellcastingData._classLink;
+          if (subclassItem?.system?.spellcasting?.progression && subclassItem.system.spellcasting.progression !== 'none') {
+            spellcastingConfig = subclassItem.system.spellcasting;
+            spellcastingSource = subclassItem;
+          } else continue;
+        }
+        const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
+        classes[identifier] = {
+          name: classItem.name,
+          item: classItem,
+          spellcasting: spellcastingConfig,
+          spellcastingSource: spellcastingSource
+        };
+      }
     }
+
     return classes;
   }
 
