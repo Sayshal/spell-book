@@ -68,8 +68,8 @@ export class SpellManager {
   }
 
   /**
-   * Get preparation status for a spell with class-specific awareness
-   * @param {Item5e} spell - The spell to check
+   * Get the preparation status for a given spell
+   * @param {Object} spell - The spell to check
    * @param {string} classIdentifier - The specific class context
    * @returns {Object} Preparation status information
    */
@@ -122,6 +122,66 @@ export class SpellManager {
           alwaysPrepared: false,
           isGranted: false,
           sourceItem: null,
+          isCantripLocked: false
+        };
+      }
+    }
+    const specialSpell = this.actor.items.find((item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid));
+    if (specialSpell) {
+      if (specialSpell.system.prepared === 2) {
+        const sourceClass = specialSpell.system?.sourceClass || specialSpell.sourceClass;
+        const classItem = sourceClass ? this.actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === sourceClass || i.name.toLowerCase() === sourceClass)) : null;
+        return {
+          prepared: true,
+          isOwned: false,
+          preparationMode: 'always',
+          disabled: true,
+          alwaysPrepared: true,
+          disabledReason: game.i18n.format('SPELLBOOK.Preparation.AlwaysPreparedByClass', {
+            class: classItem?.name || sourceClass || 'Feature'
+          }),
+          localizedPreparationMode: game.i18n.localize('SPELLBOOK.Preparation.Always'),
+          sourceItem: this._determineSpellSource(specialSpell),
+          isGranted: false,
+          isCantripLocked: false
+        };
+      }
+      if (specialSpell.flags?.dnd5e?.cachedFor) {
+        const grantingItem = this.actor.items.get(specialSpell.flags.dnd5e.cachedFor);
+        return {
+          prepared: true,
+          isOwned: false,
+          preparationMode: 'granted',
+          disabled: true,
+          isGranted: true,
+          disabledReason: game.i18n.format('SPELLBOOK.SpellSource.GrantedByItem', {
+            item: grantingItem?.name || 'Feature'
+          }),
+          localizedPreparationMode: game.i18n.localize('SPELLBOOK.SpellSource.Granted'),
+          sourceItem: grantingItem,
+          alwaysPrepared: false,
+          isCantripLocked: false
+        };
+      }
+      const specialModes = ['innate', 'pact', 'atwill', 'ritual'];
+      if (specialModes.includes(specialSpell.system.method)) {
+        const sourceClass = specialSpell.system?.sourceClass || specialSpell.sourceClass;
+        const classItem = sourceClass ? this.actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === sourceClass || i.name.toLowerCase() === sourceClass)) : null;
+        const localizedMode = formattingUtils.getLocalizedPreparationMode(specialSpell.system.method);
+        return {
+          prepared: true,
+          isOwned: false,
+          preparationMode: specialSpell.system.method,
+          disabled: true,
+          preparationMode: specialSpell.system.method,
+          disabledReason: game.i18n.format('SPELLBOOK.Preparation.SpecialModeByClass', {
+            mode: localizedMode,
+            class: classItem?.name || sourceClass || classIdentifier
+          }),
+          localizedPreparationMode: localizedMode,
+          alwaysPrepared: false,
+          isGranted: false,
+          sourceItem: this._determineSpellSource(specialSpell),
           isCantripLocked: false
         };
       }
