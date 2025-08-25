@@ -425,7 +425,7 @@ export class SpellbookState {
       if (processedSpellNames.has(spellName)) continue;
       if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
       const spellUuid = spell.uuid || spell.compendiumUuid;
-      const spellData = { ...spell };
+      const spellData = foundry.utils.deepClone(spell);
       let preparedByOtherClass = null;
       for (const [otherClass, preparedSpells] of Object.entries(preparedByClass)) {
         if (otherClass === classIdentifier) continue;
@@ -435,8 +435,13 @@ export class SpellbookState {
           break;
         }
       }
-      if (preparedByOtherClass) spellData.sourceClass = preparedByOtherClass;
-      else spellData.sourceClass = classIdentifier;
+      spellData.sourceClass = classIdentifier;
+      spellData.system = spellData.system || {};
+      spellData.system.sourceClass = classIdentifier;
+      if (preparedByOtherClass) {
+        spellData.preparation = spellData.preparation || {};
+        spellData.preparation.preparedByOtherClass = preparedByOtherClass;
+      }
       if (this.app.spellManager) spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, classIdentifier);
       spellData.filterData = formattingUtils.extractSpellFilterData(spell);
       spellData.enrichedIcon = formattingUtils.createSpellIconLink(spell);
