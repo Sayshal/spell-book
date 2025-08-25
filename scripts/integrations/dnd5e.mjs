@@ -54,19 +54,12 @@ async function handleRestCompleted(actor, result, config) {
     if (needsSpellSwap || needsCantripSwap) {
       hasAnyLongRestMechanics = true;
       log(3, `Class ${classIdentifier} needs long rest mechanics: spell swap=${needsSpellSwap}, cantrip swap=${needsCantripSwap}`);
-      if (needsCantripSwap) {
-        const spellcastingClasses = actor.items.filter((i) => i.type === 'class' && i.system.spellcasting?.progression !== 'none');
-        const classItem = spellcastingClasses.find((c) => c.system.identifier?.toLowerCase() === classIdentifier || c.name.toLowerCase() === classIdentifier);
-        const className = classItem?.name || classIdentifier;
-        longRestClasses.cantripSwapping.push({ identifier: classIdentifier, name: className });
-      }
+      const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
+      const classItem = spellcastingData ? actor.items.get(spellcastingData.id) : null;
+      const className = classItem?.name || classIdentifier;
+      if (needsCantripSwap) longRestClasses.cantripSwapping.push({ identifier: classIdentifier, name: className });
       if (needsSpellSwap) {
-        const spellcastingClasses = actor.items.filter((i) => i.type === 'class' && i.system.spellcasting?.progression !== 'none');
-        const classItem = spellcastingClasses.find((c) => c.system.identifier?.toLowerCase() === classIdentifier || c.name.toLowerCase() === classIdentifier);
-        const className = classItem?.name || classIdentifier;
         longRestClasses.spellSwapping.push({ identifier: classIdentifier, name: className });
-      }
-      if (needsSpellSwap) {
         const swapTracking = actor.getFlag(MODULE.ID, FLAGS.SWAP_TRACKING) || {};
         if (!swapTracking[classIdentifier]) swapTracking[classIdentifier] = {};
         swapTracking[classIdentifier].longRest = true;
@@ -79,8 +72,9 @@ async function handleRestCompleted(actor, result, config) {
     actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
     log(3, `Set long rest completion flag for ${actor.name} - available for all classes that need it`);
     await handleLongRestSwapPrompt(actor, longRestClasses);
+  } else {
+    log(3, `No classes on ${actor.name} require long rest mechanics, skipping`);
   }
-  if (!hasAnyLongRestMechanics) log(3, `No classes on ${actor.name} require long rest mechanics, skipping`);
 }
 
 /**

@@ -68,8 +68,8 @@ export class SpellManager {
   }
 
   /**
-   * Get preparation status for a spell with class-specific awareness
-   * @param {Item5e} spell - The spell to check
+   * Get the preparation status for a given spell
+   * @param {Object} spell - The spell to check
    * @param {string} classIdentifier - The specific class context
    * @returns {Object} Preparation status information
    */
@@ -109,7 +109,8 @@ export class SpellManager {
       if (otherClass === classIdentifier) continue;
       const otherClassKey = `${otherClass}:${spellUuid}`;
       if (preparedSpells.includes(otherClassKey)) {
-        const classItem = this.actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === otherClass || i.name.toLowerCase() === otherClass));
+        const spellcastingData = this.actor.spellcastingClasses?.[otherClass];
+        const classItem = spellcastingData ? this.actor.items.get(spellcastingData.id) : null;
         return {
           prepared: true,
           isOwned: false,
@@ -122,6 +123,68 @@ export class SpellManager {
           alwaysPrepared: false,
           isGranted: false,
           sourceItem: null,
+          isCantripLocked: false
+        };
+      }
+    }
+    const specialSpell = this.actor.items.find((item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid));
+    if (specialSpell) {
+      if (specialSpell.system.prepared === 2) {
+        const sourceClass = specialSpell.system?.sourceClass || specialSpell.sourceClass;
+        const spellcastingData = sourceClass ? this.actor.spellcastingClasses?.[sourceClass] : null;
+        const classItem = spellcastingData ? this.actor.items.get(spellcastingData.id) : null;
+        return {
+          prepared: true,
+          isOwned: false,
+          preparationMode: 'always',
+          disabled: true,
+          alwaysPrepared: true,
+          disabledReason: game.i18n.format('SPELLBOOK.Preparation.AlwaysPreparedByClass', {
+            class: classItem?.name || sourceClass || 'Feature'
+          }),
+          localizedPreparationMode: game.i18n.localize('SPELLBOOK.Preparation.Always'),
+          sourceItem: this._determineSpellSource(specialSpell),
+          isGranted: false,
+          isCantripLocked: false
+        };
+      }
+      if (specialSpell.flags?.dnd5e?.cachedFor) {
+        const grantingItem = this.actor.items.get(specialSpell.flags.dnd5e.cachedFor);
+        return {
+          prepared: true,
+          isOwned: false,
+          preparationMode: 'granted',
+          disabled: true,
+          isGranted: true,
+          disabledReason: game.i18n.format('SPELLBOOK.SpellSource.GrantedByItem', {
+            item: grantingItem?.name || 'Feature'
+          }),
+          localizedPreparationMode: game.i18n.localize('SPELLBOOK.SpellSource.Granted'),
+          sourceItem: grantingItem,
+          alwaysPrepared: false,
+          isCantripLocked: false
+        };
+      }
+      const specialModes = ['innate', 'pact', 'atwill', 'ritual'];
+      if (specialModes.includes(specialSpell.system.method)) {
+        const sourceClass = specialSpell.system?.sourceClass || specialSpell.sourceClass;
+        const spellcastingData = sourceClass ? this.actor.spellcastingClasses?.[sourceClass] : null;
+        const classItem = spellcastingData ? this.actor.items.get(spellcastingData.id) : null;
+        const localizedMode = formattingUtils.getLocalizedPreparationMode(specialSpell.system.method);
+        return {
+          prepared: true,
+          isOwned: false,
+          preparationMode: specialSpell.system.method,
+          disabled: true,
+          preparationMode: specialSpell.system.method,
+          disabledReason: game.i18n.format('SPELLBOOK.Preparation.SpecialModeByClass', {
+            mode: localizedMode,
+            class: classItem?.name || sourceClass || classIdentifier
+          }),
+          localizedPreparationMode: localizedMode,
+          alwaysPrepared: false,
+          isGranted: false,
+          sourceItem: this._determineSpellSource(specialSpell),
           isCantripLocked: false
         };
       }
@@ -227,14 +290,28 @@ export class SpellManager {
       if (item) return { name: item.name, type: item.type, id: item.id };
     }
     const preparationMode = spell.system.method;
+    const sourceClassId = spell.system?.sourceClass || spell.sourceClass;
     if (preparationMode === 'always') {
+      if (sourceClassId && this.actor.spellcastingClasses?.[sourceClassId]) {
+        const spellcastingData = this.actor.spellcastingClasses[sourceClassId];
+        const spellcastingSource = genericUtils.getSpellcastingSourceItem(this.actor, sourceClassId);
+        if (spellcastingSource && spellcastingSource.type === 'subclass') return { name: spellcastingSource.name, type: 'subclass', id: spellcastingSource.id };
+      }
       const subclass = this.actor.items.find((i) => i.type === 'subclass');
       if (subclass) return { name: subclass.name, type: 'subclass', id: subclass.id };
     } else if (preparationMode === 'pact') {
+      if (sourceClassId && this.actor.spellcastingClasses?.[sourceClassId]) {
+        const spellcastingSource = genericUtils.getSpellcastingSourceItem(this.actor, sourceClassId);
+        if (spellcastingSource && spellcastingSource.type === 'subclass') return { name: spellcastingSource.name, type: 'subclass', id: spellcastingSource.id };
+      }
       const subclass = this.actor.items.find((i) => i.type === 'subclass');
       if (subclass) return { name: subclass.name, type: 'subclass', id: subclass.id };
       return { name: game.i18n.localize('SPELLBOOK.SpellSource.PactMagic'), type: 'class' };
     } else {
+      if (sourceClassId && this.actor.spellcastingClasses?.[sourceClassId]) {
+        const spellcastingSource = genericUtils.getSpellcastingSourceItem(this.actor, sourceClassId);
+        if (spellcastingSource) return { name: spellcastingSource.name, type: spellcastingSource.type, id: spellcastingSource.id };
+      }
       const classItem = this.actor.items.find((i) => i.type === 'class');
       if (classItem) return { name: classItem.name, type: 'class', id: classItem.id };
     }
@@ -398,9 +475,8 @@ export class SpellManager {
    * @returns {string} The preparation mode (prepared, pact, etc.)
    */
   _getClassPreparationMode(classIdentifier) {
-    const classItem = this.actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier));
-    if (!classItem) return 'spell';
-    if (classItem.system.spellcasting?.type === 'pact') return 'pact';
+    const spellcastingConfig = genericUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
+    if (spellcastingConfig?.type === 'pact') return 'pact';
     return 'spell';
   }
 

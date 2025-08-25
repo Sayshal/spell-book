@@ -306,6 +306,15 @@
     }
   }
 
+  /* Content wrapper - manages overflow for sidebar in collapsed mode */
+  .content-wrapper {
+    inset: 0;
+    display: flex;
+    position: absolute;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
   /* Main container - positioned relative to sidebar */
   .spell-book-container {
     inset: 0 0 0 var(--spell-book-sidebar-width);

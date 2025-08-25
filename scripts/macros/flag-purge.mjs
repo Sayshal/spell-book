@@ -4,8 +4,7 @@ function flagPurgeScript() {
     const eligibleActors = game.actors
       .filter((actor) => {
         if (!actor.hasPlayerOwner) return false;
-        const spellcastingClasses = actor.items.filter((item) => item.type === 'class' && item.system.spellcasting?.progression !== 'none');
-        return spellcastingClasses.length > 0;
+        return actor.spellcastingClasses && Object.keys(actor.spellcastingClasses).length > 0;
       })
       .sort((a, b) => a.name.localeCompare(b.name));
     if (eligibleActors.length === 0) {

@@ -11,7 +11,7 @@
  */
 export function createCheckbox(config) {
   const field = new foundry.data.fields.BooleanField();
-  const fieldConfig = { name: config.name, value: config.checked || false, disabled: config.disabled, ariaLabel: config.ariaLabel, classes: config.cssClass };
+  const fieldConfig = { name: config.name, value: config.checked || false, disabled: config.disabled, ariaLabel: config.ariaLabel, classes: config.cssClass || '' };
   const checkbox = dnd5e.applications.fields.createCheckboxInput(field, fieldConfig);
   if (config.label) {
     const label = document.createElement('label');
