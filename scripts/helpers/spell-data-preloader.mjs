@@ -106,18 +106,21 @@ async function collectPlayerSpellUuids(actor) {
  */
 async function getSpellsFromActorSpellLists(actor) {
   const spellUuids = [];
-  const spellcastingClasses = actor.items.filter((item) => item.type === 'class' && item.system.spellcasting?.progression && item.system.spellcasting.progression !== 'none');
-  for (const classItem of spellcastingClasses) {
+  if (!actor.spellcastingClasses) return spellUuids;
+  for (const [classIdentifier, classData] of Object.entries(actor.spellcastingClasses)) {
+    const classItem = actor.items.get(classData.id);
+    if (!classItem) {
+      log(2, `Could not find class item for ${classIdentifier}`);
+      continue;
+    }
+    const spellcastingConfig = genericUtils.getSpellcastingConfigForClass(actor, classIdentifier);
+    if (!spellcastingConfig) continue;
     const className = classItem.name.toLowerCase();
     const classUuid = classItem.uuid;
-    try {
-      const spellList = await discoveryUtils.getClassSpellList(className, classUuid, actor);
-      if (spellList && spellList.size > 0) {
-        spellList.forEach((spellUuid) => spellUuids.push(spellUuid));
-        log(3, `Found ${spellList.size} spells for ${className} class`);
-      }
-    } catch (error) {
-      log(2, `Error getting spell list for class ${className}:`, error);
+    const spellList = await discoveryUtils.getClassSpellList(className, classUuid, actor);
+    if (spellList && spellList.size > 0) {
+      spellList.forEach((spellUuid) => spellUuids.push(spellUuid));
+      log(3, `Found ${spellList.size} spells for ${className} class (${classIdentifier})`);
     }
   }
   log(3, `Total spell UUIDs from actor spell lists: ${spellUuids.length}`);

@@ -463,6 +463,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   async _onRender(context, options) {
     super._onRender(context, options);
+    this._setupContentWrapper();
     const sidebarControlsBottom = game.settings.get(MODULE.ID, SETTINGS.SIDEBAR_CONTROLS_BOTTOM);
     this.element.dataset.sidebarControlsBottom = sidebarControlsBottom;
     this.ui.setSidebarState();
@@ -732,6 +733,24 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
+   * Set up the content wrapper element to allow hiding sidebar in collapsed mode.
+   * @private
+   */
+  _setupContentWrapper() {
+    if (!this.element.querySelector('.content-wrapper')) {
+      const tabsNav = this.element.querySelector('.window-content > nav.tabs.tabs-right');
+      const wrapper = document.createElement('div');
+      wrapper.className = 'content-wrapper';
+      const elementsToWrap = [this.element.querySelector('.sidebar'), this.element.querySelector('.spell-book-container'), this.element.querySelector('.window-content > footer')].filter((el) => el);
+      if (elementsToWrap.length && elementsToWrap[0].parentNode) {
+        elementsToWrap[0].parentNode.insertBefore(wrapper, elementsToWrap[0]);
+        elementsToWrap.forEach((el) => wrapper.appendChild(el));
+        if (tabsNav && tabsNav.parentNode === wrapper) this.element.querySelector('.window-content').appendChild(tabsNav);
+      }
+    }
+  }
+
+  /**
    * Sync journal favorites to match current actor.system.favorites state
    * This handles the case where user closed without saving - journal is "ahead" of actor
    */
@@ -894,11 +913,9 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this._stateManager.updateGlobalPreparationCount();
     this._switchTabVisibility(tabName);
     this.render(false, { parts: ['footer'] });
-    setTimeout(() => {
-      this.ui.updateSpellCounts();
-      this.ui.updateSpellPreparationTracking();
-      this.ui.setupCantripUI();
-    }, 50);
+    this.ui.updateSpellCounts();
+    this.ui.updateSpellPreparationTracking();
+    this.ui.setupCantripUI();
   }
 
   /**

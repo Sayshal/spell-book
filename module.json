@@ -33,11 +33,19 @@
   ],
   "license": "https://github.com/Sayshal/spell-book?tab=MIT-1-ov-file",
   "manifest": "https://github.com/Sayshal/spell-book/releases/latest/download/module.json",
+  "media": [
+    {
+      "type": "setup",
+      "url": "modules/spell-book/assets/Desk.webp",
+      "loop": false,
+      "flags": {}
+    }
+  ],
   "packFolders": [
     {
       "name": "Spell Book",
       "packs": ["custom-spell-lists", "spell-book-macros", "user-spell-data"],
-      "sorting": "a"
+      "sorting": "m"
     }
   ],
   "packs": [
@@ -49,6 +57,8 @@
         "PLAYER": "OWNER"
       },
       "path": "storage/custom-spell-lists",
+      "banner": "modules/spell-book/assets/desk_01.webp",
+      "sort": 10000,
       "type": "JournalEntry"
     },
     {
@@ -59,6 +69,8 @@
         "ASSISTANT": "OWNER"
       },
       "path": "/storage/user-spell-data",
+      "banner": "modules/spell-book/assets/desk_02.webp",
+      "sort": 20000,
       "type": "JournalEntry"
     },
     {
@@ -68,6 +80,8 @@
         "ASSISTANT": "OWNER",
         "PLAYER": "NONE"
       },
+      "banner": "modules/spell-book/assets/desk_03.webp",
+      "sort": 30000,
       "type": "Macro"
     }
   ],

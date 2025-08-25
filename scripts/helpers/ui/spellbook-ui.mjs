@@ -3,6 +3,7 @@ import { FLAGS, MODULE } from '../../constants.mjs';
 import { log } from '../../logger.mjs';
 import { RuleSetManager } from '../../managers/rule-set-manager.mjs';
 import * as colorUtils from '../color-utils.mjs';
+import * as genericUtils from '../generic-utils.mjs';
 import { AdvancedSearchManager } from './advanced-search-manager.mjs';
 
 /**
@@ -125,7 +126,10 @@ export class SpellbookUI {
     const classData = this.app._stateManager.classSpellData[classIdentifier];
     if (!classData) return;
     const classRules = RuleSetManager.getClassRules(this.app.actor, classIdentifier);
-    const baseMaxPrepared = classData.classItem?.system?.spellcasting?.preparation?.max || 0;
+    let baseMaxPrepared = 0;
+    const spellcastingConfig = genericUtils.getSpellcastingConfigForClass(this.app.actor, classIdentifier);
+    if (spellcastingConfig?.preparation?.max) baseMaxPrepared = spellcastingConfig.preparation.max;
+    else baseMaxPrepared = classData.classItem?.system?.spellcasting?.preparation?.max || 0;
     const preparationBonus = classRules?.spellPreparationBonus || 0;
     const classMaxPrepared = baseMaxPrepared + preparationBonus;
     let classPreparedCount = 0;
