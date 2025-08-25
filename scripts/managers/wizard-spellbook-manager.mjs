@@ -48,11 +48,12 @@ export class WizardSpellbookManager {
 
   /**
    * Find the actor's wizard-enabled class for this identifier
-   * @todo - Is this required if we have a genericUtils for it?
    * @returns {Item5e|null} - The wizard-enabled class item or null
    */
   _findWizardClass() {
-    const classItem = this.actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === this.classIdentifier || i.name.toLowerCase() === this.classIdentifier));
+    if (!this.actor.spellcastingClasses?.[this.classIdentifier]) return null;
+    const spellcastingData = this.actor.spellcastingClasses[this.classIdentifier];
+    const classItem = this.actor.items.get(spellcastingData.id);
     if (!classItem) return null;
     if (genericUtils.isClassWizardEnabled(this.actor, this.classIdentifier)) return classItem;
     return null;

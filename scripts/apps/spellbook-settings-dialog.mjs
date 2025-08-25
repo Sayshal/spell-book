@@ -1,6 +1,7 @@
 import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import { shouldIndexCompendium } from '../helpers/compendium-management.mjs';
 import * as formElements from '../helpers/form-elements.mjs';
+import * as genericUtils from '../helpers/generic-utils.mjs';
 import { log } from '../logger.mjs';
 import { RuleSetManager } from '../managers/rule-set-manager.mjs';
 import { SpellManager } from '../managers/spell-manager.mjs';
@@ -343,8 +344,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   _createSpellPreparationBonusControls(identifier, currentValue) {
     const container = document.createElement('div');
     container.className = 'preparation-bonus-controls';
-    const classItem = this.actor.items.find((item) => item.type === 'class' && (item.system.identifier?.toLowerCase() === identifier || item.name.toLowerCase() === identifier));
-    const baseMaxSpells = classItem?.system?.spellcasting?.preparation?.max || 0;
+    const spellcastingConfig = genericUtils.getSpellcastingConfigForClass(this.actor, identifier);
+    const baseMaxSpells = spellcastingConfig?.preparation?.max || 0;
     const minValue = -baseMaxSpells;
     const decreaseButton = document.createElement('button');
     decreaseButton.type = 'button';
@@ -384,17 +385,18 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   _createCantripPreparationBonusControls(identifier, currentValue) {
     const container = document.createElement('div');
     container.className = 'preparation-bonus-controls';
-    const classItem = this.actor.items.find((item) => item.type === 'class' && (item.system.identifier?.toLowerCase() === identifier || item.name.toLowerCase() === identifier));
     let baseMaxCantrips = 0;
-    if (classItem) {
+    const spellcastingData = this.actor.spellcastingClasses?.[identifier];
+    if (spellcastingData) {
       const cantripScaleValuesSetting = game.settings.get(MODULE.ID, SETTINGS.CANTRIP_SCALE_VALUES);
       const cantripScaleKeys = cantripScaleValuesSetting
         .split(',')
         .map((v) => v.trim())
         .filter((v) => v.length > 0);
-      if (classItem.scaleValues) {
+      const scaleValues = genericUtils.getScaleValuesForClass(this.actor, identifier);
+      if (scaleValues) {
         for (const key of cantripScaleKeys) {
-          const cantripValue = classItem.scaleValues[key]?.value;
+          const cantripValue = scaleValues[key]?.value;
           if (cantripValue !== undefined) {
             baseMaxCantrips = cantripValue;
             break;
@@ -535,8 +537,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellPreparationBonus"]`);
     if (!input) return;
-    const classItem = this.actor.items.find((item) => item.type === 'class' && (item.system.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier));
-    const baseMax = classItem?.system?.spellcasting?.preparation?.max || 0;
+    const spellcastingConfig = genericUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
+    const baseMax = spellcastingConfig?.preparation?.max || 0;
     const minimumBonus = -baseMax;
     const currentValue = parseInt(input.value) || 0;
     const newValue = Math.max(currentValue - 1, minimumBonus);
@@ -544,6 +546,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     input.dispatchEvent(new Event('change', { bubbles: true }));
     this._updateClassStatsDisplay(classIdentifier, 'spell', newValue);
     if (newValue === minimumBonus && currentValue > minimumBonus) {
+      const spellcastingData = this.actor.spellcastingClasses?.[classIdentifier];
+      const classItem = spellcastingData ? this.actor.items.get(spellcastingData.id) : null;
       const message =
         baseMax > 0 ?
           game.i18n.format('SPELLBOOK.Settings.SpellPreparationBonus.MinimumReached', {
@@ -602,17 +606,18 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.cantripPreparationBonus"]`);
     if (!input) return;
-    const classItem = this.actor.items.find((item) => item.type === 'class' && (item.system.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier));
     let baseMaxCantrips = 0;
-    if (classItem) {
+    const spellcastingData = this.actor.spellcastingClasses?.[classIdentifier];
+    if (spellcastingData) {
       const cantripScaleValuesSetting = game.settings.get(MODULE.ID, SETTINGS.CANTRIP_SCALE_VALUES);
       const cantripScaleKeys = cantripScaleValuesSetting
         .split(',')
         .map((v) => v.trim())
         .filter((v) => v.length > 0);
-      if (classItem.scaleValues) {
+      const scaleValues = genericUtils.getScaleValuesForClass(this.actor, classIdentifier);
+      if (scaleValues) {
         for (const key of cantripScaleKeys) {
-          const cantripValue = classItem.scaleValues[key]?.value;
+          const cantripValue = scaleValues[key]?.value;
           if (cantripValue !== undefined) {
             baseMaxCantrips = cantripValue;
             break;
@@ -627,6 +632,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     input.dispatchEvent(new Event('change', { bubbles: true }));
     this._updateClassStatsDisplay(classIdentifier, 'cantrip', newValue);
     if (newValue === minimumBonus && currentValue > minimumBonus) {
+      const classItem = spellcastingData ? this.actor.items.get(spellcastingData.id) : null;
       const message =
         baseMaxCantrips > 0 ?
           game.i18n.format('SPELLBOOK.Settings.CantripPreparationBonus.MinimumReached', {

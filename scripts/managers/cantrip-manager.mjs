@@ -32,10 +32,16 @@ export class CantripManager {
     if (this._cacheInitialized) return;
     this._maxCantripsByClass.clear();
     this._totalMaxCantrips = 0;
-    const classItems = this.actor.items.filter((i) => i.type === 'class' && i.system.spellcasting?.progression && i.system.spellcasting.progression !== 'none');
-    for (const classItem of classItems) {
-      const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
-      const maxCantrips = this._calculateMaxCantripsForClass(classItem, identifier);
+    if (!this.actor.spellcastingClasses) {
+      log(2, 'No spellcastingClasses found on actor');
+      this._cacheInitialized = true;
+      return;
+    }
+
+    for (const [identifier, classData] of Object.entries(this.actor.spellcastingClasses)) {
+      const spellcastingConfig = genericUtils.getSpellcastingConfigForClass(this.actor, identifier);
+      if (!spellcastingConfig) continue;
+      const maxCantrips = this._calculateMaxCantripsForClass(identifier);
       this._maxCantripsByClass.set(identifier, maxCantrips);
       this._totalMaxCantrips += maxCantrips;
       log(3, `Cached max cantrips for ${identifier}: ${maxCantrips}`);
@@ -74,20 +80,20 @@ export class CantripManager {
 
   /**
    * Calculate max cantrips for a specific class
-   * @param {Item5e} classItem - The class item
    * @param {string} classIdentifier - The class identifier
    * @returns {number} Maximum cantrips for this class
    */
-  _calculateMaxCantripsForClass(classItem, classIdentifier) {
+  _calculateMaxCantripsForClass(classIdentifier) {
     const cantripScaleValuesSetting = game.settings.get(MODULE.ID, SETTINGS.CANTRIP_SCALE_VALUES);
     const cantripScaleKeys = cantripScaleValuesSetting
       .split(',')
       .map((v) => v.trim())
       .filter((v) => v.length > 0);
     let baseCantrips = 0;
-    if (classItem.scaleValues) {
+    const scaleValues = genericUtils.getScaleValuesForClass(this.actor, classIdentifier);
+    if (scaleValues) {
       for (const key of cantripScaleKeys) {
-        const cantripValue = classItem.scaleValues[key]?.value;
+        const cantripValue = scaleValues[key]?.value;
         if (cantripValue !== undefined) {
           baseCantrips = cantripValue;
           log(3, `Found cantrip scale value '${key}' = ${baseCantrips} for class ${classIdentifier}`);
@@ -98,8 +104,10 @@ export class CantripManager {
     if (baseCantrips === 0) return 0;
     const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
     if (classRules && classRules.showCantrips === false) return 0;
-    const cantripBonus = classRules?.cantripPreparationBonus || 0;
-    return Math.max(0, baseCantrips + cantripBonus);
+    const preparationBonus = classRules?.cantripPreparationBonus || 0;
+    const totalMaxCantrips = Math.max(0, baseCantrips + preparationBonus);
+    log(3, `Max cantrips for ${classIdentifier}: ${baseCantrips} base + ${preparationBonus} bonus = ${totalMaxCantrips}`);
+    return totalMaxCantrips;
   }
 
   /**

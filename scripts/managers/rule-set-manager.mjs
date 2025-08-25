@@ -291,8 +291,9 @@ export class RuleSetManager {
         log(1, `Error loading new spell list ${newSpellListUuid}:`, error);
       }
     } else {
-      const classItem = actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier));
-      if (classItem) newSpellList = await discoveryUtils.getClassSpellList(classItem.name.toLowerCase(), classItem.uuid, null);
+      const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
+      const classItem = spellcastingData ? actor.items.get(spellcastingData.id) : null;
+      if (classItem) newSpellList = await discoveryUtils.getClassSpellList(classItem.name.toLowerCase(), classItem.uuid, actor);
     }
     const affectedSpells = [];
     for (const classSpellKey of classPreparedSpells) {
@@ -331,7 +332,9 @@ export class RuleSetManager {
    * @returns {Promise<boolean>} Whether the user confirmed the change
    */
   static async _confirmSpellListChange(actor, classIdentifier, affectedSpells) {
-    const className = actor.items.find((i) => i.type === 'class' && (i.system.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier))?.name || classIdentifier;
+    const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
+    const classItem = spellcastingData ? actor.items.get(spellcastingData.id) : null;
+    const className = classItem?.name || classIdentifier;
     const cantripCount = affectedSpells.filter((s) => s.level === 0).length;
     const spellCount = affectedSpells.filter((s) => s.level > 0).length;
     let content = `<div class="spell-list-change-warning">
@@ -363,7 +366,6 @@ export class RuleSetManager {
         default: 'cancel',
         rejectClose: false
       });
-
       return result === 'confirm';
     } catch (error) {
       log(1, 'Error showing spell list change confirmation dialog:', error);

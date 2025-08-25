@@ -284,12 +284,28 @@ export class SpellbookState {
       return false;
     }
     this.handleCantripLevelUp();
+    log(3, `Loading spell data for ${Object.keys(this.spellcastingClasses).length} spellcasting classes:`, Object.keys(this.spellcastingClasses));
     for (const [identifier, classData] of Object.entries(this.spellcastingClasses)) {
       const classItem = this.actor.items.get(classData.id);
-      if (!classItem) continue;
-      if (genericUtils.isClassWizardEnabled(this.actor, identifier)) await this.loadWizardSpellData(classItem, identifier);
-      else await this.loadClassSpellData(identifier, classItem);
+      if (!classItem) {
+        log(2, `Could not find class item for ${identifier} with id ${classData.id}`);
+        continue;
+      }
+      log(3, `Processing class ${identifier} (${classItem.name})`);
+      if (genericUtils.isClassWizardEnabled(this.actor, identifier)) {
+        log(3, `Loading wizard spell data for ${identifier}`);
+        await this.loadWizardSpellData(classItem, identifier);
+      } else {
+        log(3, `Loading regular spell data for ${identifier}`);
+        await this.loadClassSpellData(identifier, classItem);
+      }
+      if (this.classSpellData[identifier]) {
+        log(3, `Successfully loaded spell data for ${identifier}: ${this.classSpellData[identifier].spellPreparation.current}/${this.classSpellData[identifier].spellPreparation.maximum}`);
+      } else {
+        log(2, `FAILED to load spell data for ${identifier} - not in classSpellData!`);
+      }
     }
+    log(3, `Final classSpellData keys:`, Object.keys(this.classSpellData));
     if (this.activeClass && this.classSpellData[this.activeClass]) {
       this.spellLevels = this.classSpellData[this.activeClass].spellLevels || [];
       this.className = this.classSpellData[this.activeClass].className || '';
@@ -308,8 +324,22 @@ export class SpellbookState {
   async loadClassSpellData(identifier, classItem) {
     const className = classItem.name.toLowerCase();
     const classUuid = classItem.uuid;
+    log(3, `Getting spell list for class ${identifier} (${className})`);
     const spellList = await discoveryUtils.getClassSpellList(className, classUuid, this.actor);
-    if (!spellList || !spellList.size) return;
+    if (!spellList || !spellList.size) {
+      log(2, `No spell list found for class ${identifier} (${className}) - spell list size: ${spellList?.size || 0}`);
+      const prepStats = this.calculatePreparationStats(identifier, [], classItem);
+      this.classSpellData[identifier] = {
+        spellLevels: [],
+        className: classItem.name,
+        spellPreparation: prepStats,
+        classItem,
+        identifier
+      };
+      log(3, `Created empty spell data for ${identifier} with prep stats: ${prepStats.current}/${prepStats.maximum}`);
+      return;
+    }
+    log(3, `Found spell list with ${spellList.size} spells for ${identifier}`);
     let maxSpellLevel = discoveryUtils.calculateMaxSpellLevel(classItem, this.actor);
     const hideCantrips = this._shouldHideCantrips(identifier);
     if (hideCantrips && maxSpellLevel > 0) maxSpellLevel = Math.max(1, maxSpellLevel);
@@ -465,7 +495,7 @@ export class SpellbookState {
   /**
    * Calculate preparation statistics for a specific class
    * @param {string} classIdentifier - The class identifier
-   * @param {Array} spellLevels - Array of level objects with grouped spells
+   * @param {Array} spellLevels - Array of level objects with grouped spells or flat spell array
    * @param {Item} classItem - The spellcasting class item
    * @returns {Object} Preparation stats object
    */
@@ -478,10 +508,11 @@ export class SpellbookState {
     const isFlatStructure = spellLevels.length > 0 && spellLevels[0] && ('system' in spellLevels[0] || 'level' in spellLevels[0]);
     let totalSpellCount = 0;
     let preparedCount = 0;
+    const effectiveLevels = genericUtils.getSpellcastingLevelsForClass(this.actor, classIdentifier);
     if (isGroupedStructure) {
       log(3, 'GROUPED STRUCTURE DETECTED!', { class: classIdentifier, spells: spellLevels, classItem: classItem });
       totalSpellCount = spellLevels.reduce((count, level) => count + (Array.isArray(level.spells) ? level.spells.length : 0), 0);
-      const cacheKey = `${classIdentifier}-${totalSpellCount}-${classItem.system.levels}`;
+      const cacheKey = `${classIdentifier}-${totalSpellCount}-${effectiveLevels}`;
       if (this._preparationStatsCache.has(cacheKey)) return this._preparationStatsCache.get(cacheKey);
       for (const levelData of spellLevels) {
         if (levelData.level === '0' || levelData.level === 0) continue;
@@ -493,7 +524,7 @@ export class SpellbookState {
     } else if (isFlatStructure) {
       log(3, 'FLAT STRUCTURE DETECTED!', { class: classIdentifier, spells: spellLevels, classItem: classItem });
       totalSpellCount = spellLevels.length;
-      const cacheKey = `${classIdentifier}-${totalSpellCount}-${classItem.system.levels}`;
+      const cacheKey = `${classIdentifier}-${totalSpellCount}-${effectiveLevels}`;
       if (this._preparationStatsCache.has(cacheKey)) return this._preparationStatsCache.get(cacheKey);
       for (const spell of spellLevels) {
         const spellLevel = spell.system?.level ?? spell.level ?? spell._levelMetadata?.level;
@@ -503,12 +534,15 @@ export class SpellbookState {
     } else {
       log(1, `calculatePreparationStats: Unknown structure for spellLevels`, spellLevels);
     }
-    const baseMaxPrepared = classItem?.system?.spellcasting?.preparation?.max || 0;
+    let baseMaxPrepared = 0;
+    const spellcastingConfig = genericUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
+    if (spellcastingConfig?.preparation?.max) baseMaxPrepared = spellcastingConfig.preparation.max;
+    else baseMaxPrepared = classItem?.system?.spellcasting?.preparation?.max || 0;
     const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
     const preparationBonus = classRules?.spellPreparationBonus || 0;
     const maxPrepared = baseMaxPrepared + preparationBonus;
     const result = { current: preparedCount, maximum: maxPrepared };
-    const cacheKey = `${classIdentifier}-${totalSpellCount}-${classItem.system.levels}`;
+    const cacheKey = `${classIdentifier}-${totalSpellCount}-${effectiveLevels}`;
     this._preparationStatsCache.set(cacheKey, result);
     return result;
   }

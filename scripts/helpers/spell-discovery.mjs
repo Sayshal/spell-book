@@ -1,4 +1,5 @@
 import { MODULE, SETTINGS } from '../constants.mjs';
+import * as genericUtils from '../helpers/generic-utils.mjs';
 import { log } from '../logger.mjs';
 import { RuleSetManager } from '../managers/rule-set-manager.mjs';
 import * as preloaderUtils from './spell-data-preloader.mjs';
@@ -154,11 +155,16 @@ async function findCustomSpellListByIdentifier(identifier) {
  * @returns {number} Maximum spell level (0 for cantrips only)
  */
 export function calculateMaxSpellLevel(classItem, actor) {
-  const spellcasting = classItem?.system?.spellcasting;
-  if (!spellcasting || spellcasting.progression === 'none') return 0;
-  const spellcastingType = spellcasting.type;
+  if (!classItem || !actor) return 0;
+  const classIdentifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
+  const spellcastingConfig = genericUtils.getSpellcastingConfigForClass(actor, classIdentifier);
+  if (!spellcastingConfig) {
+    log(3, `No spellcasting configuration found for class ${classIdentifier}`);
+    return 0;
+  }
+  const spellcastingType = spellcastingConfig.type;
   const classKey = classItem.identifier || classItem.name?.slugify() || 'class';
-  const classLevels = classItem.system?.levels || 0;
+  const classLevels = genericUtils.getSpellcastingLevelsForClass(actor, classIdentifier);
   if (spellcastingType === 'spell') {
     const progression = { spell: 0, [classKey]: classLevels };
     const spellSlotTable = CONFIG.DND5E.spellcasting.spell.table;
@@ -171,7 +177,8 @@ export function calculateMaxSpellLevel(classItem, actor) {
     for (let i = 1; i <= maxPossibleSpellLevel; i++) spellLevels.push(i);
     const spells = Object.fromEntries(spellLevels.map((l) => [`spell${l}`, { level: l }]));
     try {
-      actor.constructor.computeClassProgression(progression, classItem, { spellcasting });
+      const spellcastingSource = genericUtils.getSpellcastingSourceItem(actor, classIdentifier);
+      actor.constructor.computeClassProgression(progression, spellcastingSource, { spellcasting: spellcastingConfig });
       actor.constructor.prepareSpellcastingSlots(spells, 'spell', progression, { actor });
       return Object.values(spells).reduce((maxLevel, spellData) => {
         const max = spellData.max;
@@ -187,14 +194,18 @@ export function calculateMaxSpellLevel(classItem, actor) {
     const spells = { pact: {} };
     const progression = { pact: 0, [classKey]: classLevels };
     try {
-      actor.constructor.computeClassProgression(progression, classItem, { spellcasting });
+      const spellcastingSource = genericUtils.getSpellcastingSourceItem(actor, classIdentifier);
+      actor.constructor.computeClassProgression(progression, spellcastingSource, { spellcasting: spellcastingConfig });
       actor.constructor.prepareSpellcastingSlots(spells, 'pact', progression, { actor });
-      return spells.pact.level || 0;
+      const pactLevel = spells.pact?.level || 0;
+      log(3, `Calculated pact spell level: ${pactLevel} for class ${classIdentifier}`);
+      return pactLevel;
     } catch (error) {
-      log(1, 'Error calculating pact spell progression:', error);
+      log(1, 'Error calculating pact progression:', error);
       return 0;
     }
   }
+  log(3, `Unsupported spellcasting type: ${spellcastingType} for class ${classIdentifier}`);
   return 0;
 }
 
