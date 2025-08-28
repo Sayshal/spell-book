@@ -677,11 +677,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         const cantripsToRemove = actor.items
           .filter(
             (item) =>
-              item.type === 'spell' &&
-              item.system.level === 0 &&
-              (item.system.sourceClass === classId || item.sourceClass === classId) &&
-              !item.system.preparation?.alwaysPrepared &&
-              !item.flags?.dnd5e?.cachedFor
+              item.type === 'spell' && item.system.level === 0 && (item.system.sourceClass === classId || item.sourceClass === classId) && item.system.prepared !== 2 && !item.flags?.dnd5e?.cachedFor
           )
           .map((item) => item.id);
         if (cantripsToRemove.length > 0) await actor.deleteEmbeddedDocuments('Item', cantripsToRemove);

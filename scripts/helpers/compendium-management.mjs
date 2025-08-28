@@ -613,5 +613,5 @@ export async function getOrCreateMergedFolder() {
 export function shouldIndexCompendium(pack) {
   const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
   if (settings && settings.hasOwnProperty(pack.collection)) return settings[pack.collection] === true;
-  return true;
+  return ['Item', 'JournalEntry'].includes(pack.metadata.type);
 }

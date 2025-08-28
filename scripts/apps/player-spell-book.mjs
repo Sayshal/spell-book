@@ -1497,7 +1497,8 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   _prepareClassValidationNotice(classIdentifier, className) {
     const classItem = this.actor.items.find((item) => item.type === 'class' && (item.system?.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier));
     const isFromCompendium = !!(classItem._stats?.compendiumSource && classItem._stats.compendiumSource.startsWith('Compendium.'));
-    if (!isFromCompendium) {
+    const isDnDBeyondClass = !!classItem?.flags?.ddbimporter;
+    if (!isFromCompendium && !isDnDBeyondClass) {
       const customSpellListSetting = this.actor.getFlag(MODULE.ID, `rules.${classIdentifier}.customSpellList`);
       const hasCustomSpellList = !!(customSpellListSetting && customSpellListSetting !== 'auto');
       if (!hasCustomSpellList) {

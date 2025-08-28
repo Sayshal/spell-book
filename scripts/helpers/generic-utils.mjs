@@ -35,15 +35,12 @@ export function getSpellcastingConfigForClass(actor, classIdentifier) {
 export function getScaleValuesForClass(actor, classIdentifier) {
   const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
   if (!spellcastingData) return null;
-
-  // For subclass-granted spellcasting, scale values are usually on the subclass
-  if (spellcastingData._classLink?.scaleValues) {
-    return spellcastingData._classLink.scaleValues;
-  }
-
-  // Fall back to main class scale values
+  let mergedScaleValues = {};
   const classItem = actor.items.get(spellcastingData.id);
-  return classItem?.scaleValues || null;
+  if (classItem?.scaleValues) mergedScaleValues = { ...mergedScaleValues, ...classItem.scaleValues };
+  if (spellcastingData._classLink?.scaleValues) mergedScaleValues = { ...mergedScaleValues, ...spellcastingData._classLink.scaleValues };
+  if (spellcastingData.scaleValues) mergedScaleValues = { ...mergedScaleValues, ...spellcastingData.scaleValues };
+  return Object.keys(mergedScaleValues).length > 0 ? mergedScaleValues : null;
 }
 
 /**

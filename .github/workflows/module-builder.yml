@@ -134,7 +134,7 @@ jobs:
                 fields: [
                   {name: "Version", value: $version, inline: true},
                   {name: "Core Compatibility", value: ($compat_min + " - " + $compat_max), inline: true},
-                  {name: "System Compatibility", value:"5.2.1+", inline: true},
+                  {name: "System Compatibility", value:"5.1.2+", inline: true},
                   {name: "Foundry Package", value: $foundry_url, inline: false},
                   {name: "Release Tag", value: $release_url, inline: false},
                   {name: "Manual Download", value: $download_url, inline: false},
