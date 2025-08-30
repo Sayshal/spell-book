@@ -10,7 +10,11 @@ import * as formattingUtils from './spell-formatting.mjs';
  */
 export async function findCompendiumSpellLists(includeHidden = true) {
   const spellLists = [];
-  const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry' && shouldIndexCompendium(p));
+  const allJournalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
+  const journalPacks = allJournalPacks.filter((p) => {
+    return shouldIndexCompendium(p);
+  });
+
   log(3, `Scanning ${journalPacks.length} enabled journal compendiums for spell lists`);
   await processStandardPacks(journalPacks, spellLists);
   await processCustomPack(spellLists);
@@ -295,7 +299,10 @@ export function normalizeUuid(uuid) {
  */
 export async function fetchAllCompendiumSpells(maxLevel = 9) {
   const spells = [];
-  const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item' && shouldIndexCompendium(p));
+  const allItemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
+  const itemPacks = allItemPacks.filter((p) => {
+    return shouldIndexCompendium(p);
+  });
   log(3, `Fetching spells from ${itemPacks.length} enabled item compendiums`);
   for (const pack of itemPacks) {
     const packSpells = await fetchSpellsFromPack(pack, maxLevel);
@@ -613,5 +620,34 @@ export async function getOrCreateMergedFolder() {
 export function shouldIndexCompendium(pack) {
   const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
   if (settings && settings.hasOwnProperty(pack.collection)) return settings[pack.collection] === true;
-  return ['Item', 'JournalEntry'].includes(pack.metadata.type);
+  return false;
+}
+
+/**
+ * Check if a compendium should be shown in settings for potential indexing
+ * This includes both packs already in settings AND valid spell-related packs not yet configured
+ * @param {CompendiumCollection} pack - The pack to check
+ * @returns {Promise<boolean>} Whether the pack should be available in settings
+ */
+export async function shouldShowInSettings(pack) {
+  const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
+  if (settings && settings.hasOwnProperty(pack.collection)) return true;
+  if (pack.metadata.type === 'Item') {
+    try {
+      const index = await pack.getIndex({ fields: ['type'] });
+      const hasSpells = index.some((entry) => entry.type === 'spell');
+      return hasSpells;
+    } catch (error) {
+      return false;
+    }
+  } else if (pack.metadata.type === 'JournalEntry') {
+    try {
+      const index = await pack.getIndex({ fields: ['pages'] });
+      const hasSpellPages = index.some((entry) => entry.pages?.some((page) => page.type === 'spells'));
+      return hasSpellPages;
+    } catch (error) {
+      return false;
+    }
+  }
+  return false;
 }

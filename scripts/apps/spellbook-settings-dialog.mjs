@@ -1,5 +1,5 @@
 import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
-import { shouldIndexCompendium } from '../helpers/compendium-management.mjs';
+import { shouldShowInSettings } from '../helpers/compendium-management.mjs';
 import * as formElements from '../helpers/form-elements.mjs';
 import * as genericUtils from '../helpers/generic-utils.mjs';
 import { log } from '../logger.mjs';
@@ -443,7 +443,12 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       const options = [{ value: '', label: game.i18n.localize('SPELLBOOK.Settings.SpellList.AutoDetect') }];
       const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
       const allSpellLists = [];
-      const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry' && shouldIndexCompendium(p));
+      const allJournalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
+      const journalPacks = [];
+      for (const pack of allJournalPacks) {
+        const shouldShow = await shouldShowInSettings(pack);
+        if (shouldShow) journalPacks.push(pack);
+      }
       for (const pack of journalPacks) {
         let topLevelFolderName = pack.metadata.label;
         if (pack.folder) {
