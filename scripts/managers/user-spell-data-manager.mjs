@@ -1,4 +1,4 @@
-import { MODULE, TEMPLATES } from '../constants.mjs';
+import { MODULE, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;

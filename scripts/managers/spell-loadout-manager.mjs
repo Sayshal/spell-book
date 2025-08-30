@@ -1,4 +1,4 @@
-import { FLAGS, MODULE } from '../constants.mjs';
+import { FLAGS, MODULE } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**

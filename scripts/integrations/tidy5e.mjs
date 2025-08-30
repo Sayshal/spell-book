@@ -1,5 +1,5 @@
 import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
-import { ASSETS } from '../constants.mjs';
+import { ASSETS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**

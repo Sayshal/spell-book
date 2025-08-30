@@ -1,5 +1,5 @@
-import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
-import * as formElements from '../helpers/form-elements.mjs';
+import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
+import * as formElements from '../validation/form-elements.mjs';
 import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;

@@ -1,4 +1,4 @@
-import { MODULE, SETTINGS } from './constants.mjs';
+import { MODULE, SETTINGS } from './constants/_module.mjs';
 
 /**
  * Custom logger with caller context information

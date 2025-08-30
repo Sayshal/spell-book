@@ -238,7 +238,7 @@ Whether you're a new player learning spellcasting basics or a veteran managing a
 
 ### GM Tools
 
-![GM Spell List Manager](./github_media/07_SPELLLISTMANAGER.png)
+![Spell List Manager](./github_media/07_SPELLLISTMANAGER.png)
 
 ***Main GM interface showing available spell lists, selection panel, and management options***
 

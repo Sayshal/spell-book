@@ -1,7 +1,7 @@
-import { GMSpellListManager } from '../apps/gm-spell-list-manager.mjs';
+import { SpellListManager } from '../apps/spell-list-manager.mjs';
 import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
 import { SpellAnalyticsDashboard } from '../apps/spell-analytics-dashboard.mjs';
-import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import { SpellManager } from '../managers/spell-manager.mjs';
 
@@ -114,7 +114,7 @@ function createJournalManagerButton() {
   const managerButton = document.createElement('button');
   managerButton.classList.add('spell-book-journal-button');
   managerButton.innerHTML = `<i class="fas fa-bars-progress"></i> ${game.i18n.localize('SPELLBOOK.UI.JournalButton')}`;
-  const manager = new GMSpellListManager();
+  const manager = new SpellListManager();
   managerButton.addEventListener('click', () => {
     manager.render(true);
   });

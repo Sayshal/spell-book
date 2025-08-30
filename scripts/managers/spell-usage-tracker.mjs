@@ -1,5 +1,5 @@
-import { MODULE, SETTINGS } from '../constants.mjs';
-import { SpellUserDataJournal } from '../helpers/spell-user-data.mjs';
+import { MODULE, SETTINGS } from '../constants/_module.mjs';
+import { SpellUserDataJournal } from '../data/spell-user-data.mjs';
 import { log } from '../logger.mjs';
 
 /**

@@ -1,8 +1,8 @@
 import { createAPI } from './api.mjs';
 import { PlayerSpellBook } from './apps/player-spell-book.mjs';
-import { MODULE, SETTINGS, TEMPLATES } from './constants.mjs';
-import * as preloaderUtils from './helpers/spell-data-preloader.mjs';
-import { SpellDescriptionInjection } from './helpers/spell-description-injection.mjs';
+import { MODULE, SETTINGS, TEMPLATES } from './constants/_module.mjs';
+import * as preloaderUtils from './data/spell-data-preloader.mjs';
+import { SpellDescriptionInjection } from './ui/spell-description-injection.mjs';
 import { registerDnD5eIntegration } from './integrations/dnd5e.mjs';
 import { registerTidy5eIntegration } from './integrations/tidy5e.mjs';
 import { initializeLogger, log } from './logger.mjs';

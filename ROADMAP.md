@@ -51,7 +51,7 @@ Ensure seamless integration with the Cauldron of Plentiful Resources module, pro
 
 Implement an intuitive spell creation interface with guided templates, balance validation, and automatic integration into custom spell lists.
 
-**Code justification:** The existing spell list management in `compendium-management.mjs` provides the infrastructure for custom content with `duplicateSpellList()`, `findDuplicateSpellList()`, and mapping systems. The comprehensive spell data structures in the module show the required fields and validation patterns. The GM Spell List Manager already handles custom list creation and management workflows.
+**Code justification:** The existing spell list management in `compendium-management.mjs` provides the infrastructure for custom content with `duplicateSpellList()`, `findDuplicateSpellList()`, and mapping systems. The comprehensive spell data structures in the module show the required fields and validation patterns. The Spell List Manager already handles custom list creation and management workflows.
 
 **Creation wizard features:**
 

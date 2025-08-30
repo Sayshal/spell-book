@@ -1,26 +1,26 @@
-import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
-import * as colorUtils from '../helpers/color-utils.mjs';
-import * as filterUtils from '../helpers/filters.mjs';
-import * as formElements from '../helpers/form-elements.mjs';
-import * as genericUtils from '../helpers/generic-utils.mjs';
-import { ScrollScanner } from '../helpers/scroll-scanner.mjs';
-import * as spellFavorites from '../helpers/spell-favorites.mjs';
-import { SpellUserDataJournal } from '../helpers/spell-user-data.mjs';
-import { SpellbookState } from '../helpers/state/spellbook-state.mjs';
-import { UICustomizationHelper } from '../helpers/ui-customization.mjs';
-import { SpellbookFilterHelper } from '../helpers/ui/spellbook-filters.mjs';
-import { SpellbookUI } from '../helpers/ui/spellbook-ui.mjs';
+import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
+import * as genericUtils from '../data/generic-utils.mjs';
+import { ScrollScanner } from '../data/scroll-scanner.mjs';
+import { SpellUserDataJournal } from '../data/spell-user-data.mjs';
+import { SpellComparisonDialog } from '../dialogs/spell-comparison-dialog.mjs';
+import { SpellDetailsCustomization } from '../dialogs/spell-details-customization.mjs';
+import { SpellLoadoutDialog } from '../dialogs/spell-loadout-dialog.mjs';
+import { SpellNotesDialog } from '../dialogs/spell-notes-dialog.mjs';
+import { SpellbookSettingsDialog } from '../dialogs/spellbook-settings-dialog.mjs';
 import { log } from '../logger.mjs';
 import { SpellLoadoutManager } from '../managers/spell-loadout-manager.mjs';
 import { SpellManager } from '../managers/spell-manager.mjs';
 import { WizardSpellbookManager } from '../managers/wizard-spellbook-manager.mjs';
+import { SpellbookState } from '../state/spellbook-state.mjs';
+import * as colorUtils from '../ui/color-utils.mjs';
+import * as spellFavorites from '../ui/spell-favorites.mjs';
+import { SpellbookFilterHelper } from '../ui/spellbook-filters.mjs';
+import { SpellbookUI } from '../ui/spellbook-ui.mjs';
+import { UICustomizationHelper } from '../ui/ui-customization.mjs';
+import * as filterUtils from '../validation/filters.mjs';
+import * as formElements from '../validation/form-elements.mjs';
 import { PlayerFilterConfiguration } from './player-filter-configuration.mjs';
 import { SpellAnalyticsDashboard } from './spell-analytics-dashboard.mjs';
-import { SpellComparisonDialog } from './spell-comparison-dialog.mjs';
-import { SpellDetailsCustomization } from './spell-details-customization.mjs';
-import { SpellLoadoutDialog } from './spell-loadout-dialog.mjs';
-import { SpellNotesDialog } from './spell-notes-dialog.mjs';
-import { SpellbookSettingsDialog } from './spellbook-settings-dialog.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const { renderTemplate } = foundry.applications.handlebars;
@@ -60,10 +60,10 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   };
 
   static PARTS = {
-    container: { template: TEMPLATES.PLAYER.CONTAINER },
-    sidebar: { template: TEMPLATES.PLAYER.SIDEBAR },
-    navigation: { template: TEMPLATES.PLAYER.TAB_NAV },
-    footer: { template: TEMPLATES.PLAYER.FOOTER }
+    container: { template: TEMPLATES.PLAYER_SPELL_BOOK.CONTAINER },
+    sidebar: { template: TEMPLATES.PLAYER_SPELL_BOOK.SIDEBAR },
+    navigation: { template: TEMPLATES.PLAYER_SPELL_BOOK.TAB_NAV },
+    footer: { template: TEMPLATES.PLAYER_SPELL_BOOK.FOOTER }
   };
 
   /**
@@ -276,7 +276,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       for (const [identifier, classData] of Object.entries(this._stateManager.spellcastingClasses)) {
         const tabId = `${identifier}Tab`;
         this.constructor.PARTS[tabId] = {
-          template: TEMPLATES.PLAYER.TAB_SPELLS,
+          template: TEMPLATES.PLAYER_SPELL_BOOK.TAB_SPELLS,
           scrollable: [''],
           data: { classIdentifier: identifier, className: classData.name }
         };
@@ -287,7 +287,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const { identifier } of wizardClasses) {
       const tabId = `wizardbook-${identifier}`;
       this.constructor.PARTS[tabId] = {
-        template: TEMPLATES.PLAYER.TAB_WIZARD_SPELLBOOK,
+        template: TEMPLATES.PLAYER_SPELL_BOOK.TAB_WIZARD_SPELLBOOK,
         scrollable: [''],
         data: { classIdentifier: identifier }
       };

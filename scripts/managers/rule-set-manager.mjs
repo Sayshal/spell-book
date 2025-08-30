@@ -1,5 +1,5 @@
-import { FLAGS, MODULE, SETTINGS } from '../constants.mjs';
-import * as discoveryUtils from '../helpers/spell-discovery.mjs';
+import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
+import * as discoveryUtils from '../data/spell-discovery.mjs';
 import { log } from '../logger.mjs';
 
 /**

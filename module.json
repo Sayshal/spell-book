@@ -16,7 +16,7 @@
   },
   "description": "Enhanced spell management for DnD5e. Easily view, prepare, and customize spell lists.",
   "download": "",
-  "esmodules": ["scripts/spell-book.mjs", "scripts/constants.mjs"],
+  "esmodules": ["scripts/spell-book.mjs"],
   "flags": {
     "hotReload": {
       "extensions": ["css", "html", "hbs", "json"],
@@ -103,6 +103,5 @@
   "title": "Spell Book",
   "url": "https://github.com/Sayshal/spell-book",
   "version": "",
-  "hasStorage:": true,
   "persistentStorage": true
 }

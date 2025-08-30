@@ -1,6 +1,6 @@
-import { MODULE } from '../constants.mjs';
+import { MODULE } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
-import * as macros from '../macros/index.mjs';
+import * as macros from '../macros/_module.mjs';
 
 const MACROS = Object.values(macros);
 

@@ -1,8 +1,8 @@
-import { CompendiumSelectionDialog } from './apps/compendium-selection-dialog.mjs';
-import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
-import { SpellDetailsCustomization } from './apps/spell-details-customization.mjs';
-import { MODULE, SETTINGS } from './constants.mjs';
-import { SpellDescriptionInjection } from './helpers/spell-description-injection.mjs';
+import { CompendiumSelectionDialog } from './dialogs/compendium-selection-dialog.mjs';
+import { SpellListManager } from './apps/spell-list-manager.mjs';
+import { SpellDetailsCustomization } from './dialogs/spell-details-customization.mjs';
+import { MODULE, SETTINGS } from './constants/_module.mjs';
+import { SpellDescriptionInjection } from './ui/spell-description-injection.mjs';
 import { log } from './logger.mjs';
 
 /**
@@ -19,7 +19,7 @@ export function registerSettings() {
     label: 'SPELLBOOK.Settings.OpenSpellListManager.Button',
     icon: 'fas fa-hat-wizard',
     scope: 'world',
-    type: GMSpellListManager,
+    type: SpellListManager,
     restricted: true
   });
 

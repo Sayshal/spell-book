@@ -1,5 +1,5 @@
-import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
-import * as genericUtils from '../helpers/generic-utils.mjs';
+import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
+import * as genericUtils from '../data/generic-utils.mjs';
 import { log } from '../logger.mjs';
 import { RuleSetManager } from './rule-set-manager.mjs';
 

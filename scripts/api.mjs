@@ -1,24 +1,16 @@
-import { GMSpellListManager } from './apps/gm-spell-list-manager.mjs';
 import { PlayerFilterConfiguration } from './apps/player-filter-configuration.mjs';
 import { PlayerSpellBook } from './apps/player-spell-book.mjs';
 import { SpellAnalyticsDashboard } from './apps/spell-analytics-dashboard.mjs';
-import { SpellLoadoutDialog } from './apps/spell-loadout-dialog.mjs';
-import { SpellNotesDialog } from './apps/spell-notes-dialog.mjs';
-import { SpellbookSettingsDialog } from './apps/spellbook-settings-dialog.mjs';
-import * as actorSpellUtils from './helpers/actor-spells.mjs';
-import * as colorUtils from './helpers/color-utils.mjs';
-import * as managerHelpers from './helpers/compendium-management.mjs';
-import * as filterUtils from './helpers/filters.mjs';
-import * as formElements from './helpers/form-elements.mjs';
-import * as genericUtils from './helpers/generic-utils.mjs';
-import { ScrollScanner } from './helpers/scroll-scanner.mjs';
-import { SpellDescriptionInjection } from './helpers/spell-description-injection.mjs';
-import * as discoveryUtils from './helpers/spell-discovery.mjs';
-import * as formattingUtils from './helpers/spell-formatting.mjs';
-import { SpellUserDataJournal } from './helpers/spell-user-data.mjs';
-import { SpellbookState } from './helpers/state/spellbook-state.mjs';
-import { SpellbookFilterHelper } from './helpers/ui/spellbook-filters.mjs';
-import { SpellbookUI } from './helpers/ui/spellbook-ui.mjs';
+import { SpellListManager } from './apps/spell-list-manager.mjs';
+import * as actorSpellUtils from './data/actor-spells.mjs';
+import * as managerHelpers from './data/compendium-management.mjs';
+import * as genericUtils from './data/generic-utils.mjs';
+import { ScrollScanner } from './data/scroll-scanner.mjs';
+import * as discoveryUtils from './data/spell-discovery.mjs';
+import { SpellUserDataJournal } from './data/spell-user-data.mjs';
+import { SpellLoadoutDialog } from './dialogs/spell-loadout-dialog.mjs';
+import { SpellNotesDialog } from './dialogs/spell-notes-dialog.mjs';
+import { SpellbookSettingsDialog } from './dialogs/spellbook-settings-dialog.mjs';
 import { log } from './logger.mjs';
 import { CantripManager } from './managers/cantrip-manager.mjs';
 import { MacroManager } from './managers/macro-manager.mjs';
@@ -29,6 +21,14 @@ import { SpellUsageTracker } from './managers/spell-usage-tracker.mjs';
 import { UserSpellDataManager } from './managers/user-spell-data-manager.mjs';
 import { WizardSpellbookManager } from './managers/wizard-spellbook-manager.mjs';
 import { forceMigration } from './migrations.mjs';
+import { SpellbookState } from './state/spellbook-state.mjs';
+import * as colorUtils from './ui/color-utils.mjs';
+import { SpellDescriptionInjection } from './ui/spell-description-injection.mjs';
+import * as formattingUtils from './ui/spell-formatting.mjs';
+import { SpellbookFilterHelper } from './ui/spellbook-filters.mjs';
+import { SpellbookUI } from './ui/spellbook-ui.mjs';
+import * as filterUtils from './validation/filters.mjs';
+import * as formElements from './validation/form-elements.mjs';
 
 /**
  * Creates and registers the module's API
@@ -39,7 +39,7 @@ export function createAPI() {
     const api = {
       apps: {
         PlayerSpellBook,
-        GMSpellListManager,
+        SpellListManager,
         SpellbookSettingsDialog,
         PlayerFilterConfiguration,
         SpellAnalyticsDashboard,
@@ -97,11 +97,11 @@ export function createAPI() {
       },
 
       /**
-       * Open the GM spell list manager
-       * @returns {GMSpellListManager} The created manager instance
+       * Open the Spell List Manager
+       * @returns {SpellListManager} The created manager instance
        */
       openSpellListManager: () => {
-        const manager = new GMSpellListManager();
+        const manager = new SpellListManager();
         manager.render(true);
         return manager;
       },

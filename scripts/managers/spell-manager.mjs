@@ -1,6 +1,6 @@
-import { FLAGS, MODULE, SETTINGS } from '../constants.mjs';
-import * as genericUtils from '../helpers/generic-utils.mjs';
-import * as formattingUtils from '../helpers/spell-formatting.mjs';
+import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
+import * as genericUtils from '../data/generic-utils.mjs';
+import * as formattingUtils from '../ui/spell-formatting.mjs';
 import { log } from '../logger.mjs';
 import { CantripManager } from './cantrip-manager.mjs';
 import { RuleSetManager } from './rule-set-manager.mjs';
