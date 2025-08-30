@@ -1,5 +1,5 @@
 import { DEPRECATED_FLAGS, MODULE, TEMPLATES } from './constants/_module.mjs';
-import * as managerHelpers from './data/compendium-management.mjs';
+import * as DataHelpers from './data/_module.mjs';
 import { log } from './logger.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
@@ -140,8 +140,8 @@ async function migrateSpellListFolders() {
     const topLevelJournals = allJournals.filter((journal) => !journal.folder);
     if (topLevelJournals.length === 0) return results;
     log(2, `Found ${topLevelJournals.length} top-level journals to migrate`);
-    const customFolder = await managerHelpers.getOrCreateCustomFolder();
-    const mergedFolder = await managerHelpers.getOrCreateMergedFolder();
+    const customFolder = await DataHelpers.getOrCreateCustomFolder();
+    const mergedFolder = await DataHelpers.getOrCreateMergedFolder();
     if (customFolder) results.foldersCreated.push('custom');
     if (mergedFolder) results.foldersCreated.push('merged');
     for (const journal of topLevelJournals) {

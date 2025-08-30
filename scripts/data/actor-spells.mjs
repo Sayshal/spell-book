@@ -1,5 +1,5 @@
 import { log } from '../logger.mjs';
-import { getPreloadedData } from './spell-data-preloader.mjs';
+import * as UIHelpers from './_module.mjs';
 
 /**
  * Fast spell document fetching using getIndex instead of getDocument
@@ -9,7 +9,7 @@ import { getPreloadedData } from './spell-data-preloader.mjs';
  * @returns {Promise<Array>} - Array of spell documents
  */
 export async function fetchSpellDocuments(spellUuids, maxSpellLevel, actorId = null) {
-  const preloadedData = getPreloadedData();
+  const preloadedData = UIHelpers.getPreloadedData();
   if (preloadedData && preloadedData.enrichedSpells.length > 0) {
     const matchingSpells = preloadedData.enrichedSpells.filter((spell) => spellUuids.has(spell.uuid) && spell.system?.level <= maxSpellLevel);
     if (matchingSpells.length === spellUuids.size) return matchingSpells;

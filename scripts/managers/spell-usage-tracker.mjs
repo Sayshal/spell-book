@@ -1,5 +1,5 @@
 import { MODULE, SETTINGS } from '../constants/_module.mjs';
-import { SpellUserDataJournal } from '../data/spell-user-data.mjs';
+import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -85,7 +85,7 @@ export class SpellUsageTracker {
     try {
       const owningUser = game.users.find((user) => user.character?.id === actor.id);
       const targetUserId = owningUser?.id || game.user.id;
-      const userData = (await SpellUserDataJournal.getUserDataForSpell(spellUuid, targetUserId, actor.id)) || {};
+      const userData = (await DataHelpers.SpellUserDataJournal.getUserDataForSpell(spellUuid, targetUserId, actor.id)) || {};
       const currentStats = userData.usageStats || { count: 0, lastUsed: null, contextUsage: { combat: 0, exploration: 0 } };
       const newStats = {
         count: currentStats.count + 1,
@@ -95,7 +95,7 @@ export class SpellUsageTracker {
           exploration: currentStats.contextUsage.exploration + (context === 'exploration' ? 1 : 0)
         }
       };
-      await SpellUserDataJournal.setUserDataForSpell(spellUuid, { ...userData, usageStats: newStats }, targetUserId, actor.id);
+      await DataHelpers.SpellUserDataJournal.setUserDataForSpell(spellUuid, { ...userData, usageStats: newStats }, targetUserId, actor.id);
     } catch (error) {
       log(1, 'Error recording spell usage:', error);
     }

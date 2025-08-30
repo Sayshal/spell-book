@@ -1,6 +1,6 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
-import * as formElements from '../validation/form-elements.mjs';
 import { log } from '../logger.mjs';
+import * as ValidationHelpers from '../validation/_module.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const { DragDrop } = foundry.applications.ux;
@@ -91,7 +91,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   _prepareFilterConfigFormData() {
     return this.config.map((filter) => {
       const sortable = !(filter.id === 'name' || filter.id === 'prepared' || filter.id === 'ritual');
-      const checkbox = formElements.createCheckbox({
+      const checkbox = ValidationHelpers.createCheckbox({
         name: `enabled-${filter.id}`,
         checked: filter.enabled,
         ariaLabel: game.i18n.format('SPELLBOOK.Settings.EnableFilter', { name: game.i18n.localize(filter.label) })
@@ -100,7 +100,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       return {
         ...filter,
         sortable: filter.sortable !== undefined ? filter.sortable : sortable,
-        checkboxHtml: formElements.elementToHtml(checkbox)
+        checkboxHtml: ValidationHelpers.elementToHtml(checkbox)
       };
     });
   }

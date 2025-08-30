@@ -1,7 +1,7 @@
 import { FLAGS, MODULE, TEMPLATES } from '../constants/_module.mjs';
-import * as formElements from '../validation/form-elements.mjs';
 import { log } from '../logger.mjs';
-import { SpellLoadoutManager } from '../managers/spell-loadout-manager.mjs';
+import { SpellLoadoutManager } from '../managers/_module.mjs';
+import * as ValidationHelpers from '../validation/_module.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -55,12 +55,12 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
       spellCount: Array.isArray(loadout.spellConfiguration) ? loadout.spellConfiguration.length : 0,
       formattedDate: loadout.updatedAt ? foundry.utils.timeSince(loadout.updatedAt) : null
     }));
-    const nameInput = formElements.createTextInput({
+    const nameInput = ValidationHelpers.createTextInput({
       name: 'loadout-name',
       placeholder: game.i18n.localize('SPELLBOOK.Loadouts.NamePlaceholder'),
       ariaLabel: game.i18n.localize('SPELLBOOK.Loadouts.LoadoutName')
     });
-    const descriptionInput = formElements.createTextInput({
+    const descriptionInput = ValidationHelpers.createTextInput({
       name: 'loadout-description',
       placeholder: game.i18n.localize('SPELLBOOK.Loadouts.DescriptionPlaceholder'),
       ariaLabel: game.i18n.localize('SPELLBOOK.Loadouts.LoadoutDescription')
@@ -71,8 +71,8 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
     context.className = this.spellbook._stateManager.classSpellData[this.classIdentifier]?.className || this.classIdentifier;
     context.existingLoadouts = loadoutsWithCounts;
     context.currentSpellCount = currentSpellCount;
-    context.nameInputHtml = formElements.elementToHtml(nameInput);
-    context.descriptionInputHtml = formElements.elementToHtml(descriptionInput);
+    context.nameInputHtml = ValidationHelpers.elementToHtml(nameInput);
+    context.descriptionInputHtml = ValidationHelpers.elementToHtml(descriptionInput);
     return context;
   }
 

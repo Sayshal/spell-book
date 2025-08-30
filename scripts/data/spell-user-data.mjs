@@ -1,6 +1,6 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
-import { UserSpellDataManager } from '../managers/user-spell-data-manager.mjs';
+import { UserSpellDataManager } from '../managers/_module.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
 

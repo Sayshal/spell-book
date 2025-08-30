@@ -1,13 +1,8 @@
 import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
-import * as actorSpellUtils from '../data/actor-spells.mjs';
-import * as genericUtils from '../data/generic-utils.mjs';
-import { ScrollScanner } from '../data/scroll-scanner.mjs';
-import * as preloaderUtils from '../data/spell-data-preloader.mjs';
-import * as discoveryUtils from '../data/spell-discovery.mjs';
-import { SpellUserDataJournal } from '../data/spell-user-data.mjs';
+import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
-import { RuleSetManager } from '../managers/rule-set-manager.mjs';
-import * as formattingUtils from '../ui/spell-formatting.mjs';
+import { RuleSetManager } from '../managers/_module.mjs';
+import * as UIHelpers from '../ui/_module.mjs';
 
 /**
  * Manages state for the spellbook application with cached calculations
@@ -47,7 +42,7 @@ export class SpellbookState {
     if (!this._classesDetected) this.detectSpellcastingClasses();
     await this.app.spellManager.cleanupStalePreparationFlags();
     await this.loadSpellData();
-    const wizardClasses = genericUtils.getWizardEnabledClasses(this.actor);
+    const wizardClasses = DataHelpers.getWizardEnabledClasses(this.actor);
     if (wizardClasses.length > 0) {
       log(3, `Checking wizard data for ${wizardClasses.length} wizard classes`);
       const wizardPromises = wizardClasses
@@ -274,7 +269,7 @@ export class SpellbookState {
    */
   async loadSpellData() {
     RuleSetManager.initializeNewClasses(this.actor);
-    const wizardClasses = genericUtils.getWizardEnabledClasses(this.actor);
+    const wizardClasses = DataHelpers.getWizardEnabledClasses(this.actor);
     for (const { identifier } of wizardClasses) {
       const wizardManager = this.app.wizardManagers.get(identifier);
       if (wizardManager) await this.cacheWizardSpellbook(identifier);
@@ -292,7 +287,7 @@ export class SpellbookState {
         continue;
       }
       log(3, `Processing class ${identifier} (${classItem.name})`);
-      if (genericUtils.isClassWizardEnabled(this.actor, identifier)) {
+      if (DataHelpers.isClassWizardEnabled(this.actor, identifier)) {
         log(3, `Loading wizard spell data for ${identifier}`);
         await this.loadWizardSpellData(classItem, identifier);
       } else {
@@ -325,7 +320,7 @@ export class SpellbookState {
     const className = classItem.name.toLowerCase();
     const classUuid = classItem.uuid;
     log(3, `Getting spell list for class ${identifier} (${className})`);
-    const spellList = await discoveryUtils.getClassSpellList(className, classUuid, this.actor);
+    const spellList = await DataHelpers.getClassSpellList(className, classUuid, this.actor);
     if (!spellList || !spellList.size) {
       log(2, `No spell list found for class ${identifier} (${className}) - spell list size: ${spellList?.size || 0}`);
       const prepStats = this.calculatePreparationStats(identifier, [], classItem);
@@ -340,10 +335,10 @@ export class SpellbookState {
       return;
     }
     log(3, `Found spell list with ${spellList.size} spells for ${identifier}`);
-    let maxSpellLevel = discoveryUtils.calculateMaxSpellLevel(classItem, this.actor);
+    let maxSpellLevel = DataHelpers.calculateMaxSpellLevel(classItem, this.actor);
     const hideCantrips = this._shouldHideCantrips(identifier);
     if (hideCantrips && maxSpellLevel > 0) maxSpellLevel = Math.max(1, maxSpellLevel);
-    const preloadedData = preloaderUtils.getPreloadedData();
+    const preloadedData = DataHelpers.getPreloadedData();
     let spellItems = [];
     if (preloadedData && preloadedData.enrichedSpells.length > 0) {
       log(3, `Using preloaded spell data for ${identifier} class`);
@@ -352,10 +347,10 @@ export class SpellbookState {
       const missingSpells = Array.from(spellList).filter((uuid) => !preloadedSpells.some((spell) => spell.uuid === uuid));
       if (missingSpells.length > 0) {
         log(3, `Loading ${missingSpells.length} missing spells for ${identifier}`);
-        const additionalSpells = await actorSpellUtils.fetchSpellDocuments(new Set(missingSpells), maxSpellLevel, this.actor.id);
+        const additionalSpells = await DataHelpers.fetchSpellDocuments(new Set(missingSpells), maxSpellLevel, this.actor.id);
         spellItems = [...preloadedSpells, ...additionalSpells];
       } else spellItems = preloadedSpells;
-    } else spellItems = await actorSpellUtils.fetchSpellDocuments(spellList, maxSpellLevel, this.actor.id);
+    } else spellItems = await DataHelpers.fetchSpellDocuments(spellList, maxSpellLevel, this.actor.id);
     if (!spellItems || !spellItems.length) return;
     await this.processAndOrganizeSpellsForClass(identifier, spellItems, classItem);
   }
@@ -371,14 +366,14 @@ export class SpellbookState {
     const spellsByLevel = {};
     const processedSpellIds = new Set();
     const processedSpellNames = new Set();
-    const targetUserId = genericUtils._getTargetUserId(this.actor);
+    const targetUserId = DataHelpers._getTargetUserId(this.actor);
     const actorId = this.actor?.id;
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     if (this.actor) {
       const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
       const userDataPromises = actorSpells.map((spell) => {
         const compendiumUuid = spell.flags?.core?.sourceId || spell.uuid;
-        return SpellUserDataJournal.getUserDataForSpell(compendiumUuid, targetUserId, actorId);
+        return DataHelpers.SpellUserDataJournal.getUserDataForSpell(compendiumUuid, targetUserId, actorId);
       });
       await Promise.all(userDataPromises);
       for (const spell of actorSpells) {
@@ -392,8 +387,8 @@ export class SpellbookState {
         const spellData = {
           ...spell,
           compendiumUuid: compendiumUuid,
-          filterData: formattingUtils.extractSpellFilterData(spell),
-          enrichedIcon: formattingUtils.createSpellIconLink(spell)
+          filterData: UIHelpers.extractSpellFilterData(spell),
+          enrichedIcon: UIHelpers.createSpellIconLink(spell)
         };
         if (spell.system?.sourceClass) {
           spellData.sourceClass = spell.system.sourceClass;
@@ -409,14 +404,14 @@ export class SpellbookState {
           spellData.system.sourceClass = classIdentifier;
         }
         spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, classIdentifier);
-        const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
+        const enhancedSpell = DataHelpers.SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
         Object.assign(spellData, enhancedSpell);
         spellsByLevel[level].spells.push(spellData);
         processedSpellIds.add(spell.id || spell.uuid);
         processedSpellNames.add(spellName);
       }
     }
-    const compendiumDataPromises = spellItems.map((spell) => SpellUserDataJournal.getUserDataForSpell(spell.uuid || spell.compendiumUuid, targetUserId, actorId));
+    const compendiumDataPromises = spellItems.map((spell) => DataHelpers.SpellUserDataJournal.getUserDataForSpell(spell.uuid || spell.compendiumUuid, targetUserId, actorId));
     await Promise.all(compendiumDataPromises);
     for (const spell of spellItems) {
       if (spell?.system?.level === undefined) continue;
@@ -443,9 +438,9 @@ export class SpellbookState {
         spellData.preparation.preparedByOtherClass = preparedByOtherClass;
       }
       if (this.app.spellManager) spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, classIdentifier);
-      spellData.filterData = formattingUtils.extractSpellFilterData(spell);
-      spellData.enrichedIcon = formattingUtils.createSpellIconLink(spell);
-      const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
+      spellData.filterData = UIHelpers.extractSpellFilterData(spell);
+      spellData.enrichedIcon = UIHelpers.createSpellIconLink(spell);
+      const enhancedSpell = DataHelpers.SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
       Object.assign(spellData, enhancedSpell);
       spellsByLevel[level].spells.push(spellData);
       processedSpellIds.add(spell.id || spell.compendiumUuid || spell.uuid);
@@ -513,7 +508,7 @@ export class SpellbookState {
     const isFlatStructure = spellLevels.length > 0 && spellLevels[0] && ('system' in spellLevels[0] || 'level' in spellLevels[0]);
     let totalSpellCount = 0;
     let preparedCount = 0;
-    const effectiveLevels = genericUtils.getSpellcastingLevelsForClass(this.actor, classIdentifier);
+    const effectiveLevels = DataHelpers.getSpellcastingLevelsForClass(this.actor, classIdentifier);
     if (isGroupedStructure) {
       log(3, 'GROUPED STRUCTURE DETECTED!', { class: classIdentifier, spells: spellLevels, classItem: classItem });
       totalSpellCount = spellLevels.reduce((count, level) => count + (Array.isArray(level.spells) ? level.spells.length : 0), 0);
@@ -540,7 +535,7 @@ export class SpellbookState {
       log(1, `calculatePreparationStats: Unknown structure for spellLevels`, spellLevels);
     }
     let baseMaxPrepared = 0;
-    const spellcastingConfig = genericUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
+    const spellcastingConfig = DataHelpers.getSpellcastingConfigForClass(this.actor, classIdentifier);
     if (spellcastingConfig?.preparation?.max) baseMaxPrepared = spellcastingConfig.preparation.max;
     else baseMaxPrepared = classItem?.system?.spellcasting?.preparation?.max || 0;
     const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
@@ -637,8 +632,8 @@ export class SpellbookState {
   async loadWizardSpellData(classItem, classIdentifier) {
     const className = classItem.name.toLowerCase();
     const classUuid = classItem.uuid;
-    const maxSpellLevel = discoveryUtils.calculateMaxSpellLevel(classItem, this.actor);
-    const fullSpellList = await discoveryUtils.getClassSpellList(className, classUuid, this.actor);
+    const maxSpellLevel = DataHelpers.calculateMaxSpellLevel(classItem, this.actor);
+    const fullSpellList = await DataHelpers.getClassSpellList(className, classUuid, this.actor);
     if (!fullSpellList || !fullSpellList.size) return;
     const wizardManager = this.app.wizardManagers.get(classIdentifier);
     if (!wizardManager || !wizardManager.isWizard) return;
@@ -647,7 +642,7 @@ export class SpellbookState {
     this._fullWizardSpellLists.set(classIdentifier, new Set(fullSpellList));
     const allUuids = new Set([...fullSpellList, ...personalSpellbook]);
     const effectiveMaxLevel = Math.max(1, maxSpellLevel);
-    const preloadedData = preloaderUtils.getPreloadedData();
+    const preloadedData = DataHelpers.getPreloadedData();
     let spellItems = [];
     if (preloadedData && preloadedData.enrichedSpells.length > 0) {
       log(3, `Using preloaded spell data for ${classIdentifier} wizard spells`);
@@ -656,10 +651,10 @@ export class SpellbookState {
       const missingSpells = allUuidsArray.filter((uuid) => !preloadedSpells.some((spell) => spell.uuid === uuid));
       if (missingSpells.length > 0) {
         log(3, `Loading ${missingSpells.length} missing wizard spells for ${classIdentifier}`);
-        const additionalSpells = await actorSpellUtils.fetchSpellDocuments(new Set(missingSpells), effectiveMaxLevel);
+        const additionalSpells = await DataHelpers.fetchSpellDocuments(new Set(missingSpells), effectiveMaxLevel);
         spellItems = [...preloadedSpells, ...additionalSpells];
       } else spellItems = preloadedSpells;
-    } else spellItems = await actorSpellUtils.fetchSpellDocuments(allUuids, effectiveMaxLevel);
+    } else spellItems = await DataHelpers.fetchSpellDocuments(allUuids, effectiveMaxLevel);
     if (!spellItems || !spellItems.length) {
       log(1, `No spell items found for wizard ${classIdentifier}`);
       return;
@@ -708,7 +703,7 @@ export class SpellbookState {
     const usedFreeSpells = await wizardManager.getUsedFreeSpells();
     const remainingFreeSpells = Math.max(0, totalFreeSpells - usedFreeSpells);
     const totalSpells = personalSpellbook.length;
-    this.scrollSpells = await ScrollScanner.scanForScrollSpells(this.actor);
+    this.scrollSpells = await DataHelpers.ScrollScanner.scanForScrollSpells(this.actor);
     for (const scrollSpell of this.scrollSpells) {
     }
     const grantedSpells = this.actor.items
@@ -826,7 +821,7 @@ export class SpellbookState {
             };
           }
         }
-        if (!spell.enrichedIcon) spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
+        if (!spell.enrichedIcon) spell.enrichedIcon = UIHelpers.createSpellIconLink(spell);
       }
     }
   }
@@ -837,7 +832,7 @@ export class SpellbookState {
    */
   async waitForWizardDataCompletion() {
     if (this._initialized) {
-      const wizardClasses = genericUtils.getWizardEnabledClasses(this.actor);
+      const wizardClasses = DataHelpers.getWizardEnabledClasses(this.actor);
       for (const { identifier } of wizardClasses) {
         const wizardTabId = `wizardbook-${identifier}`;
         if (!this.tabData[wizardTabId]) {
@@ -886,7 +881,7 @@ export class SpellbookState {
     if (wizardManager) wizardManager.invalidateCache();
     const classItem = this.actor.items.get(classData.id);
     if (!classItem) return;
-    if (genericUtils.isClassWizardEnabled(this.actor, classIdentifier)) {
+    if (DataHelpers.isClassWizardEnabled(this.actor, classIdentifier)) {
       await this.cacheWizardSpellbook(classIdentifier);
       await this.loadWizardSpellData(classItem, classIdentifier);
     } else {
@@ -1003,12 +998,12 @@ export class SpellbookState {
   async _addClassRitualSpells(classIdentifier, classData, spellDataByClass) {
     const className = classData.name.toLowerCase();
     const classUuid = classData.uuid;
-    const spellList = await discoveryUtils.getClassSpellList(className, classUuid, this.actor);
+    const spellList = await DataHelpers.getClassSpellList(className, classUuid, this.actor);
     if (!spellList || !spellList.size) {
       log(1, `No spell list found for class ${classIdentifier} (${className})`);
       return;
     }
-    const spellItems = await actorSpellUtils.fetchSpellDocuments(spellList, 9);
+    const spellItems = await DataHelpers.fetchSpellDocuments(spellList, 9);
     if (!spellItems || !spellItems.length) {
       log(1, `No spell items fetched for class ${classIdentifier} - fetchSpellDocuments returned empty`);
       return;
@@ -1152,17 +1147,17 @@ export class SpellbookState {
         else log(2, `No owner found for actor ${this.app.actor.name}, using GM data for enhancements`);
       }
     }
-    if (SpellUserDataJournal?.cache) {
-      for (const key of SpellUserDataJournal.cache.keys()) {
-        if (key.startsWith(`${targetUserId}:`)) SpellUserDataJournal.cache.delete(key);
+    if (DataHelpers.SpellUserDataJournal?.cache) {
+      for (const key of DataHelpers.SpellUserDataJournal.cache.keys()) {
+        if (key.startsWith(`${targetUserId}:`)) DataHelpers.SpellUserDataJournal.cache.delete(key);
       }
     }
     for (const [classIdentifier, classData] of Object.entries(this.classSpellData)) {
       if (classData.spellLevels) {
-        const userDataPromises = classData.spellLevels.map((spell) => SpellUserDataJournal.getUserDataForSpell(spell.uuid || spell.compendiumUuid, targetUserId, this.app.actor?.id));
+        const userDataPromises = classData.spellLevels.map((spell) => DataHelpers.SpellUserDataJournal.getUserDataForSpell(spell.uuid || spell.compendiumUuid, targetUserId, this.app.actor?.id));
         await Promise.all(userDataPromises);
         for (const spell of classData.spellLevels) {
-          const enhancedSpell = SpellUserDataJournal.enhanceSpellWithUserData(spell, targetUserId, this.app.actor?.id);
+          const enhancedSpell = DataHelpers.SpellUserDataJournal.enhanceSpellWithUserData(spell, targetUserId, this.app.actor?.id);
           Object.assign(spell, enhancedSpell);
         }
       }

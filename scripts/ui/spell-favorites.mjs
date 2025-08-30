@@ -1,4 +1,4 @@
-import { SpellUserDataJournal } from '../data/spell-user-data.mjs';
+import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -55,7 +55,7 @@ export async function removeSpellFromActorFavorites(spellUuid, actor) {
 export async function syncFavoritesOnSave(actor, spellData) {
   try {
     for (const [uuid, data] of Object.entries(spellData)) {
-      const userData = await SpellUserDataJournal.getUserDataForSpell(uuid, null, actor.id);
+      const userData = await DataHelpers.SpellUserDataJournal.getUserDataForSpell(uuid, null, actor.id);
       if (userData?.favorited) await addSpellToActorFavorites(uuid, actor);
     }
   } catch (error) {
@@ -81,7 +81,7 @@ export async function processFavoritesFromForm(form, actor) {
     log(3, `Checking ${actorSpells.length} spells on actor for favorite status`);
     for (const spell of actorSpells) {
       const canonicalUuid = getCanonicalSpellUuid(spell.uuid);
-      const userData = await SpellUserDataJournal.getUserDataForSpell(canonicalUuid, targetUserId, actor.id);
+      const userData = await DataHelpers.SpellUserDataJournal.getUserDataForSpell(canonicalUuid, targetUserId, actor.id);
       const isFavoritedInJournal = userData?.favorited || false;
       if (isFavoritedInJournal) favoritesToAdd.push(spell);
     }

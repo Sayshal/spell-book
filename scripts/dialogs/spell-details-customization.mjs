@@ -1,6 +1,6 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
-import * as formElements from '../validation/form-elements.mjs';
 import { log } from '../logger.mjs';
+import * as ValidationHelpers from '../validation/_module.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -85,9 +85,9 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   _prepareUIElementsWithCheckboxes(type, settings) {
     const elements = this._getUIElementsConfig(type);
     return elements.map((element) => {
-      const checkbox = formElements.createCheckbox({ name: `${type}.${element.key}`, checked: settings[element.key] || false, ariaLabel: game.i18n.localize(element.label) });
+      const checkbox = ValidationHelpers.createCheckbox({ name: `${type}.${element.key}`, checked: settings[element.key] || false, ariaLabel: game.i18n.localize(element.label) });
       checkbox.id = `${type}-${element.key}`;
-      return { ...element, checkboxHtml: formElements.elementToHtml(checkbox) };
+      return { ...element, checkboxHtml: ValidationHelpers.elementToHtml(checkbox) };
     });
   }
 
@@ -100,9 +100,9 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   _prepareMetadataElementsWithCheckboxes(type, settings) {
     const elements = this._getMetadataElementsConfig(type);
     return elements.map((element) => {
-      const checkbox = formElements.createCheckbox({ name: `${type}.${element.key}`, checked: settings[element.key] || false, ariaLabel: game.i18n.localize(element.label) });
+      const checkbox = ValidationHelpers.createCheckbox({ name: `${type}.${element.key}`, checked: settings[element.key] || false, ariaLabel: game.i18n.localize(element.label) });
       checkbox.id = `${type}-${element.key}`;
-      return { ...element, checkboxHtml: formElements.elementToHtml(checkbox) };
+      return { ...element, checkboxHtml: ValidationHelpers.elementToHtml(checkbox) };
     });
   }
 
@@ -113,12 +113,12 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
    * @returns {string} HTML for the select-all checkbox
    */
   _createSelectAllCheckbox(id, group) {
-    const checkbox = formElements.createCheckbox({ name: id, checked: false, ariaLabel: game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.SelectAll') });
+    const checkbox = ValidationHelpers.createCheckbox({ name: id, checked: false, ariaLabel: game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.SelectAll') });
     checkbox.id = id;
     checkbox.dataset.action = 'selectAll';
     checkbox.dataset.group = group;
     checkbox.classList.add('select-all-checkbox');
-    return formElements.elementToHtml(checkbox);
+    return ValidationHelpers.elementToHtml(checkbox);
   }
 
   /**

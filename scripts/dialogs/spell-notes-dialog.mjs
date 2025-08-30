@@ -1,9 +1,7 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
-import * as genericUtils from '../data/generic-utils.mjs';
-import { SpellDescriptionInjection } from '../ui/spell-description-injection.mjs';
-import * as spellFavorites from '../ui/spell-favorites.mjs';
-import { SpellUserDataJournal } from '../data/spell-user-data.mjs';
+import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
+import * as UIHelpers from '../ui/_module.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -37,7 +35,7 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
 
   constructor(options = {}) {
     super(options);
-    this.spellUuid = spellFavorites.getCanonicalSpellUuid(options.spellUuid);
+    this.spellUuid = UIHelpers.getCanonicalSpellUuid(options.spellUuid);
     this.spellName = fromUuidSync(this.spellUuid).name;
     this.actor = options.actor;
     this.currentNotes = '';
@@ -47,9 +45,9 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
   /** @override */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    const targetUserId = genericUtils._getTargetUserId(this.actor);
+    const targetUserId = DataHelpers._getTargetUserId(this.actor);
     try {
-      const userData = await SpellUserDataJournal.getUserDataForSpell(this.spellUuid, targetUserId, this.actor?.id);
+      const userData = await DataHelpers.SpellUserDataJournal.getUserDataForSpell(this.spellUuid, targetUserId, this.actor?.id);
       this.currentNotes = userData?.notes || '';
     } catch (error) {
       this.currentNotes = '';
@@ -120,7 +118,7 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
     const notes = formData.object.notes || '';
     const spellUuid = formData.object.spellUuid;
     const actorId = formData.object.actorId;
-    const canonicalUuid = spellFavorites.getCanonicalSpellUuid(spellUuid);
+    const canonicalUuid = UIHelpers.getCanonicalSpellUuid(spellUuid);
     try {
       let targetUserId = game.user.id;
       if (game.user.isActiveGM && actorId) {
@@ -135,9 +133,9 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
           }
         }
       }
-      await SpellUserDataJournal.setSpellNotes(canonicalUuid, notes, targetUserId);
+      await DataHelpers.SpellUserDataJournal.setSpellNotes(canonicalUuid, notes, targetUserId);
       const cacheKey = `${targetUserId}:${canonicalUuid}`;
-      if (SpellUserDataJournal?.cache) SpellUserDataJournal.cache.delete(cacheKey);
+      if (DataHelpers.SpellUserDataJournal?.cache) DataHelpers.SpellUserDataJournal.cache.delete(cacheKey);
       const spellbookApp = Array.from(foundry.applications.instances.values()).find((app) => app.constructor.name === 'PlayerSpellBook');
       if (spellbookApp) {
         await spellbookApp._stateManager.refreshSpellEnhancements();
@@ -152,7 +150,7 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
         icon.setAttribute('data-tooltip', newTooltip);
         icon.setAttribute('aria-label', newTooltip);
       });
-      await SpellDescriptionInjection.handleNotesChange(canonicalUuid);
+      await UIHelpers.SpellDescriptionInjection.handleNotesChange(canonicalUuid);
       ui.notifications.info(game.i18n.localize('SPELLBOOK.UI.NotesUpdated'));
     } catch (error) {
       log(1, 'Error saving spell notes:', error);

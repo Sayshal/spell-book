@@ -1,34 +1,12 @@
-import { PlayerFilterConfiguration } from './apps/player-filter-configuration.mjs';
-import { PlayerSpellBook } from './apps/player-spell-book.mjs';
-import { SpellAnalyticsDashboard } from './apps/spell-analytics-dashboard.mjs';
-import { SpellListManager } from './apps/spell-list-manager.mjs';
-import * as actorSpellUtils from './data/actor-spells.mjs';
-import * as managerHelpers from './data/compendium-management.mjs';
-import * as genericUtils from './data/generic-utils.mjs';
-import { ScrollScanner } from './data/scroll-scanner.mjs';
-import * as discoveryUtils from './data/spell-discovery.mjs';
-import { SpellUserDataJournal } from './data/spell-user-data.mjs';
-import { SpellLoadoutDialog } from './dialogs/spell-loadout-dialog.mjs';
-import { SpellNotesDialog } from './dialogs/spell-notes-dialog.mjs';
-import { SpellbookSettingsDialog } from './dialogs/spellbook-settings-dialog.mjs';
+import { PlayerFilterConfiguration, PlayerSpellBook, SpellAnalyticsDashboard, SpellListManager } from './apps/_module.mjs';
+import * as DataHelpers from './data/_module.mjs';
+import { CompendiumSelectionDialog, SpellComparisonDialog, SpellDetailsCustomization, SpellLoadoutDialog, SpellNotesDialog, SpellbookSettingsDialog } from './dialogs/_module.mjs';
 import { log } from './logger.mjs';
-import { CantripManager } from './managers/cantrip-manager.mjs';
-import { MacroManager } from './managers/macro-manager.mjs';
-import { RuleSetManager } from './managers/rule-set-manager.mjs';
-import { SpellLoadoutManager } from './managers/spell-loadout-manager.mjs';
-import { SpellManager } from './managers/spell-manager.mjs';
-import { SpellUsageTracker } from './managers/spell-usage-tracker.mjs';
-import { UserSpellDataManager } from './managers/user-spell-data-manager.mjs';
-import { WizardSpellbookManager } from './managers/wizard-spellbook-manager.mjs';
+import { CantripManager, MacroManager, RuleSetManager, SpellLoadoutManager, SpellManager, SpellUsageTracker, UserSpellDataManager, WizardSpellbookManager } from './managers/_module.mjs';
 import { forceMigration } from './migrations.mjs';
-import { SpellbookState } from './state/spellbook-state.mjs';
-import * as colorUtils from './ui/color-utils.mjs';
-import { SpellDescriptionInjection } from './ui/spell-description-injection.mjs';
-import * as formattingUtils from './ui/spell-formatting.mjs';
-import { SpellbookFilterHelper } from './ui/spellbook-filters.mjs';
-import { SpellbookUI } from './ui/spellbook-ui.mjs';
-import * as filterUtils from './validation/filters.mjs';
-import * as formElements from './validation/form-elements.mjs';
+import { SpellbookState } from './state/_module.mjs';
+import * as UIHelpers from './ui/_module.mjs';
+import * as ValidationHelpers from './validation/_module.mjs';
 
 /**
  * Creates and registers the module's API
@@ -37,44 +15,14 @@ import * as formElements from './validation/form-elements.mjs';
 export function createAPI() {
   try {
     const api = {
-      apps: {
-        PlayerSpellBook,
-        SpellListManager,
-        SpellbookSettingsDialog,
-        PlayerFilterConfiguration,
-        SpellAnalyticsDashboard,
-        SpellLoadoutDialog,
-        SpellNotesDialog
-      },
+      apps: { PlayerFilterConfiguration, PlayerSpellBook, SpellAnalyticsDashboard, SpellListManager },
+      dialogs: { CompendiumSelectionDialog, SpellComparisonDialog, SpellDetailsCustomization, SpellLoadoutDialog, SpellNotesDialog, SpellbookSettingsDialog },
       utils: {
-        actor: { ...actorSpellUtils },
-        colors: { ...colorUtils },
-        filters: { ...filterUtils },
-        discovery: { ...discoveryUtils },
-        formatting: { ...formattingUtils },
-        management: { ...managerHelpers },
-        forms: { ...formElements },
-        generic: { ...genericUtils },
-        SpellUserDataJournal
-      },
-      helpers: {
+        data: { DataHelpers },
+        managers: { CantripManager, MacroManager, RuleSetManager, SpellLoadoutManager, SpellManager, SpellUsageTracker, UserSpellDataManager, WizardSpellbookManager },
         state: { SpellbookState },
-        ui: {
-          SpellbookFilterHelper,
-          SpellbookUI
-        },
-        ScrollScanner,
-        SpellDescriptionInjection
-      },
-      managers: {
-        SpellManager,
-        CantripManager,
-        RuleSetManager,
-        WizardSpellbookManager,
-        SpellLoadoutManager,
-        MacroManager,
-        UserSpellDataManager,
-        SpellUsageTracker
+        ui: { UIHelpers },
+        validation: { ValidationHelpers }
       },
       migrations: {
         forceMigration

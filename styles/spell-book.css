@@ -5241,8 +5241,8 @@
 
       .class-icon {
         object-fit: cover;
-        width: 1.75rem;
-        height: 1.75rem;
+        width: 3rem;
+        height: 3rem;
         border: 0.125rem solid var(--spell-book-text-accent);
         border-radius: 50%;
       }

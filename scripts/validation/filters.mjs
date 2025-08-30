@@ -1,4 +1,4 @@
-import * as genericUtils from '../data/generic-utils.mjs';
+import * as DataHelpers from '../data/_module.mjs';
 
 /**
  * Convert a spell range to feet (or meters based on dnd5e system settings)
@@ -13,7 +13,7 @@ export function convertRangeToStandardUnit(units, value) {
     : units === 'mi' ? value * 5280
     : units === 'spec' ? 0
     : value;
-  return genericUtils.shouldUseMetricUnits() ? Math.round(inFeet * 0.3048) : inFeet;
+  return DataHelpers.shouldUseMetricUnits() ? Math.round(inFeet * 0.3048) : inFeet;
 }
 
 /**
@@ -33,7 +33,7 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
       break;
     case 'school':
       Object.entries(CONFIG.DND5E.spellSchools).forEach(([key, school]) => {
-        const label = genericUtils.getConfigLabel(CONFIG.DND5E.spellSchools, key);
+        const label = DataHelpers.getConfigLabel(CONFIG.DND5E.spellSchools, key);
         options.push({ value: key, label, selected: filterState.school === key });
       });
       break;
@@ -48,12 +48,12 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
       };
       Object.entries(damageTypes)
         .sort((a, b) => {
-          const labelA = a[0] === 'healing' ? damageTypes.healing.label : genericUtils.getConfigLabel(CONFIG.DND5E.damageTypes, a[0]) || a[0];
-          const labelB = b[0] === 'healing' ? damageTypes.healing.label : genericUtils.getConfigLabel(CONFIG.DND5E.damageTypes, b[0]) || b[0];
+          const labelA = a[0] === 'healing' ? damageTypes.healing.label : DataHelpers.getConfigLabel(CONFIG.DND5E.damageTypes, a[0]) || a[0];
+          const labelB = b[0] === 'healing' ? damageTypes.healing.label : DataHelpers.getConfigLabel(CONFIG.DND5E.damageTypes, b[0]) || b[0];
           return labelA.localeCompare(labelB);
         })
         .forEach(([key, type]) => {
-          const label = key === 'healing' ? damageTypes.healing.label : genericUtils.getConfigLabel(CONFIG.DND5E.damageTypes, key) || key;
+          const label = key === 'healing' ? damageTypes.healing.label : DataHelpers.getConfigLabel(CONFIG.DND5E.damageTypes, key) || key;
           options.push({ value: key, label, selected: filterState.damageType === key });
         });
       break;
@@ -61,12 +61,12 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
       Object.entries(CONFIG.DND5E.conditionTypes)
         .filter(([_key, condition]) => !condition.pseudo)
         .sort((a, b) => {
-          const labelA = genericUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, a[0]);
-          const labelB = genericUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, b[0]);
+          const labelA = DataHelpers.getConfigLabel(CONFIG.DND5E.conditionTypes, a[0]);
+          const labelB = DataHelpers.getConfigLabel(CONFIG.DND5E.conditionTypes, b[0]);
           return labelA.localeCompare(labelB);
         })
         .forEach(([key, condition]) => {
-          const label = genericUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, key);
+          const label = DataHelpers.getConfigLabel(CONFIG.DND5E.conditionTypes, key);
           options.push({ value: key, label, selected: filterState.condition === key });
         });
       break;

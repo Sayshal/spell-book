@@ -1,10 +1,9 @@
-import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
+import { PlayerSpellBook } from '../apps/_module.mjs';
 import { FLAGS, MODULE } from '../constants/_module.mjs';
-import * as genericUtils from '../data/generic-utils.mjs';
+import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
-import { RuleSetManager } from '../managers/rule-set-manager.mjs';
-import { AdvancedSearchManager } from './advanced-search-manager.mjs';
-import * as colorUtils from './color-utils.mjs';
+import { RuleSetManager } from '../managers/_module.mjs';
+import * as UIHelpers from './_module.mjs';
 
 /**
  * Helper class for UI-related functionality in the spellbook application
@@ -17,7 +16,7 @@ export class SpellbookUI {
   constructor(app) {
     this.app = app;
     this._colorApplicationCount = 0;
-    this.advancedSearchManager = new AdvancedSearchManager(app);
+    this.advancedSearchManager = new UIHelpers.AdvancedSearchManager(app);
   }
 
   /**
@@ -127,7 +126,7 @@ export class SpellbookUI {
     if (!classData) return;
     const classRules = RuleSetManager.getClassRules(this.app.actor, classIdentifier);
     let baseMaxPrepared = 0;
-    const spellcastingConfig = genericUtils.getSpellcastingConfigForClass(this.app.actor, classIdentifier);
+    const spellcastingConfig = DataHelpers.getSpellcastingConfigForClass(this.app.actor, classIdentifier);
     if (spellcastingConfig?.preparation?.max) baseMaxPrepared = spellcastingConfig.preparation.max;
     else baseMaxPrepared = classData.classItem?.system?.spellcasting?.preparation?.max || 0;
     const preparationBonus = classRules?.spellPreparationBonus || 0;
@@ -468,7 +467,7 @@ export class SpellbookUI {
   async applyClassStyling() {
     if (this._colorApplicationCount > 0) return;
     if (this.app._stateManager.spellcastingClasses) {
-      await colorUtils.applyClassColors(this.app._stateManager.spellcastingClasses);
+      await UIHelpers.applyClassColors(this.app._stateManager.spellcastingClasses);
       this._colorApplicationCount++;
     }
   }

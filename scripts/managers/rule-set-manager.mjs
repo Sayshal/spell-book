@@ -1,5 +1,5 @@
 import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
-import * as discoveryUtils from '../data/spell-discovery.mjs';
+import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -293,7 +293,7 @@ export class RuleSetManager {
     } else {
       const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
       const classItem = spellcastingData ? actor.items.get(spellcastingData.id) : null;
-      if (classItem) newSpellList = await discoveryUtils.getClassSpellList(classItem.name.toLowerCase(), classItem.uuid, actor);
+      if (classItem) newSpellList = await DataHelpers.getClassSpellList(classItem.name.toLowerCase(), classItem.uuid, actor);
     }
     const affectedSpells = [];
     for (const classSpellKey of classPreparedSpells) {

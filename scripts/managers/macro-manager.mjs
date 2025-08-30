@@ -1,8 +1,8 @@
 import { MODULE } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
-import * as macros from '../macros/_module.mjs';
+import * as m from '../macros/_module.mjs';
 
-const MACROS = Object.values(macros);
+const MACROS = Object.values(m);
 
 /**
  * Macro Manager class for handling versioned compendium macros

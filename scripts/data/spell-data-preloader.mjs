@@ -1,10 +1,8 @@
 import { MODULE, SETTINGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
-import { WizardSpellbookManager } from '../managers/wizard-spellbook-manager.mjs';
-import * as formattingUtils from '../ui/spell-formatting.mjs';
-import * as managerHelpers from './compendium-management.mjs';
-import * as genericUtils from './generic-utils.mjs';
-import * as discoveryUtils from './spell-discovery.mjs';
+import { WizardSpellbookManager } from '../managers/_module.mjs';
+import * as UIHelpers from '../ui/_module.mjs';
+import * as DataHelpers from './_module.mjs';
 
 /**
  * Preload spell data based on user role and settings
@@ -32,9 +30,9 @@ export async function preloadSpellData() {
 async function preloadForGMSetupMode() {
   log(3, 'Starting GM setup mode preload - loading all spells and lists');
   try {
-    const allSpellLists = await managerHelpers.findCompendiumSpellLists(true);
+    const allSpellLists = await DataHelpers.findCompendiumSpellLists(true);
     allSpellLists.sort((a, b) => a.name.localeCompare(b.name));
-    const allSpells = await managerHelpers.fetchAllCompendiumSpells();
+    const allSpells = await DataHelpers.fetchAllCompendiumSpells();
     const enrichedSpells = enrichSpellsWithIcons(allSpells);
     cachePreloadedData(allSpellLists, enrichedSpells, 'gm-setup');
     const message = `Spell Book ready for GM setup! (${allSpellLists.length} lists, ${enrichedSpells.length} spells)`; // Localize
@@ -61,7 +59,7 @@ async function preloadForPlayer() {
     }
     const spellUuids = await collectPlayerSpellUuids(playerActor);
     const normalizedUuids = normalizeSpellUuids(spellUuids);
-    const allSpells = await managerHelpers.fetchAllCompendiumSpells();
+    const allSpells = await DataHelpers.fetchAllCompendiumSpells();
     const relevantSpells = allSpells.filter((spell) => normalizedUuids.has(spell.uuid));
     const enrichedSpells = enrichSpellsWithIcons(relevantSpells);
     cachePreloadedData([], enrichedSpells, 'player');
@@ -92,7 +90,7 @@ async function collectPlayerSpellUuids(actor) {
   let spellUuids = new Set();
   const assignedListSpells = await getSpellsFromActorSpellLists(actor);
   assignedListSpells.forEach((uuid) => spellUuids.add(uuid));
-  if (genericUtils.isWizard(actor)) {
+  if (DataHelpers.isWizard(actor)) {
     const spellbookSpells = await getActorSpellbookSpells(actor);
     spellbookSpells.forEach((uuid) => spellUuids.add(uuid));
   }
@@ -113,11 +111,11 @@ async function getSpellsFromActorSpellLists(actor) {
       log(2, `Could not find class item for ${classIdentifier}`);
       continue;
     }
-    const spellcastingConfig = genericUtils.getSpellcastingConfigForClass(actor, classIdentifier);
+    const spellcastingConfig = DataHelpers.getSpellcastingConfigForClass(actor, classIdentifier);
     if (!spellcastingConfig) continue;
     const className = classItem.name.toLowerCase();
     const classUuid = classItem.uuid;
-    const spellList = await discoveryUtils.getClassSpellList(className, classUuid, actor);
+    const spellList = await DataHelpers.getClassSpellList(className, classUuid, actor);
     if (spellList && spellList.size > 0) {
       spellList.forEach((spellUuid) => spellUuids.push(spellUuid));
       log(3, `Found ${spellList.size} spells for ${className} class (${classIdentifier})`);
@@ -134,7 +132,7 @@ async function getSpellsFromActorSpellLists(actor) {
  */
 async function getActorSpellbookSpells(actor) {
   const spellUuids = [];
-  const wizardClasses = genericUtils.getWizardEnabledClasses(actor);
+  const wizardClasses = DataHelpers.getWizardEnabledClasses(actor);
   for (const { identifier } of wizardClasses) {
     try {
       const wizardManager = new WizardSpellbookManager(actor, identifier);
@@ -215,7 +213,7 @@ export function shouldInvalidateCacheForPage(page) {
   if (!journal?.pack) return false;
   const pack = game.packs.get(journal.pack);
   if (!pack || pack.metadata.type !== 'JournalEntry') return false;
-  return managerHelpers.shouldIndexCompendium(pack);
+  return DataHelpers.shouldIndexCompendium(pack);
 }
 
 /**
@@ -239,6 +237,6 @@ function normalizeSpellUuids(spellUuids) {
  */
 function enrichSpellsWithIcons(spells) {
   const enrichedSpells = spells.slice();
-  if (spells.length > 0) for (let spell of enrichedSpells) spell.enrichedIcon = formattingUtils.createSpellIconLink(spell);
+  if (spells.length > 0) for (let spell of enrichedSpells) spell.enrichedIcon = UIHelpers.createSpellIconLink(spell);
   return enrichedSpells;
 }

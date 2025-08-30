@@ -1,4 +1,3 @@
-// Export all data utilities
 export * from './actor-spells.mjs';
 export * from './compendium-management.mjs';
 export * from './generic-utils.mjs';

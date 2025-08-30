@@ -1,7 +1,7 @@
 import { MODULE, SETTINGS } from '../constants/_module.mjs';
-import { SpellUserDataJournal } from '../data/spell-user-data.mjs';
+import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
-import * as spellFavorites from './spell-favorites.mjs';
+import * as UIHelpers from './_module.mjs';
 
 /**
  * Class to handle injecting notes into spell descriptions on actor items
@@ -72,7 +72,7 @@ export class SpellDescriptionInjection {
    */
   static async updateSpellDescription(spellItem) {
     if (!spellItem || spellItem.type !== 'spell') return;
-    const canonicalUuid = spellFavorites.getCanonicalSpellUuid(spellItem.uuid);
+    const canonicalUuid = UIHelpers.getCanonicalSpellUuid(spellItem.uuid);
     let targetUserId = game.user.id;
     const actor = spellItem.parent;
     if (actor && game.user.isActiveGM) {
@@ -94,7 +94,7 @@ export class SpellDescriptionInjection {
     }
     const injectionMode = game.settings.get(MODULE.ID, 'injectNotesIntoDescriptions');
     if (injectionMode === 'off') return;
-    const userData = await SpellUserDataJournal.getUserDataForSpell(canonicalUuid, targetUserId, actor?.id);
+    const userData = await DataHelpers.SpellUserDataJournal.getUserDataForSpell(canonicalUuid, targetUserId, actor?.id);
     if (!userData?.notes || !userData.notes.trim()) await this.removeNotesFromDescription(spellItem);
     const spellKey = `${spellItem.actor?.id || 'unknown'}-${canonicalUuid}`;
     if (this._updatingSpells.has(spellKey)) return;
@@ -162,11 +162,11 @@ export class SpellDescriptionInjection {
    * Handle notes changes - call this when notes are updated
    */
   static async handleNotesChange(spellUuid) {
-    const canonicalUuid = spellFavorites.getCanonicalSpellUuid(spellUuid);
+    const canonicalUuid = UIHelpers.getCanonicalSpellUuid(spellUuid);
     for (const actor of game.actors) {
       const matchingSpells = actor.items.filter((item) => {
         if (item.type !== 'spell') return false;
-        const itemCanonicalUuid = spellFavorites.getCanonicalSpellUuid(item.uuid);
+        const itemCanonicalUuid = UIHelpers.getCanonicalSpellUuid(item.uuid);
         return itemCanonicalUuid === canonicalUuid;
       });
       for (const spell of matchingSpells) await this.updateSpellDescription(spell);

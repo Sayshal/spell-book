@@ -1,7 +1,7 @@
 import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
-import * as genericUtils from '../data/generic-utils.mjs';
+import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
-import { RuleSetManager } from './rule-set-manager.mjs';
+import { RuleSetManager } from './_module.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
 
@@ -18,7 +18,7 @@ export class CantripManager {
   constructor(actor, spellManager) {
     this.actor = actor;
     this.spellManager = spellManager;
-    this.isWizard = genericUtils.isWizard(actor);
+    this.isWizard = DataHelpers.isWizard(actor);
     this._maxCantripsByClass = new Map();
     this._totalMaxCantrips = 0;
     this._cacheInitialized = false;
@@ -39,7 +39,7 @@ export class CantripManager {
     }
 
     for (const [identifier, classData] of Object.entries(this.actor.spellcastingClasses)) {
-      const spellcastingConfig = genericUtils.getSpellcastingConfigForClass(this.actor, identifier);
+      const spellcastingConfig = DataHelpers.getSpellcastingConfigForClass(this.actor, identifier);
       if (!spellcastingConfig) continue;
       const maxCantrips = this._calculateMaxCantripsForClass(identifier);
       this._maxCantripsByClass.set(identifier, maxCantrips);
@@ -90,7 +90,7 @@ export class CantripManager {
       .map((v) => v.trim())
       .filter((v) => v.length > 0);
     let baseCantrips = 0;
-    const scaleValues = genericUtils.getScaleValuesForClass(this.actor, classIdentifier);
+    const scaleValues = DataHelpers.getScaleValuesForClass(this.actor, classIdentifier);
     if (scaleValues) {
       for (const key of cantripScaleKeys) {
         const cantripValue = scaleValues[key]?.value;
@@ -196,7 +196,7 @@ export class CantripManager {
         break;
     }
     const trackingData = this._getSwapTrackingData(isLevelUp, isLongRest, classIdentifier);
-    const spellUuid = genericUtils.getSpellUuid(spell);
+    const spellUuid = DataHelpers.getSpellUuid(spell);
     if ((isLevelUp && cantripSwapping === 'levelUp') || (isLongRest && cantripSwapping === 'longRest')) {
       if (!isChecked && trackingData.hasUnlearned && trackingData.unlearned !== spellUuid && trackingData.originalChecked.includes(spellUuid)) {
         return { allowed: false, message: 'SPELLBOOK.Cantrips.OnlyOneSwap' };
@@ -244,7 +244,7 @@ export class CantripManager {
     }
     const settings = this.spellManager.getSettings(classIdentifier);
     const cantripSwapping = settings.cantripSwapping || 'none';
-    const spellUuid = genericUtils.getSpellUuid(spell);
+    const spellUuid = DataHelpers.getSpellUuid(spell);
     if (!isLevelUp && !isLongRest) return;
     if (cantripSwapping === 'none') return;
     if (cantripSwapping === 'longRest' && classIdentifier !== MODULE.CLASS_IDENTIFIERS.WIZARD) return;
@@ -253,7 +253,7 @@ export class CantripManager {
     if (!tracking) {
       const preparedCantrips = this.actor.items
         .filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1 && (i.sourceClass === classIdentifier || i.system.sourceClass === classIdentifier))
-        .map((i) => genericUtils.getSpellUuid(i));
+        .map((i) => DataHelpers.getSpellUuid(i));
       tracking = { hasUnlearned: false, unlearned: null, hasLearned: false, learned: null, originalChecked: preparedCantrips };
       this.actor.setFlag(MODULE.ID, flagName, tracking);
     }

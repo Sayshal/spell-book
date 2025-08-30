@@ -1,9 +1,8 @@
 import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
-import * as genericUtils from '../data/generic-utils.mjs';
-import * as formattingUtils from '../ui/spell-formatting.mjs';
+import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
-import { CantripManager } from './cantrip-manager.mjs';
-import { RuleSetManager } from './rule-set-manager.mjs';
+import * as UIHelpers from '../ui/_module.mjs';
+import { CantripManager, RuleSetManager } from './_module.mjs';
 
 /**
  * Manages spell preparation and related functionality
@@ -15,7 +14,7 @@ export class SpellManager {
    */
   constructor(actor) {
     this.actor = actor;
-    this.isWizard = genericUtils.isWizard(actor);
+    this.isWizard = DataHelpers.isWizard(actor);
     this._wizardSpellbookCache = null;
     this._wizardManager = null;
     this.cantripManager = new CantripManager(actor, this);
@@ -86,7 +85,7 @@ export class SpellManager {
       isCantripLocked: false
     };
     if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
-    const spellUuid = spell.compendiumUuid || spell.uuid || genericUtils.getSpellUuid(spell);
+    const spellUuid = spell.compendiumUuid || spell.uuid || DataHelpers.getSpellUuid(spell);
     const actualSpell = this.actor.items.find(
       (item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
     );
@@ -170,7 +169,7 @@ export class SpellManager {
         const sourceClass = specialSpell.system?.sourceClass || specialSpell.sourceClass;
         const spellcastingData = sourceClass ? this.actor.spellcastingClasses?.[sourceClass] : null;
         const classItem = spellcastingData ? this.actor.items.get(spellcastingData.id) : null;
-        const localizedMode = formattingUtils.getLocalizedPreparationMode(specialSpell.system.method);
+        const localizedMode = UIHelpers.getLocalizedPreparationMode(specialSpell.system.method);
         return {
           prepared: true,
           isOwned: false,
@@ -238,7 +237,7 @@ export class SpellManager {
     const alwaysPrepared = spell.system.prepared === 2;
     const isInnateCasting = preparationMode === 'innate';
     const isAtWill = preparationMode === 'atwill';
-    const localizedPreparationMode = formattingUtils.getLocalizedPreparationMode(preparationMode);
+    const localizedPreparationMode = UIHelpers.getLocalizedPreparationMode(preparationMode);
     const sourceInfo = this._determineSpellSource(spell);
     const isGranted = !!sourceInfo && !!spell.flags?.dnd5e?.cachedFor;
     const isCantrip = spell.system.level === 0;
@@ -294,14 +293,14 @@ export class SpellManager {
     if (preparationMode === 'always') {
       if (sourceClassId && this.actor.spellcastingClasses?.[sourceClassId]) {
         const spellcastingData = this.actor.spellcastingClasses[sourceClassId];
-        const spellcastingSource = genericUtils.getSpellcastingSourceItem(this.actor, sourceClassId);
+        const spellcastingSource = DataHelpers.getSpellcastingSourceItem(this.actor, sourceClassId);
         if (spellcastingSource && spellcastingSource.type === 'subclass') return { name: spellcastingSource.name, type: 'subclass', id: spellcastingSource.id };
       }
       const subclass = this.actor.items.find((i) => i.type === 'subclass');
       if (subclass) return { name: subclass.name, type: 'subclass', id: subclass.id };
     } else if (preparationMode === 'pact') {
       if (sourceClassId && this.actor.spellcastingClasses?.[sourceClassId]) {
-        const spellcastingSource = genericUtils.getSpellcastingSourceItem(this.actor, sourceClassId);
+        const spellcastingSource = DataHelpers.getSpellcastingSourceItem(this.actor, sourceClassId);
         if (spellcastingSource && spellcastingSource.type === 'subclass') return { name: spellcastingSource.name, type: 'subclass', id: spellcastingSource.id };
       }
       const subclass = this.actor.items.find((i) => i.type === 'subclass');
@@ -309,7 +308,7 @@ export class SpellManager {
       return { name: game.i18n.localize('SPELLBOOK.SpellSource.PactMagic'), type: 'class' };
     } else {
       if (sourceClassId && this.actor.spellcastingClasses?.[sourceClassId]) {
-        const spellcastingSource = genericUtils.getSpellcastingSourceItem(this.actor, sourceClassId);
+        const spellcastingSource = DataHelpers.getSpellcastingSourceItem(this.actor, sourceClassId);
         if (spellcastingSource) return { name: spellcastingSource.name, type: spellcastingSource.type, id: spellcastingSource.id };
       }
       const classItem = this.actor.items.find((i) => i.type === 'class');
@@ -475,7 +474,7 @@ export class SpellManager {
    * @returns {string} The preparation mode (prepared, pact, etc.)
    */
   _getClassPreparationMode(classIdentifier) {
-    const spellcastingConfig = genericUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
+    const spellcastingConfig = DataHelpers.getSpellcastingConfigForClass(this.actor, classIdentifier);
     if (spellcastingConfig?.type === 'pact') return 'pact';
     return 'spell';
   }
@@ -570,7 +569,7 @@ export class SpellManager {
     const isFromClassFeature = targetSpell.system.prepared === 2;
     if (isAlwaysPrepared || isGranted || isFromClassFeature) return;
     const isRitualSpell = targetSpell.system.components?.ritual;
-    const isWizard = genericUtils.isWizard(this.actor);
+    const isWizard = DataHelpers.isWizard(this.actor);
     const classRules = RuleSetManager.getClassRules(this.actor, 'wizard');
     const ritualCastingEnabled = classRules.ritualCasting !== 'none';
     if (isRitualSpell && isWizard && ritualCastingEnabled && targetSpell.system.level > 0) {

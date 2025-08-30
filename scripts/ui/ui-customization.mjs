@@ -1,5 +1,5 @@
 import { MODULE, SETTINGS } from '../constants/_module.mjs';
-import * as formattingUtils from './spell-formatting.mjs';
+import * as UIHelpers from './_module.mjs';
 
 /**
  * Helper class for managing UI customization settings
@@ -78,15 +78,15 @@ export class UICustomizationHelper {
       if (levelText) metadata.push(levelText);
     }
     if (this.isPlayerElementEnabled('components')) {
-      const componentsText = formattingUtils.formatSpellComponents(spell);
+      const componentsText = UIHelpers.formatSpellComponents(spell);
       if (componentsText) metadata.push(componentsText);
     }
     if (this.isPlayerElementEnabled('school')) {
-      const schoolText = formattingUtils.formatSpellSchool(spell);
+      const schoolText = UIHelpers.formatSpellSchool(spell);
       if (schoolText) metadata.push(schoolText);
     }
     if (this.isPlayerElementEnabled('castingTime')) {
-      const castingTimeText = formattingUtils.formatSpellActivation(spell);
+      const castingTimeText = UIHelpers.formatSpellActivation(spell);
       if (castingTimeText) metadata.push(castingTimeText);
     }
     if (this.isPlayerElementEnabled('range')) {
@@ -107,7 +107,7 @@ export class UICustomizationHelper {
     }
     if (this.isPlayerElementEnabled('concentration') && this._spellHasProperty(spell, 'concentration')) metadata.push(game.i18n.localize('DND5E.Concentration'));
     if (this.isPlayerElementEnabled('materialComponents')) {
-      const materialText = formattingUtils.formatMaterialComponents(spell);
+      const materialText = UIHelpers.formatMaterialComponents(spell);
       if (materialText) metadata.push(materialText);
     }
     return metadata.join(' • ');
@@ -125,15 +125,15 @@ export class UICustomizationHelper {
       if (levelText) metadata.push(levelText);
     }
     if (this.isGMElementEnabled('components')) {
-      const componentsText = formattingUtils.formatSpellComponents(spell);
+      const componentsText = UIHelpers.formatSpellComponents(spell);
       if (componentsText) metadata.push(componentsText);
     }
     if (this.isGMElementEnabled('school')) {
-      const schoolText = formattingUtils.formatSpellSchool(spell);
+      const schoolText = UIHelpers.formatSpellSchool(spell);
       if (schoolText) metadata.push(schoolText);
     }
     if (this.isGMElementEnabled('castingTime')) {
-      const castingTimeText = formattingUtils.formatSpellActivation(spell);
+      const castingTimeText = UIHelpers.formatSpellActivation(spell);
       if (castingTimeText) metadata.push(castingTimeText);
     }
     if (this.isGMElementEnabled('range')) {
@@ -154,7 +154,7 @@ export class UICustomizationHelper {
     }
     if (this.isGMElementEnabled('concentration') && this._spellHasProperty(spell, 'concentration')) metadata.push(game.i18n.localize('DND5E.Concentration'));
     if (this.isGMElementEnabled('materialComponents')) {
-      const materialText = formattingUtils.formatMaterialComponents(spell);
+      const materialText = UIHelpers.formatMaterialComponents(spell);
       if (materialText) metadata.push(materialText);
     }
     return metadata.join(' • ');

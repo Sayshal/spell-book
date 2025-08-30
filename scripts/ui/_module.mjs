@@ -1,4 +1,3 @@
-// Export all UI utilities
 export * from './advanced-search-manager.mjs';
 export * from './color-utils.mjs';
 export * from './spell-description-injection.mjs';

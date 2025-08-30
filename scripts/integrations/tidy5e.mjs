@@ -1,4 +1,4 @@
-import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
+import { PlayerSpellBook } from '../apps/_module.mjs';
 import { ASSETS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 

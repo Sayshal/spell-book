@@ -1,10 +1,8 @@
 import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
-import { shouldShowInSettings } from '../data/compendium-management.mjs';
-import * as formElements from '../validation/form-elements.mjs';
-import * as genericUtils from '../data/generic-utils.mjs';
+import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
-import { RuleSetManager } from '../managers/rule-set-manager.mjs';
-import { SpellManager } from '../managers/spell-manager.mjs';
+import { RuleSetManager, SpellManager } from '../managers/_module.mjs';
+import * as ValidationHelpers from '../validation/_module.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -127,13 +125,13 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         selected: enforcementValue === 'enforced'
       }
     ];
-    const ruleSetSelect = formElements.createSelect({
+    const ruleSetSelect = ValidationHelpers.createSelect({
       name: 'ruleSetOverride',
       options: ruleSetOptions,
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.RuleSetOverride.Label')
     });
     ruleSetSelect.id = 'rule-set-override';
-    const enforcementSelect = formElements.createSelect({
+    const enforcementSelect = ValidationHelpers.createSelect({
       name: 'enforcementBehavior',
       options: enforcementOptions,
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.EnforcementBehavior.Label')
@@ -144,8 +142,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       ruleSetOverride,
       enforcementBehavior,
       currentRuleSetLabel: globalRuleSetLabel,
-      ruleSetSelectHtml: formElements.elementToHtml(ruleSetSelect),
-      enforcementSelectHtml: formElements.elementToHtml(enforcementSelect)
+      ruleSetSelectHtml: ValidationHelpers.elementToHtml(ruleSetSelect),
+      enforcementSelectHtml: ValidationHelpers.elementToHtml(enforcementSelect)
     };
   }
 
@@ -192,7 +190,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
           const customList = await fromUuid(formRules.customSpellList);
           customSpellListName = customList?.name || game.i18n.localize('SPELLBOOK.Settings.UnknownList');
         }
-        const classFormElements = this._prepareClassFormElements(identifier, formRules, availableSpellLists);
+        const classValidationHelpers = this._prepareClassValidationHelpers(identifier, formRules, availableSpellLists);
         const classData = {
           name: classItem.name,
           identifier: identifier,
@@ -206,7 +204,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
           },
           hasCustomSpellList: hasCustomSpellList,
           customSpellListName: customSpellListName,
-          formElements: classFormElements,
+          ValidationHelpers: classValidationHelpers,
           spellcastingSource: spellcastingSource
         };
         classSettings.push(classData);
@@ -223,15 +221,15 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    * @param {Array} availableSpellLists - Available spell list options
    * @returns {Object} Object containing all form element HTML for the class
    */
-  _prepareClassFormElements(identifier, formRules, availableSpellLists) {
-    const showCantripsCheckbox = formElements.createCheckbox({
+  _prepareClassValidationHelpers(identifier, formRules, availableSpellLists) {
+    const showCantripsCheckbox = ValidationHelpers.createCheckbox({
       name: `class.${identifier}.showCantrips`,
       checked: formRules.showCantrips,
       disabled: formRules._noScaleValue,
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.ShowCantrips.Label')
     });
     showCantripsCheckbox.id = `show-cantrips-${identifier}`;
-    const forceWizardCheckbox = formElements.createCheckbox({
+    const forceWizardCheckbox = ValidationHelpers.createCheckbox({
       name: `class.${identifier}.forceWizardMode`,
       checked: formRules.forceWizardMode,
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.ForceWizardMode.Label')
@@ -255,7 +253,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         selected: cantripSwappingValue === 'longRest'
       }
     ];
-    const cantripSwappingSelect = formElements.createSelect({
+    const cantripSwappingSelect = ValidationHelpers.createSelect({
       name: `class.${identifier}.cantripSwapping`,
       options: cantripSwappingOptions,
       disabled: !formRules.showCantrips,
@@ -280,7 +278,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         selected: spellSwappingValue === 'longRest'
       }
     ];
-    const spellSwappingSelect = formElements.createSelect({
+    const spellSwappingSelect = ValidationHelpers.createSelect({
       name: `class.${identifier}.spellSwapping`,
       options: spellSwappingOptions,
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.SpellSwapping.Label')
@@ -304,7 +302,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         selected: ritualCastingValue === 'always'
       }
     ];
-    const ritualCastingSelect = formElements.createSelect({
+    const ritualCastingSelect = ValidationHelpers.createSelect({
       name: `class.${identifier}.ritualCasting`,
       options: ritualCastingOptions,
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.Label')
@@ -315,7 +313,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       ...option,
       selected: option.value === customSpellListValue
     }));
-    const customSpellListSelect = formElements.createSelect({
+    const customSpellListSelect = ValidationHelpers.createSelect({
       name: `class.${identifier}.customSpellList`,
       options: customSpellListOptions,
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.CustomSpellList.Label')
@@ -324,12 +322,12 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     const spellPreparationBonusControls = this._createSpellPreparationBonusControls(identifier, formRules.spellPreparationBonus);
     const cantripPreparationBonusControls = this._createCantripPreparationBonusControls(identifier, formRules.cantripPreparationBonus);
     return {
-      showCantripsCheckboxHtml: formElements.elementToHtml(showCantripsCheckbox),
-      forceWizardModeCheckboxHtml: formElements.elementToHtml(forceWizardCheckbox),
-      cantripSwappingSelectHtml: formElements.elementToHtml(cantripSwappingSelect),
-      spellSwappingSelectHtml: formElements.elementToHtml(spellSwappingSelect),
-      ritualCastingSelectHtml: formElements.elementToHtml(ritualCastingSelect),
-      customSpellListSelectHtml: formElements.elementToHtml(customSpellListSelect),
+      showCantripsCheckboxHtml: ValidationHelpers.elementToHtml(showCantripsCheckbox),
+      forceWizardModeCheckboxHtml: ValidationHelpers.elementToHtml(forceWizardCheckbox),
+      cantripSwappingSelectHtml: ValidationHelpers.elementToHtml(cantripSwappingSelect),
+      spellSwappingSelectHtml: ValidationHelpers.elementToHtml(spellSwappingSelect),
+      ritualCastingSelectHtml: ValidationHelpers.elementToHtml(ritualCastingSelect),
+      customSpellListSelectHtml: ValidationHelpers.elementToHtml(customSpellListSelect),
       spellPreparationBonusControlsHtml: spellPreparationBonusControls,
       cantripPreparationBonusControlsHtml: cantripPreparationBonusControls
     };
@@ -344,7 +342,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   _createSpellPreparationBonusControls(identifier, currentValue) {
     const container = document.createElement('div');
     container.className = 'preparation-bonus-controls';
-    const spellcastingConfig = genericUtils.getSpellcastingConfigForClass(this.actor, identifier);
+    const spellcastingConfig = DataHelpers.getSpellcastingConfigForClass(this.actor, identifier);
     const baseMaxSpells = spellcastingConfig?.preparation?.max || 0;
     const minValue = -baseMaxSpells;
     const decreaseButton = document.createElement('button');
@@ -354,7 +352,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     decreaseButton.dataset.action = 'decreaseSpellPrepBonus';
     decreaseButton.textContent = '−';
     decreaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.SpellPreparationBonus.Decrease'));
-    const input = formElements.createNumberInput({
+    const input = ValidationHelpers.createNumberInput({
       name: `class.${identifier}.spellPreparationBonus`,
       value: currentValue,
       min: minValue,
@@ -373,7 +371,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     container.appendChild(decreaseButton);
     container.appendChild(input);
     container.appendChild(increaseButton);
-    return formElements.elementToHtml(container);
+    return ValidationHelpers.elementToHtml(container);
   }
 
   /**
@@ -393,7 +391,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         .split(',')
         .map((v) => v.trim())
         .filter((v) => v.length > 0);
-      const scaleValues = genericUtils.getScaleValuesForClass(this.actor, identifier);
+      const scaleValues = DataHelpers.getScaleValuesForClass(this.actor, identifier);
       if (scaleValues) {
         for (const key of cantripScaleKeys) {
           const cantripValue = scaleValues[key]?.value;
@@ -412,7 +410,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     decreaseButton.dataset.action = 'decreaseCantripPrepBonus';
     decreaseButton.textContent = '−';
     decreaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.CantripPreparationBonus.Decrease'));
-    const input = formElements.createNumberInput({
+    const input = ValidationHelpers.createNumberInput({
       name: `class.${identifier}.cantripPreparationBonus`,
       value: currentValue,
       min: minValue,
@@ -431,7 +429,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     container.appendChild(decreaseButton);
     container.appendChild(input);
     container.appendChild(increaseButton);
-    return formElements.elementToHtml(container);
+    return ValidationHelpers.elementToHtml(container);
   }
 
   /**
@@ -446,7 +444,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       const allJournalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
       const journalPacks = [];
       for (const pack of allJournalPacks) {
-        const shouldShow = await shouldShowInSettings(pack);
+        const shouldShow = await DataHelpers.shouldShowInSettings(pack);
         if (shouldShow) journalPacks.push(pack);
       }
       for (const pack of journalPacks) {
@@ -542,7 +540,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellPreparationBonus"]`);
     if (!input) return;
-    const spellcastingConfig = genericUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
+    const spellcastingConfig = DataHelpers.getSpellcastingConfigForClass(this.actor, classIdentifier);
     const baseMax = spellcastingConfig?.preparation?.max || 0;
     const minimumBonus = -baseMax;
     const currentValue = parseInt(input.value) || 0;
@@ -580,7 +578,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     icon.setAttribute('aria-hidden', 'true');
     submitButton.appendChild(icon);
     submitButton.appendChild(document.createTextNode(` ${game.i18n.localize('SPELLBOOK.Settings.SaveButton')}`));
-    return { submitButtonHtml: formElements.elementToHtml(submitButton) };
+    return { submitButtonHtml: ValidationHelpers.elementToHtml(submitButton) };
   }
 
   /**
@@ -619,7 +617,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         .split(',')
         .map((v) => v.trim())
         .filter((v) => v.length > 0);
-      const scaleValues = genericUtils.getScaleValuesForClass(this.actor, classIdentifier);
+      const scaleValues = DataHelpers.getScaleValuesForClass(this.actor, classIdentifier);
       if (scaleValues) {
         for (const key of cantripScaleKeys) {
           const cantripValue = scaleValues[key]?.value;

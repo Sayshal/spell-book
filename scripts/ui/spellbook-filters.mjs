@@ -1,6 +1,6 @@
 import { MODULE, SETTINGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
-import * as filterUtils from '../validation/filters.mjs';
+import * as ValidationHelpers from '../validation/_module.mjs';
 
 /**
  * Helper class for filtering spells in the spellbook application with cached filter state
@@ -399,7 +399,7 @@ export class SpellbookFilterHelper {
     }
     if ((filters.minRange || filters.maxRange) && spell.rangeUnits) {
       const rangeValue = parseInt(spell.rangeValue, 10);
-      const convertedRange = filterUtils.convertRangeToStandardUnit(spell.rangeUnits, rangeValue);
+      const convertedRange = ValidationHelpers.convertRangeToStandardUnit(spell.rangeUnits, rangeValue);
       const minRange = filters.minRange ? parseInt(filters.minRange, 10) : 0;
       const maxRange = filters.maxRange ? parseInt(filters.maxRange, 10) : Infinity;
       if (convertedRange < minRange || convertedRange > maxRange) return false;

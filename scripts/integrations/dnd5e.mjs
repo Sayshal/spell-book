@@ -1,9 +1,7 @@
-import { SpellListManager } from '../apps/spell-list-manager.mjs';
-import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
-import { SpellAnalyticsDashboard } from '../apps/spell-analytics-dashboard.mjs';
+import { PlayerSpellBook, SpellAnalyticsDashboard, SpellListManager } from '../apps/_module.mjs';
 import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
-import { SpellManager } from '../managers/spell-manager.mjs';
+import { SpellManager } from '../managers/_module.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
 

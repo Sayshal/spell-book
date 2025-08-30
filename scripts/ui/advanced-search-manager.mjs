@@ -1,9 +1,7 @@
-import { PlayerSpellBook } from '../apps/player-spell-book.mjs';
+import { PlayerSpellBook } from '../apps/_module.mjs';
 import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
-import { FieldDefinitions } from '../validation/field-definitions.mjs';
-import { QueryExecutor } from '../validation/query-executor.mjs';
-import { QueryParser } from '../validation/query-parser.mjs';
+import * as ValidationHelpers from '../validation/_module.mjs';
 
 /**
  * Advanced search manager for handling Google-style search with recent searches and fuzzy matching.
@@ -18,7 +16,7 @@ export class AdvancedSearchManager {
     this.actor = app.actor;
     this.app = app;
     this.clearButtonElement = null;
-    this.fieldDefinitions = new FieldDefinitions();
+    this.fieldDefinitions = new ValidationHelpers.FieldDefinitions();
     this.focusDebounceTimeout = null;
     this.isAdvancedQuery = false;
     this.isDropdownVisible = false;
@@ -31,8 +29,8 @@ export class AdvancedSearchManager {
     this.lastProcessedTime = null;
     this.parsedQuery = null;
     this.queryCache = new Map();
-    this.queryExecutor = new QueryExecutor();
-    this.queryParser = new QueryParser(this.fieldDefinitions);
+    this.queryExecutor = new ValidationHelpers.QueryExecutor();
+    this.queryParser = new ValidationHelpers.QueryParser(this.fieldDefinitions);
     this.searchInputElement = null;
     this.searchTimeout = null;
     this.selectedSuggestionIndex = -1;

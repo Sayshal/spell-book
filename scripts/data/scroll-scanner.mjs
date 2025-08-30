@@ -1,8 +1,7 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
-import * as formattingUtils from '../ui/spell-formatting.mjs';
-import * as genericUtils from './generic-utils.mjs';
-import * as discoveryUtils from './spell-discovery.mjs';
+import * as UIHelpers from '../ui/_module.mjs';
+import * as DataHelpers from './_module.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
 
@@ -17,7 +16,7 @@ export class ScrollScanner {
    */
   static async scanForScrollSpells(actor) {
     const scrollSpells = [];
-    if (!genericUtils.isWizard(actor)) return scrollSpells;
+    if (!DataHelpers.isWizard(actor)) return scrollSpells;
     const scrollItems = actor.items.filter((item) => item.type === 'consumable' && item.system?.type?.value === 'scroll');
     for (const scroll of scrollItems) {
       const spellData = await this._extractSpellFromScroll(scroll, actor);
@@ -34,9 +33,9 @@ export class ScrollScanner {
    * @returns {Promise<Object|null>} Spell data or null if no valid spell found
    */
   static async _extractSpellFromScroll(scroll, actor) {
-    const wizardClass = genericUtils.findWizardClass(actor);
+    const wizardClass = DataHelpers.findWizardClass(actor);
     if (!wizardClass) return null;
-    const maxSpellLevel = discoveryUtils.calculateMaxSpellLevel(wizardClass, actor);
+    const maxSpellLevel = DataHelpers.calculateMaxSpellLevel(wizardClass, actor);
     if (scroll.system?.activities) {
       const activitiesArray = Array.from(scroll.system.activities.values());
       for (const [activityIndex, activity] of activitiesArray.entries()) {
@@ -76,7 +75,7 @@ export class ScrollScanner {
         return null;
       }
       if (spell.system.level > maxSpellLevel && spell.system.level > 0) return null;
-      const filterData = formattingUtils.extractSpellFilterData(spell);
+      const filterData = UIHelpers.extractSpellFilterData(spell);
       let processedResult = {
         scrollItem: scroll,
         spell: spell,
@@ -86,7 +85,7 @@ export class ScrollScanner {
         img: spell.img,
         system: spell.system,
         filterData: filterData,
-        enrichedIcon: formattingUtils.createSpellIconLink(spell),
+        enrichedIcon: UIHelpers.createSpellIconLink(spell),
         isFromScroll: true,
         scrollId: scroll.id,
         scrollName: scroll.name,

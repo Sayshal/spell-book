@@ -1,9 +1,8 @@
-import { CompendiumSelectionDialog } from './dialogs/compendium-selection-dialog.mjs';
-import { SpellListManager } from './apps/spell-list-manager.mjs';
-import { SpellDetailsCustomization } from './dialogs/spell-details-customization.mjs';
+import { SpellListManager } from './apps/_module.mjs';
 import { MODULE, SETTINGS } from './constants/_module.mjs';
-import { SpellDescriptionInjection } from './ui/spell-description-injection.mjs';
+import { CompendiumSelectionDialog, SpellDetailsCustomization } from './dialogs/_module.mjs';
 import { log } from './logger.mjs';
+import * as UIHelpers from './ui/_module.mjs';
 
 /**
  * Register all module settings
@@ -262,7 +261,7 @@ export function registerSettings() {
     },
     default: 'off',
     onChange: async (value) => {
-      await SpellDescriptionInjection.handleSettingChange(value);
+      await UIHelpers.SpellDescriptionInjection.handleSettingChange(value);
     }
   });
 

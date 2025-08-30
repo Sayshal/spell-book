@@ -1,5 +1,5 @@
 import { FLAGS, MODULE } from '../constants/_module.mjs';
-import * as genericUtils from '../data/generic-utils.mjs';
+import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -55,7 +55,7 @@ export class WizardSpellbookManager {
     const spellcastingData = this.actor.spellcastingClasses[this.classIdentifier];
     const classItem = this.actor.items.get(spellcastingData.id);
     if (!classItem) return null;
-    if (genericUtils.isClassWizardEnabled(this.actor, this.classIdentifier)) return classItem;
+    if (DataHelpers.isClassWizardEnabled(this.actor, this.classIdentifier)) return classItem;
     return null;
   }
 

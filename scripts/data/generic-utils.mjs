@@ -10,19 +10,10 @@ import { log } from '../logger.mjs';
 export function getSpellcastingConfigForClass(actor, classIdentifier) {
   const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
   if (!spellcastingData) return null;
-
-  // Check main class first
   const mainClassSpellcasting = spellcastingData.spellcasting;
-  if (mainClassSpellcasting?.progression && mainClassSpellcasting.progression !== 'none') {
-    return mainClassSpellcasting;
-  }
-
-  // Check subclass if main class doesn't have spellcasting
+  if (mainClassSpellcasting?.progression && mainClassSpellcasting.progression !== 'none') return mainClassSpellcasting;
   const subclassSpellcasting = spellcastingData._classLink?.system?.spellcasting;
-  if (subclassSpellcasting?.progression && subclassSpellcasting.progression !== 'none') {
-    return subclassSpellcasting;
-  }
-
+  if (subclassSpellcasting?.progression && subclassSpellcasting.progression !== 'none') return subclassSpellcasting;
   return null;
 }
 
@@ -52,24 +43,14 @@ export function getScaleValuesForClass(actor, classIdentifier) {
 export function getSpellcastingSourceItem(actor, classIdentifier) {
   const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
   if (!spellcastingData) return null;
-
   const mainClass = actor.items.get(spellcastingData.id);
   if (!mainClass) return null;
-
-  // Check if main class has spellcasting
   const mainClassSpellcasting = mainClass.system?.spellcasting;
-  if (mainClassSpellcasting?.progression && mainClassSpellcasting.progression !== 'none') {
-    return mainClass;
-  }
-
-  // Check if subclass provides spellcasting
+  if (mainClassSpellcasting?.progression && mainClassSpellcasting.progression !== 'none') return mainClass;
   const subclassItem = spellcastingData._classLink;
   const subclassSpellcasting = subclassItem?.system?.spellcasting;
-  if (subclassSpellcasting?.progression && subclassSpellcasting.progression !== 'none') {
-    return subclassItem;
-  }
-
-  return mainClass; // Fallback to main class
+  if (subclassSpellcasting?.progression && subclassSpellcasting.progression !== 'none') return subclassItem;
+  return mainClass;
 }
 
 /**
@@ -81,11 +62,8 @@ export function getSpellcastingSourceItem(actor, classIdentifier) {
 export function getSpellcastingLevelsForClass(actor, classIdentifier) {
   const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
   if (!spellcastingData) return 0;
-
   const mainClass = actor.items.get(spellcastingData.id);
   if (!mainClass) return 0;
-
-  // Always use main class levels (subclasses don't have separate levels)
   return mainClass.system?.levels || 0;
 }
 

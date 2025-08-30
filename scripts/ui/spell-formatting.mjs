@@ -1,6 +1,6 @@
 import { MODULE } from '../constants/_module.mjs';
-import * as genericUtils from '../data/generic-utils.mjs';
-import { UICustomizationHelper } from './ui-customization.mjs';
+import * as DataHelpers from '../data/_module.mjs';
+import * as UIHelpers from '../ui/_module.mjs';
 
 /**
  * Process spell list data for display
@@ -36,8 +36,8 @@ export function processSpellItemForDisplay(spell) {
   const processed = foundry.utils.deepClone(spell);
   processed.cssClasses = 'spell-item';
   processed.dataAttributes = `data-uuid="${spell.compendiumUuid}"`;
-  processed.showCompare = UICustomizationHelper.isGMElementEnabled('compare');
-  processed.formattedDetails = UICustomizationHelper.buildGMMetadata(spell);
+  processed.showCompare = UIHelpers.UICustomizationHelper.isGMElementEnabled('compare');
+  processed.formattedDetails = UIHelpers.UICustomizationHelper.buildGMMetadata(spell);
   return processed;
 }
 
@@ -82,7 +82,7 @@ export function formatSpellActivation(spell) {
 export function formatSpellSchool(spell) {
   let result = '';
   if (spell.labels?.school) result = spell.labels.school;
-  else if (spell.system?.school) result = genericUtils.getConfigLabel(CONFIG.DND5E.spellSchools, spell.system.school) || spell.system.school;
+  else if (spell.system?.school) result = DataHelpers.getConfigLabel(CONFIG.DND5E.spellSchools, spell.system.school) || spell.system.school;
   return result;
 }
 
@@ -109,7 +109,7 @@ export function formatMaterialComponents(spell) {
  */
 export function getLocalizedPreparationMode(mode) {
   if (!mode) return '';
-  const label = genericUtils.getConfigLabel(CONFIG.DND5E.spellcasting, mode);
+  const label = DataHelpers.getConfigLabel(CONFIG.DND5E.spellcasting, mode);
   if (label) return label;
   return mode.charAt(0).toUpperCase() + mode.slice(1);
 }
@@ -253,7 +253,7 @@ export function extractSpellConditions(spell) {
     const lowerDesc = description.toLowerCase();
     for (const [key, condition] of Object.entries(CONFIG.DND5E.conditionTypes)) {
       if (condition.pseudo) continue;
-      const conditionLabel = genericUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, key);
+      const conditionLabel = DataHelpers.getConfigLabel(CONFIG.DND5E.conditionTypes, key);
       if (conditionLabel && lowerDesc.includes(conditionLabel.toLowerCase())) conditions.push(key);
     }
   }

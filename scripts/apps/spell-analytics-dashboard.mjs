@@ -1,7 +1,7 @@
 import { MODULE, TEMPLATES } from '../constants/_module.mjs';
-import { SpellUserDataJournal } from '../data/spell-user-data.mjs';
+import { SpellUserDataJournal } from '../data/_module.mjs';
 import { log } from '../logger.mjs';
-import { UserSpellDataManager } from '../managers/user-spell-data-manager.mjs';
+import { UserSpellDataManager } from '../managers/_module.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const { renderTemplate } = foundry.applications.handlebars;

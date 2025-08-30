@@ -1,4 +1,3 @@
-// Export all dialog classes
 export { CompendiumSelectionDialog } from '../dialogs/compendium-selection-dialog.mjs';
 export { SpellComparisonDialog } from '../dialogs/spell-comparison-dialog.mjs';
 export { SpellDetailsCustomization } from '../dialogs/spell-details-customization.mjs';

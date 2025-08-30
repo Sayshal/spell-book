@@ -1,5 +1,5 @@
 import { MODULE } from '../constants/_module.mjs';
-import * as genericUtils from '../data/generic-utils.mjs';
+import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -46,12 +46,10 @@ export class FieldDefinitions {
               Object.values(CONFIG.DND5E.spellSchools)
                 .map((school) => {
                   const fullKey = school.fullKey?.toUpperCase();
-                  const label = genericUtils
-                    .getConfigLabel(
-                      CONFIG.DND5E.spellSchools,
-                      Object.keys(CONFIG.DND5E.spellSchools).find((k) => CONFIG.DND5E.spellSchools[k] === school)
-                    )
-                    ?.toUpperCase();
+                  const label = DataHelpers.getConfigLabel(
+                    CONFIG.DND5E.spellSchools,
+                    Object.keys(CONFIG.DND5E.spellSchools).find((k) => CONFIG.DND5E.spellSchools[k] === school)
+                  )?.toUpperCase();
                   return fullKey || label;
                 })
                 .filter(Boolean)
@@ -195,8 +193,8 @@ export class FieldDefinitions {
           };
           return Object.entries(damageTypesWithHealing)
             .sort((a, b) => {
-              const labelA = a[0] === 'healing' ? damageTypesWithHealing.healing.label : genericUtils.getConfigLabel(CONFIG.DND5E.damageTypes, a[0]);
-              const labelB = b[0] === 'healing' ? damageTypesWithHealing.healing.label : genericUtils.getConfigLabel(CONFIG.DND5E.damageTypes, b[0]);
+              const labelA = a[0] === 'healing' ? damageTypesWithHealing.healing.label : DataHelpers.getConfigLabel(CONFIG.DND5E.damageTypes, a[0]);
+              const labelB = b[0] === 'healing' ? damageTypesWithHealing.healing.label : DataHelpers.getConfigLabel(CONFIG.DND5E.damageTypes, b[0]);
               return labelA.localeCompare(labelB);
             })
             .map(([key]) => key.toUpperCase());

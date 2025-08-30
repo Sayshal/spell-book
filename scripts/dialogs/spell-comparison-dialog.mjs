@@ -1,6 +1,5 @@
 import { TEMPLATES } from '../constants/_module.mjs';
-import { formatSpellActivation, formatSpellComponents, formatSpellSchool } from '../ui/spell-formatting.mjs';
-
+import * as UIHelpers from '../ui/_module.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 export class SpellComparisonDialog extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -121,11 +120,11 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
       img: spell.img,
       enrichedIcon: this._createEnrichedSpellIcon(spell),
       level: spell.system.level,
-      school: formatSpellSchool(spell),
-      castingTime: spell.labels?.activation || formatSpellActivation(spell),
+      school: UIHelpers.formatSpellSchool(spell),
+      castingTime: spell.labels?.activation || UIHelpers.formatSpellActivation(spell),
       range: spell.labels?.range || spell.system.range?.value + ' ' + spell.system.range?.units,
       duration: spell.labels?.duration || spell.system.duration?.value,
-      components: formatSpellComponents(spell),
+      components: UIHelpers.formatSpellComponents(spell),
       damage: this._extractDamageInfo(spell),
       description: spell.system.description?.value || ''
     };
