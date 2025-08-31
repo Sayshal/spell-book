@@ -1,4 +1,4 @@
-import { PlayerSpellBook } from '../apps/_module.mjs';
+import { SpellBook } from '../apps/_module.mjs';
 import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import * as ValidationHelpers from '../validation/_module.mjs';
@@ -10,7 +10,7 @@ import * as ValidationHelpers from '../validation/_module.mjs';
 export class AdvancedSearchManager {
   /**
    * Create a new advanced search manager instance
-   * @param {PlayerSpellBook} app - The parent application instance
+   * @param {SpellBook} app - The parent application instance
    */
   constructor(app) {
     this.actor = app.actor;

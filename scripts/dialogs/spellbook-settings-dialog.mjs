@@ -735,7 +735,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     }
     if (Object.keys(cantripVisibilityChanges).length > 0) await SpellbookSettingsDialog._handleCantripVisibilityChanges(actor, cantripVisibilityChanges);
     const allInstances = Array.from(foundry.applications.instances.values());
-    const openSpellbooks = allInstances.filter((w) => w.constructor.name === 'PlayerSpellBook' && w.actor.id === actor.id);
+    const openSpellbooks = allInstances.filter((w) => w.constructor.name === 'SpellBook' && w.actor.id === actor.id);
     for (const spellbook of openSpellbooks) await spellbook.refreshFromSettingsChange();
     ui.notifications.info(game.i18n.format('SPELLBOOK.Settings.Saved', { name: actor.name }));
     return actor;

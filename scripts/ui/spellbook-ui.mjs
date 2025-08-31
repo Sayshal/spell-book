@@ -1,4 +1,4 @@
-import { PlayerSpellBook } from '../apps/_module.mjs';
+import { SpellBook } from '../apps/_module.mjs';
 import { FLAGS, MODULE } from '../constants/_module.mjs';
 import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
@@ -11,7 +11,7 @@ import * as UIHelpers from './_module.mjs';
 export class SpellbookUI {
   /**
    * Create a new UI helper
-   * @param {PlayerSpellBook} app - The parent application
+   * @param {SpellBook} app - The parent application
    */
   constructor(app) {
     this.app = app;

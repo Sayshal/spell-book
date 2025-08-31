@@ -72,7 +72,7 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
   }
 
   /**
-   * Position the dialog smartly relative to the parent PlayerSpellBook
+   * Position the dialog smartly relative to the parent SpellBook
    */
   _positionRelativeToParent() {
     if (!this.parentApp?.element) return;

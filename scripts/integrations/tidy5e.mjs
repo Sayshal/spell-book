@@ -1,4 +1,4 @@
-import { PlayerSpellBook } from '../apps/_module.mjs';
+import { SpellBook } from '../apps/_module.mjs';
 import { ASSETS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 
@@ -89,6 +89,6 @@ function createTidySpellbookButtonQuadrone(actor) {
  */
 function openSpellbook(event, actor) {
   event.preventDefault();
-  const spellBook = new PlayerSpellBook(actor);
+  const spellBook = new SpellBook(actor);
   spellBook.render(true);
 }

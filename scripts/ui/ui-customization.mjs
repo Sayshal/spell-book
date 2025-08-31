@@ -30,7 +30,7 @@ export class UICustomizationHelper {
   }
 
   /**
-   * Check if a UI element should be shown for PlayerSpellBook
+   * Check if a UI element should be shown for SpellBook
    * @param {string} element - The element to check ('favorites', 'compare', 'notes', etc.)
    * @returns {boolean} Whether the element should be shown
    */
@@ -67,7 +67,7 @@ export class UICustomizationHelper {
   }
 
   /**
-   * Build custom metadata subtitle for PlayerSpellBook
+   * Build custom metadata subtitle for SpellBook
    * @param {Object} spell - The spell object with processed data
    * @returns {string} Formatted metadata string
    */

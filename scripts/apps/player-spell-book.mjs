@@ -15,30 +15,30 @@ const { renderTemplate } = foundry.applications.handlebars;
  * Player-facing spell book application for managing prepared spells
  * Thin application that delegates business logic to managers and helpers
  */
-export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
+export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: `player-${MODULE.ID}`,
     tag: 'form',
     form: {
-      handler: PlayerSpellBook.formHandler,
+      handler: SpellBook.formHandler,
       closeOnSubmit: true,
       submitOnChange: false
     },
     actions: {
-      toggleSidebar: PlayerSpellBook.toggleSidebar,
-      filterSpells: PlayerSpellBook.filterSpells,
-      reset: PlayerSpellBook.handleReset,
-      toggleSpellLevel: PlayerSpellBook.toggleSpellLevel,
-      configureFilters: PlayerSpellBook.configureFilters,
-      configureCantripSettings: PlayerSpellBook.configureCantripSettings,
-      learnSpell: PlayerSpellBook.learnSpell,
-      learnFromScroll: PlayerSpellBook.handleLearnFromScroll,
-      openLoadoutDialog: PlayerSpellBook.openLoadoutDialog,
-      toggleFavorite: PlayerSpellBook.handleToggleFavorite,
-      editNotes: PlayerSpellBook.handleEditNotes,
-      openAnalyticsDashboard: PlayerSpellBook.handleOpenAnalyticsDashboard,
-      compareSpell: PlayerSpellBook.handleCompareSpell,
-      openCustomization: PlayerSpellBook.handleOpenCustomization
+      toggleSidebar: SpellBook.toggleSidebar,
+      filterSpells: SpellBook.filterSpells,
+      reset: SpellBook.handleReset,
+      toggleSpellLevel: SpellBook.toggleSpellLevel,
+      configureFilters: SpellBook.configureFilters,
+      configureCantripSettings: SpellBook.configureCantripSettings,
+      learnSpell: SpellBook.learnSpell,
+      learnFromScroll: SpellBook.handleLearnFromScroll,
+      openLoadoutDialog: SpellBook.openLoadoutDialog,
+      toggleFavorite: SpellBook.handleToggleFavorite,
+      editNotes: SpellBook.handleEditNotes,
+      openAnalyticsDashboard: SpellBook.handleOpenAnalyticsDashboard,
+      compareSpell: SpellBook.handleCompareSpell,
+      openCustomization: SpellBook.handleOpenCustomization
     },
     classes: ['spell-book', 'vertical-tabs'],
     window: { icon: 'spell-book-module-icon', resizable: true, minimizable: true, positioned: true },
@@ -71,7 +71,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Create a new PlayerSpellBook application
+   * Create a new SpellBook application
    * @param {Actor} actor - The actor whose spells to display
    * @param {Object} options - Application options
    */
@@ -808,7 +808,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   async _onClose(options) {
     await game.settings.set(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION, this.position);
-    PlayerSpellBook.DEFAULT_OPTIONS.position = this.position;
+    SpellBook.DEFAULT_OPTIONS.position = this.position;
     if (this._preparationListener) {
       document.removeEventListener('change', this._preparationListener);
       this._preparationListener = null;
@@ -829,7 +829,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this._preparationListener = async (event) => {
       const target = event.target;
       if (target.matches('dnd5e-checkbox[data-uuid]')) await this._handlePreparationChange(event);
-      else if (target.matches('dnd5e-checkbox[name^="filter-"]')) PlayerSpellBook.filterSpells.call(this);
+      else if (target.matches('dnd5e-checkbox[name^="filter-"]')) SpellBook.filterSpells.call(this);
     };
     document.addEventListener('change', this._preparationListener);
   }
@@ -1554,7 +1554,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       favoriteButtons.forEach((button) => {
         const spellUuid = button.dataset.uuid;
         if (spellUuid) {
-          PlayerSpellBook._updateFavoriteButtonState(button, false);
+          SpellBook._updateFavoriteButtonState(button, false);
           this._stateManager.updateFavoriteSessionState(spellUuid, false);
         }
       });
@@ -1773,7 +1773,7 @@ export class PlayerSpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       }
       if (newFavoriteStatus) await UIHelpers.addSpellToActorFavorites(spellUuid, this.actor);
       else await UIHelpers.removeSpellFromActorFavorites(spellUuid, this.actor);
-      PlayerSpellBook._updateFavoriteButtonState(target, newFavoriteStatus);
+      SpellBook._updateFavoriteButtonState(target, newFavoriteStatus);
       log(3, `Successfully toggled favorite for spell ${spellUuid}: ${newFavoriteStatus}`);
     } catch (error) {
       log(1, 'Error in handleToggleFavorite:', error);

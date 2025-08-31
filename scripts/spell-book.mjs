@@ -1,5 +1,5 @@
 import { createAPI } from './api.mjs';
-import { PlayerSpellBook } from './apps/_module.mjs';
+import { SpellBook } from './apps/_module.mjs';
 import { MODULE, SETTINGS, TEMPLATES } from './constants/_module.mjs';
 import * as DataHelpers from './data/_module.mjs';
 import { registerDnD5eIntegration, registerTidy5eIntegration } from './integrations/_module.mjs';
@@ -21,7 +21,7 @@ Hooks.once('init', async function () {
 Hooks.on('setup', () => {
   let position = game.settings.get(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION);
   if (!position || (typeof position === 'object' && Object.keys(position).length === 0)) position = { height: 875, width: 600 };
-  PlayerSpellBook.DEFAULT_OPTIONS.position = position;
+  SpellBook.DEFAULT_OPTIONS.position = position;
 });
 
 Hooks.once('ready', async function () {

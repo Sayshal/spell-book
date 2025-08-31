@@ -136,7 +136,7 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
       await DataHelpers.SpellUserDataJournal.setSpellNotes(canonicalUuid, notes, targetUserId);
       const cacheKey = `${targetUserId}:${canonicalUuid}`;
       if (DataHelpers.SpellUserDataJournal?.cache) DataHelpers.SpellUserDataJournal.cache.delete(cacheKey);
-      const spellbookApp = Array.from(foundry.applications.instances.values()).find((app) => app.constructor.name === 'PlayerSpellBook');
+      const spellbookApp = Array.from(foundry.applications.instances.values()).find((app) => app.constructor.name === 'SpellBook');
       if (spellbookApp) {
         await spellbookApp._stateManager.refreshSpellEnhancements();
         spellbookApp.render(false);

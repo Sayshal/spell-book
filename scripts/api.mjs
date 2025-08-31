@@ -1,4 +1,4 @@
-import { PlayerFilterConfiguration, PlayerSpellBook, SpellAnalyticsDashboard, SpellListManager } from './apps/_module.mjs';
+import { PlayerFilterConfiguration, SpellAnalyticsDashboard, SpellBook, SpellListManager } from './apps/_module.mjs';
 import * as DataHelpers from './data/_module.mjs';
 import { CompendiumSelectionDialog, SpellComparisonDialog, SpellDetailsCustomization, SpellLoadoutDialog, SpellNotesDialog, SpellbookSettingsDialog } from './dialogs/_module.mjs';
 import { log } from './logger.mjs';
@@ -15,7 +15,7 @@ import * as ValidationHelpers from './validation/_module.mjs';
 export function createAPI() {
   try {
     const api = {
-      apps: { PlayerFilterConfiguration, PlayerSpellBook, SpellAnalyticsDashboard, SpellListManager },
+      apps: { PlayerFilterConfiguration, SpellBook, SpellAnalyticsDashboard, SpellListManager },
       dialogs: { CompendiumSelectionDialog, SpellComparisonDialog, SpellDetailsCustomization, SpellLoadoutDialog, SpellNotesDialog, SpellbookSettingsDialog },
       utils: {
         data: { DataHelpers },
@@ -32,14 +32,14 @@ export function createAPI() {
       /**
        * Open spell book for a specific actor
        * @param {Actor5e} actor - The actor to open the spell book for
-       * @returns {PlayerSpellBook} The created spell book instance
+       * @returns {SpellBook} The created spell book instance
        */
       openSpellBookForActor: (actor) => {
         if (!actor) {
           log(1, 'No actor provided');
           return null;
         }
-        const spellBook = new PlayerSpellBook(actor);
+        const spellBook = new SpellBook(actor);
         spellBook.render(true);
         return spellBook;
       },
@@ -91,7 +91,7 @@ export function createAPI() {
       /**
        * Open spell loadout dialog for an actor and class
        * @param {Actor} actor - The actor
-       * @param {PlayerSpellBook} spellbook - The spellbook reference
+       * @param {SpellBook} spellbook - The spellbook reference
        * @param {string} classIdentifier - The class identifier
        * @returns {SpellLoadoutDialog} The created dialog instance
        */

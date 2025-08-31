@@ -1,4 +1,4 @@
-import { PlayerSpellBook, SpellAnalyticsDashboard, SpellListManager } from '../apps/_module.mjs';
+import { SpellAnalyticsDashboard, SpellBook, SpellListManager } from '../apps/_module.mjs';
 import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import { SpellManager } from '../managers/_module.mjs';
@@ -163,7 +163,7 @@ async function handleLongRestSwapPrompt(actor, longRestClasses) {
   }
   const dialogResult = await showLongRestSwapDialog(longRestClasses);
   if (dialogResult === 'confirm') {
-    const spellBook = new PlayerSpellBook(actor);
+    const spellBook = new SpellBook(actor);
     spellBook.render(true);
   }
 }
@@ -235,6 +235,6 @@ async function onSpellBookButtonClick(actor, event) {
     }
     if (longRestFlagValue === undefined || longRestFlagValue === null) actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
   }
-  const spellBook = new PlayerSpellBook(actor);
+  const spellBook = new SpellBook(actor);
   spellBook.render(true);
 }

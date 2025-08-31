@@ -8,7 +8,7 @@ import { log } from '../logger.mjs';
 export class SpellLoadoutManager {
   /**
    * @param {Actor} actor - The actor whose loadouts to manage
-   * @param {PlayerSpellBook} spellbook - Optional spellbook reference
+   * @param {SpellBook} spellbook - Optional spellbook reference
    */
   constructor(actor, spellbook = null) {
     this.actor = actor;

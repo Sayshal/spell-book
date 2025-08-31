@@ -8,7 +8,7 @@ import * as ValidationHelpers from '../validation/_module.mjs';
 export class SpellbookFilterHelper {
   /**
    * Create a new filter helper
-   * @param {PlayerSpellBook} app - The parent application
+   * @param {SpellBook} app - The parent application
    */
   constructor(app) {
     this.app = app;

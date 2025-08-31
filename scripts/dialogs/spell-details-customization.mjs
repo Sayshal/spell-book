@@ -392,7 +392,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
         ]);
       }
       const openApplications = Array.from(foundry.applications.instances.values());
-      const spellbookApps = openApplications.filter((app) => app.constructor.name === 'PlayerSpellBook');
+      const spellbookApps = openApplications.filter((app) => app.constructor.name === 'SpellBook');
       for (const app of spellbookApps) app.render(false);
       const gmSpellListApps = openApplications.filter((app) => app.constructor.name === 'SpellListManager');
       for (const app of gmSpellListApps) app.render(false);
