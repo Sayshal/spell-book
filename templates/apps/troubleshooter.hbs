@@ -1,0 +1,57 @@
+<div class="spell-book-troubleshooter-container">
+  <p class="notes">{{localize "SPELLBOOK.Settings.Troubleshooter.Notes"}}</p>
+
+  {{!-- Actor Export Option (GM Only) --}}
+  {{#if ownedActorCount}}
+    <div class="actor-export-option">
+      <label>
+        <input type="checkbox" data-action="toggleIncludeActors" {{#if includeActors}}checked{{/if}}>
+        <span>{{localize "SPELLBOOK.Settings.Troubleshooter.IncludeActorData"}}</span>
+      </label>
+      <p class="hint">
+        {{localize "SPELLBOOK.Settings.Troubleshooter.ActorDataHint" count=ownedActorCount names=ownedActorNames}}
+      </p>
+    </div>
+  {{/if}}
+
+  {{!-- Diagnostic Output Display --}}
+  <textarea id="troubleshooter-output" rows="25" cols="80" readonly
+    aria-label="{{localize 'SPELLBOOK.Settings.Troubleshooter.OutputLabel'}}">{{output}}</textarea>
+
+  {{!-- Action Buttons --}}
+  <div class="troubleshooter-buttons">
+    {{!-- Import Settings Button --}}
+    <button type="button" data-action="importSettings"
+      aria-label="{{localize "SPELLBOOK.Settings.Troubleshooter.ImportSettings"}}">
+      <i class="fa-solid fa-upload" aria-hidden="true"></i>
+      <span>{{localize "SPELLBOOK.Settings.Troubleshooter.ImportSettings"}}</span>
+    </button>
+
+    {{!-- Export Report Button --}}
+    <button type="button" data-action="exportReport"
+      aria-label="{{localize "SPELLBOOK.Settings.Troubleshooter.SaveToFile"}}">
+      <i class="fa-solid fa-download" aria-hidden="true"></i>
+      <span>{{localize "SPELLBOOK.Settings.Troubleshooter.SaveToFile"}}</span>
+    </button>
+
+    {{!-- Copy to Clipboard Button --}}
+    <button type="button" data-action="copyToClipboard"
+      aria-label="{{localize "SPELLBOOK.Settings.Troubleshooter.CopyToClipboard"}}">
+      <i class="fa-solid fa-copy" aria-hidden="true"></i>
+      <span>{{localize "SPELLBOOK.Settings.Troubleshooter.CopyToClipboard"}}</span>
+    </button>
+
+    {{!-- Discord Support Button --}}
+    <button type="button" data-action="openDiscord"
+      aria-label="{{localize "SPELLBOOK.Settings.Troubleshooter.Discord"}}">
+      <i class="fa-brands fa-discord" aria-hidden="true"></i>
+      <span>{{localize "SPELLBOOK.Settings.Troubleshooter.Discord"}}</span>
+    </button>
+
+    {{!-- GitHub Issues Button --}}
+    <button type="button" data-action="openGithub" aria-label="{{localize "SPELLBOOK.Settings.Troubleshooter.Github"}}">
+      <i class="fa-brands fa-github-alt" aria-hidden="true"></i>
+      <span>{{localize "SPELLBOOK.Settings.Troubleshooter.Github"}}</span>
+    </button>
+  </div>
+</div>

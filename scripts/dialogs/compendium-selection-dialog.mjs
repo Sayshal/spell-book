@@ -366,11 +366,11 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
 
   /**
    * Updates the global "Select All" checkbox state
-   * @param {HTMLElement} form The form element
+   * @param {HTMLElement} _form The form element
    * @param {NodeList} allCheckboxes All individual checkboxes
    * @param {HTMLElement} globalSelectAll Global select all checkbox
    */
-  _updateGlobalSelectAll(form, allCheckboxes, globalSelectAll) {
+  _updateGlobalSelectAll(_form, allCheckboxes, globalSelectAll) {
     if (!globalSelectAll) return;
     const allChecked = Array.from(allCheckboxes).every((checkbox) => checkbox.checked);
     globalSelectAll.checked = allChecked;
@@ -378,11 +378,11 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
 
   /**
    * Form handler for saving compendium selection options
-   * @param {Event} event The form submission event
+   * @param {Event} _event The form submission event
    * @param {HTMLElement} form The form element
-   * @param {Object} formData The form data
+   * @param {Object} _formData The form data
    */
-  static async formHandler(event, form, formData) {
+  static async formHandler(_event, form, _formData) {
     const enabledCompendiums = {};
     const originalSettings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
     for (const pack of game.packs) {
@@ -396,10 +396,7 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
     const relevantCheckboxes = form.querySelectorAll('dnd5e-checkbox[name="compendiumMultiSelect"]:not([disabled])');
     relevantCheckboxes.forEach((checkbox) => {
       const checkboxValue = checkbox.getAttribute('value') || checkbox.value;
-      if (checkboxValue) {
-        enabledCompendiums[checkboxValue] = checkbox.checked;
-        if (checkbox.checked && !(checkboxValue in enabledCompendiums)) userSelectedCount++;
-      }
+      if (checkboxValue) enabledCompendiums[checkboxValue] = checkbox.checked;
     });
     const settingsChanged = JSON.stringify(originalSettings) !== JSON.stringify(enabledCompendiums);
     await game.settings.set(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS, enabledCompendiums);

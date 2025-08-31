@@ -118,7 +118,6 @@ export const MODULE = {
 export const SETTINGS = {
   ADVANCED_SEARCH_PREFIX: 'advancedSearchPrefix',
   CANTRIP_SCALE_VALUES: 'cantripScaleValues',
-  COMPENDIUM_SELECTION: 'compendiumSelection',
   CONSUME_SCROLLS_WHEN_LEARNING: 'consumeScrollsWhenLearning',
   CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',
   DEFAULT_ENFORCEMENT_BEHAVIOR: 'defaultEnforcementBehavior',
@@ -140,7 +139,6 @@ export const SETTINGS = {
   HIDDEN_SPELL_LISTS: 'hiddenSpellLists',
   INDEXED_COMPENDIUMS: 'indexedCompendiums',
   LOGGING_LEVEL: 'loggingLevel',
-  OPEN_SPELL_MANAGER: 'openSpellListManager',
   PLAYER_UI_CASTING_TIME: 'playerUICastingTime',
   PLAYER_UI_COMPARE: 'playerUICompare',
   PLAYER_UI_COMPONENTS: 'playerUIComponents',
@@ -161,6 +159,7 @@ export const SETTINGS = {
   SPELL_NOTES_DESC_INJECTION: 'injectNotesIntoDescriptions',
   SPELL_NOTES_LENGTH: 'spellNotesMaxLength',
   SPELLCASTING_RULE_SET: 'spellcastingRuleSet',
+  TROUBLESHOOTER_INCLUDE_ACTORS: 'troubleshooterIncludeActors',
   WIZARD_BOOK_ICON_COLOR: 'wizardBookIconColor'
 };
 

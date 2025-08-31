@@ -54,5 +54,8 @@ export const TEMPLATES = {
     TAB_NAV: 'modules/spell-book/templates/apps/player/tab-navigation.hbs',
     TAB_SPELLS: 'modules/spell-book/templates/apps/player/tab-spells.hbs',
     TAB_WIZARD_SPELLBOOK: 'modules/spell-book/templates/apps/player/tab-wizard-spellbook.hbs'
+  },
+  TROUBLESHOOTER: {
+    MAIN: 'modules/spell-book/templates/apps/troubleshooter.hbs'
   }
 };

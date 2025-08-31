@@ -1,4 +1,4 @@
-import { SpellListManager } from './apps/_module.mjs';
+import { SpellBookTroubleshooter, SpellListManager } from './apps/_module.mjs';
 import { MODULE, SETTINGS } from './constants/_module.mjs';
 import { CompendiumSelectionDialog, SpellDetailsCustomization } from './dialogs/_module.mjs';
 import { log } from './logger.mjs';
@@ -12,7 +12,7 @@ export function registerSettings() {
   //  Menus & Classes                        //
   // ========================================//
 
-  game.settings.registerMenu(MODULE.ID, SETTINGS.OPEN_SPELL_MANAGER, {
+  game.settings.registerMenu(MODULE.ID, 'openSpellListManager', {
     name: 'SPELLBOOK.Settings.OpenSpellListManager.Name',
     hint: 'SPELLBOOK.Settings.OpenSpellListManager.Hint',
     label: 'SPELLBOOK.Settings.OpenSpellListManager.Button',
@@ -22,7 +22,7 @@ export function registerSettings() {
     restricted: true
   });
 
-  game.settings.registerMenu(MODULE.ID, SETTINGS.COMPENDIUM_SELECTION, {
+  game.settings.registerMenu(MODULE.ID, 'compendiumSelection', {
     name: 'SPELLBOOK.Settings.CompendiumSelectionName',
     hint: 'SPELLBOOK.Settings.CompendiumSelectionHint',
     label: 'SPELLBOOK.Settings.CompendiumSelectionButton',
@@ -198,7 +198,7 @@ export function registerSettings() {
       [MODULE.RULE_SETS.MODERN]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Modern'
     },
     default: MODULE.RULE_SETS.LEGACY,
-    onChange: (value) => {
+    onChange: () => {
       ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.RuleSetChanged'));
     }
   });
@@ -535,6 +535,23 @@ export function registerSettings() {
   // ========================================//
   //  Troubleshooting                        //
   // ========================================//
+
+  game.settings.registerMenu(MODULE.ID, 'troubleshooterMenu', {
+    name: 'SPELLBOOK.Settings.Troubleshooter.Menu.Name',
+    hint: 'SPELLBOOK.Settings.Troubleshooter.Menu.Hint',
+    label: 'SPELLBOOK.Settings.Troubleshooter.GenerateReport',
+    icon: 'fas fa-bug',
+    scope: 'world',
+    type: SpellBookTroubleshooter,
+    restricted: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.TROUBLESHOOTER_INCLUDE_ACTORS, {
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: false
+  });
 
   game.settings.register(MODULE.ID, SETTINGS.LOGGING_LEVEL, {
     name: 'SPELLBOOK.Settings.Logger.Name',
