@@ -126,6 +126,7 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
     return name;
   }
 
+  /** @inheritdoc */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const currentSettings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
@@ -376,31 +377,28 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Handle form submission
-   * @param event
-   * @param form
-   * @param formData
+   * Form handler for saving compendium selection options
+   * @param {Event} event The form submission event
+   * @param {HTMLElement} form The form element
+   * @param {Object} formData The form data
    */
   static async formHandler(event, form, formData) {
     const enabledCompendiums = {};
     const originalSettings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
-    let modulePackCount = 0;
     for (const pack of game.packs) {
       if (pack.metadata.packageName === MODULE.ID && ['JournalEntry', 'Item'].includes(pack.metadata.type)) {
         const isRelevant = await CompendiumSelectionDialog._isPackRelevantForSpells(pack);
         if (isRelevant) {
           enabledCompendiums[pack.collection] = true;
-          modulePackCount++;
         }
       }
     }
     const relevantCheckboxes = form.querySelectorAll('dnd5e-checkbox[name="compendiumMultiSelect"]:not([disabled])');
-    let userSelectedCount = 0;
     relevantCheckboxes.forEach((checkbox) => {
       const checkboxValue = checkbox.getAttribute('value') || checkbox.value;
       if (checkboxValue) {
         enabledCompendiums[checkboxValue] = checkbox.checked;
-        if (checkbox.checked && !enabledCompendiums.hasOwnProperty(checkboxValue)) userSelectedCount++;
+        if (checkbox.checked && !(checkboxValue in enabledCompendiums)) userSelectedCount++;
       }
     });
     const settingsChanged = JSON.stringify(originalSettings) !== JSON.stringify(enabledCompendiums);

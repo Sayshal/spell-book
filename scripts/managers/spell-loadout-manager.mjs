@@ -7,6 +7,7 @@ import { log } from '../logger.mjs';
  */
 export class SpellLoadoutManager {
   /**
+   * Create a new Spell Loadout application
    * @param {Actor} actor The actor whose loadouts to manage
    * @param {SpellBook} spellbook Optional Spell Book reference
    */

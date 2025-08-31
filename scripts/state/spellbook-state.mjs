@@ -9,6 +9,10 @@ import * as UIHelpers from '../ui/_module.mjs';
  * Handles loading, processing, and organizing spell data
  */
 export class SpellbookState {
+  /**
+   * Create a new State manager
+   * @param app Spell Book application instance
+   */
   constructor(app) {
     this.app = app;
     this.actor = app.actor;
@@ -71,7 +75,6 @@ export class SpellbookState {
 
   /**
    * Detect and initialize all spellcasting classes for the actor with cleanup of stale data
-   * @returns {Promise<void>}
    */
   detectSpellcastingClasses() {
     if (this._classesDetected) return;
@@ -84,7 +87,7 @@ export class SpellbookState {
     this._preparationStatsCache.clear();
     this._classDetectionCache.clear();
     if (this.actor.spellcastingClasses) {
-      for (const [classKey, spellcastingData] of Object.entries(this.actor.spellcastingClasses)) {
+      for (const spellcastingData of Object.values(this.actor.spellcastingClasses)) {
         const classItem = spellcastingData;
         let spellcastingConfig = classItem.system?.spellcasting;
         let spellcastingSource = classItem;
@@ -126,7 +129,6 @@ export class SpellbookState {
   /**
    * Clean up all stored data for class identifiers that don't match current actor classes
    * @param {Array<string>} currentClassIds Array of current valid class identifiers
-   * @returns {Promise<void>}
    */
   _cleanupStaleClassData(currentClassIds) {
     this._cleanupStaleFlags(currentClassIds);
@@ -136,7 +138,6 @@ export class SpellbookState {
   /**
    * Clean up all flag-based data for non-existent classes
    * @param {Array<string>} currentClassIds Array of current valid class identifiers
-   * @returns {Promise<void>}
    */
   _cleanupStaleFlags(currentClassIds) {
     const actorFlags = this.actor.flags?.[MODULE.ID] || {};
@@ -210,8 +211,6 @@ export class SpellbookState {
       const wizardImageKeys = [...this.app._wizardBookImages.keys()];
       for (const classId of wizardImageKeys) if (!currentClassIds.includes(classId)) this.app._wizardBookImages.delete(classId);
     }
-    const prepStatsSize = this._preparationStatsCache.size;
-    const classDetectionSize = this._classDetectionCache.size;
     this._preparationStatsCache.clear();
     this._classDetectionCache.clear();
   }
@@ -447,7 +446,7 @@ export class SpellbookState {
       processedSpellNames.add(spellName);
     }
     for (const level in spellsByLevel) {
-      if (spellsByLevel.hasOwnProperty(level)) spellsByLevel[level].spells.sort((a, b) => a.name.localeCompare(b.name));
+      if (level in spellsByLevel) spellsByLevel[level].spells.sort((a, b) => a.name.localeCompare(b.name));
     }
     const sortedLevels = Object.entries(spellsByLevel)
       .sort(([a], [b]) => Number(a) - Number(b))
@@ -553,7 +552,7 @@ export class SpellbookState {
   updateGlobalPreparationCount() {
     let totalPrepared = 0;
     let totalMaxPrepared = 0;
-    for (const [identifier, classData] of Object.entries(this.classSpellData)) {
+    for (const classData of Object.values(this.classSpellData)) {
       if (classData.spellPreparation) {
         totalPrepared += classData.spellPreparation.current;
         totalMaxPrepared += classData.spellPreparation.maximum;
@@ -704,8 +703,6 @@ export class SpellbookState {
     const remainingFreeSpells = Math.max(0, totalFreeSpells - usedFreeSpells);
     const totalSpells = personalSpellbook.length;
     this.scrollSpells = await DataHelpers.ScrollScanner.scanForScrollSpells(this.actor);
-    for (const scrollSpell of this.scrollSpells) {
-    }
     const grantedSpells = this.actor.items
       .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.method && ['pact', 'innate', 'atwill'].includes(i.system.method))))
       .flatMap((i) => {
@@ -718,9 +715,6 @@ export class SpellbookState {
       })
       .filter(Boolean);
     const fullWizardSpellList = this._fullWizardSpellLists.get(classIdentifier);
-    if (fullWizardSpellList && fullWizardSpellList.size > 0) {
-      const fullListSample = Array.from(fullWizardSpellList).slice(0, 5);
-    }
     for (const spell of allSpellItems) spell.sourceClass = classIdentifier;
     const prepTabSpells = allSpellItems.filter((spell) => {
       const isCantrip = spell.system.level === 0;
@@ -927,7 +921,7 @@ export class SpellbookState {
    */
   async _cleanupDisabledRitualSpells() {
     const spellIdsToRemove = [];
-    for (const [classIdentifier, classData] of Object.entries(this.spellcastingClasses)) {
+    for (const classIdentifier of Object.keys(this.spellcastingClasses)) {
       const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
       if (classRules.ritualCasting !== 'always') {
         const moduleRitualSpells = this.actor.items.filter(
@@ -1016,15 +1010,6 @@ export class SpellbookState {
         }
       });
     }
-    let addedCount = 0;
-    let ritualSpellsFound = 0;
-    let skippedReasons = {
-      alreadyPrepared: 0,
-      notRitual: 0,
-      isCantrip: 0,
-      alreadyOnActorAsRitual: 0,
-      addedAsRitual: 0
-    };
     const isRitualSpell = (spell) => {
       if (spell.system?.properties && spell.system.properties.has) return spell.system.properties.has('ritual');
       if (spell.system?.properties && Array.isArray(spell.system.properties)) return spell.system.properties.some((prop) => prop.value === 'ritual');
@@ -1152,7 +1137,7 @@ export class SpellbookState {
         if (key.startsWith(`${targetUserId}:`)) DataHelpers.SpellUserDataJournal.cache.delete(key);
       }
     }
-    for (const [classIdentifier, classData] of Object.entries(this.classSpellData)) {
+    for (const classData of Object.values(this.classSpellData)) {
       if (classData.spellLevels) {
         const userDataPromises = classData.spellLevels.map((spell) => DataHelpers.SpellUserDataJournal.getUserDataForSpell(spell.uuid || spell.compendiumUuid, targetUserId, this.app.actor?.id));
         await Promise.all(userDataPromises);

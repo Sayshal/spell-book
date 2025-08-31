@@ -175,7 +175,6 @@ export class SpellManager {
           isOwned: false,
           preparationMode: specialSpell.system.method,
           disabled: true,
-          preparationMode: specialSpell.system.method,
           disabledReason: game.i18n.format('SPELLBOOK.Preparation.SpecialModeByClass', {
             mode: localizedMode,
             class: classItem?.name || sourceClass || classIdentifier
@@ -240,7 +239,6 @@ export class SpellManager {
     const localizedPreparationMode = UIHelpers.getLocalizedPreparationMode(preparationMode);
     const sourceInfo = this._determineSpellSource(spell);
     const isGranted = !!sourceInfo && !!spell.flags?.dnd5e?.cachedFor;
-    const isCantrip = spell.system.level === 0;
     const actuallyPrepared = !!(isGranted || alwaysPrepared || isInnateCasting || isAtWill || spell.system.prepared === 1);
     let isDisabled = isGranted || alwaysPrepared || isInnateCasting || isAtWill;
     let disabledReason = '';
@@ -292,7 +290,6 @@ export class SpellManager {
     const sourceClassId = spell.system?.sourceClass || spell.sourceClass;
     if (preparationMode === 'always') {
       if (sourceClassId && this.actor.spellcastingClasses?.[sourceClassId]) {
-        const spellcastingData = this.actor.spellcastingClasses[sourceClassId];
         const spellcastingSource = DataHelpers.getSpellcastingSourceItem(this.actor, sourceClassId);
         if (spellcastingSource && spellcastingSource.type === 'subclass') return { name: spellcastingSource.name, type: 'subclass', id: spellcastingSource.id };
       }
@@ -596,6 +593,7 @@ export class SpellManager {
         const spell = await fromUuid(parsed.spellUuid);
         if (spell && spell.system.level !== 0) cleanedSpells.push(classSpellKey);
       } catch (error) {
+        log(1, 'Error', error);
         cleanedSpells.push(classSpellKey);
       }
     }
@@ -652,7 +650,6 @@ export class SpellManager {
     if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
     if (!classIdentifier) return { allowed: true };
     const settings = this.getSettings(classIdentifier);
-    const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
     if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.UNENFORCED || settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
       if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM && isChecked) {
         if (currentPrepared >= maxPrepared) {

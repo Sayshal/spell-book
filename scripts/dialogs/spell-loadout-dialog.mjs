@@ -3,7 +3,7 @@ import { log } from '../logger.mjs';
 import { SpellLoadoutManager } from '../managers/_module.mjs';
 import * as ValidationHelpers from '../validation/_module.mjs';
 
-const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
  * Dialog for managing spell loadouts
@@ -28,6 +28,7 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
   };
 
   /**
+   * Create a new Spell Loadout dialog
    * @param {Actor} actor The actor whose loadouts to manage
    * @param {SpellBook} spellbook The Spell Book reference
    * @param {string} classIdentifier The current class identifier
@@ -40,13 +41,16 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
     this.loadoutManager = new SpellLoadoutManager(actor, spellbook);
   }
 
-  /** @override */
+  /**
+   * Get the window title for this application
+   * @returns {string} The formatted title including actor name
+   */
   get title() {
     const className = this.spellbook._stateManager.classSpellData[this.classIdentifier]?.className || this.classIdentifier;
     return game.i18n.format('SPELLBOOK.Loadouts.DialogTitle', { class: className });
   }
 
-  /** @override */
+  /** @inheritdoc */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const existingLoadouts = this.loadoutManager.getAvailableLoadouts(this.classIdentifier);

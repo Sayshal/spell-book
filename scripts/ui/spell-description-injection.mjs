@@ -11,6 +11,7 @@ export class SpellDescriptionInjection {
 
   /**
    * Initialize hooks for spell description injection
+   * @returns {void}
    */
   static initialize() {
     Hooks.on('updateItem', this.onUpdateItem.bind(this));
@@ -18,8 +19,9 @@ export class SpellDescriptionInjection {
   }
 
   /**
-   * Handle setting change
-   * @param newValue
+   * Handle setting change for spell description injection mode
+   * @param {string} newValue The new injection setting value ('off', 'before', 'after')
+   * @returns {Promise<void>}
    */
   static async handleSettingChange(newValue) {
     log(3, `Notes injection setting changed to: ${newValue}`);
@@ -29,6 +31,7 @@ export class SpellDescriptionInjection {
 
   /**
    * Remove all notes from all actor spell descriptions
+   * @returns {Promise<void>}
    */
   static async removeAllNotesFromDescriptions() {
     for (const actor of game.actors) {
@@ -40,6 +43,7 @@ export class SpellDescriptionInjection {
 
   /**
    * Re-apply all notes to all actor spell descriptions
+   * @returns {Promise<void>}
    */
   static async reapplyAllNotes() {
     for (const actor of game.actors) {
@@ -50,10 +54,11 @@ export class SpellDescriptionInjection {
   }
 
   /**
-   * Handle item creation
-   * @param item
-   * @param options
-   * @param userId
+   * Handle item creation and inject notes if applicable
+   * @param {Item5e} item The created item
+   * @param {Object} options Creation options
+   * @param {string} userId ID of the user who created the item
+   * @returns {Promise<void>}
    */
   static async onCreateItem(item, options, userId) {
     if (item.type !== 'spell' || !item.parent || item.parent.documentName !== 'Actor') return;
@@ -61,11 +66,12 @@ export class SpellDescriptionInjection {
   }
 
   /**
-   * Handle item updates - with recursion prevention
-   * @param item
-   * @param changes
-   * @param options
-   * @param userId
+   * Handle item updates with recursion prevention for spell description changes
+   * @param {Item5e} item The updated item
+   * @param {Object} changes The changes made to the item
+   * @param {Object} options Update options
+   * @param {string} userId ID of the user who updated the item
+   * @returns {Promise<void>}
    */
   static async onUpdateItem(item, changes, options, userId) {
     if (item.type !== 'spell' || !item.parent || item.parent.documentName !== 'Actor') return;
@@ -76,8 +82,9 @@ export class SpellDescriptionInjection {
   }
 
   /**
-   * Update spell description with notes injection
-   * @param spellItem
+   * Update spell description with notes injection based on current settings
+   * @param {Item5e} spellItem The spell item to update
+   * @returns {Promise<void>}
    */
   static async updateSpellDescription(spellItem) {
     if (!spellItem || spellItem.type !== 'spell') return;
@@ -121,8 +128,9 @@ export class SpellDescriptionInjection {
   }
 
   /**
-   * Format notes for HTML injection
-   * @param notes
+   * Format notes for HTML injection into spell descriptions
+   * @param {string} notes The raw notes text to format
+   * @returns {string} HTML formatted notes with styling and labels
    */
   static formatNotesForDescription(notes) {
     const escapedNotes = notes.replace(/\n/g, '<br>');
@@ -131,11 +139,12 @@ export class SpellDescriptionInjection {
   }
 
   /**
-   * Add notes to description
-   * @param spellItem
-   * @param notesHtml
-   * @param injectionMode
-   * @param currentDescription
+   * Add notes to spell description based on injection mode
+   * @param {Item5e} spellItem The spell item to update
+   * @param {string} notesHtml The formatted HTML notes to inject
+   * @param {string} injectionMode Where to inject notes ('before' or 'after')
+   * @param {string} currentDescription The current spell description content
+   * @returns {Promise<void>}
    */
   static async addNotesToDescription(spellItem, notesHtml, injectionMode, currentDescription) {
     let newDescription;
@@ -146,14 +155,15 @@ export class SpellDescriptionInjection {
   }
 
   /**
-   * Replace existing notes in description
-   * @param spellItem
-   * @param notesHtml
-   * @param injectionMode
+   * Replace existing notes in spell description with updated content
+   * @param {Item5e} spellItem The spell item to update
+   * @param {string} notesHtml The new formatted HTML notes
+   * @param {string} injectionMode Where to place notes ('before' or 'after')
+   * @returns {Promise<void>}
    */
   static async replaceNotesInDescription(spellItem, notesHtml, injectionMode) {
     const currentDescription = spellItem.system.description?.value || '';
-    const notesRegex = new RegExp("<div class='spell-book-personal-notes'[^>]*>.*?</div>", 'gs');
+    const notesRegex = /<div class='spell-book-personal-notes'[^>]*>.*?<\/div>/gs;
     let newDescription = currentDescription.replace(notesRegex, '');
     if (injectionMode === 'before') newDescription = notesHtml + newDescription;
     else newDescription = newDescription + notesHtml;
@@ -162,13 +172,14 @@ export class SpellDescriptionInjection {
   }
 
   /**
-   * Remove notes from description
-   * @param spellItem
+   * Remove notes from spell description completely
+   * @param {Item5e} spellItem The spell item to clean up
+   * @returns {Promise<void>}
    */
   static async removeNotesFromDescription(spellItem) {
     const currentDescription = spellItem.system.description?.value || '';
     if (!currentDescription.includes("class='spell-book-personal-notes'")) return;
-    const notesRegex = new RegExp("<div class='spell-book-personal-notes'[^>]*>.*?</div>", 'gs');
+    const notesRegex = /<div class='spell-book-personal-notes'[^>]*>.*?<\/div>/gs;
     const newDescription = currentDescription.replace(notesRegex, '');
     if (newDescription !== currentDescription) {
       await spellItem.update({ 'system.description.value': newDescription }, { ['spellBookModuleUpdate']: true });
@@ -177,8 +188,9 @@ export class SpellDescriptionInjection {
   }
 
   /**
-   * Handle notes changes - call this when notes are updated
-   * @param spellUuid
+   * Handle notes changes by updating all matching spell descriptions across actors
+   * @param {string} spellUuid The UUID of the spell whose notes changed
+   * @returns {Promise<void>}
    */
   static async handleNotesChange(spellUuid) {
     const canonicalUuid = UIHelpers.getCanonicalSpellUuid(spellUuid);

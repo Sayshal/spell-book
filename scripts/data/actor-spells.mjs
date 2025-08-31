@@ -137,7 +137,7 @@ export function organizeSpellsByLevel(spellItems, actor = null) {
     spellsByLevel[level].push(spell);
   }
   for (const level in spellsByLevel) {
-    if (spellsByLevel.hasOwnProperty(level)) spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
+    if (level in spellsByLevel) spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
   }
   const levelArray = [];
   const sortedLevels = Object.keys(spellsByLevel).sort((a, b) => Number(a) - Number(b));

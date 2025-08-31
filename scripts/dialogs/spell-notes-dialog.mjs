@@ -33,6 +33,10 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
     return game.i18n.format('SPELLBOOK.UI.EditNotesTitle', { spell: this.spellName });
   }
 
+  /**
+   * Create a new Spell Notes dialog
+   * @param {Object} options Application options
+   */
   constructor(options = {}) {
     super(options);
     this.spellUuid = UIHelpers.getCanonicalSpellUuid(options.spellUuid);
@@ -50,6 +54,7 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
       const userData = await DataHelpers.SpellUserDataJournal.getUserDataForSpell(this.spellUuid, targetUserId, this.actor?.id);
       this.currentNotes = userData?.notes || '';
     } catch (error) {
+      log(1, 'Error:', error);
       this.currentNotes = '';
     }
     const rows = Math.max(3, Math.min(8, Math.ceil(this.currentNotes.length / 50)));

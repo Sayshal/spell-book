@@ -38,14 +38,14 @@ export class ScrollScanner {
     const maxSpellLevel = DataHelpers.calculateMaxSpellLevel(wizardClass, actor);
     if (scroll.system?.activities) {
       const activitiesArray = Array.from(scroll.system.activities.values());
-      for (const [activityIndex, activity] of activitiesArray.entries()) {
+      for (const activity of activitiesArray) {
         if (activity?.spell?.uuid) {
           const spellUuid = activity.spell.uuid;
           const result = await this._processScrollSpell(scroll, spellUuid, maxSpellLevel);
           if (result) return result;
         }
         if (activity?.effects && Array.isArray(activity.effects)) {
-          for (const [effectIndex, effectRef] of activity.effects.entries()) {
+          for (const effectRef of activity.effects) {
             if (effectRef._id && scroll.effects) {
               const matchingEffect = scroll.effects.find((effect) => effect._id === effectRef._id);
               if (matchingEffect?.origin) {

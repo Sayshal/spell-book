@@ -75,7 +75,7 @@ export function getSpellcastingLevelsForClass(actor, classIdentifier) {
 export function isWizard(actor) {
   const localizedWizardName = game.i18n.localize('SPELLBOOK.Classes.Wizard').toLowerCase();
   if (actor.spellcastingClasses) {
-    for (const [classId, classData] of Object.entries(actor.spellcastingClasses)) {
+    for (const classData of Object.values(actor.spellcastingClasses)) {
       const classItem = actor.items.get(classData.id);
       if (classItem && classItem.name.toLowerCase() === localizedWizardName) return true;
     }
@@ -102,25 +102,25 @@ export function getSpellUuid(spell) {
 export function findWizardClass(actor) {
   if (!isWizard(actor)) return null;
   if (actor.spellcastingClasses) {
-    const spellcastingClassEntries = Object.entries(actor.spellcastingClasses);
-    if (spellcastingClassEntries.length === 1) {
-      const [classId, classData] = spellcastingClassEntries[0];
+    const spellcastingClasses = Object.values(actor.spellcastingClasses);
+    if (spellcastingClasses.length === 1) {
+      const classData = spellcastingClasses[0];
       return actor.items.get(classData.id);
     }
-    if (spellcastingClassEntries.length >= 2) {
+    if (spellcastingClasses.length >= 2) {
       const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
-      for (const [classId, classData] of spellcastingClassEntries) {
+      for (const classData of spellcastingClasses) {
         const classItem = actor.items.get(classData.id);
         if (!classItem) continue;
         const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
         if (classRules[identifier]?.forceWizardMode === true) return classItem;
       }
-      for (const [classId, classData] of spellcastingClassEntries) {
+      for (const classData of spellcastingClasses) {
         const classItem = actor.items.get(classData.id);
         if (classItem?.system.identifier?.toLowerCase() === 'wizard') return classItem;
       }
       const localizedWizardName = game.i18n.localize('SPELLBOOK.Classes.Wizard').toLowerCase();
-      for (const [classId, classData] of spellcastingClassEntries) {
+      for (const classData of spellcastingClasses) {
         const classItem = actor.items.get(classData.id);
         if (classItem?.name.toLowerCase() === localizedWizardName) return classItem;
       }
@@ -139,7 +139,7 @@ export function getWizardEnabledClasses(actor) {
   const localizedWizardName = game.i18n.localize('SPELLBOOK.Classes.Wizard').toLowerCase();
   const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
   if (actor.spellcastingClasses) {
-    for (const [classId, classData] of Object.entries(actor.spellcastingClasses)) {
+    for (const classData of Object.values(actor.spellcastingClasses)) {
       const classItem = actor.items.get(classData.id);
       if (!classItem) continue;
       const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
@@ -168,6 +168,7 @@ export function isClassWizardEnabled(actor, classIdentifier) {
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     return classRules[classIdentifier]?.forceWizardMode === true;
   }
+  return false;
 }
 
 /**
@@ -187,7 +188,7 @@ export function getConfigLabel(configObject, key) {
 
 /**
  * Get the target user ID for spell data operations
- * @param actor
+ * @param {Actor5e} actor The actor to determine ownership for
  * @todo - Should be an easier way within dnd5e/foundry to get this done
  * @returns {string} The user ID to use for spell data
  */

@@ -760,8 +760,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
+   * Reset all filters to their default state and clear form inputs
    * @todo - Shouldn't this be in filterHelper?
-   * Reset all filters to default state
+   * @returns {void}
    */
   _resetAllFilters() {
     this.filterState = {
@@ -1033,13 +1034,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Display a confirmation dialog
    * @param {Object} options Dialog configuration options
-   * @param options.title
-   * @param options.content
-   * @param options.confirmLabel
-   * @param options.confirmIcon
-   * @param options.cancelLabel
-   * @param options.cancelIcon
-   * @param options.confirmCssClass
+   * @param {string} options.title The dialog title text
+   * @param {string} options.content The dialog message content
+   * @param {string} options.confirmLabel Text label for the confirm button
+   * @param {string} options.confirmIcon FontAwesome icon class for the confirm button
+   * @param {string} options.cancelLabel Text label for the cancel button
+   * @param {string} options.cancelIcon FontAwesome icon class for the cancel button
+   * @param {string} options.confirmCssClass Additional CSS class for the confirm button styling
    * @returns {Promise<boolean>} Whether confirmed
    */
   async confirmDialog({
@@ -1623,6 +1624,11 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     this.close();
   }
 
+  /**
+   * Close the application and clean up associated resources
+   * @param {Object} options Options passed to the parent close method
+   * @returns {Promise<void>} Promise that resolves when the application is closed
+   */
   async close(options = {}) {
     if (this.comparisonDialog) {
       await this.comparisonDialog.close();
@@ -2115,15 +2121,23 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     }
   }
 
+  /**
+   * Handle opening the analytics dashboard for GM users
+   * @param {Event} event The click event
+   * @param {HTMLElement} target The target element that triggered the event
+   * @returns {Promise<void>}
+   */
   static async handleOpenAnalyticsDashboard(event, target) {
-    if (globalThis.SPELLBOOK) {
-      SPELLBOOK.openAnalyticsDashboard({ viewMode: 'gm' });
-    } else {
-      const dashboard = new SpellAnalyticsDashboard({ viewMode: 'gm' });
-      dashboard.render(true);
-    }
+    const dashboard = new SpellAnalyticsDashboard({ viewMode: 'gm' });
+    dashboard.render(true);
   }
 
+  /**
+   * Handle opening the spell details customization dialog
+   * @param {Event} event The click event
+   * @param {HTMLElement} target The target element that triggered the event
+   * @returns {Promise<void>}
+   */
   static async handleOpenCustomization(event, target) {
     const dialog = new SpellDetailsCustomization();
     dialog.render(true);

@@ -1,3 +1,5 @@
+/* eslint-disable jsdoc/require-jsdoc */
+/* eslint-disable nonblock-statement-body-position */
 /** Thank you Ben for writing this color detection code for me. */
 
 import { log } from '../logger.mjs';
@@ -197,7 +199,7 @@ export async function applyClassColors(sc) {
           clr = A('#8B4513', bg, 4.5);
         }
       } catch (e) {
-        log(2, `Could not extract color for class ${id}, using fallback`);
+        log(2, `Could not extract color for class ${id}, using fallback`, e);
         clr = A('#8B4513', bg, 4.5);
       }
     } else {

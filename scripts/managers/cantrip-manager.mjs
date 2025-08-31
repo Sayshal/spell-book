@@ -38,7 +38,7 @@ export class CantripManager {
       return;
     }
 
-    for (const [identifier, classData] of Object.entries(this.actor.spellcastingClasses)) {
+    for (const identifier of Object.keys(this.actor.spellcastingClasses)) {
       const spellcastingConfig = DataHelpers.getSpellcastingConfigForClass(this.actor, identifier);
       if (!spellcastingConfig) continue;
       const maxCantrips = this._calculateMaxCantripsForClass(identifier);
@@ -163,7 +163,6 @@ export class CantripManager {
       return { allowed: true };
     }
     const settings = this.spellManager.getSettings(classIdentifier);
-    const spellName = spell.name;
     if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.UNENFORCED || settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
       if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM && isChecked) {
         const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount(classIdentifier);

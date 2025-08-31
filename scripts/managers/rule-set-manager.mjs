@@ -10,13 +10,12 @@ export class RuleSetManager {
    * Apply a rule set to an actor, populating class-specific defaults
    * @param {Actor5e} actor The actor to configure
    * @param {string} ruleSet The rule set to apply ('legacy' or 'modern')
-   * @returns {Promise<void>}
    */
   static applyRuleSetToActor(actor, ruleSet) {
     const spellcastingClasses = RuleSetManager._detectSpellcastingClasses(actor);
     const existingClassRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const classRules = {};
-    for (const [classId, classData] of Object.entries(spellcastingClasses)) {
+    for (const classId of Object.keys(spellcastingClasses)) {
       const defaults = RuleSetManager._getClassDefaults(classId, ruleSet);
       const existing = existingClassRules[classId] || {};
       classRules[classId] = { ...defaults, ...existing };
@@ -49,7 +48,7 @@ export class RuleSetManager {
     if (existingRules) {
       let classExists = false;
       if (actor.spellcastingClasses) {
-        for (const [classKey, spellcastingData] of Object.entries(actor.spellcastingClasses)) {
+        for (const spellcastingData of Object.values(actor.spellcastingClasses)) {
           const classItem = spellcastingData;
           const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
           if (identifier === classIdentifier) {
@@ -104,7 +103,6 @@ export class RuleSetManager {
   /**
    * Initialize class rules for any newly detected spellcasting classes
    * @param {Actor5e} actor The actor to check
-   * @returns {Promise<void>}
    */
   static initializeNewClasses(actor) {
     const spellcastingClasses = RuleSetManager._detectSpellcastingClasses(actor);
@@ -131,7 +129,7 @@ export class RuleSetManager {
   static _detectSpellcastingClasses(actor) {
     const classes = {};
     if (actor.spellcastingClasses) {
-      for (const [classKey, spellcastingData] of Object.entries(actor.spellcastingClasses)) {
+      for (const spellcastingData of Object.values(actor.spellcastingClasses)) {
         const classItem = spellcastingData;
         let spellcastingConfig = classItem.system?.spellcasting;
         let spellcastingSource = classItem;

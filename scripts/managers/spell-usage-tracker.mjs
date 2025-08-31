@@ -10,6 +10,9 @@ export class SpellUsageTracker {
 
   static _initialized = false;
 
+  /**
+   * Create a new Spell usage application
+   */
   constructor() {
     this.activeTracking = new Map();
   }

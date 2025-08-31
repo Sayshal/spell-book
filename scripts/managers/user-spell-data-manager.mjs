@@ -7,6 +7,9 @@ const { renderTemplate } = foundry.applications.handlebars;
  * Manager for journal-based user spell data storage
  */
 export class UserSpellDataManager {
+  /**
+   * Create a new User SpellData application
+   */
   constructor() {
     this.journalName = null;
     this.folderName = null;
@@ -51,7 +54,7 @@ export class UserSpellDataManager {
   /**
    * Ensure folder exists in the pack
    * @param {CompendiumCollection} pack The spells pack
-   * @returns {Promise<Folder>}
+   * @returns {Promise<Folder>} Promise that resolves to the existing or newly created folder
    */
   async _ensureFolder(pack) {
     let folder = pack.folders.find((f) => f.name === this.folderName);
@@ -65,7 +68,7 @@ export class UserSpellDataManager {
   /**
    * Ensure journal exists in the folder
    * @param {CompendiumCollection} pack The spells pack
-   * @returns {Promise<JournalEntry>}
+   * @returns {Promise<JournalEntry>} Promise that resolves to the existing or newly created journal entry
    */
   async _ensureJournal(pack) {
     const documents = await pack.getDocuments();

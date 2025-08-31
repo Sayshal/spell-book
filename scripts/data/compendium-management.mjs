@@ -596,7 +596,7 @@ async function getOrCreateSpellListFolder(folderName, localizationKey) {
 
 /**
  * Get or create the Custom Spell Lists folder
- * @returns {Promise<Folder|null>}
+ * @returns {Promise<Folder|null>} Promise that resolves to the custom spell lists folder or null if creation failed
  */
 export async function getOrCreateCustomFolder() {
   const folderName = game.i18n.localize('SPELLMANAGER.Folders.CustomSpellListsFolder');
@@ -605,7 +605,7 @@ export async function getOrCreateCustomFolder() {
 
 /**
  * Get or create the Merged Spell Lists folder
- * @returns {Promise<Folder|null>}
+ * @returns {Promise<Folder|null>} Promise that resolves to the merged spell lists folder or null if creation failed
  */
 export async function getOrCreateMergedFolder() {
   const folderName = game.i18n.localize('SPELLMANAGER.Folders.MergedSpellListsFolder');
@@ -619,7 +619,7 @@ export async function getOrCreateMergedFolder() {
  */
 export function shouldIndexCompendium(pack) {
   const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
-  if (settings && settings.hasOwnProperty(pack.collection)) return settings[pack.collection] === true;
+  if (settings && pack.collection in settings) return settings[pack.collection] === true;
   return false;
 }
 
@@ -631,13 +631,14 @@ export function shouldIndexCompendium(pack) {
  */
 export async function shouldShowInSettings(pack) {
   const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
-  if (settings && settings.hasOwnProperty(pack.collection)) return true;
+  if (settings && pack.collection in settings) return true;
   if (pack.metadata.type === 'Item') {
     try {
       const index = await pack.getIndex({ fields: ['type'] });
       const hasSpells = index.some((entry) => entry.type === 'spell');
       return hasSpells;
     } catch (error) {
+      log(1, error);
       return false;
     }
   } else if (pack.metadata.type === 'JournalEntry') {
@@ -646,6 +647,7 @@ export async function shouldShowInSettings(pack) {
       const hasSpellPages = index.some((entry) => entry.pages?.some((page) => page.type === 'spells'));
       return hasSpellPages;
     } catch (error) {
+      log(1, error);
       return false;
     }
   }

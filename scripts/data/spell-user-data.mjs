@@ -14,7 +14,7 @@ export class SpellUserDataJournal {
 
   /**
    * Get the user spell data journal
-   * @returns {Promise<JournalEntry|null>}
+   * @returns {Promise<JournalEntry|null>} Promise that resolves to the user spell data journal or null if not found
    */
   static async _getJournal() {
     const pack = game.packs.get(MODULE.PACK.USERDATA);
@@ -139,7 +139,7 @@ export class SpellUserDataJournal {
             const spellName = spell?.name || 'Unknown Spell';
             favoriteSpells.push({ uuid, name: spellName });
           } catch (error) {
-            log(2, `Could not resolve spell UUID ${uuid} for favorites table`);
+            log(2, `Could not resolve spell UUID ${uuid} for favorites table`, error);
           }
         }
         if (actorData?.usageStats && actorData.usageStats.count > 0) {
@@ -150,7 +150,7 @@ export class SpellUserDataJournal {
             const lastUsedDate = stats.lastUsed ? new Date(stats.lastUsed).toLocaleDateString() : '-';
             usageSpells.push({ uuid, name: spellName, stats, lastUsedDate });
           } catch (error) {
-            log(2, `Could not resolve spell UUID ${uuid} for usage table`);
+            log(2, `Could not resolve spell UUID ${uuid} for usage table`, error);
           }
         }
       }
@@ -164,7 +164,7 @@ export class SpellUserDataJournal {
           const spellName = spell?.name || 'Unknown Spell';
           notesSpells.push({ uuid, name: spellName, notes: data.notes });
         } catch (error) {
-          log(2, `Could not resolve spell UUID ${uuid} for notes table`);
+          log(2, `Could not resolve spell UUID ${uuid} for notes table`, error);
         }
       }
     }
@@ -204,6 +204,7 @@ export class SpellUserDataJournal {
           const spellDoc = fromUuidSync(spellUuid);
           if (spellDoc?.flags?.core?.sourceId) canonicalUuid = spellDoc.flags.core.sourceId;
         } catch (error) {
+          log(1, 'Error:', error);
           canonicalUuid = spellUuid;
         }
       }
@@ -255,6 +256,7 @@ export class SpellUserDataJournal {
           const spellDoc = fromUuidSync(spellUuid);
           if (spellDoc?.flags?.core?.sourceId) canonicalUuid = spellDoc.flags.core.sourceId;
         } catch (error) {
+          log(1, 'Error:', error);
           canonicalUuid = spellUuid;
         }
       }
@@ -306,6 +308,7 @@ export class SpellUserDataJournal {
         const spellDoc = fromUuidSync(spellUuid);
         if (spellDoc?.flags?.core?.sourceId) canonicalUuid = spellDoc.flags.core.sourceId;
       } catch (error) {
+        log(1, 'Error:', error);
         canonicalUuid = spellUuid;
       }
     }
@@ -348,6 +351,7 @@ export class SpellUserDataJournal {
           const spellDoc = fromUuidSync(spellUuid);
           if (spellDoc?.flags?.core?.sourceId) canonicalUuid = spellDoc.flags.core.sourceId;
         } catch (error) {
+          log(1, 'Error:', error);
           canonicalUuid = spellUuid;
         }
       }
@@ -411,6 +415,7 @@ export class SpellUserDataJournal {
           const spellDoc = fromUuidSync(spellUuid);
           if (spellDoc?.flags?.core?.sourceId) canonicalUuid = spellDoc.flags.core.sourceId;
         } catch (error) {
+          log(1, 'Error:', error);
           canonicalUuid = spellUuid;
         }
       }

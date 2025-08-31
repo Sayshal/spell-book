@@ -43,6 +43,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   };
 
   /**
+   * Create a new Spell Book settings dialog
    * @param {Actor5e} actor The actor to configure settings for
    * @param {Object} [options={}] Additional application options
    */
@@ -77,6 +78,10 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     return context;
   }
 
+  /**
+   * Prepare form data for global settings configuration including rule set and enforcement behavior options
+   * @returns {Object} Form data object containing current settings, select HTML, and configuration options
+   */
   _prepareGlobalSettingsFormData() {
     const ruleSetOverride = this.actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE);
     const enforcementBehavior = this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR);
@@ -156,7 +161,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     const availableSpellLists = await this._prepareSpellListOptions();
     const currentClassRules = this.actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     if (this.actor.spellcastingClasses) {
-      for (const [classKey, spellcastingData] of Object.entries(this.actor.spellcastingClasses)) {
+      for (const spellcastingData of Object.values(this.actor.spellcastingClasses)) {
         const classItem = spellcastingData;
         let spellcastingConfig = classItem.system?.spellcasting;
         let spellcastingSource = classItem;
@@ -174,14 +179,14 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         const maxCantrips = spellManager.getMaxAllowed(identifier);
         const currentCantrips = spellManager.getCurrentCount(identifier);
         const formRules = {
-          showCantrips: savedRules.hasOwnProperty('showCantrips') ? savedRules.showCantrips : processedClassRules.showCantrips,
-          forceWizardMode: savedRules.hasOwnProperty('forceWizardMode') ? savedRules.forceWizardMode : processedClassRules.forceWizardMode,
+          showCantrips: 'showCantrips' in savedRules ? savedRules.showCantrips : processedClassRules.showCantrips,
+          forceWizardMode: 'forceWizardMode' in savedRules ? savedRules.forceWizardMode : processedClassRules.forceWizardMode,
           cantripSwapping: savedRules.cantripSwapping || processedClassRules.cantripSwapping || 'none',
           spellSwapping: savedRules.spellSwapping || processedClassRules.spellSwapping || 'none',
           ritualCasting: savedRules.ritualCasting || processedClassRules.ritualCasting || 'none',
           customSpellList: savedRules.customSpellList || processedClassRules.customSpellList || '',
-          spellPreparationBonus: savedRules.hasOwnProperty('spellPreparationBonus') ? savedRules.spellPreparationBonus : processedClassRules.spellPreparationBonus || 0,
-          cantripPreparationBonus: savedRules.hasOwnProperty('cantripPreparationBonus') ? savedRules.cantripPreparationBonus : processedClassRules.cantripPreparationBonus || 0,
+          spellPreparationBonus: 'spellPreparationBonus' in savedRules ? savedRules.spellPreparationBonus : processedClassRules.spellPreparationBonus || 0,
+          cantripPreparationBonus: 'cantripPreparationBonus' in savedRules ? savedRules.cantripPreparationBonus : processedClassRules.cantripPreparationBonus || 0,
           _noScaleValue: processedClassRules._noScaleValue
         };
         const hasCustomSpellList = !!formRules.customSpellList;
@@ -204,7 +209,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
           },
           hasCustomSpellList: hasCustomSpellList,
           customSpellListName: customSpellListName,
-          ValidationHelpers: classValidationHelpers,
+          formElements: classValidationHelpers,
           spellcastingSource: spellcastingSource
         };
         classSettings.push(classData);

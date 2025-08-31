@@ -6,6 +6,10 @@ import { log } from '../logger.mjs';
  * Supports only FIELD:VALUE syntax with AND operations
  */
 export class QueryParser {
+  /**
+   * Create a new QueryParser instance with field definitions for parsing search queries
+   * @param {FieldDefinitions} fieldDefinitions The field definitions to use for parsing
+   */
   constructor(fieldDefinitions) {
     this.fieldDefinitions = fieldDefinitions;
   }

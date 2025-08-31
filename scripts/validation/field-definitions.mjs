@@ -6,6 +6,9 @@ import { log } from '../logger.mjs';
  * Field definitions for advanced search syntax
  */
 export class FieldDefinitions {
+  /**
+   * Create a new FieldDefinitions instance and initialize field mappings and validators
+   */
   constructor() {
     this.fieldMap = new Map();
     this.valueValidators = new Map();

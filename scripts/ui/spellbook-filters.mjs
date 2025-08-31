@@ -40,7 +40,7 @@ export class SpellbookFilterHelper {
   getFilterState() {
     const now = Date.now();
     if (this._cachedFilterState && now - this._lastFilterUpdate < 1000) return this._cachedFilterState;
-    if (!this.element)
+    if (!this.element) {
       return {
         name: '',
         level: '',
@@ -57,6 +57,7 @@ export class SpellbookFilterHelper {
         concentration: '',
         materialComponents: ''
       };
+    }
     this._cachedFilterState = {
       name: this.element.querySelector('[name="filter-name"]')?.value || '',
       level: this.element.querySelector('[name="filter-level"]')?.value || '',

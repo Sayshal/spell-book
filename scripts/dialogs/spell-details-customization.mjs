@@ -4,6 +4,9 @@ import * as ValidationHelpers from '../validation/_module.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
+/**
+ * Dialog application for customizing spell detail display settings and preferences
+ */
 export class SpellDetailsCustomization extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: 'spell-details-customization',
@@ -27,6 +30,10 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
     footer: { template: TEMPLATES.DIALOGS.SPELL_CUSTOMIZATION_FOOTER, id: 'footer', classes: ['spell-details-customization-footer'] }
   };
 
+  /**
+   * Get the window title for this application
+   * @returns {string} The formatted title including actor name
+   */
   get title() {
     return game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.Title');
   }

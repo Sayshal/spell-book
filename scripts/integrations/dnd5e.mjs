@@ -21,9 +21,9 @@ export function registerDnD5eIntegration() {
 
 /**
  * Add Spell Book button to character sheet
- * @param app
- * @param html
- * @param data
+ * @param {Application} app The character sheet application instance
+ * @param {HTMLElement} html The character sheet HTML element
+ * @param {Object} data The sheet data object containing actor information
  */
 function addSpellbookButton(app, html, data) {
   const actor = data.actor;
@@ -42,9 +42,9 @@ function addSpellbookButton(app, html, data) {
 
 /**
  * Handle long rest completion for all spellcasting classes
- * @param actor
- * @param result
- * @param config
+ * @param {Actor5e} actor The actor who completed the long rest
+ * @param {Object} result The rest result data containing completion status
+ * @param {Object} config The rest configuration options
  */
 async function handleRestCompleted(actor, result, config) {
   if (!result.longRest) return;
@@ -83,7 +83,7 @@ async function handleRestCompleted(actor, result, config) {
 
 /**
  * Add Spell Book button to journal sidebar footer
- * @param app
+ * @param {Application} app The journal sidebar application
  */
 function addJournalSpellBookButton(app) {
   if (!game.settings.get(MODULE.ID, SETTINGS.ENABLE_JOURNAL_BUTTON)) return;
@@ -97,6 +97,7 @@ function addJournalSpellBookButton(app) {
 
 /**
  * Create the container and buttons for journal sidebar
+ * @returns {HTMLElement} Container element with spell book buttons
  */
 function createJournalButtonsContainer() {
   const container = document.createElement('div');
@@ -114,6 +115,7 @@ function createJournalButtonsContainer() {
 
 /**
  * Create the spell list manager button
+ * @returns {HTMLElement} Button element for opening spell list manager
  */
 function createJournalManagerButton() {
   const managerButton = document.createElement('button');
@@ -128,6 +130,7 @@ function createJournalManagerButton() {
 
 /**
  * Create the analytics button
+ * @returns {HTMLElement} Button element for opening analytics dashboard
  */
 function createJournalAnalyticsButton() {
   const analyticsButton = document.createElement('button');
@@ -148,6 +151,7 @@ function createJournalAnalyticsButton() {
       analyticsButton.title = newSetting ? game.i18n.localize('SPELLBOOK.Analytics.TrackingEnabled') : game.i18n.localize('SPELLBOOK.Analytics.TrackingDisabled');
     } catch (error) {
       ui.notifications.error(game.i18n.localize('SPELLBOOK.Analytics.TrackingToggleError'));
+      log(1, 'Error:', error);
     }
   });
   const trackingEnabled = game.settings.get(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING);
@@ -158,8 +162,8 @@ function createJournalAnalyticsButton() {
 
 /**
  * Handle the long rest swap prompt for all applicable classes
- * @param actor
- * @param longRestClasses
+ * @param {Actor5e} actor The actor who completed the long rest
+ * @param {Object} longRestClasses Object containing arrays of classes needing cantrip or spell swapping
  */
 async function handleLongRestSwapPrompt(actor, longRestClasses) {
   const isPromptDisabled = game.settings.get(MODULE.ID, SETTINGS.DISABLE_LONG_REST_SWAP_PROMPT);
@@ -179,7 +183,8 @@ async function handleLongRestSwapPrompt(actor, longRestClasses) {
 
 /**
  * Show the long rest swap dialog with dynamic content
- * @param longRestClasses
+ * @param {Object} longRestClasses Object containing arrays of classes needing swapping mechanics
+ * @returns {Promise<string>} The dialog result action ('confirm' or 'cancel')
  */
 async function showLongRestSwapDialog(longRestClasses) {
   const content = await renderTemplate(TEMPLATES.DIALOGS.LONG_REST_SWAP, { longRestClasses });
@@ -198,8 +203,9 @@ async function showLongRestSwapDialog(longRestClasses) {
 
 /**
  * Check if Spell Book button can be added
- * @param actor
- * @param html
+ * @param {Actor5e} actor The actor to check for spellcasting capabilities
+ * @param {HTMLElement} html The character sheet HTML element
+ * @returns {boolean} True if the button can be added to this sheet
  */
 function canAddSpellbookButton(actor, html) {
   const canCast = Object.keys(actor?.spellcastingClasses || {}).length > 0;
@@ -211,7 +217,8 @@ function canAddSpellbookButton(actor, html) {
 
 /**
  * Create Spell Book button element
- * @param actor
+ * @param {Actor5e} actor The actor this button will open a spell book for
+ * @returns {HTMLElement} The created button element
  */
 function createSpellBookButton(actor) {
   const button = document.createElement('button');
@@ -226,8 +233,9 @@ function createSpellBookButton(actor) {
 
 /**
  * Handle Spell Book button click
- * @param actor
- * @param event
+ * @param {Actor5e} actor The actor whose spell book should be opened
+ * @param {Event} event The click event
+ * @returns {Promise<void>}
  */
 async function onSpellBookButtonClick(actor, event) {
   event.preventDefault();
@@ -235,10 +243,9 @@ async function onSpellBookButtonClick(actor, event) {
   const hasLongRestSwapping = Object.values(classRules).some((rules) => rules.cantripSwapping === 'longRest' || rules.spellSwapping === 'longRest');
   if (hasLongRestSwapping) {
     const longRestFlagValue = actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);
-    const swapTracking = actor.getFlag(MODULE.ID, FLAGS.SWAP_TRACKING) || {};
     const cantripSwapTracking = actor.getFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING) || {};
     let hasCompletedSwaps = false;
-    for (const [classId, tracking] of Object.entries(cantripSwapTracking)) {
+    for (const tracking of Object.values(cantripSwapTracking)) {
       if (tracking.longRest?.hasLearned && tracking.longRest?.hasUnlearned) {
         hasCompletedSwaps = true;
         break;

@@ -14,9 +14,9 @@ export function registerTidy5eIntegration() {
 
 /**
  * Handle Tidy5e classic sheet rendering
- * @param sheet
- * @param element
- * @param data
+ * @param {Application} sheet The Tidy5e sheet application instance
+ * @param {HTMLElement} element The sheet HTML element
+ * @param {Object} data The sheet data object containing actor information
  */
 function onTidy5eRender(sheet, element, data) {
   const actor = data.actor;
@@ -34,9 +34,9 @@ function onTidy5eRender(sheet, element, data) {
 
 /**
  * Handle Tidy5e new (Quadrone) sheet rendering
- * @param sheet
- * @param element
- * @param data
+ * @param {Application} sheet The Tidy5e sheet application instance
+ * @param {HTMLElement} element The sheet HTML element
+ * @param {Object} data The sheet data object containing actor information
  */
 function onTidy5eQuadroneRender(sheet, element, data) {
   const actor = data.actor;
@@ -54,20 +54,22 @@ function onTidy5eQuadroneRender(sheet, element, data) {
 
 /**
  * Check if Tidy5e Spell Book button can be added
- * @param actor
- * @param element
+ * @param {Actor5e} actor The actor to check for spellcasting capabilities
+ * @param {HTMLElement} element The sheet HTML element
+ * @returns {boolean} True if the button can be added to this Tidy5e sheet
  */
 function canAddTidySpellbookButton(actor, element) {
   const canCast = Object.keys(actor?.spellcastingClasses || {}).length > 0;
   if (!canCast) return false;
-  const hasSpellbook = element.querySelector('.spellbook') || htmlElement.querySelector('.tidy-tab.spellbook');
+  const hasSpellbook = element.querySelector('.spellbook') || element.querySelector('.tidy-tab.spellbook');
   if (!hasSpellbook) return false;
   return true;
 }
 
 /**
  * Create Tidy5e Spell Book button element
- * @param actor
+ * @param {Actor5e} actor The actor this button will open a spell book for
+ * @returns {HTMLElement} The created button element for Tidy5e classic sheets
  */
 function createTidySpellbookButton(actor) {
   const button = document.createElement('button');
@@ -82,7 +84,8 @@ function createTidySpellbookButton(actor) {
 
 /**
  * Create Tidy5e Spell Book button element for Quadrone sheet
- * @param actor
+ * @param {Actor5e} actor The actor this button will open a spell book for
+ * @returns {HTMLElement} The created button element for Tidy5e Quadrone sheets
  */
 function createTidySpellbookButtonQuadrone(actor) {
   const button = document.createElement('button');
@@ -96,8 +99,9 @@ function createTidySpellbookButtonQuadrone(actor) {
 
 /**
  * Open Spell Book application
- * @param event
- * @param actor
+ * @param {Event} event The click event
+ * @param {Actor5e} actor The actor whose spell book should be opened
+ * @returns {void}
  */
 function openSpellbook(event, actor) {
   event.preventDefault();

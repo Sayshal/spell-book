@@ -54,7 +54,7 @@ export async function removeSpellFromActorFavorites(spellUuid, actor) {
  */
 export async function syncFavoritesOnSave(actor, spellData) {
   try {
-    for (const [uuid, data] of Object.entries(spellData)) {
+    for (const uuid of Object.keys(spellData)) {
       const userData = await DataHelpers.SpellUserDataJournal.getUserDataForSpell(uuid, null, actor.id);
       if (userData?.favorited) await addSpellToActorFavorites(uuid, actor);
     }

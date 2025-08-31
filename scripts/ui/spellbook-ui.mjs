@@ -1,4 +1,3 @@
-import { SpellBook } from '../apps/_module.mjs';
 import { FLAGS, MODULE } from '../constants/_module.mjs';
 import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
@@ -483,7 +482,6 @@ export class SpellbookUI {
     const classIdentifier = activeTabContent?.dataset.classIdentifier;
     if (!classIdentifier) return;
     const settings = this.app.spellManager.getSettings(classIdentifier);
-    const classRules = RuleSetManager.getClassRules(this.app.actor, classIdentifier);
     const classData = this.app._stateManager.classSpellData[classIdentifier];
     if (!classData) return;
     const currentPrepared = classData.spellPreparation.current || 0;

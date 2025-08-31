@@ -25,7 +25,7 @@ export class MacroManager {
    * Ensure a specific macro exists in the compendium and is current
    * @param {CompendiumCollection} pack The macro compendium
    * @param {Object} macroConfig Macro configuration object
-   * @returns {Promise<Macro|null>}
+   * @returns {Promise<Macro|null>} Promise that resolves to the existing or newly created macro, or null if creation failed
    */
   static async ensureCompendiumMacroExists(pack, macroConfig) {
     const { flagKey, version, name, command, img = 'icons/svg/dice-target.svg', type = 'script' } = macroConfig;
@@ -75,7 +75,7 @@ export class MacroManager {
 
   /**
    * Get all macros managed by this module from the compendium
-   * @returns {Promise<Array<Macro>>}
+   * @returns {Promise<Array<Macro>>} Promise that resolves to an array of module-managed macros
    */
   static async getManagedMacros() {
     const pack = game.packs.get(MODULE.PACK.MACROS);

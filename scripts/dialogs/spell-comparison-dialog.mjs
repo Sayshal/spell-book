@@ -3,6 +3,10 @@ import * as UIHelpers from '../ui/_module.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
+/**
+ * Dialog application for comparing multiple spells side-by-side
+ * Allows users to view and analyze spell differences and similarities
+ */
 export class SpellComparisonDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: 'spell-comparison-dialog',
@@ -21,11 +25,20 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
     comparison: { template: TEMPLATES.DIALOGS.SPELL_COMPARISON }
   };
 
+  /**
+   * Create a new spell comparison dialog
+   * @param parentApp Parent Spell Book application
+   * @param {Object} options Application options
+   */
   constructor(parentApp, options = {}) {
     super(options);
     this.parentApp = parentApp;
   }
 
+  /**
+   * Get the window title for this application
+   * @returns {string} The formatted title including actor name
+   */
   get title() {
     return game.i18n.localize('SPELLBOOK.Comparison.DialogTitle');
   }
@@ -101,19 +114,7 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
   /**
    * Process a spell object into standardized format for comparison display
    * @param {Object} spell The spell document to process
-   * @returns {Object} Processed spell data with standardized properties for comparison
-   * @returns {string} returns.uuid - Spell UUID
-   * @returns {string} returns.name - Spell name
-   * @returns {string} returns.img - Spell image path
-   * @returns {string} returns.enrichedIcon - HTML for enriched spell icon
-   * @returns {number} returns.level - Spell level (0-9)
-   * @returns {string} returns.school - Formatted spell school name
-   * @returns {string} returns.castingTime - Formatted casting time
-   * @returns {string} returns.range - Formatted spell range
-   * @returns {string} returns.duration - Spell duration
-   * @returns {string} returns.components - Formatted spell components (V, S, M, etc.)
-   * @returns {Object} returns.damage - Extracted damage information
-   * @returns {string} returns.description - Spell description HTML
+   * @returns {Object} Processed spell data object containing uuid, name, img, enrichedIcon, level, school, castingTime, range, duration, components, damage, and description properties
    */
   _processSpellForComparison(spell) {
     return {
@@ -152,10 +153,7 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
   /**
    * Extract damage information from a spell for comparison purposes
    * @param {Object} spell The spell document to extract damage from
-   * @returns {Object} Damage information object
-   * @returns {string} returns.formula - Damage formula string (e.g., "1d8 + 2d6")
-   * @returns {string[]} returns.types - Array of damage type strings
-   * @returns {number} returns.maxDice - Maximum possible dice damage value
+   * @returns {Object} Damage information object containing formula string, damage types array, and maximum dice damage value
    */
   _extractDamageInfo(spell) {
     const damageInfo = { formula: '', types: [], maxDice: 0 };
@@ -193,14 +191,7 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
   /**
    * Build comparison table data structure from processed spells
    * @param {Object[]} spells Array of processed spell objects
-   * @returns {Object} Comparison table data
-   * @returns {Object[]} returns.properties - Array of property comparison objects
-   * @returns {string} returns.properties[].name - Localized property name
-   * @returns {string} returns.properties[].key - Property key identifier
-   * @returns {Object[]} returns.properties[].values - Array of value objects for each spell
-   * @returns {string} returns.properties[].values[].value - Display value for the property
-   * @returns {boolean} returns.properties[].values[].highlight - Whether to highlight this value
-   * @returns {number} returns.maxDamage - Maximum damage value across all spells
+   * @returns {Object} Comparison table data containing properties array for display and maximum damage value across all spells
    */
   _buildComparisonTable(spells) {
     if (!spells.length) return { properties: [] };

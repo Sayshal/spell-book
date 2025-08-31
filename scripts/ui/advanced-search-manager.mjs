@@ -1,4 +1,3 @@
-import { SpellBook } from '../apps/_module.mjs';
 import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import * as ValidationHelpers from '../validation/_module.mjs';
@@ -69,6 +68,7 @@ export class AdvancedSearchManager {
       this.queryCache.set(query, parsed);
       return parsed;
     } catch (error) {
+      log(1, 'Error:', error);
       this.queryCache.set(query, null);
       return null;
     }
@@ -86,7 +86,6 @@ export class AdvancedSearchManager {
       return;
     }
     const hasAdvancedClass = searchInput.classList.contains('advanced-search-input');
-    const existingDropdown = document.querySelector('.search-dropdown');
     if (!hasAdvancedClass) {
       searchInput.classList.add('advanced-search-input');
       searchInput.setAttribute('placeholder', game.i18n.localize('SPELLBOOK.Search.AdvancedPlaceholder'));
@@ -277,7 +276,6 @@ export class AdvancedSearchManager {
    * @param {MouseEvent} event Click event from document
    */
   handleDocumentClick(event) {
-    const dropdown = document.querySelector('.search-dropdown');
     if (event.target.closest('.clear-recent-search')) {
       log(3, 'Handling clear recent search click');
       event.preventDefault();
@@ -572,6 +570,7 @@ export class AdvancedSearchManager {
   /**
    * Generate HTML content for fuzzy spell name matches
    * @param {string} query The search query string
+   * @returns {string} HTML string containing search suggestions or no matches message
    */
   _generateFuzzyMatches(query) {
     let content = `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Suggestions')}</div>`;

@@ -166,7 +166,7 @@ export function extractDamageTypes(spell) {
   const damageTypes = [];
   if (spell.labels?.damages?.length) for (const damage of spell.labels.damages) if (damage.damageType && !damageTypes.includes(damage.damageType)) damageTypes.push(damage.damageType);
   if (spell.system?.activities) {
-    for (const [_key, activity] of Object.entries(spell.system.activities)) {
+    for (const activity of Object.values(spell.system.activities)) {
       if (activity.damage?.parts?.length) {
         for (const part of activity.damage.parts) {
           if (part.types && Array.isArray(part.types) && part.types.length) {
@@ -227,7 +227,7 @@ export function extractMaterialComponents(spell) {
 export function checkSpellRequiresSave(spell) {
   let result = false;
   if (spell.system?.activities) {
-    for (const [_key, activity] of Object.entries(spell.system.activities)) {
+    for (const activity of Object.values(spell.system.activities)) {
       if (activity.value?.type === 'save') {
         result = true;
         break;
