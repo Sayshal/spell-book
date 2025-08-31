@@ -7,7 +7,7 @@ import * as UIHelpers from './_module.mjs';
 export class UICustomizationHelper {
   /**
    * Convert element name to setting key format
-   * @param {string} element - The element name
+   * @param {string} element The element name
    * @returns {string} The setting key suffix
    */
   static _convertToSettingKey(element) {
@@ -31,7 +31,7 @@ export class UICustomizationHelper {
 
   /**
    * Check if a UI element should be shown for SpellBook
-   * @param {string} element - The element to check ('favorites', 'compare', 'notes', etc.)
+   * @param {string} element The element to check ('favorites', 'compare', 'notes', etc.)
    * @returns {boolean} Whether the element should be shown
    */
   static isPlayerElementEnabled(element) {
@@ -42,7 +42,7 @@ export class UICustomizationHelper {
 
   /**
    * Check if a UI element should be shown for GMSpellListManager
-   * @param {string} element - The element to check ('compare', 'spellLevel', etc.)
+   * @param {string} element The element to check ('compare', 'spellLevel', etc.)
    * @returns {boolean} Whether the element should be shown
    */
   static isGMElementEnabled(element) {
@@ -54,8 +54,8 @@ export class UICustomizationHelper {
 
   /**
    * Check if spell has a specific property
-   * @param {Object} spell - The spell object
-   * @param {string} property - The property to check for
+   * @param {Object} spell The spell object
+   * @param {string} property The property to check for
    * @returns {boolean} Whether the spell has the property
    */
   static _spellHasProperty(spell, property) {
@@ -68,7 +68,7 @@ export class UICustomizationHelper {
 
   /**
    * Build custom metadata subtitle for SpellBook
-   * @param {Object} spell - The spell object with processed data
+   * @param {Object} spell The spell object with processed data
    * @returns {string} Formatted metadata string
    */
   static buildPlayerMetadata(spell) {
@@ -115,7 +115,7 @@ export class UICustomizationHelper {
 
   /**
    * Build custom metadata subtitle for GMSpellListManager
-   * @param {Object} spell - The spell object with processed data
+   * @param {Object} spell The spell object with processed data
    * @returns {string} Formatted metadata string
    */
   static buildGMMetadata(spell) {
@@ -162,7 +162,7 @@ export class UICustomizationHelper {
 
   /**
    * Format spell level for display
-   * @param {Object} spell - The spell object
+   * @param {Object} spell The spell object
    * @returns {string} Formatted spell level
    */
   static _formatSpellLevel(spell) {
@@ -174,7 +174,7 @@ export class UICustomizationHelper {
 
   /**
    * Format spell range for display
-   * @param {Object} spell - The spell object
+   * @param {Object} spell The spell object
    * @returns {string} Formatted range
    */
   static _formatSpellRange(spell) {

@@ -11,7 +11,7 @@ const { renderTemplate } = foundry.applications.handlebars;
 export class ScrollScanner {
   /**
    * Scan actor inventory for spell scrolls and extract learnable spells
-   * @param {Actor5e} actor - The actor to scan
+   * @param {Actor5e} actor The actor to scan
    * @returns {Promise<Array>} Array of scroll spell data
    */
   static async scanForScrollSpells(actor) {
@@ -28,8 +28,8 @@ export class ScrollScanner {
   /**
    * Extract spell data from a scroll item
    * @todo - This seems way more complicated then it should be.
-   * @param {Item5e} scroll - The scroll item
-   * @param {Actor5e} actor - The actor who owns the scroll
+   * @param {Item5e} scroll The scroll item
+   * @param {Actor5e} actor The actor who owns the scroll
    * @returns {Promise<Object|null>} Spell data or null if no valid spell found
    */
   static async _extractSpellFromScroll(scroll, actor) {
@@ -63,9 +63,9 @@ export class ScrollScanner {
 
   /**
    * Process a spell UUID from a scroll and create spell data
-   * @param {Item5e} scroll - The scroll item
-   * @param {string} spellUuid - The spell UUID
-   * @param {number} maxSpellLevel - Maximum spell level the actor can cast
+   * @param {Item5e} scroll The scroll item
+   * @param {string} spellUuid The spell UUID
+   * @param {number} maxSpellLevel Maximum spell level the actor can cast
    * @returns {Promise<Object|null>} Processed spell data or null
    */
   static async _processScrollSpell(scroll, spellUuid, maxSpellLevel) {
@@ -110,9 +110,9 @@ export class ScrollScanner {
 
   /**
    * Learn a spell from a scroll and optionally consume it
-   * @param {Actor5e} actor - The actor learning the spell
-   * @param {Object} scrollSpellData - The scroll spell data
-   * @param {WizardSpellbookManager} wizardManager - The wizard manager
+   * @param {Actor5e} actor The actor learning the spell
+   * @param {Object} scrollSpellData The scroll spell data
+   * @param {WizardSpellbookManager} wizardManager The wizard manager
    * @returns {Promise<boolean>} Success status
    */
   static async learnSpellFromScroll(actor, scrollSpellData, wizardManager) {
@@ -136,11 +136,11 @@ export class ScrollScanner {
 
   /**
    * Show dialog for learning spell from scroll
-   * @param {Item5e} spell - The spell to learn
-   * @param {number} cost - Cost to learn
-   * @param {number} time - Time to learn
-   * @param {boolean} isFree - Whether the spell is free
-   * @param {boolean} isAlreadyInSpellbook - Whether spell is already known
+   * @param {Item5e} spell The spell to learn
+   * @param {number} cost Cost to learn
+   * @param {number} time Time to learn
+   * @param {boolean} isFree Whether the spell is free
+   * @param {boolean} isAlreadyInSpellbook Whether spell is already known
    * @returns {Promise<boolean>} Whether to proceed
    */
   static async _showLearnFromScrollDialog(spell, cost, time, isFree, isAlreadyInSpellbook) {

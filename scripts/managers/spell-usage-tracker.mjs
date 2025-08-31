@@ -7,6 +7,7 @@ import { log } from '../logger.mjs';
  */
 export class SpellUsageTracker {
   static _instance = null;
+
   static _initialized = false;
 
   constructor() {
@@ -36,10 +37,10 @@ export class SpellUsageTracker {
 
   /**
    * Handle D&D5e activity consumption events for spell usage tracking
-   * @param {Activity} activity - The activity being consumed
-   * @param {Object} usageConfig - Usage configuration data
-   * @param {Object} messageConfig - Message configuration data
-   * @param {Object} updates - Document updates object
+   * @param {Activity} activity The activity being consumed
+   * @param {Object} usageConfig Usage configuration data
+   * @param {Object} messageConfig Message configuration data
+   * @param {Object} updates Document updates object
    * @returns {Promise<void>}
    */
   async _handleActivityConsumption(activity, usageConfig, messageConfig, updates) {
@@ -64,7 +65,7 @@ export class SpellUsageTracker {
 
   /**
    * Detect usage context based on combat state
-   * @param {Actor} actor - The casting actor
+   * @param {Actor} actor The casting actor
    * @returns {string} Either 'combat' or 'exploration'
    */
   _detectUsageContext(actor) {
@@ -76,9 +77,9 @@ export class SpellUsageTracker {
 
   /**
    * Record spell usage in actor data
-   * @param {string} spellUuid - Canonical spell UUID
-   * @param {string} context - Either 'combat' or 'exploration'
-   * @param {Actor} actor - The casting actor
+   * @param {string} spellUuid Canonical spell UUID
+   * @param {string} context Either 'combat' or 'exploration'
+   * @param {Actor} actor The casting actor
    * @returns {Promise<void>}
    */
   async _recordSpellUsage(spellUuid, context, actor) {

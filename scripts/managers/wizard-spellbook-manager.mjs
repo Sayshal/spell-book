@@ -7,12 +7,13 @@ import { log } from '../logger.mjs';
  */
 export class WizardSpellbookManager {
   static _folderCreationLock = false;
+
   static _journalCreationLocks = new Map();
 
   /**
    * Create a new WizardSpellbookManager for an actor and specific class
-   * @param {Actor5e} actor - The actor to manage wizard Spell Book for
-   * @param {string} classIdentifier - The class identifier (e.g., 'wizard', 'cleric')
+   * @param {Actor5e} actor The actor to manage wizard Spell Book for
+   * @param {string} classIdentifier The class identifier (e.g., 'wizard', 'cleric')
    */
   constructor(actor, classIdentifier = 'wizard') {
     this.actor = actor;
@@ -88,7 +89,7 @@ export class WizardSpellbookManager {
 
   /**
    * Check if a spell is in the wizard's Spell Book
-   * @param {string} spellUuid - UUID of the spell
+   * @param {string} spellUuid UUID of the spell
    * @returns {Promise<boolean>} Whether the spell is in the Spell Book
    */
   async isSpellInSpellbook(spellUuid) {
@@ -98,10 +99,10 @@ export class WizardSpellbookManager {
 
   /**
    * Copy a spell to the wizard's Spell Book with associated cost and time
-   * @param {string} spellUuid - UUID of the spell to copy
-   * @param {number} cost - Cost in gold to copy the spell
-   * @param {number} time - Time in hours to copy the spell
-   * @param {boolean} isFree - Whether this is a free spell
+   * @param {string} spellUuid UUID of the spell to copy
+   * @param {number} cost Cost in gold to copy the spell
+   * @param {number} time Time in hours to copy the spell
+   * @param {boolean} isFree Whether this is a free spell
    * @returns {Promise<boolean>} Success state
    */
   async copySpell(spellUuid, cost, time, isFree = false) {
@@ -115,7 +116,7 @@ export class WizardSpellbookManager {
 
   /**
    * Calculate cost to copy a spell, accounting for free spells
-   * @param {Item5e} spell - The spell to copy
+   * @param {Item5e} spell The spell to copy
    * @returns {Promise<{cost: number, isFree: boolean}>} Cost in gold pieces and if it's free
    */
   async getCopyingCost(spell) {
@@ -127,7 +128,7 @@ export class WizardSpellbookManager {
 
   /**
    * Calculate time to copy a spell
-   * @param {Item5e} spell - The spell to copy
+   * @param {Item5e} spell The spell to copy
    * @returns {number} Time in hours
    */
   getCopyingTime(spell) {
@@ -136,9 +137,9 @@ export class WizardSpellbookManager {
 
   /**
    * Add a spell to the wizard's Spell Book
-   * @param {string} spellUuid - UUID of the spell to add
-   * @param {string} source - Source of the spell (levelUp, copied, initial)
-   * @param {Object} metadata - Additional metadata for the spell
+   * @param {string} spellUuid UUID of the spell to add
+   * @param {string} source Source of the spell (levelUp, copied, initial)
+   * @param {Object} metadata Additional metadata for the spell
    * @returns {Promise<boolean>} Success state
    */
   async addSpellToSpellbook(spellUuid, source, metadata) {
@@ -321,7 +322,7 @@ export class WizardSpellbookManager {
 
   /**
    * Check if a spell would be free to copy
-   * @param {Item5e} spell - The spell to check
+   * @param {Item5e} spell The spell to check
    * @returns {Promise<boolean>} Whether the spell would be free
    */
   async isSpellFree(spell) {

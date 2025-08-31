@@ -21,7 +21,7 @@ function spellSlotTrackerScript() {
       message += `<tr><td>${i}</td><td>${slot.value}</td><td>${slot.max}</td></tr>`;
     }
   }
-  message += `</table>`;
+  message += '</table>';
   ChatMessage.create({
     user: game.user.id,
     speaker: ChatMessage.getSpeaker({ actor }),

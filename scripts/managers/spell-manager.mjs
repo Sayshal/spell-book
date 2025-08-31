@@ -10,7 +10,7 @@ import { CantripManager, RuleSetManager } from './_module.mjs';
 export class SpellManager {
   /**
    * Create a new SpellManager for an actor
-   * @param {Actor5e} actor - The actor to manage spells for
+   * @param {Actor5e} actor The actor to manage spells for
    */
   constructor(actor) {
     this.actor = actor;
@@ -22,7 +22,7 @@ export class SpellManager {
 
   /**
    * Get cantrip and spell settings for the actor
-   * @param {string} classIdentifier - Class identifier for class-specific rules (required)
+   * @param {string} classIdentifier Class identifier for class-specific rules (required)
    * @returns {Object} Actor's spell settings
    */
   getSettings(classIdentifier) {
@@ -48,7 +48,7 @@ export class SpellManager {
 
   /**
    * Get maximum allowed cantrips for the actor using cached values when available
-   * @param {string} classIdentifier - The class identifier to check
+   * @param {string} classIdentifier The class identifier to check
    * @returns {number} Maximum allowed cantrips for this class
    */
   getMaxAllowed(classIdentifier) {
@@ -58,7 +58,7 @@ export class SpellManager {
 
   /**
    * Get the current count of prepared cantrips for a specific class
-   * @param {string} classIdentifier - The class identifier
+   * @param {string} classIdentifier The class identifier
    * @returns {number} Currently prepared cantrips count for this class
    */
   getCurrentCount(classIdentifier) {
@@ -68,8 +68,8 @@ export class SpellManager {
 
   /**
    * Get the preparation status for a given spell
-   * @param {Object} spell - The spell to check
-   * @param {string} classIdentifier - The specific class context
+   * @param {Object} spell The spell to check
+   * @param {string} classIdentifier The specific class context
    * @returns {Object} Preparation status information
    */
   getSpellPreparationStatus(spell, classIdentifier = null) {
@@ -208,8 +208,8 @@ export class SpellManager {
 
   /**
    * Create a unique key for class-spell combinations
-   * @param {string} spellUuid - The spell UUID
-   * @param {string} classIdentifier - The class identifier
+   * @param {string} spellUuid The spell UUID
+   * @param {string} classIdentifier The class identifier
    * @returns {string} Unique key for this class-spell combination
    */
   _createClassSpellKey(spellUuid, classIdentifier) {
@@ -218,7 +218,7 @@ export class SpellManager {
 
   /**
    * Parse a class-spell key back into components
-   * @param {string} key - The class-spell key
+   * @param {string} key The class-spell key
    * @returns {Object} Object with classIdentifier and spellUuid
    */
   _parseClassSpellKey(key) {
@@ -228,8 +228,8 @@ export class SpellManager {
 
   /**
    * Get preparation status for a spell that's on the actor
-   * @param {Item5e} spell - The spell item
-   * @param {string} classIdentifier - The class identifier for context
+   * @param {Item5e} spell The spell item
+   * @param {string} classIdentifier The class identifier for context
    * @returns {Object} - Preparation status information
    */
   _getOwnedSpellPreparationStatus(spell, classIdentifier) {
@@ -266,7 +266,7 @@ export class SpellManager {
 
   /**
    * Determine the source of a spell on the actor
-   * @param {Item5e} spell - The spell item
+   * @param {Item5e} spell The spell item
    * @returns {Object|null} - Source information for the spell
    */
   _determineSpellSource(spell) {
@@ -319,8 +319,8 @@ export class SpellManager {
 
   /**
    * Save prepared spells for a specific class
-   * @param {string} classIdentifier - The class identifier
-   * @param {Object} classSpellData - Object with spell data keyed by classSpellKey
+   * @param {string} classIdentifier The class identifier
+   * @param {Object} classSpellData Object with spell data keyed by classSpellKey
    * @returns {Promise<Object>} Result object with cantrip changes
    */
   async saveClassSpecificPreparedSpells(classIdentifier, classSpellData) {
@@ -407,8 +407,8 @@ export class SpellManager {
 
   /**
    * Clean up ritual spells created by our module for a specific class
-   * @param {string} classIdentifier - The class identifier
-   * @param {Array} spellIdsToRemove - Array to add removal IDs to
+   * @param {string} classIdentifier The class identifier
+   * @param {Array} spellIdsToRemove Array to add removal IDs to
    * @returns {Promise<void>}
    */
   async _cleanupModuleRitualSpells(classIdentifier, spellIdsToRemove) {
@@ -430,10 +430,10 @@ export class SpellManager {
 
   /**
    * Ensure a ritual spell exists on the actor in ritual mode
-   * @param {string} uuid - Spell UUID
-   * @param {string} sourceClass - Source class identifier
-   * @param {Array} spellsToCreate - Array to add creation data to
-   * @param {Array} spellsToUpdate - Array to add update data to
+   * @param {string} uuid Spell UUID
+   * @param {string} sourceClass Source class identifier
+   * @param {Array} spellsToCreate Array to add creation data to
+   * @param {Array} spellsToUpdate Array to add update data to
    * @returns {Promise<void>}
    */
   async _ensureRitualSpellOnActor(uuid, sourceClass, spellsToCreate, spellsToUpdate) {
@@ -470,7 +470,7 @@ export class SpellManager {
 
   /**
    * Get the preparation mode for a specific class
-   * @param {string} classIdentifier - The class identifier
+   * @param {string} classIdentifier The class identifier
    * @returns {string} The preparation mode (prepared, pact, etc.)
    */
   _getClassPreparationMode(classIdentifier) {
@@ -481,11 +481,11 @@ export class SpellManager {
 
   /**
    * Ensure a spell exists on the actor with proper class attribution
-   * @param {string} uuid - Spell UUID
-   * @param {string} sourceClass - Source class identifier
-   * @param {string} preparationMode - Preparation mode for this class
-   * @param {Array} spellsToCreate - Array to add creation data to
-   * @param {Array} spellsToUpdate - Array to add update data to
+   * @param {string} uuid Spell UUID
+   * @param {string} sourceClass Source class identifier
+   * @param {string} preparationMode Preparation mode for this class
+   * @param {Array} spellsToCreate Array to add creation data to
+   * @param {Array} spellsToUpdate Array to add update data to
    * @returns {Promise<void>}
    */
   async _ensureSpellOnActor(uuid, sourceClass, preparationMode, spellsToCreate, spellsToUpdate) {
@@ -553,10 +553,10 @@ export class SpellManager {
   /**
    * Handle unpreparing a spell for a specific class
    * @todo - Make sure classRules is set to actual identifier
-   * @param {string} uuid - Spell UUID
-   * @param {string} sourceClass - Source class identifier
-   * @param {Array} spellIdsToRemove - Array to add removal IDs to
-   * @param {Array} spellsToUpdate - Array to add update data to
+   * @param {string} uuid Spell UUID
+   * @param {string} sourceClass Source class identifier
+   * @param {Array} spellIdsToRemove Array to add removal IDs to
+   * @param {Array} spellsToUpdate Array to add update data to
    * @returns {Promise<void>}
    */
   async _handleUnpreparingSpell(uuid, sourceClass, spellIdsToRemove, spellsToUpdate) {
@@ -583,7 +583,7 @@ export class SpellManager {
 
   /**
    * Clean up cantrip entries from class-specific prepared spells
-   * @param {string} classIdentifier - The class identifier
+   * @param {string} classIdentifier The class identifier
    * @returns {Promise<void>}
    */
   async cleanupCantripsForClass(classIdentifier) {
@@ -637,14 +637,14 @@ export class SpellManager {
 
   /**
    * Determine if a spell can be changed based on class rules and current state
-   * @param {Item5e} spell - The spell being modified
-   * @param {boolean} isChecked - Whether the spell is being checked (true) or unchecked (false)
-   * @param {boolean} wasPrepared - Whether the spell was previously prepared
-   * @param {boolean} isLevelUp - Whether this is during level-up
-   * @param {boolean} isLongRest - Whether this is during a long rest
-   * @param {string} classIdentifier - The class identifier
-   * @param {number} currentPrepared - Current number of prepared spells for this class
-   * @param {number} maxPrepared - Maximum allowed prepared spells for this class
+   * @param {Item5e} spell The spell being modified
+   * @param {boolean} isChecked Whether the spell is being checked (true) or unchecked (false)
+   * @param {boolean} wasPrepared Whether the spell was previously prepared
+   * @param {boolean} isLevelUp Whether this is during level-up
+   * @param {boolean} isLongRest Whether this is during a long rest
+   * @param {string} classIdentifier The class identifier
+   * @param {number} currentPrepared Current number of prepared spells for this class
+   * @param {number} maxPrepared Maximum allowed prepared spells for this class
    * @returns {Object} Status object with allowed and message properties
    */
   canChangeSpellStatus(spell, isChecked, wasPrepared, isLevelUp, isLongRest, classIdentifier, currentPrepared, maxPrepared) {

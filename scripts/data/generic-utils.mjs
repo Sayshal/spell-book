@@ -3,8 +3,8 @@ import { log } from '../logger.mjs';
 
 /**
  * Get spellcasting configuration for a class, checking both main class and subclass
- * @param {Actor5e} actor - The actor
- * @param {string} classIdentifier - The class identifier
+ * @param {Actor5e} actor The actor
+ * @param {string} classIdentifier The class identifier
  * @returns {Object|null} Spellcasting configuration or null
  */
 export function getSpellcastingConfigForClass(actor, classIdentifier) {
@@ -19,8 +19,8 @@ export function getSpellcastingConfigForClass(actor, classIdentifier) {
 
 /**
  * Get scale values for a class, checking both main class and subclass
- * @param {Actor5e} actor - The actor
- * @param {string} classIdentifier - The class identifier
+ * @param {Actor5e} actor The actor
+ * @param {string} classIdentifier The class identifier
  * @returns {Object|null} Scale values or null
  */
 export function getScaleValuesForClass(actor, classIdentifier) {
@@ -36,8 +36,8 @@ export function getScaleValuesForClass(actor, classIdentifier) {
 
 /**
  * Get the item that provides spellcasting for a class (main class or subclass)
- * @param {Actor5e} actor - The actor
- * @param {string} classIdentifier - The class identifier
+ * @param {Actor5e} actor The actor
+ * @param {string} classIdentifier The class identifier
  * @returns {Item5e|null} The item providing spellcasting or null
  */
 export function getSpellcastingSourceItem(actor, classIdentifier) {
@@ -55,8 +55,8 @@ export function getSpellcastingSourceItem(actor, classIdentifier) {
 
 /**
  * Get effective class levels for spellcasting progression
- * @param {Actor5e} actor - The actor
- * @param {string} classIdentifier - The class identifier
+ * @param {Actor5e} actor The actor
+ * @param {string} classIdentifier The class identifier
  * @returns {number} Class levels for spellcasting calculations
  */
 export function getSpellcastingLevelsForClass(actor, classIdentifier) {
@@ -69,7 +69,7 @@ export function getSpellcastingLevelsForClass(actor, classIdentifier) {
 
 /**
  * Check if an actor is considered a wizard
- * @param {Actor5e} actor - The actor to check
+ * @param {Actor5e} actor The actor to check
  * @returns {boolean} True if actor has a wizard class or force wizard mode is enabled
  */
 export function isWizard(actor) {
@@ -87,7 +87,7 @@ export function isWizard(actor) {
 
 /**
  * Get the canonical UUID for a spell
- * @param {Item5e} spell - The spell item
+ * @param {Item5e} spell The spell item
  * @returns {string} The spell's UUID
  */
 export function getSpellUuid(spell) {
@@ -96,7 +96,7 @@ export function getSpellUuid(spell) {
 
 /**
  * Find the wizard class item for an actor
- * @param {Actor5e} actor - The actor to check
+ * @param {Actor5e} actor The actor to check
  * @returns {Item5e|null} The wizard class item or null
  */
 export function findWizardClass(actor) {
@@ -131,7 +131,7 @@ export function findWizardClass(actor) {
 
 /**
  * Get all wizard-enabled classes for an actor (including force wizard mode classes)
- * @param {Actor5e} actor - The actor to check
+ * @param {Actor5e} actor The actor to check
  * @returns {Array} Array of class identifiers that are wizard-enabled
  */
 export function getWizardEnabledClasses(actor) {
@@ -153,8 +153,8 @@ export function getWizardEnabledClasses(actor) {
 
 /**
  * Check if a specific class is wizard-enabled
- * @param {Actor5e} actor - The actor to check
- * @param {string} classIdentifier - The class identifier to check
+ * @param {Actor5e} actor The actor to check
+ * @param {string} classIdentifier The class identifier to check
  * @returns {boolean} True if the class is wizard-enabled
  */
 export function isClassWizardEnabled(actor, classIdentifier) {
@@ -172,8 +172,8 @@ export function isClassWizardEnabled(actor, classIdentifier) {
 
 /**
  * Get the appropriate label/name from a CONFIG object
- * @param {Object} configObject - The CONFIG object (e.g., CONFIG.DND5E.spellSchools)
- * @param {string} key - The key to look up
+ * @param {Object} configObject The CONFIG object (e.g., CONFIG.DND5E.spellSchools)
+ * @param {string} key The key to look up
  * @returns {string} The label/name or empty string if not found
  */
 export function getConfigLabel(configObject, key) {
@@ -187,6 +187,7 @@ export function getConfigLabel(configObject, key) {
 
 /**
  * Get the target user ID for spell data operations
+ * @param actor
  * @todo - Should be an easier way within dnd5e/foundry to get this done
  * @returns {string} The user ID to use for spell data
  */

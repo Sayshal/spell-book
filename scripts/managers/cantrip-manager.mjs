@@ -12,8 +12,8 @@ export class CantripManager {
   /**
    * Create a new CantripManager
    * @todo - Replace `isWizard` checks with `this.isWizard` wherever possible.
-   * @param {Actor5e} actor - The actor to manage cantrips for
-   * @param {SpellManager} spellManager - The associated SpellManager
+   * @param {Actor5e} actor The actor to manage cantrips for
+   * @param {SpellManager} spellManager The associated SpellManager
    */
   constructor(actor, spellManager) {
     this.actor = actor;
@@ -61,7 +61,7 @@ export class CantripManager {
 
   /**
    * Get max cantrips for a class using cached values when available
-   * @param {string} classIdentifier - The class identifier
+   * @param {string} classIdentifier The class identifier
    * @returns {number} Max cantrips for this class
    */
   _getMaxCantripsForClass(classIdentifier) {
@@ -80,7 +80,7 @@ export class CantripManager {
 
   /**
    * Calculate max cantrips for a specific class
-   * @param {string} classIdentifier - The class identifier
+   * @param {string} classIdentifier The class identifier
    * @returns {number} Maximum cantrips for this class
    */
   _calculateMaxCantripsForClass(classIdentifier) {
@@ -112,7 +112,7 @@ export class CantripManager {
 
   /**
    * Get the current count of prepared cantrips for a specific class
-   * @param {string} classIdentifier - The class identifier
+   * @param {string} classIdentifier The class identifier
    * @returns {number} Currently prepared cantrips count for this class
    */
   getCurrentCount(classIdentifier = null) {
@@ -147,12 +147,12 @@ export class CantripManager {
 
   /**
    * Determine if a cantrip can be changed
-   * @param {Item5e} spell - The spell being modified
-   * @param {boolean} isChecked - Whether the spell is being checked (true) or unchecked (false)
-   * @param {boolean} isLevelUp - Whether this is during level-up
-   * @param {boolean} isLongRest - Whether this is during a long rest
-   * @param {number} uiCantripCount - Number of checked cantrip boxes in the UI currently
-   * @param {string} classIdentifier - The current class identifier
+   * @param {Item5e} spell The spell being modified
+   * @param {boolean} isChecked Whether the spell is being checked (true) or unchecked (false)
+   * @param {boolean} isLevelUp Whether this is during level-up
+   * @param {boolean} isLongRest Whether this is during a long rest
+   * @param {number} uiCantripCount Number of checked cantrip boxes in the UI currently
+   * @param {string} classIdentifier The current class identifier
    * @returns {Object} Status object with allowed and message properties
    */
   canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest, uiCantripCount, classIdentifier) {
@@ -213,9 +213,9 @@ export class CantripManager {
 
   /**
    * Get the current swap tracking data
-   * @param {boolean} isLevelUp - Whether this is a level-up context
-   * @param {boolean} isLongRest - Whether this is a long rest context
-   * @param {string} classIdentifier - The class identifier
+   * @param {boolean} isLevelUp Whether this is a level-up context
+   * @param {boolean} isLongRest Whether this is a long rest context
+   * @param {string} classIdentifier The class identifier
    * @returns {Object} Tracking data
    */
   _getSwapTrackingData(isLevelUp, isLongRest, classIdentifier) {
@@ -227,11 +227,11 @@ export class CantripManager {
 
   /**
    * Track changes to cantrips for swap management
-   * @param {Item5e} spell - The spell being modified
-   * @param {boolean} isChecked - Whether the spell is being checked (true) or unchecked (false)
-   * @param {boolean} isLevelUp - Whether this is during level-up
-   * @param {boolean} isLongRest - Whether this is during a long rest
-   * @param {string} classIdentifier - The class identifier
+   * @param {Item5e} spell The spell being modified
+   * @param {boolean} isChecked Whether the spell is being checked (true) or unchecked (false)
+   * @param {boolean} isLevelUp Whether this is during level-up
+   * @param {boolean} isLongRest Whether this is during a long rest
+   * @param {string} classIdentifier The class identifier
    */
   trackCantripChange(spell, isChecked, isLevelUp, isLongRest, classIdentifier) {
     if (spell.system.level !== 0) return;
@@ -285,7 +285,7 @@ export class CantripManager {
 
   /**
    * Complete the cantrip swap process and reset tracking
-   * @param {boolean} isLevelUp - Whether this is completing a level-up swap
+   * @param {boolean} isLevelUp Whether this is completing a level-up swap
    * @returns {Promise<boolean>} Success status
    */
   async completeCantripSwap(isLevelUp) {
@@ -338,7 +338,7 @@ export class CantripManager {
 
   /**
    * Send comprehensive GM notification with all spell changes and over-limit warnings
-   * @param {Object} notificationData - Combined notification data
+   * @param {Object} notificationData Combined notification data
    * @returns {Promise<void>}
    */
   async sendComprehensiveGMNotification(notificationData) {

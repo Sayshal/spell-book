@@ -9,6 +9,7 @@ const { renderTemplate } = foundry.applications.handlebars;
  */
 export class SpellUserDataJournal {
   static cache = new Map();
+
   static journalName = 'User Spell Data';
 
   /**
@@ -24,7 +25,7 @@ export class SpellUserDataJournal {
 
   /**
    * Get user page from journal for spell data storage
-   * @param {string} userId - User ID to get page for
+   * @param {string} userId User ID to get page for
    * @returns {Promise<JournalEntryPage|null>} The user's page or null if not found
    */
   static async _getUserPage(userId) {
@@ -35,7 +36,7 @@ export class SpellUserDataJournal {
 
   /**
    * Parse spell data from HTML tables with per-actor structure support
-   * @param {string} htmlContent - The page HTML content to parse
+   * @param {string} htmlContent The page HTML content to parse
    * @returns {Object} Parsed spell data object
    */
   static _parseSpellDataFromHTML(htmlContent) {
@@ -107,9 +108,9 @@ export class SpellUserDataJournal {
 
   /**
    * Generate HTML tables from spell data for journal storage
-   * @param {Object} spellData - The spell data to convert to HTML
-   * @param {string} userName - Name of the user for display
-   * @param {string} userId - User ID for the data
+   * @param {Object} spellData The spell data to convert to HTML
+   * @param {string} userName Name of the user for display
+   * @param {string} userId User ID for the data
    * @returns {string} Generated HTML tables content
    */
   static async _generateTablesHTML(spellData, userName, userId) {
@@ -188,9 +189,9 @@ export class SpellUserDataJournal {
 
   /**
    * Get user data for a specific spell, creating missing infrastructure as needed
-   * @param {string|Object} spellOrUuid - Spell UUID or spell object
-   * @param {string} userId - User ID (optional)
-   * @param {string} actorId - Actor ID (optional)
+   * @param {string|Object} spellOrUuid Spell UUID or spell object
+   * @param {string} userId User ID (optional)
+   * @param {string} actorId Actor ID (optional)
    * @returns {Promise<Object|null>} User data object or null
    */
   static async getUserDataForSpell(spellOrUuid, userId = null, actorId = null) {
@@ -238,10 +239,10 @@ export class SpellUserDataJournal {
 
   /**
    * Set user data for a spell
-   * @param {string|Object} spellOrUuid - Spell UUID or spell object
-   * @param {Object} data - Data to set
-   * @param {string} userId - User ID (optional)
-   * @param {string} actorId - Actor ID (optional)
+   * @param {string|Object} spellOrUuid Spell UUID or spell object
+   * @param {Object} data Data to set
+   * @param {string} userId User ID (optional)
+   * @param {string} actorId Actor ID (optional)
    * @returns {Promise<boolean>} Success status
    */
   static async setUserDataForSpell(spellOrUuid, data, userId = null, actorId = null) {
@@ -273,9 +274,7 @@ export class SpellUserDataJournal {
         }
         if (data.favorited !== undefined) spellData[canonicalUuid].actorData[actorId].favorited = data.favorited;
         if (data.usageStats !== undefined) spellData[canonicalUuid].actorData[actorId].usageStats = data.usageStats;
-      } else {
-        if (data.notes !== undefined) spellData[canonicalUuid].notes = data.notes;
-      }
+      } else if (data.notes !== undefined) spellData[canonicalUuid].notes = data.notes;
       const newContent = await this._generateTablesHTML(spellData, user.name, targetUserId);
       await page.update({
         'text.content': newContent,
@@ -293,9 +292,9 @@ export class SpellUserDataJournal {
 
   /**
    * Enhance spell with user data
-   * @param {Object} spell - Spell object to enhance
-   * @param {string} userId - User ID (optional)
-   * @param {string} actorId - Actor ID (optional)
+   * @param {Object} spell Spell object to enhance
+   * @param {string} userId User ID (optional)
+   * @param {string} actorId Actor ID (optional)
    * @returns {Object} Enhanced spell object
    */
   static enhanceSpellWithUserData(spell, userId = null, actorId = null) {
@@ -333,10 +332,10 @@ export class SpellUserDataJournal {
 
   /**
    * Set spell favorite status
-   * @param {string|Object} spellOrUuid - Spell UUID or spell object
-   * @param {boolean} favorited - Favorite status
-   * @param {string} userId - User ID (optional)
-   * @param {string} actorId - Actor ID (optional)
+   * @param {string|Object} spellOrUuid Spell UUID or spell object
+   * @param {boolean} favorited Favorite status
+   * @param {string} userId User ID (optional)
+   * @param {string} actorId Actor ID (optional)
    * @returns {Promise<boolean>} Success status
    */
   static async setSpellFavorite(spellOrUuid, favorited, userId = null, actorId = null) {
@@ -395,9 +394,9 @@ export class SpellUserDataJournal {
 
   /**
    * Set spell notes
-   * @param {string|Object} spellOrUuid - Spell UUID or spell object
-   * @param {string} notes - Notes text
-   * @param {string} userId - User ID (optional)
+   * @param {string|Object} spellOrUuid Spell UUID or spell object
+   * @param {string} notes Notes text
+   * @param {string} userId User ID (optional)
    * @returns {Promise<boolean>} Success status
    */
   static async setSpellNotes(spellOrUuid, notes, userId = null) {
@@ -437,7 +436,7 @@ export class SpellUserDataJournal {
 
   /**
    * Ensure user data infrastructure exists (journal, page, etc.)
-   * @param {string} userId - User ID to ensure data for
+   * @param {string} userId User ID to ensure data for
    * @returns {Promise<void>}
    */
   static async _ensureUserDataInfrastructure(userId) {
@@ -488,8 +487,8 @@ export class SpellUserDataJournal {
 
   /**
    * Generate empty user data HTML structure
-   * @param {string} userName - User display name
-   * @param {string} userId - User ID
+   * @param {string} userName User display name
+   * @param {string} userId User ID
    * @returns {Promise<string>} HTML content
    */
   static async _generateEmptyUserDataHTML(userName, userId) {

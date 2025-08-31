@@ -7,8 +7,8 @@ import { log } from '../logger.mjs';
  */
 export class SpellLoadoutManager {
   /**
-   * @param {Actor} actor - The actor whose loadouts to manage
-   * @param {SpellBook} spellbook - Optional Spell Book reference
+   * @param {Actor} actor The actor whose loadouts to manage
+   * @param {SpellBook} spellbook Optional Spell Book reference
    */
   constructor(actor, spellbook = null) {
     this.actor = actor;
@@ -19,7 +19,7 @@ export class SpellLoadoutManager {
 
   /**
    * Get all loadouts for the actor, with caching
-   * @param {string} classIdentifier - The class identifier to filter by
+   * @param {string} classIdentifier The class identifier to filter by
    * @returns {Array} Array of loadout objects
    */
   getAvailableLoadouts(classIdentifier = null) {
@@ -28,7 +28,7 @@ export class SpellLoadoutManager {
     if (!this._loadoutsCache || now - this._lastCacheTime > cacheTimeout) {
       this._loadoutsCache = this.actor.getFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS) || {};
       this._lastCacheTime = now;
-      log(3, `Loaded loadouts from cache:`, this._loadoutsCache);
+      log(3, 'Loaded loadouts from cache:', this._loadoutsCache);
     }
     const allLoadouts = Object.values(this._loadoutsCache);
     if (classIdentifier) {
@@ -41,10 +41,10 @@ export class SpellLoadoutManager {
 
   /**
    * Save a new loadout
-   * @param {string} name - The loadout name
-   * @param {string} description - The loadout description
-   * @param {Array} spellConfiguration - The spell preparation configuration
-   * @param {string} classIdentifier - Optional class identifier
+   * @param {string} name The loadout name
+   * @param {string} description The loadout description
+   * @param {Array} spellConfiguration The spell preparation configuration
+   * @param {string} classIdentifier Optional class identifier
    * @returns {Promise<boolean>} Success status
    */
   async saveLoadout(name, description, spellConfiguration, classIdentifier = null) {
@@ -72,7 +72,7 @@ export class SpellLoadoutManager {
 
   /**
    * Load a loadout by ID
-   * @param {string} loadoutId - The loadout ID
+   * @param {string} loadoutId The loadout ID
    * @returns {Object|null} The loadout object or null if not found
    */
   loadLoadout(loadoutId) {
@@ -87,8 +87,8 @@ export class SpellLoadoutManager {
 
   /**
    * Apply a loadout to the current Spell Book
-   * @param {string} loadoutId - The loadout ID to apply
-   * @param {string} classIdentifier - The class to apply it to
+   * @param {string} loadoutId The loadout ID to apply
+   * @param {string} classIdentifier The class to apply it to
    * @returns {boolean} Success status
    */
   applyLoadout(loadoutId, classIdentifier) {
@@ -109,7 +109,7 @@ export class SpellLoadoutManager {
 
   /**
    * Delete a loadout
-   * @param {string} loadoutId - The loadout ID to delete
+   * @param {string} loadoutId The loadout ID to delete
    * @returns {Promise<boolean>} Success status
    */
   async deleteLoadout(loadoutId) {
@@ -130,7 +130,7 @@ export class SpellLoadoutManager {
 
   /**
    * Capture current spell preparation state
-   * @param {string} classIdentifier - The class identifier
+   * @param {string} classIdentifier The class identifier
    * @returns {Array} Array of prepared spell UUIDs
    */
   captureCurrentState(classIdentifier) {
@@ -155,8 +155,8 @@ export class SpellLoadoutManager {
 
   /**
    * Apply spell configuration to checkboxes
-   * @param {Array} spellConfiguration - Array of spell UUIDs to prepare
-   * @param {string} classIdentifier - The class identifier
+   * @param {Array} spellConfiguration Array of spell UUIDs to prepare
+   * @param {string} classIdentifier The class identifier
    */
   _applySpellConfiguration(spellConfiguration, classIdentifier) {
     if (!this.spellbook) throw new Error('No Spell Book reference available');

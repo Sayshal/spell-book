@@ -16,7 +16,6 @@ export async function preloadSpellData() {
       return await preloadForGMSetupMode();
     } else {
       log(3, 'GM Setup Mode disabled - no preloading');
-      return;
     }
   } else {
     return await preloadForPlayer();
@@ -83,7 +82,7 @@ function getCurrentPlayerActor() {
 
 /**
  * Collect all relevant spell UUIDs for a player actor
- * @param {Actor5e} actor - The player's actor
+ * @param {Actor5e} actor The player's actor
  * @returns {Promise<Set<string>>} Set of spell UUIDs
  */
 async function collectPlayerSpellUuids(actor) {
@@ -99,7 +98,7 @@ async function collectPlayerSpellUuids(actor) {
 
 /**
  * Get spell UUIDs from spell lists assigned to actor's classes
- * @param {Actor5e} actor - The actor to check
+ * @param {Actor5e} actor The actor to check
  * @returns {Promise<Array<string>>} Array of spell UUIDs
  */
 async function getSpellsFromActorSpellLists(actor) {
@@ -127,7 +126,7 @@ async function getSpellsFromActorSpellLists(actor) {
 
 /**
  * Get spell UUIDs from actor's wizard Spell Book
- * @param {Actor5e} actor - The actor to check
+ * @param {Actor5e} actor The actor to check
  * @returns {Promise<Array<string>>} Array of spell UUIDs
  */
 async function getActorSpellbookSpells(actor) {
@@ -177,9 +176,9 @@ export function getPreloadedData() {
 
 /**
  * Cache preloaded data to global scope
- * @param {Array} spellLists - Array of spell list objects
- * @param {Array} enrichedSpells - Array of enriched spell objects
- * @param {string} mode - The preload mode used
+ * @param {Array} spellLists Array of spell list objects
+ * @param {Array} enrichedSpells Array of enriched spell objects
+ * @param {string} mode The preload mode used
  */
 function cachePreloadedData(spellLists, enrichedSpells, mode) {
   globalThis.SPELLBOOK.preloadedData = { spellLists, enrichedSpells, timestamp: Date.now(), version: game.modules.get(MODULE.ID).version, mode };
@@ -203,7 +202,7 @@ export function invalidateSpellListCache() {
 
 /**
  * Check if a journal page should trigger cache invalidation
- * @param {JournalEntryPage} page - The journal page to check
+ * @param {JournalEntryPage} page The journal page to check
  * @returns {boolean} True if this page affects spell lists and should invalidate cache
  */
 export function shouldInvalidateCacheForPage(page) {
@@ -218,7 +217,7 @@ export function shouldInvalidateCacheForPage(page) {
 
 /**
  * Normalize spell UUIDs to match compendium format
- * @param {Set<string>} spellUuids - Set of spell UUIDs to normalize
+ * @param {Set<string>} spellUuids Set of spell UUIDs to normalize
  * @returns {Set<string>} Set of normalized UUIDs
  */
 function normalizeSpellUuids(spellUuids) {
@@ -232,7 +231,7 @@ function normalizeSpellUuids(spellUuids) {
 
 /**
  * Enrich spells with icon links
- * @param {Array} spells - Array of spell objects
+ * @param {Array} spells Array of spell objects
  * @returns {Array} Array of spells with enriched icons
  */
 function enrichSpellsWithIcons(spells) {

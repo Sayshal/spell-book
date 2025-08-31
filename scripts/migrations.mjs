@@ -48,31 +48,10 @@ async function migrateDeprecatedFlags() {
 }
 
 /**
- * Check if folder migration is needed for spell journals
- * @returns {Promise<boolean>} Whether migration is needed
- */
-async function checkFolderMigrationNeeded() {
-  const customPack = game.packs.get(MODULE.PACK.SPELLS);
-  if (!customPack) return false;
-  const allJournals = await customPack.getDocuments();
-  const topLevelSpellJournals = allJournals.filter((journal) => {
-    if (journal.folder || journal.pages.size === 0) return false;
-    const page = journal.pages.contents[0];
-    if (page.type !== 'spells') return false;
-    const flags = page.flags?.[MODULE.ID] || {};
-    if (flags.isDuplicate || flags.originalUuid) return false;
-    return flags.isMerged || flags.isCustom || flags.isNewList;
-  });
-  const migrationNeeded = topLevelSpellJournals.length > 0;
-  log(migrationNeeded ? 3 : 3, migrationNeeded ? `Folder migration needed: found ${topLevelSpellJournals.length} top-level spell journals` : 'No folder migration needed');
-  return migrationNeeded;
-}
-
-/**
  * Migrate a collection of documents for deprecated flags
- * @param {Collection|Array} documents - Documents to migrate
- * @param {Object} results - Results object to update
- * @param {string|null} packName - Pack name if migrating compendium
+ * @param {Collection|Array} documents Documents to migrate
+ * @param {Object} results Results object to update
+ * @param {string|null} packName Pack name if migrating compendium
  */
 async function migrateCollection(documents, results, packName = null) {
   for (const doc of documents) {
@@ -89,8 +68,8 @@ async function migrateCollection(documents, results, packName = null) {
 
 /**
  * Migrate a single document for deprecated flags
- * @param {Document} doc - Document to migrate
- * @param {Array} deprecatedFlags - Array of deprecated flag definitions
+ * @param {Document} doc Document to migrate
+ * @param {Array} deprecatedFlags Array of deprecated flag definitions
  * @returns {Promise<Object>} Migration result with update status and removed flags
  */
 async function migrateDocument(doc, deprecatedFlags) {
@@ -229,7 +208,7 @@ async function validateUserDataOwnership() {
       if (!isOwnershipEqual(userDataJournal.ownership, correctJournalOwnership, journalIdentifier)) {
         await userDataJournal.update({ ownership: correctJournalOwnership });
         results.fixed++;
-        results.details.push(`Fixed user data journal`);
+        results.details.push('Fixed user data journal');
         results.fixedDocuments.push({ type: 'journal', name: userDataJournal.name, id: userDataJournal.id, oldOwnership: currentOwnership, newOwnership: correctJournalOwnership });
       }
       for (const page of userDataJournal.pages) {
@@ -428,9 +407,9 @@ async function validatePackOwnership() {
 
 /**
  * Compare two ownership objects for equality
- * @param {Object} ownership1 - First ownership object
- * @param {Object} ownership2 - Second ownership object
- * @param {string} documentName - Document name for logging
+ * @param {Object} ownership1 First ownership object
+ * @param {Object} ownership2 Second ownership object
+ * @param {string} documentName Document name for logging
  * @returns {boolean} Whether ownership objects are equal
  */
 function isOwnershipEqual(ownership1, ownership2, documentName = 'unknown') {
@@ -444,9 +423,9 @@ function isOwnershipEqual(ownership1, ownership2, documentName = 'unknown') {
 
 /**
  * Compare two role-based ownership objects for equality
- * @param {Object} ownership1 - First ownership object
- * @param {Object} ownership2 - Second ownership object
- * @param {string} documentName - Document name for logging
+ * @param {Object} ownership1 First ownership object
+ * @param {Object} ownership2 Second ownership object
+ * @param {string} documentName Document name for logging
  * @returns {boolean} Whether role ownership objects are equal
  */
 function isRoleOwnershipEqual(ownership1, ownership2, documentName = 'unknown') {
@@ -460,9 +439,9 @@ function isRoleOwnershipEqual(ownership1, ownership2, documentName = 'unknown') 
 
 /**
  * Migrate a journal to its appropriate folder based on flags
- * @param {JournalEntry} journal - Journal to migrate
- * @param {Folder} customFolder - Custom spell lists folder
- * @param {Folder} mergedFolder - Merged spell lists folder
+ * @param {JournalEntry} journal Journal to migrate
+ * @param {Folder} customFolder Custom spell lists folder
+ * @param {Folder} mergedFolder Merged spell lists folder
  * @returns {Promise<Object>} Migration result with success status and type
  */
 async function migrateJournalToFolder(journal, customFolder, mergedFolder) {
@@ -548,9 +527,10 @@ async function migratePackSorting() {
 
 /**
  * Log detailed migration results to console and create chat message
- * @param {Object} deprecatedResults - Results from deprecated flag migration
- * @param {Object} folderResults - Results from folder migration
- * @param {Object} ownershipResults - Results from ownership validation
+ * @param {Object} deprecatedResults Results from deprecated flag migration
+ * @param {Object} folderResults Results from folder migration
+ * @param {Object} ownershipResults Results from ownership validation
+ * @param {Object} packSortingResults Results from pack sorting validation
  */
 async function logMigrationResults(deprecatedResults, folderResults, ownershipResults, packSortingResults) {
   const totalProcessed = deprecatedResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed;
@@ -601,51 +581,15 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
 
 /**
  * Build chat message content for migration results
- * @param {Object} deprecatedResults - Deprecated flag results
- * @param {Object} folderResults - Folder migration results
- * @param {Object} ownershipResults - Ownership validation results
- * @param {Object} packSortingResults - Pack sorting results
- * @param {number} totalProcessed - Total processed documents
+ * @param {Object} deprecatedResults Deprecated flag results
+ * @param {Object} folderResults Folder migration results
+ * @param {Object} ownershipResults Ownership validation results
+ * @param {Object} packSortingResults Pack sorting results
+ * @param {number} totalProcessed Total processed documents
  * @returns {Promise<string>} Rendered HTML content
  */
 async function buildChatContent(deprecatedResults, folderResults, ownershipResults, packSortingResults, totalProcessed) {
   return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_REPORT, { deprecatedResults, folderResults, ownershipResults, packSortingResults, totalProcessed });
-}
-
-/**
- * Build user data migration content for templates
- * @param {Object} userDataResults - User data migration results
- * @returns {Promise<string>} Rendered HTML content
- */
-async function buildUserDataMigrationContent(userDataResults) {
-  const visibleUsers = userDataResults.users.slice(0, 5);
-  const hasMoreUsers = userDataResults.users.length > 5;
-  const remainingUserCount = Math.max(0, userDataResults.users.length - 5);
-  const processedResults = { ...userDataResults, visibleUsers, hasMoreUsers, remainingUserCount };
-  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_USER_DATA, { userDataResults: processedResults });
-}
-
-/**
- * Build folder migration content for templates
- * @param {Object} folderResults - Folder migration results
- * @returns {Promise<string>} Rendered HTML content
- */
-async function buildFolderMigrationContent(folderResults) {
-  const processedResults = { ...folderResults, foldersCreatedNames: folderResults.foldersCreated.length > 0 ? folderResults.foldersCreated.join(', ') : null };
-  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_FOLDER, { folderResults: processedResults });
-}
-
-/**
- * Build actor list content for templates
- * @param {Array} actors - Array of affected actors
- * @returns {Promise<string>} Rendered HTML content
- */
-async function buildActorListContent(actors) {
-  const visibleActors = actors.slice(0, 10);
-  const hasMoreActors = actors.length > 10;
-  const remainingCount = Math.max(0, actors.length - 10);
-  const context = { actors, visibleActors, hasMoreActors, remainingCount };
-  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_ACTORS, context);
 }
 
 /**

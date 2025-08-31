@@ -1,5 +1,6 @@
 import { TEMPLATES } from '../constants/_module.mjs';
 import * as UIHelpers from '../ui/_module.mjs';
+
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 export class SpellComparisonDialog extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -80,7 +81,8 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
     const parentRect = this.parentApp.element.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    let left, top;
+    let left;
+    let top;
     const rightSpace = viewportWidth - parentRect.right;
     if (rightSpace >= dialogWidth + 20) left = parentRect.right + 10;
     else {
@@ -98,7 +100,7 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
 
   /**
    * Process a spell object into standardized format for comparison display
-   * @param {Object} spell - The spell document to process
+   * @param {Object} spell The spell document to process
    * @returns {Object} Processed spell data with standardized properties for comparison
    * @returns {string} returns.uuid - Spell UUID
    * @returns {string} returns.name - Spell name
@@ -122,7 +124,7 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
       level: spell.system.level,
       school: UIHelpers.formatSpellSchool(spell),
       castingTime: spell.labels?.activation || UIHelpers.formatSpellActivation(spell),
-      range: spell.labels?.range || spell.system.range?.value + ' ' + spell.system.range?.units,
+      range: spell.labels?.range || `${spell.system.range?.value} ${spell.system.range?.units}`,
       duration: spell.labels?.duration || spell.system.duration?.value,
       components: UIHelpers.formatSpellComponents(spell),
       damage: this._extractDamageInfo(spell),
@@ -132,7 +134,7 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
 
   /**
    * Create enriched spell icon link
-   * @param {Object} spell - The spell document
+   * @param {Object} spell The spell document
    * @returns {string} HTML for enriched icon
    */
   _createEnrichedSpellIcon(spell) {
@@ -149,7 +151,7 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
 
   /**
    * Extract damage information from a spell for comparison purposes
-   * @param {Object} spell - The spell document to extract damage from
+   * @param {Object} spell The spell document to extract damage from
    * @returns {Object} Damage information object
    * @returns {string} returns.formula - Damage formula string (e.g., "1d8 + 2d6")
    * @returns {string[]} returns.types - Array of damage type strings
@@ -190,7 +192,7 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
 
   /**
    * Build comparison table data structure from processed spells
-   * @param {Object[]} spells - Array of processed spell objects
+   * @param {Object[]} spells Array of processed spell objects
    * @returns {Object} Comparison table data
    * @returns {Object[]} returns.properties - Array of property comparison objects
    * @returns {string} returns.properties[].name - Localized property name

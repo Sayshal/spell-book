@@ -27,11 +27,13 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /** @override */
   static PARTS = { form: { template: TEMPLATES.DIALOGS.FILTER_CONFIG } };
+
   config = [];
 
   /**
-   * @param {Application} parentApp - The parent application that opened this configuration
-   * @param {Object} [options={}] - Additional application options
+   * Create a new configuration instance
+   * @param {Application} parentApp The parent application that opened this configuration
+   * @param {Object} [options={}] Additional application options
    */
   constructor(parentApp, options = {}) {
     super(options);
@@ -165,7 +167,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Handle drag start event
-   * @param {DragEvent} event - The drag event
+   * @param {DragEvent} event The drag event
    * @returns {boolean} Whether drag start was successful
    */
   onDragStart(event) {
@@ -185,8 +187,8 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Handle drag over event to show drop position
-   * @param {DragEvent} event - The drag event
-   * @param {string} _selector - The selector for drag targets
+   * @param {DragEvent} event The drag event
+   * @param {string} _selector The selector for drag targets
    */
   onDragOver(event, _selector) {
     event.preventDefault();
@@ -206,8 +208,8 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Find the target element for dropping
-   * @param {DragEvent} event - The drag event
-   * @param {Array<HTMLElement>} items - List of potential drop targets
+   * @param {DragEvent} event The drag event
+   * @param {Array<HTMLElement>} items List of potential drop targets
    * @returns {HTMLElement|null} The target element
    */
   getDragTarget(event, items) {
@@ -228,7 +230,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Handle drop event to reorder filters
-   * @param {DragEvent} event - The drop event
+   * @param {DragEvent} event The drop event
    * @returns {Promise<boolean>} Whether drop was successful
    */
   async onDrop(event) {
@@ -255,7 +257,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       this.updateFilterOrder();
       if (this._formState) {
         for (const filter of this.config) {
-          if (this._formState.hasOwnProperty(filter.id)) filter.enabled = this._formState[filter.id];
+          if (filter.id in this._formState) filter.enabled = this._formState[filter.id];
         }
       }
       this.render(false);
@@ -280,8 +282,8 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Create a visual placeholder for drop position
-   * @param {HTMLElement} targetItem - The target element
-   * @param {boolean} dropAfter - Whether to drop after the target
+   * @param {HTMLElement} targetItem The target element
+   * @param {boolean} dropAfter Whether to drop after the target
    */
   createDropPlaceholder(targetItem, dropAfter) {
     const placeholder = document.createElement('div');
@@ -323,8 +325,8 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Process sortable and non-sortable filters
-   * @param {Array} filterConfig - The filter configuration
-   * @param {Object} formData - Form data from submission
+   * @param {Array} filterConfig The filter configuration
+   * @param {Object} formData Form data from submission
    * @returns {Object} Sorted filter groups
    */
   static processSortableFilters(filterConfig, formData) {
@@ -353,8 +355,8 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Update filter ordering based on DOM structure
-   * @param {Array} sortableFilters - Filters that can be sorted
-   * @param {HTMLFormElement} form - The form element
+   * @param {Array} sortableFilters Filters that can be sorted
+   * @param {HTMLFormElement} form The form element
    * @returns {Array} Updated sortable filters
    */
   static updateFilterOrder(sortableFilters, form) {
@@ -384,8 +386,8 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Handle form reset action
-   * @param {Event} event - The click event
-   * @param {HTMLFormElement} _form - The form element
+   * @param {Event} event The click event
+   * @param {HTMLFormElement} _form The form element
    */
   static handleReset(event, _form) {
     event.preventDefault();
@@ -395,9 +397,10 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Process and save filter configuration from form submission
-   * @param {Event} event - The submit event
-   * @param {HTMLFormElement} form - The form element
-   * @param {FormDataExtended} formData - The processed form data
+   * @param {Event} event The submit event
+   * @param {HTMLFormElement} form The form element
+   * @param {FormDataExtended} formData The processed form data
+   * @returns {boolean} True if configuration was saved successfully, false otherwise
    */
   static formHandler(event, form, formData) {
     event.preventDefault();

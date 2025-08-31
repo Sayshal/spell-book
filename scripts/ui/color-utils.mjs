@@ -1,6 +1,7 @@
 /** Thank you Ben for writing this color detection code for me. */
 
 import { log } from '../logger.mjs';
+
 const T = { light: '#f4f4f4', dark: '#1b1d24' };
 
 function d() {
@@ -8,7 +9,7 @@ function d() {
 }
 
 function h(x) {
-  const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(x);
+  const r = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(x);
   return r ? { r: parseInt(r[1], 16), g: parseInt(r[2], 16), b: parseInt(r[3], 16) } : null;
 }
 
@@ -16,11 +17,11 @@ function rgbToHsl(r, g, b) {
   r /= 255;
   g /= 255;
   b /= 255;
-  const x = Math.max(r, g, b),
-    n = Math.min(r, g, b);
-  let h,
-    s,
-    l = (x + n) / 2;
+  const x = Math.max(r, g, b);
+  const n = Math.min(r, g, b);
+  let h;
+  let s;
+  let l = (x + n) / 2;
   if (x === n) h = s = 0;
   else {
     const d = x - n;
@@ -52,11 +53,13 @@ function hslToRgb(h, s, l) {
     if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
     return p;
   };
-  let r, g, b;
+  let r;
+  let g;
+  let b;
   if (s === 0) r = g = b = l;
   else {
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s,
-      p = 2 * l - q;
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
     r = u(p, q, h + 1 / 3);
     g = u(p, q, h);
     b = u(p, q, h - 1 / 3);
@@ -73,13 +76,13 @@ function L(r, g, b) {
 }
 
 function C(a, b) {
-  const x = h(a),
-    y = h(b);
+  const x = h(a);
+  const y = h(b);
   if (!x || !y) return 1;
-  const l1 = L(x.r, x.g, x.b),
-    l2 = L(y.r, y.g, y.b),
-    br = Math.max(l1, l2),
-    dr = Math.min(l1, l2);
+  const l1 = L(x.r, x.g, x.b);
+  const l2 = L(y.r, y.g, y.b);
+  const br = Math.max(l1, l2);
+  const dr = Math.min(l1, l2);
   return (br + 0.05) / (dr + 0.05);
 }
 
@@ -89,19 +92,19 @@ function A(c, bg, t = 4.5) {
   const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
   let cr = C(c, bg);
   if (cr >= t) return c;
-  const bRgb = h(bg),
-    bLum = L(bRgb.r, bRgb.g, bRgb.b),
-    sL = bLum < 0.5;
+  const bRgb = h(bg);
+  const bLum = L(bRgb.r, bRgb.g, bRgb.b);
+  const sL = bLum < 0.5;
   let aL = hsl.l;
-  const st = sL ? 5 : -5,
-    lm = sL ? 95 : 5;
+  const st = sL ? 5 : -5;
+  const lm = sL ? 95 : 5;
   let at = 0;
   while (cr < t && at < 20) {
     aL += st;
     if (sL && aL >= lm) aL = lm;
     if (!sL && aL <= lm) aL = lm;
-    const aRgb = hslToRgb(hsl.h, hsl.s, aL),
-      aHex = `#${((1 << 24) + (aRgb.r << 16) + (aRgb.g << 8) + aRgb.b).toString(16).slice(1)}`;
+    const aRgb = hslToRgb(hsl.h, hsl.s, aL);
+    const aHex = `#${((1 << 24) + (aRgb.r << 16) + (aRgb.g << 8) + aRgb.b).toString(16).slice(1)}`;
     cr = C(aHex, bg);
     if (cr >= t) return aHex;
     if ((sL && aL >= lm) || (!sL && aL <= lm)) break;
@@ -123,28 +126,28 @@ export async function extractDominantColor(src) {
       i.onload = () => {
         clearTimeout(timeout);
         try {
-          const c = document.createElement('canvas'),
-            ctx = c.getContext('2d'),
-            s = 50;
+          const c = document.createElement('canvas');
+          const ctx = c.getContext('2d');
+          const s = 50;
           c.width = s;
           c.height = s;
           ctx.drawImage(i, 0, 0, s, s);
-          const d = ctx.getImageData(0, 0, s, s).data,
-            m = new Map();
+          const d = ctx.getImageData(0, 0, s, s).data;
+          const m = new Map();
           for (let x = 0; x < d.length; x += 16) {
-            const r = d[x],
-              g = d[x + 1],
-              b = d[x + 2],
-              a = d[x + 3];
+            const r = d[x];
+            const g = d[x + 1];
+            const b = d[x + 2];
+            const a = d[x + 3];
             if (a < 128 || (r > 240 && g > 240 && b > 240)) continue;
-            const rG = Math.floor(r / 32) * 32,
-              gG = Math.floor(g / 32) * 32,
-              bG = Math.floor(b / 32) * 32,
-              k = `${rG},${gG},${bG}`;
+            const rG = Math.floor(r / 32) * 32;
+            const gG = Math.floor(g / 32) * 32;
+            const bG = Math.floor(b / 32) * 32;
+            const k = `${rG},${gG},${bG}`;
             m.set(k, (m.get(k) || 0) + 1);
           }
-          let dc = null,
-            mc = 0;
+          let dc = null;
+          let mc = 0;
           for (const [c, cnt] of m.entries())
             if (cnt > mc) {
               mc = cnt;
@@ -153,7 +156,7 @@ export async function extractDominantColor(src) {
           if (dc) {
             const [r, g, b] = dc.split(',').map(Number);
             const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-            if (hex.match(/^#[0-9A-Fa-f]{6}$/)) resolve(hex);
+            if (hex.match(/^#[\dA-Fa-f]{6}$/)) resolve(hex);
             else resolve('#8B4513');
           } else resolve('#8B4513');
         } catch (e) {
@@ -187,7 +190,7 @@ export async function applyClassColors(sc) {
     if (img && img !== 'icons/svg/mystery-man.svg') {
       try {
         const ec = await extractDominantColor(img);
-        if (ec && typeof ec === 'string' && ec.match(/^#[0-9A-Fa-f]{6}$/)) {
+        if (ec && typeof ec === 'string' && ec.match(/^#[\dA-Fa-f]{6}$/)) {
           clr = A(ec, bg, 4.5);
         } else {
           log(2, `Invalid color extracted for class ${id}, using fallback`);
@@ -200,7 +203,7 @@ export async function applyClassColors(sc) {
     } else {
       clr = A('#8B4513', bg, 4.5);
     }
-    if (!clr || typeof clr !== 'string' || !clr.match(/^#[0-9A-Fa-f]{6}$/)) {
+    if (!clr || typeof clr !== 'string' || !clr.match(/^#[\dA-Fa-f]{6}$/)) {
       log(2, `Final color validation failed for class ${id}, using raw fallback`);
       clr = '#8B4513';
     }

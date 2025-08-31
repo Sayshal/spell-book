@@ -4,7 +4,7 @@ import * as UIHelpers from '../ui/_module.mjs';
 
 /**
  * Process spell list data for display
- * @param {Object} spellList - The spell list to process
+ * @param {Object} spellList The spell list to process
  * @returns {Object} Processed spell list with display data
  */
 export function processSpellListForDisplay(spellList) {
@@ -28,7 +28,7 @@ export function processSpellListForDisplay(spellList) {
 
 /**
  * Process spell item for display in the GM interface
- * @param {Object} spell - The spell to process
+ * @param {Object} spell The spell to process
  * @returns {Object} Processed spell with display data
  */
 export function processSpellItemForDisplay(spell) {
@@ -43,7 +43,7 @@ export function processSpellItemForDisplay(spell) {
 
 /**
  * Format spell components for display
- * @param {Object} spell - The spell object
+ * @param {Object} spell The spell object
  * @returns {string} - Formatted components string
  */
 export function formatSpellComponents(spell) {
@@ -58,7 +58,7 @@ export function formatSpellComponents(spell) {
 
 /**
  * Format spell activation for display
- * @param {Object} spell - The spell object
+ * @param {Object} spell The spell object
  * @returns {string} - Formatted activation string
  */
 export function formatSpellActivation(spell) {
@@ -76,7 +76,7 @@ export function formatSpellActivation(spell) {
 
 /**
  * Format spell school for display
- * @param {Object} spell - The spell object
+ * @param {Object} spell The spell object
  * @returns {string} - Formatted school string
  */
 export function formatSpellSchool(spell) {
@@ -88,7 +88,7 @@ export function formatSpellSchool(spell) {
 
 /**
  * Format material components for display when consumed
- * @param {Object} spell - The spell object
+ * @param {Object} spell The spell object
  * @returns {string} - Formatted material components string
  */
 export function formatMaterialComponents(spell) {
@@ -104,7 +104,7 @@ export function formatMaterialComponents(spell) {
 
 /**
  * Get localized preparation mode text
- * @param {string} mode - The preparation mode
+ * @param {string} mode The preparation mode
  * @returns {string} - Localized preparation mode text
  */
 export function getLocalizedPreparationMode(mode) {
@@ -116,7 +116,7 @@ export function getLocalizedPreparationMode(mode) {
 
 /**
  * Extracts additional spell data for filtering
- * @param {Object} spell - The spell document
+ * @param {Object} spell The spell document
  * @returns {Object} - Additional data for filtering
  */
 export function extractSpellFilterData(spell) {
@@ -134,7 +134,7 @@ export function extractSpellFilterData(spell) {
 
 /**
  * Extract casting time information from spell
- * @param {Object} spell - The spell document
+ * @param {Object} spell The spell document
  * @returns {Object} - Casting time data
  */
 export function extractCastingTime(spell) {
@@ -147,7 +147,7 @@ export function extractCastingTime(spell) {
 
 /**
  * Extract range information from spell
- * @param {Object} spell - The spell document
+ * @param {Object} spell The spell document
  * @returns {Object} - Range data
  */
 export function extractRange(spell) {
@@ -159,7 +159,7 @@ export function extractRange(spell) {
 
 /**
  * Extract damage types from spell
- * @param {Object} spell - The spell document
+ * @param {Object} spell The spell document
  * @returns {string[]} - Array of damage types
  */
 export function extractDamageTypes(spell) {
@@ -184,7 +184,7 @@ export function extractDamageTypes(spell) {
 
 /**
  * Check if spell is a ritual
- * @param {Object} spell - The spell document
+ * @param {Object} spell The spell document
  * @returns {boolean} - Whether the spell is a ritual
  */
 export function checkIsRitual(spell) {
@@ -200,7 +200,7 @@ export function checkIsRitual(spell) {
 
 /**
  * Check if spell requires concentration
- * @param {Object} spell - The spell document
+ * @param {Object} spell The spell document
  * @returns {boolean} - Whether the spell requires concentration
  */
 export function checkIsConcentration(spell) {
@@ -210,7 +210,7 @@ export function checkIsConcentration(spell) {
 
 /**
  * Extract material component information from spell
- * @param {Object} spell - The spell document
+ * @param {Object} spell The spell document
  * @returns {Object} - Material component data
  */
 export function extractMaterialComponents(spell) {
@@ -221,7 +221,7 @@ export function extractMaterialComponents(spell) {
 
 /**
  * Check if a spell requires a saving throw
- * @param {Object} spell - The spell document
+ * @param {Object} spell The spell document
  * @returns {boolean} - Whether the spell requires a save
  */
 export function checkSpellRequiresSave(spell) {
@@ -243,7 +243,7 @@ export function checkSpellRequiresSave(spell) {
 
 /**
  * Extract conditions that might be applied by a spell
- * @param {Object} spell - The spell document
+ * @param {Object} spell The spell document
  * @returns {string[]} - Array of condition keys
  */
 export function extractSpellConditions(spell) {
@@ -262,7 +262,7 @@ export function extractSpellConditions(spell) {
 
 /**
  * Create a spell icon link
- * @param {Object} spell - The spell data object
+ * @param {Object} spell The spell data object
  * @returns {string} - HTML string with icon link
  */
 export function createSpellIconLink(spell) {

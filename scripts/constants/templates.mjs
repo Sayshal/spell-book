@@ -30,7 +30,7 @@ export const TEMPLATES = {
     LONG_REST_SWAP: 'modules/spell-book/templates/dialogs/long-rest-swap.hbs',
     MANAGER_DOCUMENTATION: 'modules/spell-book/templates/dialogs/spell-list-manager-documentation.hbs',
     MERGE_SPELL_LISTS: 'modules/spell-book/templates/dialogs/merge-spell-lists.hbs',
-    RENAME_SPELL_LIST: `modules/spell-book/templates/dialogs/rename-spell-list.hbs`,
+    RENAME_SPELL_LIST: 'modules/spell-book/templates/dialogs/rename-spell-list.hbs',
     SCROLL_SCANNER_RESULTS: 'modules/spell-book/templates/dialogs/scroll-scanner-results.hbs',
     SPELL_COMPARISON: 'modules/spell-book/templates/dialogs/spell-comparison.hbs',
     SPELL_CUSTOMIZATION_BODY: 'modules/spell-book/templates/dialogs/spell-details-customization.hbs',

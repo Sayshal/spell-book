@@ -50,7 +50,7 @@ export class UserSpellDataManager {
 
   /**
    * Ensure folder exists in the pack
-   * @param {CompendiumCollection} pack - The spells pack
+   * @param {CompendiumCollection} pack The spells pack
    * @returns {Promise<Folder>}
    */
   async _ensureFolder(pack) {
@@ -64,7 +64,7 @@ export class UserSpellDataManager {
 
   /**
    * Ensure journal exists in the folder
-   * @param {CompendiumCollection} pack - The spells pack
+   * @param {CompendiumCollection} pack The spells pack
    * @returns {Promise<JournalEntry>}
    */
   async _ensureJournal(pack) {
@@ -89,8 +89,8 @@ export class UserSpellDataManager {
 
   /**
    * Generate empty tables HTML for a user (updated structure with proper heading hierarchy)
-   * @param {string} userName - User name for display
-   * @param {string} userId - User ID for finding actors
+   * @param {string} userName User name for display
+   * @param {string} userId User ID for finding actors
    * @returns {Promise<string>} HTML content
    */
   async _generateEmptyTablesHTML(userName, userId) {
@@ -129,7 +129,7 @@ export class UserSpellDataManager {
 
   /**
    * Ensure user table exists (updated to pass userId and set sort order)
-   * @param {string} userId - User ID
+   * @param {string} userId User ID
    * @returns {Promise<boolean>} True if created, false if existed
    */
   async _ensureUserTable(userId) {
@@ -159,7 +159,7 @@ export class UserSpellDataManager {
 
   /**
    * Create introductory title page for user data journal
-   * @param {JournalEntry} journal - The user data journal
+   * @param {JournalEntry} journal The user data journal
    * @returns {Promise<void>}
    */
   async _createIntroductoryPage(journal) {

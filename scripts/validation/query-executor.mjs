@@ -7,8 +7,8 @@ import { log } from '../logger.mjs';
 export class QueryExecutor {
   /**
    * Execute parsed query against spells
-   * @param {Object} queryObject - Parsed query object
-   * @param {Array} spells - Array of spells to filter
+   * @param {Object} queryObject Parsed query object
+   * @param {Array} spells Array of spells to filter
    * @returns {Array} Filtered spells
    */
   executeQuery(queryObject, spells) {
@@ -23,8 +23,8 @@ export class QueryExecutor {
 
   /**
    * Evaluate all conditions against a spell (AND logic)
-   * @param {Array} conditions - Array of field conditions
-   * @param {Object} spell - Spell to evaluate against
+   * @param {Array} conditions Array of field conditions
+   * @param {Object} spell Spell to evaluate against
    * @returns {boolean} Whether the spell matches all conditions
    */
   _evaluateSpell(conditions, spell) {
@@ -33,8 +33,8 @@ export class QueryExecutor {
 
   /**
    * Evaluate single field condition
-   * @param {Object} condition - Field condition
-   * @param {Object} spell - Spell to evaluate
+   * @param {Object} condition Field condition
+   * @param {Object} spell Spell to evaluate
    * @returns {boolean} Whether the spell matches the condition
    */
   _evaluateCondition(condition, spell) {
@@ -73,8 +73,8 @@ export class QueryExecutor {
 
   /**
    * Evaluate casting time criteria
-   * @param {string} value - Expected casting time
-   * @param {Object} spell - Spell to check
+   * @param {string} value Expected casting time
+   * @param {Object} spell Spell to check
    * @returns {boolean} Whether casting time matches
    */
   _evaluateCastingTime(value, spell) {
@@ -88,8 +88,8 @@ export class QueryExecutor {
 
   /**
    * Evaluate range criteria
-   * @param {string} value - Expected range
-   * @param {Object} spell - Spell to check
+   * @param {string} value Expected range
+   * @param {Object} spell Spell to check
    * @returns {boolean} Whether range matches
    */
   _evaluateRange(value, spell) {
@@ -108,8 +108,8 @@ export class QueryExecutor {
 
   /**
    * Evaluate damage type criteria
-   * @param {string} value - Expected damage types (comma-separated)
-   * @param {Object} spell - Spell to check
+   * @param {string} value Expected damage types (comma-separated)
+   * @param {Object} spell Spell to check
    * @returns {boolean} Whether any damage type matches
    */
   _evaluateDamageType(value, spell) {
@@ -120,8 +120,8 @@ export class QueryExecutor {
 
   /**
    * Evaluate condition criteria
-   * @param {string} value - Expected conditions (comma-separated)
-   * @param {Object} spell - Spell to check
+   * @param {string} value Expected conditions (comma-separated)
+   * @param {Object} spell Spell to check
    * @returns {boolean} Whether any condition matches
    */
   _evaluateConditionProperty(value, spell) {
@@ -132,8 +132,8 @@ export class QueryExecutor {
 
   /**
    * Evaluate requires save criteria
-   * @param {string} value - Expected save requirement (true/false)
-   * @param {Object} spell - Spell to check
+   * @param {string} value Expected save requirement (true/false)
+   * @param {Object} spell Spell to check
    * @returns {boolean} Whether save requirement matches
    */
   _evaluateRequiresSave(value, spell) {
@@ -144,8 +144,8 @@ export class QueryExecutor {
 
   /**
    * Evaluate concentration criteria
-   * @param {string} value - Expected concentration requirement (true/false)
-   * @param {Object} spell - Spell to check
+   * @param {string} value Expected concentration requirement (true/false)
+   * @param {Object} spell Spell to check
    * @returns {boolean} Whether concentration requirement matches
    */
   _evaluateConcentration(value, spell) {
@@ -156,8 +156,8 @@ export class QueryExecutor {
 
   /**
    * Evaluate prepared criteria
-   * @param {string} value - Expected preparation status (true/false)
-   * @param {Object} spell - Spell to check
+   * @param {string} value Expected preparation status (true/false)
+   * @param {Object} spell Spell to check
    * @returns {boolean} Whether preparation status matches
    */
   _evaluatePrepared(value, spell) {
@@ -168,8 +168,8 @@ export class QueryExecutor {
 
   /**
    * Evaluate ritual criteria
-   * @param {string} value - Expected ritual capability (true/false)
-   * @param {Object} spell - Spell to check
+   * @param {string} value Expected ritual capability (true/false)
+   * @param {Object} spell Spell to check
    * @returns {boolean} Whether ritual capability matches
    */
   _evaluateRitual(value, spell) {
@@ -180,8 +180,8 @@ export class QueryExecutor {
 
   /**
    * Evaluate material components criteria
-   * @param {string} value - Expected material component status
-   * @param {Object} spell - Spell to check
+   * @param {string} value Expected material component status
+   * @param {Object} spell Spell to check
    * @returns {boolean} Whether material component status matches
    */
   _evaluateMaterialComponents(value, spell) {

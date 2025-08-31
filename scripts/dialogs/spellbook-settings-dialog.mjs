@@ -43,8 +43,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   };
 
   /**
-   * @param {Actor5e} actor - The actor to configure settings for
-   * @param {Object} [options={}] - Additional application options
+   * @param {Actor5e} actor The actor to configure settings for
+   * @param {Object} [options={}] Additional application options
    */
   constructor(actor, options = {}) {
     super(options);
@@ -216,9 +216,9 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Prepare form elements for a specific class
-   * @param {string} identifier - The class identifier
-   * @param {Object} formRules - The form rules configuration (with actual saved values)
-   * @param {Array} availableSpellLists - Available spell list options
+   * @param {string} identifier The class identifier
+   * @param {Object} formRules The form rules configuration (with actual saved values)
+   * @param {Array} availableSpellLists Available spell list options
    * @returns {Object} Object containing all form element HTML for the class
    */
   _prepareClassValidationHelpers(identifier, formRules, availableSpellLists) {
@@ -335,8 +335,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Create spell preparation bonus controls (decrease button, input, increase button)
-   * @param {string} identifier - The class identifier
-   * @param {number} currentValue - The current spell preparation bonus value
+   * @param {string} identifier The class identifier
+   * @param {number} currentValue The current spell preparation bonus value
    * @returns {string} HTML string for the spell preparation bonus controls
    */
   _createSpellPreparationBonusControls(identifier, currentValue) {
@@ -376,8 +376,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Create cantrip preparation bonus controls (decrease button, input, increase button)
-   * @param {string} identifier - The class identifier
-   * @param {number} currentValue - The current cantrip preparation bonus value
+   * @param {string} identifier The class identifier
+   * @param {number} currentValue The current cantrip preparation bonus value
    * @returns {string} HTML string for the cantrip preparation bonus controls
    */
   _createCantripPreparationBonusControls(identifier, currentValue) {
@@ -514,8 +514,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Increase spell preparation bonus for a specific class
-   * @param {Event} event - The click event
-   * @param {HTMLElement} target - The clicked button
+   * @param {Event} event The click event
+   * @param {HTMLElement} target The clicked button
    */
   static increaseSpellPrepBonus(event, target) {
     const classIdentifier = target.dataset.class;
@@ -532,8 +532,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Decrease spell preparation bonus for a specific class
-   * @param {Event} event - The click event
-   * @param {HTMLElement} target - The clicked button
+   * @param {Event} event The click event
+   * @param {HTMLElement} target The clicked button
    */
   static decreaseSpellPrepBonus(event, target) {
     const classIdentifier = target.dataset.class;
@@ -583,8 +583,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Increase cantrip preparation bonus for a specific class
-   * @param {Event} event - The click event
-   * @param {HTMLElement} target - The clicked button
+   * @param {Event} event The click event
+   * @param {HTMLElement} target The clicked button
    */
   static increaseCantripPrepBonus(event, target) {
     const classIdentifier = target.dataset.class;
@@ -601,8 +601,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Decrease cantrip preparation bonus for a specific class
-   * @param {Event} event - The click event
-   * @param {HTMLElement} target - The clicked button
+   * @param {Event} event The click event
+   * @param {HTMLElement} target The clicked button
    */
   static decreaseCantripPrepBonus(event, target) {
     const classIdentifier = target.dataset.class;
@@ -650,9 +650,9 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Update the visual display of class stats when preparation bonus changes
-   * @param {string} classIdentifier - The class identifier
-   * @param {string} bonusType - The type of bonus ('spell' or 'cantrip')
-   * @param {number} newBonus - The new bonus value
+   * @param {string} classIdentifier The class identifier
+   * @param {string} bonusType The type of bonus ('spell' or 'cantrip')
+   * @param {number} newBonus The new bonus value
    */
   _updateClassStatsDisplay(classIdentifier, bonusType, newBonus) {
     const classSection = this.element.querySelector(`[data-class="${classIdentifier}"]`);
@@ -669,8 +669,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Handle cantrip visibility changes - cleanup when disabled, restore when enabled
-   * @param {Actor5e} actor - The actor
-   * @param {Object} changes - Object mapping class IDs to 'enabled'/'disabled'
+   * @param {Actor5e} actor The actor
+   * @param {Object} changes Object mapping class IDs to 'enabled'/'disabled'
    * @returns {Promise<void>}
    */
   static async _handleCantripVisibilityChanges(actor, changes) {
@@ -691,9 +691,9 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Form handler for saving Spell Book settings
-   * @param {Event} _event - The form submission event
-   * @param {HTMLFormElement} _form - The form element
-   * @param {Object} formData - The form data
+   * @param {Event} _event The form submission event
+   * @param {HTMLFormElement} _form The form element
+   * @param {Object} formData The form data
    * @returns {Promise<Actor5e|null>} The actor or null if error
    */
   static async formHandler(_event, _form, formData) {

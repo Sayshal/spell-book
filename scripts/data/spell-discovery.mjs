@@ -5,9 +5,9 @@ import * as DataHelpers from './_module.mjs';
 
 /**
  * Get a class's spell list from compendium journals
- * @param {string} className - The name of the class
- * @param {string} [classUuid] - UUID of the class item
- * @param {Actor5e} [actor] - The actor (for custom spell list lookup)
+ * @param {string} className The name of the class
+ * @param {string} [classUuid] UUID of the class item
+ * @param {Actor5e} [actor] The actor (for custom spell list lookup)
  * @returns {Promise<Set<string>>} - Set of spell UUIDs
  */
 export async function getClassSpellList(className, classUuid, actor) {
@@ -66,7 +66,7 @@ export async function getClassSpellList(className, classUuid, actor) {
 
 /**
  * Extract top-level folder name from compendium source string
- * @param {string} source - Compendium source string
+ * @param {string} source Compendium source string
  * @returns {string} Top-level folder name or 'Unknown'
  */
 function getFolderNameFromPack(source) {
@@ -88,8 +88,8 @@ function getFolderNameFromPack(source) {
 /**
  * Find spell list by identifier across all packs
  * @todo - Can this be simplified?
- * @param {string} identifier - Class identifier
- * @param {Object} customMappings - Custom spell list mappings
+ * @param {string} identifier Class identifier
+ * @param {Object} customMappings Custom spell list mappings
  * @returns {Promise<Set<string>|null>} Matched spell list or null
  */
 async function findSpellListByIdentifier(identifier, customMappings) {
@@ -103,9 +103,9 @@ async function findSpellListByIdentifier(identifier, customMappings) {
 
 /**
  * Search pack for spell list matching identifier
- * @param {CompendiumCollection} pack - Pack to search
- * @param {string} identifier - Class identifier to match
- * @param {Object} customMappings - Custom spell list mappings
+ * @param {CompendiumCollection} pack Pack to search
+ * @param {string} identifier Class identifier to match
+ * @param {Object} customMappings Custom spell list mappings
  * @returns {Promise<Set<string>|null>} Matched spell list or null
  */
 async function searchPackForSpellList(pack, identifier, customMappings) {
@@ -128,7 +128,7 @@ async function searchPackForSpellList(pack, identifier, customMappings) {
 
 /**
  * Find custom spell list with specific identifier
- * @param {string} identifier - Identifier to search for
+ * @param {string} identifier Identifier to search for
  * @returns {Promise<Set<string>|null>} Matched spell list or null
  */
 async function findCustomSpellListByIdentifier(identifier) {
@@ -149,8 +149,8 @@ async function findCustomSpellListByIdentifier(identifier) {
 
 /**
  * Calculate maximum spell level available to a specific class
- * @param {Item} classItem - The class item with spellcasting configuration
- * @param {Actor5e} [actor] - The actor (optional, for additional context)
+ * @param {Item} classItem The class item with spellcasting configuration
+ * @param {Actor5e} [actor] The actor (optional, for additional context)
  * @returns {number} Maximum spell level (0 for cantrips only)
  */
 export function calculateMaxSpellLevel(classItem, actor) {
@@ -210,9 +210,9 @@ export function calculateMaxSpellLevel(classItem, actor) {
 
 /**
  * Find spell list by top-level folder name and identifier
- * @param {string} topLevelFolderName - Top-level folder name to match
- * @param {string} identifier - Class identifier
- * @param {Object} customMappings - Custom spell list mappings
+ * @param {string} topLevelFolderName Top-level folder name to match
+ * @param {string} identifier Class identifier
+ * @param {Object} customMappings Custom spell list mappings
  * @returns {Promise<Set<string>|null>} Matched spell list or null
  */
 async function getSpellListFromFolder(topLevelFolderName, identifier, customMappings) {

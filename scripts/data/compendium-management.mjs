@@ -5,7 +5,7 @@ import * as DataHelpers from './_module.mjs';
 
 /**
  * Scan compendiums for spell lists
- * @param {boolean} [includeHidden=true] - Whether to include hidden spell lists
+ * @param {boolean} [includeHidden=true] Whether to include hidden spell lists
  * @returns {Promise<Array>} Array of spell list objects with metadata
  */
 export async function findCompendiumSpellLists(includeHidden = true) {
@@ -51,7 +51,7 @@ export async function findCompendiumSpellLists(includeHidden = true) {
 
 /**
  * Prepare spell sources for filtering
- * @param {Array} availableSpells - The available spells array
+ * @param {Array} availableSpells The available spells array
  * @returns {Array} Array of source options
  */
 export function prepareSpellSources(availableSpells) {
@@ -73,8 +73,8 @@ export function prepareSpellSources(availableSpells) {
 
 /**
  * Process standard journal packs for spell lists
- * @param {Array} journalPacks - Array of journal packs
- * @param {Array} spellLists - Array to store results
+ * @param {Array} journalPacks Array of journal packs
+ * @param {Array} spellLists Array to store results
  */
 async function processStandardPacks(journalPacks, spellLists) {
   for (const pack of journalPacks) {
@@ -107,7 +107,7 @@ async function processStandardPacks(journalPacks, spellLists) {
 
 /**
  * Process custom spell lists pack
- * @param {Array} spellLists - Array to store results
+ * @param {Array} spellLists Array to store results
  */
 async function processCustomPack(spellLists) {
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
@@ -140,8 +140,8 @@ async function processCustomPack(spellLists) {
 
 /**
  * Compare versions of original and custom spell lists
- * @param {string} originalUuid - UUID of the original spell list
- * @param {string} customUuid - UUID of the custom spell list
+ * @param {string} originalUuid UUID of the original spell list
+ * @param {string} customUuid UUID of the custom spell list
  * @returns {Promise<Object>} Comparison results
  */
 export async function compareListVersions(originalUuid, customUuid) {
@@ -196,7 +196,7 @@ export async function getValidCustomListMappings() {
 
 /**
  * Duplicate a spell list to the custom pack
- * @param {Object} originalSpellList - The original spell list document
+ * @param {Object} originalSpellList The original spell list document
  * @returns {Promise<JournalEntryPage>} The duplicated spell list
  */
 export async function duplicateSpellList(originalSpellList) {
@@ -223,7 +223,7 @@ export async function duplicateSpellList(originalSpellList) {
 
 /**
  * Find a duplicate spell list in the custom pack
- * @param {string} originalUuid - UUID of the original spell list
+ * @param {string} originalUuid UUID of the original spell list
  * @returns {Promise<JournalEntryPage|null>} The duplicate or null
  */
 export async function findDuplicateSpellList(originalUuid) {
@@ -241,8 +241,8 @@ export async function findDuplicateSpellList(originalUuid) {
 
 /**
  * Update the spell list mapping settings
- * @param {string} originalUuid - UUID of the original spell list
- * @param {string} duplicateUuid - UUID of the duplicate spell list
+ * @param {string} originalUuid UUID of the original spell list
+ * @param {string} duplicateUuid UUID of the duplicate spell list
  * @returns {Promise<void>}
  */
 async function updateSpellListMapping(originalUuid, duplicateUuid) {
@@ -253,7 +253,7 @@ async function updateSpellListMapping(originalUuid, duplicateUuid) {
 
 /**
  * Remove a custom spell list and its mapping
- * @param {string} duplicateUuid - UUID of the duplicate spell list
+ * @param {string} duplicateUuid UUID of the duplicate spell list
  * @returns {Promise<boolean>} Whether removal was successful
  */
 export async function removeCustomSpellList(duplicateUuid) {
@@ -274,7 +274,7 @@ export async function removeCustomSpellList(duplicateUuid) {
 /**
  * Normalize a UUID for comparison
  * @todo I feel like we shouldn't have to do this in foundry anymore.
- * @param {string} uuid - The UUID to normalize
+ * @param {string} uuid The UUID to normalize
  * @returns {string[]} Array of normalized forms
  */
 export function normalizeUuid(uuid) {
@@ -294,7 +294,7 @@ export function normalizeUuid(uuid) {
 
 /**
  * Fetch all compendium spells
- * @param {number} [maxLevel=9] - Maximum spell level to include
+ * @param {number} [maxLevel=9] Maximum spell level to include
  * @returns {Promise<Array>} Array of spell items
  */
 export async function fetchAllCompendiumSpells(maxLevel = 9) {
@@ -318,8 +318,8 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
 
 /**
  * Fetch spells from a specific pack
- * @param {CompendiumCollection} pack - The pack to fetch from
- * @param {number} maxLevel - Maximum spell level
+ * @param {CompendiumCollection} pack The pack to fetch from
+ * @param {number} maxLevel Maximum spell level
  * @returns {Promise<Array>} Array of spell items
  */
 async function fetchSpellsFromPack(pack, maxLevel) {
@@ -340,8 +340,8 @@ async function fetchSpellsFromPack(pack, maxLevel) {
 
 /**
  * Format a spell index entry into a spell object
- * @param {Object} entry - The spell index entry
- * @param {CompendiumCollection} pack - The source pack
+ * @param {Object} entry The spell index entry
+ * @param {CompendiumCollection} pack The source pack
  * @returns {Object} Formatted spell object
  */
 function formatSpellEntry(entry, pack) {
@@ -367,9 +367,9 @@ function formatSpellEntry(entry, pack) {
 
 /**
  * Create a new spell list
- * @param {string} name - The name of the spell list
- * @param {string} identifier - The identifier (typically class name)
- * @param {string} source - The source description (not used for naming anymore)
+ * @param {string} name The name of the spell list
+ * @param {string} identifier The identifier (typically class name)
+ * @param {string} source The source description (not used for naming anymore)
  * @returns {Promise<JournalEntryPage>} The created spell list
  */
 export async function createNewSpellList(name, identifier, source) {
@@ -404,8 +404,8 @@ export async function createNewSpellList(name, identifier, source) {
 
 /**
  * Prepare dropdown options for casting time filter
- * @param {Array} availableSpells - The available spells array
- * @param {Object} filterState - Current filter state
+ * @param {Array} availableSpells The available spells array
+ * @param {Object} filterState Current filter state
  * @returns {Array} Array of options for the dropdown
  */
 export function prepareCastingTimeOptions(availableSpells, filterState) {
@@ -450,7 +450,7 @@ export function prepareCastingTimeOptions(availableSpells, filterState) {
 
 /**
  * Prepare dropdown options for damage type filter
- * @param {Object} filterState - Current filter state
+ * @param {Object} filterState Current filter state
  * @returns {Array} Array of options for the dropdown
  */
 export function prepareDamageTypeOptions(filterState) {
@@ -475,7 +475,7 @@ export function prepareDamageTypeOptions(filterState) {
 
 /**
  * Prepare dropdown options for condition filter
- * @param {Object} filterState - Current filter state
+ * @param {Object} filterState Current filter state
  * @returns {Array} Array of options for the dropdown
  */
 export function prepareConditionOptions(filterState) {
@@ -522,9 +522,9 @@ export async function findClassIdentifiers() {
 
 /**
  * Create a merged spell list from two existing spell lists
- * @param {string} sourceListUuid - UUID of the source spell list
- * @param {string} copyFromListUuid - UUID of the list to copy spells from
- * @param {string} mergedListName - Name for the merged list
+ * @param {string} sourceListUuid UUID of the source spell list
+ * @param {string} copyFromListUuid UUID of the list to copy spells from
+ * @param {string} mergedListName Name for the merged list
  * @returns {Promise<JournalEntryPage>} The created merged spell list
  */
 export async function createMergedSpellList(sourceListUuid, copyFromListUuid, mergedListName) {
@@ -571,8 +571,8 @@ export async function createMergedSpellList(sourceListUuid, copyFromListUuid, me
 
 /**
  * Get or create a folder in the custom spell lists pack
- * @param {string} folderName - Name of the folder
- * @param {string} localizationKey - Localization key for the folder name
+ * @param {string} folderName Name of the folder
+ * @param {string} localizationKey Localization key for the folder name
  * @returns {Promise<Folder|null>} The folder document
  */
 async function getOrCreateSpellListFolder(folderName, localizationKey) {
@@ -614,7 +614,7 @@ export async function getOrCreateMergedFolder() {
 
 /**
  * Check if a compendium should be indexed
- * @param {CompendiumCollection} pack - The pack to check
+ * @param {CompendiumCollection} pack The pack to check
  * @returns {boolean} Whether the pack should be indexed
  */
 export function shouldIndexCompendium(pack) {
@@ -626,7 +626,7 @@ export function shouldIndexCompendium(pack) {
 /**
  * Check if a compendium should be shown in settings for potential indexing
  * This includes both packs already in settings AND valid spell-related packs not yet configured
- * @param {CompendiumCollection} pack - The pack to check
+ * @param {CompendiumCollection} pack The pack to check
  * @returns {Promise<boolean>} Whether the pack should be available in settings
  */
 export async function shouldShowInSettings(pack) {

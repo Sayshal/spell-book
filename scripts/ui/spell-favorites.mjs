@@ -3,8 +3,8 @@ import { log } from '../logger.mjs';
 
 /**
  * Add spell to actor.system.favorites
- * @param {string} spellUuid - The spell UUID (compendium or actor)
- * @param {Actor} actor - The actor
+ * @param {string} spellUuid The spell UUID (compendium or actor)
+ * @param {Actor} actor The actor
  * @returns {Promise<boolean>} Success status
  */
 export async function addSpellToActorFavorites(spellUuid, actor) {
@@ -27,8 +27,8 @@ export async function addSpellToActorFavorites(spellUuid, actor) {
 
 /**
  * Remove spell from actor.system.favorites
- * @param {string} spellUuid - The spell UUID
- * @param {Actor} actor - The actor
+ * @param {string} spellUuid The spell UUID
+ * @param {Actor} actor The actor
  * @returns {Promise<boolean>} Success status
  */
 export async function removeSpellFromActorFavorites(spellUuid, actor) {
@@ -48,8 +48,8 @@ export async function removeSpellFromActorFavorites(spellUuid, actor) {
 
 /**
  * Sync favorites on spell preparation save
- * @param {Actor} actor - The actor
- * @param {Object} spellData - Spell preparation data
+ * @param {Actor} actor The actor
+ * @param {Object} spellData Spell preparation data
  * @returns {Promise<void>}
  */
 export async function syncFavoritesOnSave(actor, spellData) {
@@ -65,8 +65,8 @@ export async function syncFavoritesOnSave(actor, spellData) {
 
 /**
  * Process favorites from form state and update actor.system.favorites to match journal
- * @param {HTMLFormElement} form - The form element
- * @param {Actor} actor - The actor to update
+ * @param {HTMLFormElement} form The form element
+ * @param {Actor} actor The actor to update
  * @returns {Promise<void>}
  */
 export async function processFavoritesFromForm(form, actor) {
@@ -105,8 +105,8 @@ export async function processFavoritesFromForm(form, actor) {
 
 /**
  * Find actor spell by UUID with enhanced UUID matching
- * @param {string} spellUuid - The spell UUID to find
- * @param {Actor} actor - The actor to search
+ * @param {string} spellUuid The spell UUID to find
+ * @param {Actor} actor The actor to search
  * @returns {Item|null} The actor's spell item
  */
 export function findActorSpellByUuid(spellUuid, actor) {
@@ -127,7 +127,7 @@ export function findActorSpellByUuid(spellUuid, actor) {
 
 /**
  * Get canonical UUID for spell favorites (prefers compendium UUID)
- * @param {string|Object} spellOrUuid - Spell object or UUID
+ * @param {string|Object} spellOrUuid Spell object or UUID
  * @returns {string} Canonical UUID for favorites storage
  */
 export function getCanonicalSpellUuid(spellOrUuid) {

@@ -1,12 +1,12 @@
 /**
  * Create a checkbox input using DnD5e styling
- * @param {Object} config - Configuration options
- * @param {string} config.name - The name attribute for the checkbox
- * @param {boolean} [config.checked=false] - Whether the checkbox is checked
- * @param {boolean} [config.disabled] - Whether the checkbox is disabled
- * @param {string} [config.ariaLabel] - The aria-label attribute
- * @param {string} [config.cssClass] - Additional CSS classes
- * @param {string} [config.label] - Label text to display next to the checkbox
+ * @param {Object} config Configuration options
+ * @param {string} config.name The name attribute for the checkbox
+ * @param {boolean} [config.checked=false] Whether the checkbox is checked
+ * @param {boolean} [config.disabled] Whether the checkbox is disabled
+ * @param {string} [config.ariaLabel] The aria-label attribute
+ * @param {string} [config.cssClass] Additional CSS classes
+ * @param {string} [config.label] Label text to display next to the checkbox
  * @returns {HTMLElement} The created checkbox element
  */
 export function createCheckbox(config) {
@@ -27,16 +27,16 @@ export function createCheckbox(config) {
 
 /**
  * Create a number input using DnD5e styling
- * @param {Object} config - Configuration options
- * @param {string} config.name - The name attribute for the input
- * @param {number|string} [config.value] - The input value
- * @param {number} [config.min] - Minimum allowed value
- * @param {number} [config.max] - Maximum allowed value
- * @param {number} [config.step] - Step increment value
- * @param {string} [config.placeholder] - Placeholder text
- * @param {boolean} [config.disabled] - Whether the input is disabled
- * @param {string} [config.ariaLabel] - The aria-label attribute
- * @param {string} [config.cssClass] - Additional CSS classes
+ * @param {Object} config Configuration options
+ * @param {string} config.name The name attribute for the input
+ * @param {number|string} [config.value] The input value
+ * @param {number} [config.min] Minimum allowed value
+ * @param {number} [config.max] Maximum allowed value
+ * @param {number} [config.step] Step increment value
+ * @param {string} [config.placeholder] Placeholder text
+ * @param {boolean} [config.disabled] Whether the input is disabled
+ * @param {string} [config.ariaLabel] The aria-label attribute
+ * @param {string} [config.cssClass] Additional CSS classes
  * @returns {HTMLElement} The created number input
  */
 export function createNumberInput(config) {
@@ -47,13 +47,13 @@ export function createNumberInput(config) {
 
 /**
  * Create a text input using DnD5e styling
- * @param {Object} config - Configuration options
- * @param {string} config.name - The name attribute for the input
- * @param {string} [config.value] - The input value
- * @param {string} [config.placeholder] - Placeholder text
- * @param {boolean} [config.disabled] - Whether the input is disabled
- * @param {string} [config.ariaLabel] - The aria-label attribute
- * @param {string} [config.cssClass] - Additional CSS classes
+ * @param {Object} config Configuration options
+ * @param {string} config.name The name attribute for the input
+ * @param {string} [config.value] The input value
+ * @param {string} [config.placeholder] Placeholder text
+ * @param {boolean} [config.disabled] Whether the input is disabled
+ * @param {string} [config.ariaLabel] The aria-label attribute
+ * @param {string} [config.cssClass] Additional CSS classes
  * @returns {HTMLElement} The created text input
  */
 export function createTextInput(config) {
@@ -64,12 +64,12 @@ export function createTextInput(config) {
 
 /**
  * Create a select dropdown using DnD5e styling
- * @param {Object} config - Configuration options
- * @param {string} config.name - The name attribute for the select
- * @param {Array} [config.options] - Array of option objects { value, label, selected, disabled, optgroup }
- * @param {string} [config.ariaLabel] - The aria-label attribute
- * @param {boolean} [config.disabled] - Whether the select is disabled
- * @param {string} [config.cssClass] - Additional CSS classes
+ * @param {Object} config Configuration options
+ * @param {string} config.name The name attribute for the select
+ * @param {Array} [config.options] Array of option objects { value, label, selected, disabled, optgroup }
+ * @param {string} [config.ariaLabel] The aria-label attribute
+ * @param {boolean} [config.disabled] Whether the select is disabled
+ * @param {string} [config.cssClass] Additional CSS classes
  * @returns {HTMLElement} The created select element
  */
 export function createSelect(config) {
@@ -106,7 +106,7 @@ export function createSelect(config) {
 
 /**
  * Convert a DOM element to its HTML string representation
- * @param {HTMLElement|DocumentFragment|string} element - The DOM element to convert
+ * @param {HTMLElement|DocumentFragment|string} element The DOM element to convert
  * @returns {string} HTML string representation
  */
 export function elementToHtml(element) {

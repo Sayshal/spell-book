@@ -80,7 +80,7 @@ async function unlockModuleCompendium() {
 
 /**
  * Create Actor Spellbooks folder in the module compendium
- * @param {CompendiumCollection} pack - The module's compendium pack
+ * @param {CompendiumCollection} pack The module's compendium pack
  * @returns {Promise<void>}
  */
 async function createActorSpellbooksFolder(pack) {
@@ -92,7 +92,17 @@ async function createActorSpellbooksFolder(pack) {
   }
 }
 
+/**
+ * Preload all Handlebars templates used by the module
+ * @returns {Promise<void>} Promise that resolves when templates are loaded
+ */
 async function preloadTemplates() {
+  /**
+   * Recursively flatten a nested template object into an array of template paths
+   * @param {Object} obj The template object to flatten
+   * @param {Array<string>} result The accumulator array for template paths
+   * @returns {Array<string>} Array of flattened template paths
+   */
   function flattenTemplateObject(obj, result = []) {
     for (const key in obj) {
       if (typeof obj[key] === 'string') result.push(obj[key]);
@@ -104,6 +114,10 @@ async function preloadTemplates() {
   return foundry?.applications?.handlebars?.loadTemplates(templatePaths);
 }
 
+/**
+ * Register custom Handlebars helpers used by the module templates
+ * @returns {void}
+ */
 function registerHandlebarsHelpers() {
   Handlebars.registerHelper('isWizardTab', function (tabName) {
     return tabName && (tabName === 'wizardbook' || tabName.startsWith('wizardbook-'));

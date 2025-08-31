@@ -28,10 +28,10 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
   };
 
   /**
-   * @param {Actor} actor - The actor whose loadouts to manage
-   * @param {SpellBook} spellbook - The Spell Book reference
-   * @param {string} classIdentifier - The current class identifier
-   * @param {Object} options - Additional options
+   * @param {Actor} actor The actor whose loadouts to manage
+   * @param {SpellBook} spellbook The Spell Book reference
+   * @param {string} classIdentifier The current class identifier
+   * @param {Object} options Additional options
    */
   constructor(actor, spellbook, classIdentifier, options = {}) {
     super(options);
@@ -84,8 +84,8 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Save current configuration as a new loadout
-   * @param {Event} event - The form event
-   * @param {HTMLElement} target - The clicked element
+   * @param {Event} event The form event
+   * @param {HTMLElement} target The clicked element
    */
   static async saveLoadout(event, target) {
     const form = target.closest('form');
@@ -116,8 +116,8 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Overwrite an existing loadout with current configuration
-   * @param {Event} event - The click event
-   * @param {HTMLElement} target - The clicked element
+   * @param {Event} event The click event
+   * @param {HTMLElement} target The clicked element
    */
   static async overwriteLoadout(event, target) {
     const loadoutId = target.dataset.loadoutId;
@@ -140,8 +140,8 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Delete a loadout
-   * @param {Event} event - The click event
-   * @param {HTMLElement} target - The clicked element
+   * @param {Event} event The click event
+   * @param {HTMLElement} target The clicked element
    */
   static async deleteLoadout(event, target) {
     const loadoutId = target.dataset.loadoutId;
@@ -163,8 +163,8 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Apply a loadout
-   * @param {Event} event - The click event
-   * @param {HTMLElement} target - The clicked element
+   * @param {Event} event The click event
+   * @param {HTMLElement} target The clicked element
    */
   static applyLoadout(event, target) {
     const loadoutId = target.dataset.loadoutId;
@@ -197,7 +197,7 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Show spell preview tooltip
-   * @param {Event} event - The mouse event
+   * @param {Event} event The mouse event
    */
   async _showSpellPreview(event) {
     const loadoutId = event.target.dataset.loadoutId;
@@ -279,8 +279,8 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Position tooltip near cursor
-   * @param {Event} event - The mouse event
-   * @param {HTMLElement} tooltip - Optional tooltip element
+   * @param {Event} event The mouse event
+   * @param {HTMLElement} tooltip Optional tooltip element
    */
   _positionTooltip(event, tooltip = null) {
     if (!tooltip) tooltip = document.getElementById('spell-preview-tooltip');

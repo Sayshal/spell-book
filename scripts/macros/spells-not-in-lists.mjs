@@ -94,7 +94,7 @@ function spellsNotInListsScript() {
     }).then((result) => {
       if (result === 'copy') {
         const spellNames = spells.map((s) => `${s.name} (${s.uuid})`).join('\n');
-        SPELLBOOK.log(3, 'Spells not in lists:\n' + spellNames);
+        SPELLBOOK.log(3, `Spells not in lists:\n${spellNames}`);
         ui.notifications.info('Spell list copied to console (F12)');
       }
     });

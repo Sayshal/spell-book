@@ -10,7 +10,7 @@ import * as ValidationHelpers from '../validation/_module.mjs';
 export class AdvancedSearchManager {
   /**
    * Create a new advanced search manager instance
-   * @param {SpellBook} app - The parent application instance
+   * @param {SpellBook} app The parent application instance
    */
   constructor(app) {
     this.actor = app.actor;
@@ -59,7 +59,7 @@ export class AdvancedSearchManager {
 
   /**
    * Parse and cache query to avoid redundant parsing operations
-   * @param {string} query - Query string without the ^ prefix
+   * @param {string} query Query string without the ^ prefix
    * @returns {Object|null} Parsed query object or null if parsing failed
    */
   parseAndCacheQuery(query) {
@@ -153,7 +153,7 @@ export class AdvancedSearchManager {
 
   /**
    * Handle search input changes with debouncing and query processing
-   * @param {InputEvent} event - Input event from search field
+   * @param {InputEvent} event Input event from search field
    * @returns {Promise<void>}
    */
   async handleSearchInput(event) {
@@ -190,7 +190,7 @@ export class AdvancedSearchManager {
 
   /**
    * Check if an advanced query appears to be syntactically complete
-   * @param {string} query - The query string to validate
+   * @param {string} query The query string to validate
    * @returns {boolean} Whether the query is complete and valid
    */
   isAdvancedQueryComplete(query) {
@@ -207,7 +207,7 @@ export class AdvancedSearchManager {
 
   /**
    * Handle keyboard navigation in search dropdown
-   * @param {KeyboardEvent} event - Keydown event from search field
+   * @param {KeyboardEvent} event Keydown event from search field
    * @returns {void}
    */
   handleSearchKeydown(event) {
@@ -246,7 +246,7 @@ export class AdvancedSearchManager {
 
   /**
    * Handle search input focus events with debouncing
-   * @param {FocusEvent} event - Focus event from search field
+   * @param {FocusEvent} event Focus event from search field
    */
   handleSearchFocus(event) {
     if (this.isProcessingFocusEvent) return;
@@ -262,7 +262,7 @@ export class AdvancedSearchManager {
 
   /**
    * Handle search input blur events
-   * @param {FocusEvent} event - Blur event from search field
+   * @param {FocusEvent} event Blur event from search field
    * @returns {void}
    */
   handleSearchBlur(event) {
@@ -274,7 +274,7 @@ export class AdvancedSearchManager {
 
   /**
    * Handle document click events for dropdown interaction and cleanup
-   * @param {MouseEvent} event - Click event from document
+   * @param {MouseEvent} event Click event from document
    */
   handleDocumentClick(event) {
     const dropdown = document.querySelector('.search-dropdown');
@@ -300,10 +300,10 @@ export class AdvancedSearchManager {
 
   /**
    * Select a suggestion from the dropdown and update search state
-   * @param {HTMLElement} suggestionElement - The suggestion DOM element
+   * @param {HTMLElement} suggestionElement The suggestion DOM element
    */
   selectSuggestion(suggestionElement) {
-    const suggestionId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    const suggestionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const query = suggestionElement.dataset.query;
     const now = Date.now();
     if (!query) return;
@@ -377,7 +377,7 @@ export class AdvancedSearchManager {
 
   /**
    * Update dropdown content based on current query type
-   * @param {string} query - Current search query string
+   * @param {string} query Current search query string
    */
   updateDropdownContent(query) {
     if (this.lastDropdownQuery === query) return;
@@ -394,7 +394,7 @@ export class AdvancedSearchManager {
 
   /**
    * Generate content for advanced query suggestions
-   * @param {string} query - The advanced query string
+   * @param {string} query The advanced query string
    * @returns {Promise<string>} HTML content for dropdown
    */
   _generateAdvancedQueryContent(query) {
@@ -481,7 +481,7 @@ export class AdvancedSearchManager {
 
   /**
    * Check if query ends with AND operator and needs a field suggestion
-   * @param {string} query - The query string to check
+   * @param {string} query The query string to check
    * @returns {boolean} Whether query ends with AND operator
    */
   isIncompleteAndQuery(query) {
@@ -493,11 +493,11 @@ export class AdvancedSearchManager {
 
   /**
    * Check if query ends with a field name followed by a colon
-   * @param {string} query - Query string without the ^ prefix
+   * @param {string} query Query string without the ^ prefix
    * @returns {string|null} Field name if found, null otherwise
    */
   queryEndsWithFieldColon(query) {
-    const parts = query.split(/\s+AND\s+/i);
+    const parts = query.split(/\s+and\s+/i);
     const lastPart = parts[parts.length - 1].trim();
     if (lastPart && lastPart.endsWith(':')) {
       const potentialField = lastPart.slice(0, -1);
@@ -508,11 +508,11 @@ export class AdvancedSearchManager {
 
   /**
    * Check if a value appears to be incomplete while typing
-   * @param {string} queryWithoutTrigger - Query without ^ prefix
+   * @param {string} queryWithoutTrigger Query without ^ prefix
    * @returns {Object|null} Object with field and value if incomplete, null otherwise
    */
   isIncompleteValue(queryWithoutTrigger) {
-    const parts = queryWithoutTrigger.split(/\s+AND\s+/i);
+    const parts = queryWithoutTrigger.split(/\s+and\s+/i);
     const lastPart = parts[parts.length - 1].trim();
     const colonIndex = lastPart.indexOf(':');
     if (colonIndex !== -1) {
@@ -526,8 +526,8 @@ export class AdvancedSearchManager {
 
   /**
    * Check if a value appears to be incomplete while typing
-   * @param {string} fieldId - The field ID
-   * @param {string} value - The value being typed
+   * @param {string} fieldId The field ID
+   * @param {string} value The value being typed
    * @returns {boolean} Whether the value appears incomplete
    */
   isIncompleteValueForField(fieldId, value) {
@@ -541,7 +541,7 @@ export class AdvancedSearchManager {
 
   /**
    * Generate content for standard queries
-   * @param {string} query - The query string
+   * @param {string} query The query string
    * @returns {string} HTML content
    */
   _generateStandardQueryContent(query) {
@@ -571,7 +571,7 @@ export class AdvancedSearchManager {
 
   /**
    * Generate HTML content for fuzzy spell name matches
-   * @param {string} query - The search query string
+   * @param {string} query The search query string
    */
   _generateFuzzyMatches(query) {
     let content = `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Suggestions')}</div>`;
@@ -590,7 +590,7 @@ export class AdvancedSearchManager {
 
   /**
    * Update visual selection state of dropdown suggestions
-   * @param {NodeList} suggestions - List of suggestion DOM elements
+   * @param {NodeList} suggestions List of suggestion DOM elements
    * @returns {void}
    */
   updateSuggestionSelection(suggestions) {
@@ -603,11 +603,11 @@ export class AdvancedSearchManager {
 
   /**
    * Perform the actual search operation based on query type
-   * @param {string} query - Search query string
+   * @param {string} query Search query string
    * @returns {Promise<void>}
    */
   async performSearch(query) {
-    const searchId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    const searchId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     if (this.isProcessingSearch) return;
     log(3, `performSearch [${searchId}] started with query: "${query}"`);
     this.isProcessingSearch = true;
@@ -640,7 +640,7 @@ export class AdvancedSearchManager {
 
   /**
    * Apply advanced query results to current filter state
-   * @param {Object} parsedQuery - The parsed query object with filters
+   * @param {Object} parsedQuery The parsed query object with filters
    * @returns {void}
    */
   applyAdvancedQueryToFilters(parsedQuery) {
@@ -671,7 +671,7 @@ export class AdvancedSearchManager {
 
   /**
    * Parse a range value string into minimum and maximum components
-   * @param {string} rangeValue - Range value like "0-30", "30", "*-30", "30-*"
+   * @param {string} rangeValue Range value like "0-30", "30", "*-30", "30-*"
    * @returns {Array<number|null>} Array containing [min, max] values
    */
   parseRangeValue(rangeValue) {
@@ -699,7 +699,7 @@ export class AdvancedSearchManager {
 
   /**
    * Set range filter values in the UI elements
-   * @param {string} rangeValue - Range value like "0-30"
+   * @param {string} rangeValue Range value like "0-30"
    * @returns {void}
    */
   setRangeFilterValue(rangeValue) {
@@ -718,8 +718,8 @@ export class AdvancedSearchManager {
 
   /**
    * Set filter value in the appropriate UI element
-   * @param {string} fieldId - Field identifier for the filter
-   * @param {string} value - Value to set in the filter
+   * @param {string} fieldId Field identifier for the filter
+   * @param {string} value Value to set in the filter
    * @returns {void}
    */
   setFilterValue(fieldId, value) {
@@ -740,7 +740,7 @@ export class AdvancedSearchManager {
 
   /**
    * Setup search functionality for collapsed footer
-   * @param {HTMLElement} searchInput - The search input in collapsed footer
+   * @param {HTMLElement} searchInput The search input in collapsed footer
    */
   setupCollapsedFooterSearch(searchInput) {
     this.collapsedFooterSearchInput = searchInput;
@@ -785,7 +785,7 @@ export class AdvancedSearchManager {
 
   /**
    * Execute advanced query against a collection of spells
-   * @param {Array<Object>} spells - Array of spell objects to filter
+   * @param {Array<Object>} spells Array of spell objects to filter
    * @returns {Array<Object>} Filtered array of spells matching the query
    */
   executeAdvancedQuery(spells) {
@@ -839,7 +839,7 @@ export class AdvancedSearchManager {
 
   /**
    * Add a search query to the recent searches list
-   * @param {string} query - The search query string to add
+   * @param {string} query The search query string to add
    * @returns {void}
    */
   addToRecentSearches(query) {
@@ -860,7 +860,7 @@ export class AdvancedSearchManager {
 
   /**
    * Remove a search query from the recent searches list
-   * @param {string} query - The search query string to remove
+   * @param {string} query The search query string to remove
    * @returns {void}
    */
   removeFromRecentSearches(query) {

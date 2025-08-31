@@ -11,7 +11,7 @@ import * as UIHelpers from './_module.mjs';
 export class SpellbookUI {
   /**
    * Create a new UI helper
-   * @param {SpellBook} app - The parent application
+   * @param {SpellBook} app The parent application
    */
   constructor(app) {
     this.app = app;
@@ -71,7 +71,7 @@ export class SpellbookUI {
   /**
    * Setup search functionality for collapsed footer search
    * @todo duplicate class name setupCollapsedFooterSearch?
-   * @param {HTMLElement} searchElement - The cloned search element
+   * @param {HTMLElement} searchElement The cloned search element
    */
   setupCollapsedFooterSearch(searchElement) {
     const searchInput = searchElement.querySelector('.advanced-search-input');
@@ -153,9 +153,9 @@ export class SpellbookUI {
 
   /**
    * Update the footer preparation display with granular at-max styling
-   * @param {string} activeClassIdentifier - The currently active class identifier
-   * @param {boolean} isActiveClassAtMax - Whether the active class is at maximum
-   * @param {Object} globalPrepared - Global preparation counts {current, maximum}
+   * @param {string} activeClassIdentifier The currently active class identifier
+   * @param {boolean} isActiveClassAtMax Whether the active class is at maximum
+   * @param {Object} globalPrepared Global preparation counts {current, maximum}
    */
   _updateFooterPreparationDisplay(activeClassIdentifier, isActiveClassAtMax, globalPrepared) {
     const prepTrackingContainer = this.element.querySelector('.spell-prep-tracking');
@@ -181,9 +181,9 @@ export class SpellbookUI {
 
   /**
    * Enforce per-class spell limits for non-cantrip spells
-   * @param {HTMLElement} tabContent - The active tab content element
-   * @param {string} classIdentifier - The class identifier
-   * @param {boolean} isClassAtMax - Whether this class is at its spell limit
+   * @param {HTMLElement} tabContent The active tab content element
+   * @param {string} classIdentifier The class identifier
+   * @param {boolean} isClassAtMax Whether this class is at its spell limit
    */
   _enforcePerClassSpellLimits(tabContent, classIdentifier, isClassAtMax) {
     const spellCheckboxes = tabContent.querySelectorAll('dnd5e-checkbox[data-uuid]');
@@ -319,8 +319,8 @@ export class SpellbookUI {
 
   /**
    * Update cantrip counter display using cached max values
-   * @param {HTMLElement} [cantripLevel] - The cantrip level container
-   * @param {boolean} [skipLockSetup=false] - Whether to skip calling setupCantripLocks
+   * @param {HTMLElement} [cantripLevel] The cantrip level container
+   * @param {boolean} [skipLockSetup=false] Whether to skip calling setupCantripLocks
    * @returns {Object} Counter state with current and max values
    */
   updateCantripCounter(cantripLevel, skipLockSetup = false) {
@@ -370,7 +370,7 @@ export class SpellbookUI {
 
   /**
    * Set up cantrip lock states based on selection rules using cached max values
-   * @param {boolean} [applyRuleLocks=false] - Whether to apply rule-based locks (vs count-only)
+   * @param {boolean} [applyRuleLocks=false] Whether to apply rule-based locks (vs count-only)
    */
   setupCantripLocks(applyRuleLocks = false) {
     const activeTab = this.app.tabGroups['spellbook-tabs'];
@@ -415,11 +415,11 @@ export class SpellbookUI {
 
   /**
    * Apply rule-based locks to a cantrip (legacy/modern restrictions)
-   * @param {HTMLElement} item - The spell item element
-   * @param {HTMLElement} checkbox - The checkbox element
-   * @param {boolean} isChecked - Whether the checkbox is checked
-   * @param {string} classIdentifier - The class identifier
-   * @param {Object} settings - The class-specific settings
+   * @param {HTMLElement} item The spell item element
+   * @param {HTMLElement} checkbox The checkbox element
+   * @param {boolean} isChecked Whether the checkbox is checked
+   * @param {string} classIdentifier The class identifier
+   * @param {Object} settings The class-specific settings
    */
   _applyRuleBasedCantripLocks(item, checkbox, isChecked, classIdentifier, settings) {
     if (settings.behavior !== MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) return;

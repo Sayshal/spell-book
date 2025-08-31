@@ -19,6 +19,7 @@ export class SpellDescriptionInjection {
 
   /**
    * Handle setting change
+   * @param newValue
    */
   static async handleSettingChange(newValue) {
     log(3, `Notes injection setting changed to: ${newValue}`);
@@ -50,6 +51,9 @@ export class SpellDescriptionInjection {
 
   /**
    * Handle item creation
+   * @param item
+   * @param options
+   * @param userId
    */
   static async onCreateItem(item, options, userId) {
     if (item.type !== 'spell' || !item.parent || item.parent.documentName !== 'Actor') return;
@@ -58,10 +62,14 @@ export class SpellDescriptionInjection {
 
   /**
    * Handle item updates - with recursion prevention
+   * @param item
+   * @param changes
+   * @param options
+   * @param userId
    */
   static async onUpdateItem(item, changes, options, userId) {
     if (item.type !== 'spell' || !item.parent || item.parent.documentName !== 'Actor') return;
-    if (options['spellBookModuleUpdate']) return;
+    if (options.spellBookModuleUpdate) return;
     const spellKey = `${item.parent.id}-${item.id}`;
     if (this._updatingSpells.has(spellKey)) return;
     if (changes.system?.description) await this.updateSpellDescription(item);
@@ -69,6 +77,7 @@ export class SpellDescriptionInjection {
 
   /**
    * Update spell description with notes injection
+   * @param spellItem
    */
   static async updateSpellDescription(spellItem) {
     if (!spellItem || spellItem.type !== 'spell') return;
@@ -82,7 +91,7 @@ export class SpellDescriptionInjection {
         targetUserId = characterOwner.id;
         log(3, `Using character owner for description: ${characterOwner.name} (${characterOwner.id})`);
       } else {
-        log(3, `No character owner found, checking ownership levels...`);
+        log(3, 'No character owner found, checking ownership levels...');
         const ownershipOwner = game.users.find((user) => actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
         if (ownershipOwner) {
           targetUserId = ownershipOwner.id;
@@ -104,7 +113,7 @@ export class SpellDescriptionInjection {
       if (injectionMode === 'off') return;
       const currentDescription = spellItem.system.description?.value || '';
       const notesHtml = this.formatNotesForDescription(userData.notes);
-      if (currentDescription.includes(`class='spell-book-personal-notes'`)) await this.replaceNotesInDescription(spellItem, notesHtml, injectionMode);
+      if (currentDescription.includes("class='spell-book-personal-notes'")) await this.replaceNotesInDescription(spellItem, notesHtml, injectionMode);
       else await this.addNotesToDescription(spellItem, notesHtml, injectionMode, currentDescription);
     } finally {
       this._updatingSpells.delete(spellKey);
@@ -113,6 +122,7 @@ export class SpellDescriptionInjection {
 
   /**
    * Format notes for HTML injection
+   * @param notes
    */
   static formatNotesForDescription(notes) {
     const escapedNotes = notes.replace(/\n/g, '<br>');
@@ -122,6 +132,10 @@ export class SpellDescriptionInjection {
 
   /**
    * Add notes to description
+   * @param spellItem
+   * @param notesHtml
+   * @param injectionMode
+   * @param currentDescription
    */
   static async addNotesToDescription(spellItem, notesHtml, injectionMode, currentDescription) {
     let newDescription;
@@ -133,10 +147,13 @@ export class SpellDescriptionInjection {
 
   /**
    * Replace existing notes in description
+   * @param spellItem
+   * @param notesHtml
+   * @param injectionMode
    */
   static async replaceNotesInDescription(spellItem, notesHtml, injectionMode) {
     const currentDescription = spellItem.system.description?.value || '';
-    const notesRegex = new RegExp(`<div class='spell-book-personal-notes'[^>]*>.*?</div>`, 'gs');
+    const notesRegex = new RegExp("<div class='spell-book-personal-notes'[^>]*>.*?</div>", 'gs');
     let newDescription = currentDescription.replace(notesRegex, '');
     if (injectionMode === 'before') newDescription = notesHtml + newDescription;
     else newDescription = newDescription + notesHtml;
@@ -146,11 +163,12 @@ export class SpellDescriptionInjection {
 
   /**
    * Remove notes from description
+   * @param spellItem
    */
   static async removeNotesFromDescription(spellItem) {
     const currentDescription = spellItem.system.description?.value || '';
-    if (!currentDescription.includes(`class='spell-book-personal-notes'`)) return;
-    const notesRegex = new RegExp(`<div class='spell-book-personal-notes'[^>]*>.*?</div>`, 'gs');
+    if (!currentDescription.includes("class='spell-book-personal-notes'")) return;
+    const notesRegex = new RegExp("<div class='spell-book-personal-notes'[^>]*>.*?</div>", 'gs');
     const newDescription = currentDescription.replace(notesRegex, '');
     if (newDescription !== currentDescription) {
       await spellItem.update({ 'system.description.value': newDescription }, { ['spellBookModuleUpdate']: true });
@@ -160,6 +178,7 @@ export class SpellDescriptionInjection {
 
   /**
    * Handle notes changes - call this when notes are updated
+   * @param spellUuid
    */
   static async handleNotesChange(spellUuid) {
     const canonicalUuid = UIHelpers.getCanonicalSpellUuid(spellUuid);

@@ -2,8 +2,8 @@ import { MODULE, SETTINGS } from './constants/_module.mjs';
 
 /**
  * Custom logger with caller context information
- * @param {number} level - Log level (1=error, 2=warning, 3=verbose)
- * @param {...any} args - Content to log to console
+ * @param {number} level Log level (1=error, 2=warning, 3=verbose)
+ * @param {...any} args Content to log to console
  */
 export function log(level, ...args) {
   try {

@@ -8,8 +8,8 @@ import { log } from '../logger.mjs';
 export class RuleSetManager {
   /**
    * Apply a rule set to an actor, populating class-specific defaults
-   * @param {Actor5e} actor - The actor to configure
-   * @param {string} ruleSet - The rule set to apply ('legacy' or 'modern')
+   * @param {Actor5e} actor The actor to configure
+   * @param {string} ruleSet The rule set to apply ('legacy' or 'modern')
    * @returns {Promise<void>}
    */
   static applyRuleSetToActor(actor, ruleSet) {
@@ -28,7 +28,7 @@ export class RuleSetManager {
 
   /**
    * Get the effective rule set for an actor (checking override, then global)
-   * @param {Actor5e} actor - The actor to check
+   * @param {Actor5e} actor The actor to check
    * @returns {string} The effective rule set
    */
   static getEffectiveRuleSet(actor) {
@@ -39,8 +39,8 @@ export class RuleSetManager {
 
   /**
    * Get class-specific rules for an actor, with fallback to defaults
-   * @param {Actor5e} actor - The actor to check
-   * @param {string} classIdentifier - The class identifier
+   * @param {Actor5e} actor The actor to check
+   * @param {string} classIdentifier The class identifier
    * @returns {Object} The class rules object
    */
   static getClassRules(actor, classIdentifier) {
@@ -78,9 +78,9 @@ export class RuleSetManager {
 
   /**
    * Update class rules for a specific class on an actor
-   * @param {Actor5e} actor - The actor to update
-   * @param {string} classIdentifier - The class identifier
-   * @param {Object} newRules - The new rules to apply
+   * @param {Actor5e} actor The actor to update
+   * @param {string} classIdentifier The class identifier
+   * @param {Object} newRules The new rules to apply
    * @returns {Promise<boolean>} True if rules were updated, false if cancelled
    */
   static async updateClassRules(actor, classIdentifier, newRules) {
@@ -103,7 +103,7 @@ export class RuleSetManager {
 
   /**
    * Initialize class rules for any newly detected spellcasting classes
-   * @param {Actor5e} actor - The actor to check
+   * @param {Actor5e} actor The actor to check
    * @returns {Promise<void>}
    */
   static initializeNewClasses(actor) {
@@ -125,7 +125,7 @@ export class RuleSetManager {
 
   /**
    * Detect spellcasting classes on an actor
-   * @param {Actor5e} actor - The actor to check
+   * @param {Actor5e} actor The actor to check
    * @returns {Object} Map of class identifiers to class data
    */
   static _detectSpellcastingClasses(actor) {
@@ -157,8 +157,8 @@ export class RuleSetManager {
 
   /**
    * Get default rules for a class based on rule set
-   * @param {string} classIdentifier - The class identifier
-   * @param {string} ruleSet - The rule set to use
+   * @param {string} classIdentifier The class identifier
+   * @param {string} ruleSet The rule set to use
    * @returns {Object} Default rules for the class
    */
   static _getClassDefaults(classIdentifier, ruleSet) {
@@ -179,8 +179,8 @@ export class RuleSetManager {
 
   /**
    * Apply legacy rule set defaults for a class
-   * @param {string} classIdentifier - The class identifier
-   * @param {Object} defaults - The defaults object to modify
+   * @param {string} classIdentifier The class identifier
+   * @param {Object} defaults The defaults object to modify
    */
   static _applyLegacyDefaults(classIdentifier, defaults) {
     defaults.cantripSwapping = MODULE.SWAP_MODES.NONE;
@@ -225,8 +225,8 @@ export class RuleSetManager {
 
   /**
    * Apply modern rule set defaults for a class
-   * @param {string} classIdentifier - The class identifier
-   * @param {Object} defaults - The defaults object to modify
+   * @param {string} classIdentifier The class identifier
+   * @param {Object} defaults The defaults object to modify
    */
   static _applyModernDefaults(classIdentifier, defaults) {
     defaults.cantripSwapping = MODULE.SWAP_MODES.LEVEL_UP;
@@ -272,10 +272,10 @@ export class RuleSetManager {
 
   /**
    * Get spells that will be affected by a spell list change
-   * @param {Actor5e} actor - The actor to check
-   * @param {string} classIdentifier - The class identifier
-   * @param {string} oldSpellListUuid - UUID of the old spell list
-   * @param {string} newSpellListUuid - UUID of the new spell list
+   * @param {Actor5e} actor The actor to check
+   * @param {string} classIdentifier The class identifier
+   * @param {string} oldSpellListUuid UUID of the old spell list
+   * @param {string} newSpellListUuid UUID of the new spell list
    * @returns {Promise<Array>} Array of affected spell data
    */
   static async _getAffectedSpellsByListChange(actor, classIdentifier, oldSpellListUuid, newSpellListUuid) {
@@ -326,9 +326,9 @@ export class RuleSetManager {
 
   /**
    * Show confirmation dialog for spell list change
-   * @param {Actor5e} actor - The actor
-   * @param {string} classIdentifier - The class identifier
-   * @param {Array} affectedSpells - Array of spells that will be unprepared
+   * @param {Actor5e} actor The actor
+   * @param {string} classIdentifier The class identifier
+   * @param {Array} affectedSpells Array of spells that will be unprepared
    * @returns {Promise<boolean>} Whether the user confirmed the change
    */
   static async _confirmSpellListChange(actor, classIdentifier, affectedSpells) {
@@ -375,9 +375,9 @@ export class RuleSetManager {
 
   /**
    * Unprepare spells that are no longer available in the new spell list
-   * @param {Actor5e} actor - The actor
-   * @param {string} classIdentifier - The class identifier
-   * @param {Array} affectedSpells - Array of spells to unprepare
+   * @param {Actor5e} actor The actor
+   * @param {string} classIdentifier The class identifier
+   * @param {Array} affectedSpells Array of spells to unprepare
    * @returns {Promise<void>}
    */
   static async _unprepareAffectedSpells(actor, classIdentifier, affectedSpells) {

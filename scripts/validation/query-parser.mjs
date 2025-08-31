@@ -12,7 +12,7 @@ export class QueryParser {
 
   /**
    * Parse advanced search query
-   * @param {string} query - The query string (without ^ trigger)
+   * @param {string} query The query string (without ^ trigger)
    * @returns {Object|null} Parsed query object or null if invalid
    */
   parseQuery(query) {
@@ -31,12 +31,13 @@ export class QueryParser {
 
   /**
    * Parse query into field conditions
-   * @param {string} query - The query string
+   * @todo changing `and` from `AND` might break REGEX here
+   * @param {string} query The query string
    * @returns {Array} Array of field condition objects
    */
   _parseConditions(query) {
     const conditions = [];
-    const parts = query.split(/\s+AND\s+/i);
+    const parts = query.split(/\s+and\s+/i);
     for (const part of parts) {
       const trimmedPart = part.trim();
       if (!trimmedPart) continue;
@@ -48,7 +49,7 @@ export class QueryParser {
 
   /**
    * Parse field:value expression
-   * @param {string} expression - The field:value expression
+   * @param {string} expression The field:value expression
    * @returns {Object|null} Parsed field condition or null if invalid
    */
   _parseFieldExpression(expression) {
@@ -66,8 +67,8 @@ export class QueryParser {
 
   /**
    * Normalize field values
-   * @param {string} fieldId - The field ID
-   * @param {string} value - The raw value
+   * @param {string} fieldId The field ID
+   * @param {string} value The raw value
    * @returns {string} Normalized value
    */
   _normalizeValue(fieldId, value) {

@@ -8,9 +8,9 @@ import * as UIHelpers from './ui/_module.mjs';
  * Register all module settings
  */
 export function registerSettings() {
-  //========================================//
-  //  Menus & Classes                       //
-  //========================================//
+  // ========================================//
+  //  Menus & Classes                        //
+  // ========================================//
 
   game.settings.registerMenu(MODULE.ID, SETTINGS.OPEN_SPELL_MANAGER, {
     name: 'SPELLBOOK.Settings.OpenSpellListManager.Name',
@@ -32,9 +32,9 @@ export function registerSettings() {
     restricted: true
   });
 
-  //========================================//
-  //  Core Functionality                    //
-  //========================================//
+  // ========================================//
+  //  Core Functionality                     //
+  // ========================================//
 
   game.settings.register(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS, {
     name: 'SPELLBOOK.Settings.IndexedCompendiumsName',
@@ -97,9 +97,9 @@ export function registerSettings() {
     requiresReload: true
   });
 
-  //========================================//
-  //  UI & UX                               //
-  //========================================//
+  // ========================================//
+  //  UI & UX                                //
+  // ========================================//
 
   game.settings.register(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION, {
     name: 'SPELLBOOK.Settings.SpellBookPosition.Name',
@@ -168,7 +168,7 @@ export function registerSettings() {
           ui.notifications.warn('Advanced search prefix must be exactly 1 character');
           return;
         }
-        if (/[a-zA-Z0-9]/.test(value)) {
+        if (/[\dA-Za-z]/.test(value)) {
           log(2, 'Advanced search prefix cannot be a letter or number, resetting to default');
           game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
           ui.notifications.warn('Advanced search prefix cannot be a letter or number');
@@ -183,9 +183,9 @@ export function registerSettings() {
     }
   });
 
-  //========================================//
-  //  Spell Behavior                        //
-  //========================================//
+  // ========================================//
+  //  Spell Behavior                         //
+  // ========================================//
 
   game.settings.register(MODULE.ID, SETTINGS.SPELLCASTING_RULE_SET, {
     name: 'SPELLBOOK.Settings.SpellcastingRuleSet.Name',
@@ -244,9 +244,9 @@ export function registerSettings() {
     default: 'cantrips-known, cantrips'
   });
 
-  //========================================//
-  //  Notes & Annotations                   //
-  //========================================//
+  // ========================================//
+  //  Notes & Annotations                    //
+  // ========================================//
 
   game.settings.register(MODULE.ID, SETTINGS.SPELL_NOTES_DESC_INJECTION, {
     name: 'SPELLBOOK.Settings.InjectNotesIntoDescriptions.Name',
@@ -279,9 +279,9 @@ export function registerSettings() {
     }
   });
 
-  //========================================//
-  //  UI Customization                      //
-  //========================================//
+  // ========================================//
+  //  UI Customization                       //
+  // ========================================//
 
   game.settings.registerMenu(MODULE.ID, 'spellDetailsCustomization', {
     name: 'SPELLBOOK.Settings.DetailsCustomization.MenuName',
@@ -484,9 +484,9 @@ export function registerSettings() {
     default: true
   });
 
-  //========================================//
-  //  Technical                             //
-  //========================================//
+  // ========================================//
+  //  Technical                              //
+  // ========================================//
 
   game.settings.register(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, {
     name: 'SPELLBOOK.Settings.FilterConfiguration.Name',
@@ -532,9 +532,9 @@ export function registerSettings() {
     }
   });
 
-  //========================================//
-  //  Troubleshooting                       //
-  //========================================//
+  // ========================================//
+  //  Troubleshooting                        //
+  // ========================================//
 
   game.settings.register(MODULE.ID, SETTINGS.LOGGING_LEVEL, {
     name: 'SPELLBOOK.Settings.Logger.Name',

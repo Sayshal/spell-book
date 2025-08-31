@@ -110,9 +110,9 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle form submission with GM-to-player delegation
-   * @param {Event} event - The form submission event
-   * @param {HTMLFormElement} form - The form element
-   * @param {FormDataExtended} formData - The form data
+   * @param {Event} event The form submission event
+   * @param {HTMLFormElement} form The form element
+   * @param {FormDataExtended} formData The form data
    */
   static async formHandler(event, form, formData) {
     const notes = formData.object.notes || '';
@@ -129,7 +129,7 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
           else {
             const ownershipOwner = game.users.find((user) => actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
             if (ownershipOwner) targetUserId = ownershipOwner.id;
-            else log(2, `No owner found via ownership levels, using GM`);
+            else log(2, 'No owner found via ownership levels, using GM');
           }
         }
       }

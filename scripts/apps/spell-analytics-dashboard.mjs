@@ -36,6 +36,10 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
     dashboard: { template: TEMPLATES.ANALYTICS.DASHBOARD }
   };
 
+  /**
+   * Create a new Analytics Dashboard application
+   * @param {Object} options Application options
+   */
   constructor(options = {}) {
     super(options);
     this.viewMode = options.viewMode || 'personal';
@@ -87,8 +91,8 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Adjust font size of context bar labels based on available width
-   * @param {HTMLElement} element - The context bar element
-   * @param {number} percent - The percentage width
+   * @param {HTMLElement} element The context bar element
+   * @param {number} percent The percentage width
    */
   _adjustContextBarFontSizes(element, percent) {
     const label = element.querySelector('.context-label');
@@ -134,8 +138,8 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Compute personal analytics for a specific user
-   * @param {Object} analytics - Analytics object to populate
-   * @param {string} userId - User ID
+   * @param {Object} analytics Analytics object to populate
+   * @param {string} userId User ID
    * @returns {Promise<void>}
    */
   async _computePersonalAnalytics(analytics, userId) {
@@ -180,7 +184,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Compute GM analytics across all users
-   * @param {Object} analytics - Analytics object to populate
+   * @param {Object} analytics Analytics object to populate
    * @returns {Promise<void>}
    */
   async _computeGMAnalytics(analytics) {
@@ -218,7 +222,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Get all spell data for a user (updated for per-actor aggregation)
-   * @param {string} userId - User ID
+   * @param {string} userId User ID
    * @returns {Promise<Object>} Aggregated user spell data
    */
   async _getAllUserSpellData(userId) {
@@ -238,7 +242,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
           }
         };
         if (data.actorData) {
-          for (const [actorId, actorData] of Object.entries(data.actorData)) {
+          for (const [actorData] of Object.entries(data.actorData)) {
             if (actorData.favorited) aggregatedData[spellUuid].favorited = true;
             if (actorData.usageStats) {
               aggregatedData[spellUuid].usageStats.count += actorData.usageStats.count || 0;
@@ -262,7 +266,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Get spell name from UUID
-   * @param {string} uuid - Spell UUID
+   * @param {string} uuid Spell UUID
    * @returns {string} Spell name
    */
   _getSpellNameFromUuid(uuid) {
@@ -290,29 +294,65 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
     };
   }
 
+  /**
+   * Handle switching between view modes in the analytics dashboard
+   * @param {Event} event The click event
+   * @param {HTMLElement} target The target element containing view mode data
+   * @returns {Promise<void>}
+   */
   static async handleSwitchView(event, target) {
     const viewMode = target.dataset.viewMode;
     this.viewMode = viewMode;
     this.render();
   }
 
+  /**
+   * Handle exporting user spell data
+   * @param {Event} event The click event
+   * @param {HTMLElement} target The target element that triggered the export
+   * @returns {Promise<void>}
+   */
   static async handleExportData(event, target) {
     await this._exportUserData();
   }
 
+  /**
+   * Handle importing user spell data
+   * @param {Event} event The click event
+   * @param {HTMLElement} target The target element that triggered the import
+   * @returns {Promise<void>}
+   */
   static async handleImportData(event, target) {
     await this._importUserData();
   }
 
+  /**
+   * Handle clearing user spell data
+   * @param {Event} event The click event
+   * @param {HTMLElement} target The target element that triggered the clear operation
+   * @returns {Promise<void>}
+   */
   static async handleClearData(event, target) {
     await this._clearUserData();
   }
 
+  /**
+   * Handle refreshing analytics statistics by clearing cache and re-rendering
+   * @param {Event} event The click event
+   * @param {HTMLElement} target The target element that triggered the refresh
+   * @returns {Promise<void>}
+   */
   static async handleRefreshStats(event, target) {
     this.analytics = null;
     this.render();
   }
 
+  /**
+   * Handle viewing data for a specific user
+   * @param {Event} event The click event
+   * @param {HTMLElement} target The target element containing user ID data
+   * @returns {Promise<void>}
+   */
   static async handleViewUserData(event, target) {
     const userId = target.dataset.userId;
     this.selectedUserId = userId;
@@ -360,7 +400,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
             htmlContent: page.text.content,
             lastUpdated: page.flags?.[MODULE.ID]?.lastUpdated || null
           };
-          const filename = `${user.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-spell-data-${timestamp}.json`;
+          const filename = `${user.name.replace(/[^\da-z]/gi, '_').toLowerCase()}-spell-data-${timestamp}.json`;
           const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
           saveDataToFile(blob, { type: 'application/json' }, filename);
         } else {
@@ -391,7 +431,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
         try {
           importData = JSON.parse(text);
         } catch (parseError) {
-          throw new Error('Invalid JSON format');
+          throw new Error('Invalid JSON format', parseError);
         }
         if (!importData.version || !importData.userData || typeof importData.userData !== 'object') throw new Error('Invalid spell data format');
         const userCount = Object.keys(importData.userData).length;

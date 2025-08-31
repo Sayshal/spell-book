@@ -27,8 +27,8 @@ export class FieldDefinitions {
 
   /**
    * Setup value validators for different field types
-   * @param {string} fieldId - The field ID
-   * @param {string} fieldType - The field type
+   * @param {string} fieldId The field ID
+   * @param {string} fieldType The field type
    */
   _setupValueValidator(fieldId, fieldType) {
     switch (fieldId) {
@@ -123,7 +123,7 @@ export class FieldDefinitions {
 
   /**
    * Get field ID from alias
-   * @param {string} alias - The field alias
+   * @param {string} alias The field alias
    * @returns {string|null} The field ID or null if not found
    */
   getFieldId(alias) {
@@ -132,8 +132,8 @@ export class FieldDefinitions {
 
   /**
    * Validate field value
-   * @param {string} fieldId - The field ID
-   * @param {string} value - The value to validate
+   * @param {string} fieldId The field ID
+   * @param {string} value The value to validate
    * @returns {boolean} Whether the value is valid
    */
   validateValue(fieldId, value) {
@@ -143,7 +143,7 @@ export class FieldDefinitions {
 
   /**
    * Normalize boolean values
-   * @param {string} value - The value to normalize
+   * @param {string} value The value to normalize
    * @returns {string} Normalized boolean value
    */
   normalizeBooleanValue(value) {
@@ -163,7 +163,7 @@ export class FieldDefinitions {
 
   /**
    * Get valid values for a field (for autocomplete suggestions)
-   * @param {string} fieldId - The field ID
+   * @param {string} fieldId The field ID
    * @returns {Array<string>} Array of valid values
    */
   getValidValuesForField(fieldId) {

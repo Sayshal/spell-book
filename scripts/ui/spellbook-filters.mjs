@@ -8,7 +8,7 @@ import * as ValidationHelpers from '../validation/_module.mjs';
 export class SpellbookFilterHelper {
   /**
    * Create a new filter helper
-   * @param {SpellBook} app - The parent application
+   * @param {SpellBook} app The parent application
    */
   constructor(app) {
     this.app = app;
@@ -79,10 +79,10 @@ export class SpellbookFilterHelper {
 
   /**
    * Filter available spells based on current filter state
-   * @param {Array} availableSpells - Array of available spells
-   * @param {Set} selectedSpellUUIDs - Set of selected spell UUIDs
-   * @param {Function} isSpellInSelectedList - Function to check if spell is in selected list
-   * @param {Object} [filterState] - Optional filter state to use instead of reading from DOM
+   * @param {Array} availableSpells Array of available spells
+   * @param {Set} selectedSpellUUIDs Set of selected spell UUIDs
+   * @param {Function} isSpellInSelectedList Function to check if spell is in selected list
+   * @param {Object} [filterState] Optional filter state to use instead of reading from DOM
    * @returns {Object} Filtered spells with count
    */
   filterAvailableSpells(availableSpells, selectedSpellUUIDs, isSpellInSelectedList, filterState = null) {
@@ -106,9 +106,9 @@ export class SpellbookFilterHelper {
 
   /**
    * Filter out spells already in the selected list
-   * @param {Array} spells - Spells to filter
-   * @param {Set} selectedSpellUUIDs - UUIDs in selected list
-   * @param {Function} isSpellInSelectedList - Function to check if spell is in list
+   * @param {Array} spells Spells to filter
+   * @param {Set} selectedSpellUUIDs UUIDs in selected list
+   * @param {Function} isSpellInSelectedList Function to check if spell is in list
    * @returns {Array} Filtered spells
    */
   _filterBySelectedList(spells, selectedSpellUUIDs, isSpellInSelectedList) {
@@ -119,8 +119,8 @@ export class SpellbookFilterHelper {
 
   /**
    * Filter spells by source
-   * @param {Array} spells - Spells to filter
-   * @param {Object} filterState - Current filter state
+   * @param {Array} spells Spells to filter
+   * @param {Object} filterState Current filter state
    * @returns {Array} Filtered spells
    */
   _filterBySource(spells, filterState) {
@@ -142,8 +142,8 @@ export class SpellbookFilterHelper {
 
   /**
    * Filter spells by basic properties (name, level, school, casting time)
-   * @param {Array} spells - Spells to filter
-   * @param {Object} filterState - Current filter state
+   * @param {Array} spells Spells to filter
+   * @param {Object} filterState Current filter state
    * @returns {Array} Filtered spells
    */
   _filterByBasicProperties(spells, filterState) {
@@ -168,8 +168,8 @@ export class SpellbookFilterHelper {
 
   /**
    * Enhanced name filtering with fuzzy search and advanced syntax
-   * @param {Array} spells - Spells to filter
-   * @param {string} searchQuery - Search query
+   * @param {Array} spells Spells to filter
+   * @param {string} searchQuery Search query
    * @returns {Array} Filtered spells
    */
   _filterByEnhancedName(spells, searchQuery) {
@@ -220,8 +220,8 @@ export class SpellbookFilterHelper {
 
   /**
    * Filter spells by range
-   * @param {Array} spells - Spells to filter
-   * @param {Object} filterState - Current filter state
+   * @param {Array} spells Spells to filter
+   * @param {Object} filterState Current filter state
    * @returns {Array} Filtered spells
    */
   _filterByRange(spells, filterState) {
@@ -244,8 +244,8 @@ export class SpellbookFilterHelper {
 
   /**
    * Filter spells by damage types and conditions
-   * @param {Array} spells - Spells to filter
-   * @param {Object} filterState - Current filter state
+   * @param {Array} spells Spells to filter
+   * @param {Object} filterState Current filter state
    * @returns {Array} Filtered spells
    */
   _filterByDamageAndConditions(spells, filterState) {
@@ -268,8 +268,8 @@ export class SpellbookFilterHelper {
 
   /**
    * Filter spells by special properties (saves, concentration, ritual)
-   * @param {Array} spells - Spells to filter
-   * @param {Object} filterState - Current filter state
+   * @param {Array} spells Spells to filter
+   * @param {Object} filterState Current filter state
    * @returns {Array} Filtered spells
    */
   _filterBySpecialProperties(spells, filterState) {
@@ -326,7 +326,7 @@ export class SpellbookFilterHelper {
 
   /**
    * Extract spell data from DOM element for filtering
-   * @param {HTMLElement} item - The spell item element
+   * @param {HTMLElement} item The spell item element
    * @returns {Object} Extracted spell data
    */
   _extractSpellDataFromElement(item) {
@@ -353,9 +353,9 @@ export class SpellbookFilterHelper {
 
   /**
    * Update level visibility statistics
-   * @param {Map} levelVisibilityMap - Map to track level statistics
-   * @param {Object} spellData - Spell data
-   * @param {HTMLElement} item - Spell item element
+   * @param {Map} levelVisibilityMap Map to track level statistics
+   * @param {Object} spellData Spell data
+   * @param {HTMLElement} item Spell item element
    */
   _updateLevelVisibilityStats(levelVisibilityMap, spellData, item) {
     const level = spellData.level;
@@ -374,7 +374,7 @@ export class SpellbookFilterHelper {
 
   /**
    * Update the "no results" display
-   * @param {number} visibleCount - Number of visible spells
+   * @param {number} visibleCount Number of visible spells
    */
   _updateNoResultsDisplay(visibleCount) {
     const noResults = this.element.querySelector('.no-filter-results');
@@ -383,8 +383,8 @@ export class SpellbookFilterHelper {
 
   /**
    * Check if a spell matches the current filters
-   * @param {Object} filters - The current filter state
-   * @param {Object} spell - The spell to check
+   * @param {Object} filters The current filter state
+   * @param {Object} spell The spell to check
    * @returns {boolean} Whether the spell should be visible
    */
   _checkSpellVisibility(filters, spell) {
@@ -426,8 +426,8 @@ export class SpellbookFilterHelper {
 
   /**
    * Check if spell name matches the search query with enhanced syntax support
-   * @param {string} searchQuery - The search query
-   * @param {string} spellName - The spell name to check
+   * @param {string} searchQuery The search query
+   * @param {string} spellName The spell name to check
    * @returns {boolean} Whether the spell name matches
    */
   _checkEnhancedNameMatch(searchQuery, spellName) {
@@ -452,7 +452,7 @@ export class SpellbookFilterHelper {
 
   /**
    * Update level container visibility and counts
-   * @param {Map} levelVisibilityMap - Map of level visibility data
+   * @param {Map} levelVisibilityMap Map of level visibility data
    */
   _updateLevelContainers(levelVisibilityMap) {
     const levelContainers = this.element.querySelectorAll('.spell-level');

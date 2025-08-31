@@ -31,7 +31,7 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
 
   /**
    * Check if a pack is relevant for spell indexing without full document loading
-   * @param {CompendiumCollection} pack - Pack to check
+   * @param {CompendiumCollection} pack Pack to check
    * @returns {Promise<boolean>} Whether the pack contains relevant content
    */
   static async _isPackRelevantForSpells(pack) {
@@ -79,7 +79,7 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
 
   /**
    * Determines the organization name for a pack based on its folder structure
-   * @param {CompendiumCollection} pack - Pack to analyze
+   * @param {CompendiumCollection} pack Pack to analyze
    * @returns {string} Organization name to use
    */
   _determineOrganizationName(pack) {
@@ -95,7 +95,7 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
 
   /**
    * Gets the top-level folder name from a pack's folder hierarchy
-   * @param {CompendiumCollection} pack - Pack to analyze
+   * @param {CompendiumCollection} pack Pack to analyze
    * @returns {string|null} Top-level folder name or null if no folder
    */
   _getPackTopLevelFolderName(pack) {
@@ -113,8 +113,8 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
   /**
    * Translates system folder names to more user-friendly names
    * @todo - Name translations should be localized, at least the end result.
-   * @param {string} name - Folder name to translate
-   * @param {string} [id] - Optional pack ID for additional context
+   * @param {string} name Folder name to translate
+   * @param {string} [id] Optional pack ID for additional context
    * @returns {string} Translated name
    */
   _translateSystemFolderName(name, id = null) {
@@ -141,8 +141,8 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
 
   /**
    * Process categories and create form elements for each pack
-   * @param {Array} categorizedPacks - The categorized pack data
-   * @param {Set} enabledCompendiums - Set of enabled compendium IDs
+   * @param {Array} categorizedPacks The categorized pack data
+   * @param {Set} enabledCompendiums Set of enabled compendium IDs
    * @returns {Array} Processed categories with form elements
    */
   _prepareCategories(categorizedPacks, enabledCompendiums) {
@@ -163,9 +163,9 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
 
   /**
    * Process packs within a category and create their form elements
-   * @param {Array} packs - The packs in the category
-   * @param {Set} enabledCompendiums - Set of enabled compendium IDs
-   * @param {string} categoryName - Name of the category
+   * @param {Array} packs The packs in the category
+   * @param {Set} enabledCompendiums Set of enabled compendium IDs
+   * @param {string} categoryName Name of the category
    * @returns {Array} Processed packs with form elements
    */
   _preparePacksInCategory(packs, enabledCompendiums, categoryName) {
@@ -187,7 +187,7 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
 
   /**
    * Calculate statistics for a category
-   * @param {Array} packsInCategory - The packs in the category
+   * @param {Array} packsInCategory The packs in the category
    * @returns {Object} Category statistics
    */
   _calculateCategoryStats(packsInCategory) {
@@ -199,7 +199,7 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
 
   /**
    * Create a checkbox for an individual pack
-   * @param {Object} packData - The pack data
+   * @param {Object} packData The pack data
    * @returns {HTMLElement} The created checkbox element
    */
   _createPackCheckbox(packData) {
@@ -217,8 +217,8 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
 
   /**
    * Create a category select all checkbox
-   * @param {string} categoryName - Name of the category
-   * @param {Object} categoryStats - Category statistics
+   * @param {string} categoryName Name of the category
+   * @param {Object} categoryStats Category statistics
    * @returns {HTMLElement} The created checkbox element
    */
   _createCategorySelectAllCheckbox(categoryName, categoryStats) {
@@ -236,7 +236,7 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
 
   /**
    * Calculate summary data for all categories
-   * @param {Array} categories - The processed categories
+   * @param {Array} categories The processed categories
    * @returns {Object} Summary data including totals and selection state
    */
   _calculateSummaryData(categories) {
@@ -252,7 +252,7 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
 
   /**
    * Create the global select all checkbox
-   * @param {boolean} allSelected - Whether all packs are selected
+   * @param {boolean} allSelected Whether all packs are selected
    * @returns {string} HTML string for the checkbox
    */
   _createGlobalSelectAllCheckbox(allSelected) {
@@ -322,8 +322,8 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
 
   /**
    * Update the count display for a specific category
-   * @param {HTMLElement} form - The form element
-   * @param {string} organizationName - The organization name to update
+   * @param {HTMLElement} form The form element
+   * @param {string} organizationName The organization name to update
    */
   _updateCategoryCount(form, organizationName) {
     const categoryCheckboxes = form.querySelectorAll(`dnd5e-checkbox[data-organization="${organizationName}"][name="compendiumMultiSelect"]`);
@@ -340,7 +340,7 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
 
   /**
    * Update all category counts
-   * @param {HTMLElement} form - The form element
+   * @param {HTMLElement} form The form element
    */
   _updateAllCategoryCounts(form) {
     const categorySelectAlls = form.querySelectorAll('dnd5e-checkbox.select-all-category');
@@ -352,8 +352,8 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
 
   /**
    * Update the summary count at the top
-   * @param {HTMLElement} form - The form element
-   * @param {NodeList} allCheckboxes - All individual checkboxes
+   * @param {HTMLElement} form The form element
+   * @param {NodeList} allCheckboxes All individual checkboxes
    */
   _updateSummaryCount(form, allCheckboxes) {
     const enabledCountSpan = form.querySelector('.enabled-count');
@@ -365,9 +365,9 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
 
   /**
    * Updates the global "Select All" checkbox state
-   * @param {HTMLElement} form - The form element
-   * @param {NodeList} allCheckboxes - All individual checkboxes
-   * @param {HTMLElement} globalSelectAll - Global select all checkbox
+   * @param {HTMLElement} form The form element
+   * @param {NodeList} allCheckboxes All individual checkboxes
+   * @param {HTMLElement} globalSelectAll Global select all checkbox
    */
   _updateGlobalSelectAll(form, allCheckboxes, globalSelectAll) {
     if (!globalSelectAll) return;
@@ -377,6 +377,9 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
 
   /**
    * Handle form submission
+   * @param event
+   * @param form
+   * @param formData
    */
   static async formHandler(event, form, formData) {
     const enabledCompendiums = {};

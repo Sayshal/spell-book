@@ -2,8 +2,8 @@ import * as DataHelpers from '../data/_module.mjs';
 
 /**
  * Convert a spell range to feet (or meters based on dnd5e system settings)
- * @param {string} units - The range units (feet, miles, etc)
- * @param {number} value - The range value
+ * @param {string} units The range units (feet, miles, etc)
+ * @param {number} value The range value
  * @returns {number} - The converted range value
  */
 export function convertRangeToStandardUnit(units, value) {
@@ -18,9 +18,9 @@ export function convertRangeToStandardUnit(units, value) {
 
 /**
  * Prepare filter options based on filter type
- * @param {string} filterId - The filter ID
- * @param {Object} filterState - Current filter state
- * @param {Array} spellData - Spell data
+ * @param {string} filterId The filter ID
+ * @param {Object} filterState Current filter state
+ * @param {Array} spellData Spell data
  * @returns {Array} Options for the dropdown
  */
 export function getOptionsForFilter(filterId, filterState, spellData) {
@@ -89,7 +89,7 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
 
 /**
  * Get casting time options
- * @param {Object} filterState - Current filter state
+ * @param {Object} filterState Current filter state
  * @returns {Array} Casting time options
  */
 function getCastingTimeOptions(filterState) {

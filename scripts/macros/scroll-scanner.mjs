@@ -96,7 +96,7 @@ function scrollScannerScript() {
     }).then((result) => {
       if (result === 'copy') {
         const scrollList = scrolls.map((s) => `${s.name} (${s.uuid}) - ${s.source}`).join('\n');
-        SPELLBOOK.log(3, 'Scrolls found in compendiums:\n' + scrollList);
+        SPELLBOOK.log(3, `Scrolls found in compendiums:\n${scrollList}`);
         ui.notifications.info('Scroll list copied to console (F12)');
       }
     });

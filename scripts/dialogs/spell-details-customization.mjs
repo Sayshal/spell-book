@@ -78,8 +78,8 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
 
   /**
    * Prepare UI elements with generated checkboxes
-   * @param {string} type - 'player' or 'gm'
-   * @param {Object} settings - Current settings object
+   * @param {string} type 'player' or 'gm'
+   * @param {Object} settings Current settings object
    * @returns {Array} Array of UI element configurations with checkboxes
    */
   _prepareUIElementsWithCheckboxes(type, settings) {
@@ -93,8 +93,8 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
 
   /**
    * Prepare metadata elements with generated checkboxes
-   * @param {string} type - 'player' or 'gm'
-   * @param {Object} settings - Current settings object
+   * @param {string} type 'player' or 'gm'
+   * @param {Object} settings Current settings object
    * @returns {Array} Array of metadata element configurations with checkboxes
    */
   _prepareMetadataElementsWithCheckboxes(type, settings) {
@@ -108,8 +108,8 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
 
   /**
    * Create a select-all checkbox for a group
-   * @param {string} id - The checkbox ID
-   * @param {string} group - The group identifier
+   * @param {string} id The checkbox ID
+   * @param {string} group The group identifier
    * @returns {string} HTML for the select-all checkbox
    */
   _createSelectAllCheckbox(id, group) {
@@ -170,8 +170,8 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
 
   /**
    * Set all checkboxes in a group to checked/unchecked
-   * @param {string} group - The group identifier
-   * @param {boolean} checked - Whether to check or uncheck
+   * @param {string} group The group identifier
+   * @param {boolean} checked Whether to check or uncheck
    */
   _setGroupCheckboxes(group, checked) {
     const groupItems = this.element.querySelectorAll(`[data-group="${group}"]`);
@@ -185,7 +185,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
 
   /**
    * Update the select-all checkbox state based on group items
-   * @param {string} group - The group identifier
+   * @param {string} group The group identifier
    */
   _updateSelectAllState(group) {
     const selectAllCheckbox = this.element.querySelector(`[data-group="${group}"].select-all-checkbox`);
@@ -258,7 +258,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
 
   /**
    * Get UI elements configuration
-   * @param {string} type - 'player' or 'gm'
+   * @param {string} type 'player' or 'gm'
    * @returns {Array} Array of UI element configurations
    */
   _getUIElementsConfig(type) {
@@ -267,7 +267,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
         {
           key: 'favorites',
           label: 'SPELLBOOK.Settings.DetailsCustomization.Favorites',
-          description: '<i class="fas fa-star"></i> ' + game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.FavoritesDesc')
+          description: `<i class="fas fa-star"></i> ${game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.FavoritesDesc')}`
         },
         {
           key: 'compare',
@@ -277,7 +277,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
         {
           key: 'notes',
           label: 'SPELLBOOK.Settings.DetailsCustomization.Notes',
-          description: '<i class="fas fa-sticky-note"></i> ' + game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.NotesDesc')
+          description: `<i class="fas fa-sticky-note"></i> ${game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.NotesDesc')}`
         },
         {
           key: 'sidebarControlsBottom',
@@ -298,7 +298,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
 
   /**
    * Get metadata elements configuration
-   * @param {string} type - 'player' or 'gm'
+   * @param {string} type 'player' or 'gm'
    * @returns {Array} Array of metadata element configurations
    */
   _getMetadataElementsConfig(type) {
@@ -318,8 +318,8 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
 
   /**
    * Action handler to set wizard book color to user color
-   * @param {Event} event - The triggering event
-   * @param {HTMLElement} target - The target element
+   * @param {Event} event The triggering event
+   * @param {HTMLElement} target The target element
    */
   static async useUserColor(event, target) {
     const userColor = target.dataset.userColor || game.user.color;
@@ -332,8 +332,8 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
 
   /**
    * Action handler to reset wizard book color to default/saved setting
-   * @param {Event} event - The triggering event
-   * @param {HTMLElement} target - The target element
+   * @param {Event} event The triggering event
+   * @param {HTMLElement} target The target element
    */
   static async resetToDefault(event, target) {
     const colorPicker = target.closest('.wizard-book-color-controls').querySelector('color-picker[name="wizardBookIconColor"]');
@@ -346,9 +346,9 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
 
   /**
    * Handle form submission to save settings
-   * @param {Event} _event - The form submission event
-   * @param {HTMLFormElement} _form - The form element
-   * @param {Object} formData - The submitted form data
+   * @param {Event} _event The form submission event
+   * @param {HTMLFormElement} _form The form element
+   * @param {Object} formData The submitted form data
    * @returns {Promise<void>}
    */
   static async formHandler(_event, _form, formData) {

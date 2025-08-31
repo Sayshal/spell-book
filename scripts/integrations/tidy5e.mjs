@@ -14,6 +14,9 @@ export function registerTidy5eIntegration() {
 
 /**
  * Handle Tidy5e classic sheet rendering
+ * @param sheet
+ * @param element
+ * @param data
  */
 function onTidy5eRender(sheet, element, data) {
   const actor = data.actor;
@@ -31,6 +34,9 @@ function onTidy5eRender(sheet, element, data) {
 
 /**
  * Handle Tidy5e new (Quadrone) sheet rendering
+ * @param sheet
+ * @param element
+ * @param data
  */
 function onTidy5eQuadroneRender(sheet, element, data) {
   const actor = data.actor;
@@ -48,6 +54,8 @@ function onTidy5eQuadroneRender(sheet, element, data) {
 
 /**
  * Check if Tidy5e Spell Book button can be added
+ * @param actor
+ * @param element
  */
 function canAddTidySpellbookButton(actor, element) {
   const canCast = Object.keys(actor?.spellcastingClasses || {}).length > 0;
@@ -59,6 +67,7 @@ function canAddTidySpellbookButton(actor, element) {
 
 /**
  * Create Tidy5e Spell Book button element
+ * @param actor
  */
 function createTidySpellbookButton(actor) {
   const button = document.createElement('button');
@@ -73,6 +82,7 @@ function createTidySpellbookButton(actor) {
 
 /**
  * Create Tidy5e Spell Book button element for Quadrone sheet
+ * @param actor
  */
 function createTidySpellbookButtonQuadrone(actor) {
   const button = document.createElement('button');
@@ -86,6 +96,8 @@ function createTidySpellbookButtonQuadrone(actor) {
 
 /**
  * Open Spell Book application
+ * @param event
+ * @param actor
  */
 function openSpellbook(event, actor) {
   event.preventDefault();

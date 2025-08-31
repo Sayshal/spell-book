@@ -31,7 +31,7 @@ export function createAPI() {
 
       /**
        * Open Spell Book for a specific actor
-       * @param {Actor5e} actor - The actor to open the Spell Book for
+       * @param {Actor5e} actor The actor to open the Spell Book for
        * @returns {SpellBook} The created Spell Book instance
        */
       openSpellBookForActor: (actor) => {
@@ -56,9 +56,9 @@ export function createAPI() {
 
       /**
        * Open the spell analytics dashboard
-       * @param {Object} options - Dashboard options
-       * @param {string} [options.viewMode='personal'] - 'personal' or 'gm'
-       * @param {string} [options.userId] - User ID for personal view
+       * @param {Object} options Dashboard options
+       * @param {string} [options.viewMode='personal'] 'personal' or 'gm'
+       * @param {string} [options.userId] User ID for personal view
        * @returns {SpellAnalyticsDashboard} The created dashboard instance
        */
       openAnalyticsDashboard: (options = {}) => {
@@ -75,7 +75,7 @@ export function createAPI() {
 
       /**
        * Open spell notes dialog for a specific spell
-       * @param {string} spellUuid - The spell UUID
+       * @param {string} spellUuid The spell UUID
        * @returns {SpellNotesDialog} The created dialog instance
        */
       openSpellNotesDialog: (spellUuid) => {
@@ -90,9 +90,9 @@ export function createAPI() {
 
       /**
        * Open spell loadout dialog for an actor and class
-       * @param {Actor} actor - The actor
-       * @param {SpellBook} spellbook - The Spell Book reference
-       * @param {string} classIdentifier - The class identifier
+       * @param {Actor} actor The actor
+       * @param {SpellBook} spellbook The Spell Book reference
+       * @param {string} classIdentifier The class identifier
        * @returns {SpellLoadoutDialog} The created dialog instance
        */
       openSpellLoadoutDialog: (actor, spellbook, classIdentifier) => {
@@ -107,7 +107,7 @@ export function createAPI() {
 
       /**
        * Open Spell Book settings dialog for an actor
-       * @param {Actor} actor - The actor
+       * @param {Actor} actor The actor
        * @returns {SpellbookSettingsDialog} The created dialog instance
        */
       openSpellbookSettingsDialog: (actor) => {

@@ -21,6 +21,9 @@ export function registerDnD5eIntegration() {
 
 /**
  * Add Spell Book button to character sheet
+ * @param app
+ * @param html
+ * @param data
  */
 function addSpellbookButton(app, html, data) {
   const actor = data.actor;
@@ -39,6 +42,9 @@ function addSpellbookButton(app, html, data) {
 
 /**
  * Handle long rest completion for all spellcasting classes
+ * @param actor
+ * @param result
+ * @param config
  */
 async function handleRestCompleted(actor, result, config) {
   if (!result.longRest) return;
@@ -77,6 +83,7 @@ async function handleRestCompleted(actor, result, config) {
 
 /**
  * Add Spell Book button to journal sidebar footer
+ * @param app
  */
 function addJournalSpellBookButton(app) {
   if (!game.settings.get(MODULE.ID, SETTINGS.ENABLE_JOURNAL_BUTTON)) return;
@@ -151,11 +158,13 @@ function createJournalAnalyticsButton() {
 
 /**
  * Handle the long rest swap prompt for all applicable classes
+ * @param actor
+ * @param longRestClasses
  */
 async function handleLongRestSwapPrompt(actor, longRestClasses) {
   const isPromptDisabled = game.settings.get(MODULE.ID, SETTINGS.DISABLE_LONG_REST_SWAP_PROMPT);
   if (isPromptDisabled) {
-    log(3, `Long rest swap prompt disabled by user preference, flag already set`);
+    log(3, 'Long rest swap prompt disabled by user preference, flag already set');
     const classNames = [...longRestClasses.cantripSwapping.map((c) => c.name), ...longRestClasses.spellSwapping.map((c) => c.name)];
     const uniqueClassNames = [...new Set(classNames)];
     ui.notifications.info(game.i18n.format('SPELLBOOK.LongRest.SwapAvailableNotification', { name: actor.name, classes: uniqueClassNames.join(', ') }));
@@ -170,6 +179,7 @@ async function handleLongRestSwapPrompt(actor, longRestClasses) {
 
 /**
  * Show the long rest swap dialog with dynamic content
+ * @param longRestClasses
  */
 async function showLongRestSwapDialog(longRestClasses) {
   const content = await renderTemplate(TEMPLATES.DIALOGS.LONG_REST_SWAP, { longRestClasses });
@@ -188,6 +198,8 @@ async function showLongRestSwapDialog(longRestClasses) {
 
 /**
  * Check if Spell Book button can be added
+ * @param actor
+ * @param html
  */
 function canAddSpellbookButton(actor, html) {
   const canCast = Object.keys(actor?.spellcastingClasses || {}).length > 0;
@@ -199,6 +211,7 @@ function canAddSpellbookButton(actor, html) {
 
 /**
  * Create Spell Book button element
+ * @param actor
  */
 function createSpellBookButton(actor) {
   const button = document.createElement('button');
@@ -213,6 +226,8 @@ function createSpellBookButton(actor) {
 
 /**
  * Handle Spell Book button click
+ * @param actor
+ * @param event
  */
 async function onSpellBookButtonClick(actor, event) {
   event.preventDefault();
