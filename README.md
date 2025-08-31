@@ -63,10 +63,7 @@ Get Spell Book through Foundry's **Module Manager** or **The Forge's Bazaar** fo
 
 1. Open **Foundry's Configuration and Setup** screen
 2. Click **Install Module** in the Add-on Modules section
-3. Paste this URL in the **Manifest URL** field:
-
-[https://github.com/Sayshal/spell-book/releases/latest/download/module.json](https://github.com/Sayshal/spell-book/releases/latest/download/module.json)
-
+3. Paste this URL in the **Manifest URL** field:[https://github.com/Sayshal/spell-book/releases/latest/download/module.json](https://github.com/Sayshal/spell-book/releases/latest/download/module.json)
 4. Click **Install**
 5. Enable Spell Book in the **Manage Modules** section
 
