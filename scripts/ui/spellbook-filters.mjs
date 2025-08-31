@@ -3,7 +3,7 @@ import { log } from '../logger.mjs';
 import * as ValidationHelpers from '../validation/_module.mjs';
 
 /**
- * Helper class for filtering spells in the spellbook application with cached filter state
+ * Helper class for filtering spells in the Spell Book application with cached filter state
  */
 export class SpellbookFilterHelper {
   /**

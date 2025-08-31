@@ -66,7 +66,7 @@ export class RuleSetManager {
         }
       }
       if (!classExists) {
-        log(2, `Class rules found for non-existent class: ${classIdentifier}. Will be cleaned up on next spellbook open.`);
+        log(2, `Class rules found for non-existent class: ${classIdentifier}. Will be cleaned up on next Spell Book open.`);
         const ruleSet = RuleSetManager.getEffectiveRuleSet(actor);
         return RuleSetManager._getClassDefaults(classIdentifier, ruleSet);
       }

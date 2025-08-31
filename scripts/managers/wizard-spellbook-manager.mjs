@@ -3,7 +3,7 @@ import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
- * Manages wizard-specific spellbook functionality for a specific class
+ * Manages wizard-specific Spell Book functionality for a specific class
  */
 export class WizardSpellbookManager {
   static _folderCreationLock = false;
@@ -11,7 +11,7 @@ export class WizardSpellbookManager {
 
   /**
    * Create a new WizardSpellbookManager for an actor and specific class
-   * @param {Actor5e} actor - The actor to manage wizard spellbook for
+   * @param {Actor5e} actor - The actor to manage wizard Spell Book for
    * @param {string} classIdentifier - The class identifier (e.g., 'wizard', 'cleric')
    */
   constructor(actor, classIdentifier = 'wizard') {
@@ -73,7 +73,7 @@ export class WizardSpellbookManager {
   }
 
   /**
-   * Get all spells in the wizard's spellbook for this class (with caching)
+   * Get all spells in the wizard's Spell Book for this class (with caching)
    * @returns {Promise<Array<string>>} Array of spell UUIDs
    */
   async getSpellbookSpells() {
@@ -87,9 +87,9 @@ export class WizardSpellbookManager {
   }
 
   /**
-   * Check if a spell is in the wizard's spellbook
+   * Check if a spell is in the wizard's Spell Book
    * @param {string} spellUuid - UUID of the spell
-   * @returns {Promise<boolean>} Whether the spell is in the spellbook
+   * @returns {Promise<boolean>} Whether the spell is in the Spell Book
    */
   async isSpellInSpellbook(spellUuid) {
     const spells = await this.getSpellbookSpells();
@@ -97,7 +97,7 @@ export class WizardSpellbookManager {
   }
 
   /**
-   * Copy a spell to the wizard's spellbook with associated cost and time
+   * Copy a spell to the wizard's Spell Book with associated cost and time
    * @param {string} spellUuid - UUID of the spell to copy
    * @param {number} cost - Cost in gold to copy the spell
    * @param {number} time - Time in hours to copy the spell
@@ -135,7 +135,7 @@ export class WizardSpellbookManager {
   }
 
   /**
-   * Add a spell to the wizard's spellbook
+   * Add a spell to the wizard's Spell Book
    * @param {string} spellUuid - UUID of the spell to add
    * @param {string} source - Source of the spell (levelUp, copied, initial)
    * @param {Object} metadata - Additional metadata for the spell
@@ -159,14 +159,14 @@ export class WizardSpellbookManager {
       copiedSpells.push(metadataObj);
       await this.actor.setFlag(MODULE.ID, copiedSpellsFlag, copiedSpells);
     }
-    log(3, `Added spell ${spellUuid} to ${this.actor.name}'s ${this.classIdentifier} spellbook`);
+    log(3, `Added spell ${spellUuid} to ${this.actor.name}'s ${this.classIdentifier} Spell Book`);
     this.invalidateCache();
     return true;
   }
 
   /**
-   * Find the actor's spellbook journal for this class
-   * @returns {Promise<JournalEntry|null>} The actor's spellbook journal or null if not found
+   * Find the actor's Spell Book journal for this class
+   * @returns {Promise<JournalEntry|null>} The actor's Spell Book journal or null if not found
    */
   async findSpellbookJournal() {
     const customPack = game.packs.get(MODULE.PACK.SPELLS);
@@ -178,12 +178,12 @@ export class WizardSpellbookManager {
         return document;
       }
     }
-    log(2, `No spellbook journal found for actor ${this.actor.id}, class ${this.classIdentifier}`);
+    log(2, `No Spell Book journal found for actor ${this.actor.id}, class ${this.classIdentifier}`);
     return null;
   }
 
   /**
-   * Create a new spellbook journal for the actor and class
+   * Create a new Spell Book journal for the actor and class
    * @returns {Promise<JournalEntry>} The created journal
    */
   async createSpellbookJournal() {
@@ -228,13 +228,13 @@ export class WizardSpellbookManager {
       ]
     };
     const journal = await JournalEntry.create(journalData, { pack: customPack.collection });
-    log(3, `Created new spellbook journal for ${this.actor.name} ${this.classIdentifier}: ${journal.uuid}`);
+    log(3, `Created new Spell Book journal for ${this.actor.name} ${this.classIdentifier}: ${journal.uuid}`);
     return journal;
   }
 
   /**
-   * Get or create the actor's spellbook journal for this class
-   * @returns {Promise<JournalEntry|null>} The actor's spellbook journal
+   * Get or create the actor's Spell Book journal for this class
+   * @returns {Promise<JournalEntry|null>} The actor's Spell Book journal
    */
   async getOrCreateSpellbookJournal() {
     const lockKey = `${this.actor.id}-${this.classIdentifier}`;
@@ -248,7 +248,7 @@ export class WizardSpellbookManager {
       const newJournal = await this.createSpellbookJournal();
       return newJournal;
     } catch (error) {
-      log(1, `Error getting or creating spellbook journal for ${this.actor.name} ${this.classIdentifier}:`, error);
+      log(1, `Error getting or creating Spell Book journal for ${this.actor.name} ${this.classIdentifier}:`, error);
       return null;
     } finally {
       WizardSpellbookManager._journalCreationLocks.delete(lockKey);
@@ -267,7 +267,7 @@ export class WizardSpellbookManager {
   }
 
   /**
-   * Calculate the maximum number of spells allowed in the wizard's spellbook (cached)
+   * Calculate the maximum number of spells allowed in the wizard's Spell Book (cached)
    * @returns {number} The maximum number of spells allowed
    */
   getMaxSpellsAllowed() {

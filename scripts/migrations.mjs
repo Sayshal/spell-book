@@ -168,12 +168,12 @@ async function migrateSpellListFolders() {
 }
 
 /**
- * Validate and fix ownership levels for all spell book documents
+ * Validate and fix ownership levels for all Spell Book documents
  * @returns {Promise<Object>} Validation results with fixed counts and details
  */
 async function validateOwnershipLevels() {
   const results = { processed: 0, errors: [], userDataFixed: 0, spellListsFixed: 0, actorSpellbooksFixed: 0, packsFixed: 0, details: [], fixedDocuments: [] };
-  log(3, 'Validating ownership levels for spell book documents...');
+  log(3, 'Validating ownership levels for Spell Book documents...');
   try {
     const userDataResults = await validateUserDataOwnership();
     results.userDataFixed = userDataResults.fixed;
@@ -297,7 +297,7 @@ async function validateSpellListOwnership() {
 }
 
 /**
- * Validate and fix actor spellbook journal and page ownership
+ * Validate and fix actor Spell Book journal and page ownership
  * @returns {Promise<Object>} Validation results for actor spellbooks
  */
 async function validateActorSpellbookOwnership() {
@@ -333,7 +333,7 @@ async function validateActorSpellbookOwnership() {
             await page.update({ ownership: correctPageOwnership });
             results.fixed++;
             const ownerNames = ownerUserIds.map((id) => game.users.get(id)?.name || id).join(', ');
-            results.details.push(`Fixed actor spellbook page: ${actor.name} (${classIdentifier}) for user(s) ${ownerNames}`);
+            results.details.push(`Fixed actor Spell Book page: ${actor.name} (${classIdentifier}) for user(s) ${ownerNames}`);
             results.fixedDocuments.push({
               type: 'actorSpellbookPage',
               name: page.name,
@@ -355,7 +355,7 @@ async function validateActorSpellbookOwnership() {
           try {
             await doc.update({ ownership: correctPageOwnership });
             results.fixed++;
-            results.details.push(`Fixed actor spellbook journal: ${doc.name}`);
+            results.details.push(`Fixed actor Spell Book journal: ${doc.name}`);
             results.fixedDocuments.push({
               type: 'actorSpellbookJournal',
               name: doc.name,
@@ -374,7 +374,7 @@ async function validateActorSpellbookOwnership() {
       }
     }
   } catch (error) {
-    results.errors.push(`Actor spellbook ownership error: ${error.message}`);
+    results.errors.push(`Actor Spell Book ownership error: ${error.message}`);
   }
   return results;
 }
@@ -492,7 +492,7 @@ async function migrateJournalToFolder(journal, customFolder, mergedFolder) {
 }
 
 /**
- * Migrate pack sorting and folder sorting for spell book packs
+ * Migrate pack sorting and folder sorting for Spell Book packs
  * @returns {Promise<Object>} Migration results with processed count and updated items
  */
 async function migratePackSorting() {

@@ -7,7 +7,7 @@ import * as ValidationHelpers from '../validation/_module.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
- * Enhanced dialog for configuring spell book settings with per-class rules
+ * Enhanced dialog for configuring Spell Book settings with per-class rules
  */
 export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
@@ -690,7 +690,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Form handler for saving spellbook settings
+   * Form handler for saving Spell Book settings
    * @param {Event} _event - The form submission event
    * @param {HTMLFormElement} _form - The form element
    * @param {Object} formData - The form data

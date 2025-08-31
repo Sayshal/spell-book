@@ -30,9 +30,9 @@ export function createAPI() {
       preloadedData: null,
 
       /**
-       * Open spell book for a specific actor
-       * @param {Actor5e} actor - The actor to open the spell book for
-       * @returns {SpellBook} The created spell book instance
+       * Open Spell Book for a specific actor
+       * @param {Actor5e} actor - The actor to open the Spell Book for
+       * @returns {SpellBook} The created Spell Book instance
        */
       openSpellBookForActor: (actor) => {
         if (!actor) {
@@ -91,7 +91,7 @@ export function createAPI() {
       /**
        * Open spell loadout dialog for an actor and class
        * @param {Actor} actor - The actor
-       * @param {SpellBook} spellbook - The spellbook reference
+       * @param {SpellBook} spellbook - The Spell Book reference
        * @param {string} classIdentifier - The class identifier
        * @returns {SpellLoadoutDialog} The created dialog instance
        */
@@ -106,7 +106,7 @@ export function createAPI() {
       },
 
       /**
-       * Open spellbook settings dialog for an actor
+       * Open Spell Book settings dialog for an actor
        * @param {Actor} actor - The actor
        * @returns {SpellbookSettingsDialog} The created dialog instance
        */

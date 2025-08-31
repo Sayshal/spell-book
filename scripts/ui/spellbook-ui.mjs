@@ -6,7 +6,7 @@ import { RuleSetManager } from '../managers/_module.mjs';
 import * as UIHelpers from './_module.mjs';
 
 /**
- * Helper class for UI-related functionality in the spellbook application
+ * Helper class for UI-related functionality in the Spell Book application
  */
 export class SpellbookUI {
   /**

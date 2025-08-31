@@ -1609,7 +1609,7 @@
   }
 
   /* ----------------------------------------- */
-  /*  Wizard Spellbook Tab                    */
+  /*  Wizard Spell Book Tab                    */
   /* ----------------------------------------- */
   .wizardbook {
     .spellbook-rules {
@@ -5005,7 +5005,7 @@
   }
 
   /* ----------------------------------------- */
-  /*  Spellbook Settings Dialog                */
+  /*  Spell Book Settings Dialog                */
   /* ----------------------------------------- */
   &.spell-book.spellbook-settings-dialog {
     .window-content {

@@ -49,7 +49,7 @@ async function preloadForGMSetupMode() {
  * @returns {Promise<void>}
  */
 async function preloadForPlayer() {
-  log(3, 'Starting player preload - loading assigned spell lists and wizard spellbook');
+  log(3, 'Starting player preload - loading assigned spell lists and wizard Spell Book');
   try {
     const playerActor = getCurrentPlayerActor();
     if (!playerActor) {
@@ -63,7 +63,7 @@ async function preloadForPlayer() {
     const relevantSpells = allSpells.filter((spell) => normalizedUuids.has(spell.uuid));
     const enrichedSpells = enrichSpellsWithIcons(relevantSpells);
     cachePreloadedData([], enrichedSpells, 'player');
-    const message = `Your spell book is ready! (${enrichedSpells.length} spells loaded)`; // Localize
+    const message = `Your Spell Book is ready! (${enrichedSpells.length} spells loaded)`; // Localize
     if (ui.notifications.success) ui.notifications.success(message, { console: false });
     else ui.notifications.info(message, { console: false });
     log(3, `Player preload completed: ${enrichedSpells.length} spells`);
@@ -126,7 +126,7 @@ async function getSpellsFromActorSpellLists(actor) {
 }
 
 /**
- * Get spell UUIDs from actor's wizard spellbook
+ * Get spell UUIDs from actor's wizard Spell Book
  * @param {Actor5e} actor - The actor to check
  * @returns {Promise<Array<string>>} Array of spell UUIDs
  */
@@ -144,12 +144,12 @@ async function getActorSpellbookSpells(actor) {
             const spellsSet = journalPage.system.spells;
             if (spellsSet instanceof Set) spellsSet.forEach((spellUuid) => spellUuids.push(spellUuid));
             else if (Array.isArray(spellsSet)) spellUuids.push(...spellsSet);
-            log(3, `Found ${spellsSet.size || spellsSet.length} spells in ${identifier} spellbook`);
+            log(3, `Found ${spellsSet.size || spellsSet.length} spells in ${identifier} Spell Book`);
           }
         }
       }
     } catch (error) {
-      log(2, `Error getting spellbook spells for ${identifier}:`, error);
+      log(2, `Error getting Spell Book spells for ${identifier}:`, error);
     }
   }
   log(3, `Total spell UUIDs from wizard spellbooks: ${spellUuids.length}`);

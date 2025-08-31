@@ -29,7 +29,7 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * @param {Actor} actor - The actor whose loadouts to manage
-   * @param {SpellBook} spellbook - The spellbook reference
+   * @param {SpellBook} spellbook - The Spell Book reference
    * @param {string} classIdentifier - The current class identifier
    * @param {Object} options - Additional options
    */

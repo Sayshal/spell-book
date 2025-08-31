@@ -5,7 +5,7 @@ import { RuleSetManager } from '../managers/_module.mjs';
 import * as UIHelpers from '../ui/_module.mjs';
 
 /**
- * Manages state for the spellbook application with cached calculations
+ * Manages state for the Spell Book application with cached calculations
  * Handles loading, processing, and organizing spell data
  */
 export class SpellbookState {
@@ -37,7 +37,7 @@ export class SpellbookState {
    */
   async initialize() {
     if (this._initialized) return true;
-    log(3, 'Starting spellbook state initialization');
+    log(3, 'Starting Spell Book state initialization');
     this.isLongRest = !this.actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);
     if (!this._classesDetected) this.detectSpellcastingClasses();
     await this.app.spellManager.cleanupStalePreparationFlags();
@@ -65,7 +65,7 @@ export class SpellbookState {
     }
 
     this._initialized = true;
-    log(3, 'Spellbook state initialization completed');
+    log(3, 'Spell Book state initialization completed');
     return true;
   }
 
@@ -609,7 +609,7 @@ export class SpellbookState {
   }
 
   /**
-   * Cache wizard spellbook spells for a specific class
+   * Cache wizard Spell Book spells for a specific class
    * @param {string} classIdentifier - The class identifier
    * @returns {Promise<void>}
    */
@@ -673,7 +673,7 @@ export class SpellbookState {
    * Process wizard spells for a specific class
    * @param {Array} allSpellItems - All fetched spell items
    * @param {Item} classItem - The class item
-   * @param {Array} personalSpellbook - The personal spellbook spell UUIDs
+   * @param {Array} personalSpellbook - The personal Spell Book spell UUIDs
    * @param {string} classIdentifier - The class identifier
    * @returns {Promise<void>}
    */
@@ -794,7 +794,7 @@ export class SpellbookState {
   /**
    * Enrich wizard tab spells with additional data
    * @param {Array} spellLevelsGrouped - Grouped spell levels array
-   * @param {Array} personalSpellbook - The personal spellbook spell UUIDs
+   * @param {Array} personalSpellbook - The personal Spell Book spell UUIDs
    * @param {boolean} isWizardBook - Whether this is for the wizard tab
    * @param {boolean} isAtMaxSpells - Whether maximum spells are reached
    */
@@ -948,7 +948,7 @@ export class SpellbookState {
   }
 
   /**
-   * Add missing wizard ritual spells using wizard spellbook
+   * Add missing wizard ritual spells using wizard Spell Book
    * @param {string} classIdentifier - The class identifier (should be 'wizard')
    * @param {Object} spellDataByClass - The spell data grouped by class
    * @returns {Promise<void>}

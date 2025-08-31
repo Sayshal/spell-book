@@ -5,4 +5,4 @@ export { SpellLoadoutManager } from './spell-loadout-manager.mjs';
 export { SpellManager } from './spell-manager.mjs';
 export { SpellUsageTracker } from './spell-usage-tracker.mjs';
 export { UserSpellDataManager } from './user-spell-data-manager.mjs';
-export { WizardSpellbookManager } from './wizard-spellbook-manager.mjs';
+export { WizardSpellbookManager } from './wizard-Spell Book-manager.mjs';

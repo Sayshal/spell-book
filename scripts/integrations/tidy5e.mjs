@@ -47,7 +47,7 @@ function onTidy5eQuadroneRender(sheet, element, data) {
 }
 
 /**
- * Check if Tidy5e spellbook button can be added
+ * Check if Tidy5e Spell Book button can be added
  */
 function canAddTidySpellbookButton(actor, element) {
   const canCast = Object.keys(actor?.spellcastingClasses || {}).length > 0;
@@ -58,7 +58,7 @@ function canAddTidySpellbookButton(actor, element) {
 }
 
 /**
- * Create Tidy5e spellbook button element
+ * Create Tidy5e Spell Book button element
  */
 function createTidySpellbookButton(actor) {
   const button = document.createElement('button');
@@ -72,7 +72,7 @@ function createTidySpellbookButton(actor) {
 }
 
 /**
- * Create Tidy5e spellbook button element for Quadrone sheet
+ * Create Tidy5e Spell Book button element for Quadrone sheet
  */
 function createTidySpellbookButtonQuadrone(actor) {
   const button = document.createElement('button');
@@ -85,7 +85,7 @@ function createTidySpellbookButtonQuadrone(actor) {
 }
 
 /**
- * Open spellbook application
+ * Open Spell Book application
  */
 function openSpellbook(event, actor) {
   event.preventDefault();

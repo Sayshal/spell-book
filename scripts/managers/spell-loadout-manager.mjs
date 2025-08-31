@@ -8,7 +8,7 @@ import { log } from '../logger.mjs';
 export class SpellLoadoutManager {
   /**
    * @param {Actor} actor - The actor whose loadouts to manage
-   * @param {SpellBook} spellbook - Optional spellbook reference
+   * @param {SpellBook} spellbook - Optional Spell Book reference
    */
   constructor(actor, spellbook = null) {
     this.actor = actor;
@@ -86,7 +86,7 @@ export class SpellLoadoutManager {
   }
 
   /**
-   * Apply a loadout to the current spellbook
+   * Apply a loadout to the current Spell Book
    * @param {string} loadoutId - The loadout ID to apply
    * @param {string} classIdentifier - The class to apply it to
    * @returns {boolean} Success status
@@ -95,7 +95,7 @@ export class SpellLoadoutManager {
     try {
       const loadout = this.loadLoadout(loadoutId);
       if (!loadout) throw new Error('Loadout not found');
-      if (!this.spellbook) throw new Error('No spellbook reference available');
+      if (!this.spellbook) throw new Error('No Spell Book reference available');
       this._applySpellConfiguration(loadout.spellConfiguration, classIdentifier);
       log(3, `Applied loadout: ${loadout.name} to class ${classIdentifier}`);
       ui.notifications.info(game.i18n.format('SPELLBOOK.Loadouts.Applied', { name: loadout.name }));
@@ -135,10 +135,10 @@ export class SpellLoadoutManager {
    */
   captureCurrentState(classIdentifier) {
     try {
-      if (!this.spellbook) throw new Error('No spellbook reference available');
+      if (!this.spellbook) throw new Error('No Spell Book reference available');
       const preparedSpells = [];
       const formElement = this.spellbook.element;
-      if (!formElement) throw new Error('Spellbook element not found');
+      if (!formElement) throw new Error('Spell Book element not found');
       const checkboxes = formElement.querySelectorAll(`dnd5e-checkbox[data-uuid][data-source-class="${classIdentifier}"]`);
       checkboxes.forEach((checkbox) => {
         const uuid = checkbox.dataset.uuid;
@@ -159,9 +159,9 @@ export class SpellLoadoutManager {
    * @param {string} classIdentifier - The class identifier
    */
   _applySpellConfiguration(spellConfiguration, classIdentifier) {
-    if (!this.spellbook) throw new Error('No spellbook reference available');
+    if (!this.spellbook) throw new Error('No Spell Book reference available');
     const formElement = this.spellbook.element;
-    if (!formElement) throw new Error('Spellbook element not found');
+    if (!formElement) throw new Error('Spell Book element not found');
     const allCheckboxes = formElement.querySelectorAll(`dnd5e-checkbox[data-uuid][data-source-class="${classIdentifier}"]`);
     allCheckboxes.forEach((checkbox) => {
       if (!checkbox.disabled) {

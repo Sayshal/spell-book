@@ -14,12 +14,12 @@ function spellBookQuickAccessScript() {
     ui.notifications.info(`${actor.name} has no spells.`);
     return;
   }
-  ui.notifications.info(`Opening spell book for ${actor.name}`);
+  ui.notifications.info(`Opening Spell Book for ${actor.name}`);
   SPELLBOOK.openSpellBookForActor(actor);
 }
 export const spellBookQuickAccess = {
   flagKey: 'spellBookQuickAccess',
-  version: '1.0.0',
+  version: '1.0.1',
   name: 'Spell Book - Quick Access',
   img: 'icons/svg/book.svg',
   type: 'script',

@@ -12,7 +12,7 @@ const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applicat
 const { renderTemplate } = foundry.applications.handlebars;
 
 /**
- * Player-facing spell book application for managing prepared spells
+ * Player-facing Spell Book application for managing prepared spells
  * Thin application that delegates business logic to managers and helpers
  */
 export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -1282,7 +1282,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Position context menu at the left edge of the spell book application
+   * Position context menu at the left edge of the Spell Book application
    * @param {Event} event - The click event
    * @param {HTMLElement} menu - The context menu element
    */
@@ -1859,7 +1859,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Refresh the spellbook after settings changes
+   * Refresh the Spell Book after settings changes
    * @todo - Can this be replaced since its only called once?
    * @returns {Promise<void>}
    */
@@ -1951,7 +1951,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Form handler for saving spellbook settings with class-specific preparation AND favorites
+   * Form handler for saving Spell Book settings with class-specific preparation AND favorites
    * @param {Event} _event - The form submission event
    * @param {HTMLElement} form - The form element
    * @param {Object} formData - The form data

@@ -36,15 +36,15 @@ Say goodbye to endless compendium searches and confusing spell tracking. **Spell
 
 ### 🧙‍♂️ **Advanced Wizard Features**
 
-- **Personal Spellbook**: Dedicated tab for learning and managing wizard spells
+- **Personal Spell Book**: Dedicated tab for learning and managing wizard spells
 - **Spell Learning System**: Track free spells per level and purchased spells with cost reminders
-- **Ritual Casting Integration**: Automatic ritual spell management based on your spellbook
+- **Ritual Casting Integration**: Automatic ritual spell management based on your Spell Book
 
 ### 🔧 **Powerful GM Tools**
 
 - **Spell List Manager**: Create, edit, and customize spell lists for any class or character
 - **Custom Spell Lists**: Build entirely new spell lists or modify existing ones
-- **Player Spellbook Access**: View and manage individual character spellbooks
+- **Player Spell Book Access**: View and manage individual character spellbooks
 
 ### ⚙️ **Intelligent Automation**
 
@@ -98,14 +98,14 @@ Customize when and how spells can be changed:
 - **On Level-Up**: Swap one spell when you gain a level
 - **On Long Rest**: Change spells during long rests (like clerics and druids)
 
-### Wizard Spellbook System
+### Wizard Spell Book System
 
-Wizards get special treatment with a dedicated spellbook tab:
+Wizards get special treatment with a dedicated Spell Book tab:
 
 - **Spell Learning**: Learn new spells with proper cost and time tracking
 - **Free vs. Purchased**: Automatic tracking of free spells per level vs. spells copied from scrolls or other sources
-- **Spellbook Preparation**: Only prepare spells you've actually learned
-- **Ritual Integration**: Automatically access ritual spells from your spellbook
+- **Spell Book Preparation**: Only prepare spells you've actually learned
+- **Ritual Integration**: Automatically access ritual spells from your Spell Book
 
 ### Multiclass Support
 
@@ -200,7 +200,7 @@ You get a streamlined, all-in-one tool that:
 - **Handles Complexity Automatically**: Each class follows its proper rules without you having to remember them
 - **Scales With Your Character**: From single-class beginners to complex multiclass builds
 - **Adapts to Your Campaign**: Support both 2014 and 2024 rules with easy switching
-- **Grows With Your Needs**: From basic spell preparation to advanced wizard spellbook management
+- **Grows With Your Needs**: From basic spell preparation to advanced wizard Spell Book management
 
 Whether you're a new player learning spellcasting basics or a veteran managing a complex multiclass character, Spell Book provides the tools you need to focus on the fun parts of magic!
 
@@ -214,9 +214,9 @@ Whether you're a new player learning spellcasting basics or a veteran managing a
 
 ***A single-class spellcaster with the main spell book interface, highlighting the clean layout and preparation checkboxes***
 
-![Wizard Spellbook Tab](./github_media/02_WIZARDBOOK.png)
+![Wizard Spell Book Tab](./github_media/02_WIZARDBOOK.png)
 
-***The wizard-specific spellbook tab showing learnable spells, cost information***
+***The wizard-specific Spell Book tab showing learnable spells, cost information***
 
 ![Multiclass Character](./github_media/03_MULTICLASS.png)
 

@@ -20,7 +20,7 @@ export function registerDnD5eIntegration() {
 }
 
 /**
- * Add spellbook button to character sheet
+ * Add Spell Book button to character sheet
  */
 function addSpellbookButton(app, html, data) {
   const actor = data.actor;
@@ -76,7 +76,7 @@ async function handleRestCompleted(actor, result, config) {
 }
 
 /**
- * Add spellbook button to journal sidebar footer
+ * Add Spell Book button to journal sidebar footer
  */
 function addJournalSpellBookButton(app) {
   if (!game.settings.get(MODULE.ID, SETTINGS.ENABLE_JOURNAL_BUTTON)) return;
@@ -187,7 +187,7 @@ async function showLongRestSwapDialog(longRestClasses) {
 }
 
 /**
- * Check if spellbook button can be added
+ * Check if Spell Book button can be added
  */
 function canAddSpellbookButton(actor, html) {
   const canCast = Object.keys(actor?.spellcastingClasses || {}).length > 0;
@@ -198,7 +198,7 @@ function canAddSpellbookButton(actor, html) {
 }
 
 /**
- * Create spellbook button element
+ * Create Spell Book button element
  */
 function createSpellBookButton(actor) {
   const button = document.createElement('button');
@@ -212,7 +212,7 @@ function createSpellBookButton(actor) {
 }
 
 /**
- * Handle spellbook button click
+ * Handle Spell Book button click
  */
 async function onSpellBookButtonClick(actor, event) {
   event.preventDefault();
