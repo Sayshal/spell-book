@@ -106,9 +106,8 @@ export class WizardSpellbookManager {
    * @returns {Promise<boolean>} Success state
    */
   async copySpell(spellUuid, cost, time, isFree = false) {
-    const result =
-      !isFree ?
-        await this.addSpellToSpellbook(spellUuid, MODULE.WIZARD_SPELL_SOURCE.COPIED, { cost, timeSpent: time })
+    const result = !isFree
+      ? await this.addSpellToSpellbook(spellUuid, MODULE.WIZARD_SPELL_SOURCE.COPIED, { cost, timeSpent: time })
       : await this.addSpellToSpellbook(spellUuid, MODULE.WIZARD_SPELL_SOURCE.FREE, null);
     if (result) this.invalidateCache();
     return result;

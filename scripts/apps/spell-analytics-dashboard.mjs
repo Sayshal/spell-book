@@ -478,12 +478,12 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
         }
         SpellUserDataJournal.cache.clear();
         const message =
-          importedCount > 0 ?
-            game.i18n.format('SPELLBOOK.Analytics.ImportSuccessWithCount', {
-              imported: importedCount,
-              skipped: skippedCount
-            })
-          : game.i18n.localize('SPELLBOOK.Analytics.ImportSuccess');
+          importedCount > 0
+            ? game.i18n.format('SPELLBOOK.Analytics.ImportSuccessWithCount', {
+                imported: importedCount,
+                skipped: skippedCount
+              })
+            : game.i18n.localize('SPELLBOOK.Analytics.ImportSuccess');
         ui.notifications.info(message);
         this.render();
       } catch (error) {

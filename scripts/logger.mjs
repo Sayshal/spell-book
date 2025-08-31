@@ -20,10 +20,7 @@ export function log(level, ...args) {
     const now = new Date();
     const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
     const logEntry = {
-      type:
-        level === 1 ? 'error'
-        : level === 2 ? 'warn'
-        : 'debug',
+      type: level === 1 ? 'error' : level === 2 ? 'warn' : 'debug',
       timestamp,
       level,
       content: args

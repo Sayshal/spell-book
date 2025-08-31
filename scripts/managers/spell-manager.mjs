@@ -440,7 +440,7 @@ export class SpellManager {
     if (existingSpell) {
       if (existingSpell.system.method !== 'ritual') {
         const updateData = {
-          '_id': existingSpell.id,
+          _id: existingSpell.id,
           'system.method': 'ritual',
           'system.prepared': 0,
           'system.sourceClass': sourceClass,
@@ -504,7 +504,7 @@ export class SpellManager {
       // Check if we need to update the existing spell
       if (existingSpell.system.method !== targetMode || existingSpell.system.prepared !== targetPrepared || existingSpell.system.sourceClass !== sourceClass) {
         const updateData = {
-          '_id': existingSpell.id,
+          _id: existingSpell.id,
           'system.method': targetMode,
           'system.prepared': targetPrepared
         };
@@ -570,7 +570,7 @@ export class SpellManager {
     const classRules = RuleSetManager.getClassRules(this.actor, 'wizard');
     const ritualCastingEnabled = classRules.ritualCasting !== 'none';
     if (isRitualSpell && isWizard && ritualCastingEnabled && targetSpell.system.level > 0) {
-      spellsToUpdate.push({ '_id': targetSpell.id, 'system.method': 'ritual', 'system.prepared': 0 });
+      spellsToUpdate.push({ _id: targetSpell.id, 'system.method': 'ritual', 'system.prepared': 0 });
       log(3, `Converting wizard spell back to ritual mode: ${targetSpell.name}`);
       return;
     }

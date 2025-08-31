@@ -81,9 +81,8 @@ async function migrateDocument(doc, deprecatedFlags) {
   const nullValidFlags = ['ruleSetOverride', 'enforcementBehavior'];
   for (const [key, value] of Object.entries(flags)) {
     const isDeprecated = deprecatedFlags.some((deprecated) => deprecated.key === key);
-    const isInvalid =
-      nullValidFlags.includes(key) ?
-        value === undefined || (typeof value === 'object' && value !== null && !Array.isArray(value) && Object.keys(value).length === 0)
+    const isInvalid = nullValidFlags.includes(key)
+      ? value === undefined || (typeof value === 'object' && value !== null && !Array.isArray(value) && Object.keys(value).length === 0)
       : value === null || value === undefined || (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0);
     if (isDeprecated || isInvalid) {
       updates[`flags.${MODULE.ID}.-=${key}`] = null;

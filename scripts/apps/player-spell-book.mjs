@@ -1150,22 +1150,22 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     const favoriteStarHtml =
-      UIHelpers.UICustomizationHelper.isPlayerElementEnabled('favorites') && spellUuid ?
-        `<button type="button" class="spell-favorite-toggle ${spell.favorited ? 'favorited' : ''}"
+      UIHelpers.UICustomizationHelper.isPlayerElementEnabled('favorites') && spellUuid
+        ? `<button type="button" class="spell-favorite-toggle ${spell.favorited ? 'favorited' : ''}"
         data-action="toggleFavorite"
         data-uuid="${spellUuid}"
         data-tooltip="${spell.favorited ? game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites') : game.i18n.localize('SPELLBOOK.UI.AddToFavorites')}"
         aria-label="${spell.favorited ? game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites') : game.i18n.localize('SPELLBOOK.UI.AddToFavorites')}">
         <i class="${spell.favorited ? 'fas' : 'far'} fa-star" aria-hidden="true"></i>
       </button>`
-      : '';
+        : '';
     const notesIconHtml =
-      UIHelpers.UICustomizationHelper.isPlayerElementEnabled('notes') && spellUuid ?
-        `<i class="${spell.hasNotes ? 'fas fa-sticky-note' : 'far fa-sticky-note'} spell-notes-icon"
+      UIHelpers.UICustomizationHelper.isPlayerElementEnabled('notes') && spellUuid
+        ? `<i class="${spell.hasNotes ? 'fas fa-sticky-note' : 'far fa-sticky-note'} spell-notes-icon"
         data-uuid="${spellUuid}" data-action="editNotes"
         data-tooltip="${spell.hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes')}"
         aria-label="${spell.hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes')}"></i>`
-      : '';
+        : '';
     let actionHtml = '';
     if (isWizardTab) {
       if (spell.isFromScroll) {

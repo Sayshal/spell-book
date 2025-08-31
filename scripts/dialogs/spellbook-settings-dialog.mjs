@@ -557,12 +557,12 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       const spellcastingData = this.actor.spellcastingClasses?.[classIdentifier];
       const classItem = spellcastingData ? this.actor.items.get(spellcastingData.id) : null;
       const message =
-        baseMax > 0 ?
-          game.i18n.format('SPELLBOOK.Settings.SpellPreparationBonus.MinimumReached', {
-            class: classItem?.name || classIdentifier,
-            total: baseMax + newValue
-          })
-        : game.i18n.localize('SPELLBOOK.Settings.SpellPreparationBonus.MinimumReachedGeneric');
+        baseMax > 0
+          ? game.i18n.format('SPELLBOOK.Settings.SpellPreparationBonus.MinimumReached', {
+              class: classItem?.name || classIdentifier,
+              total: baseMax + newValue
+            })
+          : game.i18n.localize('SPELLBOOK.Settings.SpellPreparationBonus.MinimumReachedGeneric');
       ui.notifications.info(message);
     }
     log(3, `Decreased spell preparation bonus for ${classIdentifier} to ${newValue}`);
@@ -642,12 +642,12 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     if (newValue === minimumBonus && currentValue > minimumBonus) {
       const classItem = spellcastingData ? this.actor.items.get(spellcastingData.id) : null;
       const message =
-        baseMaxCantrips > 0 ?
-          game.i18n.format('SPELLBOOK.Settings.CantripPreparationBonus.MinimumReached', {
-            class: classItem?.name || classIdentifier,
-            total: baseMaxCantrips + newValue
-          })
-        : game.i18n.localize('SPELLBOOK.Settings.CantripPreparationBonus.MinimumReachedGeneric');
+        baseMaxCantrips > 0
+          ? game.i18n.format('SPELLBOOK.Settings.CantripPreparationBonus.MinimumReached', {
+              class: classItem?.name || classIdentifier,
+              total: baseMaxCantrips + newValue
+            })
+          : game.i18n.localize('SPELLBOOK.Settings.CantripPreparationBonus.MinimumReachedGeneric');
       ui.notifications.info(message);
     }
     log(3, `Decreased cantrip preparation bonus for ${classIdentifier} to ${newValue}`);

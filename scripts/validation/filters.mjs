@@ -8,11 +8,7 @@ import * as DataHelpers from '../data/_module.mjs';
  */
 export function convertRangeToStandardUnit(units, value) {
   if (!units || !value) return 0;
-  let inFeet =
-    units === 'ft' ? value
-    : units === 'mi' ? value * 5280
-    : units === 'spec' ? 0
-    : value;
+  let inFeet = units === 'ft' ? value : units === 'mi' ? value * 5280 : units === 'spec' ? 0 : value;
   return DataHelpers.shouldUseMetricUnits() ? Math.round(inFeet * 0.3048) : inFeet;
 }
 
