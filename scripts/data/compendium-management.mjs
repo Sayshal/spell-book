@@ -25,9 +25,16 @@ export async function findCompendiumSpellLists(includeHidden = true) {
     spellLists.length = 0;
     spellLists.push(...filteredLists);
   }
+  const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
   for (const list of spellLists) {
     const document = await fromUuid(list.uuid);
     if (document.system?.identifier && !list.identifier) list.identifier = document.system.identifier;
+    const duplicateUuid = customMappings[list.uuid];
+    if (duplicateUuid) {
+      const duplicateDoc = await fromUuid(duplicateUuid);
+      if (duplicateDoc) list.name = duplicateDoc.name;
+    }
+
     if (document?.flags?.[MODULE.ID]?.actorId) {
       list.isActorOwned = true;
       list.actorId = document.flags[MODULE.ID].actorId;
