@@ -1077,10 +1077,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   async _showCreateListDialog(identifierOptions) {
     let formData = null;
-    const ValidationHelplers = this._prepareCreateListFormData(identifierOptions);
+    const formElements = this._prepareCreateListFormData(identifierOptions);
     const content = await renderTemplate(TEMPLATES.DIALOGS.CREATE_SPELL_LIST, {
       identifierOptions,
-      ValidationHelplers
+      formElements
     });
     const result = await DialogV2.wait({
       window: {
@@ -1150,7 +1150,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   async _showMergeListsDialog() {
     let formData = null;
-    const ValidationHelplers = this._prepareMergeListFormData();
+    const formElements = this._prepareMergeListFormData();
     const context = {
       actorOwnedLists: this.availableSpellLists.filter((list) => list.isActorOwned),
       customLists: this.availableSpellLists.filter((list) => !list.isActorOwned && !list.isMerged && (list.isCustom || list.document?.flags?.[MODULE.ID]?.isNewList)),
@@ -1160,7 +1160,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       hasCustomLists: false,
       hasMergedLists: false,
       hasStandardLists: false,
-      ValidationHelplers
+      formElements
     };
     context.hasActorOwnedLists = context.actorOwnedLists.length > 0;
     context.hasCustomLists = context.customLists.length > 0;
