@@ -30,6 +30,20 @@ Generate comprehensive chat summaries after combat encounters detailing spellcas
 - **Tactical Analysis**: Identify spell synergies, counter-spellings, and effectiveness patterns from the encounter
 - **NPC Spellcasting Integration**: Track and report enemy spellcaster activity alongside player actions for complete encounter analysis
 
+#### **Subclass Spell List Management [Medium Priority]**
+
+Allow GMs to manually set a subclass spell list or 'secondary' spell list that is additive to the available spells, providing enhanced customization for subclass-specific magical traditions.
+
+**Code justification:** The existing spell source detection in `spell-manager.mjs` already identifies subclass sources through `_determineSpellSource()` and handles subclass spellcasting via `getSpellcastingSourceItem()`. The spell list management infrastructure in `compendium-management.mjs` provides custom list creation with `duplicateSpellList()` and `findDuplicateSpellList()` methods. The Spell List Manager already supports custom identifiers and spell list modification workflows, providing the foundation for subclass-specific spell expansions.
+
+**Subclass spell list features:**
+
+- **Secondary Spell List Assignment**: Interface for GMs to assign additional spell lists to specific subclasses, expanding their available spell repertoire beyond the base class list
+- **Additive Spell Integration**: Automatically combine base class spells with subclass-specific spells, ensuring all spells are available for preparation without replacing existing options
+- **Duplicate Resolution**: Intelligent merging system that removes duplicate spells when combining base and subclass lists, preventing redundancy while preserving spell access
+- **Subclass Detection**: Automatic recognition of character subclasses to apply appropriate secondary spell lists when players open their spell books
+- **GM Override Controls**: Manual assignment options for homebrew subclasses or custom magical traditions that don't follow standard spell list patterns
+
 #### **Cauldron of Plentiful Resources Compatibility [Medium Priority]**
 
 Ensure seamless integration with the Cauldron of Plentiful Resources module, providing automatic spell setup and configuration after spells are added to character sheets.
@@ -84,4 +98,4 @@ Support homebrew and edge-case spellcasting classes that don't follow standard s
 - **Investigator**: Ritual-only caster with no spell progression
 - **Other homebrew classes**: Custom spellcasting patterns that don't fit standard progressions
 
-**Code justification:** Currently, `spellbook-state.mjs` and `rule-set-manager.mjs` filter out classes where `spellcasting.progression` is missing or set to `'none'`. The detection logic in `detectSpellcastingClasses()` and `_detectSpellcastingClasses()` excludes these classes entirely:
+**Code justification:** Currently, `spellbook-state.mjs` and `rule-set-manager.mjs` filter out classes where `spellcasting.progression` is missing or set to `'none'`. The detection logic in `detectSpellcastingClasses()` and `_detectSpellcastingClasses()` excludes these classes entirely.

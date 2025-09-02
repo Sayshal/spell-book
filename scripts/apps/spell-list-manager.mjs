@@ -353,7 +353,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       }
 
       this.selectedSpellList.spells = spellItems;
-      this.selectedSpellList.spellsByLevel = DataHelpers.organizeSpellsByLevel(spellItems, null);
+      this.selectedSpellList.spellsByLevel = DataHelpers.organizeSpellsByLevel(spellItems);
       this.selectedSpellList.isLoadingSpells = false;
       log(3, `Loaded ${spellItems.length} spells for spell list`);
     } catch (error) {
@@ -823,7 +823,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     });
     levelSelect.id = 'spell-level';
     const schoolOptions = [{ value: '', label: game.i18n.localize('SPELLMANAGER.Filters.AllSchools'), selected: !this.filterState.school }];
-    Object.entries(CONFIG.DND5E.spellSchools).forEach(([key, school]) => {
+    Object.entries(CONFIG.DND5E.spellSchools).forEach(([key, _school]) => {
       const label = DataHelpers.getConfigLabel(CONFIG.DND5E.spellSchools, key);
       schoolOptions.push({ value: key, label, selected: this.filterState.school === key });
     });
@@ -1097,7 +1097,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
           label: game.i18n.localize('SPELLMANAGER.Buttons.CreateNew'),
           icon: 'fas fa-check',
           action: 'create',
-          callback: (event, target, form) => {
+          callback: (_event, _target, form) => {
             const formElement = form?.querySelector ? form : form.element;
             const nameInput = formElement.querySelector('[name="name"]');
             const identifierSelect = formElement.querySelector('[name="identifier"]');
@@ -1135,7 +1135,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       ],
       default: 'cancel',
       rejectClose: false,
-      render: (event, target, form) => {
+      render: (_event, target, _form) => {
         const dialogElement = target.querySelector ? target : target.element;
         this._setupCreateListDialogListeners(dialogElement);
       }
@@ -1176,7 +1176,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
           label: game.i18n.localize('SPELLMANAGER.Buttons.MergeLists'),
           icon: 'fas fa-code-merge',
           action: 'merge',
-          callback: (event, target, form) => {
+          callback: (_event, _target, form) => {
             const formElement = form?.querySelector ? form : form.element;
             const sourceListSelect = formElement.querySelector('[name="sourceList"]');
             const copyFromListSelect = formElement.querySelector('[name="copyFromList"]');
@@ -1192,7 +1192,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
             if (!mergedListName) {
               const sourceList = this.availableSpellLists.find((list) => list.uuid === sourceListSelect.value);
               mergedListName = game.i18n.format('SPELLMANAGER.MergeLists.DefaultMergedName', {
-                sourceName: sourceList ? sourceList.name : 'Unknown'
+                sourceName: sourceList ? sourceList.name : 'Unknown' //Localize
               });
             }
             formData = {
@@ -1212,7 +1212,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       ],
       default: 'cancel',
       rejectClose: false,
-      render: (event, target, form) => {
+      render: (_event, target, _form) => {
         const dialogElement = target.querySelector ? target : target.element;
         this._setupMergeListsDialogListeners(dialogElement);
       }
@@ -1406,8 +1406,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @returns {Promise<void>}
    */
   async _createNewListCallback(name, identifier) {
-    const source = game.i18n.localize('SPELLMANAGER.CreateList.Custom');
-    const newList = await DataHelpers.createNewSpellList(name, identifier, source);
+    const newList = await DataHelpers.createNewSpellList(name, identifier);
     if (newList) {
       await this.loadData();
       await this.selectSpellList(newList.uuid);
@@ -1497,7 +1496,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       const spellUuids = [spell.uuid, spell.compendiumUuid, ...(spell._id ? [spell._id] : [])];
       return !spellUuids.some((id) => normalizedForms.includes(id));
     });
-    this.selectedSpellList.spellsByLevel = DataHelpers.organizeSpellsByLevel(this.selectedSpellList.spells, null);
+    this.selectedSpellList.spellsByLevel = DataHelpers.organizeSpellsByLevel(this.selectedSpellList.spells);
     this._ensureSpellIcons();
     this.render(false);
     this.applyFilters();
@@ -1522,7 +1521,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (!spellCopy.enrichedIcon) spellCopy.enrichedIcon = UIHelpers.createSpellIconLink(spellCopy);
     this.selectedSpellList.spellUuids.push(spellUuid);
     this.selectedSpellList.spells.push(spellCopy);
-    this.selectedSpellList.spellsByLevel = DataHelpers.organizeSpellsByLevel(this.selectedSpellList.spells, null);
+    this.selectedSpellList.spellsByLevel = DataHelpers.organizeSpellsByLevel(this.selectedSpellList.spells);
     this._ensureSpellIcons();
     this.render(false);
     this.applyFilters();
@@ -1530,11 +1529,11 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle saving the custom spell list
-   * @param {Event} event The triggering event
+   * @param {Event} _event The triggering event
    * @param {HTMLElement} _form The form element
    * @returns {Promise<void>}
    */
-  static async handleSaveCustomList(event, _form) {
+  static async handleSaveCustomList(_event, _form) {
     if (!this.selectedSpellList || !this.isEditing) return;
     log(3, 'Saving custom spell list with pending changes');
     const document = this.selectedSpellList.document;
@@ -1555,11 +1554,11 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle deleting the custom spell list
-   * @param {Event} event The triggering event
+   * @param {Event} _event The triggering event
    * @param {HTMLElement} _form The form element
    * @returns {Promise<void>}
    */
-  static async handleDeleteCustomList(event, _form) {
+  static async handleDeleteCustomList(_event, _form) {
     if (!this.selectedSpellList) return;
     const uuid = this.selectedSpellList.uuid;
     const listName = this.selectedSpellList.name;
@@ -1579,11 +1578,11 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle restoring from the original spell list
-   * @param {Event} event The triggering event
+   * @param {Event} _event The triggering event
    * @param {HTMLElement} _form The form element
    * @returns {Promise<void>}
    */
-  static async handleRestoreOriginal(event, _form) {
+  static async handleRestoreOriginal(_event, _form) {
     if (!this.selectedSpellList) return;
     const originalUuid = this.selectedSpellList.document.flags?.[MODULE.ID]?.originalUuid;
     if (!originalUuid) return;
@@ -1721,10 +1720,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle opening an actor sheet
-   * @param {Event} event The triggering event
+   * @param {Event} _event The triggering event
    * @param {HTMLElement} _form The form element
    */
-  static async handleOpenActor(event, _form) {
+  static async handleOpenActor(_event, _form) {
     const document = this.selectedSpellList.document;
     const actorId = document.flags?.[MODULE.ID]?.actorId;
     if (!actorId) return;
@@ -1735,10 +1734,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle opening a class item sheet
-   * @param {Event} event The triggering event
+   * @param {Event} _event The triggering event
    * @param {HTMLElement} _form The form element
    */
-  static async handleOpenClass(event, _form) {
+  static async handleOpenClass(_event, _form) {
     const selectedSpellList = this.selectedSpellList;
     const identifier = selectedSpellList.document.system?.identifier;
     if (!identifier) return;
@@ -1758,11 +1757,11 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle creating a new spell list
-   * @param {Event} event The triggering event
+   * @param {Event} _event The triggering event
    * @param {HTMLElement} _form The form element
    * @returns {Promise<void>}
    */
-  static async handleCreateNewList(event, _form) {
+  static async handleCreateNewList(_event, _form) {
     const classIdentifiers = await DataHelpers.findClassIdentifiers();
     const identifierOptions = Object.entries(classIdentifiers)
       .sort(([, dataA], [, dataB]) => dataA.name.localeCompare(dataB.name))
@@ -1777,11 +1776,11 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle renaming a spell list
-   * @param {Event} event The triggering event
+   * @param {Event} _event The triggering event
    * @param {HTMLElement} _form The form element
    * @returns {Promise<void>}
    */
-  static async handleRenameSpellList(event, _form) {
+  static async handleRenameSpellList(_event, _form) {
     if (!this.selectedSpellList) return;
     const currentName = this.selectedSpellList.name;
     const listUuid = this.selectedSpellList.uuid;
@@ -1820,7 +1819,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
           label: game.i18n.localize('SPELLMANAGER.Buttons.Rename'),
           icon: 'fas fa-check',
           action: 'rename',
-          callback: (event, target, form) => {
+          callback: (_event, _target, form) => {
             const formElement = form?.querySelector ? form : form.element;
             const newNameInput = formElement.querySelector('[name="newName"]');
             const newName = newNameInput?.value.trim();
@@ -1837,7 +1836,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       ],
       default: 'cancel',
       rejectClose: false,
-      render: (event, target, form) => {
+      render: (_event, target, _form) => {
         const dialogElement = target.querySelector ? target : target.element;
         this._setupRenameDialogListeners(dialogElement, currentName, (valid) => {
           isValid = valid;
@@ -1926,11 +1925,11 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle merging spell lists
-   * @param {Event} event The triggering event
+   * @param {Event} _event The triggering event
    * @param {HTMLElement} _form The form element
    * @returns {Promise<void>}
    */
-  static async handleMergeLists(event, _form) {
+  static async handleMergeLists(_event, _form) {
     if (this.availableSpellLists.length < 2) {
       ui.notifications.warn(game.i18n.localize('SPELLMANAGER.MergeLists.InsufficientLists'));
       return;
@@ -1941,10 +1940,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle toggling selection mode
-   * @param {Event} event The triggering event
+   * @param {Event} _event The triggering event
    * @param {HTMLElement} _form The form element
    */
-  static handleToggleSelectionMode(event, _form) {
+  static handleToggleSelectionMode(_event, _form) {
     this.selectionMode = !this.selectionMode;
     if (!this.selectionMode) {
       this._clearSelections();
@@ -2001,11 +2000,11 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle bulk save operation
-   * @param {Event} event The triggering event
+   * @param {Event} _event The triggering event
    * @param {HTMLElement} _form The form element
    * @returns {Promise<void>}
    */
-  static async handleBulkSave(event, _form) {
+  static async handleBulkSave(_event, _form) {
     const addCount = this.selectedSpellsToAdd.size;
     const removeCount = this.selectedSpellsToRemove.size;
     const totalCount = addCount + removeCount;
@@ -2065,7 +2064,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
           }
         }
       }
-      this.selectedSpellList.spellsByLevel = DataHelpers.organizeSpellsByLevel(this.selectedSpellList.spells, null);
+      this.selectedSpellList.spellsByLevel = DataHelpers.organizeSpellsByLevel(this.selectedSpellList.spells);
       this._ensureSpellIcons();
       this._clearSelections();
       if (failed === 0) ui.notifications.info(game.i18n.format('SPELLMANAGER.BulkOps.Completed', { count: processed }));
@@ -2078,10 +2077,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle canceling selection mode
-   * @param {Event} event The triggering event
+   * @param {Event} _event The triggering event
    * @param {HTMLElement} _form The form element
    */
-  static handleCancelSelection(event, _form) {
+  static handleCancelSelection(_event, _form) {
     this._clearSelections();
     this.render(false);
   }
@@ -2123,22 +2122,22 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle opening the analytics dashboard for GM users
-   * @param {Event} event The click event
-   * @param {HTMLElement} target The target element that triggered the event
+   * @param {Event} _event The click event
+   * @param {HTMLElement} _target The target element that triggered the event
    * @returns {Promise<void>}
    */
-  static async handleOpenAnalyticsDashboard(event, target) {
+  static async handleOpenAnalyticsDashboard(_event, _target) {
     const dashboard = new SpellAnalyticsDashboard({ viewMode: 'gm' });
     dashboard.render(true);
   }
 
   /**
    * Handle opening the spell details customization dialog
-   * @param {Event} event The click event
-   * @param {HTMLElement} target The target element that triggered the event
+   * @param {Event} _event The click event
+   * @param {HTMLElement} _target The target element that triggered the event
    * @returns {Promise<void>}
    */
-  static async handleOpenCustomization(event, target) {
+  static async handleOpenCustomization(_event, _target) {
     const dialog = new SpellDetailsCustomization();
     dialog.render(true);
   }

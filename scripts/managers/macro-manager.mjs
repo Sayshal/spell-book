@@ -17,7 +17,7 @@ export class MacroManager {
     const pack = game.packs.get(MODULE.PACK.MACROS);
     if (!pack) return;
     for (const macro of MACROS) await this.ensureCompendiumMacroExists(pack, macro);
-    await this.cleanupObsoleteMacros(pack);
+    await this.cleanupObsoleteMacros();
     log(3, 'All compendium macros initialized successfully');
   }
 
@@ -89,10 +89,9 @@ export class MacroManager {
 
   /**
    * Clean up obsolete macros that are no longer defined
-   * @param {CompendiumCollection} pack The macro compendium
    * @returns {Promise<void>}
    */
-  static async cleanupObsoleteMacros(pack) {
+  static async cleanupObsoleteMacros() {
     const currentFlagKeys = MACROS.map((def) => def.flagKey);
     const managedMacros = await this.getManagedMacros();
     for (const macro of managedMacros) {

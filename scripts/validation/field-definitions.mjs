@@ -22,7 +22,7 @@ export class FieldDefinitions {
     for (const filter of MODULE.DEFAULT_FILTER_CONFIG) {
       if (filter.searchAliases) {
         for (const alias of filter.searchAliases) this.fieldMap.set(alias.toUpperCase(), filter.id);
-        this._setupValueValidator(filter.id, filter.type);
+        this._setupValueValidator(filter.id);
       }
     }
     log(3, 'Field definitions initialized:', this.fieldMap);
@@ -31,9 +31,8 @@ export class FieldDefinitions {
   /**
    * Setup value validators for different field types
    * @param {string} fieldId The field ID
-   * @param {string} fieldType The field type
    */
-  _setupValueValidator(fieldId, fieldType) {
+  _setupValueValidator(fieldId) {
     switch (fieldId) {
       case 'level':
         this.valueValidators.set(fieldId, (value) => {

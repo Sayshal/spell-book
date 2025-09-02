@@ -56,11 +56,11 @@ export class SpellDescriptionInjection {
   /**
    * Handle item creation and inject notes if applicable
    * @param {Item5e} item The created item
-   * @param {Object} options Creation options
-   * @param {string} userId ID of the user who created the item
+   * @param {Object} _options Creation options
+   * @param {string} _userId ID of the user who created the item
    * @returns {Promise<void>}
    */
-  static async onCreateItem(item, options, userId) {
+  static async onCreateItem(item, _options, _userId) {
     if (item.type !== 'spell' || !item.parent || item.parent.documentName !== 'Actor') return;
     await this.updateSpellDescription(item);
   }
@@ -70,10 +70,10 @@ export class SpellDescriptionInjection {
    * @param {Item5e} item The updated item
    * @param {Object} changes The changes made to the item
    * @param {Object} options Update options
-   * @param {string} userId ID of the user who updated the item
+   * @param {string} _userId ID of the user who updated the item
    * @returns {Promise<void>}
    */
-  static async onUpdateItem(item, changes, options, userId) {
+  static async onUpdateItem(item, changes, options, _userId) {
     if (item.type !== 'spell' || !item.parent || item.parent.documentName !== 'Actor') return;
     if (options.spellBookModuleUpdate) return;
     const spellKey = `${item.parent.id}-${item.id}`;

@@ -5,10 +5,9 @@ import * as UIHelpers from './_module.mjs';
  * Fast spell document fetching using getIndex instead of getDocument
  * @param {Set<string>} spellUuids Set of spell UUIDs
  * @param {number} maxSpellLevel Maximum spell level to include
- * @param {string} [actorId=null] Actor ID for caching
  * @returns {Promise<Array>} - Array of spell documents
  */
-export async function fetchSpellDocuments(spellUuids, maxSpellLevel, actorId = null) {
+export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
   const preloadedData = UIHelpers.getPreloadedData();
   if (preloadedData && preloadedData.enrichedSpells.length > 0) {
     const matchingSpells = preloadedData.enrichedSpells.filter((spell) => spellUuids.has(spell.uuid) && spell.system?.level <= maxSpellLevel);
@@ -124,10 +123,9 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel, actorId = n
 /**
  * Organize spells by level for display in GM interface
  * @param {Array} spellItems Array of spell documents
- * @param {Actor|null} actor The actor (optional, for additional context)
  * @returns {Array} Array of level objects with organized spells
  */
-export function organizeSpellsByLevel(spellItems, actor = null) {
+export function organizeSpellsByLevel(spellItems) {
   if (!spellItems || !Array.isArray(spellItems)) return [];
   const spellsByLevel = {};
   for (const spell of spellItems) {

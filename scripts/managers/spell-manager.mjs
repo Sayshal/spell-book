@@ -89,7 +89,7 @@ export class SpellManager {
     const actualSpell = this.actor.items.find(
       (item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
     );
-    if (actualSpell) return this._getOwnedSpellPreparationStatus(actualSpell, classIdentifier);
+    if (actualSpell) return this._getOwnedSpellPreparationStatus(actualSpell);
     const unassignedSpell = this.actor.items.find(
       (item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && !item.system?.sourceClass && !item.sourceClass
     );
@@ -101,7 +101,7 @@ export class SpellManager {
         unassignedSpell.sourceClass = classIdentifier;
         if (unassignedSpell.system) unassignedSpell.system.sourceClass = classIdentifier;
       }
-      return this._getOwnedSpellPreparationStatus(unassignedSpell, classIdentifier);
+      return this._getOwnedSpellPreparationStatus(unassignedSpell);
     }
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     for (const [otherClass, preparedSpells] of Object.entries(preparedByClass)) {
@@ -228,10 +228,9 @@ export class SpellManager {
   /**
    * Get preparation status for a spell that's on the actor
    * @param {Item5e} spell The spell item
-   * @param {string} classIdentifier The class identifier for context
    * @returns {Object} - Preparation status information
    */
-  _getOwnedSpellPreparationStatus(spell, classIdentifier) {
+  _getOwnedSpellPreparationStatus(spell) {
     const preparationMode = spell.system.method;
     const alwaysPrepared = spell.system.prepared === 2;
     const isInnateCasting = preparationMode === 'innate';

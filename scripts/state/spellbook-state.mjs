@@ -346,10 +346,10 @@ export class SpellbookState {
       const missingSpells = Array.from(spellList).filter((uuid) => !preloadedSpells.some((spell) => spell.uuid === uuid));
       if (missingSpells.length > 0) {
         log(3, `Loading ${missingSpells.length} missing spells for ${identifier}`);
-        const additionalSpells = await DataHelpers.fetchSpellDocuments(new Set(missingSpells), maxSpellLevel, this.actor.id);
+        const additionalSpells = await DataHelpers.fetchSpellDocuments(new Set(missingSpells), maxSpellLevel);
         spellItems = [...preloadedSpells, ...additionalSpells];
       } else spellItems = preloadedSpells;
-    } else spellItems = await DataHelpers.fetchSpellDocuments(spellList, maxSpellLevel, this.actor.id);
+    } else spellItems = await DataHelpers.fetchSpellDocuments(spellList, maxSpellLevel);
     if (!spellItems || !spellItems.length) return;
     await this.processAndOrganizeSpellsForClass(identifier, spellItems, classItem);
   }
@@ -358,10 +358,9 @@ export class SpellbookState {
    * Organize spells into levels with grouped structure
    * @param {Array} spellItems Array of spell documents
    * @param {string} classIdentifier The class identifier
-   * @param {Item} classItem The class item
    * @returns {Array} Array of level objects, each containing its spells
    */
-  async _organizeSpellsByLevelForClass(spellItems, classIdentifier, classItem) {
+  async _organizeSpellsByLevelForClass(spellItems, classIdentifier) {
     const spellsByLevel = {};
     const processedSpellIds = new Set();
     const processedSpellNames = new Set();
@@ -484,7 +483,7 @@ export class SpellbookState {
         if (spell.system && !spell.system.sourceClass) spell.system.sourceClass = identifier;
       }
     }
-    const spellLevels = await this._organizeSpellsByLevelForClass(spellItems, identifier, classItem);
+    const spellLevels = await this._organizeSpellsByLevelForClass(spellItems, identifier);
     const allSpells = spellLevels.flatMap((level) => level.spells);
     const prepStats = this.calculatePreparationStats(identifier, allSpells, classItem);
     this.classSpellData[identifier] = { spellLevels, className: classItem.name, spellPreparation: prepStats, classItem, identifier };
@@ -731,8 +730,8 @@ export class SpellbookState {
       return shouldInclude;
     });
     const combinedWizardbookSpells = [...wizardbookSpells, ...this.scrollSpells];
-    const prepLevelsGrouped = await this._organizeSpellsByLevelForClass(prepTabSpells, classIdentifier, classItem);
-    const wizardLevelsGrouped = await this._organizeSpellsByLevelForClass(combinedWizardbookSpells, classIdentifier, classItem);
+    const prepLevelsGrouped = await this._organizeSpellsByLevelForClass(prepTabSpells, classIdentifier);
+    const wizardLevelsGrouped = await this._organizeSpellsByLevelForClass(combinedWizardbookSpells, classIdentifier);
     const scrollSpellsForLevel = [];
     for (const scrollSpell of this.scrollSpells) {
       scrollSpell.sourceClass = classIdentifier;

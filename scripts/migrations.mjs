@@ -201,10 +201,9 @@ async function validateUserDataOwnership() {
     const folderName = game.i18n.localize('SPELLBOOK.UserData.FolderName');
     const userDataJournal = documents.find((doc) => doc.name === folderName && doc.flags?.[MODULE.ID]?.isUserSpellDataJournal);
     if (userDataJournal) {
-      const journalIdentifier = 'User Data Journal';
       const currentOwnership = userDataJournal.ownership || {};
       const correctJournalOwnership = { ...currentOwnership, default: 0, [game.user.id]: 3 };
-      if (!isOwnershipEqual(userDataJournal.ownership, correctJournalOwnership, journalIdentifier)) {
+      if (!isOwnershipEqual(userDataJournal.ownership, correctJournalOwnership)) {
         await userDataJournal.update({ ownership: correctJournalOwnership });
         results.fixed++;
         results.details.push('Fixed user data journal');
@@ -215,10 +214,9 @@ async function validateUserDataOwnership() {
         if (userId && page.flags?.[MODULE.ID]?.isUserSpellData) {
           const user = game.users.get(userId);
           if (!user) continue;
-          const pageIdentifier = `User Page: ${user.name}`;
           const currentPageOwnership = page.ownership || {};
           const correctPageOwnership = { ...currentPageOwnership, default: 0, [userId]: 3, [game.user.id]: 3 };
-          if (!isOwnershipEqual(page.ownership, correctPageOwnership, pageIdentifier)) {
+          if (!isOwnershipEqual(page.ownership, correctPageOwnership)) {
             await page.update({ ownership: correctPageOwnership });
             results.fixed++;
             results.details.push(`Fixed user page: ${user.name}`);
@@ -256,10 +254,9 @@ async function validateSpellListOwnership() {
       const flags = page.flags?.[MODULE.ID] || {};
       const isSpellList = flags.isMerged || flags.isCustom || flags.isNewList;
       if (isSpellList) {
-        const journalIdentifier = `Spell List: ${journal.name}`;
         const currentOwnership = journal.ownership || {};
         const correctOwnership = { ...currentOwnership, default: 1, [game.user.id]: 3 };
-        if (!isOwnershipEqual(journal.ownership, correctOwnership, journalIdentifier)) {
+        if (!isOwnershipEqual(journal.ownership, correctOwnership)) {
           await journal.update({ ownership: correctOwnership });
           results.fixed++;
           results.details.push(`Fixed spell list: ${journal.name}`);
@@ -375,7 +372,7 @@ async function validatePackOwnership() {
     if (!config.pack) continue;
     const pack = config.pack;
     try {
-      const needsOwnershipUpdate = !isRoleOwnershipEqual(pack.ownership, config.expectedOwnership, `${config.name} Pack`);
+      const needsOwnershipUpdate = !isRoleOwnershipEqual(pack.ownership, config.expectedOwnership);
       const needsVisibilityUpdate = !pack.visible || pack.getUserLevel(game.user) < 1;
       if (needsOwnershipUpdate || needsVisibilityUpdate) {
         const updateReasons = [];
@@ -408,10 +405,9 @@ async function validatePackOwnership() {
  * Compare two ownership objects for equality
  * @param {Object} ownership1 First ownership object
  * @param {Object} ownership2 Second ownership object
- * @param {string} documentName Document name for logging
  * @returns {boolean} Whether ownership objects are equal
  */
-function isOwnershipEqual(ownership1, ownership2, documentName = 'unknown') {
+function isOwnershipEqual(ownership1, ownership2) {
   if (!ownership1 || !ownership2) return false;
   const allKeys = new Set([...Object.keys(ownership1), ...Object.keys(ownership2)]);
   for (const key of allKeys) {
@@ -424,10 +420,9 @@ function isOwnershipEqual(ownership1, ownership2, documentName = 'unknown') {
  * Compare two role-based ownership objects for equality
  * @param {Object} ownership1 First ownership object
  * @param {Object} ownership2 Second ownership object
- * @param {string} documentName Document name for logging
  * @returns {boolean} Whether role ownership objects are equal
  */
-function isRoleOwnershipEqual(ownership1, ownership2, documentName = 'unknown') {
+function isRoleOwnershipEqual(ownership1, ownership2) {
   if (!ownership1 || !ownership2) return false;
   const allKeys = new Set([...Object.keys(ownership1), ...Object.keys(ownership2)]);
   for (const key of allKeys) {

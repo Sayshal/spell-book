@@ -65,11 +65,11 @@ export async function syncFavoritesOnSave(actor, spellData) {
 
 /**
  * Process favorites from form state and update actor.system.favorites to match journal
- * @param {HTMLFormElement} form The form element
+ * @param {HTMLFormElement} _form The form element
  * @param {Actor} actor The actor to update
  * @returns {Promise<void>}
  */
-export async function processFavoritesFromForm(form, actor) {
+export async function processFavoritesFromForm(_form, actor) {
   try {
     let targetUserId = game.user.id;
     if (game.user.isActiveGM) {

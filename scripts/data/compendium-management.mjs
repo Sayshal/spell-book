@@ -369,10 +369,9 @@ function formatSpellEntry(entry, pack) {
  * Create a new spell list
  * @param {string} name The name of the spell list
  * @param {string} identifier The identifier (typically class name)
- * @param {string} source The source description (not used for naming anymore)
  * @returns {Promise<JournalEntryPage>} The created spell list
  */
-export async function createNewSpellList(name, identifier, source) {
+export async function createNewSpellList(name, identifier) {
   const customFolder = await getOrCreateCustomFolder();
   const journalData = {
     name: name,
@@ -466,7 +465,7 @@ export function prepareDamageTypeOptions(filterState) {
       const labelB = b[0] === 'healing' ? damageTypesWithHealing.healing.label : DataHelpers.getConfigLabel(CONFIG.DND5E.damageTypes, b[0]);
       return labelA.localeCompare(labelB);
     })
-    .forEach(([key, damageType]) => {
+    .forEach(([key, _damageType]) => {
       const label = key === 'healing' ? damageTypesWithHealing.healing.label : DataHelpers.getConfigLabel(CONFIG.DND5E.damageTypes, key);
       options.push({ value: key, label, selected: filterState.damageType === key });
     });
@@ -487,7 +486,7 @@ export function prepareConditionOptions(filterState) {
       const labelB = DataHelpers.getConfigLabel(CONFIG.DND5E.conditionTypes, b[0]);
       return labelA.localeCompare(labelB);
     })
-    .forEach(([key, condition]) => {
+    .forEach(([key, _condition]) => {
       const label = DataHelpers.getConfigLabel(CONFIG.DND5E.conditionTypes, key);
       options.push({ value: key, label, selected: filterState.condition === key });
     });
@@ -572,10 +571,9 @@ export async function createMergedSpellList(sourceListUuid, copyFromListUuid, me
 /**
  * Get or create a folder in the custom spell lists pack
  * @param {string} folderName Name of the folder
- * @param {string} localizationKey Localization key for the folder name
  * @returns {Promise<Folder|null>} The folder document
  */
-async function getOrCreateSpellListFolder(folderName, localizationKey) {
+async function getOrCreateSpellListFolder(folderName) {
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
   if (!customPack) {
     log(1, 'Custom spell lists pack not found');
@@ -600,7 +598,7 @@ async function getOrCreateSpellListFolder(folderName, localizationKey) {
  */
 export async function getOrCreateCustomFolder() {
   const folderName = game.i18n.localize('SPELLMANAGER.Folders.CustomSpellListsFolder');
-  return getOrCreateSpellListFolder(folderName, 'SPELLMANAGER.Folders.CustomSpellListsFolder');
+  return getOrCreateSpellListFolder(folderName);
 }
 
 /**
@@ -609,7 +607,7 @@ export async function getOrCreateCustomFolder() {
  */
 export async function getOrCreateMergedFolder() {
   const folderName = game.i18n.localize('SPELLMANAGER.Folders.MergedSpellListsFolder');
-  return getOrCreateSpellListFolder(folderName, 'SPELLMANAGER.Folders.MergedSpellListsFolder');
+  return getOrCreateSpellListFolder(folderName);
 }
 
 /**

@@ -41,12 +41,12 @@ export class SpellUsageTracker {
   /**
    * Handle D&D5e activity consumption events for spell usage tracking
    * @param {Activity} activity The activity being consumed
-   * @param {Object} usageConfig Usage configuration data
-   * @param {Object} messageConfig Message configuration data
-   * @param {Object} updates Document updates object
+   * @param {Object} _usageConfig Usage configuration data
+   * @param {Object} _messageConfig Message configuration data
+   * @param {Object} _updates Document updates object
    * @returns {Promise<void>}
    */
-  async _handleActivityConsumption(activity, usageConfig, messageConfig, updates) {
+  async _handleActivityConsumption(activity, _usageConfig, _messageConfig, _updates) {
     try {
       if (!game.settings.get(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING)) return;
       if (activity.parent?.parent?.type !== 'spell') return;

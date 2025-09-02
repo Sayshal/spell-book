@@ -261,10 +261,10 @@ export class AdvancedSearchManager {
 
   /**
    * Handle search input blur events
-   * @param {FocusEvent} event Blur event from search field
+   * @param {FocusEvent} _event Blur event from search field
    * @returns {void}
    */
-  handleSearchBlur(event) {
+  handleSearchBlur(_event) {
     if (this.isProcessingSuggestion) return;
     setTimeout(() => {
       if (!document.querySelector('.search-dropdown:hover') && !this.isProcessingSuggestion) this.hideDropdown();

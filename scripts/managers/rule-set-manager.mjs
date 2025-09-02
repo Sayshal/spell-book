@@ -86,7 +86,7 @@ export class RuleSetManager {
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const currentRules = classRules[classIdentifier] || {};
     if (newRules.customSpellList !== undefined && newRules.customSpellList !== currentRules.customSpellList) {
-      const affectedSpells = await RuleSetManager._getAffectedSpellsByListChange(actor, classIdentifier, currentRules.customSpellList, newRules.customSpellList);
+      const affectedSpells = await RuleSetManager._getAffectedSpellsByListChange(actor, classIdentifier, newRules.customSpellList);
       if (affectedSpells.length > 0) {
         const shouldProceed = await RuleSetManager._confirmSpellListChange(actor, classIdentifier, affectedSpells);
         if (!shouldProceed) return false;
@@ -272,11 +272,10 @@ export class RuleSetManager {
    * Get spells that will be affected by a spell list change
    * @param {Actor5e} actor The actor to check
    * @param {string} classIdentifier The class identifier
-   * @param {string} oldSpellListUuid UUID of the old spell list
    * @param {string} newSpellListUuid UUID of the new spell list
    * @returns {Promise<Array>} Array of affected spell data
    */
-  static async _getAffectedSpellsByListChange(actor, classIdentifier, oldSpellListUuid, newSpellListUuid) {
+  static async _getAffectedSpellsByListChange(actor, classIdentifier, newSpellListUuid) {
     const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const classPreparedSpells = preparedByClass[classIdentifier] || [];
     if (classPreparedSpells.length === 0) return [];

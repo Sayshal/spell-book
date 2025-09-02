@@ -14,11 +14,11 @@ export function registerTidy5eIntegration() {
 
 /**
  * Handle Tidy5e classic sheet rendering
- * @param {Application} sheet The Tidy5e sheet application instance
+ * @param {Application} _sheet The Tidy5e sheet application instance
  * @param {HTMLElement} element The sheet HTML element
  * @param {Object} data The sheet data object containing actor information
  */
-function onTidy5eRender(sheet, element, data) {
+function onTidy5eRender(_sheet, element, data) {
   const actor = data.actor;
   if (!canAddTidySpellbookButton(actor, element)) return;
   const spellsTab = element.querySelector('.spellbook');
@@ -34,11 +34,11 @@ function onTidy5eRender(sheet, element, data) {
 
 /**
  * Handle Tidy5e new (Quadrone) sheet rendering
- * @param {Application} sheet The Tidy5e sheet application instance
+ * @param {Application} _sheet The Tidy5e sheet application instance
  * @param {HTMLElement} element The sheet HTML element
  * @param {Object} data The sheet data object containing actor information
  */
-function onTidy5eQuadroneRender(sheet, element, data) {
+function onTidy5eQuadroneRender(_sheet, element, data) {
   const actor = data.actor;
   if (!canAddTidySpellbookButton(actor, element)) return;
   const spellsTab = element.querySelector('.tidy-tab.spellbook');

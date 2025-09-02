@@ -634,6 +634,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {Error} error The error that occurred
    */
   _showErrorState(error) {
+    log(1, `${game.user.name} encountered an error:`, error);
     const activeTab = this.tabGroups['spellbook-tabs'];
     const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
     const spellsContainer = activeTabContent?.querySelector('.spells-container');
@@ -1007,13 +1008,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     else filterConfig = this._ensureFilterIntegrity(filterConfig);
     const sortedFilters = filterConfig.sort((a, b) => a.order - b.order);
     const filterState = this.filterHelper.getFilterState();
-    const activeTab = this.tabGroups['spellbook-tabs'];
-    const activeTabContent = this.element?.querySelector(`.tab[data-tab="${activeTab}"]`);
-    const classIdentifier = activeTabContent?.dataset.classIdentifier || this._stateManager.activeClass;
-    let spellData = [];
-    if (classIdentifier && this._stateManager.classSpellData[classIdentifier]) {
-      spellData = this._stateManager.classSpellData[classIdentifier].spellLevels || [];
-    }
     const result = sortedFilters
       .map((filter) => {
         let filterEnabled = filter.enabled;
@@ -1040,7 +1034,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             });
             break;
           case 'dropdown':
-            const options = ValidationHelpers.getOptionsForFilter(filter.id, filterState, spellData);
+            const options = ValidationHelpers.getOptionsForFilter(filter.id, filterState);
             element = ValidationHelpers.createSelect({
               name: `filter-${filter.id}`,
               options: options,
@@ -1547,9 +1541,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Handle reset button click
    * @param {Event} event The click event
-   * @param {HTMLElement} form The form element
+   * @param {HTMLElement} _form The form element
    */
-  static handleReset(event, form) {
+  static handleReset(event, _form) {
     const isShiftReset = event.shiftKey;
     if (isShiftReset) {
       const checkboxes = this.element.querySelectorAll('dnd5e-checkbox[data-uuid]:not([disabled])');
@@ -1749,10 +1743,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Open the spell loadout dialog
-   * @param {Event} event The click event
+   * @param {Event} _event The click event
    * @param {HTMLElement} _form The form element
    */
-  static async openLoadoutDialog(event, _form) {
+  static async openLoadoutDialog(_event, _form) {
     const activeTab = this.tabGroups['spellbook-tabs'];
     const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
     const classIdentifier = activeTabContent?.dataset.classIdentifier || this._stateManager.activeClass;
@@ -1873,10 +1867,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Handle opening spell details customization dialog
-   * @param {Event} event The click event
-   * @param {HTMLElement} target The target element that triggered the event
+   * @param {Event} _event The click event
+   * @param {HTMLElement} _target The target element that triggered the event
    */
-  static handleOpenCustomization(event, target) {
+  static handleOpenCustomization(_event, _target) {
     const dialog = new SpellDetailsCustomization();
     dialog.render(true);
   }
@@ -1977,10 +1971,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Form handler for saving Spell Book settings with class-specific preparation AND favorites
    * @param {Event} _event The form submission event
    * @param {HTMLElement} form The form element
-   * @param {Object} formData The form data
+   * @param {Object} _formData The form data
    * @returns {Promise<Actor|null>} The updated actor or null
    */
-  static async formHandler(_event, form, formData) {
+  static async formHandler(_event, form, _formData) {
     const actor = this.actor;
     if (!actor) return null;
     const existingPreparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};

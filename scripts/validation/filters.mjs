@@ -16,10 +16,9 @@ export function convertRangeToStandardUnit(units, value) {
  * Prepare filter options based on filter type
  * @param {string} filterId The filter ID
  * @param {Object} filterState Current filter state
- * @param {Array} spellData Spell data
  * @returns {Array} Options for the dropdown
  */
-export function getOptionsForFilter(filterId, filterState, spellData) {
+export function getOptionsForFilter(filterId, filterState) {
   const options = [{ value: '', label: game.i18n.localize('SPELLBOOK.Filters.All') }];
   switch (filterId) {
     case 'level':
@@ -28,7 +27,7 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
       });
       break;
     case 'school':
-      Object.entries(CONFIG.DND5E.spellSchools).forEach(([key, school]) => {
+      Object.entries(CONFIG.DND5E.spellSchools).forEach(([key, _school]) => {
         const label = DataHelpers.getConfigLabel(CONFIG.DND5E.spellSchools, key);
         options.push({ value: key, label, selected: filterState.school === key });
       });
@@ -48,7 +47,7 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
           const labelB = b[0] === 'healing' ? damageTypes.healing.label : DataHelpers.getConfigLabel(CONFIG.DND5E.damageTypes, b[0]) || b[0];
           return labelA.localeCompare(labelB);
         })
-        .forEach(([key, type]) => {
+        .forEach(([key, _type]) => {
           const label = key === 'healing' ? damageTypes.healing.label : DataHelpers.getConfigLabel(CONFIG.DND5E.damageTypes, key) || key;
           options.push({ value: key, label, selected: filterState.damageType === key });
         });
@@ -61,7 +60,7 @@ export function getOptionsForFilter(filterId, filterState, spellData) {
           const labelB = DataHelpers.getConfigLabel(CONFIG.DND5E.conditionTypes, b[0]);
           return labelA.localeCompare(labelB);
         })
-        .forEach(([key, condition]) => {
+        .forEach(([key, _condition]) => {
           const label = DataHelpers.getConfigLabel(CONFIG.DND5E.conditionTypes, key);
           options.push({ value: key, label, selected: filterState.condition === key });
         });

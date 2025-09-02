@@ -105,7 +105,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
    * @returns {Array} Array of metadata element configurations with checkboxes
    */
   _prepareMetadataElementsWithCheckboxes(type, settings) {
-    const elements = this._getMetadataElementsConfig(type);
+    const elements = this._getMetadataElementsConfig();
     return elements.map((element) => {
       const checkbox = ValidationHelpers.createCheckbox({ name: `${type}.${element.key}`, checked: settings[element.key] || false, ariaLabel: game.i18n.localize(element.label) });
       checkbox.id = `${type}-${element.key}`;
@@ -159,7 +159,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   _setupSelectAllListeners() {
     const selectAllCheckboxes = this.element.querySelectorAll('.select-all-checkbox');
     selectAllCheckboxes.forEach((checkbox) => {
-      checkbox.addEventListener('change', (event) => {
+      checkbox.addEventListener('change', (_event) => {
         const group = checkbox.dataset.group;
         const isChecked = checkbox.checked;
         this._setGroupCheckboxes(group, isChecked);
@@ -167,7 +167,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
     });
     const individualCheckboxes = this.element.querySelectorAll('.setting-item dnd5e-checkbox');
     individualCheckboxes.forEach((checkbox) => {
-      checkbox.addEventListener('change', (event) => {
+      checkbox.addEventListener('change', (_event) => {
         const settingItem = checkbox.closest('.setting-item');
         const group = settingItem?.dataset.group;
         if (group) this._updateSelectAllState(group);
@@ -305,10 +305,9 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
 
   /**
    * Get metadata elements configuration
-   * @param {string} type 'player' or 'gm'
    * @returns {Array} Array of metadata element configurations
    */
-  _getMetadataElementsConfig(type) {
+  _getMetadataElementsConfig() {
     return [
       { key: 'spellLevel', label: 'SPELLBOOK.Settings.DetailsCustomization.SpellLevel', description: 'SPELLBOOK.Settings.DetailsCustomization.SpellLevelDesc' },
       { key: 'components', label: 'SPELLBOOK.Settings.DetailsCustomization.Components', description: 'SPELLBOOK.Settings.DetailsCustomization.ComponentsDesc' },
@@ -325,10 +324,10 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
 
   /**
    * Action handler to set wizard book color to user color
-   * @param {Event} event The triggering event
+   * @param {Event} _event The triggering event
    * @param {HTMLElement} target The target element
    */
-  static async useUserColor(event, target) {
+  static async useUserColor(_event, target) {
     const userColor = target.dataset.userColor || game.user.color;
     const colorPicker = target.closest('.wizard-book-color-controls').querySelector('color-picker[name="wizardBookIconColor"]');
     if (colorPicker) {
@@ -339,10 +338,10 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
 
   /**
    * Action handler to reset wizard book color to default/saved setting
-   * @param {Event} event The triggering event
+   * @param {Event} _event The triggering event
    * @param {HTMLElement} target The target element
    */
-  static async resetToDefault(event, target) {
+  static async resetToDefault(_event, target) {
     const colorPicker = target.closest('.wizard-book-color-controls').querySelector('color-picker[name="wizardBookIconColor"]');
     if (colorPicker) {
       const savedColor = game.settings.get(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR);

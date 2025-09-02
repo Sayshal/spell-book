@@ -115,11 +115,11 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle form submission with GM-to-player delegation
-   * @param {Event} event The form submission event
-   * @param {HTMLFormElement} form The form element
+   * @param {Event} _event The form submission event
+   * @param {HTMLFormElement} _form The form element
    * @param {FormDataExtended} formData The form data
    */
-  static async formHandler(event, form, formData) {
+  static async formHandler(_event, _form, formData) {
     const notes = formData.object.notes || '';
     const spellUuid = formData.object.spellUuid;
     const actorId = formData.object.actorId;

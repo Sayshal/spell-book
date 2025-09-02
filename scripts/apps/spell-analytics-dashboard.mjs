@@ -296,11 +296,11 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Handle switching between view modes in the analytics dashboard
-   * @param {Event} event The click event
+   * @param {Event} _event The click event
    * @param {HTMLElement} target The target element containing view mode data
    * @returns {Promise<void>}
    */
-  static async handleSwitchView(event, target) {
+  static async handleSwitchView(_event, target) {
     const viewMode = target.dataset.viewMode;
     this.viewMode = viewMode;
     this.render();
@@ -308,52 +308,52 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Handle exporting user spell data
-   * @param {Event} event The click event
-   * @param {HTMLElement} target The target element that triggered the export
+   * @param {Event} _event The click event
+   * @param {HTMLElement} _target The target element that triggered the export
    * @returns {Promise<void>}
    */
-  static async handleExportData(event, target) {
+  static async handleExportData(_event, _target) {
     await this._exportUserData();
   }
 
   /**
    * Handle importing user spell data
-   * @param {Event} event The click event
-   * @param {HTMLElement} target The target element that triggered the import
+   * @param {Event} _event The click event
+   * @param {HTMLElement} _target The target element that triggered the import
    * @returns {Promise<void>}
    */
-  static async handleImportData(event, target) {
+  static async handleImportData(_event, _target) {
     await this._importUserData();
   }
 
   /**
    * Handle clearing user spell data
-   * @param {Event} event The click event
-   * @param {HTMLElement} target The target element that triggered the clear operation
+   * @param {Event} _event The click event
+   * @param {HTMLElement} _target The target element that triggered the clear operation
    * @returns {Promise<void>}
    */
-  static async handleClearData(event, target) {
+  static async handleClearData(_event, _target) {
     await this._clearUserData();
   }
 
   /**
    * Handle refreshing analytics statistics by clearing cache and re-rendering
-   * @param {Event} event The click event
-   * @param {HTMLElement} target The target element that triggered the refresh
+   * @param {Event} _event The click event
+   * @param {HTMLElement} _target The target element that triggered the refresh
    * @returns {Promise<void>}
    */
-  static async handleRefreshStats(event, target) {
+  static async handleRefreshStats(_event, _target) {
     this.analytics = null;
     this.render();
   }
 
   /**
    * Handle viewing data for a specific user
-   * @param {Event} event The click event
+   * @param {Event} _event The click event
    * @param {HTMLElement} target The target element containing user ID data
    * @returns {Promise<void>}
    */
-  static async handleViewUserData(event, target) {
+  static async handleViewUserData(_event, target) {
     const userId = target.dataset.userId;
     this.selectedUserId = userId;
     this.render();
@@ -389,7 +389,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
         }
         const filename = `all-users-spell-data-${timestamp}.json`;
         const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-        saveDataToFile(blob, { type: 'application/json' }, filename);
+        foundry.utils.saveDataToFile(blob, { type: 'application/json' }, filename);
       } else {
         const user = game.users.get(this.selectedUserId);
         const page = await SpellUserDataJournal._getUserPage(this.selectedUserId);
@@ -402,7 +402,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
           };
           const filename = `${user.name.replace(/[^\da-z]/gi, '_').toLowerCase()}-spell-data-${timestamp}.json`;
           const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-          saveDataToFile(blob, { type: 'application/json' }, filename);
+          foundry.utils.saveDataToFile(blob, { type: 'application/json' }, filename);
         } else {
           throw new Error('No data found for selected user');
         }

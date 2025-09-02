@@ -21,11 +21,11 @@ export function registerDnD5eIntegration() {
 
 /**
  * Add Spell Book button to character sheet
- * @param {Application} app The character sheet application instance
+ * @param {Application} _app The character sheet application instance
  * @param {HTMLElement} html The character sheet HTML element
  * @param {Object} data The sheet data object containing actor information
  */
-function addSpellbookButton(app, html, data) {
+function addSpellbookButton(_app, html, data) {
   const actor = data.actor;
   if (!canAddSpellbookButton(actor, html)) return;
   const spellsTab = html.querySelector('section.tab[data-tab="spells"]');
@@ -44,9 +44,9 @@ function addSpellbookButton(app, html, data) {
  * Handle long rest completion for all spellcasting classes
  * @param {Actor5e} actor The actor who completed the long rest
  * @param {Object} result The rest result data containing completion status
- * @param {Object} config The rest configuration options
+ * @param {Object} _config The rest configuration options
  */
-async function handleRestCompleted(actor, result, config) {
+async function handleRestCompleted(actor, result, _config) {
   if (!result.longRest) return;
   log(3, `Long rest completed for ${actor.name}, processing all spellcasting classes`);
   const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};

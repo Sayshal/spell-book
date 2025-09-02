@@ -407,7 +407,7 @@ export class SpellbookUI {
           item.classList.add('cantrip-locked');
           continue;
         }
-        if (applyRuleLocks) this._applyRuleBasedCantripLocks(item, checkbox, isChecked, classIdentifier, settings);
+        if (applyRuleLocks) this._applyRuleBasedCantripLocks(item, checkbox, classIdentifier, settings);
       }
     }
   }
@@ -416,11 +416,10 @@ export class SpellbookUI {
    * Apply rule-based locks to a cantrip (legacy/modern restrictions)
    * @param {HTMLElement} item The spell item element
    * @param {HTMLElement} checkbox The checkbox element
-   * @param {boolean} isChecked Whether the checkbox is checked
    * @param {string} classIdentifier The class identifier
    * @param {Object} settings The class-specific settings
    */
-  _applyRuleBasedCantripLocks(item, checkbox, isChecked, classIdentifier, settings) {
+  _applyRuleBasedCantripLocks(item, checkbox, classIdentifier, settings) {
     if (settings.behavior !== MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) return;
     const isLevelUp = this.app.spellManager.cantripManager.canBeLeveledUp();
     const isLongRest = this.app._isLongRest;

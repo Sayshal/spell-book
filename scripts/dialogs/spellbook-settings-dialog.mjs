@@ -519,10 +519,10 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Increase spell preparation bonus for a specific class
-   * @param {Event} event The click event
+   * @param {Event} _event The click event
    * @param {HTMLElement} target The clicked button
    */
-  static increaseSpellPrepBonus(event, target) {
+  static increaseSpellPrepBonus(_event, target) {
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellPreparationBonus"]`);
@@ -537,10 +537,10 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Decrease spell preparation bonus for a specific class
-   * @param {Event} event The click event
+   * @param {Event} _event The click event
    * @param {HTMLElement} target The clicked button
    */
-  static decreaseSpellPrepBonus(event, target) {
+  static decreaseSpellPrepBonus(_event, target) {
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellPreparationBonus"]`);
@@ -588,10 +588,10 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Increase cantrip preparation bonus for a specific class
-   * @param {Event} event The click event
+   * @param {Event} _event The click event
    * @param {HTMLElement} target The clicked button
    */
-  static increaseCantripPrepBonus(event, target) {
+  static increaseCantripPrepBonus(_event, target) {
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.cantripPreparationBonus"]`);
@@ -606,10 +606,10 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
   /**
    * Decrease cantrip preparation bonus for a specific class
-   * @param {Event} event The click event
+   * @param {Event} _event The click event
    * @param {HTMLElement} target The clicked button
    */
-  static decreaseCantripPrepBonus(event, target) {
+  static decreaseCantripPrepBonus(_event, target) {
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.cantripPreparationBonus"]`);

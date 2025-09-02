@@ -1,5 +1,6 @@
 import { TEMPLATES } from '../constants/_module.mjs';
 import * as UIHelpers from '../ui/_module.mjs';
+import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 

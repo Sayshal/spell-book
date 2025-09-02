@@ -33,15 +33,15 @@ Hooks.once('ready', async function () {
   await DataHelpers.preloadSpellData();
 });
 
-Hooks.on('createJournalEntryPage', (page, options, userId) => {
+Hooks.on('createJournalEntryPage', (page, _options, _userId) => {
   if (DataHelpers.shouldInvalidateCacheForPage(page)) DataHelpers.invalidateSpellListCache();
 });
 
-Hooks.on('updateJournalEntryPage', (page, changes, options, userId) => {
+Hooks.on('updateJournalEntryPage', (page, changes, _options, _userId) => {
   if (DataHelpers.shouldInvalidateCacheForPage(page)) if (changes.system?.spells || changes.system?.identifier || changes.flags) DataHelpers.invalidateSpellListCache();
 });
 
-Hooks.on('deleteJournalEntryPage', (page, options, userId) => {
+Hooks.on('deleteJournalEntryPage', (page, _options, _userId) => {
   if (DataHelpers.shouldInvalidateCacheForPage(page)) DataHelpers.invalidateSpellListCache();
 });
 

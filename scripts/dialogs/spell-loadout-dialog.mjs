@@ -88,10 +88,10 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Save current configuration as a new loadout
-   * @param {Event} event The form event
+   * @param {Event} _event The form event
    * @param {HTMLElement} target The clicked element
    */
-  static async saveLoadout(event, target) {
+  static async saveLoadout(_event, target) {
     const form = target.closest('form');
     const formData = new FormData(form);
     const name = formData.get('loadout-name')?.trim();
@@ -120,10 +120,10 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Overwrite an existing loadout with current configuration
-   * @param {Event} event The click event
+   * @param {Event} _event The click event
    * @param {HTMLElement} target The clicked element
    */
-  static async overwriteLoadout(event, target) {
+  static async overwriteLoadout(_event, target) {
     const loadoutId = target.dataset.loadoutId;
     const loadoutName = target.dataset.loadoutName;
     if (!loadoutId) return;
@@ -144,10 +144,10 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Delete a loadout
-   * @param {Event} event The click event
+   * @param {Event} _event The click event
    * @param {HTMLElement} target The clicked element
    */
-  static async deleteLoadout(event, target) {
+  static async deleteLoadout(_event, target) {
     const loadoutId = target.dataset.loadoutId;
     const loadoutName = target.dataset.loadoutName;
     if (!loadoutId) return;
@@ -167,10 +167,10 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Apply a loadout
-   * @param {Event} event The click event
+   * @param {Event} _event The click event
    * @param {HTMLElement} target The clicked element
    */
-  static applyLoadout(event, target) {
+  static applyLoadout(_event, target) {
     const loadoutId = target.dataset.loadoutId;
     if (!loadoutId) return;
     try {

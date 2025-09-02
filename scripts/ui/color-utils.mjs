@@ -1,5 +1,4 @@
 /* eslint-disable jsdoc/require-jsdoc */
-/* eslint-disable nonblock-statement-body-position */
 /** Thank you Ben for writing this color detection code for me. */
 
 import { log } from '../logger.mjs';
