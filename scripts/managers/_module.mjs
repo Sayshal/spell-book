@@ -1,5 +1,6 @@
 export { CantripManager } from './cantrip-manager.mjs';
 export { MacroManager } from './macro-manager.mjs';
+export { PartySpellManager } from './party-spell-manager.mjs';
 export { RuleSetManager } from './rule-set-manager.mjs';
 export { SpellLoadoutManager } from './spell-loadout-manager.mjs';
 export { SpellManager } from './spell-manager.mjs';

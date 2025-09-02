@@ -15,8 +15,9 @@ export const FLAGS = {
   COLLAPSED_FOLDERS: 'collapsedFolders',
   COLLAPSED_LEVELS: 'collapsedSpellLevels',
   ENFORCEMENT_BEHAVIOR: 'enforcementBehavior',
-  LONG_REST_COMPLETED: 'longRestCompleted',
   GM_COLLAPSED_LEVELS: 'gmCollapsedSpellLevels',
+  LONG_REST_COMPLETED: 'longRestCompleted',
+  PARTY_MODE_ENABLED: 'partyModeEnabled',
   PREPARED_SPELLS_BY_CLASS: 'preparedSpellsByClass',
   PREPARED_SPELLS: 'preparedSpells',
   PREVIOUS_CANTRIP_MAX: 'previousCantripMax',
@@ -25,6 +26,7 @@ export const FLAGS = {
   RULE_SET_OVERRIDE: 'ruleSetOverride',
   SIDEBAR_COLLAPSED: 'sidebarCollapsed',
   SPELL_LOADOUTS: 'spellLoadouts',
+  SPELLCASTING_FOCUS: 'spellcastingFocus',
   SWAP_TRACKING: 'swapTracking',
   WIZARD_COPIED_SPELLS: 'wizardCopiedSpells',
   WIZARD_RITUAL_CASTING: 'wizardRitualCasting'

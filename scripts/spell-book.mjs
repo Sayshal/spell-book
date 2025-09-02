@@ -2,7 +2,7 @@ import { createAPI } from './api.mjs';
 import { SpellBook } from './apps/_module.mjs';
 import { MODULE, SETTINGS, TEMPLATES } from './constants/_module.mjs';
 import * as DataHelpers from './data/_module.mjs';
-import { registerDnD5eIntegration, registerTidy5eIntegration } from './integrations/_module.mjs';
+import { registerDnD5eIntegration, registerTidy5eIntegration, registerGroupActorIntegration } from './integrations/_module.mjs';
 import { initializeLogger, log } from './logger.mjs';
 import { MacroManager, SpellUsageTracker, UserSpellDataManager } from './managers/_module.mjs';
 import { registerSettings } from './settings.mjs';
@@ -61,6 +61,7 @@ async function initializeModuleComponents() {
   registerSettings();
   initializeLogger();
   registerDnD5eIntegration();
+  registerGroupActorIntegration();
   if (game.modules.get('tidy5e-sheet')?.active) registerTidy5eIntegration();
 }
 

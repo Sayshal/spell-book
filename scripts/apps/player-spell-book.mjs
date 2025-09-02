@@ -2,11 +2,11 @@ import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module
 import * as DataHelpers from '../data/_module.mjs';
 import { SpellComparisonDialog, SpellDetailsCustomization, SpellLoadoutDialog, SpellNotesDialog, SpellbookSettingsDialog } from '../dialogs/_module.mjs';
 import { log } from '../logger.mjs';
-import { SpellLoadoutManager, SpellManager, WizardSpellbookManager } from '../managers/_module.mjs';
+import { SpellLoadoutManager, SpellManager, WizardSpellbookManager, PartySpellManager } from '../managers/_module.mjs';
 import { SpellbookState } from '../state/_module.mjs';
 import * as UIHelpers from '../ui/_module.mjs';
 import * as ValidationHelpers from '../validation/_module.mjs';
-import { PlayerFilterConfiguration, SpellAnalyticsDashboard } from './_module.mjs';
+import { PlayerFilterConfiguration, SpellAnalyticsDashboard, PartySpells } from './_module.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const { renderTemplate } = foundry.applications.handlebars;
@@ -38,7 +38,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       editNotes: SpellBook.handleEditNotes,
       openAnalyticsDashboard: SpellBook.handleOpenAnalyticsDashboard,
       compareSpell: SpellBook.handleCompareSpell,
-      openCustomization: SpellBook.handleOpenCustomization
+      openCustomization: SpellBook.handleOpenCustomization,
+      openPartyManager: SpellBook.openPartyManager,
+      togglePartyMode: SpellBook.togglePartyMode
     },
     classes: ['spell-book', 'vertical-tabs'],
     window: { icon: 'spell-book-module-icon', resizable: true, minimizable: true, positioned: true },
@@ -238,6 +240,18 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         cssClass: 'loadout-button'
       }
     ];
+    const partyActors = PartySpellManager.getPartyActors();
+    const showPartyButton = partyActors.length !== 0;
+    if (showPartyButton) {
+      buttons.push({
+        type: 'button',
+        action: 'openPartyManager',
+        icon: 'fas fa-users',
+        label: 'SPELLBOOK.Party.Party',
+        tooltip: 'SPELLBOOK.Party.OpenPartyManager',
+        cssClass: 'party-button'
+      });
+    }
     return {
       ...context,
       actor: this.actor,
@@ -480,6 +494,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       await this._applyFavoriteStatesToButtons(favoriteButtons);
       favoriteButtons.forEach((button) => button.setAttribute('data-favorites-applied', 'true'));
     }
+    this._setupPartyModeContextMenu();
   }
 
   /** @inheritdoc */
@@ -772,13 +787,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const isFavoritedInJournal = userData?.favorited || false;
         if (isFavoritedInJournal && !isFavoritedInActor) {
           log(3, `Unfavoriting ${spell.name} in journal to match actor state`);
-          await DataHelpers.setSpellFavorite(spellUuid, false);
+          await DataHelpers.SpellUserDataJournal.setSpellFavorite(spellUuid, false);
           changedSpells.push({ uuid: spellUuid, newState: false });
           syncCount++;
         }
         if (!isFavoritedInJournal && isFavoritedInActor) {
           log(3, `Favoriting ${spell.name} in journal to match actor state`);
-          await DataHelpers.setSpellFavorite(spellUuid, true);
+          await DataHelpers.SpellUserDataJournal.setSpellFavorite(spellUuid, true);
           changedSpells.push({ uuid: spellUuid, newState: true });
           syncCount++;
         }
@@ -1873,6 +1888,203 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   static handleOpenCustomization(_event, _target) {
     const dialog = new SpellDetailsCustomization();
     dialog.render(true);
+  }
+
+  /**
+   * Open party spell manager
+   * @param {Event} _event The triggering event
+   * @param {HTMLElement} _target The event target
+   */
+  static async openPartyManager(_event, _target) {
+    const partyActors = PartySpellManager.getPartyActors();
+    if (partyActors.length === 0) {
+      ui.notifications.warn('SPELLBOOK.Party.NoSpellcasters', { localize: true });
+      return;
+    }
+
+    const manager = new PartySpells(partyActors, this.actor);
+    manager.render(true);
+  }
+
+  /**
+   * Toggle party mode visualization
+   * @param {Event} _event The triggering event
+   * @param {HTMLElement} _target The event target
+   */
+  static async togglePartyMode(_event, _target) {
+    const currentMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
+    await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, !currentMode);
+
+    // Add party mode filter if enabling
+    if (!currentMode) {
+      this._addPartyModeFilter();
+    } else {
+      this._removePartyModeFilter();
+    }
+
+    await this.render();
+    ui.notifications.info(!currentMode ? 'SPELLBOOK.Party.PartyModeEnabled' : 'SPELLBOOK.Party.PartyModeDisabled', { localize: true });
+  }
+
+  /**
+   * Add party mode filter to filter list
+   */
+  _addPartyModeFilter() {
+    if (!this.filterHelper) return;
+
+    const partyFilter = {
+      id: 'notPreparedByOthers',
+      type: 'checkbox',
+      enabled: true,
+      order: 5000,
+      label: 'SPELLBOOK.Filters.NotPreparedByOthers',
+      sortable: false,
+      partyModeOnly: true
+    };
+
+    this.filterHelper.addFilter(partyFilter);
+  }
+
+  /**
+   * Remove party mode filter
+   */
+  _removePartyModeFilter() {
+    if (!this.filterHelper) return;
+    this.filterHelper.removeFilter('notPreparedByOthers');
+  }
+
+  /**
+   * Setup party mode context menu
+   */
+  _setupPartyModeContextMenu() {
+    if (!this.element) return;
+
+    // Add context menu to the window header/title area
+    const windowHeader = this.element.querySelector('.window-header');
+    if (!windowHeader) return;
+
+    windowHeader.addEventListener('contextmenu', (event) => {
+      event.preventDefault();
+      this._showPartyModeContextMenu(event);
+    });
+  }
+
+  /**
+   * Show party mode context menu
+   * @param {Event} event The context menu event
+   */
+  async _showPartyModeContextMenu(event) {
+    const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
+
+    this._hidePartyModeContextMenu(); // Clear any existing menu
+
+    const contextMenu = document.createElement('div');
+    contextMenu.className = 'party-mode-context-menu';
+    contextMenu.id = 'party-mode-context-menu'; // Add ID for cleanup
+    contextMenu.innerHTML = `
+    <div class="context-menu-item" data-action="${isPartyMode ? 'disable' : 'enable'}-party-mode">
+      <i class="fas ${isPartyMode ? 'fa-eye-slash' : 'fa-users'}"></i>
+      <span>${game.i18n.localize(isPartyMode ? 'SPELLBOOK.Party.DisablePartyMode' : 'SPELLBOOK.Party.EnablePartyMode')}</span>
+    </div>
+    <div class="context-menu-item" data-action="open-party-manager">
+      <i class="fas fa-users-cog"></i>
+      <span>${game.i18n.localize('SPELLBOOK.Party.OpenPartyManager')}</span>
+    </div>
+  `;
+
+    document.body.appendChild(contextMenu);
+    this._positionContextMenu(event, contextMenu);
+
+    contextMenu.addEventListener('click', async (clickEvent) => {
+      const item = clickEvent.target.closest('.context-menu-item');
+      if (!item) return;
+
+      const action = item.dataset.action;
+      switch (action) {
+        case 'enable-party-mode':
+        case 'disable-party-mode':
+          await SpellBook.togglePartyMode.call(this, clickEvent, item);
+          break;
+        case 'open-party-manager':
+          await SpellBook.openPartyManager.call(this, clickEvent, item);
+          break;
+      }
+
+      this._hidePartyModeContextMenu();
+    });
+
+    // Auto-hide on outside click
+    setTimeout(() => {
+      const clickHandler = (e) => {
+        if (!contextMenu.contains(e.target)) {
+          this._hidePartyModeContextMenu();
+          document.removeEventListener('click', clickHandler);
+        }
+      };
+      document.addEventListener('click', clickHandler);
+    }, 100);
+  }
+
+  /**
+   * Hide party mode context menu
+   */
+  _hidePartyModeContextMenu() {
+    const existingMenu = document.getElementById('party-mode-context-menu');
+    if (existingMenu) {
+      existingMenu.remove();
+    }
+  }
+
+  /**
+   * Enhance spell rendering with party member icons
+   * @param {string} spellHtml Original spell HTML
+   * @param {Object} spellData Spell data
+   * @returns {string} Enhanced HTML with party member icons
+   */
+  _enhanceSpellWithPartyIcons(spellHtml, spellData) {
+    const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
+    if (!isPartyMode) return spellHtml;
+
+    const partyActors = PartySpellManager.getPartyActors();
+    const tokenLimit = game.settings.get(MODULE.ID, SETTINGS.PARTY_MODE_TOKEN_LIMIT);
+
+    let partyIcons = '';
+    let iconCount = 0;
+
+    for (const actor of partyActors) {
+      if (iconCount >= tokenLimit) break;
+      if (actor.id === this.actor.id) continue; // Skip self
+
+      if (this._actorHasSpellPrepared(actor, spellData.uuid)) {
+        partyIcons += `<img src="${actor.img}" class="party-member-icon" title="${actor.name}" data-actor-id="${actor.id}">`;
+        iconCount++;
+      }
+    }
+
+    if (partyIcons) {
+      // Insert icons after spell name
+      const nameEndIndex = spellHtml.indexOf('</span>', spellHtml.indexOf('class="title"'));
+      if (nameEndIndex !== -1) {
+        const beforeIcons = spellHtml.substring(0, nameEndIndex + 7);
+        const afterIcons = spellHtml.substring(nameEndIndex + 7);
+        return `${beforeIcons}<span class="party-icons">${partyIcons}</span>${afterIcons}`;
+      }
+    }
+
+    return spellHtml;
+  }
+
+  /**
+   * Check if an actor has a specific spell prepared
+   * @param {Actor} actor The actor to check
+   * @param {string} spellUuid The spell UUID
+   * @returns {boolean} True if actor has spell prepared
+   */
+  _actorHasSpellPrepared(actor, spellUuid) {
+    if (!PartySpellManager.prototype.hasViewPermission(actor)) return false;
+
+    const preparedSpells = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS) || [];
+    return preparedSpells.includes(spellUuid);
   }
 
   /**

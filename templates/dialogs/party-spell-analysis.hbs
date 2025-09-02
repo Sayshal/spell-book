@@ -1,0 +1,66 @@
+<div class="party-spell-analysis">
+  <div class="analysis-overview">
+    <h3>{{localize "SPELLBOOK.Party.Analysis.Overview"}}</h3>
+
+    <div class="stats-grid">
+      <div class="stat-item">
+        <span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.TotalSpells"}}</span>
+        <span class="stat-value">{{analysis.totalSpells}}</span>
+      </div>
+
+      <div class="stat-item">
+        <span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.TotalPrepared"}}</span>
+        <span class="stat-value">{{analysis.totalPreparedSpells}}</span>
+      </div>
+
+      <div class="stat-item">
+        <span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.ConcentrationSpells"}}</span>
+        <span class="stat-value">{{analysis.concentrationSpells}} ({{analysis.concentrationPercentage}}%)</span>
+      </div>
+
+      <div class="stat-item">
+        <span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.RitualSpells"}}</span>
+        <span class="stat-value">{{analysis.ritualSpells}}</span>
+      </div>
+    </div>
+  </div>
+
+  {{#if analysis.damageDistribution}}
+    <div class="damage-analysis">
+      <h4>{{localize "SPELLBOOK.Party.Analysis.DamageTypes"}}</h4>
+      <div class="damage-types">
+        {{#each analysis.damageDistribution as |count type|}}
+          <div class="damage-type-item">
+            <span class="damage-type">{{localize (concat "DND5E.Damage" (titleCase type))}}</span>
+            <span class="damage-count">{{count}}</span>
+          </div>
+        {{/each}}
+      </div>
+    </div>
+  {{/if}}
+
+  {{#if analysis.focusDistribution}}
+    <div class="focus-analysis">
+      <h4>{{localize "SPELLBOOK.Party.Analysis.FocusDistribution"}}</h4>
+      <div class="focus-types">
+        {{#each analysis.focusDistribution as |count focus|}}
+          <div class="focus-type-item">
+            <span class="focus-type">{{localize focus}}</span>
+            <span class="focus-count">{{count}}</span>
+          </div>
+        {{/each}}
+      </div>
+    </div>
+  {{/if}}
+
+  {{#if analysis.recommendations}}
+    <div class="recommendations">
+      <h4>{{localize "SPELLBOOK.Party.Analysis.Recommendations"}}</h4>
+      <ul class="recommendation-list">
+        {{#each analysis.recommendations as |recommendation|}}
+          <li>{{localize recommendation}}</li>
+        {{/each}}
+      </ul>
+    </div>
+  {{/if}}
+</div>

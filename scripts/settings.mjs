@@ -485,6 +485,43 @@ export function registerSettings() {
   });
 
   // ========================================//
+  //  Party Spell Tracking                   //
+  // ========================================//
+
+  game.settings.register(MODULE.ID, SETTINGS.SPELLCASTING_FOCUSES, {
+    name: 'SPELLBOOK.Settings.SpellcastingFocuses.Name',
+    hint: 'SPELLBOOK.Settings.SpellcastingFocuses.Hint',
+    scope: 'world',
+    config: true,
+    type: String,
+    default: MODULE.PARTY_SPELL.DEFAULT_FOCUSES.join(','),
+    onChange: (value) => {
+      try {
+        const focuses = value
+          .split(',')
+          .map((f) => f.trim())
+          .filter((f) => f.length > 0);
+        if (focuses.length === 0) {
+          log(2, 'Spellcasting focuses cannot be empty, resetting to default');
+          game.settings.set(MODULE.ID, SETTINGS.SPELLCASTING_FOCUSES, MODULE.PARTY_SPELL.DEFAULT_FOCUSES.join(','));
+        }
+      } catch (error) {
+        log(1, 'Error validating spellcasting focuses:', error);
+      }
+    }
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.PARTY_MODE_TOKEN_LIMIT, {
+    name: 'SPELLBOOK.Settings.PartyModeTokenLimit.Name',
+    hint: 'SPELLBOOK.Settings.PartyModeTokenLimit.Hint',
+    scope: 'client',
+    config: true,
+    type: Number,
+    default: 4,
+    range: { min: 2, max: 8, step: 1 }
+  });
+
+  // ========================================//
   //  Technical                              //
   // ========================================//
 

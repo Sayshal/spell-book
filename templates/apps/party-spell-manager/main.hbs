@@ -1,0 +1,127 @@
+<div class="party-spell-manager-content">
+  <!-- Header with Actions -->
+  <header class="party-header">
+    <div class="party-title">
+      <h2>{{localize "SPELLBOOK.Party.SpellPoolTitle"}}</h2>
+      <div class="party-actions">
+        <button type="button" class="refresh-button" data-action="refreshData"
+          data-tooltip="{{localize 'SPELLBOOK.Party.RefreshData'}}">
+          <i class="fas fa-sync" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="analysis-button" data-action="showSynergyAnalysis"
+          data-tooltip="{{localize 'SPELLBOOK.Party.ShowSynergyAnalysis'}}">
+          <i class="fas fa-chart-line" aria-hidden="true"></i>
+          {{localize "SPELLBOOK.Party.SynergyAnalysis"}}
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Party Members Overview -->
+  <section class="party-members">
+    <h3>{{localize "SPELLBOOK.Party.PartyMembers"}}</h3>
+    <div class="members-grid">
+      {{#each comparison.actors as |actor|}}
+        <div class="member-card {{#unless actor.hasPermission}}no-permission{{/unless}}">
+          <div class="member-header">
+            <img src="{{actor.token}}" class="member-avatar" alt="{{actor.name}}">
+            <div class="member-info">
+              <h4>{{actor.name}}</h4>
+              {{#if actor.hasPermission}}
+                <div class="focus-selection">
+                  <label for="focus-{{actor.id}}">{{localize "SPELLBOOK.Party.SpellcastingFocus"}}</label>
+                  <select id="focus-{{actor.id}}" data-actor-id="{{actor.id}}" data-action="setSpellcastingFocus"
+                    {{#unless ../canEditFocus}}disabled{{/unless}}>
+                    {{#each ../availableFocuses as |focus|}}
+                      <option value="{{focus.value}}" {{#if (eq focus.value ../actor.focus)}}selected{{/if}}>
+                        {{focus.label}}
+                      </option>
+                    {{/each}}
+                  </select>
+                </div>
+              {{else}}
+                <p class="no-permission-text">{{localize "SPELLBOOK.Party.NoViewPermission"}}</p>
+              {{/if}}
+            </div>
+          </div>
+
+          {{#if actor.hasPermission}}
+            <div class="member-stats">
+              {{#each actor.spellcasters as |class|}}
+                <div class="class-stats">
+                  <div class="class-header">
+                    {{#if class.icon}}<img src="{{class.icon}}" class="class-icon" alt="{{class.className}}">{{/if}}
+                    <span class="class-name">{{class.className}}</span>
+                  </div>
+                  <div class="spell-counts">
+                    <span class="known-count" data-tooltip="{{localize 'SPELLBOOK.Party.KnownSpells'}}">
+                      {{localize "SPELLBOOK.Party.Known"}}: {{class.totalKnown}}
+                    </span>
+                    <span class="prepared-count" data-tooltip="{{localize 'SPELLBOOK.Party.PreparedSpells'}}">
+                      {{localize "SPELLBOOK.Party.Prepared"}}: {{class.totalPrepared}}
+                    </span>
+                  </div>
+                </div>
+              {{/each}}
+            </div>
+          {{/if}}
+        </div>
+      {{/each}}
+    </div>
+  </section>
+
+  <!-- Spell Comparison Matrix - embedded directly, not as partial -->
+  <section class="spell-comparison">
+    <h3>{{localize "SPELLBOOK.Party.SpellComparison"}}</h3>
+    {{#if spellLevels}}
+      {{#each spellLevels as |levelGroup|}}
+        <div class="spell-level-group" data-spell-level="{{levelGroup.level}}">
+          <h4 class="level-header">
+            <span class="level-name">{{levelGroup.levelName}}</span>
+            <span class="spell-count">({{levelGroup.spells.length}} {{localize "SPELLBOOK.Party.Spells"}})</span>
+          </h4>
+
+          <div class="spells-grid">
+            {{#each levelGroup.spells as |spell|}}
+              <div class="spell-comparison-item">
+                <div class="spell-header">
+                  <span class="spell-name">{{spell.name}}</span>
+                  {{#if spell.concentration}}
+                    <i class="fas fa-circle-dot concentration-icon"
+                      data-tooltip="{{localize 'SPELLBOOK.SpellDetails.Concentration'}}" aria-hidden="true"></i>
+                  {{/if}}
+                  {{#if spell.ritual}}
+                    <i class="fas fa-scroll ritual-icon" data-tooltip="{{localize 'SPELLBOOK.SpellDetails.Ritual'}}"
+                      aria-hidden="true"></i>
+                  {{/if}}
+                </div>
+
+                <div class="spell-actors">
+                  {{#each spell.actors as |actorData|}}
+                    <div class="actor-spell-status {{#if actorData.isPrepared}}prepared{{else}}known{{/if}}">
+                      <img src="{{actorData.token}}" class="actor-token" alt="{{actorData.actorName}}">
+                      <span class="actor-name">{{actorData.actorName}}</span>
+                      <span class="spell-status">
+                        {{#if actorData.isPrepared}}
+                          <i class="fas fa-check prepared-icon" data-tooltip="{{localize 'SPELLBOOK.Party.Prepared'}}"
+                            aria-hidden="true"></i>
+                        {{else}}
+                          <i class="fas fa-book known-icon" data-tooltip="{{localize 'SPELLBOOK.Party.Known'}}"
+                            aria-hidden="true"></i>
+                        {{/if}}
+                      </span>
+                    </div>
+                  {{/each}}
+                </div>
+              </div>
+            {{/each}}
+          </div>
+        </div>
+      {{/each}}
+    {{else}}
+      <div class="empty-state">
+        <p>{{localize "SPELLBOOK.Party.NoSpellsFound"}}</p>
+      </div>
+    {{/if}}
+  </section>
+</div>

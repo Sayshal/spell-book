@@ -35,6 +35,17 @@ export const MODULE = {
   ],
 
   /**
+   * Party spell coordination constants
+   * @type {Object}
+   */
+  PARTY_SPELL: {
+    /**
+     * Default spellcasting focus options
+     * @type {Array}
+     */
+    DEFAULT_FOCUSES: ['Support', 'Healing', 'Damage/Blasting', 'Control', 'Utility', 'Tank/Defense', 'Stealth/Infiltration', 'Social/Enchantment']
+  },
+  /**
    * Spell change behavior options
    * @type {Object}
    */
@@ -139,6 +150,7 @@ export const SETTINGS = {
   HIDDEN_SPELL_LISTS: 'hiddenSpellLists',
   INDEXED_COMPENDIUMS: 'indexedCompendiums',
   LOGGING_LEVEL: 'loggingLevel',
+  PARTY_MODE_TOKEN_LIMIT: 'partyModeTokenLimit',
   PLAYER_UI_CASTING_TIME: 'playerUICastingTime',
   PLAYER_UI_COMPARE: 'playerUICompare',
   PLAYER_UI_COMPONENTS: 'playerUIComponents',
@@ -158,6 +170,7 @@ export const SETTINGS = {
   SPELL_COMPARISON_MAX: 'spellComparisonMax',
   SPELL_NOTES_DESC_INJECTION: 'injectNotesIntoDescriptions',
   SPELL_NOTES_LENGTH: 'spellNotesMaxLength',
+  SPELLCASTING_FOCUSES: 'spellcastingFocuses',
   SPELLCASTING_RULE_SET: 'spellcastingRuleSet',
   TROUBLESHOOTER_INCLUDE_ACTORS: 'troubleshooterIncludeActors',
   WIZARD_BOOK_ICON_COLOR: 'wizardBookIconColor'
