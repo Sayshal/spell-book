@@ -6,16 +6,17 @@
 
 #### **Sharing & Collaboration [High Priority]**
 
-Enable players to discover and use public spell loadouts from other characters, with intelligent party coordination tools to optimize spell selection across the group.
+Enable comprehensive party spell coordination through group actor integration, providing visual spell pool management, preparation optimization tools, and collaborative spellcasting focus assignment to maximize party effectiveness.
 
-**Code justification:** The current `SpellLoadoutManager` stores loadouts locally per actor using flags. The `getAvailableLoadouts()` method already filters by class identifier, providing the foundation for cross-player loadout sharing. The existing `saveClassSpecificPreparedSpells()` method in `spell-manager.mjs` tracks preparation data that could be analyzed for party coordination. The system's spell discovery mechanism in `spell-discovery.mjs` shows how to handle spell availability validation.
+**Code justification:** The existing `SpellLoadoutManager` stores preparation data per actor using flags, and the `saveClassSpecificPreparedSpells()` method in `spell-manager.mjs` tracks preparation data that forms the foundation for party-wide spell analysis. The current Tidy5e integration in `integrations/tidy5e.mjs` provides the framework for extending group actor functionality. The spell discovery mechanism in `spell-discovery.mjs` demonstrates spell availability validation that can be adapted for permission-based party member spell visibility. The existing permission system and actor data access patterns provide the foundation for secure cross-character spell information sharing.
 
 **Features:**
 
-- **Public Loadout Discovery**: Browse loadouts marked as "public" by other players in the spell loadouts menu, filtered by matching class
-- **Graceful Spell Handling**: When applying shared loadouts, silently skip spells not available to the current character and apply only compatible spells
-- **Party Coordination Tool**: Integration with group actors to display a comparison matrix showing what spells each party member _knows_ versus what they can currently _prepare_ (If user viewing does not have observer or greater permission to view a character, show a grayed out/blurred out version with a note that you do not have permission to view)
-- **Smart Suggestions**: Highlight spell preparation opportunities where party members could complement each other's spell selections. This should be accomplished by making factual statements (the party has 8 fire-damage spells, 85% of the spells require concentration, etc.)
+- **Group Actor Integration**: Add button to Group Actor Sheet to view party spell pool, with corresponding button in SpellBook application footer for seamless access
+- **Party Spell Comparison Matrix**: Integration with group actors to display a comparison matrix showing what spells each party member _knows_ versus what they can currently _prepare_ (If user viewing does not have observer or greater permission to view a character, show a grayed out/blurred out version with a note that you do not have permission to view)
+- **Spell Synergy Analysis**: Highlight spell preparation opportunities where party members could complement each other's spell selections. This should be accomplished by making factual statements (the party has 8 fire-damage spells, 85% of the spells require concentration, etc.)
+- **Spellcasting Focus Assignment**: Allow spellcasters (and GMs) to specify their characters spellcasting 'focus' ie: Support, Healing, Melee Combat, etc. This should be a standard list provided by the module via a world setting so GMs can customize (and localize!)
+- **Party Mode Visualization**: Right Click context menu on SpellBook to enable Party Mode. This mode will add a symbol (circular token art) for every party member that CURRENTLY has a certain spell prepared. To help avoid duplicates.
 
 #### **Post-Encounter Spell Analytics [High Priority]**
 
