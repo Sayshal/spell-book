@@ -11,7 +11,6 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
     id: 'party-spell-manager',
     tag: 'div',
     actions: {
-      setSpellcastingFocus: PartySpells.setSpellcastingFocus,
       showSynergyAnalysis: PartySpells.showSynergyAnalysis,
       refreshData: PartySpells.refreshData
     },
@@ -59,11 +58,45 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     context.comparison = this._comparisonData;
-    context.availableFocuses = this.getAvailableFocusOptions();
+    context.availableFocuses = this.getAvailableFocusOptions(); // Add this back
     context.canEditFocus = game.user.isGM || (this.viewingActor && this.viewingActor.isOwner);
     context.spellLevels = this.getSpellLevelGroups(this._comparisonData.spellsByLevel);
 
     return context;
+  }
+
+  /** @inheritdoc */
+  _onRender(context, options) {
+    super._onRender(context, options);
+
+    // Set up change event handling for focus dropdowns
+    const focusSelects = this.element.querySelectorAll('select[data-actor-id]');
+    focusSelects.forEach((select) => {
+      select.addEventListener('change', async (event) => {
+        const actorId = event.target.dataset.actorId;
+        const focus = event.target.value;
+
+        if (!actorId || !focus) return;
+
+        const actor = game.actors.get(actorId);
+        if (!actor) return;
+
+        // Check permissions
+        if (!game.user.isGM && !actor.isOwner) {
+          ui.notifications.warn('SPELLBOOK.Party.NoPermissionToSetFocus', { localize: true });
+          return;
+        }
+
+        const success = await this.partyManager.setActorSpellcastingFocus(actor, focus);
+        if (success) {
+          ui.notifications.info('SPELLBOOK.Party.FocusUpdated', { localize: true });
+          // Clear cache so next manual refresh gets new data
+          this._comparisonData = null;
+        } else {
+          ui.notifications.error('SPELLBOOK.Party.FocusUpdateError', { localize: true });
+        }
+      });
+    });
   }
 
   /**
@@ -74,8 +107,7 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
     const focuses = PartySpellManager.getAvailableFocuses();
     return focuses.map((focus) => ({
       value: focus,
-      label: focus,
-      selected: false
+      label: focus
     }));
   }
 
@@ -94,37 +126,6 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
       levelName: level === 0 ? game.i18n.localize('SPELLBOOK.SpellLevel.Cantrip') : game.i18n.format('SPELLBOOK.SpellLevel.Numbered', { level }),
       spells: Object.values(spellsByLevel[level]).sort((a, b) => a.name.localeCompare(b.name))
     }));
-  }
-
-  /**
-   * Set spellcasting focus for an actor
-   * @param {Event} event The triggering event
-   * @param {HTMLElement} target The event target
-   */
-  static async setSpellcastingFocus(event, target) {
-    const actorId = target.dataset.actorId;
-    const focus = target.value;
-
-    if (!actorId || !focus) return;
-
-    const actor = game.actors.get(actorId);
-    if (!actor) return;
-
-    // Check permissions
-    if (!game.user.isGM && !actor.isOwner) {
-      ui.notifications.warn('SPELLBOOK.Party.NoPermissionToSetFocus', { localize: true });
-      return;
-    }
-
-    const success = await this.partyManager.setActorSpellcastingFocus(actor, focus);
-    if (success) {
-      ui.notifications.info('SPELLBOOK.Party.FocusUpdated', { localize: true });
-      // Don't force full re-render, just clear cache so next manual refresh gets new data
-      this._comparisonData = null;
-      // Remove this line: this.render();
-    } else {
-      ui.notifications.error('SPELLBOOK.Party.FocusUpdateError', { localize: true });
-    }
   }
 
   /**

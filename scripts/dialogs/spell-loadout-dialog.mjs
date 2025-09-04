@@ -11,7 +11,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     id: 'spell-loadout-dialog',
-    tag: 'div',
+    tag: 'form',
     actions: {
       saveLoadout: SpellLoadoutDialog.saveLoadout,
       applyLoadout: SpellLoadoutDialog.applyLoadout,

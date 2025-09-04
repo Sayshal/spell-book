@@ -494,7 +494,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       await this._applyFavoriteStatesToButtons(favoriteButtons);
       favoriteButtons.forEach((button) => button.setAttribute('data-favorites-applied', 'true'));
     }
-    this._setupPartyModeContextMenu();
+    this._setupPartyContextMenu();
   }
 
   /** @inheritdoc */
@@ -1220,7 +1220,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const tooltipContent = lastIconIndex !== -1 ? subtitleContent.substring(lastIconIndex + 4).trim() : subtitleContent;
       tooltipAttr = tooltipContent ? `data-tooltip="${tooltipContent}"` : '';
     }
-    return `<li class="${cssClasses}" ${dataAttributes}>
+    const spellHtml = `<li class="${cssClasses}" ${dataAttributes}>
   <div class="spell-name">
     ${enrichedIcon}
     <div class="name-stacked">
@@ -1230,6 +1230,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   </div>
   ${actionHtml}
 </li>`;
+    return this._enhanceSpellWithPartyIcons(spellHtml, spell);
   }
 
   /**
@@ -1253,6 +1254,19 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       await this._showLoadoutContextMenu(event);
     });
     document.addEventListener('click', this._hideLoadoutContextMenu.bind(this));
+  }
+
+  /**
+   * Set up context menu for party button
+   */
+  _setupPartyContextMenu() {
+    const partyButton = this.element.querySelector('[data-action="openPartyManager"]');
+    if (!partyButton) return;
+    partyButton.addEventListener('contextmenu', async (event) => {
+      event.preventDefault();
+      await this._showPartyContextMenu(event);
+    });
+    document.addEventListener('click', this._hidePartyContextMenu.bind(this));
   }
 
   /**
@@ -1307,6 +1321,86 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
+   * Show context menu for party button
+   * @param {Event} event The right-click event
+   */
+  async _showPartyContextMenu(event) {
+    this._hidePartyContextMenu();
+
+    const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
+
+    try {
+      const contextMenu = document.createElement('div');
+      contextMenu.id = 'party-context-menu';
+      contextMenu.className = 'party-mode-context-menu'; // Use the correct class
+
+      contextMenu.innerHTML = `
+      <div class="context-menu-item" data-action="${isPartyMode ? 'disable' : 'enable'}-party-mode">
+        <i class="fas ${isPartyMode ? 'fa-eye-slash' : 'fa-users'}" aria-hidden="true"></i>
+        <span>${game.i18n.localize(isPartyMode ? 'SPELLBOOK.Party.DisablePartyMode' : 'SPELLBOOK.Party.EnablePartyMode')}</span>
+      </div>
+    `;
+
+      document.body.appendChild(contextMenu);
+      this._positionPartyContextMenu(event, contextMenu); // Use custom positioning
+
+      contextMenu.addEventListener('click', async (clickEvent) => {
+        const item = clickEvent.target.closest('.context-menu-item');
+        if (!item) return;
+
+        const action = item.dataset.action;
+        switch (action) {
+          case 'enable-party-mode':
+          case 'disable-party-mode':
+            await SpellBook.togglePartyMode.call(this, clickEvent, item);
+            break;
+        }
+
+        this._hidePartyContextMenu();
+      });
+
+      this._activePartyContextMenu = contextMenu;
+    } catch (error) {
+      log(1, 'Error showing party context menu:', error);
+    }
+  }
+
+  /**
+   * Position party context menu near the button
+   * @param {Event} event The click event
+   * @param {HTMLElement} menu The context menu element
+   */
+  _positionPartyContextMenu(event, menu) {
+    const button = event.currentTarget;
+    const buttonRect = button.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+
+    // Position above the button by default
+    let finalX = buttonRect.left;
+    let finalY = buttonRect.top - menuRect.height - 5;
+
+    // If menu would go off top of screen, position below button
+    if (finalY < 10) {
+      finalY = buttonRect.bottom + 5;
+    }
+
+    // If menu would go off right side of screen, align to right edge of button
+    if (finalX + menuRect.width > viewportWidth - 10) {
+      finalX = buttonRect.right - menuRect.width;
+    }
+
+    // Ensure menu doesn't go off left side
+    if (finalX < 10) {
+      finalX = 10;
+    }
+
+    menu.style.left = `${finalX}px`;
+    menu.style.top = `${finalY}px`;
+  }
+
+  /**
    * Position context menu at the left edge of the Spell Book application
    * @param {Event} event The click event
    * @param {HTMLElement} menu The context menu element
@@ -1338,6 +1432,15 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const existingMenu = document.getElementById('spell-loadout-context-menu');
     if (existingMenu) existingMenu.remove();
     this._activeContextMenu = null;
+  }
+
+  /**
+   * Hide party context menu
+   */
+  _hidePartyContextMenu() {
+    const existingMenu = document.getElementById('party-context-menu');
+    if (existingMenu) existingMenu.remove();
+    this._activePartyContextMenu = null;
   }
 
   /**
@@ -1915,124 +2018,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const currentMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
     await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, !currentMode);
 
-    // Add party mode filter if enabling
-    if (!currentMode) {
-      this._addPartyModeFilter();
-    } else {
-      this._removePartyModeFilter();
-    }
-
+    // Just re-render the app to update the UI
     await this.render();
+
     ui.notifications.info(!currentMode ? 'SPELLBOOK.Party.PartyModeEnabled' : 'SPELLBOOK.Party.PartyModeDisabled', { localize: true });
-  }
-
-  /**
-   * Add party mode filter to filter list
-   */
-  _addPartyModeFilter() {
-    if (!this.filterHelper) return;
-
-    const partyFilter = {
-      id: 'notPreparedByOthers',
-      type: 'checkbox',
-      enabled: true,
-      order: 5000,
-      label: 'SPELLBOOK.Filters.NotPreparedByOthers',
-      sortable: false,
-      partyModeOnly: true
-    };
-
-    this.filterHelper.addFilter(partyFilter);
-  }
-
-  /**
-   * Remove party mode filter
-   */
-  _removePartyModeFilter() {
-    if (!this.filterHelper) return;
-    this.filterHelper.removeFilter('notPreparedByOthers');
-  }
-
-  /**
-   * Setup party mode context menu
-   */
-  _setupPartyModeContextMenu() {
-    if (!this.element) return;
-
-    // Add context menu to the window header/title area
-    const windowHeader = this.element.querySelector('.window-header');
-    if (!windowHeader) return;
-
-    windowHeader.addEventListener('contextmenu', (event) => {
-      event.preventDefault();
-      this._showPartyModeContextMenu(event);
-    });
-  }
-
-  /**
-   * Show party mode context menu
-   * @param {Event} event The context menu event
-   */
-  async _showPartyModeContextMenu(event) {
-    const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
-
-    this._hidePartyModeContextMenu(); // Clear any existing menu
-
-    const contextMenu = document.createElement('div');
-    contextMenu.className = 'party-mode-context-menu';
-    contextMenu.id = 'party-mode-context-menu'; // Add ID for cleanup
-    contextMenu.innerHTML = `
-    <div class="context-menu-item" data-action="${isPartyMode ? 'disable' : 'enable'}-party-mode">
-      <i class="fas ${isPartyMode ? 'fa-eye-slash' : 'fa-users'}"></i>
-      <span>${game.i18n.localize(isPartyMode ? 'SPELLBOOK.Party.DisablePartyMode' : 'SPELLBOOK.Party.EnablePartyMode')}</span>
-    </div>
-    <div class="context-menu-item" data-action="open-party-manager">
-      <i class="fas fa-users-cog"></i>
-      <span>${game.i18n.localize('SPELLBOOK.Party.OpenPartyManager')}</span>
-    </div>
-  `;
-
-    document.body.appendChild(contextMenu);
-    this._positionContextMenu(event, contextMenu);
-
-    contextMenu.addEventListener('click', async (clickEvent) => {
-      const item = clickEvent.target.closest('.context-menu-item');
-      if (!item) return;
-
-      const action = item.dataset.action;
-      switch (action) {
-        case 'enable-party-mode':
-        case 'disable-party-mode':
-          await SpellBook.togglePartyMode.call(this, clickEvent, item);
-          break;
-        case 'open-party-manager':
-          await SpellBook.openPartyManager.call(this, clickEvent, item);
-          break;
-      }
-
-      this._hidePartyModeContextMenu();
-    });
-
-    // Auto-hide on outside click
-    setTimeout(() => {
-      const clickHandler = (e) => {
-        if (!contextMenu.contains(e.target)) {
-          this._hidePartyModeContextMenu();
-          document.removeEventListener('click', clickHandler);
-        }
-      };
-      document.addEventListener('click', clickHandler);
-    }, 100);
-  }
-
-  /**
-   * Hide party mode context menu
-   */
-  _hidePartyModeContextMenu() {
-    const existingMenu = document.getElementById('party-mode-context-menu');
-    if (existingMenu) {
-      existingMenu.remove();
-    }
   }
 
   /**

@@ -238,11 +238,11 @@
     overflow: visible !important;
     transition: var(--spell-book-transition-slow);
 
-    >* {
+    > * {
       transition: var(--spell-book-transition-slow);
     }
 
-    >nav.tabs.tabs-right {
+    > nav.tabs.tabs-right {
       z-index: var(--spell-book-z-index-tabs);
       position: absolute;
       top: 1.25rem;
@@ -250,7 +250,7 @@
       transform: translateZ(0);
     }
 
-    >.tab {
+    > .tab {
       inset: 0 0 0.5rem var(--spell-book-sidebar-width);
       scrollbar-gutter: stable;
       display: none;
@@ -259,11 +259,11 @@
       overflow-y: auto;
     }
 
-    &:has(.collapsed-footer:not(.hidden))>.tab {
+    &:has(.collapsed-footer:not(.hidden)) > .tab {
       inset: 0 0 6.55rem;
     }
 
-    >.tab.active {
+    > .tab.active {
       display: block;
     }
 
@@ -334,11 +334,11 @@
       left: 0;
     }
 
-    .window-content>.tab {
+    .window-content > .tab {
       left: 0;
     }
 
-    .window-content>footer {
+    .window-content > footer {
       left: 0;
     }
 
@@ -416,7 +416,7 @@
     margin: 0;
     border: none;
 
-    >.item {
+    > .item {
       transform-style: preserve-3d;
       display: flex;
       position: relative;
@@ -470,7 +470,7 @@
         font-size: var(--icon-size);
       }
 
-      >span {
+      > span {
         position: absolute;
         width: 0.063rem;
         height: 0.063rem;
@@ -663,7 +663,7 @@
     font-size: var(--spell-book-font-xs);
     text-transform: uppercase;
 
-    +.filter-toggles {
+    + .filter-toggles {
       border-top: 0.063rem solid var(--spell-book-border-light);
     }
 
@@ -801,7 +801,7 @@
     }
 
     /* Handle cases where there's a label above the input - use bottom positioning */
-    label+.advanced-search-input+.search-input-clear {
+    label + .advanced-search-input + .search-input-clear {
       top: auto;
       bottom: 0.1rem;
       transform: none;
@@ -856,7 +856,7 @@
       }
     }
 
-    label+.advanced-search-input+.search-input-clear {
+    label + .advanced-search-input + .search-input-clear {
       top: auto;
       bottom: 0.2rem;
       transform: none;
@@ -2007,7 +2007,6 @@
 /*  Spell List Manager COMPONENTS         */
 /* ========================================= */
 .gm-spell-list-manager {
-
   /* ----------------------------------------- */
   /*  Manager Application Structure            */
   /* ----------------------------------------- */
@@ -3393,7 +3392,6 @@
 /*  DIALOG COMPONENTS                        */
 /* ========================================= */
 .spell-book {
-
   /* ----------------------------------------- */
   /*  Analytics Dashboard                      */
   /* ----------------------------------------- */
@@ -3994,8 +3992,8 @@
       p {
         line-height: 1.5;
 
-        +ol,
-        +ul {
+        + ol,
+        + ul {
           margin-top: 0.5rem;
         }
       }
@@ -4012,7 +4010,7 @@
           }
         }
 
-        +p {
+        + p {
           margin-top: 1rem;
         }
       }
@@ -4036,7 +4034,7 @@
         margin-bottom: 0.25rem;
       }
 
-      >*:last-child {
+      > *:last-child {
         margin-bottom: 0;
       }
     }
@@ -4820,60 +4818,6 @@
         color: var(--spell-book-color-error);
       }
     }
-
-    /* Loadout Context Menu - Nested under Loadout System */
-    .spell-loadout-context-menu {
-      z-index: var(--spell-book-z-index-context);
-      position: absolute;
-      max-width: 18.75rem;
-      border-radius: var(--spell-book-radius-md);
-      color: var(--spell-book-text-primary);
-      font-family: var(--font-primary);
-      background: var(--spell-book-bg-primary-opaque);
-
-      .context-menu-item {
-        gap: 0.5rem;
-        display: flex;
-        align-items: center;
-        padding: 0.35rem;
-        border: none;
-        color: var(--spell-book-text-primary);
-        cursor: pointer;
-        background: none;
-        transition: var(--spell-book-transition-normal);
-
-        &:hover {
-          background: var(--spell-book-bg-item-hover);
-        }
-
-        &.separator {
-          height: 0.063rem;
-          margin: 0.25rem 0;
-          padding: 0;
-          border-bottom: 0.063rem solid var(--spell-book-border-light);
-          cursor: default;
-          background: none;
-
-          &:hover {
-            background: none;
-          }
-        }
-
-        .item-icon {
-          flex: 0 0 auto;
-          width: 1rem;
-          color: var(--spell-book-text-secondary);
-          text-align: center;
-        }
-
-        .item-text {
-          flex: 1;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-      }
-    }
   }
 
   /* ----------------------------------------- */
@@ -5442,7 +5386,6 @@
       align-items: center;
 
       color-picker {
-
         /* Hide the text input part for this specific use case */
         input[type='text'] {
           display: none;
@@ -6238,7 +6181,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Custom Module Icon Class                */
+/*  Custom Module Icon Class                 */
 /* ----------------------------------------- */
 .spell-book-module-icon {
   display: inline-block;
@@ -6261,6 +6204,62 @@
   background-size: contain;
 }
 
+/* ----------------------------------------- */
+/*  Context Menus                            */
+/* ----------------------------------------- */
+.spell-loadout-context-menu,
+.party-mode-context-menu {
+  z-index: var(--spell-book-z-index-context);
+  position: absolute;
+  max-width: 18.75rem;
+  border-radius: var(--spell-book-radius-md);
+  color: var(--spell-book-text-primary);
+  font-family: var(--font-primary);
+  background: var(--spell-book-bg-primary-opaque);
+
+  .context-menu-item {
+    gap: 0.5rem;
+    display: flex;
+    align-items: center;
+    padding: 0.35rem;
+    border: none;
+    color: var(--spell-book-text-primary);
+    cursor: pointer;
+    background: none;
+    transition: var(--spell-book-transition-normal);
+
+    &:hover {
+      background: var(--spell-book-bg-item-hover);
+    }
+
+    &.separator {
+      height: 0.063rem;
+      margin: 0.25rem 0;
+      padding: 0;
+      border-bottom: 0.063rem solid var(--spell-book-border-light);
+      cursor: default;
+      background: none;
+
+      &:hover {
+        background: none;
+      }
+    }
+
+    .item-icon {
+      flex: 0 0 auto;
+      width: 1rem;
+      color: var(--spell-book-text-secondary);
+      text-align: center;
+    }
+
+    .item-text {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}
 /* ========================================= */
 /*  RESPONSIVE DESIGN                        */
 /* ========================================= */
@@ -6306,7 +6305,7 @@
     }
 
     /* Adjust tabs for compact layout */
-    .window-content>.tabs.tabs-right>.item {
+    .window-content > .tabs.tabs-right > .item {
       width: auto;
       padding: 0 0.5rem;
     }

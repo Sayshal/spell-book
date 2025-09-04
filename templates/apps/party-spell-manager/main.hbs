@@ -30,7 +30,7 @@
               {{#if actor.hasPermission}}
                 <div class="focus-selection">
                   <label for="focus-{{actor.id}}">{{localize "SPELLBOOK.Party.SpellcastingFocus"}}</label>
-                  <select id="focus-{{actor.id}}" data-actor-id="{{actor.id}}" data-action="setSpellcastingFocus"
+                  <select id="focus-{{actor.id}}" data-actor-id="{{actor.id}}"
                     {{#unless ../canEditFocus}}disabled{{/unless}}>
                     {{#each ../availableFocuses as |focus|}}
                       <option value="{{focus.value}}" {{#if (eq focus.value ../actor.focus)}}selected{{/if}}>
@@ -39,8 +39,6 @@
                     {{/each}}
                   </select>
                 </div>
-              {{else}}
-                <p class="no-permission-text">{{localize "SPELLBOOK.Party.NoViewPermission"}}</p>
               {{/if}}
             </div>
           </div>
