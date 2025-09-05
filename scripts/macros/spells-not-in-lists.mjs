@@ -10,7 +10,7 @@ function spellsNotInListsScript() {
         spells.forEach((spell) => allSpells.add(spell.uuid));
       }
       SPELLBOOK.log(3, `Found ${allSpells.size} total spells across all packs`);
-      const spellLists = await SPELLBOOK.utils.management.findCompendiumSpellLists();
+      const spellLists = await SPELLBOOK.utils.data.findCompendiumSpellLists();
       const spellsInLists = new Set();
       for (const list of spellLists) {
         try {
@@ -103,7 +103,7 @@ function spellsNotInListsScript() {
 }
 export const spellsNotInLists = {
   flagKey: 'spellsNotInLists',
-  version: '1.0.0',
+  version: '1.1.0',
   name: 'Spell Book - Spells Not In Lists',
   img: 'icons/tools/scribal/magnifying-glass.webp',
   type: 'script',

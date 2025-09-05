@@ -18,11 +18,11 @@ export function createAPI() {
       apps: { PlayerFilterConfiguration, SpellBook, SpellAnalyticsDashboard, SpellListManager },
       dialogs: { CompendiumSelectionDialog, SpellComparisonDialog, SpellDetailsCustomization, SpellLoadoutDialog, SpellNotesDialog, SpellbookSettingsDialog },
       utils: {
-        data: { DataHelpers },
+        data: DataHelpers,
         managers: { CantripManager, MacroManager, RuleSetManager, SpellLoadoutManager, SpellManager, SpellUsageTracker, UserSpellDataManager, WizardSpellbookManager },
-        state: { SpellbookState },
-        ui: { UIHelpers },
-        validation: { ValidationHelpers }
+        state: SpellbookState,
+        ui: UIHelpers,
+        validation: ValidationHelpers
       },
       migrations: {
         forceMigration

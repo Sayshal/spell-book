@@ -252,7 +252,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     }
 
     context.filteredSpells = filteredData;
-    context.filterValidationHelplers = this._prepareFilterValidationHelplers();
+    context.filterFormElements = this._prepareFilterValidationHelplers();
   }
 
   /**
