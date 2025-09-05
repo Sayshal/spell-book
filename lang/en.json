@@ -199,6 +199,7 @@
   "SPELLBOOK.Party.DefaultGroupName": "Party",
   "SPELLBOOK.Party.DisablePartyMode": "Disable Party Mode",
   "SPELLBOOK.Party.EnablePartyMode": "Enable Party Mode",
+  "SPELLBOOK.Party.FilterToMember": "Click to filter spells for this member",
   "SPELLBOOK.Party.Focus.Control": "Control",
   "SPELLBOOK.Party.Focus.Damage": "Damage/Blasting",
   "SPELLBOOK.Party.Focus.Defense": "Tank/Defense",

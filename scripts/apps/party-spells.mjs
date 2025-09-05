@@ -13,7 +13,8 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
     actions: {
       showSynergyAnalysis: PartySpells.showSynergyAnalysis,
       refreshData: PartySpells.refreshData,
-      toggleSpellLevel: PartySpells.toggleSpellLevel
+      toggleSpellLevel: PartySpells.toggleSpellLevel,
+      filterMemberSpells: PartySpells.filterMemberSpells
     },
     classes: ['spell-book', 'party-spell-manager'],
     window: {
@@ -42,6 +43,7 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
     this.viewingActor = viewingActor;
     this.groupActor = groupActor;
     this._comparisonData = null;
+    this._filteredActorId = null;
   }
 
   /**
@@ -100,6 +102,25 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
     });
     this._setupPartyMemberHover();
     this._restoreCollapsedLevels();
+    this._globalClickHandler = (event) => {
+      if (!this._filteredActorId) return;
+
+      if (this.element && this.element.contains(event.target)) {
+        const clickedMemberCard = event.target.closest('.member-card');
+        if (!clickedMemberCard) {
+          this._clearSpellFilter();
+        }
+      }
+    };
+
+    document.addEventListener('click', this._globalClickHandler);
+  }
+
+  /** @inheritdoc */
+  async _onClose(options = {}) {
+    if (this._globalClickHandler) document.removeEventListener('click', this._globalClickHandler);
+
+    return super._onClose(options);
   }
 
   /**
@@ -200,6 +221,27 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
+   * Handle member card click for spell filtering
+   * @param {Event} event The click event
+   * @param {HTMLElement} target The clicked element
+   */
+  static async filterMemberSpells(event, target) {
+    event.stopPropagation();
+
+    const actorId = target.dataset.actorId;
+    if (!actorId) return;
+
+    // Case 1: Clicking the same card again - unfilter
+    if (this._filteredActorId === actorId) {
+      this._clearSpellFilter();
+      return;
+    }
+
+    // Case 2: Clicking a different card - change filter
+    this._applySpellFilter(actorId);
+  }
+
+  /**
    * Set up hover functionality to highlight party member spells
    * @private
    */
@@ -258,6 +300,114 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
         if (collapseIcon) {
           collapseIcon.className = 'fas fa-caret-right collapse-indicator';
         }
+      }
+    });
+  }
+
+  /**
+   * Apply spell filter to show only spells for a specific actor
+   * @param {string} actorId The actor ID to filter by
+   * @private
+   */
+  _applySpellFilter(actorId) {
+    this._filteredActorId = actorId;
+
+    const spellItems = this.element.querySelectorAll('.spell-comparison-item');
+
+    spellItems.forEach((spellItem) => {
+      const actorSpellStatus = spellItem.querySelector(`.actor-spell-status[data-actor-id="${actorId}"]`);
+
+      if (actorSpellStatus) {
+        spellItem.style.display = '';
+        spellItem.classList.add('member-filtered');
+        actorSpellStatus.classList.add('filtered-actor');
+
+        const otherStatuses = spellItem.querySelectorAll(`.actor-spell-status:not([data-actor-id="${actorId}"])`);
+        otherStatuses.forEach((status) => status.classList.add('dimmed'));
+      } else {
+        spellItem.style.display = 'none';
+      }
+    });
+
+    this._updateLevelHeadersForFilter();
+    this._updateMemberCardStates(actorId);
+    this.element.classList.add('member-filter-active');
+  }
+
+  /**
+   * Clear the spell filter and show all spells
+   * @private
+   */
+  _clearSpellFilter() {
+    this._filteredActorId = null;
+
+    const spellItems = this.element.querySelectorAll('.spell-comparison-item');
+
+    spellItems.forEach((spellItem) => {
+      spellItem.style.display = '';
+      spellItem.classList.remove('member-filtered');
+
+      const actorStatuses = spellItem.querySelectorAll('.actor-spell-status');
+      actorStatuses.forEach((status) => {
+        status.classList.remove('filtered-actor', 'dimmed');
+      });
+    });
+
+    this._updateLevelHeadersForFilter();
+    this._updateMemberCardStates(null);
+    this.element.classList.remove('member-filter-active');
+  }
+
+  /**
+   * Update member card visual states based on current filter
+   * @param {string|null} filteredActorId The currently filtered actor ID
+   * @private
+   */
+  _updateMemberCardStates(filteredActorId) {
+    const memberCards = this.element.querySelectorAll('.member-card');
+
+    memberCards.forEach((card) => {
+      const actorId = card.dataset.actorId;
+
+      if (filteredActorId === actorId) {
+        card.classList.add('filter-active');
+        card.classList.remove('filter-inactive');
+      } else if (filteredActorId) {
+        card.classList.remove('filter-active');
+        card.classList.add('filter-inactive');
+      } else {
+        card.classList.remove('filter-active', 'filter-inactive');
+      }
+    });
+  }
+
+  /**
+   * Update level headers to reflect filtered spell counts
+   * @private
+   */
+  _updateLevelHeadersForFilter() {
+    const levelGroups = this.element.querySelectorAll('.spell-level-group');
+
+    levelGroups.forEach((levelGroup) => {
+      const spellItems = levelGroup.querySelectorAll('.spell-comparison-item');
+      const visibleSpells = Array.from(spellItems).filter((item) => item.style.display !== 'none');
+
+      const spellCountElement = levelGroup.querySelector('.spell-count');
+      if (spellCountElement) {
+        const totalCount = spellItems.length;
+        const visibleCount = visibleSpells.length;
+
+        if (this._filteredActorId) {
+          spellCountElement.textContent = `(${visibleCount}/${totalCount} ${game.i18n.localize('SPELLBOOK.Party.Spells')})`;
+        } else {
+          spellCountElement.textContent = `(${totalCount} ${game.i18n.localize('SPELLBOOK.Party.Spells')})`;
+        }
+      }
+
+      if (visibleSpells.length === 0) {
+        levelGroup.style.display = 'none';
+      } else {
+        levelGroup.style.display = '';
       }
     });
   }

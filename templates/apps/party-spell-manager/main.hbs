@@ -19,7 +19,8 @@
   <section class="party-members">
     <div class="members-grid">
       {{#each comparison.actors as |actor|}}
-        <div class="member-card {{#unless actor.hasPermission}}no-permission{{/unless}}" data-actor-id="{{actor.id}}">
+        <div class="member-card {{#unless actor.hasPermission}}no-permission{{/unless}}" data-actor-id="{{actor.id}}"
+          data-action="filterMemberSpells" data-tooltip="{{localize 'SPELLBOOK.Party.FilterToMember'}}">
           <div class="member-header">
             <div class="member-info-top">
               <img src="{{actor.token}}" class="member-avatar" alt="{{actor.name}}">

@@ -5439,10 +5439,12 @@
         border-radius: var(--spell-book-radius-md);
         background: var(--spell-book-bg-primary);
         transition: var(--spell-book-transition-fast);
+        cursor: pointer;
 
         &:hover {
           border-color: var(--spell-book-border-medium);
           box-shadow: 0 0.125rem 0.5rem rgba(0 0 0 / 10%);
+          transform: translateY(-0.063rem);
         }
 
         &.focused {
@@ -5450,9 +5452,21 @@
           box-shadow: 0 0 0.25rem rgb(var(--spell-book-color-primary) / 40%);
         }
 
+        &.filter-active {
+          border-color: var(--spell-book-color-primary);
+          box-shadow: 0 0 0.5rem rgb(var(--spell-book-color-primary) / 30%);
+          background: rgb(var(--spell-book-color-primary) / 5%);
+        }
+
+        &.filter-inactive {
+          opacity: 0.6;
+          filter: grayscale(50%);
+        }
+
         &.no-permission {
           opacity: 0.6;
           filter: grayscale(50%);
+          cursor: not-allowed;
         }
 
         .member-header {
@@ -5700,6 +5714,16 @@
               color: var(--spell-book-text-secondary);
             }
 
+            &.filtered-actor {
+              background: var(--spell-book-bg-prepared-full);
+              color: var(--spell-book-text-contrast);
+              font-weight: 600;
+            }
+
+            &.dimmed {
+              opacity: 0.4;
+            }
+
             &:last-child {
               border-top-right-radius: var(--spell-book-radius-sm);
               border-bottom-right-radius: var(--spell-book-radius-sm);
@@ -5708,547 +5732,494 @@
         }
       }
     }
+  }
+  /* ----------------------------------------- */
+  /*  Party Mode Visualization                 */
+  /* ----------------------------------------- */
+  .party-icons {
+    display: inline-flex;
+    gap: 0.125rem;
+    margin-left: var(--spell-book-spacing-sm);
+  }
 
-    /* ----------------------------------------- */
-    /*  Party Mode Visualization                 */
-    /* ----------------------------------------- */
-    .party-icons {
-      display: inline-flex;
-      gap: 0.125rem;
-      margin-left: var(--spell-book-spacing-sm);
+  .party-member-icon {
+    width: 1rem;
+    height: 1rem;
+    border: 0.063rem solid var(--spell-book-border-dark);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: var(--spell-book-transition-fast);
+
+    &:hover {
+      border-color: var(--spell-book-border-highlight);
     }
+  }
 
-    .party-member-icon {
-      width: 1rem;
-      height: 1rem;
-      border: 0.063rem solid var(--spell-book-border-dark);
-      border-radius: 50%;
-      cursor: pointer;
-      transition: var(--spell-book-transition-fast);
+  .party-mode-context-menu {
+    position: absolute;
+    z-index: var(--spell-book-z-index-tooltip);
+    min-width: 11.25rem;
+    background: var(--spell-book-bg-primary);
+    border: 0.063rem solid var(--spell-book-border-dark);
+    border-radius: var(--spell-book-radius-md);
+    box-shadow: var(--spell-book-shadow-heavy);
 
-      &:hover {
-        border-color: var(--spell-book-border-highlight);
-      }
-    }
-
-    .party-mode-context-menu {
-      position: absolute;
-      z-index: var(--spell-book-z-index-tooltip);
-      min-width: 11.25rem;
-      background: var(--spell-book-bg-primary);
-      border: 0.063rem solid var(--spell-book-border-dark);
-      border-radius: var(--spell-book-radius-md);
-      box-shadow: var(--spell-book-shadow-heavy);
-
-      .context-menu-item {
-        display: flex;
-        align-items: center;
-        gap: var(--spell-book-spacing-sm);
-        padding: var(--spell-book-spacing-sm) var(--spell-book-spacing-md);
-        color: var(--spell-book-text-primary);
-        cursor: pointer;
-        transition: var(--spell-book-transition-fast);
-
-        &:hover {
-          background: var(--spell-book-bg-secondary);
-        }
-
-        i {
-          width: 1rem;
-          text-align: center;
-        }
-      }
-    }
-
-    /* ----------------------------------------- */
-    /*  Group Actor Button Integration           */
-    /* ----------------------------------------- */
-    .party-spell-button {
+    .context-menu-item {
       display: flex;
       align-items: center;
-      gap: var(--spell-book-spacing-xs);
-      padding: var(--spell-book-spacing-xs) var(--spell-book-spacing-sm);
-      border: 0.063rem solid var(--spell-book-border-light);
-      border-radius: var(--spell-book-radius-sm);
-      background: var(--spell-book-bg-primary);
+      gap: var(--spell-book-spacing-sm);
+      padding: var(--spell-book-spacing-sm) var(--spell-book-spacing-md);
+      color: var(--spell-book-text-primary);
       cursor: pointer;
       transition: var(--spell-book-transition-fast);
 
       &:hover {
         background: var(--spell-book-bg-secondary);
-        border-color: var(--spell-book-border-dark);
       }
 
-      .spell-book-icon {
+      i {
         width: 1rem;
-        height: 1rem;
-      }
-
-      &.gold-button {
-        position: relative;
-        width: 2.5rem;
-        height: 2.5rem;
-        justify-content: center;
-        border: none;
-        background: linear-gradient(135deg, rgb(212 175 55) 0%, rgb(255 215 0) 50%, rgb(212 175 55) 100%);
-        color: rgb(26 26 26);
-
-        &:hover {
-          background: linear-gradient(135deg, rgb(184 148 31) 0%, rgb(230 194 0) 50%, rgb(184 148 31) 100%);
-          transform: translateY(-0.063rem);
-          box-shadow: 0 0.125rem 0.25rem rgb(0 0 0 / 20%);
-        }
-
-        &:active {
-          transform: translateY(0);
-        }
-
-        .spell-book-icon {
-          width: 1.125rem;
-          height: 1.125rem;
-          filter: brightness(0) saturate(100%);
-        }
-      }
-    }
-
-    /* ========================================= */
-    /*  Spell Book Troubleshooter                */
-    /* ========================================= */
-    .spell-book-troubleshooter .fa-bug {
-      color: var(--user-color);
-    }
-
-    .spell-book-troubleshooter-container {
-      padding: 0.5rem;
-
-      .notes {
-        margin-block-end: 1rem;
-        font-style: italic;
-      }
-
-      .actor-export-option {
-        margin-block-end: 1rem;
-        padding: 0.75rem;
-        background: rgb(0 0 0 / 10%);
-        border-radius: var(--border-radius-md);
-        border: 0.063rem solid var(--color-border-light-tertiary);
-
-        label {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-weight: bold;
-          margin-block-end: 0.5rem;
-        }
-
-        .hint {
-          font-size: var(--font-size-12);
-          color: var(--color-text-light-primary);
-          margin: 0;
-        }
-      }
-
-      textarea {
-        color: var(--spell-book-text-primary);
-        margin-block-end: 0.625rem;
-        width: 100%;
-        overflow-x: hidden;
-        font-size: var(--font-size-12);
-        font-family: monospace;
-        white-space: pre-wrap;
-        resize: none;
-      }
-    }
-
-    .troubleshooter-buttons {
-      gap: 0.625rem;
-      margin-block-start: 1rem;
-      display: flex;
-      justify-content: center;
-
-      button {
-        gap: 0.313rem;
-        display: flex;
-        align-items: center;
-
-        i {
-          margin-inline-end: 0.3rem;
-        }
-      }
-    }
-
-    .import-settings-warning {
-      padding: 1rem;
-      background: rgb(220 53 69 / 10%);
-      border: 0.063rem solid rgb(220 53 69 / 30%);
-      border-radius: var(--border-radius-md);
-      margin-block-end: 1rem;
-
-      p {
-        margin-block-end: 0.5rem;
-
-        &:last-child {
-          margin-block-end: 0;
-        }
-      }
-    }
-
-    .application.spell-book-troubleshooter {
-      min-width: 37.5rem;
-
-      .window-content {
-        padding: 0.5rem;
-      }
-    }
-  }
-
-  /* ========================================= */
-  /*  CHAT MESSAGES                            */
-  /* ========================================= */
-  .chat-message {
-    .spell-book-chat-message {
-      color: var(--spell-book-text-primary);
-      line-height: 1.4;
-      font-family: inherit;
-    }
-
-    .spell-book-migration-report {
-      h4 {
-        margin: 0 0 0.75rem;
-        color: var(--spell-book-color-info);
-        font-weight: bold;
-        font-size: 1.125rem;
-      }
-
-      h3 {
-        margin: 1rem 0 0.5rem;
-        color: var(--spell-book-text-primary);
-        font-weight: 600;
-        font-size: 1rem;
-      }
-
-      p {
-        margin: 0.5rem 0;
-      }
-
-      ul {
-        margin: 0.5rem 0;
-        padding-left: 1.5rem;
-      }
-
-      strong {
-        color: var(--spell-book-text-accent);
-      }
-    }
-
-    .spell-book-update-report {
-      h4 {
-        margin: 0;
-        color: var(--spell-book-color-error);
-        font-weight: bold;
-        font-size: 1rem;
-      }
-
-      h5 {
-        color: var(--spell-book-text-primary);
-        font-weight: 600;
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05rem;
-      }
-
-      p {
-        margin: 0.25rem 0;
-      }
-
-      ul {
-        margin: 0.25rem 0 0.5rem;
-        padding-left: 1.5rem;
-      }
-
-      hr {
-        opacity: 0.5;
-        margin: 0.75rem 0 0.5rem;
-        border: none;
-        border-top: 0.0625rem solid var(--spell-book-border-light);
-      }
-
-      strong {
-        color: var(--spell-book-text-accent);
-      }
-    }
-  }
-
-  /* ========================================= */
-  /*  MISC COMPONENTS                          */
-  /* ========================================= */
-  /* ----------------------------------------- */
-  /*  Spell Description Notes Injection        */
-  /* ----------------------------------------- */
-  .spell-book-personal-notes {
-    margin: 0;
-    padding: 0.25rem;
-    border-left: 0.188rem solid var(--user-color);
-    border-radius: 0 var(--spell-book-radius-md) var(--spell-book-radius-md) 0;
-    font-style: italic;
-
-    strong {
-      display: block;
-      color: var(--user-color);
-      font-style: normal;
-    }
-  }
-
-  /* ----------------------------------------- */
-  /*  Spell Book Icon Sizing                   */
-  /* ----------------------------------------- */
-  .spell-book-icon {
-    object-fit: contain;
-    display: block;
-    width: 1.25rem;
-    height: 1.25rem;
-  }
-
-  /* ----------------------------------------- */
-  /*  Custom Module Icon Class                 */
-  /* ----------------------------------------- */
-  .spell-book-module-icon {
-    display: inline-block;
-    position: relative;
-    width: 1.25rem;
-    height: 1.25rem;
-    padding-right: 0.15rem;
-  }
-
-  .spell-book-module-icon::before {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    content: '';
-    background-image: url('../assets/icon_colored.webp');
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
-  }
-
-  /* ----------------------------------------- */
-  /*  Context Menus                            */
-  /* ----------------------------------------- */
-  .spell-loadout-context-menu,
-  .party-mode-context-menu {
-    z-index: var(--spell-book-z-index-context);
-    position: absolute;
-    max-width: 18.75rem;
-    border-radius: var(--spell-book-radius-md);
-    color: var(--spell-book-text-primary);
-    font-family: var(--font-primary);
-    background: var(--spell-book-bg-primary-opaque);
-
-    .context-menu-item {
-      gap: 0.5rem;
-      display: flex;
-      align-items: center;
-      padding: 0.35rem;
-      border: none;
-      color: var(--spell-book-text-primary);
-      cursor: pointer;
-      background: none;
-      transition: var(--spell-book-transition-normal);
-
-      &:hover {
-        background: var(--spell-book-bg-item-hover);
-      }
-
-      &.separator {
-        height: 0.063rem;
-        margin: 0.25rem 0;
-        padding: 0;
-        border-bottom: 0.063rem solid var(--spell-book-border-light);
-        cursor: default;
-        background: none;
-
-        &:hover {
-          background: none;
-        }
-      }
-
-      .item-icon {
-        flex: 0 0 auto;
-        width: 1rem;
-        color: var(--spell-book-text-secondary);
         text-align: center;
       }
-
-      .item-text {
-        flex: 1;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
     }
   }
 
   /* ========================================= */
-  /*  RESPONSIVE DESIGN                        */
+  /*  Spell Book Troubleshooter                */
   /* ========================================= */
-  /* ----------------------------------------- */
-  /*  Medium Screens (75rem)                  */
-  /* ----------------------------------------- */
-  @media (width <=75rem) {
-    :root {
-      --spell-book-sidebar-width: 11.25rem;
-    }
-
-    .spell-book {
-      .spell-item {
-        padding: 0.2rem 0.3rem;
-      }
-
-      .spell-icon {
-        width: 1.75rem;
-        height: 1.75rem;
-      }
-    }
+  .spell-book-troubleshooter .fa-bug {
+    color: var(--user-color);
   }
 
-  /* ----------------------------------------- */
-  /*  Small Screens (64rem)                   */
-  /* ----------------------------------------- */
-  @media (width <=64rem) {
-    :root {
-      --spell-book-sidebar-width: 10rem;
+  .spell-book-troubleshooter-container {
+    padding: 0.5rem;
+
+    .notes {
+      margin-block-end: 1rem;
+      font-style: italic;
     }
 
-    .spell-book {
-      .spell-details {
-        max-width: 50%;
-      }
+    .actor-export-option {
+      margin-block-end: 1rem;
+      padding: 0.75rem;
+      background: rgb(0 0 0 / 10%);
+      border-radius: var(--border-radius-md);
+      border: 0.063rem solid var(--color-border-light-tertiary);
 
-      .name-stacked .title {
-        font-size: var(--spell-book-font-lg);
-      }
-
-      .name-stacked .subtitle {
-        font-size: var(--spell-book-font-xs);
-      }
-
-      .window-content > .tabs.tabs-right > .item {
-        width: auto;
-        padding: 0 0.5rem;
-      }
-    }
-
-    .spellbook-settings-dialog {
-      .class-rules-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .class-header {
+      label {
+        display: flex;
+        align-items: center;
         gap: 0.5rem;
-        flex-direction: column;
+        font-weight: bold;
+        margin-block-end: 0.5rem;
+      }
+
+      .hint {
+        font-size: var(--font-size-12);
+        color: var(--color-text-light-primary);
+        margin: 0;
+      }
+    }
+
+    textarea {
+      color: var(--spell-book-text-primary);
+      margin-block-end: 0.625rem;
+      width: 100%;
+      overflow-x: hidden;
+      font-size: var(--font-size-12);
+      font-family: monospace;
+      white-space: pre-wrap;
+      resize: none;
+    }
+  }
+
+  .troubleshooter-buttons {
+    gap: 0.625rem;
+    margin-block-start: 1rem;
+    display: flex;
+    justify-content: center;
+
+    button {
+      gap: 0.313rem;
+      display: flex;
+      align-items: center;
+
+      i {
+        margin-inline-end: 0.3rem;
+      }
+    }
+  }
+
+  .import-settings-warning {
+    padding: 1rem;
+    background: rgb(220 53 69 / 10%);
+    border: 0.063rem solid rgb(220 53 69 / 30%);
+    border-radius: var(--border-radius-md);
+    margin-block-end: 1rem;
+
+    p {
+      margin-block-end: 0.5rem;
+
+      &:last-child {
+        margin-block-end: 0;
+      }
+    }
+  }
+
+  .application.spell-book-troubleshooter {
+    min-width: 37.5rem;
+
+    .window-content {
+      padding: 0.5rem;
+    }
+  }
+}
+/* ========================================= */
+/*  CHAT MESSAGES                            */
+/* ========================================= */
+.chat-message {
+  .spell-book-chat-message {
+    color: var(--spell-book-text-primary);
+    line-height: 1.4;
+    font-family: inherit;
+  }
+
+  .spell-book-migration-report {
+    h4 {
+      margin: 0 0 0.75rem;
+      color: var(--spell-book-color-info);
+      font-weight: bold;
+      font-size: 1.125rem;
+    }
+
+    h3 {
+      margin: 1rem 0 0.5rem;
+      color: var(--spell-book-text-primary);
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    p {
+      margin: 0.5rem 0;
+    }
+
+    ul {
+      margin: 0.5rem 0;
+      padding-left: 1.5rem;
+    }
+
+    strong {
+      color: var(--spell-book-text-accent);
+    }
+  }
+
+  .spell-book-update-report {
+    h4 {
+      margin: 0;
+      color: var(--spell-book-color-error);
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    h5 {
+      color: var(--spell-book-text-primary);
+      font-weight: 600;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05rem;
+    }
+
+    p {
+      margin: 0.25rem 0;
+    }
+
+    ul {
+      margin: 0.25rem 0 0.5rem;
+      padding-left: 1.5rem;
+    }
+
+    hr {
+      opacity: 0.5;
+      margin: 0.75rem 0 0.5rem;
+      border: none;
+      border-top: 0.0625rem solid var(--spell-book-border-light);
+    }
+
+    strong {
+      color: var(--spell-book-text-accent);
+    }
+  }
+}
+
+/* ========================================= */
+/*  MISC COMPONENTS                          */
+/* ========================================= */
+/* ----------------------------------------- */
+/*  Spell Description Notes Injection        */
+/* ----------------------------------------- */
+.spell-book-personal-notes {
+  margin: 0;
+  padding: 0.25rem;
+  border-left: 0.188rem solid var(--user-color);
+  border-radius: 0 var(--spell-book-radius-md) var(--spell-book-radius-md) 0;
+  font-style: italic;
+
+  strong {
+    display: block;
+    color: var(--user-color);
+    font-style: normal;
+  }
+}
+
+/* ----------------------------------------- */
+/*  Spell Book Icon Sizing                   */
+/* ----------------------------------------- */
+.spell-book-icon {
+  object-fit: contain;
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* ----------------------------------------- */
+/*  Custom Module Icon Class                 */
+/* ----------------------------------------- */
+.spell-book-module-icon {
+  display: inline-block;
+  position: relative;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding-right: 0.15rem;
+}
+
+.spell-book-module-icon::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  content: '';
+  background-image: url('../assets/icon_colored.webp');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+/* ----------------------------------------- */
+/*  Context Menus                            */
+/* ----------------------------------------- */
+.spell-loadout-context-menu,
+.party-mode-context-menu {
+  z-index: var(--spell-book-z-index-context);
+  position: absolute;
+  max-width: 18.75rem;
+  border-radius: var(--spell-book-radius-md);
+  color: var(--spell-book-text-primary);
+  font-family: var(--font-primary);
+  background: var(--spell-book-bg-primary-opaque);
+
+  .context-menu-item {
+    gap: 0.5rem;
+    display: flex;
+    align-items: center;
+    padding: 0.35rem;
+    border: none;
+    color: var(--spell-book-text-primary);
+    cursor: pointer;
+    background: none;
+    transition: var(--spell-book-transition-normal);
+
+    &:hover {
+      background: var(--spell-book-bg-item-hover);
+    }
+
+    &.separator {
+      height: 0.063rem;
+      margin: 0.25rem 0;
+      padding: 0;
+      border-bottom: 0.063rem solid var(--spell-book-border-light);
+      cursor: default;
+      background: none;
+
+      &:hover {
+        background: none;
+      }
+    }
+
+    .item-icon {
+      flex: 0 0 auto;
+      width: 1rem;
+      color: var(--spell-book-text-secondary);
+      text-align: center;
+    }
+
+    .item-text {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}
+
+/* ========================================= */
+/*  RESPONSIVE DESIGN                        */
+/* ========================================= */
+/* ----------------------------------------- */
+/*  Medium Screens (75rem)                  */
+/* ----------------------------------------- */
+@media (width <=75rem) {
+  :root {
+    --spell-book-sidebar-width: 11.25rem;
+  }
+
+  .spell-book {
+    .spell-item {
+      padding: 0.2rem 0.3rem;
+    }
+
+    .spell-icon {
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+  }
+}
+
+/* ----------------------------------------- */
+/*  Small Screens (64rem)                   */
+/* ----------------------------------------- */
+@media (width <=64rem) {
+  :root {
+    --spell-book-sidebar-width: 10rem;
+  }
+
+  .spell-book {
+    .spell-details {
+      max-width: 50%;
+    }
+
+    .name-stacked .title {
+      font-size: var(--spell-book-font-lg);
+    }
+
+    .name-stacked .subtitle {
+      font-size: var(--spell-book-font-xs);
+    }
+
+    .window-content > .tabs.tabs-right > .item {
+      width: auto;
+      padding: 0 0.5rem;
+    }
+  }
+
+  .spellbook-settings-dialog {
+    .class-rules-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .class-header {
+      gap: 0.5rem;
+      flex-direction: column;
+      align-items: flex-start;
+
+      .class-stats {
         align-items: flex-start;
-
-        .class-stats {
-          align-items: flex-start;
-        }
       }
     }
   }
+}
 
-  /* ----------------------------------------- */
-  /*  GM Manager Responsive (87.5rem)           */
-  /* ----------------------------------------- */
-  @media (width <=87.5rem) {
-    :root {
-      --spell-book-manager-sidebar-width: 13.75rem;
-      --spell-book-manager-spells-sidebar-width: 21.875rem;
-    }
+/* ----------------------------------------- */
+/*  GM Manager Responsive (87.5rem)           */
+/* ----------------------------------------- */
+@media (width <=87.5rem) {
+  :root {
+    --spell-book-manager-sidebar-width: 13.75rem;
+    --spell-book-manager-spells-sidebar-width: 21.875rem;
+  }
+}
+
+/* ----------------------------------------- */
+/*  GM Manager Responsive (75rem)           */
+/* ----------------------------------------- */
+@media (width <=75rem) {
+  :root {
+    --spell-book-manager-sidebar-width: 12.5rem;
+    --spell-book-manager-spells-sidebar-width: 18.75rem;
   }
 
-  /* ----------------------------------------- */
-  /*  GM Manager Responsive (75rem)           */
-  /* ----------------------------------------- */
-  @media (width <=75rem) {
-    :root {
-      --spell-book-manager-sidebar-width: 12.5rem;
-      --spell-book-manager-spells-sidebar-width: 18.75rem;
+  .gm-spell-list-manager {
+    .filter-grid {
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(5, auto);
     }
 
-    .gm-spell-list-manager {
-      .filter-grid {
-        grid-template-columns: repeat(2, 1fr);
-        grid-template-rows: repeat(5, auto);
-      }
-
-      .name-stacked .title {
-        font-size: var(--spell-book-manager-font-md);
-      }
+    .name-stacked .title {
+      font-size: var(--spell-book-manager-font-md);
     }
   }
+}
 
-  /* ----------------------------------------- */
-  /*  GM Manager Responsive (64rem)           */
-  /* ----------------------------------------- */
-  @media (width <=64rem) {
-    :root {
-      --spell-book-manager-sidebar-width: 11.25rem;
-      --spell-book-manager-spells-sidebar-width: 15.625rem;
+/* ----------------------------------------- */
+/*  GM Manager Responsive (64rem)           */
+/* ----------------------------------------- */
+@media (width <=64rem) {
+  :root {
+    --spell-book-manager-sidebar-width: 11.25rem;
+    --spell-book-manager-spells-sidebar-width: 15.625rem;
+  }
+
+  .gm-spell-list-manager {
+    .filter-grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto;
     }
 
-    .gm-spell-list-manager {
-      .filter-grid {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto;
-      }
+    .spell-icon {
+      width: 1.75rem;
+      height: 1.75rem;
+    }
 
-      .spell-icon {
-        width: 1.75rem;
-        height: 1.75rem;
-      }
+    .name-stacked .subtitle {
+      display: none;
+    }
 
-      .name-stacked .subtitle {
+    .spell-list-item .list-meta {
+      flex-direction: column;
+      align-items: flex-start;
+
+      .meta-separator {
         display: none;
       }
+    }
 
-      .spell-list-item .list-meta {
-        flex-direction: column;
-        align-items: flex-start;
-
-        .meta-separator {
-          display: none;
-        }
-      }
-
-      .selected-list-header .header-buttons {
-        gap: 0.25rem;
-        flex-direction: column;
-      }
+    .selected-list-header .header-buttons {
+      gap: 0.25rem;
+      flex-direction: column;
     }
   }
+}
 
-  /* ----------------------------------------- */
-  /*  Analytics Dashboard Responsive           */
-  /* ----------------------------------------- */
-  @media (width <=48rem) {
-    .analytics-dashboard {
-      .dashboard-grid {
-        grid-template-columns: 1fr;
-      }
+/* ----------------------------------------- */
+/*  Analytics Dashboard Responsive           */
+/* ----------------------------------------- */
+@media (width <=48rem) {
+  .analytics-dashboard {
+    .dashboard-grid {
+      grid-template-columns: 1fr;
+    }
 
-      .stats-summary {
-        grid-template-columns: repeat(2, 1fr);
-      }
+    .stats-summary {
+      grid-template-columns: repeat(2, 1fr);
+    }
 
-      .view-controls {
-        gap: 0.25rem;
-        flex-direction: column;
-      }
+    .view-controls {
+      gap: 0.25rem;
+      flex-direction: column;
+    }
 
-      .data-management {
-        flex-direction: column;
-      }
+    .data-management {
+      flex-direction: column;
     }
   }
 }
