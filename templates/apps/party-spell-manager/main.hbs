@@ -23,51 +23,35 @@
           <div class="member-header">
             <div class="member-info-top">
               <img src="{{actor.token}}" class="member-avatar" alt="{{actor.name}}">
-              <div class="member-name-focus">
+              <div class="member-name-class">
                 <span class="member-name">{{actor.name}}</span>
                 {{#if actor.hasPermission}}
                   <div class="member-class-info">
                     {{#each actor.spellcasters as |class|}}
-                      <span class="class-name">{{class.className}}</span>{{#unless @last}}, {{/unless}}
+                      <span class="class-name">{{class.enhancedClassName}}</span>{{#unless @last}}, {{/unless}}
                     {{/each}}
                   </div>
+                {{else}}
+                  <span class="no-permission-text">{{localize "SPELLBOOK.Party.NoViewPermission"}}</span>
                 {{/if}}
               </div>
-
               {{#if actor.hasPermission}}
-                {{#if ../canEditFocus}}
-                  <div class="focus-input-wrapper">
-                    <select class="focus-input" data-actor-id="{{actor.id}}">
-                      {{#each ../availableFocuses as |focus|}}
-                        <option value="{{focus.value}}" {{#if (eq focus.value ../actor.focus)}}selected{{/if}}>
-                          {{focus.label}}
-                        </option>
-                      {{/each}}
-                    </select>
-                  </div>
-                {{else}}
-                  <span class="focus-display">{{localize actor.focus}}</span>
-                {{/if}}
-              {{else}}
-                <span class="no-permission-text">{{localize "SPELLBOOK.Party.NoViewPermission"}}</span>
+                <div class="spell-counts-compact">
+                  <span class="count-item">
+                    <span class="count-number">{{actor.totalSpellsKnown}}</span>
+                    <span class="count-label">{{localize "SPELLBOOK.Party.Known"}}</span>
+                  </span>
+                  <span class="count-item">
+                    <span class="count-number">{{actor.totalSpellsPrepared}}</span>
+                    <span class="count-label">{{localize "SPELLBOOK.Party.Prepared"}}</span>
+                  </span>
+                </div>
               {{/if}}
             </div>
+            <!-- TODO: Create a settings menu within the UI to set an icon and title and description for each Spellcasting Focus Options instead of a global setting. Future logic will allow clicking the icon to open the change-focus ui and hovering will show the name and description to view. -->
+            <i class="fas fa-cog member-focus-icon" data-actor-id="{{actor.id}}"
+              data-tooltip="{{localize 'SPELLBOOK.Party.FocusSettings'}}"></i>
           </div>
-
-          {{#if actor.hasPermission}}
-            <div class="member-stats">
-              <div class="spell-counts-summary">
-                <div class="count-item">
-                  <div class="count-number">{{actor.totalSpellsKnown}}</div>
-                  <div class="count-label">{{localize "SPELLBOOK.Party.Known"}}</div>
-                </div>
-                <div class="count-item">
-                  <div class="count-number">{{actor.totalSpellsPrepared}}</div>
-                  <div class="count-label">{{localize "SPELLBOOK.Party.Prepared"}}</div>
-                </div>
-              </div>
-            </div>
-          {{/if}}
         </div>
       {{/each}}
     </div>
@@ -87,20 +71,12 @@
           <div class="spells-grid" id="spell-list-{{levelGroup.level}}">
             {{#each levelGroup.spells as |spell|}}
               <div class="spell-comparison-item" data-spell-uuid="{{spell.uuid}}">
-                <div class="spell-header">
-                  <div class="spell-icon-container">
-                    {{{spell.enrichedIcon}}}
-                  </div>
-                  <div class="spell-title-info">
-                    <span class="spell-name">{{spell.name}}</span>
-                    <span class="spell-components">{{spell.components}}</span>
-                  </div>
-                </div>
+                {{{spell.enrichedIcon}}}
+                <span class="spell-name">{{spell.name}}</span>
                 <div class="spell-actors">
                   {{#each spell.actorStatuses as |actorStatus|}}
-                    <div class="actor-spell-status {{actorStatus.status}}" data-actor-id="{{actorStatus.actorId}}">
-                      <span class="actor-name">{{actorStatus.name}}</span>
-                    </div>
+                    <span class="actor-spell-status {{actorStatus.status}}"
+                      data-actor-id="{{actorStatus.actorId}}">{{actorStatus.name}}</span>
                   {{/each}}
                 </div>
               </div>

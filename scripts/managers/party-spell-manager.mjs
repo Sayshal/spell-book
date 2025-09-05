@@ -87,9 +87,11 @@ export class PartySpellManager {
     for (const [classId, classData] of Object.entries(actor.spellcastingClasses || {})) {
       const classSpells = await this.getClassSpells(actor, classId);
       if (classSpells) {
+        const enhancedClassName = this.getEnhancedClassName(actor, classId, classData);
         actorData.spellcasters.push({
           classId,
           className: classData.name || classId,
+          enhancedClassName,
           icon: classData.img,
           knownSpells: classSpells.known,
           preparedSpells: classSpells.prepared,
@@ -133,19 +135,11 @@ export class PartySpellManager {
 
         const enrichedIcon = UIHelpers.createSpellIconLink(spellDoc || spell);
 
-        // Get component abbreviations from labels
-        const componentAbbrs = spellDoc?.labels?.components?.all?.map((comp) => comp.abbr).join(', ') || '';
-
         const spellData = {
           uuid: spell.uuid,
           name: spell.name,
           level: spell.system.level,
-          school: spell.system.school,
-          enrichedIcon: enrichedIcon, // Full HTML with metadata
-          components: componentAbbrs,
-          concentration: spell.system.properties?.has('concentration'),
-          ritual: spell.system.properties?.has('ritual'),
-          damageType: this.extractDamageTypes(spell),
+          enrichedIcon: enrichedIcon,
           prepared: spell.system.prepared === 1
         };
 
@@ -165,6 +159,21 @@ export class PartySpellManager {
       log(1, `Error getting class spells for ${actor.name}:${classId}:`, error);
       return null;
     }
+  }
+
+  /**
+   * Get enhanced class name including subclass
+   * @param {Actor} actor The actor
+   * @param {string} classId The class identifier
+   * @param {Object} classData The class data
+   * @returns {string} Enhanced class name with subclass
+   */
+  getEnhancedClassName(actor, classId, classData) {
+    const baseClassName = classData.name || classId;
+    if (classData._classLink && classData._classLink.name) return `${classData._classLink.name} ${baseClassName}`;
+    const subclassItem = actor.items.find((item) => item.type === 'subclass' && item.system?.classIdentifier === classId);
+    if (subclassItem) return `${subclassItem.name} ${baseClassName}`;
+    return baseClassName;
   }
 
   /**
@@ -241,9 +250,7 @@ export class PartySpellManager {
               uuid: spell.uuid,
               name: spell.name,
               enrichedIcon: spell.enrichedIcon,
-              components: spell.components,
               level: spell.level,
-              school: spell.school,
               actorStatuses: []
             };
           }
