@@ -71,8 +71,10 @@
           <div class="spells-grid" id="spell-list-{{levelGroup.level}}">
             {{#each levelGroup.spells as |spell|}}
               <div class="spell-comparison-item" data-spell-uuid="{{spell.uuid}}">
-                {{{spell.enrichedIcon}}}
-                <span class="spell-name">{{spell.name}}</span>
+                <div class="spell-name-section">
+                  {{{spell.enrichedIcon}}}
+                  <span class="spell-name">{{spell.name}}</span>
+                </div>
                 <div class="spell-actors">
                   {{#each spell.actorStatuses as |actorStatus|}}
                     <span class="actor-spell-status {{actorStatus.status}}"

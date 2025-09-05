@@ -218,6 +218,7 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
           const spellItem = spell.closest('.spell-comparison-item');
           if (spellItem) {
             spellItem.classList.add('member-focused');
+            spellItem.setAttribute('data-focused-actor', actorId);
           }
         });
 
@@ -225,7 +226,10 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
       });
 
       card.addEventListener('mouseleave', () => {
-        this.element.querySelectorAll('.spell-comparison-item.member-focused').forEach((item) => item.classList.remove('member-focused'));
+        this.element.querySelectorAll('.spell-comparison-item.member-focused').forEach((item) => {
+          item.classList.remove('member-focused');
+          item.removeAttribute('data-focused-actor');
+        });
         card.classList.remove('focused');
       });
     });
