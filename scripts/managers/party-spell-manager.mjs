@@ -66,7 +66,9 @@ export class PartySpellManager {
         hasPermission: false,
         token: actor.img,
         focus: this.getActorSpellcastingFocus(actor),
-        spellcasters: []
+        spellcasters: [],
+        totalSpellsKnown: 0,
+        totalSpellsPrepared: 0
       };
     }
 
@@ -76,7 +78,9 @@ export class PartySpellManager {
       hasPermission: true,
       token: actor.img,
       focus: this.getActorSpellcastingFocus(actor),
-      spellcasters: []
+      spellcasters: [],
+      totalSpellsKnown: 0,
+      totalSpellsPrepared: 0
     };
 
     // Get spellcasting classes
@@ -92,6 +96,10 @@ export class PartySpellManager {
           totalKnown: classSpells.known.length,
           totalPrepared: classSpells.prepared.length
         });
+
+        // Add to actor totals
+        actorData.totalSpellsKnown += classSpells.known.length;
+        actorData.totalSpellsPrepared += classSpells.prepared.length;
       }
     }
 
@@ -123,18 +131,18 @@ export class PartySpellManager {
         // Get enriched spell data using fromUuidSync (no DB hit for actor items)
         const spellDoc = fromUuidSync(spell.uuid);
 
-        const enrichedImg = UIHelpers.createSpellIconLink(spellDoc);
+        const enrichedIcon = UIHelpers.createSpellIconLink(spellDoc || spell);
 
         // Get component abbreviations from labels
-        const componentAbbrs = spellDoc.labels?.components?.all?.map((comp) => comp.abbr).join(', ') || '';
+        const componentAbbrs = spellDoc?.labels?.components?.all?.map((comp) => comp.abbr).join(', ') || '';
 
         const spellData = {
           uuid: spell.uuid,
           name: spell.name,
           level: spell.system.level,
           school: spell.system.school,
-          img: enrichedImg, // This is now the full HTML link, not just the image src
-          componentAbbrs, // Add component abbreviations
+          enrichedIcon: enrichedIcon, // Full HTML with metadata
+          components: componentAbbrs,
           concentration: spell.system.properties?.has('concentration'),
           ritual: spell.system.properties?.has('ritual'),
           damageType: this.extractDamageTypes(spell),
@@ -235,18 +243,23 @@ export class PartySpellManager {
           const spellKey = spell.name;
           if (!spellsByLevel[level][spellKey]) {
             spellsByLevel[level][spellKey] = {
-              ...spell,
-              actors: []
+              uuid: spell.uuid,
+              name: spell.name,
+              enrichedIcon: spell.enrichedIcon,
+              components: spell.components,
+              level: spell.level,
+              school: spell.school,
+              actorStatuses: []
             };
           }
 
-          spellsByLevel[level][spellKey].actors.push({
+          spellsByLevel[level][spellKey].actorStatuses.push({
             actorId: actorData.id,
-            actorName: actorData.name,
+            name: actorData.name,
             token: actorData.token,
             classId: classData.classId,
             className: classData.className,
-            isPrepared: spell.prepared
+            status: spell.prepared ? 'prepared' : 'known'
           });
         }
       }

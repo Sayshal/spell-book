@@ -1,4 +1,4 @@
-import { TEMPLATES } from '../constants/_module.mjs';
+import { MODULE, TEMPLATES } from '../constants/_module.mjs';
 import { PartySpellManager } from '../managers/_module.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -12,11 +12,12 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
     tag: 'div',
     actions: {
       showSynergyAnalysis: PartySpells.showSynergyAnalysis,
-      refreshData: PartySpells.refreshData
+      refreshData: PartySpells.refreshData,
+      toggleSpellLevel: PartySpells.toggleSpellLevel
     },
     classes: ['spell-book', 'party-spell-manager'],
     window: {
-      icon: 'fas fa-users-magic',
+      icon: 'modules/spell-book/assets/icon_colored.webp',
       resizable: true,
       minimizable: true,
       positioned: true
@@ -32,12 +33,14 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
    * Create a new Party Spell Manager application
    * @param {Actor[]} partyActors Array of party member actors
    * @param {Actor} [viewingActor] The actor who opened this view
+   * @param {Actor} [groupActor] The group actor if opened from group sheet
    * @param {Object} options Additional options
    */
-  constructor(partyActors = [], viewingActor = null, options = {}) {
+  constructor(partyActors = [], viewingActor = null, groupActor = null, options = {}) {
     super(options);
     this.partyManager = new PartySpellManager(partyActors, viewingActor);
     this.viewingActor = viewingActor;
+    this.groupActor = groupActor;
     this._comparisonData = null;
   }
 
@@ -52,16 +55,12 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-
-    if (!this._comparisonData) {
-      this._comparisonData = await this.partyManager.getPartySpellComparison();
-    }
-
+    if (!this._comparisonData) this._comparisonData = await this.partyManager.getPartySpellComparison();
     context.comparison = this._comparisonData;
-    context.availableFocuses = this.getAvailableFocusOptions(); // Add this back
+    context.availableFocuses = this.getAvailableFocusOptions();
     context.canEditFocus = game.user.isGM || (this.viewingActor && this.viewingActor.isOwner);
     context.spellLevels = this.getSpellLevelGroups(this._comparisonData.spellsByLevel);
-
+    context.groupName = this.groupActor?.name || game.i18n.localize('SPELLBOOK.Party.DefaultGroupName');
     return context;
   }
 
@@ -99,6 +98,8 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       });
     });
+    this._setupPartyMemberHover();
+    this._restoreCollapsedLevels();
   }
 
   /**
@@ -163,5 +164,95 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
     this.partyManager._spellDataCache.clear();
     await this.render();
     ui.notifications.info('SPELLBOOK.Party.DataRefreshed', { localize: true });
+  }
+
+  /**
+   * Toggle spell level expansion/collapse
+   * @param {Event} event The click event
+   * @param {HTMLElement} target The clicked element
+   */
+  static toggleSpellLevel(event, target) {
+    const levelContainer = target.closest('.spell-level-group');
+    if (!levelContainer) return;
+
+    const levelId = levelContainer.dataset.spellLevel;
+    const isCollapsed = levelContainer.classList.toggle('collapsed');
+
+    // Save state to user flags
+    const collapsedLevels = game.user.getFlag(MODULE.ID, 'partyCollapsedLevels') || [];
+    if (isCollapsed && !collapsedLevels.includes(levelId)) {
+      collapsedLevels.push(levelId);
+    } else if (!isCollapsed && collapsedLevels.includes(levelId)) {
+      collapsedLevels.splice(collapsedLevels.indexOf(levelId), 1);
+    }
+    game.user.setFlag(MODULE.ID, 'partyCollapsedLevels', collapsedLevels);
+
+    // Update UI elements
+    const header = levelContainer.querySelector('.level-header');
+    const spellList = levelContainer.querySelector('.spells-grid');
+    const collapseIcon = header?.querySelector('.collapse-indicator');
+
+    if (header) header.setAttribute('aria-expanded', !isCollapsed);
+    if (spellList) spellList.style.display = isCollapsed ? 'none' : '';
+    if (collapseIcon) {
+      collapseIcon.className = `fas fa-caret-${isCollapsed ? 'right' : 'down'} collapse-indicator`;
+    }
+  }
+
+  /**
+   * Set up hover functionality to highlight party member spells
+   * @private
+   */
+  _setupPartyMemberHover() {
+    const memberCards = this.element.querySelectorAll('.member-card');
+
+    memberCards.forEach((card) => {
+      const actorId = card.dataset.actorId;
+
+      if (!actorId) return;
+
+      card.addEventListener('mouseenter', () => {
+        const memberSpells = this.element.querySelectorAll(`.actor-spell-status[data-actor-id="${actorId}"].prepared`);
+
+        memberSpells.forEach((spell) => {
+          const spellItem = spell.closest('.spell-comparison-item');
+          if (spellItem) {
+            spellItem.classList.add('member-focused');
+          }
+        });
+
+        card.classList.add('focused');
+      });
+
+      card.addEventListener('mouseleave', () => {
+        this.element.querySelectorAll('.spell-comparison-item.member-focused').forEach((item) => item.classList.remove('member-focused'));
+        card.classList.remove('focused');
+      });
+    });
+  }
+
+  /**
+   * Restore collapsed level states from user flags
+   * @private
+   */
+  _restoreCollapsedLevels() {
+    const collapsedLevels = game.user.getFlag(MODULE.ID, 'partyCollapsedLevels') || [];
+
+    collapsedLevels.forEach((levelId) => {
+      const levelContainer = this.element.querySelector(`.spell-level-group[data-spell-level="${levelId}"]`);
+
+      if (levelContainer) {
+        levelContainer.classList.add('collapsed');
+        const header = levelContainer.querySelector('.level-header');
+        const spellList = levelContainer.querySelector('.spells-grid');
+        const collapseIcon = header?.querySelector('.collapse-indicator');
+
+        if (header) header.setAttribute('aria-expanded', 'false');
+        if (spellList) spellList.style.display = 'none';
+        if (collapseIcon) {
+          collapseIcon.className = 'fas fa-caret-right collapse-indicator';
+        }
+      }
+    });
   }
 }

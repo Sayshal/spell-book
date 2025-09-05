@@ -93,6 +93,7 @@ function openPartySpellManager(event, groupActor, data) {
     return;
   }
 
-  const manager = new PartySpells(partyActors);
+  // Pass the groupActor as the third parameter to get the group name
+  const manager = new PartySpells(partyActors, null, groupActor);
   manager.render(true);
 }

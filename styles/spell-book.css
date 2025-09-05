@@ -228,7 +228,6 @@
   overflow: visible;
   box-shadow: none;
 
-  /* Window content - base container */
   .window-content {
     display: flex;
     position: relative;
@@ -286,7 +285,6 @@
     }
   }
 
-  /* Content wrapper - manages overflow for sidebar in collapsed mode */
   .content-wrapper {
     inset: 0;
     display: flex;
@@ -295,7 +293,6 @@
     overflow: hidden;
   }
 
-  /* Main container - positioned relative to sidebar */
   .spell-book-container {
     inset: 0 0 0 var(--spell-book-sidebar-width);
     position: absolute;
@@ -303,7 +300,6 @@
     transition: var(--spell-book-transition-slow);
   }
 
-  /* Main content area */
   .spell-book-content {
     position: relative;
     height: 100%;
@@ -314,7 +310,6 @@
     transition: var(--spell-book-transition-slow);
   }
 
-  /* Collapsed footer */
   .collapsed-footer {
     display: none;
     z-index: var(--spell-book-z-index-footer);
@@ -328,7 +323,6 @@
     box-shadow: var(--spell-book-shadow-top);
   }
 
-  /* Collapsed sidebar styles */
   &.sidebar-collapsed {
     .spell-book-container {
       left: 0;
@@ -368,7 +362,6 @@
     }
   }
 
-  /* Loading state */
   &.loading {
     .spell-book-content {
       display: flex;
@@ -387,7 +380,6 @@
     }
   }
 
-  /* Max spells state */
   &.at-max-spells .spell-item.max-prepared {
     opacity: 0.6;
     cursor: not-allowed;
@@ -403,7 +395,6 @@
   /* ----------------------------------------- */
   /*  Window & Layout Structure                */
   /* ----------------------------------------- */
-  /* Tab Navigation */
   .tabs.tabs-right {
     --icon-fill: var(--spell-book-text-accent);
     --icon-size: 1rem;
@@ -456,7 +447,6 @@
         }
       }
 
-      /* Class Icon Images Styling */
       img.tab-icon {
         object-fit: cover;
         width: 2rem;
@@ -484,7 +474,6 @@
     }
   }
 
-  /* Class Header Styling */
   .class-header {
     padding-top: 0.25rem;
     padding-bottom: 0.5rem;
@@ -523,7 +512,6 @@
     transform: translateZ(0);
   }
 
-  /* Sidebar Controls Container */
   .sidebar-controls {
     gap: 0.5rem;
     display: flex;
@@ -540,7 +528,6 @@
     bottom: 0.5rem;
   }
 
-  /* Base styles for control buttons */
   .filter-config-button,
   .cantrip-config-button,
   .sidebar-collapser,
@@ -560,7 +547,6 @@
     }
   }
 
-  /* Size differences between buttons */
   .filter-config-button,
   .cantrip-config-button,
   .ui-customization-button {
@@ -589,7 +575,6 @@
   /* ----------------------------------------- */
   /*  Main Content Area                        */
   /* ----------------------------------------- */
-  /* Content Status Messages */
   .no-filter-results,
   .error-message {
     padding: 1rem;
@@ -751,7 +736,6 @@
     }
   }
 
-  /* Advanced Search Components */
   .filter-item.filter-search[data-filter-id='name'] {
     position: relative;
 
@@ -759,7 +743,6 @@
       padding-right: 2rem;
     }
 
-    /* Search input clear button */
     .search-input-clear {
       display: none;
       z-index: 2;
@@ -800,7 +783,6 @@
       }
     }
 
-    /* Handle cases where there's a label above the input - use bottom positioning */
     label + .advanced-search-input + .search-input-clear {
       top: auto;
       bottom: 0.1rem;
@@ -808,7 +790,6 @@
     }
   }
 
-  /* Additional fallback for has-advanced-search class if it gets added */
   .filter-item.has-advanced-search {
     position: relative;
 
@@ -1047,7 +1028,6 @@
       text-overflow: ellipsis;
       white-space: nowrap;
 
-      /* Compare Button Styling */
       .spell-compare-icon {
         display: inline-flex;
         justify-content: center;
@@ -1110,7 +1090,6 @@
     }
   }
 
-  /* Spell Tags & Details */
   .spell-tag {
     margin-left: 0.35rem;
     padding: 0 0.35rem;
@@ -1131,7 +1110,6 @@
     font-weight: 600;
     font-size: 0.75rem;
 
-    /* Specific tag types */
     &.always-prepared {
       background-color: var(--spell-book-tag-always);
     }
@@ -1205,7 +1183,6 @@
   /* ----------------------------------------- */
   /*  Interactive Elements                     */
   /* ----------------------------------------- */
-  /* Spell Favorite Star Button */
   .spell-favorite-toggle {
     display: inline-flex;
     justify-content: center;
@@ -1254,7 +1231,6 @@
     }
   }
 
-  /* Spell Notes Icon */
   .spell-notes-icon {
     display: inline-flex;
     justify-content: center;
@@ -1276,7 +1252,6 @@
     }
   }
 
-  /* Source Class Indicator */
   .source-class-indicator {
     margin-left: 0.5rem;
     color: var(--spell-book-text-secondary);
@@ -1315,7 +1290,6 @@
       font-size: 0.9em;
       white-space: nowrap;
 
-      /* Add separator after each item except the last */
       &:not(:last-child)::after {
         margin: 0 0.25rem;
         color: var(--spell-book-text-secondary);
@@ -1323,7 +1297,6 @@
         content: ' | ';
       }
 
-      /* Force line break after every 2nd item */
       &:nth-child(2n)::after {
         flex-basis: 100%;
         height: 0;
@@ -1331,7 +1304,6 @@
         content: '';
       }
 
-      /* Add line break styling */
       &:nth-child(2n) {
         margin-bottom: 0.125rem;
       }
@@ -1390,7 +1362,6 @@
     gap: 0.5rem;
     display: flex;
     flex-flow: row nowrap;
-    /* Changed from wrap to nowrap */
     justify-content: center;
     align-items: stretch;
 
@@ -1406,12 +1377,10 @@
       font-size: var(--spell-book-font-md);
       transition: all 0.4s ease;
 
-      /* Hide text labels by default - icons only */
       span {
         display: none;
       }
 
-      /* Icon sizing */
       i {
         margin: 0;
         font-size: 1rem;
@@ -1420,7 +1389,6 @@
     }
   }
 
-  /* Collapsed footer styles */
   .collapsed-footer {
     display: none;
     z-index: var(--spell-book-z-index-footer);
@@ -1437,7 +1405,6 @@
       display: none;
     }
 
-    /* Compact spell prep tracking for collapsed footer */
     .spell-prep-tracking,
     .spell-book-tracking {
       gap: 1rem;
@@ -1462,7 +1429,6 @@
       .class-prep-count {
         font-size: inherit;
 
-        /* Remove the line break behavior in collapsed footer */
         &:nth-child(2n)::after {
           flex-basis: auto;
           height: auto;
@@ -1490,20 +1456,17 @@
       }
     }
 
-    /* Search filter container above buttons */
     .collapsed-footer-search {
       margin-bottom: 0.375rem;
 
       .filter-item {
         margin-bottom: 0;
 
-        /* Hide the label in collapsed footer */
         label {
           display: none;
         }
       }
 
-      /* Adjust search input for collapsed footer */
       .advanced-search-input {
         width: 100%;
         padding: 0.25rem 2rem 0.25rem 0.5rem;
@@ -1512,13 +1475,11 @@
     }
 
     .footer-buttons {
-      /* Force buttons onto one line */
       gap: 0.25rem;
       flex-wrap: nowrap;
       justify-content: space-between;
 
       button {
-        /* Remove fixed width, let buttons size to content */
         flex: 1 1 auto;
         min-width: 3.75rem;
         max-width: 7.5rem;
@@ -1528,7 +1489,6 @@
         text-overflow: ellipsis;
         white-space: nowrap;
 
-        /* Show text labels in collapsed footer */
         span {
           display: inline;
           overflow: hidden;
@@ -1536,14 +1496,12 @@
           white-space: nowrap;
         }
 
-        /* Add margin back to icon when text is shown */
         i {
           margin-right: 0.25rem;
         }
       }
     }
 
-    /* Adjust overall layout for smaller screens */
     @media (width <=37.5rem) {
       padding: 0.375rem;
 
@@ -1567,7 +1525,6 @@
         min-width: 3.125rem;
         max-width: 6.25rem;
 
-        /* Icon only on very small sizes */
         @media (width <=25rem) {
           span {
             display: none;
@@ -1785,7 +1742,6 @@
     transform: translateY(0);
   }
 
-  /* Section headers in dropdown */
   .search-section-header {
     margin: 0;
     padding: 0.25rem;
@@ -1802,7 +1758,6 @@
     }
   }
 
-  /* Search suggestions and recent searches */
   .search-suggestion {
     display: flex;
     align-items: center;
@@ -1828,7 +1783,6 @@
       background: var(--spell-book-bg-option-hover);
     }
 
-    /* Suggestion icon */
     i {
       flex-shrink: 0;
       width: 0.75rem;
@@ -1836,7 +1790,6 @@
       color: var(--spell-book-text-tertiary);
     }
 
-    /* Suggestion text */
     .suggestion-text {
       flex: 1;
       margin-left: 0.375rem;
@@ -1847,7 +1800,6 @@
       text-overflow: ellipsis;
       white-space: nowrap;
 
-      /* Highlighted text in suggestions */
       mark {
         padding: 0;
         color: var(--spell-book-text-primary);
@@ -1856,7 +1808,6 @@
       }
     }
 
-    /* Score display for fuzzy matches */
     .suggestion-score {
       margin-left: auto;
       color: var(--spell-book-text-tertiary);
@@ -1864,7 +1815,6 @@
       font-size: 0.75rem;
     }
 
-    /* Clear button for recent searches */
     .clear-recent-search {
       display: flex;
       flex-shrink: 0;
@@ -1905,7 +1855,6 @@
     }
   }
 
-  /* Advanced search status messages */
   .search-status {
     padding: 0.5rem 0.75rem;
     border-bottom: 0.063rem solid var(--spell-book-border-light);
@@ -1922,7 +1871,6 @@
     }
   }
 
-  /* Search notes and help text */
   .search-note {
     display: flex;
     align-items: flex-start;
@@ -1951,7 +1899,6 @@
     }
   }
 
-  /* No suggestions state */
   .no-suggestions {
     padding: 1rem 0.75rem;
     color: var(--spell-book-text-tertiary);
@@ -1960,7 +1907,6 @@
     text-align: center;
   }
 
-  /* Scrollbar styling for dropdown */
   &::-webkit-scrollbar {
     width: 0.375rem;
   }
@@ -2024,7 +1970,6 @@
     border-bottom: none;
   }
 
-  /* Container part */
   .gm-spell-list-manager-container {
     inset: 0;
     position: absolute;
@@ -2049,7 +1994,6 @@
     }
   }
 
-  /* Sidebar collapsed state */
   &.sidebar-collapsed {
     .selected-list-content {
       left: 0;
@@ -2163,7 +2107,6 @@
       order: 2;
     }
 
-    /* Folder styling */
     .list-folder {
       margin-bottom: var(--spell-book-spacing-lg);
 
@@ -2208,7 +2151,6 @@
       }
     }
 
-    /* Actor folder styling */
     .actor-lists-folder {
       .folder-header {
         color: var(--spell-book-manager-actor-color);
@@ -2219,7 +2161,6 @@
       }
     }
 
-    /* Custom Lists folder styling */
     .custom-lists-folder {
       .folder-header {
         color: var(--spell-book-manager-custom-list-color);
@@ -2243,7 +2184,6 @@
       }
     }
 
-    /* Merged Lists folder styling */
     .merged-lists-folder {
       .folder-header {
         color: var(--spell-book-manager-merged-color);
@@ -2267,7 +2207,6 @@
       }
     }
 
-    /* Standard folder styling */
     .standard-lists-folder {
       .folder-header {
         color: var(--spell-book-text-secondary);
@@ -2278,7 +2217,6 @@
       }
     }
 
-    /* Hidden Lists folder styling */
     .hidden-lists-folder {
       .folder-header {
         color: var(--spell-book-text-muted);
@@ -2303,7 +2241,6 @@
       }
     }
 
-    /* Actor-owned list item styling */
     .actor-owned-list {
       border-left: var(--spell-book-spacing-xs) solid var(--spell-book-manager-actor-color);
 
@@ -2322,7 +2259,6 @@
     }
   }
 
-  /* Sidebar collapser */
   .sidebar-collapser {
     place-content: center;
     display: grid;
@@ -2347,7 +2283,6 @@
     }
   }
 
-  /* Lists container */
   .lists-container {
     flex: 1 1 auto;
     height: 0;
@@ -2362,7 +2297,6 @@
     list-style: none;
   }
 
-  /* List items */
   .spell-list-item {
     margin-bottom: var(--spell-book-spacing-sm);
     padding: var(--spell-book-spacing-md);
@@ -2436,7 +2370,6 @@
     }
   }
 
-  /* List item header for visibility controls */
   .list-item-header {
     display: flex;
     justify-content: space-between;
@@ -2482,7 +2415,6 @@
     }
   }
 
-  /* Merge form styling */
   .merge-spell-lists-form {
     .checkbox-label {
       gap: var(--spell-book-spacing-md);
@@ -2503,7 +2435,6 @@
     }
   }
 
-  /* List controls */
   .list-controls {
     margin-top: var(--spell-book-spacing-xl);
     padding: var(--spell-book-spacing-md);
@@ -2524,7 +2455,6 @@
     transition: var(--spell-book-transition-slow);
   }
 
-  /* Selected list header */
   .selected-list-header {
     display: flex;
     flex-direction: column;
@@ -2579,7 +2509,6 @@
       }
     }
 
-    /* Action buttons */
     .action-button {
       padding: var(--spell-book-spacing-sm) var(--spell-book-spacing-md);
       border: none;
@@ -2640,7 +2569,6 @@
     }
   }
 
-  /* Custom list controls */
   .custom-list-controls {
     display: flex;
     align-items: center;
@@ -2682,7 +2610,6 @@
     align-items: center;
   }
 
-  /* No selection message */
   .no-selection {
     display: flex;
     justify-content: center;
@@ -2867,7 +2794,6 @@
     }
   }
 
-  /* Name stacked styling */
   .name-stacked {
     display: flex;
     flex: 1;
@@ -2941,7 +2867,6 @@
     }
   }
 
-  /* Spell preparation */
   .spell-preparation {
     flex: 0 0 auto;
     width: 1.9rem;
@@ -2967,7 +2892,6 @@
     }
   }
 
-  /* Selection mode styles */
   &.selection-mode {
     .spell-item {
       padding-left: 2.5rem;
@@ -2984,7 +2908,6 @@
     }
   }
 
-  /* Selection mode spell items */
   .spell-item.selectable {
     position: relative;
     user-select: none;
@@ -2999,7 +2922,6 @@
     }
   }
 
-  /* Adjust spell content positioning when checkbox is present */
   .selection-mode .spell-item {
     .spell-name,
     .spell-details {
@@ -3034,7 +2956,6 @@
     }
   }
 
-  /* Available spells select all positioning */
   .select-all-add-container {
     display: flex;
     justify-content: flex-end;
@@ -3060,7 +2981,6 @@
     }
   }
 
-  /* Filter controls */
   .spell-filters {
     display: flex;
     flex: 0 0 auto;
@@ -3098,7 +3018,6 @@
     text-align: center;
   }
 
-  /* Filter search */
   .filter-search {
     width: 100%;
     margin-bottom: var(--spell-book-spacing-md);
@@ -3114,7 +3033,6 @@
     }
   }
 
-  /* Filter grid */
   .filter-grid {
     gap: var(--spell-book-spacing-md);
     grid-template-columns: repeat(3, 1fr);
@@ -3139,7 +3057,6 @@
     }
   }
 
-  /* Filter item styling */
   .filter-item {
     label {
       display: block;
@@ -3170,7 +3087,6 @@
     }
   }
 
-  /* Range filter */
   .filter-range {
     margin-bottom: var(--spell-book-spacing-md);
 
@@ -3295,7 +3211,6 @@
     }
   }
 
-  /* List content header styling */
   .list-content-header {
     gap: var(--spell-book-spacing-xl);
     display: flex;
@@ -3317,7 +3232,6 @@
     }
   }
 
-  /* Footer */
   .manager-footer {
     display: flex;
     z-index: var(--spell-book-z-index-footer);
@@ -3363,7 +3277,6 @@
     }
   }
 
-  /* Status Messages */
   .spell-loading {
     display: flex;
     flex-direction: column;
@@ -4249,7 +4162,6 @@
       margin: 0;
       border: 0.0625rem solid var(--spell-book-border-light);
       table-layout: auto;
-      /* Changed from fixed to auto for better column distribution */
       border-collapse: collapse;
 
       thead {
@@ -4313,7 +4225,6 @@
 
         &:first-child {
           width: 8rem;
-          /* Slightly wider for property names */
           min-width: 8rem;
           max-width: 8rem;
           padding-left: 0.5rem;
@@ -4328,7 +4239,6 @@
           max-width: none;
           padding: 0.5rem;
 
-          /* More padding for spell headers */
           .spell-info {
             gap: 0.5rem;
             display: flex;
@@ -4338,7 +4248,6 @@
             min-height: 4rem;
             padding: 0.5rem;
 
-            /* Ensure adequate height */
             a {
               display: block;
               margin: 0;
@@ -4357,7 +4266,6 @@
 
             .spell-icon {
               object-fit: cover;
-              /* Larger icons */
               display: block;
               width: 2.5rem;
               height: 2.5rem;
@@ -4370,7 +4278,6 @@
             .spell-name {
               overflow-wrap: anywhere;
               max-width: 100%;
-              /* Slightly larger text */
               margin: 0;
               padding: 0 0.25rem;
               font-weight: bold;
@@ -4447,7 +4354,6 @@
       }
     }
 
-    /* Responsive adjustments */
     @media (width <=64rem) {
       .comparison-table {
         font-size: 0.8rem;
@@ -4722,7 +4628,6 @@
       text-align: center;
     }
 
-    /* Spell Preview Tooltip - Nested under Loadout System */
     .spell-preview-tooltip {
       z-index: var(--spell-book-z-index-tooltip);
       position: absolute;
@@ -5066,7 +4971,6 @@
         }
       }
 
-      /* Tooltip comes first in HTML */
       .setting-tooltip {
         flex: 0 0 auto;
         color: var(--spell-book-text-tertiary);
@@ -5079,17 +4983,14 @@
         }
       }
 
-      /* Label comes second in HTML */
       label {
         flex: 1;
         margin-left: 0.5rem;
         color: var(--spell-book-text-primary);
         font-weight: 500;
         cursor: pointer;
-        /* Add spacing after tooltip */
       }
 
-      /* Form elements come third in HTML */
       select {
         flex: 0 0 auto;
         min-width: 8rem;
@@ -5260,7 +5161,6 @@
       }
     }
 
-    /* Updated group title to support select-all */
     .group-title {
       display: flex;
       justify-content: space-between;
@@ -5291,7 +5191,6 @@
       }
     }
 
-    /* Updated settings grid - force 3 columns with content-based sizing */
     .settings-grid {
       gap: 0.5rem;
       grid-template-columns: repeat(3, minmax(max-content, 1fr));
@@ -5299,7 +5198,6 @@
       align-items: start;
     }
 
-    /* Updated setting item to support new layout and equal heights */
     .setting-item {
       display: flex;
       flex-direction: column;
@@ -5330,7 +5228,6 @@
         }
       }
 
-      /* Wizard Book Color Item - Override clickable behavior */
       &.wizard-book-color-item {
         cursor: default;
 
@@ -5345,21 +5242,18 @@
       }
     }
 
-    /* Checkbox and content horizontal layout within each item */
     .setting-item-content {
       display: flex;
       gap: 0.5rem;
       align-items: center;
     }
 
-    /* New checkbox container for left-aligned layout */
     .setting-checkbox {
       display: flex;
       align-items: center;
       flex-shrink: 0;
     }
 
-    /* Content area for title and description */
     .setting-content {
       flex: 1;
       min-width: 0;
@@ -5378,7 +5272,6 @@
       }
     }
 
-    /* Wizard Book Color Controls */
     .wizard-book-color-controls {
       display: flex;
       gap: 0.5rem;
@@ -5386,12 +5279,10 @@
       align-items: center;
 
       color-picker {
-        /* Hide the text input part for this specific use case */
         input[type='text'] {
           display: none;
         }
 
-        /* Style the color input to be circular and smaller */
         input[type='color'] {
           width: 1rem;
           height: 1rem;
@@ -5406,7 +5297,6 @@
             transform: scale(1.05);
           }
 
-          /* Webkit browsers */
           &::-webkit-color-swatch-wrapper {
             padding: 0;
             border-radius: 50%;
@@ -5418,7 +5308,6 @@
             border-radius: 50%;
           }
 
-          /* Firefox */
           &::-moz-color-swatch {
             border: none;
             border-radius: 50%;
@@ -5464,7 +5353,6 @@
       }
     }
 
-    /* Hide legacy label styling */
     .setting-label {
       display: none;
     }
@@ -5501,7 +5389,6 @@
       }
     }
 
-    /* Responsive adjustments */
     @media (width <=64rem) {
       .settings-grid {
         grid-template-columns: repeat(2, minmax(max-content, 1fr));
@@ -5535,7 +5422,6 @@
         }
       }
 
-      /* Responsive wizard book controls */
       .wizard-book-color-controls {
         flex-wrap: wrap;
         justify-content: flex-start;
@@ -5550,9 +5436,7 @@
   /* ----------------------------------------- */
   /*  Party Spell Manager Application          */
   /* ----------------------------------------- */
-
   &.party-spell-manager {
-    /* Ensure the window has proper overflow handling */
     overflow: hidden;
 
     .window-content {
@@ -5565,13 +5449,12 @@
     .party-spell-manager-content {
       display: flex;
       flex-direction: column;
-      gap: var(--spell-book-spacing-lg); /* Reduce gap slightly */
-      padding: var(--spell-book-spacing-md); /* Reduce padding */
+      gap: var(--spell-book-spacing-lg);
+      padding: var(--spell-book-spacing-md);
       overflow-y: auto;
       max-height: 100%;
       flex: 1;
 
-      /* Custom scrollbar styling to match theme */
       &::-webkit-scrollbar {
         width: 0.5rem;
       }
@@ -5590,25 +5473,32 @@
       }
     }
 
-    .party-header {
-      flex-shrink: 0; /* Prevent header from shrinking */
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .party-title-section {
+      flex-shrink: 0;
       padding-bottom: var(--spell-book-spacing-sm);
       border-bottom: var(--spell-book-radius-sm) solid var(--spell-book-border-dark);
       margin-bottom: var(--spell-book-spacing-md);
 
-      .party-title h2 {
-        margin: 0;
+      .party-name {
+        margin: 0 0 var(--spell-book-spacing-xs) 0;
         color: var(--spell-book-text-primary);
-        font-size: 1.25rem; /* Slightly smaller header */
+        font-size: 1.5rem;
+        text-align: center;
+      }
+
+      .member-count {
+        margin: 0 0 var(--spell-book-spacing-sm) 0;
+        color: var(--spell-book-text-secondary);
+        font-size: 1rem;
+        font-weight: normal;
+        text-align: center;
       }
 
       .party-actions {
         display: flex;
         gap: var(--spell-book-spacing-sm);
         align-items: center;
+        justify-content: center;
 
         button {
           display: flex;
@@ -5619,7 +5509,7 @@
           border-radius: var(--spell-book-radius-sm);
           background: var(--spell-book-bg-primary);
           color: var(--spell-book-text-primary);
-          font-size: 0.75rem; /* Smaller button text */
+          font-size: 0.75rem;
           cursor: pointer;
           transition: var(--spell-book-transition-fast);
 
@@ -5631,7 +5521,6 @@
       }
     }
 
-    /* Make sections more compact */
     .party-members,
     .spell-comparison {
       margin-bottom: var(--spell-book-spacing-lg);
@@ -5643,7 +5532,6 @@
       }
     }
 
-    /* Party Members Grid - more compact */
     .members-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
@@ -5655,107 +5543,127 @@
       border: 0.063rem solid var(--spell-book-border-light);
       border-radius: var(--spell-book-radius-md);
       background: var(--spell-book-bg-primary);
+      transition: var(--spell-book-transition-fast);
 
       &.no-permission {
         opacity: 0.6;
         border-style: dashed;
       }
 
+      &.focused {
+        background: var(--spell-book-bg-secondary);
+        border-color: var(--spell-book-border-highlight);
+        box-shadow: 0 0 0.5rem rgb(var(--spell-book-color-primary) / 30%);
+      }
+
       .member-header {
-        display: flex;
-        align-items: center;
-        gap: var(--spell-book-spacing-sm);
         margin-bottom: var(--spell-book-spacing-sm);
 
-        .member-avatar {
-          width: 2rem;
-          height: 2rem;
-          border-radius: 50%;
-          border: 0.063rem solid var(--spell-book-border-medium);
-          flex-shrink: 0;
-        }
+        .member-info-top {
+          display: flex;
+          align-items: flex-start;
+          gap: var(--spell-book-spacing-sm);
 
-        .member-name {
-          color: var(--spell-book-text-primary);
-          font-weight: 600;
-          font-size: 0.9rem;
-          flex: 1;
-        }
+          .member-avatar {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            border: 0.063rem solid var(--spell-book-border-medium);
+            flex-shrink: 0;
+          }
 
-        .focus-input-wrapper {
-          .focus-input {
-            appearance: none;
-            background: transparent;
-            border: none;
+          .member-name-focus {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spell-book-spacing-xs);
+            flex: 1;
+
+            .member-name {
+              color: var(--spell-book-text-primary);
+              font-weight: 600;
+              font-size: 0.9rem;
+            }
+
+            .member-class-info {
+              font-size: 0.8rem;
+              color: var(--spell-book-text-secondary);
+              font-style: italic;
+            }
+          }
+
+          .focus-input-wrapper {
+            .focus-input {
+              appearance: none;
+              background: transparent;
+              border: none;
+              color: var(--spell-book-text-secondary);
+              font-size: 0.75rem;
+              font-style: italic;
+              cursor: pointer;
+              padding: 0.125rem 1.25rem 0.125rem 0.25rem;
+              border-radius: var(--spell-book-radius-sm);
+              min-width: 5rem;
+
+              &:hover,
+              &:focus {
+                background: var(--spell-book-bg-secondary);
+                outline: none;
+              }
+
+              background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+              background-position: right 0.25rem center;
+              background-repeat: no-repeat;
+              background-size: 0.8rem;
+            }
+          }
+
+          .focus-display {
             color: var(--spell-book-text-secondary);
             font-size: 0.75rem;
             font-style: italic;
-            cursor: pointer;
-            padding: 0.125rem 1.25rem 0.125rem 0.25rem;
-            border-radius: var(--spell-book-radius-sm);
-            min-width: 5rem;
-
-            &:hover,
-            &:focus {
-              background: var(--spell-book-bg-secondary);
-              outline: none;
-            }
-
-            /* Dropdown arrow */
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
-            background-position: right 0.25rem center;
-            background-repeat: no-repeat;
-            background-size: 0.8rem;
           }
-        }
 
-        .focus-display {
-          color: var(--spell-book-text-secondary);
-          font-size: 0.75rem;
-          font-style: italic;
-        }
-
-        .no-permission-text {
-          color: var(--spell-book-text-secondary);
-          font-style: italic;
-          font-size: 0.75rem;
+          .no-permission-text {
+            color: var(--spell-book-text-secondary);
+            font-style: italic;
+            font-size: 0.75rem;
+          }
         }
       }
 
       .member-stats {
         border-top: 0.063rem solid var(--spell-book-border-light);
-        padding-top: var(--spell-book-spacing-sm);
+        padding-top: var(--spell-book-spacing-md);
+        text-align: center;
 
-        .class-info {
+        .spell-counts-summary {
           display: flex;
-          align-items: center;
-          gap: var(--spell-book-spacing-xs);
-          padding: var(--spell-book-spacing-xs) 0;
+          justify-content: center;
+          gap: var(--spell-book-spacing-lg);
 
-          .class-icon {
-            width: 1.25rem;
-            height: 1.25rem;
-            border-radius: var(--spell-book-radius-sm);
-            flex-shrink: 0;
-          }
+          .count-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spell-book-spacing-xs);
 
-          .class-name {
-            color: var(--spell-book-text-primary);
-            font-weight: 500;
-            font-size: 0.8rem;
-            flex: 1;
-          }
+            .count-number {
+              font-size: 1.25rem;
+              font-weight: 600;
+              color: var(--spell-book-text-primary);
+            }
 
-          .spell-counts {
-            color: var(--spell-book-text-secondary);
-            font-size: 0.7rem;
-            white-space: nowrap;
+            .count-label {
+              font-size: 0.75rem;
+              color: var(--spell-book-text-secondary);
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+            }
           }
         }
       }
     }
 
-    /* More compact spell comparison */
     .spell-comparison {
       .spell-level-group {
         border: 0.063rem solid var(--spell-book-border-light);
@@ -5765,17 +5673,30 @@
 
         .level-header {
           display: flex;
-          justify-content: space-between;
           align-items: center;
+          gap: var(--spell-book-spacing-md);
           margin: 0;
           padding: var(--spell-book-spacing-sm) var(--spell-book-spacing-md);
           background: var(--spell-book-bg-secondary);
           border-bottom: 0.063rem solid var(--spell-book-border-light);
+          cursor: pointer;
+          transition: var(--spell-book-transition-fast);
+
+          &:hover {
+            background: var(--spell-book-bg-item-hover);
+            border-color: var(--spell-book-border-medium);
+          }
+
+          .collapse-indicator {
+            color: var(--spell-book-text-secondary);
+            transition: transform var(--spell-book-transition-fast);
+          }
 
           .level-name {
             color: var(--spell-book-text-primary);
             font-weight: 600;
             font-size: 0.95rem;
+            flex: 1;
           }
 
           .spell-count {
@@ -5789,25 +5710,42 @@
           flex-wrap: wrap;
           gap: var(--spell-book-spacing-sm);
           padding: var(--spell-book-spacing-md);
-          max-height: 25rem;
-          overflow-y: auto;
           align-content: flex-start;
+        }
+
+        &.collapsed {
+          .spells-grid {
+            display: none !important;
+          }
+
+          .collapse-indicator {
+            transform: rotate(90deg);
+          }
         }
       }
 
       .spell-comparison-item {
-        width: fit-content;
-        max-width: 18.75rem;
+        flex: 0 0 auto;
+        width: max-content;
         padding: var(--spell-book-spacing-sm);
         border: 0.063rem solid var(--spell-book-border-light);
-        border-radius: var(--spell-book-radius-sm);
+        border-radius: var(--spell-book-radius-md);
         background: var(--spell-book-bg-primary);
+        transition: var(--spell-book-transition-fast);
+
+        &.member-focused {
+          background: var(--spell-book-bg-prepared);
+          border-color: var(--spell-book-color-success);
+          box-shadow: 0 0 0.25rem rgb(var(--spell-book-color-success) / 40%);
+          transform: translateY(-0.063rem);
+        }
 
         .spell-header {
           display: flex;
-          align-items: flex-start;
+          align-items: center;
           gap: var(--spell-book-spacing-xs);
           margin-bottom: var(--spell-book-spacing-xs);
+          width: 100%;
 
           .spell-icon-container {
             flex-shrink: 0;
@@ -5831,33 +5769,41 @@
 
           .spell-title-info {
             display: flex;
-            flex-flow: row wrap; /* Changed from column to row */
-            align-items: baseline; /* Align baselines for better text alignment */
-            gap: 0.375rem; /* Increased gap for spacing between name and components */
-            flex: 1; /* Allow wrapping if needed */
+            flex-direction: column;
+            justify-content: center;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
 
             .spell-name {
               color: var(--spell-book-text-primary);
               font-weight: 500;
               font-size: 0.85rem;
               line-height: 1.2;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
             }
 
             .spell-components {
               color: var(--spell-book-text-secondary);
               font-size: 0.7rem;
               font-weight: normal;
-              font-style: italic; /* Added italics */
+              font-style: italic;
               opacity: 0.8;
-              white-space: nowrap; /* Prevent components from breaking across lines */
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
             }
           }
         }
 
         .spell-actors {
           display: flex;
-          flex-direction: column;
+          flex-flow: row wrap;
           gap: var(--spell-book-spacing-xs);
+          align-items: flex-start;
+          width: 100%;
         }
       }
 
@@ -5868,6 +5814,8 @@
         padding: 0.125rem var(--spell-book-spacing-xs);
         border-radius: var(--spell-book-radius-sm);
         font-size: 0.75rem;
+        width: fit-content;
+        max-width: 100%;
 
         &.prepared {
           background: var(--spell-book-bg-prepared);
@@ -5889,20 +5837,16 @@
 
         .actor-name {
           color: var(--spell-book-text-primary);
-          flex: 1;
-        }
-
-        .prepared-icon,
-        .known-icon {
-          font-size: 0.7rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 3rem;
         }
 
         .prepared-icon {
+          font-size: 0.7rem;
           color: var(--spell-book-color-success);
-        }
-
-        .known-icon {
-          color: var(--spell-book-text-secondary);
+          flex-shrink: 0;
         }
       }
     }
@@ -5911,7 +5855,6 @@
   /* ----------------------------------------- */
   /*  Party Mode Visualization                 */
   /* ----------------------------------------- */
-
   .party-icons {
     display: inline-flex;
     gap: 0.125rem;
@@ -5963,7 +5906,6 @@
   /* ----------------------------------------- */
   /*  Group Actor Button Integration           */
   /* ----------------------------------------- */
-
   .party-spell-button {
     display: flex;
     align-items: center;
@@ -5985,7 +5927,6 @@
       height: 1rem;
     }
 
-    /* Group Actor Sheet Gold Button Style Override */
     &.gold-button {
       position: relative;
       width: 2.5rem;
@@ -6291,6 +6232,7 @@
     }
   }
 }
+
 /* ========================================= */
 /*  RESPONSIVE DESIGN                        */
 /* ========================================= */
@@ -6335,7 +6277,6 @@
       font-size: var(--spell-book-font-xs);
     }
 
-    /* Adjust tabs for compact layout */
     .window-content > .tabs.tabs-right > .item {
       width: auto;
       padding: 0 0.5rem;
@@ -6452,4 +6393,5 @@
       flex-direction: column;
     }
   }
+}
 }

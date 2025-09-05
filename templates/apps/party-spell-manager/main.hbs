@@ -1,63 +1,71 @@
 <div class="party-spell-manager-content">
-  <!-- Header with Actions -->
-  <header class="party-header">
-    <div class="party-title">
-      <h2>{{localize "SPELLBOOK.Party.SpellPoolTitle"}}</h2>
-      <div class="party-actions">
-        <button type="button" class="refresh-button" data-action="refreshData"
-          data-tooltip="{{localize 'SPELLBOOK.Party.RefreshData'}}">
-          <i class="fas fa-sync" aria-hidden="true"></i>
-        </button>
-        <button type="button" class="analysis-button" data-action="showSynergyAnalysis"
-          data-tooltip="{{localize 'SPELLBOOK.Party.ShowSynergyAnalysis'}}">
-          <i class="fas fa-chart-line" aria-hidden="true"></i>
-          {{localize "SPELLBOOK.Party.SynergyAnalysis"}}
-        </button>
-      </div>
+  <div class="party-title-section">
+    <h2 class="party-name">{{groupName}} {{localize "SPELLBOOK.Party.SpellPool"}}</h2>
+    <h4 class="member-count">{{comparison.actors.length}} {{localize "SPELLBOOK.Party.Members"}}</h4>
+    <div class="party-actions">
+      <button type="button" class="refresh-button" data-action="refreshData"
+        data-tooltip="{{localize 'SPELLBOOK.Party.RefreshData'}}">
+        <i class="fas fa-sync" aria-hidden="true"></i>
+        {{localize "SPELLBOOK.Party.Refresh"}}
+      </button>
+      <button type="button" class="analysis-button" data-action="showSynergyAnalysis"
+        data-tooltip="{{localize 'SPELLBOOK.Party.ShowSynergyAnalysis'}}">
+        <i class="fas fa-chart-line" aria-hidden="true"></i>
+        {{localize "SPELLBOOK.Party.SynergyAnalysis"}}
+      </button>
     </div>
-  </header>
+  </div>
 
-  <!-- Party Members Overview -->
   <section class="party-members">
-    <h3>{{localize "SPELLBOOK.Party.PartyMembers"}}</h3>
     <div class="members-grid">
       {{#each comparison.actors as |actor|}}
-        <div class="member-card {{#unless actor.hasPermission}}no-permission{{/unless}}">
+        <div class="member-card {{#unless actor.hasPermission}}no-permission{{/unless}}" data-actor-id="{{actor.id}}">
           <div class="member-header">
-            <img src="{{actor.token}}" class="member-avatar" alt="{{actor.name}}">
-            <span class="member-name">{{actor.name}}</span>
-
-            {{#if actor.hasPermission}}
-              {{#if ../canEditFocus}}
-                <div class="focus-input-wrapper">
-                  <select class="focus-input" data-actor-id="{{actor.id}}">
-                    {{#each ../availableFocuses as |focus|}}
-                      <option value="{{focus.value}}" {{#if (eq focus.value ../actor.focus)}}selected{{/if}}>
-                        {{focus.label}}
-                      </option>
+            <div class="member-info-top">
+              <img src="{{actor.token}}" class="member-avatar" alt="{{actor.name}}">
+              <div class="member-name-focus">
+                <span class="member-name">{{actor.name}}</span>
+                {{#if actor.hasPermission}}
+                  <div class="member-class-info">
+                    {{#each actor.spellcasters as |class|}}
+                      <span class="class-name">{{class.className}}</span>{{#unless @last}}, {{/unless}}
                     {{/each}}
-                  </select>
-                </div>
+                  </div>
+                {{/if}}
+              </div>
+
+              {{#if actor.hasPermission}}
+                {{#if ../canEditFocus}}
+                  <div class="focus-input-wrapper">
+                    <select class="focus-input" data-actor-id="{{actor.id}}">
+                      {{#each ../availableFocuses as |focus|}}
+                        <option value="{{focus.value}}" {{#if (eq focus.value ../actor.focus)}}selected{{/if}}>
+                          {{focus.label}}
+                        </option>
+                      {{/each}}
+                    </select>
+                  </div>
+                {{else}}
+                  <span class="focus-display">{{localize actor.focus}}</span>
+                {{/if}}
               {{else}}
-                <span class="focus-display">{{localize actor.focus}}</span>
+                <span class="no-permission-text">{{localize "SPELLBOOK.Party.NoViewPermission"}}</span>
               {{/if}}
-            {{else}}
-              <span class="no-permission-text">{{localize "SPELLBOOK.Party.NoViewPermission"}}</span>
-            {{/if}}
+            </div>
           </div>
 
           {{#if actor.hasPermission}}
             <div class="member-stats">
-              {{#each actor.spellcasters as |class|}}
-                <div class="class-info">
-                  {{#if class.icon}}<img src="{{class.icon}}" class="class-icon" alt="{{class.className}}">{{/if}}
-                  <span class="class-name">{{class.className}}</span>
-                  <span class="spell-counts">
-                    {{localize "SPELLBOOK.Party.Known"}}: {{class.totalKnown}}
-                    {{localize "SPELLBOOK.Party.Prepared"}}: {{class.totalPrepared}}
-                  </span>
+              <div class="spell-counts-summary">
+                <div class="count-item">
+                  <div class="count-number">{{actor.totalSpellsKnown}}</div>
+                  <div class="count-label">{{localize "SPELLBOOK.Party.Known"}}</div>
                 </div>
-              {{/each}}
+                <div class="count-item">
+                  <div class="count-number">{{actor.totalSpellsPrepared}}</div>
+                  <div class="count-label">{{localize "SPELLBOOK.Party.Prepared"}}</div>
+                </div>
+              </div>
             </div>
           {{/if}}
         </div>
@@ -65,44 +73,37 @@
     </div>
   </section>
 
-  <!-- Spell Comparison Matrix -->
   <section class="spell-comparison">
-    <h3>{{localize "SPELLBOOK.Party.SpellComparison"}}</h3>
     {{#if spellLevels}}
       {{#each spellLevels as |levelGroup|}}
         <div class="spell-level-group" data-spell-level="{{levelGroup.level}}">
-          <h4 class="level-header">
+          <h4 class="level-header" data-action="toggleSpellLevel" role="button" aria-expanded="true"
+            aria-controls="spell-list-{{levelGroup.level}}">
+            <i class="fas fa-caret-down collapse-indicator" aria-hidden="true"></i>
             <span class="level-name">{{levelGroup.levelName}}</span>
             <span class="spell-count">({{levelGroup.spells.length}} {{localize "SPELLBOOK.Party.Spells"}})</span>
           </h4>
 
-          <div class="spells-grid">
+          <div class="spells-grid" id="spell-list-{{levelGroup.level}}">
             {{#each levelGroup.spells as |spell|}}
-              <div class="spell-comparison-item">
+              <div class="spell-comparison-item" data-spell-uuid="{{spell.uuid}}">
                 <div class="spell-header">
-                  <div class="spell-icon-container">{{{spell.img}}}</div>
+                  <div class="spell-icon-container">
+                    {{{spell.enrichedIcon}}}
+                  </div>
                   <div class="spell-title-info">
                     <span class="spell-name">{{spell.name}}</span>
-                    {{#if spell.componentAbbrs}}
-                      <span class="spell-components">{{spell.componentAbbrs}}</span>
-                    {{/if}}
+                    <span class="spell-components">{{spell.components}}</span>
                   </div>
                 </div>
-
                 <div class="spell-actors">
-                  {{#each spell.actors as |actorData|}}
-                    <div class="actor-spell-status {{#if actorData.isPrepared}}prepared{{else}}known{{/if}}">
-                      <img src="{{actorData.token}}" class="actor-token" alt="{{actorData.actorName}}">
-                      <span class="actor-name">{{actorData.actorName}}</span>
-                      <span class="spell-status">
-                        {{#if actorData.isPrepared}}
-                          <i class="fas fa-check prepared-icon" data-tooltip="{{localize 'SPELLBOOK.Party.Prepared'}}"
-                            aria-hidden="true"></i>
-                        {{else}}
-                          <i class="fas fa-book known-icon" data-tooltip="{{localize 'SPELLBOOK.Party.Known'}}"
-                            aria-hidden="true"></i>
-                        {{/if}}
-                      </span>
+                  {{#each spell.actorStatuses as |actorStatus|}}
+                    <div class="actor-spell-status {{actorStatus.status}}" data-actor-id="{{actorStatus.actorId}}">
+                      <img src="{{actorStatus.token}}" class="actor-token" alt="{{actorStatus.name}}">
+                      <span class="actor-name">{{actorStatus.name}}</span>
+                      {{#if (eq actorStatus.status "prepared")}}
+                        <i class="fas fa-check-circle prepared-icon" aria-hidden="true"></i>
+                      {{/if}}
                     </div>
                   {{/each}}
                 </div>
@@ -111,10 +112,6 @@
           </div>
         </div>
       {{/each}}
-    {{else}}
-      <div class="empty-state">
-        <p>{{localize "SPELLBOOK.Party.NoSpellsFound"}}</p>
-      </div>
     {{/if}}
   </section>
 </div>
