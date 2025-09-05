@@ -1,5 +1,6 @@
 import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
+import * as UIHelpers from '../ui/_module.mjs';
 
 /**
  * Manages party spell coordination and analysis
@@ -119,11 +120,21 @@ export class PartySpellManager {
       const classSpells = actor.items.filter((item) => item.type === 'spell' && (item.system.sourceClass === classId || item.sourceClass === classId));
 
       for (const spell of classSpells) {
+        // Get enriched spell data using fromUuidSync (no DB hit for actor items)
+        const spellDoc = fromUuidSync(spell.uuid);
+
+        const enrichedImg = UIHelpers.createSpellIconLink(spellDoc);
+
+        // Get component abbreviations from labels
+        const componentAbbrs = spellDoc.labels?.components?.all?.map((comp) => comp.abbr).join(', ') || '';
+
         const spellData = {
           uuid: spell.uuid,
           name: spell.name,
           level: spell.system.level,
           school: spell.system.school,
+          img: enrichedImg, // This is now the full HTML link, not just the image src
+          componentAbbrs, // Add component abbreviations
           concentration: spell.system.properties?.has('concentration'),
           ritual: spell.system.properties?.has('ritual'),
           damageType: this.extractDamageTypes(spell),
@@ -221,7 +232,7 @@ export class PartySpellManager {
             spellsByLevel[level] = {};
           }
 
-          const spellKey = spell.uuid;
+          const spellKey = spell.name;
           if (!spellsByLevel[level][spellKey]) {
             spellsByLevel[level][spellKey] = {
               ...spell,

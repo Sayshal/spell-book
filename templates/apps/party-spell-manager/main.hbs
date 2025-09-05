@@ -25,13 +25,12 @@
         <div class="member-card {{#unless actor.hasPermission}}no-permission{{/unless}}">
           <div class="member-header">
             <img src="{{actor.token}}" class="member-avatar" alt="{{actor.name}}">
-            <div class="member-info">
-              <h4>{{actor.name}}</h4>
-              {{#if actor.hasPermission}}
-                <div class="focus-selection">
-                  <label for="focus-{{actor.id}}">{{localize "SPELLBOOK.Party.SpellcastingFocus"}}</label>
-                  <select id="focus-{{actor.id}}" data-actor-id="{{actor.id}}"
-                    {{#unless ../canEditFocus}}disabled{{/unless}}>
+            <span class="member-name">{{actor.name}}</span>
+
+            {{#if actor.hasPermission}}
+              {{#if ../canEditFocus}}
+                <div class="focus-input-wrapper">
+                  <select class="focus-input" data-actor-id="{{actor.id}}">
                     {{#each ../availableFocuses as |focus|}}
                       <option value="{{focus.value}}" {{#if (eq focus.value ../actor.focus)}}selected{{/if}}>
                         {{focus.label}}
@@ -39,26 +38,24 @@
                     {{/each}}
                   </select>
                 </div>
+              {{else}}
+                <span class="focus-display">{{localize actor.focus}}</span>
               {{/if}}
-            </div>
+            {{else}}
+              <span class="no-permission-text">{{localize "SPELLBOOK.Party.NoViewPermission"}}</span>
+            {{/if}}
           </div>
 
           {{#if actor.hasPermission}}
             <div class="member-stats">
               {{#each actor.spellcasters as |class|}}
-                <div class="class-stats">
-                  <div class="class-header">
-                    {{#if class.icon}}<img src="{{class.icon}}" class="class-icon" alt="{{class.className}}">{{/if}}
-                    <span class="class-name">{{class.className}}</span>
-                  </div>
-                  <div class="spell-counts">
-                    <span class="known-count" data-tooltip="{{localize 'SPELLBOOK.Party.KnownSpells'}}">
-                      {{localize "SPELLBOOK.Party.Known"}}: {{class.totalKnown}}
-                    </span>
-                    <span class="prepared-count" data-tooltip="{{localize 'SPELLBOOK.Party.PreparedSpells'}}">
-                      {{localize "SPELLBOOK.Party.Prepared"}}: {{class.totalPrepared}}
-                    </span>
-                  </div>
+                <div class="class-info">
+                  {{#if class.icon}}<img src="{{class.icon}}" class="class-icon" alt="{{class.className}}">{{/if}}
+                  <span class="class-name">{{class.className}}</span>
+                  <span class="spell-counts">
+                    {{localize "SPELLBOOK.Party.Known"}}: {{class.totalKnown}}
+                    {{localize "SPELLBOOK.Party.Prepared"}}: {{class.totalPrepared}}
+                  </span>
                 </div>
               {{/each}}
             </div>
@@ -68,7 +65,7 @@
     </div>
   </section>
 
-  <!-- Spell Comparison Matrix - embedded directly, not as partial -->
+  <!-- Spell Comparison Matrix -->
   <section class="spell-comparison">
     <h3>{{localize "SPELLBOOK.Party.SpellComparison"}}</h3>
     {{#if spellLevels}}
@@ -83,15 +80,13 @@
             {{#each levelGroup.spells as |spell|}}
               <div class="spell-comparison-item">
                 <div class="spell-header">
-                  <span class="spell-name">{{spell.name}}</span>
-                  {{#if spell.concentration}}
-                    <i class="fas fa-circle-dot concentration-icon"
-                      data-tooltip="{{localize 'SPELLBOOK.SpellDetails.Concentration'}}" aria-hidden="true"></i>
-                  {{/if}}
-                  {{#if spell.ritual}}
-                    <i class="fas fa-scroll ritual-icon" data-tooltip="{{localize 'SPELLBOOK.SpellDetails.Ritual'}}"
-                      aria-hidden="true"></i>
-                  {{/if}}
+                  <div class="spell-icon-container">{{{spell.img}}}</div>
+                  <div class="spell-title-info">
+                    <span class="spell-name">{{spell.name}}</span>
+                    {{#if spell.componentAbbrs}}
+                      <span class="spell-components">{{spell.componentAbbrs}}</span>
+                    {{/if}}
+                  </div>
                 </div>
 
                 <div class="spell-actors">

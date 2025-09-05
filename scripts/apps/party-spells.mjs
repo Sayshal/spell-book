@@ -21,7 +21,7 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
       minimizable: true,
       positioned: true
     },
-    position: { height: 800, width: 1000 }
+    position: { height: Math.round(window.innerHeight * 0.9), width: Math.round(window.innerWidth * 0.8) }
   };
 
   static PARTS = {
@@ -89,10 +89,12 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const success = await this.partyManager.setActorSpellcastingFocus(actor, focus);
         if (success) {
+          ui.notifications.clear();
           ui.notifications.info('SPELLBOOK.Party.FocusUpdated', { localize: true });
           // Clear cache so next manual refresh gets new data
           this._comparisonData = null;
         } else {
+          ui.notifications.clear();
           ui.notifications.error('SPELLBOOK.Party.FocusUpdateError', { localize: true });
         }
       });
