@@ -80,6 +80,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(actor, options = {}) {
     super(options);
     this.actor = actor;
+    this.group = PartySpellManager.getPrimaryGroupForActor(actor);
     this.spellManager = new SpellManager(actor);
     this.wizardManagers = new Map();
     const wizardClasses = DataHelpers.getWizardEnabledClasses(actor);
@@ -2005,7 +2006,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       return;
     }
 
-    const manager = new PartySpells(partyActors, this.actor);
+    const manager = new PartySpells(partyActors, this.actor, this.group);
     manager.render(true);
   }
 

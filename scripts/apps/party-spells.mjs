@@ -17,12 +17,12 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
     },
     classes: ['spell-book', 'party-spell-manager'],
     window: {
-      icon: 'modules/spell-book/assets/icon_colored.webp',
+      icon: 'spell-book-module-icon',
       resizable: true,
       minimizable: true,
       positioned: true
     },
-    position: { height: Math.round(window.innerHeight * 0.9), width: Math.round(window.innerWidth * 0.8) }
+    position: { height: 1200, width: 750 }
   };
 
   static PARTS = {

@@ -229,17 +229,12 @@ export class PartySpellManager {
    */
   organizeSpellsByLevel(comparisonData) {
     const spellsByLevel = {};
-
     for (const actorData of comparisonData.actors) {
       if (!actorData.hasPermission) continue;
-
       for (const classData of actorData.spellcasters) {
         for (const spell of classData.knownSpells) {
           const level = spell.level;
-          if (!spellsByLevel[level]) {
-            spellsByLevel[level] = {};
-          }
-
+          if (!spellsByLevel[level]) spellsByLevel[level] = {};
           const spellKey = spell.name;
           if (!spellsByLevel[level][spellKey]) {
             spellsByLevel[level][spellKey] = {
@@ -252,11 +247,9 @@ export class PartySpellManager {
               actorStatuses: []
             };
           }
-
           spellsByLevel[level][spellKey].actorStatuses.push({
             actorId: actorData.id,
             name: actorData.name,
-            token: actorData.token,
             classId: classData.classId,
             className: classData.className,
             status: spell.prepared ? 'prepared' : 'known'
@@ -432,5 +425,56 @@ export class PartySpellManager {
     }
 
     return [];
+  }
+
+  /**
+   * Find the group actor(s) that contain the specified actor
+   * @param {Actor} actor The actor to find groups for
+   * @returns {Actor[]} Array of group actors containing this actor
+   */
+  static findGroupsForActor(actor) {
+    if (!actor) return [];
+
+    const groups = [];
+
+    // Search through all group actors
+    for (const groupActor of game.actors.filter((a) => a.type === 'group')) {
+      const creatures = groupActor.system?.creatures || [];
+
+      // Check if this actor is in the group's creatures array
+      if (creatures.some((creature) => creature?.id === actor.id)) {
+        groups.push(groupActor);
+      }
+    }
+
+    return groups;
+  }
+
+  /**
+   * Get the primary group for an actor (first group found, or primary party if set)
+   * @param {Actor} actor The actor to find primary group for
+   * @returns {Actor|null} The primary group actor or null if none found
+   */
+  static getPrimaryGroupForActor(actor) {
+    if (!actor) return null;
+
+    // First try to find if actor is in the primary party
+    try {
+      const primaryPartyData = game.settings.get('dnd5e', 'primaryParty');
+      const primaryPartyActor = primaryPartyData?.actor;
+
+      if (primaryPartyActor && primaryPartyActor.type === 'group') {
+        const creatures = primaryPartyActor.system?.creatures || [];
+        if (creatures.some((creature) => creature?.id === actor.id)) {
+          return primaryPartyActor;
+        }
+      }
+    } catch (error) {
+      console.warn('Error accessing primary party setting:', error);
+    }
+
+    // Fall back to first group found
+    const groups = this.findGroupsForActor(actor);
+    return groups.length > 0 ? groups[0] : null;
   }
 }

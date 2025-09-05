@@ -99,11 +99,7 @@
                 <div class="spell-actors">
                   {{#each spell.actorStatuses as |actorStatus|}}
                     <div class="actor-spell-status {{actorStatus.status}}" data-actor-id="{{actorStatus.actorId}}">
-                      <img src="{{actorStatus.token}}" class="actor-token" alt="{{actorStatus.name}}">
                       <span class="actor-name">{{actorStatus.name}}</span>
-                      {{#if (eq actorStatus.status "prepared")}}
-                        <i class="fas fa-check-circle prepared-icon" aria-hidden="true"></i>
-                      {{/if}}
                     </div>
                   {{/each}}
                 </div>
