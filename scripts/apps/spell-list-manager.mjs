@@ -252,7 +252,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     }
 
     context.filteredSpells = filteredData;
-    context.filterFormElements = this._prepareFilterValidationHelplers();
+    context.filterFormElements = this._prepareFilterElements();
   }
 
   /**
@@ -802,7 +802,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * Prepare form elements for the spell filters
    * @returns {Object} Object containing all filter form element HTML
    */
-  _prepareFilterValidationHelplers() {
+  _prepareFilterElements() {
     const searchInput = ValidationHelplers.createTextInput({
       name: 'spell-search',
       value: this.filterState.name || '',
