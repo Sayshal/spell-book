@@ -5,12 +5,118 @@ import { log } from './logger.mjs';
 import * as UIHelpers from './ui/_module.mjs';
 
 /**
- * Register all module settings
+ * Foundry VTT setting configuration object
+ * @typedef {Object} SettingConfig
+ * @property {string} name Localization key for setting name
+ * @property {string} [hint] Localization key for setting description
+ * @property {SettingScope} scope Setting scope ('world' | 'client')
+ * @property {boolean} config Whether setting appears in configuration UI
+ * @property {SettingType} type JavaScript type for setting value
+ * @property {*} default Default value for the setting
+ * @property {Object} [choices] Choice options for dropdown settings
+ * @property {SettingRange} [range] Range constraints for numeric settings
+ * @property {Function} [onChange] Callback function when setting changes
+ * @property {boolean} [requiresReload] Whether changing requires world reload
+ * @property {boolean} [restricted] Whether setting is GM-only
+ */
+
+/**
+ * Setting scope determines where the setting is stored
+ * @typedef {"world" | "client"} SettingScope
+ */
+
+/**
+ * JavaScript type constructors for settings
+ * @typedef {StringConstructor | NumberConstructor | BooleanConstructor | ObjectConstructor | ArrayConstructor} SettingType
+ */
+
+/**
+ * Numeric setting range constraints
+ * @typedef {Object} SettingRange
+ * @property {number} min Minimum allowed value
+ * @property {number} max Maximum allowed value
+ * @property {number} step Step increment for input controls
+ */
+
+/**
+ * Filter configuration structure stored in settings
+ * @typedef {Object} FilterConfiguration
+ * @property {string} version Configuration schema version
+ * @property {FilterConfigItem[]} filters Array of filter definitions
+ */
+
+/**
+ * Individual filter configuration item
+ * @typedef {Object} FilterConfigItem
+ * @property {string} id Unique filter identifier
+ * @property {string} type Filter control type
+ * @property {boolean} enabled Whether filter is enabled
+ * @property {number} order Display order
+ * @property {string} label Localization key for label
+ * @property {boolean} sortable Whether results can be sorted
+ * @property {string[]} [searchAliases] Alternative search terms
+ */
+
+/**
+ * Compendium indexing configuration
+ * @typedef {Object} CompendiumIndexConfig
+ * @property {Object.<string, boolean>} [packId] Pack ID mapped to enabled status
+ */
+
+/**
+ * Custom spell mappings configuration
+ * @typedef {Object} CustomSpellMappings
+ * @property {Object.<string, string>} [classId] Class ID mapped to spell list UUID
+ */
+
+/**
+ * Available focus options for party mode
+ * @typedef {Object} AvailableFocusOptions
+ * @property {PartyFocus[]} focuses Array of available focus definitions
+ */
+
+/**
+ * Party spellcasting focus definition
+ * @typedef {Object} PartyFocus
+ * @property {string} id Unique focus identifier
+ * @property {string} name Display name for focus
+ * @property {string} icon Icon class for focus
+ * @property {string} description Focus description
+ */
+
+/**
+ * Hidden spell lists configuration
+ * @typedef {string[]} HiddenSpellLists Array of spell list UUIDs to hide
+ */
+
+/**
+ * Position data for spell book window
+ * @typedef {Object} SpellBookPosition
+ * @property {number} [height] Window height in pixels
+ * @property {number} [width] Window width in pixels
+ * @property {number} [left] Window left position
+ * @property {number} [top] Window top position
+ */
+
+/**
+ * Register all module settings with Foundry VTT.
+ *
+ * Organizes settings into logical groups:
+ * - Menus & Classes: Interactive setting menus
+ * - Core Functionality: Essential module behavior
+ * - UI & UX: User interface customization
+ * - Notes & Annotations: Spell notes and descriptions
+ * - UI Customization: Detailed interface options
+ * - Party Spell Tracking: Group coordination features
+ * - Technical: Advanced configuration options
+ * - Troubleshooting: Debug and diagnostic tools
+ *
+ * @returns {void}
  */
 export function registerSettings() {
-  // ========================================//
-  //  Menus & Classes                        //
-  // ========================================//
+  // ========================================
+  //  Menus & Classes
+  // ========================================
 
   game.settings.registerMenu(MODULE.ID, 'openSpellListManager', {
     name: 'SPELLBOOK.Settings.OpenSpellListManager.Name',
@@ -32,9 +138,9 @@ export function registerSettings() {
     restricted: true
   });
 
-  // ========================================//
-  //  Core Functionality                     //
-  // ========================================//
+  // ========================================
+  //  Core Functionality
+  // ========================================
 
   game.settings.register(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS, {
     name: 'SPELLBOOK.Settings.IndexedCompendiumsName',
@@ -64,7 +170,8 @@ export function registerSettings() {
     type: Boolean,
     default: true,
     onChange: (value) => {
-      ui.notifications.info(value ? game.i18n.localize('SPELLBOOK.Settings.SpellUsageTrackingEnabled') : game.i18n.localize('SPELLBOOK.Settings.SpellUsageTrackingDisabled'));
+      const message = value ? game.i18n.localize('SPELLBOOK.Settings.SpellUsageTrackingEnabled') : game.i18n.localize('SPELLBOOK.Settings.SpellUsageTrackingDisabled');
+      ui.notifications.info(message);
     }
   });
 
@@ -95,112 +202,6 @@ export function registerSettings() {
     type: Boolean,
     default: false,
     requiresReload: true
-  });
-
-  // ========================================//
-  //  UI & UX                                //
-  // ========================================//
-
-  game.settings.register(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION, {
-    name: 'SPELLBOOK.Settings.SpellBookPosition.Name',
-    hint: 'SPELLBOOK.Settings.SpellBookPosition.Hint',
-    scope: 'client',
-    config: false,
-    type: Object,
-    default: {}
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.SIDEBAR_CONTROLS_BOTTOM, {
-    name: 'SPELLBOOK.Settings.SidebarControlsBottom.Name',
-    hint: 'SPELLBOOK.Settings.SidebarControlsBottom.Hint',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: false
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.ENABLE_JOURNAL_BUTTON, {
-    name: 'SPELLBOOK.Settings.EnableJournalButton.Name',
-    hint: 'SPELLBOOK.Settings.EnableJournalButton.Hint',
-    scope: 'world',
-    config: true,
-    type: Boolean,
-    default: true,
-    requiresReload: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX, {
-    name: 'SPELLBOOK.Settings.SpellComparisonMax.Name',
-    hint: 'SPELLBOOK.Settings.SpellComparisonMax.Hint',
-    scope: 'world',
-    config: true,
-    type: Number,
-    default: 3,
-    range: { min: 2, max: 7, step: 1 }
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.WizardBookIconColor',
-    scope: 'client',
-    config: false,
-    type: new foundry.data.fields.ColorField({
-      required: false,
-      nullable: true,
-      blank: true,
-      initial: null,
-      label: 'SPELLBOOK.Settings.DetailsCustomization.WizardBookIconColor'
-    }),
-    default: null
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, {
-    name: 'SPELLBOOK.Settings.AdvancedSearchPrefix.Name',
-    hint: 'SPELLBOOK.Settings.AdvancedSearchPrefix.Hint',
-    scope: 'client',
-    config: true,
-    type: String,
-    default: '^',
-    onChange: (value) => {
-      try {
-        if (value.length !== 1) {
-          log(2, 'Advanced search prefix must be exactly 1 character, resetting to default');
-          game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
-          ui.notifications.warn('Advanced search prefix must be exactly 1 character');
-          return;
-        }
-        if (/[\dA-Za-z]/.test(value)) {
-          log(2, 'Advanced search prefix cannot be a letter or number, resetting to default');
-          game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
-          ui.notifications.warn('Advanced search prefix cannot be a letter or number');
-          return;
-        }
-        log(3, `Advanced search prefix changed to "${value}"`);
-        ui.notifications.info(`Advanced search prefix updated to "${value}"`);
-      } catch (error) {
-        log(1, 'Error validating advanced search prefix:', error);
-        game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
-      }
-    }
-  });
-
-  // ========================================//
-  //  Spell Behavior                         //
-  // ========================================//
-
-  game.settings.register(MODULE.ID, SETTINGS.SPELLCASTING_RULE_SET, {
-    name: 'SPELLBOOK.Settings.SpellcastingRuleSet.Name',
-    hint: 'SPELLBOOK.Settings.SpellcastingRuleSet.Hint',
-    scope: 'world',
-    config: true,
-    type: String,
-    choices: {
-      [MODULE.RULE_SETS.LEGACY]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Legacy',
-      [MODULE.RULE_SETS.MODERN]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Modern'
-    },
-    default: MODULE.RULE_SETS.LEGACY,
-    onChange: () => {
-      ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.RuleSetChanged'));
-    }
   });
 
   game.settings.register(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR, {
@@ -244,9 +245,60 @@ export function registerSettings() {
     default: 'cantrips-known, cantrips'
   });
 
-  // ========================================//
-  //  Notes & Annotations                    //
-  // ========================================//
+  // ========================================
+  //  UI & UX
+  // ========================================
+
+  game.settings.register(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION, {
+    name: 'SPELLBOOK.Settings.SpellBookPosition.Name',
+    hint: 'SPELLBOOK.Settings.SpellBookPosition.Hint',
+    scope: 'client',
+    config: false,
+    type: Object,
+    default: {}
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.SIDEBAR_CONTROLS_BOTTOM, {
+    name: 'SPELLBOOK.Settings.SidebarControlsBottom.Name',
+    hint: 'SPELLBOOK.Settings.SidebarControlsBottom.Hint',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: false
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.ENABLE_JOURNAL_BUTTON, {
+    name: 'SPELLBOOK.Settings.EnableJournalButton.Name',
+    hint: 'SPELLBOOK.Settings.EnableJournalButton.Hint',
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: true,
+    requiresReload: true
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX, {
+    name: 'SPELLBOOK.Settings.SpellComparisonMax.Name',
+    hint: 'SPELLBOOK.Settings.SpellComparisonMax.Hint',
+    scope: 'world',
+    config: true,
+    type: Number,
+    default: 3,
+    range: { min: 2, max: 7, step: 1 }
+  });
+
+  game.settings.register(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR, {
+    name: 'SPELLBOOK.Settings.WizardBookIconColor.Name',
+    hint: 'SPELLBOOK.Settings.WizardBookIconColor.Hint',
+    scope: 'client',
+    config: false,
+    type: String,
+    default: ''
+  });
+
+  // ========================================
+  //  Notes & Annotations
+  // ========================================
 
   game.settings.register(MODULE.ID, SETTINGS.SPELL_NOTES_DESC_INJECTION, {
     name: 'SPELLBOOK.Settings.InjectNotesIntoDescriptions.Name',
@@ -279,9 +331,9 @@ export function registerSettings() {
     }
   });
 
-  // ========================================//
-  //  UI Customization                       //
-  // ========================================//
+  // ========================================
+  //  UI Customization
+  // ========================================
 
   game.settings.registerMenu(MODULE.ID, 'spellDetailsCustomization', {
     name: 'SPELLBOOK.Settings.DetailsCustomization.MenuName',
@@ -292,201 +344,11 @@ export function registerSettings() {
     restricted: false
   });
 
-  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.Favorites',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
+  _registerUICustomizationSettings();
 
-  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_COMPARE, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.Compare',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_NOTES, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.Notes',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_SPELL_LEVEL, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.SpellLevel',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_COMPONENTS, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.Components',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_SCHOOL, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.School',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_CASTING_TIME, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.CastingTime',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_RANGE, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.Range',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_DAMAGE_TYPES, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.DamageTypes',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_CONDITIONS, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.Conditions',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_SAVE, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.Save',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_CONCENTRATION, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.Concentration',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_MATERIAL_COMPONENTS, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.MaterialComponents',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.GM_UI_COMPARE, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.Compare',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.GM_UI_SPELL_LEVEL, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.SpellLevel',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.GM_UI_COMPONENTS, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.Components',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.GM_UI_SCHOOL, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.School',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.GM_UI_CASTING_TIME, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.CastingTime',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.GM_UI_RANGE, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.Range',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.GM_UI_DAMAGE_TYPES, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.DamageTypes',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.GM_UI_CONDITIONS, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.Conditions',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.GM_UI_SAVE, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.Save',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.GM_UI_CONCENTRATION, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.Concentration',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  game.settings.register(MODULE.ID, SETTINGS.GM_UI_MATERIAL_COMPONENTS, {
-    name: 'SPELLBOOK.Settings.DetailsCustomization.MaterialComponents',
-    scope: 'client',
-    config: false,
-    type: Boolean,
-    default: true
-  });
-
-  // ========================================//
-  //  Party Spell Tracking                   //
-  // ========================================//
+  // ========================================
+  //  Party Spell Tracking
+  // ========================================
 
   game.settings.register(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS, {
     name: 'Available Focus Options',
@@ -513,9 +375,9 @@ export function registerSettings() {
     range: { min: 2, max: 8, step: 1 }
   });
 
-  // ========================================//
-  //  Technical                              //
-  // ========================================//
+  // ========================================
+  //  Technical
+  // ========================================
 
   game.settings.register(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, {
     name: 'SPELLBOOK.Settings.FilterConfiguration.Name',
@@ -561,9 +423,9 @@ export function registerSettings() {
     }
   });
 
-  // ========================================//
-  //  Troubleshooting                        //
-  // ========================================//
+  // ========================================
+  //  Troubleshooting
+  // ========================================
 
   game.settings.registerMenu(MODULE.ID, 'troubleshooterMenu', {
     name: 'SPELLBOOK.Settings.Troubleshooter.Menu.Name',
@@ -600,4 +462,47 @@ export function registerSettings() {
       log(3, `Logging level changed to ${MODULE.LOG_LEVEL}`);
     }
   });
+}
+
+/**
+ * Register all UI customization boolean settings.
+ * Reduces code duplication for similar settings.
+ * @returns {void}
+ * @private
+ */
+function _registerUICustomizationSettings() {
+  const playerUISettings = [
+    'FAVORITES',
+    'COMPARE',
+    'NOTES',
+    'SPELL_LEVEL',
+    'COMPONENTS',
+    'SCHOOL',
+    'CASTING_TIME',
+    'RANGE',
+    'DAMAGE_TYPES',
+    'CONDITIONS',
+    'SAVE',
+    'CONCENTRATION',
+    'MATERIAL_COMPONENTS'
+  ];
+  for (const setting of playerUISettings) {
+    game.settings.register(MODULE.ID, SETTINGS[`PLAYER_UI_${setting}`], {
+      name: `SPELLBOOK.Settings.DetailsCustomization.${setting.toLowerCase().replace(/_/g, '')}`,
+      scope: 'client',
+      config: false,
+      type: Boolean,
+      default: true
+    });
+  }
+  const gmUISettings = ['COMPARE', 'SPELL_LEVEL', 'COMPONENTS', 'SCHOOL', 'CASTING_TIME', 'RANGE', 'DAMAGE_TYPES', 'CONDITIONS', 'SAVE', 'CONCENTRATION', 'MATERIAL_COMPONENTS'];
+  for (const setting of gmUISettings) {
+    game.settings.register(MODULE.ID, SETTINGS[`GM_UI_${setting}`], {
+      name: `SPELLBOOK.Settings.DetailsCustomization.${setting.toLowerCase().replace(/_/g, '')}`,
+      scope: 'client',
+      config: false,
+      type: Boolean,
+      default: true
+    });
+  }
 }
