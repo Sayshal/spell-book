@@ -1,3 +1,17 @@
+/**
+ * Spell Book Module API
+ *
+ * Provides external access to module functionality through a unified API interface.
+ * This module creates and registers the global SPELLBOOK API object that allows
+ * other modules and macros to interact with Spell Book features programmatically.
+ *
+ * The API exposes applications, dialogs, utility functions, and convenience methods
+ * for opening various UI components and accessing module state.
+ *
+ * @module API
+ * @author Tyler
+ */
+
 import { PlayerFilterConfiguration, SpellAnalyticsDashboard, SpellBook, SpellListManager } from './apps/_module.mjs';
 import * as DataHelpers from './data/_module.mjs';
 import { CompendiumSelectionDialog, SpellComparisonDialog, SpellDetailsCustomization, SpellLoadoutDialog, SpellNotesDialog, SpellbookSettingsDialog } from './dialogs/_module.mjs';
@@ -9,14 +23,105 @@ import * as UIHelpers from './ui/_module.mjs';
 import * as ValidationHelpers from './validation/_module.mjs';
 
 /**
- * Creates and registers the module's API
- * @returns {Object} The API object
+ * Available applications exposed through the API.
+ *
+ * @typedef {Object} APIApplications
+ * @property {typeof PlayerFilterConfiguration} PlayerFilterConfiguration - Player filter configuration application
+ * @property {typeof SpellBook} SpellBook - Main spell book application
+ * @property {typeof SpellAnalyticsDashboard} SpellAnalyticsDashboard - Spell usage analytics dashboard
+ * @property {typeof SpellListManager} SpellListManager - Spell list management application
+ */
+
+/**
+ * Available dialogs exposed through the API.
+ *
+ * @typedef {Object} APIDialogs
+ * @property {typeof CompendiumSelectionDialog} CompendiumSelectionDialog - Compendium selection dialog
+ * @property {typeof SpellComparisonDialog} SpellComparisonDialog - Spell comparison dialog
+ * @property {typeof SpellDetailsCustomization} SpellDetailsCustomization - Spell details customization dialog
+ * @property {typeof SpellLoadoutDialog} SpellLoadoutDialog - Spell loadout configuration dialog
+ * @property {typeof SpellNotesDialog} SpellNotesDialog - Spell notes editor dialog
+ * @property {typeof SpellbookSettingsDialog} SpellbookSettingsDialog - Spellbook settings dialog
+ */
+
+/**
+ * Manager classes exposed through the API utilities.
+ *
+ * @typedef {Object} APIManagers
+ * @property {typeof CantripManager} CantripManager - Cantrip management functionality
+ * @property {typeof MacroManager} MacroManager - Macro management functionality
+ * @property {typeof RuleSetManager} RuleSetManager - Rule set management functionality
+ * @property {typeof SpellLoadoutManager} SpellLoadoutManager - Spell loadout management functionality
+ * @property {typeof SpellManager} SpellManager - Core spell management functionality
+ * @property {typeof SpellUsageTracker} SpellUsageTracker - Spell usage tracking functionality
+ * @property {typeof UserSpellDataManager} UserSpellDataManager - User spell data management functionality
+ * @property {typeof WizardSpellbookManager} WizardSpellbookManager - Wizard spellbook management functionality
+ */
+
+/**
+ * Utility modules exposed through the API.
+ *
+ * @typedef {Object} APIUtils
+ * @property {Object} data - Data helper functions for spell and compendium operations
+ * @property {APIManagers} managers - Manager classes for various spell book functionalities
+ * @property {typeof SpellbookState} state - State management utilities
+ * @property {Object} ui - UI helper functions and utilities
+ * @property {Object} validation - Validation helper functions
+ */
+
+/**
+ * Migration functions exposed through the API.
+ *
+ * @typedef {Object} APIMigrations
+ * @property {Function} forceMigration - Force run all migrations for testing purposes
+ */
+
+/**
+ * Analytics dashboard options for opening the dashboard with specific configuration.
+ *
+ * @typedef {Object} AnalyticsDashboardOptions
+ * @property {'personal'|'gm'} [viewMode='personal'] - Dashboard view mode
+ * @property {string} [userId] - User ID for personal view (defaults to current user)
+ */
+
+/**
+ * Complete Spell Book module API interface.
+ *
+ * @typedef {Object} SpellBookAPI
+ * @property {APIApplications} apps - Available applications
+ * @property {APIDialogs} dialogs - Available dialogs
+ * @property {APIUtils} utils - Utility modules and functions
+ * @property {APIMigrations} migrations - Migration functions
+ * @property {*} preloadedData - Cached spell data for performance optimization
+ * @property {Function} openSpellBookForActor - Open spell book for specific actor
+ * @property {Function} openSpellListManager - Open spell list manager
+ * @property {Function} openAnalyticsDashboard - Open analytics dashboard
+ * @property {Function} openSpellNotesDialog - Open spell notes dialog
+ * @property {Function} openSpellLoadoutDialog - Open spell loadout dialog
+ * @property {Function} openSpellbookSettingsDialog - Open spellbook settings dialog
+ * @property {Function} log - Module logging function
+ */
+
+/**
+ * Creates and registers the module's API on the global scope.
+ *
+ * This function constructs the complete API object with all available applications,
+ * dialogs, utilities, and convenience methods. The API is registered globally as
+ * `globalThis.SPELLBOOK` for access by other modules and macros.
+ *
+ * @returns {SpellBookAPI|null} The API object, or null if creation failed
  */
 export function createAPI() {
   try {
+    /** @type {SpellBookAPI} */
     const api = {
+      /** @type {APIApplications} Available applications */
       apps: { PlayerFilterConfiguration, SpellBook, SpellAnalyticsDashboard, SpellListManager },
+
+      /** @type {APIDialogs} Available dialogs */
       dialogs: { CompendiumSelectionDialog, SpellComparisonDialog, SpellDetailsCustomization, SpellLoadoutDialog, SpellNotesDialog, SpellbookSettingsDialog },
+
+      /** @type {APIUtils} Utility modules */
       utils: {
         data: DataHelpers,
         managers: { CantripManager, MacroManager, RuleSetManager, SpellLoadoutManager, SpellManager, SpellUsageTracker, UserSpellDataManager, WizardSpellbookManager },
@@ -24,15 +129,24 @@ export function createAPI() {
         ui: UIHelpers,
         validation: ValidationHelpers
       },
+
+      /** @type {APIMigrations} Migration functions */
       migrations: {
         forceMigration
       },
+
+      /** @type {*} Preloaded spell data for performance optimization */
       preloadedData: null,
 
       /**
-       * Open Spell Book for a specific actor
-       * @param {Actor5e} actor The actor to open the Spell Book for
-       * @returns {SpellBook} The created Spell Book instance
+       * Open Spell Book application for a specific actor.
+       *
+       * Creates and renders a new Spell Book instance for the provided actor.
+       * The spell book will display all spellcasting classes and capabilities
+       * for the given actor.
+       *
+       * @param {Actor5e} actor - The actor to open the Spell Book for
+       * @returns {SpellBook|null} The created Spell Book instance, or null if no actor provided
        */
       openSpellBookForActor: (actor) => {
         if (!actor) {
@@ -45,7 +159,11 @@ export function createAPI() {
       },
 
       /**
-       * Open the Spell List Manager
+       * Open the Spell List Manager application.
+       *
+       * Creates and renders a new Spell List Manager instance for managing
+       * custom spell lists, merging spell lists, and organizing spells.
+       *
        * @returns {SpellListManager} The created manager instance
        */
       openSpellListManager: () => {
@@ -55,10 +173,12 @@ export function createAPI() {
       },
 
       /**
-       * Open the spell analytics dashboard
-       * @param {Object} options Dashboard options
-       * @param {string} [options.viewMode='personal'] 'personal' or 'gm'
-       * @param {string} [options.userId] User ID for personal view
+       * Open the spell analytics dashboard.
+       *
+       * Creates and renders a new analytics dashboard for viewing spell usage
+       * statistics and trends. Supports both personal and GM view modes.
+       *
+       * @param {AnalyticsDashboardOptions} [options={}] - Dashboard configuration options
        * @returns {SpellAnalyticsDashboard} The created dashboard instance
        */
       openAnalyticsDashboard: (options = {}) => {
@@ -74,9 +194,13 @@ export function createAPI() {
       },
 
       /**
-       * Open spell notes dialog for a specific spell
-       * @param {string} spellUuid The spell UUID
-       * @returns {SpellNotesDialog} The created dialog instance
+       * Open spell notes dialog for a specific spell.
+       *
+       * Creates and renders a spell notes dialog for editing personal notes
+       * about a specific spell identified by its UUID.
+       *
+       * @param {string} spellUuid - The UUID of the spell to edit notes for
+       * @returns {SpellNotesDialog|null} The created dialog instance, or null if no UUID provided
        */
       openSpellNotesDialog: (spellUuid) => {
         if (!spellUuid) {
@@ -89,11 +213,15 @@ export function createAPI() {
       },
 
       /**
-       * Open spell loadout dialog for an actor and class
-       * @param {Actor} actor The actor
-       * @param {SpellBook} spellbook The Spell Book reference
-       * @param {string} classIdentifier The class identifier
-       * @returns {SpellLoadoutDialog} The created dialog instance
+       * Open spell loadout dialog for an actor and class.
+       *
+       * Creates and renders a spell loadout configuration dialog for managing
+       * spell selections, preparations, and loadouts for a specific class.
+       *
+       * @param {Actor} actor - The actor to configure loadouts for
+       * @param {SpellBook} spellbook - The Spell Book application reference
+       * @param {string} classIdentifier - The class identifier for the loadout
+       * @returns {SpellLoadoutDialog|null} The created dialog instance, or null if parameters missing
        */
       openSpellLoadoutDialog: (actor, spellbook, classIdentifier) => {
         if (!actor || !spellbook || !classIdentifier) {
@@ -106,9 +234,13 @@ export function createAPI() {
       },
 
       /**
-       * Open Spell Book settings dialog for an actor
-       * @param {Actor} actor The actor
-       * @returns {SpellbookSettingsDialog} The created dialog instance
+       * Open Spell Book settings dialog for an actor.
+       *
+       * Creates and renders a spellbook settings dialog for configuring
+       * actor-specific spell book behavior and preferences.
+       *
+       * @param {Actor} actor - The actor to configure settings for
+       * @returns {SpellbookSettingsDialog|null} The created dialog instance, or null if no actor provided
        */
       openSpellbookSettingsDialog: (actor) => {
         if (!actor) {
@@ -120,9 +252,11 @@ export function createAPI() {
         return dialog;
       },
 
+      /** @type {Function} Module logging function with level-based filtering */
       log
     };
 
+    // Register API globally for external access
     globalThis.SPELLBOOK = api;
     log(3, 'Module API registered with all components');
     return api;

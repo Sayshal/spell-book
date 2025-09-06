@@ -47,10 +47,10 @@ This document tracks the progress of enhancing JSDoc type definitions across all
 
 ### `/scripts/integrations/` - External Module Integration
 
-- [] `dnd5e.mjs` - D&D 5e system integration hooks and handlers
-- [] `group-actor.mjs` - Group actor module integration
-- [] `tidy5e.mjs` - Tidy5e sheet integration
-- [] `_module.mjs` - Integrations module exports
+- [x] `dnd5e.mjs` - D&D 5e system integration hooks and handlers
+- [x] `group-actor.mjs` - Group actor module integration [REMOVED]
+- [x] `tidy5e.mjs` - Tidy5e sheet integration
+- [x] `_module.mjs` - Integrations module exports
 
 ### `/scripts/managers/` - Business Logic Managers
 
@@ -93,11 +93,11 @@ This document tracks the progress of enhancing JSDoc type definitions across all
 
 ### `/scripts/` - Root Level Files
 
-- [] `api.mjs` - Public API for external module integration
-- [] `logger.mjs` - Custom logging system with context information
-- [] `migrations.mjs` - Database migration and update handlers
-- [] `settings.mjs` - Foundry settings registration and management
-- [] `spell-book.mjs` - Main module initialization and hooks
+- [x] `api.mjs` - Public API for external module integration
+- [x] `logger.mjs` - Custom logging system with context information
+- [x] `migrations.mjs` - Database migration and update handlers
+- [x] `settings.mjs` - Foundry settings registration and management
+- [x] `spell-book.mjs` - Main module initialization and hooks
 
 ### `/templates/` - Handlebars Templates
 

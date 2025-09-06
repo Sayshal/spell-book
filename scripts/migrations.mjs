@@ -1,16 +1,105 @@
+/**
+ * Spell Book Module Migrations
+ *
+ * Handles data migration and maintenance tasks for the Spell Book module.
+ * This module provides automated migration functionality that runs on world
+ * startup to ensure data integrity, update deprecated configurations, and
+ * maintain proper ownership and organization of module data.
+ *
+ * Migration areas:
+ * - Deprecated flag cleanup from actors and documents
+ * - Spell list folder organization and migration
+ * - Ownership validation and correction
+ * - Compendium pack configuration and sorting
+ *
+ * @module Migrations
+ * @author Tyler
+ */
+
 import { DEPRECATED_FLAGS, MODULE, TEMPLATES } from './constants/_module.mjs';
 import * as DataHelpers from './data/_module.mjs';
 import { log } from './logger.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
 
-Hooks.on('ready', runAllMigrations);
+/**
+ * Results from deprecated flag migration operations.
+ *
+ * @typedef {Object} DeprecatedFlagResults
+ * @property {number} processed - Number of documents processed
+ * @property {number} invalidFlagRemovals - Number of documents with invalid flags removed
+ * @property {Array<Object>} actors - Array of actor migration information
+ * @property {Array<Object>} affectedDocuments - Array of all affected document information
+ */
 
 /**
- * Run all migration functions in sequence
+ * Results from folder migration operations.
+ *
+ * @typedef {Object} FolderMigrationResults
+ * @property {number} processed - Number of journals migrated
+ * @property {Array<string>} errors - Array of error messages
+ * @property {number} customMoved - Number of custom spell lists moved
+ * @property {number} mergedMoved - Number of merged spell lists moved
+ * @property {Array<string>} foldersCreated - Array of folder names created
+ * @property {Array<Object>} migratedJournals - Array of migrated journal information
  */
-async function runAllMigrations() {
+
+/**
+ * Results from ownership validation operations.
+ *
+ * @typedef {Object} OwnershipValidationResults
+ * @property {number} processed - Total number of documents fixed
+ * @property {Array<string>} errors - Array of error messages
+ * @property {number} userDataFixed - Number of user data documents fixed
+ * @property {number} spellListsFixed - Number of spell list documents fixed
+ * @property {number} actorSpellbooksFixed - Number of actor spellbook documents fixed
+ * @property {number} packsFixed - Number of compendium packs fixed
+ * @property {Array<string>} details - Array of detailed fix descriptions
+ * @property {Array<Object>} fixedDocuments - Array of fixed document information
+ */
+
+/**
+ * Results from pack sorting migration operations.
+ *
+ * @typedef {Object} PackSortingResults
+ * @property {number} processed - Total items processed
+ * @property {number} foldersUpdated - Number of folders updated
+ * @property {number} packsUpdated - Number of packs updated
+ * @property {Array<Object>} errors - Array of error objects with type and details
+ */
+
+/**
+ * Document migration result for individual documents.
+ *
+ * @typedef {Object} DocumentMigrationResult
+ * @property {boolean} wasUpdated - Whether the document was updated
+ * @property {boolean} invalidFlags - Whether invalid flags were found
+ * @property {Array<Object>} removedFlags - Array of removed flag information
+ */
+
+/**
+ * Journal folder migration result for individual journals.
+ *
+ * @typedef {Object} JournalMigrationResult
+ * @property {boolean} success - Whether migration was successful
+ * @property {string} [type] - Type of migration performed ('custom' or 'merged')
+ * @property {string} [targetFolder] - Name of target folder
+ * @property {string} [error] - Error message if migration failed
+ */
+
+/**
+ * Run all migration functions in sequence.
+ *
+ * This function orchestrates all migration operations, collecting results
+ * and providing comprehensive reporting. Only runs for GM users to prevent
+ * conflicts. Migrations include deprecated flag cleanup, folder organization,
+ * ownership validation, and pack sorting updates.
+ *
+ * @returns {Promise<void>}
+ */
+export async function runAllMigrations() {
   if (!game.user.isGM) return;
+
   log(3, 'Running all migrations...');
   try {
     const deprecatedFlagResults = await migrateDeprecatedFlags();
@@ -32,10 +121,15 @@ async function runAllMigrations() {
 }
 
 /**
- * Migrate deprecated flags from world actors and compendium documents
- * @returns {Promise<Object>} Migration results with processed count and affected documents
+ * Migrate deprecated flags from world actors and compendium documents.
+ *
+ * Scans all world actors and module compendium documents for deprecated
+ * flags and invalid values, removing them to maintain data cleanliness.
+ *
+ * @returns {Promise<DeprecatedFlagResults>} Migration results with processed count and affected documents
  */
 async function migrateDeprecatedFlags() {
+  /** @type {DeprecatedFlagResults} */
   const results = { processed: 0, invalidFlagRemovals: 0, actors: [], affectedDocuments: [] };
   log(3, 'Migrating world actors and compendium for deprecated flags');
   await migrateCollection(game.actors, results);
@@ -48,10 +142,16 @@ async function migrateDeprecatedFlags() {
 }
 
 /**
- * Migrate a collection of documents for deprecated flags
- * @param {Collection|Array} documents Documents to migrate
- * @param {Object} results Results object to update
- * @param {string|null} packName Pack name if migrating compendium
+ * Migrate a collection of documents for deprecated flags.
+ *
+ * Processes each document in the collection, checking for and removing
+ * deprecated or invalid flags. Updates the results object with migration
+ * information for reporting.
+ *
+ * @param {Collection|Array} documents - Documents to migrate
+ * @param {DeprecatedFlagResults} results - Results object to update
+ * @param {string|null} [packName=null] - Pack name if migrating compendium
+ * @returns {Promise<void>}
  */
 async function migrateCollection(documents, results, packName = null) {
   for (const doc of documents) {
@@ -67,10 +167,14 @@ async function migrateCollection(documents, results, packName = null) {
 }
 
 /**
- * Migrate a single document for deprecated flags
- * @param {Document} doc Document to migrate
- * @param {Array} deprecatedFlags Array of deprecated flag definitions
- * @returns {Promise<Object>} Migration result with update status and removed flags
+ * Migrate a single document for deprecated flags.
+ *
+ * Examines document flags for deprecated or invalid values and removes them.
+ * Returns detailed information about what was changed for reporting purposes.
+ *
+ * @param {Document} doc - Document to migrate
+ * @param {Array} deprecatedFlags - Array of deprecated flag definitions
+ * @returns {Promise<DocumentMigrationResult>} Migration result with update status and removed flags
  */
 async function migrateDocument(doc, deprecatedFlags) {
   const flags = doc.flags?.[MODULE.ID];
@@ -91,7 +195,6 @@ async function migrateDocument(doc, deprecatedFlags) {
       removedFlags.push({ key, value, reason });
     }
   }
-
   if (hasRemovals) {
     try {
       await doc.update(updates);
@@ -106,12 +209,19 @@ async function migrateDocument(doc, deprecatedFlags) {
 }
 
 /**
- * Migrate spell list journals to appropriate folders
- * @returns {Promise<Object>} Migration results with processed count and moved journals
+ * Migrate spell list journals to appropriate folders.
+ *
+ * Organizes spell list journals into proper folder structure based on their
+ * flags and types. Creates necessary folders if they don't exist and moves
+ * journals from the root level into appropriate categorized folders.
+ *
+ * @returns {Promise<FolderMigrationResults>} Migration results with processed count and moved journals
  */
 async function migrateSpellListFolders() {
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
   if (!customPack) return { processed: 0, errors: [], customMoved: 0, mergedMoved: 0, foldersCreated: [], migratedJournals: [] };
+
+  /** @type {FolderMigrationResults} */
   const results = { processed: 0, errors: [], customMoved: 0, mergedMoved: 0, foldersCreated: [], migratedJournals: [] };
   try {
     const allJournals = await customPack.getDocuments();
@@ -146,10 +256,16 @@ async function migrateSpellListFolders() {
 }
 
 /**
- * Validate and fix ownership levels for all Spell Book documents
- * @returns {Promise<Object>} Validation results with fixed counts and details
+ * Validate and fix ownership levels for all Spell Book documents.
+ *
+ * Ensures proper ownership configuration for user data, spell lists,
+ * actor spellbooks, and compendium packs. Corrects ownership levels
+ * to maintain security and access control.
+ *
+ * @returns {Promise<OwnershipValidationResults>} Validation results with fixed counts and details
  */
 async function validateOwnershipLevels() {
+  /** @type {OwnershipValidationResults} */
   const results = { processed: 0, errors: [], userDataFixed: 0, spellListsFixed: 0, actorSpellbooksFixed: 0, packsFixed: 0, details: [], fixedDocuments: [] };
   log(3, 'Validating ownership levels for Spell Book documents...');
   try {
@@ -186,7 +302,11 @@ async function validateOwnershipLevels() {
 }
 
 /**
- * Validate and fix user data journal and page ownership
+ * Validate and fix user data journal and page ownership.
+ *
+ * Ensures user spell data journals and pages have correct ownership
+ * settings for proper access control and data security.
+ *
  * @returns {Promise<Object>} Validation results for user data
  */
 async function validateUserDataOwnership() {
@@ -235,7 +355,11 @@ async function validateUserDataOwnership() {
 }
 
 /**
- * Validate and fix spell list journal ownership
+ * Validate and fix spell list journal ownership.
+ *
+ * Ensures spell list journals have appropriate ownership levels for
+ * proper access by players and GMs.
+ *
  * @returns {Promise<Object>} Validation results for spell lists
  */
 async function validateSpellListOwnership() {
@@ -272,7 +396,11 @@ async function validateSpellListOwnership() {
 }
 
 /**
- * Validate and fix actor Spell Book journal and page ownership
+ * Validate and fix actor Spell Book journal and page ownership.
+ *
+ * Ensures actor spellbook journals and pages have ownership that matches
+ * the associated actor's ownership for proper access control.
+ *
  * @returns {Promise<Object>} Validation results for actor spellbooks
  */
 async function validateActorSpellbookOwnership() {
@@ -355,7 +483,11 @@ async function validateActorSpellbookOwnership() {
 }
 
 /**
- * Validate and fix compendium pack ownership and visibility
+ * Validate and fix compendium pack ownership and visibility.
+ *
+ * Ensures all module compendium packs have correct ownership levels
+ * and visibility settings for proper user access.
+ *
  * @returns {Promise<Object>} Validation results for packs
  */
 async function validatePackOwnership() {
@@ -363,6 +495,8 @@ async function validatePackOwnership() {
   const userDataPack = game.packs.get(MODULE.PACK.USERDATA);
   const spellsPack = game.packs.get(MODULE.PACK.SPELLS);
   const macrosPack = game.packs.get(MODULE.PACK.MACROS);
+
+  /** @type {Array<{pack: CompendiumCollection, name: string, expectedOwnership: Object}>} */
   const packConfigurations = [
     { pack: userDataPack, name: 'User Data', expectedOwnership: { PLAYER: 'OWNER', ASSISTANT: 'OWNER' } },
     { pack: spellsPack, name: 'Spells', expectedOwnership: { PLAYER: 'OWNER', ASSISTANT: 'OWNER' } },
@@ -402,9 +536,13 @@ async function validatePackOwnership() {
 }
 
 /**
- * Compare two ownership objects for equality
- * @param {Object} ownership1 First ownership object
- * @param {Object} ownership2 Second ownership object
+ * Compare two ownership objects for equality.
+ *
+ * Performs deep comparison of ownership objects to determine if they
+ * have identical access levels for all users.
+ *
+ * @param {Object} ownership1 - First ownership object
+ * @param {Object} ownership2 - Second ownership object
  * @returns {boolean} Whether ownership objects are equal
  */
 function isOwnershipEqual(ownership1, ownership2) {
@@ -417,9 +555,13 @@ function isOwnershipEqual(ownership1, ownership2) {
 }
 
 /**
- * Compare two role-based ownership objects for equality
- * @param {Object} ownership1 First ownership object
- * @param {Object} ownership2 Second ownership object
+ * Compare two role-based ownership objects for equality.
+ *
+ * Compares role-based ownership configurations used by compendium packs
+ * to determine if access levels are correctly configured.
+ *
+ * @param {Object} ownership1 - First ownership object
+ * @param {Object} ownership2 - Second ownership object
  * @returns {boolean} Whether role ownership objects are equal
  */
 function isRoleOwnershipEqual(ownership1, ownership2) {
@@ -432,11 +574,15 @@ function isRoleOwnershipEqual(ownership1, ownership2) {
 }
 
 /**
- * Migrate a journal to its appropriate folder based on flags
- * @param {JournalEntry} journal Journal to migrate
- * @param {Folder} customFolder Custom spell lists folder
- * @param {Folder} mergedFolder Merged spell lists folder
- * @returns {Promise<Object>} Migration result with success status and type
+ * Migrate a journal to its appropriate folder based on flags.
+ *
+ * Analyzes journal page flags to determine the correct target folder
+ * and moves the journal accordingly. Also handles name cleanup.
+ *
+ * @param {JournalEntry} journal - Journal to migrate
+ * @param {Folder} customFolder - Custom spell lists folder
+ * @param {Folder} mergedFolder - Merged spell lists folder
+ * @returns {Promise<JournalMigrationResult>} Migration result with success status and type
  */
 async function migrateJournalToFolder(journal, customFolder, mergedFolder) {
   if (!journal || journal.pages.size === 0) return { success: false };
@@ -465,10 +611,15 @@ async function migrateJournalToFolder(journal, customFolder, mergedFolder) {
 }
 
 /**
- * Migrate pack sorting and folder sorting for Spell Book packs
- * @returns {Promise<Object>} Migration results with processed count and updated items
+ * Migrate pack sorting and folder sorting for Spell Book packs.
+ *
+ * Updates compendium pack sort orders and folder sorting modes to ensure
+ * consistent organization and display order.
+ *
+ * @returns {Promise<PackSortingResults>} Migration results with processed count and updated items
  */
 async function migratePackSorting() {
+  /** @type {PackSortingResults} */
   const results = { processed: 0, foldersUpdated: 0, packsUpdated: 0, errors: [] };
   try {
     const packSortingConfig = {
@@ -520,11 +671,16 @@ async function migratePackSorting() {
 }
 
 /**
- * Log detailed migration results to console and create chat message
- * @param {Object} deprecatedResults Results from deprecated flag migration
- * @param {Object} folderResults Results from folder migration
- * @param {Object} ownershipResults Results from ownership validation
- * @param {Object} packSortingResults Results from pack sorting validation
+ * Log detailed migration results to console and create chat message.
+ *
+ * Provides comprehensive reporting of all migration operations with detailed
+ * console logging and a formatted chat message for the GM.
+ *
+ * @param {DeprecatedFlagResults} deprecatedResults - Results from deprecated flag migration
+ * @param {FolderMigrationResults} folderResults - Results from folder migration
+ * @param {OwnershipValidationResults} ownershipResults - Results from ownership validation
+ * @param {PackSortingResults} packSortingResults - Results from pack sorting validation
+ * @returns {Promise<void>}
  */
 async function logMigrationResults(deprecatedResults, folderResults, ownershipResults, packSortingResults) {
   const totalProcessed = deprecatedResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed;
@@ -574,12 +730,16 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
 }
 
 /**
- * Build chat message content for migration results
- * @param {Object} deprecatedResults Deprecated flag results
- * @param {Object} folderResults Folder migration results
- * @param {Object} ownershipResults Ownership validation results
- * @param {Object} packSortingResults Pack sorting results
- * @param {number} totalProcessed Total processed documents
+ * Build chat message content for migration results.
+ *
+ * Renders a formatted HTML template containing migration results for
+ * display in the chat log.
+ *
+ * @param {DeprecatedFlagResults} deprecatedResults - Deprecated flag results
+ * @param {FolderMigrationResults} folderResults - Folder migration results
+ * @param {OwnershipValidationResults} ownershipResults - Ownership validation results
+ * @param {PackSortingResults} packSortingResults - Pack sorting results
+ * @param {number} totalProcessed - Total processed documents
  * @returns {Promise<string>} Rendered HTML content
  */
 async function buildChatContent(deprecatedResults, folderResults, ownershipResults, packSortingResults, totalProcessed) {
@@ -587,7 +747,12 @@ async function buildChatContent(deprecatedResults, folderResults, ownershipResul
 }
 
 /**
- * Force run all migrations for testing purposes
+ * Force run all migrations for testing purposes.
+ *
+ * Manually triggers all migration operations for development and testing.
+ * This function bypasses normal conditions and forces migration execution.
+ *
+ * @returns {Promise<void>}
  */
 export async function forceMigration() {
   log(2, 'Force running migration for testing...');
