@@ -1,0 +1,107 @@
+<div class="focus-settings-dialog">
+  <div class="focus-settings-content">
+    {{#if isGMMode}}
+      <!-- GM Mode: Manage Available Focus Options -->
+      <div class="gm-focus-management">
+        <h3>{{localize "SPELLBOOK.FocusSettings.ManageFocuses"}}</h3>
+
+        <div class="focus-options-list">
+          {{#each availableFocuses as |focus|}}
+            <div class="focus-option-row" data-index="{{@index}}">
+              <input type="hidden" name="focus-id-{{@index}}" value="{{focus.id}}" />
+
+              <!-- Icon column - clickable image -->
+              <div class="focus-icon-picker" data-action="selectIcon" data-index="{{@index}}"
+                data-tooltip="{{localize 'SPELLBOOK.FocusSettings.ClickToChangeIcon'}}">
+                <img src="{{focus.icon}}" alt="Focus Icon" class="focus-icon-preview" />
+                <input type="hidden" name="focus-icon-{{@index}}" value="{{focus.icon}}" />
+              </div>
+
+              <!-- Name column -->
+              <input type="text" name="focus-name-{{@index}}" value="{{focus.name}}"
+                placeholder="{{localize 'SPELLBOOK.FocusSettings.NamePlaceholder'}}"
+                data-tooltip="{{localize 'SPELLBOOK.FocusSettings.NameTooltip'}}" />
+
+              <!-- Description column -->
+              <input type="text" name="focus-description-{{@index}}" value="{{focus.description}}"
+                placeholder="{{localize 'SPELLBOOK.FocusSettings.DescriptionPlaceholder'}}"
+                data-tooltip="{{localize 'SPELLBOOK.FocusSettings.DescriptionTooltip'}}" />
+
+              <!-- Delete button -->
+              <button type="button" class="delete-focus" data-action="deleteFocus" data-index="{{@index}}"
+                data-tooltip="{{localize 'SPELLBOOK.FocusSettings.DeleteFocus'}}">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          {{/each}}
+        </div>
+
+        <button type="button" class="add-focus" data-action="addFocus">
+          <i class="fas fa-plus"></i> {{localize "SPELLBOOK.FocusSettings.AddFocus"}}
+        </button>
+
+        <hr>
+
+        <!-- Assign Focus to Party Members -->
+        <h3>{{localize "SPELLBOOK.FocusSettings.AssignFocuses"}}</h3>
+        <div class="party-member-assignments">
+          {{log 'DEBUG' partyMembers}}
+          {{#each partyMembers as |member|}}
+            <div class="member-assignment">
+              <div class="member-info">
+                <span class="member-name">{{member.name}}</span>
+                {{#if member.actorName}}
+                  <span class="actor-name">({{member.actorName}})</span>
+                {{/if}}
+              </div>
+              <select name="member-focus-{{member.id}}" data-user-id="{{member.id}}">
+                <option value="">{{localize "SPELLBOOK.FocusSettings.NoFocus"}}</option>
+                {{#each ../availableFocuses as |focus|}}
+                  <option value="{{focus.id}}" {{#if (eq focus.id ../member.selectedFocus)}}selected{{/if}}>
+                    {{focus.name}}
+                  </option>
+                {{/each}}
+              </select>
+            </div>
+          {{/each}}
+        </div>
+
+        <input type="hidden" name="action" value="save-focuses" />
+      </div>
+    {{else}}
+      <!-- Player Mode: Select Personal Focus -->
+      <div class="player-focus-selection">
+        <h3>{{localize "SPELLBOOK.FocusSettings.SelectYourFocus"}}</h3>
+
+        <div class="focus-grid">
+          {{#each availableFocuses as |focus|}}
+            <div class="focus-card {{#if (eq focus.id ../currentSelection)}}selected{{/if}}" data-action="selectFocus"
+              data-focus-id="{{focus.id}}">
+              <img src="{{focus.icon}}" alt="{{focus.name}}" class="focus-card-icon" />
+              <h4>{{focus.name}}</h4>
+              <p>{{focus.description}}</p>
+            </div>
+          {{/each}}
+        </div>
+
+        <input type="hidden" name="action" value="select-focus" />
+        <input type="hidden" name="selectedFocus" id="selected-focus-input" value="{{currentSelection}}" />
+      </div>
+    {{/if}}
+  </div>
+
+  <div class="form-footer">
+    <button type="button" class="cancel-button" data-action="close">
+      <i class="fas fa-times" aria-hidden="true"></i>
+      {{localize "SPELLBOOK.UI.Cancel"}}
+    </button>
+    <button type="submit" class="save-button">
+      <i class="fas fa-save" aria-hidden="true"></i>
+      {{#if isGMMode}}
+        {{localize "SPELLBOOK.FocusSettings.SaveSettings"}}
+      {{else}}
+        {{localize "SPELLBOOK.FocusSettings.SaveSelection"}}
+      {{/if}}
+    </button>
+  </div>
+</div>

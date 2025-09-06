@@ -24,6 +24,7 @@ export const FLAGS = {
   PREVIOUS_LEVEL: 'previousLevel',
   RECENT_SEARCHES: 'recentSearches',
   RULE_SET_OVERRIDE: 'ruleSetOverride',
+  SELECTED_FOCUS: 'selectedFocus',
   SIDEBAR_COLLAPSED: 'sidebarCollapsed',
   SPELL_LOADOUTS: 'spellLoadouts',
   SPELLCASTING_FOCUS: 'spellcastingFocus',

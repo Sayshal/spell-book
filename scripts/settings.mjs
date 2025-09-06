@@ -488,26 +488,18 @@ export function registerSettings() {
   //  Party Spell Tracking                   //
   // ========================================//
 
-  game.settings.register(MODULE.ID, SETTINGS.SPELLCASTING_FOCUSES, {
-    name: 'SPELLBOOK.Settings.SpellcastingFocuses.Name',
-    hint: 'SPELLBOOK.Settings.SpellcastingFocuses.Hint',
+  game.settings.register(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS, {
+    name: 'Available Focus Options',
     scope: 'world',
-    config: true,
-    type: String,
-    default: MODULE.PARTY_SPELL.DEFAULT_FOCUSES.join(','),
-    onChange: (value) => {
-      try {
-        const focuses = value
-          .split(',')
-          .map((f) => f.trim())
-          .filter((f) => f.length > 0);
-        if (focuses.length === 0) {
-          log(2, 'Spellcasting focuses cannot be empty, resetting to default');
-          game.settings.set(MODULE.ID, SETTINGS.SPELLCASTING_FOCUSES, MODULE.PARTY_SPELL.DEFAULT_FOCUSES.join(','));
-        }
-      } catch (error) {
-        log(1, 'Error validating spellcasting focuses:', error);
-      }
+    config: false,
+    type: Object,
+    default: {
+      focuses: MODULE.PARTY_SPELL.DEFAULT_FOCUSES.map((name, index) => ({
+        id: `focus-${index}`,
+        name: name,
+        icon: 'fas fa-magic',
+        description: `${name} spellcasting focus`
+      }))
     }
   });
 

@@ -383,18 +383,6 @@ export class PartySpellManager {
   }
 
   /**
-   * Get available spellcasting focuses from world settings
-   * @returns {string[]} Array of focus names
-   */
-  static getAvailableFocuses() {
-    const focusString = game.settings.get(MODULE.ID, SETTINGS.SPELLCASTING_FOCUSES);
-    return focusString
-      .split(',')
-      .map((f) => f.trim())
-      .filter((f) => f.length > 0);
-  }
-
-  /**
    * Get party actors from the primary party setting or fallback
    * @param {Actor} [groupActor] Optional specific group actor to use instead of primary party
    * @returns {Actor[]} Array of party member actors
@@ -432,6 +420,25 @@ export class PartySpellManager {
     }
 
     return [];
+  }
+
+  /**
+   * Get users who have actors in the party group
+   * @param {Actor} groupActor The group actor
+   * @returns {Object[]} Array of user objects with their actor information
+   */
+  static getPartyUsers(groupActor) {
+    if (!groupActor || groupActor.type !== 'group') return [];
+    const partyActors = this.getPartyActors(groupActor);
+    const partyUsers = [];
+    const partyActorIds = new Set(partyActors.map((actor) => actor.id));
+    for (const user of game.users) {
+      if (user.character && partyActorIds.has(user.character.id)) {
+        const userInfo = { id: user.id, name: user.name, actorId: user.character.id, actorName: user.character.name, user: user };
+        partyUsers.push(userInfo);
+      }
+    }
+    return partyUsers;
   }
 
   /**
@@ -483,5 +490,65 @@ export class PartySpellManager {
     // Fall back to first group found
     const groups = this.findGroupsForActor(actor);
     return groups.length > 0 ? groups[0] : null;
+  }
+
+  /**
+   * Get available spellcasting focuses from world settings
+   * @returns {string[]} Array of focus names
+   */
+  static getAvailableFocuses() {
+    const focusData = game.settings.get(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS);
+    const focuses = focusData?.focuses || [];
+    return focuses.map((focus) => focus.name);
+  }
+
+  /**
+   * Get available focus options with full data
+   * @returns {Object[]} Array of focus option objects
+   */
+  static getAvailableFocusOptions() {
+    const focusData = game.settings.get(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS);
+    return focusData?.focuses || [];
+  }
+
+  /**
+   * Get user's selected focus
+   * @param {Actor} groupActor The group actor
+   * @param {string} userId The user ID
+   * @returns {Object|null} The selected focus object or null
+   */
+  getUserSelectedFocus(groupActor, userId) {
+    const userSelections = groupActor?.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
+    const selectedFocusId = userSelections[userId];
+
+    if (!selectedFocusId) return null;
+
+    const availableFocuses = this.getAvailableFocusOptions();
+    return availableFocuses.find((f) => f.id === selectedFocusId) || null;
+  }
+
+  /**
+   * Set user's selected focus
+   * @param {Actor} groupActor The group actor
+   * @param {string} userId The user ID
+   * @param {string} focusId The focus ID to set
+   * @returns {Promise<boolean>} Success status
+   */
+  async setUserSelectedFocus(groupActor, userId, focusId) {
+    try {
+      const currentSelections = groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
+
+      if (focusId) {
+        currentSelections[userId] = focusId;
+      } else {
+        delete currentSelections[userId];
+      }
+
+      await groupActor.setFlag(MODULE.ID, FLAGS.SELECTED_FOCUS, currentSelections);
+      return true;
+    } catch (error) {
+      log(1, `Error setting focus for user ${userId}:`, error);
+      return false;
+    }
   }
 }

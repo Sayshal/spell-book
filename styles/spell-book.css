@@ -10,71 +10,71 @@
 /* ----------------------------------------- */
 :root {
   /* ======= Background Colors ======= */
-  --spell-book-bg-primary: rgb(27 29 36 / 90.2%);
-  --spell-book-bg-primary-opaque: rgb(27 29 36 / 100%);
-  --spell-book-tab-bg: rgb(11 10 19 / 90.2%);
-  --spell-book-bg-secondary: rgb(42 44 51 / 95%);
-  --spell-book-bg-tertiary: rgb(58 60 67 / 90%);
-  --spell-book-bg-tertiary-reduced: rgb(58 60 67 / 30%);
-  --spell-book-bg-item: rgb(0 0 0 / 5.1%);
-  --spell-book-bg-item-hover: rgb(0 0 0 / 10.2%);
-  --spell-book-bg-item-active: rgb(0 0 0 / 15.3%);
-  --spell-book-bg-prepared: rgb(0 128 0 / 10.2%);
-  --spell-book-bg-prepared-full: rgb(0 128 0 / 20%);
-  --spell-book-bg-spell-item: rgb(24 60 99 / 50%);
   --spell-book-bg-disabled: rgb(0 0 0 / 3.1%);
-  --spell-book-bg-option: rgb(255 255 255 / 5.1%);
-  --spell-book-bg-option-hover: rgb(255 255 255 / 10.2%);
+  --spell-book-bg-item-active: rgb(0 0 0 / 15.3%);
+  --spell-book-bg-item-hover: rgb(0 0 0 / 10.2%);
+  --spell-book-bg-item: rgb(0 0 0 / 5.1%);
   --spell-book-bg-option-active: rgb(255 255 255 / 15.3%);
+  --spell-book-bg-option-hover: rgb(255 255 255 / 10.2%);
+  --spell-book-bg-option: rgb(255 255 255 / 5.1%);
+  --spell-book-bg-prepared-full: rgb(0 128 0 / 20%);
+  --spell-book-bg-prepared: rgb(0 128 0 / 10.2%);
+  --spell-book-bg-primary-opaque: rgb(27 29 36 / 100%);
+  --spell-book-bg-primary: rgb(27 29 36 / 90.2%);
+  --spell-book-bg-secondary: rgb(42 44 51 / 95%);
+  --spell-book-bg-spell-item: rgb(24 60 99 / 50%);
+  --spell-book-bg-tertiary-reduced: rgb(58 60 67 / 30%);
+  --spell-book-bg-tertiary: rgb(58 60 67 / 90%);
+  --spell-book-tab-bg: rgb(11 10 19 / 90.2%);
   /* ======= Text Colors ======= */
+  --spell-book-text-accent: rgb(159 146 117);
+  --spell-book-text-active: rgb(76 175 80);
+  --spell-book-text-disabled: rgb(102 102 102 / 100%);
+  --spell-book-text-highlight: rgb(255 255 0 / 100%);
+  --spell-book-text-hyperlink: rgb(85 170 255 / 100%);
+  --spell-book-text-muted: rgb(119 119 119 / 100%);
+  --spell-book-text-notice: rgb(0 0 0 / 100%);
   --spell-book-text-primary: rgb(241 241 241 / 100%);
   --spell-book-text-secondary: rgb(186 186 186 / 100%);
   --spell-book-text-tertiary: rgb(153 153 153 / 100%);
-  --spell-book-text-muted: rgb(119 119 119 / 100%);
-  --spell-book-text-disabled: rgb(102 102 102 / 100%);
-  --spell-book-text-accent: rgb(159 146 117);
-  --spell-book-text-notice: rgb(0 0 0 / 100%);
-  --spell-book-text-hyperlink: rgb(85 170 255 / 100%);
-  --spell-book-text-highlight: rgb(255 255 0 / 100%);
-  --spell-book-text-active: rgb(76 175 80);
   /* ======= Border Colors ======= */
-  --spell-book-border-light: rgb(201 199 184 / 16.5%);
-  --spell-book-nav-border: rgb(255 255 255 / 0%);
-  --spell-book-border-light-theme: rgb(90 90 90 / 36.9%);
-  --spell-book-border-medium: rgb(153 153 153 / 25.1%);
   --spell-book-border-dark: rgb(85 85 85 / 50.2%);
-  --spell-book-border-highlight: rgb(159 146 117);
   --spell-book-border-focus: rgb(85 170 255 / 100%);
+  --spell-book-border-highlight: rgb(159 146 117);
+  --spell-book-border-light-theme: rgb(90 90 90 / 36.9%);
+  --spell-book-border-light: rgb(201 199 184 / 16.5%);
+  --spell-book-border-medium: rgb(153 153 153 / 25.1%);
+  --spell-book-nav-border: rgb(255 255 255 / 0%);
   /* ======= Interactive State Colors ======= */
-  --spell-book-state-hover: rgb(255 255 255 / 5.1%);
-  --spell-book-state-focus: rgb(85 170 255 / 25.1%);
   --spell-book-state-active: rgb(255 201 25 / 25.1%);
   --spell-book-state-disabled: rgb(0 0 0 / 40%);
+  --spell-book-state-focus: rgb(85 170 255 / 25.1%);
+  --spell-book-state-hover: rgb(255 255 255 / 5.1%);
   --spell-book-state-selected: rgb(85 170 255 / 10.2%);
   /* ======= Component-Specific Colors ======= */
-  --spell-book-color-success: rgb(76 175 80 / 100%);
-  --spell-book-color-warning: rgb(255 193 7 / 100%);
   --spell-book-color-error: rgb(244 67 54 / 100%);
   --spell-book-color-info: rgb(33 150 243 / 100%);
+  --spell-book-color-success: rgb(76 175 80 / 100%);
+  --spell-book-color-warning: rgb(255 193 7 / 100%);
   /* ======= Tag Colors ======= */
   --spell-book-tag-always: rgb(63 198 193 / 100%);
+  --spell-book-tag-atwill: rgb(230 126 34 / 100%);
   --spell-book-tag-granted: rgb(245 159 112 / 100%);
+  --spell-book-tag-innate: rgb(52 152 219 / 100%);
+  --spell-book-tag-learned: rgb(119 34 61 / 100%);
   --spell-book-tag-mode: rgb(206 164 229 / 100%);
   --spell-book-tag-pact: rgb(155 89 182 / 100%);
-  --spell-book-tag-innate: rgb(52 152 219 / 100%);
-  --spell-book-tag-ritual: rgb(241 196 15 / 100%);
-  --spell-book-tag-atwill: rgb(230 126 34 / 100%);
   --spell-book-tag-prepared: rgb(76 175 80 / 100%);
-  --spell-book-tag-learned: rgb(119 34 61 / 100%);
+  --spell-book-tag-ritual: rgb(241 196 15 / 100%);
   /* ======= Shadow Effects ======= */
+  --spell-book-shadow-heavy: 0 0 0.5rem rgb(0 0 0 / 75.3%);
+  --spell-book-shadow-highlight: 0 0 0.5rem rgb(255 201 25 / 50.2%);
   --spell-book-shadow-light: 0 0 0.25rem rgb(0 0 0 / 25.1%);
   --spell-book-shadow-normal: 0 0 0.375rem rgb(0 0 0 / 50.2%);
-  --spell-book-shadow-heavy: 0 0 0.5rem rgb(0 0 0 / 75.3%);
   --spell-book-shadow-top: 0 -0.125rem 0.375rem rgb(0 0 0 / 10.2%);
-  --spell-book-shadow-highlight: 0 0 0.5rem rgb(255 201 25 / 50.2%);
   /* ======= Glow Effects ======= */
-  --spell-book-glow-gold: 0 0 0.375rem rgb(255 201 25 / 100%);
   --spell-book-glow-blue: 0 0 0.375rem rgb(85 170 255 / 100%);
+  --spell-book-glow-gold: 0 0 0.375rem rgb(255 201 25 / 100%);
   --spell-book-glow-green: 0 0 0.375rem rgb(76 175 80 / 100%);
   --spell-book-glow-red: 0 0 0.375rem rgb(244 67 54 / 100%);
 }
@@ -84,34 +84,34 @@
 /* ----------------------------------------- */
 :root {
   /* ======= Sidebar & Controls ======= */
-  --spell-book-sidebar-width: 12.5rem;
+  --spell-book-config-width: 1.5rem;
+  --spell-book-control-width: 1rem;
   --spell-book-sidebar-width-compact: 11.25rem;
   --spell-book-sidebar-width-minimal: 10rem;
-  --spell-book-control-width: 1rem;
-  --spell-book-config-width: 1.5rem;
+  --spell-book-sidebar-width: 12.5rem;
   /* ======= Tabs ======= */
   --spell-book-tab-full-width: 2.75rem;
-  --spell-book-tab-inactive-width: 2.125rem;
   --spell-book-tab-height: 2.5rem;
+  --spell-book-tab-inactive-width: 2.125rem;
   /* ======= Spacing ======= */
-  --spell-book-spacing-xs: 0.125rem;
-  --spell-book-spacing-sm: 0.25rem;
-  --spell-book-spacing-md: 0.5rem;
-  --spell-book-spacing-lg: 0.75rem;
-  --spell-book-spacing-xl: 1rem;
   --spell-book-spacing-2xl: 1.5rem;
   --spell-book-spacing-3xl: 2rem;
+  --spell-book-spacing-lg: 0.75rem;
+  --spell-book-spacing-md: 0.5rem;
+  --spell-book-spacing-sm: 0.25rem;
+  --spell-book-spacing-xl: 1rem;
+  --spell-book-spacing-xs: 0.125rem;
   /* ======= Border Radius ======= */
-  --spell-book-radius-sm: 0.125rem;
-  --spell-book-radius-md: 0.188rem;
   --spell-book-radius-lg: 0.25rem;
-  --spell-book-radius-xl: 0.5rem;
+  --spell-book-radius-md: 0.188rem;
   --spell-book-radius-round: 50%;
+  --spell-book-radius-sm: 0.125rem;
+  --spell-book-radius-xl: 0.5rem;
   /* ======= GM Manager Specific ======= */
-  --spell-book-manager-sidebar-width: 17.5rem;
-  --spell-book-manager-spells-sidebar-width: 25rem;
   --spell-book-manager-column-gap: 0.75rem;
   --spell-book-manager-footer-height: 3.75rem;
+  --spell-book-manager-sidebar-width: 17.5rem;
+  --spell-book-manager-spells-sidebar-width: 25rem;
 }
 
 /* ----------------------------------------- */
@@ -119,10 +119,10 @@
 /* ----------------------------------------- */
 :root {
   /* ======= Manager Specific Colors ======= */
-  --spell-book-manager-custom-color: rgb(121 215 212 / 100%);
-  --spell-book-manager-merged-color: rgb(147 51 234 / 100%);
   --spell-book-manager-actor-color: rgb(107 209 77 / 100%);
+  --spell-book-manager-custom-color: rgb(121 215 212 / 100%);
   --spell-book-manager-custom-list-color: rgb(255 201 25 / 100%);
+  --spell-book-manager-merged-color: rgb(147 51 234 / 100%);
 }
 
 /* ----------------------------------------- */
@@ -131,45 +131,45 @@
 :root {
   /* ======= Font Sizes ======= */
   --spell-book-font-2xl: 0.938rem;
-  --spell-book-font-xl: 0.875rem;
   --spell-book-font-lg: 0.813rem;
   --spell-book-font-md: 0.75rem;
   --spell-book-font-sm: 0.688rem;
+  --spell-book-font-xl: 0.875rem;
   --spell-book-font-xs: 0.625rem;
   /* ======= Manager Font Sizes ======= */
-  --spell-book-manager-font-title: 1.2rem;
   --spell-book-manager-font-lg: 0.938rem;
   --spell-book-manager-font-md: 0.875rem;
   --spell-book-manager-font-sm: 0.75rem;
+  --spell-book-manager-font-title: 1.2rem;
   --spell-book-manager-font-xs: 0.625rem;
   /* ======= Icon Sizes ======= */
-  --spell-book-icon-size: 2rem;
   --spell-book-icon-size-sm: 1.5rem;
   --spell-book-icon-size-xs: 1rem;
+  --spell-book-icon-size: 2rem;
 }
 
 /* ----------------------------------------- */
 /*  Animation & Transition Variables         */
 /* ----------------------------------------- */
 :root {
+  --spell-book-transition-collapse: max-height 400ms ease;
   --spell-book-transition-fast: all 150ms ease;
   --spell-book-transition-normal: all 250ms ease;
   --spell-book-transition-slow: all 450ms ease;
-  --spell-book-transition-collapse: max-height 400ms ease;
 }
 
 /* ----------------------------------------- */
 /*  Z-Index Variables                        */
 /* ----------------------------------------- */
 :root {
+  --spell-book-z-index-context: 9998;
   --spell-book-z-index-controls: 1;
+  --spell-book-z-index-dropdown: 10000;
+  --spell-book-z-index-footer: 10;
+  --spell-book-z-index-header: 3;
   --spell-book-z-index-sidebar: 2;
   --spell-book-z-index-tabs: 3;
-  --spell-book-z-index-header: 3;
-  --spell-book-z-index-footer: 10;
   --spell-book-z-index-tooltip: 9999;
-  --spell-book-z-index-context: 9998;
-  --spell-book-z-index-dropdown: 10000;
 }
 
 /* ----------------------------------------- */
@@ -177,50 +177,50 @@
 /* ----------------------------------------- */
 .theme-light {
   /* ======= Background Colors ======= */
-  --spell-book-bg-primary: rgb(244 244 244 / 90.2%);
+  --spell-book-bg-disabled: rgb(0 0 0 / 2%);
+  --spell-book-bg-item-active: rgb(0 0 0 / 8.2%);
+  --spell-book-bg-item-hover: rgb(0 0 0 / 5.1%);
+  --spell-book-bg-item: rgb(0 0 0 / 3.1%);
+  --spell-book-bg-option-active: rgb(0 0 0 / 8.2%);
+  --spell-book-bg-option-hover: rgb(0 0 0 / 5.1%);
+  --spell-book-bg-option: rgb(0 0 0 / 3.1%);
+  --spell-book-bg-prepared-full: rgb(0 128 0 / 20%);
+  --spell-book-bg-prepared: rgb(0 128 0 / 8.2%);
   --spell-book-bg-primary-opaque: rgb(244 244 244 / 100%);
-  --spell-book-tab-bg: url('../../../systems/dnd5e/ui/parchment.jpg') repeat;
+  --spell-book-bg-primary: rgb(244 244 244 / 90.2%);
   --spell-book-bg-secondary: rgb(250 250 250 / 95%);
   --spell-book-bg-tertiary: rgb(255 255 255 / 90%);
-  --spell-book-bg-item: rgb(0 0 0 / 3.1%);
-  --spell-book-bg-item-hover: rgb(0 0 0 / 5.1%);
-  --spell-book-bg-item-active: rgb(0 0 0 / 8.2%);
-  --spell-book-bg-prepared: rgb(0 128 0 / 8.2%);
-  --spell-book-bg-prepared-full: rgb(0 128 0 / 20%);
-  --spell-book-bg-disabled: rgb(0 0 0 / 2%);
-  --spell-book-bg-option: rgb(0 0 0 / 3.1%);
-  --spell-book-bg-option-hover: rgb(0 0 0 / 5.1%);
-  --spell-book-bg-option-active: rgb(0 0 0 / 8.2%);
+  --spell-book-tab-bg: url('../../../systems/dnd5e/ui/parchment.jpg') repeat;
   /* ======= Text Colors ======= */
+  --spell-book-text-accent: rgb(191 143 32 / 100%);
+  --spell-book-text-active: rgb(76 175 80 / 100%);
+  --spell-book-text-disabled: rgb(153 153 153 / 100%);
+  --spell-book-text-highlight: rgb(255 201 25 / 100%);
+  --spell-book-text-hyperlink: rgb(0 102 204 / 100%);
+  --spell-book-text-muted: rgb(136 136 136 / 100%);
+  --spell-book-text-notice: rgb(255 255 255 / 100%);
   --spell-book-text-primary: rgb(17 17 17 / 100%);
   --spell-book-text-secondary: rgb(68 68 68 / 100%);
   --spell-book-text-tertiary: rgb(102 102 102 / 100%);
-  --spell-book-text-muted: rgb(136 136 136 / 100%);
-  --spell-book-text-disabled: rgb(153 153 153 / 100%);
-  --spell-book-text-accent: rgb(191 143 32 / 100%);
-  --spell-book-text-notice: rgb(255 255 255 / 100%);
-  --spell-book-text-hyperlink: rgb(0 102 204 / 100%);
-  --spell-book-text-highlight: rgb(255 201 25 / 100%);
-  --spell-book-text-active: rgb(76 175 80 / 100%);
   /* ======= Border Colors ======= */
-  --spell-book-border-light: rgb(230 230 255);
-  --spell-book-border-light-theme: rgb(204 204 204 / 75.3%);
-  --spell-book-nav-border: rgb(48 47 43);
-  --spell-book-border-medium: rgb(170 170 170 / 50.2%);
   --spell-book-border-dark: rgb(136 136 136 / 75.3%);
-  --spell-book-border-highlight: rgb(191 143 32 / 100%);
   --spell-book-border-focus: rgb(0 102 204 / 100%);
+  --spell-book-border-highlight: rgb(191 143 32 / 100%);
+  --spell-book-border-light-theme: rgb(204 204 204 / 75.3%);
+  --spell-book-border-light: rgb(230 230 255);
+  --spell-book-border-medium: rgb(170 170 170 / 50.2%);
+  --spell-book-nav-border: rgb(48 47 43);
   /* ======= Component-Specific Colors ======= */
-  --spell-book-color-success: rgb(22 50 23 / 100%);
-  --spell-book-color-warning: rgb(177 137 5 / 100%);
   --spell-book-color-error: rgb(92 11 5 / 100%);
   --spell-book-color-info: rgb(4 44 78 / 100%);
+  --spell-book-color-success: rgb(22 50 23 / 100%);
+  --spell-book-color-warning: rgb(177 137 5 / 100%);
   /* ======= Shadow Effects ======= */
+  --spell-book-shadow-heavy: 0 0 0.5rem rgb(0 0 0 / 30.2%);
+  --spell-book-shadow-highlight: 0 0 0.5rem rgb(191 143 32 / 30.2%);
   --spell-book-shadow-light: 0 0 0.25rem rgb(0 0 0 / 10.2%);
   --spell-book-shadow-normal: 0 0 0.375rem rgb(0 0 0 / 20%);
-  --spell-book-shadow-heavy: 0 0 0.5rem rgb(0 0 0 / 30.2%);
   --spell-book-shadow-top: 0 -0.125rem 0.375rem rgb(0 0 0 / 5.1%);
-  --spell-book-shadow-highlight: 0 0 0.5rem rgb(191 143 32 / 30.2%);
 }
 
 /* ========================================= */
@@ -669,9 +669,9 @@
 
     &.filter-checkbox {
       label {
+        gap: 0.375rem;
         display: flex;
         align-items: center;
-        gap: 0.375rem;
         margin-bottom: 0;
 
         dnd5e-checkbox {
@@ -1005,8 +1005,8 @@
   }
 
   .name-stacked {
-    display: flex;
     gap: 0.15rem;
+    display: flex;
     flex: 1;
     flex-direction: column;
     min-width: 0;
@@ -1660,18 +1660,18 @@
   }
 
   .class-notice .notice {
+    gap: 0.75rem;
     display: flex;
     align-items: flex-start;
-    gap: 0.75rem;
     padding: 0.75rem;
-    border-radius: var(--spell-book-radius-md);
     border-left: 0.25rem solid;
+    border-radius: var(--spell-book-radius-md);
   }
 
   .class-notice .notice.warning {
+    align-items: center;
     border-left-color: var(--spell-book-color-warning);
     color: var(--spell-book-text-warning);
-    align-items: center;
   }
 
   .class-notice .notice i {
@@ -3582,8 +3582,8 @@
     width: 32rem;
     min-width: 25rem;
     max-width: 37.5rem;
-    max-height: 60vh;
     height: 60vh;
+    max-height: 60vh;
 
     .window-content {
       display: flex;
@@ -3614,12 +3614,12 @@
     }
 
     .compendium-categories {
+      scrollbar-gutter: stable;
       flex: 1 1 auto;
       width: 100%;
       min-height: 0;
       padding: 0.5rem;
       overflow: hidden auto;
-      scrollbar-gutter: stable;
 
       .compendium-global-header {
         margin-bottom: 0.75rem;
@@ -5092,15 +5092,15 @@
       }
 
       .select-all-label {
+        gap: 0.5rem;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        cursor: pointer;
         margin: 0;
+        cursor: pointer;
 
         .select-all-text {
-          font-size: 0.8125rem;
           color: var(--spell-book-text-secondary);
+          font-size: 0.8125rem;
           white-space: nowrap;
         }
 
@@ -5119,16 +5119,16 @@
     }
 
     .setting-item {
+      gap: 0.5rem;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
-      gap: 0.5rem;
+      width: 100%;
+      min-height: 3.4rem;
       padding: 0.5rem;
       border: 0.0625rem solid var(--spell-book-border-light);
       border-radius: var(--spell-book-radius-md);
       transition: var(--spell-book-transition-normal);
-      min-height: 3.4rem;
-      width: 100%;
 
       &:hover {
         border-color: var(--spell-book-border-focus);
@@ -5139,8 +5139,8 @@
 
         &:hover,
         &.setting-hover {
-          background-color: var(--spell-book-bg-item-hover);
           border-color: var(--spell-book-border-focus);
+          background-color: var(--spell-book-bg-item-hover);
         }
 
         &:active {
@@ -5152,8 +5152,8 @@
         cursor: default;
 
         &:hover {
-          background-color: inherit;
           border-color: var(--spell-book-border-light);
+          background-color: inherit;
         }
 
         .setting-item-content {
@@ -5163,15 +5163,15 @@
     }
 
     .setting-item-content {
-      display: flex;
       gap: 0.5rem;
+      display: flex;
       align-items: center;
     }
 
     .setting-checkbox {
       display: flex;
-      align-items: center;
       flex-shrink: 0;
+      align-items: center;
     }
 
     .setting-content {
@@ -5180,23 +5180,23 @@
 
       .setting-name {
         display: block;
-        font-weight: 500;
         color: var(--spell-book-text-primary);
+        font-weight: 500;
       }
 
       .setting-description {
         margin: 0;
-        font-size: 0.8125rem;
         color: var(--spell-book-text-secondary);
+        font-size: 0.8125rem;
         line-height: 1.3;
       }
     }
 
     .wizard-book-color-controls {
-      display: flex;
       gap: 0.5rem;
-      margin-left: 0.2rem;
+      display: flex;
       align-items: center;
+      margin-left: 0.2rem;
 
       color-picker {
         input[type='text'] {
@@ -5204,12 +5204,12 @@
         }
 
         input[type='color'] {
+          flex: unset;
           width: 1rem;
           height: 1rem;
-          border-radius: 50%;
           padding: 0;
+          border-radius: 50%;
           cursor: pointer;
-          flex: unset;
           transition: var(--spell-book-transition-normal);
 
           &:hover {
@@ -5237,23 +5237,23 @@
     }
 
     .wizard-book-buttons {
-      display: flex;
       gap: 0.25rem;
+      display: flex;
 
       button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
         width: 1rem;
         height: 1rem;
         min-height: unset;
         padding: 0;
         border: none;
-        background: none;
         color: var(--spell-book-text-secondary);
-        cursor: pointer;
-        transition: var(--spell-book-transition-normal);
-        display: flex;
-        align-items: center;
-        justify-content: center;
         font-size: 0.75rem;
+        cursor: pointer;
+        background: none;
+        transition: var(--spell-book-transition-normal);
 
         &:hover {
           color: var(--spell-book-text-primary);
@@ -5321,9 +5321,9 @@
       }
 
       .group-title {
+        gap: 0.5rem;
         flex-direction: column;
         align-items: flex-start;
-        gap: 0.5rem;
 
         .select-all-label {
           align-self: flex-end;
@@ -5368,17 +5368,17 @@
 
     .party-spell-manager-content {
       display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      height: 100%;
       flex: 1;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
     }
 
     .party-title-section {
       flex-shrink: 0;
+      margin-bottom: var(--spell-book-spacing-md);
       padding: var(--spell-book-spacing-md);
       border-bottom: var(--spell-book-radius-sm) solid var(--spell-book-border-dark);
-      margin-bottom: var(--spell-book-spacing-md);
 
       .party-name {
         margin: 0 0 var(--spell-book-spacing-xs) 0;
@@ -5390,33 +5390,33 @@
       .member-count {
         margin: 0 0 var(--spell-book-spacing-sm) 0;
         color: var(--spell-book-text-secondary);
-        font-size: 1rem;
         font-weight: normal;
+        font-size: 1rem;
         text-align: center;
       }
 
       .party-actions {
-        display: flex;
         gap: var(--spell-book-spacing-sm);
-        align-items: center;
+        display: flex;
         justify-content: right;
+        align-items: center;
 
         button {
+          gap: var(--spell-book-spacing-xs);
           display: flex;
           align-items: center;
-          gap: var(--spell-book-spacing-xs);
           padding: var(--spell-book-spacing-xs) var(--spell-book-spacing-sm);
           border: 0.063rem solid var(--spell-book-border-light);
           border-radius: var(--spell-book-radius-sm);
-          background: var(--spell-book-bg-primary);
           color: var(--spell-book-text-primary);
           font-size: 0.75rem;
           cursor: pointer;
+          background: var(--spell-book-bg-primary);
           transition: var(--spell-book-transition-fast);
 
           &:hover {
-            background: var(--spell-book-bg-secondary);
             border-color: var(--spell-book-border-dark);
+            background: var(--spell-book-bg-secondary);
           }
         }
       }
@@ -5427,9 +5427,9 @@
       padding: var(--spell-book-spacing-md);
 
       .members-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
         gap: var(--spell-book-spacing-md);
+        grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+        display: grid;
       }
 
       .member-card {
@@ -5437,9 +5437,9 @@
         padding: var(--spell-book-spacing-md);
         border: 0.063rem solid var(--spell-book-border-light);
         border-radius: var(--spell-book-radius-md);
+        cursor: pointer;
         background: var(--spell-book-bg-primary);
         transition: var(--spell-book-transition-fast);
-        cursor: pointer;
 
         &:hover {
           border-color: var(--spell-book-border-medium);
@@ -5454,8 +5454,8 @@
 
         &.filter-active {
           border-color: var(--spell-book-color-primary);
-          box-shadow: 0 0 0.5rem rgb(var(--spell-book-color-primary) / 30%);
           background: rgb(var(--spell-book-color-primary) / 5%);
+          box-shadow: 0 0 0.5rem rgb(var(--spell-book-color-primary) / 30%);
         }
 
         &.filter-inactive {
@@ -5465,24 +5465,24 @@
 
         &.no-permission {
           opacity: 0.6;
-          filter: grayscale(50%);
           cursor: not-allowed;
+          filter: grayscale(50%);
         }
 
         .member-header {
           .member-info-top {
+            gap: var(--spell-book-spacing-sm);
             display: flex;
             align-items: center;
-            gap: var(--spell-book-spacing-sm);
 
             .member-avatar {
+              display: flex;
+              flex-shrink: 0;
+              justify-content: center;
+              align-items: center;
               width: 3.5rem;
               height: 3.5rem;
-              flex-shrink: 0;
               overflow: hidden;
-              display: flex;
-              align-items: center;
-              justify-content: center;
             }
 
             .member-name-class {
@@ -5491,16 +5491,16 @@
 
               .member-name {
                 display: block;
+                margin-bottom: 0.125rem;
                 color: var(--spell-book-text-primary);
                 font-weight: 600;
                 font-size: 1.1rem;
-                margin-bottom: 0.125rem;
               }
 
               .member-class-info {
-                font-size: 0.75rem;
                 color: var(--spell-book-text-secondary);
                 font-style: italic;
+                font-size: 0.75rem;
               }
 
               .no-permission-text {
@@ -5511,24 +5511,24 @@
             }
 
             .spell-counts-compact {
-              display: flex;
               gap: var(--spell-book-spacing-md);
+              display: flex;
 
               .count-item {
+                gap: 0.125rem;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                gap: 0.125rem;
 
                 .count-number {
-                  font-size: 1rem;
-                  font-weight: 600;
                   color: var(--spell-book-text-primary);
+                  font-weight: 600;
+                  font-size: 1rem;
                 }
 
                 .count-label {
-                  font-size: 0.7rem;
                   color: var(--spell-book-text-secondary);
+                  font-size: 0.7rem;
                   text-transform: uppercase;
                   letter-spacing: 0.05em;
                 }
@@ -5536,7 +5536,8 @@
             }
           }
 
-          .member-focus-icon {
+          .member-focus-display,
+          .member-focus-none {
             position: absolute;
             top: 0.3rem;
             right: 0.3rem;
@@ -5545,39 +5546,57 @@
             cursor: pointer;
             transition: var(--spell-book-transition-fast);
           }
+
+          .member-focus-display:hover,
+          .member-focus-none:hover {
+            color: var(--spell-book-text-primary);
+          }
+
+          .member-focus-display i,
+          .member-focus-none i {
+            display: block;
+          }
+
+          .member-focus-display {
+            color: var(--spell-book-accent);
+          }
+
+          .member-focus-none {
+            color: var(--spell-book-text-muted);
+          }
         }
       }
     }
 
     .spell-comparison {
-      flex: 1;
-      overflow-y: auto;
-      min-height: 0;
-      padding: var(--spell-book-spacing-md);
-      margin-bottom: var(--spell-book-spacing-md);
-      padding-right: 0;
       scrollbar-gutter: stable;
+      flex: 1;
+      min-height: 0;
+      margin-bottom: var(--spell-book-spacing-md);
+      padding: var(--spell-book-spacing-md);
+      padding-right: 0;
+      overflow-y: auto;
 
       .spell-level-group {
+        margin-bottom: var(--spell-book-spacing-md);
         border: 0.063rem solid var(--spell-book-border-light);
         border-radius: var(--spell-book-radius-md);
         overflow: hidden;
-        margin-bottom: var(--spell-book-spacing-md);
 
         .level-header {
+          gap: var(--spell-book-spacing-md);
           display: flex;
           align-items: center;
-          gap: var(--spell-book-spacing-md);
           margin: 0;
           padding: var(--spell-book-spacing-sm) var(--spell-book-spacing-md);
-          background: var(--spell-book-bg-secondary);
           border-bottom: 0.063rem solid var(--spell-book-border-light);
           cursor: pointer;
+          background: var(--spell-book-bg-secondary);
           transition: var(--spell-book-transition-fast);
 
           &:hover {
-            background: var(--spell-book-bg-item-hover);
             border-color: var(--spell-book-border-medium);
+            background: var(--spell-book-bg-item-hover);
           }
 
           .collapse-indicator {
@@ -5586,10 +5605,10 @@
           }
 
           .level-name {
+            flex: 1;
             color: var(--spell-book-text-primary);
             font-weight: 600;
             font-size: 0.95rem;
-            flex: 1;
           }
 
           .spell-count {
@@ -5599,11 +5618,11 @@
         }
 
         .spells-grid {
+          gap: var(--spell-book-spacing-sm);
           display: flex;
           flex-wrap: wrap;
-          gap: var(--spell-book-spacing-sm);
-          padding: var(--spell-book-spacing-md);
           align-content: flex-start;
+          padding: var(--spell-book-spacing-md);
         }
 
         &.collapsed {
@@ -5616,14 +5635,14 @@
       .spell-comparison-item {
         display: inline-flex;
         align-items: stretch;
-        padding: 0;
-        transition: var(--spell-book-transition-fast);
-        line-height: 1.5rem;
-        min-height: 1.5rem;
         width: fit-content;
         max-width: 100%;
-        overflow: hidden;
+        min-height: 1.5rem;
+        padding: 0;
         border-radius: var(--spell-book-radius-sm);
+        overflow: hidden;
+        line-height: 1.5rem;
+        transition: var(--spell-book-transition-fast);
 
         &.member-focused {
           box-shadow: 0 0 0.375rem rgb(var(--spell-book-color-primary) / 40%);
@@ -5633,9 +5652,9 @@
           }
 
           .spell-actors .actor-spell-status.highlighted-actor {
-            background: var(--spell-book-color-success);
-            font-weight: 600;
             opacity: 1;
+            font-weight: 600;
+            background: var(--spell-book-color-success);
           }
         }
 
@@ -5645,48 +5664,48 @@
         }
 
         .spell-name-section {
+          gap: var(--spell-book-spacing-xs);
           display: flex;
           align-items: center;
-          gap: var(--spell-book-spacing-xs);
           padding: var(--spell-book-spacing-xs) var(--spell-book-spacing-sm);
-          background: var(--spell-book-bg-spell-item);
           border-top-left-radius: var(--spell-book-radius-sm);
           border-bottom-left-radius: var(--spell-book-radius-sm);
+          background: var(--spell-book-bg-spell-item);
 
           .content-link {
             display: block;
+            padding: 0;
             border: none;
             color: inherit;
             text-decoration: none;
             background: none;
-            padding: 0;
 
             .spell-icon {
+              object-fit: cover;
+              flex-shrink: 0;
               width: 1.5rem;
               height: 1.5rem;
-              border-radius: 50%;
               border: 0.0625rem solid var(--spell-book-border-medium);
-              object-fit: cover;
+              border-radius: 50%;
               background: var(--spell-book-bg-primary);
-              flex-shrink: 0;
             }
           }
 
           .spell-icon {
             object-fit: cover;
             display: block;
+            flex-shrink: 0;
             width: 1.5rem;
             height: 1.5rem;
             border: 0.0625rem solid var(--spell-book-border-medium);
             border-radius: 50%;
             background: var(--spell-book-bg-primary);
-            flex-shrink: 0;
           }
 
           .spell-name {
+            color: var(--spell-book-text-primary);
             font-weight: 600;
             font-size: 0.875rem;
-            color: var(--spell-book-text-primary);
             white-space: nowrap;
           }
         }
@@ -5699,25 +5718,25 @@
             display: flex;
             align-items: center;
             padding: var(--spell-book-spacing-xs) var(--spell-book-spacing-sm);
-            font-size: 0.75rem;
-            font-weight: 500;
-            white-space: nowrap;
             border: none;
+            font-weight: 500;
+            font-size: 0.75rem;
+            white-space: nowrap;
 
             &.prepared {
-              background: var(--spell-book-bg-prepared-full);
               color: var(--spell-book-text-primary);
+              background: var(--spell-book-bg-prepared-full);
             }
 
             &.known {
-              background: var(--spell-book-bg-tertiary-reduced);
               color: var(--spell-book-text-secondary);
+              background: var(--spell-book-bg-tertiary-reduced);
             }
 
             &.filtered-actor {
-              background: var(--spell-book-bg-prepared-full);
               color: var(--spell-book-text-contrast);
               font-weight: 600;
+              background: var(--spell-book-bg-prepared-full);
             }
 
             &.dimmed {
@@ -5733,12 +5752,13 @@
       }
     }
   }
+
   /* ----------------------------------------- */
   /*  Party Mode Visualization                 */
   /* ----------------------------------------- */
   .party-icons {
-    display: inline-flex;
     gap: 0.125rem;
+    display: inline-flex;
     margin-left: var(--spell-book-spacing-sm);
   }
 
@@ -5756,18 +5776,18 @@
   }
 
   .party-mode-context-menu {
-    position: absolute;
     z-index: var(--spell-book-z-index-tooltip);
+    position: absolute;
     min-width: 11.25rem;
-    background: var(--spell-book-bg-primary);
     border: 0.063rem solid var(--spell-book-border-dark);
     border-radius: var(--spell-book-radius-md);
+    background: var(--spell-book-bg-primary);
     box-shadow: var(--spell-book-shadow-heavy);
 
     .context-menu-item {
+      gap: var(--spell-book-spacing-sm);
       display: flex;
       align-items: center;
-      gap: var(--spell-book-spacing-sm);
       padding: var(--spell-book-spacing-sm) var(--spell-book-spacing-md);
       color: var(--spell-book-text-primary);
       cursor: pointer;
@@ -5780,6 +5800,287 @@
       i {
         width: 1rem;
         text-align: center;
+      }
+    }
+  }
+
+  /* ----------------------------------------- */
+  /*  Focus Settings Dialog                    */
+  /* ----------------------------------------- */
+  .focus-settings-dialog {
+    .focus-settings-content {
+      padding: 1rem;
+
+      h3 {
+        margin: 0 0 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 0.063rem solid var(--spell-book-border);
+        font-weight: 600;
+        font-size: 1.1rem;
+      }
+
+      hr {
+        margin: 1.5rem 0;
+        border: none;
+        border-top: 0.063rem solid var(--spell-book-border);
+      }
+    }
+
+    .gm-focus-management {
+      .focus-options-list {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 1rem;
+
+        .focus-option-row {
+          gap: 0.75rem;
+          grid-template-columns: 3.75rem 1fr 2fr auto;
+          display: grid;
+          align-items: center;
+          padding: 0;
+          border: 0.063rem solid var(--spell-book-border);
+          border-radius: var(--spell-book-border-radius);
+          background: var(--spell-book-background-alt);
+
+          .focus-icon-picker {
+            position: relative;
+            width: 2rem;
+            height: 2rem;
+            border: 0.125rem solid var(--spell-book-border);
+            border-radius: 50%;
+            overflow: hidden;
+            cursor: pointer;
+            transition: var(--spell-book-transition-fast);
+
+            &:hover {
+              border-color: var(--spell-book-accent);
+              box-shadow: 0 0 0 0.125rem var(--spell-book-accent-alpha);
+            }
+
+            .focus-icon-preview {
+              object-fit: cover;
+              display: block;
+              width: 100%;
+              height: 100%;
+              transition: var(--spell-book-transition-fast);
+            }
+          }
+
+          .delete-focus {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-width: 2.25rem;
+            height: 2.25rem;
+            padding: 0.5rem;
+            border: none;
+            border-radius: var(--spell-book-border-radius-small);
+            cursor: pointer;
+            background: var(--spell-book-danger);
+            transition: var(--spell-book-transition-fast);
+
+            &:hover {
+              background: var(--spell-book-danger-dark);
+              transform: scale(1.05);
+            }
+
+            &:active {
+              transform: scale(0.95);
+            }
+
+            i {
+              font-size: 0.8rem;
+            }
+          }
+        }
+      }
+
+      .add-focus {
+        gap: 0.5rem;
+        display: flex;
+        align-items: center;
+        padding: 0.6rem 1rem;
+        border: none;
+        border-radius: var(--spell-book-border-radius);
+        font-size: 0.9rem;
+        cursor: pointer;
+        background: var(--spell-book-accent);
+        transition: var(--spell-book-transition-fast);
+      }
+
+      .party-member-assignments {
+        gap: 0.5rem;
+        display: flex;
+        flex-direction: column;
+
+        .member-assignment {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0;
+          border: 0.063rem solid var(--spell-book-border);
+          border-radius: var(--spell-book-border-radius);
+          background: var(--spell-book-background-alt);
+          transition: var(--spell-book-transition-fast);
+
+          &:hover {
+            border-color: var(--spell-book-border-highlight);
+            background: var(--spell-book-background-hover);
+          }
+
+          .member-name {
+            flex: 1;
+            margin-right: 1rem;
+            font-weight: 500;
+          }
+
+          select {
+            width: fit-content;
+            min-width: 12.5rem;
+            max-width: 25rem;
+          }
+        }
+      }
+    }
+
+    .player-focus-selection {
+      .focus-grid {
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
+        display: grid;
+        margin-bottom: 1rem;
+
+        .focus-card {
+          display: flex;
+          position: relative;
+          flex-direction: column;
+          align-items: center;
+          padding: 1.5rem 1rem;
+          border: 0.125rem solid var(--spell-book-border);
+          border-radius: var(--spell-book-border-radius);
+          overflow: hidden;
+          text-align: center;
+          cursor: pointer;
+          background: var(--spell-book-background-alt);
+          transition: var(--spell-book-transition-fast);
+
+          &:hover {
+            border-color: var(--spell-book-accent);
+            background: var(--spell-book-background-hover);
+            box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 10%);
+            transform: translateY(-0.125rem);
+          }
+
+          &.selected {
+            border-color: var(--spell-book-accent);
+            background: var(--spell-book-accent-alpha);
+            box-shadow: 0 0 0 0.125rem var(--spell-book-accent-alpha);
+
+            &::before {
+              position: absolute;
+              top: 0;
+              right: 0;
+              left: 0;
+              height: 0.188rem;
+              content: '';
+              background: var(--spell-book-accent);
+            }
+          }
+
+          .focus-card-icon {
+            object-fit: cover;
+            width: 3.75rem;
+            height: 3.75rem;
+            margin-bottom: 0.75rem;
+            border: 0.125rem solid var(--spell-book-border);
+            border-radius: var(--spell-book-border-radius);
+            transition: var(--spell-book-transition-fast);
+          }
+
+          &:hover .focus-card-icon {
+            border-color: var(--spell-book-accent);
+            transform: scale(1.05);
+          }
+
+          &.selected .focus-card-icon {
+            border-color: var(--spell-book-accent);
+            box-shadow: 0 0 0 0.125rem var(--spell-book-accent-alpha);
+          }
+
+          i {
+            margin-bottom: 0.75rem;
+            font-size: 2rem;
+            transition: var(--spell-book-transition-fast);
+          }
+
+          &:hover i {
+            transform: scale(1.1);
+          }
+
+          h4 {
+            margin: 0 0 0.5rem;
+            font-weight: 600;
+            font-size: 1rem;
+          }
+
+          p {
+            margin: 0;
+            font-size: 0.85rem;
+            line-height: 1.3;
+          }
+        }
+      }
+    }
+
+    .form-footer {
+      gap: 0.75rem;
+      display: flex;
+      justify-content: flex-end;
+      padding: 1rem;
+      border-top: 0.063rem solid var(--spell-book-border);
+      background: var(--spell-book-background-alt);
+
+      .cancel-button,
+      .save-button {
+        gap: 0.375rem;
+        display: flex;
+        align-items: center;
+        min-height: 2.25rem;
+        padding: 0.6rem 1.2rem;
+        border: 0.063rem solid var(--spell-book-border);
+        border-radius: var(--spell-book-border-radius);
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: var(--spell-book-transition-fast);
+
+        i {
+          font-size: 0.875em;
+        }
+
+        &:active {
+          transform: scale(0.98);
+        }
+      }
+
+      .save-button {
+        border-color: var(--spell-book-accent);
+        background: var(--spell-book-accent);
+
+        &:hover {
+          border-color: var(--spell-book-accent-dark);
+          background: var(--spell-book-accent-dark);
+          box-shadow: 0 0.125rem 0.5rem rgb(0 0 0 / 15%);
+          transform: translateY(-0.063rem);
+        }
+      }
+
+      .cancel-button {
+        background: var(--spell-book-background);
+
+        &:hover {
+          border-color: var(--spell-book-border-highlight);
+          background: var(--spell-book-background-hover);
+        }
       }
     }
   }
@@ -5802,30 +6103,30 @@
     .actor-export-option {
       margin-block-end: 1rem;
       padding: 0.75rem;
-      background: rgb(0 0 0 / 10%);
-      border-radius: var(--border-radius-md);
       border: 0.063rem solid var(--color-border-light-tertiary);
+      border-radius: var(--border-radius-md);
+      background: rgb(0 0 0 / 10%);
 
       label {
+        gap: 0.5rem;
+        margin-block-end: 0.5rem;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
         font-weight: bold;
-        margin-block-end: 0.5rem;
       }
 
       .hint {
-        font-size: var(--font-size-12);
-        color: var(--color-text-light-primary);
         margin: 0;
+        color: var(--color-text-light-primary);
+        font-size: var(--font-size-12);
       }
     }
 
     textarea {
-      color: var(--spell-book-text-primary);
       margin-block-end: 0.625rem;
       width: 100%;
       overflow-x: hidden;
+      color: var(--spell-book-text-primary);
       font-size: var(--font-size-12);
       font-family: monospace;
       white-space: pre-wrap;
@@ -5851,11 +6152,11 @@
   }
 
   .import-settings-warning {
+    margin-block-end: 1rem;
     padding: 1rem;
-    background: rgb(220 53 69 / 10%);
     border: 0.063rem solid rgb(220 53 69 / 30%);
     border-radius: var(--border-radius-md);
-    margin-block-end: 1rem;
+    background: rgb(220 53 69 / 10%);
 
     p {
       margin-block-end: 0.5rem;
@@ -5874,6 +6175,7 @@
     }
   }
 }
+
 /* ========================================= */
 /*  CHAT MESSAGES                            */
 /* ========================================= */
@@ -6066,7 +6368,7 @@
 /*  RESPONSIVE DESIGN                        */
 /* ========================================= */
 /* ----------------------------------------- */
-/*  Medium Screens (75rem)                  */
+/*  Medium Screens (75rem)                   */
 /* ----------------------------------------- */
 @media (width <=75rem) {
   :root {
@@ -6086,7 +6388,7 @@
 }
 
 /* ----------------------------------------- */
-/*  Small Screens (64rem)                   */
+/*  Small Screens (64rem)                    */
 /* ----------------------------------------- */
 @media (width <=64rem) {
   :root {
@@ -6130,7 +6432,7 @@
 }
 
 /* ----------------------------------------- */
-/*  GM Manager Responsive (87.5rem)           */
+/*  GM Manager Responsive (87.5rem)          */
 /* ----------------------------------------- */
 @media (width <=87.5rem) {
   :root {
@@ -6140,7 +6442,7 @@
 }
 
 /* ----------------------------------------- */
-/*  GM Manager Responsive (75rem)           */
+/*  GM Manager Responsive (75rem)            */
 /* ----------------------------------------- */
 @media (width <=75rem) {
   :root {

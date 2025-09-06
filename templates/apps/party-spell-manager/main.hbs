@@ -49,9 +49,19 @@
                 </div>
               {{/if}}
             </div>
-            <!-- TODO: Create a settings menu within the UI to set an icon and title and description for each Spellcasting Focus Options instead of a global setting. Future logic will allow clicking the icon to open the change-focus ui and hovering will show the name and description to view. -->
-            <i class="fas fa-cog member-focus-icon" data-actor-id="{{actor.id}}"
-              data-tooltip="{{localize 'SPELLBOOK.Party.FocusSettings'}}"></i>
+            {{#if actor.hasPermission}}
+              {{#if actor.selectedFocus}}
+                <div class="member-focus-display" data-action="openFocusSettings" data-actor-id="{{actor.id}}"
+                  data-tooltip="{{actor.selectedFocus.name}}: {{actor.selectedFocus.description}}">
+                  <i class="{{actor.selectedFocus.icon}}"></i>
+                </div>
+              {{else}}
+                <div class="member-focus-none" data-action="openFocusSettings" data-actor-id="{{actor.id}}"
+                  data-tooltip="{{localize 'SPELLBOOK.Party.NoFocusSet'}}">
+                  <i class="fas fa-cog"></i>
+                </div>
+              {{/if}}
+            {{/if}}
           </div>
         </div>
       {{/each}}

@@ -26,6 +26,7 @@ export const TEMPLATES = {
     COMPENDIUM_SELECTION: 'modules/spell-book/templates/dialogs/compendium-selection.hbs',
     CREATE_SPELL_LIST: 'modules/spell-book/templates/dialogs/create-spell-list.hbs',
     FILTER_CONFIG: 'modules/spell-book/templates/dialogs/filter-configuration.hbs',
+    FOCUS_SETTINGS: 'modules/spell-book/templates/dialogs/focus-settings.hbs',
     LEARN_FROM_SCROLL: 'modules/spell-book/templates/dialogs/learn-from-scroll.hbs',
     LONG_REST_SWAP: 'modules/spell-book/templates/dialogs/long-rest-swap.hbs',
     MANAGER_DOCUMENTATION: 'modules/spell-book/templates/dialogs/spell-list-manager-documentation.hbs',

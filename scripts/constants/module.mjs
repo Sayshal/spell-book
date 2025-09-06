@@ -128,6 +128,7 @@ export const MODULE = {
  */
 export const SETTINGS = {
   ADVANCED_SEARCH_PREFIX: 'advancedSearchPrefix',
+  AVAILABLE_FOCUS_OPTIONS: 'availableFocusOptions',
   CANTRIP_SCALE_VALUES: 'cantripScaleValues',
   CONSUME_SCROLLS_WHEN_LEARNING: 'consumeScrollsWhenLearning',
   CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',
@@ -170,7 +171,6 @@ export const SETTINGS = {
   SPELL_COMPARISON_MAX: 'spellComparisonMax',
   SPELL_NOTES_DESC_INJECTION: 'injectNotesIntoDescriptions',
   SPELL_NOTES_LENGTH: 'spellNotesMaxLength',
-  SPELLCASTING_FOCUSES: 'spellcastingFocuses',
   SPELLCASTING_RULE_SET: 'spellcastingRuleSet',
   TROUBLESHOOTER_INCLUDE_ACTORS: 'troubleshooterIncludeActors',
   WIZARD_BOOK_ICON_COLOR: 'wizardBookIconColor'

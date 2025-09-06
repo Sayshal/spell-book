@@ -1,5 +1,6 @@
 import { MODULE, TEMPLATES } from '../constants/_module.mjs';
 import { PartySpellManager } from '../managers/_module.mjs';
+import { FocusSettingsDialog } from '../dialogs/_module.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -14,7 +15,8 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
       showSynergyAnalysis: PartySpells.showSynergyAnalysis,
       refreshData: PartySpells.refreshData,
       toggleSpellLevel: PartySpells.toggleSpellLevel,
-      filterMemberSpells: PartySpells.filterMemberSpells
+      filterMemberSpells: PartySpells.filterMemberSpells,
+      openFocusSettings: PartySpells.openFocusSettings
     },
     classes: ['spell-book', 'party-spell-manager'],
     window: {
@@ -63,6 +65,11 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
     context.canEditFocus = game.user.isGM || (this.viewingActor && this.viewingActor.isOwner);
     context.spellLevels = this.getSpellLevelGroups(this._comparisonData.spellsByLevel);
     context.groupName = this.groupActor?.name || game.i18n.localize('SPELLBOOK.Party.DefaultGroupName');
+    if (context.comparison?.actors) {
+      context.comparison.actors.forEach((actorData) => {
+        if (actorData.hasPermission) actorData.selectedFocus = this.partyManager.getUserSelectedFocus(this.groupActor, game.user.id);
+      });
+    }
     return context;
   }
 
@@ -239,6 +246,19 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
 
     // Case 2: Clicking a different card - change filter
     this._applySpellFilter(actorId);
+  }
+
+  /**
+   * Open focus settings dialog
+   * @param {Event} event The click event
+   * @param {HTMLElement} target The clicked element
+   */
+  static async openFocusSettings(event, target) {
+    event.stopPropagation();
+    const actorId = target.dataset.actorId;
+    const actor = actorId ? game.actors.get(actorId) : null;
+    if (game.user.isGM) new FocusSettingsDialog(this.groupActor, null).render(true);
+    else new FocusSettingsDialog(this.groupActor, actor).render(true);
   }
 
   /**
