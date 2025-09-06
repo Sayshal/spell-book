@@ -6,6 +6,42 @@ import { RuleSetManager } from './_module.mjs';
 const { renderTemplate } = foundry.applications.handlebars;
 
 /**
+ * Cantrip enforcement behaviors
+ * @typedef {"none" | "levelUp" | "longRest"} CantripSwappingMode
+ */
+
+/**
+ * Result of checking whether a cantrip change is allowed
+ * @typedef {Object} CantripChangeResult
+ * @property {boolean} allowed Whether the change is allowed
+ * @property {string} [message] Optional i18n message key for rejections
+ */
+
+/**
+ * Data tracked for a single cantrip swap session
+ * @typedef {Object} SwapTrackingData
+ * @property {boolean} hasUnlearned Whether a cantrip was unlearned
+ * @property {string|null} unlearned The UUID of the unlearned spell
+ * @property {boolean} hasLearned Whether a cantrip was learned
+ * @property {string|null} learned The UUID of the learned spell
+ * @property {string[]} originalChecked UUIDs of spells originally prepared
+ */
+
+/**
+ * Shape of notification data passed to GM notifications
+ * @typedef {Object} GMNotificationData
+ * @property {string} actorName Actor’s name
+ * @property {Object.<string, GMClassChange>} classChanges Per-class change data
+ */
+
+/**
+ * Per-class notification change data
+ * @typedef {Object} GMClassChange
+ * @property {Object} cantripChanges Added/removed cantrip data
+ * @property {Object} overLimits Cantrip/spell over-limit data
+ */
+
+/**
  * Manages cantrip-specific functionality - Single source of truth for cantrip calculations
  */
 export class CantripManager {
@@ -16,18 +52,22 @@ export class CantripManager {
    * @param {SpellManager} spellManager The associated SpellManager
    */
   constructor(actor, spellManager) {
+    /** @type {Actor5e} */
     this.actor = actor;
+    /** @type {SpellManager} */
     this.spellManager = spellManager;
+    /** @type {boolean} */
     this.isWizard = DataHelpers.isWizard(actor);
+    /** @type {Map<string, number>} */
     this._maxCantripsByClass = new Map();
+    /** @type {number} */
     this._totalMaxCantrips = 0;
+    /** @type {boolean} */
     this._cacheInitialized = false;
     this._initializeCache();
   }
 
-  /**
-   * Initialize cantrip calculation cache
-   */
+  /** Initialize cantrip calculation cache */
   _initializeCache() {
     if (this._cacheInitialized) return;
     this._maxCantripsByClass.clear();
@@ -50,9 +90,7 @@ export class CantripManager {
     log(3, `Total max cantrips across all classes: ${this._totalMaxCantrips}`);
   }
 
-  /**
-   * Clear cantrip calculation cache (call when class rules change)
-   */
+  /** Clear cantrip calculation cache (call when class rules change) */
   clearCache() {
     this._maxCantripsByClass.clear();
     this._totalMaxCantrips = 0;
@@ -112,7 +150,7 @@ export class CantripManager {
 
   /**
    * Get the current count of prepared cantrips for a specific class
-   * @param {string} classIdentifier The class identifier
+   * @param {string} [classIdentifier] The class identifier (optional, all classes if omitted)
    * @returns {number} Currently prepared cantrips count for this class
    */
   getCurrentCount(classIdentifier = null) {
@@ -121,10 +159,7 @@ export class CantripManager {
       .length;
   }
 
-  /**
-   * Check if cantrips can be changed during level-up
-   * @returns {boolean} Whether cantrips can be changed
-   */
+  /** @returns {boolean} Whether cantrips can be changed during level-up */
   canBeLeveledUp() {
     const previousLevel = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL) || 0;
     const previousMax = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX) || 0;
@@ -133,10 +168,7 @@ export class CantripManager {
     return (previousLevel === 0 && currentLevel > 0) || ((currentLevel > previousLevel || currentMax > previousMax) && previousLevel > 0);
   }
 
-  /**
-   * Check for level-up that affects cantrips
-   * @returns {boolean} Whether a level-up cantrip change is detected
-   */
+  /** @returns {boolean} Whether a level-up cantrip change is detected */
   checkForLevelUp() {
     const previousLevel = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL) || 0;
     const previousMax = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX) || 0;
@@ -153,7 +185,7 @@ export class CantripManager {
    * @param {boolean} isLongRest Whether this is during a long rest
    * @param {number} uiCantripCount Number of checked cantrip boxes in the UI currently
    * @param {string} classIdentifier The current class identifier
-   * @returns {Object} Status object with allowed and message properties
+   * @returns {CantripChangeResult} Result of checking whether the cantrip can be changed
    */
   canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest, uiCantripCount, classIdentifier) {
     if (spell.system.level !== 0) return { allowed: true };
@@ -215,7 +247,7 @@ export class CantripManager {
    * @param {boolean} isLevelUp Whether this is a level-up context
    * @param {boolean} isLongRest Whether this is a long rest context
    * @param {string} classIdentifier The class identifier
-   * @returns {Object} Tracking data
+   * @returns {SwapTrackingData} The current swap tracking data
    */
   _getSwapTrackingData(isLevelUp, isLongRest, classIdentifier) {
     if (!isLevelUp && !isLongRest) return { hasUnlearned: false, unlearned: null, hasLearned: false, learned: null, originalChecked: [] };
@@ -307,10 +339,7 @@ export class CantripManager {
     return true;
   }
 
-  /**
-   * Complete the cantrip level-up process
-   * @returns {Promise<boolean>} Success status
-   */
+  /** @returns {Promise<boolean>} Success status */
   async completeCantripsLevelUp() {
     const currentLevel = this.actor.system.details.level;
     const currentMax = this._getTotalMaxCantrips();
@@ -320,9 +349,7 @@ export class CantripManager {
     return true;
   }
 
-  /**
-   * Reset all cantrip swap tracking data
-   */
+  /** Reset all cantrip swap tracking data */
   resetSwapTracking() {
     const allTracking = this.actor.getFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING) || {};
     for (const classId of Object.keys(allTracking)) {
@@ -337,7 +364,7 @@ export class CantripManager {
 
   /**
    * Send comprehensive GM notification with all spell changes and over-limit warnings
-   * @param {Object} notificationData Combined notification data
+   * @param {GMNotificationData} notificationData Combined notification data
    * @returns {Promise<void>}
    */
   async sendComprehensiveGMNotification(notificationData) {
