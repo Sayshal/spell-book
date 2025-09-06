@@ -30,117 +30,15 @@ const { renderTemplate } = foundry.applications.handlebars;
 /**
  * Shape of notification data passed to GM notifications
  * @typedef {Object} GMNotificationData
- * @property {string} actorName Actor's name
+ * @property {string} actorName Actor’s name
  * @property {Object.<string, GMClassChange>} classChanges Per-class change data
  */
 
 /**
  * Per-class notification change data
  * @typedef {Object} GMClassChange
- * @property {string} className The display name of the class
- * @property {CantripChangeDetails} cantripChanges Added/removed cantrip data
- * @property {OverLimitData} overLimits Cantrip/spell over-limit data
- * @property {boolean} hasChanges Whether this class has any changes to report
- */
-
-/**
- * Detailed cantrip change information for notifications
- * @typedef {Object} CantripChangeDetails
- * @property {SpellChangeItem[]} added Array of added cantrips
- * @property {SpellChangeItem[]} removed Array of removed cantrips
- * @property {string|null} addedNames Comma-separated names of added cantrips
- * @property {string|null} removedNames Comma-separated names of removed cantrips
- * @property {boolean} hasChanges Whether there are any cantrip changes
- */
-
-/**
- * Spell change item for notifications
- * @typedef {Object} SpellChangeItem
- * @property {string} name The spell name
- * @property {string} uuid The spell UUID
- */
-
-/**
- * Over-limit tracking data for spells and cantrips
- * @typedef {Object} OverLimitData
- * @property {LimitInfo} cantrips Cantrip limit information
- * @property {LimitInfo} spells Spell limit information
- */
-
-/**
- * Limit information for a specific spell type
- * @typedef {Object} LimitInfo
- * @property {boolean} isOver Whether the limit is exceeded
- * @property {number} current Current count
- * @property {number} max Maximum allowed
- * @property {number} overCount How many over the limit (current - max)
- */
-
-/**
- * Foundry VTT scale values for a class
- * @typedef {Object} ClassScaleValues
- * @property {Object.<string, ScaleValueEntry>} [key] Scale value entries by key
- */
-
-/**
- * Individual scale value entry
- * @typedef {Object} ScaleValueEntry
- * @property {number} value The numeric scale value
- */
-
-/**
- * Class-specific spell rules configuration
- * @typedef {Object} ClassRules
- * @property {boolean} [showCantrips] Whether to show cantrips for this class
- * @property {number} [cantripPreparationBonus] Bonus cantrips that can be prepared
- * @property {CantripSwappingMode} [cantripSwapping] When cantrips can be swapped
- */
-
-/**
- * Foundry VTT Item5e spell object
- * @typedef {Object} Item5e
- * @property {string} name The spell name
- * @property {string} type The item type ('spell')
- * @property {SpellSystemData} system The spell's system data
- * @property {string} [sourceClass] The source class identifier
- * @property {string} uuid The spell's UUID
- */
-
-/**
- * Spell system data structure
- * @typedef {Object} SpellSystemData
- * @property {number} level The spell level (0 for cantrips)
- * @property {number} prepared Preparation status (0=unprepared, 1=prepared)
- * @property {string} [sourceClass] The source class identifier
- */
-
-/**
- * Foundry VTT Actor5e object
- * @typedef {Object} Actor5e
- * @property {ActorSystemData} system The actor's system data
- * @property {Collection} items The actor's items collection
- * @property {Object} spellcastingClasses Spellcasting class data
- * @property {Function} getFlag Get actor flag data
- * @property {Function} setFlag Set actor flag data
- * @property {Function} unsetFlag Remove actor flag data
- */
-
-/**
- * Actor system data structure
- * @typedef {Object} ActorSystemData
- * @property {ActorDetails} details Actor details including level
- */
-
-/**
- * Actor details structure
- * @typedef {Object} ActorDetails
- * @property {number} level The actor's character level
- */
-
-/**
- * SpellManager reference for type checking
- * @typedef {Object} SpellManager
- * @property {Function} getSettings Get spell settings for a class
+ * @property {Object} cantripChanges Added/removed cantrip data
+ * @property {Object} overLimits Cantrip/spell over-limit data
  */
 
 /**
@@ -149,44 +47,156 @@ const { renderTemplate } = foundry.applications.handlebars;
 export class CantripManager {
   /**
    * Create a new CantripManager
-   * @param {Actor5e} actor The D&D 5e actor this manager handles
-   * @param {SpellManager} spellManager Reference to the spell manager instance
    * @todo - Replace `isWizard` checks with `this.isWizard` wherever possible.
+   * @param {Actor5e} actor The actor to manage cantrips for
+   * @param {SpellManager} spellManager The associated SpellManager
    */
   constructor(actor, spellManager) {
-    /** @type {Actor5e} The actor this manager handles */
+    /** @type {Actor5e} */
     this.actor = actor;
-    /** @type {SpellManager} The associated SpellManager */
+    /** @type {SpellManager} */
     this.spellManager = spellManager;
-    /** @type {boolean} Whether this actor has wizard capabilities */
+    /** @type {boolean} */
     this.isWizard = DataHelpers.isWizard(actor);
-    /** @type {Map<string, number>} Cached max cantrips by class identifier */
+    /** @type {Map<string, number>} */
     this._maxCantripsByClass = new Map();
-    /** @type {number} Cached total max cantrips across all classes */
+    /** @type {number} */
     this._totalMaxCantrips = 0;
-    /** @type {boolean} Whether the cache has been initialized */
+    /** @type {boolean} */
     this._cacheInitialized = false;
     this._initializeCache();
   }
 
+  /** Initialize cantrip calculation cache */
+  _initializeCache() {
+    if (this._cacheInitialized) return;
+    this._maxCantripsByClass.clear();
+    this._totalMaxCantrips = 0;
+    if (!this.actor.spellcastingClasses) {
+      log(2, 'No spellcastingClasses found on actor');
+      this._cacheInitialized = true;
+      return;
+    }
+
+    for (const identifier of Object.keys(this.actor.spellcastingClasses)) {
+      const spellcastingConfig = DataHelpers.getSpellcastingConfigForClass(this.actor, identifier);
+      if (!spellcastingConfig) continue;
+      const maxCantrips = this._calculateMaxCantripsForClass(identifier);
+      this._maxCantripsByClass.set(identifier, maxCantrips);
+      this._totalMaxCantrips += maxCantrips;
+      log(3, `Cached max cantrips for ${identifier}: ${maxCantrips}`);
+    }
+    this._cacheInitialized = true;
+    log(3, `Total max cantrips across all classes: ${this._totalMaxCantrips}`);
+  }
+
+  /** Clear cantrip calculation cache (call when class rules change) */
+  clearCache() {
+    this._maxCantripsByClass.clear();
+    this._totalMaxCantrips = 0;
+    this._cacheInitialized = false;
+  }
+
   /**
-   * Check if a cantrip status change is allowed
+   * Get max cantrips for a class using cached values when available
+   * @param {string} classIdentifier The class identifier
+   * @returns {number} Max cantrips for this class
+   */
+  _getMaxCantripsForClass(classIdentifier) {
+    if (!this._cacheInitialized) this._initializeCache();
+    return this._maxCantripsByClass.get(classIdentifier) || 0;
+  }
+
+  /**
+   * Get total max cantrips across all classes using cached values when available
+   * @returns {number} Total max cantrips
+   */
+  _getTotalMaxCantrips() {
+    if (!this._cacheInitialized) this._initializeCache();
+    return this._totalMaxCantrips;
+  }
+
+  /**
+   * Calculate max cantrips for a specific class
+   * @param {string} classIdentifier The class identifier
+   * @returns {number} Maximum cantrips for this class
+   */
+  _calculateMaxCantripsForClass(classIdentifier) {
+    const cantripScaleValuesSetting = game.settings.get(MODULE.ID, SETTINGS.CANTRIP_SCALE_VALUES);
+    const cantripScaleKeys = cantripScaleValuesSetting
+      .split(',')
+      .map((v) => v.trim())
+      .filter((v) => v.length > 0);
+    let baseCantrips = 0;
+    const scaleValues = DataHelpers.getScaleValuesForClass(this.actor, classIdentifier);
+    if (scaleValues) {
+      for (const key of cantripScaleKeys) {
+        const cantripValue = scaleValues[key]?.value;
+        if (cantripValue !== undefined) {
+          baseCantrips = cantripValue;
+          log(3, `Found cantrip scale value '${key}' = ${baseCantrips} for class ${classIdentifier}`);
+          break;
+        }
+      }
+    }
+    if (baseCantrips === 0) return 0;
+    const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
+    if (classRules && classRules.showCantrips === false) return 0;
+    const preparationBonus = classRules?.cantripPreparationBonus || 0;
+    const totalMaxCantrips = Math.max(0, baseCantrips + preparationBonus);
+    log(3, `Max cantrips for ${classIdentifier}: ${baseCantrips} base + ${preparationBonus} bonus = ${totalMaxCantrips}`);
+    return totalMaxCantrips;
+  }
+
+  /**
+   * Get the current count of prepared cantrips for a specific class
+   * @param {string} [classIdentifier] The class identifier (optional, all classes if omitted)
+   * @returns {number} Currently prepared cantrips count for this class
+   */
+  getCurrentCount(classIdentifier = null) {
+    if (!classIdentifier) return this.actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1).length;
+    return this.actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1 && (i.system.sourceClass === classIdentifier || i.sourceClass === classIdentifier))
+      .length;
+  }
+
+  /** @returns {boolean} Whether cantrips can be changed during level-up */
+  canBeLeveledUp() {
+    const previousLevel = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL) || 0;
+    const previousMax = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX) || 0;
+    const currentLevel = this.actor.system.details.level;
+    const currentMax = this._getTotalMaxCantrips();
+    return (previousLevel === 0 && currentLevel > 0) || ((currentLevel > previousLevel || currentMax > previousMax) && previousLevel > 0);
+  }
+
+  /** @returns {boolean} Whether a level-up cantrip change is detected */
+  checkForLevelUp() {
+    const previousLevel = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL) || 0;
+    const previousMax = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX) || 0;
+    const currentLevel = this.actor.system.details.level;
+    const currentMax = this._getTotalMaxCantrips();
+    return (currentLevel > previousLevel || currentMax > previousMax) && previousLevel > 0;
+  }
+
+  /**
+   * Determine if a cantrip can be changed
    * @param {Item5e} spell The spell being modified
-   * @param {boolean} isChecked Whether the spell is being checked (prepared)
+   * @param {boolean} isChecked Whether the spell is being checked (true) or unchecked (false)
    * @param {boolean} isLevelUp Whether this is during level-up
    * @param {boolean} isLongRest Whether this is during a long rest
-   * @param {number|null} uiCantripCount Current UI cantrip count (for efficiency)
-   * @param {string} classIdentifier The class identifier
-   * @returns {CantripChangeResult} Result indicating if change is allowed
+   * @param {number} uiCantripCount Number of checked cantrip boxes in the UI currently
+   * @param {string} classIdentifier The current class identifier
+   * @returns {CantripChangeResult} Result of checking whether the cantrip can be changed
    */
   canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest, uiCantripCount, classIdentifier) {
+    if (spell.system.level !== 0) return { allowed: true };
+    if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
     if (!classIdentifier) {
-      log(2, `No class identifier provided for cantrip change check: ${spell.name}`);
-      return { allowed: false, message: 'SPELLBOOK.Errors.NoClassIdentifier' };
+      log(2, `No class identifier for cantrip ${spell.name}, allowing change but may cause issues`);
+      return { allowed: true };
     }
     const settings = this.spellManager.getSettings(classIdentifier);
-    if (game.settings.get(MODULE.ID, SETTINGS.OVER_LIMIT_ENFORCEMENT) === MODULE.OVER_LIMIT_ENFORCEMENT_BEHAVIOR.WARN) {
-      if (isChecked) {
+    if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.UNENFORCED || settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
+      if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM && isChecked) {
         const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount(classIdentifier);
         const maxCantrips = this._getMaxCantripsForClass(classIdentifier);
         if (currentCount >= maxCantrips) {
@@ -233,13 +243,26 @@ export class CantripManager {
   }
 
   /**
+   * Get the current swap tracking data
+   * @param {boolean} isLevelUp Whether this is a level-up context
+   * @param {boolean} isLongRest Whether this is a long rest context
+   * @param {string} classIdentifier The class identifier
+   * @returns {SwapTrackingData} The current swap tracking data
+   */
+  _getSwapTrackingData(isLevelUp, isLongRest, classIdentifier) {
+    if (!isLevelUp && !isLongRest) return { hasUnlearned: false, unlearned: null, hasLearned: false, learned: null, originalChecked: [] };
+    const flagName = isLevelUp ? `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.levelUp` : `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.longRest`;
+    const data = this.actor.getFlag(MODULE.ID, flagName);
+    return data || { hasUnlearned: false, unlearned: null, hasLearned: false, learned: null, originalChecked: [] };
+  }
+
+  /**
    * Track changes to cantrips for swap management
    * @param {Item5e} spell The spell being modified
    * @param {boolean} isChecked Whether the spell is being checked (true) or unchecked (false)
    * @param {boolean} isLevelUp Whether this is during level-up
    * @param {boolean} isLongRest Whether this is during a long rest
    * @param {string} classIdentifier The class identifier
-   * @returns {void}
    */
   trackCantripChange(spell, isChecked, isLevelUp, isLongRest, classIdentifier) {
     if (spell.system.level !== 0) return;
@@ -316,10 +339,7 @@ export class CantripManager {
     return true;
   }
 
-  /**
-   * Complete cantrips level-up process
-   * @returns {Promise<boolean>} Success status
-   */
+  /** @returns {Promise<boolean>} Success status */
   async completeCantripsLevelUp() {
     const currentLevel = this.actor.system.details.level;
     const currentMax = this._getTotalMaxCantrips();
@@ -329,10 +349,7 @@ export class CantripManager {
     return true;
   }
 
-  /**
-   * Reset all cantrip swap tracking data for long rests
-   * @returns {void}
-   */
+  /** Reset all cantrip swap tracking data */
   resetSwapTracking() {
     const allTracking = this.actor.getFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING) || {};
     for (const classId of Object.keys(allTracking)) {
@@ -343,39 +360,6 @@ export class CantripManager {
     }
     if (Object.keys(allTracking).length === 0) this.actor.unsetFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING);
     else this.actor.setFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING, allTracking);
-  }
-
-  /**
-   * Get the current count of prepared cantrips for a specific class
-   * @param {string|null} [classIdentifier] The class identifier (optional, all classes if omitted)
-   * @returns {number} Currently prepared cantrips count for this class
-   */
-  getCurrentCount(classIdentifier = null) {
-    if (!classIdentifier) return this.actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1).length;
-    return this.actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1 && (i.system.sourceClass === classIdentifier || i.sourceClass === classIdentifier))
-      .length;
-  }
-
-  /**
-   * Check whether cantrips can be changed during level-up
-   * @returns {boolean} Whether cantrips can be changed during level-up
-   */
-  canBeLeveledUp() {
-    const previousLevel = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL) || 0;
-    const previousMax = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX) || 0;
-    const currentLevel = this.actor.system.details.level;
-    const currentMax = this._getTotalMaxCantrips();
-    return (previousLevel === 0 && currentLevel > 0) || ((currentLevel > previousLevel || currentMax > previousMax) && previousLevel > 0);
-  }
-
-  /**
-   * Check whether a level-up cantrip change is detected
-   * @returns {boolean} Whether a level-up cantrip change is detected
-   */
-  checkForLevelUp() {
-    const previousLevel = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL) || 0;
-    const currentLevel = this.actor.system.details.level;
-    return currentLevel > previousLevel;
   }
 
   /**
@@ -402,112 +386,8 @@ export class CantripManager {
       })
       .filter((classChange) => classChange.hasChanges);
     if (processedClassChanges.length === 0) return;
+
     const content = await renderTemplate(TEMPLATES.COMPONENTS.CANTRIP_NOTIFICATION, { actorName, classChanges: processedClassChanges });
     await ChatMessage.create({ content, whisper: game.users.filter((u) => u.isGM).map((u) => u.id), flags: { 'spell-book': { messageType: 'update-report' } } });
-  }
-
-  /**
-   * Clear cantrip calculation cache (call when class rules change)
-   * @returns {void}
-   */
-  clearCache() {
-    this._maxCantripsByClass.clear();
-    this._totalMaxCantrips = 0;
-    this._cacheInitialized = false;
-  }
-
-  /**
-   * Initialize cantrip calculation cache
-   * @returns {void}
-   * @private
-   */
-  _initializeCache() {
-    if (this._cacheInitialized) return;
-    this._maxCantripsByClass.clear();
-    this._totalMaxCantrips = 0;
-    if (!this.actor.spellcastingClasses) {
-      log(2, 'No spellcastingClasses found on actor');
-      this._cacheInitialized = true;
-      return;
-    }
-    for (const identifier of Object.keys(this.actor.spellcastingClasses)) {
-      const spellcastingConfig = DataHelpers.getSpellcastingConfigForClass(this.actor, identifier);
-      if (!spellcastingConfig) continue;
-      const maxCantrips = this._calculateMaxCantripsForClass(identifier);
-      this._maxCantripsByClass.set(identifier, maxCantrips);
-      this._totalMaxCantrips += maxCantrips;
-      log(3, `Cached max cantrips for ${identifier}: ${maxCantrips}`);
-    }
-    this._cacheInitialized = true;
-    log(3, `Total max cantrips across all classes: ${this._totalMaxCantrips}`);
-  }
-
-  /**
-   * Get max cantrips for a class using cached values when available
-   * @param {string} classIdentifier The class identifier
-   * @returns {number} Max cantrips for this class
-   * @private
-   */
-  _getMaxCantripsForClass(classIdentifier) {
-    if (!this._cacheInitialized) this._initializeCache();
-    return this._maxCantripsByClass.get(classIdentifier) || 0;
-  }
-
-  /**
-   * Get total max cantrips across all classes using cached values when available
-   * @returns {number} Total max cantrips
-   * @private
-   */
-  _getTotalMaxCantrips() {
-    if (!this._cacheInitialized) this._initializeCache();
-    return this._totalMaxCantrips;
-  }
-
-  /**
-   * Calculate max cantrips for a specific class
-   * @param {string} classIdentifier The class identifier
-   * @returns {number} Maximum cantrips for this class
-   * @private
-   */
-  _calculateMaxCantripsForClass(classIdentifier) {
-    const cantripScaleValuesSetting = game.settings.get(MODULE.ID, SETTINGS.CANTRIP_SCALE_VALUES);
-    const cantripScaleKeys = cantripScaleValuesSetting
-      .split(',')
-      .map((v) => v.trim())
-      .filter((v) => v.length > 0);
-    let baseCantrips = 0;
-    const scaleValues = DataHelpers.getScaleValuesForClass(this.actor, classIdentifier);
-    if (scaleValues) {
-      for (const key of cantripScaleKeys) {
-        const cantripValue = scaleValues[key]?.value;
-        if (cantripValue !== undefined) {
-          baseCantrips = cantripValue;
-          log(3, `Found cantrip scale value '${key}' = ${baseCantrips} for class ${classIdentifier}`);
-          break;
-        }
-      }
-    }
-    if (baseCantrips === 0) return 0;
-    const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
-    if (classRules && classRules.showCantrips === false) return 0;
-    const preparationBonus = classRules?.cantripPreparationBonus || 0;
-    const totalMaxCantrips = Math.max(0, baseCantrips + preparationBonus);
-    log(3, `Max cantrips for ${classIdentifier}: ${baseCantrips} base + ${preparationBonus} bonus = ${totalMaxCantrips}`);
-    return totalMaxCantrips;
-  }
-
-  /**
-   * Get the current swap tracking data
-   * @param {boolean} isLevelUp Whether this is a level-up context
-   * @param {boolean} isLongRest Whether this is a long rest context
-   * @param {string} classIdentifier The class identifier
-   * @returns {SwapTrackingData} The current swap tracking data
-   * @private
-   */
-  _getSwapTrackingData(isLevelUp, isLongRest, classIdentifier) {
-    if (!isLevelUp && !isLongRest) return { hasUnlearned: false, unlearned: null, hasLearned: false, learned: null, originalChecked: [] };
-    const flagName = isLevelUp ? `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.levelUp` : `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.longRest`;
-    const data = this.actor.getFlag(MODULE.ID, flagName);
-    return data || { hasUnlearned: false, unlearned: null, hasLearned: false, learned: null, originalChecked: [] };
   }
 }
