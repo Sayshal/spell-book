@@ -1,24 +1,109 @@
+/**
+ * Journal-Based User Spell Data Storage Management
+ *
+ * Manages the creation and maintenance of journal-based storage for user-specific
+ * spell data including notes, favorites, and usage statistics. This class provides
+ * a persistent storage solution using Foundry's compendium system to store user
+ * data that persists across game sessions and world migrations.
+ *
+ * Key features:
+ * - Automatic journal and folder structure creation in compendium packs
+ * - Per-user data table generation with appropriate permissions
+ * - HTML template rendering for structured data display
+ * - Multi-actor support for users with multiple characters
+ * - GM-specific handling and player data segregation
+ * - Introductory documentation page creation
+ * - Localized content generation for internationalization support
+ * - Version tracking for data migration and compatibility
+ *
+ * The system creates a hierarchical structure within the user data compendium:
+ * - Main folder for organization
+ * - Master journal entry containing all user data
+ * - Individual pages for each user with structured HTML tables
+ * - Introductory page with usage instructions
+ *
+ * Data is stored as HTML tables within journal pages, providing a human-readable
+ * format that can be easily viewed and edited within Foundry's journal system
+ * while maintaining programmatic access for module functionality.
+ *
+ * @module Managers/UserSpellDataManager
+ * @author Tyler
+ */
+
 import { MODULE, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
 
 /**
- * Manager for journal-based user spell data storage
+ * User actor information for data table generation.
+ *
+ * @typedef {Object} UserActorInfo
+ * @property {string} id - Actor ID
+ * @property {string} name - Actor display name
+ */
+
+/**
+ * Journal page data structure for user spell data storage.
+ *
+ * @typedef {Object} UserSpellDataPageData
+ * @property {string} name - Page name (user name)
+ * @property {string} type - Page type (always 'text')
+ * @property {Object} title - Title configuration object
+ * @property {boolean} title.show - Whether to show the title
+ * @property {number} title.level - Heading level for the title
+ * @property {Object} text - Text content configuration
+ * @property {number} text.format - Text format (1 for HTML)
+ * @property {string} text.content - HTML content of the page
+ * @property {Object} ownership - Permission configuration
+ * @property {Object} flags - Module-specific flags and metadata
+ * @property {number} sort - Sort order for page display
+ */
+
+/**
+ * User Spell Data Manager - Journal-based persistent storage system.
+ *
+ * This class manages the creation and maintenance of a journal-based storage
+ * system for user-specific spell data. It creates structured HTML tables within
+ * journal pages to store spell notes, favorites, and usage statistics in a
+ * format that's both human-readable and programmatically accessible.
+ *
+ * The manager handles the complete lifecycle of the storage system including
+ * initial setup, user table creation, permission management, and content
+ * generation using localized templates.
  */
 export class UserSpellDataManager {
   /**
-   * Create a new User SpellData application
+   * Create a new User Spell Data Manager instance.
+   *
+   * Initializes the manager with default values for journal and folder names
+   * along with a cache system for optimizing repeated operations. The names
+   * will be populated with localized values during setup.
    */
   constructor() {
+    /** @type {string|null} Localized name for the main journal entry */
     this.journalName = null;
+
+    /** @type {string|null} Localized name for the organization folder */
     this.folderName = null;
+
+    /** @type {Map} Cache for storing frequently accessed data */
     this.cache = new Map();
   }
 
   /**
-   * Initialize user spell data management system
+   * Initialize user spell data management system.
+   *
+   * Sets up the complete journal-based storage system including folder creation,
+   * journal entry setup, and user table generation for all non-GM users. This
+   * method should be called during module initialization to ensure the storage
+   * system is ready for use.
+   *
+   * Only executes when run by a GM user to prevent permission conflicts and
+   * duplicate setup attempts from multiple users.
+   *
    * @returns {Promise<void>}
+   * @static
    */
   static async initializeUserSpellData() {
     if (!game.user.isGM) return;
@@ -36,7 +121,13 @@ export class UserSpellDataManager {
   }
 
   /**
-   * Ensure journal and folder structure exists
+   * Ensure journal and folder structure exists.
+   *
+   * Sets up the basic infrastructure for the user data storage system by
+   * creating the necessary folder and journal entry in the compendium pack.
+   * Uses localized names for internationalization support.
+   *
+   * @private
    * @returns {Promise<void>}
    */
   async _ensureJournalSetup() {
@@ -52,8 +143,14 @@ export class UserSpellDataManager {
   }
 
   /**
-   * Ensure folder exists in the pack
-   * @param {CompendiumCollection} pack The spells pack
+   * Ensure folder exists in the pack.
+   *
+   * Creates or retrieves the organization folder for user spell data within
+   * the compendium pack. The folder provides organization and visual grouping
+   * for related journal entries.
+   *
+   * @private
+   * @param {CompendiumCollection} pack - The spells pack
    * @returns {Promise<Folder>} Promise that resolves to the existing or newly created folder
    */
   async _ensureFolder(pack) {
@@ -66,8 +163,14 @@ export class UserSpellDataManager {
   }
 
   /**
-   * Ensure journal exists in the folder
-   * @param {CompendiumCollection} pack The spells pack
+   * Ensure journal exists in the folder.
+   *
+   * Creates or retrieves the main journal entry that will contain all user
+   * spell data pages. Sets up appropriate permissions and module flags for
+   * identification and version tracking.
+   *
+   * @private
+   * @param {CompendiumCollection} pack - The spells pack
    * @returns {Promise<JournalEntry>} Promise that resolves to the existing or newly created journal entry
    */
   async _ensureJournal(pack) {
@@ -91,9 +194,19 @@ export class UserSpellDataManager {
   }
 
   /**
-   * Generate empty tables HTML for a user (updated structure with proper heading hierarchy)
-   * @param {string} userName User name for display
-   * @param {string} userId User ID for finding actors
+   * Generate empty tables HTML for a user.
+   *
+   * Creates the structured HTML content for a user's spell data page including
+   * spell notes tables, favorites tracking, and usage statistics. Handles both
+   * GM users (with simplified content) and regular users (with full actor-based
+   * table structures).
+   *
+   * The generated HTML uses proper heading hierarchy and includes localized
+   * column headers and section titles for internationalization support.
+   *
+   * @private
+   * @param {string} userName - User name for display
+   * @param {string} userId - User ID for finding actors
    * @returns {Promise<string>} HTML content
    */
   async _generateEmptyTablesHTML(userName, userId) {
@@ -131,8 +244,15 @@ export class UserSpellDataManager {
   }
 
   /**
-   * Ensure user table exists (updated to pass userId and set sort order)
-   * @param {string} userId User ID
+   * Ensure user table exists.
+   *
+   * Creates a journal page for the specified user containing their spell data
+   * tables. Checks for existing pages to prevent duplicates and handles
+   * permission setup for appropriate access control. Skips GM users as they
+   * don't need individual spell data pages.
+   *
+   * @private
+   * @param {string} userId - User ID
    * @returns {Promise<boolean>} True if created, false if existed
    */
   async _ensureUserTable(userId) {
@@ -161,8 +281,14 @@ export class UserSpellDataManager {
   }
 
   /**
-   * Create introductory title page for user data journal
-   * @param {JournalEntry} journal The user data journal
+   * Create introductory title page for user data journal.
+   *
+   * Adds an informational page to the user data journal explaining the purpose
+   * and usage of the spell data system. This page serves as documentation for
+   * users and provides context for the data stored in subsequent pages.
+   *
+   * @private
+   * @param {JournalEntry} journal - The user data journal
    * @returns {Promise<void>}
    */
   async _createIntroductoryPage(journal) {

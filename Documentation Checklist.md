@@ -54,16 +54,16 @@ This document tracks the progress of enhancing JSDoc type definitions across all
 
 ### `/scripts/managers/` - Business Logic Managers
 
-- [] `cantrip-manager.mjs` - Cantrip-specific functionality and swap management
-- [] `macro-manager.mjs` - Foundry macro management and initialization
-- [] `party-spell-manager.mjs` - Party-wide spell coordination logic
-- [] `rule-set-manager.mjs` - Spellcasting rule set management
-- [] `spell-loadout-manager.mjs` - Spell loadout storage and restoration
-- [] `spell-manager.mjs` - Core spell preparation and management
-- [] `spell-usage-tracker.mjs` - Spell usage analytics and tracking
-- [] `user-spell-data-manager.mjs` - User data synchronization and management
-- [] `wizard-spellbook-manager.mjs` - Wizard-specific spellbook functionality
-- [] `_module.mjs` - Managers module exports
+- [x] `cantrip-manager.mjs` - Cantrip-specific functionality and swap management
+- [x] `macro-manager.mjs` - Foundry macro management and initialization
+- [x] `party-spell-manager.mjs` - Party-wide spell coordination logic
+- [x] `rule-set-manager.mjs` - Spellcasting rule set management
+- [x] `spell-loadout-manager.mjs` - Spell loadout storage and restoration
+- [x] `spell-manager.mjs` - Core spell preparation and management
+- [x] `spell-usage-tracker.mjs` - Spell usage analytics and tracking
+- [x] `user-spell-data-manager.mjs` - User data synchronization and management
+- [x] `wizard-spellbook-manager.mjs` - Wizard-specific spellbook functionality
+- [x] `_module.mjs` - Managers module exports
 
 ### `/scripts/state/` - Application State Management
 

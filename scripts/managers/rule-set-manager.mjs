@@ -1,15 +1,93 @@
+/**
+ * Rule Set Management and Class-Specific Configuration
+ *
+ * Manages spellcasting rule set application and class-specific rule configuration
+ * for actors in the Spell Book module. This class provides a centralized system for
+ * applying legacy or modern spellcasting rules, managing per-class configurations,
+ * and handling spell list changes with proper validation and cleanup.
+ *
+ * Key features:
+ * - Legacy and modern rule set application with class-specific defaults
+ * - Dynamic spellcasting class detection and configuration initialization
+ * - Per-class rule customization with spell preparation bonuses and swap mechanics
+ * - Custom spell list integration with affected spell validation
+ * - Automatic cleanup of spells when changing spell lists
+ * - Comprehensive confirmation dialogs for rule changes affecting prepared spells
+ * - Integration with actor flag system for persistent rule storage
+ * - Support for multiclass characters with individual class rule management
+ *
+ * The manager distinguishes between legacy rules (more restrictive, closer to PHB)
+ * and modern rules (more flexible, incorporating optional rules and house rules)
+ * while allowing per-class customization for complex multiclass scenarios.
+ *
+ * @module Managers/RuleSetManager
+ * @author Tyler
+ */
+
 import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
 import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
- * Manages rule set application and class-specific rule configuration
+ * Spellcasting class data structure for rule management.
+ *
+ * @typedef {Object} SpellcastingClassData
+ * @property {string} name - Display name of the class
+ * @property {Item5e} item - The class item document
+ * @property {Object} spellcasting - Spellcasting configuration from the class
+ * @property {Item5e} spellcastingSource - The item providing spellcasting (class or subclass)
+ */
+
+/**
+ * Class rule configuration object defining spellcasting behavior.
+ *
+ * @typedef {Object} ClassRules
+ * @property {string} cantripSwapping - When cantrips can be swapped ('none', 'levelUp', 'longRest')
+ * @property {string} spellSwapping - When spells can be swapped ('none', 'levelUp', 'longRest')
+ * @property {string} ritualCasting - Ritual casting restrictions ('none', 'prepared', 'always')
+ * @property {boolean} showCantrips - Whether to show cantrips for this class
+ * @property {string|null} customSpellList - UUID of custom spell list document
+ * @property {number} spellPreparationBonus - Bonus to spell preparation limit
+ * @property {number} cantripPreparationBonus - Bonus to cantrip preparation limit
+ * @property {boolean} forceWizardMode - Whether to force wizard-style spell management
+ */
+
+/**
+ * Affected spell data for spell list change validation.
+ *
+ * @typedef {Object} AffectedSpellData
+ * @property {string} name - Spell name
+ * @property {string} uuid - Spell document UUID
+ * @property {number} level - Spell level (0 for cantrips)
+ * @property {string} classSpellKey - Internal class spell key for tracking
+ */
+
+/**
+ * Rule Set Manager - Centralized spellcasting rule configuration and management.
+ *
+ * This static class provides comprehensive rule set management for spellcasting
+ * characters, handling both global rule set application and per-class customization.
+ * It manages the complexity of multiclass spellcasters while providing sensible
+ * defaults based on established D&D 5e patterns and optional rules.
+ *
+ * The manager automatically detects spellcasting classes and applies appropriate
+ * defaults while allowing fine-grained customization for specific campaign needs
+ * or house rules. It integrates with the module's spell preparation tracking
+ * system to ensure rule changes are applied safely without data loss.
  */
 export class RuleSetManager {
   /**
-   * Apply a rule set to an actor, populating class-specific defaults
-   * @param {Actor5e} actor The actor to configure
-   * @param {string} ruleSet The rule set to apply ('legacy' or 'modern')
+   * Apply a rule set to an actor, populating class-specific defaults.
+   *
+   * Applies the specified rule set (legacy or modern) to an actor by detecting
+   * their spellcasting classes and configuring appropriate defaults for each class.
+   * Preserves any existing class-specific customizations while initializing
+   * defaults for newly detected classes.
+   *
+   * @param {Actor5e} actor - The actor to configure
+   * @param {string} ruleSet - The rule set to apply ('legacy' or 'modern')
+   * @returns {void}
+   * @static
    */
   static applyRuleSetToActor(actor, ruleSet) {
     const spellcastingClasses = RuleSetManager._detectSpellcastingClasses(actor);
@@ -26,9 +104,15 @@ export class RuleSetManager {
   }
 
   /**
-   * Get the effective rule set for an actor (checking override, then global)
-   * @param {Actor5e} actor The actor to check
-   * @returns {string} The effective rule set
+   * Get the effective rule set for an actor.
+   *
+   * Determines the active rule set for an actor by checking for actor-specific
+   * overrides first, then falling back to the global module setting. This
+   * allows for per-actor customization while maintaining world-wide defaults.
+   *
+   * @param {Actor5e} actor - The actor to check
+   * @returns {string} The effective rule set ('legacy' or 'modern')
+   * @static
    */
   static getEffectiveRuleSet(actor) {
     const override = actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE);
@@ -37,10 +121,17 @@ export class RuleSetManager {
   }
 
   /**
-   * Get class-specific rules for an actor, with fallback to defaults
-   * @param {Actor5e} actor The actor to check
-   * @param {string} classIdentifier The class identifier
-   * @returns {Object} The class rules object
+   * Get class-specific rules for an actor, with fallback to defaults.
+   *
+   * Retrieves the configured rules for a specific class on an actor. If no
+   * rules exist, generates appropriate defaults based on the actor's effective
+   * rule set. Includes validation to ensure rules exist only for valid
+   * spellcasting classes.
+   *
+   * @param {Actor5e} actor - The actor to check
+   * @param {string} classIdentifier - The class identifier
+   * @returns {ClassRules} The class rules object
+   * @static
    */
   static getClassRules(actor, classIdentifier) {
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
@@ -76,11 +167,18 @@ export class RuleSetManager {
   }
 
   /**
-   * Update class rules for a specific class on an actor
-   * @param {Actor5e} actor The actor to update
-   * @param {string} classIdentifier The class identifier
-   * @param {Object} newRules The new rules to apply
+   * Update class rules for a specific class on an actor.
+   *
+   * Updates the rule configuration for a specific class, with special handling
+   * for custom spell list changes. When changing spell lists, validates which
+   * prepared spells will be affected and provides user confirmation before
+   * proceeding with changes that would unprepare spells.
+   *
+   * @param {Actor5e} actor - The actor to update
+   * @param {string} classIdentifier - The class identifier
+   * @param {Partial<ClassRules>} newRules - The new rules to apply
    * @returns {Promise<boolean>} True if rules were updated, false if cancelled
+   * @static
    */
   static async updateClassRules(actor, classIdentifier, newRules) {
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
@@ -101,8 +199,16 @@ export class RuleSetManager {
   }
 
   /**
-   * Initialize class rules for any newly detected spellcasting classes
-   * @param {Actor5e} actor The actor to check
+   * Initialize class rules for any newly detected spellcasting classes.
+   *
+   * Scans the actor for spellcasting classes and initializes default rules
+   * for any classes that don't already have rule configurations. This is
+   * typically called when opening the spell book to ensure all classes
+   * have proper rule configurations.
+   *
+   * @param {Actor5e} actor - The actor to check
+   * @returns {void}
+   * @static
    */
   static initializeNewClasses(actor) {
     const spellcastingClasses = RuleSetManager._detectSpellcastingClasses(actor);
@@ -122,9 +228,16 @@ export class RuleSetManager {
   }
 
   /**
-   * Detect spellcasting classes on an actor
-   * @param {Actor5e} actor The actor to check
-   * @returns {Object} Map of class identifiers to class data
+   * Detect spellcasting classes on an actor.
+   *
+   * Analyzes an actor's class items to identify which classes provide
+   * spellcasting capabilities. Handles both class-based and subclass-based
+   * spellcasting, returning a map of class identifiers to class data.
+   *
+   * @private
+   * @param {Actor5e} actor - The actor to check
+   * @returns {Object<string, SpellcastingClassData>} Map of class identifiers to class data
+   * @static
    */
   static _detectSpellcastingClasses(actor) {
     const classes = {};
@@ -141,23 +254,24 @@ export class RuleSetManager {
           } else continue;
         }
         const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
-        classes[identifier] = {
-          name: classItem.name,
-          item: classItem,
-          spellcasting: spellcastingConfig,
-          spellcastingSource: spellcastingSource
-        };
+        classes[identifier] = { name: classItem.name, item: classItem, spellcasting: spellcastingConfig, spellcastingSource: spellcastingSource };
       }
     }
-
     return classes;
   }
 
   /**
-   * Get default rules for a class based on rule set
-   * @param {string} classIdentifier The class identifier
-   * @param {string} ruleSet The rule set to use
-   * @returns {Object} Default rules for the class
+   * Get default rules for a class based on rule set.
+   *
+   * Generates the default rule configuration for a specific class based on
+   * the specified rule set. Provides baseline configurations that can be
+   * customized later, with different defaults for legacy vs modern rule sets.
+   *
+   * @private
+   * @param {string} classIdentifier - The class identifier
+   * @param {string} ruleSet - The rule set to use ('legacy' or 'modern')
+   * @returns {ClassRules} Default rules for the class
+   * @static
    */
   static _getClassDefaults(classIdentifier, ruleSet) {
     const defaults = {
@@ -176,9 +290,17 @@ export class RuleSetManager {
   }
 
   /**
-   * Apply legacy rule set defaults for a class
-   * @param {string} classIdentifier The class identifier
-   * @param {Object} defaults The defaults object to modify
+   * Apply legacy rule set defaults for a class.
+   *
+   * Configures class defaults according to legacy D&D 5e rules, which are
+   * more restrictive and closer to the Player's Handbook as written. Legacy
+   * rules typically don't allow cantrip swapping and have limited flexibility.
+   *
+   * @private
+   * @param {string} classIdentifier - The class identifier
+   * @param {ClassRules} defaults - The defaults object to modify
+   * @returns {void}
+   * @static
    */
   static _applyLegacyDefaults(classIdentifier, defaults) {
     defaults.cantripSwapping = MODULE.SWAP_MODES.NONE;
@@ -222,9 +344,18 @@ export class RuleSetManager {
   }
 
   /**
-   * Apply modern rule set defaults for a class
-   * @param {string} classIdentifier The class identifier
-   * @param {Object} defaults The defaults object to modify
+   * Apply modern rule set defaults for a class.
+   *
+   * Configures class defaults according to modern D&D 5e interpretations,
+   * including optional rules and common house rules. Modern rules typically
+   * allow more flexibility, including cantrip swapping on level-up for most
+   * classes and expanded spell swapping options.
+   *
+   * @private
+   * @param {string} classIdentifier - The class identifier
+   * @param {ClassRules} defaults - The defaults object to modify
+   * @returns {void}
+   * @static
    */
   static _applyModernDefaults(classIdentifier, defaults) {
     defaults.cantripSwapping = MODULE.SWAP_MODES.LEVEL_UP;
@@ -269,11 +400,19 @@ export class RuleSetManager {
   }
 
   /**
-   * Get spells that will be affected by a spell list change
-   * @param {Actor5e} actor The actor to check
-   * @param {string} classIdentifier The class identifier
-   * @param {string} newSpellListUuid UUID of the new spell list
-   * @returns {Promise<Array>} Array of affected spell data
+   * Get spells that will be affected by a spell list change.
+   *
+   * Analyzes the actor's currently prepared spells to determine which ones
+   * will no longer be available if the spell list is changed to the specified
+   * new list. This enables proper user notification and cleanup when changing
+   * custom spell lists.
+   *
+   * @private
+   * @param {Actor5e} actor - The actor to check
+   * @param {string} classIdentifier - The class identifier
+   * @param {string} newSpellListUuid - UUID of the new spell list
+   * @returns {Promise<AffectedSpellData[]>} Array of affected spell data
+   * @static
    */
   static async _getAffectedSpellsByListChange(actor, classIdentifier, newSpellListUuid) {
     const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
@@ -299,22 +438,10 @@ export class RuleSetManager {
       if (!newSpellList.has(spellUuid)) {
         try {
           const spell = await fromUuid(spellUuid);
-          if (spell) {
-            affectedSpells.push({
-              name: spell.name,
-              uuid: spellUuid,
-              level: spell.system.level,
-              classSpellKey: classSpellKey
-            });
-          }
+          if (spell) affectedSpells.push({ name: spell.name, uuid: spellUuid, level: spell.system.level, classSpellKey: classSpellKey });
         } catch (error) {
           log(2, `Error loading spell ${spellUuid} for cleanup check:`, error);
-          affectedSpells.push({
-            name: 'Unknown Spell',
-            uuid: spellUuid,
-            level: 0,
-            classSpellKey: classSpellKey
-          });
+          affectedSpells.push({ name: 'Unknown Spell', uuid: spellUuid, level: 0, classSpellKey: classSpellKey });
         }
       }
     }
@@ -322,11 +449,19 @@ export class RuleSetManager {
   }
 
   /**
-   * Show confirmation dialog for spell list change
-   * @param {Actor5e} actor The actor
-   * @param {string} classIdentifier The class identifier
-   * @param {Array} affectedSpells Array of spells that will be unprepared
+   * Show confirmation dialog for spell list change.
+   *
+   * Displays a comprehensive confirmation dialog when a spell list change
+   * would affect prepared spells. Shows the user exactly which spells will
+   * be unprepared and requires explicit confirmation before proceeding.
+   *
+   * @private
+   * @param {Actor5e} actor - The actor
+   * @param {string} classIdentifier - The class identifier
+   * @param {AffectedSpellData[]} affectedSpells - Array of spells that will be unprepared
    * @returns {Promise<boolean>} Whether the user confirmed the change
+   * @todo Template?
+   * @static
    */
   static async _confirmSpellListChange(actor, classIdentifier, affectedSpells) {
     const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
@@ -335,23 +470,20 @@ export class RuleSetManager {
     const cantripCount = affectedSpells.filter((s) => s.level === 0).length;
     const spellCount = affectedSpells.filter((s) => s.level > 0).length;
     let content = `<div class="spell-list-change-warning">
-    <p><strong>${game.i18n.localize('SPELLBOOK.SpellListChange.Warning')}</strong></p>
-    <p>${game.i18n.format('SPELLBOOK.SpellListChange.Explanation', {
-      className: className,
-      total: affectedSpells.length
-    })}</p>`;
+      <p><strong>${game.i18n.localize('SPELLBOOK.SpellListChange.Warning')}</strong></p>
+      <p>${game.i18n.format('SPELLBOOK.SpellListChange.Explanation', { className: className, total: affectedSpells.length })}</p>`;
     if (cantripCount > 0) content += `<p><strong>${game.i18n.localize('SPELLBOOK.SpellListChange.CantripsAffected')}:</strong> ${cantripCount}</p>`;
     if (spellCount > 0) content += `<p><strong>${game.i18n.localize('SPELLBOOK.SpellListChange.SpellsAffected')}:</strong> ${spellCount}</p>`;
     content += `<details>
-    <summary>${game.i18n.localize('SPELLBOOK.SpellListChange.ShowAffectedSpells')}</summary>
-    <ul class="affected-spells-list">`;
+      <summary>${game.i18n.localize('SPELLBOOK.SpellListChange.ShowAffectedSpells')}</summary>
+      <ul class="affected-spells-list">`;
     for (const spell of affectedSpells) {
       const levelText = spell.level === 0 ? game.i18n.localize('SPELLBOOK.SpellLevel.Cantrip') : game.i18n.format('SPELLBOOK.SpellLevel.Numbered', { level: spell.level });
       content += `<li>${spell.name} (${levelText})</li>`;
     }
     content += `</ul></details>
-    <p><strong>${game.i18n.localize('SPELLBOOK.SpellListChange.Confirmation')}</strong></p>
-  </div>`;
+      <p><strong>${game.i18n.localize('SPELLBOOK.SpellListChange.Confirmation')}</strong></p>
+    </div>`;
     try {
       const result = await foundry.applications.api.DialogV2.wait({
         title: game.i18n.localize('SPELLBOOK.SpellListChange.Title'),
@@ -371,11 +503,19 @@ export class RuleSetManager {
   }
 
   /**
-   * Unprepare spells that are no longer available in the new spell list
-   * @param {Actor5e} actor The actor
-   * @param {string} classIdentifier The class identifier
-   * @param {Array} affectedSpells Array of spells to unprepare
+   * Unprepare spells that are no longer available in the new spell list.
+   *
+   * Removes affected spells from preparation tracking and cleans up actor
+   * spell items as appropriate. Handles both the module's preparation tracking
+   * system and the actor's embedded spell items, with proper handling of
+   * granted spells and special spell modes.
+   *
+   * @private
+   * @param {Actor5e} actor - The actor
+   * @param {string} classIdentifier - The class identifier
+   * @param {AffectedSpellData[]} affectedSpells - Array of spells to unprepare
    * @returns {Promise<void>}
+   * @static
    */
   static async _unprepareAffectedSpells(actor, classIdentifier, affectedSpells) {
     const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
@@ -409,9 +549,9 @@ export class RuleSetManager {
     const cantripCount = affectedSpells.filter((s) => s.level === 0).length;
     const spellCount = affectedSpells.filter((s) => s.level > 0).length;
     let message = game.i18n.format('SPELLBOOK.SpellListChange.Completed', { total: affectedSpells.length });
-    if (cantripCount > 0 && spellCount > 0) {
+    if (cantripCount > 0 && spellCount > 0)
       message += ` (${cantripCount} ${game.i18n.localize('SPELLBOOK.SpellListChange.Cantrips')}, ${spellCount} ${game.i18n.localize('SPELLBOOK.SpellListChange.Spells')})`;
-    } else if (cantripCount > 0) message += ` (${cantripCount} ${game.i18n.localize('SPELLBOOK.SpellListChange.Cantrips')})`;
+    else if (cantripCount > 0) message += ` (${cantripCount} ${game.i18n.localize('SPELLBOOK.SpellListChange.Cantrips')})`;
     else if (spellCount > 0) message += ` (${spellCount} ${game.i18n.localize('SPELLBOOK.SpellListChange.Spells')})`;
     ui.notifications.info(message);
     log(3, `Unprepared ${affectedSpells.length} spells for ${classIdentifier} due to spell list change`);
