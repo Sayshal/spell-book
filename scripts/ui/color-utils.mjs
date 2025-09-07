@@ -1,8 +1,66 @@
+/**
+ * Color Detection and Theme Utilities Module
+ *
+ * This module provides comprehensive color detection, theme utilities, and accessibility
+ * features for the Spell Book module. It includes dominant color extraction from images,
+ * automatic color contrast adjustment, and class-specific theming capabilities.
+ *
+ * The module integrates with Foundry VTT's theme system and provides WCAG-compliant
+ * color contrast adjustments to ensure accessibility across different UI themes.
+ *
+ * Key features include:
+ * - Dominant color extraction from class icons and images
+ * - Automatic contrast ratio calculation and adjustment
+ * - Class-specific color theming with CSS injection
+ * - Color overlay application for visual enhancement
+ * - Integration with Foundry's light/dark theme system
+ * - WCAG accessibility compliance for text contrast
+ *
+ * @module UIHelpers/ColorUtils
+ * @author Tyler
+ * @credits Ben - Original color detection algorithms
+ */
+
 /* eslint-disable jsdoc/require-jsdoc */
-/** Thank you Ben for writing this color detection code for me. */
 
 import { log } from '../logger.mjs';
 
+/**
+ * Color theme constants for light and dark modes.
+ *
+ * @typedef {Object} ThemeColors
+ * @property {string} light - Default light theme background color
+ * @property {string} dark - Default dark theme background color
+ */
+
+/**
+ * RGB color components structure.
+ *
+ * @typedef {Object} RGBColor
+ * @property {number} r - Red component (0-255)
+ * @property {number} g - Green component (0-255)
+ * @property {number} b - Blue component (0-255)
+ */
+
+/**
+ * HSL color components structure.
+ *
+ * @typedef {Object} HSLColor
+ * @property {number} h - Hue component (0-360)
+ * @property {number} s - Saturation component (0-100)
+ * @property {number} l - Lightness component (0-100)
+ */
+
+/**
+ * Class data structure for color extraction.
+ *
+ * @typedef {Object} ClassData
+ * @property {string} img - Image path for the class icon
+ * @property {string} [name] - Display name of the class
+ * @property {string} [identifier] - Unique identifier for the class
+ */
+
+/** @type {ThemeColors} */
 const T = { light: '#f4f4f4', dark: '#1b1d24' };
 
 function d() {
@@ -115,6 +173,23 @@ function A(c, bg, t = 4.5) {
   return `#${((1 << 24) + (fRgb.r << 16) + (fRgb.g << 8) + fRgb.b).toString(16).slice(1)}`;
 }
 
+/**
+ * Extract the dominant color from an image source.
+ *
+ * Analyzes an image to determine its most prominent color using canvas sampling
+ * and color frequency analysis. Uses a downsampled approach for performance and
+ * filters out transparent and very light pixels to focus on meaningful colors.
+ *
+ * The extraction process:
+ * - Loads the image with CORS support and timeout handling
+ * - Downsamples to 50x50 pixels for performance
+ * - Groups colors into buckets to reduce noise
+ * - Filters out transparent and near-white pixels
+ * - Returns the most frequent color group as a hex string
+ *
+ * @param {string} src - The image source URL to analyze
+ * @returns {Promise<string>} Promise resolving to hex color string (e.g., "#8B4513")
+ */
 export async function extractDominantColor(src) {
   try {
     return new Promise((resolve) => {
@@ -179,6 +254,24 @@ export async function extractDominantColor(src) {
   }
 }
 
+/**
+ * Apply class-specific colors to the UI with automatic contrast adjustment.
+ *
+ * Generates and injects CSS rules for class-specific colors based on class icons.
+ * Extracts dominant colors from class images and adjusts them for proper contrast
+ * against the current theme background. Creates dynamic styling for spell preparation
+ * tracking elements.
+ *
+ * The process includes:
+ * - Extracting dominant colors from class icon images
+ * - Adjusting colors for WCAG compliance against current theme
+ * - Generating CSS rules for class-specific styling
+ * - Injecting styles into the document head
+ * - Providing enhanced visual feedback for active classes
+ *
+ * @param {Object<string, ClassData>} sc - Object mapping class identifiers to class data
+ * @returns {Promise<void>} Promise that resolves when colors are applied
+ */
 export async function applyClassColors(sc) {
   const se = document.getElementById('spell-book-class-colors') || document.createElement('style');
   se.id = 'spell-book-class-colors';
@@ -215,6 +308,25 @@ export async function applyClassColors(sc) {
   log(3, 'Applied class-specific colors to CSS with contrast adjustment');
 }
 
+/**
+ * Apply a color overlay to an image with intelligent blending modes.
+ *
+ * Creates a dynamically colored version of an image using canvas operations
+ * and sophisticated blending techniques. Automatically adjusts the overlay
+ * method based on whether the overlay color is light or dark for optimal
+ * visual results.
+ *
+ * The overlay process:
+ * - Loads the source image with timeout and error handling
+ * - Analyzes the overlay color's brightness characteristics
+ * - Applies appropriate blending modes (multiply for dark, enhanced color for light)
+ * - Uses multiple overlay layers for light colors to maintain vibrancy
+ * - Returns a data URL of the processed image
+ *
+ * @param {string} imagePath - Path to the source image to overlay
+ * @param {string} overlayColor - Hex color string for the overlay (e.g., "#FF6B6B")
+ * @returns {Promise<string>} Promise resolving to data URL of the overlaid image
+ */
 export async function applyColorOverlay(imagePath, overlayColor) {
   try {
     return new Promise((resolve) => {
@@ -277,6 +389,24 @@ export async function applyColorOverlay(imagePath, overlayColor) {
   }
 }
 
+/**
+ * Calculate the contrast ratio between two colors.
+ *
+ * Computes the WCAG-defined contrast ratio between two colors to determine
+ * their accessibility compliance. The contrast ratio is calculated using
+ * relative luminance values and follows WCAG 2.1 guidelines.
+ *
+ * Contrast ratio interpretation:
+ * - 1:1 = No contrast (same color)
+ * - 3:1 = Minimum for large text (AA)
+ * - 4.5:1 = Minimum for normal text (AA)
+ * - 7:1 = Enhanced contrast (AAA)
+ * - 21:1 = Maximum contrast (white on black)
+ *
+ * @param {string} color1 - First color as hex string (e.g., "#FF0000")
+ * @param {string} color2 - Second color as hex string (e.g., "#FFFFFF")
+ * @returns {number} Contrast ratio between the two colors (1-21)
+ */
 export function getContrastRatio(color1, color2) {
   const contrast = C(color1, color2);
   return contrast;

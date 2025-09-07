@@ -72,15 +72,15 @@ This document tracks the progress of enhancing JSDoc type definitions across all
 
 ### `/scripts/ui/` - UI Utilities & Helpers
 
-- [] `advanced-search-manager.mjs` - Advanced search functionality and query parsing
-- [] `color-utils.mjs` - Color detection and theme utilities
-- [] `spell-description-injection.mjs` - Spell description enhancement system
-- [] `spell-favorites.mjs` - Spell favorites management and UI integration
-- [] `spell-formatting.mjs` - Spell display formatting utilities
-- [] `spellbook-filters.mjs` - Filter logic and UI management
-- [] `spellbook-ui.mjs` - General UI helper functions and utilities
-- [] `ui-customization.mjs` - UI customization and theme utilities
-- [] `_module.mjs` - UI module exports
+- [x] `advanced-search-manager.mjs` - Advanced search functionality and query parsing
+- [x] `color-utils.mjs` - Color detection and theme utilities
+- [x] `spell-description-injection.mjs` - Spell description enhancement system
+- [x] `spell-favorites.mjs` - Spell favorites management and UI integration
+- [x] `spell-formatting.mjs` - Spell display formatting utilities
+- [x] `spellbook-filters.mjs` - Filter logic and UI management
+- [x] `spellbook-ui.mjs` - General UI helper functions and utilities
+- [x] `ui-customization.mjs` - UI customization and theme utilities
+- [x] `_module.mjs` - UI module exports
 
 ### `/scripts/validation/` - Data Validation & Filtering
 
