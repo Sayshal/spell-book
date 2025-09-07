@@ -1,15 +1,63 @@
+/**
+ * Advanced Search Query Execution Engine
+ *
+ * Executes parsed search queries against spell data collections. This module provides
+ * the runtime evaluation system for advanced search functionality, supporting field-based
+ * filtering with complex criteria and validation logic.
+ *
+ * The query executor supports:
+ * - Conjunction (AND) operations between field conditions
+ * - Complex field-specific evaluation logic
+ * - Type-safe spell property access and comparison
+ * - Error handling and fallback behavior
+ *
+ * @module ValidationHelpers/QueryExecutor
+ * @author Tyler
+ */
+
 import { log } from '../logger.mjs';
 
 /**
- * Executes parsed queries against spell data
- * Supports only AND operations between field conditions
+ * Parsed query object structure for execution.
+ *
+ * @typedef {Object} ParsedQuery
+ * @property {string} type - Query type (currently only 'conjunction' supported)
+ * @property {Array<FieldCondition>} conditions - Array of field conditions to evaluate
+ */
+
+/**
+ * Individual field condition within a query.
+ *
+ * @typedef {Object} FieldCondition
+ * @property {string} type - Condition type (should be 'field')
+ * @property {string} field - Field identifier to evaluate against
+ * @property {string} value - Expected value for the field condition
+ */
+
+/**
+ * Spell data structure for query evaluation.
+ *
+ * @typedef {Object} SpellData
+ * @property {string} name - Spell name for text searching
+ * @property {number} level - Spell level (0-9)
+ * @property {string} school - Spell school identifier
+ * @property {Object} [system] - D&D 5e system data for the spell
+ * @property {Object} [filterData] - Pre-processed filter data for performance
+ * @property {boolean} [prepared] - Whether the spell is prepared (for actors)
+ */
+
+/**
+ * Executes parsed queries against spell data.
+ * Supports only AND operations between field conditions for performance and simplicity.
  */
 export class QueryExecutor {
   /**
-   * Execute parsed query against spells
-   * @param {Object} queryObject Parsed query object
-   * @param {Array} spells Array of spells to filter
-   * @returns {Array} Filtered spells
+   * Execute parsed query against spells collection.
+   * Filters the provided spells array based on the parsed query conditions.
+   *
+   * @param {ParsedQuery} queryObject - Parsed query object from QueryParser
+   * @param {Array<SpellData>} spells - Array of spell data to filter
+   * @returns {Array<SpellData>} Filtered spells that match all query conditions
    */
   executeQuery(queryObject, spells) {
     if (!queryObject || !spells || queryObject.type !== 'conjunction') return spells;
@@ -22,9 +70,12 @@ export class QueryExecutor {
   }
 
   /**
-   * Evaluate all conditions against a spell (AND logic)
-   * @param {Array} conditions Array of field conditions
-   * @param {Object} spell Spell to evaluate against
+   * Evaluate all conditions against a spell using AND logic.
+   * All conditions must be true for the spell to be included in results.
+   *
+   * @private
+   * @param {Array<FieldCondition>} conditions - Array of field conditions to evaluate
+   * @param {SpellData} spell - Spell data to evaluate against
    * @returns {boolean} Whether the spell matches all conditions
    */
   _evaluateSpell(conditions, spell) {
@@ -32,9 +83,12 @@ export class QueryExecutor {
   }
 
   /**
-   * Evaluate single field condition
-   * @param {Object} condition Field condition
-   * @param {Object} spell Spell to evaluate
+   * Evaluate single field condition against a spell.
+   * Dispatches to appropriate field-specific evaluation method.
+   *
+   * @private
+   * @param {FieldCondition} condition - Field condition to evaluate
+   * @param {SpellData} spell - Spell data to evaluate
    * @returns {boolean} Whether the spell matches the condition
    */
   _evaluateCondition(condition, spell) {
@@ -72,10 +126,13 @@ export class QueryExecutor {
   }
 
   /**
-   * Evaluate casting time criteria
-   * @param {string} value Expected casting time
-   * @param {Object} spell Spell to check
-   * @returns {boolean} Whether casting time matches
+   * Evaluate casting time criteria against spell data.
+   * Supports type:value format (e.g., "action:1", "minute:10").
+   *
+   * @private
+   * @param {string} value - Expected casting time in "type:value" format
+   * @param {SpellData} spell - Spell data to check
+   * @returns {boolean} Whether casting time matches the criteria
    */
   _evaluateCastingTime(value, spell) {
     const parts = value.split(':');
@@ -87,10 +144,14 @@ export class QueryExecutor {
   }
 
   /**
-   * Evaluate range criteria
-   * @param {string} value Expected range
-   * @param {Object} spell Spell to check
-   * @returns {boolean} Whether range matches
+   * Evaluate range criteria against spell data.
+   * Supports numeric ranges and range type keywords.
+   *
+   * @private
+   * @param {string} value - Expected range value or type
+   * @param {SpellData} spell - Spell data to check
+   * @todo Implement proper numeric range comparison
+   * @returns {boolean} Whether range matches the criteria
    */
   _evaluateRange(value, spell) {
     const rangeValue = parseInt(value);
@@ -107,9 +168,12 @@ export class QueryExecutor {
   }
 
   /**
-   * Evaluate damage type criteria
-   * @param {string} value Expected damage types (comma-separated)
-   * @param {Object} spell Spell to check
+   * Evaluate damage type criteria against spell data.
+   * Supports comma-separated damage types for OR matching within the field.
+   *
+   * @private
+   * @param {string} value - Expected damage types (comma-separated)
+   * @param {SpellData} spell - Spell data to check
    * @returns {boolean} Whether any damage type matches
    */
   _evaluateDamageType(value, spell) {
@@ -119,9 +183,12 @@ export class QueryExecutor {
   }
 
   /**
-   * Evaluate condition criteria
-   * @param {string} value Expected conditions (comma-separated)
-   * @param {Object} spell Spell to check
+   * Evaluate condition criteria against spell data.
+   * Supports comma-separated conditions for OR matching within the field.
+   *
+   * @private
+   * @param {string} value - Expected conditions (comma-separated)
+   * @param {SpellData} spell - Spell data to check
    * @returns {boolean} Whether any condition matches
    */
   _evaluateConditionProperty(value, spell) {
@@ -131,9 +198,12 @@ export class QueryExecutor {
   }
 
   /**
-   * Evaluate requires save criteria
-   * @param {string} value Expected save requirement (true/false)
-   * @param {Object} spell Spell to check
+   * Evaluate requires save criteria against spell data.
+   * Checks whether the spell requires a saving throw.
+   *
+   * @private
+   * @param {string} value - Expected save requirement ('true' or 'false')
+   * @param {SpellData} spell - Spell data to check
    * @returns {boolean} Whether save requirement matches
    */
   _evaluateRequiresSave(value, spell) {
@@ -143,9 +213,12 @@ export class QueryExecutor {
   }
 
   /**
-   * Evaluate concentration criteria
-   * @param {string} value Expected concentration requirement (true/false)
-   * @param {Object} spell Spell to check
+   * Evaluate concentration criteria against spell data.
+   * Checks whether the spell requires concentration.
+   *
+   * @private
+   * @param {string} value - Expected concentration requirement ('true' or 'false')
+   * @param {SpellData} spell - Spell data to check
    * @returns {boolean} Whether concentration requirement matches
    */
   _evaluateConcentration(value, spell) {
@@ -155,9 +228,12 @@ export class QueryExecutor {
   }
 
   /**
-   * Evaluate prepared criteria
-   * @param {string} value Expected preparation status (true/false)
-   * @param {Object} spell Spell to check
+   * Evaluate prepared criteria against spell data.
+   * Checks whether the spell is currently prepared by the actor.
+   *
+   * @private
+   * @param {string} value - Expected preparation status ('true' or 'false')
+   * @param {SpellData} spell - Spell data to check
    * @returns {boolean} Whether preparation status matches
    */
   _evaluatePrepared(value, spell) {
@@ -167,9 +243,12 @@ export class QueryExecutor {
   }
 
   /**
-   * Evaluate ritual criteria
-   * @param {string} value Expected ritual capability (true/false)
-   * @param {Object} spell Spell to check
+   * Evaluate ritual criteria against spell data.
+   * Checks whether the spell can be cast as a ritual.
+   *
+   * @private
+   * @param {string} value - Expected ritual capability ('true' or 'false')
+   * @param {SpellData} spell - Spell data to check
    * @returns {boolean} Whether ritual capability matches
    */
   _evaluateRitual(value, spell) {
@@ -179,9 +258,12 @@ export class QueryExecutor {
   }
 
   /**
-   * Evaluate material components criteria
-   * @param {string} value Expected material component status
-   * @param {Object} spell Spell to check
+   * Evaluate material components criteria against spell data.
+   * Checks whether the spell has consumed or non-consumed material components.
+   *
+   * @private
+   * @param {string} value - Expected material component status ('consumed' or 'notconsumed')
+   * @param {SpellData} spell - Spell data to check
    * @returns {boolean} Whether material component status matches
    */
   _evaluateMaterialComponents(value, spell) {

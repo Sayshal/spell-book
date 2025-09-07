@@ -84,12 +84,12 @@ This document tracks the progress of enhancing JSDoc type definitions across all
 
 ### `/scripts/validation/` - Data Validation & Filtering
 
-- [] `field-definitions.mjs` - Field definition schemas for validation
-- [] `filters.mjs` - Filter logic and spell filtering systems
-- [] `form-elements.mjs` - Form element validation helpers
-- [] `query-executor.mjs` - Query execution engine for spell searches
-- [] `query-parser.mjs` - Advanced search query parsing
-- [] `_module.mjs` - Validation module exports
+- [x] `field-definitions.mjs` - Field definition schemas for validation
+- [x] `filters.mjs` - Filter logic and spell filtering systems
+- [x] `form-elements.mjs` - Form element validation helpers
+- [x] `query-executor.mjs` - Query execution engine for spell searches
+- [x] `query-parser.mjs` - Advanced search query parsing
+- [x] `_module.mjs` - Validation module exports
 
 ### `/scripts/` - Root Level Files
 

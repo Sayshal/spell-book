@@ -1,10 +1,47 @@
+/**
+ * Spell Filtering Utilities
+ *
+ * Provides filtering logic and dropdown option generation for the spell browser interface.
+ * This module handles range conversions, filter option preparation, and casting time
+ * option generation for the spell filtering system.
+ *
+ * Key Features:
+ * - Range unit conversion with metric system support
+ * - Dynamic filter option generation based on D&D 5e configuration
+ * - Casting time option sorting and formatting
+ * - Localized filter labels and descriptions
+ *
+ * @module ValidationHelpers/Filters
+ * @author Tyler
+ */
+
 import * as DataHelpers from '../data/_module.mjs';
 
 /**
- * Convert a spell range to feet (or meters based on dnd5e system settings)
- * @param {string} units The range units (feet, miles, etc)
- * @param {number} value The range value
- * @returns {number} - The converted range value
+ * Filter option for dropdown controls in the spell browser interface.
+ *
+ * @typedef {Object} FilterOption
+ * @property {string} value - The option value used for filtering
+ * @property {string} label - The localized display label for the option
+ * @property {boolean} [selected] - Whether this option is currently selected
+ */
+
+/**
+ * Casting time configuration for option generation and sorting.
+ *
+ * @typedef {Object} CastingTimeConfig
+ * @property {string} type - The activation type (action, bonus, reaction, etc.)
+ * @property {number} value - The numeric value for the casting time
+ * @property {number} priority - Sort priority for ordering options
+ */
+
+/**
+ * Convert a spell range to feet (or meters based on D&D 5e system settings).
+ * Handles unit conversion for range comparisons and display formatting.
+ *
+ * @param {string} units - The range units (ft, mi, spec, etc.)
+ * @param {number} value - The range value to convert
+ * @returns {number} The converted range value in standard units
  */
 export function convertRangeToStandardUnit(units, value) {
   if (!units || !value) return 0;
@@ -13,10 +50,13 @@ export function convertRangeToStandardUnit(units, value) {
 }
 
 /**
- * Prepare filter options based on filter type
- * @param {string} filterId The filter ID
- * @param {Object} filterState Current filter state
- * @returns {Array} Options for the dropdown
+ * Prepare filter options based on filter type and current state.
+ * Generates dropdown options for various filter types with localized labels
+ * and current selection states.
+ *
+ * @param {string} filterId - The filter identifier (level, school, etc.)
+ * @param {Object} filterState - Current filter state with selected values
+ * @returns {Array<FilterOption>} Options for the dropdown control
  */
 export function getOptionsForFilter(filterId, filterState) {
   const options = [{ value: '', label: game.i18n.localize('SPELLBOOK.Filters.All') }];
@@ -83,11 +123,15 @@ export function getOptionsForFilter(filterId, filterState) {
 }
 
 /**
- * Get casting time options
- * @param {Object} filterState Current filter state
- * @returns {Array} Casting time options
+ * Get casting time options with proper sorting and formatting.
+ * Generates standardized casting time options sorted by priority and value.
+ *
+ * @private
+ * @param {Object} filterState - Current filter state for selection tracking
+ * @returns {Array<FilterOption>} Sorted casting time options
  */
 function getCastingTimeOptions(filterState) {
+  /** @type {Array<CastingTimeConfig>} */
   const castingTimes = [
     { type: 'action', value: 1, priority: 1 },
     { type: 'bonus', value: 1, priority: 2 },
