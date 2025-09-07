@@ -25,14 +25,14 @@ This document tracks the progress of enhancing JSDoc type definitions across all
 
 ### `/scripts/data/` - Data Management & Processing
 
-- [] `actor-spells.mjs` - Actor spell data extraction and processing
-- [] `compendium-management.mjs` - Compendium operations and spell list management
-- [] `generic-utils.mjs` - Generic utility functions for data manipulation
-- [] `scroll-scanner.mjs` - Spell scroll detection and processing
-- [] `spell-data-preloader.mjs` - Spell data preloading and caching
-- [] `spell-discovery.mjs` - Spell list discovery and mapping
-- [] `spell-user-data.mjs` - User-specific spell data management
-- [] `_module.mjs` - Data module exports
+- [x] `actor-spells.mjs` - Actor spell data extraction and processing
+- [x] `compendium-management.mjs` - Compendium operations and spell list management
+- [x] `generic-utils.mjs` - Generic utility functions for data manipulation
+- [x] `scroll-scanner.mjs` - Spell scroll detection and processing
+- [x] `spell-data-preloader.mjs` - Spell data preloading and caching
+- [x] `spell-discovery.mjs` - Spell list discovery and mapping
+- [x] `spell-user-data.mjs` - User-specific spell data management
+- [x] `_module.mjs` - Data module exports
 
 ### `/scripts/dialogs/` - Dialog Applications
 

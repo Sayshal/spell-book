@@ -550,7 +550,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _processSpellForDisplay(spell) {
     const processedSpell = foundry.utils.deepClone(spell);
-    if (!spell.compendiumUuid) spell.compendiumUuid = DataHelpers.getSpellUuid(spell);
+    if (!spell.compendiumUuid) spell.compendiumUuid = spell.uuid;
     processedSpell.cssClasses = this._getSpellCssClasses(spell);
     processedSpell.dataAttributes = this._getSpellDataAttributes(spell);
     processedSpell.tag = this._getSpellPreparationTag(spell);

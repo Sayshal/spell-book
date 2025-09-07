@@ -195,7 +195,7 @@ export class CantripManager {
         break;
     }
     const trackingData = this._getSwapTrackingData(isLevelUp, isLongRest, classIdentifier);
-    const spellUuid = DataHelpers.getSpellUuid(spell);
+    const spellUuid = spell.uuid;
     if ((isLevelUp && cantripSwapping === 'levelUp') || (isLongRest && cantripSwapping === 'longRest')) {
       if (!isChecked && trackingData.hasUnlearned && trackingData.unlearned !== spellUuid && trackingData.originalChecked.includes(spellUuid)) {
         return { allowed: false, message: 'SPELLBOOK.Cantrips.OnlyOneSwap' };
@@ -243,7 +243,7 @@ export class CantripManager {
     }
     const settings = this.spellManager.getSettings(classIdentifier);
     const cantripSwapping = settings.cantripSwapping || 'none';
-    const spellUuid = DataHelpers.getSpellUuid(spell);
+    const spellUuid = spell.uuid;
     if (!isLevelUp && !isLongRest) return;
     if (cantripSwapping === 'none') return;
     if (cantripSwapping === 'longRest' && classIdentifier !== MODULE.CLASS_IDENTIFIERS.WIZARD) return;
@@ -252,7 +252,7 @@ export class CantripManager {
     if (!tracking) {
       const preparedCantrips = this.actor.items
         .filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1 && (i.sourceClass === classIdentifier || i.system.sourceClass === classIdentifier))
-        .map((i) => DataHelpers.getSpellUuid(i));
+        .map((i) => i.uuid);
       tracking = { hasUnlearned: false, unlearned: null, hasLearned: false, learned: null, originalChecked: preparedCantrips };
       this.actor.setFlag(MODULE.ID, flagName, tracking);
     }

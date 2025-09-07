@@ -26,36 +26,36 @@ import * as ValidationHelpers from './validation/_module.mjs';
  * Available applications exposed through the API.
  *
  * @typedef {Object} APIApplications
- * @property {typeof PlayerFilterConfiguration} PlayerFilterConfiguration - Player filter configuration application
- * @property {typeof SpellBook} SpellBook - Main spell book application
- * @property {typeof SpellAnalyticsDashboard} SpellAnalyticsDashboard - Spell usage analytics dashboard
- * @property {typeof SpellListManager} SpellListManager - Spell list management application
+ * @property {PlayerFilterConfiguration} PlayerFilterConfiguration - Player filter configuration application
+ * @property {SpellBook} SpellBook - Main spell book application
+ * @property {SpellAnalyticsDashboard} SpellAnalyticsDashboard - Spell usage analytics dashboard
+ * @property {SpellListManager} SpellListManager - Spell list management application
  */
 
 /**
  * Available dialogs exposed through the API.
  *
  * @typedef {Object} APIDialogs
- * @property {typeof CompendiumSelectionDialog} CompendiumSelectionDialog - Compendium selection dialog
- * @property {typeof SpellComparisonDialog} SpellComparisonDialog - Spell comparison dialog
- * @property {typeof SpellDetailsCustomization} SpellDetailsCustomization - Spell details customization dialog
- * @property {typeof SpellLoadoutDialog} SpellLoadoutDialog - Spell loadout configuration dialog
- * @property {typeof SpellNotesDialog} SpellNotesDialog - Spell notes editor dialog
- * @property {typeof SpellbookSettingsDialog} SpellbookSettingsDialog - Spellbook settings dialog
+ * @property {CompendiumSelectionDialog} CompendiumSelectionDialog - Compendium selection dialog
+ * @property {SpellComparisonDialog} SpellComparisonDialog - Spell comparison dialog
+ * @property {SpellDetailsCustomization} SpellDetailsCustomization - Spell details customization dialog
+ * @property {SpellLoadoutDialog} SpellLoadoutDialog - Spell loadout configuration dialog
+ * @property {SpellNotesDialog} SpellNotesDialog - Spell notes editor dialog
+ * @property {SpellbookSettingsDialog} SpellbookSettingsDialog - Spellbook settings dialog
  */
 
 /**
  * Manager classes exposed through the API utilities.
  *
  * @typedef {Object} APIManagers
- * @property {typeof CantripManager} CantripManager - Cantrip management functionality
- * @property {typeof MacroManager} MacroManager - Macro management functionality
- * @property {typeof RuleSetManager} RuleSetManager - Rule set management functionality
- * @property {typeof SpellLoadoutManager} SpellLoadoutManager - Spell loadout management functionality
- * @property {typeof SpellManager} SpellManager - Core spell management functionality
- * @property {typeof SpellUsageTracker} SpellUsageTracker - Spell usage tracking functionality
- * @property {typeof UserSpellDataManager} UserSpellDataManager - User spell data management functionality
- * @property {typeof WizardSpellbookManager} WizardSpellbookManager - Wizard spellbook management functionality
+ * @property {CantripManager} CantripManager - Cantrip management functionality
+ * @property {MacroManager} MacroManager - Macro management functionality
+ * @property {RuleSetManager} RuleSetManager - Rule set management functionality
+ * @property {SpellLoadoutManager} SpellLoadoutManager - Spell loadout management functionality
+ * @property {SpellManager} SpellManager - Core spell management functionality
+ * @property {SpellUsageTracker} SpellUsageTracker - Spell usage tracking functionality
+ * @property {UserSpellDataManager} UserSpellDataManager - User spell data management functionality
+ * @property {WizardSpellbookManager} WizardSpellbookManager - Wizard spellbook management functionality
  */
 
 /**
@@ -64,7 +64,7 @@ import * as ValidationHelpers from './validation/_module.mjs';
  * @typedef {Object} APIUtils
  * @property {Object} data - Data helper functions for spell and compendium operations
  * @property {APIManagers} managers - Manager classes for various spell book functionalities
- * @property {typeof SpellbookState} state - State management utilities
+ * @property {SpellbookState} state - State management utilities
  * @property {Object} ui - UI helper functions and utilities
  * @property {Object} validation - Validation helper functions
  */

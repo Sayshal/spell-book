@@ -2,10 +2,59 @@ import { log } from '../logger.mjs';
 import * as UIHelpers from './_module.mjs';
 
 /**
- * Fast spell document fetching using getIndex instead of getDocument
- * @param {Set<string>} spellUuids Set of spell UUIDs
- * @param {number} maxSpellLevel Maximum spell level to include
- * @returns {Promise<Array>} - Array of spell documents
+ * @typedef {Object} SpellDocument
+ * @property {string} uuid - Unique identifier for the spell
+ * @property {string} name - Display name of the spell
+ * @property {string} img - Image path for the spell icon
+ * @property {string} type - Document type (should be 'spell')
+ * @property {SpellSystemData} system - System-specific spell data
+ * @property {Object} labels - Computed labels for display
+ * @property {Object} flags - Document flags and metadata
+ * @property {string} [compendiumUuid] - UUID of the source compendium document
+ */
+
+/**
+ * @typedef {Object} SpellSystemData
+ * @property {number} level - Spell level (0-9, where 0 is cantrip)
+ * @property {string} school - School of magic identifier
+ * @property {Object} preparation - Spell preparation configuration
+ * @property {Object} activation - Spell activation requirements
+ * @property {Object} range - Spell range information
+ * @property {Object} duration - Spell duration data
+ * @property {Array} properties - Array of spell property flags
+ * @property {Object} materials - Material component requirements
+ * @property {Map} activities - Map of spell activities
+ * @property {Object} description - Spell description content
+ * @property {Object} components - Spell component requirements
+ */
+
+/**
+ * @typedef {Object} CompendiumGroupData
+ * @property {string} uuid - Full UUID of the spell
+ * @property {string} id - Document ID within the compendium
+ */
+
+/**
+ * @typedef {Object} SpellFetchError
+ * @property {string} uuid - UUID that failed to fetch
+ * @property {string} reason - Human-readable error reason
+ */
+
+/**
+ * @typedef {Object} LevelGroup
+ * @property {number} level - Numeric spell level
+ * @property {string} levelName - Localized display name for the level
+ * @property {Array<SpellDocument>} spells - Array of spells at this level
+ */
+
+/**
+ * Fast spell document fetching using getIndex instead of getDocument.
+ * Optimizes performance by using compendium indexes and batching operations
+ * rather than individual document fetches.
+ *
+ * @param {Set<string>} spellUuids - Set of spell UUIDs to fetch
+ * @param {number} maxSpellLevel - Maximum spell level to include in results
+ * @returns {Promise<Array<SpellDocument>>} Array of spell documents
  */
 export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
   const preloadedData = UIHelpers.getPreloadedData();
@@ -13,7 +62,11 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
     const matchingSpells = preloadedData.enrichedSpells.filter((spell) => spellUuids.has(spell.uuid) && spell.system?.level <= maxSpellLevel);
     if (matchingSpells.length === spellUuids.size) return matchingSpells;
   }
+
+  /** @type {Map<string, Array<CompendiumGroupData>>} */
   const compendiumGroups = new Map();
+
+  /** @type {Array<string>} */
   const nonCompendiumUuids = [];
   for (const uuid of spellUuids) {
     const parsed = foundry.utils.parseUuid(uuid);
@@ -25,17 +78,21 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
       nonCompendiumUuids.push(uuid);
     }
   }
+
+  /** @type {Array<SpellDocument>} */
   const spellItems = [];
+
+  /** @type {Array<SpellFetchError>} */
   const errors = [];
+
+  /** @type {Array<SpellDocument>} */
   const filteredOut = [];
   log(3, `Fetching spell documents: ${spellUuids.size} spells, max level ${maxSpellLevel}`);
   log(3, `Grouped into ${compendiumGroups.size} compendiums + ${nonCompendiumUuids.length} non-compendium UUIDs`);
   for (const [packId, uuidData] of compendiumGroups) {
     const pack = game.packs.get(packId);
     if (!pack) {
-      for (const { uuid } of uuidData) {
-        errors.push({ uuid, reason: `Compendium ${packId} not found` });
-      }
+      for (const { uuid } of uuidData) errors.push({ uuid, reason: `Compendium ${packId} not found` });
       continue;
     }
     const index = await pack.getIndex({
@@ -64,10 +121,10 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
         'flags.core'
       ]
     });
+
+    /** @type {Map<string, Object>} */
     const spellMap = new Map();
-    for (const entry of index) {
-      if (entry.type === 'spell') spellMap.set(entry._id, entry);
-    }
+    for (const entry of index) if (entry.type === 'spell') spellMap.set(entry._id, entry);
     for (const { uuid, id } of uuidData) {
       const spell = spellMap.get(id);
       if (!spell) {
@@ -121,12 +178,17 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
 }
 
 /**
- * Organize spells by level for display in GM interface
- * @param {Array} spellItems Array of spell documents
- * @returns {Array} Array of level objects with organized spells
+ * Organize spells by level for display in GM interface.
+ * Groups spells into level-based arrays and sorts them alphabetically
+ * within each level for consistent presentation.
+ *
+ * @param {Array<SpellDocument>} spellItems - Array of spell documents to organize
+ * @returns {Array<LevelGroup>} Array of level objects with organized spells
  */
 export function organizeSpellsByLevel(spellItems) {
   if (!spellItems || !Array.isArray(spellItems)) return [];
+
+  /** @type {Object<number, Array<SpellDocument>>} */
   const spellsByLevel = {};
   for (const spell of spellItems) {
     if (spell?.system?.level === undefined) continue;
@@ -137,15 +199,13 @@ export function organizeSpellsByLevel(spellItems) {
   for (const level in spellsByLevel) {
     if (level in spellsByLevel) spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
   }
+
+  /** @type {Array<LevelGroup>} */
   const levelArray = [];
   const sortedLevels = Object.keys(spellsByLevel).sort((a, b) => Number(a) - Number(b));
   for (const level of sortedLevels) {
     const levelName = CONFIG.DND5E.spellLevels[level] || `Level ${level}`;
-    levelArray.push({
-      level: Number(level),
-      levelName: levelName,
-      spells: spellsByLevel[level]
-    });
+    levelArray.push({ level: Number(level), levelName: levelName, spells: spellsByLevel[level] });
   }
   return levelArray;
 }

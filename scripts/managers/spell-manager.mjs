@@ -85,7 +85,7 @@ export class SpellManager {
       isCantripLocked: false
     };
     if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
-    const spellUuid = spell.compendiumUuid || spell.uuid || DataHelpers.getSpellUuid(spell);
+    const spellUuid = spell.compendiumUuid || spell.uuid;
     const actualSpell = this.actor.items.find(
       (item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
     );

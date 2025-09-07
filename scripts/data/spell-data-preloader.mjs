@@ -5,26 +5,78 @@ import * as UIHelpers from '../ui/_module.mjs';
 import * as DataHelpers from './_module.mjs';
 
 /**
- * Preload spell data based on user role and settings
+ * @typedef {Object} PreloadedSpellData
+ * @property {Array<SpellListMetadata>} spellLists - Array of available spell lists
+ * @property {Array<EnrichedSpellData>} enrichedSpells - Array of enriched spell data
+ * @property {number} timestamp - Timestamp when data was preloaded
+ * @property {string} version - Module version when data was preloaded
+ * @property {string} mode - Preload mode used ('gm-setup', 'player', 'no-character')
+ */
+
+/**
+ * @typedef {Object} EnrichedSpellData
+ * @property {string} uuid - Unique identifier for the spell
+ * @property {string} name - Display name of the spell
+ * @property {string} img - Image path for the spell icon
+ * @property {number} level - Spell level (0-9)
+ * @property {string} school - School of magic identifier
+ * @property {string} sourceId - Source identifier for filtering
+ * @property {string} packName - Display name of the source pack
+ * @property {Object} system - System-specific spell data
+ * @property {Object} labels - Computed labels for display
+ * @property {Object} filterData - Extracted filter data for UI
+ * @property {string} enrichedIcon - HTML string for spell icon link
+ */
+
+/**
+ * @typedef {Object} PlayerActor
+ * @property {string} _id - Unique actor ID
+ * @property {string} name - Actor display name
+ * @property {string} type - Actor type (should be 'character')
+ * @property {Object} spellcastingClasses - Spellcasting class data
+ * @property {Collection} items - Actor's item collection
+ */
+
+/**
+ * @typedef {Object} SpellbookData
+ * @property {JournalEntry} journal - The spellbook journal document
+ * @property {JournalEntryPage} page - The spells page within the journal
+ * @property {Set<string>|Array<string>} spells - Collection of spell UUIDs
+ */
+
+/**
+ * @typedef {Object} PreloadResult
+ * @property {boolean} success - Whether preloading completed successfully
+ * @property {string} mode - The preload mode that was used
+ * @property {number} spellListCount - Number of spell lists loaded
+ * @property {number} spellCount - Number of spells loaded
+ * @property {string} [error] - Error message if preloading failed
+ */
+
+/**
+ * Preload spell data based on user role and settings.
+ * Determines the appropriate preloading strategy based on whether the user
+ * is a GM with setup mode enabled or a player with an assigned character.
+ *
  * @returns {Promise<void>}
  */
 export async function preloadSpellData() {
   const isGM = game.user.isGM;
   if (isGM) {
     const setupMode = game.settings.get(MODULE.ID, SETTINGS.SETUP_MODE);
-    if (setupMode) {
-      return await preloadForGMSetupMode();
-    } else {
-      log(3, 'GM Setup Mode disabled - no preloading');
-    }
-  } else {
-    return await preloadForPlayer();
-  }
+    if (setupMode) return await preloadForGMSetupMode();
+    else log(3, 'GM Setup Mode disabled - no preloading');
+  } else return await preloadForPlayer();
 }
 
 /**
- * Preload all spell data for GM setup mode
+ * Preload all spell data for GM setup mode.
+ * Loads all available spell lists and spells from enabled compendiums
+ * to provide comprehensive data for GM configuration interfaces.
+ *
  * @returns {Promise<void>}
+ * @todo Missing some localization
+ * @private
  */
 async function preloadForGMSetupMode() {
   log(3, 'Starting GM setup mode preload - loading all spells and lists');
@@ -35,8 +87,7 @@ async function preloadForGMSetupMode() {
     const enrichedSpells = enrichSpellsWithIcons(allSpells);
     cachePreloadedData(allSpellLists, enrichedSpells, 'gm-setup');
     const message = `Spell Book ready for GM setup! (${allSpellLists.length} lists, ${enrichedSpells.length} spells)`; // Localize
-    if (ui.notifications.success) ui.notifications.success(message, { console: false });
-    else ui.notifications.info(message, { console: false });
+    ui.notifications.success(message, { console: false });
     log(3, `GM setup preload completed: ${allSpellLists.length} lists, ${enrichedSpells.length} spells`);
   } catch (error) {
     log(1, 'Error during GM setup mode preload', error);
@@ -44,8 +95,13 @@ async function preloadForGMSetupMode() {
 }
 
 /**
- * Preload relevant spell data for player characters
+ * Preload relevant spell data for player characters.
+ * Identifies the player's assigned character and loads spell data
+ * from their class spell lists and wizard spellbooks if applicable.
+ *
  * @returns {Promise<void>}
+ * @todo Missing some localization
+ * @private
  */
 async function preloadForPlayer() {
   log(3, 'Starting player preload - loading assigned spell lists and wizard Spell Book');
@@ -63,8 +119,7 @@ async function preloadForPlayer() {
     const enrichedSpells = enrichSpellsWithIcons(relevantSpells);
     cachePreloadedData([], enrichedSpells, 'player');
     const message = `Your Spell Book is ready! (${enrichedSpells.length} spells loaded)`; // Localize
-    if (ui.notifications.success) ui.notifications.success(message, { console: false });
-    else ui.notifications.info(message, { console: false });
+    ui.notifications.success(message, { console: false });
     log(3, `Player preload completed: ${enrichedSpells.length} spells`);
   } catch (error) {
     log(1, 'Error during player preload', error);
@@ -72,8 +127,12 @@ async function preloadForPlayer() {
 }
 
 /**
- * Get the current player's assigned character
- * @returns {Actor5e|null} The player's character or null if none assigned
+ * Get the current player's assigned character.
+ * Finds the character document assigned to the current user
+ * in the game's user configuration.
+ *
+ * @returns {PlayerActor|null} The player's character or null if none assigned
+ * @private
  */
 function getCurrentPlayerActor() {
   const currentPlayer = game.users.players.find((player) => player._id === game.user.id);
@@ -81,11 +140,16 @@ function getCurrentPlayerActor() {
 }
 
 /**
- * Collect all relevant spell UUIDs for a player actor
- * @param {Actor5e} actor The player's actor
- * @returns {Promise<Set<string>>} Set of spell UUIDs
+ * Collect all relevant spell UUIDs for a player actor.
+ * Gathers spell UUIDs from the actor's class spell lists and wizard
+ * spellbooks to determine which spells should be preloaded.
+ *
+ * @param {PlayerActor} actor - The player's actor to collect spells for
+ * @returns {Promise<Set<string>>} Set of spell UUIDs relevant to this actor
+ * @private
  */
 async function collectPlayerSpellUuids(actor) {
+  /** @type {Set<string>} */
   let spellUuids = new Set();
   const assignedListSpells = await getSpellsFromActorSpellLists(actor);
   assignedListSpells.forEach((uuid) => spellUuids.add(uuid));
@@ -97,11 +161,16 @@ async function collectPlayerSpellUuids(actor) {
 }
 
 /**
- * Get spell UUIDs from spell lists assigned to actor's classes
- * @param {Actor5e} actor The actor to check
- * @returns {Promise<Array<string>>} Array of spell UUIDs
+ * Get spell UUIDs from spell lists assigned to actor's classes.
+ * Iterates through the actor's spellcasting classes and retrieves
+ * spell UUIDs from their associated spell lists.
+ *
+ * @param {PlayerActor} actor - The actor to check for class spell lists
+ * @returns {Promise<Array<string>>} Array of spell UUIDs from class lists
+ * @private
  */
 async function getSpellsFromActorSpellLists(actor) {
+  /** @type {Array<string>} */
   const spellUuids = [];
   if (!actor.spellcastingClasses) return spellUuids;
   for (const [classIdentifier, classData] of Object.entries(actor.spellcastingClasses)) {
@@ -125,11 +194,16 @@ async function getSpellsFromActorSpellLists(actor) {
 }
 
 /**
- * Get spell UUIDs from actor's wizard Spell Book
- * @param {Actor5e} actor The actor to check
- * @returns {Promise<Array<string>>} Array of spell UUIDs
+ * Get spell UUIDs from actor's wizard spellbooks.
+ * Retrieves spells from all wizard-enabled classes' spellbook journals
+ * for characters with wizard capabilities.
+ *
+ * @param {PlayerActor} actor - The actor to check for wizard spellbooks
+ * @returns {Promise<Array<string>>} Array of spell UUIDs from wizard spellbooks
+ * @private
  */
 async function getActorSpellbookSpells(actor) {
+  /** @type {Array<string>} */
   const spellUuids = [];
   const wizardClasses = DataHelpers.getWizardEnabledClasses(actor);
   for (const { identifier } of wizardClasses) {
@@ -156,7 +230,10 @@ async function getActorSpellbookSpells(actor) {
 }
 
 /**
- * Check if preloaded data is available and valid
+ * Check if preloaded data is available and valid.
+ * Validates that cached preloaded data exists and matches the current
+ * module version to ensure compatibility.
+ *
  * @returns {boolean} True if valid preloaded data exists
  */
 export function hasValidPreloadedData() {
@@ -167,25 +244,34 @@ export function hasValidPreloadedData() {
 }
 
 /**
- * Get preloaded spell data if valid
- * @returns {Object|null} Preloaded data or null if invalid
+ * Get preloaded spell data if valid.
+ * Retrieves cached preloaded data after validating its existence
+ * and version compatibility.
+ *
+ * @returns {PreloadedSpellData|null} Preloaded data or null if invalid
  */
 export function getPreloadedData() {
   return hasValidPreloadedData() ? globalThis.SPELLBOOK.preloadedData : null;
 }
 
 /**
- * Cache preloaded data to global scope
- * @param {Array} spellLists Array of spell list objects
- * @param {Array} enrichedSpells Array of enriched spell objects
- * @param {string} mode The preload mode used
+ * Cache preloaded data to global scope.
+ * Stores preloaded spell and spell list data in the global SPELLBOOK
+ * namespace for access by other module components.
+ *
+ * @param {Array<SpellListMetadata>} spellLists - Array of spell list objects
+ * @param {Array<EnrichedSpellData>} enrichedSpells - Array of enriched spell objects
+ * @param {string} mode - The preload mode used ('gm-setup', 'player', 'no-character')
+ * @private
  */
 function cachePreloadedData(spellLists, enrichedSpells, mode) {
   globalThis.SPELLBOOK.preloadedData = { spellLists, enrichedSpells, timestamp: Date.now(), version: game.modules.get(MODULE.ID).version, mode };
 }
 
 /**
- * Invalidate spell cache when relevant compendium content changes
+ * Invalidate spell cache when relevant compendium content changes.
+ * Clears cached preloaded data and triggers automatic reloading
+ * for GMs with setup mode enabled when content changes are detected.
  */
 export function invalidateSpellListCache() {
   if (globalThis.SPELLBOOK?.preloadedData) {
@@ -201,8 +287,11 @@ export function invalidateSpellListCache() {
 }
 
 /**
- * Check if a journal page should trigger cache invalidation
- * @param {JournalEntryPage} page The journal page to check
+ * Check if a journal page should trigger cache invalidation.
+ * Determines whether changes to a specific journal page affect
+ * spell list data and should invalidate the preloaded cache.
+ *
+ * @param {JournalEntryPage} page - The journal page to check
  * @returns {boolean} True if this page affects spell lists and should invalidate cache
  */
 export function shouldInvalidateCacheForPage(page) {
@@ -216,11 +305,16 @@ export function shouldInvalidateCacheForPage(page) {
 }
 
 /**
- * Normalize spell UUIDs to match compendium format
- * @param {Set<string>} spellUuids Set of spell UUIDs to normalize
- * @returns {Set<string>} Set of normalized UUIDs
+ * Normalize spell UUIDs to match compendium format.
+ * Converts actor-specific spell UUIDs to their compendium equivalents
+ * for proper matching against preloaded compendium spell data.
+ *
+ * @param {Set<string>} spellUuids - Set of spell UUIDs to normalize
+ * @returns {Set<string>} Set of normalized UUIDs for compendium matching
+ * @private
  */
 function normalizeSpellUuids(spellUuids) {
+  /** @type {Set<string>} */
   const normalizedUuids = new Set();
   spellUuids.forEach((uuid) => {
     const normalizedUuid = uuid.replace('.Item.', '.');
@@ -230,9 +324,13 @@ function normalizeSpellUuids(spellUuids) {
 }
 
 /**
- * Enrich spells with icon links
- * @param {Array} spells Array of spell objects
- * @returns {Array} Array of spells with enriched icons
+ * Enrich spells with icon links for UI display.
+ * Adds enriched icon HTML to spell objects for consistent
+ * display across the module's user interfaces.
+ *
+ * @param {Array<Object>} spells - Array of spell objects to enrich
+ * @returns {Array<EnrichedSpellData>} Array of spells with enriched icons
+ * @private
  */
 function enrichSpellsWithIcons(spells) {
   const enrichedSpells = spells.slice();
