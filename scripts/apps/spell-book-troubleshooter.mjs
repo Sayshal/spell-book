@@ -1,34 +1,80 @@
+/**
+ * Spell Book Troubleshooter Application
+ *
+ * A comprehensive diagnostic tool for generating troubleshooting reports to assist
+ * with Spell Book module issues. This GM-only application captures relevant system
+ * information, module settings, filtered console logs, and optionally exports owned
+ * actor data for comprehensive debugging support.
+ *
+ * Key features:
+ * - Generates formatted troubleshooting reports with system and module information
+ * - Filters console logs to show only Spell Book-related entries with smart processing
+ * - Optionally exports all GM-owned actor data as individual JSON files
+ * - Provides copy-to-clipboard functionality for quick sharing
+ * - Includes direct links to Discord support and GitHub issues
+ * - Settings import/export functionality for configuration troubleshooting
+ * - Comprehensive error handling and user feedback
+ * - Automatic metadata inclusion for debugging context
+ *
+ * @module Applications/SpellBookTroubleshooter
+ * @author Tyler
+ */
+
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
- * Spell Book Troubleshooter Application
+ * Troubleshooter export result information.
  *
- * A diagnostic tool for generating troubleshooting reports to assist with Spell Book module issues.
- * This GM-only application captures relevant system information, module settings, filtered console logs,
- * and optionally exports owned actor data for comprehensive debugging support.
+ * @typedef {Object} ExportResult
+ * @property {string} filename - The primary troubleshooting report filename
+ * @property {number} exportedCount - Total number of files exported
+ * @property {boolean} includeActors - Whether actor data was included
+ */
+
+/**
+ * Settings import validation result.
  *
- * Features:
- * - Generates formatted troubleshooting reports with system and module information
- * - Filters console logs to show only Spell Book-related entries
- * - Optionally exports all GM-owned actor data as individual JSON files
- * - Provides copy-to-clipboard functionality for quick sharing
- * - Includes direct links to Discord support and GitHub issues
+ * @typedef {Object} ImportResult
+ * @property {number} imported - Number of settings successfully imported
+ * @property {number} skipped - Number of settings skipped
+ * @property {Array<string>} errors - Array of error messages
+ */
+
+/**
+ * Actor export metadata for troubleshooting context.
+ *
+ * @typedef {Object} ActorExportMetadata
+ * @property {string} worldId - Current world ID
+ * @property {string} uuid - Actor UUID
+ * @property {string} coreVersion - Foundry VTT core version
+ * @property {string} systemId - Game system ID
+ * @property {string} systemVersion - Game system version
+ * @property {string} exportedBy - User ID of exporter
+ * @property {string} exportedAt - ISO timestamp of export
+ * @property {boolean} troubleshooterExport - Flag indicating troubleshooter export
+ */
+
+/**
+ * Spell Book Troubleshooter Application.
+ *
+ * This application provides comprehensive diagnostic and troubleshooting capabilities
+ * for the Spell Book module. It generates detailed reports containing system information,
+ * module configurations, console logs, and optionally actor data to assist with
+ * debugging and support requests.
+ *
+ * The troubleshooter is designed for GM use and includes safety measures to prevent
+ * data exposure and ensure proper error handling throughout the diagnostic process.
  */
 export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
+  /** @inheritdoc */
   static DEFAULT_OPTIONS = {
     id: 'spell-book-troubleshooter',
     classes: ['spell-book', 'spell-book-troubleshooter'],
-    position: {
-      width: 750,
-      height: 'auto'
-    },
-    window: {
-      icon: 'fa-solid fa-bug',
-      resizable: false
-    },
+    position: { width: 750, height: 'auto' },
+    window: { icon: 'fa-solid fa-bug', resizable: false },
     tag: 'div',
     actions: {
       exportReport: SpellBookTroubleshooter._onExportReport,
@@ -40,32 +86,20 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
     }
   };
 
-  /** @override */
-  static PARTS = {
-    main: {
-      template: TEMPLATES.TROUBLESHOOTER.MAIN,
-      classes: ['spell-book-troubleshooter-content']
-    }
-  };
+  /** @inheritdoc */
+  static PARTS = { main: { template: TEMPLATES.TROUBLESHOOTER.MAIN, classes: ['spell-book-troubleshooter-content'] } };
 
-  /** @override */
+  /** @inheritdoc */
   get title() {
     return `${MODULE.NAME} | ${game.i18n.localize('SPELLBOOK.Settings.Troubleshooter.Title')}`;
   }
 
-  /**
-   * Prepares context data for the troubleshooter application
-   * @param {object} options - Application render options
-   * @returns {object} Context data for template rendering
-   * @protected
-   * @override
-   */
+  /** @inheritdoc */
   _prepareContext(options) {
     try {
       const context = super._prepareContext(options);
       const includeActors = game.settings.get(MODULE.ID, SETTINGS.TROUBLESHOOTER_INCLUDE_ACTORS);
       const ownedActors = game.actors.filter((actor) => actor.isOwner);
-
       return {
         ...context,
         output: SpellBookTroubleshooter.generateTextReport(),
@@ -86,14 +120,23 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Generates a text-based troubleshooting report
+   * Generate a comprehensive text-based troubleshooting report.
+   *
+   * Creates a detailed diagnostic report containing game information,
+   * module details, Spell Book settings, and filtered console logs.
+   * The report is formatted for easy reading and sharing with support.
+   *
    * @returns {string} The formatted troubleshooting report
    * @static
    */
   static generateTextReport() {
     try {
       const reportLines = [];
+
+      /** @type {function(string): void} Function to add a line to the report */
       const addLine = (text) => reportLines.push(text);
+
+      /** @type {function(string): void} Function to add a section header */
       const addHeader = (text) => {
         addLine('');
         addLine(`/////////////// ${text} ///////////////`);
@@ -111,8 +154,13 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Exports the troubleshooting report and optionally actor data
-   * @returns {Promise<string>} The filename of the exported report
+   * Export the troubleshooting report and optionally actor data.
+   *
+   * Creates a comprehensive export package including the main troubleshooting
+   * report and optionally all GM-owned actor data as individual JSON files.
+   * Each actor export includes debugging metadata for context.
+   *
+   * @returns {Promise<ExportResult>} Export result information
    * @static
    */
   static async exportTroubleshooterData() {
@@ -156,8 +204,10 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Handles the export report button click
+   * Handle the export report button click event.
+   *
    * @param {Event} event - The triggering event
+   * @returns {Promise<void>}
    * @static
    */
   static async _onExportReport(event) {
@@ -183,8 +233,10 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Handles the copy to clipboard button click
+   * Handle the copy to clipboard button click event.
+   *
    * @param {Event} event - The triggering event
+   * @returns {Promise<void>}
    * @static
    */
   static async _onCopyToClipboard(event) {
@@ -200,7 +252,8 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Handles the open Discord button click
+   * Handle the open Discord button click event.
+   *
    * @param {Event} event - The triggering event
    * @static
    */
@@ -215,7 +268,8 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Handles the open GitHub button click
+   * Handle the open GitHub button click event.
+   *
    * @param {Event} event - The triggering event
    * @static
    */
@@ -230,7 +284,8 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Handles the include actors checkbox toggle
+   * Handle the include actors checkbox toggle event.
+   *
    * @param {Event} event - The triggering event
    * @static
    */
@@ -244,8 +299,14 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Handles the import settings button click
+   * Handle the import settings button click event.
+   *
+   * Provides file selection dialog and processes imported troubleshooter
+   * files to extract and import Spell Book settings. Includes validation
+   * and confirmation dialogs for safety.
+   *
    * @param {Event} event - The triggering event
+   * @returns {Promise<void>}
    * @static
    */
   static async _onImportSettings(event) {
@@ -292,7 +353,12 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Extracts settings data from troubleshooter file content
+   * Extract settings data from troubleshooter file content.
+   *
+   * Parses a troubleshooter text file to locate and extract the embedded
+   * settings JSON data for import purposes. Includes validation to ensure
+   * proper data format and structure.
+   *
    * @param {string} fileContent - The troubleshooter file content
    * @returns {Object|null} The settings data or null if not found
    * @static
@@ -323,7 +389,12 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Imports settings data into the game
+   * Import settings data into the game with validation and error handling.
+   *
+   * Processes extracted settings data and applies it to the game, with
+   * comprehensive validation, deferred processing for complex settings,
+   * and detailed reporting of success/failure rates.
+   *
    * @param {Object} settingsData - The settings data to import
    * @returns {Promise<void>}
    * @static
@@ -438,9 +509,10 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Adds game information to the report
-   * @param {Function} addLine - Function to add a line to the report
-   * @param {Function} addHeader - Function to add a section header
+   * Add game information section to the troubleshooting report.
+   *
+   * @param {function(string): void} addLine - Function to add a line to the report
+   * @param {function(string): void} addHeader - Function to add a section header
    * @returns {void}
    * @static
    * @private
@@ -461,9 +533,10 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Adds module information to the report
-   * @param {Function} addLine - Function to add a line to the report
-   * @param {Function} addHeader - Function to add a section header
+   * Add module information section to the troubleshooting report.
+   *
+   * @param {function(string): void} addLine - Function to add a line to the report
+   * @param {function(string): void} addHeader - Function to add a section header
    * @returns {void}
    * @static
    * @private
@@ -488,9 +561,10 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Adds all Spell Book settings to the report
-   * @param {Function} addLine - Function to add a line to the report
-   * @param {Function} addHeader - Function to add a section header
+   * Add all Spell Book settings to the troubleshooting report.
+   *
+   * @param {function(string): void} addLine - Function to add a line to the report
+   * @param {function(string): void} addHeader - Function to add a section header
    * @returns {void}
    * @static
    * @private
@@ -532,9 +606,10 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Adds filtered Spell Book log data to the report
-   * @param {Function} addLine - Function to add a line to the report
-   * @param {Function} addHeader - Function to add a section header
+   * Add filtered Spell Book log data to the troubleshooting report.
+   *
+   * @param {function(string): void} addLine - Function to add a line to the report
+   * @param {function(string): void} addHeader - Function to add a section header
    * @returns {void}
    * @static
    * @private

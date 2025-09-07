@@ -1,3 +1,25 @@
+/**
+ * Spell Analytics Dashboard Application
+ *
+ * A comprehensive analytics interface for viewing spell usage statistics, data management,
+ * and user behavior analysis. This application provides both personal and GM-level views
+ * of spell usage patterns, favorites, notes, and contextual usage breakdowns across
+ * combat and exploration scenarios.
+ *
+ * Key features:
+ * - Personal and GM analytics views with user switching
+ * - Spell usage statistics and trends analysis
+ * - Context-based usage breakdowns (combat vs exploration)
+ * - Data export/import functionality with JSON format support
+ * - User data management with clear and reset capabilities
+ * - Visual progress bars and statistical representations
+ * - Real-time data refresh and cache management
+ * - Integration with spell user data journaling system
+ *
+ * @module Applications/SpellAnalyticsDashboard
+ * @author Tyler
+ */
+
 import { MODULE, TEMPLATES } from '../constants/_module.mjs';
 import { SpellUserDataJournal } from '../data/_module.mjs';
 import { log } from '../logger.mjs';
@@ -7,19 +29,113 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const { renderTemplate } = foundry.applications.handlebars;
 
 /**
- * Analytics Dashboard for viewing spell usage statistics and data management
+ * Spell usage statistics for analytics processing.
+ *
+ * @typedef {Object} UsageStats
+ * @property {number} count - Total number of times the spell was cast
+ * @property {number} lastUsed - Timestamp of last usage
+ * @property {Object} contextUsage - Usage breakdown by context
+ * @property {number} contextUsage.combat - Number of uses in combat
+ * @property {number} contextUsage.exploration - Number of uses in exploration
+ */
+
+/**
+ * Aggregated spell data for analytics calculations.
+ *
+ * @typedef {Object} SpellData
+ * @property {string} notes - User notes for the spell
+ * @property {boolean} favorited - Whether the spell is marked as favorite
+ * @property {UsageStats} usageStats - Usage statistics for the spell
+ * @property {Object} [actorData] - Per-actor spell data
+ */
+
+/**
+ * Context usage breakdown with percentages.
+ *
+ * @typedef {Object} ContextBreakdown
+ * @property {number} combat - Total combat usage count
+ * @property {number} exploration - Total exploration usage count
+ * @property {number} combatPercent - Percentage of combat usage
+ * @property {number} explorationPercent - Percentage of exploration usage
+ */
+
+/**
+ * Spell usage entry for most/least used and recent activity lists.
+ *
+ * @typedef {Object} SpellUsageEntry
+ * @property {string} uuid - Spell UUID
+ * @property {string} name - Spell name
+ * @property {number} count - Usage count
+ * @property {number} lastUsed - Timestamp of last usage
+ */
+
+/**
+ * User breakdown data for GM analytics view.
+ *
+ * @typedef {Object} UserBreakdown
+ * @property {string} name - User display name
+ * @property {number} totalSpells - Total spells with data for this user
+ * @property {number} totalCasts - Total spell casts for this user
+ * @property {number} totalFavorites - Total favorited spells for this user
+ * @property {number} totalNotes - Total spells with notes for this user
+ */
+
+/**
+ * Complete analytics data structure.
+ *
+ * @typedef {Object} AnalyticsData
+ * @property {number} totalSpells - Total number of spells with data
+ * @property {number} totalCasts - Total number of spell casts
+ * @property {number} totalFavorites - Total number of favorited spells
+ * @property {number} totalNotes - Total number of spells with notes
+ * @property {Array<SpellUsageEntry>} mostUsedSpells - Most frequently used spells
+ * @property {Array<SpellUsageEntry>} leastUsedSpells - Least frequently used spells
+ * @property {Array<SpellUsageEntry>} recentActivity - Recently used spells
+ * @property {ContextBreakdown} contextBreakdown - Usage breakdown by context
+ * @property {Map<string, number>} spellsBySchool - Usage counts by spell school
+ * @property {Map<string, number>} spellsByLevel - Usage counts by spell level
+ * @property {Map<string, UserBreakdown>} userBreakdown - Per-user statistics for GM view
+ */
+
+/**
+ * Export data structure for analytics data persistence.
+ *
+ * @typedef {Object} ExportData
+ * @property {string} version - Module version at export time
+ * @property {number} timestamp - Export timestamp
+ * @property {string} exportedAt - ISO string of export date
+ * @property {string} exportedBy - Name of user who exported
+ * @property {string} viewMode - Analytics view mode ('personal' or 'gm')
+ * @property {Object<string, Object>} userData - User data by user ID
+ */
+
+/**
+ * User data export entry for individual users.
+ *
+ * @typedef {Object} UserDataExport
+ * @property {string} userId - User ID
+ * @property {string} userName - User display name
+ * @property {string} htmlContent - HTML content from user data page
+ * @property {number} [lastUpdated] - Timestamp of last update
+ */
+
+/**
+ * Analytics Dashboard for viewing spell usage statistics and data management.
+ *
+ * This application provides comprehensive analytics and data management capabilities
+ * for the Spell Book module. It supports both personal analytics for individual users
+ * and GM-level analytics for viewing usage patterns across all players.
+ *
+ * The dashboard includes interactive features for data export/import, user data
+ * management, and real-time statistics calculation with visual representations
+ * including progress bars and contextual breakdowns.
  */
 export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2) {
+  /** @inheritdoc */
   static DEFAULT_OPTIONS = {
     id: 'spell-analytics-dashboard',
     tag: 'div',
-    window: {
-      resizable: true,
-      minimizable: true,
-      positioned: true,
-      title: 'SPELLBOOK.Analytics.DashboardTitle',
-      icon: 'fas fa-chart-bar'
-    },
+    window: { resizable: true, minimizable: true, positioned: true, title: 'SPELLBOOK.Analytics.DashboardTitle', icon: 'fas fa-chart-bar' },
     position: { width: 800, height: 'auto' },
     classes: ['spell-book', 'analytics-dashboard'],
     actions: {
@@ -32,36 +148,47 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
     }
   };
 
-  static PARTS = {
-    dashboard: { template: TEMPLATES.ANALYTICS.DASHBOARD }
-  };
+  /** @inheritdoc */
+  static PARTS = { dashboard: { template: TEMPLATES.ANALYTICS.DASHBOARD } };
 
   /**
-   * Create a new Analytics Dashboard application
-   * @param {Object} options Application options
+   * Create a new Analytics Dashboard application.
+   *
+   * Initializes the analytics dashboard with the specified view mode and user context.
+   * Supports both personal analytics for individual users and GM analytics for
+   * viewing aggregate statistics across all players.
+   *
+   * @param {Object} [options={}] - Application options
+   * @param {string} [options.viewMode] - View mode ('personal' or 'gm')
+   * @param {string} [options.userId] - User ID for personal view
    */
   constructor(options = {}) {
     super(options);
+
+    /** @type {string} Current view mode ('personal' or 'gm') */
     this.viewMode = options.viewMode || 'personal';
+
+    /** @type {string} Selected user ID for analytics */
     this.selectedUserId = options.userId || game.user.id;
+
+    /** @type {AnalyticsData|null} Cached analytics data */
     this.analytics = null;
+
+    /** @type {number|null} Timestamp of last data refresh */
     this.lastRefresh = null;
   }
 
-  /** @override */
+  /** @inheritdoc */
   get title() {
     if (this.viewMode === 'gm') return game.i18n.localize('SPELLBOOK.Analytics.GMDashboardTitle');
     return game.i18n.localize('SPELLBOOK.Analytics.PersonalDashboardTitle');
   }
 
-  /** @override */
+  /** @inheritdoc */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     this.analytics = await this._computeAnalytics();
-    const analyticsForTemplate = {
-      ...this.analytics,
-      userBreakdown: this.analytics.userBreakdown instanceof Map ? Object.fromEntries(this.analytics.userBreakdown) : this.analytics.userBreakdown
-    };
+    const analyticsForTemplate = { ...this.analytics, userBreakdown: this.analytics.userBreakdown instanceof Map ? Object.fromEntries(this.analytics.userBreakdown) : this.analytics.userBreakdown };
     return {
       ...context,
       viewMode: this.viewMode,
@@ -74,7 +201,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
     };
   }
 
-  /** @override */
+  /** @inheritdoc */
   async _onRender(context, options) {
     await super._onRender(context, options);
     const combatElement = this.element.querySelector('.context-combat');
@@ -90,9 +217,14 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Adjust font size of context bar labels based on available width
-   * @param {HTMLElement} element The context bar element
-   * @param {number} percent The percentage width
+   * Adjust font size of context bar labels based on available width.
+   *
+   * Implements responsive typography for progress bar labels to ensure
+   * readability across different percentage widths and screen sizes.
+   *
+   * @param {HTMLElement} element - The context bar element
+   * @param {number} percent - The percentage width of the bar
+   * @private
    */
   _adjustContextBarFontSizes(element, percent) {
     const label = element.querySelector('.context-label');
@@ -107,8 +239,13 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Compute analytics data for the current view
-   * @returns {Promise<Object>} Analytics data
+   * Compute analytics data for the current view mode.
+   *
+   * Orchestrates the analytics computation process, routing to either personal
+   * or GM analytics based on the current view mode and user permissions.
+   *
+   * @returns {Promise<AnalyticsData>} Complete analytics data structure
+   * @private
    */
   async _computeAnalytics() {
     try {
@@ -137,10 +274,16 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Compute personal analytics for a specific user
-   * @param {Object} analytics Analytics object to populate
-   * @param {string} userId User ID
+   * Compute personal analytics for a specific user.
+   *
+   * Processes all spell data for an individual user, calculating usage statistics,
+   * favorites, notes, and contextual breakdowns. Includes spell categorization
+   * by school and level with usage aggregation.
+   *
+   * @param {AnalyticsData} analytics - Analytics object to populate
+   * @param {string} userId - User ID to compute analytics for
    * @returns {Promise<void>}
+   * @private
    */
   async _computePersonalAnalytics(analytics, userId) {
     const userSpells = await this._getAllUserSpellData(userId);
@@ -153,12 +296,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
         analytics.contextBreakdown.combat += userData.usageStats.contextUsage?.combat || 0;
         analytics.contextBreakdown.exploration += userData.usageStats.contextUsage?.exploration || 0;
         const spellName = this._getSpellNameFromUuid(spellUuid);
-        const usageData = {
-          uuid: spellUuid,
-          name: spellName,
-          count: userData.usageStats.count,
-          lastUsed: userData.usageStats.lastUsed
-        };
+        const usageData = { uuid: spellUuid, name: spellName, count: userData.usageStats.count, lastUsed: userData.usageStats.lastUsed };
         analytics.mostUsedSpells.push(usageData);
         if (userData.usageStats.lastUsed && Date.now() - userData.usageStats.lastUsed < 30 * 24 * 60 * 60 * 1000) analytics.recentActivity.push(usageData);
       }
@@ -183,9 +321,15 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Compute GM analytics across all users
-   * @param {Object} analytics Analytics object to populate
+   * Compute GM analytics across all users.
+   *
+   * Aggregates analytics data from all non-GM users to provide a comprehensive
+   * view of spell usage patterns across the entire game. Includes per-user
+   * breakdowns and combined statistics.
+   *
+   * @param {AnalyticsData} analytics - Analytics object to populate
    * @returns {Promise<void>}
+   * @private
    */
   async _computeGMAnalytics(analytics) {
     const users = game.users.filter((u) => !u.isGM);
@@ -221,9 +365,15 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Get all spell data for a user (updated for per-actor aggregation)
-   * @param {string} userId User ID
-   * @returns {Promise<Object>} Aggregated user spell data
+   * Get all spell data for a user with per-actor aggregation.
+   *
+   * Retrieves and processes all spell data for a specific user, aggregating
+   * data across multiple actors to provide a unified view of the user's
+   * spell usage patterns, favorites, and notes.
+   *
+   * @param {string} userId - User ID to retrieve data for
+   * @returns {Promise<Object<string, SpellData>>} Aggregated user spell data by spell UUID
+   * @private
    */
   async _getAllUserSpellData(userId) {
     try {
@@ -235,11 +385,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
         aggregatedData[spellUuid] = {
           notes: data.notes || '',
           favorited: false,
-          usageStats: {
-            count: 0,
-            lastUsed: null,
-            contextUsage: { combat: 0, exploration: 0 }
-          }
+          usageStats: { count: 0, lastUsed: null, contextUsage: { combat: 0, exploration: 0 } }
         };
         if (data.actorData) {
           for (const [actorData] of Object.entries(data.actorData)) {
@@ -265,9 +411,11 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Get spell name from UUID
-   * @param {string} uuid Spell UUID
-   * @returns {string} Spell name
+   * Get spell name from UUID for display purposes.
+   *
+   * @param {string} uuid - Spell UUID to resolve
+   * @returns {string} Spell name or undefined if not found
+   * @private
    */
   _getSpellNameFromUuid(uuid) {
     const spell = fromUuidSync(uuid);
@@ -275,8 +423,10 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Get empty analytics structure
-   * @returns {Object} Empty analytics
+   * Get empty analytics structure for initialization.
+   *
+   * @returns {AnalyticsData} Empty analytics data structure
+   * @private
    */
   _getEmptyAnalytics() {
     return {
@@ -295,10 +445,12 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Handle switching between view modes in the analytics dashboard
-   * @param {Event} _event The click event
-   * @param {HTMLElement} target The target element containing view mode data
+   * Handle switching between view modes in the analytics dashboard.
+   *
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} target - The target element containing view mode data
    * @returns {Promise<void>}
+   * @static
    */
   static async handleSwitchView(_event, target) {
     const viewMode = target.dataset.viewMode;
@@ -307,40 +459,48 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Handle exporting user spell data
-   * @param {Event} _event The click event
-   * @param {HTMLElement} _target The target element that triggered the export
+   * Handle exporting user spell data to JSON format.
+   *
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} _target - The target element that triggered the export
    * @returns {Promise<void>}
+   * @static
    */
   static async handleExportData(_event, _target) {
     await this._exportUserData();
   }
 
   /**
-   * Handle importing user spell data
-   * @param {Event} _event The click event
-   * @param {HTMLElement} _target The target element that triggered the import
+   * Handle importing user spell data from JSON files.
+   *
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} _target - The target element that triggered the import
    * @returns {Promise<void>}
+   * @static
    */
   static async handleImportData(_event, _target) {
     await this._importUserData();
   }
 
   /**
-   * Handle clearing user spell data
-   * @param {Event} _event The click event
-   * @param {HTMLElement} _target The target element that triggered the clear operation
+   * Handle clearing user spell data with confirmation.
+   *
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} _target - The target element that triggered the clear operation
    * @returns {Promise<void>}
+   * @static
    */
   static async handleClearData(_event, _target) {
     await this._clearUserData();
   }
 
   /**
-   * Handle refreshing analytics statistics by clearing cache and re-rendering
-   * @param {Event} _event The click event
-   * @param {HTMLElement} _target The target element that triggered the refresh
+   * Handle refreshing analytics statistics by clearing cache and re-rendering.
+   *
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} _target - The target element that triggered the refresh
    * @returns {Promise<void>}
+   * @static
    */
   static async handleRefreshStats(_event, _target) {
     this.analytics = null;
@@ -348,10 +508,12 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Handle viewing data for a specific user
-   * @param {Event} _event The click event
-   * @param {HTMLElement} target The target element containing user ID data
+   * Handle viewing data for a specific user in personal mode.
+   *
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} target - The target element containing user ID data
    * @returns {Promise<void>}
+   * @static
    */
   static async handleViewUserData(_event, target) {
     const userId = target.dataset.userId;
@@ -360,12 +522,20 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Export user data to JSON with embedded HTML
+   * Export user data to JSON with embedded HTML content.
+   *
+   * Creates a comprehensive export of user spell data including HTML content,
+   * metadata, and user information. Supports both individual user export
+   * and bulk export for GM users.
+   *
    * @returns {Promise<void>}
+   * @private
    */
   async _exportUserData() {
     try {
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+
+      /** @type {ExportData} */
       const exportData = {
         version: game.modules.get(MODULE.ID).version,
         timestamp: Date.now(),
@@ -415,8 +585,14 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Import user data from JSON with embedded HTML
+   * Import user data from JSON with embedded HTML content.
+   *
+   * Handles file selection, validation, and import of previously exported
+   * user spell data. Includes confirmation dialog with import summary
+   * and error handling for invalid or corrupted data.
+   *
    * @returns {Promise<void>}
+   * @private
    */
   async _importUserData() {
     const input = document.createElement('input');
@@ -440,7 +616,6 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
           .join(', ');
         const exportDate = importData.exportedAt ? new Date(importData.exportedAt).toLocaleDateString() : game.i18n.localize('SPELLBOOK.Analytics.ImportSummaryUnknown');
         const exportedBy = importData.exportedBy || game.i18n.localize('SPELLBOOK.Analytics.ImportSummaryUnknown');
-
         const summaryContent = await renderTemplate(TEMPLATES.DIALOGS.ANALYTICS_IMPORT_SUMMARY, { exportDate, exportedBy, userCount, userNames });
         const confirmed = await foundry.applications.api.DialogV2.wait({
           window: { title: game.i18n.localize('SPELLBOOK.Analytics.ImportConfirmTitle') },
@@ -495,8 +670,14 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Clear user data with confirmation (updated to use manager's function)
+   * Clear user data with confirmation using UserSpellDataManager.
+   *
+   * Provides a confirmation dialog and clears spell data for either the
+   * selected user (personal mode) or all users (GM mode). Uses the
+   * UserSpellDataManager to generate proper empty table structures.
+   *
    * @returns {Promise<void>}
+   * @private
    */
   async _clearUserData() {
     const confirmed = await foundry.applications.api.DialogV2.wait({

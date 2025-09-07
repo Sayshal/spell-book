@@ -8,13 +8,13 @@ This document tracks the progress of enhancing JSDoc type definitions across all
 
 ### `/scripts/apps/` - Application Classes
 
-- [] `party-spells.mjs` - Party-wide spell coordination interface
-- [] `player-filter-configuration.mjs` - Player filter configuration dialog
-- [] `player-spell-book.mjs` - Main player spell book application
-- [] `spell-analytics-dashboard.mjs` - Analytics dashboard for spell usage
-- [] `spell-book-troubleshooter.mjs` - Troubleshooting and diagnostic tools
-- [] `spell-list-manager.mjs` - GM spell list management application
-- [] `_module.mjs` - Apps module exports
+- [x] `party-spells.mjs` - Party-wide spell coordination interface
+- [x] `player-filter-configuration.mjs` - Player filter configuration dialog
+- [x] `player-spell-book.mjs` - Main player spell book application
+- [x] `spell-analytics-dashboard.mjs` - Analytics dashboard for spell usage
+- [x] `spell-book-troubleshooter.mjs` - Troubleshooting and diagnostic tools
+- [x] `spell-list-manager.mjs` - GM spell list management application
+- [x] `_module.mjs` - Apps module exports
 
 ### `/scripts/constants/` - Configuration & Constants
 
@@ -67,8 +67,8 @@ This document tracks the progress of enhancing JSDoc type definitions across all
 
 ### `/scripts/state/` - Application State Management
 
-- [] `spellbook-state.mjs` - Spell book application state management
-- [] `_module.mjs` - State module exports
+- [x] `spellbook-state.mjs` - Spell book application state management
+- [x] `_module.mjs` - State module exports
 
 ### `/scripts/ui/` - UI Utilities & Helpers
 

@@ -1,3 +1,30 @@
+/**
+ * Player Spell Book Application
+ *
+ * The primary user-facing interface for managing spells, spell preparation, and spellcasting
+ * capabilities. This comprehensive application serves as the central hub for all spell-related
+ * activities including preparation management, filter configuration, analytics access, and
+ * party coordination features.
+ *
+ * Key features:
+ * - Multi-class spell management with dynamic tab generation
+ * - Advanced filtering system with customizable filter configurations
+ * - Spell preparation enforcement with class-specific rules and validation
+ * - Wizard spellbook management with learning and copying capabilities
+ * - Cantrip management with level-up and long rest tracking
+ * - Party mode integration with spell coordination
+ * - Analytics dashboard integration for usage tracking
+ * - Loadout system for quick spell configuration changes
+ * - Favorites and notes system with persistent storage
+ * - Spell comparison functionality for detailed analysis
+ * - Responsive UI with collapsible sections and state persistence
+ * - Context menu integration for advanced actions
+ * - Real-time synchronization with actor data and journal storage
+ *
+ * @module Applications/SpellBook
+ * @author Tyler
+ */
+
 import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import * as DataHelpers from '../data/_module.mjs';
 import { SpellComparisonDialog, SpellDetailsCustomization, SpellLoadoutDialog, SpellNotesDialog, SpellbookSettingsDialog } from '../dialogs/_module.mjs';
@@ -12,10 +39,120 @@ const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applicat
 const { renderTemplate } = foundry.applications.handlebars;
 
 /**
- * Player-facing Spell Book application for managing prepared spells
- * Thin application that delegates business logic to managers and helpers
+ * Spell preparation information for display and validation.
+ *
+ * @typedef {Object} SpellPreparation
+ * @property {boolean} prepared - Whether the spell is currently prepared
+ * @property {boolean} disabled - Whether preparation can be changed
+ * @property {boolean} alwaysPrepared - Whether the spell is always prepared
+ * @property {boolean} isGranted - Whether the spell is granted by a feature
+ * @property {boolean} isOwned - Whether the spell is owned by the actor
+ * @property {string} preparationMode - The preparation mode ('spell', 'pact', 'innate', etc.)
+ * @property {string} [disabledReason] - Localization key for why preparation is disabled
+ * @property {string} [preparedByOtherClass] - Class that prepared this spell
+ * @property {Object} [sourceItem] - Item that grants this spell
+ */
+
+/**
+ * Processed spell data for UI display.
+ *
+ * @typedef {Object} ProcessedSpell
+ * @property {string} name - Spell name
+ * @property {string} uuid - Spell UUID
+ * @property {string} compendiumUuid - Compendium UUID for the spell
+ * @property {Object} system - Spell system data
+ * @property {SpellPreparation} preparation - Preparation information
+ * @property {string} cssClasses - CSS classes for the spell item
+ * @property {string} dataAttributes - HTML data attributes string
+ * @property {string} preparationCheckboxHtml - HTML for preparation checkbox
+ * @property {Object} [tag] - Preparation tag information
+ * @property {boolean} [inWizardSpellbook] - Whether spell is in wizard spellbook
+ * @property {boolean} [showCompareLink] - Whether to show comparison link
+ * @property {boolean} [isInComparison] - Whether spell is in comparison set
+ * @property {Object} [filterData] - Filter-related data
+ */
+
+/**
+ * Class-specific spell data structure.
+ *
+ * @typedef {Object} ClassSpellData
+ * @property {string} className - Display name of the class
+ * @property {Object} classItem - The class item from the actor
+ * @property {Array<Object>} spellLevels - Spell levels with their spells
+ * @property {Object} spellPreparation - Current/maximum preparation counts
+ */
+
+/**
+ * Tab configuration for the spell book interface.
+ *
+ * @typedef {Object} SpellBookTab
+ * @property {string} id - Tab identifier
+ * @property {string} label - Display label for the tab
+ * @property {string} group - Tab group identifier
+ * @property {string} cssClass - CSS classes for the tab
+ * @property {string} icon - Icon for the tab
+ * @property {Object} data - Additional data for the tab
+ */
+
+/**
+ * Filter configuration for spell filtering.
+ *
+ * @typedef {Object} FilterConfig
+ * @property {string} id - Filter identifier
+ * @property {string} type - Filter type ('search', 'dropdown', 'checkbox', 'range')
+ * @property {string} name - Form field name
+ * @property {string} label - Display label
+ * @property {boolean} enabled - Whether the filter is enabled
+ * @property {string} elementHtml - HTML for the filter element
+ */
+
+/**
+ * Button configuration for the spell book interface.
+ *
+ * @typedef {Object} SpellBookButton
+ * @property {string} type - Button type ('submit', 'reset', 'button')
+ * @property {string} [action] - Action handler for the button
+ * @property {string} icon - Icon class for the button
+ * @property {string} label - Button label localization key
+ * @property {string} tooltip - Tooltip localization key
+ * @property {string} cssClass - CSS class for the button
+ */
+
+/**
+ * Party icon display information.
+ *
+ * @typedef {Object} PartyIconInfo
+ * @property {string} actorId - Actor ID
+ * @property {string} name - Actor name
+ * @property {string} img - Actor image path
+ * @property {boolean} hasSpell - Whether actor has the spell prepared
+ */
+
+/**
+ * Cantrip change tracking information.
+ *
+ * @typedef {Object} CantripChanges
+ * @property {boolean} hasChanges - Whether there are cantrip changes
+ * @property {Array<string>} added - UUIDs of added cantrips
+ * @property {Array<string>} removed - UUIDs of removed cantrips
+ * @property {string} classIdentifier - Class that changed cantrips
+ */
+
+/**
+ * Player-facing Spell Book application for managing prepared spells.
+ *
+ * This is the main application interface that players interact with to manage their
+ * spells, preparation, and related features. It serves as a thin application layer
+ * that delegates business logic to specialized managers and helpers while providing
+ * a comprehensive and user-friendly interface.
+ *
+ * The application dynamically generates tabs for each spellcasting class and wizard
+ * spellbook, provides advanced filtering capabilities, manages spell preparation
+ * with enforcement rules, and integrates with the broader spell book ecosystem
+ * including analytics, loadouts, and party coordination.
  */
 export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
+  /** @inheritdoc */
   static DEFAULT_OPTIONS = {
     id: `player-${MODULE.ID}`,
     tag: 'form',
@@ -47,6 +184,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     position: { height: 850, width: 600 }
   };
 
+  /** @inheritdoc */
   static PARTS = {
     container: { template: TEMPLATES.PLAYER_SPELL_BOOK.CONTAINER },
     sidebar: { template: TEMPLATES.PLAYER_SPELL_BOOK.SIDEBAR },
@@ -54,16 +192,17 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     footer: { template: TEMPLATES.PLAYER_SPELL_BOOK.FOOTER }
   };
 
-  /**
-   * Get the window title for this application
-   * @returns {string} The formatted title including actor name
-   */
+  /** @inheritdoc */
   get title() {
     return game.i18n.format('SPELLBOOK.Application.ActorTitle', { name: this.actor.name });
   }
 
   /**
-   * Get the primary wizard manager (for backward compatibility)
+   * Get the primary wizard manager for backward compatibility.
+   *
+   * Returns the wizard manager with preference for the 'wizard' identifier,
+   * falling back to the first available wizard manager.
+   *
    * @returns {WizardSpellbookManager|null} The primary wizard manager instance or null if none found
    */
   get wizardManager() {
@@ -73,32 +212,77 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Create a new SpellBook application
-   * @param {Actor} actor The actor whose spells to display
-   * @param {Object} options Application options
+   * Create a new SpellBook application.
+   *
+   * Initializes the spell book with comprehensive manager setup, state tracking,
+   * and UI helpers. Sets up wizard managers for all wizard-enabled classes and
+   * establishes event listeners for actor updates.
+   *
+   * @param {Actor} actor - The actor whose spells to display
+   * @param {Object} [options={}] - Application options
    */
   constructor(actor, options = {}) {
     super(options);
+
+    /** @type {Actor} The actor whose spells are being managed */
     this.actor = actor;
+
+    /** @type {Actor|null} The primary group actor for this actor */
     this.group = PartySpellManager.getPrimaryGroupForActor(actor);
+
+    /** @type {SpellManager} Main spell management instance */
     this.spellManager = new SpellManager(actor);
+
+    /** @type {Map<string, WizardSpellbookManager>} Wizard managers by class identifier */
     this.wizardManagers = new Map();
+
+    // Initialize wizard managers for all wizard-enabled classes
     const wizardClasses = DataHelpers.getWizardEnabledClasses(actor);
     for (const { identifier } of wizardClasses) this.wizardManagers.set(identifier, new WizardSpellbookManager(actor, identifier));
+
+    /** @type {SpellbookState} State manager for the application */
     this._stateManager = new SpellbookState(this);
+
+    /** @type {UIHelpers.SpellbookUI} UI helper for interface management */
     this.ui = new UIHelpers.SpellbookUI(this);
+
+    /** @type {UIHelpers.SpellbookFilterHelper} Filter helper for spell filtering */
     this.filterHelper = new UIHelpers.SpellbookFilterHelper(this);
+
+    /** @type {Map} Ritual managers by class (currently unused) */
     this.ritualManagers = new Map();
+
+    /** @type {Array} Spell levels data */
     this.spellLevels = [];
+
+    /** @type {string} Current class name */
     this.className = '';
+
+    /** @type {Object} Current spell preparation counts */
     this.spellPreparation = { current: 0, maximum: 0 };
+
+    /** @type {Set<string>} Newly checked cantrips in this session */
     this._newlyCheckedCantrips = new Set();
+
+    /** @type {boolean} Whether a long rest was completed */
     this._isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED) || false;
+
+    // Register dynamic parts for class tabs
     this._registerClassParts();
+
+    /** @type {boolean} Whether cantrip UI has been initialized */
     this._cantripUIInitialized = false;
+
+    /** @type {boolean} Whether class colors have been applied */
     this._classColorsApplied = false;
+
+    /** @type {boolean} Whether classes have changed since last render */
     this._classesChanged = false;
+
+    /** @type {Map<string, string>} Wizard book images by class identifier */
     this._wizardBookImages = new Map();
+
+    // Set up flag change listener for real-time updates
     this._flagChangeHook = Hooks.on('updateActor', (updatedActor, changes) => {
       if (updatedActor.id !== this.actor.id) return;
       if (changes.flags?.[MODULE.ID]) {
@@ -111,8 +295,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       }
     });
+
+    /** @type {boolean} Whether spell data is currently being loaded */
     this._isLoadingSpellData = false;
+
+    /** @type {Set<string>} Set of spell UUIDs for comparison */
     this.comparisonSpells = new Set();
+
+    /** @type {SpellComparisonDialog|null} Active comparison dialog */
     this.comparisonDialog = null;
   }
 
@@ -145,13 +335,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     return context;
   }
 
-  /**
-   * Prepares context data for a specific part/tab of the application
-   * @param {string} partId ID of the template part being rendered
-   * @param {object} context Shared context from _prepareContext
-   * @param {object} options Render options
-   * @returns {object} Modified context for the specific part
-   */
+  /** @inheritdoc */
   async _preparePartContext(partId, context, options) {
     log(3, `Preparing context for part: ${partId}`);
     context = await super._preparePartContext(partId, context, options);
@@ -202,12 +386,19 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Create the base context for the application
-   * @param {Object} options The options passed to the context preparation
+   * Create the base context for the application.
+   *
+   * Establishes the foundational context including button configuration,
+   * party integration, actor information, and basic spell book data.
+   *
+   * @param {Object} options - The options passed to the context preparation
    * @returns {Object} The base context
+   * @private
    */
   _createBaseContext(options) {
     const context = super._prepareContext(options);
+
+    /** @type {Array<SpellBookButton>} */
     const buttons = [
       {
         type: 'submit',
@@ -268,7 +459,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Register class-specific parts for all spellcasting classes and wizard tabs
+   * Register class-specific parts for all spellcasting classes and wizard tabs.
+   *
+   * Dynamically creates template parts for each detected spellcasting class
+   * and wizard-enabled class, allowing for proper tab rendering and navigation.
+   *
    * @private
    */
   _registerClassParts() {
@@ -298,7 +493,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Ensure all spell data (including wizard data) is loaded before rendering
+   * Ensure all spell data (including wizard data) is loaded before rendering.
+   *
+   * Handles the complex initialization sequence for spell data loading,
+   * including wizard data completion, state manager initialization, and
+   * UI updates. Provides error handling with user-friendly error states.
+   *
+   * @returns {Promise<void>}
+   * @private
    */
   async _ensureAllSpellDataLoaded() {
     if (this._isLoadingSpellData) return;
@@ -327,12 +529,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  /**
-   * Initialize application options with saved position data
-   * @param {Object} options Application initialization options
-   * @returns {Object} Modified options object with position data
-   * @inheritDoc
-   */
+  /** @inheritdoc */
   _initializeApplicationOptions(options) {
     options = super._initializeApplicationOptions(options);
     const lastPosition = game.settings.get(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION);
@@ -341,9 +538,15 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Process a spell for display in the UI
-   * @param {Object} spell The spell to process
-   * @returns {Object} The processed spell with UI elements
+   * Process a spell for display in the UI.
+   *
+   * Transforms raw spell data into a display-ready format with all necessary
+   * UI elements including checkboxes, CSS classes, data attributes, and tags.
+   * Handles complex preparation logic and wizard spellbook integration.
+   *
+   * @param {Object} spell - The spell to process
+   * @returns {ProcessedSpell} The processed spell with UI elements
+   * @private
    */
   _processSpellForDisplay(spell) {
     const processedSpell = foundry.utils.deepClone(spell);
@@ -384,9 +587,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Get data attributes for a spell item
-   * @param {Object} spell The spell object
+   * Get data attributes for a spell item.
+   *
+   * Creates HTML data attributes for spell filtering, searching, and display.
+   * Includes comprehensive spell metadata for advanced filtering capabilities.
+   *
+   * @param {Object} spell - The spell object
    * @returns {string} HTML-ready data attributes
+   * @private
    */
   _getSpellDataAttributes(spell) {
     const attributes = [
@@ -410,9 +618,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Get CSS classes for a spell item
-   * @param {Object} spell The spell object
+   * Get CSS classes for a spell item.
+   *
+   * Determines appropriate CSS classes based on spell preparation status,
+   * ownership, and wizard spellbook inclusion.
+   *
+   * @param {Object} spell - The spell object
    * @returns {string} Space-separated CSS classes
+   * @private
    */
   _getSpellCssClasses(spell) {
     const classes = ['spell-item'];
@@ -426,9 +639,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Get the preparation tag for a spell
-   * @param {Object} spell The spell object
+   * Get the preparation tag for a spell.
+   *
+   * Creates display tags for special spell preparation modes including
+   * always prepared, granted, pact, innate, ritual, and at-will spells.
+   *
+   * @param {Object} spell - The spell object
    * @returns {Object|null} Tag information or null
+   * @private
    */
   _getSpellPreparationTag(spell) {
     if (!spell.preparation) return null;
@@ -522,14 +740,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
                 const theme = UIHelpers.d ? UIHelpers.d() : 'dark';
                 const background = theme === 'light' ? '#f4f4f4' : '#1b1d24';
                 const contrast = UIHelpers.getContrastRatio ? UIHelpers.getContrastRatio(dominantColor, background) : 'unavailable';
-                log(3, `Wizard book color debug for ${identifier}:`, {
-                  dominantColor,
-                  theme,
-                  background,
-                  contrast,
-                  isCustom: !!(customColor && customColor !== null && customColor !== ''),
-                  customColorSetting: customColor
-                });
                 const wizardBookImage = await UIHelpers.applyColorOverlay(ASSETS.WIZARDBOOK_ICON, dominantColor);
                 this._wizardBookImages.set(identifier, wizardBookImage);
                 log(3, `Applied ${dominantColor} color overlay to wizardbook for class ${identifier}`);
@@ -552,8 +762,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Ensure spell data is loaded
-   * @todo - Why do I need this and _ensureAllSpellDataLoaded
+   * Ensure spell data is loaded (alternate entry point).
+   *
+   * @todo Consolidate with _ensureAllSpellDataLoaded to eliminate duplication
+   * @private
    */
   async _ensureSpellData() {
     if (this._isLoadingSpellData) return;
@@ -580,8 +792,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Render all spells for the currently active tab
+   * Render all spells for the currently active tab.
+   *
+   * Dynamically renders spell level sections for the active tab by removing
+   * existing content and rebuilding from current spell data. Handles both
+   * class tabs and wizard tabs appropriately.
+   *
    * @returns {Promise<void>}
+   * @private
    */
   async _renderAllSpells() {
     const activeTab = this.tabGroups['spellbook-tabs'];
@@ -612,9 +830,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Create HTML string for a spell level section
-   * @param {Object} levelData The spell level data containing level, name, and spells
+   * Create HTML string for a spell level section.
+   *
+   * Generates the complete HTML structure for a spell level including header,
+   * collapse controls, spell count indicators, cantrip counters, and spell list.
+   *
+   * @param {Object} levelData - The spell level data containing level, name, and spells
    * @returns {string} HTML string for the spell level section
+   * @private
    */
   _createSpellLevelHtml(levelData) {
     const level = String(levelData.level);
@@ -646,8 +869,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Show error state if spell loading fails
-   * @param {Error} error The error that occurred
+   * Show error state if spell loading fails.
+   *
+   * Displays a user-friendly error message with retry functionality when
+   * spell data loading encounters problems.
+   *
+   * @param {Error} error - The error that occurred
+   * @private
    */
   _showErrorState(error) {
     log(1, `${game.user.name} encountered an error:`, error);
@@ -672,7 +900,12 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Apply favorite states after render based on user data
+   * Apply favorite states after render based on user data.
+   *
+   * Handles the application of favorite states to spell buttons after rendering,
+   * including retry logic for delayed button availability.
+   *
+   * @private
    */
   async _applyFavoriteStatesAfterRender() {
     const favoritesEnabled = game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES);
@@ -691,8 +924,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Apply favorite states with actor state validation
-   * @param {NodeList} buttons The buttons to update
+   * Apply favorite states with actor state validation.
+   *
+   * Updates favorite button states based on a combination of session state,
+   * journal data, and actor ownership. Handles complex state reconciliation
+   * between different data sources.
+   *
+   * @param {NodeList} buttons - The buttons to update
+   * @private
    */
   async _applyFavoriteStatesToButtons(buttons) {
     const targetUserId = DataHelpers._getTargetUserId(this.actor);
@@ -736,9 +975,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Check if a spell UUID is currently on the actor
-   * @param {string} spellUuid The spell UUID to check
+   * Check if a spell UUID is currently on the actor.
+   *
+   * @param {string} spellUuid - The spell UUID to check
    * @returns {boolean} Whether the spell is on the actor
+   * @private
    */
   _isSpellOnActor(spellUuid) {
     return this.actor.items.some((item) => {
@@ -751,6 +992,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Set up the content wrapper element to allow hiding sidebar in collapsed mode.
+   *
    * @private
    */
   _setupContentWrapper() {
@@ -768,8 +1010,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Sync journal favorites to match current actor.system.favorites state
-   * This handles the case where user closed without saving - journal is "ahead" of actor
+   * Sync journal favorites to match current actor.system.favorites state.
+   *
+   * Handles the case where user closed without saving - journal is "ahead" of actor.
+   * Ensures consistency between journal data and actor state by synchronizing
+   * favorites based on the actor's current state.
+   *
+   * @private
    */
   async _syncJournalToActorState() {
     try {
@@ -807,8 +1054,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Immediately apply favorite changes to UI without waiting for next render
-   * @param {Array} changedSpells Array of {uuid, newState} objects
+   * Immediately apply favorite changes to UI without waiting for next render.
+   *
+   * @param {Array<{uuid: string, newState: boolean}>} changedSpells - Array of changed spell states
+   * @private
    */
   _applyImmediateFavoriteChanges(changedSpells) {
     for (const { uuid, newState } of changedSpells) {
@@ -852,8 +1101,12 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Set up event listeners for spell preparation checkboxes and filter checkboxes
-   * Only set up once to prevent multiple handlers
+   * Set up event listeners for spell preparation checkboxes and filter checkboxes.
+   *
+   * Only set up once to prevent multiple handlers. Handles both spell preparation
+   * changes and filter changes through a single delegated event listener.
+   *
+   * @private
    */
   setupPreparationListeners() {
     if (this._preparationListener) document.removeEventListener('change', this._preparationListener);
@@ -866,8 +1119,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Get tabs for the application including multiple wizard tabs
-   * @returns {Object} The tab configuration
+   * Get tabs for the application including multiple wizard tabs.
+   *
+   * Dynamically generates tab configuration for all spellcasting classes
+   * and wizard tabs, including proper icons, labels, and active states.
+   *
+   * @returns {Object<string, SpellBookTab>} The tab configuration
+   * @private
    */
   _getTabs() {
     const tabGroup = 'spellbook-tabs';
@@ -920,7 +1178,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     return tabs;
   }
 
-  /** @override */
+  /** @inheritdoc */
   changeTab(tabName, groupName, options = {}) {
     super.changeTab(tabName, groupName, options);
     const classMatch = tabName.match(/^([^T]+)Tab$/);
@@ -935,8 +1193,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Switch tab visibility without re-rendering
-   * @param {string} activeTabName The tab to make active
+   * Switch tab visibility without re-rendering.
+   *
+   * Efficiently switches between tabs by manipulating DOM visibility and
+   * active states without triggering a full re-render.
+   *
+   * @param {string} activeTabName - The tab to make active
+   * @private
    */
   _switchTabVisibility(activeTabName) {
     const allTabs = this.element.querySelectorAll('.tab');
@@ -958,8 +1221,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
+   * @todo This seems overly complicated and could be simplified
    * @inheritdoc
-   * @todo - This semems overly complicated.
    */
   _configureRenderOptions(options) {
     super._configureRenderOptions(options);
@@ -976,8 +1239,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Prepare class-specific preparation data for footer display
-   * @returns {Array} Array of class preparation data
+   * Prepare class-specific preparation data for footer display.
+   *
+   * @returns {Array<Object>} Array of class preparation data
+   * @private
    */
   _prepareClassPreparationData() {
     const activeTab = this.tabGroups['spellbook-tabs'];
@@ -999,8 +1264,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Prepare filter data for the UI
-   * @returns {Array} The prepared filters
+   * Prepare filter data for the UI.
+   *
+   * Processes filter configuration including migration, validation, and
+   * element generation for each enabled filter. Handles special cases
+   * like favorites UI integration and range filters.
+   *
+   * @returns {Array<FilterConfig>} The prepared filters
+   * @private
    */
   _prepareFilters() {
     let filterConfigData = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
@@ -1082,10 +1353,12 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Create a range filter element
-   * @param {string} filterId The filter identifier
-   * @param {Object} filterState The current filter state
+   * Create a range filter element with min/max inputs.
+   *
+   * @param {string} filterId - The filter identifier
+   * @param {Object} filterState - The current filter state
    * @returns {HTMLElement} The created range filter element
+   * @private
    */
   _createRangeFilterElement(filterId, filterState) {
     const container = document.createElement('div');
@@ -1115,7 +1388,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Apply collapsed state to any existing level headers
+   * Apply collapsed state to any existing level headers.
+   *
+   * @private
    */
   _applyCollapsedStateToExistingHeaders() {
     const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
@@ -1136,10 +1411,12 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Create HTML for a spell item
-   * @todo - Should this be a template? This should be a template.
-   * @param {Object} spell Processed spell
+   * Create HTML for a spell item.
+   *
+   * @todo Should this be a template? This should be a template.
+   * @param {ProcessedSpell} spell - Processed spell
    * @returns {string} HTML string
+   * @private
    */
   _createSpellItemHtml(spell) {
     const tagHtml = spell.tag ? `<span class="tag ${spell.tag.cssClass}" ${spell.tag.tooltip ? `data-tooltip="${spell.tag.tooltip}"` : ''}>${spell.tag.text}</span>` : '';
@@ -1158,7 +1435,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const ariaLabel = game.i18n.format('SPELLBOOK.Comparison.CompareSpell', { name: name });
       comparisonIconHtml = `<i class="fa-solid fa-clipboard-question spell-compare-icon${activeClass}" data-action="compareSpell" data-uuid="${spell.compendiumUuid}" data-tooltip="${compareText}" aria-label="${ariaLabel}"></i>`;
     }
-
     const favoriteStarHtml =
       UIHelpers.UICustomizationHelper.isPlayerElementEnabled('favorites') && spellUuid
         ? `<button type="button" class="spell-favorite-toggle ${spell.favorited ? 'favorited' : ''}"
@@ -1235,7 +1511,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Apply filters to spells
+   * Apply filters to spells.
+   *
+   * @private
    */
   async _applyFilters() {
     if (!this.element) return;
@@ -1245,7 +1523,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Set up context menu for loadout button
+   * Set up context menu for loadout button.
+   *
+   * @private
    */
   _setupLoadoutContextMenu() {
     const loadoutButton = this.element.querySelector('[data-action="openLoadoutDialog"]');
@@ -1258,7 +1538,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Set up context menu for party button
+   * Set up context menu for party button.
+   *
+   * @private
    */
   _setupPartyContextMenu() {
     const partyButton = this.element.querySelector('[data-action="openPartyManager"]');
@@ -1271,9 +1553,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Show context menu with available loadouts
+   * Show context menu with available loadouts.
+   *
    * @todo Localize ui.notifications
-   * @param {Event} event The right-click event
+   * @param {Event} event - The right-click event
+   * @private
    */
   async _showLoadoutContextMenu(event) {
     this._hideLoadoutContextMenu();
@@ -1322,33 +1606,29 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Show context menu for party button
-   * @param {Event} event The right-click event
+   * Show context menu for party button.
+   *
+   * @param {Event} event - The right-click event
+   * @private
    */
   async _showPartyContextMenu(event) {
     this._hidePartyContextMenu();
-
     const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
-
     try {
       const contextMenu = document.createElement('div');
       contextMenu.id = 'party-context-menu';
-      contextMenu.className = 'party-mode-context-menu'; // Use the correct class
-
+      contextMenu.className = 'party-mode-context-menu';
       contextMenu.innerHTML = `
       <div class="context-menu-item" data-action="${isPartyMode ? 'disable' : 'enable'}-party-mode">
         <i class="fas ${isPartyMode ? 'fa-eye-slash' : 'fa-users'}" aria-hidden="true"></i>
         <span>${game.i18n.localize(isPartyMode ? 'SPELLBOOK.Party.DisablePartyMode' : 'SPELLBOOK.Party.EnablePartyMode')}</span>
       </div>
     `;
-
       document.body.appendChild(contextMenu);
-      this._positionPartyContextMenu(event, contextMenu); // Use custom positioning
-
+      this._positionPartyContextMenu(event, contextMenu);
       contextMenu.addEventListener('click', async (clickEvent) => {
         const item = clickEvent.target.closest('.context-menu-item');
         if (!item) return;
-
         const action = item.dataset.action;
         switch (action) {
           case 'enable-party-mode':
@@ -1356,10 +1636,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             await SpellBook.togglePartyMode.call(this, clickEvent, item);
             break;
         }
-
         this._hidePartyContextMenu();
       });
-
       this._activePartyContextMenu = contextMenu;
     } catch (error) {
       log(1, 'Error showing party context menu:', error);
@@ -1367,9 +1645,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Position party context menu near the button
-   * @param {Event} event The click event
-   * @param {HTMLElement} menu The context menu element
+   * Position party context menu near the button.
+   *
+   * @param {Event} event - The click event
+   * @param {HTMLElement} menu - The context menu element
+   * @private
    */
   _positionPartyContextMenu(event, menu) {
     const button = event.currentTarget;
@@ -1377,34 +1657,21 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const menuRect = menu.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
-
-    // Position above the button by default
     let finalX = buttonRect.left;
     let finalY = buttonRect.top - menuRect.height - 5;
-
-    // If menu would go off top of screen, position below button
-    if (finalY < 10) {
-      finalY = buttonRect.bottom + 5;
-    }
-
-    // If menu would go off right side of screen, align to right edge of button
-    if (finalX + menuRect.width > viewportWidth - 10) {
-      finalX = buttonRect.right - menuRect.width;
-    }
-
-    // Ensure menu doesn't go off left side
-    if (finalX < 10) {
-      finalX = 10;
-    }
-
+    if (finalY < 10) finalY = buttonRect.bottom + 5;
+    if (finalX + menuRect.width > viewportWidth - 10) finalX = buttonRect.right - menuRect.width;
+    if (finalX < 10) finalX = 10;
     menu.style.left = `${finalX}px`;
     menu.style.top = `${finalY}px`;
   }
 
   /**
-   * Position context menu at the left edge of the Spell Book application
-   * @param {Event} event The click event
-   * @param {HTMLElement} menu The context menu element
+   * Position context menu at the left edge of the Spell Book application.
+   *
+   * @param {Event} event - The click event
+   * @param {HTMLElement} menu - The context menu element
+   * @private
    */
   _positionContextMenu(event, menu) {
     const button = event.currentTarget;
@@ -1427,7 +1694,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Hide loadout context menu
+   * Hide loadout context menu.
+   *
+   * @private
    */
   _hideLoadoutContextMenu() {
     const existingMenu = document.getElementById('spell-loadout-context-menu');
@@ -1436,7 +1705,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Hide party context menu
+   * Hide party context menu.
+   *
+   * @private
    */
   _hidePartyContextMenu() {
     const existingMenu = document.getElementById('party-context-menu');
@@ -1445,9 +1716,15 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle preparation checkbox change with optimized UI updates
-   * @param {Event} event The change event
+   * Handle preparation checkbox change with optimized UI updates.
+   *
+   * Processes spell preparation changes including validation, cantrip handling,
+   * and UI state updates. Manages enforcement rules and provides user feedback
+   * for preparation limitations.
+   *
+   * @param {Event} event - The change event
    * @returns {Promise<void>}
+   * @private
    */
   async _handlePreparationChange(event) {
     try {
@@ -1474,14 +1751,19 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle regular spell preparation change with swapping enforcement
-   * @param {Event} event The change event
-   * @param {string} uuid The spell UUID
-   * @param {HTMLElement} spellItem The spell item element
-   * @param {string} sourceClass The source class identifier
-   * @param {boolean} wasPrepared Whether the spell was previously prepared
-   * @param {boolean} isChecked Whether the spell is being checked
+   * Handle regular spell preparation change with swapping enforcement.
+   *
+   * Validates spell preparation changes against class limits and enforcement
+   * rules, providing appropriate user feedback for invalid operations.
+   *
+   * @param {Event} event - The change event
+   * @param {string} uuid - The spell UUID
+   * @param {HTMLElement} spellItem - The spell item element
+   * @param {string} sourceClass - The source class identifier
+   * @param {boolean} wasPrepared - Whether the spell was previously prepared
+   * @param {boolean} isChecked - Whether the spell is being checked
    * @returns {Promise<void>}
+   * @private
    */
   async _handleSpellPreparationChange(event, uuid, spellItem, sourceClass, wasPrepared, isChecked) {
     const checkbox = event.target;
@@ -1510,11 +1792,16 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle cantrip preparation change using CantripManager
-   * @param {Event} event The change event
-   * @param {string} uuid The spell UUID
-   * @param {HTMLElement} spellItem The spell item element
+   * Handle cantrip preparation change using CantripManager.
+   *
+   * Processes cantrip preparation changes with specialized validation for
+   * cantrip-specific rules including level-up restrictions and limits.
+   *
+   * @param {Event} event - The change event
+   * @param {string} uuid - The spell UUID
+   * @param {HTMLElement} spellItem - The spell item element
    * @returns {Promise<void>}
+   * @private
    */
   async _handleCantripPreparationChange(event, uuid, spellItem) {
     const checkbox = event.target;
@@ -1545,9 +1832,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Update wizard tab data after learning a spell
-   * @param {boolean} isFree Whether the spell was learned for free
-   * @param {string} classIdentifier The class identifier for the wizard tab
+   * Update wizard tab data after learning a spell.
+   *
+   * Updates wizard spellbook counts and free spell tracking after a successful
+   * spell learning operation.
+   *
+   * @param {boolean} isFree - Whether the spell was learned for free
+   * @param {string} [classIdentifier='wizard'] - The class identifier for the wizard tab
+   * @private
    */
   _updatewizardbookDataAfterSpellLearning(isFree, classIdentifier = 'wizard') {
     const wizardTabId = `wizardbook-${classIdentifier}`;
@@ -1563,50 +1855,50 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Migrate filter configuration from old version to new version
-   * @param {Array} oldConfig The old filter configuration
-   * @param {string} oldVersion The old version
-   * @param {string} newVersion The new version
+   * Migrate filter configuration from old version to new version.
+   *
+   * @param {Array} oldConfig - The old filter configuration
+   * @param {string} oldVersion - The old version
+   * @param {string} newVersion - The new version
    * @returns {Array} The migrated configuration
+   * @private
    */
   _migrateFilterConfiguration(oldConfig, oldVersion, newVersion) {
     const existingFilters = new Map(oldConfig.map((f) => [f.id, f]));
     const migratedConfig = MODULE.DEFAULT_FILTER_CONFIG.map((defaultFilter) => {
       const existingFilter = existingFilters.get(defaultFilter.id);
-      if (existingFilter) {
-        return {
-          ...defaultFilter,
-          enabled: existingFilter.enabled,
-          order: existingFilter.order !== undefined ? existingFilter.order : defaultFilter.order
-        };
-      } else {
-        return foundry.utils.deepClone(defaultFilter);
-      }
+      if (existingFilter) return { ...defaultFilter, enabled: existingFilter.enabled, order: existingFilter.order !== undefined ? existingFilter.order : defaultFilter.order };
+      else return foundry.utils.deepClone(defaultFilter);
     });
     log(3, `Migrated filter configuration from version ${oldVersion} to ${newVersion}`);
     return migratedConfig;
   }
 
   /**
-   * Ensure filter configuration integrity by adding missing filters and removing obsolete ones
-   * @param {Array} filterConfig Current filter configuration
+   * Ensure filter configuration integrity by adding missing filters and removing obsolete ones.
+   *
+   * @param {Array} filterConfig - Current filter configuration
    * @returns {Array} Updated filter configuration
+   * @private
    */
   _ensureFilterIntegrity(filterConfig) {
     const existingFilters = new Map(filterConfig.map((f) => [f.id, f]));
     const defaultFilterIds = new Set(MODULE.DEFAULT_FILTER_CONFIG.map((f) => f.id));
-    for (const defaultFilter of MODULE.DEFAULT_FILTER_CONFIG) {
-      if (!existingFilters.has(defaultFilter.id)) filterConfig.push(foundry.utils.deepClone(defaultFilter));
-    }
+    for (const defaultFilter of MODULE.DEFAULT_FILTER_CONFIG) if (!existingFilters.has(defaultFilter.id)) filterConfig.push(foundry.utils.deepClone(defaultFilter));
     filterConfig = filterConfig.filter((filter) => defaultFilterIds.has(filter.id));
     return filterConfig;
   }
 
   /**
-   * Check if a specific class needs a validation notice
-   * @param {string} classIdentifier The class identifier
-   * @param {string} className The class name
+   * Check if a specific class needs a validation notice.
+   *
+   * Determines if a class requires a validation warning due to not being
+   * from a compendium or D&D Beyond import, and lacking custom spell list configuration.
+   *
+   * @param {string} classIdentifier - The class identifier
+   * @param {string} className - The class name
    * @returns {Object|null} Notice object or null
+   * @private
    */
   _prepareClassValidationNotice(classIdentifier, className) {
     const classItem = this.actor.items.find((item) => item.type === 'class' && (item.system?.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier));
@@ -1620,23 +1912,19 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           type: 'warning',
           icon: 'fas fa-exclamation-triangle',
           title: game.i18n.localize('SPELLBOOK.Notices.ClassValidationWarning'),
-          message: game.i18n.format('SPELLBOOK.Notices.ClassNotFromCompendium', {
-            className: className
-          })
+          message: game.i18n.format('SPELLBOOK.Notices.ClassNotFromCompendium', { className: className })
         };
       }
     }
     return null;
   }
 
-  /* -------------------------------------------- */
-  /*  Static Handler Methods                      */
-  /* -------------------------------------------- */
-
   /**
-   * Toggle sidebar visibility
-   * @param {Event} event The click event
-   * @param {HTMLElement} _form The form element
+   * Toggle sidebar visibility.
+   *
+   * @param {Event} event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
    */
   static toggleSidebar(event, _form) {
     const isCollapsing = !this.element.classList.contains('sidebar-collapsed');
@@ -1648,9 +1936,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Apply filters to spells
-   * @param {Event} _event The event
-   * @param {HTMLElement} _form The form element
+   * Apply filters to spells.
+   *
+   * @param {Event} _event - The event
+   * @param {HTMLElement} _form - The form element
+   * @static
    */
   static filterSpells(_event, _form) {
     this.filterHelper.invalidateFilterCache();
@@ -1658,9 +1948,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle reset button click
-   * @param {Event} event The click event
-   * @param {HTMLElement} _form The form element
+   * Handle reset button click.
+   *
+   * Provides two reset modes: normal reset (filters only) and shift+reset
+   * (complete reset including preparation and favorites).
+   *
+   * @param {Event} event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
    */
   static handleReset(event, _form) {
     const isShiftReset = event.shiftKey;
@@ -1727,9 +2022,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Toggle spell level expansion/collapse
-   * @param {Event} _event The click event
-   * @param {HTMLElement} form The form element
+   * Toggle spell level expansion/collapse.
+   *
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} form - The form element
+   * @static
    */
   static toggleSpellLevel(_event, form) {
     const levelContainer = form.parentElement;
@@ -1754,9 +2051,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Open filter configuration dialog
-   * @param {Event} _event The click event
-   * @param {HTMLElement} _form The form element
+   * Open filter configuration dialog.
+   *
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
    */
   static configureFilters(_event, _form) {
     const filterConfig = new PlayerFilterConfiguration(this);
@@ -1764,9 +2063,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Open cantrip settings dialog
-   * @param {Event} _event The click event
-   * @param {HTMLElement} _form The form element
+   * Open cantrip settings dialog.
+   *
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
    */
   static configureCantripSettings(_event, _form) {
     const dialog = new SpellbookSettingsDialog(this.actor);
@@ -1774,9 +2075,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle learn spell button click
-   * @param {Event} event The click event
+   * Handle learn spell button click.
+   *
+   * Manages the wizard spell learning process including cost calculation,
+   * confirmation dialog, and spell copying with appropriate UI feedback.
+   *
+   * @param {Event} event - The click event
    * @returns {Promise<void>}
+   * @static
    */
   static async learnSpell(event) {
     const spellUuid = event.target.dataset.uuid;
@@ -1840,10 +2146,12 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle learning a spell from a scroll
-   * @param {Event} event The triggering event
-   * @param {HTMLElement} _form The form element
+   * Handle learning a spell from a scroll.
+   *
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} _form - The form element
    * @returns {Promise<void>}
+   * @static
    */
   static async handleLearnFromScroll(event, _form) {
     const spellUuid = event.target.dataset.uuid;
@@ -1861,9 +2169,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Open the spell loadout dialog
-   * @param {Event} _event The click event
-   * @param {HTMLElement} _form The form element
+   * Open the spell loadout dialog.
+   *
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} _form - The form element
+   * @static
    */
   static async openLoadoutDialog(_event, _form) {
     const activeTab = this.tabGroups['spellbook-tabs'];
@@ -1875,9 +2185,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle toggling spell favorite status
-   * @param {Event} event The click event
-   * @param {HTMLElement} target The target element containing spell data
+   * Handle toggling spell favorite status.
+   *
+   * Manages the complete favorite toggle process including journal persistence,
+   * actor favorites synchronization, and UI state updates.
+   *
+   * @param {Event} event - The click event
+   * @param {HTMLElement} target - The target element containing spell data
+   * @static
    */
   static async handleToggleFavorite(event, target) {
     event.preventDefault();
@@ -1913,9 +2228,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Update favorite button state immediately
-   * @param {HTMLElement} button The favorite button element
-   * @param {boolean} isFavorited Whether the spell is favorited
+   * Update favorite button state immediately.
+   *
+   * @param {HTMLElement} button - The favorite button element
+   * @param {boolean} isFavorited - Whether the spell is favorited
+   * @static
    */
   static _updateFavoriteButtonState(button, isFavorited) {
     const icon = button.querySelector('i');
@@ -1939,9 +2256,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle opening spell notes dialog
-   * @param {Event} event The click event
-   * @param {HTMLElement} target The target element containing spell data
+   * Handle opening spell notes dialog.
+   *
+   * @param {Event} event - The click event
+   * @param {HTMLElement} target - The target element containing spell data
+   * @static
    */
   static async handleEditNotes(event, target) {
     event.preventDefault();
@@ -1952,20 +2271,24 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle opening the spell analytics dashboard
-   * @param {MouseEvent} _event The click event (unused)
-   * @param {HTMLElement} _target The target element (unused)
+   * Handle opening the spell analytics dashboard.
+   *
+   * @param {MouseEvent} _event - The click event (unused)
+   * @param {HTMLElement} _target - The target element (unused)
    * @returns {Promise<void>}
+   * @static
    */
   static async handleOpenAnalyticsDashboard(_event, _target) {
     new SpellAnalyticsDashboard().render({ force: true });
   }
 
   /**
-   * Handle spell comparison selection and dialog management
-   * @param {MouseEvent} event The click event
-   * @param {HTMLFormElement} _form The form element (unused)
+   * Handle spell comparison selection and dialog management.
+   *
+   * @param {MouseEvent} event - The click event
+   * @param {HTMLFormElement} _form - The form element (unused)
    * @returns {Promise<void>}
+   * @static
    */
   static async handleCompareSpell(event, _form) {
     const spellUuid = event.target.dataset.uuid;
@@ -1985,9 +2308,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle opening spell details customization dialog
-   * @param {Event} _event The click event
-   * @param {HTMLElement} _target The target element that triggered the event
+   * Handle opening spell details customization dialog.
+   *
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} _target - The target element that triggered the event
+   * @static
    */
   static handleOpenCustomization(_event, _target) {
     const dialog = new SpellDetailsCustomization();
@@ -1995,9 +2320,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Open party spell manager
-   * @param {Event} _event The triggering event
-   * @param {HTMLElement} _target The event target
+   * Open party spell manager.
+   *
+   * @param {Event} _event - The triggering event
+   * @param {HTMLElement} _target - The event target
+   * @static
    */
   static async openPartyManager(_event, _target) {
     const partyActors = PartySpellManager.getPartyActors();
@@ -2005,54 +2332,51 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       ui.notifications.warn('SPELLBOOK.Party.NoSpellcasters', { localize: true });
       return;
     }
-
     const manager = new PartySpells(partyActors, this.actor, this.group);
     manager.render(true);
   }
 
   /**
-   * Toggle party mode visualization
-   * @param {Event} _event The triggering event
-   * @param {HTMLElement} _target The event target
+   * Toggle party mode visualization.
+   *
+   * @param {Event} _event - The triggering event
+   * @param {HTMLElement} _target - The event target
+   * @static
    */
   static async togglePartyMode(_event, _target) {
     const currentMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
     await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, !currentMode);
-
-    // Just re-render the app to update the UI
     await this.render();
-
     ui.notifications.info(!currentMode ? 'SPELLBOOK.Party.PartyModeEnabled' : 'SPELLBOOK.Party.PartyModeDisabled', { localize: true });
   }
 
   /**
-   * Enhance spell rendering with party member icons
-   * @param {string} spellHtml Original spell HTML
-   * @param {Object} spellData Spell data
+   * Enhance spell rendering with party member icons.
+   *
+   * Adds party member icons to spells when party mode is enabled, showing
+   * which other party members have the same spell prepared.
+   *
+   * @param {string} spellHtml - Original spell HTML
+   * @param {Object} spellData - Spell data
    * @returns {string} Enhanced HTML with party member icons
+   * @private
    */
   _enhanceSpellWithPartyIcons(spellHtml, spellData) {
     const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
     if (!isPartyMode) return spellHtml;
-
     const partyActors = PartySpellManager.getPartyActors();
     const tokenLimit = game.settings.get(MODULE.ID, SETTINGS.PARTY_MODE_TOKEN_LIMIT);
-
     let partyIcons = '';
     let iconCount = 0;
-
     for (const actor of partyActors) {
       if (iconCount >= tokenLimit) break;
-      if (actor.id === this.actor.id) continue; // Skip self
-
+      if (actor.id === this.actor.id) continue;
       if (this._actorHasSpellPrepared(actor, spellData.uuid)) {
         partyIcons += `<img src="${actor.img}" class="party-member-icon" title="${actor.name}" data-actor-id="${actor.id}">`;
         iconCount++;
       }
     }
-
     if (partyIcons) {
-      // Insert icons after spell name
       const nameEndIndex = spellHtml.indexOf('</span>', spellHtml.indexOf('class="title"'));
       if (nameEndIndex !== -1) {
         const beforeIcons = spellHtml.substring(0, nameEndIndex + 7);
@@ -2060,26 +2384,27 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         return `${beforeIcons}<span class="party-icons">${partyIcons}</span>${afterIcons}`;
       }
     }
-
     return spellHtml;
   }
 
   /**
-   * Check if an actor has a specific spell prepared
-   * @param {Actor} actor The actor to check
-   * @param {string} spellUuid The spell UUID
+   * Check if an actor has a specific spell prepared.
+   *
+   * @param {Actor} actor - The actor to check
+   * @param {string} spellUuid - The spell UUID
    * @returns {boolean} True if actor has spell prepared
+   * @private
    */
   _actorHasSpellPrepared(actor, spellUuid) {
     if (!PartySpellManager.prototype.hasViewPermission(actor)) return false;
-
     const preparedSpells = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS) || [];
     return preparedSpells.includes(spellUuid);
   }
 
   /**
-   * Refresh the Spell Book after settings changes
-   * @todo - Can this be replaced since its only called once?
+   * Refresh the Spell Book after settings changes.
+   *
+   * @todo Can this be replaced since it's only called once?
    * @returns {Promise<void>}
    */
   async refreshFromSettingsChange() {
@@ -2170,11 +2495,17 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Form handler for saving Spell Book settings with class-specific preparation AND favorites
-   * @param {Event} _event The form submission event
-   * @param {HTMLElement} form The form element
-   * @param {Object} _formData The form data
+   * Form handler for saving Spell Book settings with class-specific preparation AND favorites.
+   *
+   * Processes form submission including spell preparation changes, cantrip tracking,
+   * ritual spell handling, and favorites integration. Manages complex class-specific
+   * logic and provides comprehensive saving with proper notifications.
+   *
+   * @param {Event} _event - The form submission event
+   * @param {HTMLElement} form - The form element
+   * @param {Object} _formData - The form data
    * @returns {Promise<Actor|null>} The updated actor or null
+   * @static
    */
   static async formHandler(_event, form, _formData) {
     const actor = this.actor;
@@ -2226,9 +2557,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const allCantripChangesByClass = {};
     for (const [classIdentifier, classSpellData] of Object.entries(spellDataByClass)) {
       const saveResult = await this.spellManager.saveClassSpecificPreparedSpells(classIdentifier, classSpellData);
-      if (saveResult && saveResult.cantripChanges && saveResult.cantripChanges.hasChanges) {
-        allCantripChangesByClass[classIdentifier] = saveResult.cantripChanges;
-      }
+      if (saveResult && saveResult.cantripChanges && saveResult.cantripChanges.hasChanges) allCantripChangesByClass[classIdentifier] = saveResult.cantripChanges;
       const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
       for (const [classIdentifier, preparedSpells] of Object.entries(existingPreparedByClass)) {
         if (!spellDataByClass[classIdentifier]) preparedByClass[classIdentifier] = preparedSpells;
