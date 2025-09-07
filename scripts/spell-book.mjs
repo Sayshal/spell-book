@@ -49,8 +49,10 @@ Hooks.on('deleteJournalEntryPage', (page, options, userId) => {
  * Initialize Foundry configuration for the module
  */
 function initializeFoundryConfiguration() {
-  CONFIG.JournalEntry.compendiumIndexFields = ['_id', 'name', 'pages', 'type', 'uuid'];
-  CONFIG.Item.compendiumIndexFields = ['system.spellcasting.progression', 'system.spellcasting.type'];
+  const journalFields = ['_id', 'name', 'pages', 'type', 'uuid'];
+  const itemFields = ['system.spellcasting.progression', 'system.spellcasting.type'];
+  CONFIG.JournalEntry.compendiumIndexFields = [...new Set([...CONFIG.JournalEntry.compendiumIndexFields, ...journalFields])];
+  CONFIG.Item.compendiumIndexFields = [...new Set([...CONFIG.Item.compendiumIndexFields, ...itemFields])];
 }
 
 /**
