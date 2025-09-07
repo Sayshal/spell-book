@@ -1,11 +1,57 @@
+{{!--
+/**
+ * Wizard Learn Spell Dialog Template
+ *
+ * PURPOSE:
+ * Confirmation dialog for wizard spell learning operations displaying spell
+ * information, learning costs, and time requirements. Provides wizards with
+ * detailed information before committing to the spell learning process for
+ * standard spell acquisition (non-scroll based).
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {Object} spell - Spell object being learned
+ * @param {string} spell.name - Display name of the spell
+ * @param {string} costText - Formatted cost text for spell learning
+ * @param {number} time - Time in hours required for learning
+ *
+ * HELPER DEPENDENCIES:
+ * @requires localize - Foundry VTT localization helper for text translation
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic form structure for dialog content
+ * - Strong text for spell name emphasis
+ * - Clear label-value pairs for cost and time information
+ * - Logical content flow from prompt to details
+ *
+ * CUSTOMIZATION POINTS:
+ * - Spell name prominently displayed for confirmation
+ * - Cost and time information provided for informed decisions
+ * - Learning prompt provides clear context for the action
+ * - Form structure supports dialog integration patterns
+ *
+ * INTEGRATION:
+ * - Used in wizard spell learning workflow for standard acquisition
+ * - Connects to wizard spell learning and cost calculation systems
+ * - Uses module localization keys from SPELLBOOK.Wizard namespace
+ * - Supports wizard-specific spell acquisition mechanics
+ */
+--}}
+
 <form class="wizard-copy-form">
+  <!-- Spell Learning Confirmation Prompt -->
   <p>{{localize 'SPELLBOOK.Wizard.LearnSpellPromptPrefix'}} <strong>{{spell.name}}</strong>
-    {{localize 'SPELLBOOK.Wizard.LearnSpellPromptSuffix'}}</p>
+    {{localize 'SPELLBOOK.Wizard.LearnSpellPromptSuffix'}}
+  </p>
+
+  <!-- Spell Learning Cost and Time Details -->
   <div class="copy-details">
+    <!-- Learning Cost Information -->
     <div class="form-group">
       <label>{{localize 'SPELLBOOK.Wizard.CostLabel'}}:</label>
       <span>{{costText}}</span>
     </div>
+
+    <!-- Learning Time Information -->
     <div class="form-group">
       <label>{{localize 'SPELLBOOK.Wizard.TimeLabel'}}:</label>
       <span>{{localize 'SPELLBOOK.Wizard.SpellCopyTime' hours=time}}</span>

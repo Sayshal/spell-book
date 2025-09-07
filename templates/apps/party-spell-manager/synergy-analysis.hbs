@@ -1,23 +1,81 @@
+{{!--
+/**
+ * Party Spell Synergy Analysis Template
+ *
+ * PURPOSE:
+ * Detailed analytical interface for party spell optimization and synergy assessment.
+ * Provides statistical breakdowns of party spell capabilities including damage type
+ * distribution, spellcasting focus analysis, and strategic recommendations for
+ * improving party spell coordination and effectiveness.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {number} totalSpells - Total number of unique spells across the party
+ * @param {number} totalPreparedSpells - Total number of prepared spells across party
+ * @param {number} concentrationSpells - Number of concentration spells available
+ * @param {number} concentrationPercentage - Percentage of spells requiring concentration
+ * @param {number} ritualSpells - Number of ritual spells available to party
+ * @param {Array<Object>} damageDistribution - Damage type analysis data
+ * @param {string} damageDistribution[].localizedType - Localized damage type name
+ * @param {number} damageDistribution[].count - Number of spells of this damage type
+ * @param {Array<Object>} focusDistribution - Spellcasting focus analysis data
+ * @param {string} focusDistribution[].focus - Focus type or specialization name
+ * @param {number} focusDistribution[].count - Number of party members using this focus
+ * @param {Array<string>} recommendations - Strategic recommendations for party optimization
+ *
+ * HELPER DEPENDENCIES:
+ * @requires localize - Foundry VTT localization helper for text translation
+ * @requires if - Handlebars conditional helper for optional sections
+ * @requires each - Handlebars iteration helper for collections
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic HTML structure with clear content organization
+ * - Descriptive headings (h3, h4) for different analysis sections
+ * - Grid layout for statistical overview with labeled stat items
+ * - List structure for recommendations with proper ul/li markup
+ * - Clear label/value pairs for all statistical data
+ *
+ * CUSTOMIZATION POINTS:
+ * - Analysis sections display conditionally based on data availability
+ * - Damage type distribution adapts to available damage types
+ * - Focus distribution reflects actual party composition
+ * - Recommendations list expands based on analysis results
+ * - Statistical overview scales with party size and capabilities
+ *
+ * INTEGRATION:
+ * - Connects to PartySpells application's synergy analysis functionality
+ * - Uses module localization keys from SPELLBOOK.Party.Analysis namespace
+ * - Supports dynamic data updates when party composition changes
+ * - Provides input for strategic party spell coordination decisions
+ * - Can be triggered from main party manager interface
+ */
+--}}
+
 <div class="party-spell-analysis">
+  <!-- Analysis Overview Section - Key statistical summary -->
   <div class="analysis-overview">
     <h3>{{localize "SPELLBOOK.Party.Analysis.Overview"}}</h3>
 
+    <!-- Statistics Grid - Core party spell metrics -->
     <div class="stats-grid">
+      <!-- Total Unique Spells Statistic -->
       <div class="stat-item">
         <span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.TotalSpells"}}</span>
         <span class="stat-value">{{totalSpells}}</span>
       </div>
 
+      <!-- Total Prepared Spells Statistic -->
       <div class="stat-item">
         <span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.TotalPrepared"}}</span>
         <span class="stat-value">{{totalPreparedSpells}}</span>
       </div>
 
+      <!-- Concentration Spells Analysis -->
       <div class="stat-item">
         <span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.ConcentrationSpells"}}</span>
         <span class="stat-value">{{concentrationSpells}} ({{concentrationPercentage}}%)</span>
       </div>
 
+      <!-- Ritual Spells Count -->
       <div class="stat-item">
         <span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.RitualSpells"}}</span>
         <span class="stat-value">{{ritualSpells}}</span>
@@ -25,9 +83,12 @@
     </div>
   </div>
 
+  <!-- Damage Type Analysis Section - Optional based on data availability -->
   {{#if damageDistribution.length}}
     <div class="damage-analysis">
       <h4>{{localize "SPELLBOOK.Party.Analysis.DamageTypes"}}</h4>
+
+      <!-- Damage Types Distribution Display -->
       <div class="damage-types">
         {{#each damageDistribution as |damageData|}}
           <div class="damage-type-item">
@@ -39,9 +100,12 @@
     </div>
   {{/if}}
 
+  <!-- Spellcasting Focus Analysis Section - Optional based on data availability -->
   {{#if focusDistribution.length}}
     <div class="focus-analysis">
       <h4>{{localize "SPELLBOOK.Party.Analysis.FocusDistribution"}}</h4>
+
+      <!-- Focus Types Distribution Display -->
       <div class="focus-types">
         {{#each focusDistribution as |focusData|}}
           <div class="focus-type-item">
@@ -53,9 +117,12 @@
     </div>
   {{/if}}
 
+  <!-- Strategic Recommendations Section - Optional based on analysis results -->
   {{#if recommendations.length}}
     <div class="recommendations">
       <h4>{{localize "SPELLBOOK.Party.Analysis.Recommendations"}}</h4>
+
+      <!-- Recommendations List - Localized strategic advice -->
       <ul class="recommendation-list">
         {{#each recommendations as |recommendation|}}
           <li>{{localize recommendation}}</li>

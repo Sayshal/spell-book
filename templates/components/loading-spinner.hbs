@@ -1,3 +1,41 @@
+{{!--
+/**
+ * Loading Spinner Component Template
+ *
+ * PURPOSE:
+ * Reusable component for displaying loading indicators during asynchronous operations.
+ * Provides visual feedback with animated spinner and customizable size, along with
+ * optional loading message text. Ensures consistent loading state presentation
+ * across the application with proper accessibility support.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {number} [size] - Optional spinner size multiplier (defaults to 3x)
+ * @param {string} [message] - Optional custom loading message (falls back to default)
+ *
+ * HELPER DEPENDENCIES:
+ * @requires localize - Foundry VTT localization helper for text translation
+ * @requires if - Handlebars conditional helper for parameter checking
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Status role for screen reader announcement of loading state
+ * - Descriptive aria-label for loading context
+ * - Spinner icon marked as decorative to avoid redundant announcement
+ * - Semantic paragraph structure for loading message
+ *
+ * CUSTOMIZATION POINTS:
+ * - Spinner size configurable through size parameter (1x, 2x, 3x, etc.)
+ * - Loading message adaptable through context parameter
+ * - Default size of 3x provides good visibility
+ * - Default message ensures consistent user feedback
+ *
+ * INTEGRATION:
+ * - Used across multiple templates for consistent loading display
+ * - Supports async data loading, spell processing, and application initialization
+ * - Integrates with application state management systems
+ * - Provides user feedback during data operations
+ */
+--}}
+
 <div class="loading-spinner" role="status" aria-label="{{localize 'SPELLBOOK.UI.Loading'}}">
 	<i class="fas fa-spinner fa-spin fa-{{#if size}}{{size}}{{else}}3{{/if}}x" aria-hidden="true"></i>
 	<p>{{#if message}}{{message}}{{else}}{{localize 'SPELLBOOK.UI.Loading'}}{{/if}}</p>

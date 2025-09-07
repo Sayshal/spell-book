@@ -1,4 +1,66 @@
+{{!--
+/**
+ * Analytics Dashboard Template
+ *
+ * PURPOSE:
+ * Main analytics dashboard interface for displaying spell usage statistics, user activity
+ * tracking, and data management controls. Provides both personal and GM views for
+ * comprehensive spell usage analytics across the Spell Book module.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {Object} analytics - Core analytics data object containing all statistics
+ * @param {number} analytics.totalSpells - Total number of spells tracked
+ * @param {number} analytics.totalCasts - Total number of spell casts recorded
+ * @param {number} analytics.totalFavorites - Total number of favorited spells
+ * @param {number} analytics.totalNotes - Total number of spell notes created
+ * @param {Object} analytics.contextBreakdown - Spell usage context statistics
+ * @param {number} analytics.contextBreakdown.combat - Combat context usage count
+ * @param {number} analytics.contextBreakdown.combatPercent - Combat usage percentage
+ * @param {number} analytics.contextBreakdown.exploration - Exploration context usage count
+ * @param {number} analytics.contextBreakdown.explorationPercent - Exploration usage percentage
+ * @param {Array<Object>} analytics.mostUsedSpells - Top used spells collection
+ * @param {string} analytics.mostUsedSpells[].name - Spell name
+ * @param {number} analytics.mostUsedSpells[].count - Usage count
+ * @param {Array<Object>} analytics.recentActivity - Recent spell activity collection
+ * @param {string} analytics.recentActivity[].name - Spell name
+ * @param {Date|string} analytics.recentActivity[].lastUsed - Last usage timestamp
+ * @param {Object} analytics.userBreakdown - Per-user statistics (GM view only)
+ * @param {string} analytics.userBreakdown[userId].name - User display name
+ * @param {number} analytics.userBreakdown[userId].totalCasts - User's total casts
+ * @param {number} analytics.userBreakdown[userId].totalFavorites - User's total favorites
+ * @param {number} analytics.userBreakdown[userId].totalNotes - User's total notes
+ * @param {string|null} lastRefresh - Last data refresh timestamp for display
+ * @param {boolean} isGM - Whether current user has GM permissions
+ * @param {string} viewMode - Current view mode ("personal" or "gm")
+ *
+ * HELPER DEPENDENCIES:
+ * @requires localize - Foundry VTT localization helper for text translation
+ * @requires formatDate - Custom date formatting helper for timestamp display
+ * @requires eq - Handlebars equality comparison helper for conditional logic
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic HTML structure with proper header/main/section/footer elements
+ * - Fieldset/legend pairs for grouped content sections
+ * - Interactive elements properly labeled for screen readers
+ * - Button elements include descriptive text and icons
+ * - List structures for organized data presentation
+ *
+ * CUSTOMIZATION POINTS:
+ * - View mode toggles support different permission levels
+ * - Context breakdown visualization adapts to data percentages
+ * - Statistics sections expand/contract based on data availability
+ * - GM-specific sections conditionally render based on user permissions
+ *
+ * INTEGRATION:
+ * - Connects to SpellAnalyticsDashboard application class
+ * - Uses module localization keys from SPELLBOOK.Analytics namespace
+ * - Supports data export/import functionality through action buttons
+ * - Links to detailed user data views for GM users
+ */
+--}}
+
 <div class="analytics-dashboard">
+  <!-- Dashboard Header - Title, refresh info, and view controls -->
   <header class="dashboard-header">
     <div class="header-content">
       <h1>{{localize "SPELLBOOK.Analytics.DashboardTitle"}}</h1>
@@ -7,6 +69,7 @@
       {{/if}}
     </div>
 
+    <!-- View Mode Controls - GM users can switch between personal and GM views -->
     <div class="view-controls">
       {{#if isGM}}
         <button type="button" class="view-toggle {{#if (eq viewMode 'personal')}}active{{/if}}" data-action="switchView"
@@ -19,14 +82,16 @@
         </button>
       {{/if}}
 
+      <!-- Data Refresh Control -->
       <button type="button" class="refresh-btn" data-action="refreshStats">
         <i class="fas fa-sync-alt"></i> {{localize "SPELLBOOK.Analytics.Refresh"}}
       </button>
     </div>
   </header>
 
+  <!-- Main Dashboard Content Area -->
   <div class="dashboard-content">
-    <!-- Summary Statistics -->
+    <!-- Summary Statistics Cards - Overview of key metrics -->
     <section class="stats-summary">
       <div class="stat-card">
         <div class="stat-value">{{analytics.totalSpells}}</div>
@@ -46,10 +111,11 @@
       </div>
     </section>
 
-    <!-- Context Usage Breakdown -->
+    <!-- Context Usage Visualization - Shows combat vs exploration usage patterns -->
     <section class="context-breakdown">
       <h2>{{localize "SPELLBOOK.Analytics.ContextUsage"}}</h2>
       <div class="context-chart">
+        <!-- Visual bar chart representation of usage context -->
         <div class="context-bar">
           <div class="context-combat" data-percent="{{analytics.contextBreakdown.combatPercent}}">
             <span class="context-label">{{analytics.contextBreakdown.combat}}
@@ -63,8 +129,9 @@
       </div>
     </section>
 
+    <!-- Two-Column Grid Layout for Detailed Statistics -->
     <div class="dashboard-grid">
-      <!-- Most Used Spells -->
+      <!-- Most Used Spells Section - Shows top spells by usage count -->
       <fieldset class="most-used-spells">
         <legend>{{localize "SPELLBOOK.Analytics.MostUsedSpells"}}</legend>
         <div class="spell-list">
@@ -77,7 +144,7 @@
         </div>
       </fieldset>
 
-      <!-- Recent Activity -->
+      <!-- Recent Activity Section - Shows recently used spells with timestamps -->
       <fieldset class="recent-activity">
         <legend>{{localize "SPELLBOOK.Analytics.RecentActivity"}}</legend>
         <div class="activity-list">
@@ -91,10 +158,11 @@
       </fieldset>
     </div>
 
+    <!-- GM-Only User Breakdown Section - Full width display of per-user statistics -->
     {{#if (eq viewMode 'gm')}}
-      <!-- User Breakdown (GM View) - Full Width -->
       <fieldset class="user-breakdown">
         <legend>{{localize "SPELLBOOK.Analytics.UserBreakdown"}}</legend>
+        <!-- Interactive user list - clicking opens detailed user data view -->
         <ul class="user-list">
           {{#each analytics.userBreakdown}}
             <li class="user-stats" data-action="viewUserData" data-user-id="{{@key}}">
@@ -110,14 +178,19 @@
     {{/if}}
   </div>
 
-  <!-- Data Management Footer -->
+  <!-- Data Management Footer - Export, import, and administrative controls -->
   <footer class="data-management">
+    <!-- Data Export Control -->
     <button type="button" class="export-btn" data-action="exportData">
       <i class="fas fa-download"></i> {{localize "SPELLBOOK.Analytics.ExportData"}}
     </button>
+
+    <!-- Data Import Control -->
     <button type="button" class="import-btn" data-action="importData">
       <i class="fas fa-upload"></i> {{localize "SPELLBOOK.Analytics.ImportData"}}
     </button>
+
+    <!-- GM-Only Data Management -->
     {{#if isGM}}
       <button type="button" class="clear-btn" data-action="clearData">
         <i class="fas fa-trash"></i> {{localize "SPELLBOOK.Analytics.ClearData"}}

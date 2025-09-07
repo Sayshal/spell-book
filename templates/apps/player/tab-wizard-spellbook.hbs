@@ -1,24 +1,82 @@
+{{!--
+/**
+ * Player Spell Book Wizard Spellbook Tab Template
+ *
+ * PURPOSE:
+ * Specialized spellbook interface for wizard characters providing spell learning,
+ * spellbook management, and wizard-specific spell preparation functionality.
+ * Displays wizard-specific rules and information while serving as a container
+ * for dynamically rendered spell content with wizard-specific features.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {Object} tab - Tab configuration object with display properties
+ * @param {string} tab.id - Unique tab identifier for DOM targeting
+ * @param {string} tab.cssClass - CSS classes for tab styling and wizard-specific behavior
+ * @param {string} tab.group - Tab group identifier for coordinated navigation
+ * @param {string} classIdentifier - Unique identifier for the wizard class
+ * @param {boolean} hasError - Whether an error condition exists for display
+ * @param {string} errorMessage - Error message text for display (when hasError is true)
+ * @param {boolean} isWizard - Whether character has wizard class levels
+ * @param {boolean} isForceWizard - Whether wizard functionality is force-enabled
+ *
+ * HELPER DEPENDENCIES:
+ * @requires localize - Foundry VTT localization helper for text translation
+ * @requires if - Handlebars conditional helper for error and wizard state checks
+ * @requires or - Handlebars logical OR helper for wizard condition checking
+ * @requires > - Handlebars partial inclusion helper for error message component
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Tab container with proper data attributes for wizard tab navigation
+ * - Wizard rules section with semantic header structure
+ * - Help icon with descriptive tooltip for wizard spellbook rules
+ * - Error display uses accessible alert patterns
+ * - Filter results message with role="status" for screen reader updates
+ * - Semantic content organization with containers and headers
+ *
+ * CUSTOMIZATION POINTS:
+ * - Error display uses shared error message component for consistency
+ * - Wizard availability check controls content display
+ * - Spellbook rules section provides wizard-specific context
+ * - Dynamic spell level rendering adapts to wizard spellbook contents
+ * - Filter results message toggles based on search state
+ *
+ * INTEGRATION:
+ * - Connects to PlayerSpellBook application for wizard-specific functionality
+ * - Uses shared error message component from templates/components/
+ * - Supports dynamic spell level rendering through JavaScript
+ * - Integrates with wizard spell learning and preparation systems
+ * - Works with spellbook-specific filtering and search functionality
+ */
+--}}
+
 <div class="wizardbook tab {{tab.cssClass}}" data-tab="{{tab.id}}" data-group="{{tab.group}}"
 	data-class-identifier="{{classIdentifier}}">
+
 	<div class="spells-container">
 		{{#if hasError}}
+			<!-- Error State Display - Uses shared error message component -->
 			{{> "modules/spell-book/templates/components/error-message.hbs" message=errorMessage}}
 		{{else}}
 			{{#if (or isWizard isForceWizard)}}
+				<!-- Wizard Spellbook Rules and Information Section -->
 				<div class="spellbook-rules">
 					<div class="spellbook-header">
 						<h2>{{localize 'SPELLBOOK.Wizard.NewSpellsTitle'}}</h2>
+						<!-- Wizard Help Information - Tooltip with detailed rules -->
 						<i class="fas fa-info-circle spellbook-help-icon"
 							data-tooltip="{{localize 'SPELLBOOK.Wizard.NewSpellsInfo1'}}<br><br>{{localize 'SPELLBOOK.Wizard.NewSpellsInfo2'}}"></i>
 					</div>
 				</div>
-				{{!-- Spell levels will be rendered dynamically by JavaScript, just like regular spell tabs --}}
+				<!-- Dynamic Spell Level Content - Rendered by JavaScript like regular spell tabs -->
 			{{else}}
+				<!-- Wizard Unavailable State - Shown when character lacks wizard capabilities -->
 				<div class="wizard-unavailable">
 					<p>{{localize 'SPELLBOOK.Wizard.Unavailable'}}</p>
 				</div>
 			{{/if}}
 		{{/if}}
+
+		<!-- Filter Results Message - Hidden by default, shown when no spells match filters -->
 		<div class="no-filter-results" style="display: none;" role="status">
 			{{localize 'SPELLBOOK.Filters.NoResults'}}
 		</div>

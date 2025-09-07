@@ -1,3 +1,40 @@
+{{!--
+/**
+ * Error Message Component Template
+ *
+ * PURPOSE:
+ * Reusable component for displaying error messages with consistent styling and
+ * accessibility features. Provides visual and semantic indication of error
+ * states across the application with proper alerting for screen readers.
+ * Supports both custom error messages and default fallback text.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {string} [message] - Optional custom error message to display (falls back to default)
+ *
+ * HELPER DEPENDENCIES:
+ * @requires localize - Foundry VTT localization helper for default text translation
+ * @requires if - Handlebars conditional helper for message selection
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Alert role for immediate screen reader announcement of errors
+ * - Warning icon with aria-hidden to avoid redundant announcement
+ * - Semantic paragraph structure for error message content
+ * - Consistent styling for error state recognition
+ *
+ * CUSTOMIZATION POINTS:
+ * - Error message content adaptable through context parameter
+ * - Default fallback message provides consistent experience
+ * - Icon and styling controlled through CSS classes
+ * - Alert behavior ensures proper accessibility handling
+ *
+ * INTEGRATION:
+ * - Used across multiple templates for consistent error display
+ * - Supports application errors, validation failures, and system issues
+ * - Integrates with error handling and validation systems
+ * - Provides user feedback for error conditions
+ */
+--}}
+
 <div class="error-message" role="alert">
 	<i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
 	<p>{{#if message}}{{message}}{{else}}{{localize 'SPELLBOOK.UI.ErrorOccurred'}}{{/if}}</p>

@@ -1,10 +1,60 @@
+{{!--
+/**
+ * Spell Comparison Dialog Template
+ *
+ * PURPOSE:
+ * Side-by-side comparison interface for analyzing multiple spells simultaneously.
+ * Displays spell properties in tabular format with highlighting for differences,
+ * providing users with detailed comparative analysis for spell selection and
+ * strategic planning. Supports empty state when no spells are selected.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {Array<Object>} spells - Array of spells being compared
+ * @param {string} spells[].name - Spell display name
+ * @param {string} spells[].enrichedIcon - HTML for spell icon/image display
+ * @param {Object} comparisonData - Processed comparison data structure
+ * @param {Array<Object>} comparisonData.properties - Array of comparable properties
+ * @param {string} comparisonData.properties[].name - Property display name
+ * @param {Array<Object>} comparisonData.properties[].values - Property values per spell
+ * @param {string} comparisonData.properties[].values[].value - Formatted property value
+ * @param {boolean} comparisonData.properties[].values[].highlight - Whether to highlight differences
+ *
+ * HELPER DEPENDENCIES:
+ * @requires localize - Foundry VTT localization helper for text translation
+ * @requires if - Handlebars conditional helper for spell availability check
+ * @requires each - Handlebars iteration helper for spells and properties
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic table structure with proper thead/tbody sections
+ * - Table headers with spell information for column identification
+ * - Row headers for property names with proper scope
+ * - Highlighted cells for visual difference indication
+ * - Empty state with descriptive message for no selections
+ *
+ * CUSTOMIZATION POINTS:
+ * - Table displays dynamically based on selected spells
+ * - Property comparison highlights differences between spells
+ * - Empty state provides guidance when no spells selected
+ * - Spell icons and names clearly identify each comparison column
+ * - Highlighting system draws attention to important differences
+ *
+ * INTEGRATION:
+ * - Used for spell analysis and selection assistance
+ * - Connects to spell comparison and analysis systems
+ * - Uses module localization keys from SPELLBOOK.Comparison namespace
+ * - Supports strategic spell selection and planning workflows
+ */
+--}}
+
 <div class="spell-comparison-content">
   {{#if spells.length}}
+    <!-- Spell Comparison Table -->
     <table class="comparison-table">
       <thead>
         <tr>
           <th></th> <!-- Empty header for property names column -->
           {{#each spells}}
+            <!-- Spell Header Column -->
             <th class="spell-header">
               <div class="spell-info">
                 {{{enrichedIcon}}}
@@ -17,7 +67,10 @@
       <tbody>
         {{#each comparisonData.properties}}
           <tr>
+            <!-- Property Name Row Header -->
             <td class="property-name">{{name}}</td>
+
+            <!-- Property Values for Each Spell -->
             {{#each values}}
               <td class="property-value {{#if highlight}}highlighted{{/if}}">
                 {{value}}
@@ -28,6 +81,7 @@
       </tbody>
     </table>
   {{else}}
+    <!-- Empty Comparison State -->
     <div class="empty-comparison">
       <p>{{localize "SPELLBOOK.Comparison.NoSpellsSelected"}}</p>
     </div>

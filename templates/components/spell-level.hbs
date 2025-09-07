@@ -1,4 +1,48 @@
+{{!--
+/**
+ * Spell Level Grouping Component Template
+ *
+ * PURPOSE:
+ * Reusable component for organizing and displaying spells by level with collapsible
+ * sections. Provides consistent spell level presentation across the application
+ * with expandable/collapsible functionality, spell counts, and support for
+ * partial block content through Handlebars composition patterns.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {number} level - Numeric spell level (0-9, where 0 represents cantrips)
+ * @param {string} levelName - Localized display name for the spell level
+ * @param {Array<Object>} spells - Array of spell objects for this level
+ * @partial-block {Object} spell - Individual spell object passed to partial content
+ *
+ * HELPER DEPENDENCIES:
+ * @requires localize - Foundry VTT localization helper for accessibility text
+ * @requires each - Handlebars iteration helper for spell collection
+ * @requires @partial-block - Handlebars partial block for spell item content
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Collapsible header with role="button" for keyboard accessibility
+ * - ARIA attributes (aria-expanded, aria-controls) for screen reader support
+ * - Descriptive aria-label for spell count information
+ * - List structure with role="list" for proper semantic navigation
+ * - Visual collapse indicator marked as decorative
+ *
+ * CUSTOMIZATION POINTS:
+ * - Spell level content provided through partial block composition
+ * - Collapse/expand state managed through aria-expanded attribute
+ * - Spell count displays current number of spells at this level
+ * - Level identification through data-level attribute for styling/scripting
+ *
+ * INTEGRATION:
+ * - Used across spell display templates for consistent level organization
+ * - Supports both player spell book and spell list manager contexts
+ * - Integrates with collapse/expand functionality through data-action
+ * - Provides flexible content through partial block pattern
+ * - Works with spell filtering and search systems
+ */
+--}}
+
 <div class="spell-level" data-level="{{level}}">
+	<!-- Collapsible Spell Level Header -->
 	<h3 class="spell-level-heading" data-action="toggleSpellLevel" role="button" aria-expanded="true"
 		aria-controls="spell-list-{{level}}">
 		<i class="fas fa-caret-down collapse-indicator" aria-hidden="true"></i>
@@ -6,8 +50,11 @@
 		<span class="spell-count"
 			aria-label="{{localize 'SPELLBOOK.UI.SpellCount' count=spells.length}}">({{spells.length}})</span>
 	</h3>
+
+	<!-- Spell List Container -->
 	<ul id="spell-list-{{level}}" class="spell-list" role="list">
 		{{#each spells as |spell|}}
+			<!-- Partial Block Content - Allows flexible spell item rendering -->
 			{{> @partial-block spell}}
 		{{/each}}
 	</ul>

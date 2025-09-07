@@ -1,10 +1,52 @@
+{{!--
+/**
+ * Player Spell Book Main Container Template
+ *
+ * PURPOSE:
+ * Primary container template for the player spell book interface providing the
+ * structural foundation for spell display and management. Serves as the main
+ * content area where spell tabs and spell listings are dynamically rendered,
+ * with additional container for collapsed sidebar footer functionality.
+ *
+ * CONTEXT REQUIREMENTS:
+ * This template uses minimal context as it primarily serves as a structural
+ * foundation. Content is dynamically populated by the application's rendering
+ * system rather than passed through template context.
+ *
+ * HELPER DEPENDENCIES:
+ * @requires localize - Foundry VTT localization helper for aria-label text
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Main content section with role="main" for landmark navigation
+ * - Descriptive aria-label for spell list content identification
+ * - Complementary footer container with role="complementary"
+ * - Semantic section element for proper document structure
+ * - Hidden footer container uses proper accessibility attributes
+ *
+ * CUSTOMIZATION POINTS:
+ * - Main content area serves as dynamic rendering target for spell tabs
+ * - Collapsed footer container toggles visibility based on sidebar state
+ * - Container structure adapts to different application rendering modes
+ * - Footer search container provides alternate location for search controls
+ *
+ * INTEGRATION:
+ * - Connects to PlayerSpellBook application as primary content container
+ * - Serves as rendering target for dynamic spell tab content
+ * - Integrates with sidebar collapse/expand functionality
+ * - Provides structure for responsive layout management
+ * - Works with application part-based rendering system
+ */
+--}}
+
 <div class="spell-book-container">
-  <!-- This will just be a container for other parts -->
+  <!-- Primary Content Area - Dynamic rendering target for spell tabs and content -->
   <section class="spell-book-content" role="main" aria-label="{{localize 'SPELLBOOK.UI.SpellList'}}">
+    <!-- Content dynamically populated by application rendering system -->
   </section>
 
-  <!-- Footer container for collapsed sidebar -->
+  <!-- Collapsed Sidebar Footer Container - Alternative footer location when sidebar is collapsed -->
   <div class="collapsed-footer hidden" role="complementary" aria-label="{{localize 'SPELLBOOK.UI.SpellPreparation'}}">
+    <!-- Search controls container for collapsed sidebar state -->
     <div class="collapsed-footer-search"></div>
   </div>
 </div>

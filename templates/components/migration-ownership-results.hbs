@@ -1,15 +1,64 @@
+{{!--
+/**
+ * Migration Ownership Results Component Template
+ *
+ * PURPOSE:
+ * Component for displaying results of ownership validation and correction during
+ * migration operations. Shows statistics for different types of ownership fixes
+ * including user data, spell lists, and compendium packs. Provides detailed
+ * feedback about ownership consistency maintenance.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {Object} ownershipResults - Ownership validation results data
+ * @param {number} ownershipResults.processed - Total items with ownership validated
+ * @param {number} ownershipResults.userDataFixed - Count of user data ownership fixes
+ * @param {number} ownershipResults.spellListsFixed - Count of spell list ownership fixes
+ * @param {number} ownershipResults.packsFixed - Count of pack ownership fixes
+ * @param {Array} ownershipResults.errors - Array of ownership validation errors
+ *
+ * HELPER DEPENDENCIES:
+ * @requires localize - Foundry VTT localization helper for text translation
+ * @requires if - Handlebars conditional helper for conditional display
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic paragraph structure for ownership information
+ * - Strong text for section headers and important information
+ * - Bulleted list structure for detailed fix counts
+ * - Error information properly highlighted
+ *
+ * CUSTOMIZATION POINTS:
+ * - Fix details display conditionally based on what was corrected
+ * - Error reporting included when validation issues occurred
+ * - Count information provides detailed ownership validation feedback
+ * - Different ownership types clearly distinguished
+ *
+ * INTEGRATION:
+ * - Used within comprehensive migration reports
+ * - Connects to ownership validation and correction systems
+ * - Uses module localization keys from SPELLBOOK.Migrations namespace
+ * - Supports multiple ownership validation categories
+ */
+--}}
+
+<!-- Ownership Validation Overview -->
 <p><strong>{{localize 'SPELLBOOK.Migrations.OwnershipValidation'}}:</strong>
   {{localize 'SPELLBOOK.Migrations.OwnershipFixed' count=ownershipResults.processed}}
 </p>
+
+<!-- Detailed Ownership Fix Results -->
 {{#if ownershipResults.userDataFixed}}
   <p>• {{localize 'SPELLBOOK.Migrations.UserDataOwnershipFixed' count=ownershipResults.userDataFixed}}</p>
 {{/if}}
+
 {{#if ownershipResults.spellListsFixed}}
   <p>• {{localize 'SPELLBOOK.Migrations.SpellListOwnershipFixed' count=ownershipResults.spellListsFixed}}</p>
 {{/if}}
+
 {{#if ownershipResults.packsFixed}}
   <p>• {{localize 'SPELLBOOK.Migrations.PackOwnershipFixed' count=ownershipResults.packsFixed}}</p>
 {{/if}}
+
+<!-- Ownership Validation Errors -->
 {{#if ownershipResults.errors.length}}
   <p><strong>{{localize 'SPELLBOOK.Migrations.OwnershipErrors'}}:</strong>
     {{localize 'SPELLBOOK.Migrations.OwnershipErrorsCount' count=ownershipResults.errors.length}}

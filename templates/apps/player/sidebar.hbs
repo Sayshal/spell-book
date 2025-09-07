@@ -1,19 +1,70 @@
+{{!--
+/**
+ * Player Spell Book Sidebar Template
+ *
+ * PURPOSE:
+ * Application sidebar for the player spell book interface providing spell filtering,
+ * search capabilities, UI customization controls, and sidebar management. Contains
+ * both control buttons and filter elements for comprehensive spell browsing and
+ * interface customization functionality.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {boolean} isGM - Whether current user has GM permissions for additional controls
+ * @param {Array<Object>} filters - Collection of filter elements for spell browsing
+ * @param {string} filters[].id - Unique filter identifier for DOM targeting
+ * @param {string} filters[].type - Filter type ("checkbox", "select", "text", etc.)
+ * @param {string} filters[].label - Display label for filter (used in non-checkbox filters)
+ * @param {boolean} filters[].enabled - Whether filter is currently enabled/visible
+ * @param {string} filters[].elementHtml - Pre-rendered HTML for filter input element
+ *
+ * HELPER DEPENDENCIES:
+ * @requires localize - Foundry VTT localization helper for text translation
+ * @requires if - Handlebars conditional helper for GM controls
+ * @requires each - Handlebars iteration helper for filter collection
+ * @requires unless - Handlebars inverse conditional for filter visibility
+ * @requires ne - Handlebars not-equal helper for filter type checking
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Sidebar with complementary role for landmark navigation
+ * - Button elements with proper aria-label attributes for screen readers
+ * - Search region role for filter section with descriptive aria-label
+ * - Collapsible sidebar with aria-expanded state management
+ * - Icons marked as decorative with aria-hidden="true"
+ * - Footer container for collapsed state spell preparation display
+ *
+ * CUSTOMIZATION POINTS:
+ * - GM-only controls display conditionally based on user permissions
+ * - Filter elements render dynamically based on configuration
+ * - Sidebar collapse state toggles between expanded/collapsed layouts
+ * - Filter visibility controlled through enabled state and display styling
+ * - Control button positioning adapts to sidebar state
+ *
+ * INTEGRATION:
+ * - Connects to PlayerSpellBook application for sidebar state management
+ * - Uses module localization keys from SPELLBOOK namespace
+ * - Supports dynamic filter configuration through filter objects
+ * - Integrates with UI customization dialog system
+ * - Manages collapsed footer container for spell preparation display
+ */
+--}}
+
 <div class="sidebar card" role="complementary">
-  <!-- Sidebar Controls Container -->
+  <!-- Sidebar Control Buttons - External button bar for sidebar management -->
   <div class="sidebar-controls">
-    <!-- UI Customization Button -->
+    <!-- UI Customization Access Button -->
     <button type="button" class="ui-customization-button unbutton interface-only" data-action="openCustomization"
       data-tooltip="{{localize 'SPELLBOOK.Settings.DetailsCustomization.MenuLabel'}}"
       aria-label="{{localize 'SPELLBOOK.Settings.DetailsCustomization.MenuLabel'}}">
       <i class="fas fa-palette" aria-hidden="true"></i>
     </button>
-    <!-- Filter Configuration Button -->
+
+    <!-- Filter Configuration Access Button -->
     <button type="button" class="filter-config-button unbutton interface-only" data-action="configureFilters"
       data-tooltip="{{localize 'SPELLBOOK.UI.FilterControls'}}" aria-label="{{localize 'SPELLBOOK.UI.FilterControls'}}">
       <i class="fas fa-cog" aria-hidden="true"></i>
     </button>
 
-    <!-- Cantrip Settings Button (GM Only) -->
+    <!-- GM-Only Cantrip Settings Button -->
     {{#if isGM}}
       <button type="button" class="cantrip-config-button unbutton interface-only" data-action="configureCantripSettings"
         data-tooltip="{{localize 'SPELLBOOK.UI.SpellSettings'}}" aria-label="{{localize 'SPELLBOOK.UI.SpellSettings'}}">
@@ -21,7 +72,7 @@
       </button>
     {{/if}}
 
-    <!-- Sidebar Collapse Button -->
+    <!-- Sidebar Collapse/Expand Toggle -->
     <button type="button" class="sidebar-collapser collapser vertical unbutton interface-only"
       data-action="toggleSidebar" data-tooltip="{{localize 'SPELLBOOK.UI.ToggleSidebar'}}"
       aria-label="{{localize 'SPELLBOOK.UI.ToggleSidebar'}}" aria-expanded="true">
@@ -29,17 +80,24 @@
     </button>
   </div>
 
+  <!-- Spell Filtering Section - Dynamic filter controls for spell browsing -->
   <div class="spell-filters" role="search" aria-label="{{localize 'SPELLBOOK.UI.SpellFilters'}}">
     {{#each filters as |filter|}}
+      <!-- Individual Filter Item - Conditionally visible based on enabled state -->
       <div class="filter-item filter-{{filter.type}}" data-filter-id="{{filter.id}}"
         {{#unless filter.enabled}}style="display: none;" {{/unless}}>
+
+        <!-- Filter Label - Hidden for checkbox filters which have integrated labels -->
         {{#if (ne filter.type "checkbox")}}
           <label for="{{filter.id}}">{{filter.label}}</label>
         {{/if}}
+
+        <!-- Pre-rendered Filter Element HTML - Supports various input types -->
         {{{filter.elementHtml}}}
       </div>
     {{/each}}
   </div>
-  <!-- Footer container for open sidebar -->
+
+  <!-- Footer Container - Used for spell preparation display when sidebar is open -->
   <div class="sidebar-footer-container"></div>
 </div>

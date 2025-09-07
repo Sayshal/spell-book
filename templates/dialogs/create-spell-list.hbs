@@ -1,16 +1,65 @@
+{{!--
+/**
+ * Create Spell List Dialog Template
+ *
+ * PURPOSE:
+ * Form dialog for creating new custom spell lists with name, class association,
+ * and optional custom identifier. Provides validation and guidance for spell
+ * list creation with dynamic form sections that show/hide based on selections.
+ * Supports both standard class-based lists and fully custom spell lists.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {Object} formElements - Pre-rendered form element HTML
+ * @param {string} formElements.nameInputHtml - List name input element
+ * @param {string} formElements.classSelectHtml - Class selection dropdown element
+ * @param {string} formElements.customInputHtml - Custom identifier input element
+ *
+ * HELPER DEPENDENCIES:
+ * @requires localize - Foundry VTT localization helper for text translation
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic form structure with proper label associations
+ * - Form groups for logical organization of related fields
+ * - Hidden validation error section for dynamic error display
+ * - Notes and guidance text for user assistance
+ * - Progressive disclosure with show/hide sections
+ *
+ * CUSTOMIZATION POINTS:
+ * - Custom identifier section displays conditionally based on class selection
+ * - Validation error messages appear dynamically during form interaction
+ * - Form elements pre-rendered for consistency with application styling
+ * - Guidance notes provide context for custom identifier usage
+ *
+ * INTEGRATION:
+ * - Used in Spell List Manager for creating new spell lists
+ * - Connects to spell list validation and creation systems
+ * - Uses module localization keys from SPELLMANAGER.CreateList namespace
+ * - Supports both D&D class-based and custom spell list creation
+ */
+--}}
+
 <form>
+	<!-- List Name Input Group -->
 	<div class="form-group">
 		<label for="list-name">{{localize "SPELLMANAGER.CreateList.ListNameLabel"}}</label>
 		{{{formElements.nameInputHtml}}}
 	</div>
+
+	<!-- Class Association Input Group -->
 	<div class="form-group">
 		<label for="class-identifier">{{localize "SPELLMANAGER.CreateList.ClassLabel"}}</label>
 		{{{formElements.classSelectHtml}}}
 	</div>
+
+	<!-- Custom Identifier Input Group - Hidden by default -->
 	<div class="form-group custom-id-group" style="display:none;">
 		<label for="custom-identifier">{{localize "SPELLMANAGER.CreateList.CustomIdentifierLabel"}}</label>
 		{{{formElements.customInputHtml}}}
+
+		<!-- Custom Identifier Guidance -->
 		<p class="notes">{{localize "SPELLMANAGER.CreateList.IdentifierNotes"}}</p>
+
+		<!-- Validation Error Display -->
 		<p class="validation-error" style="color: red; display: none;">
 			{{localize "SPELLMANAGER.CreateList.ValidationError"}}
 		</p>

@@ -1,14 +1,83 @@
+{{!--
+/**
+ * Spellbook Settings Dialog Template
+ *
+ * PURPOSE:
+ * Comprehensive settings dialog for configuring spell book behavior including
+ * global rule overrides, per-class spell management settings, and spellcasting
+ * rules customization. Provides detailed configuration interface for all
+ * spell book module behaviors with validation and status indicators.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {boolean} hasNotices - Whether any validation notices should be displayed
+ * @param {Array<Object>} spellcastingClasses - Array of character's spellcasting classes
+ * @param {string} spellcastingClasses[].identifier - Unique class identifier
+ * @param {string} spellcastingClasses[].name - Class display name
+ * @param {string} spellcastingClasses[].img - Class icon image path (optional)
+ * @param {Object} spellcastingClasses[].rules - Class rule configuration
+ * @param {boolean} spellcastingClasses[].rules._noScaleValue - Whether class lacks scale values
+ * @param {boolean} spellcastingClasses[].rules.showCantrips - Whether to show cantrips
+ * @param {number} spellcastingClasses[].rules.spellPreparationBonus - Spell prep bonus
+ * @param {number} spellcastingClasses[].rules.cantripPreparationBonus - Cantrip prep bonus
+ * @param {boolean} spellcastingClasses[].hasCustomSpellList - Whether using custom spell list
+ * @param {string} spellcastingClasses[].customSpellListName - Custom list name
+ * @param {Object} spellcastingClasses[].stats - Current class statistics
+ * @param {number} spellcastingClasses[].stats.currentCantrips - Current cantrip count
+ * @param {number} spellcastingClasses[].stats.maxCantrips - Maximum cantrips allowed
+ * @param {Object} spellcastingClasses[].formElements - Pre-rendered form elements
+ * @param {Object} globalSettings - Global settings form elements
+ * @param {string} globalSettings.ruleSetSelectHtml - Rule set selection dropdown
+ * @param {string} globalSettings.enforcementSelectHtml - Enforcement behavior dropdown
+ * @param {Object} submitButton - Submit button configuration
+ * @param {string} submitButton.submitButtonHtml - Submit button HTML
+ *
+ * HELPER DEPENDENCIES:
+ * @requires localize - Foundry VTT localization helper for text translation
+ * @requires if - Handlebars conditional helper for notices and conditional content
+ * @requires each - Handlebars iteration helper for class collections
+ * @requires unless - Handlebars inverse conditional helper
+ * @requires ne - Handlebars not-equal helper for bonus comparisons
+ * @requires gt - Handlebars greater-than helper for positive bonuses
+ * @requires lt - Handlebars less-than helper for negative bonuses
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic fieldset/legend structure for grouped settings
+ * - Notice sections with appropriate alert styling
+ * - Tooltip icons with descriptive data-tooltip attributes
+ * - Form labels properly associated with their controls
+ * - Setting rows with conditional disabled states
+ * - Clear visual hierarchy with headings and sections
+ *
+ * CUSTOMIZATION POINTS:
+ * - Global rule overrides affect all spellcasting behavior
+ * - Per-class settings allow fine-grained control
+ * - Validation notices highlight configuration issues
+ * - Custom spell list integration with visual indicators
+ * - Bonus display with clear positive/negative/zero formatting
+ * - Conditional field enabling based on related settings
+ *
+ * INTEGRATION:
+ * - Used for comprehensive spell book configuration
+ * - Connects to spell validation and rule enforcement systems
+ * - Uses module localization keys from SPELLBOOK.Settings namespace
+ * - Supports D&D 5e spellcasting rule customization
+ */
+--}}
+
 <div class="spellbook-settings-form">
-  {{!-- Notice Area --}}
+  <!-- Notice Area - Validation warnings and information -->
   {{#if hasNotices}}
     <div class="settings-notices">
       {{#each spellcastingClasses as |classData|}}
+        <!-- Scale Value Missing Warning -->
         {{#if classData.rules._noScaleValue}}
           <div class="notice warning">
             <i class="fas fa-exclamation-triangle"></i>
             <strong>{{classData.name}}:</strong> {{localize 'SPELLBOOK.Settings.NoScaleValueNotice'}}
           </div>
         {{/if}}
+
+        <!-- Custom Spell List Information -->
         {{#if classData.hasCustomSpellList}}
           <div class="notice info">
             <i class="fas fa-info-circle"></i>
@@ -20,10 +89,11 @@
     </div>
   {{/if}}
 
-  {{!-- Global Rule Set Override --}}
+  <!-- Global Rule Set Override Section -->
   <fieldset class="settings-fieldset rule-set-fieldset">
     <legend>{{localize 'SPELLBOOK.Settings.GlobalRules'}}</legend>
 
+    <!-- Rule Set Override Setting -->
     <div class="setting-row">
       <i class="fas fa-question-circle setting-tooltip"
         data-tooltip="{{localize 'SPELLBOOK.Settings.RuleSetOverride.Hint'}}"></i>
@@ -31,6 +101,7 @@
       {{{globalSettings.ruleSetSelectHtml}}}
     </div>
 
+    <!-- Enforcement Behavior Setting -->
     <div class="setting-row">
       <i class="fas fa-question-circle setting-tooltip"
         data-tooltip="{{localize 'SPELLBOOK.Settings.EnforcementBehavior.Hint'}}"></i>
@@ -39,30 +110,39 @@
     </div>
   </fieldset>
 
-  {{!-- Per-Class Settings --}}
+  <!-- Per-Class Settings Section -->
   {{#if spellcastingClasses.length}}
     <fieldset class="settings-fieldset class-rules-fieldset">
       <legend>{{localize 'SPELLBOOK.Settings.ClassRules.Title'}}</legend>
       <p class="fieldset-description">{{localize 'SPELLBOOK.Settings.ClassRules.Description'}}</p>
 
+      <!-- Class Rules Content -->
       <div class="class-rules-content">
         {{#each spellcastingClasses as |classData|}}
           <div class="class-settings-section {{#if classData.rules._noScaleValue}}has-issues{{/if}}"
             data-class="{{classData.identifier}}">
+
+            <!-- Class Header with Icon and Stats -->
             <div class="class-header">
               {{#if classData.img}}
                 <img src="{{classData.img}}" alt="{{classData.name}}" class="class-icon">
               {{/if}}
               <h4>{{classData.name}}</h4>
+
+              <!-- Class Statistics Display -->
               <div class="class-stats">
                 {{#if classData.rules.showCantrips}}
                   <span
                     class="cantrip-count">{{localize 'SPELLBOOK.Settings.CantripsKnown' current=classData.stats.currentCantrips max=classData.stats.maxCantrips}}</span>
                 {{/if}}
+
+                <!-- Spell Preparation Bonus Display -->
                 <span class="preparation-bonus {{#if (ne classData.rules.spellPreparationBonus 0)}}has-bonus{{/if}}">
                   {{#if (gt classData.rules.spellPreparationBonus 0)}}+{{classData.rules.spellPreparationBonus}}{{else if (lt classData.rules.spellPreparationBonus 0)}}{{classData.rules.spellPreparationBonus}}{{else}}±0{{/if}}
                   {{localize 'SPELLBOOK.Settings.SpellPreparationBonus.Text'}}
                 </span>
+
+                <!-- Cantrip Preparation Bonus Display -->
                 <span class="preparation-bonus {{#if (ne classData.rules.cantripPreparationBonus 0)}}has-bonus{{/if}}">
                   {{#if (gt classData.rules.cantripPreparationBonus 0)}}+{{classData.rules.cantripPreparationBonus}}{{else if (lt classData.rules.cantripPreparationBonus 0)}}{{classData.rules.cantripPreparationBonus}}{{else}}±0{{/if}}
                   {{localize 'SPELLBOOK.Settings.CantripPreparationBonus.Text'}}
@@ -70,8 +150,9 @@
               </div>
             </div>
 
+            <!-- Class Settings List -->
             <div class="class-settings-list">
-              {{!-- Show Cantrips Setting --}}
+              <!-- Show Cantrips Setting -->
               <div class="setting-row{{#if classData.rules._noScaleValue}} disabled{{/if}}">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.ShowCantrips.Hint'}}"></i>
@@ -83,7 +164,7 @@
                 {{/if}}
               </div>
 
-              {{!-- Force Wizard Mode Setting --}}
+              <!-- Force Wizard Mode Setting -->
               <div class="setting-row">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.ForceWizardMode.Hint'}}"></i>
@@ -92,7 +173,7 @@
                 {{{classData.formElements.forceWizardModeCheckboxHtml}}}
               </div>
 
-              {{!-- Cantrip Swapping Setting --}}
+              <!-- Cantrip Swapping Setting -->
               <div class="setting-row{{#unless classData.rules.showCantrips}} disabled{{/unless}}">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.CantripSwapping.Hint'}}"></i>
@@ -101,7 +182,7 @@
                 {{{classData.formElements.cantripSwappingSelectHtml}}}
               </div>
 
-              {{!-- Spell Swapping Setting --}}
+              <!-- Spell Swapping Setting -->
               <div class="setting-row">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.SpellSwapping.Hint'}}"></i>
@@ -110,7 +191,7 @@
                 {{{classData.formElements.spellSwappingSelectHtml}}}
               </div>
 
-              {{!-- Ritual Casting Setting --}}
+              <!-- Ritual Casting Setting -->
               <div class="setting-row">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.RitualCasting.Hint'}}"></i>
@@ -119,7 +200,7 @@
                 {{{classData.formElements.ritualCastingSelectHtml}}}
               </div>
 
-              {{!-- Custom Spell List Setting --}}
+              <!-- Custom Spell List Setting -->
               <div class="setting-row">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.CustomSpellList.Hint'}}"></i>
@@ -128,7 +209,7 @@
                 {{{classData.formElements.customSpellListSelectHtml}}}
               </div>
 
-              {{!-- Spell Preparation Bonus Setting --}}
+              <!-- Spell Preparation Bonus Setting -->
               <div class="setting-row">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.SpellPreparationBonus.Hint'}}"></i>
@@ -137,7 +218,7 @@
                 {{{classData.formElements.spellPreparationBonusControlsHtml}}}
               </div>
 
-              {{!-- Cantrip Preparation Bonus Setting --}}
+              <!-- Cantrip Preparation Bonus Setting -->
               <div class="setting-row{{#unless classData.rules.showCantrips}} disabled{{/unless}}">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.CantripPreparationBonus.Hint'}}"></i>
@@ -152,7 +233,7 @@
     </fieldset>
   {{/if}}
 
-  {{!-- Submit Button --}}
+  <!-- Submit Button Section -->
   <div class="submit-section">
     {{{submitButton.submitButtonHtml}}}
   </div>

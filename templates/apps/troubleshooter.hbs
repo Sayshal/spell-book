@@ -1,54 +1,103 @@
+{{!--
+/**
+ * Spell Book Troubleshooter Interface Template
+ *
+ * PURPOSE:
+ * Diagnostic and troubleshooting interface for the Spell Book module providing
+ * system information export, settings management, and support access. Enables
+ * users and administrators to generate comprehensive diagnostic reports,
+ * manage configuration data, and access community support resources for
+ * problem resolution and technical assistance.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {string} output - Pre-generated diagnostic output text for display
+ * @param {number} ownedActorCount - Count of actors owned by current user (GM context)
+ * @param {string} ownedActorNames - Comma-separated list of owned actor names
+ * @param {boolean} includeActors - Whether actor data should be included in export
+ *
+ * HELPER DEPENDENCIES:
+ * @requires localize - Foundry VTT localization helper for text translation
+ * @requires if - Handlebars conditional helper for conditional rendering
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic form elements with proper labeling and associations
+ * - Textarea with descriptive aria-label for diagnostic output
+ * - Button elements with comprehensive aria-label attributes
+ * - Icons marked as decorative with aria-hidden="true"
+ * - Checkbox input with associated label for screen readers
+ * - Hint text providing context for actor data options
+ *
+ * CUSTOMIZATION POINTS:
+ * - Actor export option displays conditionally based on owned actor count
+ * - Diagnostic output area supports variable content length
+ * - Button actions support different export and import workflows
+ * - Support links adapt to different community platforms
+ * - Checkbox state toggles actor data inclusion in exports
+ *
+ * INTEGRATION:
+ * - Connects to SpellBookTroubleshooter application for diagnostic functionality
+ * - Uses module localization keys from SPELLBOOK.Settings.Troubleshooter namespace
+ * - Supports file export/import operations for configuration management
+ * - Integrates with external support platforms (Discord, GitHub)
+ * - Provides clipboard operations for easy data sharing
+ */
+--}}
+
 <div class="spell-book-troubleshooter-container">
+  <!-- Troubleshooter Instructions and Notes -->
   <p class="notes">{{localize "SPELLBOOK.Settings.Troubleshooter.Notes"}}</p>
 
-  {{!-- Actor Export Option (GM Only) --}}
+  <!-- Actor Data Export Option - GM Only Feature -->
   {{#if ownedActorCount}}
     <div class="actor-export-option">
+      <!-- Actor Data Inclusion Checkbox -->
       <label>
         <input type="checkbox" data-action="toggleIncludeActors" {{#if includeActors}}checked{{/if}}>
         <span>{{localize "SPELLBOOK.Settings.Troubleshooter.IncludeActorData"}}</span>
       </label>
+
+      <!-- Actor Data Context Information -->
       <p class="hint">
         {{localize "SPELLBOOK.Settings.Troubleshooter.ActorDataHint" count=ownedActorCount names=ownedActorNames}}
       </p>
     </div>
   {{/if}}
 
-  {{!-- Diagnostic Output Display --}}
+  <!-- Diagnostic Output Display Area -->
   <textarea id="troubleshooter-output" rows="25" cols="80" readonly
     aria-label="{{localize 'SPELLBOOK.Settings.Troubleshooter.OutputLabel'}}">{{output}}</textarea>
 
-  {{!-- Action Buttons --}}
+  <!-- Troubleshooter Action Buttons - Primary operations and support access -->
   <div class="troubleshooter-buttons">
-    {{!-- Import Settings Button --}}
+    <!-- Settings Import Operation -->
     <button type="button" data-action="importSettings"
       aria-label="{{localize "SPELLBOOK.Settings.Troubleshooter.ImportSettings"}}">
       <i class="fa-solid fa-upload" aria-hidden="true"></i>
       <span>{{localize "SPELLBOOK.Settings.Troubleshooter.ImportSettings"}}</span>
     </button>
 
-    {{!-- Export Report Button --}}
+    <!-- Diagnostic Report Export Operation -->
     <button type="button" data-action="exportReport"
       aria-label="{{localize "SPELLBOOK.Settings.Troubleshooter.SaveToFile"}}">
       <i class="fa-solid fa-download" aria-hidden="true"></i>
       <span>{{localize "SPELLBOOK.Settings.Troubleshooter.SaveToFile"}}</span>
     </button>
 
-    {{!-- Copy to Clipboard Button --}}
+    <!-- Clipboard Copy Operation -->
     <button type="button" data-action="copyToClipboard"
       aria-label="{{localize "SPELLBOOK.Settings.Troubleshooter.CopyToClipboard"}}">
       <i class="fa-solid fa-copy" aria-hidden="true"></i>
       <span>{{localize "SPELLBOOK.Settings.Troubleshooter.CopyToClipboard"}}</span>
     </button>
 
-    {{!-- Discord Support Button --}}
+    <!-- Discord Community Support Access -->
     <button type="button" data-action="openDiscord"
       aria-label="{{localize "SPELLBOOK.Settings.Troubleshooter.Discord"}}">
       <i class="fa-brands fa-discord" aria-hidden="true"></i>
       <span>{{localize "SPELLBOOK.Settings.Troubleshooter.Discord"}}</span>
     </button>
 
-    {{!-- GitHub Issues Button --}}
+    <!-- GitHub Issues and Documentation Access -->
     <button type="button" data-action="openGithub" aria-label="{{localize "SPELLBOOK.Settings.Troubleshooter.Github"}}">
       <i class="fa-brands fa-github-alt" aria-hidden="true"></i>
       <span>{{localize "SPELLBOOK.Settings.Troubleshooter.Github"}}</span>

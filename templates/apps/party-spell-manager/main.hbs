@@ -1,13 +1,88 @@
+{{!--
+/**
+ * Party Spell Manager Main Interface Template
+ *
+ * PURPOSE:
+ * Primary interface for party-wide spell coordination and management. Displays all party
+ * members with their spellcasting capabilities, spell preparation status, and provides
+ * tools for analyzing party spell synergy and coordination. Enables GMs and players to
+ * view the collective spellcasting resources available to their party.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {string} groupName - Display name for the party/group
+ * @param {Object} comparison - Core party spell comparison data
+ * @param {Array<Object>} comparison.actors - Array of party member actor data
+ * @param {string} comparison.actors[].id - Unique actor identifier
+ * @param {string} comparison.actors[].name - Actor display name
+ * @param {string} comparison.actors[].token - Actor token image path
+ * @param {boolean} comparison.actors[].hasPermission - Whether current user can view actor spells
+ * @param {number} comparison.actors[].totalSpellsKnown - Total spells known by actor
+ * @param {number} comparison.actors[].totalSpellsPrepared - Total spells prepared by actor
+ * @param {Array<Object>} comparison.actors[].spellcasters - Actor's spellcasting classes
+ * @param {string} comparison.actors[].spellcasters[].enhancedClassName - Formatted class name
+ * @param {Object|null} comparison.actors[].selectedFocus - Actor's selected spellcasting focus
+ * @param {string} comparison.actors[].selectedFocus.name - Focus name
+ * @param {string} comparison.actors[].selectedFocus.description - Focus description
+ * @param {string} comparison.actors[].selectedFocus.icon - Focus icon CSS class
+ * @param {Array<Object>} spellLevels - Spell data organized by spell level
+ * @param {number} spellLevels[].level - Spell level (0-9)
+ * @param {string} spellLevels[].levelName - Localized spell level name
+ * @param {Array<Object>} spellLevels[].spells - Spells at this level
+ * @param {string} spellLevels[].spells[].uuid - Unique spell identifier
+ * @param {string} spellLevels[].spells[].name - Spell name
+ * @param {string} spellLevels[].spells[].enrichedIcon - HTML for spell icon/image
+ * @param {Array<Object>} spellLevels[].spells[].actorStatuses - Per-actor spell status
+ * @param {string} spellLevels[].spells[].actorStatuses[].actorId - Actor identifier
+ * @param {string} spellLevels[].spells[].actorStatuses[].name - Actor name
+ * @param {string} spellLevels[].spells[].actorStatuses[].status - Spell status for actor ("known", "prepared", etc.)
+ *
+ * HELPER DEPENDENCIES:
+ * @requires localize - Foundry VTT localization helper for text translation
+ * @requires unless - Handlebars inverse conditional helper
+ * @requires each - Handlebars iteration helper for collections
+ * @requires if - Handlebars conditional helper
+ * @requires last - Handlebars helper to check if item is last in array
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic HTML structure with section elements for content organization
+ * - Interactive elements properly labeled with aria-label and data-tooltip
+ * - Grid layout uses semantic member cards for screen reader navigation
+ * - Collapsible spell level sections with aria-expanded and aria-controls
+ * - Button elements include descriptive text and icon combinations
+ * - Image elements have proper alt text for avatars
+ *
+ * CUSTOMIZATION POINTS:
+ * - Member card display adapts based on user permissions
+ * - Spell counts and class information conditional on permission level
+ * - Focus settings display toggles between set/unset states
+ * - Spell level groups expand/collapse independently
+ * - Actor status indicators reflect different spell relationships
+ *
+ * INTEGRATION:
+ * - Connects to PartySpells application class for data and actions
+ * - Uses module localization keys from SPELLBOOK.Party namespace
+ * - Supports focus settings dialog integration via data actions
+ * - Links to synergy analysis functionality through action buttons
+ * - Supports spell filtering by individual party members
+ */
+--}}
+
 <div class="party-spell-manager-content">
+  <!-- Party Header Section - Group name, member count, and primary actions -->
   <div class="party-title-section">
     <h2 class="party-name">{{groupName}} {{localize "SPELLBOOK.Party.SpellPool"}}</h2>
     <h4 class="member-count">{{comparison.actors.length}} {{localize "SPELLBOOK.Party.Members"}}</h4>
+
+    <!-- Primary Party Actions -->
     <div class="party-actions">
+      <!-- Data Refresh Control -->
       <button type="button" class="refresh-button" data-action="refreshData"
         data-tooltip="{{localize 'SPELLBOOK.Party.RefreshData'}}">
         <i class="fas fa-sync" aria-hidden="true"></i>
         {{localize "SPELLBOOK.Party.Refresh"}}
       </button>
+
+      <!-- Synergy Analysis Launcher -->
       <button type="button" class="analysis-button" data-action="showSynergyAnalysis"
         data-tooltip="{{localize 'SPELLBOOK.Party.ShowSynergyAnalysis'}}">
         <i class="fas fa-chart-line" aria-hidden="true"></i>
@@ -16,32 +91,45 @@
     </div>
   </div>
 
+  <!-- Party Members Section - Cards displaying each party member's information -->
   <section class="party-members">
     <div class="members-grid">
       {{#each comparison.actors as |actor|}}
+        <!-- Individual Member Card - Interactive element for filtering spells -->
         <div class="member-card {{#unless actor.hasPermission}}no-permission{{/unless}}" data-actor-id="{{actor.id}}"
           data-action="filterMemberSpells" data-tooltip="{{localize 'SPELLBOOK.Party.FilterToMember'}}">
+
           <div class="member-header">
+            <!-- Member Basic Information - Avatar, name, class, spell counts -->
             <div class="member-info-top">
+              <!-- Member Avatar -->
               <img src="{{actor.token}}" class="member-avatar" alt="{{actor.name}}">
+
+              <!-- Member Name and Class Information -->
               <div class="member-name-class">
                 <span class="member-name">{{actor.name}}</span>
                 {{#if actor.hasPermission}}
+                  <!-- Spellcasting Classes Display -->
                   <div class="member-class-info">
                     {{#each actor.spellcasters as |class|}}
                       <span class="class-name">{{class.enhancedClassName}}</span>{{#unless @last}}, {{/unless}}
                     {{/each}}
                   </div>
                 {{else}}
+                  <!-- No Permission Indicator -->
                   <span class="no-permission-text">{{localize "SPELLBOOK.Party.NoViewPermission"}}</span>
                 {{/if}}
               </div>
+
+              <!-- Spell Count Summary - Only visible with permissions -->
               {{#if actor.hasPermission}}
                 <div class="spell-counts-compact">
+                  <!-- Known Spells Count -->
                   <span class="count-item">
                     <span class="count-number">{{actor.totalSpellsKnown}}</span>
                     <span class="count-label">{{localize "SPELLBOOK.Party.Known"}}</span>
                   </span>
+                  <!-- Prepared Spells Count -->
                   <span class="count-item">
                     <span class="count-number">{{actor.totalSpellsPrepared}}</span>
                     <span class="count-label">{{localize "SPELLBOOK.Party.Prepared"}}</span>
@@ -49,13 +137,17 @@
                 </div>
               {{/if}}
             </div>
+
+            <!-- Spellcasting Focus Display - Interactive settings access -->
             {{#if actor.hasPermission}}
               {{#if actor.selectedFocus}}
+                <!-- Active Focus Display -->
                 <div class="member-focus-display" data-action="openFocusSettings" data-actor-id="{{actor.id}}"
                   data-tooltip="{{actor.selectedFocus.name}}: {{actor.selectedFocus.description}}">
                   <i class="{{actor.selectedFocus.icon}}"></i>
                 </div>
               {{else}}
+                <!-- No Focus Set Indicator -->
                 <div class="member-focus-none" data-action="openFocusSettings" data-actor-id="{{actor.id}}"
                   data-tooltip="{{localize 'SPELLBOOK.Party.NoFocusSet'}}">
                   <i class="fas fa-cog"></i>
@@ -68,10 +160,13 @@
     </div>
   </section>
 
+  <!-- Spell Comparison Section - Organized display of all party spells by level -->
   <section class="spell-comparison">
     {{#if spellLevels}}
       {{#each spellLevels as |levelGroup|}}
+        <!-- Spell Level Group - Collapsible section for each spell level -->
         <div class="spell-level-group" data-spell-level="{{levelGroup.level}}">
+          <!-- Level Header - Clickable toggle for expand/collapse -->
           <h4 class="level-header" data-action="toggleSpellLevel" role="button" aria-expanded="true"
             aria-controls="spell-list-{{levelGroup.level}}">
             <i class="fas fa-caret-down collapse-indicator" aria-hidden="true"></i>
@@ -79,13 +174,18 @@
             <span class="spell-count">({{levelGroup.spells.length}} {{localize "SPELLBOOK.Party.Spells"}})</span>
           </h4>
 
+          <!-- Spells Grid - Individual spell entries with actor status -->
           <div class="spells-grid" id="spell-list-{{levelGroup.level}}">
             {{#each levelGroup.spells as |spell|}}
+              <!-- Individual Spell Comparison Item -->
               <div class="spell-comparison-item" data-spell-uuid="{{spell.uuid}}">
+                <!-- Spell Name and Icon -->
                 <div class="spell-name-section">
                   {{{spell.enrichedIcon}}}
                   <span class="spell-name">{{spell.name}}</span>
                 </div>
+
+                <!-- Actor Status Indicators - Shows which actors know/prepare this spell -->
                 <div class="spell-actors">
                   {{#each spell.actorStatuses as |actorStatus|}}
                     <span class="actor-spell-status {{actorStatus.status}}"
