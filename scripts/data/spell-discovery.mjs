@@ -125,7 +125,7 @@ export async function getClassSpellList(className, classUuid, actor) {
  */
 function getFolderNameFromPack(source) {
   if (!source) return 'Unknown';
-  const packCollection = foundry.utils.parseUuid(source).collection.metadata.id;
+  const packCollection = foundry.utils.parseUuid(source)?.collection?.metadata?.id;
   if (!packCollection) return 'Unknown';
   const pack = game.packs.get(packCollection);
   if (!pack) return 'Unknown';
