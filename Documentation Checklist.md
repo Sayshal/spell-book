@@ -36,14 +36,14 @@ This document tracks the progress of enhancing JSDoc type definitions across all
 
 ### `/scripts/dialogs/` - Dialog Applications
 
-- [] `compendium-selection-dialog.mjs` - Compendium selection interface
-- [] `focus-settings-dialog.mjs` - Spellcasting focus configuration
-- [] `spell-comparison-dialog.mjs` - Side-by-side spell comparison
-- [] `spell-details-customization.mjs` - Spell display customization settings
-- [] `spell-loadout-dialog.mjs` - Spell loadout management
-- [] `spell-notes-dialog.mjs` - Spell notes editing interface
-- [] `spellbook-settings-dialog.mjs` - Main spellbook configuration
-- [] `_module.mjs` - Dialogs module exports
+- [x] `compendium-selection-dialog.mjs` - Compendium selection interface
+- [x] `focus-settings-dialog.mjs` - Spellcasting focus configuration
+- [x] `spell-comparison-dialog.mjs` - Side-by-side spell comparison
+- [x] `spell-details-customization.mjs` - Spell display customization settings
+- [x] `spell-loadout-dialog.mjs` - Spell loadout management
+- [x] `spell-notes-dialog.mjs` - Spell notes editing interface
+- [x] `spellbook-settings-dialog.mjs` - Main spellbook configuration
+- [x] `_module.mjs` - Dialogs module exports
 
 ### `/scripts/integrations/` - External Module Integration
 

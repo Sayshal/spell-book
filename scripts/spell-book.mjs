@@ -38,7 +38,6 @@ import { runAllMigrations } from './migrations.mjs';
  */
 Hooks.once('init', async function () {
   log(3, `Initializing ${MODULE.NAME}!`);
-  initializeFoundryConfiguration();
   await initializeModuleComponents();
   await preloadTemplates();
   createAPI();
@@ -104,21 +103,6 @@ Hooks.on('updateJournalEntryPage', (page, changes, _options, _userId) => {
 Hooks.on('deleteJournalEntryPage', (page, _options, _userId) => {
   if (DataHelpers.shouldInvalidateCacheForPage(page)) DataHelpers.invalidateSpellListCache();
 });
-
-/**
- * Initialize Foundry VTT configuration for module requirements.
- *
- * Configures Foundry's core systems to support module functionality,
- * particularly compendium indexing fields for performance optimization.
- *
- * @returns {void}
- */
-function initializeFoundryConfiguration() {
-  const journalFields = ['_id', 'name', 'pages', 'type', 'uuid'];
-  const itemFields = ['system.spellcasting.progression', 'system.spellcasting.type'];
-  CONFIG.JournalEntry.compendiumIndexFields = [...new Set([...CONFIG.JournalEntry.compendiumIndexFields, ...journalFields])];
-  CONFIG.Item.compendiumIndexFields = [...new Set([...CONFIG.Item.compendiumIndexFields, ...itemFields])];
-}
 
 /**
  * Initialize all module components in the correct order.

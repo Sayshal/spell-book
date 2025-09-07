@@ -7,9 +7,97 @@ import * as ValidationHelpers from '../validation/_module.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
- * Enhanced dialog for configuring Spell Book settings with per-class rules
+ * @typedef {Object} GlobalSettings
+ * @property {string} currentRuleSet - The global rule set identifier
+ * @property {string|null} ruleSetOverride - Actor-specific rule set override (null for global)
+ * @property {string|null} enforcementBehavior - Actor-specific enforcement behavior (null for global)
+ * @property {string} currentRuleSetLabel - Localized label for current global rule set
+ * @property {string} ruleSetSelectHtml - HTML for rule set selection dropdown
+ * @property {string} enforcementSelectHtml - HTML for enforcement behavior dropdown
+ */
+
+/**
+ * @typedef {Object} RuleSetOption
+ * @property {string} value - The option value
+ * @property {string} label - Localized display label
+ * @property {boolean} selected - Whether this option is currently selected
+ */
+
+/**
+ * @typedef {Object} ClassStats
+ * @property {number} currentCantrips - Number of currently prepared cantrips
+ * @property {number} maxCantrips - Maximum allowed cantrips for this class
+ * @property {number} classLevel - Current level of this class
+ * @property {number} basePreparationMax - Base spell preparation maximum from class features
+ */
+
+/**
+ * @typedef {Object} ProcessedClassRules
+ * @property {boolean} showCantrips - Whether to show cantrip management
+ * @property {boolean} forceWizardMode - Whether to force wizard-style spell management
+ * @property {string} cantripSwapping - Cantrip swapping rule ('none', 'levelUp', 'longRest')
+ * @property {string} spellSwapping - Spell swapping rule ('none', 'levelUp', 'longRest')
+ * @property {string} ritualCasting - Ritual casting rule ('none', 'prepared', 'always')
+ * @property {string} customSpellList - UUID of custom spell list (empty for auto-detect)
+ * @property {number} spellPreparationBonus - Bonus to spell preparation count
+ * @property {number} cantripPreparationBonus - Bonus to cantrip preparation count
+ * @property {boolean} _noScaleValue - Whether class lacks scale value data
+ */
+
+/**
+ * @typedef {Object} ClassFormElements
+ * @property {string} showCantripsCheckboxHtml - HTML for show cantrips checkbox
+ * @property {string} forceWizardModeCheckboxHtml - HTML for force wizard mode checkbox
+ * @property {string} cantripSwappingSelectHtml - HTML for cantrip swapping dropdown
+ * @property {string} spellSwappingSelectHtml - HTML for spell swapping dropdown
+ * @property {string} ritualCastingSelectHtml - HTML for ritual casting dropdown
+ * @property {string} customSpellListSelectHtml - HTML for custom spell list dropdown
+ * @property {string} spellPreparationBonusControlsHtml - HTML for spell preparation bonus controls
+ * @property {string} cantripPreparationBonusControlsHtml - HTML for cantrip preparation bonus controls
+ */
+
+/**
+ * @typedef {Object} ClassSettingsData
+ * @property {string} name - Class display name
+ * @property {string} identifier - Class identifier
+ * @property {string} img - Class icon path
+ * @property {ProcessedClassRules} rules - Processed class rules configuration
+ * @property {ClassStats} stats - Class statistics and limits
+ * @property {boolean} hasCustomSpellList - Whether class uses a custom spell list
+ * @property {string|null} customSpellListName - Name of custom spell list if applicable
+ * @property {ClassFormElements} formElements - Generated form elements for this class
+ * @property {Object} spellcastingSource - Source item providing spellcasting configuration
+ */
+
+/**
+ * @typedef {Object} SpellListOption
+ * @property {string} value - The option value (UUID or empty string)
+ * @property {string} label - Display label for the option
+ * @property {boolean} selected - Whether this option is currently selected
+ * @property {string} [optgroup] - Optgroup directive ('start' or 'end')
+ */
+
+/**
+ * @typedef {Object} CantripVisibilityChange
+ * @property {string} [classId] - 'enabled' or 'disabled' status change
+ */
+
+/**
+ * @typedef {Object} WizardModeChange
+ * @property {string} [classId] - 'enabled' or 'disabled' status change
+ */
+
+/**
+ * Enhanced dialog application for configuring Spell Book settings with per-class rules.
+ *
+ * This dialog provides comprehensive configuration options for spell book behavior,
+ * including global settings (rule sets, enforcement) and per-class configurations
+ * (preparation bonuses, swapping rules, custom spell lists, etc.).
+ *
+ * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */
 export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(ApplicationV2) {
+  /** @inheritdoc */
   static DEFAULT_OPTIONS = {
     id: 'spellbook-settings-dialog',
     tag: 'form',
@@ -25,40 +113,35 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       decreaseCantripPrepBonus: SpellbookSettingsDialog.decreaseCantripPrepBonus
     },
     classes: ['spell-book', 'spellbook-settings-dialog'],
-    window: {
-      icon: 'fas fa-book-spells',
-      resizable: false,
-      minimizable: true,
-      positioned: true
-    },
-    position: {
-      width: 600,
-      height: 'auto'
-    }
+    window: { icon: 'fas fa-book-spells', resizable: false, minimizable: true, positioned: true },
+    position: { width: 600, height: 'auto' }
   };
 
-  /** @override */
-  static PARTS = {
-    form: { template: TEMPLATES.DIALOGS.SPELLBOOK_SETTINGS }
-  };
+  /** @inheritdoc */
+  static PARTS = { form: { template: TEMPLATES.DIALOGS.SPELLBOOK_SETTINGS } };
 
   /**
-   * Create a new Spell Book settings dialog
-   * @param {Actor5e} actor The actor to configure settings for
-   * @param {Object} [options={}] Additional application options
+   * Create a new Spell Book settings dialog instance.
+   *
+   * @param {Actor5e} actor - The actor to configure settings for
+   * @param {Object} [options={}] - Additional application options
    */
   constructor(actor, options = {}) {
     super(options);
+
+    /** @type {Actor5e} The actor being configured */
     this.actor = actor;
+
+    /** @type {SpellManager} Spell management utility for this actor */
     this.spellManager = new SpellManager(actor);
   }
 
-  /** @override */
+  /** @inheritdoc */
   get title() {
     return game.i18n.format('SPELLBOOK.Settings.Title', { name: this.actor.name });
   }
 
-  /** @override */
+  /** @inheritdoc */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     RuleSetManager.initializeNewClasses(this.actor);
@@ -79,8 +162,13 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Prepare form data for global settings configuration including rule set and enforcement behavior options
-   * @returns {Object} Form data object containing current settings, select HTML, and configuration options
+   * Prepare form data for global settings configuration.
+   *
+   * Creates form elements and data for rule set override and enforcement behavior
+   * settings, including current values and available options with localized labels.
+   *
+   * @returns {GlobalSettings} Complete global settings configuration object
+   * @private
    */
   _prepareGlobalSettingsFormData() {
     const ruleSetOverride = this.actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE);
@@ -92,43 +180,15 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     const ruleSetValue = ruleSetOverride || 'global';
     const enforcementValue = enforcementBehavior || 'global';
     const ruleSetOptions = [
-      {
-        value: 'global',
-        label: `${game.i18n.localize('SPELLBOOK.Settings.RuleSetOverride.Global')} (${globalRuleSetLabel})`,
-        selected: ruleSetValue === 'global'
-      },
-      {
-        value: 'legacy',
-        label: game.i18n.localize('SPELLBOOK.Settings.SpellcastingRuleSet.Legacy'),
-        selected: ruleSetValue === 'legacy'
-      },
-      {
-        value: 'modern',
-        label: game.i18n.localize('SPELLBOOK.Settings.SpellcastingRuleSet.Modern'),
-        selected: ruleSetValue === 'modern'
-      }
+      { value: 'global', label: `${game.i18n.localize('SPELLBOOK.Settings.RuleSetOverride.Global')} (${globalRuleSetLabel})`, selected: ruleSetValue === 'global' },
+      { value: 'legacy', label: game.i18n.localize('SPELLBOOK.Settings.SpellcastingRuleSet.Legacy'), selected: ruleSetValue === 'legacy' },
+      { value: 'modern', label: game.i18n.localize('SPELLBOOK.Settings.SpellcastingRuleSet.Modern'), selected: ruleSetValue === 'modern' }
     ];
     const enforcementOptions = [
-      {
-        value: 'global',
-        label: `${game.i18n.localize('SPELLBOOK.Settings.EnforcementBehavior.Global')} (${globalEnforcementBehaviorLabel})`,
-        selected: enforcementValue === 'global'
-      },
-      {
-        value: 'unenforced',
-        label: game.i18n.localize('SPELLBOOK.Settings.EnforcementBehavior.Unenforced'),
-        selected: enforcementValue === 'unenforced'
-      },
-      {
-        value: 'notifyGM',
-        label: game.i18n.localize('SPELLBOOK.Settings.EnforcementBehavior.NotifyGM'),
-        selected: enforcementValue === 'notifyGM'
-      },
-      {
-        value: 'enforced',
-        label: game.i18n.localize('SPELLBOOK.Settings.EnforcementBehavior.Enforced'),
-        selected: enforcementValue === 'enforced'
-      }
+      { value: 'global', label: `${game.i18n.localize('SPELLBOOK.Settings.EnforcementBehavior.Global')} (${globalEnforcementBehaviorLabel})`, selected: enforcementValue === 'global' },
+      { value: 'unenforced', label: game.i18n.localize('SPELLBOOK.Settings.EnforcementBehavior.Unenforced'), selected: enforcementValue === 'unenforced' },
+      { value: 'notifyGM', label: game.i18n.localize('SPELLBOOK.Settings.EnforcementBehavior.NotifyGM'), selected: enforcementValue === 'notifyGM' },
+      { value: 'enforced', label: game.i18n.localize('SPELLBOOK.Settings.EnforcementBehavior.Enforced'), selected: enforcementValue === 'enforced' }
     ];
     const ruleSetSelect = ValidationHelpers.createSelect({
       name: 'ruleSetOverride',
@@ -153,8 +213,13 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Prepare class settings data including rules and stats
-   * @returns {Promise<Array>} Array of class settings data
+   * Prepare class-specific settings data including rules and statistics.
+   *
+   * Processes all spellcasting classes for the actor, gathering their current
+   * rule configurations, statistics, and generating form elements for each class.
+   *
+   * @returns {Promise<ClassSettingsData[]>} Array of processed class settings data
+   * @private
    */
   async _prepareClassSettings() {
     const classSettings = [];
@@ -175,9 +240,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
         const processedClassRules = RuleSetManager.getClassRules(this.actor, identifier);
         const savedRules = currentClassRules[identifier] || {};
-        const spellManager = new SpellManager(this.actor);
-        const maxCantrips = spellManager.getMaxAllowed(identifier);
-        const currentCantrips = spellManager.getCurrentCount(identifier);
         const formRules = {
           showCantrips: 'showCantrips' in savedRules ? savedRules.showCantrips : processedClassRules.showCantrips,
           forceWizardMode: 'forceWizardMode' in savedRules ? savedRules.forceWizardMode : processedClassRules.forceWizardMode,
@@ -189,6 +251,9 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
           cantripPreparationBonus: 'cantripPreparationBonus' in savedRules ? savedRules.cantripPreparationBonus : processedClassRules.cantripPreparationBonus || 0,
           _noScaleValue: processedClassRules._noScaleValue
         };
+        const spellManager = new SpellManager(this.actor);
+        const maxCantrips = spellManager.getMaxAllowed(identifier);
+        const currentCantrips = spellManager.getCurrentCount(identifier);
         const hasCustomSpellList = !!formRules.customSpellList;
         let customSpellListName = null;
         if (hasCustomSpellList) {
@@ -220,11 +285,16 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Prepare form elements for a specific class
-   * @param {string} identifier The class identifier
-   * @param {Object} formRules The form rules configuration (with actual saved values)
-   * @param {Array} availableSpellLists Available spell list options
-   * @returns {Object} Object containing all form element HTML for the class
+   * Prepare form elements for a specific class configuration.
+   *
+   * Generates all necessary form elements (checkboxes, selects, controls) for
+   * configuring a specific class's spell management rules and bonuses.
+   *
+   * @param {string} identifier - The class identifier
+   * @param {ProcessedClassRules} formRules - Current form rule values
+   * @param {SpellListOption[]} availableSpellLists - Available spell list options
+   * @returns {ClassFormElements} Object containing all form element HTML for the class
+   * @private
    */
   _prepareClassValidationHelpers(identifier, formRules, availableSpellLists) {
     const showCantripsCheckbox = ValidationHelpers.createCheckbox({
@@ -242,21 +312,9 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     forceWizardCheckbox.id = `force-wizard-mode-${identifier}`;
     const cantripSwappingValue = formRules.cantripSwapping;
     const cantripSwappingOptions = [
-      {
-        value: 'none',
-        label: game.i18n.localize('SPELLBOOK.Settings.CantripSwapping.None'),
-        selected: cantripSwappingValue === 'none'
-      },
-      {
-        value: 'levelUp',
-        label: game.i18n.localize('SPELLBOOK.Settings.CantripSwapping.LevelUp'),
-        selected: cantripSwappingValue === 'levelUp'
-      },
-      {
-        value: 'longRest',
-        label: game.i18n.localize('SPELLBOOK.Settings.CantripSwapping.LongRest'),
-        selected: cantripSwappingValue === 'longRest'
-      }
+      { value: 'none', label: game.i18n.localize('SPELLBOOK.Settings.CantripSwapping.None'), selected: cantripSwappingValue === 'none' },
+      { value: 'levelUp', label: game.i18n.localize('SPELLBOOK.Settings.CantripSwapping.LevelUp'), selected: cantripSwappingValue === 'levelUp' },
+      { value: 'longRest', label: game.i18n.localize('SPELLBOOK.Settings.CantripSwapping.LongRest'), selected: cantripSwappingValue === 'longRest' }
     ];
     const cantripSwappingSelect = ValidationHelpers.createSelect({
       name: `class.${identifier}.cantripSwapping`,
@@ -267,21 +325,9 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     cantripSwappingSelect.id = `cantrip-swapping-${identifier}`;
     const spellSwappingValue = formRules.spellSwapping;
     const spellSwappingOptions = [
-      {
-        value: 'none',
-        label: game.i18n.localize('SPELLBOOK.Settings.SpellSwapping.None'),
-        selected: spellSwappingValue === 'none'
-      },
-      {
-        value: 'levelUp',
-        label: game.i18n.localize('SPELLBOOK.Settings.SpellSwapping.LevelUp'),
-        selected: spellSwappingValue === 'levelUp'
-      },
-      {
-        value: 'longRest',
-        label: game.i18n.localize('SPELLBOOK.Settings.SpellSwapping.LongRest'),
-        selected: spellSwappingValue === 'longRest'
-      }
+      { value: 'none', label: game.i18n.localize('SPELLBOOK.Settings.SpellSwapping.None'), selected: spellSwappingValue === 'none' },
+      { value: 'levelUp', label: game.i18n.localize('SPELLBOOK.Settings.SpellSwapping.LevelUp'), selected: spellSwappingValue === 'levelUp' },
+      { value: 'longRest', label: game.i18n.localize('SPELLBOOK.Settings.SpellSwapping.LongRest'), selected: spellSwappingValue === 'longRest' }
     ];
     const spellSwappingSelect = ValidationHelpers.createSelect({
       name: `class.${identifier}.spellSwapping`,
@@ -291,21 +337,9 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     spellSwappingSelect.id = `spell-swapping-${identifier}`;
     const ritualCastingValue = formRules.ritualCasting;
     const ritualCastingOptions = [
-      {
-        value: 'none',
-        label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.None'),
-        selected: ritualCastingValue === 'none'
-      },
-      {
-        value: 'prepared',
-        label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.Prepared'),
-        selected: ritualCastingValue === 'prepared'
-      },
-      {
-        value: 'always',
-        label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.Always'),
-        selected: ritualCastingValue === 'always'
-      }
+      { value: 'none', label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.None'), selected: ritualCastingValue === 'none' },
+      { value: 'prepared', label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.Prepared'), selected: ritualCastingValue === 'prepared' },
+      { value: 'always', label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.Always'), selected: ritualCastingValue === 'always' }
     ];
     const ritualCastingSelect = ValidationHelpers.createSelect({
       name: `class.${identifier}.ritualCasting`,
@@ -339,10 +373,15 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Create spell preparation bonus controls (decrease button, input, increase button)
-   * @param {string} identifier The class identifier
-   * @param {number} currentValue The current spell preparation bonus value
-   * @returns {string} HTML string for the spell preparation bonus controls
+   * Create spell preparation bonus control elements.
+   *
+   * Generates decrease button, number input, and increase button for managing
+   * spell preparation bonuses with appropriate bounds checking.
+   *
+   * @param {string} identifier - The class identifier
+   * @param {number} currentValue - Current spell preparation bonus value
+   * @returns {string} HTML string for the complete control group
+   * @private
    */
   _createSpellPreparationBonusControls(identifier, currentValue) {
     const container = document.createElement('div');
@@ -380,10 +419,15 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Create cantrip preparation bonus controls (decrease button, input, increase button)
-   * @param {string} identifier The class identifier
-   * @param {number} currentValue The current cantrip preparation bonus value
-   * @returns {string} HTML string for the cantrip preparation bonus controls
+   * Create cantrip preparation bonus control elements.
+   *
+   * Generates decrease button, number input, and increase button for managing
+   * cantrip preparation bonuses with appropriate bounds checking.
+   *
+   * @param {string} identifier - The class identifier
+   * @param {number} currentValue - Current cantrip preparation bonus value
+   * @returns {string} HTML string for the complete control group
+   * @private
    */
   _createCantripPreparationBonusControls(identifier, currentValue) {
     const container = document.createElement('div');
@@ -438,8 +482,13 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Prepare available spell list options for custom selection
-   * @returns {Promise<Array>} Array of spell list options
+   * Prepare available spell list options for custom selection dropdown.
+   *
+   * Loads and organizes all available spell lists from compendiums, categorizing
+   * them by type (actor-owned, custom, merged, standard) for easier selection.
+   *
+   * @returns {Promise<SpellListOption[]>} Array of spell list options with optgroups
+   * @private
    */
   async _prepareSpellListOptions() {
     try {
@@ -518,9 +567,14 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Increase spell preparation bonus for a specific class
-   * @param {Event} _event The click event
-   * @param {HTMLElement} target The clicked button
+   * Action handler to increase spell preparation bonus for a specific class.
+   *
+   * Increments the spell preparation bonus value with bounds checking and
+   * updates the visual display to reflect the change.
+   *
+   * @param {Event} _event - The click event (unused)
+   * @param {HTMLElement} target - The clicked button element
+   * @static
    */
   static increaseSpellPrepBonus(_event, target) {
     const classIdentifier = target.dataset.class;
@@ -536,9 +590,14 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Decrease spell preparation bonus for a specific class
-   * @param {Event} _event The click event
-   * @param {HTMLElement} target The clicked button
+   * Action handler to decrease spell preparation bonus for a specific class.
+   *
+   * Decrements the spell preparation bonus value with bounds checking based on
+   * the class's base preparation maximum to prevent negative totals.
+   *
+   * @param {Event} _event - The click event (unused)
+   * @param {HTMLElement} target - The clicked button element
+   * @static
    */
   static decreaseSpellPrepBonus(_event, target) {
     const classIdentifier = target.dataset.class;
@@ -569,8 +628,13 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Prepare submit button configuration
-   * @returns {Object} Submit button configuration
+   * Prepare submit button configuration with localized content.
+   *
+   * Creates a properly configured submit button element with icon and
+   * appropriate accessibility attributes.
+   *
+   * @returns {Object} Submit button configuration object
+   * @private
    */
   _prepareSubmitButton() {
     const submitButton = document.createElement('button');
@@ -587,9 +651,14 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Increase cantrip preparation bonus for a specific class
-   * @param {Event} _event The click event
-   * @param {HTMLElement} target The clicked button
+   * Action handler to increase cantrip preparation bonus for a specific class.
+   *
+   * Increments the cantrip preparation bonus value with bounds checking and
+   * updates the visual display to reflect the change.
+   *
+   * @param {Event} _event - The click event (unused)
+   * @param {HTMLElement} target - The clicked button element
+   * @static
    */
   static increaseCantripPrepBonus(_event, target) {
     const classIdentifier = target.dataset.class;
@@ -605,9 +674,14 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Decrease cantrip preparation bonus for a specific class
-   * @param {Event} _event The click event
-   * @param {HTMLElement} target The clicked button
+   * Action handler to decrease cantrip preparation bonus for a specific class.
+   *
+   * Decrements the cantrip preparation bonus value with bounds checking based on
+   * the class's base cantrip maximum from scale values.
+   *
+   * @param {Event} _event - The click event (unused)
+   * @param {HTMLElement} target - The clicked button element
+   * @static
    */
   static decreaseCantripPrepBonus(_event, target) {
     const classIdentifier = target.dataset.class;
@@ -654,10 +728,15 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Update the visual display of class stats when preparation bonus changes
-   * @param {string} classIdentifier The class identifier
-   * @param {string} bonusType The type of bonus ('spell' or 'cantrip')
-   * @param {number} newBonus The new bonus value
+   * Update the visual display of class statistics when preparation bonus changes.
+   *
+   * Updates bonus display elements to reflect current bonus values with
+   * appropriate styling and formatting.
+   *
+   * @param {string} classIdentifier - The class identifier
+   * @param {string} bonusType - The type of bonus ('spell' or 'cantrip')
+   * @param {number} newBonus - The new bonus value
+   * @private
    */
   _updateClassStatsDisplay(classIdentifier, bonusType, newBonus) {
     const classSection = this.element.querySelector(`[data-class="${classIdentifier}"]`);
@@ -673,10 +752,16 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Handle cantrip visibility changes - cleanup when disabled, restore when enabled
-   * @param {Actor5e} actor The actor
-   * @param {Object} changes Object mapping class IDs to 'enabled'/'disabled'
+   * Handle cantrip visibility changes - cleanup when disabled, restore when enabled.
+   *
+   * Manages cantrip spell items when cantrip visibility is toggled, removing
+   * unprepared cantrips when disabled and cleaning up class associations.
+   *
+   * @param {Actor5e} actor - The actor whose cantrips to manage
+   * @param {CantripVisibilityChange} changes - Object mapping class IDs to change types
    * @returns {Promise<void>}
+   * @static
+   * @private
    */
   static async _handleCantripVisibilityChanges(actor, changes) {
     const spellManager = new SpellManager(actor);
@@ -694,13 +779,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     }
   }
 
-  /**
-   * Form handler for saving Spell Book settings
-   * @param {Event} _event The form submission event
-   * @param {HTMLFormElement} _form The form element
-   * @param {Object} formData The form data
-   * @returns {Promise<Actor5e|null>} The actor or null if error
-   */
+  /** @inheritdoc */
   static async formHandler(_event, _form, formData) {
     const actor = this.actor;
     if (!actor) return null;

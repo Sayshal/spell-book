@@ -5,9 +5,65 @@ import * as ValidationHelpers from '../validation/_module.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
- * Dialog application for customizing spell detail display settings and preferences
+ * @typedef {Object} UIElementConfig
+ * @property {string} key - The setting key identifier
+ * @property {string} label - Localization key for the element label
+ * @property {string} description - HTML description content for the element
+ * @property {string} checkboxHtml - Generated HTML for the checkbox form element
+ */
+
+/**
+ * @typedef {Object} MetadataElementConfig
+ * @property {string} key - The setting key identifier
+ * @property {string} label - Localization key for the element label
+ * @property {string} description - Localization key for the element description
+ * @property {string} checkboxHtml - Generated HTML for the checkbox form element
+ */
+
+/**
+ * @typedef {Object} PlayerSettings
+ * @property {boolean} favorites - Whether to show favorites functionality
+ * @property {boolean} compare - Whether to show spell comparison tools
+ * @property {boolean} notes - Whether to show spell notes functionality
+ * @property {boolean} spellLevel - Whether to show spell level metadata
+ * @property {boolean} components - Whether to show spell components metadata
+ * @property {boolean} school - Whether to show spell school metadata
+ * @property {boolean} castingTime - Whether to show casting time metadata
+ * @property {boolean} range - Whether to show spell range metadata
+ * @property {boolean} damageTypes - Whether to show damage types metadata
+ * @property {boolean} conditions - Whether to show conditions metadata
+ * @property {boolean} save - Whether to show saving throw metadata
+ * @property {boolean} concentration - Whether to show concentration metadata
+ * @property {boolean} materialComponents - Whether to show material components metadata
+ * @property {boolean} sidebarControlsBottom - Whether to position sidebar controls at bottom
+ */
+
+/**
+ * @typedef {Object} GMSettings
+ * @property {boolean} compare - Whether to show spell comparison tools for GMs
+ * @property {boolean} spellLevel - Whether to show spell level metadata for GMs
+ * @property {boolean} components - Whether to show spell components metadata for GMs
+ * @property {boolean} school - Whether to show spell school metadata for GMs
+ * @property {boolean} castingTime - Whether to show casting time metadata for GMs
+ * @property {boolean} range - Whether to show spell range metadata for GMs
+ * @property {boolean} damageTypes - Whether to show damage types metadata for GMs
+ * @property {boolean} conditions - Whether to show conditions metadata for GMs
+ * @property {boolean} save - Whether to show saving throw metadata for GMs
+ * @property {boolean} concentration - Whether to show concentration metadata for GMs
+ * @property {boolean} materialComponents - Whether to show material components metadata for GMs
+ */
+
+/**
+ * Dialog application for customizing spell detail display settings and preferences.
+ *
+ * This dialog allows users to configure which UI elements and metadata are visible
+ * in the spell book interface, with separate settings for players and GMs. It provides
+ * granular control over the spell display experience.
+ *
+ * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */
 export class SpellDetailsCustomization extends HandlebarsApplicationMixin(ApplicationV2) {
+  /** @inheritdoc */
   static DEFAULT_OPTIONS = {
     id: 'spell-details-customization',
     classes: ['spell-book', 'spell-details-customization'],
@@ -22,21 +78,14 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
       resetToDefault: SpellDetailsCustomization.resetToDefault
     },
     position: { height: 600, width: 800 },
-    window: { icon: 'fa-solid fa-palette', resizable: true }
+    window: { title: 'SPELLBOOK.Settings.DetailsCustomization.Title', icon: 'fa-solid fa-palette', resizable: true }
   };
 
+  /** @inheritdoc */
   static PARTS = {
     form: { template: TEMPLATES.DIALOGS.SPELL_CUSTOMIZATION_BODY, id: 'body', classes: ['spell-details-customization-popup'] },
     footer: { template: TEMPLATES.DIALOGS.SPELL_CUSTOMIZATION_FOOTER, id: 'footer', classes: ['spell-details-customization-footer'] }
   };
-
-  /**
-   * Get the window title for this application
-   * @returns {string} The formatted title including actor name
-   */
-  get title() {
-    return game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.Title');
-  }
 
   /** @inheritdoc */
   async _prepareContext(_options) {
@@ -84,10 +133,15 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Prepare UI elements with generated checkboxes
-   * @param {string} type 'player' or 'gm'
-   * @param {Object} settings Current settings object
-   * @returns {Array} Array of UI element configurations with checkboxes
+   * Prepare UI elements with generated checkbox form controls.
+   *
+   * Takes UI element configurations and enhances them with generated checkbox
+   * HTML for form rendering, based on current setting values.
+   *
+   * @param {string} type - Setting type ('player' or 'gm')
+   * @param {PlayerSettings|GMSettings} settings - Current settings object
+   * @returns {UIElementConfig[]} Array of UI element configurations with checkboxes
+   * @private
    */
   _prepareUIElementsWithCheckboxes(type, settings) {
     const elements = this._getUIElementsConfig(type);
@@ -99,10 +153,15 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Prepare metadata elements with generated checkboxes
-   * @param {string} type 'player' or 'gm'
-   * @param {Object} settings Current settings object
-   * @returns {Array} Array of metadata element configurations with checkboxes
+   * Prepare metadata elements with generated checkbox form controls.
+   *
+   * Takes metadata element configurations and enhances them with generated checkbox
+   * HTML for form rendering, based on current setting values.
+   *
+   * @param {string} type - Setting type ('player' or 'gm')
+   * @param {PlayerSettings|GMSettings} settings - Current settings object
+   * @returns {MetadataElementConfig[]} Array of metadata element configurations with checkboxes
+   * @private
    */
   _prepareMetadataElementsWithCheckboxes(type, settings) {
     const elements = this._getMetadataElementsConfig();
@@ -114,10 +173,15 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Create a select-all checkbox for a group
-   * @param {string} id The checkbox ID
-   * @param {string} group The group identifier
-   * @returns {string} HTML for the select-all checkbox
+   * Create a select-all checkbox for bulk group operations.
+   *
+   * Generates a master checkbox that can select or deselect all checkboxes
+   * within a specific group for easier bulk configuration.
+   *
+   * @param {string} id - Unique checkbox ID
+   * @param {string} group - Group identifier for related checkboxes
+   * @returns {string} HTML string for the select-all checkbox
+   * @private
    */
   _createSelectAllCheckbox(id, group) {
     const checkbox = ValidationHelpers.createCheckbox({ name: id, checked: false, ariaLabel: game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.SelectAll') });
@@ -129,7 +193,12 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Setup clickable setting items
+   * Set up clickable setting item interactions.
+   *
+   * Makes entire setting rows clickable to toggle their associated checkboxes,
+   * improving user experience by providing larger click targets with visual feedback.
+   *
+   * @private
    */
   _setupClickableSettings() {
     const clickableSettings = this.element.querySelectorAll('.clickable-setting');
@@ -154,7 +223,12 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Setup select-all checkbox listeners
+   * Set up event listeners for select-all checkbox functionality.
+   *
+   * Establishes event handlers for master select-all checkboxes and individual
+   * checkboxes to maintain proper synchronization and state management.
+   *
+   * @private
    */
   _setupSelectAllListeners() {
     const selectAllCheckboxes = this.element.querySelectorAll('.select-all-checkbox');
@@ -176,9 +250,14 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Set all checkboxes in a group to checked/unchecked
-   * @param {string} group The group identifier
-   * @param {boolean} checked Whether to check or uncheck
+   * Set all checkboxes in a group to a specific checked state.
+   *
+   * Bulk operation to check or uncheck all checkboxes within a specific
+   * group, triggered by master select-all checkbox changes.
+   *
+   * @param {string} group - The group identifier
+   * @param {boolean} checked - Whether to check or uncheck the group
+   * @private
    */
   _setGroupCheckboxes(group, checked) {
     const groupItems = this.element.querySelectorAll(`[data-group="${group}"]`);
@@ -191,8 +270,13 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Update the select-all checkbox state based on group items
-   * @param {string} group The group identifier
+   * Update the select-all checkbox state based on individual checkbox states.
+   *
+   * Synchronizes the master select-all checkbox with the state of individual
+   * checkboxes, supporting fully checked, unchecked, and indeterminate states.
+   *
+   * @param {string} group - The group identifier to update
+   * @private
    */
   _updateSelectAllState(group) {
     const selectAllCheckbox = this.element.querySelector(`[data-group="${group}"].select-all-checkbox`);
@@ -212,7 +296,12 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Update all select-all checkbox states
+   * Update all select-all checkbox states for all groups.
+   *
+   * Batch update of all master select-all checkboxes to ensure proper
+   * synchronization after initial render or bulk operations.
+   *
+   * @private
    */
   _updateSelectAllStates() {
     ['player-ui', 'player-metadata', 'gm-ui', 'gm-metadata'].forEach((group) => {
@@ -221,8 +310,13 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Get player UI customization settings
-   * @returns {Object} Player settings object
+   * Retrieve current player UI customization settings from world settings.
+   *
+   * Loads all player-specific UI configuration settings that control
+   * the visibility and behavior of interface elements.
+   *
+   * @returns {PlayerSettings} Object containing all player UI settings
+   * @private
    */
   _getPlayerSettings() {
     return {
@@ -244,8 +338,13 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Get GM UI customization settings
-   * @returns {Object} GM settings object
+   * Retrieve current GM UI customization settings from world settings.
+   *
+   * Loads all GM-specific UI configuration settings that control
+   * the visibility and behavior of interface elements for Game Masters.
+   *
+   * @returns {GMSettings} Object containing all GM UI settings
+   * @private
    */
   _getGMSettings() {
     return {
@@ -264,9 +363,14 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Get UI elements configuration
-   * @param {string} type 'player' or 'gm'
-   * @returns {Array} Array of UI element configurations
+   * Get UI elements configuration for a specific user type.
+   *
+   * Defines the available UI customization options with localization keys
+   * and descriptions for either player or GM interface elements.
+   *
+   * @param {string} type - User type ('player' or 'gm')
+   * @returns {UIElementConfig[]} Array of UI element configurations
+   * @private
    */
   _getUIElementsConfig(type) {
     if (type === 'player') {
@@ -304,8 +408,13 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Get metadata elements configuration
-   * @returns {Array} Array of metadata element configurations
+   * Get metadata elements configuration for spell detail display.
+   *
+   * Defines the available metadata customization options that control
+   * which spell properties are displayed in the interface.
+   *
+   * @returns {MetadataElementConfig[]} Array of metadata element configurations
+   * @private
    */
   _getMetadataElementsConfig() {
     return [
@@ -323,9 +432,15 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Action handler to set wizard book color to user color
-   * @param {Event} _event The triggering event
-   * @param {HTMLElement} target The target element
+   * Action handler to set wizard book icon color to current user's color.
+   *
+   * Convenience function to quickly set the wizard book icon color to match
+   * the current user's assigned color in Foundry.
+   *
+   * @param {Event} _event - The triggering event (unused)
+   * @param {HTMLElement} target - The target element containing user color data
+   * @returns {Promise<void>}
+   * @static
    */
   static async useUserColor(_event, target) {
     const userColor = target.dataset.userColor || game.user.color;
@@ -337,9 +452,15 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Action handler to reset wizard book color to default/saved setting
-   * @param {Event} _event The triggering event
-   * @param {HTMLElement} target The target element
+   * Action handler to reset wizard book icon color to default/saved setting.
+   *
+   * Resets the wizard book icon color picker to the currently saved setting value,
+   * allowing users to revert changes before saving.
+   *
+   * @param {Event} _event - The triggering event (unused)
+   * @param {HTMLElement} target - The target element within color controls
+   * @returns {Promise<void>}
+   * @static
    */
   static async resetToDefault(_event, target) {
     const colorPicker = target.closest('.wizard-book-color-controls').querySelector('color-picker[name="wizardBookIconColor"]');
@@ -350,13 +471,7 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
     }
   }
 
-  /**
-   * Handle form submission to save settings
-   * @param {Event} _event The form submission event
-   * @param {HTMLFormElement} _form The form element
-   * @param {Object} formData The submitted form data
-   * @returns {Promise<void>}
-   */
+  /** @inheritdoc */
   static async formHandler(_event, _form, formData) {
     try {
       const expandedData = foundry.utils.expandObject(formData.object);
