@@ -1,3 +1,22 @@
+/**
+ * Spell Comparison Dialog
+ *
+ * Side-by-side spell analysis and comparison interface for detailed spell
+ * evaluation. Provides comprehensive spell data comparison including statistics,
+ * effects, and tactical analysis for informed spellcasting decisions.
+ *
+ * Key features:
+ * - Side-by-side spell comparison interface
+ * - Detailed statistics and effect analysis
+ * - Visual difference highlighting
+ * - Tactical comparison metrics
+ * - Export and sharing capabilities
+ * - Integration with spell selection workflows
+ *
+ * @module Dialogs/SpellComparisonDialog
+ * @author Tyler
+ */
+
 import { TEMPLATES } from '../constants/_module.mjs';
 import * as UIHelpers from '../ui/_module.mjs';
 import { log } from '../logger.mjs';

@@ -1,3 +1,22 @@
+/**
+ * Spellcasting Focus Settings Dialog
+ *
+ * Configuration dialog for managing party spellcasting coordination and focus
+ * assignments. Allows players to set their spellcasting priorities and roles
+ * within a party context for optimized spell preparation and coordination.
+ *
+ * Key features:
+ * - Individual spellcasting focus assignment
+ * - Party role configuration and coordination
+ * - Spell preparation priority settings
+ * - Multi-character focus management
+ * - Integration with party spell coordination
+ * - Real-time focus updates and synchronization
+ *
+ * @module Dialogs/FocusSettingsDialog
+ * @author Tyler
+ */
+
 import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import { PartySpellManager } from '../managers/_module.mjs';
 import { log } from '../logger.mjs';

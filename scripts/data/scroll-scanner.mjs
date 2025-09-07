@@ -1,3 +1,23 @@
+/**
+ * Spell Scroll Detection and Learning System
+ *
+ * Provides functionality for detecting spell scrolls in actor inventories,
+ * extracting learnable spells, and handling the wizard spell learning process.
+ * This module supports the complete workflow from scroll detection to spell
+ * acquisition with proper cost calculation and validation.
+ *
+ * Key features:
+ * - Spell scroll inventory scanning
+ * - Learnable spell extraction and validation
+ * - Wizard spell learning workflow
+ * - Cost calculation for spell copying
+ * - Scroll consumption management
+ * - Level-based learning restrictions
+ *
+ * @module DataHelpers/ScrollScanner
+ * @author Tyler
+ */
+
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import * as UIHelpers from '../ui/_module.mjs';

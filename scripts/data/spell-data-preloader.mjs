@@ -1,3 +1,22 @@
+/**
+ * Spell Data Preloading and Caching System
+ *
+ * Manages preloading and caching of spell data for performance optimization.
+ * This module handles bulk spell loading, cache management, and provides
+ * optimized access to frequently used spell data across the application.
+ *
+ * Key features:
+ * - Bulk spell data preloading
+ * - Intelligent caching strategies
+ * - Player-specific spell filtering
+ * - Performance optimization for large datasets
+ * - Memory-efficient data storage
+ * - Version-aware cache invalidation
+ *
+ * @module DataHelpers/SpellDataPreloader
+ * @author Tyler
+ */
+
 import { MODULE, SETTINGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import { WizardSpellbookManager } from '../managers/_module.mjs';

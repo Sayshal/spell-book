@@ -19,6 +19,15 @@ import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
+ * Field definitions class instance for field validation and mapping.
+ *
+ * @typedef {Object} FieldDefinitionsType
+ * @property {function(string): string|null} getFieldId - Get field ID from alias
+ * @property {function(string, string): boolean} validateValue - Validate field value
+ * @property {function(string): string} normalizeBooleanValue - Normalize boolean values
+ */
+
+/**
  * Parsed query structure ready for execution.
  *
  * @typedef {Object} ParsedQueryObject
@@ -44,10 +53,10 @@ export class QueryParser {
    * Create a new QueryParser instance with field definitions for parsing search queries.
    * The field definitions provide alias resolution and value validation capabilities.
    *
-   * @param {import('./field-definitions.mjs').FieldDefinitions} fieldDefinitions - The field definitions to use for parsing
+   * @param {FieldDefinitionsType} fieldDefinitions - The field definitions to use for parsing
    */
   constructor(fieldDefinitions) {
-    /** @type {import('./field-definitions.mjs').FieldDefinitions} */
+    /** @type {FieldDefinitionsType} */
     this.fieldDefinitions = fieldDefinitions;
   }
 

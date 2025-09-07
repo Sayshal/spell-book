@@ -1,3 +1,22 @@
+/**
+ * Spell Notes Editor Dialog
+ *
+ * Personal spell notes editing interface for adding user-specific annotations
+ * and tactical information to spells. Provides rich text editing capabilities
+ * and integration with the spell user data system.
+ *
+ * Key features:
+ * - Rich text spell notes editing
+ * - Personal spell annotations
+ * - Tactical information management
+ * - User-specific spell data storage
+ * - Integration with spell display systems
+ * - Notes sharing and collaboration
+ *
+ * @module Dialogs/SpellNotesDialog
+ * @author Tyler
+ */
+
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';

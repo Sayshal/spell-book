@@ -1,3 +1,23 @@
+/**
+ * Spell Discovery and Retrieval System
+ *
+ * Provides comprehensive spell discovery functionality for finding spells
+ * across multiple sources including compendiums, spell lists, and actor
+ * collections. This module handles the complex task of spell resolution
+ * and availability determination.
+ *
+ * Key features:
+ * - Multi-source spell discovery
+ * - Spell availability analysis
+ * - Class-specific spell filtering
+ * - Dynamic spell list generation
+ * - Source prioritization and deduplication
+ * - Cross-reference spell resolution
+ *
+ * @module DataHelpers/SpellDiscovery
+ * @author Tyler
+ */
+
 import { MODULE, SETTINGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import { RuleSetManager } from '../managers/_module.mjs';

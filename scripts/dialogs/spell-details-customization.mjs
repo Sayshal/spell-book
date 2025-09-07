@@ -1,3 +1,22 @@
+/**
+ * Spell Details Customization Dialog
+ *
+ * Configuration interface for customizing spell detail display and behavior.
+ * Allows users to configure which spell information is shown, how it's formatted,
+ * and how spell details integrate with character sheets and other interfaces.
+ *
+ * Key features:
+ * - Spell detail display customization
+ * - Information formatting preferences
+ * - Integration behavior configuration
+ * - UI layout and presentation options
+ * - Per-actor customization support
+ * - Real-time preview capabilities
+ *
+ * @module Dialogs/SpellDetailsCustomization
+ * @author Tyler
+ */
+
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import * as ValidationHelpers from '../validation/_module.mjs';

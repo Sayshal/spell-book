@@ -1,3 +1,22 @@
+/**
+ * Compendium Management and Spell List Operations
+ *
+ * Handles compendium pack operations, spell list discovery, and spell source
+ * management. This module provides utilities for working with spell data across
+ * multiple compendium sources and managing spell list documents within packs.
+ *
+ * Key features:
+ * - Compendium pack scanning and indexing
+ * - Spell list discovery and metadata extraction
+ * - Source filtering and organization
+ * - Pack document management
+ * - Spell source identification and cataloging
+ * - Cross-pack spell data consolidation
+ *
+ * @module DataHelpers/CompendiumManagement
+ * @author Tyler
+ */
+
 import { MODULE, SETTINGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import * as UIHelpers from '../ui/_module.mjs';

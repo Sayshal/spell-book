@@ -1,3 +1,22 @@
+/**
+ * Spell Loadout Management Dialog
+ *
+ * Interface for saving, loading, and managing spell preparation configurations.
+ * Provides loadout management capabilities for quickly switching between
+ * different spell preparation setups and tactical configurations.
+ *
+ * Key features:
+ * - Spell preparation loadout management
+ * - Quick-switch preparation configurations
+ * - Loadout saving and restoration
+ * - Tactical preparation templates
+ * - Multi-class loadout support
+ * - Integration with spell preparation systems
+ *
+ * @module Dialogs/SpellLoadoutDialog
+ * @author Tyler
+ */
+
 import { FLAGS, MODULE, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import { SpellLoadoutManager } from '../managers/_module.mjs';

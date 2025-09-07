@@ -1,3 +1,23 @@
+/**
+ * Compendium Selection Dialog
+ *
+ * Configuration dialog for selecting which compendium packs should be included
+ * in spell indexing and searching operations. Organizes compendiums by source
+ * and provides bulk selection controls for easier management with performance
+ * optimization through selective loading.
+ *
+ * Key features:
+ * - Hierarchical compendium organization by source
+ * - Bulk selection controls (global and category-level)
+ * - Performance-aware pack filtering
+ * - Spell-relevant content detection
+ * - Required pack handling and validation
+ * - User-friendly configuration interface
+ *
+ * @module Dialogs/CompendiumSelectionDialog
+ * @author Tyler
+ */
+
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import * as ValidationHelpers from '../validation/_module.mjs';

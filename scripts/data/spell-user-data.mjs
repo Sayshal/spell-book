@@ -1,3 +1,22 @@
+/**
+ * User Spell Data Storage and Management
+ *
+ * Provides journal-based storage for user-specific spell data including notes,
+ * favorites, and usage statistics. This module handles data persistence, caching,
+ * and HTML table generation for user spell analytics and personalization features.
+ *
+ * Key features:
+ * - User-specific spell notes and favorites
+ * - Usage statistics tracking
+ * - Journal-based persistent storage
+ * - HTML table generation for analytics
+ * - Actor-specific data organization
+ * - Performance-optimized caching system
+ *
+ * @module DataHelpers/SpellUserData
+ * @author Tyler
+ */
+
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import { UserSpellDataManager } from '../managers/_module.mjs';
@@ -405,7 +424,8 @@ export class SpellUserDataJournal {
    * @param {Object} spell - Spell object to enhance with user data
    * @param {string} [userId=null] - User ID (defaults to current user)
    * @param {string} [actorId=null] - Actor ID for actor-specific data
-   * @returns {Object & EnhancedSpellData} Enhanced spell object with user data
+   * @returns {EnhancedSpellData} Enhanced spell object with user data properties added
+   * @returns {Object} Spell object
    * @static
    */
   static enhanceSpellWithUserData(spell, userId = null, actorId = null) {

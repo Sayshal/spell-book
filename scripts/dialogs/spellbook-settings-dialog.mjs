@@ -1,3 +1,22 @@
+/**
+ * Spellbook Settings Dialog
+ *
+ * Main configuration dialog for actor-specific spell book behavior and preferences.
+ * Provides comprehensive settings management for individual character spellbooks
+ * including display options, preparation modes, and integration preferences.
+ *
+ * Key features:
+ * - Actor-specific spellbook configuration
+ * - Display and UI preference management
+ * - Spell preparation behavior settings
+ * - Integration toggle controls
+ * - Performance optimization options
+ * - User preference persistence
+ *
+ * @module Dialogs/SpellbookSettingsDialog
+ * @author Tyler
+ */
+
 import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';

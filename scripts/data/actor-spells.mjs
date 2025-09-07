@@ -1,3 +1,23 @@
+/**
+ * Actor Spell Management Utilities
+ *
+ * Provides comprehensive utilities for managing spells on D&D 5e actors including
+ * spell retrieval, preparation status management, spellcasting class analysis,
+ * and spell slot calculations. This module handles the complex interactions
+ * between actors, their classes, and their spell collections.
+ *
+ * Key features:
+ * - Spellcasting class detection and analysis
+ * - Spell preparation status tracking
+ * - Spell slot calculation and management
+ * - Class-specific spell list integration
+ * - Wizard spellbook support
+ * - Multi-class spellcaster handling
+ *
+ * @module DataHelpers/ActorSpells
+ * @author Tyler
+ */
+
 import { log } from '../logger.mjs';
 import * as UIHelpers from './_module.mjs';
 

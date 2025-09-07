@@ -1,3 +1,22 @@
+/**
+ * Generic Data Utilities and Helper Functions
+ *
+ * Provides general-purpose utility functions for data manipulation, validation,
+ * and processing used throughout the Spell Book module. This module contains
+ * reusable functions that don't belong to specific functional areas.
+ *
+ * Key features:
+ * - Data validation and sanitization
+ * - Object manipulation utilities
+ * - String processing and formatting
+ * - Array and collection operations
+ * - Configuration data helpers
+ * - General-purpose data transformations
+ *
+ * @module DataHelpers/GenericUtils
+ * @author Tyler
+ */
+
 import { FLAGS, MODULE } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 
