@@ -1905,7 +1905,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const isFromCompendium = !!(classItem._stats?.compendiumSource && classItem._stats.compendiumSource.startsWith('Compendium.'));
     const isDnDBeyondClass = !!classItem?.flags?.ddbimporter;
     if (!isFromCompendium && !isDnDBeyondClass) {
-      const customSpellListSetting = this.actor.getFlag(MODULE.ID, `rules.${classIdentifier}.customSpellList`);
+      const customSpellListSetting = this.actor.getFlag(MODULE.ID, `classRules.${classIdentifier}.customSpellList`);
       const hasCustomSpellList = !!(customSpellListSetting && customSpellListSetting !== 'auto');
       if (!hasCustomSpellList) {
         return {
