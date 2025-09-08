@@ -335,7 +335,7 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
             </div>
           `,
             yes: { icon: '<i class="fa-solid fa-upload"></i>', label: game.i18n.localize('SPELLBOOK.Settings.Troubleshooter.ImportConfirm') },
-            no: { icon: '<i class="fa-solid fa-times"></i>', label: game.i18n.localize('SPELLBOOK.Settings.Troubleshooter.ImportCancel') },
+            no: { icon: '<i class="fa-solid fa-times"></i>', label: game.i18n.localize('SPELLBOOK.UI.Cancel') },
             modal: true,
             rejectClose: false
           });
