@@ -129,18 +129,22 @@
             {{#if actor.hasPermission}}
               {{#if actor.selectedFocus}}
                 <!-- Active Focus Display -->
-                <div class="member-focus-display" data-action="openFocusSettings" data-actor-id="{{id}}"
-                  data-tooltip="{{selectedFocus}}">
-                  {{#if selectedFocusIcon}}
-                    <img src="{{selectedFocusIcon}}" alt="{{selectedFocus}}" class="focus-icon">
+                <div class="member-focus-display {{#unless (or @root.user.isGM actor.isOwner)}}read-only{{/unless}}"
+                  {{#if (or @root.user.isGM actor.isOwner)}}data-action="openFocusSettings" {{/if}}
+                  data-actor-id="{{actor.id}}"
+                  data-tooltip="{{#if (or @root.user.isGM actor.isOwner)}}{{localize 'SPELLBOOK.FocusSettings.ClickToEdit'}} - {{/if}}{{actor.selectedFocus}}">
+                  {{#if actor.selectedFocusIcon}}
+                    <img src="{{actor.selectedFocusIcon}}" alt="{{actor.selectedFocus}}" class="focus-icon">
                   {{else}}
                     <img src="icons/svg/mystery-man.svg" alt="No Focus" class="focus-icon">
                   {{/if}}
                 </div>
               {{else}}
                 <!-- No Focus Set Indicator -->
-                <div class="member-focus-none" data-action="openFocusSettings" data-actor-id="{{actor.id}}"
-                  data-tooltip="{{localize 'SPELLBOOK.FocusSettings.NoFocusSet'}}">
+                <div class="member-focus-none {{#unless (or @root.user.isGM actor.isOwner)}}read-only{{/unless}}"
+                  {{#if (or @root.user.isGM actor.isOwner)}}data-action="openFocusSettings" {{/if}}
+                  data-actor-id="{{actor.id}}"
+                  data-tooltip="{{#if (or @root.user.isGM actor.isOwner)}}{{localize 'SPELLBOOK.FocusSettings.ClickToSetFocus'}}{{else}}{{localize 'SPELLBOOK.FocusSettings.NoFocusSet'}}{{/if}}">
                   <i class="fas fa-cog"></i>
                 </div>
               {{/if}}

@@ -152,6 +152,8 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
       const partyUsers = PartySpellManager.getPartyUsers(this.groupActor);
       context.comparison.actors.forEach((actorData) => {
         if (actorData.hasPermission) {
+          const actor = game.actors.get(actorData.id);
+          actorData.isOwner = actor ? actor.isOwner : false;
           const associatedUser = partyUsers.find((user) => {
             return user.actorId === actorData.id;
           });
@@ -165,6 +167,9 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
             actorData.selectedFocusId = null;
             actorData.selectedFocusIcon = null;
           }
+        } else {
+          const actor = game.actors.get(actorData.id);
+          actorData.isOwner = actor ? actor.isOwner : false;
         }
       });
     }
@@ -344,6 +349,7 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
    *
    * Opens the FocusSettingsDialog in appropriate mode (GM management or
    * player selection) based on user permissions and target context.
+   * Only allows access for GMs or users who own the target actor.
    *
    * @param {Event} event - The triggering event
    * @param {HTMLElement} target - The clicked element with optional data-actor-id
@@ -353,8 +359,17 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
     event.stopPropagation();
     const actorId = target.dataset.actorId;
     const actor = actorId ? game.actors.get(actorId) : null;
-    if (game.user.isGM) new FocusSettingsDialog(this.groupActor, null, this).render(true);
-    else new FocusSettingsDialog(this.groupActor, actor, this).render(true);
+    if (game.user.isGM) {
+      new FocusSettingsDialog(this.groupActor, null, this).render(true);
+      return;
+    }
+    if (actor) {
+      if (!actor.isOwner) {
+        ui.notifications.warn(game.i18n.localize('SPELLBOOK.FocusSettings.NoEditPermission'));
+        return;
+      }
+      new FocusSettingsDialog(this.groupActor, actor, this).render(true);
+    } else new FocusSettingsDialog(this.groupActor, null, this).render(true);
   }
 
   /**
@@ -407,13 +422,9 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
     memberCards.forEach((card) => {
       const actorId = card.dataset.actorId;
       if (!actorId) return;
-
       const actor = game.actors.get(actorId);
       if (!actor) return;
-
-      // Only add context menu if user has at least Observer permissions
       if (!actor.testUserPermission(game.user, 'LIMITED')) return;
-
       card.addEventListener('contextmenu', (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -432,41 +443,30 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   async _showMemberCardContextMenu(event, card, actor) {
     this._hideMemberCardContextMenu();
-
     try {
       const contextMenu = document.createElement('div');
       contextMenu.id = 'member-card-context-menu';
       contextMenu.className = 'member-card-context-menu';
-
       contextMenu.innerHTML = `
-      <div class="context-menu-item" data-action="open-actor" data-actor-id="${actor.id}">
-        <i class="fas fa-user" aria-hidden="true"></i>
-        <span>${game.i18n.localize('SPELLBOOK.Party.OpenActor')}</span>
-      </div>
-    `;
-
+        <div class="context-menu-item" data-action="open-actor" data-actor-id="${actor.id}">
+          <i class="fas fa-user" aria-hidden="true"></i>
+          <span>${game.i18n.localize('SPELLBOOK.Party.OpenActor')}</span>
+        </div>
+      `;
       document.body.appendChild(contextMenu);
       this._positionMemberCardContextMenu(event, contextMenu);
-
       contextMenu.addEventListener('click', async (clickEvent) => {
         const item = clickEvent.target.closest('.context-menu-item');
         if (!item) return;
-
         const action = item.dataset.action;
         const actorId = item.dataset.actorId;
-
         if (action === 'open-actor' && actorId) {
           const targetActor = game.actors.get(actorId);
-          if (targetActor && targetActor.testUserPermission(game.user, 'LIMITED')) {
-            await targetActor.sheet.render(true);
-          } else {
-            ui.notifications.warn(game.i18n.localize('SPELLBOOK.Party.NoPermissionToOpenActor'));
-          }
+          if (targetActor && targetActor.testUserPermission(game.user, 'LIMITED')) await targetActor.sheet.render(true);
+          else ui.notifications.warn(game.i18n.localize('SPELLBOOK.Party.NoPermissionToOpenActor'));
         }
-
         this._hideMemberCardContextMenu();
       });
-
       this._activeMemberCardContextMenu = contextMenu;
     } catch (error) {
       console.error('Error showing member card context menu:', error);
@@ -484,22 +484,12 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
     const menuRect = menu.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
-
     let finalX = event.clientX + 5;
     let finalY = event.clientY + 5;
-
-    // Adjust if menu would go off screen
-    if (finalX + menuRect.width > viewportWidth - 10) {
-      finalX = event.clientX - menuRect.width - 5;
-    }
-    if (finalY + menuRect.height > viewportHeight - 10) {
-      finalY = event.clientY - menuRect.height - 5;
-    }
-
-    // Ensure menu stays on screen
+    if (finalX + menuRect.width > viewportWidth - 10) finalX = event.clientX - menuRect.width - 5;
+    if (finalY + menuRect.height > viewportHeight - 10) finalY = event.clientY - menuRect.height - 5;
     if (finalX < 10) finalX = 10;
     if (finalY < 10) finalY = 10;
-
     menu.style.left = `${finalX}px`;
     menu.style.top = `${finalY}px`;
   }
@@ -613,9 +603,7 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
       } else if (filteredActorId) {
         card.classList.remove('filter-active');
         card.classList.add('filter-inactive');
-      } else {
-        card.classList.remove('filter-active', 'filter-inactive');
-      }
+      } else card.classList.remove('filter-active', 'filter-inactive');
     });
   }
 

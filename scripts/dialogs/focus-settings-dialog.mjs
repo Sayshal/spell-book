@@ -121,19 +121,15 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
   /** @inheritdoc */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-
-    // Handle the array structure in settings
     const settingData = game.settings.get(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS);
     let focusData = Array.isArray(settingData) ? settingData[0] : settingData;
-
     if (!focusData?.focuses || focusData.focuses.length === 0) {
       focusData = { focuses: MODULE.DEFAULT_FOCUSES };
       await game.settings.set(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS, focusData);
     }
-
     context.availableFocuses = focusData.focuses;
     context.isGMMode = this.isGMMode;
-
+    context.isReadOnly = this.targetActor && !game.user.isGM && !this.targetActor.isOwner;
     if (this.groupActor && this.isGMMode) {
       const userSelections = this.groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
       const partyUsers = PartySpellManager.getPartyUsers(this.groupActor);
@@ -147,8 +143,13 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
       const userSelections = this.groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
       context.currentSelection = userSelections[game.user.id] || null;
     }
-
     return context;
+  }
+
+  /** @inheritdoc */
+  _onRender(context, options) {
+    super._onRender(context, options);
+    this._addSelectedIconsToPreselectedCards();
   }
 
   /**
@@ -160,6 +161,7 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
    *
    * @param {Event} event - The triggering click event
    * @param {HTMLElement} target - The clicked element
+   * @todo Template?
    * @static
    */
   static async addFocus(event, target) {
@@ -195,32 +197,19 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
    * @param {Event} event - The triggering click event
    * @param {HTMLElement} target - The clicked element with data-index attribute
    * @returns {Promise<void>}
+   * @todo Localize
    * @static
    */
   static async deleteFocus(event, target) {
     event.preventDefault();
-
     const button = target.closest('[data-index]');
     const index = parseInt(button?.dataset.index);
-
-    if (isNaN(index)) {
-      ui.notifications.error('Invalid focus index');
-      return;
-    }
-
-    // Get focus data - handle the array structure
+    if (isNaN(index)) return;
     const settingData = game.settings.get(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS);
     const focusData = Array.isArray(settingData) ? settingData[0] : settingData;
     const focuses = focusData?.focuses || [];
-
-    if (index < 0 || index >= focuses.length) {
-      ui.notifications.error('Focus not found');
-      return;
-    }
-
+    if (index < 0 || index >= focuses.length) return;
     const focusToDelete = focuses[index];
-
-    // Confirm deletion
     const confirmed = await foundry.applications.api.DialogV2.wait({
       window: { title: 'Delete Focus', icon: 'fas fa-trash' },
       content: `<p>Delete focus "${focusToDelete.name}"?</p>`,
@@ -230,78 +219,67 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
       ],
       default: 'cancel'
     });
-
     if (confirmed !== 'delete') return;
-
-    // Remove focus from array
     focuses.splice(index, 1);
-
-    // Save back in the same structure
     await game.settings.set(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS, { focuses });
-
-    // Clean up user assignments
     if (this.groupActor) {
       const selections = this.groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
       let changed = false;
-
       for (const [userId, focusId] of Object.entries(selections)) {
         if (focusId === focusToDelete.id) {
           delete selections[userId];
           changed = true;
         }
       }
-
       if (changed) await this.groupActor.setFlag(MODULE.ID, FLAGS.SELECTED_FOCUS, selections);
       const partyUsers = PartySpellManager.getPartyUsers(this.groupActor);
       for (const user of partyUsers) {
         const actor = game.actors.get(user.actorId);
         if (!actor) continue;
-
         const assignedFocusId = currentSelections[user.id];
         let focusName = null;
-
         if (assignedFocusId) {
           const focusObject = focuses.find((f) => f.id === assignedFocusId);
           focusName = focusObject?.name || null;
         }
-
-        // Update individual actor flag to match group assignment
-        if (focusName) {
-          await actor.setFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS, focusName);
-          log(3, `Synced focus for actor ${actor.name}: ${focusName}`);
-        } else {
-          await actor.unsetFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS);
-          log(3, `Cleared focus for actor ${actor.name}`);
-        }
+        if (focusName) await actor.setFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS, focusName);
+        else await actor.unsetFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS);
       }
     }
-
-    ui.notifications.info(`Deleted focus: ${focusToDelete.name}`);
-
-    if (this.parentApp) {
-      this.parentApp.render(true);
-    }
+    if (this.parentApp) this.parentApp.render(true);
   }
 
   /**
-   * Open icon selection dialog for focus customization.
+   * Handle focus card selection in player mode.
    *
-   * Provides interface for selecting custom icons for focus options,
-   * integrating with Foundry's file browser for asset selection.
+   * Updates both the visual state of focus cards and the hidden form input
+   * to track the currently selected focus option. Only allows editing if user
+   * has proper permissions (GM, or Owner of the target actor).
    *
-   * @param {Event} event - The triggering event
-   * @param {HTMLElement} target - The clicked element with data-index
+   * @param {Event} event - The triggering click event
+   * @param {HTMLElement} target - The clicked focus card element
    * @static
    */
   static async selectFocus(event, target) {
+    event.preventDefault();
     const focusId = target.dataset.focusId;
-    const userId = target.dataset.userId || game.user.id;
-    if (!game.user.isGM && userId !== game.user.id) {
-      ui.notifications.error('SPELLBOOK.FocusSettings.NoPermission', { localize: true });
+    if (!focusId) return;
+    if (this.targetActor && !game.user.isGM && !this.targetActor.isOwner) {
+      ui.notifications.warn(game.i18n.localize('SPELLBOOK.FocusSettings.NoEditPermission'));
       return;
     }
-    await this._saveUserSelection({ selectedFocus: focusId, targetUserId: userId, action: 'select-focus' });
-    this.render();
+    const allCards = target.closest('.focus-grid').querySelectorAll('.focus-card');
+    allCards.forEach((card) => {
+      card.classList.remove('selected');
+      const existingIcon = card.querySelector('.selected-icon');
+      if (existingIcon) existingIcon.remove();
+    });
+    target.classList.add('selected');
+    const selectedIcon = document.createElement('i');
+    selectedIcon.className = 'fa-solid fa-check selected-icon';
+    target.appendChild(selectedIcon);
+    const hiddenInput = target.closest('form').querySelector('#selected-focus-input');
+    if (hiddenInput) hiddenInput.value = focusId;
   }
 
   /**
@@ -348,63 +326,36 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
    * @param {Event} event - The triggering event
    * @param {HTMLElement} target - The clicked element
    * @returns {Promise<void>}
+   * @todo Template?
    * @static
    */
   static async resetFocuses(event, target) {
     try {
       const result = await foundry.applications.api.DialogV2.wait({
-        window: {
-          title: game.i18n.localize('SPELLBOOK.FocusSettings.ResetDialog.Title'),
-          icon: 'fas fa-undo',
-          resizable: false,
-          minimizable: false,
-          positioned: true
-        },
+        window: { title: game.i18n.localize('SPELLBOOK.FocusSettings.ResetDialog.Title'), icon: 'fas fa-undo', resizable: false, minimizable: false, positioned: true },
         position: { width: 450, height: 'auto' },
         content: `
-        <p>${game.i18n.localize('SPELLBOOK.FocusSettings.ResetDialog.Content')}</p>
-        <p><strong>${game.i18n.localize('SPELLBOOK.FocusSettings.ResetDialog.Warning')}</strong></p>
-      `,
+          <p>${game.i18n.localize('SPELLBOOK.FocusSettings.ResetDialog.Content')}</p>
+          <p><strong>${game.i18n.localize('SPELLBOOK.FocusSettings.ResetDialog.Warning')}</strong></p>
+        `,
         buttons: [
-          {
-            icon: 'fas fa-undo',
-            label: game.i18n.localize('SPELLBOOK.FocusSettings.ResetConfirm'),
-            action: 'reset',
-            className: 'dialog-button danger'
-          },
-          {
-            icon: 'fas fa-times',
-            label: game.i18n.localize('SPELLBOOK.UI.Cancel'),
-            action: 'cancel',
-            className: 'dialog-button'
-          }
+          { icon: 'fas fa-undo', label: game.i18n.localize('SPELLBOOK.FocusSettings.ResetConfirm'), action: 'reset', className: 'dialog-button danger' },
+          { icon: 'fas fa-times', label: game.i18n.localize('SPELLBOOK.UI.Cancel'), action: 'cancel', className: 'dialog-button' }
         ],
         default: 'cancel',
         rejectClose: false
       });
-
       if (result !== 'reset') return;
-
-      // Reset focuses to defaults - use MODULE.DEFAULT_FOCUSES
       const defaultFocusData = { focuses: MODULE.DEFAULT_FOCUSES };
       await game.settings.set(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS, defaultFocusData);
-
-      // Clear all member focus assignments
-      if (this.groupActor) {
-        await this.groupActor.unsetFlag(MODULE.ID, FLAGS.SELECTED_FOCUS);
-      }
-
+      if (this.groupActor) await this.groupActor.unsetFlag(MODULE.ID, FLAGS.SELECTED_FOCUS);
       ui.notifications.info(game.i18n.localize('SPELLBOOK.FocusSettings.ResetSuccess'));
-
-      // Re-render this dialog and any parent apps
       this.render();
       Object.values(ui.windows).forEach((app) => {
-        if (app.constructor.name === 'PartySpellsApp') {
-          app.render();
-        }
+        if (app.constructor.name === 'PartySpellsApp') app.render();
       });
     } catch (error) {
-      console.error('Failed to reset focus settings:', error);
+      log(1, 'Failed to reset focus settings:', error);
       ui.notifications.error(game.i18n.localize('SPELLBOOK.FocusSettings.ResetError'));
     }
   }
@@ -512,5 +463,24 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
     else delete currentSelections[targetUserId];
     await groupActor.setFlag(MODULE.ID, FLAGS.SELECTED_FOCUS, currentSelections);
     ui.notifications.info('SPELLBOOK.FocusSettings.SelectionSaved', { localize: true });
+  }
+
+  /**
+   * Add selected icons to cards that have the selected class on render.
+   *
+   * Handles the initial state where a focus may already be selected
+   * and needs the visual icon indicator.
+   *
+   * @private
+   */
+  _addSelectedIconsToPreselectedCards() {
+    const selectedCards = this.element.querySelectorAll('.focus-card.selected');
+    selectedCards.forEach((card) => {
+      if (!card.querySelector('.selected-icon')) {
+        const selectedIcon = document.createElement('i');
+        selectedIcon.className = 'fa-solid fa-check selected-icon';
+        card.appendChild(selectedIcon);
+      }
+    });
   }
 }

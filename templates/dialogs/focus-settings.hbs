@@ -120,35 +120,47 @@
         <input type="hidden" name="action" value="save-focuses" />
       </div>
     {{else}}
-      <!-- Player Mode: Personal Focus Selection -->
-      <div class="player-focus-selection">
-        <h3>{{localize "SPELLBOOK.FocusSettings.SelectYourFocus"}}</h3>
+      {{#unless isGMMode}}
+        <!-- Player Mode: Personal Focus Selection -->
+        <div class="player-focus-selection">
+          <h3>{{localize "SPELLBOOK.FocusSettings.SelectYourFocus"}}</h3>
 
-        <!-- Focus Selection Grid -->
-        <div class="focus-grid">
-          {{#each availableFocuses as |focus|}}
-            <div class="focus-card {{#if (eq focus.id ../currentSelection)}}selected{{/if}}" data-action="selectFocus"
-              data-focus-id="{{focus.id}}">
-              <img src="{{focus.icon}}" alt="{{focus.name}}" class="focus-card-icon" />
-              <h4>{{focus.name}}</h4>
-              <p>{{focus.description}}</p>
-            </div>
-          {{/each}}
+          {{#if isReadOnly}}
+            <!-- Read-only view for Observer permissions -->
+            <p class="permission-notice">
+              <i class="fas fa-eye" aria-hidden="true"></i>
+              {{localize "SPELLBOOK.FocusSettings.ViewOnlyMode"}}
+            </p>
+          {{/if}}
+
+          <!-- Focus Selection Grid -->
+          <div class="focus-grid {{#if isReadOnly}}read-only{{/if}}">
+            {{#each availableFocuses as |focus|}}
+              <div class="focus-card {{#if (eq focus.id ../currentSelection)}}selected{{/if}}"
+                {{#unless ../isReadOnly}}data-action="selectFocus" {{/unless}} data-focus-id="{{focus.id}}">
+                <img src="{{focus.icon}}" alt="{{focus.name}}" class="focus-card-icon" />
+                <h4>{{focus.name}}</h4>
+                <p>{{focus.description}}</p>
+              </div>
+            {{/each}}
+          </div>
+
+          <input type="hidden" name="action" value="select-focus" />
+          <input type="hidden" name="selectedFocus" id="selected-focus-input" value="{{currentSelection}}" />
         </div>
-
-        <input type="hidden" name="action" value="select-focus" />
-        <input type="hidden" name="selectedFocus" id="selected-focus-input" value="{{currentSelection}}" />
-      </div>
+      {{/unless}}
     {{/if}}
   </div>
 
   <!-- Form Footer with Action Buttons -->
   <div class="form-footer">
-    <!-- Reset Button -->
-    <button type="button" data-action="resetFocuses" class="reset-button">
-      <i class="fas fa-undo" aria-hidden="true"></i>
-      {{localize "SPELLBOOK.FocusSettings.ResetToDefaults"}}
-    </button>
+    {{#if isGMMode}}
+      <!-- Reset Button - GM Only -->
+      <button type="button" data-action="resetFocuses" class="reset-button">
+        <i class="fas fa-undo" aria-hidden="true"></i>
+        {{localize "SPELLBOOK.FocusSettings.ResetToDefaults"}}
+      </button>
+    {{/if}}
 
     <!-- Cancel Button -->
     <button type="button" class="cancel-button" data-action="close">

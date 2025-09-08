@@ -5465,8 +5465,16 @@
 
         &.no-permission {
           opacity: 0.6;
-          cursor: not-allowed;
-          filter: grayscale(50%);
+          cursor: default;
+          filter: grayscale(100%);
+          pointer-events: none;
+
+          &:hover {
+            background-color: inherit !important;
+            border-color: inherit !important;
+            transform: none !important;
+            box-shadow: none !important;
+          }
         }
 
         .member-header {
@@ -5544,6 +5552,10 @@
             font-size: 0.6rem;
             cursor: pointer;
             transition: var(--spell-book-transition-fast);
+
+            &.read-only {
+              cursor: default;
+            }
           }
 
           .member-focus-display:hover,
@@ -5991,6 +6003,23 @@
               content: '';
               background: var(--spell-book-accent);
             }
+          }
+
+          .selected-icon {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            padding: 0.25rem;
+            background: var(--spell-book-accent);
+            color: rgb(255 255 255);
+            font-size: 0.8rem;
+            border-radius: 50%;
+            width: 1.5rem;
+            height: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0.125rem 0.25rem rgb(0 0 0 / 20%);
           }
 
           .focus-card-icon {
