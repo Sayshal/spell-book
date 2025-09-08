@@ -250,7 +250,6 @@ export class PartySpellManager {
         name: actor.name,
         hasPermission: false,
         token: actor.img,
-        focus: this.getActorSpellcastingFocus(actor),
         spellcasters: [],
         totalSpellsKnown: 0,
         totalSpellsPrepared: 0
@@ -261,7 +260,6 @@ export class PartySpellManager {
       name: actor.name,
       hasPermission: true,
       token: actor.img,
-      focus: this.getActorSpellcastingFocus(actor),
       spellcasters: [],
       totalSpellsKnown: 0,
       totalSpellsPrepared: 0
@@ -667,7 +665,8 @@ export class PartySpellManager {
    * @static
    */
   static getAvailableFocusOptions() {
-    const focusData = game.settings.get(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS);
+    const settingData = game.settings.get(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS);
+    const focusData = Array.isArray(settingData) ? settingData[0] : settingData;
     return focusData?.focuses || [];
   }
 
@@ -686,7 +685,9 @@ export class PartySpellManager {
     const userSelections = groupActor?.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
     const selectedFocusId = userSelections[userId];
     if (!selectedFocusId) return null;
-    const availableFocuses = PartySpellManager.getAvailableFocusOptions();
+    const settingData = game.settings.get(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS);
+    const focusData = Array.isArray(settingData) ? settingData[0] : settingData;
+    const availableFocuses = focusData?.focuses || [];
     return availableFocuses.find((f) => f.id === selectedFocusId) || null;
   }
 

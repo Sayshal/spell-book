@@ -141,34 +141,24 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
     context.spellLevels = this.getSpellLevelGroups(this._comparisonData.spellsByLevel);
     context.groupName = this.groupActor?.name || game.i18n.localize('SPELLBOOK.Party.DefaultGroupName');
     if (context.comparison?.actors) {
-      log(1, '=== ACTOR FOCUS MAPPING DEBUG ===');
       const partyUsers = PartySpellManager.getPartyUsers(this.groupActor);
-      log(1, 'Party users structure:', partyUsers);
-      log(1, 'Sample actor data:', context.comparison.actors[0]);
-
       context.comparison.actors.forEach((actorData) => {
         if (actorData.hasPermission) {
-          log(1, `Looking for actor ${actorData.id} (${actorData.name})`);
           const associatedUser = partyUsers.find((user) => {
-            log(1, `  Checking user ${user.id} with actorId: ${user.actorId}`);
             return user.actorId === actorData.id;
           });
           if (associatedUser) {
-            log(1, `  Found user ${associatedUser.id} for actor ${actorData.id}`);
             const focusObject = this.partyManager.getUserSelectedFocus(this.groupActor, associatedUser.id);
-            // Extract the focus name for display
             actorData.selectedFocus = focusObject?.name || null;
             actorData.selectedFocusId = focusObject?.id || null;
-            log(1, `  Selected focus:`, focusObject);
-            log(1, `  Focus name:`, actorData.selectedFocus);
+            actorData.selectedFocusIcon = focusObject?.icon || null;
           } else {
-            log(1, `  No user found for actor ${actorData.id}`);
             actorData.selectedFocus = null;
             actorData.selectedFocusId = null;
+            actorData.selectedFocusIcon = null;
           }
         }
       });
-      log(1, '=== END ACTOR FOCUS MAPPING DEBUG ===');
     }
     return context;
   }

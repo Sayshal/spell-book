@@ -142,9 +142,13 @@
             {{#if actor.hasPermission}}
               {{#if actor.selectedFocus}}
                 <!-- Active Focus Display -->
-                <div class="member-focus-display" data-action="openFocusSettings" data-actor-id="{{actor.id}}"
-                  data-tooltip="{{actor.selectedFocus.name}}: {{actor.selectedFocus.description}}">
-                  <img src="{{actor.selectedFocus.icon}}" alt="{{actor.selectedFocus.name}}" class="focus-icon">
+                <div class="member-focus-display" data-action="openFocusSettings" data-actor-id="{{id}}"
+                  data-tooltip="{{selectedFocus}}">
+                  {{#if selectedFocusIcon}}
+                    <img src="{{selectedFocusIcon}}" alt="{{selectedFocus}}" class="focus-icon">
+                  {{else}}
+                    <img src="icons/svg/mystery-man.svg" alt="No Focus" class="focus-icon">
+                  {{/if}}
                 </div>
               {{else}}
                 <!-- No Focus Set Indicator -->

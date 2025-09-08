@@ -240,8 +240,28 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
         }
       }
 
-      if (changed) {
-        await this.groupActor.setFlag(MODULE.ID, FLAGS.SELECTED_FOCUS, selections);
+      if (changed) await this.groupActor.setFlag(MODULE.ID, FLAGS.SELECTED_FOCUS, selections);
+      const partyUsers = PartySpellManager.getPartyUsers(this.groupActor);
+      for (const user of partyUsers) {
+        const actor = game.actors.get(user.actorId);
+        if (!actor) continue;
+
+        const assignedFocusId = currentSelections[user.id];
+        let focusName = null;
+
+        if (assignedFocusId) {
+          const focusObject = focuses.find((f) => f.id === assignedFocusId);
+          focusName = focusObject?.name || null;
+        }
+
+        // Update individual actor flag to match group assignment
+        if (focusName) {
+          await actor.setFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS, focusName);
+          log(3, `Synced focus for actor ${actor.name}: ${focusName}`);
+        } else {
+          await actor.unsetFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS);
+          log(3, `Cleared focus for actor ${actor.name}`);
+        }
       }
     }
 
@@ -371,18 +391,7 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
   static async formHandler(event, form, formData) {
     event.preventDefault();
     const action = formData.object?.action || formData.action;
-
-    log(1, '=== FOCUS SETTINGS DEBUG ===');
-    log(1, 'Action:', action);
-    log(1, 'Form Data Object:', formData.object);
-    log(1, 'Form Data:', formData);
-    log(1, 'Group Actor:', this.groupActor);
-    log(1, 'Has Group Actor:', !!this.groupActor);
-    log(1, 'Group Actor ID:', this.groupActor?.id);
-    log(1, '================================');
-
     if (game.user.isGM && action === 'save-focuses') {
-      // Pass this.groupActor as second parameter
       await FocusSettingsDialog._saveFocusOptions(formData.object || formData, this.groupActor);
       if (this.parentApp) {
         this.parentApp._comparisonData = null;
@@ -409,11 +418,6 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
    * @static
    */
   static async _saveFocusOptions(formData, groupActor) {
-    log(1, '=== SAVE FOCUS OPTIONS DEBUG ===');
-    log(1, 'Received formData:', formData);
-    log(1, 'Received groupActor:', groupActor);
-
-    // Save focus options (existing code)
     const focuses = [];
     let index = 0;
     while (formData[`focus-name-${index}`] !== undefined) {
@@ -424,56 +428,39 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
       if (name && name.trim()) focuses.push({ id: id, name: name.trim(), icon: icon, description: description.trim() });
       index++;
     }
-
-    log(1, 'Processed focuses:', focuses);
     await game.settings.set(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS, { focuses: focuses });
-    log(1, 'Focus options saved to settings');
-
-    // Process member focus assignments
-    log(1, 'Group Actor for member assignments:', groupActor);
-
     if (groupActor) {
       const currentSelections = groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
-      log(1, 'Current focus selections before update:', currentSelections);
-
-      // Process all member-focus-* fields
       const memberAssignments = {};
       for (const [key, value] of Object.entries(formData)) {
         if (key.startsWith('member-focus-')) {
           const userId = key.replace('member-focus-', '');
           memberAssignments[key] = { userId, value };
-          log(1, `Found member assignment: ${key} = "${value}" (type: ${typeof value}) (userId: ${userId})`);
-
-          // Handle different cases for value - check type first
-          if (value && typeof value === 'string' && value.trim() && value !== '' && value !== 'null' && value !== 'undefined') {
-            log(1, `  Setting focus for ${userId}: ${value}`);
-            currentSelections[userId] = value;
-          } else {
-            log(1, `  Removing focus for ${userId} (value was: "${value}", type: ${typeof value})`);
-            delete currentSelections[userId];
-          }
+          if (value && typeof value === 'string' && value.trim() && value !== '' && value !== 'null' && value !== 'undefined') currentSelections[userId] = value;
+          else delete currentSelections[userId];
         }
       }
-
-      log(1, 'Member assignments found:', memberAssignments);
-      log(1, 'Updated focus selections:', currentSelections);
-
       try {
         await groupActor.setFlag(MODULE.ID, FLAGS.SELECTED_FOCUS, currentSelections);
-        log(1, 'Successfully saved focus selections to group actor');
-
-        // Verify the save
+        const partyUsers = PartySpellManager.getPartyUsers(groupActor);
+        for (const user of partyUsers) {
+          const actor = game.actors.get(user.actorId);
+          if (!actor) continue;
+          const assignedFocusId = currentSelections[user.id];
+          let focusName = null;
+          if (assignedFocusId) {
+            const focusObject = focuses.find((f) => f.id === assignedFocusId);
+            focusName = focusObject?.name || null;
+          }
+          if (focusName) await actor.setFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS, focusName);
+          else await actor.unsetFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS);
+        }
         const verifySelections = groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS);
-        log(1, 'Verification - selections after save:', verifySelections);
       } catch (error) {
         log(1, 'Error saving focus selections:', error);
       }
-    } else {
-      log(1, 'No group actor available for member assignments');
-    }
-
+    } else log(2, 'No group actor available for member assignments');
     ui.notifications.info('SPELLBOOK.FocusSettings.OptionsSaved', { localize: true });
-    log(1, '=== END SAVE FOCUS OPTIONS DEBUG ===');
   }
 
   /**
