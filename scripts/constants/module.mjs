@@ -10,6 +10,41 @@
  */
 
 /**
+ * Spellcasting focus option configuration.
+ *
+ * @typedef {Object} FocusOption
+ * @property {string} id - Unique identifier for the focus option (e.g., 'focus-damage', 'focus-healer')
+ * @property {string} name - Display name of the focus option (e.g., 'Offensive Mage', 'Support')
+ * @property {string} icon - File path to the focus option icon image (e.g., 'icons/magic/fire/explosion-fireball-large-orange.webp')
+ * @property {string} description - Descriptive text explaining the focus role and strategy
+ */
+
+/**
+ * Focus selections mapping stored in group actor flags.
+ *
+ * @typedef {Object} FocusSelections
+ * @property {Object<string, string>} selections - Maps user IDs to selected focus option IDs
+ */
+
+/**
+ * Party member data with focus assignment information.
+ *
+ * @typedef {Object} PartyMember
+ * @property {string} id - User ID
+ * @property {string} name - User display name
+ * @property {string|null} actorName - Associated actor name (if available)
+ * @property {string|null} selectedFocus - Currently selected focus option ID
+ */
+
+/**
+ * Group actor focus data structure for dual-flag system.
+ *
+ * @typedef {Object} GroupFocusData
+ * @property {Object<string, string>} userSelections - Maps user IDs to focus IDs in group flags
+ * @property {Object<string, string>} actorFlags - Maps actor IDs to focus names in individual flags
+ */
+
+/**
  * Module identification and configuration constants.
  * Contains all core module settings, identifiers, and default configurations.
  *
@@ -20,6 +55,7 @@
  * @property {number} LOG_LEVEL - Current logging level (0=off, 1=error, 2=warn, 3=debug)
  * @property {string} DEFAULT_FILTER_CONFIG_VERSION - Version number for filter configuration schema
  * @property {FilterConfigItem[]} DEFAULT_FILTER_CONFIG - Default filter configuration array
+ * @property {FocusOption[]} DEFAULT_FOCUSES - Default spellcasting focus options based on magical archetypes
  * @property {EnforcementBehaviorConfig} ENFORCEMENT_BEHAVIOR - Spell change enforcement options
  * @property {WizardDefaultsConfig} WIZARD_DEFAULTS - Default wizard configuration values
  * @property {WizardSpellSourceConfig} WIZARD_SPELL_SOURCE - Wizard spell source type identifiers
@@ -58,10 +94,13 @@
  */
 
 /**
- * Party spell coordination configuration.
+ * Party spell coordination configuration with focus system.
  *
  * @typedef {Object} PartySpellConfig
- * @property {string[]} DEFAULT_FOCUSES - Default spellcasting focus options for party coordination
+ * @property {FocusOption[]} DEFAULT_FOCUSES - Default spellcasting focus options for party coordination
+ * @property {Object} DUAL_FLAG_SYSTEM - Configuration for dual-flag focus storage system
+ * @property {string} DUAL_FLAG_SYSTEM.GROUP_FLAG - Flag key for group actor focus selections
+ * @property {string} DUAL_FLAG_SYSTEM.ACTOR_FLAG - Flag key for individual actor focus storage
  */
 
 /**
@@ -139,7 +178,7 @@
  *
  * @typedef {Object} SettingsKeys
  * @property {string} ADVANCED_SEARCH_PREFIX - Prefix character for advanced search syntax
- * @property {string} AVAILABLE_FOCUS_OPTIONS - Available spellcasting focus options for party mode
+ * @property {string} AVAILABLE_FOCUS_OPTIONS - Available spellcasting focus options for party mode (stores FocusOption[] in nested object)
  * @property {string} CANTRIP_SCALE_VALUES - Scale values for cantrip damage calculations
  * @property {string} CONSUME_SCROLLS_WHEN_LEARNING - Whether to consume scrolls when learning spells
  * @property {string} CUSTOM_SPELL_MAPPINGS - Custom spell list mappings for classes
@@ -185,6 +224,26 @@
  * @property {string} SPELLCASTING_RULE_SET - Default spellcasting rule set for new actors
  * @property {string} TROUBLESHOOTER_INCLUDE_ACTORS - Include actor data in troubleshooter reports
  * @property {string} WIZARD_BOOK_ICON_COLOR - Custom color for wizard book icons
+ */
+
+/**
+ * Actor and group flag keys used by the focus system.
+ *
+ * Dual Flag System for Focus Coordination:
+ *
+ * 1. **Group Actor Flags (Primary)**: FLAGS.SELECTED_FOCUS
+ *    - Stores user ID to focus ID mappings
+ *    - Used for party coordination and management
+ *    - Structure: { "userId1": "focus-damage", "userId2": "focus-healer" }
+ *
+ * 2. **Individual Actor Flags (Sync)**: FLAGS.SPELLCASTING_FOCUS
+ *    - Stores focus names (not IDs) for backward compatibility
+ *    - Synchronized automatically when group selections change
+ *    - Structure: "Offensive Mage" (human-readable name)
+ *
+ * @typedef {Object} FocusFlagKeys
+ * @property {string} SELECTED_FOCUS - Group actor flag storing user-to-focus mappings
+ * @property {string} SPELLCASTING_FOCUS - Individual actor flag for backward compatibility
  */
 
 /**
@@ -243,7 +302,14 @@ export const MODULE = {
   ],
 
   /**
-   * Default focus options based on common magical archetypes
+   * Default focus options based on common magical archetypes.
+   *
+   * Provides 10 predefined spellcasting focus types that cover the most
+   * common magical roles in D&D 5e parties. Each focus includes a unique
+   * ID, display name, thematic icon, and strategic description.
+   *
+   * @type {FocusOption[]}
+   *
    */
   DEFAULT_FOCUSES: [
     { id: 'focus-arcanist', name: 'Arcanist', icon: 'icons/magic/symbols/elements-air-earth-fire-water.webp', description: 'Versatile; handle multiple roles moderately well.' },

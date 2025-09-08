@@ -15,6 +15,7 @@
  * - Integration with D&D 5e primary party settings and group actors
  * - Comprehensive recommendation system for spell preparation
  * - Multi-class spellcaster support with enhanced class name display
+ * - Dual-flag focus system with group and individual actor synchronization
  *
  * The manager supports both primary party integration through D&D 5e settings
  * and manual group actor specification, providing flexible party management
@@ -29,14 +30,27 @@ import { log } from '../logger.mjs';
 import * as UIHelpers from '../ui/_module.mjs';
 
 /**
- * Actor spell data structure for party analysis.
+ * Spellcasting focus option configuration.
+ *
+ * @typedef {Object} FocusOption
+ * @property {string} id - Unique identifier for the focus option (e.g., 'focus-damage', 'focus-healer')
+ * @property {string} name - Display name of the focus option (e.g., 'Offensive Mage', 'Support')
+ * @property {string} icon - File path to the focus option icon image
+ * @property {string} description - Descriptive text explaining the focus role and strategy
+ */
+
+/**
+ * Actor spell data structure for party analysis with focus coordination.
  *
  * @typedef {Object} ActorSpellData
  * @property {string} id - Actor ID
  * @property {string} name - Actor name
  * @property {boolean} hasPermission - Whether current user can view actor details
  * @property {string} token - Actor image/token path
- * @property {string} focus - Actor's spellcasting focus setting
+ * @property {string} focus - Legacy focus setting (for backward compatibility)
+ * @property {string|null} selectedFocus - Selected focus name from group coordination
+ * @property {string|null} selectedFocusId - Selected focus ID from group coordination
+ * @property {string|null} selectedFocusIcon - Selected focus icon path from group coordination
  * @property {SpellcasterData[]} spellcasters - Array of spellcasting class data
  * @property {number} totalSpellsKnown - Total known spells across all classes
  * @property {number} totalSpellsPrepared - Total prepared spells across all classes
@@ -172,17 +186,14 @@ import * as UIHelpers from '../ui/_module.mjs';
  * actor specification, providing flexible party management for different campaign
  * styles. Caching mechanisms ensure optimal performance when analyzing large
  * spell datasets across multiple party members.
+ * Party spell manager for coordinating spellcasting across multiple characters.
  */
 export class PartySpellManager {
   /**
-   * Create a new Party Spell Manager instance.
+   * Create a new party spell manager instance.
    *
-   * Initializes the manager with the specified party actors and optional viewing
-   * context. Filters the party to include only spellcasting actors and sets up
-   * the caching system for optimal performance during analysis operations.
-   *
-   * @param {Actor[]} [partyActors=[]] - Array of actors in the party
-   * @param {Actor} [viewingActor=null] - The actor whose SpellBook opened this manager
+   * @param {Array<Actor>} [partyActors=[]] - Array of party member actors
+   * @param {Actor} [viewingActor=null] - The actor who opened this view
    */
   constructor(partyActors = [], viewingActor = null) {
     /** @type {Actor[]} Array of spellcasting actors in the party */
@@ -215,12 +226,11 @@ export class PartySpellManager {
   /**
    * Get party spell comparison data.
    *
-   * Generates comprehensive comparison data for all party members including
-   * individual actor spell data, spells organized by level for matrix display,
-   * and synergy analysis. This is the primary method for gathering party-wide
-   * spell coordination information.
+   * Analyzes all party members' spells and generates a comprehensive
+   * comparison matrix showing spell overlap, preparation status, and
+   * coordination opportunities.
    *
-   * @returns {Promise<PartyComparisonData>} Comparison matrix data
+   * @returns {Promise<Object>} Party spell comparison data
    */
   async getPartySpellComparison() {
     const comparisonData = { actors: [], spellsByLevel: {}, synergy: await this.getSpellSynergyAnalysis() };
@@ -375,28 +385,29 @@ export class PartySpellManager {
   }
 
   /**
-   * Get actor's spellcasting focus setting.
+   * Get actor's spellcasting focus setting from individual actor flags.
    *
    * Retrieves the actor's configured spellcasting focus for party coordination
-   * purposes. Returns a default value if no focus is specifically set.
+   * purposes. This reads from individual actor flags (FLAGS.SPELLCASTING_FOCUS)
+   * which are synchronized from group selections for backward compatibility.
    *
-   * @param {Actor} actor - The actor
-   * @returns {string} The actor's spellcasting focus
+   * @param {Actor} actor - The actor to check
+   * @returns {string} The actor's spellcasting focus name, or fallback localization key
    */
   getActorSpellcastingFocus(actor) {
     return actor.getFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS) || 'SPELLBOOK.Party.Focus.None';
   }
 
   /**
-   * Set actor's spellcasting focus.
+   * Set actor's spellcasting focus in individual actor flags.
    *
    * Updates the actor's spellcasting focus setting for party coordination.
-   * This is typically used when actors coordinate their roles within the
-   * party's spellcasting strategy.
+   * This updates individual actor flags and is typically called automatically
+   * during focus synchronization from group selections.
    *
-   * @param {Actor} actor - The actor
-   * @param {string} focus - The focus to set
-   * @returns {Promise<boolean>} Success status
+   * @param {Actor} actor - The actor to update
+   * @param {string} focus - The focus name to set
+   * @returns {Promise<boolean>} Success status of the operation
    */
   async setActorSpellcastingFocus(actor, focus) {
     try {
@@ -568,14 +579,14 @@ export class PartySpellManager {
   }
 
   /**
-   * Get users who have actors in the party group.
+   * Get party users associated with a group actor.
    *
-   * Identifies which users have character actors that are members of the
-   * specified party group. This information is useful for coordination
-   * features and user-specific party management functionality.
+   * Retrieves the list of users associated with party members in the
+   * specified group actor, enabling user-to-actor mapping for focus
+   * assignment and coordination features.
    *
-   * @param {Actor} groupActor - The group actor
-   * @returns {PartyUserInfo[]} Array of user objects with their actor information
+   * @param {Actor} groupActor - The group actor to analyze
+   * @returns {Array<Object>} Array of user objects with ID, name, and actor information
    * @static
    */
   static getPartyUsers(groupActor) {
@@ -639,13 +650,13 @@ export class PartySpellManager {
   }
 
   /**
-   * Get available spellcasting focuses from world settings.
+   * Get available spellcasting focus names from world settings.
    *
    * Retrieves the list of available spellcasting focus names from the
    * world settings configuration. This provides the options available
    * for party coordination and role assignment.
    *
-   * @returns {string[]} Array of focus names
+   * @returns {string[]} Array of focus names (display names, not IDs)
    * @static
    */
   static getAvailableFocuses() {
@@ -655,13 +666,13 @@ export class PartySpellManager {
   }
 
   /**
-   * Get available focus options with full data.
+   * Get available focus options with full data from world settings.
    *
    * Retrieves the complete focus option configurations from world settings,
-   * including all metadata and configuration details for each available
-   * spellcasting focus option.
+   * including all metadata (id, name, icon, description) for each available
+   * spellcasting focus option. Handles both array and object storage formats.
    *
-   * @returns {FocusOption[]} Array of focus option objects
+   * @returns {FocusOption[]} Array of focus option objects with complete data
    * @static
    */
   static getAvailableFocusOptions() {
@@ -675,11 +686,11 @@ export class PartySpellManager {
    *
    * Retrieves the spellcasting focus selection for a specific user within
    * the context of a group actor. This enables user-specific coordination
-   * settings within party management.
+   * settings within party management through the dual-flag system.
    *
-   * @param {Actor} groupActor - The group actor
-   * @param {string} userId - The user ID
-   * @returns {FocusOption|null} The selected focus object or null
+   * @param {Actor} groupActor - The group actor storing focus selections
+   * @param {string} userId - The user ID to look up
+   * @returns {FocusOption|null} The selected focus object with id, name, icon, and description, or null if no focus selected
    */
   getUserSelectedFocus(groupActor, userId) {
     const userSelections = groupActor?.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
@@ -696,12 +707,13 @@ export class PartySpellManager {
    *
    * Updates the spellcasting focus selection for a specific user within
    * the context of a group actor. Manages the flag data structure to
-   * maintain per-user focus selections.
+   * maintain per-user focus selections and automatically synchronizes
+   * to individual actor flags for backward compatibility.
    *
-   * @param {Actor} groupActor - The group actor
-   * @param {string} userId - The user ID
-   * @param {string} focusId - The focus ID to set
-   * @returns {Promise<boolean>} Success status
+   * @param {Actor} groupActor - The group actor to update
+   * @param {string} userId - The user ID to set focus for
+   * @param {string|null} focusId - The focus ID to set, or null to clear
+   * @returns {Promise<boolean>} Success status of the operation
    */
   async setUserSelectedFocus(groupActor, userId, focusId) {
     try {

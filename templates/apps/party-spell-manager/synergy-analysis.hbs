@@ -1,52 +1,38 @@
 {{!--
 /**
- * Party Spell Synergy Analysis Template
+ * Focus Settings Dialog Template
  *
  * PURPOSE:
- * Detailed analytical interface for party spell optimization and synergy assessment.
- * Provides statistical breakdowns of party spell capabilities including damage type
- * distribution, spellcasting focus analysis, and strategic recommendations for
- * improving party spell coordination and effectiveness.
+ * Configuration dialog for managing spellcasting focus settings with different
+ * interfaces for GM and player modes. GMs can create/edit focus options and
+ * assign them to party members, while players can select their personal focus
+ * from available options. Supports icon selection, descriptions, and assignments.
  *
  * CONTEXT REQUIREMENTS:
- * @param {number} totalSpells - Total number of unique spells across the party
- * @param {number} totalPreparedSpells - Total number of prepared spells across party
- * @param {number} concentrationSpells - Number of concentration spells available
- * @param {number} concentrationPercentage - Percentage of spells requiring concentration
- * @param {number} ritualSpells - Number of ritual spells available to party
- * @param {Array<Object>} damageDistribution - Damage type analysis data
- * @param {string} damageDistribution[].localizedType - Localized damage type name
- * @param {number} damageDistribution[].count - Number of spells of this damage type
- * @param {Array<Object>} focusDistribution - Spellcasting focus analysis data
- * @param {string} focusDistribution[].focus - Focus type or specialization name
- * @param {number} focusDistribution[].count - Number of party members using this focus
- * @param {Array<string>} recommendations - Strategic recommendations for party optimization
+ * @param {boolean} isGMMode - Whether dialog is in GM management mode vs player selection
+ * @param {Array<Object>} availableFocuses - Array of available focus options
+ * @param {string} availableFocuses[].id - Unique focus identifier
+ * @param {string} availableFocuses[].name - Focus display name
+ * @param {string} availableFocuses[].description - Focus description text
+ * @param {string} availableFocuses[].icon - Focus icon image path
+ * @param {Array<Object>} partyMembers - Array of party member data (GM mode only)
+ * @param {string} partyMembers[].id - Member user identifier
+ * @param {string} partyMembers[].name - Member display name
+ * @param {string} partyMembers[].actorName - Associated actor name (optional)
+ * @param {string} partyMembers[].selectedFocus - Currently selected focus ID (optional)
+ * @param {string} currentSelection - Current user's selected focus ID (player mode)
  *
- * HELPER DEPENDENCIES:
- * @requires localize - Foundry VTT localization helper for text translation
- * @requires if - Handlebars conditional helper for optional sections
- * @requires each - Handlebars iteration helper for collections
+ * DUAL FLAG SYSTEM INTEGRATION:
+ * - GM Mode: Manages focus options and user assignments in group flags
+ * - Player Mode: Updates personal selection in group flags, synced to actor flags
+ * - Focus options stored by ID for data consistency
+ * - Individual actor flags store focus names for backward compatibility
  *
- * ACCESSIBILITY FEATURES:
- * - Semantic HTML structure with clear content organization
- * - Descriptive headings (h3, h4) for different analysis sections
- * - Grid layout for statistical overview with labeled stat items
- * - List structure for recommendations with proper ul/li markup
- * - Clear label/value pairs for all statistical data
- *
- * CUSTOMIZATION POINTS:
- * - Analysis sections display conditionally based on data availability
- * - Damage type distribution adapts to available damage types
- * - Focus distribution reflects actual party composition
- * - Recommendations list expands based on analysis results
- * - Statistical overview scales with party size and capabilities
- *
- * INTEGRATION:
- * - Connects to PartySpells application's synergy analysis functionality
- * - Uses module localization keys from SPELLBOOK.Party.Analysis namespace
- * - Supports dynamic data updates when party composition changes
- * - Provides input for strategic party spell coordination decisions
- * - Can be triggered from main party manager interface
+ * WORKFLOW DIFFERENCES:
+ * - GM Mode: Full CRUD operations on focus options + member assignments
+ * - Player Mode: Simple selection interface with visual focus cards
+ * - Both modes support icon selection and descriptions
+ * - Form submission handles different data structures based on mode
  */
 --}}
 

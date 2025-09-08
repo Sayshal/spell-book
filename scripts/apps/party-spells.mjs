@@ -14,6 +14,7 @@
  * - Real-time data refresh and cache management
  * - Drag-and-drop spell level reordering
  * - Hover-based spell highlighting for party coordination
+ * - Dual-flag focus system integration with group and individual actor flags
  *
  * @module Applications/PartySpells
  * @author Tyler
@@ -27,13 +28,40 @@ import { log } from '../logger.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
- * Party spell comparison data structure.
+ * Spellcasting focus option for party coordination.
+ *
+ * @typedef {Object} FocusOption
+ * @property {string} id - Unique identifier for the focus option (e.g., 'focus-damage', 'focus-healer')
+ * @property {string} name - Display name of the focus option (e.g., 'Offensive Mage', 'Support')
+ * @property {string} icon - File path to the focus option icon image
+ * @property {string} description - Descriptive text explaining the focus role and strategy
+ */
+
+/**
+ * Party spell comparison data structure with focus integration.
  *
  * @typedef {Object} PartySpellComparison
  * @property {Object<string, Object>} spellsByLevel - Spells organized by level
- * @property {Array<Object>} actors - Array of party member data with spell information
+ * @property {ActorSpellData[]} actors - Array of party member data with spell information and focus assignments
  * @property {Object} synergy - Spell synergy analysis data
- * @property {Array<string>} availableFocuses - Available spellcasting focus options
+ * @property {string[]} availableFocuses - Available spellcasting focus options
+ */
+
+/**
+ * Actor spell data structure for party analysis with focus coordination.
+ *
+ * @typedef {Object} ActorSpellData
+ * @property {string} id - Actor ID
+ * @property {string} name - Actor name
+ * @property {boolean} hasPermission - Whether current user can view actor details
+ * @property {string} token - Actor image/token path
+ * @property {string} focus - Legacy focus setting (for backward compatibility)
+ * @property {string|null} selectedFocus - Selected focus name from group coordination
+ * @property {string|null} selectedFocusId - Selected focus ID from group coordination
+ * @property {string|null} selectedFocusIcon - Selected focus icon path from group coordination
+ * @property {SpellcasterData[]} spellcasters - Array of spellcasting class data
+ * @property {number} totalSpellsKnown - Total known spells across all classes
+ * @property {number} totalSpellsPrepared - Total prepared spells across all classes
  */
 
 /**
@@ -43,26 +71,6 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
  * @property {number} level - The spell level (0-9)
  * @property {string} levelName - Display name for the spell level
  * @property {Array<Object>} spells - Array of spells at this level
- */
-
-/**
- * Focus option for dropdown selection.
- *
- * @typedef {Object} FocusOption
- * @property {string} value - The focus identifier value
- * @property {string} label - Display label for the focus
- */
-
-/**
- * Party member actor data with spell information.
- *
- * @typedef {Object} PartyActorData
- * @property {string} id - Actor ID
- * @property {string} name - Actor name
- * @property {boolean} hasPermission - Whether current user can edit this actor
- * @property {string} selectedFocus - Currently selected spellcasting focus
- * @property {Object} spells - Spell data organized by level
- * @property {Array<string>} preparedSpells - List of prepared spell UUIDs
  */
 
 /**
@@ -210,10 +218,10 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Get available focus options for dropdown selection.
    *
-   * Retrieves the configured spellcasting focus options and formats them
-   * for use in dropdown selection interfaces.
+   * Retrieves and formats focus options for UI dropdown controls,
+   * providing both value and label for proper form handling.
    *
-   * @returns {Array<FocusOption>} Array of focus option objects
+   * @returns {FocusOption[]} Array of formatted focus options
    */
   getAvailableFocusOptions() {
     const focuses = PartySpellManager.getAvailableFocuses();
@@ -243,11 +251,12 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Show synergy analysis dialog for party spell optimization.
    *
-   * Displays a modal dialog containing spell synergy analysis to help players
-   * understand spell combinations and party optimization opportunities.
+   * Opens the party spell analysis dialog with comprehensive statistics,
+   * damage type distribution, focus distribution, and strategic recommendations
+   * for optimizing party spell preparation and coordination.
    *
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _target - The event target
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} target - The clicked element
    * @static
    */
   static async showSynergyAnalysis(_event, _target) {
@@ -264,11 +273,12 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Refresh party spell data and clear caches.
    *
-   * Forces a complete reload of party spell data by clearing all caches
-   * and re-rendering the interface with fresh data from the managers.
+   * Forces a refresh of all cached party spell data, including spell lists,
+   * focus assignments, and comparison matrices. Updates the UI to reflect
+   * any changes in spell preparation or party composition.
    *
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _target - The event target
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} target - The clicked element
    * @static
    */
   static async refreshData(_event, _target) {
@@ -279,14 +289,13 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Toggle spell level expansion/collapse state.
+   * Toggle spell level section visibility.
    *
-   * Handles user interaction to expand or collapse spell level sections,
-   * maintaining state persistence through user flags for consistent
-   * experience across application sessions.
+   * Collapses or expands a spell level section and persists the state
+   * to user flags for consistent UI behavior across sessions.
    *
-   * @param {Event} event - The click event
-   * @param {HTMLElement} target - The clicked element
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} target - The clicked element with data-level attribute
    * @static
    */
   static toggleSpellLevel(event, target) {
@@ -307,14 +316,13 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle member card click for spell filtering.
+   * Filter spells to show only those known/prepared by a specific member.
    *
-   * Processes clicks on party member cards to filter spell display to show
-   * only spells for the selected member, or clear filtering if the same
-   * member is clicked again.
+   * Applies visual filtering to highlight spells associated with a specific
+   * party member, providing focused view of individual contributions.
    *
-   * @param {Event} event - The click event
-   * @param {HTMLElement} target - The clicked element
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} target - The clicked element with data-actor-id attribute
    * @static
    */
   static async filterMemberSpells(event, target) {
@@ -329,13 +337,13 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Open focus settings dialog for party management.
+   * Open focus settings dialog for party coordination.
    *
-   * Launches the focus settings configuration dialog, providing appropriate
-   * context based on user permissions and the selected actor.
+   * Opens the FocusSettingsDialog in appropriate mode (GM management or
+   * player selection) based on user permissions and target context.
    *
-   * @param {Event} event - The click event
-   * @param {HTMLElement} target - The clicked element
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} target - The clicked element with optional data-actor-id
    * @static
    */
   static async openFocusSettings(event, target) {

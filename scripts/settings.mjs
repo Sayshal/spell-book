@@ -1,9 +1,10 @@
 /**
  * Spell Book Module Settings Registration
  *
- * Registers all game settings, menus, and configuration options for the Spell Book module.
- * This module handles the complete configuration interface for the module, including
- * user preferences, spell behavior, UI customization, and technical settings.
+ * Registers and manages all configurable settings for the Spell Book module,
+ * including game mechanics, UI preferences, analytics, and party coordination
+ * features. Provides centralized configuration management with proper validation,
+ * defaults, and migration support.
  *
  * Settings are organized into logical groups:
  * - Menus & Classes: Dialog and application launchers

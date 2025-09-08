@@ -12,6 +12,7 @@
  * - Multi-character focus management
  * - Integration with party spell coordination
  * - Real-time focus updates and synchronization
+ * - Dual-flag system with group and individual actor synchronization
  *
  * @module Dialogs/FocusSettingsDialog
  * @author Tyler
@@ -24,23 +25,29 @@ import { log } from '../logger.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
+ * Spellcasting focus option configuration.
+ *
  * @typedef {Object} FocusOption
- * @property {string} id - Unique identifier for the focus option
- * @property {string} name - Display name of the focus option
- * @property {string} icon - Path to the focus option icon
- * @property {string} description - Descriptive text for the focus option
+ * @property {string} id - Unique identifier for the focus option (e.g., 'focus-damage', 'focus-healer')
+ * @property {string} name - Display name of the focus option (e.g., 'Offensive Mage', 'Support')
+ * @property {string} icon - File path to the focus option icon image
+ * @property {string} description - Descriptive text explaining the focus role and strategy
  */
 
 /**
+ * Focus selections mapping stored in group actor flags.
+ *
  * @typedef {Object} FocusSelections
- * @property {Object<string, string>} [userId] - Maps user IDs to selected focus option IDs
+ * @property {Object<string, string>} selections - Maps user IDs to selected focus option IDs
  */
 
 /**
+ * Party member data with focus assignment information.
+ *
  * @typedef {Object} PartyMember
  * @property {string} id - User ID
  * @property {string} name - User display name
- * @property {string} actorName - Associated actor name
+ * @property {string|null} actorName - Associated actor name (if available)
  * @property {string|null} selectedFocus - Currently selected focus option ID
  */
 
@@ -79,6 +86,10 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
 
   /**
    * Create a new Focus Settings dialog instance.
+   *
+   * Initializes the dialog with the specified group actor, target actor,
+   * and parent application context. Determines operating mode based on
+   * user permissions and target actor presence.
    *
    * @param {Actor} groupActor - The group actor containing focus selections
    * @param {Actor} [targetActor=null] - Specific actor to configure focus for (null for GM mode)
@@ -141,15 +152,14 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
   }
 
   /**
-   * Action handler to add a new focus option (GM only).
+   * Add a new focus option row to the management interface (GM only).
    *
-   * Creates a new focus option row in the management interface with
-   * default values and appropriate form controls.
+   * Creates a new focus option entry in the GM interface with default
+   * values and proper form controls. Does not save to settings until
+   * form submission.
    *
    * @param {Event} event - The triggering click event
    * @param {HTMLElement} target - The clicked element
-   * @returns {Promise<void>}
-   * @todo Move to template and localize alt text
    * @static
    */
   static async addFocus(event, target) {
@@ -176,13 +186,14 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
   }
 
   /**
-   * Action handler to delete a focus option (GM only).
+   * Delete a specific focus option and clean up assignments (GM only).
    *
-   * Removes a focus option row from the management interface.
-   * Note: This only removes from the UI; actual deletion occurs on form submission.
+   * Removes a focus option from the world settings and cleans up any
+   * user assignments using that focus. Updates both group actor flags
+   * and individual actor flags to maintain consistency.
    *
    * @param {Event} event - The triggering click event
-   * @param {HTMLElement} target - The clicked element
+   * @param {HTMLElement} target - The clicked element with data-index attribute
    * @returns {Promise<void>}
    * @static
    */
@@ -273,14 +284,13 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
   }
 
   /**
-   * Action handler for focus selection by users.
+   * Open icon selection dialog for focus customization.
    *
-   * Handles user selection of a focus option, with permission checking
-   * to ensure users can only select for themselves unless they're a GM.
+   * Provides interface for selecting custom icons for focus options,
+   * integrating with Foundry's file browser for asset selection.
    *
-   * @param {Event} event - The triggering click event
-   * @param {HTMLElement} target - The clicked element
-   * @returns {Promise<void>}
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} target - The clicked element with data-index
    * @static
    */
   static async selectFocus(event, target) {
@@ -328,6 +338,18 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
     }
   }
 
+  /**
+   * Reset focus options to default magical archetypes.
+   *
+   * Resets all focus options to the predefined MODULE.DEFAULT_FOCUSES set,
+   * clears all user focus assignments from group actors, and synchronizes
+   * individual actor flags. This action cannot be undone.
+   *
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} target - The clicked element
+   * @returns {Promise<void>}
+   * @static
+   */
   static async resetFocuses(event, target) {
     try {
       const result = await foundry.applications.api.DialogV2.wait({
@@ -410,9 +432,11 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
    * Save focus option configurations to world settings (GM only).
    *
    * Processes form data to extract focus option definitions and saves
-   * them to the world settings for use by all users.
+   * them to the world settings for use by all users. Also handles
+   * member focus assignments and synchronizes dual-flag system.
    *
    * @param {Object} formData - The processed form data containing focus definitions
+   * @param {Actor} groupActor - The group actor to update with assignments
    * @returns {Promise<void>}
    * @private
    * @static
@@ -467,7 +491,8 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
    * Save user focus selection to the group actor.
    *
    * Updates the group actor's flags to store the user's selected focus option,
-   * with proper ownership validation and delegation handling.
+   * with proper ownership validation and delegation handling. Synchronizes
+   * to individual actor flags for backward compatibility.
    *
    * @param {Object} formData - The form data containing selection information
    * @param {Actor} groupActor - The group actor to update
