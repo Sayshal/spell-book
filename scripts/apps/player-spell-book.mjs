@@ -308,6 +308,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @inheritdoc */
   async _prepareContext(options) {
+    const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
+    if (isPartyMode) await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, false);
     const context = this._createBaseContext(options);
     await this._ensureAllSpellDataLoaded();
     if (!this._stateManager._classesDetected) this._stateManager.detectSpellcastingClasses();
@@ -435,13 +437,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const partyActors = PartySpellManager.getPartyActors();
     const showPartyButton = partyActors.length !== 0;
     if (showPartyButton) {
+      const isPartyModeEnabled = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
       buttons.push({
         type: 'button',
         action: 'openPartyManager',
         icon: 'fas fa-users',
         label: 'SPELLBOOK.Party.Party',
         tooltip: 'SPELLBOOK.Party.OpenPartyManager',
-        cssClass: 'party-button'
+        cssClass: `party-button${isPartyModeEnabled ? ' party-mode-active' : ''}`
       });
     }
     return {
@@ -1096,6 +1099,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this._isLongRest) this.actor.unsetFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);
     if (this._flagChangeHook) Hooks.off('updateActor', this._flagChangeHook);
     document.removeEventListener('click', this._hideLoadoutContextMenu.bind(this));
+    const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
+    if (isPartyMode) await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, false);
     if (this.ui?.advancedSearchManager) this.ui.advancedSearchManager.cleanup();
     super._onClose(options);
   }
@@ -1275,33 +1280,40 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _prepareFilters() {
     let filterConfigData = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
-    if (!filterConfigData.version) {
-      log(2, 'No version field found in filter configuration. Rebuilding for 0.9.0 upgrade...');
-      filterConfigData = {
-        version: MODULE.DEFAULT_FILTER_CONFIG_VERSION,
-        filters: foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG)
-      };
-      game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, filterConfigData);
+    if (!filterConfigData || !filterConfigData.version) {
+      filterConfigData = { version: MODULE.DEFAULT_FILTER_CONFIG_VERSION, filters: foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG) };
     }
-    let filterConfig = filterConfigData.filters || [];
-    const storedVersion = filterConfigData.version;
-    const currentVersion = MODULE.DEFAULT_FILTER_CONFIG_VERSION;
-    if (storedVersion !== currentVersion) {
-      log(2, `Filter configuration version mismatch. Stored: ${storedVersion}, Current: ${currentVersion}. Updating...`);
-      filterConfig = this._migrateFilterConfiguration(filterConfig, storedVersion, currentVersion);
-      const updatedConfigData = { version: currentVersion, filters: filterConfig };
-      game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, updatedConfigData);
-    } else if (filterConfig.length === 0) filterConfig = foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG);
-    else filterConfig = this._ensureFilterIntegrity(filterConfig);
+    let filterConfig = filterConfigData?.filters || [];
+    if (filterConfig.length === 0) filterConfig = foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG);
+    else {
+      const currentVersion = MODULE.DEFAULT_FILTER_CONFIG_VERSION;
+      const storedVersion = filterConfigData.version || '0.0.0';
+      if (foundry.utils.isNewerVersion(currentVersion, storedVersion)) {
+        log(3, `Migrating filter configuration from ${storedVersion} to ${currentVersion}`);
+        filterConfig = this._migrateFilterConfiguration(filterConfig, storedVersion, currentVersion);
+        const updatedConfigData = { version: currentVersion, filters: filterConfig };
+        game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, updatedConfigData);
+      } else filterConfig = this._ensureFilterIntegrity(filterConfig);
+    }
+
     const sortedFilters = filterConfig.sort((a, b) => a.order - b.order);
     const filterState = this.filterHelper.getFilterState();
     const result = sortedFilters
       .map((filter) => {
         let filterEnabled = filter.enabled;
+
+        // Special handling for favorites filter
         if (filter.id === 'favorited') {
           const favoritesUIEnabled = game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES);
           filterEnabled = filter.enabled && favoritesUIEnabled;
         }
+
+        // Special handling for party filter - only show when party mode is enabled
+        if (filter.id === 'preparedByParty') {
+          const isPartyModeEnabled = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
+          filterEnabled = filter.enabled && isPartyModeEnabled;
+        }
+
         const result = {
           id: filter.id,
           type: filter.type,
@@ -1309,6 +1321,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           label: game.i18n.localize(filter.label),
           enabled: filterEnabled
         };
+
         let element;
         switch (filter.type) {
           case 'search':
@@ -2372,16 +2385,22 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (iconCount >= tokenLimit) break;
       if (actor.id === this.actor.id) continue;
       if (this._actorHasSpellPrepared(actor, spellData.uuid)) {
-        partyIcons += `<img src="${actor.img}" class="party-member-icon" title="${actor.name}" data-actor-id="${actor.id}">`;
+        const associatedUser = game.users.find((user) => user.character?.id === actor.id);
+        const userColor = associatedUser?.color?.css || game.user.color.css || 'transparent';
+        partyIcons += `<img src="${actor.img}" class="party-member-icon" data-tooltip="${actor.name}"  data-actor-id="${actor.id}" style="box-shadow: 0 0 0.1rem 0.1rem ${userColor};">`;
         iconCount++;
       }
     }
     if (partyIcons) {
-      const nameEndIndex = spellHtml.indexOf('</span>', spellHtml.indexOf('class="title"'));
-      if (nameEndIndex !== -1) {
-        const beforeIcons = spellHtml.substring(0, nameEndIndex + 7);
-        const afterIcons = spellHtml.substring(nameEndIndex + 7);
-        return `${beforeIcons}<span class="party-icons">${partyIcons}</span>${afterIcons}`;
+      const titleStartIndex = spellHtml.indexOf('<span class="title">');
+      if (titleStartIndex !== -1) {
+        const titleContentStart = titleStartIndex + '<span class="title">'.length;
+        const titleEndIndex = spellHtml.indexOf('</span>', titleContentStart);
+        if (titleEndIndex !== -1) {
+          const beforeTitle = spellHtml.substring(0, titleEndIndex);
+          const afterTitle = spellHtml.substring(titleEndIndex);
+          return `${beforeTitle}<span class="party-icons">${partyIcons}</span>${afterTitle}`;
+        }
       }
     }
     return spellHtml;
@@ -2397,8 +2416,50 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _actorHasSpellPrepared(actor, spellUuid) {
     if (!PartySpellManager.prototype.hasViewPermission(actor)) return false;
+
+    // Check both the legacy prepared spells flag and the new class-based system
     const preparedSpells = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS) || [];
-    return preparedSpells.includes(spellUuid);
+    const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
+
+    // Check legacy flag first
+    if (preparedSpells.includes(spellUuid)) return true;
+
+    // Check class-based preparations
+    for (const classSpells of Object.values(preparedByClass)) {
+      for (const spellKey of classSpells) {
+        // Parse the class spell key to extract UUID
+        const parsed = this.spellManager._parseClassSpellKey(spellKey);
+        if (parsed && parsed.spellUuid === spellUuid) return true;
+      }
+    }
+
+    // Also check for canonical UUID matching (for spells copied from compendiums)
+    for (const storedUuid of preparedSpells) {
+      if (this._normalizeSpellUuid(storedUuid) === this._normalizeSpellUuid(spellUuid)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Normalize spell UUIDs for comparison by resolving to canonical form.
+   *
+   * @param {string} uuid - Spell UUID to normalize
+   * @returns {string} Normalized UUID
+   * @private
+   */
+  _normalizeSpellUuid(uuid) {
+    try {
+      if (uuid.startsWith('Actor.')) {
+        const spellDoc = fromUuidSync(uuid);
+        return spellDoc?.flags?.core?.sourceId || uuid;
+      }
+      return uuid.replace(/\.Item\./g, '.');
+    } catch (error) {
+      return uuid;
+    }
   }
 
   /**
@@ -2550,7 +2611,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         classSpellKey,
         preparationMode
       };
-      log(3, `Processed spell: ${name} (${uuid}) - prepared: ${isPrepared}, ritual: ${isRitual}, class: ${sourceClass}, mode: ${preparationMode}`);
+      log(3, `Processed spell: ${name} - prepared: ${isPrepared}, ritual: ${isRitual}, class: ${sourceClass}, mode: ${preparationMode}`);
     }
     this._stateManager.clearFavoriteSessionState();
     await this._stateManager.addMissingRitualSpells(spellDataByClass);

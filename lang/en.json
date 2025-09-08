@@ -86,6 +86,7 @@
   "SPELLBOOK.Filters.Materials.Title": "Material Components",
   "SPELLBOOK.Filters.NoResults": "No spells match your filters.",
   "SPELLBOOK.Filters.NotPreparedByOthers": "Hide spells prepared by others",
+  "SPELLBOOK.Filters.PreparedByParty": "Prepared by Party",
   "SPELLBOOK.Filters.PreparedOnly": "Prepared Spells Only",
   "SPELLBOOK.Filters.Range": "Range",
   "SPELLBOOK.Filters.RangeMax": "Max",

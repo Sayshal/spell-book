@@ -188,7 +188,8 @@ export class SpellbookFilterHelper {
         ritual: false,
         favorited: false,
         concentration: '',
-        materialComponents: ''
+        materialComponents: '',
+        preparedByParty: false
       };
     }
     this._cachedFilterState = {
@@ -205,7 +206,8 @@ export class SpellbookFilterHelper {
       ritual: this.element.querySelector('[name="filter-ritual"]')?.checked || false,
       favorited: this.element.querySelector('[name="filter-favorited"]')?.checked || false,
       concentration: this.element.querySelector('[name="filter-concentration"]')?.value || '',
-      materialComponents: this.element.querySelector('[name="filter-materialComponents"]')?.value || ''
+      materialComponents: this.element.querySelector('[name="filter-materialComponents"]')?.value || '',
+      preparedByParty: this.element.querySelector('[name="filter-preparedByParty"]')?.checked || false
     };
     this._lastFilterUpdate = now;
     return this._cachedFilterState;
@@ -535,6 +537,8 @@ export class SpellbookFilterHelper {
   _extractSpellDataFromElement(item) {
     const titleElement = item.querySelector('.spell-name .title');
     const extractedName = titleElement?.textContent?.trim() || item.querySelector('.spell-name')?.textContent?.trim() || '';
+    const partyIcons = item.querySelector('.party-icons');
+    const hasPartyIcons = partyIcons && partyIcons.children.length > 0;
     return {
       name: extractedName.toLowerCase(),
       isPrepared: item.classList.contains('prepared-spell'),
@@ -550,7 +554,8 @@ export class SpellbookFilterHelper {
       requiresSave: item.dataset.requiresSave === 'true',
       conditions: (item.dataset.conditions || '').split(',').filter(Boolean),
       hasMaterialComponents: item.dataset.materialComponents === 'true',
-      isFavorited: item.dataset.favorited === 'true'
+      isFavorited: item.dataset.favorited === 'true',
+      hasPartyIcons: hasPartyIcons
     };
   }
 
@@ -641,6 +646,7 @@ export class SpellbookFilterHelper {
     if (filters.ritual && !spell.isRitual) return false;
     if (filters.prepared && !spell.isPrepared) return false;
     if (filters.favorited && !spell.isFavorited) return false;
+    if (filters.preparedByParty && !spell.hasPartyIcons) return false;
     return true;
   }
 

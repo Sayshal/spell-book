@@ -1014,14 +1014,41 @@
 
     .title {
       max-height: 1.5rem;
-      overflow: hidden;
       color: var(--spell-book-text-primary);
       font-weight: bold;
       font-size: var(--spell-book-font-2xl);
       font-family: var(--dnd5e-font-roboto-slab, serif);
-      text-overflow: ellipsis;
-      white-space: nowrap;
       transition: text-shadow 250ms ease;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      position: relative;
+
+      &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+      }
+
+      .party-icons {
+        gap: 0.35rem;
+        display: inline-flex;
+        margin-left: var(--spell-book-spacing-sm);
+        align-items: center;
+        width: fit-content;
+        overflow: visible;
+      }
+
+      .party-member-icon {
+        width: 1.25rem;
+        height: 1.25rem;
+        border-radius: 50%;
+        cursor: default;
+        object-fit: cover;
+        transition: var(--spell-book-transition-fast);
+      }
     }
 
     .subtitle {
@@ -1379,7 +1406,7 @@
       height: 1.5rem;
       padding: 0;
       font-size: var(--spell-book-font-md);
-      transition: all 0.4s ease;
+      transition: var(--spell-book-transition-fast);
 
       span {
         display: none;
@@ -1389,6 +1416,31 @@
         margin: 0;
         font-size: 1rem;
         line-height: 1;
+        transition: inherit;
+      }
+
+      &.party-button {
+        &.party-mode-active {
+          border-color: var(--spell-book-border-active);
+          background-color: var(--spell-book-bg-active);
+
+          i {
+            color: var(--spell-book-text-active);
+          }
+        }
+
+        &:hover:not(.party-mode-active) {
+          i {
+            color: var(--spell-book-text-hover);
+          }
+        }
+
+        &.party-mode-active:hover {
+          i {
+            color: var(--spell-book-text-active);
+            text-shadow: 0 0 0.5rem currentcolor;
+          }
+        }
       }
     }
   }
@@ -5774,25 +5826,6 @@
   /* ----------------------------------------- */
   /*  Party Mode Visualization                 */
   /* ----------------------------------------- */
-  .party-icons {
-    gap: 0.125rem;
-    display: inline-flex;
-    margin-left: var(--spell-book-spacing-sm);
-  }
-
-  .party-member-icon {
-    width: 1rem;
-    height: 1rem;
-    border: 0.063rem solid var(--spell-book-border-dark);
-    border-radius: 50%;
-    cursor: pointer;
-    transition: var(--spell-book-transition-fast);
-
-    &:hover {
-      border-color: var(--spell-book-border-highlight);
-    }
-  }
-
   .party-mode-context-menu {
     z-index: var(--spell-book-z-index-tooltip);
     position: absolute;

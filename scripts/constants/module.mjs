@@ -277,7 +277,7 @@ export const MODULE = {
    * Current version of the default filter configuration.
    * Increment this when making changes to DEFAULT_FILTER_CONFIG.
    */
-  DEFAULT_FILTER_CONFIG_VERSION: '0.10.0',
+  DEFAULT_FILTER_CONFIG_VERSION: '1.0.0',
 
   /**
    * Default filter configuration for spell book interface.
@@ -298,7 +298,8 @@ export const MODULE = {
     { id: 'materialComponents', type: 'dropdown', enabled: true, order: 100, label: 'SPELLBOOK.Filters.Materials.Title', sortable: true, searchAliases: ['MATERIALS', 'COMPONENTS'] },
     { id: 'prepared', type: 'checkbox', enabled: true, order: 2000, label: 'SPELLBOOK.Filters.PreparedOnly', sortable: false, searchAliases: ['PREPARED'] },
     { id: 'ritual', type: 'checkbox', enabled: true, order: 3000, label: 'SPELLBOOK.Filters.RitualOnly', sortable: false, searchAliases: ['RITUAL'] },
-    { id: 'favorited', type: 'checkbox', enabled: true, order: 4000, label: 'SPELLBOOK.Filters.FavoritedOnly', sortable: false, searchAliases: ['FAVORITED', 'FAVE', 'FAV'] }
+    { id: 'favorited', type: 'checkbox', enabled: true, order: 4000, label: 'SPELLBOOK.Filters.FavoritedOnly', sortable: false, searchAliases: ['FAVORITED', 'FAVE', 'FAV'] },
+    { id: 'preparedByParty', type: 'checkbox', enabled: true, order: 5000, label: 'SPELLBOOK.Filters.PreparedByParty', sortable: false, searchAliases: ['PARTYSPELLS', 'PARTY'] }
   ],
 
   /**
