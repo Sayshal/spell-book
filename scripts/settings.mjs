@@ -547,18 +547,12 @@ export function registerSettings() {
 
   /** Available focus options for party spell coordination */
   game.settings.register(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS, {
-    name: 'Available Focus Options',
+    name: 'SPELLBOOK.Settings.FocusOptions.Name',
+    hint: 'SPELLBOOK.Settings.FocusOptions.Hint',
     scope: 'world',
     config: false,
-    type: Object,
-    default: {
-      focuses: MODULE.PARTY_SPELL.DEFAULT_FOCUSES.map((name, index) => ({
-        id: `focus-${index}`,
-        name: name,
-        icon: 'fas fa-magic',
-        description: `${name} spellcasting focus`
-      }))
-    }
+    type: Array,
+    default: MODULE.DEFAULT_FOCUSES
   });
 
   /** Token limit for party mode display */

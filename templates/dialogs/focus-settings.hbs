@@ -101,7 +101,6 @@
         <!-- Party Member Focus Assignment Section -->
         <h3>{{localize "SPELLBOOK.FocusSettings.AssignFocuses"}}</h3>
         <div class="party-member-assignments">
-          {{log 'DEBUG' partyMembers}}
           {{#each partyMembers as |member|}}
             <div class="member-assignment">
               <!-- Member Information Display -->
@@ -115,8 +114,8 @@
               <!-- Focus Assignment Dropdown -->
               <select name="member-focus-{{member.id}}" data-user-id="{{member.id}}">
                 <option value="">{{localize "SPELLBOOK.FocusSettings.NoFocus"}}</option>
-                {{#each ../availableFocuses as |focus|}}
-                  <option value="{{focus.id}}" {{#if (eq focus.id ../member.selectedFocus)}}selected{{/if}}>
+                {{#each @root.availableFocuses as |focus|}}
+                  <option value="{{focus.id}}" {{#if (eq focus.id @member.selectedFocus)}}selected{{/if}}>
                     {{focus.name}}
                   </option>
                 {{/each}}
@@ -152,6 +151,12 @@
 
   <!-- Form Footer with Action Buttons -->
   <div class="form-footer">
+    <!-- Reset Button -->
+    <button type="button" data-action="reset-focuses" class="resetFocuses">
+      <i class="fas fa-undo"></i>
+      {{localize "SPELLBOOK.FocusSettings.ResetToDefaults"}}
+    </button>
+
     <!-- Cancel Button -->
     <button type="button" class="cancel-button" data-action="close">
       <i class="fas fa-times" aria-hidden="true"></i>

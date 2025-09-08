@@ -20,7 +20,6 @@
  * @property {number} LOG_LEVEL - Current logging level (0=off, 1=error, 2=warn, 3=debug)
  * @property {string} DEFAULT_FILTER_CONFIG_VERSION - Version number for filter configuration schema
  * @property {FilterConfigItem[]} DEFAULT_FILTER_CONFIG - Default filter configuration array
- * @property {PartySpellConfig} PARTY_SPELL - Party spell coordination settings
  * @property {EnforcementBehaviorConfig} ENFORCEMENT_BEHAVIOR - Spell change enforcement options
  * @property {WizardDefaultsConfig} WIZARD_DEFAULTS - Default wizard configuration values
  * @property {WizardSpellSourceConfig} WIZARD_SPELL_SOURCE - Wizard spell source type identifiers
@@ -244,12 +243,20 @@ export const MODULE = {
   ],
 
   /**
-   * Party spell coordination configuration.
-   * @type {PartySpellConfig}
+   * Default focus options based on common magical archetypes
    */
-  PARTY_SPELL: {
-    DEFAULT_FOCUSES: ['Support', 'Healing', 'Damage/Blasting', 'Control', 'Utility', 'Tank/Defense', 'Stealth/Infiltration', 'Social/Enchantment']
-  },
+  DEFAULT_FOCUSES: [
+    { id: 'focus-damage', name: 'Damage Dealer / Blaster', icon: 'icons/magic/fire/explosion-fireball-medium-orange.webp', description: 'Maximize offensive magical damage (often at fragility cost)' },
+    { id: 'focus-healer', name: 'Healer / Support', icon: 'icons/magic/light/cross-symbol-white-blue.webp', description: 'Heal, buff, and sustain allies' },
+    { id: 'focus-utility', name: 'Utility / Controller', icon: 'icons/magic/control/control-influence-mind.webp', description: 'Manipulate battlefield and circumstances' },
+    { id: 'focus-crowd-control', name: 'Crowd Controller (CC)', icon: 'icons/magic/control/freeze-ice-snowflake.webp', description: 'Restrict or disable enemies via control effects' },
+    { id: 'focus-summoner', name: 'Summoner', icon: 'icons/magic/symbols/runes-star-pentagon-purple.webp', description: 'Conjure allies or creatures to fight' },
+    { id: 'focus-arcanist', name: 'Arcanist / All-Rounder', icon: 'icons/magic/symbols/elements-air-earth-fire-water.webp', description: 'Versatile; handle multiple roles moderately well' },
+    { id: 'focus-hybrid', name: 'Hybrid / Gish / Combat Caster', icon: 'icons/weapons/swords/sword-magic-fire.webp', description: 'Blend melee combat with magical abilities' },
+    { id: 'focus-buffer', name: 'Debuffer / Buffer', icon: 'icons/magic/perception/orb-crystal-ball-scrying.webp', description: 'Weaken foes or strengthen allies' },
+    { id: 'focus-defensive', name: 'Defensive / Protection Caster', icon: 'icons/magic/defensive/shield-barrier-blue.webp', description: 'Provide defensive shields, wards, protective effects' },
+    { id: 'focus-specialist', name: 'Thematic / Elemental Specialist', icon: 'icons/magic/symbols/question-mark-stone.webp', description: 'Focus on specific magical domains' }
+  ],
 
   /**
    * Spell change enforcement behavior options.

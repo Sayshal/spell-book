@@ -686,7 +686,7 @@ export class PartySpellManager {
     const userSelections = groupActor?.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
     const selectedFocusId = userSelections[userId];
     if (!selectedFocusId) return null;
-    const availableFocuses = this.getAvailableFocusOptions();
+    const availableFocuses = PartySpellManager.getAvailableFocusOptions();
     return availableFocuses.find((f) => f.id === selectedFocusId) || null;
   }
 

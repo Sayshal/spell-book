@@ -22,6 +22,7 @@
 import { MODULE, TEMPLATES } from '../constants/_module.mjs';
 import { PartySpellManager } from '../managers/_module.mjs';
 import { FocusSettingsDialog } from '../dialogs/_module.mjs';
+import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -140,9 +141,28 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
     context.spellLevels = this.getSpellLevelGroups(this._comparisonData.spellsByLevel);
     context.groupName = this.groupActor?.name || game.i18n.localize('SPELLBOOK.Party.DefaultGroupName');
     if (context.comparison?.actors) {
+      log(1, '=== ACTOR FOCUS MAPPING DEBUG ===');
+      const partyUsers = PartySpellManager.getPartyUsers(this.groupActor);
+      log(1, 'Party users structure:', partyUsers);
+      log(1, 'Sample actor data:', context.comparison.actors[0]);
+
       context.comparison.actors.forEach((actorData) => {
-        if (actorData.hasPermission) actorData.selectedFocus = this.partyManager.getUserSelectedFocus(this.groupActor, game.user.id);
+        if (actorData.hasPermission) {
+          log(1, `Looking for actor ${actorData.id} (${actorData.name})`);
+          const associatedUser = partyUsers.find((user) => {
+            log(1, `  Checking user ${user.id} with actorId: ${user.actorId}`);
+            return user.actorId === actorData.id;
+          });
+          if (associatedUser) {
+            log(1, `  Found user ${associatedUser.id} for actor ${actorData.id}`);
+            actorData.selectedFocus = this.partyManager.getUserSelectedFocus(this.groupActor, associatedUser.id);
+            log(1, `  Selected focus:`, actorData.selectedFocus);
+          } else {
+            log(1, `  No user found for actor ${actorData.id}`);
+          }
+        }
       });
+      log(1, '=== END ACTOR FOCUS MAPPING DEBUG ===');
     }
     return context;
   }
@@ -326,8 +346,8 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
     event.stopPropagation();
     const actorId = target.dataset.actorId;
     const actor = actorId ? game.actors.get(actorId) : null;
-    if (game.user.isGM) new FocusSettingsDialog(this.groupActor, null).render(true);
-    else new FocusSettingsDialog(this.groupActor, actor).render(true);
+    if (game.user.isGM) new FocusSettingsDialog(this.groupActor, null, this).render(true);
+    else new FocusSettingsDialog(this.groupActor, actor, this).render(true);
   }
 
   /**
