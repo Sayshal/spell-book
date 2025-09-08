@@ -198,6 +198,7 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     });
     this._setupPartyMemberHover();
+    this._setupMemberCardContextMenu();
     this._restoreCollapsedLevels();
     this._globalClickHandler = (event) => {
       if (!this._filteredActorId) return;
@@ -205,6 +206,7 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
         const clickedMemberCard = event.target.closest('.member-card');
         if (!clickedMemberCard) this._clearSpellFilter();
       }
+      if (!event.target.closest('#member-card-context-menu')) this._hideMemberCardContextMenu();
     };
     document.addEventListener('click', this._globalClickHandler);
   }
@@ -212,6 +214,7 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   async _onClose(options = {}) {
     if (this._globalClickHandler) document.removeEventListener('click', this._globalClickHandler);
+    this._hideMemberCardContextMenu();
     return super._onClose(options);
   }
 
@@ -389,6 +392,128 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
         card.classList.remove('focused');
       });
     });
+  }
+
+  /**
+   * Set up context menu functionality for member cards.
+   *
+   * Configures right-click event handlers on party member cards to
+   * provide access to actor-specific actions like opening actor sheets.
+   *
+   * @private
+   */
+  _setupMemberCardContextMenu() {
+    const memberCards = this.element.querySelectorAll('.member-card');
+    memberCards.forEach((card) => {
+      const actorId = card.dataset.actorId;
+      if (!actorId) return;
+
+      const actor = game.actors.get(actorId);
+      if (!actor) return;
+
+      // Only add context menu if user has at least Observer permissions
+      if (!actor.testUserPermission(game.user, 'LIMITED')) return;
+
+      card.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this._showMemberCardContextMenu(event, card, actor);
+      });
+    });
+  }
+
+  /**
+   * Show context menu for member card.
+   *
+   * @param {Event} event - The right-click event
+   * @param {HTMLElement} card - The member card element
+   * @param {Actor} actor - The actor associated with the card
+   * @private
+   */
+  async _showMemberCardContextMenu(event, card, actor) {
+    this._hideMemberCardContextMenu();
+
+    try {
+      const contextMenu = document.createElement('div');
+      contextMenu.id = 'member-card-context-menu';
+      contextMenu.className = 'member-card-context-menu';
+
+      contextMenu.innerHTML = `
+      <div class="context-menu-item" data-action="open-actor" data-actor-id="${actor.id}">
+        <i class="fas fa-user" aria-hidden="true"></i>
+        <span>${game.i18n.localize('SPELLBOOK.Party.OpenActor')}</span>
+      </div>
+    `;
+
+      document.body.appendChild(contextMenu);
+      this._positionMemberCardContextMenu(event, contextMenu);
+
+      contextMenu.addEventListener('click', async (clickEvent) => {
+        const item = clickEvent.target.closest('.context-menu-item');
+        if (!item) return;
+
+        const action = item.dataset.action;
+        const actorId = item.dataset.actorId;
+
+        if (action === 'open-actor' && actorId) {
+          const targetActor = game.actors.get(actorId);
+          if (targetActor && targetActor.testUserPermission(game.user, 'LIMITED')) {
+            await targetActor.sheet.render(true);
+          } else {
+            ui.notifications.warn(game.i18n.localize('SPELLBOOK.Party.NoPermissionToOpenActor'));
+          }
+        }
+
+        this._hideMemberCardContextMenu();
+      });
+
+      this._activeMemberCardContextMenu = contextMenu;
+    } catch (error) {
+      console.error('Error showing member card context menu:', error);
+    }
+  }
+
+  /**
+   * Position member card context menu near the clicked card.
+   *
+   * @param {Event} event - The click event
+   * @param {HTMLElement} menu - The context menu element
+   * @private
+   */
+  _positionMemberCardContextMenu(event, menu) {
+    const menuRect = menu.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+
+    let finalX = event.clientX + 5;
+    let finalY = event.clientY + 5;
+
+    // Adjust if menu would go off screen
+    if (finalX + menuRect.width > viewportWidth - 10) {
+      finalX = event.clientX - menuRect.width - 5;
+    }
+    if (finalY + menuRect.height > viewportHeight - 10) {
+      finalY = event.clientY - menuRect.height - 5;
+    }
+
+    // Ensure menu stays on screen
+    if (finalX < 10) finalX = 10;
+    if (finalY < 10) finalY = 10;
+
+    menu.style.left = `${finalX}px`;
+    menu.style.top = `${finalY}px`;
+  }
+
+  /**
+   * Hide member card context menu.
+   *
+   * @private
+   */
+  _hideMemberCardContextMenu() {
+    if (this._activeMemberCardContextMenu) {
+      this._activeMemberCardContextMenu.remove();
+      this._activeMemberCardContextMenu = null;
+    }
   }
 
   /**

@@ -5999,7 +5999,7 @@
             height: 3.75rem;
             margin-bottom: 0.75rem;
             border: 0.125rem solid var(--spell-book-border);
-            border-radius: var(--spell-book-border-radius);
+            border-radius: 50%;
             transition: var(--spell-book-transition-fast);
           }
 
@@ -6287,7 +6287,8 @@
 /*  Context Menus                            */
 /* ----------------------------------------- */
 .spell-loadout-context-menu,
-.party-mode-context-menu {
+.party-mode-context-menu,
+.member-card-context-menu {
   z-index: var(--spell-book-z-index-context);
   position: absolute;
   max-width: 18.75rem;
