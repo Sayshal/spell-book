@@ -110,56 +110,32 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
   /** @inheritdoc */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    const focusData = game.settings.get(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS);
 
-    // Ensure we always have valid focus data, fallback to defaults
-    let availableFocuses = focusData.focuses || [];
-    if (!availableFocuses || !Array.isArray(availableFocuses) || availableFocuses.length === 0) {
-      log(1, 'No valid focuses found, using defaults');
-      availableFocuses = MODULE.DEFAULT_FOCUSES;
+    // Handle the array structure in settings
+    const settingData = game.settings.get(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS);
+    let focusData = Array.isArray(settingData) ? settingData[0] : settingData;
+
+    if (!focusData?.focuses || focusData.focuses.length === 0) {
+      focusData = { focuses: MODULE.DEFAULT_FOCUSES };
+      await game.settings.set(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS, focusData);
     }
 
-    context.availableFocuses = availableFocuses;
-
-    log(1, '=== FOCUS DIALOG CONTEXT DEBUG ===');
-    log(1, 'Available focuses:', context.availableFocuses);
-    log(1, 'Group Actor:', this.groupActor);
-    log(1, 'Is GM Mode:', this.isGMMode);
-
-    if (this.groupActor) {
-      const userSelections = this.groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
-      context.userSelections = userSelections;
-      log(1, 'Current user selections from flags:', userSelections);
-
-      if (this.isGMMode) {
-        const partyUsers = PartySpellManager.getPartyUsers(this.groupActor);
-        log(1, 'Party users:', partyUsers);
-        context.partyMembers = partyUsers.map((userInfo) => {
-          const selectedFocus = userSelections[userInfo.id] || null;
-          return {
-            id: userInfo.id,
-            name: userInfo.name,
-            actorName: userInfo.actorName,
-            selectedFocus: selectedFocus
-          };
-        });
-        log(1, 'Party members with selections:', context.partyMembers);
-
-        // Debug each member's selection
-        context.partyMembers.forEach((member) => {
-          log(1, `Member ${member.name} (${member.id}): selectedFocus = ${member.selectedFocus}`);
-        });
-      } else {
-        context.currentSelection = userSelections[game.user.id] || null;
-        log(1, 'Current user selection:', context.currentSelection);
-      }
-    }
-
-    context.isGM = game.user.isGM;
+    context.availableFocuses = focusData.focuses;
     context.isGMMode = this.isGMMode;
 
-    log(1, 'Final context:', context);
-    log(1, '=== END FOCUS DIALOG CONTEXT DEBUG ===');
+    if (this.groupActor && this.isGMMode) {
+      const userSelections = this.groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
+      const partyUsers = PartySpellManager.getPartyUsers(this.groupActor);
+      context.partyMembers = partyUsers.map((user) => ({
+        id: user.id,
+        name: user.name,
+        actorName: user.actorName || null,
+        selectedFocus: userSelections[user.id] || null
+      }));
+    } else if (this.groupActor) {
+      const userSelections = this.groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
+      context.currentSelection = userSelections[game.user.id] || null;
+    }
 
     return context;
   }
@@ -211,9 +187,69 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
    * @static
    */
   static async deleteFocus(event, target) {
-    if (!game.user.isGM) return;
-    const row = target.closest('.focus-option-row');
-    if (row) row.remove();
+    event.preventDefault();
+
+    const button = target.closest('[data-index]');
+    const index = parseInt(button?.dataset.index);
+
+    if (isNaN(index)) {
+      ui.notifications.error('Invalid focus index');
+      return;
+    }
+
+    // Get focus data - handle the array structure
+    const settingData = game.settings.get(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS);
+    const focusData = Array.isArray(settingData) ? settingData[0] : settingData;
+    const focuses = focusData?.focuses || [];
+
+    if (index < 0 || index >= focuses.length) {
+      ui.notifications.error('Focus not found');
+      return;
+    }
+
+    const focusToDelete = focuses[index];
+
+    // Confirm deletion
+    const confirmed = await foundry.applications.api.DialogV2.wait({
+      window: { title: 'Delete Focus', icon: 'fas fa-trash' },
+      content: `<p>Delete focus "${focusToDelete.name}"?</p>`,
+      buttons: [
+        { icon: 'fas fa-trash', label: 'Delete', action: 'delete', className: 'dialog-button danger' },
+        { icon: 'fas fa-times', label: 'Cancel', action: 'cancel', className: 'dialog-button' }
+      ],
+      default: 'cancel'
+    });
+
+    if (confirmed !== 'delete') return;
+
+    // Remove focus from array
+    focuses.splice(index, 1);
+
+    // Save back in the same structure
+    await game.settings.set(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS, { focuses });
+
+    // Clean up user assignments
+    if (this.groupActor) {
+      const selections = this.groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
+      let changed = false;
+
+      for (const [userId, focusId] of Object.entries(selections)) {
+        if (focusId === focusToDelete.id) {
+          delete selections[userId];
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        await this.groupActor.setFlag(MODULE.ID, FLAGS.SELECTED_FOCUS, selections);
+      }
+    }
+
+    ui.notifications.info(`Deleted focus: ${focusToDelete.name}`);
+
+    if (this.parentApp) {
+      this.parentApp.render(true);
+    }
   }
 
   /**
@@ -307,8 +343,8 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
 
       if (result !== 'reset') return;
 
-      // Reset focuses to defaults
-      const defaultFocusData = { focuses: DEFAULT_FOCUSES };
+      // Reset focuses to defaults - use MODULE.DEFAULT_FOCUSES
+      const defaultFocusData = { focuses: MODULE.DEFAULT_FOCUSES };
       await game.settings.set(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS, defaultFocusData);
 
       // Clear all member focus assignments
@@ -318,7 +354,7 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
 
       ui.notifications.info(game.i18n.localize('SPELLBOOK.FocusSettings.ResetSuccess'));
 
-      // Re-render
+      // Re-render this dialog and any parent apps
       this.render();
       Object.values(ui.windows).forEach((app) => {
         if (app.constructor.name === 'PartySpellsApp') {

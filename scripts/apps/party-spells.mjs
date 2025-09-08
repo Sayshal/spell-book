@@ -155,10 +155,16 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
           });
           if (associatedUser) {
             log(1, `  Found user ${associatedUser.id} for actor ${actorData.id}`);
-            actorData.selectedFocus = this.partyManager.getUserSelectedFocus(this.groupActor, associatedUser.id);
-            log(1, `  Selected focus:`, actorData.selectedFocus);
+            const focusObject = this.partyManager.getUserSelectedFocus(this.groupActor, associatedUser.id);
+            // Extract the focus name for display
+            actorData.selectedFocus = focusObject?.name || null;
+            actorData.selectedFocusId = focusObject?.id || null;
+            log(1, `  Selected focus:`, focusObject);
+            log(1, `  Focus name:`, actorData.selectedFocus);
           } else {
             log(1, `  No user found for actor ${actorData.id}`);
+            actorData.selectedFocus = null;
+            actorData.selectedFocusId = null;
           }
         }
       });

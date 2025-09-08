@@ -246,16 +246,16 @@ export const MODULE = {
    * Default focus options based on common magical archetypes
    */
   DEFAULT_FOCUSES: [
-    { id: 'focus-damage', name: 'Damage Dealer / Blaster', icon: 'icons/magic/fire/explosion-fireball-medium-orange.webp', description: 'Maximize offensive magical damage (often at fragility cost)' },
-    { id: 'focus-healer', name: 'Healer / Support', icon: 'icons/magic/light/cross-symbol-white-blue.webp', description: 'Heal, buff, and sustain allies' },
-    { id: 'focus-utility', name: 'Utility / Controller', icon: 'icons/magic/control/control-influence-mind.webp', description: 'Manipulate battlefield and circumstances' },
-    { id: 'focus-crowd-control', name: 'Crowd Controller (CC)', icon: 'icons/magic/control/freeze-ice-snowflake.webp', description: 'Restrict or disable enemies via control effects' },
-    { id: 'focus-summoner', name: 'Summoner', icon: 'icons/magic/symbols/runes-star-pentagon-purple.webp', description: 'Conjure allies or creatures to fight' },
-    { id: 'focus-arcanist', name: 'Arcanist / All-Rounder', icon: 'icons/magic/symbols/elements-air-earth-fire-water.webp', description: 'Versatile; handle multiple roles moderately well' },
-    { id: 'focus-hybrid', name: 'Hybrid / Gish / Combat Caster', icon: 'icons/weapons/swords/sword-magic-fire.webp', description: 'Blend melee combat with magical abilities' },
-    { id: 'focus-buffer', name: 'Debuffer / Buffer', icon: 'icons/magic/perception/orb-crystal-ball-scrying.webp', description: 'Weaken foes or strengthen allies' },
-    { id: 'focus-defensive', name: 'Defensive / Protection Caster', icon: 'icons/magic/defensive/shield-barrier-blue.webp', description: 'Provide defensive shields, wards, protective effects' },
-    { id: 'focus-specialist', name: 'Thematic / Elemental Specialist', icon: 'icons/magic/symbols/question-mark-stone.webp', description: 'Focus on specific magical domains' }
+    { id: 'focus-arcanist', name: 'Arcanist', icon: 'icons/magic/symbols/elements-air-earth-fire-water.webp', description: 'Versatile; handle multiple roles moderately well.' },
+    { id: 'focus-buffer', name: 'Buffer', icon: 'icons/magic/control/buff-strength-muscle-damage.webp', description: 'Weaken foes and strengthen allies.' },
+    { id: 'focus-crowd-control', name: 'Crowd Controller', icon: 'icons/magic/control/debuff-chains-shackles-movement-blue.webp', description: 'Restrict or disable enemies via control effects.' },
+    { id: 'focus-damage', name: 'Offensive Mage', icon: 'icons/magic/fire/explosion-fireball-large-orange.webp', description: 'Maximize offensive magical damage.' },
+    { id: 'focus-defensive', name: 'Protector', icon: 'icons/magic/defensive/shield-barrier-flaming-pentagon-blue.webp', description: 'Provide defensive shields and wards.' },
+    { id: 'focus-healer', name: 'Support', icon: 'icons/magic/life/heart-cross-strong-green.webp', description: 'Heal, resurrect, and sustain allies.' },
+    { id: 'focus-hybrid', name: 'Brawler Mage', icon: 'icons/weapons/staves/staff-ornate-jeweled-blue.webp', description: 'Blend melee combat with magical abilities.' },
+    { id: 'focus-specialist', name: 'Elementalist', icon: 'icons/magic/symbols/rune-sigil-horned-blue.webp', description: 'Focus on specific magical domains.' },
+    { id: 'focus-summoner', name: 'Summoner', icon: 'icons/magic/symbols/runes-star-pentagon-magenta.webp', description: 'Conjure allies to join fight.' },
+    { id: 'focus-utility', name: 'Utility', icon: 'icons/magic/control/hypnosis-mesmerism-eye.webp', description: 'Manipulate battlefield and circumstances.' }
   ],
 
   /**
