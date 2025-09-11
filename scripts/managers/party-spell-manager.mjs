@@ -353,24 +353,6 @@ export class PartySpellManager {
   }
 
   /**
-   * Extract damage types from a spell.
-   *
-   * Analyzes spell activities to determine what damage types the spell can
-   * deal. This information is used for party synergy analysis and damage
-   * type distribution calculations.
-   *
-   * @param {Item} spell - The spell item
-   * @returns {string[]} Array of damage types
-   */
-  extractDamageTypes(spell) {
-    const damageTypes = new Set();
-    for (const activity of spell.system.activities?.values() || []) {
-      if (activity.damage?.parts) for (const part of activity.damage.parts) if (part.types && part.types.size > 0) part.types.forEach((type) => damageTypes.add(type));
-    }
-    return Array.from(damageTypes);
-  }
-
-  /**
    * Check if current user has view permission for actor.
    *
    * Determines whether the current user has sufficient permissions to view
@@ -463,16 +445,24 @@ export class PartySpellManager {
 
   /**
    * Get spell synergy analysis for the party.
-   *
-   * Performs comprehensive analysis of the party's spell pool to identify
-   * synergies, coverage gaps, and optimization opportunities. Analyzes damage
-   * type distribution, concentration spell usage, ritual availability, and
-   * focus coordination to generate actionable recommendations.
-   *
-   * @returns {Promise<SynergyAnalysis>} Synergy analysis data
    */
   async getSpellSynergyAnalysis() {
-    const analysis = {
+    const analysis = this._initializeAnalysisStructure();
+    const collectors = this._initializeDataCollectors();
+    for (const actor of this.partyActors) {
+      if (!this.hasViewPermission(actor)) continue;
+      await this._analyzeActorSpells(actor, analysis, collectors);
+    }
+    this._processCollectedData(analysis, collectors);
+    this.generateEnhancedRecommendations(analysis);
+    return analysis;
+  }
+
+  /**
+   * Initialize the analysis data structure.
+   */
+  _initializeAnalysisStructure() {
+    return {
       totalSpells: 0,
       totalPreparedSpells: 0,
       damageDistribution: [],
@@ -480,64 +470,392 @@ export class PartySpellManager {
       concentrationPercentage: 0,
       ritualSpells: 0,
       focusDistribution: [],
-      recommendations: []
+      spellSchoolDistribution: [],
+      spellLevelDistribution: [],
+      componentAnalysis: { verbal: 0, somatic: 0, material: 0, materialCost: 0 },
+      savingThrowDistribution: [],
+      rangeAnalysis: { self: 0, touch: 0, ranged: 0 },
+      durationAnalysis: { instantaneous: 0, concentration: 0, timed: 0 },
+      duplicateSpells: [],
+      recommendations: [],
+      memberContributions: {
+        concentration: new Map(),
+        ritual: new Map(),
+        damageTypes: new Map(),
+        schools: new Map(),
+        focuses: new Map(),
+        components: { verbal: [], somatic: [], material: [], materialCost: [] },
+        duplicateSpells: new Map(),
+        highConcentration: [],
+        lowRitual: [],
+        limitedDamageTypes: [],
+        unbalancedFocus: []
+      },
+      concentrationMembers: [],
+      ritualMembers: []
     };
-    const allSpells = new Set();
-    const allPreparedSpells = new Set();
-    const damageTypes = {};
-    const focusTypes = {};
-    let concentrationCount = 0;
-    let ritualCount = 0;
-    for (const actor of this.partyActors) {
-      if (!this.hasViewPermission(actor)) continue;
-      const focus = this.getActorSpellcastingFocus(actor);
-      focusTypes[focus] = (focusTypes[focus] || 0) + 1;
-      for (const [classId] of Object.entries(actor.spellcastingClasses || {})) {
-        const classSpells = await this.getClassSpells(actor, classId);
-        if (!classSpells) continue;
-        for (const spell of classSpells.known) {
-          allSpells.add(spell.uuid);
-          if (spell.prepared) allPreparedSpells.add(spell.uuid);
-          if (spell.concentration) concentrationCount++;
-          if (spell.ritual) ritualCount++;
-          for (const damageType of spell.damageType || []) damageTypes[damageType] = (damageTypes[damageType] || 0) + 1;
-        }
-      }
-    }
-    analysis.totalSpells = allSpells.size;
-    analysis.totalPreparedSpells = allPreparedSpells.size;
-    analysis.concentrationSpells = concentrationCount;
-    analysis.concentrationPercentage = analysis.totalPreparedSpells > 0 ? Math.round((concentrationCount / analysis.totalPreparedSpells) * 100) : 0;
-    analysis.ritualSpells = ritualCount;
-    analysis.damageDistribution = Object.entries(damageTypes).map(([type, count]) => ({
-      type: type,
-      localizedType: game.i18n.localize(`DND5E.Damage${type.charAt(0).toUpperCase()}${type.slice(1).toLowerCase()}`) || type,
-      count: count
-    }));
-    analysis.focusDistribution = Object.entries(focusTypes).map(([focus, count]) => ({ focus: focus, count: count }));
-    analysis.recommendations = this.generateRecommendations(analysis);
-    return analysis;
   }
 
   /**
-   * Generate spell preparation recommendations based on analysis.
+   * Initialize data collection objects.
+   */
+  _initializeDataCollectors() {
+    return {
+      allSpells: new Set(),
+      allPreparedSpells: new Set(),
+      damageTypes: {},
+      focusTypes: {},
+      spellSchools: {},
+      spellLevels: Array(10).fill(0),
+      savingThrows: {},
+      ranges: { self: 0, touch: 0, ranged: 0 },
+      durations: { instantaneous: 0, concentration: 0, timed: 0 },
+      components: { verbal: 0, somatic: 0, material: 0, materialCost: 0 },
+      concentrationCount: 0,
+      ritualCount: 0,
+      preparedSpellsByName: new Map()
+    };
+  }
+
+  /**
+   * Analyze spells for a single actor.
+   */
+  async _analyzeActorSpells(actor, analysis, collectors) {
+    const focus = this.getActorSpellcastingFocus(actor);
+    this._trackFocus(focus, actor.name, analysis, collectors);
+    const actorStats = { concentrationCount: 0, ritualCount: 0, damageTypes: new Set() };
+    for (const [classId] of Object.entries(actor.spellcastingClasses || {})) {
+      const classSpells = await this.getClassSpells(actor, classId);
+      if (!classSpells) continue;
+      for (const spell of classSpells.known) {
+        collectors.allSpells.add(spell.uuid);
+        if (spell.prepared) await this._analyzeSpell(spell, actor, analysis, collectors, actorStats);
+      }
+    }
+    this._analyzeActorStats(actor, actorStats, analysis);
+  }
+
+  /**
+   * Analyze a single prepared spell.
+   */
+  async _analyzeSpell(spell, actor, analysis, collectors, actorStats) {
+    collectors.allPreparedSpells.add(spell.uuid);
+    const spellDoc = fromUuidSync(spell.uuid);
+    if (!spellDoc) return;
+    this._trackDuplicateSpell(spellDoc, actor.name, collectors);
+    const spellData = this._extractSpellData(spellDoc);
+    this._updateConcentrationData(spellData, spellDoc, actor.name, analysis, collectors, actorStats);
+    this._updateRitualData(spellData, spellDoc, actor.name, analysis, collectors, actorStats);
+    this._updateDamageTypeData(spellData, spellDoc, actor.name, analysis, collectors, actorStats);
+    this._updateSchoolData(spellDoc, actor.name, analysis, collectors);
+    this._updateComponentData(spellData, spellDoc, actor.name, analysis, collectors);
+    this._updateMiscData(spellData, spellDoc, collectors);
+  }
+
+  /**
+   * Extract spell data
+   */
+  _extractSpellData(spellDoc) {
+    return {
+      isConcentration: UIHelpers.checkIsConcentration(spellDoc),
+      isRitual: UIHelpers.checkIsRitual(spellDoc),
+      damageTypes: UIHelpers.extractDamageTypes(spellDoc),
+      materialComponents: UIHelpers.extractMaterialComponents(spellDoc),
+      rangeData: UIHelpers.extractRange(spellDoc),
+      castingTime: UIHelpers.extractCastingTime(spellDoc)
+    };
+  }
+
+  /**
+   * Track focus distribution.
+   */
+  _trackFocus(focus, actorName, analysis, collectors) {
+    collectors.focusTypes[focus] = (collectors.focusTypes[focus] || 0) + 1;
+    if (!analysis.memberContributions.focuses.has(focus)) analysis.memberContributions.focuses.set(focus, []);
+    analysis.memberContributions.focuses.get(focus).push(actorName);
+  }
+
+  /**
+   * Track duplicate spells.
+   */
+  _trackDuplicateSpell(spellDoc, actorName, collectors) {
+    const spellName = spellDoc.name;
+    if (!collectors.preparedSpellsByName.has(spellName)) collectors.preparedSpellsByName.set(spellName, []);
+    collectors.preparedSpellsByName.get(spellName).push(actorName);
+  }
+
+  /**
+   * Update concentration analysis data.
+   */
+  _updateConcentrationData(spellData, spellDoc, actorName, analysis, collectors, actorStats) {
+    if (spellData.isConcentration) {
+      collectors.concentrationCount++;
+      actorStats.concentrationCount++;
+      if (!analysis.memberContributions.concentration.has(actorName)) analysis.memberContributions.concentration.set(actorName, []);
+      analysis.memberContributions.concentration.get(actorName).push(spellDoc.name);
+    }
+  }
+
+  /**
+   * Update ritual analysis data.
+   */
+  _updateRitualData(spellData, spellDoc, actorName, analysis, collectors, actorStats) {
+    if (spellData.isRitual) {
+      collectors.ritualCount++;
+      actorStats.ritualCount++;
+      if (!analysis.memberContributions.ritual.has(actorName)) analysis.memberContributions.ritual.set(actorName, []);
+      analysis.memberContributions.ritual.get(actorName).push(spellDoc.name);
+    }
+  }
+
+  /**
+   * Update damage type analysis data.
+   */
+  _updateDamageTypeData(spellData, spellDoc, actorName, analysis, collectors, actorStats) {
+    for (const damageType of spellData.damageTypes) {
+      collectors.damageTypes[damageType] = (collectors.damageTypes[damageType] || 0) + 1;
+      actorStats.damageTypes.add(damageType);
+      if (!analysis.memberContributions.damageTypes.has(damageType)) analysis.memberContributions.damageTypes.set(damageType, []);
+      analysis.memberContributions.damageTypes.get(damageType).push(`${actorName}: ${spellDoc.name}`);
+    }
+  }
+
+  /**
+   * Update school analysis data.
+   */
+  _updateSchoolData(spellDoc, actorName, analysis, collectors) {
+    const school = spellDoc.system.school;
+    if (school) {
+      collectors.spellSchools[school] = (collectors.spellSchools[school] || 0) + 1;
+      if (!analysis.memberContributions.schools.has(school)) analysis.memberContributions.schools.set(school, []);
+      analysis.memberContributions.schools.get(school).push(`${actorName}: ${spellDoc.name}`);
+    }
+  }
+
+  /**
+   * Update component analysis data.
+   */
+  _updateComponentData(spellData, spellDoc, actorName, analysis, collectors) {
+    const comp = spellDoc.system.properties;
+    const spellRef = `${actorName}: ${spellDoc.name}`;
+    if (comp?.has?.('vocal')) {
+      collectors.components.verbal++;
+      analysis.memberContributions.components.verbal.push(spellRef);
+    }
+    if (comp?.has?.('somatic')) {
+      collectors.components.somatic++;
+      analysis.memberContributions.components.somatic.push(spellRef);
+    }
+    if (comp?.has?.('material')) {
+      collectors.components.material++;
+      analysis.memberContributions.components.material.push(spellRef);
+      if (spellData.materialComponents.hasConsumedMaterials) {
+        collectors.components.materialCost++;
+        analysis.memberContributions.components.materialCost.push(spellRef);
+      }
+    }
+  }
+
+  /**
+   * Update miscellaneous analysis data.
+   */
+  _updateMiscData(spellData, spellDoc, collectors) {
+    const level = spellDoc.system.level || 0;
+    collectors.spellLevels[level]++;
+    const save = spellDoc.system.save?.ability;
+    if (save) collectors.savingThrows[save] = (collectors.savingThrows[save] || 0) + 1;
+    if (spellData.rangeData.units === 'self') collectors.ranges.self++;
+    else if (spellData.rangeData.units === 'touch') collectors.ranges.touch++;
+    else collectors.ranges.ranged++;
+    const duration = spellDoc.system.duration;
+    if (spellData.isConcentration) collectors.durations.concentration++;
+    else if (duration?.units === 'inst') collectors.durations.instantaneous++;
+    else collectors.durations.timed++;
+  }
+
+  /**
+   * Analyze actor-specific statistics.
+   */
+  _analyzeActorStats(actor, actorStats, analysis) {
+    const actorPreparedCount = actor.totalSpellsPrepared || 0;
+    if (actorPreparedCount > 0 && actorStats.concentrationCount / actorPreparedCount > 0.6) {
+      analysis.memberContributions.highConcentration.push({
+        name: actor.name,
+        percentage: Math.round((actorStats.concentrationCount / actorPreparedCount) * 100),
+        count: actorStats.concentrationCount
+      });
+    }
+    if (actorPreparedCount > 5 && actorStats.ritualCount < 2) {
+      analysis.memberContributions.lowRitual.push({
+        name: actor.name,
+        ritualCount: actorStats.ritualCount,
+        totalPrepared: actorPreparedCount
+      });
+    }
+    if (actorStats.damageTypes.size < 3 && actorPreparedCount > 8) {
+      analysis.memberContributions.limitedDamageTypes.push({
+        name: actor.name,
+        damageTypes: Array.from(actorStats.damageTypes),
+        typeCount: actorStats.damageTypes.size
+      });
+    }
+  }
+
+  /**
+   * Process all collected data into final analysis format.
+   */
+  _processCollectedData(analysis, collectors) {
+    analysis.totalSpells = collectors.allSpells.size;
+    analysis.totalPreparedSpells = collectors.allPreparedSpells.size;
+    analysis.concentrationSpells = collectors.concentrationCount;
+    analysis.concentrationPercentage = analysis.totalPreparedSpells > 0 ? Math.round((collectors.concentrationCount / analysis.totalPreparedSpells) * 100) : 0;
+    analysis.ritualSpells = collectors.ritualCount;
+    this._processDamageDistribution(analysis, collectors);
+    this._processFocusDistribution(analysis, collectors);
+    this._processSchoolDistribution(analysis, collectors);
+    this._processLevelDistribution(analysis, collectors);
+    this._processSavingThrowDistribution(analysis, collectors);
+    this._processDuplicateSpells(analysis, collectors);
+    this._processUnbalancedFocus(analysis, collectors);
+    analysis.componentAnalysis = collectors.components;
+    analysis.rangeAnalysis = collectors.ranges;
+    analysis.durationAnalysis = collectors.durations;
+    this._createMemberLists(analysis);
+  }
+
+  /**
+   * Process damage type distribution.
+   */
+  _processDamageDistribution(analysis, collectors) {
+    analysis.damageDistribution = Object.entries(collectors.damageTypes).map(([type, count]) => ({
+      type: type,
+      localizedType: this._localizeDamageType(type),
+      count: count,
+      members: analysis.memberContributions.damageTypes.get(type) || []
+    }));
+  }
+
+  /**
+   * Process focus distribution.
+   */
+  _processFocusDistribution(analysis, collectors) {
+    analysis.focusDistribution = Object.entries(collectors.focusTypes).map(([focus, count]) => ({
+      focus: focus,
+      count: count,
+      members: analysis.memberContributions.focuses.get(focus) || []
+    }));
+  }
+
+  /**
+   * Process school distribution with pie chart data.
+   */
+  _processSchoolDistribution(analysis, collectors) {
+    analysis.spellSchoolDistribution = Object.entries(collectors.spellSchools).map(([school, count]) => ({
+      school: school,
+      localizedSchool: game.i18n.localize(`DND5E.School${school.charAt(0).toUpperCase()}${school.slice(1).toLowerCase()}`) || school,
+      count: count,
+      percentage: Math.round((count / analysis.totalPreparedSpells) * 100),
+      members: analysis.memberContributions.schools.get(school) || []
+    }));
+  }
+
+  /**
+   * Process level distribution.
+   */
+  _processLevelDistribution(analysis, collectors) {
+    analysis.spellLevelDistribution = collectors.spellLevels
+      .map((count, level) => ({
+        level: level,
+        count: count,
+        percentage: analysis.totalPreparedSpells > 0 ? Math.round((count / analysis.totalPreparedSpells) * 100) : 0,
+        localizedLevel: level === 0 ? game.i18n.localize('DND5E.SpellLevel0') : game.i18n.localize(`DND5E.SpellLevel${level}`)
+      }))
+      .filter((item) => item.count > 0);
+  }
+
+  /**
+   * Process saving throw distribution.
+   */
+  _processSavingThrowDistribution(analysis, collectors) {
+    analysis.savingThrowDistribution = Object.entries(collectors.savingThrows).map(([save, count]) => ({
+      save: save,
+      localizedSave: game.i18n.localize(`DND5E.Ability${save.charAt(0).toUpperCase()}${save.slice(1).toLowerCase()}`) || save,
+      count: count
+    }));
+  }
+
+  /**
+   * Process duplicate spells.
+   */
+  _processDuplicateSpells(analysis, collectors) {
+    const duplicateSpells = [];
+    for (const [spellName, actors] of collectors.preparedSpellsByName) {
+      if (actors.length > 1) {
+        duplicateSpells.push({ name: spellName, actors: [...actors] });
+        analysis.memberContributions.duplicateSpells.set(spellName, [...actors]);
+      }
+    }
+    analysis.duplicateSpells = duplicateSpells;
+  }
+
+  /**
+   * Process unbalanced focus analysis.
+   */
+  _processUnbalancedFocus(analysis, collectors) {
+    const focusEntries = Object.entries(collectors.focusTypes);
+    if (focusEntries.length < 3 && this.partyActors.length >= 3) {
+      analysis.memberContributions.unbalancedFocus = focusEntries.map(([focus, count]) => ({
+        focus: focus,
+        count: count,
+        members: analysis.memberContributions.focuses.get(focus) || []
+      }));
+    }
+  }
+
+  /**
+   * Localize damage type with fallbacks for healing/temphp.
+   */
+  _localizeDamageType(damageType) {
+    if (damageType === 'healing') return game.i18n.localize('DND5E.Healing');
+    if (damageType === 'temphp') return game.i18n.localize('DND5E.HealingTemp');
+    const standardKey = `DND5E.Damage${damageType.charAt(0).toUpperCase()}${damageType.slice(1).toLowerCase()}`;
+    return game.i18n.localize(standardKey) || damageType;
+  }
+
+  /**
+   * Create member lists for tooltip display.
+   */
+  _createMemberLists(analysis) {
+    analysis.concentrationMembers = Array.from(analysis.memberContributions.concentration.entries()).map(([name, spells]) => ({
+      name: name,
+      spells: spells,
+      count: spells.length
+    }));
+
+    analysis.ritualMembers = Array.from(analysis.memberContributions.ritual.entries()).map(([name, spells]) => ({
+      name: name,
+      spells: spells,
+      count: spells.length
+    }));
+  }
+
+  /**
+   * Generate enhanced spell preparation recommendations with member tracking.
    *
-   * Analyzes the party's spell composition to identify potential optimization
-   * opportunities and generate actionable recommendations. Considers factors
-   * like concentration spell density, ritual utilization, damage type diversity,
-   * and focus distribution balance.
-   *
-   * @param {SynergyAnalysis} analysis - The synergy analysis data
+   * @param {Object} analysis - The synergy analysis data
    * @returns {string[]} Array of recommendation localization keys
    */
-  generateRecommendations(analysis) {
+  generateEnhancedRecommendations(analysis) {
     const recommendations = [];
     if (analysis.concentrationPercentage > 70) recommendations.push('SPELLBOOK.Party.Recommendations.HighConcentration');
     if (analysis.ritualSpells < 3 && analysis.totalSpells > 20) recommendations.push('SPELLBOOK.Party.Recommendations.LowRituals');
-    const damageTypeCount = Object.keys(analysis.damageDistribution).length;
-    if (damageTypeCount < 4 && analysis.totalSpells > 15) recommendations.push('SPELLBOOK.Party.Recommendations.LimitedDamageTypes');
-    const focusCount = Object.keys(analysis.focusDistribution).length;
-    if (focusCount < 3 && this.partyActors.length >= 3) recommendations.push('SPELLBOOK.Party.Recommendations.UnbalancedFocus');
+    if (analysis.damageDistribution.length < 4 && analysis.totalSpells > 15) recommendations.push('SPELLBOOK.Party.Recommendations.LimitedDamageTypes');
+    if (analysis.memberContributions.unbalancedFocus.length > 0) recommendations.push('SPELLBOOK.Party.Recommendations.UnbalancedFocus');
+    if (analysis.duplicateSpells.length > 0) recommendations.push('SPELLBOOK.Party.Recommendations.DuplicateSpells');
+    if (analysis.spellLevelDistribution.filter((l) => l.level <= 2).reduce((sum, l) => sum + l.count, 0) / analysis.totalPreparedSpells > 0.7) {
+      recommendations.push('SPELLBOOK.Party.Recommendations.LowLevelHeavy');
+    }
+    if (analysis.savingThrowDistribution.length < 3) recommendations.push('SPELLBOOK.Party.Recommendations.LimitedSavingThrows');
     return recommendations;
   }
 

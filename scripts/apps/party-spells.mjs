@@ -22,7 +22,7 @@
 
 import { MODULE, TEMPLATES } from '../constants/_module.mjs';
 import { PartySpellManager } from '../managers/_module.mjs';
-import { FocusSettingsDialog } from '../dialogs/_module.mjs';
+import { FocusSettingsDialog, SynergyAnalysisDialog } from '../dialogs/_module.mjs';
 import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -148,6 +148,7 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
     context.canEditFocus = game.user.isGM || (this.viewingActor && this.viewingActor.isOwner);
     context.spellLevels = this.getSpellLevelGroups(this._comparisonData.spellsByLevel);
     context.groupName = this.groupActor?.name || game.i18n.localize('SPELLBOOK.Party.DefaultGroupName');
+
     if (context.comparison?.actors) {
       const partyUsers = PartySpellManager.getPartyUsers(this.groupActor);
       context.comparison.actors.forEach((actorData) => {
@@ -179,6 +180,7 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   _onRender(context, options) {
     super._onRender(context, options);
+
     const focusSelects = this.element.querySelectorAll('select[data-actor-id]');
     focusSelects.forEach((select) => {
       select.addEventListener('change', async (event) => {
@@ -202,9 +204,11 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       });
     });
+
     this._setupPartyMemberHover();
     this._setupMemberCardContextMenu();
     this._restoreCollapsedLevels();
+
     this._globalClickHandler = (event) => {
       if (!this._filteredActorId) return;
       if (this.element && this.element.contains(event.target)) {
@@ -268,13 +272,12 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
    * @static
    */
   static async showSynergyAnalysis(_event, _target) {
-    const analysisDialog = new foundry.applications.api.DialogV2({
-      window: { title: game.i18n.localize('SPELLBOOK.Party.SynergyAnalysisTitle') },
-      content: await foundry.applications.handlebars.renderTemplate(TEMPLATES.PARTY_SPELL_MANAGER.SYNERGY_ANALYSIS, this._comparisonData?.synergy || {}),
-      buttons: [{ action: 'close', label: game.i18n.localize('SPELLBOOK.UI.Close'), default: true }],
-      modal: true,
-      position: { width: 600, height: 'auto' }
-    });
+    if (!this._comparisonData?.synergy) {
+      ui.notifications.warn('SPELLBOOK.Party.NoSynergyData', { localize: true });
+      return;
+    }
+
+    const analysisDialog = new SynergyAnalysisDialog(this._comparisonData.synergy);
     analysisDialog.render(true);
   }
 

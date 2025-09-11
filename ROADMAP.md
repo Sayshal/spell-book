@@ -1,10 +1,10 @@
 # Spell Book Roadmap
 
-### v1.0.0 - Feature Complete Release
+## v1.0.0 - Feature Complete Release
 
 **Priority: Advanced Features & Collaboration**
 
-#### **Sharing & Collaboration [High Priority]**
+### **Sharing & Collaboration [High Priority]**
 
 Enable comprehensive party spell coordination through group actor integration, providing visual spell pool management, preparation optimization tools, and collaborative spellcasting focus assignment to maximize party effectiveness.
 
@@ -18,7 +18,7 @@ Enable comprehensive party spell coordination through group actor integration, p
 - **Spellcasting Focus Assignment**: Allow spellcasters (and GMs) to specify their characters spellcasting 'focus' ie: Support, Healing, Melee Combat, etc. This should be a standard list provided by the module via a world setting so GMs can customize (and localize!)
 - **Party Mode Visualization**: Right Click context menu on SpellBook to enable Party Mode. This mode will add a symbol (circular token art) for every party member that CURRENTLY has a certain spell prepared. To help avoid duplicates.
 
-#### **Post-Encounter Spell Analytics [High Priority]**
+### **Post-Encounter Spell Analytics [High Priority]**
 
 Generate comprehensive chat summaries after combat encounters detailing spellcasting activity, resource expenditure, and tactical insights for all participants.
 
@@ -58,11 +58,11 @@ Ensure seamless integration with the Cauldron of Plentiful Resources module, pro
 - **Validation Integration**: Run spell validation and rule checking on externally-added spells to maintain data consistency
 - **UI Refresh**: Automatically update spell book interfaces when external modules modify character spell inventories
 
-### v1.1.0+ - Advanced Features
+## v1.1.0+ - Advanced Features
 
 **Priority: Power User & GM Tools**
 
-#### **Custom Spell Creation Wizard [Medium Priority]**
+### **Custom Spell Creation Wizard [Medium Priority]**
 
 Implement an intuitive spell creation interface with guided templates, balance validation, and automatic integration into custom spell lists.
 
@@ -75,7 +75,7 @@ Implement an intuitive spell creation interface with guided templates, balance v
 - **Component Validation**: Ensure proper spell component combinations and requirements based on D&D5e rules
 - **Auto-Integration**: Seamlessly add created spells to custom spell lists and make them available to appropriate character classes
 
-#### **Advanced Wizard Features [Medium Priority]**
+### **Advanced Wizard Features [Medium Priority]**
 
 Implement spell research mechanics, spell variant management, advanced spellbook customization, and spell component tracking.
 
@@ -89,7 +89,7 @@ Implement spell research mechanics, spell variant management, advanced spellbook
 - Component tracking and management
 - Enhanced familiar spell sharing
 
-#### **Non-Standard Spellcasting Classes Support [Low Priority]**
+### **Non-Standard Spellcasting Classes Support [Low Priority]**
 
 Support homebrew and edge-case spellcasting classes that don't follow standard spell progression patterns, including cantrip-only casters and ritual-only casters.
 

@@ -16,3 +16,4 @@ export { SpellComparisonDialog } from '../dialogs/spell-comparison-dialog.mjs';
 export { SpellDetailsCustomization } from '../dialogs/spell-details-customization.mjs';
 export { SpellLoadoutDialog } from '../dialogs/spell-loadout-dialog.mjs';
 export { SpellNotesDialog } from '../dialogs/spell-notes-dialog.mjs';
+export { SynergyAnalysisDialog } from './synergy-analysis.mjs';

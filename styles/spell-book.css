@@ -3626,6 +3626,357 @@
   }
 
   /* ----------------------------------------- */
+  /*  Party Spell Analysis                     */
+  /* ----------------------------------------- */
+  .party-spell-analysis {
+    padding: 1rem;
+    max-height: calc(100vh - 12.5rem);
+    overflow-y: auto;
+
+    .analysis-overview {
+      margin-bottom: 2rem;
+
+      h3 {
+        margin-bottom: 1rem;
+        color: var(--spell-book-text-primary);
+        border-bottom: 0.125rem solid var(--spell-book-border-highlight);
+        padding-bottom: 0.5rem;
+      }
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-item {
+      padding: 1rem;
+      border: 0.063rem solid var(--spell-book-border-dark);
+      border-radius: var(--spell-book-radius-md);
+      background: var(--spell-book-bg-option);
+      transition: var(--spell-book-transition-normal);
+      cursor: help;
+
+      &:hover {
+        border-color: var(--spell-book-border-highlight);
+        background: var(--spell-book-bg-option-active);
+      }
+
+      .stat-label {
+        display: block;
+        font-size: 0.875rem;
+        color: var(--spell-book-text-secondary);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .stat-value {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--spell-book-text-primary);
+      }
+    }
+
+    .school-analysis,
+    .damage-analysis,
+    .level-analysis,
+    .component-analysis,
+    .focus-analysis,
+    .duplicate-analysis {
+      margin-bottom: 1.5rem;
+
+      h4 {
+        margin-bottom: 0.75rem;
+        color: var(--spell-book-text-primary);
+        font-size: 1.125rem;
+      }
+    }
+
+    .school-pie-container {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+
+      @media (width <= 48rem) {
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
+
+    .school-pie-chart {
+      width: 12.5rem;
+      height: 12.5rem;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 0.125rem solid var(--spell-book-border-dark);
+    }
+
+    .school-legend {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .school-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem;
+      border-radius: var(--spell-book-radius-sm);
+      cursor: help;
+      transition: var(--spell-book-transition-normal);
+
+      &:hover {
+        background: var(--spell-book-bg-option-active);
+      }
+    }
+
+    .school-color {
+      width: 1rem;
+      height: 1rem;
+      border-radius: 50%;
+      flex-shrink: 0;
+
+      &[data-school='0'] {
+        background: rgb(255 107 107);
+      }
+
+      &[data-school='1'] {
+        background: rgb(78 205 196);
+      }
+
+      &[data-school='2'] {
+        background: rgb(69 183 209);
+      }
+
+      &[data-school='3'] {
+        background: rgb(150 206 180);
+      }
+
+      &[data-school='4'] {
+        background: rgb(254 202 87);
+      }
+
+      &[data-school='5'] {
+        background: rgb(255 159 243);
+      }
+
+      &[data-school='6'] {
+        background: rgb(165 94 234);
+      }
+
+      &[data-school='7'] {
+        background: rgb(253 121 168);
+      }
+    }
+
+    .school-name {
+      flex: 1;
+      font-weight: 500;
+      color: var(--spell-book-text-primary);
+    }
+
+    .school-count {
+      font-size: 0.875rem;
+      color: var(--spell-book-text-secondary);
+    }
+
+    .damage-types,
+    .focus-types {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .damage-type-item,
+    .focus-type-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.375rem 0.75rem;
+      background: var(--spell-book-bg-option);
+      border: 0.063rem solid var(--spell-book-border-dark);
+      border-radius: var(--spell-book-radius-sm);
+      font-size: 0.875rem;
+      cursor: help;
+      transition: var(--spell-book-transition-normal);
+
+      &:hover {
+        border-color: var(--spell-book-border-highlight);
+        background: var(--spell-book-bg-option-active);
+      }
+
+      .damage-type,
+      .focus-type {
+        font-weight: 500;
+        color: var(--spell-book-text-primary);
+      }
+
+      .damage-count,
+      .focus-count {
+        background: var(--spell-book-bg-secondary);
+        color: var(--spell-book-text-primary);
+        padding: 0.125rem 0.375rem;
+        border-radius: var(--spell-book-radius-sm);
+        font-size: 0.75rem;
+        font-weight: bold;
+      }
+    }
+
+    .level-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+
+    .level-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      cursor: help;
+
+      &:hover .level-bar {
+        border-color: var(--spell-book-border-highlight);
+      }
+
+      .level-label {
+        min-width: 6.25rem;
+        font-weight: 500;
+        color: var(--spell-book-text-primary);
+      }
+
+      .level-bar {
+        flex: 1;
+        height: 1.5rem;
+        background: var(--spell-book-bg-option-active);
+        border: 0.063rem solid var(--spell-book-border-dark);
+        border-radius: var(--spell-book-radius-sm);
+        display: flex;
+        align-items: center;
+        padding: 0 0.5rem;
+        min-width: 3.75rem;
+        transition: var(--spell-book-transition-normal);
+      }
+
+      .level-count {
+        font-size: 0.75rem;
+        color: var(--spell-book-text-primary);
+        font-weight: 500;
+      }
+    }
+
+    .component-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
+      gap: 0.75rem;
+    }
+
+    .component-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0.75rem;
+      background: var(--spell-book-bg-option);
+      border: 0.063rem solid var(--spell-book-border-dark);
+      border-radius: var(--spell-book-radius-md);
+      cursor: help;
+      transition: var(--spell-book-transition-normal);
+
+      &:hover {
+        border-color: var(--spell-book-border-highlight);
+        background: var(--spell-book-bg-option-active);
+      }
+
+      .component-type {
+        font-weight: bold;
+        font-size: 1.125rem;
+        color: var(--spell-book-text-primary);
+        margin-bottom: 0.25rem;
+      }
+
+      .component-count {
+        font-size: 0.875rem;
+        color: var(--spell-book-text-secondary);
+      }
+    }
+
+    .duplicate-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-height: 18.75rem;
+      overflow-y: auto;
+      scrollbar-gutter: stable;
+    }
+
+    .duplicate-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0.75rem;
+      background: var(--color-bg-warn);
+      border: 0.063rem solid var(--color-border-warn);
+      border-radius: var(--spell-book-radius-sm);
+      cursor: help;
+
+      .spell-name {
+        font-weight: 500;
+        color: var(--spell-book-text-primary);
+      }
+
+      .duplicate-count {
+        background: var(--color-bg-danger);
+        color: rgb(255 255 255);
+        padding: 0.125rem 0.375rem;
+        border-radius: var(--spell-book-radius-sm);
+        font-size: 0.75rem;
+        font-weight: bold;
+      }
+    }
+
+    .recommendations {
+      background: var(--spell-book-bg-secondary);
+      border: 0.063rem solid var(--spell-book-border-highlight);
+      border-radius: var(--spell-book-radius-md);
+      padding: 1rem;
+
+      h4 {
+        color: var(--spell-book-text-primary);
+        margin-bottom: 0.75rem;
+      }
+
+      .recommendation-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .recommendation-item {
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        background: var(--spell-book-bg-option);
+        border: 0.063rem solid var(--spell-book-border-dark);
+        border-radius: var(--spell-book-radius-sm);
+        transition: var(--spell-book-transition-normal);
+
+        &:hover {
+          border-color: var(--spell-book-border-highlight);
+          background: var(--spell-book-bg-option-active);
+        }
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+
+  /* ----------------------------------------- */
   /*  Compendium Selection Dialog              */
   /* ----------------------------------------- */
   &.compendium-selection-dialog {

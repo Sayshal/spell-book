@@ -1,83 +1,109 @@
 {{!--
 /**
- * Focus Settings Dialog Template
+ * Party Spell Synergy Analysis Template
  *
  * PURPOSE:
- * Configuration dialog for managing spellcasting focus settings with different
- * interfaces for GM and player modes. GMs can create/edit focus options and
- * assign them to party members, while players can select their personal focus
- * from available options. Supports icon selection, descriptions, and assignments.
+ * Comprehensive analytics interface displaying detailed party spell coordination analysis.
+ * Provides statistical insights, distribution visualizations, and strategic recommendations
+ * to optimize party spellcasting effectiveness and identify preparation opportunities.
  *
  * CONTEXT REQUIREMENTS:
- * @param {boolean} isGMMode - Whether dialog is in GM management mode vs player selection
- * @param {Array<Object>} availableFocuses - Array of available focus options
- * @param {string} availableFocuses[].id - Unique focus identifier
- * @param {string} availableFocuses[].name - Focus display name
- * @param {string} availableFocuses[].description - Focus description text
- * @param {string} availableFocuses[].icon - Focus icon image path
- * @param {Array<Object>} partyMembers - Array of party member data (GM mode only)
- * @param {string} partyMembers[].id - Member user identifier
- * @param {string} partyMembers[].name - Member display name
- * @param {string} partyMembers[].actorName - Associated actor name (optional)
- * @param {string} partyMembers[].selectedFocus - Currently selected focus ID (optional)
- * @param {string} currentSelection - Current user's selected focus ID (player mode)
+ * @param {Object} analysis - Complete synergy analysis data structure
+ * @param {number} analysis.totalSpells - Total unique spells across party members
+ * @param {number} analysis.totalPreparedSpells - Total prepared spells across party
+ * @param {number} analysis.concentrationSpells - Count of concentration spells
+ * @param {number} analysis.concentrationPercentage - Percentage requiring concentration
+ * @param {number} analysis.ritualSpells - Count of ritual spells available
+ * @param {Array<Object>} analysis.damageDistribution - Damage type analysis with member data
+ * @param {Array<Object>} analysis.focusDistribution - Spellcasting focus distribution
+ * @param {Array<Object>} analysis.spellSchoolDistribution - School distribution with percentages
+ * @param {Array<Object>} analysis.spellLevelDistribution - Level distribution analysis
+ * @param {Object} analysis.componentAnalysis - Component usage statistics
+ * @param {Array<Object>} analysis.duplicateSpells - Duplicate spell warnings
+ * @param {Array<string>} analysis.recommendations - Strategic recommendation keys
+ * @param {Array<Object>} analysis.concentrationMembers - Members with concentration spells
+ * @param {Array<Object>} analysis.ritualMembers - Members with ritual spells
+ * @param {Object} analysis.memberContributions - Detailed member contribution tracking
  *
- * DUAL FLAG SYSTEM INTEGRATION:
- * - GM Mode: Manages focus options and user assignments in group flags
- * - Player Mode: Updates personal selection in group flags, synced to actor flags
- * - Focus options stored by ID for data consistency
- * - Individual actor flags store focus names for backward compatibility
+ * INTERACTIVE FEATURES:
+ * - Hover tooltips showing contributing party members for each statistic
+ * - Visual progress bars and distribution charts for easy interpretation
+ * - Color-coded recommendations with severity indicators
+ * - Expandable sections for detailed breakdowns
+ * - Member-specific contribution details in tooltips
  *
- * WORKFLOW DIFFERENCES:
- * - GM Mode: Full CRUD operations on focus options + member assignments
- * - Player Mode: Simple selection interface with visual focus cards
- * - Both modes support icon selection and descriptions
- * - Form submission handles different data structures based on mode
+ * STYLING INTEGRATION:
+ * - Uses spell-book CSS variables for consistent theming
+ * - Responsive grid layouts for different screen sizes
+ * - Hover effects and transitions for enhanced UX
+ * - Semantic color coding for different data types
+ *
+ * LOCALIZATION SUPPORT:
+ * - All text content uses SPELLBOOK.Party.Analysis namespace
+ * - Damage types and spell schools use D&D 5e localization
+ * - Recommendation messages support contextual formatting
+ * - Tooltip content includes member names and specific details
  */
 --}}
 
 <div class="party-spell-analysis">
-  <!-- Analysis Overview Section - Key statistical summary -->
+  <!-- Analysis Overview Section -->
   <div class="analysis-overview">
     <h3>{{localize "SPELLBOOK.Party.Analysis.Overview"}}</h3>
 
-    <!-- Statistics Grid - Core party spell metrics -->
     <div class="stats-grid">
-      <!-- Total Unique Spells Statistic -->
-      <div class="stat-item">
+      <div class="stat-item" data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.TotalSpellsTooltip'}}">
         <span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.TotalSpells"}}</span>
         <span class="stat-value">{{totalSpells}}</span>
       </div>
 
-      <!-- Total Prepared Spells Statistic -->
-      <div class="stat-item">
+      <div class="stat-item" data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.TotalPreparedTooltip'}}">
         <span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.TotalPrepared"}}</span>
         <span class="stat-value">{{totalPreparedSpells}}</span>
       </div>
 
-      <!-- Concentration Spells Analysis -->
-      <div class="stat-item">
-        <span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.ConcentrationSpells"}}</span>
+      <div class="stat-item"
+        data-tooltip="Members with concentration spells: {{#each concentrationMembers}}{{name}} ({{count}} spells){{#unless @last}}, {{/unless}}{{/each}}{{#if memberContributions.highConcentration}} | High usage: {{#each memberContributions.highConcentration}}{{name}} ({{percentage}}%){{#unless @last}}, {{/unless}}{{/each}}{{/if}}">
+        <span class="stat-label">{{localize "DND5E.Concentration"}}</span>
         <span class="stat-value">{{concentrationSpells}} ({{concentrationPercentage}}%)</span>
       </div>
 
-      <!-- Ritual Spells Count -->
-      <div class="stat-item">
-        <span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.RitualSpells"}}</span>
+      <div class="stat-item"
+        data-tooltip="Members with ritual spells: {{#each ritualMembers}}{{name}} ({{count}} spells){{#unless @last}}, {{/unless}}{{/each}}{{#if memberContributions.lowRitual}} | Low usage: {{#each memberContributions.lowRitual}}{{name}} ({{ritualCount}}/{{totalPrepared}}){{#unless @last}}, {{/unless}}{{/each}}{{/if}}">
+        <span class="stat-label">{{localize "DND5E.Ritual"}}</span>
         <span class="stat-value">{{ritualSpells}}</span>
       </div>
     </div>
   </div>
 
-  <!-- Damage Type Analysis Section - Optional based on data availability -->
+  <!-- Spell School Distribution as Pie Chart -->
+  {{#if spellSchoolDistribution.length}}
+    <div class="school-analysis">
+      <h4>{{localize "DND5E.School"}} {{localize "SPELLBOOK.Party.Analysis.Distribution"}}</h4>
+      <div class="school-pie-container">
+        <div class="school-pie-chart"></div>
+        <div class="school-legend">
+          {{#each spellSchoolDistribution as |school|}}
+            <div class="school-legend-item"
+              data-tooltip="{{school.localizedSchool}} spells: {{#each school.members}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}">
+              <span class="school-color" data-school="{{@index}}"></span>
+              <span class="school-name">{{school.localizedSchool}}</span>
+              <span class="school-count">{{school.count}} ({{school.percentage}}%)</span>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+  {{/if}}
+
+  <!-- Damage Type Distribution -->
   {{#if damageDistribution.length}}
     <div class="damage-analysis">
-      <h4>{{localize "SPELLBOOK.Party.Analysis.DamageTypes"}}</h4>
-
-      <!-- Damage Types Distribution Display -->
+      <h4>{{localize "DND5E.DamageTypes"}}</h4>
       <div class="damage-types">
         {{#each damageDistribution as |damageData|}}
-          <div class="damage-type-item">
+          <div class="damage-type-item"
+            data-tooltip="{{damageData.localizedType}} damage spells: {{#each damageData.members}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}">
             <span class="damage-type">{{damageData.localizedType}}</span>
             <span class="damage-count">{{damageData.count}}</span>
           </div>
@@ -86,15 +112,62 @@
     </div>
   {{/if}}
 
-  <!-- Spellcasting Focus Analysis Section - Optional based on data availability -->
+  <!-- Spell Level Distribution -->
+  {{#if spellLevelDistribution.length}}
+    <div class="level-analysis">
+      <h4>{{localize "DND5E.SpellLevels"}} {{localize "SPELLBOOK.Party.Analysis.Distribution"}}</h4>
+      <div class="level-chart">
+        {{#each spellLevelDistribution as |level|}}
+          <div class="level-item"
+            data-tooltip="{{level.localizedLevel}}: {{level.count}} prepared ({{level.percentage}}% of total)">
+            <span class="level-label">{{level.localizedLevel}}</span>
+            <div class="level-bar" style="width: {{level.percentage}}%">
+              <span class="level-count">{{level.count}} ({{level.percentage}}%)</span>
+            </div>
+          </div>
+        {{/each}}
+      </div>
+    </div>
+  {{/if}}
+
+  <!-- Spell Component Analysis -->
+  <div class="component-analysis">
+    <h4>{{localize "DND5E.Components"}}</h4>
+    <div class="component-grid">
+      <div class="component-item"
+        data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.VerbalTooltip'}}: {{../componentTooltips.verbal}}">
+        <span class="component-type">{{localize "DND5E.ComponentVerbalAbbr"}}</span>
+        <span class="component-count">{{componentAnalysis.verbal}}</span>
+      </div>
+
+      <div class="component-item"
+        data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.SomaticTooltip'}}: {{../componentTooltips.somatic}}">
+        <span class="component-type">{{localize "DND5E.ComponentSomaticAbbr"}}</span>
+        <span class="component-count">{{componentAnalysis.somatic}}</span>
+      </div>
+
+      <div class="component-item"
+        data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.MaterialTooltip'}}: {{../componentTooltips.material}}">
+        <span class="component-type">{{localize "DND5E.ComponentMaterialAbbr"}}</span>
+        <span class="component-count">{{componentAnalysis.material}}</span>
+      </div>
+
+      <div class="component-item"
+        data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.MaterialCostTooltip'}}: {{../componentTooltips.materialCost}}">
+        <span class="component-type">{{localize "DND5E.ComponentMaterialAbbr"}}*</span>
+        <span class="component-count">{{componentAnalysis.materialCost}}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Focus Distribution -->
   {{#if focusDistribution.length}}
     <div class="focus-analysis">
       <h4>{{localize "SPELLBOOK.Party.Analysis.FocusDistribution"}}</h4>
-
-      <!-- Focus Types Distribution Display -->
       <div class="focus-types">
         {{#each focusDistribution as |focusData|}}
-          <div class="focus-type-item">
+          <div class="focus-type-item"
+            data-tooltip="{{focusData.focus}} focus: {{#each focusData.members}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}">
             <span class="focus-type">{{focusData.focus}}</span>
             <span class="focus-count">{{focusData.count}}</span>
           </div>
@@ -103,15 +176,29 @@
     </div>
   {{/if}}
 
-  <!-- Strategic Recommendations Section - Optional based on analysis results -->
+  <!-- Duplicate Spells Warning -->
+  {{#if duplicateSpells.length}}
+    <div class="duplicate-analysis">
+      <h4>{{localize "SPELLBOOK.Party.Analysis.DuplicateSpells"}}</h4>
+      <div class="duplicate-list">
+        {{#each duplicateSpells as |duplicate|}}
+          <div class="duplicate-item"
+            data-tooltip="{{duplicate.name}} is prepared by: {{#each duplicate.actors}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}. Consider coordination to diversify spell selection.">
+            <span class="spell-name">{{duplicate.name}}</span>
+            <span class="duplicate-count">×{{duplicate.actors.length}}</span>
+          </div>
+        {{/each}}
+      </div>
+    </div>
+  {{/if}}
+
+  <!-- Recommendations -->
   {{#if recommendations.length}}
     <div class="recommendations">
       <h4>{{localize "SPELLBOOK.Party.Analysis.Recommendations"}}</h4>
-
-      <!-- Recommendations List - Localized strategic advice -->
       <ul class="recommendation-list">
         {{#each recommendations as |recommendation|}}
-          <li>{{localize recommendation}}</li>
+          <li class="recommendation-item">{{localize recommendation}}</li>
         {{/each}}
       </ul>
     </div>
