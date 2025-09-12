@@ -126,8 +126,7 @@ export class SynergyAnalysisDialog extends HandlebarsApplicationMixin(Applicatio
         return `${color} ${startDeg}deg ${endDeg}deg`;
       })
       .join(', ');
-    const finalGradient = `conic-gradient(${gradientStops})`;
-    return finalGradient;
+    return `conic-gradient(${gradientStops})`;
   }
 
   /**
