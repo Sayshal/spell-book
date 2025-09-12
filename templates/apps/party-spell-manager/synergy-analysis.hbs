@@ -47,160 +47,169 @@
 --}}
 
 <div class="party-spell-analysis">
-  <!-- Analysis Overview Section -->
-  <div class="analysis-overview">
-    <h3>{{localize "SPELLBOOK.Party.Analysis.Overview"}}</h3>
-
-    <div class="stats-grid">
-      <div class="stat-item" data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.TotalSpellsTooltip'}}">
-        <span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.TotalSpells"}}</span>
-        <span class="stat-value">{{totalSpells}}</span>
-      </div>
-
-      <div class="stat-item" data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.TotalPreparedTooltip'}}">
-        <span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.TotalPrepared"}}</span>
-        <span class="stat-value">{{totalPreparedSpells}}</span>
-      </div>
-
-      <div class="stat-item"
-        data-tooltip="Members with concentration spells: {{#each concentrationMembers}}{{name}} ({{count}} spells){{#unless @last}}, {{/unless}}{{/each}}{{#if memberContributions.highConcentration}} | High usage: {{#each memberContributions.highConcentration}}{{name}} ({{percentage}}%){{#unless @last}}, {{/unless}}{{/each}}{{/if}}">
-        <span class="stat-label">{{localize "DND5E.Concentration"}}</span>
-        <span class="stat-value">{{concentrationSpells}} ({{concentrationPercentage}}%)</span>
-      </div>
-
-      <div class="stat-item"
-        data-tooltip="Members with ritual spells: {{#each ritualMembers}}{{name}} ({{count}} spells){{#unless @last}}, {{/unless}}{{/each}}{{#if memberContributions.lowRitual}} | Low usage: {{#each memberContributions.lowRitual}}{{name}} ({{ritualCount}}/{{totalPrepared}}){{#unless @last}}, {{/unless}}{{/each}}{{/if}}">
-        <span class="stat-label">{{localize "DND5E.Ritual"}}</span>
-        <span class="stat-value">{{ritualSpells}}</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Spell School Distribution as Pie Chart -->
-  {{#if spellSchoolDistribution.length}}
-    <div class="school-analysis">
-      <h4>{{localize "DND5E.School"}} {{localize "SPELLBOOK.Party.Analysis.Distribution"}}</h4>
-      <div class="school-pie-container">
-        <div class="school-pie-chart"></div>
-        <div class="school-legend">
-          {{#each spellSchoolDistribution as |school|}}
-            <div class="school-legend-item"
-              data-tooltip="{{school.localizedSchool}} spells: {{#each school.members}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}">
-              <span class="school-color" data-school="{{@index}}"></span>
-              <span class="school-name">{{school.localizedSchool}}</span>
-              <span class="school-count">{{school.count}} ({{school.percentage}}%)</span>
-            </div>
+  <div class="analysis-content">
+    <!-- Recommendations at Very Top -->
+    {{#if recommendations.length}}
+      <div class="recommendations">
+        <h4>{{localize "SPELLBOOK.Party.Analysis.Recommendations"}}</h4>
+        <ul class="recommendation-list">
+          {{#each recommendations as |recommendation|}}
+            <li class="recommendation-item">{{localize recommendation}}</li>
           {{/each}}
-        </div>
+        </ul>
       </div>
-    </div>
-  {{/if}}
+    {{/if}}
 
-  <!-- Damage Type Distribution -->
-  {{#if damageDistribution.length}}
-    <div class="damage-analysis">
-      <h4>{{localize "DND5E.DamageTypes"}}</h4>
-      <div class="damage-types">
-        {{#each damageDistribution as |damageData|}}
-          <div class="damage-type-item"
-            data-tooltip="{{damageData.localizedType}} damage spells: {{#each damageData.members}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}">
-            <span class="damage-type">{{damageData.localizedType}}</span>
-            <span class="damage-count">{{damageData.count}}</span>
-          </div>
-        {{/each}}
-      </div>
-    </div>
-  {{/if}}
-
-  <!-- Spell Level Distribution -->
-  {{#if spellLevelDistribution.length}}
-    <div class="level-analysis">
-      <h4>{{localize "DND5E.SpellLevels"}} {{localize "SPELLBOOK.Party.Analysis.Distribution"}}</h4>
-      <div class="level-chart">
-        {{#each spellLevelDistribution as |level|}}
-          <div class="level-item"
-            data-tooltip="{{level.localizedLevel}}: {{level.count}} prepared ({{level.percentage}}% of total)">
-            <span class="level-label">{{level.localizedLevel}}</span>
-            <div class="level-bar" style="width: {{level.percentage}}%">
-              <span class="level-count">{{level.count}} ({{level.percentage}}%)</span>
+    <!-- Two Column Layout: 30% Left, 70% Right -->
+    <div class="analysis-columns">
+      <!-- Left Column (30%) - Pie Charts and Focus -->
+      <div class="left-column">
+        <!-- Spell School Distribution -->
+        {{#if spellSchoolDistribution.length}}
+          <div class="school-analysis">
+            <h4>{{localize "DND5E.School"}} {{localize "SPELLBOOK.Party.Analysis.Distribution"}}</h4>
+            <div class="school-pie-container">
+              <div class="school-pie-chart"></div>
+              <div class="school-legend">
+                {{#each spellSchoolDistribution as |school|}}
+                  <div class="school-legend-item"
+                    data-tooltip="{{school.localizedSchool}} spells: {{#each school.members}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}">
+                    <span class="school-color" data-school="{{@index}}"></span>
+                    <span class="school-name">{{school.localizedSchool}}</span>
+                    <span class="school-count">{{school.count}} ({{school.percentage}}%)</span>
+                  </div>
+                {{/each}}
+              </div>
             </div>
           </div>
-        {{/each}}
-      </div>
-    </div>
-  {{/if}}
+        {{/if}}
 
-  <!-- Spell Component Analysis -->
-  <div class="component-analysis">
-    <h4>{{localize "DND5E.Components"}}</h4>
-    <div class="component-grid">
-      <div class="component-item"
-        data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.VerbalTooltip'}}: {{../componentTooltips.verbal}}">
-        <span class="component-type">{{localize "DND5E.ComponentVerbalAbbr"}}</span>
-        <span class="component-count">{{componentAnalysis.verbal}}</span>
+        <!-- Spell Level Distribution as Pie Chart -->
+        {{#if spellLevelDistribution.length}}
+          <div class="level-analysis">
+            <h4>{{localize "DND5E.SpellLevels"}} {{localize "SPELLBOOK.Party.Analysis.Distribution"}}</h4>
+            <div class="level-pie-container">
+              <div class="level-pie-chart"></div>
+              <div class="level-legend">
+                {{#each spellLevelDistribution as |level|}}
+                  <div class="level-legend-item"
+                    data-tooltip="{{level.localizedLevel}}: {{level.count}} prepared ({{level.percentage}}% of total)">
+                    <span class="level-color" data-level="{{@index}}"></span>
+                    <span class="level-name">{{level.localizedLevel}}</span>
+                    <span class="level-count">{{level.count}} ({{level.percentage}}%)</span>
+                  </div>
+                {{/each}}
+              </div>
+            </div>
+          </div>
+        {{/if}}
+
+        <!-- Focus Distribution -->
+        {{#if focusDistribution.length}}
+          <div class="focus-analysis">
+            <h4>{{localize "SPELLBOOK.Party.Analysis.FocusDistribution"}}</h4>
+            <div class="focus-types">
+              {{#each focusDistribution as |focusData|}}
+                <div class="focus-type-item"
+                  data-tooltip="{{focusData.focus}} focus: {{#each focusData.members}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}">
+                  <span class="focus-type">{{focusData.focus}}</span>
+                  <span class="focus-count">{{focusData.count}}</span>
+                </div>
+              {{/each}}
+            </div>
+          </div>
+        {{/if}}
       </div>
 
-      <div class="component-item"
-        data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.SomaticTooltip'}}: {{../componentTooltips.somatic}}">
-        <span class="component-type">{{localize "DND5E.ComponentSomaticAbbr"}}</span>
-        <span class="component-count">{{componentAnalysis.somatic}}</span>
-      </div>
+      <!-- Right Column (70%) - Analysis Overview, Damage, Components, then Duplicates -->
+      <div class="right-column">
+        <!-- Analysis Overview - now with h4 header -->
+        <div class="analysis-overview">
+          <h4>{{localize "SPELLBOOK.Party.Analysis.Overview"}}</h4>
+          <div class="stats-grid">
+            <div class="stat-item" data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.TotalSpellsTooltip'}}">
+              <span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.TotalSpells"}}</span>
+              <span class="stat-value">{{totalSpells}}</span>
+            </div>
+            <div class="stat-item" data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.TotalPreparedTooltip'}}">
+              <span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.TotalPrepared"}}</span>
+              <span class="stat-value">{{totalPreparedSpells}}</span>
+            </div>
+            <div class="stat-item"
+              data-tooltip="Members with concentration spells: {{#each concentrationMembers}}{{name}} ({{count}} spells){{#unless @last}}, {{/unless}}{{/each}}{{#if memberContributions.highConcentration}} | High usage: {{#each memberContributions.highConcentration}}{{name}} ({{percentage}}%){{#unless @last}}, {{/unless}}{{/each}}{{/if}}">
+              <span class="stat-label">{{localize "DND5E.Concentration"}}</span>
+              <span class="stat-value">{{concentrationSpells}} ({{concentrationPercentage}}%)</span>
+            </div>
+            <div class="stat-item"
+              data-tooltip="Members with ritual spells: {{#each ritualMembers}}{{name}} ({{count}} spells){{#unless @last}}, {{/unless}}{{/each}}{{#if memberContributions.lowRitual}} | Low usage: {{#each memberContributions.lowRitual}}{{name}} ({{ritualCount}}/{{totalPrepared}}){{#unless @last}}, {{/unless}}{{/each}}{{/if}}">
+              <span class="stat-label">{{localize "DND5E.Ritual"}}</span>
+              <span class="stat-value">{{ritualSpells}}</span>
+            </div>
+          </div>
+        </div>
 
-      <div class="component-item"
-        data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.MaterialTooltip'}}: {{../componentTooltips.material}}">
-        <span class="component-type">{{localize "DND5E.ComponentMaterialAbbr"}}</span>
-        <span class="component-count">{{componentAnalysis.material}}</span>
-      </div>
+        <!-- Damage Analysis -->
+        {{#if damageDistribution.length}}
+          <div class="damage-analysis">
+            <h4>{{localize "DND5E.DamageTypes"}}</h4>
+            <div class="damage-types">
+              {{#each damageDistribution as |damageData|}}
+                <div class="damage-type-item"
+                  data-tooltip="{{damageData.localizedType}} damage spells: {{#each damageData.members}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}">
+                  <span class="damage-type">{{damageData.localizedType}}</span>
+                  <span class="damage-count">{{damageData.count}}</span>
+                </div>
+              {{/each}}
+            </div>
+          </div>
+        {{/if}}
 
-      <div class="component-item"
-        data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.MaterialCostTooltip'}}: {{../componentTooltips.materialCost}}">
-        <span class="component-type">{{localize "DND5E.ComponentMaterialAbbr"}}*</span>
-        <span class="component-count">{{componentAnalysis.materialCost}}</span>
+        <!-- Component Analysis -->
+        <div class="component-analysis">
+          <h4>{{localize "DND5E.Components"}}</h4>
+          <div class="component-grid">
+            <div class="component-item"
+              data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.VerbalTooltip'}}: {{../componentTooltips.verbal}}">
+              <span class="component-type">{{localize "DND5E.ComponentVerbalAbbr"}}</span>
+              <span class="component-count">{{componentAnalysis.verbal}}</span>
+            </div>
+            <div class="component-item"
+              data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.SomaticTooltip'}}: {{../componentTooltips.somatic}}">
+              <span class="component-type">{{localize "DND5E.ComponentSomaticAbbr"}}</span>
+              <span class="component-count">{{componentAnalysis.somatic}}</span>
+            </div>
+            <div class="component-item"
+              data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.MaterialTooltip'}}: {{../componentTooltips.material}}">
+              <span class="component-type">{{localize "DND5E.ComponentMaterialAbbr"}}</span>
+              <span class="component-count">{{componentAnalysis.material}}</span>
+            </div>
+            <div class="component-item"
+              data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.MaterialCostTooltip'}}: {{../componentTooltips.materialCost}}">
+              <span class="component-type">{{localize "DND5E.ComponentMaterialAbbr"}}*</span>
+              <span class="component-count">{{componentAnalysis.materialCost}}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Duplicate Spells -->
+        {{#if duplicateSpells.length}}
+          <div class="duplicate-analysis">
+            <h4>{{localize "SPELLBOOK.Party.Analysis.DuplicateSpells"}}</h4>
+            <div class="duplicate-list">
+              {{#each duplicateSpells as |duplicate|}}
+                <div class="duplicate-item"
+                  data-tooltip="{{duplicate.name}} is prepared by: {{#each duplicate.actors}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}. Consider coordination to diversify spell selection.">
+                  <div class="duplicate-spell-info">
+                    {{{duplicate.enrichedIcon}}}
+                    <span class="spell-name">{{duplicate.name}}</span>
+                  </div>
+                  <span class="duplicate-count">×{{duplicate.actors.length}}</span>
+                </div>
+              {{/each}}
+            </div>
+          </div>
+        {{/if}}
       </div>
     </div>
   </div>
-
-  <!-- Focus Distribution -->
-  {{#if focusDistribution.length}}
-    <div class="focus-analysis">
-      <h4>{{localize "SPELLBOOK.Party.Analysis.FocusDistribution"}}</h4>
-      <div class="focus-types">
-        {{#each focusDistribution as |focusData|}}
-          <div class="focus-type-item"
-            data-tooltip="{{focusData.focus}} focus: {{#each focusData.members}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}">
-            <span class="focus-type">{{focusData.focus}}</span>
-            <span class="focus-count">{{focusData.count}}</span>
-          </div>
-        {{/each}}
-      </div>
-    </div>
-  {{/if}}
-
-  <!-- Duplicate Spells Warning -->
-  {{#if duplicateSpells.length}}
-    <div class="duplicate-analysis">
-      <h4>{{localize "SPELLBOOK.Party.Analysis.DuplicateSpells"}}</h4>
-      <div class="duplicate-list">
-        {{#each duplicateSpells as |duplicate|}}
-          <div class="duplicate-item"
-            data-tooltip="{{duplicate.name}} is prepared by: {{#each duplicate.actors}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}. Consider coordination to diversify spell selection.">
-            <span class="spell-name">{{duplicate.name}}</span>
-            <span class="duplicate-count">×{{duplicate.actors.length}}</span>
-          </div>
-        {{/each}}
-      </div>
-    </div>
-  {{/if}}
-
-  <!-- Recommendations -->
-  {{#if recommendations.length}}
-    <div class="recommendations">
-      <h4>{{localize "SPELLBOOK.Party.Analysis.Recommendations"}}</h4>
-      <ul class="recommendation-list">
-        {{#each recommendations as |recommendation|}}
-          <li class="recommendation-item">{{localize recommendation}}</li>
-        {{/each}}
-      </ul>
-    </div>
-  {{/if}}
 </div>

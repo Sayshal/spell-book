@@ -26,7 +26,7 @@ export class SynergyAnalysisDialog extends HandlebarsApplicationMixin(Applicatio
   static DEFAULT_OPTIONS = {
     id: 'synergy-analysis-dialog',
     tag: 'div',
-    classes: ['spell-book'],
+    classes: ['spell-book', 'synergy-analysis-dialog'],
     window: {
       icon: 'fas fa-chart-pie',
       resizable: true,
@@ -59,7 +59,7 @@ export class SynergyAnalysisDialog extends HandlebarsApplicationMixin(Applicatio
     Object.assign(context, this.synergyData);
     context.componentTooltips = this._prepareComponentTooltips(this.synergyData);
     context.pieChartData = this._preparePieChartData(this.synergyData);
-    context.levelTooltips = this._prepareLevelTooltips(this.synergyData);
+    context.levelPieChartData = this._prepareLevelPieChartData(this.synergyData);
     return context;
   }
 
@@ -67,8 +67,12 @@ export class SynergyAnalysisDialog extends HandlebarsApplicationMixin(Applicatio
   _onRender(context, options) {
     super._onRender(context, options);
     if (context.pieChartData && context.pieChartData.conicGradient) {
-      const pieChart = this.element.querySelector('.school-pie-chart');
-      if (pieChart) pieChart.style.background = context.pieChartData.conicGradient;
+      const schoolPieChart = this.element.querySelector('.school-pie-chart');
+      if (schoolPieChart) schoolPieChart.style.background = context.pieChartData.conicGradient;
+    }
+    if (context.levelPieChartData && context.levelPieChartData.conicGradient) {
+      const levelPieChart = this.element.querySelector('.level-pie-chart');
+      if (levelPieChart) levelPieChart.style.background = context.levelPieChartData.conicGradient;
     }
   }
 
@@ -112,10 +116,43 @@ export class SynergyAnalysisDialog extends HandlebarsApplicationMixin(Applicatio
   }
 
   /**
+   * Prepare pie chart CSS data for spell level distribution.
+   *
+   * Generates the necessary data structure and CSS conic-gradient string
+   * for displaying the spell level distribution as a pie chart visualization.
+   *
+   * @param {Object} synergy - The synergy analysis data
+   * @returns {Object|null} Level pie chart data with segments and CSS gradient, or null if no data
+   * @private
+   */
+  _prepareLevelPieChartData(synergy) {
+    if (!synergy.spellLevelDistribution || synergy.spellLevelDistribution.length === 0) return null;
+
+    let cumulative = 0;
+    const segments = synergy.spellLevelDistribution.map((level, index) => {
+      const start = cumulative;
+      cumulative += level.percentage;
+      return {
+        index,
+        start,
+        end: cumulative,
+        level: level.localizedLevel,
+        percentage: level.percentage,
+        count: level.count
+      };
+    });
+
+    const conicGradient = this._generateConicGradient(segments, 'level');
+    return { segments, conicGradient };
+  }
+
+  /**
    * Generate conic-gradient CSS string.
    */
-  _generateConicGradient(segments) {
-    const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#a55eea', '#fd79a8'];
+  _generateConicGradient(segments, type) {
+    const schoolColors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#a55eea', '#fd79a8'];
+    const levelColors = ['#808080', '#ff6b6b', '#ff9ff3', '#feca57', '#96ceb4', '#45b7d1', '#a55eea', '#4ecdc4', '#fd79a8', '#ffd700'];
+    const colors = type === 'level' ? levelColors : schoolColors;
     if (segments.length === 0) return '';
     if (segments.length === 1) return `conic-gradient(${colors[0]} 0deg 360deg)`;
     const gradientStops = segments

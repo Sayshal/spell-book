@@ -220,6 +220,7 @@
   "SPELLBOOK.Notifications.Removed": "Removed",
   "SPELLBOOK.Notifications.SpellOverLimit": "Spells Over Limit",
   "SPELLBOOK.Party.Analysis.Components": "Spell Components",
+  "SPELLBOOK.Party.Analysis.HealingTemp": "Temp HP",
   "SPELLBOOK.Party.Analysis.ConcentrationSpells": "Concentration Spells",
   "SPELLBOOK.Party.Analysis.DamageTypes": "Damage Type Distribution",
   "SPELLBOOK.Party.Analysis.Distribution": "Distribution",

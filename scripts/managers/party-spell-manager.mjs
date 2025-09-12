@@ -733,6 +733,7 @@ export class PartySpellManager {
       count: count,
       members: analysis.memberContributions.damageTypes.get(type) || []
     }));
+    game.i18n.sortObjects(analysis.damageDistribution, 'localizedType');
   }
 
   /**
@@ -791,7 +792,9 @@ export class PartySpellManager {
     const duplicateSpells = [];
     for (const [spellName, actors] of collectors.preparedSpellsByName) {
       if (actors.length > 1) {
-        duplicateSpells.push({ name: spellName, actors: [...actors] });
+        const spellDoc = collectors.allSpellDocs?.get(spellName);
+        const enrichedIcon = spellDoc ? UIHelpers.createSpellIconLink(spellDoc) : '';
+        duplicateSpells.push({ name: spellName, actors: [...actors], enrichedIcon: enrichedIcon });
         analysis.memberContributions.duplicateSpells.set(spellName, [...actors]);
       }
     }
@@ -817,7 +820,7 @@ export class PartySpellManager {
    */
   _localizeDamageType(damageType) {
     if (damageType === 'healing') return game.i18n.localize('DND5E.Healing');
-    if (damageType === 'temphp') return game.i18n.localize('DND5E.HealingTemp');
+    if (damageType === 'temphp') return game.i18n.localize('SPELLBOOK.Party.Analysis.HealingTemp');
     const standardKey = `DND5E.Damage${damageType.charAt(0).toUpperCase()}${damageType.slice(1).toLowerCase()}`;
     return game.i18n.localize(standardKey) || damageType;
   }
