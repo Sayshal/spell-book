@@ -3727,10 +3727,10 @@
       .stat-item,
       .damage-type-item,
       .focus-type-item,
+      .school-type-item,
+      .level-type-item,
       .component-item,
-      .duplicate-item,
-      .school-legend-item,
-      .level-legend-item {
+      .duplicate-item {
         border: 0.063rem solid var(--spell-book-border-dark);
         border-radius: var(--spell-book-radius-sm);
         background: var(--spell-book-bg-option);
@@ -3806,135 +3806,28 @@
         }
       }
 
-      /* Pie chart containers and legends */
-      .school-pie-container,
-      .level-pie-container {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        align-items: center;
-        width: 100%;
-      }
-
-      .school-pie-chart,
-      .level-pie-chart {
-        width: 10rem;
-        height: 10rem;
-        border-radius: 50%;
-        flex-shrink: 0;
-        border: 0.125rem solid var(--spell-book-border-dark);
-      }
-
-      .school-legend,
-      .level-legend {
+      /* Left column list displays - School, Level, and Focus */
+      .school-types,
+      .level-types,
+      .focus-types {
         display: flex;
         flex-direction: column;
         gap: 0.375rem;
-        width: 100%;
       }
 
-      .school-legend-item,
-      .level-legend-item {
+      .school-type-item,
+      .level-type-item,
+      .focus-type-item {
         display: flex;
+        justify-content: space-between;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0.375rem;
-        font-size: 0.875rem;
-
-        &:hover {
-          background: var(--spell-book-bg-option-active);
-        }
+        padding: 0.5rem 0.75rem;
       }
 
-      /* Color indicators */
-      .school-color,
-      .level-color {
-        width: 0.75rem;
-        height: 0.75rem;
-        border-radius: 50%;
-        flex-shrink: 0;
-      }
-
-      /* School and level colors */
-      .school-color {
-        &[data-school='0'] {
-          background: rgb(255 107 107);
-        }
-
-        &[data-school='1'] {
-          background: rgb(78 205 196);
-        }
-
-        &[data-school='2'] {
-          background: rgb(69 183 209);
-        }
-
-        &[data-school='3'] {
-          background: rgb(150 206 180);
-        }
-
-        &[data-school='4'] {
-          background: rgb(254 202 87);
-        }
-
-        &[data-school='5'] {
-          background: rgb(255 159 243);
-        }
-
-        &[data-school='6'] {
-          background: rgb(165 94 234);
-        }
-
-        &[data-school='7'] {
-          background: rgb(253 121 168);
-        }
-      }
-
-      .level-color {
-        &[data-level='0'] {
-          background: rgb(128 128 128);
-        }
-
-        &[data-level='1'] {
-          background: rgb(255 107 107);
-        }
-
-        &[data-level='2'] {
-          background: rgb(255 159 243);
-        }
-
-        &[data-level='3'] {
-          background: rgb(254 202 87);
-        }
-
-        &[data-level='4'] {
-          background: rgb(150 206 180);
-        }
-
-        &[data-level='5'] {
-          background: rgb(69 183 209);
-        }
-
-        &[data-level='6'] {
-          background: rgb(165 94 234);
-        }
-
-        &[data-level='7'] {
-          background: rgb(78 205 196);
-        }
-
-        &[data-level='8'] {
-          background: rgb(253 121 168);
-        }
-
-        &[data-level='9'] {
-          background: rgb(255 215 0);
-        }
-      }
-
-      /* Legend text */
-      .school-name,
-      .level-name {
+      /* Text styles for all list items */
+      .school-type,
+      .level-type,
+      .focus-type {
         flex: 1;
         font-weight: 500;
         color: var(--spell-book-text-primary);
@@ -3944,44 +3837,12 @@
       }
 
       .school-count,
-      .level-count {
+      .level-count,
+      .focus-count {
         font-weight: bold;
         color: var(--spell-book-text-secondary);
         font-size: 0.8125rem;
         flex-shrink: 0;
-      }
-
-      /* Focus analysis in left column */
-      .left-column .focus-analysis {
-        .focus-types {
-          display: flex;
-          flex-direction: column;
-          gap: 0.375rem;
-        }
-
-        .focus-type-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 0.5rem;
-          font-size: 0.875rem;
-
-          .focus-type {
-            flex: 1;
-            font-weight: 500;
-            color: var(--spell-book-text-primary);
-            min-width: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-          }
-
-          .focus-count {
-            font-weight: bold;
-            color: var(--spell-book-text-secondary);
-            font-size: 0.8125rem;
-            flex-shrink: 0;
-          }
-        }
       }
 
       /* Duplicate analysis with constrained height and scrolling */

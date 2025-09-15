@@ -58,22 +58,7 @@ export class SynergyAnalysisDialog extends HandlebarsApplicationMixin(Applicatio
     const context = await super._prepareContext(options);
     Object.assign(context, this.synergyData);
     context.componentTooltips = this._prepareComponentTooltips(this.synergyData);
-    context.pieChartData = this._preparePieChartData(this.synergyData);
-    context.levelPieChartData = this._prepareLevelPieChartData(this.synergyData);
     return context;
-  }
-
-  /** @inheritdoc */
-  _onRender(context, options) {
-    super._onRender(context, options);
-    if (context.pieChartData && context.pieChartData.conicGradient) {
-      const schoolPieChart = this.element.querySelector('.school-pie-chart');
-      if (schoolPieChart) schoolPieChart.style.background = context.pieChartData.conicGradient;
-    }
-    if (context.levelPieChartData && context.levelPieChartData.conicGradient) {
-      const levelPieChart = this.element.querySelector('.level-pie-chart');
-      if (levelPieChart) levelPieChart.style.background = context.levelPieChartData.conicGradient;
-    }
   }
 
   /**
@@ -98,82 +83,5 @@ export class SynergyAnalysisDialog extends HandlebarsApplicationMixin(Applicatio
     let tooltip = displaySpells.join(', ');
     if (spells.length > maxSpells) tooltip += `... and ${spells.length - maxSpells} more`;
     return tooltip;
-  }
-
-  /**
-   * Prepare pie chart CSS data.
-   */
-  _preparePieChartData(synergy) {
-    if (!synergy.spellSchoolDistribution || synergy.spellSchoolDistribution.length === 0) return null;
-    let cumulative = 0;
-    const segments = synergy.spellSchoolDistribution.map((school, index) => {
-      const start = cumulative;
-      cumulative += school.percentage;
-      return { index, start, end: cumulative, school: school.localizedSchool, percentage: school.percentage, count: school.count };
-    });
-    const conicGradient = this._generateConicGradient(segments);
-    return { segments, conicGradient };
-  }
-
-  /**
-   * Prepare pie chart CSS data for spell level distribution.
-   *
-   * Generates the necessary data structure and CSS conic-gradient string
-   * for displaying the spell level distribution as a pie chart visualization.
-   *
-   * @param {Object} synergy - The synergy analysis data
-   * @returns {Object|null} Level pie chart data with segments and CSS gradient, or null if no data
-   * @private
-   */
-  _prepareLevelPieChartData(synergy) {
-    if (!synergy.spellLevelDistribution || synergy.spellLevelDistribution.length === 0) return null;
-
-    let cumulative = 0;
-    const segments = synergy.spellLevelDistribution.map((level, index) => {
-      const start = cumulative;
-      cumulative += level.percentage;
-      return {
-        index,
-        start,
-        end: cumulative,
-        level: level.localizedLevel,
-        percentage: level.percentage,
-        count: level.count
-      };
-    });
-
-    const conicGradient = this._generateConicGradient(segments, 'level');
-    return { segments, conicGradient };
-  }
-
-  /**
-   * Generate conic-gradient CSS string.
-   */
-  _generateConicGradient(segments, type) {
-    const schoolColors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#a55eea', '#fd79a8'];
-    const levelColors = ['#808080', '#ff6b6b', '#ff9ff3', '#feca57', '#96ceb4', '#45b7d1', '#a55eea', '#4ecdc4', '#fd79a8', '#ffd700'];
-    const colors = type === 'level' ? levelColors : schoolColors;
-    if (segments.length === 0) return '';
-    if (segments.length === 1) return `conic-gradient(${colors[0]} 0deg 360deg)`;
-    const gradientStops = segments
-      .map((segment, index) => {
-        const color = colors[index % colors.length];
-        const startDeg = (segment.start * 3.6).toFixed(1);
-        const endDeg = (segment.end * 3.6).toFixed(1);
-        return `${color} ${startDeg}deg ${endDeg}deg`;
-      })
-      .join(', ');
-    return `conic-gradient(${gradientStops})`;
-  }
-
-  /**
-   * Prepare level tooltips.
-   */
-  _prepareLevelTooltips(synergy) {
-    if (!synergy.spellLevelDistribution) return [];
-    return synergy.spellLevelDistribution.map((level) => {
-      const levelName = level.localizedLevel;
-      return `${levelName}: ${level.count} prepared (${level.percentage}% of total)`;
-    });
   }
 }
