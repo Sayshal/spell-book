@@ -3,7 +3,7 @@ import * as DataHelpers from '../data/_module.mjs';
 import { SpellComparisonDialog, SpellDetailsCustomization } from '../dialogs/_module.mjs';
 import { log } from '../logger.mjs';
 import * as UIHelpers from '../ui/_module.mjs';
-import * as ValidationHelplers from '../validation/_module.mjs';
+import * as ValidationHelpers from '../validation/_module.mjs';
 import { SpellAnalyticsDashboard } from './_module.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -803,7 +803,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @returns {Object} Object containing all filter form element HTML
    */
   _prepareFilterValidationHelplers() {
-    const searchInput = ValidationHelplers.createTextInput({
+    const searchInput = ValidationHelpers.createTextInput({
       name: 'spell-search',
       value: this.filterState.name || '',
       placeholder: game.i18n.localize('SPELLMANAGER.Filters.SearchPlaceholder'),
@@ -815,7 +815,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     Object.entries(CONFIG.DND5E.spellLevels).forEach(([level, label]) => {
       levelOptions.push({ value: level, label: label, selected: this.filterState.level === level });
     });
-    const levelSelect = ValidationHelplers.createSelect({
+    const levelSelect = ValidationHelpers.createSelect({
       name: 'spell-level',
       options: levelOptions,
       disabled: !this.isEditing,
@@ -827,7 +827,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       const label = DataHelpers.getConfigLabel(CONFIG.DND5E.spellSchools, key);
       schoolOptions.push({ value: key, label, selected: this.filterState.school === key });
     });
-    const schoolSelect = ValidationHelplers.createSelect({
+    const schoolSelect = ValidationHelpers.createSelect({
       name: 'spell-school',
       options: schoolOptions,
       disabled: !this.isEditing,
@@ -835,7 +835,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     });
     schoolSelect.id = 'spell-school';
     const castingTimeOptions = DataHelpers.prepareCastingTimeOptions(this.availableSpells, this.filterState);
-    const castingTimeSelect = ValidationHelplers.createSelect({
+    const castingTimeSelect = ValidationHelpers.createSelect({
       name: 'spell-castingTime',
       options: castingTimeOptions,
       disabled: !this.isEditing,
@@ -843,7 +843,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     });
     castingTimeSelect.id = 'spell-castingTime';
     const damageTypeOptions = DataHelpers.prepareDamageTypeOptions(this.filterState);
-    const damageTypeSelect = ValidationHelplers.createSelect({
+    const damageTypeSelect = ValidationHelpers.createSelect({
       name: 'spell-damageType',
       options: damageTypeOptions,
       disabled: !this.isEditing,
@@ -851,7 +851,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     });
     damageTypeSelect.id = 'spell-damageType';
     const conditionOptions = DataHelpers.prepareConditionOptions(this.filterState);
-    const conditionSelect = ValidationHelplers.createSelect({
+    const conditionSelect = ValidationHelpers.createSelect({
       name: 'spell-condition',
       options: conditionOptions,
       disabled: !this.isEditing,
@@ -863,7 +863,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       { value: 'true', label: game.i18n.localize('SPELLBOOK.Filters.True'), selected: this.filterState.requiresSave === 'true' },
       { value: 'false', label: game.i18n.localize('SPELLBOOK.Filters.False'), selected: this.filterState.requiresSave === 'false' }
     ];
-    const requiresSaveSelect = ValidationHelplers.createSelect({
+    const requiresSaveSelect = ValidationHelpers.createSelect({
       name: 'spell-requiresSave',
       options: requiresSaveOptions,
       disabled: !this.isEditing,
@@ -875,7 +875,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       { value: 'true', label: game.i18n.localize('SPELLBOOK.Filters.True'), selected: this.filterState.concentration === 'true' },
       { value: 'false', label: game.i18n.localize('SPELLBOOK.Filters.False'), selected: this.filterState.concentration === 'false' }
     ];
-    const concentrationSelect = ValidationHelplers.createSelect({
+    const concentrationSelect = ValidationHelpers.createSelect({
       name: 'spell-concentration',
       options: concentrationOptions,
       disabled: !this.isEditing,
@@ -887,21 +887,21 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       { value: 'consumed', label: game.i18n.localize('SPELLBOOK.Filters.Materials.Consumed'), selected: this.filterState.materialComponents === 'consumed' },
       { value: 'notConsumed', label: game.i18n.localize('SPELLBOOK.Filters.Materials.NotConsumed'), selected: this.filterState.materialComponents === 'notConsumed' }
     ];
-    const materialComponentsSelect = ValidationHelplers.createSelect({
+    const materialComponentsSelect = ValidationHelpers.createSelect({
       name: 'spell-materialComponents',
       options: materialComponentsOptions,
       disabled: !this.isEditing,
       ariaLabel: game.i18n.localize('SPELLBOOK.Filters.Materials.Title')
     });
     materialComponentsSelect.id = 'spell-materialComponents';
-    const ritualCheckbox = ValidationHelplers.createCheckbox({
+    const ritualCheckbox = ValidationHelpers.createCheckbox({
       name: 'spell-ritual',
       checked: this.filterState.ritual || false,
       disabled: !this.isEditing,
       ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RitualOnly')
     });
     ritualCheckbox.id = 'spell-ritual';
-    const minRangeInput = ValidationHelplers.createNumberInput({
+    const minRangeInput = ValidationHelpers.createNumberInput({
       name: 'spell-min-range',
       value: this.filterState.minRange || '',
       placeholder: game.i18n.localize('SPELLBOOK.Filters.RangeMin'),
@@ -909,7 +909,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RangeMinLabel')
     });
     minRangeInput.id = 'spell-min-range';
-    const maxRangeInput = ValidationHelplers.createNumberInput({
+    const maxRangeInput = ValidationHelpers.createNumberInput({
       name: 'spell-max-range',
       value: this.filterState.maxRange || '',
       placeholder: game.i18n.localize('SPELLBOOK.Filters.RangeMax'),
@@ -924,7 +924,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       label: source.label,
       selected: currentSourceValue === source.id
     }));
-    const sourceSelect = ValidationHelplers.createSelect({
+    const sourceSelect = ValidationHelpers.createSelect({
       name: 'spell-source',
       options: sourceOptions,
       disabled: !this.isEditing,
@@ -932,19 +932,19 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     });
     sourceSelect.id = 'spell-source';
     return {
-      searchInputHtml: ValidationHelplers.elementToHtml(searchInput),
-      levelSelectHtml: ValidationHelplers.elementToHtml(levelSelect),
-      schoolSelectHtml: ValidationHelplers.elementToHtml(schoolSelect),
-      castingTimeSelectHtml: ValidationHelplers.elementToHtml(castingTimeSelect),
-      damageTypeSelectHtml: ValidationHelplers.elementToHtml(damageTypeSelect),
-      conditionSelectHtml: ValidationHelplers.elementToHtml(conditionSelect),
-      requiresSaveSelectHtml: ValidationHelplers.elementToHtml(requiresSaveSelect),
-      concentrationSelectHtml: ValidationHelplers.elementToHtml(concentrationSelect),
-      materialComponentsSelectHtml: ValidationHelplers.elementToHtml(materialComponentsSelect),
-      ritualCheckboxHtml: ValidationHelplers.elementToHtml(ritualCheckbox),
-      minRangeInputHtml: ValidationHelplers.elementToHtml(minRangeInput),
-      maxRangeInputHtml: ValidationHelplers.elementToHtml(maxRangeInput),
-      sourceSelectHtml: ValidationHelplers.elementToHtml(sourceSelect)
+      searchInputHtml: ValidationHelpers.elementToHtml(searchInput),
+      levelSelectHtml: ValidationHelpers.elementToHtml(levelSelect),
+      schoolSelectHtml: ValidationHelpers.elementToHtml(schoolSelect),
+      castingTimeSelectHtml: ValidationHelpers.elementToHtml(castingTimeSelect),
+      damageTypeSelectHtml: ValidationHelpers.elementToHtml(damageTypeSelect),
+      conditionSelectHtml: ValidationHelpers.elementToHtml(conditionSelect),
+      requiresSaveSelectHtml: ValidationHelpers.elementToHtml(requiresSaveSelect),
+      concentrationSelectHtml: ValidationHelpers.elementToHtml(concentrationSelect),
+      materialComponentsSelectHtml: ValidationHelpers.elementToHtml(materialComponentsSelect),
+      ritualCheckboxHtml: ValidationHelpers.elementToHtml(ritualCheckbox),
+      minRangeInputHtml: ValidationHelpers.elementToHtml(minRangeInput),
+      maxRangeInputHtml: ValidationHelpers.elementToHtml(maxRangeInput),
+      sourceSelectHtml: ValidationHelpers.elementToHtml(sourceSelect)
     };
   }
 
@@ -954,7 +954,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @returns {Object} Object containing form element HTML
    */
   _prepareCreateListFormData(identifierOptions) {
-    const nameInput = ValidationHelplers.createTextInput({
+    const nameInput = ValidationHelpers.createTextInput({
       name: 'name',
       required: true,
       ariaLabel: game.i18n.localize('SPELLMANAGER.CreateList.ListNameLabel')
@@ -970,13 +970,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       label: game.i18n.localize('SPELLMANAGER.CreateList.CustomOption'),
       selected: false
     });
-    const classSelect = ValidationHelplers.createSelect({
+    const classSelect = ValidationHelpers.createSelect({
       name: 'identifier',
       options: classOptions,
       ariaLabel: game.i18n.localize('SPELLMANAGER.CreateList.ClassLabel')
     });
     classSelect.id = 'class-identifier';
-    const customInput = ValidationHelplers.createTextInput({
+    const customInput = ValidationHelpers.createTextInput({
       name: 'customIdentifier',
       pattern: '[a-z0-9_-]+',
       title: game.i18n.localize('SPELLMANAGER.CreateList.IdentifierNotes'),
@@ -984,9 +984,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     });
     customInput.id = 'custom-identifier';
     return {
-      nameInputHtml: ValidationHelplers.elementToHtml(nameInput),
-      classSelectHtml: ValidationHelplers.elementToHtml(classSelect),
-      customInputHtml: ValidationHelplers.elementToHtml(customInput)
+      nameInputHtml: ValidationHelpers.elementToHtml(nameInput),
+      classSelectHtml: ValidationHelpers.elementToHtml(classSelect),
+      customInputHtml: ValidationHelpers.elementToHtml(customInput)
     };
   }
 
@@ -996,7 +996,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   _prepareMergeListFormData() {
     const sourceListOptions = this._buildSpellListOptions('SPELLMANAGER.MergeLists.SelectSourceList');
-    const sourceListSelect = ValidationHelplers.createSelect({
+    const sourceListSelect = ValidationHelpers.createSelect({
       name: 'sourceList',
       options: sourceListOptions,
       required: true,
@@ -1004,30 +1004,30 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     });
     sourceListSelect.id = 'source-list';
     const copyFromListOptions = this._buildSpellListOptions('SPELLMANAGER.MergeLists.SelectCopyFromList');
-    const copyFromListSelect = ValidationHelplers.createSelect({
+    const copyFromListSelect = ValidationHelpers.createSelect({
       name: 'copyFromList',
       options: copyFromListOptions,
       required: true,
       ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.CopyFromListLabel')
     });
     copyFromListSelect.id = 'copy-from-list';
-    const mergedListNameInput = ValidationHelplers.createTextInput({
+    const mergedListNameInput = ValidationHelpers.createTextInput({
       name: 'mergedListName',
       placeholder: game.i18n.localize('SPELLMANAGER.MergeLists.MergedListNamePlaceholder'),
       ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.MergedListNameLabel')
     });
     mergedListNameInput.id = 'merged-list-name';
-    const hideSourceListsCheckbox = ValidationHelplers.createCheckbox({
+    const hideSourceListsCheckbox = ValidationHelpers.createCheckbox({
       name: 'hideSourceLists',
       checked: false,
       ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.HideSourceListsLabel')
     });
     hideSourceListsCheckbox.id = 'hide-source-lists';
     return {
-      sourceListSelectHtml: ValidationHelplers.elementToHtml(sourceListSelect),
-      copyFromListSelectHtml: ValidationHelplers.elementToHtml(copyFromListSelect),
-      mergedListNameInputHtml: ValidationHelplers.elementToHtml(mergedListNameInput),
-      hideSourceListsCheckboxHtml: ValidationHelplers.elementToHtml(hideSourceListsCheckbox)
+      sourceListSelectHtml: ValidationHelpers.elementToHtml(sourceListSelect),
+      copyFromListSelectHtml: ValidationHelpers.elementToHtml(copyFromListSelect),
+      mergedListNameInputHtml: ValidationHelpers.elementToHtml(mergedListNameInput),
+      hideSourceListsCheckboxHtml: ValidationHelpers.elementToHtml(hideSourceListsCheckbox)
     };
   }
 
@@ -2320,7 +2320,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @returns {string} HTML string for the checkbox
    */
   _createSpellSelectCheckbox(spell, type, isChecked = false) {
-    const checkbox = ValidationHelplers.createCheckbox({
+    const checkbox = ValidationHelpers.createCheckbox({
       checked: isChecked,
       cssClass: 'spell-select-cb',
       ariaLabel:
@@ -2328,7 +2328,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     });
     checkbox.dataset.type = type;
     checkbox.dataset.uuid = spell.uuid || spell.compendiumUuid;
-    return ValidationHelplers.elementToHtml(checkbox);
+    return ValidationHelpers.elementToHtml(checkbox);
   }
 
   /**
@@ -2337,13 +2337,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @returns {string} HTML string for the checkbox
    */
   _createSelectAllCheckbox(type) {
-    const checkbox = ValidationHelplers.createCheckbox({
+    const checkbox = ValidationHelpers.createCheckbox({
       cssClass: 'select-all-checkbox',
       ariaLabel: type === 'add' ? game.i18n.localize('SPELLMANAGER.Selection.SelectAllToAdd') : game.i18n.localize('SPELLMANAGER.Selection.SelectAllToRemove')
     });
     checkbox.dataset.action = 'selectAll';
     checkbox.dataset.type = type;
-    return ValidationHelplers.elementToHtml(checkbox);
+    return ValidationHelpers.elementToHtml(checkbox);
   }
 
   /**
