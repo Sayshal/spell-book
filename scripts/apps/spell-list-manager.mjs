@@ -28,7 +28,7 @@ import * as DataHelpers from '../data/_module.mjs';
 import { SpellComparisonDialog, SpellDetailsCustomization } from '../dialogs/_module.mjs';
 import { log } from '../logger.mjs';
 import * as UIHelpers from '../ui/_module.mjs';
-import * as ValidationHelplers from '../validation/_module.mjs';
+import * as ValidationHelpers from '../validation/_module.mjs';
 import { SpellAnalyticsDashboard } from './_module.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
