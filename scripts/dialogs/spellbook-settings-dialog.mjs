@@ -298,7 +298,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
           }
         }
 
-        const classValidationHelpers = this._prepareClassValidationHelpers(identifier, formRules, availableSpellLists);
+        const classValidationHelpers = this._prepareClassFormElements(identifier, formRules, availableSpellLists);
         const classData = {
           name: classItem.name,
           identifier: identifier,
@@ -339,7 +339,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    * @returns {ClassFormElements} Object containing all form element HTML for the class
    * @private
    */
-  _prepareClassValidationHelpers(identifier, formRules, availableSpellLists) {
+  _prepareClassFormElements(identifier, formRules, availableSpellLists) {
     const showCantripsCheckbox = ValidationHelpers.createCheckbox({
       name: `class.${identifier}.showCantrips`,
       checked: formRules.showCantrips,
@@ -404,11 +404,19 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       group: this._getSpellListGroupLabel(option.type)
     }));
 
+    // Filter to only include groups that have options
+    const allPossibleGroups = ['SPELLBOOK.Settings.SpellListGroups.Class', 'SPELLBOOK.Settings.SpellListGroups.Subclass', 'SPELLBOOK.Settings.SpellListGroups.Other'];
+
+    const groupsWithOptions = allPossibleGroups.filter((groupKey) => {
+      return multiSelectOptions.some((option) => option.group === groupKey);
+    });
+
     const customSpellListsMultiSelect = ValidationHelpers.createMultiSelect(multiSelectOptions, {
       name: `class.${identifier}.customSpellList`,
       selectedValues: currentCustomSpellLists,
-      groups: ['SPELLBOOK.Settings.SpellListGroups.Class', 'SPELLBOOK.Settings.SpellListGroups.Subclass', 'SPELLBOOK.Settings.SpellListGroups.Other'],
-      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.CustomSpellLists.Label')
+      groups: groupsWithOptions, // Only include groups that have options
+      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.CustomSpellLists.Label'),
+      cssClass: 'spell-list-multi-select'
     });
     customSpellListsMultiSelect.id = `custom-spell-lists-${identifier}`;
 

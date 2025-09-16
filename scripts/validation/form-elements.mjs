@@ -215,10 +215,10 @@ export function createMultiSelect(options, config) {
     localize: config.localize !== false, // Default to true
     sort: config.sort !== false, // Default to true
     value: config.selectedValues || [],
-    disabled: config.disabled,
-    ariaLabel: config.ariaLabel,
-    classes: config.cssClass,
-    blank: config.blank
+    disabled: config.disabled || '',
+    ariaLabel: config.ariaLabel || '',
+    classes: config.cssClass || '',
+    blank: config.blank || false
   };
 
   return foundry.applications.fields.createMultiSelectInput(multiSelectConfig);

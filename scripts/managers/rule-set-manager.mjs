@@ -400,51 +400,103 @@ export class RuleSetManager {
   }
 
   /**
-   * Get spells that will be affected by a spell list change.
+   * Get spells that will be affected by changing a custom spell list.
    *
    * Analyzes the actor's currently prepared spells to determine which ones
    * will no longer be available if the spell list is changed to the specified
-   * new list. This enables proper user notification and cleanup when changing
-   * custom spell lists.
+   * new list(s). Now supports multiple custom spell lists with proper merging.
    *
    * @private
    * @param {Actor5e} actor - The actor to check
    * @param {string} classIdentifier - The class identifier
-   * @param {string} newSpellListUuid - UUID of the new spell list
+   * @param {string|Array<string>|null} newSpellListUuid - UUID(s) of the new spell list(s)
    * @returns {Promise<AffectedSpellData[]>} Array of affected spell data
    * @static
    */
   static async _getAffectedSpellsByListChange(actor, classIdentifier, newSpellListUuid) {
     const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const classPreparedSpells = preparedByClass[classIdentifier] || [];
+
     if (classPreparedSpells.length === 0) return [];
+
     let newSpellList = new Set();
+
     if (newSpellListUuid) {
-      try {
-        const newSpellListDoc = await fromUuid(newSpellListUuid);
-        if (newSpellListDoc && newSpellListDoc.system?.spells) newSpellList = newSpellListDoc.system.spells;
-      } catch (error) {
-        log(1, `Error loading new spell list ${newSpellListUuid}:`, error);
+      // Handle both array and single string formats
+      const spellListUuids = Array.isArray(newSpellListUuid) ? newSpellListUuid : [newSpellListUuid];
+
+      if (spellListUuids.length > 0) {
+        log(3, `Loading ${spellListUuids.length} spell list(s) for affected spells check: ${spellListUuids.join(', ')}`);
+
+        const spellSets = [];
+
+        for (const uuid of spellListUuids) {
+          if (!uuid || typeof uuid !== 'string') {
+            log(2, `Invalid spell list UUID in affected spells check: ${uuid}`);
+            continue;
+          }
+
+          try {
+            const spellListDoc = await fromUuid(uuid);
+            if (spellListDoc && spellListDoc.system?.spells && spellListDoc.system.spells.size > 0) {
+              spellSets.push(spellListDoc.system.spells);
+              log(4, `Loaded spell list for affected check: ${spellListDoc.name} (${spellListDoc.system.spells.size} spells)`);
+            } else {
+              log(2, `Spell list has no spells for affected check: ${uuid}`);
+            }
+          } catch (error) {
+            log(1, `Error loading spell list for affected spells check ${uuid}:`, error);
+          }
+        }
+
+        // Merge all spell sets
+        if (spellSets.length > 0) {
+          for (const spellSet of spellSets) {
+            for (const spell of spellSet) {
+              newSpellList.add(spell);
+            }
+          }
+          log(3, `Merged ${spellSets.length} spell lists for affected spells check: ${newSpellList.size} total spells`);
+        }
       }
     } else {
+      // Fallback to default class spell list when no custom list is specified
       const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
       const classItem = spellcastingData ? actor.items.get(spellcastingData.id) : null;
-      if (classItem) newSpellList = await DataHelpers.getClassSpellList(classItem.name.toLowerCase(), classItem.uuid, actor);
+      if (classItem) {
+        newSpellList = await DataHelpers.getClassSpellList(classItem.name.toLowerCase(), classItem.uuid, actor);
+      }
     }
+
+    // Find spells that will no longer be available
     const affectedSpells = [];
     for (const classSpellKey of classPreparedSpells) {
       const [, ...uuidParts] = classSpellKey.split(':');
       const spellUuid = uuidParts.join(':');
+
       if (!newSpellList.has(spellUuid)) {
         try {
           const spell = await fromUuid(spellUuid);
-          if (spell) affectedSpells.push({ name: spell.name, uuid: spellUuid, level: spell.system.level, classSpellKey: classSpellKey });
+          if (spell) {
+            affectedSpells.push({
+              name: spell.name,
+              uuid: spellUuid,
+              level: spell.system.level,
+              classSpellKey: classSpellKey
+            });
+          }
         } catch (error) {
           log(2, `Error loading spell ${spellUuid} for cleanup check:`, error);
-          affectedSpells.push({ name: 'Unknown Spell', uuid: spellUuid, level: 0, classSpellKey: classSpellKey });
+          affectedSpells.push({
+            name: 'Unknown Spell',
+            uuid: spellUuid,
+            level: 0,
+            classSpellKey: classSpellKey
+          });
         }
       }
     }
+
     return affectedSpells;
   }
 

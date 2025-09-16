@@ -7,12 +7,12 @@
  * and availability determination.
  *
  * Key features:
- * - Multi-source spell discovery
- * - Spell availability analysis
- * - Class-specific spell filtering
- * - Dynamic spell list generation
- * - Source prioritization and deduplication
- * - Cross-reference spell resolution
+ * - Multi-source spell discovery with support for multiple custom spell lists
+ * - Spell availability analysis across merged spell sources
+ * - Class-specific spell filtering with intelligent deduplication
+ * - Dynamic spell list generation and merging
+ * - Source prioritization with fallback discovery chains
+ * - Cross-reference spell resolution and validation
  *
  * @module DataHelpers/SpellDiscovery
  * @author Tyler
@@ -73,7 +73,8 @@ import * as DataHelpers from './_module.mjs';
 /**
  * Get a class's spell list from compendium journals.
  * Searches for spell lists associated with a specific class, checking custom
- * spell lists, preloaded data, and compendium sources in order of priority.
+ * spell lists (now supporting multiple), preloaded data, and compendium sources
+ * in order of priority. Merges multiple custom spell lists when provided.
  *
  * @param {string} className - The name of the class to find spell list for
  * @param {string} [classUuid] - UUID of the class item for additional context
@@ -82,33 +83,79 @@ import * as DataHelpers from './_module.mjs';
  */
 export async function getClassSpellList(className, classUuid, actor) {
   if (!classUuid) return new Set();
+
+  // Check for custom spell lists first (now supports multiple)
   if (actor) {
     const classItem = await fromUuid(classUuid);
     if (classItem) {
       const classIdentifier = classItem?.system?.identifier?.toLowerCase() || className.toLowerCase();
       const classRules = RuleSetManager.getClassRules(actor, classIdentifier);
+
       if (classRules.customSpellList) {
-        log(3, `Using custom spell list for ${className}: ${classRules.customSpellList}`);
-        const customSpellList = await fromUuid(classRules.customSpellList);
-        if (customSpellList && customSpellList.system?.spells) return customSpellList.system.spells;
+        // Handle both array and legacy string formats
+        const customSpellListUuids = Array.isArray(classRules.customSpellList) ? classRules.customSpellList : [classRules.customSpellList];
+
+        if (customSpellListUuids.length > 0) {
+          log(3, `Using ${customSpellListUuids.length} custom spell list(s) for ${className}: ${customSpellListUuids.join(', ')}`);
+
+          const spellSets = [];
+          const sourceNames = [];
+
+          for (const uuid of customSpellListUuids) {
+            if (!uuid || typeof uuid !== 'string') {
+              log(2, `Invalid custom spell list UUID: ${uuid}`);
+              continue;
+            }
+
+            try {
+              const customSpellList = await fromUuid(uuid);
+              if (customSpellList && customSpellList.system?.spells && customSpellList.system.spells.size > 0) {
+                spellSets.push(customSpellList.system.spells);
+                sourceNames.push(customSpellList.name || 'Unknown List');
+                log(4, `Loaded custom spell list: ${customSpellList.name} (${customSpellList.system.spells.size} spells)`);
+              } else {
+                log(2, `Custom spell list has no spells: ${uuid}`);
+              }
+            } catch (error) {
+              log(1, `Error loading custom spell list ${uuid}:`, error);
+            }
+          }
+
+          if (spellSets.length > 0) {
+            const mergedSpells = mergeSpellSets(spellSets, sourceNames);
+            log(3, `Successfully merged ${spellSets.length} custom spell lists for ${className}: ${mergedSpells.size} total spells`);
+            return mergedSpells;
+          } else {
+            log(2, `No valid custom spell lists found for ${className}, falling back to default discovery`);
+          }
+        }
       }
     }
   }
+
+  // Original fallback logic for when no custom spell lists are configured
   const classItem = await fromUuid(classUuid);
   if (!classItem) return new Set();
+
   const classIdentifier = classItem?.system?.identifier?.toLowerCase();
   const topLevelFolderName = getFolderNameFromPack(classItem?._stats?.compendiumSource);
+
   if (!classIdentifier) return new Set();
+
+  // Check preloaded data
   const preloadedData = DataHelpers.getPreloadedData();
   if (preloadedData && preloadedData.spellLists.length > 0) {
     log(3, `Checking ${preloadedData.spellLists.length} preloaded spell lists for ${classIdentifier}`);
     const preloadedMatch = preloadedData.spellLists.find((list) => {
       if (list.identifier?.toLowerCase() === classIdentifier) {
-        if (topLevelFolderName && list.pack) return list.pack.toLowerCase().includes(topLevelFolderName.toLowerCase());
+        if (topLevelFolderName && list.pack) {
+          return list.pack.toLowerCase().includes(topLevelFolderName.toLowerCase());
+        }
         return true;
       }
       return false;
     });
+
     if (preloadedMatch && preloadedMatch.spellCount > 0) {
       log(3, `Found preloaded spell list for ${classIdentifier}: ${preloadedMatch.name} (${preloadedMatch.spellCount} spells)`);
       try {
@@ -121,15 +168,23 @@ export async function getClassSpellList(className, classUuid, actor) {
       }
     }
   }
+
+  // Check custom mappings and folder-based sources
   const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
+
   if (topLevelFolderName) {
     const folderMatch = await getSpellListFromFolder(topLevelFolderName, classIdentifier, customMappings);
     if (folderMatch && folderMatch.size > 0) return folderMatch;
   }
+
+  // Check custom spell lists by identifier (fallback)
   const customMatch = await findCustomSpellListByIdentifier(classIdentifier);
   if (customMatch && customMatch.size > 0) return customMatch;
+
+  // Final fallback: search all journal packs
   const identifierMatch = await findSpellListByIdentifier(classIdentifier, customMappings);
   if (identifierMatch && identifierMatch.size > 0) return identifierMatch;
+
   log(2, `No spell list found for class ${className} (${classIdentifier}) from folder "${topLevelFolderName}"`);
   return new Set();
 }
@@ -209,9 +264,10 @@ async function searchPackForSpellList(pack, identifier, customMappings) {
 }
 
 /**
- * Find custom spell list with specific identifier.
+ * Find custom spell list with specific identifier (single result).
  * Searches the module's custom spell lists pack for user-created
- * spell lists matching the specified class identifier.
+ * spell lists matching the specified class identifier. This is the
+ * original function maintained for backward compatibility.
  *
  * @param {string} identifier - Identifier to search for in custom lists
  * @returns {Promise<Set<string>|null>} Matched custom spell list or null if not found
@@ -219,17 +275,24 @@ async function searchPackForSpellList(pack, identifier, customMappings) {
  */
 async function findCustomSpellListByIdentifier(identifier) {
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
+  if (!customPack) return null;
+
   const index = await customPack.getIndex();
   for (const journalData of index) {
     const journal = await customPack.getDocument(journalData._id);
     for (const page of journal.pages) {
       if (page.type !== 'spells') continue;
+
       const flags = page.flags?.[MODULE.ID] || {};
       if (!flags.isCustom && !flags.isNewList) continue;
+
       const pageIdentifier = page.system?.identifier?.toLowerCase() || '';
-      if (pageIdentifier === identifier && page.system.spells.size > 0) return page.system.spells;
+      if (pageIdentifier === identifier && page.system.spells.size > 0) {
+        return page.system.spells;
+      }
     }
   }
+
   return null;
 }
 
@@ -325,4 +388,43 @@ async function getSpellListFromFolder(topLevelFolderName, identifier, customMapp
   }
   log(2, `No spell list found for folder "${topLevelFolderName}", identifier "${identifier}"`);
   return null;
+}
+
+/**
+ * Merge multiple spell sets into a single combined set.
+ * Combines spell UUIDs from multiple spell lists, automatically handling
+ * duplicates through Set operations. Provides logging for transparency.
+ *
+ * @param {Array<Set<string>>} spellSets - Array of spell sets to merge
+ * @param {Array<string>} [sourceNames=[]] - Array of source names for logging
+ * @returns {Set<string>} Combined set of spell UUIDs
+ * @private
+ */
+function mergeSpellSets(spellSets, sourceNames = []) {
+  if (spellSets.length === 0) return new Set();
+  if (spellSets.length === 1) return new Set(spellSets[0]);
+
+  const mergedSet = new Set();
+  let totalSpells = 0;
+
+  for (let i = 0; i < spellSets.length; i++) {
+    const spellSet = spellSets[i];
+    const sourceName = sourceNames[i] || `List ${i + 1}`;
+
+    if (spellSet && spellSet.size > 0) {
+      const beforeSize = mergedSet.size;
+      for (const spell of spellSet) {
+        mergedSet.add(spell);
+      }
+      const added = mergedSet.size - beforeSize;
+      totalSpells += spellSet.size;
+
+      log(4, `Merged ${spellSet.size} spells from ${sourceName} (${added} new, ${spellSet.size - added} duplicates)`);
+    } else {
+      log(3, `No spells found in ${sourceName}`);
+    }
+  }
+
+  log(3, `Spell list merge complete: ${mergedSet.size} unique spells from ${totalSpells} total spells across ${spellSets.length} lists`);
+  return mergedSet;
 }

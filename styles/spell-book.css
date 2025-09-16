@@ -5330,6 +5330,28 @@
         max-width: 8rem;
       }
 
+      multi-select {
+        flex: 1;
+        min-width: 0;
+
+        .input-element-tags {
+          flex-wrap: wrap;
+          min-width: 0;
+          max-width: 100%;
+
+          .tag {
+            color: var(--spell-book-text-primary);
+            font-weight: 500;
+            font-size: 0.75rem;
+          }
+        }
+
+        select {
+          width: 100%;
+          min-width: 0;
+        }
+      }
+
       .preparation-bonus-controls {
         flex: 0 0 auto;
         min-width: fit-content;
