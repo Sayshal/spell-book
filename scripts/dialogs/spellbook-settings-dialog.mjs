@@ -232,10 +232,11 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Prepare class-specific settings data including rules and statistics.
+   * Prepare all per-class settings data.
    *
    * Processes all spellcasting classes for the actor, gathering their current
    * rule configurations, statistics, and generating form elements for each class.
+   * Now supports multiple custom spell lists per class.
    *
    * @returns {Promise<ClassSettingsData[]>} Array of processed class settings data
    * @private
@@ -244,11 +245,13 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     const classSettings = [];
     const availableSpellLists = await this._prepareSpellListOptions();
     const currentClassRules = this.actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+
     if (this.actor.spellcastingClasses) {
       for (const spellcastingData of Object.values(this.actor.spellcastingClasses)) {
         const classItem = spellcastingData;
         let spellcastingConfig = classItem.system?.spellcasting;
         let spellcastingSource = classItem;
+
         if (!spellcastingConfig?.progression || spellcastingConfig.progression === 'none') {
           const subclassItem = spellcastingData._classLink;
           if (subclassItem?.system?.spellcasting?.progression && subclassItem.system.spellcasting.progression !== 'none') {
@@ -256,29 +259,45 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
             spellcastingSource = subclassItem;
           } else continue;
         }
+
         const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
         const processedClassRules = RuleSetManager.getClassRules(this.actor, identifier);
         const savedRules = currentClassRules[identifier] || {};
+
         const formRules = {
           showCantrips: 'showCantrips' in savedRules ? savedRules.showCantrips : processedClassRules.showCantrips,
           forceWizardMode: 'forceWizardMode' in savedRules ? savedRules.forceWizardMode : processedClassRules.forceWizardMode,
           cantripSwapping: savedRules.cantripSwapping || processedClassRules.cantripSwapping || 'none',
           spellSwapping: savedRules.spellSwapping || processedClassRules.spellSwapping || 'none',
           ritualCasting: savedRules.ritualCasting || processedClassRules.ritualCasting || 'none',
-          customSpellList: savedRules.customSpellList || processedClassRules.customSpellList || '',
+          customSpellList: savedRules.customSpellList || processedClassRules.customSpellList || [], // Now always array
           spellPreparationBonus: 'spellPreparationBonus' in savedRules ? savedRules.spellPreparationBonus : processedClassRules.spellPreparationBonus || 0,
           cantripPreparationBonus: 'cantripPreparationBonus' in savedRules ? savedRules.cantripPreparationBonus : processedClassRules.cantripPreparationBonus || 0,
           _noScaleValue: processedClassRules._noScaleValue
         };
+
         const spellManager = new SpellManager(this.actor);
         const maxCantrips = spellManager.getMaxAllowed(identifier);
         const currentCantrips = spellManager.getCurrentCount(identifier);
-        const hasCustomSpellList = !!formRules.customSpellList;
-        let customSpellListName = null;
+
+        // Handle both array and string formats for backward compatibility
+        const customSpellLists = Array.isArray(formRules.customSpellList) ? formRules.customSpellList : formRules.customSpellList ? [formRules.customSpellList] : [];
+
+        const hasCustomSpellList = customSpellLists.length > 0;
+        let customSpellListNames = [];
+
         if (hasCustomSpellList) {
-          const customList = await fromUuid(formRules.customSpellList);
-          customSpellListName = customList?.name || game.i18n.localize('SPELLBOOK.Settings.UnknownList');
+          for (const uuid of customSpellLists) {
+            try {
+              const customList = await fromUuid(uuid);
+              customSpellListNames.push(customList?.name || game.i18n.localize('SPELLBOOK.Settings.UnknownList'));
+            } catch (error) {
+              log(2, `Error loading custom spell list ${uuid}:`, error);
+              customSpellListNames.push(game.i18n.localize('SPELLBOOK.Settings.UnknownList'));
+            }
+          }
         }
+
         const classValidationHelpers = this._prepareClassValidationHelpers(identifier, formRules, availableSpellLists);
         const classData = {
           name: classItem.name,
@@ -292,13 +311,17 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
             basePreparationMax: spellcastingConfig?.preparation?.max || 0
           },
           hasCustomSpellList: hasCustomSpellList,
-          customSpellListName: customSpellListName,
+          customSpellListName: customSpellListNames.length > 0 ? customSpellListNames.join(', ') : null,
+          customSpellListNames: customSpellListNames, // Array of names for detailed display
+          customSpellListCount: customSpellLists.length, // Count for display
           formElements: classValidationHelpers,
           spellcastingSource: spellcastingSource
         };
+
         classSettings.push(classData);
       }
     }
+
     classSettings.sort((a, b) => a.name.localeCompare(b.name));
     return classSettings;
   }
@@ -307,11 +330,12 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    * Prepare form elements for a specific class configuration.
    *
    * Generates all necessary form elements (checkboxes, selects, controls) for
-   * configuring a specific class's spell management rules and bonuses.
+   * configuring a specific class's spell management rules and bonuses. Now
+   * supports multi-select for custom spell lists with optgroup organization.
    *
    * @param {string} identifier - The class identifier
    * @param {ProcessedClassRules} formRules - Current form rule values
-   * @param {SpellListOption[]} availableSpellLists - Available spell list options
+   * @param {Array<{value: string, label: string, type: string}>} availableSpellLists - Available spell list options with type info
    * @returns {ClassFormElements} Object containing all form element HTML for the class
    * @private
    */
@@ -323,12 +347,14 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.ShowCantrips.Label')
     });
     showCantripsCheckbox.id = `show-cantrips-${identifier}`;
+
     const forceWizardCheckbox = ValidationHelpers.createCheckbox({
       name: `class.${identifier}.forceWizardMode`,
       checked: formRules.forceWizardMode,
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.ForceWizardMode.Label')
     });
     forceWizardCheckbox.id = `force-wizard-mode-${identifier}`;
+
     const cantripSwappingValue = formRules.cantripSwapping;
     const cantripSwappingOptions = [
       { value: 'none', label: game.i18n.localize('SPELLBOOK.Settings.CantripSwapping.None'), selected: cantripSwappingValue === 'none' },
@@ -338,10 +364,10 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     const cantripSwappingSelect = ValidationHelpers.createSelect({
       name: `class.${identifier}.cantripSwapping`,
       options: cantripSwappingOptions,
-      disabled: !formRules.showCantrips,
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.CantripSwapping.Label')
     });
     cantripSwappingSelect.id = `cantrip-swapping-${identifier}`;
+
     const spellSwappingValue = formRules.spellSwapping;
     const spellSwappingOptions = [
       { value: 'none', label: game.i18n.localize('SPELLBOOK.Settings.SpellSwapping.None'), selected: spellSwappingValue === 'none' },
@@ -354,11 +380,12 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.SpellSwapping.Label')
     });
     spellSwappingSelect.id = `spell-swapping-${identifier}`;
+
     const ritualCastingValue = formRules.ritualCasting;
     const ritualCastingOptions = [
       { value: 'none', label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.None'), selected: ritualCastingValue === 'none' },
-      { value: 'prepared', label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.Prepared'), selected: ritualCastingValue === 'prepared' },
-      { value: 'always', label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.Always'), selected: ritualCastingValue === 'always' }
+      { value: 'default', label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.Default'), selected: ritualCastingValue === 'default' },
+      { value: 'unlimited', label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.Unlimited'), selected: ritualCastingValue === 'unlimited' }
     ];
     const ritualCastingSelect = ValidationHelpers.createSelect({
       name: `class.${identifier}.ritualCasting`,
@@ -366,29 +393,59 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.Label')
     });
     ritualCastingSelect.id = `ritual-casting-${identifier}`;
-    const customSpellListValue = formRules.customSpellList;
-    const customSpellListOptions = availableSpellLists.map((option) => ({
-      ...option,
-      selected: option.value === customSpellListValue
+
+    // Prepare custom spell lists multi-select
+    const currentCustomSpellLists = Array.isArray(formRules.customSpellList) ? formRules.customSpellList : formRules.customSpellList ? [formRules.customSpellList] : [];
+
+    // Create multi-select options with group information
+    const multiSelectOptions = availableSpellLists.map((option) => ({
+      value: option.value,
+      label: option.label,
+      group: this._getSpellListGroupLabel(option.type)
     }));
-    const customSpellListSelect = ValidationHelpers.createSelect({
+
+    const customSpellListsMultiSelect = ValidationHelpers.createMultiSelect(multiSelectOptions, {
       name: `class.${identifier}.customSpellList`,
-      options: customSpellListOptions,
-      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.CustomSpellList.Label')
+      selectedValues: currentCustomSpellLists,
+      groups: ['SPELLBOOK.Settings.SpellListGroups.Class', 'SPELLBOOK.Settings.SpellListGroups.Subclass', 'SPELLBOOK.Settings.SpellListGroups.Other'],
+      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.CustomSpellLists.Label')
     });
-    customSpellListSelect.id = `custom-spell-list-${identifier}`;
+    customSpellListsMultiSelect.id = `custom-spell-lists-${identifier}`;
+
     const spellPreparationBonusControls = this._createSpellPreparationBonusControls(identifier, formRules.spellPreparationBonus);
     const cantripPreparationBonusControls = this._createCantripPreparationBonusControls(identifier, formRules.cantripPreparationBonus);
+
     return {
       showCantripsCheckboxHtml: ValidationHelpers.elementToHtml(showCantripsCheckbox),
       forceWizardModeCheckboxHtml: ValidationHelpers.elementToHtml(forceWizardCheckbox),
       cantripSwappingSelectHtml: ValidationHelpers.elementToHtml(cantripSwappingSelect),
       spellSwappingSelectHtml: ValidationHelpers.elementToHtml(spellSwappingSelect),
       ritualCastingSelectHtml: ValidationHelpers.elementToHtml(ritualCastingSelect),
-      customSpellListSelectHtml: ValidationHelpers.elementToHtml(customSpellListSelect),
+      customSpellListsSelectHtml: ValidationHelpers.elementToHtml(customSpellListsMultiSelect),
       spellPreparationBonusControlsHtml: spellPreparationBonusControls,
       cantripPreparationBonusControlsHtml: cantripPreparationBonusControls
     };
+  }
+
+  /**
+   * Get the appropriate group label for a spell list type.
+   *
+   * Maps spell list system types to localized group labels for use in
+   * optgroup organization. Follows the priority order: Class > Subclass > Other.
+   *
+   * @param {string} [type] - The spell list type from system.type
+   * @returns {string} The localization key for the appropriate group label
+   * @private
+   */
+  _getSpellListGroupLabel(type) {
+    switch (type) {
+      case 'class':
+        return 'SPELLBOOK.Settings.SpellListGroups.Class';
+      case 'subclass':
+        return 'SPELLBOOK.Settings.SpellListGroups.Subclass';
+      default:
+        return 'SPELLBOOK.Settings.SpellListGroups.Other';
+    }
   }
 
   /**
@@ -501,87 +558,88 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Prepare available spell list options for custom selection dropdown.
+   * Prepare options for spell list selection dropdowns.
    *
    * Loads and organizes all available spell lists from compendiums, categorizing
-   * them by type (actor-owned, custom, merged, standard) for easier selection.
+   * them by type (class, subclass, other) for optgroup organization. Extracts
+   * system.type information needed for proper grouping in multi-select components.
    *
-   * @returns {Promise<SpellListOption[]>} Array of spell list options with optgroups
+   * @returns {Promise<Array<{value: string, label: string, type: string}>>} Array of spell list options with type information
    * @private
    */
   async _prepareSpellListOptions() {
     try {
-      const options = [{ value: '', label: game.i18n.localize('SPELLBOOK.Settings.SpellList.AutoDetect') }];
       const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
       const allSpellLists = [];
       const allJournalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
       const journalPacks = [];
+
       for (const pack of allJournalPacks) {
         const shouldShow = await DataHelpers.shouldShowInSettings(pack);
         if (shouldShow) journalPacks.push(pack);
       }
+
       for (const pack of journalPacks) {
         let topLevelFolderName = pack.metadata.label;
         if (pack.folder) {
           if (pack.folder.depth !== 1) topLevelFolderName = pack.folder.getParentFolders().at(-1).name;
           else topLevelFolderName = pack.folder.name;
         }
+
         const index = await pack.getIndex();
         for (const journalData of index) {
           const journal = await pack.getDocument(journalData._id);
           for (const page of journal.pages) {
             if (page.type !== 'spells' || page.system?.type === 'other') continue;
             if (hiddenLists.includes(page.uuid)) continue;
+
             const flags = page.flags?.[MODULE.ID] || {};
             const isActorOwned = !!flags.actorId;
             const isCustom = !!flags.isCustom || !!flags.isNewList;
             const isMerged = !!flags.isMerged;
-            allSpellLists.push({ uuid: page.uuid, name: page.name, pack: topLevelFolderName, isActorOwned, isCustom, isMerged, flags });
+
+            allSpellLists.push({
+              uuid: page.uuid,
+              name: page.name,
+              pack: topLevelFolderName,
+              isActorOwned,
+              isCustom,
+              isMerged,
+              flags,
+              type: page.system?.type || 'other' // Add type information for grouping
+            });
           }
         }
       }
-      const actorOwnedLists = allSpellLists.filter((list) => list.isActorOwned);
-      const customLists = allSpellLists.filter((list) => !list.isActorOwned && list.isCustom && !list.isMerged);
-      const mergedLists = allSpellLists.filter((list) => !list.isActorOwned && list.isMerged);
-      const standardLists = allSpellLists.filter((list) => !list.isActorOwned && !list.isCustom && !list.isMerged);
-      if (actorOwnedLists.length > 0) {
-        options.push({ value: '', label: game.i18n.localize('SPELLMANAGER.Folders.PlayerSpellbooks'), optgroup: 'start' });
-        actorOwnedLists.forEach((list) => {
-          let actorName = game.i18n.localize('SPELLMANAGER.ListSource.Character');
-          if (list.flags.actorId) {
-            const actor = game.actors.get(list.flags.actorId);
-            if (actor) actorName = actor.name;
-          }
-          const label = `${list.name} (${actorName})`;
-          options.push({ value: list.uuid, label: label, selected: false });
-        });
-        options.push({ value: '', label: '', optgroup: 'end' });
-      }
-      if (customLists.length > 0) {
-        options.push({ value: '', label: game.i18n.localize('SPELLMANAGER.Folders.CustomLists'), optgroup: 'start' });
-        customLists.forEach((list) => {
-          options.push({ value: list.uuid, label: list.name, selected: false });
-        });
-        options.push({ value: '', label: '', optgroup: 'end' });
-      }
-      if (mergedLists.length > 0) {
-        options.push({ value: '', label: game.i18n.localize('SPELLMANAGER.Folders.MergedLists'), optgroup: 'start' });
-        mergedLists.forEach((list) => {
-          options.push({ value: list.uuid, label: list.name, selected: false });
-        });
-        options.push({ value: '', label: '', optgroup: 'end' });
-      }
-      if (standardLists.length > 0) {
-        options.push({ value: '', label: game.i18n.localize('SPELLMANAGER.Folders.SpellLists'), optgroup: 'start' });
-        standardLists.forEach((list) => {
-          options.push({ value: list.uuid, label: `${list.name} (${list.pack})`, selected: false });
-        });
-        options.push({ value: '', label: '', optgroup: 'end' });
-      }
-      return options;
+
+      // Convert to the format needed for multi-select with type information
+      const spellListOptions = allSpellLists.map((list) => {
+        let label = list.name;
+
+        // Add context for different list types
+        if (list.isActorOwned && list.flags.actorId) {
+          const actor = game.actors.get(list.flags.actorId);
+          const actorName = actor ? actor.name : game.i18n.localize('SPELLMANAGER.ListSource.Character');
+          label = `${list.name} (${actorName})`;
+        } else if (!list.isActorOwned && !list.isCustom && !list.isMerged) {
+          label = `${list.name} (${list.pack})`;
+        }
+
+        return {
+          value: list.uuid,
+          label: label,
+          type: list.type // This will be used for grouping
+        };
+      });
+
+      // Sort by name within each type
+      spellListOptions.sort((a, b) => a.label.localeCompare(b.label));
+
+      log(3, `Prepared ${spellListOptions.length} spell list options for settings dialog`);
+      return spellListOptions;
     } catch (error) {
       log(1, 'Error preparing spell list options:', error);
-      return [{ value: '', label: game.i18n.localize('SPELLBOOK.Settings.SpellList.AutoDetect') }];
+      return [];
     }
   }
 
@@ -799,47 +857,96 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   }
 
   /** @inheritdoc */
-  static async formHandler(_event, _form, formData) {
+  static async formHandler(event, form, formData) {
+    event.preventDefault();
+
     const actor = this.actor;
-    if (!actor) return null;
+    if (!actor) throw new Error('No actor provided to form handler');
+
     const expandedData = foundry.utils.expandObject(formData.object);
     const currentClassRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+
+    // Handle global settings
     const ruleSetOverride = expandedData.ruleSetOverride === 'global' ? null : expandedData.ruleSetOverride;
     const previousRuleSetOverride = actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE);
     actor.setFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE, ruleSetOverride);
+
     const enforcementBehavior = expandedData.enforcementBehavior === 'global' ? null : expandedData.enforcementBehavior;
     actor.setFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR, enforcementBehavior);
-    if (ruleSetOverride && ruleSetOverride !== previousRuleSetOverride) RuleSetManager.applyRuleSetToActor(actor, ruleSetOverride);
+
+    if (ruleSetOverride && ruleSetOverride !== previousRuleSetOverride) {
+      RuleSetManager.applyRuleSetToActor(actor, ruleSetOverride);
+    }
+
     const cantripVisibilityChanges = {};
     const wizardModeChanges = {};
+
+    // Handle per-class settings
     if (expandedData.class) {
       for (const [classId, rules] of Object.entries(expandedData.class)) {
         const currentRules = currentClassRules[classId] || {};
+
+        // Track cantrip visibility changes
         const wasShowingCantrips = currentRules.showCantrips !== false;
         const willShowCantrips = rules.showCantrips !== false;
         if (wasShowingCantrips && !willShowCantrips) cantripVisibilityChanges[classId] = 'disabled';
         else if (!wasShowingCantrips && willShowCantrips) cantripVisibilityChanges[classId] = 'enabled';
+
+        // Track wizard mode changes
         const wasWizardMode = currentRules.forceWizardMode === true;
         const willBeWizardMode = rules.forceWizardMode === true;
         if (!wasWizardMode && willBeWizardMode) wizardModeChanges[classId] = 'enabled';
         else if (wasWizardMode && !willBeWizardMode) wizardModeChanges[classId] = 'disabled';
+
+        // Process rule updates
         const processedRules = {};
-        if (rules.spellPreparationBonus !== undefined) processedRules.spellPreparationBonus = parseInt(rules.spellPreparationBonus) || 0;
-        if (rules.cantripPreparationBonus !== undefined) processedRules.cantripPreparationBonus = parseInt(rules.cantripPreparationBonus) || 0;
-        if (rules.showCantrips !== undefined) processedRules.showCantrips = Boolean(rules.showCantrips);
-        if (rules.forceWizardMode !== undefined) processedRules.forceWizardMode = Boolean(rules.forceWizardMode);
-        if (rules.customSpellList !== undefined) processedRules.customSpellList = rules.customSpellList || null;
+
+        if (rules.spellPreparationBonus !== undefined) {
+          processedRules.spellPreparationBonus = parseInt(rules.spellPreparationBonus) || 0;
+        }
+        if (rules.cantripPreparationBonus !== undefined) {
+          processedRules.cantripPreparationBonus = parseInt(rules.cantripPreparationBonus) || 0;
+        }
+        if (rules.showCantrips !== undefined) {
+          processedRules.showCantrips = Boolean(rules.showCantrips);
+        }
+        if (rules.forceWizardMode !== undefined) {
+          processedRules.forceWizardMode = Boolean(rules.forceWizardMode);
+        }
+
+        // Handle custom spell list - convert to array and filter out empty values
+        if (rules.customSpellList !== undefined) {
+          if (Array.isArray(rules.customSpellList)) {
+            processedRules.customSpellList = rules.customSpellList.filter((uuid) => uuid && uuid.trim());
+          } else if (rules.customSpellList) {
+            processedRules.customSpellList = [rules.customSpellList];
+          } else {
+            processedRules.customSpellList = [];
+          }
+        }
+
+        // Handle other rule properties
         ['cantripSwapping', 'spellSwapping', 'ritualCasting'].forEach((prop) => {
           if (rules[prop] !== undefined) processedRules[prop] = rules[prop];
         });
+
         const success = await RuleSetManager.updateClassRules(actor, classId, processedRules);
         if (!success) throw new Error('FORM_CANCELLED');
       }
     }
-    if (Object.keys(cantripVisibilityChanges).length > 0) await SpellbookSettingsDialog._handleCantripVisibilityChanges(actor, cantripVisibilityChanges);
+
+    // Handle cantrip visibility changes
+    if (Object.keys(cantripVisibilityChanges).length > 0) {
+      await SpellbookSettingsDialog._handleCantripVisibilityChanges(actor, cantripVisibilityChanges);
+    }
+
+    // Refresh open spell books
     const allInstances = Array.from(foundry.applications.instances.values());
     const openSpellbooks = allInstances.filter((w) => w.constructor.name === 'SpellBook' && w.actor.id === actor.id);
-    for (const spellbook of openSpellbooks) await spellbook.refreshFromSettingsChange();
+    for (const spellbook of openSpellbooks) {
+      await spellbook.refreshFromSettingsChange();
+    }
+
     ui.notifications.info(game.i18n.format('SPELLBOOK.Settings.Saved', { name: actor.name }));
     return actor;
   }

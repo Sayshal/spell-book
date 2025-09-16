@@ -16,7 +16,7 @@
  * @author Tyler
  */
 
-import { DEPRECATED_FLAGS, MODULE, TEMPLATES } from './constants/_module.mjs';
+import { DEPRECATED_FLAGS, MODULE, TEMPLATES, FLAGS } from './constants/_module.mjs';
 import * as DataHelpers from './data/_module.mjs';
 import { log } from './logger.mjs';
 

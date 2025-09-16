@@ -73,7 +73,11 @@
           <div class="notice info">
             <i class="fas fa-info-circle"></i>
             <strong>{{classData.name}}:</strong>
-            {{localize 'SPELLBOOK.Settings.UsingCustomSpellList' list=classData.customSpellListName}}
+            {{#if (gt classData.customSpellListCount 1)}}
+              {{localize 'SPELLBOOK.Settings.UsingMultipleCustomSpellLists' count=classData.customSpellListCount lists=classData.customSpellListName}}
+            {{else}}
+              {{localize 'SPELLBOOK.Settings.UsingCustomSpellList' list=classData.customSpellListName}}
+            {{/if}}
           </div>
         {{/if}}
       {{/each}}
@@ -191,13 +195,13 @@
                 {{{classData.formElements.ritualCastingSelectHtml}}}
               </div>
 
-              <!-- Custom Spell List Setting -->
+              <!-- Custom Spell Lists Setting (now supports multiple) -->
               <div class="setting-row">
                 <i class="fas fa-question-circle setting-tooltip"
-                  data-tooltip="{{localize 'SPELLBOOK.Settings.CustomSpellList.Hint'}}"></i>
+                  data-tooltip="{{localize 'SPELLBOOK.Settings.CustomSpellLists.Hint'}}"></i>
                 <label
-                  for="custom-spell-list-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.CustomSpellList.Label'}}</label>
-                {{{classData.formElements.customSpellListSelectHtml}}}
+                  for="custom-spell-lists-{{identifier}}">{{localize 'SPELLBOOK.Settings.CustomSpellLists.Label'}}</label>
+                {{{classData.formElements.customSpellListsSelectHtml}}}
               </div>
 
               <!-- Spell Preparation Bonus Setting -->
