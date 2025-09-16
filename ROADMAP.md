@@ -32,20 +32,7 @@
 - ✅ **Spellcasting Focus Assignment**: GM-customizable focus options with individual player selection and group synchronization
 - ✅ **Party Mode Visualization**: Right-click context menu with party member token display for prepared spell coordination
 
-### **Post-Encounter Spell Analytics [High Priority]**
-
-Generate comprehensive chat summaries after combat encounters detailing spellcasting activity, resource expenditure, and tactical insights for all participants.
-
-**Code justification:** The existing `SpellUsageTracker` in `spell-usage-tracker.mjs` already detects combat vs exploration context and monitors spell activity via `dnd5e.activityConsumption` hooks. The `sendComprehensiveGMNotification` system in `cantrip-manager.mjs` demonstrates chat message creation with templated content. Combat state detection and participant tracking provide the foundation for encounter-specific analytics.
-
-**Post-encounter features:**
-
-- **Combat Spell Summary**: Automated chat messages after combat ends listing all spells cast by players and NPCs during the encounter
-- **Resource Expenditure Report**: Breakdown of spell slots used, cantrips cast, and concentration spell management throughout the fight
-- **Tactical Analysis**: Identify spell synergies, counter-spellings, and effectiveness patterns from the encounter
-- **NPC Spellcasting Integration**: Track and report enemy spellcaster activity alongside player actions for complete encounter analysis
-
-#### **Subclass Spell List Management [Medium Priority]**
+### **Subclass Spell List Management [Medium Priority]**
 
 Allow GMs to manually set a subclass spell list or 'secondary' spell list that is additive to the available spells, providing enhanced customization for subclass-specific magical traditions.
 
@@ -59,7 +46,7 @@ Allow GMs to manually set a subclass spell list or 'secondary' spell list that i
 - **Subclass Detection**: Automatic recognition of character subclasses to apply appropriate secondary spell lists when players open their spell books
 - **GM Override Controls**: Manual assignment options for homebrew subclasses or custom magical traditions that don't follow standard spell list patterns
 
-#### **Cauldron of Plentiful Resources Compatibility [Medium Priority]**
+### **Cauldron of Plentiful Resources Compatibility [Medium Priority]**
 
 Ensure seamless integration with the Cauldron of Plentiful Resources module, providing automatic spell setup and configuration after spells are added to character sheets.
 
