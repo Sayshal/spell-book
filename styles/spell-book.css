@@ -3680,11 +3680,10 @@
         display: flex;
         width: 100%;
         gap: 1rem;
-        margin-bottom: 2rem;
         min-height: 0;
         overflow: hidden;
 
-        @media (width <= 768px) {
+        @media (width <= 48rem) {
           flex-direction: column;
           gap: 1rem;
         }
@@ -3865,24 +3864,24 @@
           gap: 0.5rem;
           overflow-y: auto;
           scrollbar-gutter: stable;
-          max-height: 400px;
+          max-height: 33rem;
           width: 100%;
           max-width: 100%;
           box-sizing: border-box;
 
           /* Custom scrollbar */
           &::-webkit-scrollbar {
-            width: 6px;
+            width: 0.375rem;
           }
 
           &::-webkit-scrollbar-track {
             background: var(--spell-book-bg-secondary);
-            border-radius: 3px;
+            border-radius: 0.188rem;
           }
 
           &::-webkit-scrollbar-thumb {
             background: var(--spell-book-border-dark);
-            border-radius: 3px;
+            border-radius: 0.188rem;
 
             &:hover {
               background: var(--spell-book-border-highlight);
