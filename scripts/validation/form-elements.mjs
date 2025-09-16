@@ -10,6 +10,7 @@
  * - Comprehensive configuration options for all form elements
  * - Accessibility support with ARIA labels
  * - Flexible styling and layout options
+ * - Generic multi-select wrapper with optgroup support
  *
  * @module ValidationHelpers/FormElements
  * @author Tyler
@@ -74,6 +75,35 @@
  * @property {boolean} [selected] - Whether this option is selected
  * @property {boolean} [disabled] - Whether this option is disabled
  * @property {string} [optgroup] - Optgroup control ('start', 'end', or undefined)
+ */
+
+/**
+ * Configuration options for multi-select creation.
+ *
+ * @typedef {Object} MultiSelectConfig
+ * @property {string} name - The name attribute for the multi-select element
+ * @property {string} [type="select"] - Multi-select type ("select" or "checkboxes")
+ * @property {Array<string>} [selectedValues=[]] - Array of currently selected values
+ * @property {Array<string>} [groups] - Array of group labels in desired order
+ * @property {boolean} [disabled] - Whether the multi-select is disabled
+ * @property {string} [ariaLabel] - The aria-label attribute for accessibility
+ * @property {string} [cssClass] - Additional CSS classes to apply
+ * @property {boolean} [localize=true] - Whether to localize labels and groups
+ * @property {boolean} [sort=true] - Whether to sort options within groups
+ * @property {string} [blank] - Blank option text (if desired)
+ */
+
+/**
+ * Multi-select option configuration.
+ *
+ * @typedef {Object} MultiSelectOption
+ * @property {string} value - The option value
+ * @property {string} label - The option display text
+ * @property {boolean} [selected] - Whether this option is selected (auto-determined from selectedValues if not provided)
+ * @property {boolean} [disabled] - Whether this option is disabled
+ * @property {string} [group] - Group label this option belongs to
+ * @property {string} [rule] - CSS rule for styling (optional)
+ * @property {Object} [dataset] - Dataset attributes for the option
  */
 
 /**
@@ -162,6 +192,55 @@ export function createSelect(config) {
     }
   }
   return select;
+}
+
+/**
+ * Create a multi-select element using Foundry's native multi-select functionality.
+ *
+ * Provides a generic wrapper around Foundry's createMultiSelectInput with support
+ * for optgroups, localization, sorting, and both dropdown and checkbox styles.
+ * Can be configured for any multi-select use case throughout the application.
+ *
+ * @param {Array<MultiSelectOption>} options - Array of option configurations
+ * @param {MultiSelectConfig} config - Multi-select configuration
+ * @returns {HTMLElement} The created multi-select element
+ */
+export function createMultiSelect(options, config) {
+  // Prepare configuration for Foundry's createMultiSelectInput
+  const multiSelectConfig = {
+    name: config.name,
+    type: config.type || 'select',
+    options: options,
+    groups: config.groups || [],
+    localize: config.localize !== false, // Default to true
+    sort: config.sort !== false, // Default to true
+    value: config.selectedValues || [],
+    disabled: config.disabled,
+    ariaLabel: config.ariaLabel,
+    classes: config.cssClass,
+    blank: config.blank
+  };
+
+  return foundry.applications.fields.createMultiSelectInput(multiSelectConfig);
+}
+
+/**
+ * Create a multi-select element with pre-grouped options.
+ *
+ * Convenience function for creating multi-selects when options are already
+ * organized into groups. Each option should have a 'group' property that
+ * matches one of the provided group labels.
+ *
+ * @param {Array<MultiSelectOption>} groupedOptions - Options with group properties
+ * @param {Array<string>} groups - Ordered array of group labels
+ * @param {MultiSelectConfig} config - Multi-select configuration
+ * @returns {HTMLElement} The created multi-select element
+ */
+export function createGroupedMultiSelect(groupedOptions, groups, config) {
+  return createMultiSelect(groupedOptions, {
+    ...config,
+    groups: groups
+  });
 }
 
 /**
