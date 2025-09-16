@@ -88,12 +88,22 @@ const { renderTemplate } = foundry.applications.handlebars;
  */
 
 /**
+ * Results from custom spell list format migration operations.
+ *
+ * @typedef {Object} CustomSpellListMigrationResults
+ * @property {number} processed - Number of actors processed
+ * @property {number} updated - Number of actors updated with new format
+ * @property {Array<Object>} migratedActors - Array of migrated actor information
+ * @property {Array<string>} errors - Array of error messages
+ */
+
+/**
  * Run all migration functions in sequence.
  *
  * This function orchestrates all migration operations, collecting results
  * and providing comprehensive reporting. Only runs for GM users to prevent
  * conflicts. Migrations include deprecated flag cleanup, folder organization,
- * ownership validation, and pack sorting updates.
+ * ownership validation, pack sorting updates, and custom spell list format updates.
  *
  * @returns {Promise<void>}
  */
@@ -106,11 +116,15 @@ export async function runAllMigrations() {
     const folderResults = await migrateSpellListFolders();
     const ownershipResults = await validateOwnershipLevels();
     const packSortingResults = await migratePackSorting();
-    const totalProcessed = deprecatedFlagResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed;
-    log(3, `Migration results: deprecated=${deprecatedFlagResults.processed}, folders=${folderResults.processed}, ownership=${ownershipResults.processed}, sorting=${packSortingResults.processed}`);
+    const customSpellListResults = await migrateCustomSpellListFormat();
+    const totalProcessed = deprecatedFlagResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed + customSpellListResults.processed;
+    log(
+      3,
+      `Migration results: deprecated=${deprecatedFlagResults.processed}, folders=${folderResults.processed}, ownership=${ownershipResults.processed}, sorting=${packSortingResults.processed}, customSpellList=${customSpellListResults.processed}`
+    );
     if (totalProcessed > 0) {
       ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.StartNotification'));
-      await logMigrationResults(deprecatedFlagResults, folderResults, ownershipResults, packSortingResults);
+      await logMigrationResults(deprecatedFlagResults, folderResults, ownershipResults, packSortingResults, customSpellListResults);
       ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.CompleteNotification'));
     } else {
       log(3, 'No migrations needed');
@@ -671,7 +685,93 @@ async function migratePackSorting() {
 }
 
 /**
- * Log detailed migration results to console and create chat message.
+ * Migrate custom spell list format from string to array.
+ *
+ * Converts legacy single customSpellList string values to array format
+ * to support multiple spell list selection. Scans all world actors for
+ * spellcasting rules and updates the customSpellList format.
+ *
+ * @returns {Promise<CustomSpellListMigrationResults>}
+ */
+export async function migrateCustomSpellListFormat() {
+  log(3, 'Starting custom spell list format migration...');
+
+  const results = {
+    processed: 0,
+    updated: 0,
+    migratedActors: [],
+    errors: []
+  };
+
+  try {
+    // Get all world actors
+    const actors = game.actors.contents;
+
+    for (const actor of actors) {
+      results.processed++;
+
+      try {
+        const currentRules = actor.getFlag(MODULE.ID, FLAGS.SPELLCASTING_RULES) || {};
+        let hasUpdates = false;
+        const updatedRules = { ...currentRules };
+        const migratedClasses = [];
+
+        // Check each class's rules for string customSpellList values
+        for (const [classId, rules] of Object.entries(currentRules)) {
+          if (rules && rules.customSpellList && typeof rules.customSpellList === 'string') {
+            log(4, `Migrating custom spell list for ${actor.name} class ${classId}: "${rules.customSpellList}" -> ["${rules.customSpellList}"]`);
+
+            // Convert string to single-element array
+            updatedRules[classId] = {
+              ...rules,
+              customSpellList: [rules.customSpellList]
+            };
+
+            migratedClasses.push({
+              classId: classId,
+              oldValue: rules.customSpellList,
+              newValue: [rules.customSpellList]
+            });
+
+            hasUpdates = true;
+          }
+        }
+
+        // Save updated rules if changes were made
+        if (hasUpdates) {
+          await actor.setFlag(MODULE.ID, FLAGS.SPELLCASTING_RULES, updatedRules);
+          results.updated++;
+          results.migratedActors.push({
+            id: actor.id,
+            name: actor.name,
+            migratedClasses: migratedClasses
+          });
+
+          log(3, `Migrated custom spell list format for ${actor.name} (${migratedClasses.length} classes)`);
+        }
+      } catch (error) {
+        const errorMessage = `Failed to migrate custom spell list format for actor ${actor.name}: ${error.message}`;
+        results.errors.push(errorMessage);
+        log(1, errorMessage, error);
+      }
+    }
+
+    if (results.updated > 0) {
+      log(2, `Custom spell list format migration completed: ${results.updated}/${results.processed} actors updated`);
+    } else {
+      log(3, `No custom spell list format migration needed (${results.processed} actors checked)`);
+    }
+  } catch (error) {
+    const errorMessage = `Critical error during custom spell list format migration: ${error.message}`;
+    results.errors.push(errorMessage);
+    log(1, errorMessage, error);
+  }
+
+  return results;
+}
+
+/**
+ * Log migration results to console and chat.
  *
  * Provides comprehensive reporting of all migration operations with detailed
  * console logging and a formatted chat message for the GM.
@@ -680,15 +780,19 @@ async function migratePackSorting() {
  * @param {FolderMigrationResults} folderResults - Results from folder migration
  * @param {OwnershipValidationResults} ownershipResults - Results from ownership validation
  * @param {PackSortingResults} packSortingResults - Results from pack sorting validation
+ * @param {CustomSpellListMigrationResults} customSpellListResults - Results from custom spell list format migration
  * @returns {Promise<void>}
  */
-async function logMigrationResults(deprecatedResults, folderResults, ownershipResults, packSortingResults) {
-  const totalProcessed = deprecatedResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed;
+async function logMigrationResults(deprecatedResults, folderResults, ownershipResults, packSortingResults, customSpellListResults) {
+  const totalProcessed = deprecatedResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed + customSpellListResults.processed;
+
   if (totalProcessed === 0) {
     log(3, 'No migration updates needed');
     return;
   }
+
   console.group('Spell Book Migration Results');
+
   if (deprecatedResults.processed > 0) {
     console.group('Deprecated Flags Migration');
     console.log(`Processed: ${deprecatedResults.processed} documents`);
@@ -696,6 +800,7 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
     console.log('Affected documents:', deprecatedResults.affectedDocuments);
     console.groupEnd();
   }
+
   if (folderResults.processed > 0) {
     console.group('Folder Migration');
     console.log(`Processed: ${folderResults.processed} journals`);
@@ -705,6 +810,7 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
     if (folderResults.errors.length > 0) console.log('Errors:', folderResults.errors);
     console.groupEnd();
   }
+
   if (ownershipResults.processed > 0) {
     console.group('Ownership Validation');
     console.log(`Total fixed: ${ownershipResults.processed} documents`);
@@ -716,6 +822,7 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
     if (ownershipResults.errors.length > 0) console.log('Errors:', ownershipResults.errors);
     console.groupEnd();
   }
+
   if (packSortingResults.processed > 0) {
     console.group('Pack Sorting Migration');
     console.log(`Packs updated: ${packSortingResults.packsUpdated}`);
@@ -723,9 +830,26 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
     if (packSortingResults.errors.length > 0) console.log('Errors:', packSortingResults.errors);
     console.groupEnd();
   }
+
+  if (customSpellListResults.processed > 0) {
+    console.group('Custom Spell List Format Migration');
+    console.log(`Processed: ${customSpellListResults.processed} actors`);
+    console.log(`Updated: ${customSpellListResults.updated} actors`);
+    console.log('Migrated actors:', customSpellListResults.migratedActors);
+    if (customSpellListResults.errors.length > 0) console.log('Errors:', customSpellListResults.errors);
+    console.groupEnd();
+  }
+
   console.groupEnd();
-  const content = await buildChatContent(deprecatedResults, folderResults, ownershipResults, packSortingResults, totalProcessed);
-  ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id, flags: { 'spell-book': { messageType: 'migration-report' } } });
+
+  const content = await buildChatContent(deprecatedResults, folderResults, ownershipResults, packSortingResults, customSpellListResults);
+  ChatMessage.create({
+    content: content,
+    whisper: [game.user.id],
+    user: game.user.id,
+    flags: { 'spell-book': { messageType: 'migration-report' } }
+  });
+
   log(3, `Migration complete: ${totalProcessed} documents/folders processed`);
 }
 
@@ -739,11 +863,18 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
  * @param {FolderMigrationResults} folderResults - Folder migration results
  * @param {OwnershipValidationResults} ownershipResults - Ownership validation results
  * @param {PackSortingResults} packSortingResults - Pack sorting results
- * @param {number} totalProcessed - Total processed documents
+ * @param {CustomSpellListMigrationResults} customSpellListResults - Custom spell list format results
  * @returns {Promise<string>} Rendered HTML content
  */
-async function buildChatContent(deprecatedResults, folderResults, ownershipResults, packSortingResults, totalProcessed) {
-  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_REPORT, { deprecatedResults, folderResults, ownershipResults, packSortingResults, totalProcessed });
+async function buildChatContent(deprecatedResults, folderResults, ownershipResults, packSortingResults, customSpellListResults) {
+  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_REPORT, {
+    deprecatedResults,
+    folderResults,
+    ownershipResults,
+    packSortingResults,
+    customSpellListResults,
+    totalProcessed: deprecatedResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed + customSpellListResults.processed
+  });
 }
 
 /**

@@ -43,6 +43,7 @@
  * @property {string} MIGRATION_FOLDER - Migration results folder template
  * @property {string} MIGRATION_OWNERSHIP - Migration results ownership template
  * @property {string} MIGRATION_REPORT - Migration results summary template
+ * @property {string} MIGRATION_CUSTOM_SPELL_LIST_RESULTS - Migration results custom spell list format template
  * @property {string} MIGRATION_USER_DATA - Migration results user data template
  * @property {string} SPELL_LEVEL - Spell level grouping component template
  * @property {string} USER_DATA_INTRO - User data introduction template for analytics
@@ -167,6 +168,9 @@ export const TEMPLATES = {
 
     /** Migration results summary component with overall statistics */
     MIGRATION_REPORT: 'modules/spell-book/templates/components/migration-report.hbs',
+
+    /** Migration results component showing custom spell list format changes */
+    MIGRATION_CUSTOM_SPELL_LIST_RESULTS: 'modules/spell-book/templates/components/migration-custom-spell-list-results.hbs',
 
     /** Migration results component showing user data changes */
     MIGRATION_USER_DATA: 'modules/spell-book/templates/components/migration-user-data-results.hbs',

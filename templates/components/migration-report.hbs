@@ -73,6 +73,11 @@
     {{> modules/spell-book/templates/components/migration-actor-list.hbs actors=deprecatedResults.actors}}
   {{/if}}
 
+  <!-- Custom Spell List Format Migration Results -->
+  {{#if customSpellListResults.processed}}
+    {{> modules/spell-book/templates/components/migration-custom-spell-list-results.hbs customSpellListResults=customSpellListResults}}
+  {{/if}}
+
   <!-- Migration Apology -->
   <p>{{localize 'SPELLBOOK.Migrations.Apology'}}</p>
 </div>
