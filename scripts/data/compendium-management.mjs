@@ -526,7 +526,7 @@ function formatSpellEntry(entry, pack) {
  * @param {string} identifier - The identifier (typically class name)
  * @returns {Promise<JournalEntryPage>} The created spell list page
  */
-export async function createNewSpellList(name, identifier) {
+export async function createNewSpellList(name, identifier, type = 'class') {
   const customFolder = await getOrCreateCustomFolder();
   const journalData = {
     name: name,
@@ -536,12 +536,12 @@ export async function createNewSpellList(name, identifier) {
         name: name,
         type: 'spells',
         flags: { [MODULE.ID]: { isCustom: true, isNewList: true, isDuplicate: false, creationDate: Date.now() } },
-        system: { identifier: identifier.toLowerCase(), description: game.i18n.format('SPELLMANAGER.CreateList.CustomDescription', { identifier }), spells: [] }
+        system: { identifier: identifier.toLowerCase(), type: type, description: game.i18n.format('SPELLMANAGER.CreateList.CustomDescription', { identifier }), spells: [] }
       }
     ]
   };
   const journal = await JournalEntry.create(journalData, { pack: MODULE.PACK.SPELLS });
-  log(3, `Created custom spell list: ${name} in folder`);
+  log(3, `Created ${type} spell list: ${name} in folder`);
   return journal.pages.contents[0];
 }
 

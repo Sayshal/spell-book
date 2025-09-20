@@ -104,6 +104,7 @@ export class UserSpellDataManager {
    *
    * @returns {Promise<void>}
    * @static
+   * @todo Instead of checking isGM can we check if its not already loaded?
    */
   static async initializeUserSpellData() {
     if (!game.user.isGM) return;

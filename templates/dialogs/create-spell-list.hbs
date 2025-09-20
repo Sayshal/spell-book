@@ -35,7 +35,7 @@
  */
 --}}
 
-<form>
+<div class='create-list-dialog'>
 	<!-- List Name Input Group -->
 	<div class="form-group">
 		<label for="list-name">{{localize "SPELLMANAGER.CreateList.ListNameLabel"}}</label>
@@ -54,11 +54,21 @@
 		{{{formElements.customInputHtml}}}
 
 		<!-- Custom Identifier Guidance -->
-		<p class="notes">{{localize "SPELLMANAGER.CreateList.IdentifierNotes"}}</p>
+		<p class="hint">{{localize "SPELLMANAGER.CreateList.IdentifierNotes"}}</p>
 
-		<!-- Validation Error Display -->
-		<p class="validation-error" style="color: red; display: none;">
-			{{localize "SPELLMANAGER.CreateList.ValidationError"}}
-		</p>
 	</div>
-</form>
+
+	<!-- Subclass Checkbox -->
+	<div class="form-group subclass-checkbox">
+		<label class="checkbox">
+			<span class="label-text">{{localize "SPELLMANAGER.CreateList.SubclassLabel"}}</span>
+			{{{formElements.subclassCheckboxHtml}}}
+		</label>
+		<p class="hint">{{localize "SPELLMANAGER.CreateList.SubclassHint"}}</p>
+	</div>
+
+	<!-- Validation Error Display -->
+	<p class="validation-error" style="color: red; display: none;">
+		{{localize "SPELLMANAGER.CreateList.ValidationError"}}
+	</p>
+</div>

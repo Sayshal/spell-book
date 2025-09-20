@@ -6681,6 +6681,42 @@
 }
 
 /* ----------------------------------------- */
+/*  Create Spell List Dialog                 */
+/* ----------------------------------------- */
+.create-list-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  label {
+    font-size: var(--spell-book-font-xl);
+  }
+
+  label.checkbox,
+  span {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+
+  /* Subclass Checkbox Layout */
+  .form-group {
+    label.checkbox,
+    span {
+      .label-text {
+        flex: 1;
+        margin-right: 0.5rem;
+      }
+    }
+  }
+
+  p.hint {
+    position: relative;
+    font-size: var(--spell-book-font-md);
+  }
+}
+
+/* ----------------------------------------- */
 /*  Spell Book Icon Sizing                   */
 /* ----------------------------------------- */
 .spell-book-icon {

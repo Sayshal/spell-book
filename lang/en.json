@@ -681,6 +681,8 @@
   "SPELLMANAGER.CreateList.ListNameLabel": "List Name:",
   "SPELLMANAGER.CreateList.Merged": "Merged",
   "SPELLMANAGER.CreateList.MergedDescription": "Merged spell list combining spells from {sourceList} and {copyFromList}",
+  "SPELLMANAGER.CreateList.SubclassHint": "Mark this spell list as a subclass-specific spell list",
+  "SPELLMANAGER.CreateList.SubclassLabel": "Subclass Spell List",
   "SPELLMANAGER.CreateList.ValidationError": "Invalid identifier format. Please use only lowercase letters, numbers, dashes, and underscores.",
   "SPELLMANAGER.Documentation.Creation.Content": "Select a spell list from the left column. Click the \"Edit\" button to create a custom copy. Add or remove spells using the right panel. Click \"Save\" when you're done.",
   "SPELLMANAGER.Documentation.Creation.Step1": "Select a spell list from the left column.",

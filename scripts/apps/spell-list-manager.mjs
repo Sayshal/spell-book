@@ -447,6 +447,16 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     try {
       DataHelpers.getValidCustomListMappings();
       this.availableSpellLists = await DataHelpers.findCompendiumSpellLists(true);
+      for (const list of this.availableSpellLists) {
+        const document = list.document;
+        if (document?.system?.type === 'subclass') {
+          list.isSubclass = true;
+          list.subclassIcon = '<i class="fas fa-shield"></i>';
+        } else {
+          list.isSubclass = false;
+          list.subclassIcon = '';
+        }
+      }
       this.availableSpellLists.sort((a, b) => a.name.localeCompare(b.name));
       const preloadedData = DataHelpers.getPreloadedData();
       if (preloadedData && preloadedData.enrichedSpells.length > 0) {
@@ -1201,10 +1211,18 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       ariaLabel: game.i18n.localize('SPELLMANAGER.CreateList.CustomIdentifierLabel')
     });
     customInput.id = 'custom-identifier';
+    const subclassCheckbox = ValidationHelpers.createCheckbox({
+      name: 'is-subclass',
+      checked: false,
+      ariaLabel: game.i18n.localize('SPELLMANAGER.CreateList.SubclassLabel'),
+      cssClass: 'dnd5e2'
+    });
+    subclassCheckbox.id = 'is-subclass';
     return {
       nameInputHtml: ValidationHelpers.elementToHtml(nameInput),
       classSelectHtml: ValidationHelpers.elementToHtml(classSelect),
-      customInputHtml: ValidationHelpers.elementToHtml(customInput)
+      customInputHtml: ValidationHelpers.elementToHtml(customInput),
+      subclassCheckboxHtml: ValidationHelpers.elementToHtml(subclassCheckbox)
     };
   }
 
@@ -1301,10 +1319,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   async _showCreateListDialog(identifierOptions) {
     let formData = null;
     const formElements = this._prepareCreateListFormData(identifierOptions);
-    const content = await renderTemplate(TEMPLATES.DIALOGS.CREATE_SPELL_LIST, {
-      identifierOptions,
-      formElements
-    });
+    const content = await renderTemplate(TEMPLATES.DIALOGS.CREATE_SPELL_LIST, { identifierOptions, formElements });
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = content;
     const result = await DialogV2.wait({
       window: {
         title: game.i18n.localize('SPELLMANAGER.Buttons.CreateNew'),
@@ -1314,7 +1331,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         positioned: true
       },
       position: { width: 650, height: 'auto' },
-      content: content,
+      content: wrapper,
       buttons: [
         {
           label: game.i18n.localize('SPELLMANAGER.Buttons.CreateNew'),
@@ -1325,10 +1342,12 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
             const nameInput = formElement.querySelector('[name="name"]');
             const identifierSelect = formElement.querySelector('[name="identifier"]');
             const customIdentifierInput = formElement.querySelector('[name="customIdentifier"]');
+            const subclassCheckbox = formElement.querySelector('[name="is-subclass"]');
             if (!identifierSelect) return false;
             let name = nameInput.value.trim();
             let identifier = '';
             let defaultClassName = '';
+            let isSubclass = subclassCheckbox ? subclassCheckbox.checked : false;
             if (identifierSelect.value === 'custom') {
               identifier = customIdentifierInput?.value || '';
               const identifierPattern = /^[\d_a-z-]+$/;
@@ -1346,7 +1365,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
             }
             if (!name && defaultClassName) name = defaultClassName;
             if (!name || !identifier) return false;
-            formData = { name, identifier };
+            formData = { name, identifier, isSubclass };
             return 'create';
           }
         },
@@ -1505,7 +1524,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (identifierSelect && customField && customIdentifierInput) {
       identifierSelect.addEventListener('change', (e) => {
         if (e.target.value === 'custom') {
-          customField.style.display = 'block';
+          customField.style.display = 'flex';
           const isValid = /^[\d_a-z-]+$/.test(customIdentifierInput.value);
           createButton.disabled = customIdentifierInput.value !== '' && !isValid;
           const errorElement = target.querySelector('.validation-error');
@@ -1631,13 +1650,12 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Create a new spell list.
    *
-   * @param {string} name - Name for the new list
-   * @param {string} identifier - Class identifier for the new list
    * @returns {Promise<void>}
    * @private
    */
-  async _createNewListCallback(name, identifier) {
-    const newList = await DataHelpers.createNewSpellList(name, identifier);
+  async _createNewListCallback(formData) {
+    let { name, identifier, isSubclass } = formData;
+    const newList = await DataHelpers.createNewSpellList(name, identifier, isSubclass ? 'subclass' : 'class');
     if (newList) {
       await this.loadData();
       await this.selectSpellList(newList.uuid);
@@ -2033,7 +2051,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         plainName: data.name
       }));
     const { result, formData } = await this._showCreateListDialog(identifierOptions);
-    if (result === 'create' && formData) await this._createNewListCallback(formData.name, formData.identifier);
+    if (result === 'create' && formData) await this._createNewListCallback(formData);
   }
 
   /**
@@ -2455,16 +2473,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     }
   }
 
-  /**
-   * Handle post-render setup and event binding.
-   *
-   * Sets up comprehensive event listeners, applies saved states, and initializes
-   * the application interface after rendering.
-   *
-   * @param {Object} context - Template context data
-   * @param {Object} options - Rendering options
-   * @inheritdoc
-   */
+  /** @inheritdoc */
   _onRender(context, options) {
     super._onRender(context, options);
     if (this.isLoading) {
