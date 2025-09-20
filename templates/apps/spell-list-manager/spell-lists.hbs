@@ -106,7 +106,7 @@
 							<div class="list-item-header">
 								<div class="list-item-content" data-action="selectSpellList" data-uuid="{{list.uuid}}">
 									<div class="list-name">
-										<i class="fas fa-book {{#if list.isCustom}}is-custom-list{{else if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
+										<i class="{{list.icon}} {{#if list.isCustom}}is-custom-list{{else if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
 											aria-hidden="true"></i>
 										<span>{{list.name}}</span>
 									</div>
@@ -142,7 +142,7 @@
 							<div class="list-item-header">
 								<div class="list-item-content" data-action="selectSpellList" data-uuid="{{list.uuid}}">
 									<div class="list-name">
-										<i class="fas fa-book is-custom-list" aria-hidden="true"></i>
+										<i class="{{list.icon}} is-custom-list" aria-hidden="true"></i>
 										<span>{{list.name}}</span>
 									</div>
 									<div class="list-meta">
@@ -180,7 +180,7 @@
 							<div class="list-item-header">
 								<div class="list-item-content" data-action="selectSpellList" data-uuid="{{list.uuid}}">
 									<div class="list-name">
-										<i class="fas fa-book is-merged-list" aria-hidden="true"></i>
+										<i class="{{list.icon}} is-merged-list" aria-hidden="true"></i>
 										<span>{{list.name}}</span>
 									</div>
 									<div class="list-meta">
@@ -218,7 +218,7 @@
 							<div class="list-item-header">
 								<div class="list-item-content" data-action="selectSpellList" data-uuid="{{list.uuid}}">
 									<div class="list-name">
-										<i class="fas fa-book {{#if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
+										<i class="{{list.icon}} {{#if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
 											aria-hidden="true"></i>
 										<span>{{list.name}}</span>
 									</div>
@@ -258,7 +258,7 @@
 							<div class="list-item-header">
 								<div class="list-item-content" data-action="selectSpellList" data-uuid="{{list.uuid}}">
 									<div class="list-name">
-										<i class="fas fa-book {{#if list.isCustom}}is-custom-list{{else if list.isMerged}}is-merged-list{{else if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
+										<i class="{{list.icon}} {{#if list.isCustom}}is-custom-list{{else if list.isMerged}}is-merged-list{{else if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
 											aria-hidden="true"></i>
 										<span>{{list.name}}</span>
 									</div>

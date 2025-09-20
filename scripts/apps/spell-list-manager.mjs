@@ -451,10 +451,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         const document = list.document;
         if (document?.system?.type === 'subclass') {
           list.isSubclass = true;
-          list.subclassIcon = '<i class="fas fa-shield"></i>';
+          list.icon = 'fas fa-shield';
         } else {
           list.isSubclass = false;
-          list.subclassIcon = '';
+          list.icon = 'fas fa-book';
         }
       }
       this.availableSpellLists.sort((a, b) => a.name.localeCompare(b.name));
