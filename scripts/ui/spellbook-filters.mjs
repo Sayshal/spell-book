@@ -214,6 +214,32 @@ export class SpellbookFilterHelper {
   }
 
   /**
+   * Reset all filter controls to their default state.
+   *
+   * Clears all filter input values, resets selects to first option, and unchecks
+   * all checkboxes. This handles the DOM manipulation for filter reset while
+   * leaving state management to the calling application.
+   *
+   * @returns {void}
+   */
+  resetFilterControls() {
+    if (!this.element) return;
+    const inputs = this.element.querySelectorAll('.spell-filters input[type="text"], .spell-filters input[type="number"]');
+    inputs.forEach((input) => {
+      input.value = '';
+    });
+    const selects = this.element.querySelectorAll('.spell-filters select');
+    selects.forEach((select) => {
+      select.value = select.options[0].value;
+    });
+    const checkboxes = this.element.querySelectorAll('.spell-filters input[type="checkbox"]');
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = false;
+    });
+    this.invalidateFilterCache();
+  }
+
+  /**
    * Filter available spells based on current filter state.
    *
    * Applies comprehensive filtering to an array of spell objects using the current

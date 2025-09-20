@@ -3291,13 +3291,9 @@
       padding: var(--spell-book-spacing-lg) var(--spell-book-spacing-xl);
     }
 
-    .footer-center {
+    .footer-left {
       gap: var(--spell-book-spacing-md);
       display: flex;
-      position: absolute;
-      left: 50%;
-      align-items: center;
-      transform: translateX(-50%);
     }
 
     .footer-right {

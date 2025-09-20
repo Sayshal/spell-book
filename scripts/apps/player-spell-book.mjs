@@ -1568,7 +1568,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Show context menu with available loadouts.
    *
-   * @todo Localize ui.notifications
    * @param {Event} event - The right-click event
    * @private
    */
@@ -1606,9 +1605,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           const dialog = new SpellLoadoutDialog(this.actor, this, classIdentifier);
           dialog.render(true);
         } else if (item.dataset.loadoutId) {
-          const success = await loadoutManager.applyLoadout(item.dataset.loadoutId, classIdentifier);
-          if (success) ui.notifications.info('Loadout applied successfully');
-          else ui.notifications.error('Failed to apply loadout');
+          await loadoutManager.applyLoadout(item.dataset.loadoutId, classIdentifier);
         }
         this._hideLoadoutContextMenu();
       });

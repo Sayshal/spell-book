@@ -139,7 +139,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     tag: 'div',
     actions: {
       selectSpellList: SpellListManager.handleSelectSpellList,
-      closeSpellManager: SpellListManager.handleClose,
       editSpellList: SpellListManager.handleEditSpellList,
       removeSpell: SpellListManager.handleRemoveSpell,
       addSpell: SpellListManager.handleAddSpell,
@@ -980,7 +979,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Reset all filters to their default state and clear form inputs.
    *
-   * @todo Shouldn't this be in filterHelper?
    * @returns {void}
    * @private
    */
@@ -1001,20 +999,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       prepared: false,
       ritual: false
     };
-    const nameInput = this.element.querySelector('input[name="spell-search"]');
-    if (nameInput) nameInput.value = '';
-    const selects = this.element.querySelectorAll('select[name^="spell-"]');
-    selects.forEach((select) => {
-      select.value = select.options[0].value;
-    });
-    const rangeInputs = this.element.querySelectorAll('input[name^="spell-"][type="number"]');
-    rangeInputs.forEach((input) => {
-      input.value = '';
-    });
-    const checkboxes = this.element.querySelectorAll('input[name^="spell-"][type="checkbox"]');
-    checkboxes.forEach((checkbox) => {
-      checkbox.checked = false;
-    });
+    this.filterHelper.resetFilterControls();
     this.render(false, { parts: ['availableSpells'] });
   }
 
@@ -1436,7 +1421,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
             if (!mergedListName) {
               const sourceList = this.availableSpellLists.find((list) => list.uuid === sourceListSelect.value);
               mergedListName = game.i18n.format('SPELLMANAGER.MergeLists.DefaultMergedName', {
-                sourceName: sourceList ? sourceList.name : 'Unknown' //Localize
+                sourceName: sourceList.name
               });
             }
             formData = {
@@ -1876,31 +1861,14 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     }
   }
 
-  /**
-   * Handle closing the spell manager.
-   *
-   * @todo Should be able to combine this into _onClose?
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @static
-   */
-  static handleClose(_event, _form) {
-    this.close();
-  }
-
-  /**
-   * Close the application and clean up associated resources.
-   *
-   * @param {Object} [options={}] - Options passed to the parent close method
-   * @returns {Promise<void>} Promise that resolves when the application is closed
-   */
-  async close(options = {}) {
+  /** @inheritdoc */
+  async _onClose(options) {
     if (this.comparisonDialog) {
       await this.comparisonDialog.close();
       this.comparisonDialog = null;
     }
     this.comparisonSpells.clear();
-    return super.close(options);
+    return super._onClose(options);
   }
 
   /**

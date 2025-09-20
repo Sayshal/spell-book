@@ -85,7 +85,6 @@ export class QueryParser {
    * Parse query into field conditions using AND logic.
    * Splits query on 'and' keywords and processes each field expression.
    *
-   * @todo Changing `and` from `AND` might break REGEX here - review case sensitivity
    * @private
    * @param {string} query - The query string to parse
    * @returns {Array<ParsedFieldCondition>} Array of parsed field condition objects

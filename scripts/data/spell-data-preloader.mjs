@@ -94,7 +94,6 @@ export async function preloadSpellData() {
  * to provide comprehensive data for GM configuration interfaces.
  *
  * @returns {Promise<void>}
- * @todo Missing some localization
  * @private
  */
 async function preloadForGMSetupMode() {
@@ -105,7 +104,7 @@ async function preloadForGMSetupMode() {
     const allSpells = await DataHelpers.fetchAllCompendiumSpells();
     const enrichedSpells = enrichSpellsWithIcons(allSpells);
     cachePreloadedData(allSpellLists, enrichedSpells, 'gm-setup');
-    const message = `Spell Book ready for GM setup! (${allSpellLists.length} lists, ${enrichedSpells.length} spells)`; // Localize
+    const message = game.i18n.format('SPELLBOOK.Preload.GMSetupReady', { lists: allSpellLists.length, spells: enrichedSpells.length });
     ui.notifications.success(message, { console: false });
     log(3, `GM setup preload completed: ${allSpellLists.length} lists, ${enrichedSpells.length} spells`);
   } catch (error) {
@@ -119,7 +118,6 @@ async function preloadForGMSetupMode() {
  * from their class spell lists and wizard spellbooks if applicable.
  *
  * @returns {Promise<void>}
- * @todo Missing some localization
  * @private
  */
 async function preloadForPlayer() {
@@ -137,9 +135,9 @@ async function preloadForPlayer() {
     const relevantSpells = allSpells.filter((spell) => normalizedUuids.has(spell.uuid));
     const enrichedSpells = enrichSpellsWithIcons(relevantSpells);
     cachePreloadedData([], enrichedSpells, 'player');
-    const message = `Your Spell Book is ready! (${enrichedSpells.length} spells loaded)`; // Localize
+    const message = game.i18n.format('SPELLBOOK.Preload.PlayerReady', { spells: enrichedSpells.length });
     ui.notifications.success(message, { console: false });
-    log(3, `Player preload completed: ${enrichedSpells.length} spells`);
+    log(3, `Player preload completed: ${enrichedSpells.length} spells loaded for ${playerActor.name}`);
   } catch (error) {
     log(1, 'Error during player preload', error);
   }

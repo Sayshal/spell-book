@@ -1174,7 +1174,6 @@ export class SpellbookState {
    * Automatically adds ritual spells that should be available to classes
    * with "always" ritual casting rules but aren't currently in the spell data.
    *
-   * @todo - Is the hard call to 'wizard' correct here?
    * @param {Object} spellDataByClass - The spell data grouped by class
    * @returns {Promise<void>}
    */
@@ -1183,7 +1182,8 @@ export class SpellbookState {
     for (const [classIdentifier, classData] of Object.entries(this.spellcastingClasses)) {
       const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
       if (classRules.ritualCasting === 'always') {
-        if (classIdentifier === 'wizard' && this.app.wizardManager?.isWizard) await this._addWizardRitualSpells(classIdentifier, spellDataByClass);
+        const wizardManager = this.app.wizardManagers.get(classIdentifier);
+        if (wizardManager?.isWizard) await this._addWizardRitualSpells(classIdentifier, spellDataByClass);
         else await this._addClassRitualSpells(classIdentifier, classData, spellDataByClass);
       }
     }
