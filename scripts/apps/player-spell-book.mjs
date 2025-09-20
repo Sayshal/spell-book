@@ -2634,6 +2634,20 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       this.ui.setupCantripUI();
       this.ui.setupSpellLocks();
     }
+    const cprEnabled = game.modules.get('chris-premades')?.active;
+    if (!cprEnabled) return actor;
+    const cprCompatibility = game.settings.get(MODULE.ID, SETTINGS.CPR_COMPATIBILITY);
+    if (cprCompatibility) {
+      try {
+        log(3, 'Running CPR automation setup for actor:', actor.name);
+        await chrisPremades.utils.actorUtils.updateAll(actor);
+        log(3, 'CPR automation setup completed successfully');
+      } catch (error) {
+        log(1, 'Error running CPR automation setup:', error);
+        // Don't throw - this shouldn't break the spell book functionality
+      }
+    }
+
     return actor;
   }
 }

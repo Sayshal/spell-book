@@ -181,6 +181,7 @@
  * @property {string} AVAILABLE_FOCUS_OPTIONS - Available spellcasting focus options for party mode (stores FocusOption[] in nested object)
  * @property {string} CANTRIP_SCALE_VALUES - Scale values for cantrip damage calculations
  * @property {string} CONSUME_SCROLLS_WHEN_LEARNING - Whether to consume scrolls when learning spells
+ * @property {string} CPR_COMPATIBILITY - Enable Cauldron of Plentiful Resources compatibility
  * @property {string} CUSTOM_SPELL_MAPPINGS - Custom spell list mappings for classes
  * @property {string} DEFAULT_ENFORCEMENT_BEHAVIOR - Default enforcement behavior for new actors
  * @property {string} DISABLE_LONG_REST_SWAP_PROMPT - Disable long rest spell swap prompts
@@ -420,6 +421,9 @@ export const SETTINGS = {
 
   /** @type {string} Whether to consume scrolls when learning spells */
   CONSUME_SCROLLS_WHEN_LEARNING: 'consumeScrollsWhenLearning',
+
+  /** @type {string} Enable Cauldron of Plentiful Resources compatibility */
+  CPR_COMPATIBILITY: 'cprCompatibility',
 
   /** @type {string} Custom spell list mappings for classes */
   CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',

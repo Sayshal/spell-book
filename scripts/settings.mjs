@@ -139,6 +139,22 @@ export function registerSettings() {
     requiresReload: true
   });
 
+  if (game.modules.get('chris-premades').active) {
+    /** Enable Cauldron of Plentiful Resources compatibility */
+    game.settings.register(MODULE.ID, SETTINGS.CPR_COMPATIBILITY, {
+      name: 'SPELLBOOK.Settings.CPRCompatibility.Name',
+      hint: 'SPELLBOOK.Settings.CPRCompatibility.Hint',
+      scope: 'world',
+      config: true,
+      type: Boolean,
+      default: false,
+      onChange: (value) => {
+        const status = value ? 'enabled' : 'disabled';
+        ui.notifications.info(game.i18n.format('SPELLBOOK.Settings.CPRCompatibility.Changed', { status }));
+      }
+    });
+  }
+
   // ========================================//
   //  UI & UX                                //
   // ========================================//
