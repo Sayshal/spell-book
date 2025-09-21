@@ -25,5 +25,3 @@ jobs:
         with:
           path: docs
           commit-message: 'Auto-sync documentation from docs folder'
-          preprocess: true
-          disable-empty-commits: true
