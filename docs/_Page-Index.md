@@ -2,8 +2,6 @@
 
 This file provides a quick reference to all wiki pages organized by category.
 
-*Generated on: 2025-09-20 23:46:46*
-
 ## Advanced Features - Analytics
 
 - [Party Synergy Analysis](Party-Synergy-Analysis)

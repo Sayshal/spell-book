@@ -2,7 +2,7 @@
 
 Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell management module for FoundryVTT! This wiki provides detailed guidance for players, GMs, and developers on utilizing all the powerful features this module offers.
 
-**Spell Book** transforms spell management from a tedious process into an engaging experience, providing automated rule enforcement, intelligent spell coordination, and comprehensive analytics across both 2014 and 2024 D&D rule sets.
+**Spell Book** transforms spell management from a tedious process into an engaging experience, providing automated rule enforcement, intelligent spell coordination, and comprehensive analytics across both 2014 and 2024 D&D rulesets.
 
 ---
 

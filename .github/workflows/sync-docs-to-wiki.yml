@@ -3,7 +3,16 @@ name: Sync Docs to Wiki
 on:
   push:
     branches: [main]
-    paths: ['docs/**']
+    paths:
+      - docs/**
+      - .github/workflows/sync-docs-to-wiki.yml
+
+concurrency:
+  group: sync-docs-to-wiki
+  cancel-in-progress: true
+
+permissions:
+  contents: write
 
 jobs:
   sync-to-wiki:
@@ -11,37 +20,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Sync to Wiki
-        uses: actions/github-script@v7
+      - name: Sync docs to wiki
+        uses: Andrew-Chen-Wang/github-wiki-action@v4
         with:
-          script: |
-            const fs = require('fs').promises;
-            const path = require('path');
-
-            async function syncDocsToWiki() {
-              const docsDir = './docs';
-              const files = await fs.readdir(docsDir, { withFileTypes: true });
-
-              for (const file of files) {
-                if (file.isFile() && file.name.endsWith('.md')) {
-                  const content = await fs.readFile(path.join(docsDir, file.name), 'utf8');
-                  const pageName = file.name.replace('.md', '');
-
-                  try {
-                    // Try to update existing page
-                    await github.rest.gists.createComment({
-                      owner: context.repo.owner,
-                      repo: `${context.repo.repo}.wiki`,
-                      path: `${pageName}.md`,
-                      message: `Auto-sync from docs/${file.name}`,
-                      content: content
-                    });
-                  } catch (error) {
-                    console.log(`Creating new wiki page: ${pageName}`);
-                    // Create new page logic here
-                  }
-                }
-              }
-            }
-
-            await syncDocsToWiki();
+          path: docs
+          commit-message: 'Auto-sync documentation from docs folder'
