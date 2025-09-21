@@ -3,7 +3,16 @@ name: Sync Docs to Wiki
 on:
   push:
     branches: [main]
-    paths: ['docs/**']
+    paths:
+      - docs/**
+      - .github/workflows/sync-docs-to-wiki.yml
+
+concurrency:
+  group: sync-docs-to-wiki
+  cancel-in-progress: true
+
+permissions:
+  contents: write
 
 jobs:
   sync-to-wiki:
@@ -11,12 +20,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Sync to Wiki
-        uses: joeizzard/action-wiki-sync@master
+      - name: Sync docs to wiki
+        uses: Andrew-Chen-Wang/github-wiki-action@v4
         with:
-          username: ${{ github.repository_owner }}
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-          wiki_folder: docs
-          commit_username: ${{ github.actor }}
-          commit_email: ${{ github.actor }}@users.noreply.github.com
-          commit_message: 'Auto-sync documentation from docs folder'
+          path: docs
+          commit-message: 'Auto-sync documentation from docs folder'
+          preprocess: true
+          disable-empty-commits: true
