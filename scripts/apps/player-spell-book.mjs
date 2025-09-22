@@ -311,7 +311,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
     if (isPartyMode) await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, false);
     const context = this._createBaseContext(options);
-    await this._ensureAllSpellDataLoaded();
+    if (!this._stateManager._initialized) await this._stateManager.initialize();
     if (!this._stateManager._classesDetected) this._stateManager.detectSpellcastingClasses();
     context.spellcastingClasses = this._stateManager.spellcastingClasses;
     context.activeClass = this._stateManager.activeClass;
@@ -495,43 +495,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     log(3, `Total registered parts: ${Object.keys(this.constructor.PARTS).join(', ')}`);
   }
 
-  /**
-   * Ensure all spell data (including wizard data) is loaded before rendering.
-   *
-   * Handles the complex initialization sequence for spell data loading,
-   * including wizard data completion, state manager initialization, and
-   * UI updates. Provides error handling with user-friendly error states.
-   *
-   * @returns {Promise<void>}
-   * @private
-   */
-  async _ensureAllSpellDataLoaded() {
-    if (this._isLoadingSpellData) return;
-    this._isLoadingSpellData = true;
-    try {
-      if (!this._stateManager._initialized) {
-        log(3, 'Initializing state manager and waiting for wizard data completion');
-        await this._stateManager.initialize();
-        await this._stateManager.waitForWizardDataCompletion();
-        this.ui.updateSpellPreparationTracking();
-        this.ui.updateSpellCounts();
-        log(3, 'State manager initialization and wizard data loading completed');
-        return;
-      }
-      await this._stateManager.waitForWizardDataCompletion();
-      await this._renderAllSpells();
-      this.ui.updateSpellPreparationTracking();
-      this.ui.updateSpellCounts();
-      this.ui.setupCantripUI();
-    } catch (error) {
-      log(1, 'Error ensuring all spell data is loaded:', error);
-      this._showErrorState(error);
-    } finally {
-      this._isLoadingSpellData = false;
-      if (this.element) await this._applyFavoriteStatesAfterRender();
-    }
-  }
-
   /** @inheritdoc */
   _initializeApplicationOptions(options) {
     options = super._initializeApplicationOptions(options);
@@ -701,8 +664,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       this._preparationListenersSetup = true;
     }
     this.ui.applyCollapsedLevels();
+    await this._renderAllSpells();
     this.ui.setupCantripUI();
     this.ui.updateSpellCounts();
+    this.ui.updateSpellPreparationTracking();
     if (!this._classColorsApplied || this._classesChanged) {
       await this.ui.applyClassStyling();
       this._classColorsApplied = true;
@@ -710,7 +675,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     this._setupLoadoutContextMenu();
     this.ui.setupAdvancedSearch();
-    await this._ensureSpellData();
     const favoriteButtons = this.element.querySelectorAll('.spell-favorite-toggle[data-uuid]');
     if (favoriteButtons.length > 0) {
       await this._applyFavoriteStatesToButtons(favoriteButtons);
@@ -762,36 +726,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     this._stateManager.clearFavoriteSessionState();
     await this._syncJournalToActorState();
-  }
-
-  /**
-   * Ensure spell data is loaded (alternate entry point).
-   *
-   * @todo Consolidate with _ensureAllSpellDataLoaded to eliminate duplication
-   * @private
-   */
-  async _ensureSpellData() {
-    if (this._isLoadingSpellData) return;
-    this._isLoadingSpellData = true;
-    try {
-      if (!this._stateManager._initialized) {
-        await this._stateManager.initialize();
-        this.ui.updateSpellPreparationTracking();
-        this.ui.updateSpellCounts();
-        this.render(false);
-        return;
-      }
-      await this._renderAllSpells();
-      this.ui.updateSpellPreparationTracking();
-      this.ui.updateSpellCounts();
-      this.ui.setupCantripUI();
-    } catch (error) {
-      log(1, 'Error loading spell data:', error);
-      this._showErrorState(error);
-    } finally {
-      this._isLoadingSpellData = false;
-      await this._applyFavoriteStatesAfterRender();
-    }
   }
 
   /**
@@ -896,9 +830,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       </div>
     `;
       spellsContainer.innerHTML = errorHtml;
-      spellsContainer.addEventListener('retry-load', () => {
-        this._ensureSpellData();
-      });
     }
   }
 

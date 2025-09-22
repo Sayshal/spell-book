@@ -326,7 +326,7 @@ export class AdvancedSearchManager {
     if (query.startsWith(this.searchPrefix)) {
       this.searchTimeout = setTimeout(async () => {
         try {
-          await this.app._ensureSpellData();
+          if (!this.app._stateManager._initialized) await this.app._stateManager.initialize();
           await new Promise((resolve) => setTimeout(resolve, 50));
         } catch (error) {
           log(2, 'Error ensuring spell data for advanced search:', error);
@@ -337,7 +337,7 @@ export class AdvancedSearchManager {
     } else {
       this.searchTimeout = setTimeout(async () => {
         try {
-          await this.app._ensureSpellData();
+          if (!this.app._stateManager._initialized) await this.app._stateManager.initialize();
           await new Promise((resolve) => setTimeout(resolve, 50));
         } catch (error) {
           log(1, 'Error ensuring spell data for fuzzy search:', error);
