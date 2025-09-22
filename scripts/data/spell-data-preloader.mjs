@@ -130,9 +130,9 @@ async function preloadForPlayer() {
       return;
     }
     const spellUuids = await collectPlayerSpellUuids(playerActor);
-    const normalizedUuids = normalizeSpellUuids(spellUuids);
+    const spellUuidsSet = new Set(spellUuids);
     const allSpells = await DataHelpers.fetchAllCompendiumSpells();
-    const relevantSpells = allSpells.filter((spell) => normalizedUuids.has(spell.uuid));
+    const relevantSpells = allSpells.filter((spell) => spellUuidsSet.has(spell.uuid));
     const enrichedSpells = enrichSpellsWithIcons(relevantSpells);
     cachePreloadedData([], enrichedSpells, 'player');
     const message = game.i18n.format('SPELLBOOK.Preload.PlayerReady', { spells: enrichedSpells.length });
@@ -319,25 +319,6 @@ export function shouldInvalidateCacheForPage(page) {
   const pack = game.packs.get(journal.pack);
   if (!pack || pack.metadata.type !== 'JournalEntry') return false;
   return DataHelpers.shouldIndexCompendium(pack);
-}
-
-/**
- * Normalize spell UUIDs to match compendium format.
- * Converts actor-specific spell UUIDs to their compendium equivalents
- * for proper matching against preloaded compendium spell data.
- *
- * @param {Set<string>} spellUuids - Set of spell UUIDs to normalize
- * @returns {Set<string>} Set of normalized UUIDs for compendium matching
- * @private
- */
-function normalizeSpellUuids(spellUuids) {
-  /** @type {Set<string>} */
-  const normalizedUuids = new Set();
-  spellUuids.forEach((uuid) => {
-    const normalizedUuid = uuid.replace('.Item.', '.');
-    normalizedUuids.add(normalizedUuid);
-  });
-  return normalizedUuids;
 }
 
 /**

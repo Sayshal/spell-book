@@ -299,11 +299,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         context.selectedSpellList.spellsByLevel = context.selectedSpellList.spellsByLevel.map((levelData) => {
           const processedLevel = { ...levelData };
           processedLevel.spells = levelData.spells.map((spell) => {
-            const rawSpellUuid = spell.uuid || spell.compendiumUuid;
-            const normalizedSpellUuid = this._normalizeUuid(rawSpellUuid);
+            const spellUuid = spell.uuid || spell.compendiumUuid;
             const processedSpell = { ...spell };
-            processedSpell.selectRemoveCheckboxHtml = this._createSpellSelectCheckbox(spell, 'remove', this.selectedSpellsToRemove.has(normalizedSpellUuid));
-            processedSpell.isInComparison = this.comparisonSpells.has(normalizedSpellUuid);
+            processedSpell.selectRemoveCheckboxHtml = this._createSpellSelectCheckbox(spell, 'remove', this.selectedSpellsToRemove.has(spellUuid));
+            processedSpell.isInComparison = this.comparisonSpells.has(spellUuid);
             processedSpell.showCompareLink = !comparisonFull || processedSpell.isInComparison;
             return processedSpell;
           });
@@ -313,10 +312,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         context.selectedSpellList.spellsByLevel = context.selectedSpellList.spellsByLevel.map((levelData) => {
           const processedLevel = { ...levelData };
           processedLevel.spells = levelData.spells.map((spell) => {
-            const rawSpellUuid = spell.uuid || spell.compendiumUuid;
-            const normalizedSpellUuid = this._normalizeUuid(rawSpellUuid);
+            const spellUuid = spell.uuid || spell.compendiumUuid;
             const processedSpell = { ...spell };
-            processedSpell.isInComparison = this.comparisonSpells.has(normalizedSpellUuid);
+            processedSpell.isInComparison = this.comparisonSpells.has(spellUuid);
             processedSpell.showCompareLink = !comparisonFull || processedSpell.isInComparison;
             return processedSpell;
           });
@@ -391,17 +389,15 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (this.isEditing && this.selectionMode && filteredData.spells) {
       filteredData.spells = filteredData.spells.map((spell) => {
         const processedSpell = UIHelpers.processSpellItemForDisplay(spell);
-        const normalizedSpellUuid = this._normalizeUuid(spell.uuid);
-        processedSpell.selectAddCheckboxHtml = this._createSpellSelectCheckbox(spell, 'add', this.selectedSpellsToAdd.has(normalizedSpellUuid));
-        processedSpell.isInComparison = this.comparisonSpells.has(normalizedSpellUuid);
+        processedSpell.selectAddCheckboxHtml = this._createSpellSelectCheckbox(spell, 'add', this.selectedSpellsToAdd.has(spell.uuid));
+        processedSpell.isInComparison = this.comparisonSpells.has(spell.uuid);
         processedSpell.showCompareLink = !comparisonFull || processedSpell.isInComparison;
         return processedSpell;
       });
     } else if (filteredData.spells) {
       filteredData.spells = filteredData.spells.map((spell) => {
         const processedSpell = UIHelpers.processSpellItemForDisplay(spell);
-        const normalizedSpellUuid = this._normalizeUuid(spell.uuid);
-        processedSpell.isInComparison = this.comparisonSpells.has(normalizedSpellUuid);
+        processedSpell.isInComparison = this.comparisonSpells.has(spell.uuid);
         processedSpell.showCompareLink = !comparisonFull || processedSpell.isInComparison;
         return processedSpell;
       });
@@ -1727,17 +1723,53 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   static handleRemoveSpell(event, _form) {
     const element = event.target.closest('[data-uuid]');
     if (!element) return;
-    let spellUuid = element.dataset.uuid;
+
+    const spellUuid = element.dataset.uuid;
     if (!this.selectedSpellList || !this.isEditing) return;
-    log(3, `Removing spell: ${spellUuid} in pending changes`);
+
+    log(1, 'handleRemoveSpell - Starting removal', {
+      spellUuid,
+      currentUuidsCount: this.selectedSpellList.spellUuids.length,
+      currentSpellsCount: this.selectedSpellList.spells.length
+    });
+
+    // Check if the UUID exists in our current data
+    const uuidExists = this.selectedSpellList.spellUuids.includes(spellUuid);
+    const spellExists = this.selectedSpellList.spells.some((spell) => spell.uuid === spellUuid || spell.compendiumUuid === spellUuid);
+
+    log(1, 'handleRemoveSpell - Existence check', {
+      spellUuid,
+      uuidExists,
+      spellExists,
+      sampleStoredUuids: this.selectedSpellList.spellUuids.slice(0, 3),
+      sampleSpellUuids: this.selectedSpellList.spells.slice(0, 2).map((s) => ({
+        uuid: s.uuid,
+        compendiumUuid: s.compendiumUuid
+      }))
+    });
+
+    log(3, `Removing spell: ${spellUuid} from list`);
+
+    // Track the change
     this.pendingChanges.removed.add(spellUuid);
     this.pendingChanges.added.delete(spellUuid);
-    const normalizedForms = DataHelpers.normalizeUuid(spellUuid);
-    this.selectedSpellList.spellUuids = this.selectedSpellList.spellUuids.filter((uuid) => !normalizedForms.includes(uuid));
-    this.selectedSpellList.spells = this.selectedSpellList.spells.filter((spell) => {
-      const spellUuids = [spell.uuid, spell.compendiumUuid, ...(spell._id ? [spell._id] : [])];
-      return !spellUuids.some((id) => normalizedForms.includes(id));
+
+    // Simple exact matching - no normalization needed
+    const originalUuidCount = this.selectedSpellList.spellUuids.length;
+    this.selectedSpellList.spellUuids = this.selectedSpellList.spellUuids.filter((uuid) => uuid !== spellUuid);
+
+    const originalSpellCount = this.selectedSpellList.spells.length;
+    this.selectedSpellList.spells = this.selectedSpellList.spells.filter((spell) => spell.uuid !== spellUuid && spell.compendiumUuid !== spellUuid);
+
+    log(1, 'handleRemoveSpell - After removal', {
+      spellUuid,
+      uuidsRemoved: originalUuidCount - this.selectedSpellList.spellUuids.length,
+      spellsRemoved: originalSpellCount - this.selectedSpellList.spells.length,
+      finalUuidsCount: this.selectedSpellList.spellUuids.length,
+      finalSpellsCount: this.selectedSpellList.spells.length
     });
+
+    // Update UI
     this.selectedSpellList.spellsByLevel = DataHelpers.organizeSpellsByLevel(this.selectedSpellList.spells);
     this._ensureSpellIcons();
     this.render(false);
@@ -1781,16 +1813,49 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   static async handleSaveCustomList(_event, _form) {
     if (!this.selectedSpellList || !this.isEditing) return;
-    log(3, 'Saving custom spell list with pending changes');
+
+    log(1, 'handleSaveCustomList - Starting save', {
+      removedCount: this.pendingChanges.removed.size,
+      addedCount: this.pendingChanges.added.size,
+      removedUuids: Array.from(this.pendingChanges.removed),
+      addedUuids: Array.from(this.pendingChanges.added)
+    });
+
     const document = this.selectedSpellList.document;
-    const currentSpells = new Set(document.system.spells || []);
+    const originalSpells = Array.from(document.system.spells || []);
+    const currentSpells = new Set(originalSpells);
+
+    log(1, 'handleSaveCustomList - Current stored spells', {
+      originalCount: originalSpells.length,
+      sampleStored: originalSpells.slice(0, 3)
+    });
+
+    // Remove spells - simple exact matching
     for (const spellUuid of this.pendingChanges.removed) {
-      const normalizedForms = DataHelpers.normalizeUuid(spellUuid);
-      for (const existingUuid of currentSpells) if (normalizedForms.includes(existingUuid)) currentSpells.delete(existingUuid);
+      const wasDeleted = currentSpells.delete(spellUuid);
+      log(1, 'handleSaveCustomList - Attempting removal', {
+        spellUuid,
+        wasDeleted,
+        remainingCount: currentSpells.size
+      });
     }
+
+    // Add spells
     log(3, `Processing ${this.pendingChanges.added.size} spell additions`);
-    for (const spellUuid of this.pendingChanges.added) currentSpells.add(spellUuid);
+    for (const spellUuid of this.pendingChanges.added) {
+      currentSpells.add(spellUuid);
+    }
+
+    log(1, 'handleSaveCustomList - Final save data', {
+      originalCount: originalSpells.length,
+      finalCount: currentSpells.size,
+      actuallyChanged: originalSpells.length !== currentSpells.size
+    });
+
+    // Save to document
     await document.update({ 'system.spells': Array.from(currentSpells) });
+
+    // Reset state
     this.pendingChanges = { added: new Set(), removed: new Set() };
     this.isEditing = false;
     await this.selectSpellList(document.uuid);
@@ -2291,12 +2356,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
           try {
             this.pendingChanges.removed.add(spellUuid);
             this.pendingChanges.added.delete(spellUuid);
-            const normalizedForms = DataHelpers.normalizeUuid(spellUuid);
-            this.selectedSpellList.spellUuids = this.selectedSpellList.spellUuids.filter((uuid) => !normalizedForms.includes(uuid));
-            this.selectedSpellList.spells = this.selectedSpellList.spells.filter((spell) => {
-              const spellUuids = [spell.uuid, spell.compendiumUuid, ...(spell._id ? [spell._id] : [])];
-              return !spellUuids.some((id) => normalizedForms.includes(id));
-            });
+            this.selectedSpellList.spellUuids = this.selectedSpellList.spellUuids.filter((uuid) => uuid !== spellUuid);
+            this.selectedSpellList.spells = this.selectedSpellList.spells.filter((spell) => spell.uuid !== spellUuid && spell.compendiumUuid !== spellUuid);
             processed++;
           } catch (error) {
             log(1, `Failed to remove spell ${spellUuid}:`, error);
@@ -2316,9 +2377,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
               if (!spellCopy.enrichedIcon) spellCopy.enrichedIcon = UIHelpers.createSpellIconLink(spellCopy);
               this.selectedSpellList.spellUuids.push(spellUuid);
               this.selectedSpellList.spells.push(spellCopy);
-            } else {
-              log(2, `Could not find spell with UUID: ${spellUuid}`);
-            }
+            } else log(2, `Could not find spell with UUID: ${spellUuid}`);
             processed++;
           } catch (error) {
             log(1, `Failed to add spell ${spellUuid}:`, error);
@@ -2421,8 +2480,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @static
    */
   static async handleCompareSpell(event, _form) {
-    const rawSpellUuid = event.target.dataset.uuid;
-    const spellUuid = this._normalizeUuid(rawSpellUuid);
+    const spellUuid = event.target.dataset.uuid;
     const maxSpells = game.settings.get(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX);
     if (this.comparisonSpells.has(spellUuid)) this.comparisonSpells.delete(spellUuid);
     else if (this.comparisonSpells.size < maxSpells) this.comparisonSpells.add(spellUuid);
@@ -2619,18 +2677,5 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     checkbox.dataset.action = 'selectAll';
     checkbox.dataset.type = type;
     return ValidationHelpers.elementToHtml(checkbox);
-  }
-
-  /**
-   * Normalize UUID to consistent format (remove .Item. if present).
-   *
-   * @todo We do this elsewhere. Is this necessary? Can we uniform it to a DataHelpers?
-   * @param {string} uuid - The UUID to normalize
-   * @returns {string} Normalized UUID
-   * @private
-   */
-  _normalizeUuid(uuid) {
-    if (!uuid) return uuid;
-    return uuid.replace(/\.Item\./g, '.');
   }
 }

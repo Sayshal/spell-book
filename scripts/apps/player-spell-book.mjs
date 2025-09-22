@@ -774,6 +774,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    *
    * @param {Object} levelData - The spell level data containing level, name, and spells
    * @returns {string} HTML string for the spell level section
+   * @todo This should be a template
    * @private
    */
   _createSpellLevelHtml(levelData) {
@@ -1156,10 +1157,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     log(3, `Switched to tab ${activeTabName} without re-rendering`);
   }
 
-  /**
-   * @todo This seems overly complicated and could be simplified
-   * @inheritdoc
-   */
+  /** @inheritdoc */
   _configureRenderOptions(options) {
     super._configureRenderOptions(options);
     if (options.parts && Array.isArray(options.parts)) {

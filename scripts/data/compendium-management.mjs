@@ -408,30 +408,6 @@ export async function removeCustomSpellList(duplicateUuid) {
 }
 
 /**
- * Normalize a UUID for comparison.
- * Generates multiple normalized forms of a UUID to handle different
- * referencing patterns and ensure proper matching.
- *
- * @todo Consider if this is still necessary in modern Foundry versions
- * @param {string} uuid - The UUID to normalize
- * @returns {Array<string>} Array of normalized UUID forms
- */
-export function normalizeUuid(uuid) {
-  if (!uuid) return [];
-  const normalized = [uuid];
-  const parsed = foundry.utils.parseUuid(uuid);
-  const idPart = uuid.split('.').pop();
-  if (idPart) normalized.push(idPart);
-  if (parsed.collection) {
-    const compendiumId = `Compendium.${parsed.collection.collection}.${parsed.id}`;
-    if (!normalized.includes(compendiumId)) normalized.push(compendiumId);
-    const shortId = `${parsed.collection.collection}.${parsed.id}`;
-    if (!normalized.includes(shortId)) normalized.push(shortId);
-  }
-  return normalized;
-}
-
-/**
  * Fetch all compendium spells with level filtering.
  * Scans all enabled item compendiums for spells up to the specified
  * maximum level and returns them in a standardized format.
@@ -503,7 +479,7 @@ function formatSpellEntry(entry, pack) {
     else topLevelFolderName = pack.folder.name;
   }
   const spell = {
-    uuid: `Compendium.${pack.collection}.${entry._id}`,
+    uuid: `Compendium.${pack.collection}.Item.${entry._id}`,
     name: entry.name,
     img: entry.img,
     level: entry.system?.level || 0,
