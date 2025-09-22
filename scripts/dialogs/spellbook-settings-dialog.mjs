@@ -153,6 +153,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
 
     /** @type {SpellManager} Spell management utility for this actor */
     this.spellManager = new SpellManager(actor);
+
+    this.parentApp = options.parentApp;
   }
 
   /** @inheritdoc */
@@ -867,94 +869,52 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   /** @inheritdoc */
   static async formHandler(event, form, formData) {
     event.preventDefault();
-
     const actor = this.actor;
     if (!actor) throw new Error('No actor provided to form handler');
-
     const expandedData = foundry.utils.expandObject(formData.object);
     const currentClassRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
-
-    // Handle global settings
     const ruleSetOverride = expandedData.ruleSetOverride === 'global' ? null : expandedData.ruleSetOverride;
     const previousRuleSetOverride = actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE);
     actor.setFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE, ruleSetOverride);
-
     const enforcementBehavior = expandedData.enforcementBehavior === 'global' ? null : expandedData.enforcementBehavior;
     actor.setFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR, enforcementBehavior);
-
-    if (ruleSetOverride && ruleSetOverride !== previousRuleSetOverride) {
-      RuleSetManager.applyRuleSetToActor(actor, ruleSetOverride);
-    }
-
+    if (ruleSetOverride && ruleSetOverride !== previousRuleSetOverride) RuleSetManager.applyRuleSetToActor(actor, ruleSetOverride);
     const cantripVisibilityChanges = {};
     const wizardModeChanges = {};
-
-    // Handle per-class settings
     if (expandedData.class) {
       for (const [classId, rules] of Object.entries(expandedData.class)) {
         const currentRules = currentClassRules[classId] || {};
-
-        // Track cantrip visibility changes
         const wasShowingCantrips = currentRules.showCantrips !== false;
         const willShowCantrips = rules.showCantrips !== false;
         if (wasShowingCantrips && !willShowCantrips) cantripVisibilityChanges[classId] = 'disabled';
         else if (!wasShowingCantrips && willShowCantrips) cantripVisibilityChanges[classId] = 'enabled';
-
-        // Track wizard mode changes
         const wasWizardMode = currentRules.forceWizardMode === true;
         const willBeWizardMode = rules.forceWizardMode === true;
         if (!wasWizardMode && willBeWizardMode) wizardModeChanges[classId] = 'enabled';
         else if (wasWizardMode && !willBeWizardMode) wizardModeChanges[classId] = 'disabled';
-
-        // Process rule updates
         const processedRules = {};
-
-        if (rules.spellPreparationBonus !== undefined) {
-          processedRules.spellPreparationBonus = parseInt(rules.spellPreparationBonus) || 0;
-        }
-        if (rules.cantripPreparationBonus !== undefined) {
-          processedRules.cantripPreparationBonus = parseInt(rules.cantripPreparationBonus) || 0;
-        }
-        if (rules.showCantrips !== undefined) {
-          processedRules.showCantrips = Boolean(rules.showCantrips);
-        }
-        if (rules.forceWizardMode !== undefined) {
-          processedRules.forceWizardMode = Boolean(rules.forceWizardMode);
-        }
-
-        // Handle custom spell list - convert to array and filter out empty values
+        if (rules.spellPreparationBonus !== undefined) processedRules.spellPreparationBonus = parseInt(rules.spellPreparationBonus) || 0;
+        if (rules.cantripPreparationBonus !== undefined) processedRules.cantripPreparationBonus = parseInt(rules.cantripPreparationBonus) || 0;
+        if (rules.showCantrips !== undefined) processedRules.showCantrips = Boolean(rules.showCantrips);
+        if (rules.forceWizardMode !== undefined) processedRules.forceWizardMode = Boolean(rules.forceWizardMode);
         if (rules.customSpellList !== undefined) {
-          if (Array.isArray(rules.customSpellList)) {
-            processedRules.customSpellList = rules.customSpellList.filter((uuid) => uuid && uuid.trim());
-          } else if (rules.customSpellList) {
-            processedRules.customSpellList = [rules.customSpellList];
-          } else {
-            processedRules.customSpellList = [];
-          }
+          if (Array.isArray(rules.customSpellList)) processedRules.customSpellList = rules.customSpellList.filter((uuid) => uuid && uuid.trim());
+          else if (rules.customSpellList) processedRules.customSpellList = [rules.customSpellList];
+          else processedRules.customSpellList = [];
         }
-
-        // Handle other rule properties
         ['cantripSwapping', 'spellSwapping', 'ritualCasting'].forEach((prop) => {
           if (rules[prop] !== undefined) processedRules[prop] = rules[prop];
         });
-
         const success = await RuleSetManager.updateClassRules(actor, classId, processedRules);
         if (!success) throw new Error('FORM_CANCELLED');
       }
     }
-
-    // Handle cantrip visibility changes
-    if (Object.keys(cantripVisibilityChanges).length > 0) {
-      await SpellbookSettingsDialog._handleCantripVisibilityChanges(actor, cantripVisibilityChanges);
+    if (Object.keys(cantripVisibilityChanges).length > 0) await SpellbookSettingsDialog._handleCantripVisibilityChanges(actor, cantripVisibilityChanges);
+    if (this.parentApp) {
+      const currentState = { activeTab: this.parentApp.tabGroups['spellbook-tabs'], position: foundry.utils.deepClone(this.parentApp.position) };
+      await this.parentApp.close();
+      const newSpellbook = SPELLBOOK.openSpellBookForActor(actor).render({ force: true });
     }
-
-    // Refresh open spell books
-    const allInstances = Array.from(foundry.applications.instances.values());
-    const openSpellbooks = allInstances.filter((w) => w.constructor.name === 'SpellBook' && w.actor.id === actor.id);
-    for (const spellbook of openSpellbooks) {
-      await spellbook.refreshFromSettingsChange();
-    }
-
     ui.notifications.info(game.i18n.format('SPELLBOOK.Settings.Saved', { name: actor.name }));
     return actor;
   }

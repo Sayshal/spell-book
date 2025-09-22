@@ -2011,7 +2011,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @static
    */
   static configureCantripSettings(_event, _form) {
-    const dialog = new SpellbookSettingsDialog(this.actor);
+    const dialog = new SpellbookSettingsDialog(this.actor, { parentApp: this });
     dialog.render(true);
   }
 
@@ -2388,99 +2388,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     } catch (error) {
       return uuid;
     }
-  }
-
-  /**
-   * Refresh the Spell Book after settings changes.
-   *
-   * @todo Can this be replaced since it's only called once?
-   * @returns {Promise<void>}
-   */
-  async refreshFromSettingsChange() {
-    const currentTab = this.tabGroups['spellbook-tabs'];
-    this.spellManager.cantripManager.clearCache();
-    this._stateManager._initialized = false;
-    this._stateManager._classesDetected = false;
-    this._stateManager.spellcastingClasses = {};
-    this._stateManager.classSpellData = {};
-    this._classesChanged = true;
-    this._cantripUIInitialized = false;
-    this.wizardManagers.clear();
-    this.ritualManagers.clear();
-    this._wizardBookImages?.clear();
-    const wizardClasses = DataHelpers.getWizardEnabledClasses(this.actor);
-    for (const { identifier } of wizardClasses) this.wizardManagers.set(identifier, new WizardSpellbookManager(this.actor, identifier));
-    await this._stateManager.initialize();
-    if (this.wizardManagers.size > 0) {
-      if (!this._wizardBookImages) this._wizardBookImages = new Map();
-      const usedImages = new Set();
-      for (const [identifier, wizardManager] of this.wizardManagers) {
-        if (wizardManager.isWizard && !this._wizardBookImages.has(identifier)) {
-          let wizardBookImage;
-          let attempts = 0;
-          const classData = this._stateManager.classSpellData[identifier];
-          if (classData && classData.classImg) {
-            try {
-              const dominantColor = await UIHelpers.extractDominantColor(classData.classImg);
-              wizardBookImage = await UIHelpers.applyColorOverlay(ASSETS.WIZARDBOOK_ICON, dominantColor);
-              log(3, `Applied ${dominantColor} color overlay to wizardbook for class ${identifier}`);
-            } catch (error) {
-              log(2, `Failed to apply color overlay for class ${identifier}:`, error);
-              wizardBookImage = ASSETS.WIZARDBOOK_ICON;
-            }
-          } else {
-            wizardBookImage = ASSETS.WIZARDBOOK_ICON;
-          }
-          do {
-            attempts++;
-          } while (usedImages.has(wizardBookImage) && attempts < 10);
-          usedImages.add(wizardBookImage);
-          this._wizardBookImages.set(identifier, wizardBookImage);
-        }
-      }
-    }
-    if (currentTab && this._stateManager.spellcastingClasses) {
-      const classMatch = currentTab.match(/^([^T]+)Tab$/);
-      const wizardMatch = currentTab.match(/^wizardbook-(.+)$/);
-      if (classMatch) {
-        const classIdentifier = classMatch[1];
-        if (this._stateManager.classSpellData[classIdentifier]) {
-          this.tabGroups['spellbook-tabs'] = currentTab;
-          this._stateManager.setActiveClass(classIdentifier);
-        } else {
-          const firstClass = Object.keys(this._stateManager.spellcastingClasses)[0];
-          if (firstClass) {
-            this.tabGroups['spellbook-tabs'] = `${firstClass}Tab`;
-            this._stateManager.setActiveClass(firstClass);
-          }
-        }
-      } else if (wizardMatch) {
-        const classIdentifier = wizardMatch[1];
-        if (this.wizardManagers.has(classIdentifier)) {
-          this.tabGroups['spellbook-tabs'] = currentTab;
-          this._stateManager.setActiveClass(classIdentifier);
-        } else {
-          const firstWizardClass = Array.from(this.wizardManagers.keys())[0];
-          if (firstWizardClass) {
-            this.tabGroups['spellbook-tabs'] = `wizardbook-${firstWizardClass}`;
-            this._stateManager.setActiveClass(firstWizardClass);
-          } else {
-            const firstClass = Object.keys(this._stateManager.spellcastingClasses)[0];
-            if (firstClass) {
-              this.tabGroups['spellbook-tabs'] = `${firstClass}Tab`;
-              this._stateManager.setActiveClass(firstClass);
-            }
-          }
-        }
-      } else {
-        const firstClass = Object.keys(this._stateManager.spellcastingClasses)[0];
-        if (firstClass) {
-          this.tabGroups['spellbook-tabs'] = `${firstClass}Tab`;
-          this._stateManager.setActiveClass(firstClass);
-        }
-      }
-    }
-    this.render(true);
   }
 
   /**
