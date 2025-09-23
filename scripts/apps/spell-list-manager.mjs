@@ -322,6 +322,27 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         });
       }
     }
+    if (context.isEditing && context.selectedSpellList) {
+      if (!context.selectedSpellList.spellCount && context.selectedSpellList.spells) {
+        context.selectedSpellList.spellCount = context.selectedSpellList.spells.length;
+      }
+      if (context.selectedSpellList.spells) {
+        const spellSources = new Set();
+        context.selectedSpellList.spells.forEach((spell) => {
+          if (spell.sourceId) {
+            const packName = spell.sourceId.split('.')[0];
+            spellSources.add(packName);
+          } else if (spell.packName) {
+            spellSources.add(spell.packName);
+          }
+        });
+        context.selectedSpellList.spellSources = Array.from(spellSources).sort();
+      }
+    } else if (!context.isEditing && this.availableSpellLists) {
+      const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
+      context.visibleSpellListsCount = this.availableSpellLists.length - hiddenLists.length;
+      context.hiddenSpellListsCount = hiddenLists.length;
+    }
     return context;
   }
 

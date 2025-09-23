@@ -3291,15 +3291,51 @@
       padding: var(--spell-book-spacing-lg) var(--spell-book-spacing-xl);
     }
 
-    .footer-left {
-      gap: var(--spell-book-spacing-md);
-      display: flex;
-    }
-
+    .footer-left,
+    .footer-center,
     .footer-right {
       display: flex;
       align-items: center;
-      margin-left: auto;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .footer-left {
+      gap: var(--spell-book-spacing-md);
+      justify-content: flex-start;
+    }
+
+    .footer-center {
+      gap: var(--spell-book-spacing-md);
+      justify-content: center;
+    }
+
+    .footer-right {
+      justify-content: flex-end;
+    }
+
+    .edit-mode-stats,
+    .global-stats {
+      display: flex;
+      align-items: center;
+      gap: var(--spell-book-spacing-lg);
+    }
+
+    .spell-count-stat,
+    .spell-sources-stat,
+    .total-spells-stat,
+    .total-lists-stat {
+      display: flex;
+      align-items: center;
+      gap: var(--spell-book-spacing-sm);
+      font-size: 0.9em;
+      color: rgb(102 102 102);
+      white-space: nowrap;
+    }
+
+    .hidden-count {
+      font-style: italic;
+      opacity: 0.8;
     }
 
     button {

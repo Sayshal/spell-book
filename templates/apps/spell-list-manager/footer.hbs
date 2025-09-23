@@ -66,8 +66,46 @@
 
 		<!-- Center Footer Section - Primary application controls -->
 		<div class="footer-center">
-			{{!-- @todo add some stats here (num of spells, num of spell lists?) --}}
-
+			{{#if isEditing}}
+				{{!-- Edit Mode: Show stats for current spell list --}}
+				{{#if selectedSpellList}}
+					<div class="edit-mode-stats">
+						<span class="spell-count-stat" data-tooltip="{{localize 'SPELLMANAGER.Footer.SpellCountTooltip'}}">
+							<i class="fas fa-magic" aria-hidden="true"></i>
+							{{localize "SPELLMANAGER.Status.SpellCount" count=selectedSpellList.spellCount}}
+						</span>
+						{{#if selectedSpellList.spellSources}}
+							<span class="spell-sources-stat" data-tooltip="{{localize 'SPELLMANAGER.Footer.SpellSourcesTooltip'}}">
+								<i class="fas fa-book" aria-hidden="true"></i>
+								{{#each selectedSpellList.spellSources as |source index|}}
+									{{source}}{{#unless @last}}, {{/unless}}
+								{{/each}}
+							</span>
+						{{/if}}
+					</div>
+				{{/if}}
+			{{else}}
+				{{!-- Non-Edit Mode: Show total stats --}}
+				<div class="global-stats">
+					{{#if availableSpells}}
+						<span class="total-spells-stat" data-tooltip="{{localize 'SPELLMANAGER.Footer.TotalSpellsTooltip'}}">
+							<i class="fas fa-scroll" aria-hidden="true"></i>
+							{{localize "SPELLMANAGER.Footer.TotalSpells" count=availableSpells.length}}
+						</span>
+					{{/if}}
+					{{#if availableSpellLists}}
+						<span class="total-lists-stat" data-tooltip="{{localize 'SPELLMANAGER.Footer.TotalListsTooltip'}}">
+							<i class="fas fa-list" aria-hidden="true"></i>
+							{{localize "SPELLMANAGER.Footer.TotalLists" count=visibleSpellListsCount}}
+							{{#if hiddenSpellListsCount}}
+								<span class="hidden-count" data-tooltip="{{localize 'SPELLMANAGER.Footer.HiddenCountTooltip'}}">
+									({{localize "SPELLMANAGER.Footer.HiddenCount" count=hiddenSpellListsCount}})
+								</span>
+							{{/if}}
+						</span>
+					{{/if}}
+				</div>
+			{{/if}}
 		</div>
 
 		<!-- Right Footer Section - Editing and selection controls -->
