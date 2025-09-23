@@ -244,6 +244,8 @@ export const TEMPLATES = {
     /** Spell details customization dialog footer with action buttons */
     SPELL_CUSTOMIZATION_FOOTER: 'modules/spell-book/templates/dialogs/settings-footer.hbs',
 
+    SPELL_LIST_CHANGE_CONFIRMATION: 'modules/spell-book/templates/dialogs/spell-list-change-confirmation.hbs',
+
     /** Spell loadout management dialog for saving/loading preparations */
     SPELL_LOADOUT: 'modules/spell-book/templates/dialogs/spell-loadout.hbs',
 

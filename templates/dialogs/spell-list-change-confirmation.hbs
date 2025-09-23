@@ -1,0 +1,57 @@
+{{!--
+/**
+ * Spell List Change Confirmation Dialog Template
+ *
+ * PURPOSE:
+ * Confirmation dialog for spell list changes that would affect prepared spells.
+ * Shows users exactly which spells will be unprepared and requires explicit
+ * confirmation before proceeding.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {string} className - Display name of the spellcasting class
+ * @param {number} totalAffected - Total number of affected spells
+ * @param {number} cantripCount - Number of affected cantrips
+ * @param {number} spellCount - Number of affected leveled spells
+ * @param {Array<Object>} affectedSpells - Array of spell objects
+ * @param {string} affectedSpells[].name - Spell name
+ * @param {number} affectedSpells[].level - Spell level
+ */
+--}}
+
+<div class="spell-list-change-warning">
+  <!-- Warning Header -->
+  <p><strong>{{localize 'SPELLBOOK.SpellListChange.Warning'}}</strong></p>
+
+  <!-- Explanation -->
+  <p>{{localize 'SPELLBOOK.SpellListChange.Explanation' className=className total=totalAffected}}</p>
+
+  <!-- Cantrip Count -->
+  {{#if cantripCount}}
+    <p><strong>{{localize 'SPELLBOOK.SpellListChange.CantripsAffected'}}:</strong> {{cantripCount}}</p>
+  {{/if}}
+
+  <!-- Spell Count -->
+  {{#if spellCount}}
+    <p><strong>{{localize 'SPELLBOOK.SpellListChange.SpellsAffected'}}:</strong> {{spellCount}}</p>
+  {{/if}}
+
+  <!-- Affected Spells Details -->
+  <details>
+    <summary>{{localize 'SPELLBOOK.SpellListChange.ShowAffectedSpells'}}</summary>
+    <ul class="affected-spells-list">
+      {{#each affectedSpells}}
+        <li>
+          {{this.name}}
+          ({{#if (eq this.level 0)}}
+            {{localize 'SPELLBOOK.SpellLevel.Cantrip'}}
+          {{else}}
+            {{localize 'SPELLBOOK.SpellLevel.Numbered' level=this.level}}
+          {{/if}})
+        </li>
+      {{/each}}
+    </ul>
+  </details>
+
+  <!-- Confirmation Prompt -->
+  <p><strong>{{localize 'SPELLBOOK.SpellListChange.Confirmation'}}</strong></p>
+</div>

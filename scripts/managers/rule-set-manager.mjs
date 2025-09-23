@@ -24,9 +24,11 @@
  * @author Tyler
  */
 
-import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
+import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
+
+const { renderTemplate } = foundry.applications.handlebars;
 
 /**
  * Spellcasting class data structure for rule management.
@@ -512,7 +514,6 @@ export class RuleSetManager {
    * @param {string} classIdentifier - The class identifier
    * @param {AffectedSpellData[]} affectedSpells - Array of spells that will be unprepared
    * @returns {Promise<boolean>} Whether the user confirmed the change
-   * @todo Template?
    * @static
    */
   static async _confirmSpellListChange(actor, classIdentifier, affectedSpells) {
@@ -521,28 +522,15 @@ export class RuleSetManager {
     const className = classItem?.name || classIdentifier;
     const cantripCount = affectedSpells.filter((s) => s.level === 0).length;
     const spellCount = affectedSpells.filter((s) => s.level > 0).length;
-    let content = `<div class="spell-list-change-warning">
-      <p><strong>${game.i18n.localize('SPELLBOOK.SpellListChange.Warning')}</strong></p>
-      <p>${game.i18n.format('SPELLBOOK.SpellListChange.Explanation', { className: className, total: affectedSpells.length })}</p>`;
-    if (cantripCount > 0) content += `<p><strong>${game.i18n.localize('SPELLBOOK.SpellListChange.CantripsAffected')}:</strong> ${cantripCount}</p>`;
-    if (spellCount > 0) content += `<p><strong>${game.i18n.localize('SPELLBOOK.SpellListChange.SpellsAffected')}:</strong> ${spellCount}</p>`;
-    content += `<details>
-      <summary>${game.i18n.localize('SPELLBOOK.SpellListChange.ShowAffectedSpells')}</summary>
-      <ul class="affected-spells-list">`;
-    for (const spell of affectedSpells) {
-      const levelText = spell.level === 0 ? game.i18n.localize('SPELLBOOK.SpellLevel.Cantrip') : game.i18n.format('SPELLBOOK.SpellLevel.Numbered', { level: spell.level });
-      content += `<li>${spell.name} (${levelText})</li>`;
-    }
-    content += `</ul></details>
-      <p><strong>${game.i18n.localize('SPELLBOOK.SpellListChange.Confirmation')}</strong></p>
-    </div>`;
+    const context = { className, totalAffected: affectedSpells.length, cantripCount, spellCount, affectedSpells };
     try {
+      const content = await renderTemplate(TEMPLATES.DIALOGS.SPELL_LIST_CHANGE_CONFIRMATION, context);
       const result = await foundry.applications.api.DialogV2.wait({
         title: game.i18n.localize('SPELLBOOK.SpellListChange.Title'),
         content: content,
         buttons: [
-          { icon: 'fas fa-check', label: game.i18n.localize('SPELLBOOK.SpellListChange.Proceed'), action: 'confirm', className: 'dialog-button' },
-          { icon: 'fas fa-times', label: game.i18n.localize('SPELLBOOK.UI.Cancel'), action: 'cancel', className: 'dialog-button' }
+          { icon: 'fas fa-check', label: 'SPELLBOOK.SpellListChange.Proceed', action: 'confirm', className: 'dialog-button' },
+          { icon: 'fas fa-times', label: 'SPELLBOOK.UI.Cancel', action: 'cancel', className: 'dialog-button' }
         ],
         default: 'cancel',
         rejectClose: false
