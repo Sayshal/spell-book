@@ -83,30 +83,22 @@ import * as DataHelpers from './_module.mjs';
  */
 export async function getClassSpellList(className, classUuid, actor) {
   if (!classUuid) return new Set();
-
-  // Check for custom spell lists first (now supports multiple)
   if (actor) {
     const classItem = await fromUuid(classUuid);
     if (classItem) {
       const classIdentifier = classItem?.system?.identifier?.toLowerCase() || className.toLowerCase();
       const classRules = RuleSetManager.getClassRules(actor, classIdentifier);
-
       if (classRules.customSpellList) {
-        // Handle both array and legacy string formats
         const customSpellListUuids = Array.isArray(classRules.customSpellList) ? classRules.customSpellList : [classRules.customSpellList];
-
         if (customSpellListUuids.length > 0) {
           log(3, `Using ${customSpellListUuids.length} custom spell list(s) for ${className}: ${customSpellListUuids.join(', ')}`);
-
           const spellSets = [];
           const sourceNames = [];
-
           for (const uuid of customSpellListUuids) {
             if (!uuid || typeof uuid !== 'string') {
               log(2, `Invalid custom spell list UUID: ${uuid}`);
               continue;
             }
-
             try {
               const customSpellList = await fromUuid(uuid);
               if (customSpellList && customSpellList.system?.spells && customSpellList.system.spells.size > 0) {
@@ -120,7 +112,6 @@ export async function getClassSpellList(className, classUuid, actor) {
               log(1, `Error loading custom spell list ${uuid}:`, error);
             }
           }
-
           if (spellSets.length > 0) {
             const mergedSpells = mergeSpellSets(spellSets, sourceNames);
             log(3, `Successfully merged ${spellSets.length} custom spell lists for ${className}: ${mergedSpells.size} total spells`);
@@ -132,25 +123,17 @@ export async function getClassSpellList(className, classUuid, actor) {
       }
     }
   }
-
-  // Original fallback logic for when no custom spell lists are configured
   const classItem = await fromUuid(classUuid);
   if (!classItem) return new Set();
-
   const classIdentifier = classItem?.system?.identifier?.toLowerCase();
   const topLevelFolderName = getFolderNameFromPack(classItem?._stats?.compendiumSource);
-
   if (!classIdentifier) return new Set();
-
-  // Check preloaded data
   const preloadedData = DataHelpers.getPreloadedData();
   if (preloadedData && preloadedData.spellLists.length > 0) {
     log(3, `Checking ${preloadedData.spellLists.length} preloaded spell lists for ${classIdentifier}`);
     const preloadedMatch = preloadedData.spellLists.find((list) => {
       if (list.identifier?.toLowerCase() === classIdentifier) {
-        if (topLevelFolderName && list.pack) {
-          return list.pack.toLowerCase().includes(topLevelFolderName.toLowerCase());
-        }
+        if (topLevelFolderName && list.pack) return list.pack.toLowerCase().includes(topLevelFolderName.toLowerCase());
         return true;
       }
       return false;
@@ -160,31 +143,21 @@ export async function getClassSpellList(className, classUuid, actor) {
       log(3, `Found preloaded spell list for ${classIdentifier}: ${preloadedMatch.name} (${preloadedMatch.spellCount} spells)`);
       try {
         const document = await fromUuid(preloadedMatch.uuid);
-        if (document?.system?.spells && document.system.spells.size > 0) {
-          return document.system.spells;
-        }
+        if (document?.system?.spells && document.system.spells.size > 0) return document.system.spells;
       } catch (error) {
         log(2, `Error loading preloaded spell list ${preloadedMatch.uuid}:`, error);
       }
     }
   }
-
-  // Check custom mappings and folder-based sources
   const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
-
   if (topLevelFolderName) {
     const folderMatch = await getSpellListFromFolder(topLevelFolderName, classIdentifier, customMappings);
     if (folderMatch && folderMatch.size > 0) return folderMatch;
   }
-
-  // Check custom spell lists by identifier (fallback)
   const customMatch = await findCustomSpellListByIdentifier(classIdentifier);
   if (customMatch && customMatch.size > 0) return customMatch;
-
-  // Final fallback: search all journal packs
   const identifierMatch = await findSpellListByIdentifier(classIdentifier, customMappings);
   if (identifierMatch && identifierMatch.size > 0) return identifierMatch;
-
   log(2, `No spell list found for class ${className} (${classIdentifier}) from folder "${topLevelFolderName}"`);
   return new Set();
 }
@@ -219,7 +192,6 @@ function getFolderNameFromPack(source) {
  * Performs a comprehensive search across all journal compendiums
  * for spell lists matching the specified class identifier.
  *
- * @todo Consider if this search process can be simplified or optimized
  * @param {string} identifier - Class identifier to search for
  * @param {Object<string, string>} customMappings - Custom spell list mappings
  * @returns {Promise<Set<string>|null>} Matched spell list or null if not found
@@ -227,11 +199,9 @@ function getFolderNameFromPack(source) {
  */
 async function findSpellListByIdentifier(identifier, customMappings) {
   const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
-  for (const pack of journalPacks) {
-    const spellList = await searchPackForSpellList(pack, identifier, customMappings);
-    if (spellList) return spellList;
-  }
-  return null;
+  const searchPromises = journalPacks.map((pack) => searchPackForSpellList(pack, identifier, customMappings));
+  const results = await Promise.allSettled(searchPromises);
+  return results.find((result) => result.status === 'fulfilled' && result.value)?.value || null;
 }
 
 /**
@@ -246,16 +216,22 @@ async function findSpellListByIdentifier(identifier, customMappings) {
  * @private
  */
 async function searchPackForSpellList(pack, identifier, customMappings) {
-  const index = await pack.getIndex();
+  const index = await pack.getIndex({ fields: ['name', 'pages', 'flags'] });
   for (const journalData of index) {
+    if (foundry.utils.hasProperty(journalData, 'pages')) {
+      const hasSpellPages = journalData.pages.some((page) => foundry.utils.hasProperty(page, 'type') && page.type === 'spells');
+      if (!hasSpellPages) continue;
+    }
     const journal = await pack.getDocument(journalData._id);
     for (const page of journal.pages) {
       if (page.type !== 'spells') continue;
-      const pageIdentifier = page.system?.identifier?.toLowerCase() || '';
+      if (!foundry.utils.hasProperty(page, 'system.identifier')) continue;
+      if (!foundry.utils.hasProperty(page, 'system.spells')) continue;
+      const pageIdentifier = page.system.identifier.toLowerCase();
       if (identifier && pageIdentifier !== identifier) continue;
       if (customMappings[page.uuid]) {
         const customList = await fromUuid(customMappings[page.uuid]);
-        if (customList?.system.spells.size > 0) return customList.system.spells;
+        if (customList && foundry.utils.hasProperty(customList, 'system.spells') && customList.system.spells.size > 0) return customList.system.spells;
       }
       if (page.system.spells.size > 0) return page.system.spells;
     }
@@ -276,23 +252,17 @@ async function searchPackForSpellList(pack, identifier, customMappings) {
 async function findCustomSpellListByIdentifier(identifier) {
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
   if (!customPack) return null;
-
   const index = await customPack.getIndex();
   for (const journalData of index) {
     const journal = await customPack.getDocument(journalData._id);
     for (const page of journal.pages) {
       if (page.type !== 'spells') continue;
-
       const flags = page.flags?.[MODULE.ID] || {};
       if (!flags.isCustom && !flags.isNewList) continue;
-
       const pageIdentifier = page.system?.identifier?.toLowerCase() || '';
-      if (pageIdentifier === identifier && page.system.spells.size > 0) {
-        return page.system.spells;
-      }
+      if (pageIdentifier === identifier && page.system.spells.size > 0) return page.system.spells;
     }
   }
-
   return null;
 }
 
@@ -403,28 +373,21 @@ async function getSpellListFromFolder(topLevelFolderName, identifier, customMapp
 function mergeSpellSets(spellSets, sourceNames = []) {
   if (spellSets.length === 0) return new Set();
   if (spellSets.length === 1) return new Set(spellSets[0]);
-
   const mergedSet = new Set();
   let totalSpells = 0;
-
   for (let i = 0; i < spellSets.length; i++) {
     const spellSet = spellSets[i];
     const sourceName = sourceNames[i] || `List ${i + 1}`;
-
     if (spellSet && spellSet.size > 0) {
       const beforeSize = mergedSet.size;
-      for (const spell of spellSet) {
-        mergedSet.add(spell);
-      }
+      for (const spell of spellSet) mergedSet.add(spell);
       const added = mergedSet.size - beforeSize;
       totalSpells += spellSet.size;
-
       log(4, `Merged ${spellSet.size} spells from ${sourceName} (${added} new, ${spellSet.size - added} duplicates)`);
     } else {
       log(3, `No spells found in ${sourceName}`);
     }
   }
-
   log(3, `Spell list merge complete: ${mergedSet.size} unique spells from ${totalSpells} total spells across ${spellSets.length} lists`);
   return mergedSet;
 }
