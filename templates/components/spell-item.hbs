@@ -86,7 +86,7 @@
   </div>
 
   {{!-- Spell Actions --}}
-  {{#if (isWizardTab @root.activeTab)}}
+  {{#if (or isWizardContext (isWizardTab @root.activeTab))}}
     {{!-- Wizard Tab Actions --}}
     <div class="wizard-spell-status">
       {{#if spell.wizardAction.isFromScroll}}

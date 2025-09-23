@@ -113,7 +113,6 @@ export class CantripManager {
    *
    * @param {Actor5e} actor - The actor to manage cantrips for
    * @param {SpellManager} spellManager - The associated SpellManager instance
-   * @todo Replace `isWizard` checks with `this.isWizard` wherever possible
    */
   constructor(actor, spellManager) {
     /** @type {Actor5e} The actor being managed */

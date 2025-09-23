@@ -502,7 +502,16 @@ export class SpellManager {
     const defaultPreparationMode = this._getClassPreparationMode(classIdentifier);
     const cantripChanges = { added: [], removed: [], hasChanges: false };
     for (const [classSpellKey, spellInfo] of Object.entries(classSpellData)) {
-      const { uuid, isPrepared, wasPrepared, spellLevel, preparationMode, name } = spellInfo;
+      const { uuid, isPrepared, wasPrepared, spellLevel, preparationMode, name, isRitual } = spellInfo;
+      log(1, 'Processing spell in saveClassSpecificPreparedSpells', {
+        name: name,
+        uuid: uuid,
+        isPrepared: isPrepared,
+        wasPrepared: wasPrepared,
+        isRitual: isRitual,
+        spellLevel: spellLevel,
+        preparationMode: preparationMode
+      });
       if (spellLevel === 0) {
         if (isPrepared && !wasPrepared) {
           cantripChanges.added.push(name || 'Unknown Cantrip');
@@ -515,9 +524,23 @@ export class SpellManager {
       let actualPreparationMode = 'spell';
       if (spellLevel > 0) actualPreparationMode = preparationMode || defaultPreparationMode;
       if (isPrepared) {
+        log(1, 'Taking PREPARED path', { name: name, preparationMode: actualPreparationMode });
         preparedSpellKeys.push(classSpellKey);
         await this._ensureSpellOnActor(uuid, classIdentifier, actualPreparationMode, spellsToCreate, spellsToUpdate);
-      } else if (wasPrepared) await this._handleUnpreparingSpell(uuid, classIdentifier, spellIdsToRemove, spellsToUpdate);
+
+        // **ADD: If this prepared spell can also be cast as ritual, ensure ritual version exists**
+        if (isRitual) {
+          await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate, spellsToUpdate);
+        }
+      } else if (wasPrepared) {
+        log(1, 'Taking UNPREPARE path', { name: name });
+        await this._handleUnpreparingSpell(uuid, classIdentifier, spellIdsToRemove, spellsToUpdate);
+      } else if (isRitual) {
+        log(1, 'Taking RITUAL-ONLY path', { name: name });
+        await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate, spellsToUpdate);
+      } else {
+        log(1, 'Taking NO ACTION path', { name: name });
+      }
     }
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     if (Array.isArray(preparedByClass)) {
@@ -698,8 +721,8 @@ export class SpellManager {
    * Handle unpreparing a spell for a specific class.
    *
    * Manages the removal or mode change of spells when they are unprepared.
-   * Handles special cases like wizard ritual spells and ensures proper cleanup
-   * of spell items while preserving always prepared and granted spells.
+   * Handles special cases like ritual spells for classes with ritual casting
+   * and ensures proper cleanup of spell items while preserving ritual versions.
    *
    * @private
    * @param {string} uuid - Spell UUID
@@ -707,28 +730,106 @@ export class SpellManager {
    * @param {string[]} spellIdsToRemove - Array to add removal IDs to
    * @param {Object[]} spellsToUpdate - Array to add update data to
    * @returns {Promise<void>}
-   * @todo Make sure classRules is set to actual identifier
    */
   async _handleUnpreparingSpell(uuid, sourceClass, spellIdsToRemove, spellsToUpdate) {
-    const targetSpell = this.actor.items.find(
+    // Find all matching spells (there might be both prepared and ritual versions)
+    const matchingSpells = this.actor.items.filter(
       (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
     );
-    if (!targetSpell) return;
+
+    if (matchingSpells.length === 0) {
+      log(1, 'No matching spells found for unpreparing', { uuid, sourceClass });
+      return;
+    }
+
+    // Prioritize finding the prepared version to unprepare
+    let targetSpell = matchingSpells.find((spell) => spell.system.prepared === 1);
+
+    log(1, 'Unpreparing spell', {
+      uuid: uuid,
+      sourceClass: sourceClass,
+      targetSpellId: targetSpell.id,
+      targetMethod: targetSpell.system?.method,
+      targetPrepared: targetSpell.system?.prepared,
+      totalMatchingSpells: matchingSpells.length
+    });
+
     const isAlwaysPrepared = targetSpell.system.prepared === 2;
     const isGranted = !!targetSpell.flags?.dnd5e?.cachedFor;
     const isFromClassFeature = targetSpell.system.prepared === 2;
-    if (isAlwaysPrepared || isGranted || isFromClassFeature) return;
-    const isRitualSpell = targetSpell.system.components?.ritual;
-    const isWizard = DataHelpers.isWizard(this.actor);
-    const classRules = RuleSetManager.getClassRules(this.actor, 'wizard');
-    const ritualCastingEnabled = classRules.ritualCasting !== 'none';
-    if (isRitualSpell && isWizard && ritualCastingEnabled && targetSpell.system.level > 0) {
-      spellsToUpdate.push({ _id: targetSpell.id, 'system.method': 'ritual', 'system.prepared': 0 });
-      log(3, `Converting wizard spell back to ritual mode: ${targetSpell.name}`);
+
+    if (isAlwaysPrepared || isGranted || isFromClassFeature) {
+      log(1, 'Spell protected from unpreparing', {
+        spellName: targetSpell.name,
+        reason: isAlwaysPrepared ? 'always-prepared' : isGranted ? 'granted' : 'class-feature'
+      });
       return;
     }
+
+    const isRitualSpell = this._isRitualSpell(targetSpell);
+    const classRules = RuleSetManager.getClassRules(this.actor, sourceClass);
+    const ritualCastingEnabled = classRules.ritualCasting === 'always';
+
+    log(1, 'Ritual detection in unpreparing', {
+      spellName: targetSpell.name,
+      isRitualSpell: isRitualSpell,
+      ritualCastingEnabled: ritualCastingEnabled,
+      spellLevel: targetSpell.system.level,
+      ritualCastingMode: classRules.ritualCasting,
+      spellComponents: targetSpell.system?.components,
+      spellProperties: targetSpell.system?.properties
+    });
+
+    // Check if there's already a ritual version
+    const existingRitualSpell = matchingSpells.find((spell) => spell.system?.method === 'ritual' && spell.id !== targetSpell.id);
+
+    if (isRitualSpell && ritualCastingEnabled && targetSpell.system.level > 0) {
+      if (targetSpell.system.method === 'ritual') {
+        // Don't remove ritual spells when unpreparing - they should stay as rituals
+        log(1, 'Keeping ritual spell as ritual', { spellName: targetSpell.name });
+        return;
+      } else if (existingRitualSpell) {
+        // There's already a ritual version, just remove the prepared version
+        spellIdsToRemove.push(targetSpell.id);
+        log(1, 'Removing prepared version, keeping existing ritual version', {
+          spellName: targetSpell.name,
+          removedId: targetSpell.id,
+          ritualId: existingRitualSpell.id
+        });
+        return;
+      } else {
+        // Convert the prepared spell to ritual mode
+        spellsToUpdate.push({
+          _id: targetSpell.id,
+          'system.method': 'ritual',
+          'system.prepared': 0
+        });
+        log(1, `Converting prepared spell to ritual mode: ${targetSpell.name}`);
+        return;
+      }
+    }
+
+    // Default case: remove the spell entirely
     spellIdsToRemove.push(targetSpell.id);
-    log(3, `Marking spell for removal: ${targetSpell.name} (${sourceClass})`);
+    log(1, `Marking spell for removal: ${targetSpell.name} (${sourceClass})`);
+  }
+
+  /**
+   * Check if a spell can be cast as a ritual.
+   * Uses the same logic as other parts of the system.
+   *
+   * @param {Object} spell - The spell item
+   * @returns {boolean} Whether the spell has ritual capability
+   * @private
+   */
+  _isRitualSpell(spell) {
+    if (spell.system?.properties && spell.system.properties.has) {
+      return spell.system.properties.has('ritual');
+    }
+    if (spell.system?.properties && Array.isArray(spell.system.properties)) {
+      return spell.system.properties.some((prop) => prop.value === 'ritual');
+    }
+    return spell.system?.components?.ritual || false;
   }
 
   /**

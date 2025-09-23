@@ -386,8 +386,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     const ritualCastingValue = formRules.ritualCasting;
     const ritualCastingOptions = [
       { value: 'none', label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.None'), selected: ritualCastingValue === 'none' },
-      { value: 'default', label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.Default'), selected: ritualCastingValue === 'default' },
-      { value: 'unlimited', label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.Unlimited'), selected: ritualCastingValue === 'unlimited' }
+      { value: 'default', label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.Prepared'), selected: ritualCastingValue === 'default' },
+      { value: 'always', label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.Always'), selected: ritualCastingValue === 'always' }
     ];
     const ritualCastingSelect = ValidationHelpers.createSelect({
       name: `class.${identifier}.ritualCasting`,

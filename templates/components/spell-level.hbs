@@ -49,7 +49,7 @@
 	</h3>
 	<ul class="spell-list" id="spell-list-{{level}}" {{#if isCollapsed}}style="display: none;" {{/if}} role="list">
 		{{#each spells as |spell|}}
-			{{> "modules/spell-book/templates/components/spell-item.hbs" spell=spell}}
+			{{> "modules/spell-book/templates/components/spell-item.hbs" spell=spell isWizardContext=../isWizardContext}}
 		{{/each}}
 	</ul>
 </div>
