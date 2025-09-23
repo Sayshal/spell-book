@@ -51,34 +51,36 @@
   data-class-identifier="{{classIdentifier}}">
 
   <div class="spells-container">
-    {{#if hasError}}
-      <!-- Error State Display - Uses shared error message component -->
-      {{> "modules/spell-book/templates/components/error-message.hbs" message=errorMessage}}
-    {{else}}
-      <!-- Class Header Section - Display class name and context -->
-      <div class="class-header">
-        <h2>{{localize 'SPELLBOOK.Classes.Tab.Header' class=className}}</h2>
-      </div>
+    <!-- Class Header Section -->
+    <div class="class-header">
+      <h2>{{className}} Spells</h2>
+    </div>
 
-      <!-- Class Validation Notice - Important information about class state -->
-      {{#if hasClassNotice}}
-        <div class="class-notice">
-          <div class="notice {{classNotice.type}}" role="alert">
-            <i class="{{classNotice.icon}}" aria-hidden="true"></i>
-            <div class="notice-content">
-              <strong>{{classNotice.title}}</strong>
-              {{#if classNotice.message}}
-                <span class="notice-message">{{classNotice.message}}</span>
-              {{/if}}
-            </div>
-          </div>
+    <!-- Class Validation Notice -->
+    {{#if hasClassNotice}}
+      <div class="class-notice {{classNotice.type}}" role="alert">
+        <i class="{{classNotice.icon}}" aria-hidden="true"></i>
+        <div class="notice-content">
+          <strong>{{classNotice.title}}</strong>
+          <p>{{classNotice.message}}</p>
         </div>
-      {{/if}}
+      </div>
     {{/if}}
 
-    <!-- Filter Results Message - Hidden by default, shown when no spells match filters -->
+    <!-- Render Spell Levels -->
+    {{#each spellLevels as |levelData|}}
+      {{> "modules/spell-book/templates/components/spell-level.hbs"
+        level=levelData.level
+        levelName=levelData.levelName
+        spells=levelData.spells
+        isCollapsed=levelData.isCollapsed
+        preparedCount=levelData.preparedCount
+        cantripCounter=levelData.cantripCounter}}
+    {{/each}}
+
+    <!-- Filter Results Message -->
     <div class="no-filter-results" style="display: none;" role="status">
-      {{localize 'SPELLBOOK.Filters.NoResults'}}
+      No spells match your filters.
     </div>
   </div>
 </div>

@@ -348,8 +348,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (this._stateManager.classSpellData[classIdentifier]) {
         context.classIdentifier = classIdentifier;
         context.className = this._stateManager.classSpellData[classIdentifier].className;
-        const flattenedSpells = this._stateManager.classSpellData[classIdentifier].spellLevels;
-        context.spellLevels = flattenedSpells;
+        const rawSpellLevels = this._stateManager.classSpellData[classIdentifier].spellLevels;
+        context.spellLevels = await this._processSpellLevelsForContext(rawSpellLevels, false);
         context.spellPreparation = this._stateManager.classSpellData[classIdentifier].spellPreparation;
         context.globalPrepared = this._stateManager.spellPreparation;
         const classNotice = this._prepareClassValidationNotice(classIdentifier, context.className);
@@ -368,7 +368,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       context.isForceWizard = wizardManager?.classItem && DataHelpers.isClassWizardEnabled(this.actor, classIdentifier);
       const wizardTabData = this._stateManager.tabData?.[partId];
       if (wizardTabData) {
-        context.spellLevels = wizardTabData.spellLevels || [];
+        const rawSpellLevels = wizardTabData.spellLevels || [];
+        context.spellLevels = await this._processSpellLevelsForContext(rawSpellLevels, true);
         context.spellPreparation = wizardTabData.spellPreparation;
         context.wizardTotalSpellbookCount = wizardTabData.wizardTotalSpellbookCount || 0;
         context.wizardFreeSpellbookCount = wizardTabData.wizardFreeSpellbookCount || 0;
@@ -663,7 +664,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       this._preparationListenersSetup = true;
     }
     this.ui.applyCollapsedLevels();
-    await this._renderAllSpells();
     this.ui.setupCantripUI();
     this.ui.updateSpellCounts();
     this.ui.updateSpellPreparationTracking();
@@ -728,81 +728,125 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Render all spells for the currently active tab.
+   * Process spells for a spell level during context preparation.
+   * Prepares ONLY data structures - NO HTML building.
    *
-   * Dynamically renders spell level sections for the active tab by removing
-   * existing content and rebuilding from current spell data. Handles both
-   * class tabs and wizard tabs appropriately.
-   *
-   * @returns {Promise<void>}
+   * @param {Array<Object>} spells - Raw spell data
+   * @param {boolean} isWizardTab - Whether this is a wizard tab
+   * @returns {Promise<Array<ProcessedSpell>>} Processed spells ready for template
    * @private
    */
-  async _renderAllSpells() {
-    const activeTab = this.tabGroups['spellbook-tabs'];
-    const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
-    if (!activeTabContent) return;
-    const spellsContainer = activeTabContent.querySelector('.spells-container');
-    if (!spellsContainer) return;
-    const existingSpellLevels = spellsContainer.querySelectorAll('.spell-level');
-    existingSpellLevels.forEach((el) => el.remove());
-    const classIdentifier = activeTabContent.dataset.classIdentifier;
-    let tabData;
-    if (activeTab.startsWith('wizardbook-')) tabData = this._stateManager.tabData[activeTab];
-    else tabData = this._stateManager.getClassTabData(classIdentifier);
-    if (!tabData || !tabData.spellLevels) return;
-    for (const levelData of tabData.spellLevels) {
-      const levelHtml = this._createSpellLevelHtml(levelData);
-      spellsContainer.insertAdjacentHTML('beforeend', levelHtml);
+  async _processSpellsForLevel(spells, isWizardTab) {
+    const processedSpells = [];
+    for (const spell of spells) {
+      const processedSpell = this._processSpellForDisplay(spell);
+      const spellUuid = processedSpell.uuid || processedSpell.compendiumUuid;
+      const comparisonIcon = {
+        enabled: UIHelpers.UICustomizationHelper.isPlayerElementEnabled('compare') && processedSpell.showCompareLink,
+        active: processedSpell.isInComparison,
+        uuid: processedSpell.compendiumUuid,
+        tooltip: game.i18n.localize('SPELLBOOK.Comparison.Compare'),
+        ariaLabel: game.i18n.format('SPELLBOOK.Comparison.CompareSpell', { name: processedSpell.name })
+      };
+      const favoriteButton = {
+        enabled: UIHelpers.UICustomizationHelper.isPlayerElementEnabled('favorites') && spellUuid,
+        favorited: processedSpell.favorited,
+        uuid: spellUuid,
+        tooltip: processedSpell.favorited ? game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites') : game.i18n.localize('SPELLBOOK.UI.AddToFavorites'),
+        iconClass: processedSpell.favorited ? 'fas' : 'far'
+      };
+      const notesIcon = {
+        enabled: UIHelpers.UICustomizationHelper.isPlayerElementEnabled('notes') && spellUuid,
+        hasNotes: processedSpell.hasNotes,
+        uuid: spellUuid,
+        tooltip: processedSpell.hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes'),
+        iconClass: processedSpell.hasNotes ? 'fas fa-sticky-note' : 'far fa-sticky-note'
+      };
+      const wizardAction = {
+        isFromScroll: processedSpell.isFromScroll,
+        inSpellbook: processedSpell.inWizardSpellbook,
+        canLearn: processedSpell.system?.level > 0 && !processedSpell.inWizardSpellbook && !processedSpell.isFromScroll,
+        uuid: processedSpell.spellUuid || processedSpell.compendiumUuid,
+        scrollId: processedSpell.scrollId,
+        ariaLabel: game.i18n.format('SPELLBOOK.Scrolls.LearnFromScroll', { name: processedSpell.name })
+      };
+      const partyIcons = this._preparePartyIconsData(processedSpell);
+      const formattedDetails = UIHelpers.UICustomizationHelper.buildPlayerMetadata(processedSpell);
+      let materialComponentsTooltip = '';
+      const hasMaterialComponents = processedSpell.filterData?.materialComponents?.hasConsumedMaterials === true;
+      if (hasMaterialComponents && formattedDetails) {
+        const lastIconIndex = formattedDetails.lastIndexOf('</i>');
+        materialComponentsTooltip = lastIconIndex !== -1 ? formattedDetails.substring(lastIconIndex + 4).trim() : formattedDetails;
+      }
+      const finalSpell = {
+        ...processedSpell,
+        name: processedSpell.name,
+        cssClasses: processedSpell.cssClasses || 'spell-item',
+        comparisonIcon,
+        favoriteButton,
+        notesIcon,
+        wizardAction,
+        partyIcons,
+        formattedDetails,
+        materialComponentsTooltip,
+        preparationCheckboxHtml: processedSpell.preparationCheckboxHtml
+      };
+      processedSpells.push(finalSpell);
     }
-    this._applyCollapsedStateToExistingHeaders();
-    this.ui.updateSpellCounts();
-    const favoriteButtons = spellsContainer.querySelectorAll('.spell-favorite-toggle[data-uuid]');
-    if (favoriteButtons.length > 0) {
-      await this._applyFavoriteStatesToButtons(favoriteButtons);
-      favoriteButtons.forEach((button) => button.setAttribute('data-favorites-applied', 'true'));
-    }
-    const cantripLevel = spellsContainer.querySelector('.spell-level[data-level="0"]');
-    if (cantripLevel) this.ui.updateCantripCounter(cantripLevel, true);
+    return processedSpells;
   }
 
   /**
-   * Create HTML string for a spell level section.
+   * Prepare party icons data for a spell.
    *
-   * Generates the complete HTML structure for a spell level including header,
-   * collapse controls, spell count indicators, cantrip counters, and spell list.
-   *
-   * @param {Object} levelData - The spell level data containing level, name, and spells
-   * @returns {string} HTML string for the spell level section
-   * @todo This should be a template
+   * @param {Object} spellData - The spell data
+   * @returns {Object} Party icons data structure
    * @private
    */
-  _createSpellLevelHtml(levelData) {
-    const level = String(levelData.level);
-    const levelName = levelData.name;
-    const spells = levelData.spells || [];
-    const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
-    const isCollapsed = collapsedLevels.includes(level);
-    let spellsHtml = '';
-    for (const spell of spells) {
-      const processedSpell = this._processSpellForDisplay(spell);
-      spellsHtml += this._createSpellItemHtml(processedSpell);
+  _preparePartyIconsData(spellData) {
+    const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
+    if (!isPartyMode) return { enabled: false, icons: [] };
+    const partyActors = PartySpellManager.getPartyActors();
+    const tokenLimit = game.settings.get(MODULE.ID, SETTINGS.PARTY_MODE_TOKEN_LIMIT);
+    const spellUuid = spellData.sourceUuid || spellData.compendiumUuid || spellData.uuid;
+    const icons = [];
+    let iconCount = 0;
+    for (const actor of partyActors) {
+      if (iconCount >= tokenLimit) break;
+      if (actor.id === this.actor.id) continue;
+      if (this._actorHasSpellPrepared(actor, spellUuid)) {
+        const associatedUser = game.users.find((user) => user.character?.id === actor.id);
+        const userColor = associatedUser?.color?.css || game.user.color.css || 'transparent';
+        icons.push({ src: actor.img, name: actor.name, actorId: actor.id, userColor: userColor });
+        iconCount++;
+      }
     }
-    let preparedCount = 0;
-    if (level !== '0') preparedCount = spells.filter((spell) => spell.preparation?.prepared).length;
-    let cantripCounterHtml = '';
-    if (level === '0') cantripCounterHtml = '<span class="cantrip-counter" title="Current/Maximum Cantrips">[0/0]</span>';
-    return `
-    <div class="spell-level" data-level="${level}">
-      <h3 class="spell-level-heading" data-action="toggleSpellLevel" data-level="${level}" role="button" aria-expanded="${!isCollapsed}" aria-controls="spell-list-${level}" style="">
-        <i class="fas fa-caret-${isCollapsed ? 'right' : 'down'} collapse-indicator" aria-hidden="true"></i>
-        ${levelName}
-        <span class="spell-count" aria-label="Spell Count">(${preparedCount}/${spells.length})</span>${cantripCounterHtml}
-      </h3>
-      <ul class="spell-list" id="spell-list-${level}" style="${isCollapsed ? 'display: none;' : ''}" role="list">
-        ${spellsHtml}
-      </ul>
-    </div>
-  `;
+    return { enabled: icons.length > 0, icons: icons };
+  }
+
+  /**
+   * Process spell levels for context preparation.
+   * Prepares ONLY data structures - NO HTML building.
+   *
+   * @param {Array<Object>} spellLevels - Raw spell level data
+   * @param {boolean} isWizardTab - Whether this is a wizard tab
+   * @returns {Promise<Array<Object>>} Processed spell levels ready for template
+   * @private
+   */
+  async _processSpellLevelsForContext(spellLevels, isWizardTab) {
+    const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
+    const processedLevels = [];
+    for (const levelData of spellLevels) {
+      const level = String(levelData.level);
+      const spells = levelData.spells || [];
+      const isCollapsed = collapsedLevels.includes(level);
+      const processedSpells = await this._processSpellsForLevel(spells, isWizardTab);
+      let preparedCount = 0;
+      if (level !== '0') preparedCount = spells.filter((spell) => spell.preparation?.prepared).length;
+      const cantripCounter = { enabled: level === '0', current: 0, maximum: 0 };
+      processedLevels.push({ level, levelName: levelData.name, spells: processedSpells, isCollapsed, preparedCount, cantripCounter });
+    }
+    return processedLevels;
   }
 
   /**
@@ -1349,106 +1393,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (spellList) spellList.style.display = isCollapsed ? 'none' : '';
       if (collapseIcon) collapseIcon.className = `fas fa-caret-${isCollapsed ? 'right' : 'down'} collapse-indicator`;
     });
-  }
-
-  /**
-   * Create HTML for a spell item.
-   *
-   * @todo Should this be a template? This should be a template.
-   * @param {ProcessedSpell} spell - Processed spell
-   * @returns {string} HTML string
-   * @private
-   */
-  _createSpellItemHtml(spell) {
-    const tagHtml = spell.tag ? `<span class="tag ${spell.tag.cssClass}" ${spell.tag.tooltip ? `data-tooltip="${spell.tag.tooltip}"` : ''}>${spell.tag.text}</span>` : '';
-    const enrichedIcon = spell.enrichedIcon || '';
-    const name = spell.name || game.i18n.localize('SPELLBOOK.UI.UnknownSpell');
-    const formattedDetails = UIHelpers.UICustomizationHelper.buildPlayerMetadata(spell);
-    const cssClasses = spell.cssClasses || 'spell-item';
-    const dataAttributes = spell.dataAttributes || '';
-    const activeTab = this.tabGroups['spellbook-tabs'];
-    const isWizardTab = activeTab && activeTab.startsWith('wizardbook-');
-    const spellUuid = spell.uuid || spell.compendiumUuid;
-    let comparisonIconHtml = '';
-    if (UIHelpers.UICustomizationHelper.isPlayerElementEnabled('compare') && spell.showCompareLink) {
-      const activeClass = spell.isInComparison ? ' active' : '';
-      const compareText = game.i18n.localize('SPELLBOOK.Comparison.Compare');
-      const ariaLabel = game.i18n.format('SPELLBOOK.Comparison.CompareSpell', { name: name });
-      comparisonIconHtml = `<i class="fa-solid fa-clipboard-question spell-compare-icon${activeClass}" data-action="compareSpell" data-uuid="${spell.compendiumUuid}" data-tooltip="${compareText}" aria-label="${ariaLabel}"></i>`;
-    }
-    const favoriteStarHtml =
-      UIHelpers.UICustomizationHelper.isPlayerElementEnabled('favorites') && spellUuid
-        ? `<button type="button" class="spell-favorite-toggle ${spell.favorited ? 'favorited' : ''}"
-        data-action="toggleFavorite"
-        data-uuid="${spellUuid}"
-        data-tooltip="${spell.favorited ? game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites') : game.i18n.localize('SPELLBOOK.UI.AddToFavorites')}"
-        aria-label="${spell.favorited ? game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites') : game.i18n.localize('SPELLBOOK.UI.AddToFavorites')}">
-        <i class="${spell.favorited ? 'fas' : 'far'} fa-star" aria-hidden="true"></i>
-      </button>`
-        : '';
-    const notesIconHtml =
-      UIHelpers.UICustomizationHelper.isPlayerElementEnabled('notes') && spellUuid
-        ? `<i class="${spell.hasNotes ? 'fas fa-sticky-note' : 'far fa-sticky-note'} spell-notes-icon"
-        data-uuid="${spellUuid}" data-action="editNotes"
-        data-tooltip="${spell.hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes')}"
-        aria-label="${spell.hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes')}"></i>`
-        : '';
-    let actionHtml = '';
-    if (isWizardTab) {
-      if (spell.isFromScroll) {
-        actionHtml = `
-    <div class="wizard-spell-status">
-      <button class="copy-spell-btn scroll-spell-btn" data-action="learnFromScroll"
-        data-uuid="${spell.spellUuid || spell.compendiumUuid}" data-scroll-id="${spell.scrollId}" type="button"
-        aria-label="${game.i18n.format('SPELLBOOK.Scrolls.LearnFromScroll', { name })}">
-        <i class="fas fa-scroll"></i> ${game.i18n.localize('SPELLBOOK.Wizard.LearnSpell')}
-      </button>
-    </div>`;
-      } else if (spell.inWizardSpellbook) {
-        actionHtml = `
-    <div class="wizard-spell-status">
-      <span class="in-spellbook-tag" aria-label="${game.i18n.localize('SPELLBOOK.Wizard.InSpellbook')}">
-        ${game.i18n.localize('SPELLBOOK.Wizard.InSpellbook')}
-      </span>
-    </div>`;
-      } else if (spell.system?.level > 0) {
-        actionHtml = `
-    <div class="wizard-spell-status">
-      <button class="copy-spell-btn" data-action="learnSpell" data-uuid="${spell.compendiumUuid}" type="button">
-        <i class="fas fa-book"></i> ${game.i18n.localize('SPELLBOOK.Wizard.LearnSpell')}
-      </button>
-    </div>`;
-      }
-    } else {
-      const preparationCheckboxHtml = spell.preparationCheckboxHtml || '';
-      actionHtml = `
-  <div class="spell-preparation dnd5e2">
-    ${preparationCheckboxHtml}
-  </div>`;
-    }
-    const subtitleParts = [];
-    if (comparisonIconHtml) subtitleParts.push(comparisonIconHtml);
-    if (notesIconHtml) subtitleParts.push(notesIconHtml);
-    if (formattedDetails) subtitleParts.push(formattedDetails);
-    const subtitleContent = subtitleParts.join(' ');
-    const hasMaterialComponents = spell.filterData?.materialComponents?.hasConsumedMaterials === true;
-    let tooltipAttr = '';
-    if (hasMaterialComponents) {
-      const lastIconIndex = subtitleContent.lastIndexOf('</i>');
-      const tooltipContent = lastIconIndex !== -1 ? subtitleContent.substring(lastIconIndex + 4).trim() : subtitleContent;
-      tooltipAttr = tooltipContent ? `data-tooltip="${tooltipContent}"` : '';
-    }
-    const spellHtml = `<li class="${cssClasses}" ${dataAttributes}>
-  <div class="spell-name">
-    ${enrichedIcon}
-    <div class="name-stacked">
-      <span class="title">${name}${favoriteStarHtml ? ` ${favoriteStarHtml}` : ''}${tagHtml ? ` ${tagHtml}` : ''}</span>
-      ${subtitleContent ? `<span class="subtitle" ${tooltipAttr}>${subtitleContent}</span>` : ''}
-    </div>
-  </div>
-  ${actionHtml}
-</li>`;
-    return this._enhanceSpellWithPartyIcons(spellHtml, spell);
   }
 
   /**
@@ -2287,63 +2231,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, !currentMode);
     await this.render();
     ui.notifications.info(!currentMode ? 'SPELLBOOK.Party.PartyModeEnabled' : 'SPELLBOOK.Party.PartyModeDisabled', { localize: true });
-  }
-
-  /**
-   * Enhance spell rendering with party member icons.
-   *
-   * Adds party member icons to spells when party mode is enabled, showing
-   * which other party members have the same spell prepared.
-   *
-   * @param {string} spellHtml - Original spell HTML
-   * @param {Object} spellData - Spell data
-   * @returns {string} Enhanced HTML with party member icons
-   * @private
-   */
-  _enhanceSpellWithPartyIcons(spellHtml, spellData) {
-    const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
-    if (!isPartyMode) return spellHtml;
-    const partyActors = PartySpellManager.getPartyActors();
-    const tokenLimit = game.settings.get(MODULE.ID, SETTINGS.PARTY_MODE_TOKEN_LIMIT);
-    let partyIcons = '';
-    let iconCount = 0;
-    const spellUuid = spellData.sourceUuid || spellData.compendiumUuid || spellData.uuid;
-    for (const actor of partyActors) {
-      if (iconCount >= tokenLimit) break;
-      if (actor.id === this.actor.id) continue;
-      if (this._actorHasSpellPrepared(actor, spellUuid)) {
-        const associatedUser = game.users.find((user) => user.character?.id === actor.id);
-        const userColor = associatedUser?.color?.css || game.user.color.css || 'transparent';
-        partyIcons += `<img src="${actor.img}" class="party-member-icon" data-tooltip="${actor.name}" data-actor-id="${actor.id}" style="box-shadow: 0 0 0.1rem 0.1rem ${userColor};">`;
-        iconCount++;
-      }
-    }
-    if (partyIcons) {
-      const titleStartIndex = spellHtml.indexOf('<span class="title">');
-      if (titleStartIndex !== -1) {
-        const titleContentStart = titleStartIndex + '<span class="title">'.length;
-        let spanDepth = 1;
-        let currentIndex = titleContentStart;
-        while (currentIndex < spellHtml.length && spanDepth > 0) {
-          const nextSpanOpen = spellHtml.indexOf('<span', currentIndex);
-          const nextSpanClose = spellHtml.indexOf('</span>', currentIndex);
-          if (nextSpanClose === -1) break;
-          if (nextSpanOpen !== -1 && nextSpanOpen < nextSpanClose) {
-            spanDepth++;
-            currentIndex = nextSpanOpen + 5;
-          } else {
-            spanDepth--;
-            if (spanDepth === 0) {
-              const beforeClose = spellHtml.substring(0, nextSpanClose);
-              const afterClose = spellHtml.substring(nextSpanClose);
-              return `${beforeClose}<span class="party-icons">${partyIcons}</span>${afterClose}`;
-            }
-            currentIndex = nextSpanClose + 7;
-          }
-        }
-      }
-    }
-    return spellHtml;
   }
 
   /**

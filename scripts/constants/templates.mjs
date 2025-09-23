@@ -175,6 +175,8 @@ export const TEMPLATES = {
     /** Migration results component showing user data changes */
     MIGRATION_USER_DATA: 'modules/spell-book/templates/components/migration-user-data-results.hbs',
 
+    SPELL_ITEM: 'modules/spell-book/templates/components/spell-item.hbs',
+
     /** Spell level grouping component for organizing spells by level */
     SPELL_LEVEL: 'modules/spell-book/templates/components/spell-level.hbs',
 

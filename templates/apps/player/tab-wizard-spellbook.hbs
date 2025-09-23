@@ -47,32 +47,37 @@
 	data-class-identifier="{{classIdentifier}}">
 
 	<div class="spells-container">
-		{{#if hasError}}
-			<!-- Error State Display - Uses shared error message component -->
-			{{> "modules/spell-book/templates/components/error-message.hbs" message=errorMessage}}
-		{{else}}
-			{{#if (or isWizard isForceWizard)}}
-				<!-- Wizard Spellbook Rules and Information Section -->
-				<div class="spellbook-rules">
-					<div class="spellbook-header">
-						<h2>{{localize 'SPELLBOOK.Wizard.NewSpellsTitle'}}</h2>
-						<!-- Wizard Help Information - Tooltip with detailed rules -->
-						<i class="fas fa-info-circle spellbook-help-icon"
-							data-tooltip="{{localize 'SPELLBOOK.Wizard.NewSpellsInfo1'}}<br><br>{{localize 'SPELLBOOK.Wizard.NewSpellsInfo2'}}"></i>
-					</div>
-				</div>
-				<!-- Dynamic Spell Level Content - Rendered by JavaScript like regular spell tabs -->
-			{{else}}
-				<!-- Wizard Unavailable State - Shown when character lacks wizard capabilities -->
-				<div class="wizard-unavailable">
-					<p>{{localize 'SPELLBOOK.Wizard.Unavailable'}}</p>
+		<!-- Wizard Header Section -->
+		<div class="class-header">
+			<h2>{{className}} Spellbook</h2>
+			{{#if wizardTotalSpellbookCount}}
+				<div class="wizard-spellbook-info">
+					<span class="wizard-spell-count">
+						{{wizardTotalSpellbookCount}}/{{wizardMaxSpellbookCount}} spells in spellbook
+					</span>
+					{{#if wizardHasFreeSpells}}
+						<span class="wizard-free-spells">
+							{{wizardRemainingFreeSpells}} free spells remaining
+						</span>
+					{{/if}}
 				</div>
 			{{/if}}
-		{{/if}}
+		</div>
 
-		<!-- Filter Results Message - Hidden by default, shown when no spells match filters -->
+		<!-- Render Spell Levels -->
+		{{#each spellLevels as |levelData|}}
+			{{> "modules/spell-book/templates/components/spell-level.hbs"
+        level=levelData.level
+        levelName=levelData.levelName
+        spells=levelData.spells
+        isCollapsed=levelData.isCollapsed
+        preparedCount=levelData.preparedCount
+        cantripCounter=levelData.cantripCounter}}
+		{{/each}}
+
+		<!-- Filter Results Message -->
 		<div class="no-filter-results" style="display: none;" role="status">
-			{{localize 'SPELLBOOK.Filters.NoResults'}}
+			No spells match your filters.
 		</div>
 	</div>
 </div>

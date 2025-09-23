@@ -37,20 +37,19 @@
 --}}
 
 <div class="spell-level" data-level="{{level}}">
-	<!-- Collapsible Spell Level Header -->
-	<h3 class="spell-level-heading" data-action="toggleSpellLevel" role="button" aria-expanded="true"
-		aria-controls="spell-list-{{level}}">
-		<i class="fas fa-caret-down collapse-indicator" aria-hidden="true"></i>
+	<h3 class="spell-level-heading" data-action="toggleSpellLevel" data-level="{{level}}" role="button"
+		aria-expanded="{{#unless isCollapsed}}true{{else}}false{{/unless}}" aria-controls="spell-list-{{level}}" style="">
+		<i class="fas fa-caret-{{#if isCollapsed}}right{{else}}down{{/if}} collapse-indicator" aria-hidden="true"></i>
 		{{levelName}}
-		<span class="spell-count"
-			aria-label="{{localize 'SPELLBOOK.UI.SpellCount' count=spells.length}}">({{spells.length}})</span>
+		<span class="spell-count" aria-label="Spell Count">({{preparedCount}}/{{spells.length}})</span>
+		{{#if cantripCounter.enabled}}
+			<span class="cantrip-counter"
+				title="Current/Maximum Cantrips">[{{cantripCounter.current}}/{{cantripCounter.maximum}}]</span>
+		{{/if}}
 	</h3>
-
-	<!-- Spell List Container -->
-	<ul id="spell-list-{{level}}" class="spell-list" role="list">
+	<ul class="spell-list" id="spell-list-{{level}}" {{#if isCollapsed}}style="display: none;" {{/if}} role="list">
 		{{#each spells as |spell|}}
-			<!-- Partial Block Content - Allows flexible spell item rendering -->
-			{{> @partial-block spell}}
+			{{> "modules/spell-book/templates/components/spell-item.hbs" spell=spell}}
 		{{/each}}
 	</ul>
 </div>
