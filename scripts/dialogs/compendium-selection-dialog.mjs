@@ -203,20 +203,24 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
    * Translate system-specific folder names to more user-friendly display names.
    *
    * Provides localized and simplified names for common system folders,
-   * with special handling for homebrew content detection.
+   * with special handling for homebrew content detection. Attempts to use
+   * CONFIG.DND5E.sourceBooks when available, falling back to manual translations.
    *
    * @param {string} name - The raw folder name to translate
    * @param {string} [id] - Optional pack ID for additional context
    * @returns {string} The translated, user-friendly name
-   * @todo Name translations should be localized, at least the end result, alternatively use CONFIG.DND5E.sourceBooks
    * @private
    */
   _translateSystemFolderName(name, id = null) {
-    if (!name || typeof name !== 'string') return id || 'Unknown Source';
-    const nameTranslations = { 'D&D Legacy Content': 'SRD 5.1', 'D&D Modern Content': 'SRD 5.2' };
-    if (nameTranslations[name]) return nameTranslations[name];
-    for (const [key, value] of Object.entries(nameTranslations)) if (name.includes(key)) return value;
-    if (/[./_-]home[\s_-]?brew[./_-]/i.test(name)) return game.i18n.localize('SPELLBOOK.Settings.CompendiumSelectionHomebrew') || 'Homebrew';
+    if (!name || typeof name !== 'string') return id || game.i18n.localize('SPELLBOOK.Settings.CompendiumSelectionUnknown');
+    if (/[./_-]home[\s_-]?brew[./_-]/i.test(name)) return game.i18n.localize('SPELLBOOK.Settings.CompendiumSelectionHomebrew');
+    const translations = new Map([
+      ['D&D Legacy Content', CONFIG.DND5E?.sourceBooks?.['SRD 5.1']],
+      ['D&D Modern Content', CONFIG.DND5E?.sourceBooks?.['SRD 5.2']],
+      ['Free Rules', CONFIG.DND5E?.sourceBooks?.['Free Rules']]
+    ]);
+    if (translations.has(name)) return game.i18n.localize(translations.get(name));
+    for (const [key, localizationKey] of translations) if (name.includes(key)) return game.i18n.localize(localizationKey);
     return name;
   }
 

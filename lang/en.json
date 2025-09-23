@@ -354,6 +354,7 @@
   "SPELLBOOK.Settings.CompendiumSelectionSpellList": "Spell Lists",
   "SPELLBOOK.Settings.CompendiumSelectionSpells": "Spells",
   "SPELLBOOK.Settings.CompendiumSelectionTitle": "Compendium Selection",
+  "SPELLBOOK.Settings.CompendiumSelectionUnknown": "Unknown Source",
   "SPELLBOOK.Settings.CompendiumSelectionUpdated": "Compendium indexing updated: {count} compendiums selected",
   "SPELLBOOK.Settings.ConfigureFilters": "Configure Filters",
   "SPELLBOOK.Settings.ConsumeScrollsWhenLearning.Hint": "Whether spell scrolls should be consumed when learning spells from them in the wizard Spell Book.",
