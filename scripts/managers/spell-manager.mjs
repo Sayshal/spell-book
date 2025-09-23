@@ -503,41 +503,33 @@ export class SpellManager {
     const cantripChanges = { added: [], removed: [], hasChanges: false };
     for (const [classSpellKey, spellInfo] of Object.entries(classSpellData)) {
       const { uuid, isPrepared, wasPrepared, spellLevel, preparationMode, name, isRitual } = spellInfo;
-      log(1, 'Processing spell in saveClassSpecificPreparedSpells', {
-        name: name,
-        uuid: uuid,
-        isPrepared: isPrepared,
-        wasPrepared: wasPrepared,
-        isRitual: isRitual,
-        spellLevel: spellLevel,
-        preparationMode: preparationMode
-      });
       if (spellLevel === 0) {
         if (isPrepared && !wasPrepared) {
-          cantripChanges.added.push(name || 'Unknown Cantrip');
+          cantripChanges.added.push(name);
           cantripChanges.hasChanges = true;
         } else if (!isPrepared && wasPrepared) {
-          cantripChanges.removed.push(name || 'Unknown Cantrip');
+          cantripChanges.removed.push(name);
           cantripChanges.hasChanges = true;
         }
       }
       let actualPreparationMode = 'spell';
       if (spellLevel > 0) actualPreparationMode = preparationMode || defaultPreparationMode;
       if (isPrepared) {
-        log(1, 'Taking PREPARED path', { name: name, preparationMode: actualPreparationMode });
         preparedSpellKeys.push(classSpellKey);
         await this._ensureSpellOnActor(uuid, classIdentifier, actualPreparationMode, spellsToCreate, spellsToUpdate);
-
-        // **ADD: If this prepared spell can also be cast as ritual, ensure ritual version exists**
         if (isRitual) {
-          await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate, spellsToUpdate);
+          const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
+          if (classRules.ritualCasting === 'always' || classRules.ritualCasting === 'prepared') await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate, spellsToUpdate);
         }
       } else if (wasPrepared) {
-        log(1, 'Taking UNPREPARE path', { name: name });
         await this._handleUnpreparingSpell(uuid, classIdentifier, spellIdsToRemove, spellsToUpdate);
+        if (isRitual) {
+          const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
+          if (classRules.ritualCasting === 'always') await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate, spellsToUpdate);
+        }
       } else if (isRitual) {
-        log(1, 'Taking RITUAL-ONLY path', { name: name });
-        await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate, spellsToUpdate);
+        const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
+        if (classRules.ritualCasting === 'always') await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate, spellsToUpdate);
       } else {
         log(1, 'Taking NO ACTION path', { name: name });
       }
@@ -602,34 +594,24 @@ export class SpellManager {
    * @returns {Promise<void>}
    */
   async _ensureRitualSpellOnActor(uuid, sourceClass, spellsToCreate, spellsToUpdate) {
-    const existingSpell = this.actor.items.find(
-      (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
+    const existingRitualSpell = this.actor.items.find(
+      (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass) && i.system?.method === 'ritual'
     );
-    if (existingSpell) {
-      if (existingSpell.system.method !== 'ritual') {
-        const updateData = {
-          _id: existingSpell.id,
-          'system.method': 'ritual',
-          'system.prepared': 0,
-          'system.sourceClass': sourceClass,
-          [`flags.${MODULE.ID}.isModuleRitual`]: true
-        };
-        spellsToUpdate.push(updateData);
-      }
+    if (existingRitualSpell) return;
+    const sourceSpell = await fromUuid(uuid);
+    if (sourceSpell) {
+      const newSpellData = sourceSpell.toObject();
+      newSpellData.system.method = 'ritual';
+      newSpellData.system.prepared = 0;
+      newSpellData.flags = newSpellData.flags || {};
+      newSpellData.flags.core = newSpellData.flags.core || {};
+      newSpellData.flags.core.sourceId = uuid;
+      newSpellData.system.sourceClass = sourceClass;
+      newSpellData.flags[MODULE.ID] = newSpellData.flags[MODULE.ID] || {};
+      newSpellData.flags[MODULE.ID].isModuleRitual = true;
+      spellsToCreate.push(newSpellData);
     } else {
-      const sourceSpell = await fromUuid(uuid);
-      if (sourceSpell) {
-        const newSpellData = sourceSpell.toObject();
-        newSpellData.system.method = 'ritual';
-        newSpellData.system.prepared = 0;
-        newSpellData.flags = newSpellData.flags || {};
-        newSpellData.flags.core = newSpellData.flags.core || {};
-        newSpellData.flags.core.sourceId = uuid;
-        newSpellData.system.sourceClass = sourceClass;
-        newSpellData.flags[MODULE.ID] = newSpellData.flags[MODULE.ID] || {};
-        newSpellData.flags[MODULE.ID].isModuleRitual = true;
-        spellsToCreate.push(newSpellData);
-      }
+      log(1, 'ERROR: Could not load source spell for ritual creation', { uuid: uuid, sourceClass: sourceClass });
     }
   }
 

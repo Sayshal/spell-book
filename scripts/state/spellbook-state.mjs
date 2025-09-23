@@ -583,58 +583,31 @@ export class SpellbookState {
     const targetUserId = DataHelpers._getTargetUserId(this.actor);
     const actorId = this.actor?.id;
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
-
     if (this.actor) {
       const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
       const spellDeduplicationMap = new Map();
-
-      // First pass: collect and deduplicate actor spells by UUID + source class
       for (const spell of actorSpells) {
         if (spell?.system?.level === undefined) continue;
-
         const spellKey = spell.flags?.core?.sourceId || spell.uuid;
         const sourceClass = spell.system?.sourceClass || spell.sourceClass || classIdentifier;
         const fullKey = `${sourceClass}:${spellKey}`;
-
         if (!spellDeduplicationMap.has(fullKey)) {
           spellDeduplicationMap.set(fullKey, spell);
         } else {
           const existing = spellDeduplicationMap.get(fullKey);
           const currentPriority = this._getSpellDisplayPriority(spell);
           const existingPriority = this._getSpellDisplayPriority(existing);
-
-          if (currentPriority > existingPriority) {
-            spellDeduplicationMap.set(fullKey, spell);
-            log(1, 'Replaced duplicate spell with higher priority version', {
-              spellName: spell.name,
-              replacedMode: existing.system?.method,
-              newMode: spell.system?.method,
-              sourceClass: sourceClass
-            });
-          }
+          if (currentPriority > existingPriority) spellDeduplicationMap.set(fullKey, spell);
         }
       }
-
-      // Second pass: process deduplicated actor spells
       for (const spell of spellDeduplicationMap.values()) {
         const level = spell.system.level;
         const spellName = spell.name.toLowerCase();
         const preparationMode = spell.system.method;
         const isSpecialMode = ['innate', 'pact', 'atwill', 'always'].includes(preparationMode);
-
-        if (!spellsByLevel[level]) {
-          spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
-        }
-
+        if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
         const compendiumUuid = spell.flags?.core?.sourceId || spell.uuid;
-        const spellData = {
-          ...spell,
-          compendiumUuid: compendiumUuid,
-          filterData: UIHelpers.extractSpellFilterData(spell),
-          enrichedIcon: UIHelpers.createSpellIconLink(spell)
-        };
-
-        // Set source class with proper fallback logic
+        const spellData = { ...spell, compendiumUuid: compendiumUuid, filterData: UIHelpers.extractSpellFilterData(spell), enrichedIcon: UIHelpers.createSpellIconLink(spell) };
         if (spell.system?.sourceClass) {
           spellData.sourceClass = spell.system.sourceClass;
           spellData.system = spellData.system || {};
@@ -648,42 +621,25 @@ export class SpellbookState {
           spellData.system = spellData.system || {};
           spellData.system.sourceClass = classIdentifier;
         }
-
-        // Add ritual indicator if this prepared spell can also be cast as ritual
-        if (preparationMode !== 'ritual' && spell.system?.components?.ritual) {
-          spellData.canCastAsRitual = true;
-        }
-
+        if (preparationMode !== 'ritual' && spell.system?.components?.ritual) spellData.canCastAsRitual = true;
         spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, classIdentifier);
         const enhancedSpell = DataHelpers.SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
         Object.assign(spellData, enhancedSpell);
-
         spellsByLevel[level].spells.push(spellData);
         processedSpellIds.add(spell.id || spell.uuid);
         processedSpellNames.add(spellName);
       }
     }
-
-    // Process compendium spells (unchanged logic from original)
     const compendiumDataPromises = spellItems.map((spell) => DataHelpers.SpellUserDataJournal.getUserDataForSpell(spell.uuid || spell.compendiumUuid, targetUserId, actorId));
     await Promise.all(compendiumDataPromises);
-
     for (const spell of spellItems) {
       if (spell?.system?.level === undefined) continue;
       const level = spell.system.level;
       const spellName = spell.name.toLowerCase();
-
-      // Skip if already processed from actor spells
       if (processedSpellNames.has(spellName)) continue;
-
-      if (!spellsByLevel[level]) {
-        spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
-      }
-
+      if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
       const spellUuid = spell.uuid || spell.compendiumUuid;
       const spellData = foundry.utils.deepClone(spell);
-
-      // Check if spell is prepared by another class
       let preparedByOtherClass = null;
       for (const [otherClass, preparedSpells] of Object.entries(preparedByClass)) {
         if (otherClass === classIdentifier) continue;
@@ -693,38 +649,23 @@ export class SpellbookState {
           break;
         }
       }
-
       spellData.sourceClass = classIdentifier;
       spellData.system = spellData.system || {};
       spellData.system.sourceClass = classIdentifier;
-
       if (preparedByOtherClass) {
         spellData.preparation = spellData.preparation || {};
         spellData.preparation.preparedByOtherClass = preparedByOtherClass;
       }
-
-      if (this.app.spellManager) {
-        spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, classIdentifier);
-      }
-
+      if (this.app.spellManager) spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, classIdentifier);
       spellData.filterData = UIHelpers.extractSpellFilterData(spell);
       spellData.enrichedIcon = UIHelpers.createSpellIconLink(spell);
       const enhancedSpell = DataHelpers.SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
       Object.assign(spellData, enhancedSpell);
-
       spellsByLevel[level].spells.push(spellData);
       processedSpellIds.add(spell.id || spell.compendiumUuid || spell.uuid);
       processedSpellNames.add(spellName);
     }
-
-    // Sort spells within each level alphabetically
-    for (const level in spellsByLevel) {
-      if (level in spellsByLevel) {
-        spellsByLevel[level].spells.sort((a, b) => a.name.localeCompare(b.name));
-      }
-    }
-
-    // Convert to sorted array format
+    for (const level in spellsByLevel) if (level in spellsByLevel) spellsByLevel[level].spells.sort((a, b) => a.name.localeCompare(b.name));
     const sortedLevels = Object.entries(spellsByLevel)
       .sort(([a], [b]) => Number(a) - Number(b))
       .map(([level, data]) => {
@@ -738,7 +679,6 @@ export class SpellbookState {
         }
         return data;
       });
-
     log(3, `Returning ${sortedLevels.length} levels for ${classIdentifier} with deduplication applied`);
     return sortedLevels;
   }
@@ -754,20 +694,10 @@ export class SpellbookState {
   _getSpellDisplayPriority(spell) {
     const method = spell.system?.method;
     const prepared = spell.system?.prepared;
-
-    // Prepared spells (system.prepared = 1) get highest priority
     if (prepared === 1) return 100;
-
-    // Always prepared spells (system.prepared = 2) get very high priority
     if (prepared === 2) return 90;
-
-    // Special modes get medium priority
     if (['innate', 'pact', 'atwill'].includes(method)) return 50;
-
-    // Ritual mode gets lowest priority (will be hidden if prepared version exists)
     if (method === 'ritual') return 10;
-
-    // Default case
     return 30;
   }
 
@@ -831,9 +761,7 @@ export class SpellbookState {
         if (levelData.level === '0' || levelData.level === 0) continue;
         if (!Array.isArray(levelData.spells)) continue;
         for (const spell of levelData.spells) {
-          if (spell.system.prepared === 1 && spell.sourceClass === classIdentifier && spell.system.prepared !== 2) {
-            preparedCount++;
-          }
+          if (spell.system.prepared === 1 && spell.sourceClass === classIdentifier && spell.system.prepared !== 2) preparedCount++;
         }
       }
     } else if (isFlatStructure) {
@@ -1327,10 +1255,7 @@ export class SpellbookState {
    * @private
    */
   async _addWizardRitualSpells(classIdentifier, spellDataByClass) {
-    if (!this.app.wizardManager.isWizard) {
-      log(1, 'Not a wizard, skipping wizard ritual spells');
-      return;
-    }
+    if (!this.app.wizardManager.isWizard) return;
     const spellbookSpells = await this.app.wizardManager.getSpellbookSpells();
     const isRitualSpell = (spell) => {
       if (spell.system?.properties && spell.system.properties.has) return spell.system.properties.has('ritual');
@@ -1345,12 +1270,7 @@ export class SpellbookState {
       const classSpellKey = `${classIdentifier}:${spellUuid}`;
       if (spellDataByClass[classIdentifier][classSpellKey]) {
         spellDataByClass[classIdentifier][classSpellKey].isRitual = true;
-        log(1, 'Marking existing spell as ritual-capable', {
-          name: sourceSpell.name,
-          isPrepared: spellDataByClass[classIdentifier][classSpellKey].isPrepared
-        });
       } else {
-        // New spell not on form - add as unprepared ritual
         spellDataByClass[classIdentifier][classSpellKey] = {
           uuid: spellUuid,
           name: sourceSpell.name,
@@ -1361,7 +1281,6 @@ export class SpellbookState {
           classSpellKey,
           spellLevel: sourceSpell.system.level
         };
-        log(1, 'Adding new unprepared ritual spell', { name: sourceSpell.name });
       }
       addedCount++;
     }
@@ -1383,21 +1302,13 @@ export class SpellbookState {
     const className = classData.name.toLowerCase();
     const classUuid = classData.uuid;
     const spellList = await DataHelpers.getClassSpellList(className, classUuid, this.actor);
-    if (!spellList || !spellList.size) {
-      log(1, `No spell list found for class ${classIdentifier} (${className})`);
-      return;
-    }
+    if (!spellList || !spellList.size) return;
     const spellItems = await DataHelpers.fetchSpellDocuments(spellList, 9);
-    if (!spellItems || !spellItems.length) {
-      log(1, `No spell items fetched for class ${classIdentifier} - fetchSpellDocuments returned empty`);
-      return;
-    }
+    if (!spellItems || !spellItems.length) return;
     const preparedUuids = new Set();
     if (spellDataByClass[classIdentifier]) {
       Object.values(spellDataByClass[classIdentifier]).forEach((spellData) => {
-        if (spellData.isPrepared || spellData.wasPrepared) {
-          preparedUuids.add(spellData.uuid);
-        }
+        if (spellData.isPrepared || spellData.wasPrepared) preparedUuids.add(spellData.uuid);
       });
     }
     const isRitualSpell = (spell) => {
