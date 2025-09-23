@@ -408,7 +408,6 @@ export class SpellbookState {
    * Analyzes the class configuration to determine how spells are prepared
    * or managed for this class type.
    *
-   * @todo - 5.1 I don't think prepared is correct anymore.
    * @param {Item} classItem - The class item to analyze
    * @returns {string} The preparation mode ('spell', 'pact', etc.)
    */

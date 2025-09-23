@@ -150,12 +150,15 @@ export class QueryExecutor {
    * @private
    * @param {string} value - Expected range value or type
    * @param {SpellData} spell - Spell data to check
-   * @todo Implement proper numeric range comparison
    * @returns {boolean} Whether range matches the criteria
    */
   _evaluateRange(value, spell) {
-    const rangeValue = parseInt(value);
-    if (!isNaN(rangeValue)) return true;
+    const searchRangeValue = parseInt(value);
+    if (!isNaN(searchRangeValue)) {
+      const spellRange = spell.system?.range?.value;
+      if (typeof spellRange === 'number') return spellRange === searchRangeValue;
+      return false;
+    }
     const spellRangeUnits = spell.filterData?.range?.units || spell.system?.range?.units || '';
     const normalizedSpellRange = spellRangeUnits.toLowerCase();
     const normalizedSearchRange = value.toLowerCase();
