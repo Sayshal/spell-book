@@ -189,7 +189,6 @@
             <h4>{{localize "SPELLBOOK.Party.Analysis.DuplicateSpells"}}</h4>
             <div class="duplicate-list">
               {{#each duplicateSpells as |duplicate|}}
-              {{log 'DEBUG' duplicate}}
                 <div class="duplicate-item"
                   data-tooltip="{{duplicate.name}} is prepared by: {{#each duplicate.actors}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}. Consider coordination to diversify spell selection.">
                   <div class="duplicate-spell-info">

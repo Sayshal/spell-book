@@ -309,7 +309,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   async _prepareContext(options) {
     const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
-    log(1, '(_prepareContext) NEW MODE:', this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED));
     const context = this._createBaseContext(options);
     if (!this._stateManager._initialized) await this._stateManager.initialize();
     if (!this._stateManager._classesDetected) this._stateManager.detectSpellcastingClasses();
@@ -437,7 +436,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const partyActors = PartySpellManager.getPartyActors();
     const showPartyButton = partyActors.length !== 0;
     if (showPartyButton) {
-      log(1, '(_createBaseContext) NEW MODE:', this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED));
       const isPartyModeEnabled = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
       buttons.push({
         type: 'button',
@@ -1450,7 +1448,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   </div>
   ${actionHtml}
 </li>`;
-    log(1, 'Enhancing spell with party icons from createSpellItemHTML');
     return this._enhanceSpellWithPartyIcons(spellHtml, spell);
   }
 
@@ -2288,7 +2285,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const currentMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
     log(1, 'CURRENT MODE:', { currentMode });
     await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, !currentMode);
-    log(1, 'NEW MODE:', this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED));
     await this.render();
     ui.notifications.info(!currentMode ? 'SPELLBOOK.Party.PartyModeEnabled' : 'SPELLBOOK.Party.PartyModeDisabled', { localize: true });
   }
@@ -2305,22 +2301,20 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _enhanceSpellWithPartyIcons(spellHtml, spellData) {
-    log(1, 'DEBUG: Enhancing spell with party icons (not working)');
     const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
-    log(1, '(_enhanceSpellWithPartyIcons) NEW MODE:', this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED));
-    log(1, 'Party Mode?', { PartyMode: !!isPartyMode, spellHtml, spellData });
     if (!isPartyMode) return spellHtml;
     const partyActors = PartySpellManager.getPartyActors();
     const tokenLimit = game.settings.get(MODULE.ID, SETTINGS.PARTY_MODE_TOKEN_LIMIT);
     let partyIcons = '';
     let iconCount = 0;
+    const spellUuid = spellData.compendiumUuid || spellData.uuid;
     for (const actor of partyActors) {
       if (iconCount >= tokenLimit) break;
       if (actor.id === this.actor.id) continue;
-      if (this._actorHasSpellPrepared(actor, spellData.uuid)) {
+      if (this._actorHasSpellPrepared(actor, spellUuid)) {
         const associatedUser = game.users.find((user) => user.character?.id === actor.id);
         const userColor = associatedUser?.color?.css || game.user.color.css || 'transparent';
-        partyIcons += `<img src="${actor.img}" class="party-member-icon" data-tooltip="${actor.name}"  data-actor-id="${actor.id}" style="box-shadow: 0 0 0.1rem 0.1rem ${userColor};">`;
+        partyIcons += `<img src="${actor.img}" class="party-member-icon" data-tooltip="${actor.name}" data-actor-id="${actor.id}" style="box-shadow: 0 0 0.1rem 0.1rem ${userColor};">`;
         iconCount++;
       }
     }
@@ -2328,11 +2322,24 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const titleStartIndex = spellHtml.indexOf('<span class="title">');
       if (titleStartIndex !== -1) {
         const titleContentStart = titleStartIndex + '<span class="title">'.length;
-        const titleEndIndex = spellHtml.indexOf('</span>', titleContentStart);
-        if (titleEndIndex !== -1) {
-          const beforeTitle = spellHtml.substring(0, titleEndIndex);
-          const afterTitle = spellHtml.substring(titleEndIndex);
-          return `${beforeTitle}<span class="party-icons">${partyIcons}</span>${afterTitle}`;
+        let spanDepth = 1;
+        let currentIndex = titleContentStart;
+        while (currentIndex < spellHtml.length && spanDepth > 0) {
+          const nextSpanOpen = spellHtml.indexOf('<span', currentIndex);
+          const nextSpanClose = spellHtml.indexOf('</span>', currentIndex);
+          if (nextSpanClose === -1) break;
+          if (nextSpanOpen !== -1 && nextSpanOpen < nextSpanClose) {
+            spanDepth++;
+            currentIndex = nextSpanOpen + 5;
+          } else {
+            spanDepth--;
+            if (spanDepth === 0) {
+              const beforeClose = spellHtml.substring(0, nextSpanClose);
+              const afterClose = spellHtml.substring(nextSpanClose);
+              return `${beforeClose}<span class="party-icons">${partyIcons}</span>${afterClose}`;
+            }
+            currentIndex = nextSpanClose + 7;
+          }
         }
       }
     }
@@ -2348,7 +2355,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _actorHasSpellPrepared(actor, spellUuid) {
-    log(1, 'DEBUG: ActorHasSpellPrepared Called!');
     if (!PartySpellManager.prototype.hasViewPermission(actor)) return false;
     const preparedSpells = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS) || [];
     const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
@@ -2359,31 +2365,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         if (parsed && parsed.spellUuid === spellUuid) return true;
       }
     }
-    for (const storedUuid of preparedSpells) {
-      if (this._normalizeSpellUuid(storedUuid) === this._normalizeSpellUuid(spellUuid)) return true;
-    }
     return false;
-  }
-
-  /**
-   * Normalize spell UUIDs for comparison by resolving to canonical form.
-   *
-   * @param {string} uuid - Spell UUID to normalize
-   * @returns {string} Normalized UUID
-   * @private
-   */
-  _normalizeSpellUuid(uuid) {
-    log(1, 'CHECKING FOR ACTOR UUID!');
-    try {
-      if (uuid.startsWith('Actor.')) {
-        log(1, 'FOUND ACTOR UUID!');
-        const spellDoc = fromUuidSync(uuid);
-        return spellDoc?.flags?.core?.sourceId || uuid;
-      }
-      return uuid.replace(/\.Item\./g, '.');
-    } catch (error) {
-      return uuid;
-    }
   }
 
   /**
