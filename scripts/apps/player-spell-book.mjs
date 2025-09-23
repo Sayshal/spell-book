@@ -2307,7 +2307,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const tokenLimit = game.settings.get(MODULE.ID, SETTINGS.PARTY_MODE_TOKEN_LIMIT);
     let partyIcons = '';
     let iconCount = 0;
-    const spellUuid = spellData.compendiumUuid || spellData.uuid;
+    const spellUuid = spellData.sourceUuid || spellData.compendiumUuid || spellData.uuid;
     for (const actor of partyActors) {
       if (iconCount >= tokenLimit) break;
       if (actor.id === this.actor.id) continue;

@@ -316,9 +316,10 @@ export class PartySpellManager {
       const preparedSpells = [];
       const classSpells = actor.items.filter((item) => item.type === 'spell' && (item.system.sourceClass === classId || item.sourceClass === classId));
       for (const spell of classSpells) {
+        const sourceUuid = spell.flags?.core?.sourceId || spell.uuid;
         const spellDoc = fromUuidSync(spell.uuid);
-        const enrichedIcon = UIHelpers.createSpellIconLink(spellDoc || spell);
-        const spellData = { uuid: spell.uuid, name: spell.name, level: spell.system.level, enrichedIcon: enrichedIcon, prepared: spell.system.prepared === 1 };
+        const enrichedIcon = UIHelpers.createSpellIconLink({ ...spell, compendiumUuid: sourceUuid });
+        const spellData = { uuid: spell.uuid, sourceUuid: sourceUuid, name: spell.name, level: spell.system.level, enrichedIcon: enrichedIcon, prepared: spell.system.prepared === 1 };
         knownSpells.push(spellData);
         if (spellData.prepared) preparedSpells.push(spellData);
       }
@@ -423,7 +424,8 @@ export class PartySpellManager {
           if (!spellsByLevel[level]) spellsByLevel[level] = {};
           if (!spellsByLevel[level][spellKey]) {
             spellsByLevel[level][spellKey] = {
-              uuid: spell.uuid,
+              uuid: spell.sourceUuid,
+              actorUuid: spell.uuid,
               name: spell.name,
               enrichedIcon: spell.enrichedIcon,
               level: spell.level,
