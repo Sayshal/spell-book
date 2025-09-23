@@ -790,18 +790,10 @@ export class PartySpellManager {
    */
   _processDuplicateSpells(analysis, collectors) {
     const duplicateSpells = [];
-    log(1, 'Processing duplicate spells, collectors.allSpells size:', collectors.allSpells?.size || 'undefined');
-    log(1, 'preparedSpellsByName entries:', Object.keys(collectors.preparedSpellsByName).length);
-
     for (const [spellName, actors] of collectors.preparedSpellsByName) {
       if (actors.length > 1) {
-        log(1, 'Found duplicate spell:', spellName, 'with actors:', actors);
-
-        // Find the UUID for this spell name from the Set of all spells
         let spellUuid = null;
         let spellDoc = null;
-
-        // Iterate through all spell UUIDs to find the one matching this spell name
         for (const uuid of collectors.allSpells) {
           const testDoc = fromUuidSync(uuid);
           if (testDoc && testDoc.name === spellName) {
@@ -810,32 +802,16 @@ export class PartySpellManager {
             break;
           }
         }
-
-        log(1, 'Found UUID for', spellName, ':', spellUuid || 'not found');
-
-        if (spellDoc) {
-          log(1, 'spellDoc details:', {
-            name: spellDoc.name,
-            uuid: spellDoc.uuid,
-            img: spellDoc.img,
-            type: typeof spellDoc
-          });
-        }
-
         const enrichedIcon = spellDoc ? UIHelpers.createSpellIconLink(spellDoc) : '';
-        log(1, 'enrichedIcon result for', spellName, ':', enrichedIcon);
-
         duplicateSpells.push({
           name: spellName,
           actors: [...actors],
           enrichedIcon: enrichedIcon,
-          spell: spellDoc // Add the spell doc for template access
+          spell: spellDoc
         });
         analysis.memberContributions.duplicateSpells.set(spellName, [...actors]);
       }
     }
-
-    log(1, 'Final duplicateSpells array length:', duplicateSpells.length);
     analysis.duplicateSpells = duplicateSpells;
   }
 

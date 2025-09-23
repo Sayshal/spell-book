@@ -151,8 +151,8 @@
 						{{#> "modules/spell-book/templates/components/spell-level.hbs" level=levelData.level levelName=levelData.levelName spells=levelData.spells}}
 							<!-- Individual Spell Item within spell level component -->
 							<li
-								class="spell-item{{#if ../../selectionMode}} selectable{{/if}}{{#if (lookup ../../selectedSpellsToRemove compendiumUuid)}} selected{{/if}}"
-								data-uuid="{{compendiumUuid}}" data-selection-type="remove" role="listitem">
+								class="spell-item{{#if ../../selectionMode}} selectable{{/if}}{{#if (lookup ../../selectedSpellsToRemove uuid)}} selected{{/if}}"
+								data-uuid="{{uuid}}" data-selection-type="remove" role="listitem">
 
 								<!-- Spell Name and Details -->
 								<div class="spell-name">
@@ -161,7 +161,7 @@
 										<span class="title">{{name}}</span>
 										<span class="subtitle">{{#if showCompareLink}}{{#if showCompare}}<button
 														class="compare-button compare-link{{#if isInComparison}} active{{/if}}"
-														data-action="compareSpell" data-uuid="{{compendiumUuid}}"
+														data-action="compareSpell" data-uuid="{{uuid}}"
 														aria-label="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=name}}"
 														data-tooltip="{{localize "SPELLBOOK.Comparison.Compare"}}">
 														<i class="fa-solid fa-clipboard-question"></i>
@@ -177,8 +177,7 @@
 											{{{selectRemoveCheckboxHtml}}}
 										{{else}}
 											<!-- Individual Remove Button -->
-											<button type="button" class="remove-spell" data-action="removeSpell"
-												data-uuid="{{compendiumUuid}}"
+											<button type="button" class="remove-spell" data-action="removeSpell" data-uuid="{{uuid}}"
 												aria-label="{{localize 'SPELLMANAGER.Buttons.RemoveSpell' name=name}}">
 												<i class="fas fa-trash" aria-hidden="true"></i>
 											</button>

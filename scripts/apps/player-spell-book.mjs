@@ -309,7 +309,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   async _prepareContext(options) {
     const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
-    if (isPartyMode) await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, false);
+    log(1, '(_prepareContext) NEW MODE:', this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED));
     const context = this._createBaseContext(options);
     if (!this._stateManager._initialized) await this._stateManager.initialize();
     if (!this._stateManager._classesDetected) this._stateManager.detectSpellcastingClasses();
@@ -437,6 +437,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const partyActors = PartySpellManager.getPartyActors();
     const showPartyButton = partyActors.length !== 0;
     if (showPartyButton) {
+      log(1, '(_createBaseContext) NEW MODE:', this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED));
       const isPartyModeEnabled = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
       buttons.push({
         type: 'button',
@@ -1449,6 +1450,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   </div>
   ${actionHtml}
 </li>`;
+    log(1, 'Enhancing spell with party icons from createSpellItemHTML');
     return this._enhanceSpellWithPartyIcons(spellHtml, spell);
   }
 
@@ -2149,7 +2151,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const currentlyFavorited = userData?.favorited || false;
       const newFavoriteStatus = !currentlyFavorited;
       this._stateManager.updateFavoriteSessionState(spellUuid, newFavoriteStatus);
-      const success = await DataHelpers.setSpellFavorite(spellUuid, newFavoriteStatus, targetUserId, targetActorId);
+      const success = await DataHelpers.SpellUserDataJournal.setSpellFavorite(spellUuid, newFavoriteStatus, targetUserId, targetActorId);
       if (!success) {
         log(1, `Failed to persist favorite status for ${spellUuid}`);
         this._stateManager.updateFavoriteSessionState(spellUuid, currentlyFavorited);
@@ -2284,7 +2286,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static async togglePartyMode(_event, _target) {
     const currentMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
+    log(1, 'CURRENT MODE:', { currentMode });
     await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, !currentMode);
+    log(1, 'NEW MODE:', this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED));
     await this.render();
     ui.notifications.info(!currentMode ? 'SPELLBOOK.Party.PartyModeEnabled' : 'SPELLBOOK.Party.PartyModeDisabled', { localize: true });
   }
@@ -2301,7 +2305,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _enhanceSpellWithPartyIcons(spellHtml, spellData) {
+    log(1, 'DEBUG: Enhancing spell with party icons (not working)');
     const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
+    log(1, '(_enhanceSpellWithPartyIcons) NEW MODE:', this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED));
+    log(1, 'Party Mode?', { PartyMode: !!isPartyMode, spellHtml, spellData });
     if (!isPartyMode) return spellHtml;
     const partyActors = PartySpellManager.getPartyActors();
     const tokenLimit = game.settings.get(MODULE.ID, SETTINGS.PARTY_MODE_TOKEN_LIMIT);
@@ -2341,31 +2348,20 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _actorHasSpellPrepared(actor, spellUuid) {
+    log(1, 'DEBUG: ActorHasSpellPrepared Called!');
     if (!PartySpellManager.prototype.hasViewPermission(actor)) return false;
-
-    // Check both the legacy prepared spells flag and the new class-based system
     const preparedSpells = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS) || [];
     const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
-
-    // Check legacy flag first
     if (preparedSpells.includes(spellUuid)) return true;
-
-    // Check class-based preparations
     for (const classSpells of Object.values(preparedByClass)) {
       for (const spellKey of classSpells) {
-        // Parse the class spell key to extract UUID
         const parsed = this.spellManager._parseClassSpellKey(spellKey);
         if (parsed && parsed.spellUuid === spellUuid) return true;
       }
     }
-
-    // Also check for canonical UUID matching (for spells copied from compendiums)
     for (const storedUuid of preparedSpells) {
-      if (this._normalizeSpellUuid(storedUuid) === this._normalizeSpellUuid(spellUuid)) {
-        return true;
-      }
+      if (this._normalizeSpellUuid(storedUuid) === this._normalizeSpellUuid(spellUuid)) return true;
     }
-
     return false;
   }
 
@@ -2377,8 +2373,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _normalizeSpellUuid(uuid) {
+    log(1, 'CHECKING FOR ACTOR UUID!');
     try {
       if (uuid.startsWith('Actor.')) {
+        log(1, 'FOUND ACTOR UUID!');
         const spellDoc = fromUuidSync(uuid);
         return spellDoc?.flags?.core?.sourceId || uuid;
       }

@@ -624,8 +624,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Check if a spell is in the currently selected list.
    *
-   * Performs comprehensive UUID matching including normalized forms
-   * and compendium ID variations to handle different UUID formats.
    *
    * @param {Object} spell - The spell to check
    * @param {Set<string>} selectedSpellUUIDs - Set of UUIDs in the selected list
@@ -634,21 +632,12 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   isSpellInSelectedList(spell, selectedSpellUUIDs) {
     if (!selectedSpellUUIDs.size) return false;
     if (selectedSpellUUIDs.has(spell.uuid)) return true;
-    const spellIdPart = spell.uuid.split('.').pop();
-    if (spellIdPart && selectedSpellUUIDs.has(spellIdPart)) return true;
-    const parsedUuid = foundry.utils.parseUuid(spell.uuid);
-    if (parsedUuid.collection) {
-      const normalizedId = `Compendium.${parsedUuid.collection.collection}.${parsedUuid.id}`;
-      if (selectedSpellUUIDs.has(normalizedId)) return true;
-    }
     return false;
   }
 
   /**
    * Get a set of UUIDs for spells in the currently selected list.
    *
-   * Creates a comprehensive set of spell UUIDs including all normalized
-   * forms to handle UUID variations across different sources.
    *
    * @returns {Set<string>} Set of spell UUIDs
    */
@@ -656,21 +645,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     try {
       if (!this.selectedSpellList?.spells) return new Set();
       const selectedSpellUUIDs = new Set();
-      for (const spell of this.selectedSpellList.spells) {
-        if (spell.compendiumUuid) {
-          const parsedUuid = foundry.utils.parseUuid(spell.compendiumUuid);
-          if (parsedUuid.collection) {
-            const normalizedId = `Compendium.${parsedUuid.collection.collection}.${parsedUuid.id}`;
-            selectedSpellUUIDs.add(normalizedId);
-          }
-          selectedSpellUUIDs.add(spell.compendiumUuid);
-          const idPart = spell.compendiumUuid.split('.').pop();
-          if (idPart) selectedSpellUUIDs.add(idPart);
-        }
-      }
+      for (const spell of this.selectedSpellList.spells) if (spell.uuid) selectedSpellUUIDs.add(spell.uuid);
       return selectedSpellUUIDs;
     } catch (error) {
-      log(1, 'Error getting normalized selected spell UUIDs:', error);
+      log(1, 'Error getting selected spell UUIDs:', error);
       return new Set();
     }
   }
@@ -1723,53 +1701,17 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   static handleRemoveSpell(event, _form) {
     const element = event.target.closest('[data-uuid]');
     if (!element) return;
-
     const spellUuid = element.dataset.uuid;
     if (!this.selectedSpellList || !this.isEditing) return;
-
-    log(1, 'handleRemoveSpell - Starting removal', {
-      spellUuid,
-      currentUuidsCount: this.selectedSpellList.spellUuids.length,
-      currentSpellsCount: this.selectedSpellList.spells.length
-    });
-
-    // Check if the UUID exists in our current data
     const uuidExists = this.selectedSpellList.spellUuids.includes(spellUuid);
     const spellExists = this.selectedSpellList.spells.some((spell) => spell.uuid === spellUuid || spell.compendiumUuid === spellUuid);
-
-    log(1, 'handleRemoveSpell - Existence check', {
-      spellUuid,
-      uuidExists,
-      spellExists,
-      sampleStoredUuids: this.selectedSpellList.spellUuids.slice(0, 3),
-      sampleSpellUuids: this.selectedSpellList.spells.slice(0, 2).map((s) => ({
-        uuid: s.uuid,
-        compendiumUuid: s.compendiumUuid
-      }))
-    });
-
     log(3, `Removing spell: ${spellUuid} from list`);
-
-    // Track the change
     this.pendingChanges.removed.add(spellUuid);
     this.pendingChanges.added.delete(spellUuid);
-
-    // Simple exact matching - no normalization needed
     const originalUuidCount = this.selectedSpellList.spellUuids.length;
     this.selectedSpellList.spellUuids = this.selectedSpellList.spellUuids.filter((uuid) => uuid !== spellUuid);
-
     const originalSpellCount = this.selectedSpellList.spells.length;
     this.selectedSpellList.spells = this.selectedSpellList.spells.filter((spell) => spell.uuid !== spellUuid && spell.compendiumUuid !== spellUuid);
-
-    log(1, 'handleRemoveSpell - After removal', {
-      spellUuid,
-      uuidsRemoved: originalUuidCount - this.selectedSpellList.spellUuids.length,
-      spellsRemoved: originalSpellCount - this.selectedSpellList.spells.length,
-      finalUuidsCount: this.selectedSpellList.spellUuids.length,
-      finalSpellsCount: this.selectedSpellList.spells.length
-    });
-
-    // Update UI
     this.selectedSpellList.spellsByLevel = DataHelpers.organizeSpellsByLevel(this.selectedSpellList.spells);
     this._ensureSpellIcons();
     this.render(false);
@@ -1813,49 +1755,15 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   static async handleSaveCustomList(_event, _form) {
     if (!this.selectedSpellList || !this.isEditing) return;
-
-    log(1, 'handleSaveCustomList - Starting save', {
-      removedCount: this.pendingChanges.removed.size,
-      addedCount: this.pendingChanges.added.size,
-      removedUuids: Array.from(this.pendingChanges.removed),
-      addedUuids: Array.from(this.pendingChanges.added)
-    });
-
     const document = this.selectedSpellList.document;
     const originalSpells = Array.from(document.system.spells || []);
     const currentSpells = new Set(originalSpells);
-
-    log(1, 'handleSaveCustomList - Current stored spells', {
-      originalCount: originalSpells.length,
-      sampleStored: originalSpells.slice(0, 3)
-    });
-
-    // Remove spells - simple exact matching
     for (const spellUuid of this.pendingChanges.removed) {
       const wasDeleted = currentSpells.delete(spellUuid);
-      log(1, 'handleSaveCustomList - Attempting removal', {
-        spellUuid,
-        wasDeleted,
-        remainingCount: currentSpells.size
-      });
     }
-
-    // Add spells
     log(3, `Processing ${this.pendingChanges.added.size} spell additions`);
-    for (const spellUuid of this.pendingChanges.added) {
-      currentSpells.add(spellUuid);
-    }
-
-    log(1, 'handleSaveCustomList - Final save data', {
-      originalCount: originalSpells.length,
-      finalCount: currentSpells.size,
-      actuallyChanged: originalSpells.length !== currentSpells.size
-    });
-
-    // Save to document
+    for (const spellUuid of this.pendingChanges.added) currentSpells.add(spellUuid);
     await document.update({ 'system.spells': Array.from(currentSpells) });
-
-    // Reset state
     this.pendingChanges = { added: new Set(), removed: new Set() };
     this.isEditing = false;
     await this.selectSpellList(document.uuid);

@@ -30,6 +30,7 @@
 import { MODULE } from '../constants/_module.mjs';
 import * as DataHelpers from '../data/_module.mjs';
 import * as UIHelpers from '../ui/_module.mjs';
+import { log } from '../logger.mjs';
 
 /**
  * Processed spell list structure with enhanced metadata for display.
@@ -150,10 +151,9 @@ export function processSpellListForDisplay(spellList) {
  * @returns {ProcessedSpellItem} Processed spell with display data
  */
 export function processSpellItemForDisplay(spell) {
-  if (!spell.compendiumUuid) spell.compendiumUuid = spell.uuid;
   const processed = foundry.utils.deepClone(spell);
   processed.cssClasses = 'spell-item';
-  processed.dataAttributes = `data-uuid="${spell.compendiumUuid}"`;
+  processed.dataAttributes = `data-uuid="${spell.uuid}"`;
   processed.showCompare = UIHelpers.UICustomizationHelper.isGMElementEnabled('compare');
   processed.formattedDetails = UIHelpers.UICustomizationHelper.buildGMMetadata(spell);
   return processed;
