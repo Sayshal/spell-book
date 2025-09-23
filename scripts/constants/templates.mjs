@@ -154,6 +154,10 @@ export const TEMPLATES = {
     /** Error message component for displaying user-friendly error information */
     ERROR: 'modules/spell-book/templates/components/error-message.hbs',
 
+    FOCUS_OPTION_ROW: 'modules/spell-book/templates/components/focus-options-row.hbs',
+
+    FOCUS_RESET_DIALOG_CONTENT: 'modules/spell-book/templates/components/focus-reset-dialog-content.hbs',
+
     /** Loading spinner component for async operations and data fetching */
     LOADING: 'modules/spell-book/templates/components/loading-spinner.hbs',
 

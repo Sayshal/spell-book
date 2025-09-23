@@ -23,6 +23,7 @@ import { PartySpellManager } from '../managers/_module.mjs';
 import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const { renderTemplate } = foundry.applications.handlebars;
 
 /**
  * Spellcasting focus option configuration.
@@ -161,29 +162,14 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
    *
    * @param {Event} event - The triggering click event
    * @param {HTMLElement} target - The clicked element
-   * @todo Template?
    * @static
    */
   static async addFocus(event, target) {
     if (!game.user.isGM) return;
     const container = target.closest('form').querySelector('.focus-options-list');
     const index = container.children.length;
-    const newFocusHtml = `
-    <div class="focus-option-row" data-index="${index}">
-      <input type="hidden" name="focus-id-${index}" value="focus-${index}" />
-      <div class="focus-icon-picker" data-action="selectIcon" data-index="${index}" data-tooltip="${game.i18n.localize('SPELLBOOK.FocusSettings.ClickToChangeIcon')}">
-        <img src="icons/svg/mystery-man.svg" alt="Focus Icon" class="focus-icon-preview" />
-        <input type="hidden" name="focus-icon-${index}" value="icons/svg/mystery-man.svg" />
-      </div>
-      <input type="text" name="focus-name-${index}" placeholder="${game.i18n.localize('SPELLBOOK.FocusSettings.NamePlaceholder')}"
-        data-tooltip="${game.i18n.localize('SPELLBOOK.FocusSettings.NameTooltip')}" />
-      <input type="text" name="focus-description-${index}" placeholder="${game.i18n.localize('SPELLBOOK.FocusSettings.DescriptionPlaceholder')}"
-        data-tooltip="${game.i18n.localize('SPELLBOOK.FocusSettings.DescriptionTooltip')}" />
-      <button type="button" data-action="deleteFocus" data-index="${index}" data-tooltip="${game.i18n.localize('SPELLBOOK.FocusSettings.DeleteFocus')}">
-        <i class="fas fa-trash"></i>
-      </button>
-    </div>
-  `;
+    const templateData = { index };
+    const newFocusHtml = await renderTemplate(TEMPLATES.COMPONENTS.FOCUS_OPTION_ROW, templateData);
     container.insertAdjacentHTML('beforeend', newFocusHtml);
   }
 
@@ -197,11 +183,11 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
    * @param {Event} event - The triggering click event
    * @param {HTMLElement} target - The clicked element with data-index attribute
    * @returns {Promise<void>}
-   * @todo Localize
    * @static
    */
   static async deleteFocus(event, target) {
     event.preventDefault();
+    event.stopPropagation();
     const button = target.closest('[data-index]');
     const index = parseInt(button?.dataset.index);
     if (isNaN(index)) return;
@@ -211,11 +197,11 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
     if (index < 0 || index >= focuses.length) return;
     const focusToDelete = focuses[index];
     const confirmed = await foundry.applications.api.DialogV2.wait({
-      window: { title: 'Delete Focus', icon: 'fas fa-trash' },
-      content: `<p>Delete focus "${focusToDelete.name}"?</p>`,
+      window: { title: 'SPELLBOOK.FocusSettings.DeleteDialog.Title', icon: 'fas fa-trash' },
+      content: `<p>${game.i18n.format('SPELLBOOK.FocusSettings.DeleteDialog.Content', { name: focusToDelete.name })}</p>`,
       buttons: [
-        { icon: 'fas fa-trash', label: 'Delete', action: 'delete', className: 'dialog-button danger' },
-        { icon: 'fas fa-times', label: 'Cancel', action: 'cancel', className: 'dialog-button' }
+        { icon: 'fas fa-trash', label: 'SPELLBOOK.FocusSettings.DeleteDialog.Confirm', action: 'delete', className: 'dialog-button danger' },
+        { icon: 'fas fa-times', label: 'SPELLBOOK.UI.Cancel', action: 'cancel', className: 'dialog-button' }
       ],
       default: 'cancel'
     });
@@ -236,7 +222,7 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
       for (const user of partyUsers) {
         const actor = game.actors.get(user.actorId);
         if (!actor) continue;
-        const assignedFocusId = currentSelections[user.id];
+        const assignedFocusId = selections[user.id];
         let focusName = null;
         if (assignedFocusId) {
           const focusObject = focuses.find((f) => f.id === assignedFocusId);
@@ -326,18 +312,15 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
    * @param {Event} event - The triggering event
    * @param {HTMLElement} target - The clicked element
    * @returns {Promise<void>}
-   * @todo Template?
    * @static
    */
   static async resetFocuses(event, target) {
     try {
+      const content = await renderTemplate(TEMPLATES.COMPONENTS.FOCUS_RESET_DIALOG_CONTENT);
       const result = await foundry.applications.api.DialogV2.wait({
-        window: { title: game.i18n.localize('SPELLBOOK.FocusSettings.ResetDialog.Title'), icon: 'fas fa-undo', resizable: false, minimizable: false, positioned: true },
+        window: { title: 'SPELLBOOK.FocusSettings.ResetDialog.Title', icon: 'fas fa-undo' },
         position: { width: 450, height: 'auto' },
-        content: `
-          <p>${game.i18n.localize('SPELLBOOK.FocusSettings.ResetDialog.Content')}</p>
-          <p><strong>${game.i18n.localize('SPELLBOOK.FocusSettings.ResetDialog.Warning')}</strong></p>
-        `,
+        content,
         buttons: [
           { icon: 'fas fa-undo', label: game.i18n.localize('SPELLBOOK.FocusSettings.ResetConfirm'), action: 'reset', className: 'dialog-button danger' },
           { icon: 'fas fa-times', label: game.i18n.localize('SPELLBOOK.UI.Cancel'), action: 'cancel', className: 'dialog-button' }
