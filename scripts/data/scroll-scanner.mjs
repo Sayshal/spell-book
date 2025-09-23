@@ -113,7 +113,6 @@ export class ScrollScanner {
    * Analyzes scroll activities and effects to find referenced spells,
    * then processes them for learning eligibility.
    *
-   * @todo This process seems more complicated than it should be - consider simplification
    * @param {Item5e} scroll - The scroll item to extract spell data from
    * @param {Actor5e} actor - The actor who owns the scroll
    * @returns {Promise<ScrollSpellData|null>} Processed spell data or null if no valid spell found

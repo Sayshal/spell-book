@@ -336,7 +336,7 @@ async function validateUserDataOwnership() {
     const userDataJournal = documents.find((doc) => doc.name === folderName && doc.flags?.[MODULE.ID]?.isUserSpellDataJournal);
     if (userDataJournal) {
       const currentOwnership = userDataJournal.ownership || {};
-      const correctJournalOwnership = { ...currentOwnership, default: 0, [game.user.id]: 3 };
+      const correctJournalOwnership = { ...currentOwnership, default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
       if (!isOwnershipEqual(userDataJournal.ownership, correctJournalOwnership)) {
         await userDataJournal.update({ ownership: correctJournalOwnership });
         results.fixed++;
@@ -349,7 +349,12 @@ async function validateUserDataOwnership() {
           const user = game.users.get(userId);
           if (!user) continue;
           const currentPageOwnership = page.ownership || {};
-          const correctPageOwnership = { ...currentPageOwnership, default: 0, [userId]: 3, [game.user.id]: 3 };
+          const correctPageOwnership = {
+            ...currentPageOwnership,
+            default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE,
+            [userId]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER,
+            [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER
+          };
           if (!isOwnershipEqual(page.ownership, correctPageOwnership)) {
             await page.update({ ownership: correctPageOwnership });
             results.fixed++;
@@ -393,7 +398,7 @@ async function validateSpellListOwnership() {
       const isSpellList = flags.isMerged || flags.isCustom || flags.isNewList;
       if (isSpellList) {
         const currentOwnership = journal.ownership || {};
-        const correctOwnership = { ...currentOwnership, default: 1, [game.user.id]: 3 };
+        const correctOwnership = { ...currentOwnership, default: CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
         if (!isOwnershipEqual(journal.ownership, correctOwnership)) {
           await journal.update({ ownership: correctOwnership });
           results.fixed++;
@@ -440,10 +445,10 @@ async function validateActorSpellbookOwnership() {
         const actor = game.actors.get(actorId);
         if (!actor) continue;
         const actorOwnership = actor.ownership || {};
-        const ownerUserIds = Object.keys(actorOwnership).filter((userId) => userId !== 'default' && actorOwnership[userId] === 3);
+        const ownerUserIds = Object.keys(actorOwnership).filter((userId) => userId !== 'default' && actorOwnership[userId] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
         if (ownerUserIds.length === 0) continue;
-        const correctPageOwnership = { default: 0, [game.user.id]: 3 };
-        for (const ownerUserId of ownerUserIds) correctPageOwnership[ownerUserId] = 3;
+        const correctPageOwnership = { default: 0, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
+        for (const ownerUserId of ownerUserIds) correctPageOwnership[ownerUserId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
         const currentPageOwnership = page.ownership || {};
         if (!isOwnershipEqual(currentPageOwnership, correctPageOwnership)) {
           try {

@@ -161,11 +161,7 @@ export async function syncFavoritesOnSave(actor, spellData) {
  */
 export async function processFavoritesFromForm(_form, actor) {
   try {
-    let targetUserId = game.user.id;
-    if (game.user.isActiveGM) {
-      const actorOwner = game.users.find((user) => user.character?.id === actor.id);
-      if (actorOwner) targetUserId = actorOwner.id;
-    }
+    const targetUserId = DataHelpers._getTargetUserId(actor);
     const actorSpells = actor.items.filter((item) => item.type === 'spell');
     const favoritesToAdd = [];
     log(3, `Checking ${actorSpells.length} spells on actor for favorite status`);

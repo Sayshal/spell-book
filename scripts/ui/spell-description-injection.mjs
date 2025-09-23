@@ -203,29 +203,15 @@ export class SpellDescriptionInjection {
   static async updateSpellDescription(spellItem) {
     if (!spellItem || spellItem.type !== 'spell') return;
     const canonicalUuid = UIHelpers.getCanonicalSpellUuid(spellItem.uuid);
-    let targetUserId = game.user.id;
     const actor = spellItem.parent;
-    if (actor && game.user.isActiveGM) {
-      log(3, `GM updating spell description, finding owner for actor: ${actor.name}`);
-      const characterOwner = game.users.find((user) => user.character?.id === actor.id);
-      if (characterOwner) {
-        targetUserId = characterOwner.id;
-        log(3, `Using character owner for description: ${characterOwner.name} (${characterOwner.id})`);
-      } else {
-        log(3, 'No character owner found, checking ownership levels...');
-        const ownershipOwner = game.users.find((user) => actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
-        if (ownershipOwner) {
-          targetUserId = ownershipOwner.id;
-          log(3, `Using ownership owner for description: ${ownershipOwner.name} (${ownershipOwner.id})`);
-        } else {
-          log(3, `No owner found for actor ${actor.name}, using GM data for description`);
-        }
-      }
-    }
+    const targetUserId = DataHelpers._getTargetUserId(actor);
     const injectionMode = game.settings.get(MODULE.ID, 'injectNotesIntoDescriptions');
     if (injectionMode === 'off') return;
     const userData = await DataHelpers.SpellUserDataJournal.getUserDataForSpell(canonicalUuid, targetUserId, actor?.id);
-    if (!userData?.notes || !userData.notes.trim()) await this.removeNotesFromDescription(spellItem);
+    if (!userData?.notes || !userData.notes.trim()) {
+      await this.removeNotesFromDescription(spellItem);
+      return;
+    }
     const spellKey = `${spellItem.actor?.id || 'unknown'}-${canonicalUuid}`;
     if (this._updatingSpells.has(spellKey)) return;
     this._updatingSpells.add(spellKey);

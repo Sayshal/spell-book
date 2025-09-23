@@ -268,19 +268,37 @@ export function getConfigLabel(configObject, key) {
 
 /**
  * Get the target user ID for spell data operations.
- * Determines the appropriate user ID for spell data operations,
- * prioritizing character ownership when the current user is a GM.
  *
- * @todo Consider if there's an easier way within dnd5e/foundry to accomplish this
+ * Determines the appropriate user ID for spell data operations using a hierarchical
+ * ownership detection system that prioritizes character ownership, falls back to
+ * document ownership levels, and finally uses GM permissions.
+ *
+ * The detection process follows this priority:
+ * 1. Character ownership: Find user whose assigned character matches the actor
+ * 2. Document ownership: Find user with OWNER-level permissions on the actor
+ * 3. GM fallback: Use the current GM user if no owner is found
+ *
  * @param {Actor5e} actor - The actor to determine ownership for
  * @returns {string} The user ID to use for spell data operations
  */
 export function _getTargetUserId(actor) {
   let targetUserId = game.user.id;
-  if (game.user.isActiveGM) {
-    const actorOwner = game.users.find((user) => user?.character?.id === actor?.id);
-    if (actorOwner) targetUserId = actorOwner.id;
-    else log(3, `No owner found for actor ${actor?.name}, using GM`);
+  if (game.user.isActiveGM && actor) {
+    log(3, `GM determining ownership for actor: ${actor.name}`);
+    const characterOwner = game.users.find((user) => user.character?.id === actor.id);
+    if (characterOwner) {
+      targetUserId = characterOwner.id;
+      log(3, `Using character owner: ${characterOwner.name} (${characterOwner.id})`);
+      return targetUserId;
+    }
+    log(3, 'No character owner found, checking ownership levels...');
+    const ownershipOwner = game.users.find((user) => actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+    if (ownershipOwner) {
+      targetUserId = ownershipOwner.id;
+      log(3, `Using ownership owner: ${ownershipOwner.name} (${ownershipOwner.id})`);
+      return targetUserId;
+    }
+    log(3, `No owner found for actor ${actor.name}, using GM`);
   }
   return targetUserId;
 }

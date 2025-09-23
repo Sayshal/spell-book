@@ -179,19 +179,8 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
     const actorId = formData.object.actorId;
     const canonicalUuid = UIHelpers.getCanonicalSpellUuid(spellUuid);
     try {
-      let targetUserId = game.user.id;
-      if (game.user.isActiveGM && actorId) {
-        const actor = game.actors.get(actorId);
-        if (actor) {
-          const characterOwner = game.users.find((user) => user.character?.id === actor.id);
-          if (characterOwner) targetUserId = characterOwner.id;
-          else {
-            const ownershipOwner = game.users.find((user) => actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
-            if (ownershipOwner) targetUserId = ownershipOwner.id;
-            else log(2, 'No owner found via ownership levels, using GM');
-          }
-        }
-      }
+      const actor = actorId ? game.actors.get(actorId) : null;
+      const targetUserId = DataHelpers._getTargetUserId(actor);
       await DataHelpers.SpellUserDataJournal.setSpellNotes(canonicalUuid, notes, targetUserId);
       const cacheKey = `${targetUserId}:${canonicalUuid}`;
       if (DataHelpers.SpellUserDataJournal?.cache) DataHelpers.SpellUserDataJournal.cache.delete(cacheKey);

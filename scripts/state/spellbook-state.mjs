@@ -1428,16 +1428,7 @@ export class SpellbookState {
    * @returns {Promise<void>}
    */
   async refreshSpellEnhancements() {
-    let targetUserId = game.user.id;
-    if (game.user.isActiveGM && this.app.actor) {
-      const characterOwner = game.users.find((user) => user.character?.id === this.app.actor.id);
-      if (characterOwner) targetUserId = characterOwner.id;
-      else {
-        const ownershipOwner = game.users.find((user) => this.app.actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
-        if (ownershipOwner) targetUserId = ownershipOwner.id;
-        else log(2, `No owner found for actor ${this.app.actor.name}, using GM data for enhancements`);
-      }
-    }
+    const targetUserId = DataHelpers._getTargetUserId(this.app.actor);
     if (DataHelpers.SpellUserDataJournal?.cache) {
       for (const key of DataHelpers.SpellUserDataJournal.cache.keys()) {
         if (key.startsWith(`${targetUserId}:`)) DataHelpers.SpellUserDataJournal.cache.delete(key);
