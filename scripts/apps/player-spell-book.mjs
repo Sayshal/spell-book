@@ -158,10 +158,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     tag: 'form',
     form: {
       handler: SpellBook.formHandler,
-      closeOnSubmit: true,
-      submitOnChange: false
+      closeOnSubmit: false,
+      submitOnChange: true
     },
     actions: {
+      save: SpellBook._handleSave,
       toggleSidebar: SpellBook.toggleSidebar,
       filterSpells: SpellBook.filterSpells,
       reset: SpellBook.handleReset,
@@ -266,6 +267,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
     /** @type {boolean} Whether a long rest was completed */
     this._isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED) || false;
+
+    /** @type {Map<string, any>} Internal form state cache for unsaved changes */
+    this._formStateCache = new Map();
 
     // Register dynamic parts for class tabs
     this._registerClassParts();
@@ -388,6 +392,98 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
+   * Restore form state from cache before syncing part state.
+   *
+   * This method is called by ApplicationV2 before rendering to restore
+   * cached form states, ensuring that user input persists across re-renders
+   * when switching tabs or updating parts.
+   *
+   * @param {string} partId - The part being synced
+   * @param {HTMLElement} newElement - The new element to sync to
+   * @param {HTMLElement} priorElement - The part DOM element
+   * @param {Object} state - State object for synchronization
+   * @protected
+   */
+  _preSyncPartState(partId, newElement, priorElement, state) {
+    super._preSyncPartState(partId, newElement, priorElement, state);
+    if (!priorElement || this._formStateCache.size === 0) return;
+    const allInputs = priorElement.querySelectorAll('input, select, textarea, dnd5e-checkbox');
+    allInputs.forEach((input) => {
+      const inputKey = this._getInputCacheKey(input);
+      if (!inputKey || !this._formStateCache.has(inputKey)) return;
+      const cachedValue = this._formStateCache.get(inputKey);
+      try {
+        if (input.type === 'checkbox' || input.matches('dnd5e-checkbox')) {
+          input.checked = cachedValue;
+        } else if (input.type === 'radio') {
+          input.checked = input.value === cachedValue;
+        } else if (input.tagName === 'SELECT') {
+          input.value = cachedValue;
+          if (input.multiple && Array.isArray(cachedValue)) {
+            Array.from(input.options).forEach((option) => {
+              option.selected = cachedValue.includes(option.value);
+            });
+          }
+        } else {
+          input.value = cachedValue;
+        }
+        log(3, `Restored ${inputKey} to cached value:`, cachedValue);
+      } catch (error) {
+        log(1, `Error restoring cached state for ${inputKey}:`, error);
+      }
+    });
+  }
+
+  /**
+   * Generate a unique cache key for form inputs.
+   *
+   * Creates a consistent identifier for form inputs that can be used
+   * to store and retrieve their states from the cache.
+   *
+   * @param {HTMLElement} input - The input element
+   * @returns {string|null} The cache key or null if input shouldn't be cached
+   * @private
+   */
+  _getInputCacheKey(input) {
+    if (input.disabled || input.readonly) return null;
+    if (input.name) return `name:${input.name}`;
+    if ((input.type === 'checkbox' || input.matches('dnd5e-checkbox')) && input.dataset.uuid) {
+      const sourceClass = input.dataset.sourceClass || 'unknown';
+      return `checkbox:${sourceClass}:${input.dataset.uuid}`;
+    }
+    if (input.id) return `id:${input.id}`;
+    return null;
+  }
+
+  /**
+   * Update form state cache with current input values.
+   *
+   * Captures the current state of all form inputs and stores them in the
+   * internal cache for restoration during re-renders.
+   *
+   * @param {HTMLElement} [formElement] - Specific form element to cache, defaults to this.element
+   * @private
+   */
+  _updateFormStateCache(formElement = null) {
+    const targetElement = formElement || this.element;
+    if (!targetElement) return;
+    const allInputs = targetElement.querySelectorAll('input, select, textarea, dnd5e-checkbox');
+    allInputs.forEach((input) => {
+      const inputKey = this._getInputCacheKey(input);
+      if (!inputKey) return;
+      let value;
+      if (input.type === 'checkbox' || input.matches('dnd5e-checkbox')) value = input.checked;
+      else if (input.type === 'radio') {
+        if (input.checked) value = input.value;
+        else return;
+      } else if (input.tagName === 'SELECT' && input.multiple) value = Array.from(input.selectedOptions).map((option) => option.value);
+      else value = input.value;
+      this._formStateCache.set(inputKey, value);
+    });
+    log(3, `Updated form state cache with ${this._formStateCache.size} entries`);
+  }
+
+  /**
    * Create the base context for the application.
    *
    * Establishes the foundational context including button configuration,
@@ -403,7 +499,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     /** @type {Array<SpellBookButton>} */
     const buttons = [
       {
-        type: 'submit',
+        type: 'button',
+        action: 'save',
         icon: 'fas fa-save',
         label: 'SPELLBOOK.UI.Save',
         tooltip: 'SPELLBOOK.UI.SaveTooltip',
@@ -1065,6 +1162,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @inheritdoc */
   async _onClose(options) {
+    if (this._formStateCache) this._formStateCache.clear();
     await game.settings.set(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION, this.position);
     SpellBook.DEFAULT_OPTIONS.position = this.position;
     if (this._preparationListener) {
@@ -2250,21 +2348,45 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Form handler for saving Spell Book settings with class-specific preparation AND favorites.
+   * Handle form submission by updating internal state cache.
    *
-   * Processes form submission including spell preparation changes, cantrip tracking,
-   * ritual spell handling, and favorites integration. Manages complex class-specific
-   * logic and provides comprehensive saving with proper notifications.
+   * Processes form changes and updates the internal state cache without
+   * committing changes to the actor. This allows for state preservation
+   * across re-renders while keeping a separation between form updates
+   * and data persistence.
    *
-   * @param {Event} _event - The form submission event
+   * @param {Event} event - The form submission event
    * @param {HTMLElement} form - The form element
-   * @param {Object} _formData - The form data
-   * @returns {Promise<Actor|null>} The updated actor or null
+   * @param {Object} formData - The form data
+   * @returns {Promise<void>}
    * @static
    */
-  static async formHandler(_event, form, _formData) {
+  static async formHandler(event, form, formData) {
+    log(3, 'Processing form submission for state cache update');
+    this._updateFormStateCache(form);
+    log(3, 'Form state cached successfully');
+  }
+
+  /**
+   * Handle save action to commit cached changes to the actor.
+   *
+   * Takes the current form state and commits all changes to the actor,
+   * including spell preparation changes, cantrip tracking, ritual spells,
+   * and favorites integration. This is the actual data persistence step.
+   *
+   * @param {Event} _event - The triggering event
+   * @param {HTMLElement} _target - The event target
+   * @returns {Promise<void>}
+   * @static
+   */
+  static async _handleSave(_event, _target) {
     const actor = this.actor;
-    if (!actor) return null;
+    if (!actor) {
+      ui.notifications.error('SPELLBOOK.Errors.NoActor', { localize: true });
+      return;
+    }
+    log(3, 'Starting spell book save process');
+    const form = this.element.querySelector('form') || this.element;
     const existingPreparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const spellDataByClass = {};
     const checkboxes = form.querySelectorAll('dnd5e-checkbox[data-uuid]');
@@ -2326,24 +2448,27 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     await this._stateManager.handlePostProcessing(actor);
     this._newlyCheckedCantrips.clear();
     await UIHelpers.processFavoritesFromForm(form, actor);
+    this._formStateCache.clear();
     if (actor.sheet.rendered) actor.sheet.render(true);
     if (this.ui && this.rendered) {
       this.ui.setupCantripUI();
       this.ui.setupSpellLocks();
     }
     const cprEnabled = game.modules.get('chris-premades')?.active;
-    if (!cprEnabled) return actor;
-    const cprCompatibility = game.settings.get(MODULE.ID, SETTINGS.CPR_COMPATIBILITY);
-    if (cprCompatibility) {
-      try {
-        log(3, 'Running CPR automation setup for actor:', actor.name);
-        await chrisPremades.utils.actorUtils.updateAll(actor);
-        log(3, 'CPR automation setup completed successfully');
-      } catch (error) {
-        log(1, 'Error running CPR automation setup:', error);
+    if (cprEnabled) {
+      const cprCompatibility = game.settings.get(MODULE.ID, SETTINGS.CPR_COMPATIBILITY);
+      if (cprCompatibility) {
+        try {
+          log(3, 'Running CPR automation setup for actor:', actor.name);
+          await chrisPremades.utils.actorUtils.updateAll(actor);
+          log(3, 'CPR automation setup completed successfully');
+        } catch (error) {
+          log(1, 'Error running CPR automation setup:', error);
+        }
       }
     }
-
-    return actor;
+    ui.notifications.info('SPELLBOOK.UI.ChangesSaved', { localize: true });
+    log(3, 'Spell book save process completed successfully');
+    this.close();
   }
 }
