@@ -247,13 +247,11 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     const classSettings = [];
     const availableSpellLists = await this._prepareSpellListOptions();
     const currentClassRules = this.actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
-
     if (this.actor.spellcastingClasses) {
       for (const spellcastingData of Object.values(this.actor.spellcastingClasses)) {
         const classItem = spellcastingData;
         let spellcastingConfig = classItem.system?.spellcasting;
         let spellcastingSource = classItem;
-
         if (!spellcastingConfig?.progression || spellcastingConfig.progression === 'none') {
           const subclassItem = spellcastingData._classLink;
           if (subclassItem?.system?.spellcasting?.progression && subclassItem.system.spellcasting.progression !== 'none') {
@@ -261,33 +259,26 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
             spellcastingSource = subclassItem;
           } else continue;
         }
-
         const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
         const processedClassRules = RuleSetManager.getClassRules(this.actor, identifier);
         const savedRules = currentClassRules[identifier] || {};
-
         const formRules = {
           showCantrips: 'showCantrips' in savedRules ? savedRules.showCantrips : processedClassRules.showCantrips,
           forceWizardMode: 'forceWizardMode' in savedRules ? savedRules.forceWizardMode : processedClassRules.forceWizardMode,
           cantripSwapping: savedRules.cantripSwapping || processedClassRules.cantripSwapping || 'none',
           spellSwapping: savedRules.spellSwapping || processedClassRules.spellSwapping || 'none',
           ritualCasting: savedRules.ritualCasting || processedClassRules.ritualCasting || 'none',
-          customSpellList: savedRules.customSpellList || processedClassRules.customSpellList || [], // Now always array
+          customSpellList: savedRules.customSpellList || processedClassRules.customSpellList || [],
           spellPreparationBonus: 'spellPreparationBonus' in savedRules ? savedRules.spellPreparationBonus : processedClassRules.spellPreparationBonus || 0,
           cantripPreparationBonus: 'cantripPreparationBonus' in savedRules ? savedRules.cantripPreparationBonus : processedClassRules.cantripPreparationBonus || 0,
           _noScaleValue: processedClassRules._noScaleValue
         };
-
         const spellManager = new SpellManager(this.actor);
         const maxCantrips = spellManager.getMaxAllowed(identifier);
         const currentCantrips = spellManager.getCurrentCount(identifier);
-
-        // Handle both array and string formats for backward compatibility
         const customSpellLists = Array.isArray(formRules.customSpellList) ? formRules.customSpellList : formRules.customSpellList ? [formRules.customSpellList] : [];
-
         const hasCustomSpellList = customSpellLists.length > 0;
         let customSpellListNames = [];
-
         if (hasCustomSpellList) {
           for (const uuid of customSpellLists) {
             try {
@@ -299,7 +290,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
             }
           }
         }
-
         const classValidationHelpers = this._prepareClassFormElements(identifier, formRules, availableSpellLists);
         const classData = {
           name: classItem.name,
@@ -314,16 +304,14 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
           },
           hasCustomSpellList: hasCustomSpellList,
           customSpellListName: customSpellListNames.length > 0 ? customSpellListNames.join(', ') : null,
-          customSpellListNames: customSpellListNames, // Array of names for detailed display
-          customSpellListCount: customSpellLists.length, // Count for display
+          customSpellListNames: customSpellListNames,
+          customSpellListCount: customSpellLists.length,
           formElements: classValidationHelpers,
           spellcastingSource: spellcastingSource
         };
-
         classSettings.push(classData);
       }
     }
-
     classSettings.sort((a, b) => a.name.localeCompare(b.name));
     return classSettings;
   }
@@ -349,14 +337,12 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.ShowCantrips.Label')
     });
     showCantripsCheckbox.id = `show-cantrips-${identifier}`;
-
     const forceWizardCheckbox = ValidationHelpers.createCheckbox({
       name: `class.${identifier}.forceWizardMode`,
       checked: formRules.forceWizardMode,
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.ForceWizardMode.Label')
     });
     forceWizardCheckbox.id = `force-wizard-mode-${identifier}`;
-
     const cantripSwappingValue = formRules.cantripSwapping;
     const cantripSwappingOptions = [
       { value: 'none', label: game.i18n.localize('SPELLBOOK.Settings.CantripSwapping.None'), selected: cantripSwappingValue === 'none' },
@@ -369,7 +355,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.CantripSwapping.Label')
     });
     cantripSwappingSelect.id = `cantrip-swapping-${identifier}`;
-
     const spellSwappingValue = formRules.spellSwapping;
     const spellSwappingOptions = [
       { value: 'none', label: game.i18n.localize('SPELLBOOK.Settings.SpellSwapping.None'), selected: spellSwappingValue === 'none' },
@@ -382,7 +367,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.SpellSwapping.Label')
     });
     spellSwappingSelect.id = `spell-swapping-${identifier}`;
-
     const ritualCastingValue = formRules.ritualCasting;
     const ritualCastingOptions = [
       { value: 'none', label: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.None'), selected: ritualCastingValue === 'none' },
@@ -395,36 +379,22 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.RitualCasting.Label')
     });
     ritualCastingSelect.id = `ritual-casting-${identifier}`;
-
-    // Prepare custom spell lists multi-select
     const currentCustomSpellLists = Array.isArray(formRules.customSpellList) ? formRules.customSpellList : formRules.customSpellList ? [formRules.customSpellList] : [];
-
-    // Create multi-select options with group information
-    const multiSelectOptions = availableSpellLists.map((option) => ({
-      value: option.value,
-      label: option.label,
-      group: this._getSpellListGroupLabel(option.type)
-    }));
-
-    // Filter to only include groups that have options
+    const multiSelectOptions = availableSpellLists.map((option) => ({ value: option.value, label: option.label, group: this._getSpellListGroupLabel(option.type) }));
     const allPossibleGroups = ['SPELLBOOK.Settings.SpellListGroups.Class', 'SPELLBOOK.Settings.SpellListGroups.Subclass', 'SPELLBOOK.Settings.SpellListGroups.Other'];
-
     const groupsWithOptions = allPossibleGroups.filter((groupKey) => {
       return multiSelectOptions.some((option) => option.group === groupKey);
     });
-
     const customSpellListsMultiSelect = ValidationHelpers.createMultiSelect(multiSelectOptions, {
       name: `class.${identifier}.customSpellList`,
       selectedValues: currentCustomSpellLists,
-      groups: groupsWithOptions, // Only include groups that have options
+      groups: groupsWithOptions,
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.CustomSpellLists.Label'),
       cssClass: 'spell-list-multi-select'
     });
     customSpellListsMultiSelect.id = `custom-spell-lists-${identifier}`;
-
     const spellPreparationBonusControls = this._createSpellPreparationBonusControls(identifier, formRules.spellPreparationBonus);
     const cantripPreparationBonusControls = this._createCantripPreparationBonusControls(identifier, formRules.cantripPreparationBonus);
-
     return {
       showCantripsCheckboxHtml: ValidationHelpers.elementToHtml(showCantripsCheckbox),
       forceWizardModeCheckboxHtml: ValidationHelpers.elementToHtml(forceWizardCheckbox),
@@ -583,31 +553,26 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       const allSpellLists = [];
       const allJournalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
       const journalPacks = [];
-
       for (const pack of allJournalPacks) {
         const shouldShow = await DataHelpers.shouldShowInSettings(pack);
         if (shouldShow) journalPacks.push(pack);
       }
-
       for (const pack of journalPacks) {
         let topLevelFolderName = pack.metadata.label;
         if (pack.folder) {
           if (pack.folder.depth !== 1) topLevelFolderName = pack.folder.getParentFolders().at(-1).name;
           else topLevelFolderName = pack.folder.name;
         }
-
         const index = await pack.getIndex();
         for (const journalData of index) {
           const journal = await pack.getDocument(journalData._id);
           for (const page of journal.pages) {
             if (page.type !== 'spells' || page.system?.type === 'other') continue;
             if (hiddenLists.includes(page.uuid)) continue;
-
             const flags = page.flags?.[MODULE.ID] || {};
             const isActorOwned = !!flags.actorId;
             const isCustom = !!flags.isCustom || !!flags.isNewList;
             const isMerged = !!flags.isMerged;
-
             allSpellLists.push({
               uuid: page.uuid,
               name: page.name,
@@ -616,17 +581,13 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
               isCustom,
               isMerged,
               flags,
-              type: page.system?.type || 'other' // Add type information for grouping
+              type: page.system?.type || 'other'
             });
           }
         }
       }
-
-      // Convert to the format needed for multi-select with type information
       const spellListOptions = allSpellLists.map((list) => {
         let label = list.name;
-
-        // Add context for different list types
         if (list.isActorOwned && list.flags.actorId) {
           const actor = game.actors.get(list.flags.actorId);
           const actorName = actor ? actor.name : game.i18n.localize('SPELLMANAGER.ListSource.Character');
@@ -634,17 +595,9 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         } else if (!list.isActorOwned && !list.isCustom && !list.isMerged) {
           label = `${list.name} (${list.pack})`;
         }
-
-        return {
-          value: list.uuid,
-          label: label,
-          type: list.type // This will be used for grouping
-        };
+        return { value: list.uuid, label: label, type: list.type };
       });
-
-      // Sort by name within each type
       spellListOptions.sort((a, b) => a.label.localeCompare(b.label));
-
       log(3, `Prepared ${spellListOptions.length} spell list options for settings dialog`);
       return spellListOptions;
     } catch (error) {

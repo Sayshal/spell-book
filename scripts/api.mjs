@@ -131,9 +131,7 @@ export function createAPI() {
       },
 
       /** @type {APIMigrations} Migration functions */
-      migrations: {
-        forceMigration
-      },
+      migrations: { forceMigration },
 
       /** @type {*} Preloaded spell data for performance optimization */
       preloadedData: null,
@@ -184,11 +182,7 @@ export function createAPI() {
       openAnalyticsDashboard: (options = {}) => {
         const viewMode = options.viewMode || (game.user.isGM ? 'gm' : 'personal');
         const userId = options.userId || game.user.id;
-
-        const dashboard = new SpellAnalyticsDashboard({
-          viewMode: viewMode,
-          userId: userId
-        });
+        const dashboard = new SpellAnalyticsDashboard({ viewMode: viewMode, userId: userId });
         dashboard.render(true);
         return dashboard;
       },
@@ -255,8 +249,6 @@ export function createAPI() {
       /** @type {Function} Module logging function with level-based filtering */
       log
     };
-
-    // Register API globally for external access
     globalThis.SPELLBOOK = api;
     log(3, 'Module API registered with all components');
     return api;

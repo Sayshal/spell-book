@@ -700,58 +700,28 @@ async function migratePackSorting() {
  */
 export async function migrateCustomSpellListFormat() {
   log(3, 'Starting custom spell list format migration...');
-
-  const results = {
-    processed: 0,
-    updated: 0,
-    migratedActors: [],
-    errors: []
-  };
-
+  const results = { processed: 0, updated: 0, migratedActors: [], errors: [] };
   try {
-    // Get all world actors
     const actors = game.actors.contents;
-
     for (const actor of actors) {
       results.processed++;
-
       try {
         const currentRules = actor.getFlag(MODULE.ID, FLAGS.SPELLCASTING_RULES) || {};
         let hasUpdates = false;
         const updatedRules = { ...currentRules };
         const migratedClasses = [];
-
-        // Check each class's rules for string customSpellList values
         for (const [classId, rules] of Object.entries(currentRules)) {
           if (rules && rules.customSpellList && typeof rules.customSpellList === 'string') {
-            log(4, `Migrating custom spell list for ${actor.name} class ${classId}: "${rules.customSpellList}" -> ["${rules.customSpellList}"]`);
-
-            // Convert string to single-element array
-            updatedRules[classId] = {
-              ...rules,
-              customSpellList: [rules.customSpellList]
-            };
-
-            migratedClasses.push({
-              classId: classId,
-              oldValue: rules.customSpellList,
-              newValue: [rules.customSpellList]
-            });
-
+            log(3, `Migrating custom spell list for ${actor.name} class ${classId}: "${rules.customSpellList}" -> ["${rules.customSpellList}"]`);
+            updatedRules[classId] = { ...rules, customSpellList: [rules.customSpellList] };
+            migratedClasses.push({ classId: classId, oldValue: rules.customSpellList, newValue: [rules.customSpellList] });
             hasUpdates = true;
           }
         }
-
-        // Save updated rules if changes were made
         if (hasUpdates) {
           await actor.setFlag(MODULE.ID, FLAGS.SPELLCASTING_RULES, updatedRules);
           results.updated++;
-          results.migratedActors.push({
-            id: actor.id,
-            name: actor.name,
-            migratedClasses: migratedClasses
-          });
-
+          results.migratedActors.push({ id: actor.id, name: actor.name, migratedClasses: migratedClasses });
           log(3, `Migrated custom spell list format for ${actor.name} (${migratedClasses.length} classes)`);
         }
       } catch (error) {
@@ -760,18 +730,13 @@ export async function migrateCustomSpellListFormat() {
         log(1, errorMessage, error);
       }
     }
-
-    if (results.updated > 0) {
-      log(2, `Custom spell list format migration completed: ${results.updated}/${results.processed} actors updated`);
-    } else {
-      log(3, `No custom spell list format migration needed (${results.processed} actors checked)`);
-    }
+    if (results.updated > 0) log(2, `Custom spell list format migration completed: ${results.updated}/${results.processed} actors updated`);
+    else log(3, `No custom spell list format migration needed (${results.processed} actors checked)`);
   } catch (error) {
     const errorMessage = `Critical error during custom spell list format migration: ${error.message}`;
     results.errors.push(errorMessage);
     log(1, errorMessage, error);
   }
-
   return results;
 }
 
@@ -790,14 +755,11 @@ export async function migrateCustomSpellListFormat() {
  */
 async function logMigrationResults(deprecatedResults, folderResults, ownershipResults, packSortingResults, customSpellListResults) {
   const totalProcessed = deprecatedResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed + customSpellListResults.processed;
-
   if (totalProcessed === 0) {
     log(3, 'No migration updates needed');
     return;
   }
-
   console.group('Spell Book Migration Results');
-
   if (deprecatedResults.processed > 0) {
     console.group('Deprecated Flags Migration');
     console.log(`Processed: ${deprecatedResults.processed} documents`);
@@ -805,7 +767,6 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
     console.log('Affected documents:', deprecatedResults.affectedDocuments);
     console.groupEnd();
   }
-
   if (folderResults.processed > 0) {
     console.group('Folder Migration');
     console.log(`Processed: ${folderResults.processed} journals`);
@@ -815,7 +776,6 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
     if (folderResults.errors.length > 0) console.log('Errors:', folderResults.errors);
     console.groupEnd();
   }
-
   if (ownershipResults.processed > 0) {
     console.group('Ownership Validation');
     console.log(`Total fixed: ${ownershipResults.processed} documents`);
@@ -827,7 +787,6 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
     if (ownershipResults.errors.length > 0) console.log('Errors:', ownershipResults.errors);
     console.groupEnd();
   }
-
   if (packSortingResults.processed > 0) {
     console.group('Pack Sorting Migration');
     console.log(`Packs updated: ${packSortingResults.packsUpdated}`);
@@ -835,7 +794,6 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
     if (packSortingResults.errors.length > 0) console.log('Errors:', packSortingResults.errors);
     console.groupEnd();
   }
-
   if (customSpellListResults.processed > 0) {
     console.group('Custom Spell List Format Migration');
     console.log(`Processed: ${customSpellListResults.processed} actors`);
@@ -844,17 +802,9 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
     if (customSpellListResults.errors.length > 0) console.log('Errors:', customSpellListResults.errors);
     console.groupEnd();
   }
-
   console.groupEnd();
-
   const content = await buildChatContent(deprecatedResults, folderResults, ownershipResults, packSortingResults, customSpellListResults);
-  ChatMessage.create({
-    content: content,
-    whisper: [game.user.id],
-    user: game.user.id,
-    flags: { 'spell-book': { messageType: 'migration-report' } }
-  });
-
+  ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id, flags: { 'spell-book': { messageType: 'migration-report' } } });
   log(3, `Migration complete: ${totalProcessed} documents/folders processed`);
 }
 

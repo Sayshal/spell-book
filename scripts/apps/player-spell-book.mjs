@@ -1273,19 +1273,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const result = sortedFilters
       .map((filter) => {
         let filterEnabled = filter.enabled;
-
-        // Special handling for favorites filter
         if (filter.id === 'favorited') {
           const favoritesUIEnabled = game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES);
           filterEnabled = filter.enabled && favoritesUIEnabled;
         }
-
-        // Special handling for party filter - only show when party mode is enabled
         if (filter.id === 'preparedByParty') {
           const isPartyModeEnabled = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
           filterEnabled = filter.enabled && isPartyModeEnabled;
         }
-
         const result = {
           id: filter.id,
           type: filter.type,
@@ -1293,7 +1288,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           label: game.i18n.localize(filter.label),
           enabled: filterEnabled
         };
-
         let element;
         switch (filter.type) {
           case 'search':
@@ -2344,7 +2338,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         log(3, 'CPR automation setup completed successfully');
       } catch (error) {
         log(1, 'Error running CPR automation setup:', error);
-        // Don't throw - this shouldn't break the spell book functionality
       }
     }
 

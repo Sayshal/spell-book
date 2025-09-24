@@ -714,86 +714,31 @@ export class SpellManager {
    * @returns {Promise<void>}
    */
   async _handleUnpreparingSpell(uuid, sourceClass, spellIdsToRemove, spellsToUpdate) {
-    // Find all matching spells (there might be both prepared and ritual versions)
     const matchingSpells = this.actor.items.filter(
       (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
     );
-
-    if (matchingSpells.length === 0) {
-      log(1, 'No matching spells found for unpreparing', { uuid, sourceClass });
-      return;
-    }
-
-    // Prioritize finding the prepared version to unprepare
+    if (matchingSpells.length === 0) return;
     let targetSpell = matchingSpells.find((spell) => spell.system.prepared === 1);
-
-    log(1, 'Unpreparing spell', {
-      uuid: uuid,
-      sourceClass: sourceClass,
-      targetSpellId: targetSpell.id,
-      targetMethod: targetSpell.system?.method,
-      targetPrepared: targetSpell.system?.prepared,
-      totalMatchingSpells: matchingSpells.length
-    });
-
     const isAlwaysPrepared = targetSpell.system.prepared === 2;
     const isGranted = !!targetSpell.flags?.dnd5e?.cachedFor;
     const isFromClassFeature = targetSpell.system.prepared === 2;
-
-    if (isAlwaysPrepared || isGranted || isFromClassFeature) {
-      log(1, 'Spell protected from unpreparing', {
-        spellName: targetSpell.name,
-        reason: isAlwaysPrepared ? 'always-prepared' : isGranted ? 'granted' : 'class-feature'
-      });
-      return;
-    }
-
+    if (isAlwaysPrepared || isGranted || isFromClassFeature) return;
     const isRitualSpell = this._isRitualSpell(targetSpell);
     const classRules = RuleSetManager.getClassRules(this.actor, sourceClass);
     const ritualCastingEnabled = classRules.ritualCasting === 'always';
-
-    log(1, 'Ritual detection in unpreparing', {
-      spellName: targetSpell.name,
-      isRitualSpell: isRitualSpell,
-      ritualCastingEnabled: ritualCastingEnabled,
-      spellLevel: targetSpell.system.level,
-      ritualCastingMode: classRules.ritualCasting,
-      spellComponents: targetSpell.system?.components,
-      spellProperties: targetSpell.system?.properties
-    });
-
-    // Check if there's already a ritual version
     const existingRitualSpell = matchingSpells.find((spell) => spell.system?.method === 'ritual' && spell.id !== targetSpell.id);
-
     if (isRitualSpell && ritualCastingEnabled && targetSpell.system.level > 0) {
       if (targetSpell.system.method === 'ritual') {
-        // Don't remove ritual spells when unpreparing - they should stay as rituals
-        log(1, 'Keeping ritual spell as ritual', { spellName: targetSpell.name });
         return;
       } else if (existingRitualSpell) {
-        // There's already a ritual version, just remove the prepared version
         spellIdsToRemove.push(targetSpell.id);
-        log(1, 'Removing prepared version, keeping existing ritual version', {
-          spellName: targetSpell.name,
-          removedId: targetSpell.id,
-          ritualId: existingRitualSpell.id
-        });
         return;
       } else {
-        // Convert the prepared spell to ritual mode
-        spellsToUpdate.push({
-          _id: targetSpell.id,
-          'system.method': 'ritual',
-          'system.prepared': 0
-        });
-        log(1, `Converting prepared spell to ritual mode: ${targetSpell.name}`);
+        spellsToUpdate.push({ _id: targetSpell.id, 'system.method': 'ritual', 'system.prepared': 0 });
         return;
       }
     }
-
-    // Default case: remove the spell entirely
     spellIdsToRemove.push(targetSpell.id);
-    log(1, `Marking spell for removal: ${targetSpell.name} (${sourceClass})`);
   }
 
   /**
@@ -805,12 +750,8 @@ export class SpellManager {
    * @private
    */
   _isRitualSpell(spell) {
-    if (spell.system?.properties && spell.system.properties.has) {
-      return spell.system.properties.has('ritual');
-    }
-    if (spell.system?.properties && Array.isArray(spell.system.properties)) {
-      return spell.system.properties.some((prop) => prop.value === 'ritual');
-    }
+    if (spell.system?.properties && spell.system.properties.has) return spell.system.properties.has('ritual');
+    if (spell.system?.properties && Array.isArray(spell.system.properties)) return spell.system.properties.some((prop) => prop.value === 'ritual');
     return spell.system?.components?.ritual || false;
   }
 

@@ -116,32 +116,24 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
   /** @inheritdoc */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-
-    // Load existing loadouts with metadata
     const existingLoadouts = this.loadoutManager.getAvailableLoadouts(this.classIdentifier);
     const loadoutsWithCounts = existingLoadouts.map((loadout) => ({
       ...loadout,
       spellCount: Array.isArray(loadout.spellConfiguration) ? loadout.spellConfiguration.length : 0,
       formattedDate: loadout.updatedAt ? foundry.utils.timeSince(loadout.updatedAt) : null
     }));
-
-    // Create form input elements
     const nameInput = ValidationHelpers.createTextInput({
       name: 'loadout-name',
       placeholder: game.i18n.localize('SPELLBOOK.Loadouts.NamePlaceholder'),
       ariaLabel: game.i18n.localize('SPELLBOOK.Loadouts.LoadoutName')
     });
-
     const descriptionInput = ValidationHelpers.createTextInput({
       name: 'loadout-description',
       placeholder: game.i18n.localize('SPELLBOOK.Loadouts.DescriptionPlaceholder'),
       ariaLabel: game.i18n.localize('SPELLBOOK.Loadouts.LoadoutDescription')
     });
-
-    // Get current spell configuration info
     const currentState = this.loadoutManager.captureCurrentState(this.classIdentifier);
     const currentSpellCount = currentState.length;
-
     return {
       ...context,
       classIdentifier: this.classIdentifier,
@@ -175,25 +167,17 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
     const formData = new FormData(form);
     const name = formData.get('loadout-name')?.trim();
     const description = formData.get('loadout-description')?.trim() || '';
-
-    // Validate required fields
     if (!name) {
       ui.notifications.warn(game.i18n.localize('SPELLBOOK.Loadouts.NameRequired'));
       return;
     }
-
     try {
-      // Capture current spell configuration
       const spellConfiguration = this.loadoutManager.captureCurrentState(this.classIdentifier);
-
       if (spellConfiguration.length === 0) {
         ui.notifications.warn(game.i18n.localize('SPELLBOOK.Loadouts.NoSpellsPrepared'));
         return;
       }
-
-      // Save the loadout
       const success = await this.loadoutManager.saveLoadout(name, description, spellConfiguration, this.classIdentifier);
-
       if (success) {
         ui.notifications.info(game.i18n.format('SPELLBOOK.Loadouts.Saved', { name }));
         form.reset();
@@ -219,29 +203,14 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
   static async overwriteLoadout(_event, target) {
     const loadoutId = target.dataset.loadoutId;
     const loadoutName = target.dataset.loadoutName;
-
     if (!loadoutId) return;
-
     try {
-      // Load existing loadout data
       const existingLoadout = this.loadoutManager.loadLoadout(loadoutId);
       if (!existingLoadout) return;
-
-      // Capture current spell configuration
       const spellConfiguration = this.loadoutManager.captureCurrentState(this.classIdentifier);
       if (spellConfiguration.length === 0) return;
-
-      // Update loadout with new configuration
-      const updatedLoadout = {
-        ...existingLoadout,
-        spellConfiguration,
-        updatedAt: Date.now()
-      };
-
-      await this.loadoutManager.actor.update({
-        [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.${loadoutId}`]: updatedLoadout
-      });
-
+      const updatedLoadout = { ...existingLoadout, spellConfiguration, updatedAt: Date.now() };
+      await this.loadoutManager.actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.${loadoutId}`]: updatedLoadout });
       this.loadoutManager._invalidateCache();
       ui.notifications.info(game.i18n.format('SPELLBOOK.Loadouts.Overwritten', { name: loadoutName }));
       await this.render(false);
@@ -264,15 +233,11 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
   static async deleteLoadout(_event, target) {
     const loadoutId = target.dataset.loadoutId;
     const loadoutName = target.dataset.loadoutName;
-
     if (!loadoutId) return;
-
-    // Confirm deletion with user
     const confirmed = await foundry.applications.api.DialogV2.confirm({
       title: game.i18n.localize('SPELLBOOK.Loadouts.ConfirmDelete'),
       content: game.i18n.format('SPELLBOOK.Loadouts.ConfirmDeleteContent', { name: loadoutName })
     });
-
     if (confirmed) {
       try {
         const success = await this.loadoutManager.deleteLoadout(loadoutId);
@@ -297,7 +262,6 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
   static applyLoadout(_event, target) {
     const loadoutId = target.dataset.loadoutId;
     if (!loadoutId) return;
-
     try {
       const success = this.loadoutManager.applyLoadout(loadoutId, this.classIdentifier);
       if (success) this.close();
@@ -316,16 +280,13 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
    */
   _setupSpellPreviewHandlers() {
     const previewIcons = this.element.querySelectorAll('.spell-preview-icon');
-
     previewIcons.forEach((icon) => {
       icon.addEventListener('mouseenter', async (event) => {
         await this._showSpellPreview(event);
       });
-
       icon.addEventListener('mouseleave', () => {
         this._hideSpellPreview();
       });
-
       icon.addEventListener('mousemove', (event) => {
         this._positionTooltip(event);
       });
@@ -345,10 +306,7 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
   async _showSpellPreview(event) {
     const loadoutId = event.target.dataset.loadoutId;
     const loadout = this.loadoutManager.loadLoadout(loadoutId);
-
     if (!loadout || !loadout.spellConfiguration) return;
-
-    // Create or get existing tooltip element
     let tooltip = document.getElementById('spell-preview-tooltip');
     if (!tooltip) {
       tooltip = document.createElement('div');
@@ -356,9 +314,7 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
       tooltip.className = 'spell-preview-tooltip';
       document.body.appendChild(tooltip);
     }
-
     try {
-      // Show loading state
       tooltip.innerHTML = `
       <div class="tooltip-content">
         <div class="loading">${game.i18n.localize('SPELLBOOK.Loadouts.LoadingSpells')}</div>
@@ -366,30 +322,18 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
     `;
       tooltip.style.display = 'block';
       this._positionTooltip(event, tooltip);
-
-      // Load spell data for all spells in loadout
       const spellData = await Promise.all(
         loadout.spellConfiguration.map(async (uuid) => {
           const spell = await fromUuid(uuid);
-          return spell
-            ? {
-                name: spell.name,
-                img: spell.img,
-                level: spell.system?.level || 0,
-                uuid: uuid
-              }
-            : null;
+          return spell ? { name: spell.name, img: spell.img, level: spell.system?.level || 0, uuid: uuid } : null;
         })
       );
-
-      // Filter and sort valid spells
       const validSpells = spellData
         .filter((spell) => spell !== null)
         .sort((a, b) => {
           if (a.level !== b.level) return a.level - b.level;
           return a.name.localeCompare(b.name);
         });
-
       if (validSpells.length === 0) {
         tooltip.innerHTML = `
         <div class="tooltip-content">
@@ -398,8 +342,6 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
       `;
         return;
       }
-
-      // Generate spell list HTML
       const spellsHtml = validSpells
         .map(
           (spell) => `
@@ -411,8 +353,6 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
     `
         )
         .join('');
-
-      // Update tooltip with spell data
       tooltip.innerHTML = `
       <div class="tooltip-content">
         <div class="tooltip-header">
@@ -458,28 +398,22 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
   _positionTooltip(event, tooltip = null) {
     if (!tooltip) tooltip = document.getElementById('spell-preview-tooltip');
     if (!tooltip) return;
-
     const offset = 15;
     const x = event.clientX + offset;
     const y = event.clientY + offset;
     const rect = tooltip.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-
     let finalX = x;
     let finalY = y;
-
-    // Adjust position to keep tooltip in viewport
     if (x + rect.width > viewportWidth) finalX = event.clientX - rect.width - offset;
     if (y + rect.height > viewportHeight) finalY = event.clientY - rect.height - offset;
-
     tooltip.style.left = `${finalX}px`;
     tooltip.style.top = `${finalY}px`;
   }
 
   /** @override */
   _onClose() {
-    // Clean up tooltip when dialog closes
     const tooltip = document.getElementById('spell-preview-tooltip');
     if (tooltip) tooltip.remove();
     super._onClose();

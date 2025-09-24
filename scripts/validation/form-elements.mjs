@@ -206,21 +206,19 @@ export function createSelect(config) {
  * @returns {HTMLElement} The created multi-select element
  */
 export function createMultiSelect(options, config) {
-  // Prepare configuration for Foundry's createMultiSelectInput
   const multiSelectConfig = {
     name: config.name,
     type: config.type || 'select',
     options: options,
     groups: config.groups || [],
-    localize: config.localize !== false, // Default to true
-    sort: config.sort !== false, // Default to true
+    localize: config.localize !== false,
+    sort: config.sort !== false,
     value: config.selectedValues || [],
     disabled: config.disabled || '',
     ariaLabel: config.ariaLabel || '',
     classes: config.cssClass || '',
     blank: config.blank || false
   };
-
   return foundry.applications.fields.createMultiSelectInput(multiSelectConfig);
 }
 

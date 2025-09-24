@@ -104,7 +104,7 @@ export async function getClassSpellList(className, classUuid, actor) {
               if (customSpellList && customSpellList.system?.spells && customSpellList.system.spells.size > 0) {
                 spellSets.push(customSpellList.system.spells);
                 sourceNames.push(customSpellList.name || 'Unknown List');
-                log(4, `Loaded custom spell list: ${customSpellList.name} (${customSpellList.system.spells.size} spells)`);
+                log(3, `Loaded custom spell list: ${customSpellList.name} (${customSpellList.system.spells.size} spells)`);
               } else {
                 log(2, `Custom spell list has no spells: ${uuid}`);
               }
@@ -383,7 +383,7 @@ function mergeSpellSets(spellSets, sourceNames = []) {
       for (const spell of spellSet) mergedSet.add(spell);
       const added = mergedSet.size - beforeSize;
       totalSpells += spellSet.size;
-      log(4, `Merged ${spellSet.size} spells from ${sourceName} (${added} new, ${spellSet.size - added} duplicates)`);
+      log(3, `Merged ${spellSet.size} spells from ${sourceName} (${added} new, ${spellSet.size - added} duplicates)`);
     } else {
       log(3, `No spells found in ${sourceName}`);
     }
