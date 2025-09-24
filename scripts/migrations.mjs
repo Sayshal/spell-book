@@ -196,7 +196,7 @@ async function migrateDocument(doc, deprecatedFlags) {
   const updates = {};
   const removedFlags = [];
   let hasRemovals = false;
-  const nullValidFlags = ['ruleSetOverride', 'enforcementBehavior'];
+  const nullValidFlags = ['ruleSetOverride', 'enforcementBehavior', 'customSpellList'];
   for (const [key, value] of Object.entries(flags)) {
     const isDeprecated = deprecatedFlags.some((deprecated) => deprecated.key === key);
     const isInvalid = nullValidFlags.includes(key)
@@ -704,9 +704,10 @@ export async function migrateCustomSpellListFormat() {
   try {
     const actors = game.actors.contents;
     for (const actor of actors) {
-      results.processed++;
       try {
         const currentRules = actor.getFlag(MODULE.ID, FLAGS.SPELLCASTING_RULES) || {};
+        if (Object.keys(currentRules).length === 0) continue;
+        results.processed++;
         let hasUpdates = false;
         const updatedRules = { ...currentRules };
         const migratedClasses = [];
