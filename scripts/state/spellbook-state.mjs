@@ -563,12 +563,10 @@ export class SpellbookState {
   }
 
   /**
-   * Organize spells into levels with grouped structure for a specific class.
-   *
    * Takes an array of spell items and organizes them by spell level, enriching
    * each spell with preparation status, user data, and UI-ready information.
-   * Handles both actor spells and compendium spells with deduplication and
-   * prioritizes prepared spells over ritual versions for duplicate UUIDs.
+   * Handles both actor spells and compendium spells with support for multiple
+   * preparation contexts (allows same spell with different preparation methods).
    *
    * @param {Array<Object>} spellItems - Array of spell documents
    * @param {string} classIdentifier - The class identifier
@@ -578,10 +576,11 @@ export class SpellbookState {
   async _organizeSpellsByLevelForClass(spellItems, classIdentifier) {
     const spellsByLevel = {};
     const processedSpellIds = new Set();
-    const processedSpellNames = new Set();
     const targetUserId = DataHelpers._getTargetUserId(this.actor);
     const actorId = this.actor?.id;
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
+    const preparableSpells = [];
+    const specialModeSpells = [];
     if (this.actor) {
       const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
       const spellDeduplicationMap = new Map();
@@ -600,33 +599,37 @@ export class SpellbookState {
         }
       }
       for (const spell of spellDeduplicationMap.values()) {
-        const level = spell.system.level;
-        const spellName = spell.name.toLowerCase();
+        if (spell?.system?.level === undefined) continue;
         const preparationMode = spell.system.method;
-        const isSpecialMode = ['innate', 'pact', 'atwill', 'always'].includes(preparationMode);
+        const isSpecialMode = ['innate', 'pact', 'atwill'].includes(preparationMode);
+        const isAlwaysPrepared = spell.system.prepared === 2;
+        const isGranted = !!spell.flags?.dnd5e?.cachedFor;
+        const isOnlySpecial = isSpecialMode || isAlwaysPrepared || isGranted;
+        if (isOnlySpecial) specialModeSpells.push(spell);
+        else preparableSpells.push(spell);
+      }
+    }
+    const processedPreparableSpells = new Set();
+    for (const spell of preparableSpells) {
+      const level = spell.system.level;
+      const spellName = spell.name.toLowerCase();
+      const spellKey = spell.flags?.core?.sourceId || spell.uuid;
+      if (!processedPreparableSpells.has(spellKey)) {
         if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
         const compendiumUuid = spell.flags?.core?.sourceId || spell.uuid;
-        const spellData = { ...spell, compendiumUuid: compendiumUuid, filterData: UIHelpers.extractSpellFilterData(spell), enrichedIcon: UIHelpers.createSpellIconLink(spell) };
-        if (spell.system?.sourceClass) {
-          spellData.sourceClass = spell.system.sourceClass;
-          spellData.system = spellData.system || {};
-          spellData.system.sourceClass = spell.system.sourceClass;
-        } else if (spell.sourceClass) {
-          spellData.sourceClass = spell.sourceClass;
-          spellData.system = spellData.system || {};
-          spellData.system.sourceClass = spell.sourceClass;
-        } else if (!isSpecialMode) {
-          spellData.sourceClass = classIdentifier;
-          spellData.system = spellData.system || {};
-          spellData.system.sourceClass = classIdentifier;
-        }
-        if (preparationMode !== 'ritual' && spell.system?.components?.ritual) spellData.canCastAsRitual = true;
+        const spellData = { ...spell, compendiumUuid: compendiumUuid };
+        spellData.sourceClass = classIdentifier;
+        spellData.system = spellData.system || {};
+        spellData.system.sourceClass = classIdentifier;
+        if (spell.system?.method !== 'ritual' && spell.system?.components?.ritual) spellData.canCastAsRitual = true;
         spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, classIdentifier);
+        spellData.filterData = UIHelpers.extractSpellFilterData(spell);
+        spellData.enrichedIcon = UIHelpers.createSpellIconLink(spell);
         const enhancedSpell = DataHelpers.SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
         Object.assign(spellData, enhancedSpell);
         spellsByLevel[level].spells.push(spellData);
+        processedPreparableSpells.add(spellKey);
         processedSpellIds.add(spell.id || spell.uuid);
-        processedSpellNames.add(spellName);
       }
     }
     const compendiumDataPromises = spellItems.map((spell) => DataHelpers.SpellUserDataJournal.getUserDataForSpell(spell.uuid || spell.compendiumUuid, targetUserId, actorId));
@@ -634,10 +637,9 @@ export class SpellbookState {
     for (const spell of spellItems) {
       if (spell?.system?.level === undefined) continue;
       const level = spell.system.level;
-      const spellName = spell.name.toLowerCase();
-      if (processedSpellNames.has(spellName)) continue;
-      if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
       const spellUuid = spell.uuid || spell.compendiumUuid;
+      if (processedPreparableSpells.has(spellUuid)) continue;
+      if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
       const spellData = foundry.utils.deepClone(spell);
       let preparedByOtherClass = null;
       for (const [otherClass, preparedSpells] of Object.entries(preparedByClass)) {
@@ -655,6 +657,7 @@ export class SpellbookState {
         spellData.preparation = spellData.preparation || {};
         spellData.preparation.preparedByOtherClass = preparedByOtherClass;
       }
+      spellData._preparationContext = 'preparable';
       if (this.app.spellManager) spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, classIdentifier);
       spellData.filterData = UIHelpers.extractSpellFilterData(spell);
       spellData.enrichedIcon = UIHelpers.createSpellIconLink(spell);
@@ -662,7 +665,26 @@ export class SpellbookState {
       Object.assign(spellData, enhancedSpell);
       spellsByLevel[level].spells.push(spellData);
       processedSpellIds.add(spell.id || spell.compendiumUuid || spell.uuid);
-      processedSpellNames.add(spellName);
+    }
+    for (const spell of specialModeSpells) {
+      const level = spell.system.level;
+      if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
+      const compendiumUuid = spell.flags?.core?.sourceId || spell.uuid;
+      const spellData = { ...spell, compendiumUuid: compendiumUuid };
+      const sourceClass = spell.system?.sourceClass || spell.sourceClass;
+      if (sourceClass) {
+        spellData.sourceClass = sourceClass;
+        spellData.system = spellData.system || {};
+        spellData.system.sourceClass = sourceClass;
+      }
+      spellData._preparationContext = 'special';
+      if (spell.system?.method !== 'ritual' && spell.system?.components?.ritual) spellData.canCastAsRitual = true;
+      spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, sourceClass || classIdentifier);
+      spellData.filterData = UIHelpers.extractSpellFilterData(spell);
+      spellData.enrichedIcon = UIHelpers.createSpellIconLink(spell);
+      const enhancedSpell = DataHelpers.SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
+      Object.assign(spellData, enhancedSpell);
+      spellsByLevel[level].spells.push(spellData);
     }
     for (const level in spellsByLevel) if (level in spellsByLevel) spellsByLevel[level].spells.sort((a, b) => a.name.localeCompare(b.name));
     const sortedLevels = Object.entries(spellsByLevel)
@@ -678,7 +700,63 @@ export class SpellbookState {
         }
         return data;
       });
-    log(3, `Returning ${sortedLevels.length} levels for ${classIdentifier} with deduplication applied`);
+    log(3, `Returning ${sortedLevels.length} levels for ${classIdentifier} with multiple preparation contexts supported`);
+    return sortedLevels;
+  }
+
+  /**
+   * Organize spells specifically for wizard spellbook learning tab.
+   * This method is completely isolated from the preparation system and only
+   * handles spell learning logic (Already Learned vs Learn Spell buttons).
+   *
+   * @param {Array<Object>} spellItems - Array of class spell list items ONLY
+   * @param {string} classIdentifier - The class identifier
+   * @param {Array<string>} personalSpellbook - Spells already learned by wizard
+   * @returns {Promise<Array<SpellLevel>>} Array of level objects for wizard spellbook
+   * @private
+   */
+  async _organizeWizardSpellsForLearning(spellItems, classIdentifier, personalSpellbook) {
+    const spellsByLevel = {};
+    const processedSpellUuids = new Set();
+    const targetUserId = DataHelpers._getTargetUserId(this.actor);
+    const actorId = this.actor?.id;
+    for (const spell of spellItems) {
+      if (spell?.system?.level === undefined) continue;
+      const spellUuid = spell.uuid || spell.compendiumUuid;
+      const level = spell.system.level;
+      if (processedSpellUuids.has(spellUuid) || level === 0) continue;
+      if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
+      const spellData = foundry.utils.deepClone(spell);
+      spellData.compendiumUuid = spellUuid;
+      spellData.sourceClass = classIdentifier;
+      spellData.isWizardClass = true;
+      spellData.inWizardSpellbook = personalSpellbook.includes(spellUuid);
+      spellData.canAddToSpellbook = !spellData.inWizardSpellbook && level > 0;
+      spellData.preparation = {
+        prepared: false,
+        isOwned: false,
+        preparationMode: null,
+        disabled: true,
+        alwaysPrepared: false,
+        sourceItem: null,
+        isGranted: false,
+        localizedPreparationMode: '',
+        isCantripLocked: false,
+        disabledReason: '',
+        _isWizardLearning: true
+      };
+      spellData.filterData = UIHelpers.extractSpellFilterData(spell);
+      spellData.enrichedIcon = UIHelpers.createSpellIconLink(spell);
+      const enhancedSpell = DataHelpers.SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
+      Object.assign(spellData, enhancedSpell);
+      spellsByLevel[level].spells.push(spellData);
+      processedSpellUuids.add(spellUuid);
+    }
+    for (const level in spellsByLevel) if (level in spellsByLevel) spellsByLevel[level].spells.sort((a, b) => a.name.localeCompare(b.name));
+    const sortedLevels = Object.entries(spellsByLevel)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([level, data]) => data);
+    log(3, `Organized ${sortedLevels.length} spell levels for wizard spellbook (${classIdentifier})`);
     return sortedLevels;
   }
 
@@ -945,9 +1023,8 @@ export class SpellbookState {
   /**
    * Process wizard spells for a specific class into preparation and spellbook tabs.
    *
-   * Separates spells into preparation tab (known/prepared spells) and spellbook tab
-   * (available spells to learn) with appropriate wizard-specific metadata and
-   * learning mechanics integration.
+   * Completely separates preparation tab (with preparation logic) from wizard spellbook tab
+   * (with only learning logic). This prevents UI interference and duplicate entries.
    *
    * @param {Array<Object>} allSpellItems - All fetched spell items
    * @param {Item} classItem - The class item
@@ -960,7 +1037,7 @@ export class SpellbookState {
     const wizardTabId = `wizardbook-${classIdentifier}`;
     const shouldHideCantrips = this._shouldHideCantrips(classIdentifier);
     const wizardManager = this.app.wizardManagers.get(classIdentifier);
-    if (!wizardManager) log(1, `No wizard manager found for ${classIdentifier}`);
+    if (!wizardManager) return;
     const getSpellUuids = (spell) => {
       const uuids = [];
       if (spell?.compendiumUuid) uuids.push(spell.compendiumUuid);
@@ -981,6 +1058,8 @@ export class SpellbookState {
     const usedFreeSpells = await wizardManager.getUsedFreeSpells();
     const remainingFreeSpells = Math.max(0, totalFreeSpells - usedFreeSpells);
     const totalSpells = personalSpellbook.length;
+    const maxSpellsAllowed = wizardManager.getMaxSpellsAllowed();
+    const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
     this.scrollSpells = await DataHelpers.ScrollScanner.scanForScrollSpells(this.actor);
     const grantedSpells = this.actor.items
       .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.method && ['pact', 'innate', 'atwill'].includes(i.system.method))))
@@ -993,8 +1072,6 @@ export class SpellbookState {
         return uuids;
       })
       .filter(Boolean);
-    const fullWizardSpellList = this._fullWizardSpellLists.get(classIdentifier);
-    for (const spell of allSpellItems) spell.sourceClass = classIdentifier;
     const prepTabSpells = allSpellItems.filter((spell) => {
       const isCantrip = spell.system.level === 0;
       const isNonCantrip = spell.system.level !== 0;
@@ -1003,41 +1080,52 @@ export class SpellbookState {
       const shouldInclude = (!shouldHideCantrips && isCantrip) || (isNonCantrip && (inPersonalSpellbook || inGrantedSpells));
       return shouldInclude;
     });
-    const wizardbookSpells = allSpellItems.filter((spell) => {
+    for (const spell of prepTabSpells) spell.sourceClass = classIdentifier;
+    const prepLevelsGrouped = await this._organizeSpellsByLevelForClass(prepTabSpells, classIdentifier);
+    let finalPrepLevels = prepLevelsGrouped;
+    if (shouldHideCantrips) finalPrepLevels = prepLevelsGrouped.filter((levelData) => levelData.level !== '0' && levelData.level !== 0);
+    const fullWizardSpellList = this._fullWizardSpellLists.get(classIdentifier);
+    const classSpellsOnly = allSpellItems.filter((spell) => {
       const isNonCantrip = spell.system.level !== 0;
       const inFullWizardList = fullWizardSpellList && isSpellInCollection(spell, fullWizardSpellList);
-      const shouldInclude = isNonCantrip && inFullWizardList;
-      return shouldInclude;
+      return isNonCantrip && inFullWizardList;
     });
-    const combinedWizardbookSpells = [...wizardbookSpells, ...this.scrollSpells];
-    const prepLevelsGrouped = await this._organizeSpellsByLevelForClass(prepTabSpells, classIdentifier);
-    const wizardLevelsGrouped = await this._organizeSpellsByLevelForClass(combinedWizardbookSpells, classIdentifier);
+    const wizardLevelsGrouped = await this._organizeWizardSpellsForLearning(classSpellsOnly, classIdentifier, personalSpellbook);
     const scrollSpellsForLevel = [];
     for (const scrollSpell of this.scrollSpells) {
       scrollSpell.sourceClass = classIdentifier;
       scrollSpell.isWizardClass = true;
       scrollSpell.inWizardSpellbook = personalSpellbook.includes(scrollSpell.compendiumUuid || scrollSpell.spellUuid);
+      scrollSpell.canLearnFromScroll = !scrollSpell.inWizardSpellbook;
+      if (scrollSpell.isFromScroll) scrollSpell.scrollMetadata = { scrollId: scrollSpell.scrollId, scrollName: scrollSpell.scrollName };
       scrollSpellsForLevel.push(scrollSpell);
     }
     if (scrollSpellsForLevel.length > 0) {
-      const learnFromScrollLevel = { level: 'scroll', name: game.i18n.localize('SPELLBOOK.Scrolls.LearnFromScroll'), spells: scrollSpellsForLevel };
+      const learnFromScrollLevel = {
+        level: 'scroll',
+        name: game.i18n.localize('SPELLBOOK.Scrolls.LearnFromScroll'),
+        spells: scrollSpellsForLevel
+      };
       wizardLevelsGrouped.unshift(learnFromScrollLevel);
     }
     const filteredWizardLevelsGrouped = wizardLevelsGrouped.filter((levelData) => {
       return levelData.level === 'scroll' || (levelData.level !== '0' && levelData.level !== 0);
     });
-    const maxSpellsAllowed = wizardManager.getMaxSpellsAllowed();
-    const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
-    let finalPrepLevels = prepLevelsGrouped;
-    if (shouldHideCantrips) finalPrepLevels = prepLevelsGrouped.filter((levelData) => levelData.level !== '0' && levelData.level !== 0);
-    this.enrichWizardBookSpells(finalPrepLevels, personalSpellbook, false, false);
-    this.enrichWizardBookSpells(filteredWizardLevelsGrouped, personalSpellbook, true, isAtMaxSpells);
+    for (const levelData of filteredWizardLevelsGrouped) {
+      for (const spell of levelData.spells) {
+        spell.isAtMaxSpells = isAtMaxSpells;
+        if (this.app && this.app.comparisonSpells) {
+          const comparisonMax = game.settings.get(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX);
+          if (this.app.comparisonSpells.size < comparisonMax) {
+            spell.showCompareLink = true;
+            spell.isInComparison = this.app.comparisonSpells.has(spell.compendiumUuid || spell.spellUuid);
+          }
+        }
+      }
+    }
     const prepStats = this.calculatePreparationStats(classIdentifier, finalPrepLevels, classItem);
     const tabData = {
-      [spellsTabId]: {
-        spellLevels: finalPrepLevels,
-        spellPreparation: prepStats
-      },
+      [spellsTabId]: { spellLevels: finalPrepLevels, spellPreparation: prepStats },
       [wizardTabId]: {
         spellLevels: filteredWizardLevelsGrouped,
         spellPreparation: prepStats,
@@ -1051,6 +1139,7 @@ export class SpellbookState {
     };
     this.classSpellData[classIdentifier] = { spellLevels: finalPrepLevels, className: classItem.name, spellPreparation: prepStats, classItem, tabData, identifier: classIdentifier };
     Object.assign(this.tabData, tabData);
+    log(3, `Processed wizard spells for ${classIdentifier}: Prep tab has ${finalPrepLevels.length} levels, Wizard tab has ${filteredWizardLevelsGrouped.length} levels`);
   }
 
   /**

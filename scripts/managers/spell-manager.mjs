@@ -218,8 +218,8 @@ export class SpellManager {
    *
    * Performs comprehensive analysis of a spell's preparation status including
    * whether it's prepared, owned by the actor, its preparation mode, disability
-   * status, and source information. Handles various special cases including
-   * granted spells, always prepared spells, and cross-class preparations.
+   * status, and source information. Now supports preparation context to allow
+   * same spell with multiple preparation methods.
    *
    * @param {Object} spell - The spell to check
    * @param {string} [classIdentifier=null] - The specific class context
@@ -239,6 +239,46 @@ export class SpellManager {
     };
     if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
     const spellUuid = spell.compendiumUuid || spell.uuid;
+    const isPreparableContext = spell._preparationContext === 'preparable';
+    if (isPreparableContext) {
+      const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
+      const classPreparedSpells = preparedByClass[classIdentifier] || [];
+      const spellKey = this._createClassSpellKey(spellUuid, classIdentifier);
+      const isPreparedForClass = classPreparedSpells.includes(spellKey);
+      for (const [otherClass, preparedSpells] of Object.entries(preparedByClass)) {
+        if (otherClass === classIdentifier) continue;
+        const otherClassKey = `${otherClass}:${spellUuid}`;
+        if (preparedSpells.includes(otherClassKey)) {
+          const spellcastingData = this.actor.spellcastingClasses?.[otherClass];
+          const classItem = spellcastingData ? this.actor.items.get(spellcastingData.id) : null;
+          return {
+            prepared: true,
+            isOwned: false,
+            preparationMode: 'spell',
+            localizedPreparationMode: game.i18n.localize('SPELLBOOK.Preparation.Prepared'),
+            disabled: true,
+            disabledReason: game.i18n.format('SPELLBOOK.Preparation.PreparedByOtherClass', { class: classItem?.name || otherClass }),
+            alwaysPrepared: false,
+            isGranted: false,
+            sourceItem: null,
+            isCantripLocked: false
+          };
+        }
+      }
+      defaultStatus.prepared = isPreparedForClass;
+      if (spell.system?.level === 0 && classIdentifier) {
+        const maxCantrips = this.cantripManager._getMaxCantripsForClass(classIdentifier);
+        const currentCount = this.cantripManager.getCurrentCount(classIdentifier);
+        const isAtMax = currentCount >= maxCantrips;
+        if (isAtMax && !isPreparedForClass) {
+          const settings = this.getSettings(classIdentifier);
+          const { behavior } = settings;
+          defaultStatus.isCantripLocked = behavior === MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED;
+          defaultStatus.cantripLockReason = 'SPELLBOOK.Cantrips.MaximumReached';
+        }
+      }
+      return defaultStatus;
+    }
     const actualSpell = this.actor.items.find(
       (item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
     );
