@@ -1359,10 +1359,10 @@ export class SpellbookState {
    * limit violations when enforcement is set to "notify GM" mode.
    *
    * @param {Object} spellDataByClass - The spell data grouped by class
-   * @param {Object} allCantripChangesByClass - Cantrip changes by class
+   * @param {Object} allChangesByClass - All spell and cantrip changes by class
    * @returns {Promise<void>}
    */
-  async sendGMNotifications(spellDataByClass, allCantripChangesByClass) {
+  async sendGMNotifications(spellDataByClass, allChangesByClass) {
     const globalBehavior = this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM;
     if (globalBehavior !== MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM) return;
     const notificationData = { actorName: this.actor.name, classChanges: {} };
@@ -1370,14 +1370,15 @@ export class SpellbookState {
       const classData = this.classSpellData[classIdentifier];
       if (!classData) continue;
       const className = classData.className || classIdentifier;
-      const cantripChanges = allCantripChangesByClass[classIdentifier] || { added: [], removed: [] };
+      const changes = allChangesByClass[classIdentifier] || { cantripChanges: { added: [], removed: [] }, spellChanges: { added: [], removed: [] } };
       const cantripCount = Object.values(classSpellData).filter((spell) => spell.isPrepared && spell.spellLevel === 0).length;
       const spellCount = Object.values(classSpellData).filter((spell) => spell.isPrepared && spell.spellLevel > 0).length;
       const maxCantrips = this.app.spellManager.cantripManager._getMaxCantripsForClass(classIdentifier);
       const maxSpells = classData.spellPreparation?.maximum || 0;
       notificationData.classChanges[classIdentifier] = {
         className,
-        cantripChanges,
+        cantripChanges: changes.cantripChanges || { added: [], removed: [] },
+        spellChanges: changes.spellChanges || { added: [], removed: [] },
         overLimits: {
           cantrips: { isOver: cantripCount > maxCantrips, current: cantripCount, max: maxCantrips },
           spells: { isOver: spellCount > maxSpells, current: spellCount, max: maxSpells }

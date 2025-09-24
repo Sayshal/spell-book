@@ -2309,17 +2309,20 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     this._stateManager.clearFavoriteSessionState();
     await this._stateManager.addMissingRitualSpells(spellDataByClass);
-    const allCantripChangesByClass = {};
+    const allChangesByClass = {};
     for (const [classIdentifier, classSpellData] of Object.entries(spellDataByClass)) {
       const saveResult = await this.spellManager.saveClassSpecificPreparedSpells(classIdentifier, classSpellData);
-      if (saveResult && saveResult.cantripChanges && saveResult.cantripChanges.hasChanges) allCantripChangesByClass[classIdentifier] = saveResult.cantripChanges;
-      const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
-      for (const [classIdentifier, preparedSpells] of Object.entries(existingPreparedByClass)) {
-        if (!spellDataByClass[classIdentifier]) preparedByClass[classIdentifier] = preparedSpells;
+      if (saveResult) {
+        allChangesByClass[classIdentifier] = {
+          cantripChanges: saveResult.cantripChanges || { added: [], removed: [] },
+          spellChanges: saveResult.spellChanges || { added: [], removed: [] }
+        };
       }
+      const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
+      for (const [classIdentifier, preparedSpells] of Object.entries(existingPreparedByClass)) if (!spellDataByClass[classIdentifier]) preparedByClass[classIdentifier] = preparedSpells;
       await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
     }
-    await this._stateManager.sendGMNotifications(spellDataByClass, allCantripChangesByClass);
+    await this._stateManager.sendGMNotifications(spellDataByClass, allChangesByClass);
     await this._stateManager.handlePostProcessing(actor);
     this._newlyCheckedCantrips.clear();
     await UIHelpers.processFavoritesFromForm(form, actor);

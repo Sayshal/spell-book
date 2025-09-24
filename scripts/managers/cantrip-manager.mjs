@@ -538,16 +538,22 @@ export class CantripManager {
       .map(([key, data]) => {
         const cantripChanges = {
           ...data.cantripChanges,
-          removedNames: data.cantripChanges.removed.length > 0 ? data.cantripChanges.removed.map((item) => item.name).join(', ') : null,
-          addedNames: data.cantripChanges.added.length > 0 ? data.cantripChanges.added.map((item) => item.name).join(', ') : null,
+          removedNames: data.cantripChanges.removed.length > 0 ? data.cantripChanges.removed.join(', ') : null,
+          addedNames: data.cantripChanges.added.length > 0 ? data.cantripChanges.added.join(', ') : null,
           hasChanges: data.cantripChanges.added.length > 0 || data.cantripChanges.removed.length > 0
+        };
+        const spellChanges = {
+          ...data.spellChanges,
+          removedNames: data.spellChanges.removed.length > 0 ? data.spellChanges.removed.join(', ') : null,
+          addedNames: data.spellChanges.added.length > 0 ? data.spellChanges.added.join(', ') : null,
+          hasChanges: data.spellChanges.added.length > 0 || data.spellChanges.removed.length > 0
         };
         const overLimits = {
           cantrips: { ...data.overLimits.cantrips, overCount: data.overLimits.cantrips.current - data.overLimits.cantrips.max },
           spells: { ...data.overLimits.spells, overCount: data.overLimits.spells.current - data.overLimits.spells.max }
         };
-        const hasChanges = cantripChanges.hasChanges || data.overLimits.cantrips.isOver || data.overLimits.spells.isOver;
-        return { classIdentifier: key, ...data, cantripChanges, overLimits, hasChanges };
+        const hasChanges = cantripChanges.hasChanges || spellChanges.hasChanges || data.overLimits.cantrips.isOver || data.overLimits.spells.isOver;
+        return { classIdentifier: key, ...data, cantripChanges, spellChanges, overLimits, hasChanges };
       })
       .filter((classChange) => classChange.hasChanges);
     if (processedClassChanges.length === 0) return;

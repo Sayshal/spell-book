@@ -487,11 +487,11 @@ export class SpellManager {
    * Processes spell preparation changes for a specific class, handling spell
    * creation, updates, and removal as needed. Manages the preparation tracking
    * flags and maintains synchronization between the UI state and actor data.
-   * Returns information about cantrip changes for notification purposes.
+   * Returns information about cantrip and spell changes for notification purposes.
    *
    * @param {string} classIdentifier - The class identifier
    * @param {Object<string, SpellInfo>} classSpellData - Object with spell data keyed by classSpellKey
-   * @returns {Promise<ClassSpellSaveResult|null>} Result object with cantrip changes
+   * @returns {Promise<ClassSpellSaveResult|null>} Result object with cantrip and spell changes
    */
   async saveClassSpecificPreparedSpells(classIdentifier, classSpellData) {
     if (!classIdentifier || !classSpellData) return null;
@@ -501,6 +501,7 @@ export class SpellManager {
     const preparedSpellKeys = [];
     const defaultPreparationMode = this._getClassPreparationMode(classIdentifier);
     const cantripChanges = { added: [], removed: [], hasChanges: false };
+    const spellChanges = { added: [], removed: [], hasChanges: false };
     for (const [classSpellKey, spellInfo] of Object.entries(classSpellData)) {
       const { uuid, isPrepared, wasPrepared, spellLevel, preparationMode, name, isRitual } = spellInfo;
       if (spellLevel === 0) {
@@ -510,6 +511,14 @@ export class SpellManager {
         } else if (!isPrepared && wasPrepared) {
           cantripChanges.removed.push(name);
           cantripChanges.hasChanges = true;
+        }
+      } else if (spellLevel > 0) {
+        if (isPrepared && !wasPrepared) {
+          spellChanges.added.push(name);
+          spellChanges.hasChanges = true;
+        } else if (!isPrepared && wasPrepared) {
+          spellChanges.removed.push(name);
+          spellChanges.hasChanges = true;
         }
       }
       let actualPreparationMode = 'spell';
@@ -530,8 +539,6 @@ export class SpellManager {
       } else if (isRitual) {
         const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
         if (classRules.ritualCasting === 'always') await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate, spellsToUpdate);
-      } else {
-        log(1, 'Taking NO ACTION path', { name: name });
       }
     }
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
@@ -547,7 +554,7 @@ export class SpellManager {
     if (spellsToUpdate.length > 0) await this.actor.updateEmbeddedDocuments('Item', spellsToUpdate);
     if (spellIdsToRemove.length > 0) await this.actor.deleteEmbeddedDocuments('Item', spellIdsToRemove);
     await this._updateGlobalPreparedSpellsFlag();
-    return { cantripChanges };
+    return { cantripChanges, spellChanges };
   }
 
   /**

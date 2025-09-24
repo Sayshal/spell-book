@@ -225,6 +225,7 @@
   "SPELLBOOK.Notifications.ComprehensiveTitle": "{name} - Update Report",
   "SPELLBOOK.Notifications.OverLimitWarning": "You are preparing {current} {type} (limit: {max}). GM will be notified.",
   "SPELLBOOK.Notifications.Removed": "Removed",
+  "SPELLBOOK.Notifications.SpellChanges": "Spell Changes",
   "SPELLBOOK.Notifications.SpellOverLimit": "Spells Over Limit",
   "SPELLBOOK.Party.Analysis.Components": "Spell Components",
   "SPELLBOOK.Party.Analysis.ConcentrationSpells": "Concentration Spells",
