@@ -389,8 +389,11 @@ async function validateSpellListOwnership() {
     return results;
   }
   try {
-    const documents = await pack.getDocuments();
-    for (const journal of documents) {
+    const index = await pack.getIndex({ fields: ['name', 'ownership', 'pages.type'] });
+    for (const journalData of index) {
+      const hasSpellPages = journalData.pages?.some((page) => page.type === 'spells');
+      if (!hasSpellPages) continue;
+      const journal = await pack.getDocument(journalData._id);
       if (journal.pages.size === 0) continue;
       const page = journal.pages.contents[0];
       if (page.type !== 'spells') continue;
@@ -433,12 +436,15 @@ async function validateActorSpellbookOwnership() {
     const actorSpellbooksFolderName = game.i18n.localize('SPELLBOOK.Folders.ActorSpellbooks');
     const actorSpellbooksFolder = pack.folders.find((f) => f.name === actorSpellbooksFolderName);
     if (!actorSpellbooksFolder) return results;
-    const documents = await pack.getDocuments();
-    const folderDocuments = documents.filter((doc) => doc.folder?.id === actorSpellbooksFolder.id);
-    for (const doc of folderDocuments) {
+    const index = await pack.getIndex({ fields: ['name', 'folder', 'pages.type'] });
+    const folderJournals = index.filter((doc) => doc.folder === actorSpellbooksFolder.id);
+    for (const journalData of folderJournals) {
+      const hasSpellPages = journalData.pages?.some((page) => page.type === 'spells');
+      if (!hasSpellPages) continue;
+      const doc = await pack.getDocument(journalData._id);
       if (!doc.pages) continue;
       for (const page of doc.pages) {
-        const flags = page.flags?.[MODULE.ID];
+        const flags = page.flags?.[MODULE.ID] || {};
         if (!flags?.isActorSpellbook || !flags?.actorId) continue;
         const actorId = flags.actorId;
         const classIdentifier = flags.classIdentifier || 'unknown';

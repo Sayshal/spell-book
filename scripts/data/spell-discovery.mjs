@@ -216,24 +216,21 @@ async function findSpellListByIdentifier(identifier, customMappings) {
  * @private
  */
 async function searchPackForSpellList(pack, identifier, customMappings) {
-  const index = await pack.getIndex({ fields: ['name', 'pages', 'flags'] });
+  const index = await pack.getIndex({ fields: ['name', 'pages.type'] });
   for (const journalData of index) {
-    if (foundry.utils.hasProperty(journalData, 'pages')) {
-      const hasSpellPages = journalData.pages.some((page) => foundry.utils.hasProperty(page, 'type') && page.type === 'spells');
-      if (!hasSpellPages) continue;
-    }
+    const hasSpellPages = journalData.pages?.some((page) => page.type === 'spells');
+    if (!hasSpellPages) continue;
     const journal = await pack.getDocument(journalData._id);
     for (const page of journal.pages) {
       if (page.type !== 'spells') continue;
-      if (!foundry.utils.hasProperty(page, 'system.identifier')) continue;
-      if (!foundry.utils.hasProperty(page, 'system.spells')) continue;
+      if (!page.system?.identifier || !page.system?.spells) continue;
       const pageIdentifier = page.system.identifier.toLowerCase();
       if (identifier && pageIdentifier !== identifier) continue;
       if (customMappings[page.uuid]) {
         const customList = await fromUuid(customMappings[page.uuid]);
-        if (customList && foundry.utils.hasProperty(customList, 'system.spells') && customList.system.spells.size > 0) return customList.system.spells;
+        if (customList && customList.system?.spells?.size > 0) return customList.system.spells;
       }
-      if (page.system.spells.size > 0) return page.system.spells;
+      if (page.system.spells?.size > 0) return page.system.spells;
     }
   }
   return null;
@@ -252,8 +249,10 @@ async function searchPackForSpellList(pack, identifier, customMappings) {
 async function findCustomSpellListByIdentifier(identifier) {
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
   if (!customPack) return null;
-  const index = await customPack.getIndex();
+  const index = await customPack.getIndex({ fields: ['name', 'pages.type'] });
   for (const journalData of index) {
+    const hasSpellPages = journalData.pages?.some((page) => page.type === 'spells');
+    if (!hasSpellPages) continue;
     const journal = await customPack.getDocument(journalData._id);
     for (const page of journal.pages) {
       if (page.type !== 'spells') continue;

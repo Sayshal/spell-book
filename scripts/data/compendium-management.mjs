@@ -197,8 +197,10 @@ async function processStandardPacks(journalPacks, spellLists) {
       if (pack.folder.depth !== 1) topLevelFolderName = pack.folder.getParentFolders().at(-1).name;
       else topLevelFolderName = pack.folder.name;
     }
-    const index = await pack.getIndex();
+    const index = await pack.getIndex({ fields: ['name', 'pages.type'] });
     for (const journalData of index) {
+      const hasSpellPages = journalData.pages?.some((page) => page.type === 'spells');
+      if (!hasSpellPages) continue;
       const journal = await pack.getDocument(journalData._id);
       for (const page of journal.pages) {
         if (page.type !== 'spells' || page.system?.type === 'other') continue;
@@ -757,7 +759,7 @@ export async function shouldShowInSettings(pack) {
     }
   } else if (pack.metadata.type === 'JournalEntry') {
     try {
-      const index = await pack.getIndex({ fields: ['pages'] });
+      const index = await pack.getIndex({ fields: ['pages.type'] });
       const hasSpellPages = index.some((entry) => entry.pages?.some((page) => page.type === 'spells'));
       return hasSpellPages;
     } catch (error) {
