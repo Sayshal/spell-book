@@ -15,25 +15,17 @@ import { log } from '../logger.mjs';
  * @param {string} userId - ID of the creating user
  */
 export async function createChatMessage(message, options, userId) {
-  // Check if this is a spell-book message that needs button handling
   const spellBookFlags = message.flags?.['spell-book'];
   if (!spellBookFlags) return;
-
-  // Small delay to ensure DOM elements are rendered
   await new Promise((resolve) => setTimeout(resolve, 100));
-
-  // Find all DOM elements for this specific message
   const messageElements = document.querySelectorAll(`[data-message-id="${message.id}"]`);
   if (!messageElements.length) return;
-
-  // Handle different message types
   messageElements.forEach((element) => {
     switch (spellBookFlags.messageType) {
       case 'migration-report': {
         handleMigrationReportButtons(element, message);
         break;
       }
-      // Add other message types here as needed
     }
   });
 }
@@ -46,36 +38,23 @@ export async function createChatMessage(message, options, userId) {
 function handleMigrationReportButtons(element, message) {
   const suppressButton = element.querySelector('.suppress-migration-warnings');
   if (!suppressButton) return;
-
   suppressButton.addEventListener('click', async (event) => {
     event.preventDefault();
-
-    const confirmed = await Dialog.confirm({
-      title: game.i18n.localize('SPELLBOOK.Migrations.SuppressButton'),
-      content: `<p>${game.i18n.localize('SPELLBOOK.Settings.SuppressMigrationWarnings.Hint')}</p>
-                      <p><strong>${game.i18n.localize('SPELLBOOK.Migrations.SuppressConfirm')}</strong></p>`,
-      yes: () => true,
-      no: () => false,
-      defaultYes: false
+    const confirmed = await foundry.applications.api.DialogV2.confirm({
+      window: { title: 'SPELLBOOK.Migrations.SuppressButton', icon: 'fas fa-eye-slash' },
+      content: `<div class="suppression-warning">
+                  <p>${game.i18n.localize('SPELLBOOK.Settings.SuppressMigrationWarnings.Hint')}</p>
+                  <p><strong>${game.i18n.localize('SPELLBOOK.Migrations.SuppressConfirm')}</strong></p>
+                </div>`,
+      yes: { icon: '<i class="fas fa-eye-slash"></i>', label: 'SPELLBOOK.Migrations.SuppressButton' },
+      no: { icon: '<i class="fas fa-times"></i>', label: 'SPELLBOOK.UI.Cancel' },
+      rejectClose: false
     });
-
     if (confirmed) {
-      try {
-        await game.settings.set(MODULE.ID, SETTINGS.SUPPRESS_MIGRATION_WARNINGS, true);
-        ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.SuppressMigrationWarnings.Enabled'));
-
-        // Fade out and delete the message
-        element.style.transition = 'opacity 0.5s';
-        element.style.opacity = '0';
-        setTimeout(async () => {
-          await message.delete();
-        }, 500);
-
-        log(3, 'Migration warnings suppressed by user');
-      } catch (error) {
-        log(1, 'Error suppressing migration warnings:', error);
-        ui.notifications.error('Failed to suppress migration warnings');
-      }
+      await game.settings.set(MODULE.ID, SETTINGS.SUPPRESS_MIGRATION_WARNINGS, true);
+      ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.SuppressMigrationWarnings.Enabled'));
+      await message.delete();
+      log(3, 'Migration warnings suppressed by user');
     }
   });
 }

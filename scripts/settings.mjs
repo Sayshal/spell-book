@@ -640,12 +640,7 @@ export function registerSettings() {
     scope: 'world',
     config: true,
     type: Boolean,
-    default: false,
-    onChange: (value) => {
-      if (value) {
-        ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.SuppressMigrationWarnings.Enabled'));
-      }
-    }
+    default: false
   });
 
   // ========================================//

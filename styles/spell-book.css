@@ -6652,6 +6652,26 @@
     strong {
       color: var(--spell-book-text-accent);
     }
+
+    .suppression-actions {
+      text-align: center;
+    }
+
+    .suppress-migration-warnings {
+      display: inline-flex;
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--spell-book-border-dark);
+      border-radius: var(--spell-book-radius-md);
+      color: var(--spell-book-text-secondary);
+      cursor: pointer;
+      transition: var(--spell-book-transition-normal);
+
+      i {
+        font-size: 0.75rem;
+      }
+    }
   }
 
   .spell-book-update-report {
