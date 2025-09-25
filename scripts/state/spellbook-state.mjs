@@ -600,6 +600,8 @@ export class SpellbookState {
       }
       for (const spell of spellDeduplicationMap.values()) {
         if (spell?.system?.level === undefined) continue;
+        const spellSourceClass = spell.system?.sourceClass || spell.sourceClass;
+        if (spellSourceClass && spellSourceClass !== classIdentifier) continue;
         const preparationMode = spell.system.method;
         const isSpecialMode = ['innate', 'pact', 'atwill'].includes(preparationMode);
         const isAlwaysPrepared = spell.system.prepared === 2;

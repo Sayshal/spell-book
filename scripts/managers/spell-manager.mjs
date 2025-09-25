@@ -263,16 +263,17 @@ export class SpellManager {
           const spellcastingData = this.actor.spellcastingClasses?.[otherClass];
           const classItem = spellcastingData ? this.actor.items.get(spellcastingData.id) : null;
           return {
-            prepared: true,
+            prepared: false,
             isOwned: false,
             preparationMode: 'spell',
             localizedPreparationMode: game.i18n.localize('SPELLBOOK.Preparation.Prepared'),
-            disabled: true,
+            disabled: false,
             disabledReason: game.i18n.format('SPELLBOOK.Preparation.PreparedByOtherClass', { class: classItem?.name || otherClass }),
             alwaysPrepared: false,
             isGranted: false,
             sourceItem: null,
-            isCantripLocked: false
+            isCantripLocked: false,
+            preparedByOtherClass: otherClass
           };
         }
       }
