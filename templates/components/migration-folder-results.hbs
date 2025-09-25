@@ -41,12 +41,20 @@
   {{localize 'SPELLBOOK.Migrations.SpellListFolderMigrationCount' count=folderResults.processed}}
 
   <!-- List Movement Details - Conditional based on what was moved -->
-  {{#if (and folderResults.customMoved folderResults.mergedMoved)}}
+  {{#if (and (and folderResults.customMoved folderResults.mergedMoved) folderResults.modifiedMoved)}}
+    {{localize 'SPELLBOOK.Migrations.FolderMigrationAllTypes' customCount=folderResults.customMoved mergedCount=folderResults.mergedMoved modifiedCount=folderResults.modifiedMoved}}
+  {{else if (and folderResults.customMoved folderResults.mergedMoved)}}
     {{localize 'SPELLBOOK.Migrations.FolderMigrationBothTypes' customCount=folderResults.customMoved mergedCount=folderResults.mergedMoved}}
+  {{else if (and folderResults.customMoved folderResults.modifiedMoved)}}
+    {{localize 'SPELLBOOK.Migrations.FolderMigrationCustomAndModified' customCount=folderResults.customMoved modifiedCount=folderResults.modifiedMoved}}
+  {{else if (and folderResults.mergedMoved folderResults.modifiedMoved)}}
+    {{localize 'SPELLBOOK.Migrations.FolderMigrationMergedAndModified' mergedCount=folderResults.mergedMoved modifiedCount=folderResults.modifiedMoved}}
   {{else if folderResults.customMoved}}
     {{localize 'SPELLBOOK.Migrations.FolderMigrationCustomOnly' customCount=folderResults.customMoved}}
   {{else if folderResults.mergedMoved}}
     {{localize 'SPELLBOOK.Migrations.FolderMigrationMergedOnly' mergedCount=folderResults.mergedMoved}}
+  {{else if folderResults.modifiedMoved}}
+    {{localize 'SPELLBOOK.Migrations.FolderMigrationModifiedOnly' modifiedCount=folderResults.modifiedMoved}}
   {{/if}}
 </p>
 

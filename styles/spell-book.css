@@ -3159,6 +3159,40 @@
     }
   }
 
+  .filter-source {
+    margin-bottom: var(--spell-book-spacing-md);
+
+    .source-filters {
+      gap: var(--spell-book-spacing-md);
+      display: flex;
+      align-items: flex-start;
+
+      .filter-item {
+        flex: 1;
+        min-width: 0;
+
+        label {
+          display: block;
+          margin-bottom: var(--spell-book-spacing-sm);
+          font-weight: bold;
+          font-size: var(--spell-book-manager-font-xs);
+          text-transform: uppercase;
+        }
+
+        select {
+          width: 100%;
+          padding: 0.35rem;
+          font-size: var(--spell-book-manager-font-xs);
+
+          &:focus {
+            border-color: var(--spell-book-border-highlight);
+            box-shadow: 0 0 var(--spell-book-radius-md) var(--spell-book-shadow-highlight);
+          }
+        }
+      }
+    }
+  }
+
   /* ----------------------------------------- */
   /*  Selection Mode Components                */
   /* ----------------------------------------- */

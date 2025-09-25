@@ -143,86 +143,94 @@
 			</div>
 		</div>
 
-		<!-- Source Compendium Filter -->
-		<div class="filter-item">
-			<label for="spell-source">{{localize "SPELLMANAGER.Filters.Source"}}</label>
-			{{{filterFormElements.sourceSelectHtml}}}
-		</div>
-	</div>
-
-	<!-- Bulk Selection Controls - Available during editing with selection mode -->
-	{{#if (and isEditing selectionMode)}}
-		<div class="select-all-add-container">
-			<span class="selection-label">{{localize "SPELLMANAGER.Selection.SelectAllToAdd"}}</span>
-			{{{selectAllAddCheckboxHtml}}}
-		</div>
-	{{/if}}
-
-	<!-- Available Spells List Container -->
-	<div class="available-spells-list">
-		{{#if isEditing}}
-			{{#if filteredSpells.spells.length}}
-				<!-- Filtered Spells Display -->
-				<div class="available-spells-wrapper">
-					<ul class="available-spells" role="list" aria-label="{{localize 'SPELLMANAGER.UI.FilteredSpells'}}">
-						{{#each filteredSpells.spells as |spell|}}
-							<!-- Individual Spell Item with data attributes for filtering -->
-							<li
-								class="spell-item available{{#if ../selectionMode}} selectable{{/if}}{{#if (lookup ../selectedSpellsToAdd spell.uuid)}} selected{{/if}}"
-								data-uuid="{{spell.uuid}}" data-spell-level="{{spell.level}}" data-spell-school="{{spell.school}}"
-								data-casting-time-type="{{spell.filterData.castingTime.type}}"
-								data-casting-time-value="{{spell.filterData.castingTime.value}}"
-								data-range-units="{{spell.filterData.range.units}}" data-range-value="{{spell.system.range.value}}"
-								data-damage-types="{{spell.filterData.damageTypes}}" data-ritual="{{spell.filterData.isRitual}}"
-								data-concentration="{{spell.filterData.concentration}}"
-								data-requires-save="{{spell.filterData.requiresSave}}" data-conditions="{{spell.filterData.conditions}}"
-								data-selection-type="add" role="listitem">
-
-								<!-- Spell Name and Details Section -->
-								<div class="spell-name">
-									{{{spell.enrichedIcon}}}
-									<div class="name-stacked">
-										<span class="title">{{spell.name}}</span>
-										<span class="subtitle">{{#if spell.showCompareLink}}{{#if spell.showCompare}}<button
-														class="compare-button compare-link{{#if spell.isInComparison}} active{{/if}}"
-														data-action="compareSpell" data-uuid="{{spell.uuid}}"
-														aria-label="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=spell.name}}"
-														data-tooltip="{{localize "SPELLBOOK.Comparison.Compare"}}">
-														<i class="fa-solid fa-clipboard-question"></i>
-													</button> {{/if}}{{/if}}{{spell.formattedDetails}}</span>
-									</div>
-								</div>
-
-								<!-- Spell Action Controls - Selection or addition buttons -->
-								<div class="spell-meta">
-									{{#if ../selectionMode}}
-										<!-- Bulk Selection Checkbox -->
-										{{{spell.selectAddCheckboxHtml}}}
-									{{else}}
-										<!-- Individual Add Button -->
-										<button type="button" class="add-spell" data-action="addSpell" data-uuid="{{spell.uuid}}"
-											aria-label="{{localize 'SPELLMANAGER.Buttons.AddSpell' name=spell.name}}">
-											<i class="fas fa-plus" aria-hidden="true"></i>
-										</button>
-									{{/if}}
-								</div>
-							</li>
-						{{/each}}
-					</ul>
+		<!-- Source Filters Section - Combined compendium and spell source filters -->
+		<div class="filter-source">
+			<div class="source-filters" role="group">
+				<div class="filter-item">
+					<label for="spell-compendium-source">{{localize "SPELLMANAGER.Filters.CompendiumSource"}}</label>
+					{{{filterFormElements.compendiumSourceSelectHtml}}}
 				</div>
-
-				<!-- Filter Results Count Display -->
-				<div class="filter-count-display" role="status" aria-live="polite">
-					<span
-						class="filter-count">{{localize "SPELLMANAGER.Filters.FilteredSpellCount" count=filteredSpells.totalFiltered}}</span>
+				<div class="filter-item">
+					<label for="spell-source">{{localize "SPELLMANAGER.Filters.SpellSource"}}</label>
+					{{{filterFormElements.sourceSelectHtml}}}
 				</div>
-			{{else}}
-				<!-- No Matching Spells State -->
-				{{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLMANAGER.Columns.NoMatchingSpells")}}
-			{{/if}}
-		{{else}}
-			<!-- Not Editing State - Prompt to start editing -->
-			<p class="phase-notice">{{localize "SPELLMANAGER.Columns.EditPrompt"}}</p>
+			</div>
+		</div>
+
+		<!-- Bulk Selection Controls - Available during editing with selection mode -->
+		{{#if (and isEditing selectionMode)}}
+			<div class="select-all-add-container">
+				<span class="selection-label">{{localize "SPELLMANAGER.Selection.SelectAllToAdd"}}</span>
+				{{{selectAllAddCheckboxHtml}}}
+			</div>
 		{{/if}}
+
+		<!-- Available Spells List Container -->
+		<div class="available-spells-list">
+			{{#if isEditing}}
+				{{#if filteredSpells.spells.length}}
+					<!-- Filtered Spells Display -->
+					<div class="available-spells-wrapper">
+						<ul class="available-spells" role="list" aria-label="{{localize 'SPELLMANAGER.UI.FilteredSpells'}}">
+							{{#each filteredSpells.spells as |spell|}}
+								<!-- Individual Spell Item with data attributes for filtering -->
+								<li
+									class="spell-item available{{#if ../selectionMode}} selectable{{/if}}{{#if (lookup ../selectedSpellsToAdd spell.uuid)}} selected{{/if}}"
+									data-uuid="{{spell.uuid}}" data-spell-level="{{spell.level}}" data-spell-school="{{spell.school}}"
+									data-casting-time-type="{{spell.filterData.castingTime.type}}"
+									data-casting-time-value="{{spell.filterData.castingTime.value}}"
+									data-range-units="{{spell.filterData.range.units}}" data-range-value="{{spell.system.range.value}}"
+									data-damage-types="{{spell.filterData.damageTypes}}" data-ritual="{{spell.filterData.isRitual}}"
+									data-concentration="{{spell.filterData.concentration}}"
+									data-requires-save="{{spell.filterData.requiresSave}}"
+									data-conditions="{{spell.filterData.conditions}}"
+									data-spell-source="{{spell.filterData.spellSourceId}}" data-selection-type="add" role="listitem">
+
+									<!-- Spell Name and Details Section -->
+									<div class="spell-name">
+										{{{spell.enrichedIcon}}}
+										<div class="name-stacked">
+											<span class="title">{{spell.name}}</span>
+											<span class="subtitle">{{#if spell.showCompareLink}}{{#if spell.showCompare}}<button
+															class="compare-button compare-link{{#if spell.isInComparison}} active{{/if}}"
+															data-action="compareSpell" data-uuid="{{spell.uuid}}"
+															aria-label="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=spell.name}}"
+															data-tooltip="{{localize "SPELLBOOK.Comparison.Compare"}}">
+															<i class="fa-solid fa-clipboard-question"></i>
+														</button> {{/if}}{{/if}}{{spell.formattedDetails}}</span>
+										</div>
+									</div>
+
+									<!-- Spell Action Controls - Selection or addition buttons -->
+									<div class="spell-meta">
+										{{#if ../selectionMode}}
+											<!-- Bulk Selection Checkbox -->
+											{{{spell.selectAddCheckboxHtml}}}
+										{{else}}
+											<!-- Individual Add Button -->
+											<button type="button" class="add-spell" data-action="addSpell" data-uuid="{{spell.uuid}}"
+												aria-label="{{localize 'SPELLMANAGER.Buttons.AddSpell' name=spell.name}}">
+												<i class="fas fa-plus" aria-hidden="true"></i>
+											</button>
+										{{/if}}
+									</div>
+								</li>
+							{{/each}}
+						</ul>
+					</div>
+
+					<!-- Filter Results Count Display -->
+					<div class="filter-count-display" role="status" aria-live="polite">
+						<span
+							class="filter-count">{{localize "SPELLMANAGER.Filters.FilteredSpellCount" count=filteredSpells.totalFiltered}}</span>
+					</div>
+				{{else}}
+					<!-- No Matching Spells State -->
+					{{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLMANAGER.Columns.NoMatchingSpells")}}
+				{{/if}}
+			{{else}}
+				<!-- Not Editing State - Prompt to start editing -->
+				<p class="phase-notice">{{localize "SPELLMANAGER.Columns.EditPrompt"}}</p>
+			{{/if}}
+		</div>
 	</div>
-</div>

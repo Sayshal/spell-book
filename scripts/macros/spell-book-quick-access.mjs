@@ -19,9 +19,9 @@ function spellBookQuickAccessScript() {
 }
 export const spellBookQuickAccess = {
   flagKey: 'spellBookQuickAccess',
-  version: '1.0.1',
+  version: '1.0.2',
   name: 'Spell Book - Quick Access',
-  img: 'icons/svg/book.svg',
+  img: 'icons/sundries/books/book-purple-gem.webp',
   type: 'script',
   command: `(${spellBookQuickAccessScript.toString()})()`
 };

@@ -207,7 +207,9 @@ export class SpellbookFilterHelper {
       favorited: this.element.querySelector('[name="filter-favorited"]')?.checked || false,
       concentration: this.element.querySelector('[name="filter-concentration"]')?.value || '',
       materialComponents: this.element.querySelector('[name="filter-materialComponents"]')?.value || '',
-      preparedByParty: this.element.querySelector('[name="filter-preparedByParty"]')?.checked || false
+      preparedByParty: this.element.querySelector('[name="filter-preparedByParty"]')?.checked || false,
+      source: this.element.querySelector('[name="spell-compendium-source"]')?.value || '',
+      spellSource: this.element.querySelector('[name="spell-source"]')?.value || ''
     };
     this._lastFilterUpdate = now;
     return this._cachedFilterState;
@@ -267,6 +269,7 @@ export class SpellbookFilterHelper {
       let remainingSpells = [...availableSpells];
       remainingSpells = this._filterBySelectedList(remainingSpells, selectedSpellUUIDs, isSpellInSelectedList);
       remainingSpells = this._filterBySource(remainingSpells, filters);
+      remainingSpells = this._filterBySpellSource(remainingSpells, filters);
       remainingSpells = this._filterByBasicProperties(remainingSpells, filters);
       remainingSpells = this._filterByRange(remainingSpells, filters);
       remainingSpells = this._filterByDamageAndConditions(remainingSpells, filters);
@@ -324,6 +327,34 @@ export class SpellbookFilterHelper {
       filterState.source = 'all';
       return spells;
     }
+    return filtered;
+  }
+
+  /**
+   * Filter spells by spell source (spell.system.source.label).
+   *
+   * Filters spells based on their system source label. Handles cases where
+   * the source is null, undefined, or empty string by treating them as "No Source".
+   *
+   * @param {Array<Object>} spells - Spells to filter
+   * @param {FilterState} filterState - Current filter state
+   * @returns {Array<Object>} Filtered spells matching spell source criteria
+   * @private
+   */
+  _filterBySpellSource(spells, filterState) {
+    const { spellSource } = filterState;
+    if (!spellSource || spellSource.trim() === '' || spellSource === 'all') return spells;
+    const beforeCount = spells.length;
+    const filtered = spells.filter((spell) => {
+      const spellSourceId = spell.filterData?.spellSourceId;
+      return spellSourceId === spellSource;
+    });
+    if (filtered.length === 0 && beforeCount > 0) {
+      log(3, `Spell Source '${spellSource}' filtered out all spells, resetting to show all sources`);
+      filterState.spellSource = 'all';
+      return spells;
+    }
+    log(3, 'After spell source filter:', filtered.length, 'spells remaining');
     return filtered;
   }
 

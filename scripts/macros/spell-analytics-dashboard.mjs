@@ -1,8 +1,8 @@
 export const spellAnalyticsDashboard = {
   flagKey: 'spellAnalyticsDashboard',
-  version: '1.0.0',
-  name: 'Open Spell Analytics Dashboard',
-  img: 'icons/svg/book.svg',
+  version: '1.0.2',
+  name: 'Spell Book - Open Analytics Dashboard',
+  img: 'icons/skills/trades/academics-merchant-scribe.webp',
   command: `
 // Open Spell Analytics Dashboard
 try {

@@ -280,7 +280,8 @@ export function extractSpellFilterData(spell) {
   const materialComponents = extractMaterialComponents(spell);
   const requiresSave = checkSpellRequiresSave(spell);
   const conditions = extractSpellConditions(spell);
-  return { castingTime, range, damageTypes, isRitual, concentration, materialComponents, requiresSave, conditions, favorited: false };
+  const spellSource = extractSpellSource(spell);
+  return { castingTime, range, damageTypes, isRitual, concentration, materialComponents, requiresSave, conditions, favorited: false, spellSource: spellSource.label, spellSourceId: spellSource.id };
 }
 
 /**
@@ -440,6 +441,20 @@ export function extractSpellConditions(spell) {
     }
   }
   return conditions;
+}
+
+/**
+ * Extract spell source information from spell data.
+ * Gets the spell's source from system.source.custom or system.source.book, handling null/undefined values.
+ *
+ * @param {Object} spell - The spell object to extract source from
+ * @returns {Object} Spell source data with label and normalized ID
+ */
+function extractSpellSource(spell) {
+  let spellSource = spell.system?.source?.custom || spell.system?.source?.book;
+  const noSourceLabel = game.i18n.localize('SPELLMANAGER.Filters.NoSource');
+  if (!spellSource || spellSource.trim() === '') spellSource = noSourceLabel;
+  return { label: spellSource, id: spellSource === noSourceLabel ? 'no-source' : spellSource };
 }
 
 /**

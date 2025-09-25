@@ -272,8 +272,8 @@ export class SpellbookUI {
     const preparationBonus = classRules?.spellPreparationBonus || 0;
     const classMaxPrepared = baseMaxPrepared + preparationBonus;
     let classPreparedCount = 0;
-    const preparedCheckboxes = activeTabContent.querySelectorAll('dnd5e-checkbox[data-uuid]:not([disabled])');
-    preparedCheckboxes.forEach((checkbox) => {
+    const allCheckboxes = activeTabContent.querySelectorAll('dnd5e-checkbox[data-uuid]');
+    allCheckboxes.forEach((checkbox) => {
       const spellItem = checkbox.closest('.spell-item');
       if (!spellItem) return;
       const spellLevel = spellItem.dataset.spellLevel;
@@ -692,6 +692,7 @@ export class SpellbookUI {
     if (!activeTab) return;
     const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
     if (!activeTabContent) return;
+    if (activeTab === 'wizardbook') return;
     const classIdentifier = activeTabContent?.dataset.classIdentifier;
     if (!classIdentifier) return;
     const settings = this.app.spellManager.getSettings(classIdentifier);
@@ -742,6 +743,11 @@ export class SpellbookUI {
           checkbox.disabled = true;
           if (ruleLockCheck.message) checkbox.dataset.tooltip = game.i18n.localize(ruleLockCheck.message);
           item.classList.add('spell-locked');
+        } else {
+          checkbox.disabled = false;
+          delete checkbox.dataset.tooltip;
+          checkbox.removeAttribute('data-tooltip');
+          item.classList.remove('spell-locked', 'max-prepared');
         }
       }
     }

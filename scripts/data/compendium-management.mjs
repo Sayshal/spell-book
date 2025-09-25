@@ -341,8 +341,9 @@ export async function duplicateSpellList(originalSpellList) {
     originalVersion: originalSpellList._stats?.systemVersion || game.system.version,
     isDuplicate: true
   };
+  const modifiedFolder = await getOrCreateModifiedFolder();
   const journalName = `${originalSpellList.parent.name} - ${originalSpellList.name}`;
-  const journalData = { name: journalName, pages: [{ name: originalSpellList.name, type: 'spells', flags: pageData.flags, system: pageData.system }] };
+  const journalData = { name: journalName, folder: modifiedFolder?.id, pages: [{ name: originalSpellList.name, type: 'spells', flags: pageData.flags, system: pageData.system }] };
   const journal = await JournalEntry.create(journalData, { pack: customPack.collection });
   const page = journal.pages.contents[0];
   await updateSpellListMapping(originalSpellList.uuid, page.uuid);
@@ -509,7 +510,7 @@ export async function createNewSpellList(name, identifier, type = 'class') {
   const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
   const journalData = {
     name: name,
-    folder: customFolder?.id || null,
+    folder: customFolder?.id,
     ownership: ownership,
     pages: [
       {
@@ -655,7 +656,7 @@ export async function createMergedSpellList(sourceListUuid, copyFromListUuid, me
   const mergedFolder = await getOrCreateMergedFolder();
   const journalData = {
     name: mergedListName,
-    folder: mergedFolder?.id || null,
+    folder: mergedFolder?.id,
     pages: [
       {
         name: mergedListName,
@@ -727,6 +728,18 @@ export async function getOrCreateMergedFolder() {
 }
 
 /**
+ * Get or create the Modified Spell Lists folder.
+ * Ensures the folder for modified standard spell lists exists
+ * in the custom spell lists pack.
+ *
+ * @returns {Promise<Folder|null>} Promise that resolves to the modified spell lists folder or null if creation failed
+ */
+export async function getOrCreateModifiedFolder() {
+  const folderName = game.i18n.localize('SPELLMANAGER.Folders.ModifiedSpellListsFolder');
+  return getOrCreateSpellListFolder(folderName);
+}
+
+/**
  * Check if a compendium should be indexed for spell operations.
  * Determines whether a compendium pack is enabled in settings
  * for spell list scanning and management operations.
@@ -771,4 +784,38 @@ export async function shouldShowInSettings(pack) {
     }
   }
   return false;
+}
+
+/**
+ * Prepare spell source options from spell.system.source.label.
+ * Extracts unique spell source labels from available spells and formats
+ * them as dropdown options with proper sorting and handling of missing values.
+ *
+ * @param {Array<FormattedSpellData>} availableSpells - The available spells array
+ * @returns {Array<SpellSourceOption>} Array of spell source options for dropdown
+ */
+export function prepareSpellSourceOptions(availableSpells) {
+  /** @type {Map<string, SpellSourceOption>} */
+  const sourceMap = new Map();
+  sourceMap.set('all', { id: 'all', label: game.i18n.localize('SPELLMANAGER.Filters.AllSpellSources') });
+  const noSourceLabel = game.i18n.localize('SPELLMANAGER.Filters.NoSource');
+  availableSpells.forEach((spell) => {
+    const spellSourceData = spell.filterData?.spellSource || spell.system?.source?.custom || spell.system?.source?.book;
+    const spellSourceId = spell.filterData?.spellSourceId;
+    let sourceLabel = spellSourceData;
+    let sourceId = spellSourceId;
+    if (!sourceLabel || sourceLabel.trim() === '') {
+      sourceLabel = noSourceLabel;
+      sourceId = 'no-source';
+    } else if (!sourceId) {
+      sourceId = sourceLabel;
+    }
+    if (!sourceMap.has(sourceId)) sourceMap.set(sourceId, { id: sourceId, label: sourceLabel === noSourceLabel ? noSourceLabel : sourceLabel });
+  });
+  const sources = Array.from(sourceMap.values()).sort((a, b) => {
+    if (a.id === 'all') return -1;
+    if (b.id === 'all') return 1;
+    return a.label.localeCompare(b.label);
+  });
+  return sources;
 }
