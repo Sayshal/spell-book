@@ -226,7 +226,7 @@
   "SPELLBOOK.Notifications.Added": "Added",
   "SPELLBOOK.Notifications.CantripChanges": "Cantrip Changes",
   "SPELLBOOK.Notifications.CantripOverLimit": "Cantrips Over Limit",
-  "SPELLBOOK.Notifications.ComprehensiveTitle": "{name} - Update Report",
+  "SPELLBOOK.Chat.UpdateReport.Title": "{name} - Update Report",
   "SPELLBOOK.Notifications.OverLimitWarning": "You are preparing {current} {type} (limit: {max}). GM will be notified.",
   "SPELLBOOK.Notifications.Removed": "Removed",
   "SPELLBOOK.Notifications.SpellChanges": "Spell Changes",

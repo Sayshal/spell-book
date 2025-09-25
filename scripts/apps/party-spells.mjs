@@ -1,7 +1,7 @@
 /**
  * Party Spell Coordination Application
  *
- * A comprehensive party management interface for coordinating spells across multiple
+ * A party management interface for coordinating spells across multiple
  * party members. This application provides spell comparison, focus assignment, synergy
  * analysis, and collaborative spell planning capabilities for groups of spellcasters.
  *
@@ -76,7 +76,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 /**
  * Party Spell Manager application for viewing party spell coordination.
  *
- * This application provides a comprehensive interface for managing spells across
+ * This application provides an interface for managing spells across
  * multiple party members, enabling spell coordination, focus assignment, and
  * strategic planning. It integrates with the PartySpellManager for data processing
  * and provides advanced filtering, visualization, and interaction capabilities.
@@ -263,7 +263,7 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Show synergy analysis dialog for party spell optimization.
    *
-   * Opens the party spell analysis dialog with comprehensive statistics,
+   * Opens the party spell analysis dialog with statistics,
    * damage type distribution, focus distribution, and strategic recommendations
    * for optimizing party spell preparation and coordination.
    *

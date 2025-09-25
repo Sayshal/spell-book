@@ -1,7 +1,7 @@
 /**
  * Player Filter Configuration Application
  *
- * A comprehensive configuration interface for customizing spell browser filters.
+ * A configuration interface for customizing spell browser filters.
  * This application allows users to enable/disable filters, reorder them through
  * drag-and-drop functionality, and reset to default configurations. It provides
  * both visual and programmatic validation to ensure filter configurations remain

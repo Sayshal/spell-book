@@ -101,7 +101,7 @@ const { renderTemplate } = foundry.applications.handlebars;
  * Run all migration functions in sequence.
  *
  * This function orchestrates all migration operations, collecting results
- * and providing comprehensive reporting. Only runs for GM users to prevent
+ * and providing a report. Only runs for GM users to prevent
  * conflicts. Migrations include deprecated flag cleanup, folder organization,
  * ownership validation, pack sorting updates, and custom spell list format updates.
  *
@@ -762,7 +762,7 @@ export async function migrateCustomSpellListFormat() {
 /**
  * Log migration results to console and chat.
  *
- * Provides comprehensive reporting of all migration operations with detailed
+ * Provides reporting of all migration operations with detailed
  * console logging and a formatted chat message for the GM.
  *
  * @param {DeprecatedFlagResults} deprecatedResults - Results from deprecated flag migration

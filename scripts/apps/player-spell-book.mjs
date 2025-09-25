@@ -2,7 +2,7 @@
  * Player Spell Book Application
  *
  * The primary user-facing interface for managing spells, spell preparation, and spellcasting
- * capabilities. This comprehensive application serves as the central hub for all spell-related
+ * capabilities. This application serves as the central hub for all spell-related
  * activities including preparation management, filter configuration, analytics access, and
  * party coordination features.
  *
@@ -144,7 +144,7 @@ const { renderTemplate } = foundry.applications.handlebars;
  * This is the main application interface that players interact with to manage their
  * spells, preparation, and related features. It serves as a thin application layer
  * that delegates business logic to specialized managers and helpers while providing
- * a comprehensive and user-friendly interface.
+ * a user-friendly interface.
  *
  * The application dynamically generates tabs for each spellcasting class and wizard
  * spellbook, provides advanced filtering capabilities, manages spell preparation
@@ -215,7 +215,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Create a new SpellBook application.
    *
-   * Initializes the spell book with comprehensive manager setup, state tracking,
+   * Initializes the spell book with manager setup, state tracking,
    * and UI helpers. Sets up wizard managers for all wizard-enabled classes and
    * establishes event listeners for actor updates.
    *
@@ -653,7 +653,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Get data attributes for a spell item.
    *
    * Creates HTML data attributes for spell filtering, searching, and display.
-   * Includes comprehensive spell metadata for advanced filtering capabilities.
+   * Includes spell metadata for advanced filtering capabilities.
    *
    * @param {Object} spell - The spell object
    * @returns {string} HTML-ready data attributes

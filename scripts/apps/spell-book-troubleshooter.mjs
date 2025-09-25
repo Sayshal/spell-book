@@ -1,10 +1,10 @@
 /**
  * Spell Book Troubleshooter Application
  *
- * A comprehensive diagnostic tool for generating troubleshooting reports to assist
+ * A diagnostic tool for generating troubleshooting reports to assist
  * with Spell Book module issues. This GM-only application captures relevant system
  * information, module settings, filtered console logs, and optionally exports owned
- * actor data for comprehensive debugging support.
+ * actor data for debugging support.
  *
  * Key features:
  * - Generates formatted troubleshooting reports with system and module information
@@ -13,7 +13,7 @@
  * - Provides copy-to-clipboard functionality for quick sharing
  * - Includes direct links to Discord support and GitHub issues
  * - Settings import/export functionality for configuration troubleshooting
- * - Comprehensive error handling and user feedback
+ * - Error handling and user feedback
  * - Automatic metadata inclusion for debugging context
  *
  * @module Applications/SpellBookTroubleshooter
@@ -60,7 +60,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 /**
  * Spell Book Troubleshooter Application.
  *
- * This application provides comprehensive diagnostic and troubleshooting capabilities
+ * This application provides diagnostic and troubleshooting capabilities
  * for the Spell Book module. It generates detailed reports containing system information,
  * module configurations, console logs, and optionally actor data to assist with
  * debugging and support requests.
@@ -120,7 +120,7 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
   }
 
   /**
-   * Generate a comprehensive text-based troubleshooting report.
+   * Generate a text-based troubleshooting report.
    *
    * Creates a detailed diagnostic report containing game information,
    * module details, Spell Book settings, and filtered console logs.
@@ -156,7 +156,7 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
   /**
    * Export the troubleshooting report and optionally actor data.
    *
-   * Creates a comprehensive export package including the main troubleshooting
+   * Creates an export package including the main troubleshooting
    * report and optionally all GM-owned actor data as individual JSON files.
    * Each actor export includes debugging metadata for context.
    *
@@ -392,7 +392,7 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
    * Import settings data into the game with validation and error handling.
    *
    * Processes extracted settings data and applies it to the game, with
-   * comprehensive validation, deferred processing for complex settings,
+   * validation, deferred processing for complex settings,
    * and detailed reporting of success/failure rates.
    *
    * @param {Object} settingsData - The settings data to import

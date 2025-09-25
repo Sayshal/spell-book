@@ -223,7 +223,7 @@ Whether you're a new player learning spellcasting basics or a veteran managing a
 
 ![Player Settings Menu](./github_media/04_SPELLSETTINGS.png)
 
-**_The comprehensive settings dialog with class-specific rules, enforcement options, and rule set selection_**
+**_The settings dialog with class-specific rules, enforcement options, and rule set selection_**
 
 ![Filter Configuration](./github_media/05_FILTERCONFIGURATION.png)
 

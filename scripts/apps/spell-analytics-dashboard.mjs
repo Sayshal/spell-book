@@ -1,7 +1,7 @@
 /**
  * Spell Analytics Dashboard Application
  *
- * A comprehensive analytics interface for viewing spell usage statistics, data management,
+ * An analytics interface for viewing spell usage statistics, data management,
  * and user behavior analysis. This application provides both personal and GM-level views
  * of spell usage patterns, favorites, notes, and contextual usage breakdowns across
  * combat and exploration scenarios.
@@ -122,7 +122,7 @@ const { renderTemplate } = foundry.applications.handlebars;
 /**
  * Analytics Dashboard for viewing spell usage statistics and data management.
  *
- * This application provides comprehensive analytics and data management capabilities
+ * This application provides analytics and data management capabilities
  * for the Spell Book module. It supports both personal analytics for individual users
  * and GM-level analytics for viewing usage patterns across all players.
  *
@@ -323,8 +323,8 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   /**
    * Compute GM analytics across all users.
    *
-   * Aggregates analytics data from all non-GM users to provide a comprehensive
-   * view of spell usage patterns across the entire game. Includes per-user
+   * Aggregates analytics data from all non-GM users to provide a view of
+   * spell usage patterns across the entire game. Includes per-user
    * breakdowns and combined statistics.
    *
    * @param {AnalyticsData} analytics - Analytics object to populate
@@ -524,7 +524,7 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
   /**
    * Export user data to JSON with embedded HTML content.
    *
-   * Creates a comprehensive export of user spell data including HTML content,
+   * Creates an export of user spell data including HTML content,
    * metadata, and user information. Supports both individual user export
    * and bulk export for GM users.
    *
