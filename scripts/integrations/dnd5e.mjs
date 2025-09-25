@@ -1,7 +1,7 @@
 /**
  * D&D 5e System Integration
  *
- * Provides comprehensive integration with the D&D 5e system including character sheets,
+ * Provides integration with the D&D 5e system including character sheets,
  * group actors, rest mechanics, and journal directory enhancements. This module handles
  * UI button injection, long rest processing, spell swap mechanics, and party spell
  * coordination features.

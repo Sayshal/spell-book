@@ -1,12 +1,12 @@
 /**
  * Spell List Manager Application
  *
- * A comprehensive GM-facing application for viewing, editing, and creating spell lists
+ * A GM-facing application for viewing, editing, and creating spell lists
  * with advanced multi-select functionality for bulk operations. This application serves
  * as the central hub for managing all spell list content within the system.
  *
  * Key features:
- * - Comprehensive spell list management with create, edit, delete, and merge operations
+ * - Spell list management with create, edit, delete, and merge operations
  * - Advanced filtering system with multiple criteria and real-time updates
  * - Multi-select functionality with bulk add/remove operations and shift-click range selection
  * - Spell comparison integration for detailed analysis
@@ -125,9 +125,9 @@ const { renderTemplate } = foundry.applications.handlebars;
 
 /**
  * Spell List Manager application for viewing, editing, and creating spell lists
- * with comprehensive multi-select functionality for bulk operations.
+ * with multi-select functionality for bulk operations.
  *
- * This application provides a comprehensive interface for GM users to manage
+ * This application provides a interface for GM users to manage
  * spell lists across the system. It combines advanced filtering, multi-selection,
  * and bulk operations with intuitive UI patterns for efficient spell list
  * management at scale.
@@ -185,7 +185,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Initialize the GM Spell List Manager.
    *
-   * Sets up comprehensive state management for spell lists, filtering, selection,
+   * Sets up state management for spell lists, filtering, selection,
    * and UI interactions. Initializes all necessary managers and helpers for
    * advanced spell list operations.
    *
@@ -453,7 +453,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Load spell lists and available spells.
    *
-   * Performs comprehensive data loading including spell list discovery,
+   * Performs data loading including spell list discovery,
    * spell data preloading, and icon enrichment. Handles both preloaded
    * and fresh data scenarios efficiently.
    *
@@ -624,7 +624,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Filter available spells using the filter helper.
    *
-   * Applies comprehensive filtering to available spells based on current
+   * Applies filtering to available spells based on current
    * filter state and selected spell list exclusions.
    *
    * @returns {Object} Filtered spells with count
@@ -1001,7 +1001,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Prepare form elements for the spell filters.
    *
-   * Creates comprehensive form elements for all filter types including
+   * Creates form elements for all filter types including
    * search inputs, dropdowns, checkboxes, and range inputs with proper
    * state management and accessibility attributes.
    *
@@ -2444,7 +2444,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Set up event listeners for multi-select functionality.
    *
-   * Implements comprehensive multi-select behavior including shift-click range
+   * Implements multi-select behavior including shift-click range
    * selection, checkbox management, and keyboard shortcuts for efficient
    * bulk operations.
    */

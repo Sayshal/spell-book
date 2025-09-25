@@ -2,7 +2,7 @@
  * Spellbook Settings Dialog
  *
  * Main configuration dialog for actor-specific spell book behavior and preferences.
- * Provides comprehensive settings management for individual character spellbooks
+ * Provides settings management for individual character spellbooks
  * including display options, preparation modes, and integration preferences.
  *
  * Key features:
@@ -109,7 +109,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 /**
  * Enhanced dialog application for configuring Spell Book settings with per-class rules.
  *
- * This dialog provides comprehensive configuration options for spell book behavior,
+ * This dialog provides configuration options for spell book behavior,
  * including global settings (rule sets, enforcement) and per-class configurations
  * (preparation bonuses, swapping rules, custom spell lists, etc.).
  *

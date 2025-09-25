@@ -2,7 +2,7 @@
  * Spell Comparison Dialog
  *
  * Side-by-side spell analysis and comparison interface for detailed spell
- * evaluation. Provides comprehensive spell data comparison including statistics,
+ * evaluation. Provides spell data comparison including statistics,
  * effects, and tactical analysis for informed spellcasting decisions.
  *
  * Key features:
@@ -228,13 +228,13 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
   }
 
   /**
-   * Extract comprehensive damage information from a spell for comparison purposes.
+   * Extract damage information from a spell for comparison purposes.
    *
    * Analyzes both legacy and modern spell damage systems to extract damage formulas,
    * types, and maximum potential damage values for highlighting purposes.
    *
    * @param {Object} spell - The spell document to analyze
-   * @returns {DamageInfo} Comprehensive damage information object
+   * @returns {DamageInfo} Damage information object
    * @private
    */
   _extractDamageInfo(spell) {

@@ -1,7 +1,7 @@
 /**
  * Spell Book State Management
  *
- * Comprehensive state management system for the Spell Book application. This class handles
+ * State management system for the Spell Book application. This class handles
  * all aspects of spell data loading, organization, caching, and state management including
  * spellcasting class detection, spell preparation tracking, wizard spellbook management,
  * and ritual casting functionality.
@@ -119,7 +119,7 @@ import * as UIHelpers from '../ui/_module.mjs';
 /**
  * Manages state for the Spell Book application with cached calculations.
  *
- * This class provides comprehensive state management for the Spell Book application,
+ * This class provides state management for the Spell Book application,
  * handling spell data loading, organization, caching, and synchronization. It manages
  * spellcasting classes, preparation tracking, wizard mechanics, and provides optimized
  * access to spell information through intelligent caching.

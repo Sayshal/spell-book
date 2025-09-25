@@ -7,7 +7,7 @@
  *
  * Key Features:
  * - D&D 5e system styling consistency
- * - Comprehensive configuration options for all form elements
+ * - Configuration options for all form elements
  * - Accessibility support with ARIA labels
  * - Flexible styling and layout options
  * - Generic multi-select wrapper with optgroup support

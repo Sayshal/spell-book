@@ -1,7 +1,7 @@
 /**
  * Color Detection and Theme Utilities Module
  *
- * This module provides comprehensive color detection, theme utilities, and accessibility
+ * This module provides color detection, theme utilities, and accessibility
  * features for the Spell Book module. It includes dominant color extraction from images,
  * automatic color contrast adjustment, and class-specific theming capabilities.
  *

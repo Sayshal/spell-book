@@ -2,7 +2,7 @@
  * Validation Module Exports
  *
  * Central export point for all validation, filtering, and query processing utilities.
- * This module provides comprehensive tools for spell data validation, advanced search
+ * This module provides tools for spell data validation, advanced search
  * query parsing and execution, form element creation, and filter management.
  *
  * Core Components:

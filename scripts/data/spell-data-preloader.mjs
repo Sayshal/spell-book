@@ -91,7 +91,7 @@ export async function preloadSpellData() {
 /**
  * Preload all spell data for GM setup mode.
  * Loads all available spell lists and spells from enabled compendiums
- * to provide comprehensive data for GM configuration interfaces.
+ * to provide data for GM configuration interfaces.
  *
  * @returns {Promise<void>}
  * @private

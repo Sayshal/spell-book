@@ -7,7 +7,7 @@
  * class-specific spell management, and integration with various spell casting systems.
  *
  * Key features:
- * - Comprehensive spell preparation tracking with class-specific organization
+ * - Spell preparation tracking with class-specific organization
  * - Multi-class spellcaster support with individual class rule application
  * - Dynamic spell status determination based on preparation mode and source
  * - Integration with cantrip management and swap mechanics
@@ -16,7 +16,7 @@
  * - Automatic spell item creation, updating, and cleanup on actors
  * - Backward compatibility with legacy preparation tracking systems
  * - Support for special spell modes (innate, pact, at-will, ritual, always prepared)
- * - Comprehensive error handling and logging for troubleshooting
+ * - Error handling and logging for troubleshooting
  *
  * The manager coordinates with other system components including CantripManager for
  * cantrip-specific functionality, RuleSetManager for class rule application, and
@@ -116,7 +116,7 @@ import { CantripManager, RuleSetManager } from './_module.mjs';
 /**
  * Spell Manager - Core spell preparation and management system.
  *
- * This class provides comprehensive spell management functionality for actors,
+ * This class provides spell management functionality for actors,
  * handling preparation tracking, validation, spell item management, and integration
  * with various spellcasting systems. It coordinates with other managers to provide
  * a complete spellcasting experience while maintaining data integrity and proper
@@ -216,7 +216,7 @@ export class SpellManager {
   /**
    * Get the preparation status for a given spell.
    *
-   * Performs comprehensive analysis of a spell's preparation status including
+   * Performs analysis of a spell's preparation status including
    * whether it's prepared, owned by the actor, its preparation mode, disability
    * status, and source information. Now supports preparation context to allow
    * same spell with multiple preparation methods.
@@ -425,7 +425,7 @@ export class SpellManager {
    * Analyzes an actor-owned spell item to determine its preparation status,
    * including preparation mode, disability reasons, source information, and
    * localized display strings. Handles all special preparation modes and
-   * provides comprehensive status information for UI display.
+   * provides status information for UI display.
    *
    * @private
    * @param {Item5e} spell - The spell item
@@ -467,7 +467,7 @@ export class SpellManager {
    *
    * Analyzes a spell item to determine what feature, class, or item granted it
    * to the actor. Checks various flag sources including advancement origins,
-   * cached grants, and class associations to provide comprehensive source
+   * cached grants, and class associations to provide source
    * information for display and management purposes.
    *
    * @private

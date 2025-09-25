@@ -2,7 +2,7 @@
  * UI Utilities and Helpers Module Exports
  *
  * Central export point for all user interface utilities and helpers used by the Spell Book module.
- * This module provides comprehensive UI functionality including search, filtering, formatting,
+ * This module provides UI functionality including search, filtering, formatting,
  * customization, and visual enhancement components that create a polished user experience.
  *
  * Available UI utilities:
@@ -11,7 +11,7 @@
  * - Spell description enhancement and content injection
  * - Spell favorites management and quick access
  * - Spell display formatting and presentation utilities
- * - Comprehensive filtering and categorization systems
+ * - Filtering and categorization systems
  * - Core UI interaction handlers and management
  * - UI customization and theming capabilities
  * - Chat Handler for spell book notices

@@ -12,7 +12,7 @@
  * - Version tracking with automatic updates when definitions change
  * - Obsolete macro detection and cleanup
  * - Flag-based macro identification and management
- * - Comprehensive error handling and logging
+ * - Error handling and logging
  *
  * The manager operates on macro configurations defined in the macros module,
  * ensuring all required macros exist in the compendium with current versions
@@ -61,7 +61,7 @@ const MACROS = Object.values(m);
 /**
  * Macro Manager - Centralized macro management and versioning system.
  *
- * This static class provides comprehensive macro management capabilities for the
+ * This static class provides macro management capabilities for the
  * Spell Book module. It handles automatic macro initialization, version tracking,
  * updates, and cleanup operations to ensure all required macros are available
  * and current in the module's compendium pack.
@@ -83,7 +83,7 @@ export class MacroManager {
    * - Validating compendium pack availability
    * - Processing each macro configuration for creation or updates
    * - Cleaning up obsolete macros no longer defined
-   * - Comprehensive logging for troubleshooting
+   * - Logging for troubleshooting
    *
    * @returns {Promise<void>} Promise that resolves when all macros are initialized
    * @static
@@ -109,7 +109,7 @@ export class MacroManager {
    * - Version comparison for update determination
    * - Creating new macros with proper flag structure
    * - Updating existing macros with new content and metadata
-   * - Comprehensive error handling and logging
+   * - error handling and logging
    *
    * @param {CompendiumCollection} pack - The macro compendium pack
    * @param {MacroConfiguration} macroConfig - Macro configuration object

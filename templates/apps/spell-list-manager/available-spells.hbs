@@ -4,7 +4,7 @@
  *
  * PURPOSE:
  * Sidebar interface for browsing and filtering available spells that can be added
- * to spell lists. Provides comprehensive filtering capabilities, search functionality,
+ * to spell lists. Provides filtering capabilities, search functionality,
  * and spell selection controls for spell list management. Supports both individual
  * spell addition and bulk selection modes for efficient list editing.
  *
@@ -39,7 +39,7 @@
  * - Form elements with associated labels for screen reader navigation
  * - List structures with role="list" and role="listitem" for spell items
  * - Status region with aria-live for dynamic filter count updates
- * - Button elements with comprehensive aria-label attributes
+ * - Button elements with aria-label attributes
  * - Range filter inputs grouped with aria-labelledby association
  *
  * CUSTOMIZATION POINTS:
@@ -64,7 +64,7 @@
 	<!-- Available Spells Header -->
 	<h2 id="available-spells-heading">{{localize "SPELLMANAGER.Columns.AvailableSpells"}}</h2>
 
-	<!-- Spell Filtering Section - Comprehensive search and filter controls -->
+	<!-- Spell Filtering Section - search and filter controls -->
 	<div class="spell-filters" role="search" aria-labelledby="available-spells-heading">
 		<!-- Search Input Container -->
 		<div class="filter-search">
@@ -166,7 +166,7 @@
 				<div class="available-spells-wrapper">
 					<ul class="available-spells" role="list" aria-label="{{localize 'SPELLMANAGER.UI.FilteredSpells'}}">
 						{{#each filteredSpells.spells as |spell|}}
-							<!-- Individual Spell Item with comprehensive data attributes for filtering -->
+							<!-- Individual Spell Item with data attributes for filtering -->
 							<li
 								class="spell-item available{{#if ../selectionMode}} selectable{{/if}}{{#if (lookup ../selectedSpellsToAdd spell.uuid)}} selected{{/if}}"
 								data-uuid="{{spell.uuid}}" data-spell-level="{{spell.level}}" data-spell-school="{{spell.school}}"

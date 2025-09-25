@@ -3,7 +3,7 @@
  *
  * Manages wizard-specific spellbook functionality including spell copying mechanics,
  * cost calculations, journal-based spellbook storage, and free spell tracking. This
- * class provides comprehensive wizard spellbook management that integrates with
+ * class provides wizard spellbook management that integrates with
  * Foundry's journal system to create persistent, shareable spellbooks for wizard
  * characters and wizard-enabled classes.
  *
@@ -13,7 +13,7 @@
  * - Free spell tracking based on wizard level progression
  * - Multi-class wizard support with class-specific spellbooks
  * - Race condition prevention through locking mechanisms
- * - Performance optimization through comprehensive caching systems
+ * - Performance optimization through caching systems
  * - Automatic journal and folder creation with proper permissions
  * - Integration with module spell discovery and data management
  * - Spell metadata tracking for copied spells (cost, time, date)
@@ -88,7 +88,7 @@ import { log } from '../logger.mjs';
 /**
  * Wizard Spellbook Manager - Journal-based wizard spell management system.
  *
- * This class provides comprehensive wizard spellbook functionality by creating and
+ * This class provides wizard spellbook functionality by creating and
  * managing journal-based spellbooks within Foundry's compendium system. It handles
  * spell copying mechanics, cost calculations, free spell tracking, and maintains
  * persistent storage that survives world migrations and updates.

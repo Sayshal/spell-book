@@ -1,7 +1,7 @@
 /**
  * Advanced Search Manager for Spell Book Module
  *
- * This module provides comprehensive Google-style search functionality with intelligent
+ * This module provides Google-style search functionality with intelligent
  * autocomplete, field-based search syntax, and search history management. It handles
  * both standard fuzzy name matching and advanced query parsing with support for
  * complex field-based searches.
@@ -78,7 +78,7 @@ import * as ValidationHelpers from '../validation/_module.mjs';
  *
  * Provides intelligent autocomplete, field-based search syntax, and search history management.
  * The manager handles both standard fuzzy name searches and advanced field-based queries with
- * comprehensive suggestion systems and keyboard navigation support.
+ * suggestion systems and keyboard navigation support.
  *
  * This class integrates with the validation helpers to parse and execute advanced queries,
  * manages search state and history, and provides a polished search experience with
@@ -601,7 +601,7 @@ export class AdvancedSearchManager {
   /**
    * Generate content for advanced query suggestions.
    *
-   * Creates comprehensive dropdown content for advanced queries including
+   * Creates dropdown content for advanced queries including
    * field suggestions, value suggestions, status indicators, and execution
    * options. Handles different stages of query construction with appropriate
    * contextual suggestions.
@@ -1200,7 +1200,7 @@ export class AdvancedSearchManager {
   /**
    * Clean up event listeners, timeouts, and DOM elements.
    *
-   * Performs comprehensive cleanup of the search manager, removing event listeners,
+   * Performs cleanup of the search manager, removing event listeners,
    * clearing timeouts, removing DOM elements, and resetting internal state.
    * Should be called when the search manager is no longer needed.
    *

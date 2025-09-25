@@ -1,7 +1,7 @@
 /**
  * Spell Display Formatting and Processing Utilities
  *
- * This module provides comprehensive utilities for formatting and processing spell data
+ * This module provides utilities for formatting and processing spell data
  * for display purposes within the Spell Book module. It handles transformation of raw
  * spell data into display-ready formats, extraction of filterable metadata, and creation
  * of formatted presentation elements.
@@ -14,7 +14,7 @@
  * - Spell list processing with metadata enhancement
  * - Individual spell item formatting for GM and player interfaces
  * - Component, activation, and school formatting with localization
- * - Comprehensive spell metadata extraction for filtering systems
+ * - Spell metadata extraction for filtering systems
  * - Material component processing with cost calculation
  * - Condition and damage type extraction from spell descriptions
  * - Icon link generation with proper UUID handling
@@ -94,7 +94,7 @@ import { log } from '../logger.mjs';
  */
 
 /**
- * Comprehensive spell filter data structure.
+ * spell filter data structure.
  *
  * @typedef {Object} SpellFilterData
  * @property {CastingTimeData} castingTime - Casting time information
@@ -260,7 +260,7 @@ export function getLocalizedPreparationMode(mode) {
 /**
  * Extracts additional spell data for filtering.
  *
- * Performs comprehensive analysis of a spell to extract all filterable metadata
+ * Performs analysis of a spell to extract all filterable metadata
  * including casting time, range, damage types, ritual status, concentration
  * requirements, material components, saving throw requirements, and conditions.
  *
@@ -365,7 +365,7 @@ export function checkIsRitual(spell) {
  *
  * Determines whether a spell requires concentration to maintain by checking
  * duration properties and spell property arrays. Handles multiple data
- * structure variations for comprehensive detection.
+ * structure variations for detection.
  *
  * @param {Object} spell - The spell document
  * @returns {boolean} Whether the spell requires concentration

@@ -18,7 +18,7 @@
  *
  * Each manager is designed to be instantiated as needed and provides a focused
  * API for its specific domain of functionality. Many managers integrate with
- * each other to provide comprehensive spell management capabilities.
+ * each other to provide spell management capabilities.
  *
  * @module Managers
  * @author Tyler

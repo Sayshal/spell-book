@@ -9,7 +9,7 @@
  * - Cached cantrip limit calculations for performance optimization
  * - Level-up detection and cantrip swap enablement
  * - Long rest cantrip swap mechanics for wizards
- * - Comprehensive swap tracking with undo functionality
+ * - Swap tracking with undo functionality
  * - GM notification system for cantrip changes and over-limit warnings
  * - Multi-class cantrip management with per-class rule support
  * - Validation and enforcement of cantrip preparation rules
@@ -66,7 +66,7 @@ const { renderTemplate } = foundry.applications.handlebars;
  */
 
 /**
- * Comprehensive notification data for GM reports.
+ * Notification data for GM reports.
  *
  * @typedef {Object} NotificationData
  * @property {string} actorName - Name of the actor with changes
@@ -100,7 +100,7 @@ const { renderTemplate } = foundry.applications.handlebars;
  * optimal performance and integrates with the module's rule system.
  *
  * The manager supports multi-class characters with per-class cantrip limits and rules,
- * wizard-specific long rest swap mechanics, and comprehensive change tracking with
+ * wizard-specific long rest swap mechanics, and change tracking with
  * GM notification capabilities.
  */
 export class CantripManager {
@@ -302,7 +302,7 @@ export class CantripManager {
   /**
    * Validate cantrip preparation based on current rules and limits.
    *
-   * Comprehensive validation method that checks cantrip preparation attempts
+   * Validation method that checks cantrip preparation attempts
    * against current limits, swap rules, and tracking state. Handles both
    * preparation and unpreparation attempts with appropriate rule enforcement.
    *
@@ -523,7 +523,7 @@ export class CantripManager {
   }
 
   /**
-   * Send comprehensive GM notification with all spell changes and over-limit warnings.
+   * Send GM notification with all spell changes and over-limit warnings.
    *
    * Creates and sends a detailed chat message to GMs containing information
    * about cantrip changes, over-limit warnings, and class-specific modifications.

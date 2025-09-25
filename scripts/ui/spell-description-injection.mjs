@@ -60,7 +60,7 @@ import * as UIHelpers from './_module.mjs';
  * Class to handle injecting notes into spell descriptions on actor items.
  *
  * This static class manages the automatic injection of user notes into spell descriptions
- * based on user preferences. It provides comprehensive handling of note insertion, updates,
+ * based on user preferences. It provides handling of note insertion, updates,
  * and removal while preventing infinite update loops and ensuring proper user ownership.
  *
  * The class hooks into Foundry VTT's item update and creation events to automatically
@@ -166,7 +166,7 @@ export class SpellDescriptionInjection {
    * Handle item updates with recursion prevention for spell description changes.
    *
    * Responds to item update events by checking if notes need to be updated in
-   * the spell description. Includes comprehensive recursion prevention to avoid
+   * the spell description. Includes recursion prevention to avoid
    * infinite update loops when the system modifies descriptions.
    *
    * @param {Item5e} item - The updated item
@@ -189,7 +189,7 @@ export class SpellDescriptionInjection {
    *
    * The core method for managing notes injection. Handles user ownership detection,
    * notes retrieval, and appropriate injection based on the current mode. Includes
-   * comprehensive error handling and recursion prevention.
+   * error handling and recursion prevention.
    *
    * For GM users, this method attempts to identify the proper spell owner by:
    * 1. Finding the character owner if the actor is a player character

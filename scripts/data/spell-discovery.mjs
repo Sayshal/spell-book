@@ -1,7 +1,7 @@
 /**
  * Spell Discovery and Retrieval System
  *
- * Provides comprehensive spell discovery functionality for finding spells
+ * Provides spell discovery functionality for finding spells
  * across multiple sources including compendiums, spell lists, and actor
  * collections. This module handles the complex task of spell resolution
  * and availability determination.
@@ -189,7 +189,7 @@ function getFolderNameFromPack(source) {
 
 /**
  * Find spell list by identifier across all journal packs.
- * Performs a comprehensive search across all journal compendiums
+ * Performs a search across all journal compendiums
  * for spell lists matching the specified class identifier.
  *
  * @param {string} identifier - Class identifier to search for

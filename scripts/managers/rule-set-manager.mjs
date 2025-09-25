@@ -12,7 +12,7 @@
  * - Per-class rule customization with spell preparation bonuses and swap mechanics
  * - Custom spell list integration with affected spell validation
  * - Automatic cleanup of spells when changing spell lists
- * - Comprehensive confirmation dialogs for rule changes affecting prepared spells
+ * - Confirmation dialogs for rule changes affecting prepared spells
  * - Integration with actor flag system for persistent rule storage
  * - Support for multiclass characters with individual class rule management
  *
@@ -67,7 +67,7 @@ const { renderTemplate } = foundry.applications.handlebars;
 /**
  * Rule Set Manager - Centralized spellcasting rule configuration and management.
  *
- * This static class provides comprehensive rule set management for spellcasting
+ * This static class provides rule set management for spellcasting
  * characters, handling both global rule set application and per-class customization.
  * It manages the complexity of multiclass spellcasters while providing sensible
  * defaults based on established D&D 5e patterns and optional rules.
@@ -472,7 +472,7 @@ export class RuleSetManager {
   /**
    * Show confirmation dialog for spell list change.
    *
-   * Displays a comprehensive confirmation dialog when a spell list change
+   * Displays a confirmation dialog when a spell list change
    * would affect prepared spells. Shows the user exactly which spells will
    * be unprepared and requires explicit confirmation before proceeding.
    *

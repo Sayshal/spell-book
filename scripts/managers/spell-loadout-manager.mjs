@@ -12,7 +12,7 @@
  * - Class-specific loadouts with optional cross-class compatibility
  * - Caching system for optimal performance when accessing loadouts frequently
  * - Integration with SpellBook UI for seamless checkbox state management
- * - Comprehensive error handling and user feedback
+ * - Error handling and user feedback
  * - Persistent storage using actor flags for cross-session availability
  * - Validation and cleanup of loadout data
  *
@@ -43,7 +43,7 @@ import { log } from '../logger.mjs';
 /**
  * Spell Loadout Manager - Quick preparation switching and configuration management.
  *
- * This class provides comprehensive spell loadout management for actors, enabling
+ * This class provides spell loadout management for actors, enabling
  * users to save current spell preparation states and quickly switch between different
  * configurations. It integrates with the SpellBook UI to provide seamless transitions
  * between loadouts while maintaining proper spell preparation tracking.

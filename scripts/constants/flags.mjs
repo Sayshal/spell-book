@@ -2,7 +2,7 @@
  * Actor flag definitions and data structures for the Spell Book module.
  *
  * This module defines all flag keys used for storing data on actor documents,
- * along with comprehensive type definitions for the data structures stored
+ * along with type definitions for the data structures stored
  * in those flags. It also tracks deprecated flags for migration purposes.
  *
  * @module Constants/Flags

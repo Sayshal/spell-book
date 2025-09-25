@@ -1,7 +1,7 @@
 /**
  * Spell Book User Interface Management System
  *
- * This module provides comprehensive UI management for the Spell Book application,
+ * This module provides UI management for the Spell Book application,
  * handling interface state, user interactions, dynamic content updates, and visual
  * enhancements. It serves as the central coordinator for all UI-related functionality
  * including layout management, search integration, and spell interaction controls.
@@ -242,7 +242,7 @@ export class SpellbookUI {
   /**
    * Enhanced spell preparation tracking that enforces per-class limits.
    *
-   * Manages comprehensive spell preparation tracking with per-class limit enforcement.
+   * Manages spell preparation tracking with per-class limit enforcement.
    * Calculates current preparation counts, applies rule-based restrictions, and
    * updates both class-specific and global preparation displays.
    *
@@ -678,7 +678,7 @@ export class SpellbookUI {
   /**
    * Set up spell lock states based on class swapping rules and max limits.
    *
-   * Applies comprehensive spell locking based on class rules, preparation limits,
+   * Applies spell locking based on class rules, preparation limits,
    * and application context. Handles rule-based restrictions for spell swapping
    * while respecting special spell types that don't count against limits.
    *

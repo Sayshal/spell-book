@@ -1,7 +1,7 @@
 /**
  * Actor Spell Management Utilities
  *
- * Provides comprehensive utilities for managing spells on D&D 5e actors including
+ * Provides utilities for managing spells on actors including
  * spell retrieval, preparation status management, spellcasting class analysis,
  * and spell slot calculations. This module handles the complex interactions
  * between actors, their classes, and their spell collections.

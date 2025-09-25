@@ -17,7 +17,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 /**
  * Synergy Analysis Dialog for displaying party spell analysis.
  *
- * This application provides comprehensive spell synergy analysis including
+ * This application provides spell synergy analysis including
  * interactive pie charts, damage type distribution, component analysis,
  * and strategic recommendations for party optimization.
  */

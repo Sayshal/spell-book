@@ -1,7 +1,7 @@
 /**
  * Spell Book Filtering System
  *
- * This module provides comprehensive filtering capabilities for the Spell Book application,
+ * This module provides filtering capabilities for the Spell Book application,
  * managing both data-level filtering for spell lists and DOM-level filtering for displayed
  * spells. It includes advanced search integration, caching mechanisms, and sophisticated
  * matching algorithms for various spell properties.
@@ -100,7 +100,7 @@ import * as ValidationHelpers from '../validation/_module.mjs';
 /**
  * Helper class for filtering spells in the Spell Book application with cached filter state.
  *
- * This class provides comprehensive filtering capabilities for spell data and DOM elements,
+ * This class provides filtering capabilities for spell data and DOM elements,
  * managing filter state caching, advanced search integration, and real-time filtering
  * updates. It handles both programmatic filtering of spell arrays and visual filtering
  * of displayed spell elements.
@@ -242,7 +242,7 @@ export class SpellbookFilterHelper {
   /**
    * Filter available spells based on current filter state.
    *
-   * Applies comprehensive filtering to an array of spell objects using the current
+   * Applies filtering to an array of spell objects using the current
    * filter state. The filtering process is executed in stages for optimal performance,
    * with early returns and efficient array operations.
    *

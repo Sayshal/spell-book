@@ -1,7 +1,7 @@
 /**
  * UI Customization and Theme Management System
  *
- * This module provides comprehensive UI customization capabilities for the Spell Book
+ * This module provides UI customization capabilities for the Spell Book
  * application, managing user preferences for spell metadata display and interface
  * elements. It handles different customization contexts for player and GM interfaces
  * while maintaining consistent formatting and localization.
@@ -82,7 +82,7 @@ import * as UIHelpers from './_module.mjs';
 /**
  * Helper class for managing UI customization settings.
  *
- * This static utility class provides comprehensive UI customization management for
+ * This static utility class provides UI customization management for
  * the Spell Book application. It handles setting-based visibility controls for
  * various UI elements, builds customized metadata displays, and ensures appropriate
  * element availability based on user context (player vs GM).
@@ -90,7 +90,7 @@ import * as UIHelpers from './_module.mjs';
  * The class integrates with Foundry VTT's settings system to provide persistent
  * user preferences while maintaining proper context separation between player
  * and administrative interfaces. It provides both element visibility checking
- * and comprehensive metadata building for spell display customization.
+ * and metadata building for spell display customization.
  */
 export class UICustomizationHelper {
   /**
@@ -184,7 +184,7 @@ export class UICustomizationHelper {
   /**
    * Build custom metadata subtitle for SpellBook player interface.
    *
-   * Constructs a comprehensive metadata string for spell display in player
+   * Constructs a metadata string for spell display in player
    * interfaces based on enabled UI elements. Combines various spell properties
    * into a formatted, localized string using bullet separators for readability.
    *
@@ -241,7 +241,7 @@ export class UICustomizationHelper {
   /**
    * Build custom metadata subtitle for GMSpellListManager interface.
    *
-   * Constructs a comprehensive metadata string for spell display in GM
+   * Constructs a metadata string for spell display in GM
    * interfaces based on enabled UI elements. Similar to player metadata
    * but excludes player-specific elements and focuses on administrative
    * information relevant to spell list management.

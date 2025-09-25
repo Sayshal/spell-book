@@ -3,7 +3,7 @@
  *
  * This module defines all template paths used with Foundry's renderTemplate() function
  * to render application interfaces, dialogs, and reusable components. All paths are
- * organized by functional area and include comprehensive type definitions.
+ * organized by functional area and include type definitions.
  *
  * @module Constants/Templates
  * @author Tyler

@@ -1,7 +1,7 @@
 /**
  * Spell Favorites Management System
  *
- * This module provides comprehensive management of spell favorites within the Spell Book
+ * This module provides management of spell favorites within the Spell Book
  * module, handling synchronization between the journal-based user data system and
  * Foundry VTT's native actor favorites system.
  *
@@ -144,7 +144,7 @@ export async function syncFavoritesOnSave(actor, spellData) {
 /**
  * Process favorites from form state and update actor.system.favorites to match journal.
  *
- * Performs a comprehensive synchronization of actor favorites based on the current
+ * Performs a synchronization of actor favorites based on the current
  * state of the spell user data journal. This function handles owner detection for
  * GM-managed actors and ensures that the actor's favorites accurately reflect the
  * journal-stored favorite states.
@@ -202,7 +202,7 @@ export async function processFavoritesFromForm(_form, actor) {
  * 3. Direct UUID comparison
  * 4. Compendium name matching as fallback
  *
- * This comprehensive approach ensures spells can be found regardless of how
+ * This approach ensures spells can be found regardless of how
  * they were added to the actor or what UUID format is provided.
  *
  * @param {string} spellUuid - The spell UUID to find

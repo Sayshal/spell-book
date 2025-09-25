@@ -13,7 +13,7 @@
  * - Integration with user data journal system for persistent storage
  * - Duplicate event prevention through active tracking mechanisms
  * - Character actor filtering to focus on player character spell usage
- * - Comprehensive error handling and logging for reliability
+ * - Error handling and logging for reliability
  * - User-specific data storage associating usage with character owners
  *
  * The tracker operates transparently in the background, requiring no direct user
@@ -56,7 +56,7 @@ import { log } from '../logger.mjs';
 /**
  * Spell Usage Tracker - Singleton analytics and tracking system.
  *
- * This class provides comprehensive spell usage tracking by hooking into D&D 5e's
+ * This class provides spell usage tracking by hooking into D&D 5e's
  * activity consumption system. It operates as a singleton to ensure unified tracking
  * across the entire game session and integrates with the user data storage system
  * to provide persistent analytics data.

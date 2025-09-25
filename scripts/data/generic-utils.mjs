@@ -82,7 +82,7 @@ export function getSpellcastingConfigForClass(actor, classIdentifier) {
 /**
  * Get scale values for a class, checking both main class and subclass.
  * Merges scale values from main class, subclass, and spellcasting data
- * to provide a comprehensive set of scaling values.
+ * to provide a set of scaling values.
  *
  * @param {Actor5e} actor - The actor to check for scale values
  * @param {string} classIdentifier - The class identifier to look up

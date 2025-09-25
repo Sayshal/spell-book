@@ -2,8 +2,8 @@
  * Party Spell Coordination and Analysis Management
  *
  * Manages party-wide spell coordination, analysis, and collaboration features for
- * multi-character spellcasting groups. This class provides comprehensive tools for
- * analyzing spell synergies, tracking party spell pools, managing spellcasting focuses,
+ * spellcasting groups. This class provides tools for analyzing spell synergies,
+ * tracking party spell pools, managing spellcasting focuses,
  * and generating coordination recommendations.
  *
  * Key features:
@@ -13,7 +13,7 @@
  * - Permission-based spell data access with graceful degradation
  * - Caching system for performance optimization with spell data
  * - Integration with D&D 5e primary party settings and group actors
- * - Comprehensive recommendation system for spell preparation
+ * - Recommendation system for spell preparation
  * - Multi-class spellcaster support with enhanced class name display
  * - Dual-flag focus system with group and individual actor synchronization
  *
@@ -177,7 +177,7 @@ import * as UIHelpers from '../ui/_module.mjs';
 /**
  * Party Spell Manager - Coordination and analysis for multi-character spellcasting.
  *
- * This class provides comprehensive party spell management capabilities including
+ * This class provides party spell management capabilities including
  * spell pool analysis, synergy detection, focus coordination, and preparation
  * recommendations. It integrates with Foundry's permission system to provide
  * appropriate data access while maintaining privacy for restricted actors.
@@ -245,7 +245,7 @@ export class PartySpellManager {
   /**
    * Get spell data for a specific actor.
    *
-   * Retrieves comprehensive spell information for the specified actor including
+   * Retrieves spell information for the specified actor including
    * all spellcasting classes, known spells, prepared spells, and metadata.
    * Respects Foundry's permission system and provides graceful degradation
    * for actors the current user cannot fully observe.
