@@ -1781,6 +1781,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       return;
     }
     if (spellItem) spellItem.classList.toggle('prepared-spell', isChecked);
+    if (isLongRest && !isChecked && wasPrepared) this.render(false);
   }
 
   /**
