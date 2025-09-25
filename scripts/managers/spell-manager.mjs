@@ -244,7 +244,18 @@ export class SpellManager {
       const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
       const classPreparedSpells = preparedByClass[classIdentifier] || [];
       const spellKey = this._createClassSpellKey(spellUuid, classIdentifier);
-      const isPreparedForClass = classPreparedSpells.includes(spellKey);
+      let isPreparedForClass = classPreparedSpells.includes(spellKey);
+      if (!isPreparedForClass) {
+        const actualPreparedSpell = this.actor.items.find(
+          (i) =>
+            i.type === 'spell' &&
+            (i.flags?.core?.sourceId === spellUuid || i.uuid === spellUuid) &&
+            (i.system.sourceClass === classIdentifier || i.sourceClass === classIdentifier) &&
+            i.system.prepared === 1 &&
+            i.system.method !== 'ritual'
+        );
+        if (actualPreparedSpell) isPreparedForClass = true;
+      }
       for (const [otherClass, preparedSpells] of Object.entries(preparedByClass)) {
         if (otherClass === classIdentifier) continue;
         const otherClassKey = `${otherClass}:${spellUuid}`;
@@ -279,9 +290,20 @@ export class SpellManager {
       }
       return defaultStatus;
     }
-    const actualSpell = this.actor.items.find(
-      (item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
+    let actualSpell = this.actor.items.find(
+      (item) =>
+        item.type === 'spell' &&
+        (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) &&
+        (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier) &&
+        item.system.prepared === 1 &&
+        item.system.method !== 'ritual'
     );
+    if (!actualSpell) {
+      actualSpell = this.actor.items.find(
+        (item) =>
+          item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
+      );
+    }
     if (actualSpell) return this._getOwnedSpellPreparationStatus(actualSpell);
     const unassignedSpell = this.actor.items.find(
       (item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && !item.system?.sourceClass && !item.sourceClass
