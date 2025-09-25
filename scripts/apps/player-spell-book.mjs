@@ -391,19 +391,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     return context;
   }
 
-  /**
-   * Restore form state from cache before syncing part state.
-   *
-   * This method is called by ApplicationV2 before rendering to restore
-   * cached form states, ensuring that user input persists across re-renders
-   * when switching tabs or updating parts.
-   *
-   * @param {string} partId - The part being synced
-   * @param {HTMLElement} newElement - The new element to sync to
-   * @param {HTMLElement} priorElement - The part DOM element
-   * @param {Object} state - State object for synchronization
-   * @protected
-   */
+  /** @inheritdoc */
   _preSyncPartState(partId, newElement, priorElement, state) {
     super._preSyncPartState(partId, newElement, priorElement, state);
     if (!priorElement || this._formStateCache.size === 0) return;
@@ -414,22 +402,48 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const cachedValue = this._formStateCache.get(inputKey);
       try {
         if (input.type === 'checkbox' || input.matches('dnd5e-checkbox')) {
-          input.checked = cachedValue;
-        } else if (input.type === 'radio') {
-          input.checked = input.value === cachedValue;
-        } else if (input.tagName === 'SELECT') {
+          if (input.matches('dnd5e-checkbox')) {
+            input.checked = cachedValue;
+            if (cachedValue !== input.checked) input.dispatchEvent(new Event('change', { bubbles: true }));
+          } else input.checked = cachedValue;
+        } else if (input.type === 'radio') input.checked = input.value === cachedValue;
+        else if (input.tagName === 'SELECT') {
           input.value = cachedValue;
           if (input.multiple && Array.isArray(cachedValue)) {
             Array.from(input.options).forEach((option) => {
               option.selected = cachedValue.includes(option.value);
             });
           }
-        } else {
-          input.value = cachedValue;
-        }
+        } else input.value = cachedValue;
         log(3, `Restored ${inputKey} to cached value:`, cachedValue);
       } catch (error) {
         log(1, `Error restoring cached state for ${inputKey}:`, error);
+      }
+    });
+  }
+
+  /** @inheritdoc */
+  _syncPartState(partId, newElement, priorElement, state) {
+    super._syncPartState(partId, newElement, priorElement, state);
+    if (this._formStateCache.size === 0) return;
+    const newInputs = newElement.querySelectorAll('dnd5e-checkbox');
+    newInputs.forEach((input) => {
+      const inputKey = this._getInputCacheKey(input);
+      if (!inputKey || !this._formStateCache.has(inputKey)) return;
+      const cachedValue = this._formStateCache.get(inputKey);
+      try {
+        input.checked = cachedValue;
+        if (typeof input.requestUpdate === 'function') input.requestUpdate();
+        const spellItem = input.closest('.spell-item');
+        if (spellItem) {
+          if (cachedValue) {
+            if (!spellItem.classList.contains('prepared-spell')) spellItem.classList.add('prepared-spell');
+            else spellItem.classList.remove('prepared-spell');
+          }
+        }
+        log(3, `Post-sync restored ${inputKey} to cached value:`, cachedValue);
+      } catch (error) {
+        log(1, `Error in post-sync restoration for ${inputKey}:`, error);
       }
     });
   }
@@ -1258,13 +1272,17 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @inheritdoc */
   changeTab(tabName, groupName, options = {}) {
+    const previousTab = this.tabGroups[groupName];
+    const isFromWizardTab = previousTab && (previousTab === 'wizardbook' || previousTab.startsWith('wizardbook-'));
+    const isToPreparationTab = tabName.endsWith('Tab') && !tabName.startsWith('wizardbook');
     super.changeTab(tabName, groupName, options);
     const classMatch = tabName.match(/^([^T]+)Tab$/);
     const classIdentifier = classMatch ? classMatch[1] : null;
     if (classIdentifier && this._stateManager.classSpellData[classIdentifier]) this._stateManager.setActiveClass(classIdentifier);
     this._stateManager.updateGlobalPreparationCount();
     this._switchTabVisibility(tabName);
-    this.render(false, { parts: ['footer'] });
+    if (isFromWizardTab && isToPreparationTab) this.render(false, { parts: [tabName, 'footer'] });
+    else this.render(false, { parts: ['footer'] });
     this.ui.updateSpellCounts();
     this.ui.updateSpellPreparationTracking();
     this.ui.setupCantripUI();
