@@ -274,7 +274,7 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
    * Set up event handlers for spell preview tooltip functionality.
    *
    * Establishes mouse event listeners for loadout spell preview icons to show
-   * detailed spell information on hover with proper positioning.
+   * detailed spell information on hover with proper positioning and scroll forwarding.
    *
    * @private
    */
@@ -290,6 +290,20 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
       icon.addEventListener('mousemove', (event) => {
         this._positionTooltip(event);
       });
+      icon.addEventListener(
+        'wheel',
+        (event) => {
+          const tooltip = document.getElementById('spell-preview-tooltip');
+          if (tooltip && tooltip.style.display !== 'none') {
+            const scrollableList = tooltip.querySelector('.spell-preview-list');
+            if (scrollableList) {
+              event.preventDefault();
+              scrollableList.scrollTop += event.deltaY;
+            }
+          }
+        },
+        { passive: false }
+      );
     });
   }
 

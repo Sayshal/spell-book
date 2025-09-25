@@ -5009,89 +5009,6 @@
       font-style: italic;
       text-align: center;
     }
-
-    .spell-preview-tooltip {
-      z-index: var(--spell-book-z-index-tooltip);
-      position: absolute;
-      max-width: 21.875rem;
-      padding: 0.5rem;
-      border-radius: var(--spell-book-radius-md);
-      color: var(--spell-book-text-primary);
-      font-family: var(--font-primary);
-      pointer-events: none;
-      background: var(--spell-book-bg-primary-opaque);
-
-      .tooltip-content {
-        gap: 0.5rem;
-        display: flex;
-        flex-direction: column;
-      }
-
-      .tooltip-header {
-        padding-bottom: 0.25rem;
-        border-bottom: 0.063rem solid var(--spell-book-border-light);
-        color: var(--spell-book-text-primary);
-        font-weight: 600;
-        font-size: 0.9rem;
-      }
-
-      .spell-preview-list {
-        gap: 0.25rem;
-        display: flex;
-        flex-direction: column;
-        max-height: 18.75rem;
-        overflow-y: auto;
-      }
-
-      .spell-preview-item {
-        gap: 0.375rem;
-        display: flex;
-        align-items: center;
-        padding: 0.25rem;
-        border-radius: 0.125rem;
-        font-size: 0.8rem;
-        background: var(--spell-book-bg-item);
-
-        &:hover {
-          background: var(--spell-book-bg-item-hover);
-        }
-
-        .spell-icon {
-          object-fit: cover;
-          width: 1.125rem;
-          height: 1.125rem;
-          border-radius: 50%;
-          background: var(--spell-book-bg-disabled);
-        }
-
-        .spell-name {
-          flex: 1;
-          overflow: hidden;
-          color: var(--spell-book-text-primary);
-          font-weight: 500;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .spell-level {
-          color: var(--spell-book-text-secondary);
-          font-size: 0.75em;
-        }
-      }
-
-      .loading,
-      .error,
-      .no-spells {
-        padding: 1rem;
-        color: var(--spell-book-text-secondary);
-        font-style: italic;
-        text-align: center;
-      }
-
-      .error {
-        color: var(--spell-book-color-error);
-      }
-    }
   }
 
   /* ----------------------------------------- */
@@ -6662,7 +6579,7 @@
       gap: 0.5rem;
       align-items: center;
       padding: 0.5rem 1rem;
-      border: 1px solid var(--spell-book-border-dark);
+      border: 0.063rem solid var(--spell-book-border-dark);
       border-radius: var(--spell-book-radius-md);
       color: var(--spell-book-text-secondary);
       cursor: pointer;
@@ -6879,6 +6796,89 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+  }
+}
+
+.spell-preview-tooltip {
+  z-index: var(--spell-book-z-index-tooltip);
+  position: absolute;
+  max-width: 21.875rem;
+  padding: 0.5rem;
+  border-radius: var(--spell-book-radius-md);
+  color: var(--spell-book-text-primary);
+  font-family: var(--font-primary);
+  pointer-events: none;
+  background: var(--spell-book-bg-primary-opaque);
+
+  .tooltip-content {
+    gap: 0.5rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tooltip-header {
+    padding-bottom: 0.25rem;
+    border-bottom: 0.063rem solid var(--spell-book-border-light);
+    color: var(--spell-book-text-primary);
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .spell-preview-list {
+    gap: 0.25rem;
+    display: flex;
+    flex-direction: column;
+    max-height: 30rem;
+    overflow-y: auto;
+  }
+
+  .spell-preview-item {
+    gap: 0.375rem;
+    display: flex;
+    align-items: center;
+    padding: 0.25rem;
+    border-radius: 0.125rem;
+    font-size: 0.8rem;
+    background: var(--spell-book-bg-item);
+
+    &:hover {
+      background: var(--spell-book-bg-item-hover);
+    }
+
+    .spell-icon {
+      object-fit: cover;
+      width: 1.125rem;
+      height: 1.125rem;
+      border-radius: 50%;
+      background: var(--spell-book-bg-disabled);
+    }
+
+    .spell-name {
+      flex: 1;
+      overflow: hidden;
+      color: var(--spell-book-text-primary);
+      font-weight: 500;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .spell-level {
+      color: var(--spell-book-text-secondary);
+      font-size: 0.75em;
+    }
+  }
+
+  .loading,
+  .error,
+  .no-spells {
+    padding: 1rem;
+    color: var(--spell-book-text-secondary);
+    font-style: italic;
+    text-align: center;
+  }
+
+  .error {
+    color: var(--spell-book-color-error);
   }
 }
 
