@@ -148,10 +148,10 @@
 				<!-- Spells Content - Organized by spell level using shared component -->
 				<div class="spells-container">
 					{{#each selectedSpellList.spellsByLevel as |levelData|}}
-						{{#> "modules/spell-book/templates/components/spell-level.hbs" level=levelData.level levelName=levelData.levelName spells=levelData.spells}}
+						{{#> "modules/spell-book/templates/apps/spell-list-manager/spell-level.hbs" level=levelData.level levelName=levelData.levelName spells=levelData.spells}}
 							<!-- Individual Spell Item within spell level component -->
 							<li
-								class="spell-item{{#if ../../selectionMode}} selectable{{/if}}{{#if (lookup ../../selectedSpellsToRemove uuid)}} selected{{/if}}"
+								class="spell-item{{#if @root.selectionMode}} selectable{{/if}}{{#if (lookup @root.selectedSpellsToRemove uuid)}} selected{{/if}}"
 								data-uuid="{{uuid}}" data-selection-type="remove" role="listitem">
 
 								<!-- Spell Name and Details -->
@@ -170,9 +170,9 @@
 								</div>
 
 								<!-- Spell Removal Controls - Available during editing -->
-								{{#if ../../isEditing}}
+								{{#if @root.isEditing}}
 									<div class="spell-preparation">
-										{{#if ../../selectionMode}}
+										{{#if @root.selectionMode}}
 											<!-- Bulk Selection Checkbox -->
 											{{{selectRemoveCheckboxHtml}}}
 										{{else}}
@@ -185,7 +185,7 @@
 									</div>
 								{{/if}}
 							</li>
-							{{/modules/spell-book/templates/components/spell-level.hbs}}
+							{{/modules/spell-book/templates/apps/spell-list-manager/spell-level.hbs}}
 					{{/each}}
 				</div>
 			{{else}}

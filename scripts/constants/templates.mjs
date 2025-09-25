@@ -276,6 +276,8 @@ export const TEMPLATES = {
     /** Main application layout template providing overall structure */
     MAIN: 'modules/spell-book/templates/apps/spell-list-manager/main.hbs',
 
+    SPELL_LEVEL: 'modules/spell-book/templates/apps/spell-list-manager/spell-level.hbs',
+
     /** Spell lists sidebar for navigating between different spell lists */
     SPELL_LISTS: 'modules/spell-book/templates/apps/spell-list-manager/spell-lists.hbs'
   },

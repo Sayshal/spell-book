@@ -1,0 +1,13 @@
+<div class="spell-level" data-level="{{level}}">
+  <h3 class="spell-level-heading" data-action="toggleSpellLevel" data-level="{{level}}" role="button"
+    aria-expanded="{{#unless isCollapsed}}true{{else}}false{{/unless}}" aria-controls="spell-list-{{level}}" style="">
+    <i class="fas fa-caret-{{#if isCollapsed}}right{{else}}down{{/if}} collapse-indicator" aria-hidden="true"></i>
+    {{levelName}}
+    <span class="spell-count" aria-label="Spell Count">({{spells.length}})</span>
+  </h3>
+  <ul class="spell-list" id="spell-list-{{level}}" {{#if isCollapsed}}style="display: none;" {{/if}} role="list">
+    {{#each spells as |spell|}}
+      {{> @partial-block spell}}
+    {{/each}}
+  </ul>
+</div>
