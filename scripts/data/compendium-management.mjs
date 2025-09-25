@@ -772,3 +772,37 @@ export async function shouldShowInSettings(pack) {
   }
   return false;
 }
+
+/**
+ * Prepare spell source options from spell.system.source.label.
+ * Extracts unique spell source labels from available spells and formats
+ * them as dropdown options with proper sorting and handling of missing values.
+ *
+ * @param {Array<FormattedSpellData>} availableSpells - The available spells array
+ * @returns {Array<SpellSourceOption>} Array of spell source options for dropdown
+ */
+export function prepareSpellSourceOptions(availableSpells) {
+  /** @type {Map<string, SpellSourceOption>} */
+  const sourceMap = new Map();
+  sourceMap.set('all', { id: 'all', label: game.i18n.localize('SPELLMANAGER.Filters.AllSpellSources') });
+  const noSourceLabel = game.i18n.localize('SPELLMANAGER.Filters.NoSource');
+  availableSpells.forEach((spell) => {
+    const spellSourceData = spell.filterData?.spellSource || spell.system?.source?.custom || spell.system?.source?.book;
+    const spellSourceId = spell.filterData?.spellSourceId;
+    let sourceLabel = spellSourceData;
+    let sourceId = spellSourceId;
+    if (!sourceLabel || sourceLabel.trim() === '') {
+      sourceLabel = noSourceLabel;
+      sourceId = 'no-source';
+    } else if (!sourceId) {
+      sourceId = sourceLabel;
+    }
+    if (!sourceMap.has(sourceId)) sourceMap.set(sourceId, { id: sourceId, label: sourceLabel === noSourceLabel ? noSourceLabel : sourceLabel });
+  });
+  const sources = Array.from(sourceMap.values()).sort((a, b) => {
+    if (a.id === 'all') return -1;
+    if (b.id === 'all') return 1;
+    return a.label.localeCompare(b.label);
+  });
+  return sources;
+}

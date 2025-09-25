@@ -239,6 +239,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       level: '',
       school: '',
       source: '',
+      spellSource: 'all',
       castingTime: '',
       minRange: '',
       maxRange: '',
@@ -902,7 +903,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const dropdownSelectors = [
       { selector: 'select[name="spell-level"]', property: 'level' },
       { selector: 'select[name="spell-school"]', property: 'school' },
-      { selector: 'select[name="spell-source"]', property: 'source' },
+      { selector: 'select[name="spell-compendium-source"]', property: 'source' },
+      { selector: 'select[name="spell-source"]', property: 'spellSource' },
       { selector: 'select[name="spell-castingTime"]', property: 'castingTime' },
       { selector: 'select[name="spell-damageType"]', property: 'damageType' },
       { selector: 'select[name="spell-condition"]', property: 'condition' },
@@ -918,7 +920,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
             this.filterState[property] = event.target.value;
             clearTimeout(this._dropdownFilterTimer);
             this._dropdownFilterTimer = setTimeout(() => {
-              if (property === 'level' || property === 'source') this.render(false, { parts: ['availableSpells'] });
+              if (property === 'level' || property === 'source' || property === 'spellSource') this.render(false, { parts: ['availableSpells'] });
               else this.applyFilters();
             }, 150);
           }
@@ -983,6 +985,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       level: '',
       school: '',
       source: '',
+      spellSource: 'all',
       castingTime: '',
       minRange: '',
       maxRange: '',
@@ -1124,19 +1127,33 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     });
     maxRangeInput.id = 'spell-max-range';
     const spellSources = DataHelpers.prepareSpellSources(this.availableSpells);
-    const currentSourceValue = this.filterState.source || 'all';
-    const sourceOptions = spellSources.map((source) => ({
+    const currentCompendiumSourceValue = this.filterState.source || 'all';
+    const compendiumSourceOptions = spellSources.map((source) => ({
       value: source.id,
       label: source.label,
-      selected: currentSourceValue === source.id
+      selected: currentCompendiumSourceValue === source.id
     }));
-    const sourceSelect = ValidationHelpers.createSelect({
-      name: 'spell-source',
-      options: sourceOptions,
+    const compendiumSourceSelect = ValidationHelpers.createSelect({
+      name: 'spell-compendium-source',
+      options: compendiumSourceOptions,
       disabled: !this.isEditing,
-      ariaLabel: game.i18n.localize('SPELLMANAGER.Filters.Source')
+      ariaLabel: game.i18n.localize('SPELLMANAGER.Filters.CompendiumSource')
     });
-    sourceSelect.id = 'spell-source';
+    compendiumSourceSelect.id = 'spell-compendium-source';
+    const spellSourceOptions = DataHelpers.prepareSpellSourceOptions(this.availableSpells);
+    const currentSpellSourceValue = this.filterState.spellSource || 'all';
+    const spellSourceSelectOptions = spellSourceOptions.map((source) => ({
+      value: source.id,
+      label: source.label,
+      selected: currentSpellSourceValue === source.id
+    }));
+    const spellSourceSelect = ValidationHelpers.createSelect({
+      name: 'spell-source',
+      options: spellSourceSelectOptions,
+      disabled: !this.isEditing,
+      ariaLabel: game.i18n.localize('SPELLMANAGER.Filters.SpellSource')
+    });
+    spellSourceSelect.id = 'spell-source';
     return {
       searchInputHtml: ValidationHelpers.elementToHtml(searchInput),
       levelSelectHtml: ValidationHelpers.elementToHtml(levelSelect),
@@ -1150,7 +1167,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       ritualCheckboxHtml: ValidationHelpers.elementToHtml(ritualCheckbox),
       minRangeInputHtml: ValidationHelpers.elementToHtml(minRangeInput),
       maxRangeInputHtml: ValidationHelpers.elementToHtml(maxRangeInput),
-      sourceSelectHtml: ValidationHelpers.elementToHtml(sourceSelect)
+      compendiumSourceSelectHtml: ValidationHelpers.elementToHtml(compendiumSourceSelect),
+      sourceSelectHtml: ValidationHelpers.elementToHtml(spellSourceSelect)
     };
   }
 
