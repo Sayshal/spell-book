@@ -143,16 +143,18 @@
 			</div>
 		</div>
 
-		<!-- Compendium Source Filter  -->
-		<div class="filter-item">
-			<label for="spell-compendium-source">{{localize "SPELLMANAGER.Filters.CompendiumSource"}}</label>
-			{{{filterFormElements.compendiumSourceSelectHtml}}}
-		</div>
-
-		<!-- Spell Source Filter -->
-		<div class="filter-item">
-			<label for="spell-source">{{localize "SPELLMANAGER.Filters.SpellSource"}}</label>
-			{{{filterFormElements.sourceSelectHtml}}}
+		<!-- Source Filters Section - Combined compendium and spell source filters -->
+		<div class="filter-source">
+			<div class="source-filters" role="group">
+				<div class="filter-item">
+					<label for="spell-compendium-source">{{localize "SPELLMANAGER.Filters.CompendiumSource"}}</label>
+					{{{filterFormElements.compendiumSourceSelectHtml}}}
+				</div>
+				<div class="filter-item">
+					<label for="spell-source">{{localize "SPELLMANAGER.Filters.SpellSource"}}</label>
+					{{{filterFormElements.sourceSelectHtml}}}
+				</div>
+			</div>
 		</div>
 
 		<!-- Bulk Selection Controls - Available during editing with selection mode -->
