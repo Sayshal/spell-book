@@ -103,7 +103,7 @@
             <div class="focus-types">
               {{#each focusDistribution as |focusData|}}
                 <div class="focus-type-item"
-                  data-tooltip="{{focusData.focus}} focus: {{#each focusData.members}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}">
+                  data-tooltip="{{#each focusData.members}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}">
                   <span class="focus-type">{{focusData.focus}}</span>
                   <span class="focus-count">{{focusData.count}}</span>
                 </div>

@@ -257,6 +257,7 @@
   "SPELLBOOK.Party.DisablePartyMode": "Disable Party Mode",
   "SPELLBOOK.Party.EnablePartyMode": "Enable Party Mode",
   "SPELLBOOK.Party.FilterToMember": "Click to filter spells for this member",
+  "SPELLBOOK.Party.Focus.None": "No Focus Selected",
   "SPELLBOOK.Party.FocusUpdateError": "Failed to update spellcasting focus",
   "SPELLBOOK.Party.FocusUpdated": "Spellcasting focus updated successfully",
   "SPELLBOOK.Party.Known": "Known",

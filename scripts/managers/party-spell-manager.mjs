@@ -378,7 +378,7 @@ export class PartySpellManager {
    * @returns {string} The actor's spellcasting focus name, or fallback localization key
    */
   getActorSpellcastingFocus(actor) {
-    return actor.getFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS) || 'SPELLBOOK.Party.Focus.None';
+    return actor.getFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS) || game.i18n.localize('SPELLBOOK.Party.Focus.None');
   }
 
   /**
