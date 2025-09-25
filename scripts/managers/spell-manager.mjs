@@ -696,21 +696,40 @@ export class SpellManager {
    * @returns {Promise<void>}
    */
   async _ensureSpellOnActor(uuid, sourceClass, preparationMode, spellsToCreate, spellsToUpdate) {
-    const existingSpell = this.actor.items.find(
+    const matchingSpells = this.actor.items.filter(
       (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
     );
-    if (existingSpell) {
-      let targetMode = preparationMode;
-      let targetPrepared = 1;
-      if (existingSpell.system.method === 'ritual') {
-        targetMode = 'spell';
-        targetPrepared = 1;
-      }
-      if (existingSpell.system.method !== targetMode || existingSpell.system.prepared !== targetPrepared || existingSpell.system.sourceClass !== sourceClass) {
-        const updateData = { _id: existingSpell.id, 'system.method': targetMode, 'system.prepared': targetPrepared };
-        if (existingSpell.system.sourceClass !== sourceClass) updateData['system.sourceClass'] = sourceClass;
+    const existingPreparedSpell = matchingSpells.find((spell) => spell.system.method !== 'ritual' && spell.system.prepared === 1);
+    const existingRitualSpell = matchingSpells.find((spell) => spell.system.method === 'ritual');
+    const classRules = RuleSetManager.getClassRules(this.actor, sourceClass);
+    const isAlwaysRitualCasting = classRules.ritualCasting === 'always';
+    if (existingPreparedSpell) {
+      if (existingPreparedSpell.system.method !== preparationMode || existingPreparedSpell.system.prepared !== 1 || existingPreparedSpell.system.sourceClass !== sourceClass) {
+        const updateData = { _id: existingPreparedSpell.id, 'system.method': preparationMode, 'system.prepared': 1 };
+        if (existingPreparedSpell.system.sourceClass !== sourceClass) updateData['system.sourceClass'] = sourceClass;
         spellsToUpdate.push(updateData);
       }
+      return;
+    }
+    if (existingRitualSpell && isAlwaysRitualCasting && preparationMode === 'spell') {
+      const sourceSpell = await fromUuid(uuid);
+      if (sourceSpell) {
+        const newSpellData = sourceSpell.toObject();
+        newSpellData.system.method = preparationMode;
+        newSpellData.system.prepared = 1;
+        newSpellData.flags = newSpellData.flags || {};
+        newSpellData.flags.core = newSpellData.flags.core || {};
+        newSpellData.flags.core.sourceId = uuid;
+        newSpellData.system.sourceClass = sourceClass;
+        spellsToCreate.push(newSpellData);
+      }
+      return;
+    }
+    const existingSpell = matchingSpells[0];
+    if (existingSpell) {
+      const updateData = { _id: existingSpell.id, 'system.method': preparationMode, 'system.prepared': 1 };
+      if (existingSpell.system.sourceClass !== sourceClass) updateData['system.sourceClass'] = sourceClass;
+      spellsToUpdate.push(updateData);
       return;
     }
     const sourceSpell = await fromUuid(uuid);
@@ -765,7 +784,9 @@ export class SpellManager {
       (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
     );
     if (matchingSpells.length === 0) return;
-    let targetSpell = matchingSpells.find((spell) => spell.system.prepared === 1);
+    let targetSpell = matchingSpells.find((spell) => spell.system.prepared === 1 && spell.system.method !== 'ritual');
+    if (!targetSpell) targetSpell = matchingSpells.find((spell) => spell.system.prepared === 1);
+    if (!targetSpell) return;
     const isAlwaysPrepared = targetSpell.system.prepared === 2;
     const isGranted = !!targetSpell.flags?.dnd5e?.cachedFor;
     const isFromClassFeature = targetSpell.system.prepared === 2;
@@ -781,7 +802,7 @@ export class SpellManager {
         spellIdsToRemove.push(targetSpell.id);
         return;
       } else {
-        spellsToUpdate.push({ _id: targetSpell.id, 'system.method': 'ritual', 'system.prepared': 0 });
+        spellIdsToRemove.push(targetSpell.id);
         return;
       }
     }
