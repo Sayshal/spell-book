@@ -1,11 +1,57 @@
+{{!--
+/**
+ * Migration Actor List Component Template
+ *
+ * PURPOSE:
+ * Component for displaying a list of actors that were updated during migration
+ * operations. Shows actor names, special conditions (invalid flags), source
+ * compendiums, and handles large lists with truncation. Provides clear feedback
+ * about which actors were affected by migration processes.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {Array<Object>} actors - Complete array of updated actors
+ * @param {Array<Object>} visibleActors - Array of actors to display (may be truncated)
+ * @param {string} visibleActors[].name - Actor display name
+ * @param {boolean} visibleActors[].hadInvalidFlags - Whether actor had invalid flags removed
+ * @param {string} visibleActors[].pack - Source compendium pack name (optional)
+ * @param {boolean} hasMoreActors - Whether the list is truncated
+ * @param {number} remainingCount - Count of actors not shown due to truncation
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic heading structure with descriptive count information
+ * - List structure with proper ul/li markup for screen readers
+ * - Clear indication of additional items when list is truncated
+ * - Descriptive text for special conditions and sources
+ *
+ * CUSTOMIZATION POINTS:
+ * - Actor list can be truncated to manage display size
+ * - Special conditions (invalid flags) clearly indicated
+ * - Source compendium information included when available
+ * - Count information provides scale context
+ *
+ * INTEGRATION:
+ * - Used within migration report displays
+ * - Connects to actor data migration systems
+ * - Uses module localization keys from SPELLBOOK.Migrations namespace
+ * - Supports both world and compendium actor updates
+ */
+--}}
+
+<!-- Migration Actor List Header with Count -->
 <h3>{{localize 'SPELLBOOK.Migrations.UpdatedActors' count=actors.length}}</h3>
+
+<!-- Updated Actors List -->
 <ul>
   {{#each visibleActors}}
     <li>{{this.name}}
+      <!-- Invalid Flags Indicator -->
       {{#if this.hadInvalidFlags}}({{localize 'SPELLBOOK.Migrations.InvalidFlagsDetail'}}){{/if}}
+      <!-- Source Compendium Information -->
       {{#if this.pack}} - {{localize 'SPELLBOOK.Migrations.Compendium' name=this.pack}}{{/if}}
     </li>
   {{/each}}
+
+  <!-- Truncation Indicator -->
   {{#if hasMoreActors}}
     <li>{{localize 'SPELLBOOK.Migrations.AndMore' count=remainingCount}}</li>
   {{/if}}

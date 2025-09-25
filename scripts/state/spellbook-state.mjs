@@ -1,3 +1,24 @@
+/**
+ * Spell Book State Management
+ *
+ * State management system for the Spell Book application. This class handles
+ * all aspects of spell data loading, organization, caching, and state management including
+ * spellcasting class detection, spell preparation tracking, wizard spellbook management,
+ * and ritual casting functionality.
+ *
+ * Key responsibilities:
+ * - Spellcasting class detection and initialization
+ * - Spell data loading and organization by class and level
+ * - Preparation statistics calculation and caching
+ * - Wizard spellbook management and integration
+ * - Ritual spell handling and automatic addition
+ * - Long rest mechanics and swap tracking
+ * - State synchronization and cache management
+ *
+ * @module State/SpellbookState
+ * @author Tyler
+ */
+
 import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
 import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
@@ -5,39 +26,184 @@ import { RuleSetManager } from '../managers/_module.mjs';
 import * as UIHelpers from '../ui/_module.mjs';
 
 /**
- * Manages state for the Spell Book application with cached calculations
- * Handles loading, processing, and organizing spell data
+ * Spell preparation statistics for a class.
+ *
+ * @typedef {Object} PreparationStats
+ * @property {number} current - Number of currently prepared spells
+ * @property {number} maximum - Maximum number of spells that can be prepared
+ */
+
+/**
+ * Spellcasting class data structure.
+ *
+ * @typedef {Object} SpellcastingClassData
+ * @property {string} name - Display name of the class
+ * @property {string} uuid - UUID of the class item
+ * @property {string} id - ID of the class item
+ * @property {Object} spellcasting - Spellcasting configuration from class
+ * @property {string} img - Image path for the class
+ */
+
+/**
+ * Organized spell data for a class.
+ *
+ * @typedef {Object} ClassSpellData
+ * @property {Array<SpellLevel>} spellLevels - Array of spell levels with organized spells
+ * @property {string} className - Display name of the class
+ * @property {PreparationStats} spellPreparation - Preparation statistics
+ * @property {Item} classItem - The class item reference
+ * @property {string} [identifier] - Class identifier
+ * @property {Object} [tabData] - Additional tab data for wizard classes
+ */
+
+/**
+ * Spell level organization structure.
+ *
+ * @typedef {Object} SpellLevel
+ * @property {number|string} level - Spell level (0-9, or 'scroll' for scrolls)
+ * @property {string} name - Display name for the spell level
+ * @property {Array<EnhancedSpell>} spells - Array of spells for this level
+ */
+
+/**
+ * Enhanced spell data with preparation and UI information.
+ *
+ * @typedef {Object} EnhancedSpell
+ * @property {string} uuid - Spell UUID
+ * @property {string} name - Spell name
+ * @property {Object} system - D&D 5e system data
+ * @property {string} sourceClass - Identifier of the source class
+ * @property {Object} preparation - Preparation status information
+ * @property {Object} filterData - Extracted filter data for UI
+ * @property {string} enrichedIcon - HTML icon link
+ * @property {boolean} [isWizardClass] - Whether this is from a wizard class
+ * @property {boolean} [inWizardSpellbook] - Whether spell is in wizard's personal spellbook
+ * @property {boolean} [canAddToSpellbook] - Whether spell can be added to spellbook
+ * @property {boolean} [isFromScroll] - Whether spell comes from a scroll
+ * @property {Object} [scrollMetadata] - Scroll-specific metadata
+ */
+
+/**
+ * Ritual casting rules for a class.
+ *
+ * @typedef {Object} RitualRules
+ * @property {boolean} canCastRituals - Whether the class can cast ritual spells
+ * @property {boolean} mustPrepare - Whether rituals must be prepared to cast
+ * @property {boolean} fromSpellbook - Whether rituals can be cast from spellbook (wizard)
+ */
+
+/**
+ * Spell swapping rules for a class.
+ *
+ * @typedef {Object} SwapRules
+ * @property {boolean} canSwapCantrips - Whether cantrips can be swapped
+ * @property {string} cantripSwapMode - When cantrips can be swapped ('none', 'levelUp', 'longRest')
+ * @property {boolean} canSwapSpells - Whether spells can be swapped
+ * @property {string} spellSwapMode - When spells can be swapped ('none', 'levelUp', 'longRest')
+ */
+
+/**
+ * Wizard tab data structure for wizard-enabled classes.
+ *
+ * @typedef {Object} WizardTabData
+ * @property {Array<SpellLevel>} spellLevels - Organized spell levels for wizard tab
+ * @property {PreparationStats} spellPreparation - Preparation statistics
+ * @property {number} wizardTotalSpellbookCount - Total spells in personal spellbook
+ * @property {number} wizardFreeSpellbookCount - Total free spells available
+ * @property {number} wizardRemainingFreeSpells - Remaining free spells to learn
+ * @property {boolean} wizardHasFreeSpells - Whether free spells are available
+ * @property {number} wizardMaxSpellbookCount - Maximum spells allowed in spellbook
+ * @property {boolean} wizardIsAtMax - Whether spellbook is at maximum capacity
+ */
+
+/**
+ * Manages state for the Spell Book application with cached calculations.
+ *
+ * This class provides state management for the Spell Book application,
+ * handling spell data loading, organization, caching, and synchronization. It manages
+ * spellcasting classes, preparation tracking, wizard mechanics, and provides optimized
+ * access to spell information through intelligent caching.
+ *
+ * The state manager automatically detects spellcasting classes, loads appropriate spell
+ * lists, handles wizard spellbook integration, manages preparation statistics, and
+ * provides enhanced spell data with UI-ready information.
  */
 export class SpellbookState {
   /**
-   * Create a new State manager
-   * @param app Spell Book application instance
+   * Create a new State manager for a Spell Book application.
+   *
+   * Initializes the state management system with empty caches and default values.
+   * The state manager will be populated during the initialization process.
+   *
+   * @param {SpellBook} app - Spell Book application instance
    */
   constructor(app) {
+    /** @type {SpellBook} The parent Spell Book application */
     this.app = app;
+
+    /** @type {Actor5e} The actor this state manager is for */
     this.actor = app.actor;
+
+    /** @type {Map<string, boolean>} Cache for class detection results */
     this._classDetectionCache = new Map();
+
+    /** @type {boolean} Whether spellcasting classes have been detected */
     this._classesDetected = false;
+
+    /** @type {boolean} Whether the state manager has been initialized */
     this._initialized = false;
+
+    /** @type {Map<string, PreparationStats>} Cache for preparation statistics */
     this._preparationStatsCache = new Map();
+
+    /** @type {string|null} Currently active class identifier */
     this.activeClass = null;
+
+    /** @type {string} Display name of the currently active class */
     this.className = '';
+
+    /** @type {Object<string, string>} Preparation modes by class identifier */
     this.classPrepModes = {};
+
+    /** @type {Object<string, RitualRules>} Ritual casting rules by class identifier */
     this.classRitualRules = {};
+
+    /** @type {Object<string, ClassSpellData>} Spell data organized by class identifier */
     this.classSpellData = {};
+
+    /** @type {Object<string, SwapRules>} Spell swapping rules by class identifier */
     this.classSwapRules = {};
+
+    /** @type {boolean} Whether actor has completed a long rest */
     this.isLongRest = false;
+
+    /** @type {Array<EnhancedSpell>} Available scroll spells for learning */
     this.scrollSpells = [];
+
+    /** @type {Object<string, SpellcastingClassData>} Detected spellcasting classes */
     this.spellcastingClasses = {};
+
+    /** @type {Array<SpellLevel>} Spell levels for the currently active class */
     this.spellLevels = [];
+
+    /** @type {PreparationStats} Global preparation statistics across all classes */
     this.spellPreparation = { current: 0, maximum: 0 };
+
+    /** @type {Object<string, Object>} Tab-specific data for wizard classes */
     this.tabData = {};
+
+    /** @type {Map<string, Array<string>>|null} Cache for wizard spellbook contents */
     this.wizardSpellbookCache = null;
   }
 
   /**
-   * Initialize state manager and load spell data
-   * @returns {Promise<boolean>} Success status
+   * Initialize state manager and load all spell data.
+   *
+   * Performs complete initialization of the state management system including
+   * spellcasting class detection, spell data loading, wizard integration,
+   * and cache population. This method is idempotent and can be called multiple times.
+   *
+   * @returns {Promise<boolean>} True if initialization successful, false otherwise
    */
   async initialize() {
     if (this._initialized) return true;
@@ -74,7 +240,13 @@ export class SpellbookState {
   }
 
   /**
-   * Detect and initialize all spellcasting classes for the actor with cleanup of stale data
+   * Detect and initialize all spellcasting classes for the actor.
+   *
+   * Scans the actor's class items to identify spellcasting capabilities and
+   * initializes the corresponding data structures. Also performs cleanup of
+   * stale data from classes that no longer exist on the actor.
+   *
+   * @returns {void}
    */
   detectSpellcastingClasses() {
     if (this._classesDetected) return;
@@ -127,8 +299,13 @@ export class SpellbookState {
   }
 
   /**
-   * Clean up all stored data for class identifiers that don't match current actor classes
-   * @param {Array<string>} currentClassIds Array of current valid class identifiers
+   * Clean up all stored data for class identifiers that don't match current actor classes.
+   *
+   * Removes flags, manager caches, and other stored data for classes that no longer
+   * exist on the actor to prevent data corruption and memory leaks.
+   *
+   * @param {Array<string>} currentClassIds - Array of current valid class identifiers
+   * @private
    */
   _cleanupStaleClassData(currentClassIds) {
     this._cleanupStaleFlags(currentClassIds);
@@ -136,8 +313,13 @@ export class SpellbookState {
   }
 
   /**
-   * Clean up all flag-based data for non-existent classes
-   * @param {Array<string>} currentClassIds Array of current valid class identifiers
+   * Clean up all flag-based data for non-existent classes.
+   *
+   * Removes actor flags related to classes that are no longer present on the actor.
+   * This includes class rules, prepared spells, swap tracking, and wizard-specific flags.
+   *
+   * @param {Array<string>} currentClassIds - Array of current valid class identifiers
+   * @private
    */
   _cleanupStaleFlags(currentClassIds) {
     const actorFlags = this.actor.flags?.[MODULE.ID] || {};
@@ -191,8 +373,13 @@ export class SpellbookState {
   }
 
   /**
-   * Clean up manager caches and maps for non-existent classes
-   * @param {Array<string>} currentClassIds Array of current valid class identifiers
+   * Clean up manager caches and maps for non-existent classes.
+   *
+   * Removes cached data from various manager instances and application caches
+   * for classes that no longer exist on the actor.
+   *
+   * @param {Array<string>} currentClassIds - Array of current valid class identifiers
+   * @private
    */
   _cleanupStaleManagers(currentClassIds) {
     if (this.app.wizardManagers) {
@@ -216,10 +403,13 @@ export class SpellbookState {
   }
 
   /**
-   * Determine the preparation mode for a given class
-   * @todo - 5.1 I don't think prepared is correct anymore.
-   * @param {Item} classItem The class item
-   * @returns {string} The preparation mode
+   * Determine the preparation mode for a given class.
+   *
+   * Analyzes the class configuration to determine how spells are prepared
+   * or managed for this class type.
+   *
+   * @param {Item} classItem - The class item to analyze
+   * @returns {string} The preparation mode ('spell', 'pact', etc.)
    */
   getClassPreparationMode(classItem) {
     let prepMode = 'spell';
@@ -228,9 +418,14 @@ export class SpellbookState {
   }
 
   /**
-   * Determine ritual casting rules for a given class
-   * @param {Item} classItem The class item
-   * @returns {Object} Ritual casting rules
+   * Determine ritual casting rules for a given class.
+   *
+   * Analyzes the class to determine what ritual casting capabilities it has,
+   * including whether rituals must be prepared and if they can be cast from
+   * a spellbook (wizard-specific).
+   *
+   * @param {Item} classItem - The class item to analyze
+   * @returns {RitualRules} Ritual casting rules for the class
    */
   getClassRitualRules(classItem) {
     const rules = { canCastRituals: false, mustPrepare: false, fromSpellbook: false };
@@ -247,9 +442,13 @@ export class SpellbookState {
   }
 
   /**
-   * Determine spell swapping rules for a given class
-   * @param {Item} classItem The class item
-   * @returns {Object} Spell swapping rules
+   * Determine spell swapping rules for a given class.
+   *
+   * Analyzes the class and current rule set to determine when and how
+   * spells and cantrips can be swapped for this class.
+   *
+   * @param {Item} classItem - The class item to analyze
+   * @returns {SwapRules} Spell swapping rules for the class
    */
   getClassSwapRules(classItem) {
     const identifier = classItem.system?.identifier?.toLowerCase() || '';
@@ -263,8 +462,13 @@ export class SpellbookState {
   }
 
   /**
-   * Load spell data for the actor
-   * @returns {Promise<boolean>} Success status
+   * Load spell data for all detected spellcasting classes.
+   *
+   * Orchestrates the loading of spell data for all spellcasting classes on the actor.
+   * Handles both regular classes and wizard-enabled classes with their special mechanics.
+   * Updates global preparation counts and handles cantrip level-up notifications.
+   *
+   * @returns {Promise<boolean>} True if spell data loaded successfully, false otherwise
    */
   async loadSpellData() {
     RuleSetManager.initializeNewClasses(this.actor);
@@ -310,9 +514,13 @@ export class SpellbookState {
   }
 
   /**
-   * Load spell data for a specific class
-   * @param {string} identifier Identifier of the class
-   * @param {Item} classItem The class item
+   * Load spell data for a specific regular (non-wizard) class.
+   *
+   * Loads the spell list for a class, fetches spell documents, and organizes
+   * them into the appropriate data structure with preparation statistics.
+   *
+   * @param {string} identifier - Identifier of the class
+   * @param {Item} classItem - The class item
    * @returns {Promise<void>}
    */
   async loadClassSpellData(identifier, classItem) {
@@ -346,68 +554,84 @@ export class SpellbookState {
       const missingSpells = Array.from(spellList).filter((uuid) => !preloadedSpells.some((spell) => spell.uuid === uuid));
       if (missingSpells.length > 0) {
         log(3, `Loading ${missingSpells.length} missing spells for ${identifier}`);
-        const additionalSpells = await DataHelpers.fetchSpellDocuments(new Set(missingSpells), maxSpellLevel, this.actor.id);
+        const additionalSpells = await DataHelpers.fetchSpellDocuments(new Set(missingSpells), maxSpellLevel);
         spellItems = [...preloadedSpells, ...additionalSpells];
       } else spellItems = preloadedSpells;
-    } else spellItems = await DataHelpers.fetchSpellDocuments(spellList, maxSpellLevel, this.actor.id);
+    } else spellItems = await DataHelpers.fetchSpellDocuments(spellList, maxSpellLevel);
     if (!spellItems || !spellItems.length) return;
     await this.processAndOrganizeSpellsForClass(identifier, spellItems, classItem);
   }
 
   /**
-   * Organize spells into levels with grouped structure
-   * @param {Array} spellItems Array of spell documents
-   * @param {string} classIdentifier The class identifier
-   * @param {Item} classItem The class item
-   * @returns {Array} Array of level objects, each containing its spells
+   * Takes an array of spell items and organizes them by spell level, enriching
+   * each spell with preparation status, user data, and UI-ready information.
+   * Handles both actor spells and compendium spells with support for multiple
+   * preparation contexts (allows same spell with different preparation methods).
+   *
+   * @param {Array<Object>} spellItems - Array of spell documents
+   * @param {string} classIdentifier - The class identifier
+   * @returns {Promise<Array<SpellLevel>>} Array of level objects, each containing its spells
+   * @private
    */
-  async _organizeSpellsByLevelForClass(spellItems, classIdentifier, classItem) {
+  async _organizeSpellsByLevelForClass(spellItems, classIdentifier) {
     const spellsByLevel = {};
     const processedSpellIds = new Set();
-    const processedSpellNames = new Set();
     const targetUserId = DataHelpers._getTargetUserId(this.actor);
     const actorId = this.actor?.id;
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
+    const preparableSpells = [];
+    const specialModeSpells = [];
     if (this.actor) {
       const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
-      const userDataPromises = actorSpells.map((spell) => {
-        const compendiumUuid = spell.flags?.core?.sourceId || spell.uuid;
-        return DataHelpers.SpellUserDataJournal.getUserDataForSpell(compendiumUuid, targetUserId, actorId);
-      });
-      await Promise.all(userDataPromises);
+      const spellDeduplicationMap = new Map();
       for (const spell of actorSpells) {
         if (spell?.system?.level === undefined) continue;
-        const level = spell.system.level;
-        const spellName = spell.name.toLowerCase();
+        const spellKey = spell.flags?.core?.sourceId || spell.uuid;
+        const sourceClass = spell.system?.sourceClass || spell.sourceClass || classIdentifier;
+        const fullKey = `${sourceClass}:${spellKey}`;
+        if (!spellDeduplicationMap.has(fullKey)) {
+          spellDeduplicationMap.set(fullKey, spell);
+        } else {
+          const existing = spellDeduplicationMap.get(fullKey);
+          const currentPriority = this._getSpellDisplayPriority(spell);
+          const existingPriority = this._getSpellDisplayPriority(existing);
+          if (currentPriority > existingPriority) spellDeduplicationMap.set(fullKey, spell);
+        }
+      }
+      for (const spell of spellDeduplicationMap.values()) {
+        if (spell?.system?.level === undefined) continue;
+        const spellSourceClass = spell.system?.sourceClass || spell.sourceClass;
+        if (spellSourceClass && spellSourceClass !== classIdentifier) continue;
         const preparationMode = spell.system.method;
-        const isSpecialMode = ['innate', 'pact', 'atwill', 'always'].includes(preparationMode);
+        const isSpecialMode = ['innate', 'pact', 'atwill'].includes(preparationMode);
+        const isAlwaysPrepared = spell.system.prepared === 2;
+        const isGranted = !!spell.flags?.dnd5e?.cachedFor;
+        const isOnlySpecial = isSpecialMode || isAlwaysPrepared || isGranted;
+        if (isOnlySpecial) specialModeSpells.push(spell);
+        else preparableSpells.push(spell);
+      }
+    }
+    const processedPreparableSpells = new Set();
+    for (const spell of preparableSpells) {
+      const level = spell.system.level;
+      const spellName = spell.name.toLowerCase();
+      const spellKey = spell.flags?.core?.sourceId || spell.uuid;
+      if (!processedPreparableSpells.has(spellKey)) {
         if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
         const compendiumUuid = spell.flags?.core?.sourceId || spell.uuid;
-        const spellData = {
-          ...spell,
-          compendiumUuid: compendiumUuid,
-          filterData: UIHelpers.extractSpellFilterData(spell),
-          enrichedIcon: UIHelpers.createSpellIconLink(spell)
-        };
-        if (spell.system?.sourceClass) {
-          spellData.sourceClass = spell.system.sourceClass;
-          spellData.system = spellData.system || {};
-          spellData.system.sourceClass = spell.system.sourceClass;
-        } else if (spell.sourceClass) {
-          spellData.sourceClass = spell.sourceClass;
-          spellData.system = spellData.system || {};
-          spellData.system.sourceClass = spell.sourceClass;
-        } else if (!isSpecialMode) {
-          spellData.sourceClass = classIdentifier;
-          spellData.system = spellData.system || {};
-          spellData.system.sourceClass = classIdentifier;
-        }
+        const spellData = { ...spell, compendiumUuid: compendiumUuid };
+        spellData.sourceClass = classIdentifier;
+        spellData.system = spellData.system || {};
+        spellData.system.sourceClass = classIdentifier;
+        if (spell.system?.method !== 'ritual' && spell.system?.components?.ritual) spellData.canCastAsRitual = true;
         spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, classIdentifier);
+        spellData.filterData = UIHelpers.extractSpellFilterData(spell);
+        spellData.enrichedIcon = UIHelpers.createSpellIconLink(spell);
         const enhancedSpell = DataHelpers.SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
         Object.assign(spellData, enhancedSpell);
         spellsByLevel[level].spells.push(spellData);
+        processedPreparableSpells.add(spellKey);
         processedSpellIds.add(spell.id || spell.uuid);
-        processedSpellNames.add(spellName);
       }
     }
     const compendiumDataPromises = spellItems.map((spell) => DataHelpers.SpellUserDataJournal.getUserDataForSpell(spell.uuid || spell.compendiumUuid, targetUserId, actorId));
@@ -415,10 +639,9 @@ export class SpellbookState {
     for (const spell of spellItems) {
       if (spell?.system?.level === undefined) continue;
       const level = spell.system.level;
-      const spellName = spell.name.toLowerCase();
-      if (processedSpellNames.has(spellName)) continue;
-      if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
       const spellUuid = spell.uuid || spell.compendiumUuid;
+      if (processedPreparableSpells.has(spellUuid)) continue;
+      if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
       const spellData = foundry.utils.deepClone(spell);
       let preparedByOtherClass = null;
       for (const [otherClass, preparedSpells] of Object.entries(preparedByClass)) {
@@ -436,6 +659,7 @@ export class SpellbookState {
         spellData.preparation = spellData.preparation || {};
         spellData.preparation.preparedByOtherClass = preparedByOtherClass;
       }
+      spellData._preparationContext = 'preparable';
       if (this.app.spellManager) spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, classIdentifier);
       spellData.filterData = UIHelpers.extractSpellFilterData(spell);
       spellData.enrichedIcon = UIHelpers.createSpellIconLink(spell);
@@ -443,11 +667,28 @@ export class SpellbookState {
       Object.assign(spellData, enhancedSpell);
       spellsByLevel[level].spells.push(spellData);
       processedSpellIds.add(spell.id || spell.compendiumUuid || spell.uuid);
-      processedSpellNames.add(spellName);
     }
-    for (const level in spellsByLevel) {
-      if (level in spellsByLevel) spellsByLevel[level].spells.sort((a, b) => a.name.localeCompare(b.name));
+    for (const spell of specialModeSpells) {
+      const level = spell.system.level;
+      if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
+      const compendiumUuid = spell.flags?.core?.sourceId || spell.uuid;
+      const spellData = { ...spell, compendiumUuid: compendiumUuid };
+      const sourceClass = spell.system?.sourceClass || spell.sourceClass;
+      if (sourceClass) {
+        spellData.sourceClass = sourceClass;
+        spellData.system = spellData.system || {};
+        spellData.system.sourceClass = sourceClass;
+      }
+      spellData._preparationContext = 'special';
+      if (spell.system?.method !== 'ritual' && spell.system?.components?.ritual) spellData.canCastAsRitual = true;
+      spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, sourceClass || classIdentifier);
+      spellData.filterData = UIHelpers.extractSpellFilterData(spell);
+      spellData.enrichedIcon = UIHelpers.createSpellIconLink(spell);
+      const enhancedSpell = DataHelpers.SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
+      Object.assign(spellData, enhancedSpell);
+      spellsByLevel[level].spells.push(spellData);
     }
+    for (const level in spellsByLevel) if (level in spellsByLevel) spellsByLevel[level].spells.sort((a, b) => a.name.localeCompare(b.name));
     const sortedLevels = Object.entries(spellsByLevel)
       .sort(([a], [b]) => Number(a) - Number(b))
       .map(([level, data]) => {
@@ -461,17 +702,94 @@ export class SpellbookState {
         }
         return data;
       });
-
-    log(3, `Returning ${sortedLevels.length} levels for ${classIdentifier}`);
-
+    log(3, `Returning ${sortedLevels.length} levels for ${classIdentifier} with multiple preparation contexts supported`);
     return sortedLevels;
   }
 
   /**
-   * Process and organize spells for a specific class with grouped structure
-   * @param {string} identifier Identifier of the class
-   * @param {Array} spellItems Array of spell items
-   * @param {Item} classItem The class item
+   * Organize spells specifically for wizard spellbook learning tab.
+   * This method is completely isolated from the preparation system and only
+   * handles spell learning logic (Already Learned vs Learn Spell buttons).
+   *
+   * @param {Array<Object>} spellItems - Array of class spell list items ONLY
+   * @param {string} classIdentifier - The class identifier
+   * @param {Array<string>} personalSpellbook - Spells already learned by wizard
+   * @returns {Promise<Array<SpellLevel>>} Array of level objects for wizard spellbook
+   * @private
+   */
+  async _organizeWizardSpellsForLearning(spellItems, classIdentifier, personalSpellbook) {
+    const spellsByLevel = {};
+    const processedSpellUuids = new Set();
+    const targetUserId = DataHelpers._getTargetUserId(this.actor);
+    const actorId = this.actor?.id;
+    for (const spell of spellItems) {
+      if (spell?.system?.level === undefined) continue;
+      const spellUuid = spell.uuid || spell.compendiumUuid;
+      const level = spell.system.level;
+      if (processedSpellUuids.has(spellUuid) || level === 0) continue;
+      if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
+      const spellData = foundry.utils.deepClone(spell);
+      spellData.compendiumUuid = spellUuid;
+      spellData.sourceClass = classIdentifier;
+      spellData.isWizardClass = true;
+      spellData.inWizardSpellbook = personalSpellbook.includes(spellUuid);
+      spellData.canAddToSpellbook = !spellData.inWizardSpellbook && level > 0;
+      spellData.preparation = {
+        prepared: false,
+        isOwned: false,
+        preparationMode: null,
+        disabled: true,
+        alwaysPrepared: false,
+        sourceItem: null,
+        isGranted: false,
+        localizedPreparationMode: '',
+        isCantripLocked: false,
+        disabledReason: '',
+        _isWizardLearning: true
+      };
+      spellData.filterData = UIHelpers.extractSpellFilterData(spell);
+      spellData.enrichedIcon = UIHelpers.createSpellIconLink(spell);
+      const enhancedSpell = DataHelpers.SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
+      Object.assign(spellData, enhancedSpell);
+      spellsByLevel[level].spells.push(spellData);
+      processedSpellUuids.add(spellUuid);
+    }
+    for (const level in spellsByLevel) if (level in spellsByLevel) spellsByLevel[level].spells.sort((a, b) => a.name.localeCompare(b.name));
+    const sortedLevels = Object.entries(spellsByLevel)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([level, data]) => data);
+    log(3, `Organized ${sortedLevels.length} spell levels for wizard spellbook (${classIdentifier})`);
+    return sortedLevels;
+  }
+
+  /**
+   * Get display priority for spell deduplication.
+   * Higher number = higher priority for display.
+   *
+   * @param {Object} spell - The spell item
+   * @returns {number} Priority value (higher = more important to display)
+   * @private
+   */
+  _getSpellDisplayPriority(spell) {
+    const method = spell.system?.method;
+    const prepared = spell.system?.prepared;
+    if (prepared === 1) return 100;
+    if (prepared === 2) return 90;
+    if (['innate', 'pact', 'atwill'].includes(method)) return 50;
+    if (method === 'ritual') return 10;
+    return 30;
+  }
+
+  /**
+   * Process and organize spells for a specific class with preparation statistics.
+   *
+   * Takes spell items and organizes them into level-based structure, then
+   * calculates preparation statistics and stores the result in classSpellData.
+   * Optionally filters out cantrips based on class configuration.
+   *
+   * @param {string} identifier - Identifier of the class
+   * @param {Array<Object>} spellItems - Array of spell items
+   * @param {Item} classItem - The class item
    * @returns {Promise<void>}
    */
   async processAndOrganizeSpellsForClass(identifier, spellItems, classItem) {
@@ -484,7 +802,7 @@ export class SpellbookState {
         if (spell.system && !spell.system.sourceClass) spell.system.sourceClass = identifier;
       }
     }
-    const spellLevels = await this._organizeSpellsByLevelForClass(spellItems, identifier, classItem);
+    const spellLevels = await this._organizeSpellsByLevelForClass(spellItems, identifier);
     const allSpells = spellLevels.flatMap((level) => level.spells);
     const prepStats = this.calculatePreparationStats(identifier, allSpells, classItem);
     this.classSpellData[identifier] = { spellLevels, className: classItem.name, spellPreparation: prepStats, classItem, identifier };
@@ -492,11 +810,16 @@ export class SpellbookState {
   }
 
   /**
-   * Calculate preparation statistics for a specific class
-   * @param {string} classIdentifier The class identifier
-   * @param {Array} spellLevels Array of level objects with grouped spells or flat spell array
-   * @param {Item} classItem The spellcasting class item
-   * @returns {Object} Preparation stats object
+   * Calculate preparation statistics for a specific class.
+   *
+   * Analyzes spell data to determine how many spells are currently prepared
+   * versus the maximum allowed for the class. Supports both grouped spell
+   * level structure and flat spell arrays with intelligent caching.
+   *
+   * @param {string} classIdentifier - The class identifier
+   * @param {Array} spellLevels - Array of level objects with grouped spells or flat spell array
+   * @param {Item} classItem - The spellcasting class item
+   * @returns {PreparationStats} Preparation stats object with current and maximum counts
    */
   calculatePreparationStats(classIdentifier, spellLevels, classItem) {
     if (!spellLevels || !Array.isArray(spellLevels)) {
@@ -547,7 +870,12 @@ export class SpellbookState {
   }
 
   /**
-   * Update the global prepared spell count
+   * Update the global prepared spell count across all classes.
+   *
+   * Aggregates preparation statistics from all spellcasting classes to
+   * provide a unified view of total prepared spells versus total maximum.
+   *
+   * @returns {void}
    */
   updateGlobalPreparationCount() {
     let totalPrepared = 0;
@@ -560,15 +888,19 @@ export class SpellbookState {
     }
     this.spellPreparation = { current: totalPrepared, maximum: totalMaxPrepared };
     log(3, `Updated global preparation count: ${totalPrepared}/${totalMaxPrepared}`);
-    if (totalMaxPrepared <= 0) {
-      log(2, `Global max preparation is ${totalMaxPrepared}, this might indicate a data issue. `);
-    }
+    if (totalMaxPrepared <= 0) log(2, `Global max preparation is ${totalMaxPrepared}, this might indicate a data issue. `);
   }
 
   /**
-   * Determine if cantrips should be hidden for a class (with caching)
-   * @param {string} identifier Identifier of the class
+   * Determine if cantrips should be hidden for a class.
+   *
+   * Checks class rules and default behavior to determine whether cantrips
+   * should be displayed in the spell list for this class. Uses caching
+   * for performance optimization.
+   *
+   * @param {string} identifier - Identifier of the class
    * @returns {boolean} Whether cantrips should be hidden
+   * @private
    */
   _shouldHideCantrips(identifier) {
     if (this._classDetectionCache.has(identifier)) return this._classDetectionCache.get(identifier);
@@ -581,8 +913,14 @@ export class SpellbookState {
   }
 
   /**
-   * Set active class and update data
-   * @param {string} identifier The class identifier to set as active
+   * Set active class and update current state data.
+   *
+   * Changes the currently active class and updates the state manager's
+   * current spell levels, class name, and preparation statistics to
+   * reflect the newly active class.
+   *
+   * @param {string} identifier - The class identifier to set as active
+   * @returns {void}
    */
   setActiveClass(identifier) {
     if (this.classSpellData[identifier]) {
@@ -594,7 +932,13 @@ export class SpellbookState {
   }
 
   /**
-   * Handle cantrip level-up notification if needed
+   * Handle cantrip level-up notification if needed.
+   *
+   * Checks if the actor has leveled up and gained access to new cantrip
+   * swapping opportunities, displaying appropriate notifications for
+   * classes with level-up cantrip swapping rules.
+   *
+   * @returns {void}
    */
   handleCantripLevelUp() {
     const cantripLevelUp = this.app.spellManager.cantripManager.checkForLevelUp();
@@ -608,8 +952,13 @@ export class SpellbookState {
   }
 
   /**
-   * Cache wizard Spell Book spells for a specific class
-   * @param {string} classIdentifier The class identifier
+   * Cache wizard spellbook spells for a specific class.
+   *
+   * Retrieves and caches the personal spellbook contents for a wizard class
+   * to optimize subsequent access. The cache is used during spell loading
+   * and organization operations.
+   *
+   * @param {string} classIdentifier - The class identifier
    * @returns {Promise<void>}
    */
   async cacheWizardSpellbook(classIdentifier) {
@@ -623,9 +972,14 @@ export class SpellbookState {
   }
 
   /**
-   * Load wizard spell data for a specific wizard-enabled class
-   * @param {Item} classItem The class item
-   * @param {string} classIdentifier The class identifier
+   * Load wizard spell data for a specific wizard-enabled class.
+   *
+   * Loads both the class spell list and personal spellbook for a wizard class,
+   * organizing them into preparation and spellbook tabs with appropriate
+   * statistics and metadata. Handles scroll learning integration.
+   *
+   * @param {Item} classItem - The class item
+   * @param {string} classIdentifier - The class identifier
    * @returns {Promise<void>}
    */
   async loadWizardSpellData(classItem, classIdentifier) {
@@ -669,11 +1023,15 @@ export class SpellbookState {
   }
 
   /**
-   * Process wizard spells for a specific class
-   * @param {Array} allSpellItems All fetched spell items
-   * @param {Item} classItem The class item
-   * @param {Array} personalSpellbook The personal Spell Book spell UUIDs
-   * @param {string} classIdentifier The class identifier
+   * Process wizard spells for a specific class into preparation and spellbook tabs.
+   *
+   * Completely separates preparation tab (with preparation logic) from wizard spellbook tab
+   * (with only learning logic). This prevents UI interference and duplicate entries.
+   *
+   * @param {Array<Object>} allSpellItems - All fetched spell items
+   * @param {Item} classItem - The class item
+   * @param {Array<string>} personalSpellbook - The personal spellbook spell UUIDs
+   * @param {string} classIdentifier - The class identifier
    * @returns {Promise<void>}
    */
   async processWizardSpells(allSpellItems, classItem, personalSpellbook, classIdentifier) {
@@ -681,7 +1039,7 @@ export class SpellbookState {
     const wizardTabId = `wizardbook-${classIdentifier}`;
     const shouldHideCantrips = this._shouldHideCantrips(classIdentifier);
     const wizardManager = this.app.wizardManagers.get(classIdentifier);
-    if (!wizardManager) log(1, `No wizard manager found for ${classIdentifier}`);
+    if (!wizardManager) return;
     const getSpellUuids = (spell) => {
       const uuids = [];
       if (spell?.compendiumUuid) uuids.push(spell.compendiumUuid);
@@ -702,6 +1060,8 @@ export class SpellbookState {
     const usedFreeSpells = await wizardManager.getUsedFreeSpells();
     const remainingFreeSpells = Math.max(0, totalFreeSpells - usedFreeSpells);
     const totalSpells = personalSpellbook.length;
+    const maxSpellsAllowed = wizardManager.getMaxSpellsAllowed();
+    const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
     this.scrollSpells = await DataHelpers.ScrollScanner.scanForScrollSpells(this.actor);
     const grantedSpells = this.actor.items
       .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.method && ['pact', 'innate', 'atwill'].includes(i.system.method))))
@@ -714,8 +1074,6 @@ export class SpellbookState {
         return uuids;
       })
       .filter(Boolean);
-    const fullWizardSpellList = this._fullWizardSpellLists.get(classIdentifier);
-    for (const spell of allSpellItems) spell.sourceClass = classIdentifier;
     const prepTabSpells = allSpellItems.filter((spell) => {
       const isCantrip = spell.system.level === 0;
       const isNonCantrip = spell.system.level !== 0;
@@ -724,20 +1082,24 @@ export class SpellbookState {
       const shouldInclude = (!shouldHideCantrips && isCantrip) || (isNonCantrip && (inPersonalSpellbook || inGrantedSpells));
       return shouldInclude;
     });
-    const wizardbookSpells = allSpellItems.filter((spell) => {
+    for (const spell of prepTabSpells) spell.sourceClass = classIdentifier;
+    const prepLevelsGrouped = await this._organizeSpellsByLevelForClass(prepTabSpells, classIdentifier);
+    let finalPrepLevels = prepLevelsGrouped;
+    if (shouldHideCantrips) finalPrepLevels = prepLevelsGrouped.filter((levelData) => levelData.level !== '0' && levelData.level !== 0);
+    const fullWizardSpellList = this._fullWizardSpellLists.get(classIdentifier);
+    const classSpellsOnly = allSpellItems.filter((spell) => {
       const isNonCantrip = spell.system.level !== 0;
       const inFullWizardList = fullWizardSpellList && isSpellInCollection(spell, fullWizardSpellList);
-      const shouldInclude = isNonCantrip && inFullWizardList;
-      return shouldInclude;
+      return isNonCantrip && inFullWizardList;
     });
-    const combinedWizardbookSpells = [...wizardbookSpells, ...this.scrollSpells];
-    const prepLevelsGrouped = await this._organizeSpellsByLevelForClass(prepTabSpells, classIdentifier, classItem);
-    const wizardLevelsGrouped = await this._organizeSpellsByLevelForClass(combinedWizardbookSpells, classIdentifier, classItem);
+    const wizardLevelsGrouped = await this._organizeWizardSpellsForLearning(classSpellsOnly, classIdentifier, personalSpellbook);
     const scrollSpellsForLevel = [];
     for (const scrollSpell of this.scrollSpells) {
       scrollSpell.sourceClass = classIdentifier;
       scrollSpell.isWizardClass = true;
       scrollSpell.inWizardSpellbook = personalSpellbook.includes(scrollSpell.compendiumUuid || scrollSpell.spellUuid);
+      scrollSpell.canLearnFromScroll = !scrollSpell.inWizardSpellbook;
+      if (scrollSpell.isFromScroll) scrollSpell.scrollMetadata = { scrollId: scrollSpell.scrollId, scrollName: scrollSpell.scrollName };
       scrollSpellsForLevel.push(scrollSpell);
     }
     if (scrollSpellsForLevel.length > 0) {
@@ -751,18 +1113,21 @@ export class SpellbookState {
     const filteredWizardLevelsGrouped = wizardLevelsGrouped.filter((levelData) => {
       return levelData.level === 'scroll' || (levelData.level !== '0' && levelData.level !== 0);
     });
-    const maxSpellsAllowed = wizardManager.getMaxSpellsAllowed();
-    const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
-    let finalPrepLevels = prepLevelsGrouped;
-    if (shouldHideCantrips) finalPrepLevels = prepLevelsGrouped.filter((levelData) => levelData.level !== '0' && levelData.level !== 0);
-    this.enrichWizardBookSpells(finalPrepLevels, personalSpellbook, false, false);
-    this.enrichWizardBookSpells(filteredWizardLevelsGrouped, personalSpellbook, true, isAtMaxSpells);
+    for (const levelData of filteredWizardLevelsGrouped) {
+      for (const spell of levelData.spells) {
+        spell.isAtMaxSpells = isAtMaxSpells;
+        if (this.app && this.app.comparisonSpells) {
+          const comparisonMax = game.settings.get(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX);
+          if (this.app.comparisonSpells.size < comparisonMax) {
+            spell.showCompareLink = true;
+            spell.isInComparison = this.app.comparisonSpells.has(spell.compendiumUuid || spell.spellUuid);
+          }
+        }
+      }
+    }
     const prepStats = this.calculatePreparationStats(classIdentifier, finalPrepLevels, classItem);
     const tabData = {
-      [spellsTabId]: {
-        spellLevels: finalPrepLevels,
-        spellPreparation: prepStats
-      },
+      [spellsTabId]: { spellLevels: finalPrepLevels, spellPreparation: prepStats },
       [wizardTabId]: {
         spellLevels: filteredWizardLevelsGrouped,
         spellPreparation: prepStats,
@@ -774,23 +1139,22 @@ export class SpellbookState {
         wizardIsAtMax: isAtMaxSpells
       }
     };
-    this.classSpellData[classIdentifier] = {
-      spellLevels: finalPrepLevels,
-      className: classItem.name,
-      spellPreparation: prepStats,
-      classItem,
-      tabData,
-      identifier: classIdentifier
-    };
+    this.classSpellData[classIdentifier] = { spellLevels: finalPrepLevels, className: classItem.name, spellPreparation: prepStats, classItem, tabData, identifier: classIdentifier };
     Object.assign(this.tabData, tabData);
+    log(3, `Processed wizard spells for ${classIdentifier}: Prep tab has ${finalPrepLevels.length} levels, Wizard tab has ${filteredWizardLevelsGrouped.length} levels`);
   }
 
   /**
-   * Enrich wizard tab spells with additional data
-   * @param {Array} spellLevelsGrouped Grouped spell levels array
-   * @param {Array} personalSpellbook The personal Spell Book spell UUIDs
-   * @param {boolean} isWizardBook Whether this is for the wizard tab
-   * @param {boolean} isAtMaxSpells Whether maximum spells are reached
+   * Enrich wizard tab spells with additional wizard-specific data.
+   *
+   * Adds wizard-specific metadata to spells including spellbook status,
+   * learning capabilities, comparison features, and scroll information.
+   *
+   * @param {Array<SpellLevel>} spellLevelsGrouped - Grouped spell levels array
+   * @param {Array<string>} personalSpellbook - The personal spellbook spell UUIDs
+   * @param {boolean} [isWizardBook=false] - Whether this is for the wizard spellbook tab
+   * @param {boolean} [isAtMaxSpells=false] - Whether maximum spells are reached
+   * @returns {void}
    */
   enrichWizardBookSpells(spellLevelsGrouped, personalSpellbook, isWizardBook = false, isAtMaxSpells = false) {
     for (const levelData of spellLevelsGrouped) {
@@ -821,7 +1185,12 @@ export class SpellbookState {
   }
 
   /**
-   * Wait for all wizard data to be fully loaded and available
+   * Wait for all wizard data to be fully loaded and available.
+   *
+   * Ensures all wizard classes have their tab data properly loaded and
+   * available. If any wizard data is missing, forces a reload of that
+   * specific class data.
+   *
    * @returns {Promise<void>}
    */
   async waitForWizardDataCompletion() {
@@ -845,9 +1214,13 @@ export class SpellbookState {
   }
 
   /**
-   * Get tab data for a specific class
-   * @param {string} identifier The class identifier
-   * @returns {Object} Tab data for the class
+   * Get tab data for a specific class.
+   *
+   * Returns the organized spell data for a specific class in a format
+   * suitable for tab rendering and UI display.
+   *
+   * @param {string} identifier - The class identifier
+   * @returns {Object|null} Tab data for the class, or null if not found
    */
   getClassTabData(identifier) {
     if (this.classSpellData[identifier]) {
@@ -862,8 +1235,13 @@ export class SpellbookState {
   }
 
   /**
-   * Refresh spell data for a specific class after changes (e.g., learning new spells)
-   * @param {string} classIdentifier The identifier of the class to refresh
+   * Refresh spell data for a specific class after changes.
+   *
+   * Reloads and reorganizes spell data for a specific class, typically
+   * called after learning new spells, changing preparations, or other
+   * modifications that affect the class's spell data.
+   *
+   * @param {string} classIdentifier - The identifier of the class to refresh
    * @returns {Promise<void>}
    */
   async refreshClassSpellData(classIdentifier) {
@@ -885,8 +1263,12 @@ export class SpellbookState {
   }
 
   /**
-   * Handle post-processing after spell save
-   * @param {Actor} actor The actor
+   * Handle post-processing after spell save operations.
+   *
+   * Performs cleanup and state updates after spell changes have been saved,
+   * including cantrip level-up completion and long rest flag management.
+   *
+   * @param {Actor} actor - The actor
    * @returns {Promise<void>}
    */
   async handlePostProcessing(actor) {
@@ -899,9 +1281,12 @@ export class SpellbookState {
   }
 
   /**
-   * Add missing ritual spells for all classes with ritual casting enabled
-   * @todo - Is the hard call to 'wizard' correct here?
-   * @param {Object} spellDataByClass The spell data grouped by class
+   * Add missing ritual spells for all classes with ritual casting enabled.
+   *
+   * Automatically adds ritual spells that should be available to classes
+   * with "always" ritual casting rules but aren't currently in the spell data.
+   *
+   * @param {Object} spellDataByClass - The spell data grouped by class
    * @returns {Promise<void>}
    */
   async addMissingRitualSpells(spellDataByClass) {
@@ -909,15 +1294,22 @@ export class SpellbookState {
     for (const [classIdentifier, classData] of Object.entries(this.spellcastingClasses)) {
       const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
       if (classRules.ritualCasting === 'always') {
-        if (classIdentifier === 'wizard' && this.app.wizardManager?.isWizard) await this._addWizardRitualSpells(classIdentifier, spellDataByClass);
+        const wizardManager = this.app.wizardManagers.get(classIdentifier);
+        const isWizard = wizardManager?.isWizard;
+        if (isWizard) await this._addWizardRitualSpells(classIdentifier, spellDataByClass);
         else await this._addClassRitualSpells(classIdentifier, classData, spellDataByClass);
       }
     }
   }
 
   /**
-   * Clean up module-created ritual spells for classes that no longer support ritual casting
+   * Clean up module-created ritual spells for classes that no longer support ritual casting.
+   *
+   * Removes ritual spells that were automatically added by the module for classes
+   * that no longer have "always" ritual casting enabled.
+   *
    * @returns {Promise<void>}
+   * @private
    */
   async _cleanupDisabledRitualSpells() {
     const spellIdsToRemove = [];
@@ -942,72 +1334,71 @@ export class SpellbookState {
   }
 
   /**
-   * Add missing wizard ritual spells using wizard Spell Book
-   * @param {string} classIdentifier The class identifier (should be 'wizard')
-   * @param {Object} spellDataByClass The spell data grouped by class
+   * Add missing wizard ritual spells using wizard spellbook.
+   *
+   * Checks the wizard's personal spellbook for ritual spells that aren't
+   * in the spell data and adds them as unprepared ritual spells.
+   *
+   * @param {string} classIdentifier - The class identifier (should be 'wizard')
+   * @param {Object} spellDataByClass - The spell data grouped by class
    * @returns {Promise<void>}
+   * @private
    */
   async _addWizardRitualSpells(classIdentifier, spellDataByClass) {
     if (!this.app.wizardManager.isWizard) return;
     const spellbookSpells = await this.app.wizardManager.getSpellbookSpells();
-    const processedUuids = new Set();
-    if (spellDataByClass[classIdentifier]) {
-      Object.values(spellDataByClass[classIdentifier]).forEach((spellData) => {
-        processedUuids.add(spellData.uuid);
-      });
-    }
     const isRitualSpell = (spell) => {
       if (spell.system?.properties && spell.system.properties.has) return spell.system.properties.has('ritual');
       if (spell.system?.properties && Array.isArray(spell.system.properties)) return spell.system.properties.some((prop) => prop.value === 'ritual');
       return spell.system?.components?.ritual || false;
     };
+    let addedCount = 0;
     for (const spellUuid of spellbookSpells) {
-      if (processedUuids.has(spellUuid)) continue;
       const sourceSpell = await fromUuid(spellUuid);
       if (!sourceSpell || !isRitualSpell(sourceSpell) || sourceSpell.system.level === 0) continue;
-      log(3, `Found missing wizard ritual spell: ${sourceSpell.name} (${spellUuid})`);
       if (!spellDataByClass[classIdentifier]) spellDataByClass[classIdentifier] = {};
       const classSpellKey = `${classIdentifier}:${spellUuid}`;
-      spellDataByClass[classIdentifier][classSpellKey] = {
-        uuid: spellUuid,
-        name: sourceSpell.name,
-        wasPrepared: false,
-        isPrepared: false,
-        isRitual: true,
-        sourceClass: classIdentifier,
-        classSpellKey,
-        spellLevel: sourceSpell.system.level
-      };
-      log(3, `Added missing wizard ritual spell: ${sourceSpell.name} as unprepared`);
+      if (spellDataByClass[classIdentifier][classSpellKey]) {
+        spellDataByClass[classIdentifier][classSpellKey].isRitual = true;
+      } else {
+        spellDataByClass[classIdentifier][classSpellKey] = {
+          uuid: spellUuid,
+          name: sourceSpell.name,
+          wasPrepared: false,
+          isPrepared: false,
+          isRitual: true,
+          sourceClass: classIdentifier,
+          classSpellKey,
+          spellLevel: sourceSpell.system.level
+        };
+      }
+      addedCount++;
     }
   }
 
   /**
-   * Add missing ritual spells for non-wizard classes using class spell lists
-   * @param {string} classIdentifier The class identifier
-   * @param {Object} classData The class data from spellcastingClasses
-   * @param {Object} spellDataByClass The spell data grouped by class
+   * Add missing ritual spells for non-wizard classes using class spell lists.
+   *
+   * Checks the class spell list for ritual spells that aren't in the spell data
+   * and adds them as unprepared ritual spells for classes with "always" ritual casting.
+   *
+   * @param {string} classIdentifier - The class identifier
+   * @param {SpellcastingClassData} classData - The class data from spellcastingClasses
+   * @param {Object} spellDataByClass - The spell data grouped by class
    * @returns {Promise<void>}
+   * @private
    */
   async _addClassRitualSpells(classIdentifier, classData, spellDataByClass) {
     const className = classData.name.toLowerCase();
     const classUuid = classData.uuid;
     const spellList = await DataHelpers.getClassSpellList(className, classUuid, this.actor);
-    if (!spellList || !spellList.size) {
-      log(1, `No spell list found for class ${classIdentifier} (${className})`);
-      return;
-    }
+    if (!spellList || !spellList.size) return;
     const spellItems = await DataHelpers.fetchSpellDocuments(spellList, 9);
-    if (!spellItems || !spellItems.length) {
-      log(1, `No spell items fetched for class ${classIdentifier} - fetchSpellDocuments returned empty`);
-      return;
-    }
+    if (!spellItems || !spellItems.length) return;
     const preparedUuids = new Set();
     if (spellDataByClass[classIdentifier]) {
       Object.values(spellDataByClass[classIdentifier]).forEach((spellData) => {
-        if (spellData.isPrepared || spellData.wasPrepared) {
-          preparedUuids.add(spellData.uuid);
-        }
+        if (spellData.isPrepared || spellData.wasPrepared) preparedUuids.add(spellData.uuid);
       });
     }
     const isRitualSpell = (spell) => {
@@ -1052,12 +1443,17 @@ export class SpellbookState {
   }
 
   /**
-   * Send GM notifications if needed
-   * @param {Object} spellDataByClass The spell data grouped by class
-   * @param {Object} allCantripChangesByClass Cantrip changes by class
+   * Send GM notifications if needed for rule violations.
+   *
+   * Analyzes spell changes and preparation limits to determine if GM
+   * notifications should be sent for rule violations or preparation
+   * limit violations when enforcement is set to "notify GM" mode.
+   *
+   * @param {Object} spellDataByClass - The spell data grouped by class
+   * @param {Object} allChangesByClass - All spell and cantrip changes by class
    * @returns {Promise<void>}
    */
-  async sendGMNotifications(spellDataByClass, allCantripChangesByClass) {
+  async sendGMNotifications(spellDataByClass, allChangesByClass) {
     const globalBehavior = this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM;
     if (globalBehavior !== MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM) return;
     const notificationData = { actorName: this.actor.name, classChanges: {} };
@@ -1065,25 +1461,18 @@ export class SpellbookState {
       const classData = this.classSpellData[classIdentifier];
       if (!classData) continue;
       const className = classData.className || classIdentifier;
-      const cantripChanges = allCantripChangesByClass[classIdentifier] || { added: [], removed: [] };
+      const changes = allChangesByClass[classIdentifier] || { cantripChanges: { added: [], removed: [] }, spellChanges: { added: [], removed: [] } };
       const cantripCount = Object.values(classSpellData).filter((spell) => spell.isPrepared && spell.spellLevel === 0).length;
       const spellCount = Object.values(classSpellData).filter((spell) => spell.isPrepared && spell.spellLevel > 0).length;
       const maxCantrips = this.app.spellManager.cantripManager._getMaxCantripsForClass(classIdentifier);
       const maxSpells = classData.spellPreparation?.maximum || 0;
       notificationData.classChanges[classIdentifier] = {
         className,
-        cantripChanges,
+        cantripChanges: changes.cantripChanges || { added: [], removed: [] },
+        spellChanges: changes.spellChanges || { added: [], removed: [] },
         overLimits: {
-          cantrips: {
-            isOver: cantripCount > maxCantrips,
-            current: cantripCount,
-            max: maxCantrips
-          },
-          spells: {
-            isOver: spellCount > maxSpells,
-            current: spellCount,
-            max: maxSpells
-          }
+          cantrips: { isOver: cantripCount > maxCantrips, current: cantripCount, max: maxCantrips },
+          spells: { isOver: spellCount > maxSpells, current: spellCount, max: maxSpells }
         }
       };
     }
@@ -1091,9 +1480,15 @@ export class SpellbookState {
   }
 
   /**
-   * Update favorite session state (like checkboxes)
-   * @param {string} spellUuid The spell UUID
-   * @param {boolean} favorited Favorite status
+   * Update favorite session state for spell favorites.
+   *
+   * Tracks temporary favorite state changes during a session that haven't
+   * been saved yet. This allows the UI to reflect favorite changes before
+   * the form is submitted.
+   *
+   * @param {string} spellUuid - The spell UUID
+   * @param {boolean} favorited - Favorite status
+   * @returns {void}
    */
   updateFavoriteSessionState(spellUuid, favorited) {
     if (!this.app._favoriteSessionState) this.app._favoriteSessionState = new Map();
@@ -1102,8 +1497,12 @@ export class SpellbookState {
   }
 
   /**
-   * Get favorite session state
-   * @param {string} spellUuid The spell UUID
+   * Get favorite session state for a spell.
+   *
+   * Retrieves the temporary favorite state for a spell that may have
+   * been changed during the current session but not yet saved.
+   *
+   * @param {string} spellUuid - The spell UUID
    * @returns {boolean|null} Session favorite state or null if not set
    */
   getFavoriteSessionState(spellUuid) {
@@ -1111,27 +1510,28 @@ export class SpellbookState {
   }
 
   /**
-   * Clear favorite session state (called on form submit)
+   * Clear favorite session state.
+   *
+   * Clears all temporary favorite state changes, typically called
+   * after form submission when session state is no longer needed.
+   *
+   * @returns {void}
    */
   clearFavoriteSessionState() {
     if (this.app._favoriteSessionState) this.app._favoriteSessionState.clear();
   }
 
   /**
-   * Refresh spell enhancements (notes, favorites) without full reload
+   * Refresh spell enhancements without full reload.
+   *
+   * Updates spell notes, favorites, and other user data enhancements
+   * for all loaded spells without reloading the entire spell data.
+   * Useful for refreshing UI after user data changes.
+   *
    * @returns {Promise<void>}
    */
   async refreshSpellEnhancements() {
-    let targetUserId = game.user.id;
-    if (game.user.isActiveGM && this.app.actor) {
-      const characterOwner = game.users.find((user) => user.character?.id === this.app.actor.id);
-      if (characterOwner) targetUserId = characterOwner.id;
-      else {
-        const ownershipOwner = game.users.find((user) => this.app.actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
-        if (ownershipOwner) targetUserId = ownershipOwner.id;
-        else log(2, `No owner found for actor ${this.app.actor.name}, using GM data for enhancements`);
-      }
-    }
+    const targetUserId = DataHelpers._getTargetUserId(this.app.actor);
     if (DataHelpers.SpellUserDataJournal?.cache) {
       for (const key of DataHelpers.SpellUserDataJournal.cache.keys()) {
         if (key.startsWith(`${targetUserId}:`)) DataHelpers.SpellUserDataJournal.cache.delete(key);
@@ -1150,8 +1550,12 @@ export class SpellbookState {
   }
 
   /**
-   * Get the current spell list for the active class
-   * @returns {Array} Array of spells for the currently active class
+   * Get the current spell list for the active class.
+   *
+   * Returns the spell levels array for the currently active class,
+   * which contains all organized spell data for UI rendering.
+   *
+   * @returns {Array<SpellLevel>} Array of spells for the currently active class
    */
   getCurrentSpellList() {
     if (!this.activeClass || !this.classSpellData[this.activeClass]) return [];

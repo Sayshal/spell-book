@@ -2,7 +2,7 @@
 
 Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell management module for FoundryVTT! This wiki provides detailed guidance for players, GMs, and developers on utilizing all the powerful features this module offers.
 
-**Spell Book** transforms spell management from a tedious process into an engaging experience, providing automated rule enforcement, intelligent spell coordination, and comprehensive analytics across both 2014 and 2024 D&D rulesets.
+**Spell Book** transforms spell management from a tedious process into an engaging experience, providing automated rule enforcement, intelligent spell coordination, and analytics across both 2014 and 2024 D&D rulesets.
 
 ---
 
@@ -68,7 +68,7 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 ### Advanced GM Features
 
 - **[Subclass Spell Management](Subclass-Spell-Management)** - Managing subclass-specific spell lists
-- **[Party Spell Analysis](Party-Spell-Analysis)** - Comprehensive party spellcasting coordination tools
+- **[Party Spell Analysis](Party-Spell-Analysis)** - Party spellcasting coordination tools
 - **[GM Analytics Dashboard](GM-Analytics-Dashboard)** - Cross-player spell usage statistics
 - **[Spell List Merging](Spell-List-Merging)** - Combining multiple spell lists into custom collections
 - **[Version Tracking](Version-Tracking)** - Managing spell list updates and modifications
@@ -129,7 +129,7 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 - **[Usage Pattern Analysis](Usage-Pattern-Analysis)** - Identifying spell usage trends
 - **[Party Synergy Analysis](Party-Synergy-Analysis)** - Optimizing party spell coordination
 - **[Recommendation System](Recommendation-System)** - Automated spell preparation suggestions
-- **[Statistical Reporting](Statistical-Reporting)** - Comprehensive usage reports
+- **[Statistical Reporting](Statistical-Reporting)** - Usage reports
 
 ### Specialized Tools
 
@@ -194,4 +194,4 @@ New to Spell Book? Start here:
 3. **[Configuration Guide](Configuration-Guide)** - Set up your preferred rules and enforcement
 4. **[First Character Setup](First-Character-Setup)** - Configure your first spellcasting character
 
-Ready to dive deeper? Explore the comprehensive feature documentation above, or jump straight to the **[Player Spell Book Interface](Player-Spell-Book-Interface)** to see what Spell Book can do!
+Ready to dive deeper? Explore the feature documentation above, or jump straight to the **[Player Spell Book Interface](Player-Spell-Book-Interface)** to see what Spell Book can do!

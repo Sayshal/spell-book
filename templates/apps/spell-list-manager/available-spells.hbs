@@ -1,45 +1,127 @@
+{{!--
+/**
+ * Spell List Manager Available Spells Panel Template
+ *
+ * PURPOSE:
+ * Sidebar interface for browsing and filtering available spells that can be added
+ * to spell lists. Provides filtering capabilities, search functionality,
+ * and spell selection controls for spell list management. Supports both individual
+ * spell addition and bulk selection modes for efficient list editing.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {boolean} isEditing - Whether spell list manager is in editing mode
+ * @param {boolean} selectionMode - Whether bulk selection mode is active
+ * @param {Object} filterFormElements - Pre-rendered filter form elements
+ * @param {string} filterFormElements.searchInputHtml - Search input HTML element
+ * @param {string} filterFormElements.levelSelectHtml - Spell level select HTML
+ * @param {string} filterFormElements.schoolSelectHtml - Spell school select HTML
+ * @param {string} filterFormElements.castingTimeSelectHtml - Casting time select HTML
+ * @param {string} filterFormElements.damageTypeSelectHtml - Damage type select HTML
+ * @param {string} filterFormElements.conditionSelectHtml - Condition select HTML
+ * @param {string} filterFormElements.requiresSaveSelectHtml - Saving throw select HTML
+ * @param {string} filterFormElements.concentrationSelectHtml - Concentration select HTML
+ * @param {string} filterFormElements.materialComponentsSelectHtml - Material components select HTML
+ * @param {string} filterFormElements.ritualCheckboxHtml - Ritual checkbox HTML
+ * @param {string} filterFormElements.minRangeInputHtml - Minimum range input HTML
+ * @param {string} filterFormElements.maxRangeInputHtml - Maximum range input HTML
+ * @param {string} filterFormElements.sourceSelectHtml - Source compendium select HTML
+ * @param {string} selectAllAddCheckboxHtml - Select all for addition checkbox HTML
+ * @param {Object} filteredSpells - Filtered spell collection data
+ * @param {Array<Object>} filteredSpells.spells - Array of filtered spell objects
+ * @param {number} filteredSpells.totalFiltered - Total count of filtered spells
+ * @param {Object} selectedSpellsToAdd - Map of spells selected for addition
+ * @param {Object} settings - Application settings for unit display
+ * @param {boolean} settings.useMetricUnits - Whether to display metric units
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Complementary sidebar role with descriptive aria-label
+ * - Search region role for filter section with proper labeling
+ * - Form elements with associated labels for screen reader navigation
+ * - List structures with role="list" and role="listitem" for spell items
+ * - Status region with aria-live for dynamic filter count updates
+ * - Button elements with aria-label attributes
+ * - Range filter inputs grouped with aria-labelledby association
+ *
+ * CUSTOMIZATION POINTS:
+ * - Filter elements render dynamically based on form configuration
+ * - Spell selection mode toggles between individual and bulk operations
+ * - Unit display adapts based on metric/imperial preference settings
+ * - Filter visibility and availability controlled through editing state
+ * - Spell comparison functionality integrates with comparison system
+ *
+ * INTEGRATION:
+ * - Connects to SpellListManager application for spell browsing and filtering
+ * - Uses module localization keys from SPELLMANAGER and SPELLBOOK namespaces
+ * - Supports shared components for empty state and loading indicators
+ * - Integrates with spell comparison dialog functionality
+ * - Works with bulk selection and individual spell addition workflows
+ */
+--}}
+
 <div class="available-spells-sidebar" role="complementary"
 	aria-label="{{localize 'SPELLMANAGER.Columns.AvailableSpells'}}">
+
+	<!-- Available Spells Header -->
 	<h2 id="available-spells-heading">{{localize "SPELLMANAGER.Columns.AvailableSpells"}}</h2>
 
+	<!-- Spell Filtering Section - search and filter controls -->
 	<div class="spell-filters" role="search" aria-labelledby="available-spells-heading">
+		<!-- Search Input Container -->
 		<div class="filter-search">
 			{{{filterFormElements.searchInputHtml}}}
 		</div>
 
+		<!-- Filter Grid - Organized filter controls for spell attributes -->
 		<div class="filter-grid">
+			<!-- Spell Level Filter -->
 			<div class="filter-item">
 				<label for="spell-level">{{localize "SPELLBOOK.Filters.Level"}}</label>
 				{{{filterFormElements.levelSelectHtml}}}
 			</div>
+
+			<!-- Spell School Filter -->
 			<div class="filter-item">
 				<label for="spell-school">{{localize "SPELLBOOK.Filters.School"}}</label>
 				{{{filterFormElements.schoolSelectHtml}}}
 			</div>
+
+			<!-- Casting Time Filter -->
 			<div class="filter-item">
 				<label for="spell-castingTime">{{localize "SPELLBOOK.Filters.CastingTime"}}</label>
 				{{{filterFormElements.castingTimeSelectHtml}}}
 			</div>
+
+			<!-- Damage Type Filter -->
 			<div class="filter-item">
 				<label for="spell-damageType">{{localize "SPELLBOOK.Filters.DamageType"}}</label>
 				{{{filterFormElements.damageTypeSelectHtml}}}
 			</div>
+
+			<!-- Condition Effect Filter -->
 			<div class="filter-item">
 				<label for="spell-condition">{{localize "SPELLBOOK.Filters.Condition"}}</label>
 				{{{filterFormElements.conditionSelectHtml}}}
 			</div>
+
+			<!-- Saving Throw Requirement Filter -->
 			<div class="filter-item">
 				<label for="spell-requiresSave">{{localize "SPELLBOOK.Filters.RequiresSave"}}</label>
 				{{{filterFormElements.requiresSaveSelectHtml}}}
 			</div>
+
+			<!-- Concentration Requirement Filter -->
 			<div class="filter-item">
 				<label for="spell-concentration">{{localize "SPELLBOOK.Filters.RequiresConcentration"}}</label>
 				{{{filterFormElements.concentrationSelectHtml}}}
 			</div>
+
+			<!-- Material Components Filter -->
 			<div class="filter-item">
 				<label for="spell-materialComponents">{{localize "SPELLBOOK.Filters.Materials.Title"}}</label>
 				{{{filterFormElements.materialComponentsSelectHtml}}}
 			</div>
+
+			<!-- Ritual Spell Checkbox Filter -->
 			<div class="filter-item checkbox-filter">
 				<label>
 					{{{filterFormElements.ritualCheckboxHtml}}}
@@ -48,6 +130,7 @@
 			</div>
 		</div>
 
+		<!-- Range Filter Section - Min/max range inputs with unit display -->
 		<div class="filter-range">
 			<label id="range-filter-label">{{localize "SPELLBOOK.Filters.Range"}}
 				({{#if @root.settings.useMetricUnits}}{{localize "DND5E.DistM"}}{{else}}{{localize "DND5E.DistFt"}}{{/if}})</label>
@@ -60,12 +143,14 @@
 			</div>
 		</div>
 
+		<!-- Source Compendium Filter -->
 		<div class="filter-item">
 			<label for="spell-source">{{localize "SPELLMANAGER.Filters.Source"}}</label>
 			{{{filterFormElements.sourceSelectHtml}}}
 		</div>
 	</div>
 
+	<!-- Bulk Selection Controls - Available during editing with selection mode -->
 	{{#if (and isEditing selectionMode)}}
 		<div class="select-all-add-container">
 			<span class="selection-label">{{localize "SPELLMANAGER.Selection.SelectAllToAdd"}}</span>
@@ -73,12 +158,15 @@
 		</div>
 	{{/if}}
 
+	<!-- Available Spells List Container -->
 	<div class="available-spells-list">
 		{{#if isEditing}}
 			{{#if filteredSpells.spells.length}}
+				<!-- Filtered Spells Display -->
 				<div class="available-spells-wrapper">
 					<ul class="available-spells" role="list" aria-label="{{localize 'SPELLMANAGER.UI.FilteredSpells'}}">
 						{{#each filteredSpells.spells as |spell|}}
+							<!-- Individual Spell Item with data attributes for filtering -->
 							<li
 								class="spell-item available{{#if ../selectionMode}} selectable{{/if}}{{#if (lookup ../selectedSpellsToAdd spell.uuid)}} selected{{/if}}"
 								data-uuid="{{spell.uuid}}" data-spell-level="{{spell.level}}" data-spell-school="{{spell.school}}"
@@ -90,6 +178,7 @@
 								data-requires-save="{{spell.filterData.requiresSave}}" data-conditions="{{spell.filterData.conditions}}"
 								data-selection-type="add" role="listitem">
 
+								<!-- Spell Name and Details Section -->
 								<div class="spell-name">
 									{{{spell.enrichedIcon}}}
 									<div class="name-stacked">
@@ -104,10 +193,13 @@
 									</div>
 								</div>
 
+								<!-- Spell Action Controls - Selection or addition buttons -->
 								<div class="spell-meta">
 									{{#if ../selectionMode}}
+										<!-- Bulk Selection Checkbox -->
 										{{{spell.selectAddCheckboxHtml}}}
 									{{else}}
+										<!-- Individual Add Button -->
 										<button type="button" class="add-spell" data-action="addSpell" data-uuid="{{spell.uuid}}"
 											aria-label="{{localize 'SPELLMANAGER.Buttons.AddSpell' name=spell.name}}">
 											<i class="fas fa-plus" aria-hidden="true"></i>
@@ -119,14 +211,17 @@
 					</ul>
 				</div>
 
+				<!-- Filter Results Count Display -->
 				<div class="filter-count-display" role="status" aria-live="polite">
 					<span
 						class="filter-count">{{localize "SPELLMANAGER.Filters.FilteredSpellCount" count=filteredSpells.totalFiltered}}</span>
 				</div>
 			{{else}}
+				<!-- No Matching Spells State -->
 				{{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLMANAGER.Columns.NoMatchingSpells")}}
 			{{/if}}
 		{{else}}
+			<!-- Not Editing State - Prompt to start editing -->
 			<p class="phase-notice">{{localize "SPELLMANAGER.Columns.EditPrompt"}}</p>
 		{{/if}}
 	</div>

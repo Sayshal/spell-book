@@ -1,39 +1,76 @@
+/**
+ * Field Definitions for Advanced Search Syntax
+ *
+ * Provides field mapping, validation, and autocomplete support for the advanced search
+ * system. This module manages the relationship between search aliases and internal field
+ * identifiers, validates search values against field constraints, and provides
+ * autocomplete suggestions for search terms.
+ *
+ * The field definition system supports:
+ * - Field alias to ID mapping for flexible search syntax
+ * - Value validation based on D&D 5e configuration data
+ * - Boolean value normalization for consistent filtering
+ * - Autocomplete suggestions for valid field values
+ *
+ * @module ValidationHelpers/FieldDefinitions
+ * @author Tyler
+ */
+
 import { MODULE } from '../constants/_module.mjs';
 import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
- * Field definitions for advanced search syntax
+ * Field validation function that checks if a value is valid for a specific field.
+ *
+ * @typedef {function} FieldValidator
+ * @param {string} value - The value to validate
+ * @returns {boolean} Whether the value is valid for the field
+ */
+
+/**
+ * Field definitions for advanced search syntax.
+ * Manages field mappings, validation, and autocomplete functionality for the search system.
  */
 export class FieldDefinitions {
   /**
-   * Create a new FieldDefinitions instance and initialize field mappings and validators
+   * Create a new FieldDefinitions instance and initialize field mappings and validators.
+   * Automatically sets up field aliases and validation rules based on module configuration.
    */
   constructor() {
+    /** @type {Map<string, string>} Map of uppercase field aliases to field IDs */
     this.fieldMap = new Map();
+
+    /** @type {Map<string, FieldValidator>} Map of field IDs to validation functions */
     this.valueValidators = new Map();
+
     this._initializeFields();
   }
 
   /**
-   * Initialize field mappings from module config
+   * Initialize field mappings from module configuration.
+   * Sets up field aliases and validation rules for all configured search fields.
+   *
+   * @private
    */
   _initializeFields() {
     for (const filter of MODULE.DEFAULT_FILTER_CONFIG) {
       if (filter.searchAliases) {
         for (const alias of filter.searchAliases) this.fieldMap.set(alias.toUpperCase(), filter.id);
-        this._setupValueValidator(filter.id, filter.type);
+        this._setupValueValidator(filter.id);
       }
     }
     log(3, 'Field definitions initialized:', this.fieldMap);
   }
 
   /**
-   * Setup value validators for different field types
-   * @param {string} fieldId The field ID
-   * @param {string} fieldType The field type
+   * Setup value validators for different field types.
+   * Creates appropriate validation functions based on field type and D&D 5e configuration.
+   *
+   * @private
+   * @param {string} fieldId - The field ID to setup validation for
    */
-  _setupValueValidator(fieldId, fieldType) {
+  _setupValueValidator(fieldId) {
     switch (fieldId) {
       case 'level':
         this.valueValidators.set(fieldId, (value) => {
@@ -125,8 +162,10 @@ export class FieldDefinitions {
   }
 
   /**
-   * Get field ID from alias
-   * @param {string} alias The field alias
+   * Get field ID from alias.
+   * Converts search aliases to internal field identifiers for query processing.
+   *
+   * @param {string} alias - The field alias to look up
    * @returns {string|null} The field ID or null if not found
    */
   getFieldId(alias) {
@@ -134,10 +173,12 @@ export class FieldDefinitions {
   }
 
   /**
-   * Validate field value
-   * @param {string} fieldId The field ID
-   * @param {string} value The value to validate
-   * @returns {boolean} Whether the value is valid
+   * Validate field value against field-specific constraints.
+   * Uses the appropriate validator function for the field type.
+   *
+   * @param {string} fieldId - The field ID to validate against
+   * @param {string} value - The value to validate
+   * @returns {boolean} Whether the value is valid for the field
    */
   validateValue(fieldId, value) {
     const validator = this.valueValidators.get(fieldId);
@@ -145,9 +186,11 @@ export class FieldDefinitions {
   }
 
   /**
-   * Normalize boolean values
-   * @param {string} value The value to normalize
-   * @returns {string} Normalized boolean value
+   * Normalize boolean values to consistent string representations.
+   * Converts various boolean representations to 'true' or 'false' strings.
+   *
+   * @param {string} value - The value to normalize
+   * @returns {string} Normalized boolean value ('true', 'false', or original value)
    */
   normalizeBooleanValue(value) {
     const val = value.toUpperCase();
@@ -157,17 +200,21 @@ export class FieldDefinitions {
   }
 
   /**
-   * Get all field aliases for autocomplete
-   * @returns {Array<string>} Array of field aliases
+   * Get all field aliases for autocomplete functionality.
+   * Returns all available field aliases that can be used in search queries.
+   *
+   * @returns {Array<string>} Array of field aliases in uppercase
    */
   getAllFieldAliases() {
     return Array.from(this.fieldMap.keys());
   }
 
   /**
-   * Get valid values for a field (for autocomplete suggestions)
-   * @param {string} fieldId The field ID
-   * @returns {Array<string>} Array of valid values
+   * Get valid values for a field for autocomplete suggestions.
+   * Returns an array of valid values that can be used with the specified field.
+   *
+   * @param {string} fieldId - The field ID to get valid values for
+   * @returns {Array<string>} Array of valid values for the field
    */
   getValidValuesForField(fieldId) {
     if (fieldId === 'range') return [];

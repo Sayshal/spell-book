@@ -1,29 +1,92 @@
+{{!--
+/**
+ * Filter Configuration Dialog Template
+ *
+ * PURPOSE:
+ * Configuration dialog for customizing spell filter visibility and order in
+ * the spell book interface. Provides drag-and-drop reordering for sortable
+ * filters and checkbox controls for filter visibility. Supports both fixed
+ * and moveable filter positions with appropriate visual indicators.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {Array<Object>} filterConfig - Array of filter configuration objects
+ * @param {string} filterConfig[].id - Unique filter identifier
+ * @param {string} filterConfig[].label - Localized filter label key
+ * @param {boolean} filterConfig[].sortable - Whether filter position can be changed
+ * @param {number} filterConfig[].order - Current filter order position
+ * @param {string} filterConfig[].checkboxHtml - Pre-rendered checkbox HTML
+ * @param {Array<Object>} buttons - Array of action button configurations
+ * @param {string} buttons[].type - Button HTML type attribute
+ * @param {string} buttons[].name - Button name attribute (optional)
+ * @param {string} buttons[].cssClass - Button CSS classes
+ * @param {string} buttons[].action - Button data-action attribute (optional)
+ * @param {boolean} buttons[].disabled - Whether button is disabled
+ * @param {string} buttons[].label - Button label localization key
+ * @param {string} buttons[].icon - Button icon CSS classes (optional)
+ *
+ * ACCESSIBILITY FEATURES:
+ * - List structure with role="list" and role="listitem" for screen readers
+ * - Drag and drop functionality with aria-grabbed and aria-dropeffect
+ * - Toolbar role for button groups with descriptive aria-label
+ * - Fixed position indicators with descriptive aria-label
+ * - Icons marked as decorative with aria-hidden="true"
+ *
+ * CUSTOMIZATION POINTS:
+ * - Filter items display different visual states for sortable vs fixed
+ * - Drag handles show lock icon for non-sortable filters
+ * - Hidden inputs maintain filter order and sortable state
+ * - Button configuration supports flexible action sets
+ * - Fixed position notes provide user guidance
+ *
+ * INTEGRATION:
+ * - Used in player spell book for filter customization
+ * - Connects to filter state management and persistence systems
+ * - Uses module localization keys from SPELLBOOK.Settings namespace
+ * - Supports drag-and-drop reordering functionality
+ */
+--}}
+
 <div class="filter-config-form">
+	<!-- Configuration Instructions -->
 	<p>{{localize "SPELLBOOK.Settings.FilterInstructions"}}</p>
+
+	<!-- Filter Configuration List - Sortable items with checkboxes -->
 	<ul class="filter-config-list" role="list" aria-label="{{localize 'SPELLBOOK.Settings.FilterConfigListLabel'}}">
 		{{#each filterConfig as |filter index|}}
 			<li data-filter-id="{{filter.id}}" data-index="{{index}}"
 				class="filter-item {{#unless filter.sortable}}not-sortable{{/unless}}" role="listitem"
 				aria-label="{{localize filter.label}}" {{#if filter.sortable}}aria-grabbed="false" aria-dropeffect="move"
 				{{/if}}>
+
+				<!-- Filter Configuration Item -->
 				<div class="filter-config-item">
+					<!-- Drag Handle - Shows appropriate icon based on sortability -->
 					<div class="drag-handle" aria-hidden="true">
 						{{#if filter.sortable}}<i class="fas fa-grip-lines"></i>{{else}}<i class="fas fa-lock"></i>{{/if}}
 					</div>
+
+					<!-- Filter Visibility Checkbox -->
 					{{{filter.checkboxHtml}}}
+
+					<!-- Filter Name Display -->
 					<span class="filter-name">{{localize filter.label}}</span>
+
+					<!-- Fixed Position Indicator -->
 					{{#unless filter.sortable}}
 						<span class="fixed-position-note" aria-label="{{localize 'SPELLBOOK.Settings.FixedPositionDesc'}}">
 							{{localize "SPELLBOOK.Settings.FixedPosition"}}
 						</span>
 					{{/unless}}
 				</div>
+
+				<!-- Hidden State Maintenance -->
 				<input type="hidden" name="order-{{filter.id}}" value="{{filter.order}}">
 				<input type="hidden" name="sortable-{{filter.id}}" value="{{filter.sortable}}">
 			</li>
 		{{/each}}
 	</ul>
 
+	<!-- Filter Configuration Footer with Action Buttons -->
 	<footer class="filter-config-footer">
 		<div class="footer-buttons" role="toolbar" aria-label="{{localize 'SPELLBOOK.Settings.FilterConfigActions'}}">
 			{{#each buttons as |button|}}

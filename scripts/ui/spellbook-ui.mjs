@@ -1,3 +1,37 @@
+/**
+ * Spell Book User Interface Management System
+ *
+ * This module provides UI management for the Spell Book application,
+ * handling interface state, user interactions, dynamic content updates, and visual
+ * enhancements. It serves as the central coordinator for all UI-related functionality
+ * including layout management, search integration, and spell interaction controls.
+ *
+ * The UI system manages multiple interconnected aspects:
+ * - Sidebar and footer layout with responsive positioning
+ * - Advanced search integration and collapsed state handling
+ * - Spell preparation tracking with per-class enforcement
+ * - Cantrip selection with rule-based restrictions
+ * - Spell locking based on class rules and limits
+ * - Dynamic count displays and visual feedback
+ * - Class-specific styling and color theming
+ *
+ * Key features include:
+ * - Real-time spell preparation limit enforcement
+ * - Granular per-class spell preparation tracking
+ * - Advanced search manager integration
+ * - Rule-based cantrip swapping with multiple modes
+ * - Dynamic UI state persistence via user flags
+ * - Responsive layout management for different view states
+ * - Visual feedback for preparation limits and restrictions
+ * - Integration with spell management and validation systems
+ *
+ * The system ensures consistent user experience while enforcing D&D 5e spellcasting
+ * rules and providing enhanced functionality for spell management workflows.
+ *
+ * @module UIHelpers/SpellbookUI
+ * @author Tyler
+ */
+
 import { FLAGS, MODULE } from '../constants/_module.mjs';
 import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
@@ -5,29 +39,103 @@ import { RuleSetManager } from '../managers/_module.mjs';
 import * as UIHelpers from './_module.mjs';
 
 /**
- * Helper class for UI-related functionality in the Spell Book application
+ * Spell preparation display data for footer tracking.
+ *
+ * @typedef {Object} PreparationDisplayData
+ * @property {number} current - Current number of prepared spells
+ * @property {number} maximum - Maximum number of spells that can be prepared
+ * @property {boolean} atMax - Whether the preparation limit has been reached
+ */
+
+/**
+ * Cantrip counter state information.
+ *
+ * @typedef {Object} CantripCounterState
+ * @property {number} current - Current number of selected cantrips
+ * @property {number} max - Maximum number of cantrips allowed
+ */
+
+/**
+ * Class-specific spell preparation tracking data.
+ *
+ * @typedef {Object} ClassPreparationData
+ * @property {number} current - Current prepared spells for this class
+ * @property {number} maximum - Maximum spells allowed for this class
+ * @property {string} className - Display name of the spellcasting class
+ */
+
+/**
+ * Spell lock validation result for rule enforcement.
+ *
+ * @typedef {Object} SpellLockResult
+ * @property {boolean} allowed - Whether the spell state change is permitted
+ * @property {string} [message] - Localization key for restriction message
+ * @property {string} [reason] - Internal reason code for the restriction
+ */
+
+/**
+ * Collapsed footer search configuration.
+ *
+ * @typedef {Object} CollapsedSearchConfig
+ * @property {HTMLElement} searchInput - The search input element
+ * @property {HTMLElement} [clearButton] - Optional clear button element
+ * @property {boolean} syncWithSidebar - Whether to sync with sidebar search
+ */
+
+/**
+ * Helper class for UI-related functionality in the Spell Book application.
+ *
+ * This class serves as the central coordinator for all user interface management
+ * within the Spell Book application. It handles layout state, user interactions,
+ * dynamic content updates, and visual feedback systems while integrating with
+ * the spell management and validation systems.
+ *
+ * The UI helper manages complex interactions between different interface components,
+ * ensuring consistent behavior across different view states and maintaining proper
+ * spell preparation tracking with rule enforcement. It provides both immediate
+ * visual feedback and persistent state management through user flags.
  */
 export class SpellbookUI {
   /**
-   * Create a new UI helper
-   * @param {SpellBook} app The parent application
+   * Create a new UI helper.
+   *
+   * Initializes the UI helper with references to the parent application and sets up
+   * internal state tracking for color applications and UI management. Creates and
+   * configures the advanced search manager for integration with the search system.
+   *
+   * @param {SpellBook} app - The parent application instance
    */
   constructor(app) {
+    /** @type {SpellBook} - The parent spell book application */
     this.app = app;
+
+    /** @type {number} - Counter to track color application lifecycle */
     this._colorApplicationCount = 0;
+
+    /** @type {UIHelpers.AdvancedSearchManager} - Advanced search functionality manager */
     this.advancedSearchManager = new UIHelpers.AdvancedSearchManager(app);
+
+    /** @type {boolean} - Flag to track cantrip UI initialization state */
+    this._cantripUIInitialized = false;
   }
 
   /**
-   * Get the application's element
-   * @returns {HTMLElement|null} The application element
+   * Get the application's element.
+   *
+   * @returns {HTMLElement|null} The application element or null if not available
    */
   get element() {
     return this.app.element;
   }
 
   /**
-   * Set sidebar expanded/collapsed state from user flags
+   * Set sidebar expanded/collapsed state from user flags.
+   *
+   * Applies the saved sidebar state from user flags, ensuring the interface
+   * maintains the user's preferred layout across sessions. The collapsed state
+   * affects footer positioning and search element placement.
+   *
+   * @returns {void}
    */
   setSidebarState() {
     const sidebarCollapsed = game.user.getFlag(MODULE.ID, FLAGS.SIDEBAR_COLLAPSED);
@@ -35,7 +143,16 @@ export class SpellbookUI {
   }
 
   /**
-   * Position the footer based on sidebar state
+   * Position the footer based on sidebar state.
+   *
+   * Dynamically repositions the footer and search elements based on whether the
+   * sidebar is collapsed or expanded. Handles cloning of search functionality
+   * to the collapsed footer and manages visibility states of different UI sections.
+   *
+   * Also updates advanced search dropdown positioning to maintain proper alignment
+   * with the active search input element.
+   *
+   * @returns {void}
    */
   positionFooter() {
     const footer = this.element.querySelector('footer');
@@ -68,9 +185,14 @@ export class SpellbookUI {
   }
 
   /**
-   * Setup search functionality for collapsed footer search
-   * @todo duplicate class name setupCollapsedFooterSearch?
-   * @param {HTMLElement} searchElement The cloned search element
+   * Setup search functionality for collapsed footer search.
+   *
+   * Configures a cloned search element in the collapsed footer to maintain
+   * synchronization with the main sidebar search. Establishes bidirectional
+   * value synchronization and integrates with the advanced search manager.
+   *
+   * @param {HTMLElement} searchElement - The cloned search element
+   * @returns {void}
    */
   setupCollapsedFooterSearch(searchElement) {
     const searchInput = searchElement.querySelector('.advanced-search-input');
@@ -97,7 +219,14 @@ export class SpellbookUI {
   }
 
   /**
-   * Set up filter change listeners
+   * Set up filter change listeners.
+   *
+   * Establishes event listeners on all filter inputs and selects to trigger
+   * filter cache invalidation and reapplication when users modify filter
+   * criteria. Handles both input and change events appropriately based on
+   * element types.
+   *
+   * @returns {void}
    */
   setupFilterListeners() {
     const filterInputs = this.element.querySelectorAll('.spell-filters input, .spell-filters select');
@@ -111,7 +240,19 @@ export class SpellbookUI {
   }
 
   /**
-   * Enhanced spell preparation tracking that enforces per-class limits
+   * Enhanced spell preparation tracking that enforces per-class limits.
+   *
+   * Manages spell preparation tracking with per-class limit enforcement.
+   * Calculates current preparation counts, applies rule-based restrictions, and
+   * updates both class-specific and global preparation displays.
+   *
+   * The system handles:
+   * - Per-class preparation counting and limit enforcement
+   * - Rule set integration for preparation bonuses
+   * - Visual feedback for at-limit states
+   * - Global preparation count aggregation
+   *
+   * @returns {void}
    */
   updateSpellPreparationTracking() {
     if (!this.element) return;
@@ -151,10 +292,17 @@ export class SpellbookUI {
   }
 
   /**
-   * Update the footer preparation display with granular at-max styling
-   * @param {string} activeClassIdentifier The currently active class identifier
-   * @param {boolean} isActiveClassAtMax Whether the active class is at maximum
-   * @param {Object} globalPrepared Global preparation counts {current, maximum}
+   * Update the footer preparation display with granular at-max styling.
+   *
+   * Updates the footer preparation tracking display with current counts and
+   * at-maximum visual indicators. Provides both global and per-class preparation
+   * status with appropriate styling for limit states.
+   *
+   * @param {string} activeClassIdentifier - The currently active class identifier
+   * @param {boolean} isActiveClassAtMax - Whether the active class is at maximum
+   * @param {PreparationDisplayData} globalPrepared - Global preparation counts
+   * @returns {void}
+   * @private
    */
   _updateFooterPreparationDisplay(activeClassIdentifier, isActiveClassAtMax, globalPrepared) {
     const prepTrackingContainer = this.element.querySelector('.spell-prep-tracking');
@@ -179,10 +327,17 @@ export class SpellbookUI {
   }
 
   /**
-   * Enforce per-class spell limits for non-cantrip spells
-   * @param {HTMLElement} tabContent The active tab content element
-   * @param {string} classIdentifier The class identifier
-   * @param {boolean} isClassAtMax Whether this class is at its spell limit
+   * Enforce per-class spell limits for non-cantrip spells.
+   *
+   * Applies preparation limit enforcement to spell checkboxes based on class-specific
+   * maximums. Disables checkboxes and applies visual indicators when preparation
+   * limits are reached, while respecting always-prepared and granted spells.
+   *
+   * @param {HTMLElement} tabContent - The active tab content element
+   * @param {string} classIdentifier - The class identifier
+   * @param {boolean} isClassAtMax - Whether this class is at its spell limit
+   * @returns {void}
+   * @private
    */
   _enforcePerClassSpellLimits(tabContent, classIdentifier, isClassAtMax) {
     const spellCheckboxes = tabContent.querySelectorAll('dnd5e-checkbox[data-uuid]');
@@ -210,7 +365,16 @@ export class SpellbookUI {
   }
 
   /**
-   * Update spell counts in level headings
+   * Update spell counts in level headings.
+   *
+   * Calculates and displays preparation counts for each spell level, showing
+   * the ratio of prepared to available spells. Excludes always-prepared, granted,
+   * innate, and at-will spells from the count to focus on user-selectable spells.
+   *
+   * The wizard spellbook tab receives special handling with count removal since
+   * wizard spells follow different preparation rules.
+   *
+   * @returns {void}
    */
   updateSpellCounts() {
     if (!this.element) return;
@@ -268,7 +432,13 @@ export class SpellbookUI {
   }
 
   /**
-   * Apply collapsed state to spell levels from user flags
+   * Apply collapsed state to spell levels from user flags.
+   *
+   * Restores the collapsed state of spell level containers based on saved user
+   * preferences. This maintains the user's preferred view state across application
+   * sessions for improved user experience.
+   *
+   * @returns {void}
    */
   applyCollapsedLevels() {
     const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
@@ -279,7 +449,13 @@ export class SpellbookUI {
   }
 
   /**
-   * Set up cantrip-specific UI elements
+   * Set up cantrip-specific UI elements.
+   *
+   * Initializes cantrip-specific interface elements including selection locks,
+   * rule information displays, and counter management. Handles wizard-specific
+   * rule information display during long rests based on cantrip swapping mode.
+   *
+   * @returns {void}
    */
   setupCantripUI() {
     const activeTab = this.app.tabGroups['spellbook-tabs'];
@@ -308,7 +484,13 @@ export class SpellbookUI {
   }
 
   /**
-   * Setup advanced search functionality
+   * Setup advanced search functionality.
+   *
+   * Initializes the advanced search manager if not already done, enabling
+   * complex search queries and dropdown suggestion functionality throughout
+   * the application.
+   *
+   * @returns {void}
    */
   setupAdvancedSearch() {
     if (this.advancedSearchManager && this.advancedSearchManager.isInitialized) return;
@@ -317,10 +499,15 @@ export class SpellbookUI {
   }
 
   /**
-   * Update cantrip counter display using cached max values
-   * @param {HTMLElement} [cantripLevel] The cantrip level container
-   * @param {boolean} [skipLockSetup=false] Whether to skip calling setupCantripLocks
-   * @returns {Object} Counter state with current and max values
+   * Update cantrip counter display using cached max values.
+   *
+   * Calculates and displays the current cantrip selection count against the maximum
+   * allowed for the active class. Provides visual feedback for at-maximum states
+   * and integrates with the cantrip locking system.
+   *
+   * @param {HTMLElement} [cantripLevel] - The cantrip level container
+   * @param {boolean} [skipLockSetup=false] - Whether to skip calling setupCantripLocks
+   * @returns {CantripCounterState} Counter state with current and max values
    */
   updateCantripCounter(cantripLevel, skipLockSetup = false) {
     if (!this.element) return { current: 0, max: 0 };
@@ -368,8 +555,14 @@ export class SpellbookUI {
   }
 
   /**
-   * Set up cantrip lock states based on selection rules using cached max values
-   * @param {boolean} [applyRuleLocks=false] Whether to apply rule-based locks (vs count-only)
+   * Set up cantrip lock states based on selection rules using cached max values.
+   *
+   * Applies cantrip selection restrictions based on count limits and rule-specific
+   * constraints. Handles different cantrip swapping modes including legacy restrictions,
+   * level-up only swapping, and long rest swapping for wizards.
+   *
+   * @param {boolean} [applyRuleLocks=false] - Whether to apply rule-based locks (vs count-only)
+   * @returns {void}
    */
   setupCantripLocks(applyRuleLocks = false) {
     const activeTab = this.app.tabGroups['spellbook-tabs'];
@@ -407,20 +600,26 @@ export class SpellbookUI {
           item.classList.add('cantrip-locked');
           continue;
         }
-        if (applyRuleLocks) this._applyRuleBasedCantripLocks(item, checkbox, isChecked, classIdentifier, settings);
+        if (applyRuleLocks) this._applyRuleBasedCantripLocks(item, checkbox, classIdentifier, settings);
       }
     }
   }
 
   /**
-   * Apply rule-based locks to a cantrip (legacy/modern restrictions)
-   * @param {HTMLElement} item The spell item element
-   * @param {HTMLElement} checkbox The checkbox element
-   * @param {boolean} isChecked Whether the checkbox is checked
-   * @param {string} classIdentifier The class identifier
-   * @param {Object} settings The class-specific settings
+   * Apply rule-based locks to a cantrip (legacy/modern restrictions).
+   *
+   * Implements specific cantrip swapping restrictions based on class rules and
+   * application context (level up, long rest, etc.). Handles different rule modes
+   * including legacy no-swapping, level-up only, and wizard long rest swapping.
+   *
+   * @param {HTMLElement} item - The spell item element
+   * @param {HTMLElement} checkbox - The checkbox element
+   * @param {string} classIdentifier - The class identifier
+   * @param {Object} settings - The class-specific settings
+   * @returns {void}
+   * @private
    */
-  _applyRuleBasedCantripLocks(item, checkbox, isChecked, classIdentifier, settings) {
+  _applyRuleBasedCantripLocks(item, checkbox, classIdentifier, settings) {
     if (settings.behavior !== MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) return;
     const isLevelUp = this.app.spellManager.cantripManager.canBeLeveledUp();
     const isLongRest = this.app._isLongRest;
@@ -460,7 +659,12 @@ export class SpellbookUI {
   }
 
   /**
-   * Apply class-specific colors and styling (only once during application lifecycle)
+   * Apply class-specific colors and styling (only once during application lifecycle).
+   *
+   * Applies class-specific color theming to the interface based on class icons
+   * and theme settings. Uses a lifecycle counter to ensure colors are only
+   * applied once during the application's lifetime for performance optimization.
+   *
    * @returns {Promise<void>}
    */
   async applyClassStyling() {
@@ -472,7 +676,16 @@ export class SpellbookUI {
   }
 
   /**
-   * Set up spell lock states based on class swapping rules and max limits
+   * Set up spell lock states based on class swapping rules and max limits.
+   *
+   * Applies spell locking based on class rules, preparation limits,
+   * and application context. Handles rule-based restrictions for spell swapping
+   * while respecting special spell types that don't count against limits.
+   *
+   * Integrates with the spell manager's validation system to determine what
+   * spell state changes are permitted under current conditions.
+   *
+   * @returns {void}
    */
   setupSpellLocks() {
     const activeTab = this.app.tabGroups['spellbook-tabs'];

@@ -1,34 +1,83 @@
+/**
+ * Spell Book Module Logger
+ *
+ * Provides enhanced logging functionality with caller context information,
+ * level-based filtering, and persistent log storage. The logger automatically
+ * captures caller file path and line information from the call stack and maintains
+ * a circular buffer of log entries for troubleshooting purposes.
+ *
+ * Features:
+ * - Automatic caller file path and line extraction from stack traces
+ * - Level-based log filtering (error, warning, debug)
+ * - Persistent log storage in global window object
+ * - Timestamp generation for log entries
+ * - Configurable log levels through module settings
+ *
+ * @module Logger
+ * @author Tyler
+ */
+
 import { MODULE, SETTINGS } from './constants/_module.mjs';
 
 /**
- * Custom logger with caller context information
- * @param {number} level Log level (1=error, 2=warning, 3=verbose)
- * @param {...any} args Content to log to console
+ * Log levels for filtering and categorizing log output.
+ *
+ * @typedef {1|2|3} LogLevel
+ * @description
+ * - 1: Error level - Critical errors only
+ * - 2: Warning level - Errors and warnings
+ * - 3: Debug level - All messages including verbose debug info
+ */
+
+/**
+ * Log entry structure stored in the global console log buffer.
+ *
+ * @typedef {Object} LogEntry
+ * @property {'error'|'warn'|'debug'} type - Type of log entry based on level
+ * @property {string} timestamp - HH:MM:SS formatted timestamp
+ * @property {LogLevel} level - Numeric log level (1=error, 2=warn, 3=debug)
+ * @property {Array<*>} content - Array of arguments passed to the log function
+ */
+
+/**
+ * Enhanced logging function with automatic caller file path detection.
+ *
+ * This function provides level-based logging with automatic extraction of caller
+ * file path and line information from the JavaScript call stack. It maintains a
+ * persistent log buffer and respects the configured log level for console output.
+ *
+ * The function automatically prepends caller context (file path:line:column) to log
+ * messages and stores all log entries in a global buffer for troubleshooting,
+ * regardless of the current log level setting.
+ *
+ * @param {LogLevel} level - Log level (1=error, 2=warning, 3=verbose)
+ * @param {...*} args - Content to log to console (any number of arguments)
  */
 export function log(level, ...args) {
   try {
     const stack = new Error().stack.split('\n');
     let callerInfo = '';
-    if (stack.length > 2) {
-      const callerLine = stack[2].trim();
-      const callerMatch = callerLine.match(/at\s+([^.]+)\.(\w+)/);
-      if (callerMatch) callerInfo = `[${callerMatch[1]}.${callerMatch[2]}] : `;
+    for (let i = 2; i < Math.min(stack.length, 5); i++) {
+      const callerLine = stack[i].trim();
+      const extractedInfo = extractCallerInfo(callerLine);
+      if (extractedInfo) {
+        callerInfo = `[${extractedInfo}] : `;
+        break;
+      }
     }
-
+    if (!callerInfo) callerInfo = '[Unknown] : ';
     if (typeof args[0] === 'string') args[0] = callerInfo + args[0];
     else args.unshift(callerInfo);
     const now = new Date();
     const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+
+    /** @type {LogEntry} */
     const logEntry = {
-      type:
-        level === 1 ? 'error'
-        : level === 2 ? 'warn'
-        : 'debug',
+      type: level === 1 ? 'error' : level === 2 ? 'warn' : 'debug',
       timestamp,
       level,
       content: args
     };
-
     if (!window.console_logs) window.console_logs = [];
     if (window.console_logs.length > 2000) window.console_logs.shift();
     window.console_logs.push(logEntry);
@@ -54,7 +103,32 @@ export function log(level, ...args) {
 }
 
 /**
- * Initialize the logger with current settings
+ * Extract meaningful caller file path and line information from a stack trace line.
+ * Extracts the relative file path and line:column info from module URLs.
+ *
+ * @param {string} stackLine - Single line from Error.stack
+ * @returns {string|null} - File path with line info or null if not extractable
+ */
+function extractCallerInfo(stackLine) {
+  const cleanLine = stackLine.replace(/^\s*at\s+/, '');
+  const match = cleanLine.match(/\(.*?\/modules\/spell-book(\/[^)]+)\)$/);
+  if (match) return match[1];
+  const fallbackMatch = cleanLine.match(/\/modules\/spell-book(\/[^\s]+)/);
+  if (fallbackMatch) return fallbackMatch[1];
+  return null;
+}
+
+/**
+ * Initialize the logger with current game settings.
+ *
+ * Retrieves the logging level from game settings and updates the module
+ * configuration. This function is called during module initialization
+ * to ensure the logger respects user preferences.
+ *
+ * If settings retrieval fails, defaults to error-level logging (level 1)
+ * for safety and logs the initialization error.
+ *
+ * @returns {void}
  */
 export function initializeLogger() {
   try {

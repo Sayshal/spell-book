@@ -1,67 +1,125 @@
+/**
+ * Spell Comparison Dialog
+ *
+ * Side-by-side spell analysis and comparison interface for detailed spell
+ * evaluation. Provides spell data comparison including statistics,
+ * effects, and tactical analysis for informed spellcasting decisions.
+ *
+ * Key features:
+ * - Side-by-side spell comparison interface
+ * - Detailed statistics and effect analysis
+ * - Visual difference highlighting
+ * - Tactical comparison metrics
+ * - Export and sharing capabilities
+ * - Integration with spell selection workflows
+ *
+ * @module Dialogs/SpellComparisonDialog
+ * @author Tyler
+ */
+
 import { TEMPLATES } from '../constants/_module.mjs';
 import * as UIHelpers from '../ui/_module.mjs';
+import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
- * Dialog application for comparing multiple spells side-by-side
- * Allows users to view and analyze spell differences and similarities
+ * @typedef {Object} ProcessedSpell
+ * @property {string} uuid - The spell's UUID
+ * @property {string} name - Spell name
+ * @property {string} img - Spell icon path
+ * @property {string} enrichedIcon - HTML for enriched spell icon link
+ * @property {number} level - Spell level (0 for cantrips)
+ * @property {string} school - Formatted spell school
+ * @property {string} castingTime - Formatted casting time/activation
+ * @property {string} range - Formatted spell range
+ * @property {string} duration - Formatted spell duration
+ * @property {string} components - Formatted spell components
+ * @property {DamageInfo} damage - Extracted damage information
+ * @property {string} description - Spell description HTML
+ */
+
+/**
+ * @typedef {Object} DamageInfo
+ * @property {string} formula - Damage formula string (e.g., "1d8 + 2d6")
+ * @property {string[]} types - Array of damage type identifiers
+ * @property {number} maxDice - Maximum possible dice damage value
+ */
+
+/**
+ * @typedef {Object} ComparisonProperty
+ * @property {string} name - Localized property name for display
+ * @property {string} key - Property key identifier
+ * @property {PropertyValue[]} values - Array of values for each compared spell
+ */
+
+/**
+ * @typedef {Object} PropertyValue
+ * @property {string} value - Formatted value to display
+ * @property {boolean} highlight - Whether this value should be visually highlighted
+ */
+
+/**
+ * @typedef {Object} ComparisonTableData
+ * @property {ComparisonProperty[]} properties - Array of property comparisons
+ * @property {number} maxDamage - Maximum damage value across all spells for highlighting
+ */
+
+/**
+ * Dialog application for comparing multiple spells side-by-side.
+ *
+ * Allows users to view and analyze spell differences and similarities in a
+ * tabular format, with intelligent positioning and responsive sizing based
+ * on the number of spells being compared.
+ *
+ * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */
 export class SpellComparisonDialog extends HandlebarsApplicationMixin(ApplicationV2) {
+  /** @inheritdoc */
   static DEFAULT_OPTIONS = {
     id: 'spell-comparison-dialog',
     tag: 'div',
-    window: {
-      icon: 'fas fa-clipboard-question',
-      resizable: false,
-      minimizable: true,
-      positioned: true
-    },
+    window: { icon: 'fas fa-clipboard-question', resizable: false, minimizable: true, positioned: true },
     position: { width: 600, height: 'auto' },
     classes: ['spell-book', 'spell-comparison-dialog']
   };
 
-  static PARTS = {
-    comparison: { template: TEMPLATES.DIALOGS.SPELL_COMPARISON }
-  };
+  /** @inheritdoc */
+  static PARTS = { comparison: { template: TEMPLATES.DIALOGS.SPELL_COMPARISON } };
 
   /**
-   * Create a new spell comparison dialog
-   * @param parentApp Parent Spell Book application
-   * @param {Object} options Application options
+   * Create a new spell comparison dialog instance.
+   *
+   * @param {Object} parentApp - Parent Spell Book application instance
+   * @param {Object} [options={}] - Additional application options
    */
   constructor(parentApp, options = {}) {
     super(options);
+
+    /** @type {Object} Reference to the parent Spell Book application */
     this.parentApp = parentApp;
   }
 
-  /**
-   * Get the window title for this application
-   * @returns {string} The formatted title including actor name
-   */
+  /** @inheritdoc */
   get title() {
     return game.i18n.localize('SPELLBOOK.Comparison.DialogTitle');
   }
 
-  /** @override */
+  /** @inheritdoc */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const spellUuids = Array.from(this.parentApp.comparisonSpells);
     const spells = [];
     for (const uuid of spellUuids) {
-      try {
-        const spell = fromUuidSync(uuid);
-        if (spell) spells.push(this._processSpellForComparison(spell));
-      } catch (error) {
-        log(1, `Error loading spell for comparison: ${uuid}`, error);
-      }
+      const spell = fromUuidSync(uuid);
+      if (spell) spells.push(this._processSpellForComparison(spell));
     }
     context.spells = spells;
     context.comparisonData = this._buildComparisonTable(spells);
     return context;
   }
 
-  /** @override */
+  /** @inheritdoc */
   _onFirstRender(context, options) {
     super._onFirstRender(context, options);
     this._calculateOptimalSize();
@@ -69,7 +127,12 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
   }
 
   /**
-   * Calculate and set optimal dialog size based on content
+   * Calculate and set optimal dialog size based on content and spell count.
+   *
+   * Dynamically sizes the dialog to accommodate the comparison table based on
+   * the number of spells being compared, with reasonable minimum and maximum bounds.
+   *
+   * @private
    */
   _calculateOptimalSize() {
     if (!this.parentApp?.comparisonSpells) return;
@@ -86,7 +149,12 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
   }
 
   /**
-   * Position the dialog smartly relative to the parent SpellBook
+   * Position the dialog intelligently relative to the parent SpellBook application.
+   *
+   * Attempts to position the dialog near the parent application without overlapping,
+   * falling back to centered positioning if insufficient space is available.
+   *
+   * @private
    */
   _positionRelativeToParent() {
     if (!this.parentApp?.element) return;
@@ -94,8 +162,7 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
     const parentRect = this.parentApp.element.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    let left;
-    let top;
+    let left, top;
     const rightSpace = viewportWidth - parentRect.right;
     if (rightSpace >= dialogWidth + 20) left = parentRect.right + 10;
     else {
@@ -112,9 +179,14 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
   }
 
   /**
-   * Process a spell object into standardized format for comparison display
-   * @param {Object} spell The spell document to process
-   * @returns {Object} Processed spell data object containing uuid, name, img, enrichedIcon, level, school, castingTime, range, duration, components, damage, and description properties
+   * Process a spell document into standardized format for comparison display.
+   *
+   * Extracts and formats all relevant spell properties for tabular comparison,
+   * including damage analysis and enriched content links.
+   *
+   * @param {Object} spell - The spell document to process
+   * @returns {ProcessedSpell} Processed spell data for comparison display
+   * @private
    */
   _processSpellForComparison(spell) {
     return {
@@ -134,9 +206,14 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
   }
 
   /**
-   * Create enriched spell icon link
-   * @param {Object} spell The spell document
-   * @returns {string} HTML for enriched icon
+   * Create an enriched content link for a spell icon.
+   *
+   * Generates a properly formatted content link that integrates with Foundry's
+   * enriched content system for tooltips and drag-drop functionality.
+   *
+   * @param {Object} spell - The spell document
+   * @returns {string} HTML string for the enriched icon link
+   * @private
    */
   _createEnrichedSpellIcon(spell) {
     const uuid = spell.uuid;
@@ -151,9 +228,14 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
   }
 
   /**
-   * Extract damage information from a spell for comparison purposes
-   * @param {Object} spell The spell document to extract damage from
-   * @returns {Object} Damage information object containing formula string, damage types array, and maximum dice damage value
+   * Extract damage information from a spell for comparison purposes.
+   *
+   * Analyzes both legacy and modern spell damage systems to extract damage formulas,
+   * types, and maximum potential damage values for highlighting purposes.
+   *
+   * @param {Object} spell - The spell document to analyze
+   * @returns {DamageInfo} Damage information object
+   * @private
    */
   _extractDamageInfo(spell) {
     const damageInfo = { formula: '', types: [], maxDice: 0 };
@@ -189,9 +271,14 @@ export class SpellComparisonDialog extends HandlebarsApplicationMixin(Applicatio
   }
 
   /**
-   * Build comparison table data structure from processed spells
-   * @param {Object[]} spells Array of processed spell objects
-   * @returns {Object} Comparison table data containing properties array for display and maximum damage value across all spells
+   * Build comparison table data structure from processed spells.
+   *
+   * Creates a structured comparison table with property rows and spell columns,
+   * including highlighting logic for significant values like maximum damage.
+   *
+   * @param {ProcessedSpell[]} spells - Array of processed spell objects
+   * @returns {ComparisonTableData} Complete comparison table data structure
+   * @private
    */
   _buildComparisonTable(spells) {
     if (!spells.length) return { properties: [] };

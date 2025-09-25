@@ -1,0 +1,57 @@
+{{!--
+/**
+ * Custom Spell List Format Migration Results Component Template
+ *
+ * PURPOSE:
+ * Component for displaying detailed custom spell list format migration results
+ * within the main migration report. Shows actors that were updated and the
+ * classes that had their spell list format migrated from string to array.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {Object} customSpellListResults - Custom spell list migration results
+ * @param {number} customSpellListResults.processed - Number of actors processed
+ * @param {number} customSpellListResults.updated - Number of actors updated
+ * @param {Array<Object>} customSpellListResults.migratedActors - Array of migrated actor data
+ * @param {Array<string>} customSpellListResults.errors - Array of error messages
+ */
+--}}
+
+{{#if customSpellListResults.updated}}
+  <div class="custom-spell-list-migration-results">
+    <p>
+      <strong>{{localize 'SPELLBOOK.Migrations.CustomSpellListFormatMigration'}}:</strong>
+      {{localize 'SPELLBOOK.Migrations.CustomSpellListFormatMigrationCount' count=customSpellListResults.updated}}
+    </p>
+
+    {{#if customSpellListResults.migratedActors.length}}
+      {{#if (lt customSpellListResults.migratedActors.length 6)}}
+        <ul>
+          {{#each customSpellListResults.migratedActors as |actor|}}
+            <li>
+              <strong>{{actor.name}}</strong>:
+              {{localize 'SPELLBOOK.Migrations.CustomSpellListClassesMigrated' count=actor.migratedClasses.length}}
+            </li>
+          {{/each}}
+        </ul>
+      {{else}}
+        <p>
+          {{#each (slice customSpellListResults.migratedActors 0 3) as |actor|}}
+            <strong>{{actor.name}}</strong>{{#unless @last}}, {{/unless}}
+          {{/each}}
+          {{localize 'SPELLBOOK.Migrations.AndMore' count=(subtract customSpellListResults.migratedActors.length 3)}}
+        </p>
+      {{/if}}
+    {{/if}}
+
+    {{#if customSpellListResults.errors.length}}
+      <div class="migration-errors">
+        <strong>{{localize 'SPELLBOOK.Migrations.MigrationErrors'}}:</strong>
+        <ul>
+          {{#each customSpellListResults.errors as |error|}}
+            <li>{{error}}</li>
+          {{/each}}
+        </ul>
+      </div>
+    {{/if}}
+  </div>
+{{/if}}

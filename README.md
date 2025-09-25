@@ -1,8 +1,8 @@
 # Spell Book
 
 ![GitHub release](https://img.shields.io/github/v/release/Sayshal/spell-book?style=for-the-badge)
-![GitHub Downloads (specific asset, all releases)](https://img.shields.io/github/downloads/Sayshal/spell-book/module.zip?style=for-the-badge&logo=foundryvirtualtabletop&logoColor=white&logoSize=auto&label=Downloads%20(Total)&color=ff144f)
-![GitHub Downloads (specific asset, latest release)](https://img.shields.io/github/downloads/Sayshal/spell-book/latest/module.zip?sort=date&style=for-the-badge&logo=foundryvirtualtabletop&logoColor=white&logoSize=auto&label=Downloads%20(Latest)&color=ff144f)
+![GitHub Downloads (specific asset, all releases)](<https://img.shields.io/github/downloads/Sayshal/spell-book/module.zip?style=for-the-badge&logo=foundryvirtualtabletop&logoColor=white&logoSize=auto&label=Downloads%20(Total)&color=ff144f>)
+![GitHub Downloads (specific asset, latest release)](<https://img.shields.io/github/downloads/Sayshal/spell-book/latest/module.zip?sort=date&style=for-the-badge&logo=foundryvirtualtabletop&logoColor=white&logoSize=auto&label=Downloads%20(Latest)&color=ff144f>)
 
 ![Foundry Version](https://img.shields.io/endpoint?url=https%3A%2F%2Ffoundryshields.com%2Fversion%3Fstyle%3Dfor-the-badge%26url%3Dhttps%3A%2F%2Fgithub.com%2FSayshal%2Fspell-book%2Freleases%2Flatest%2Fdownload%2Fmodule.json)
 ![D&D5E Version](https://img.shields.io/endpoint?url=https%3A%2F%2Ffoundryshields.com%2Fsystem%3FnameType%3Dfoundry%26showVersion%3D1%26style%3Dfor-the-badge%26url%3Dhttps%3A%2F%2Fgithub.com%2FSayshal%2Fspell-book%2Freleases%2Flatest%2Fdownload%2Fmodule.json)
@@ -63,10 +63,7 @@ Get Spell Book through Foundry's **Module Manager** or **The Forge's Bazaar** fo
 
 1. Open **Foundry's Configuration and Setup** screen
 2. Click **Install Module** in the Add-on Modules section
-3. Paste this URL in the **Manifest URL** field:
-
-[https://github.com/Sayshal/spell-book/releases/latest/download/module.json](https://github.com/Sayshal/spell-book/releases/latest/download/module.json)
-
+3. Paste this URL in the **Manifest URL** field:[https://github.com/Sayshal/spell-book/releases/latest/download/module.json](https://github.com/Sayshal/spell-book/releases/latest/download/module.json)
 4. Click **Install**
 5. Enable Spell Book in the **Manage Modules** section
 
@@ -212,35 +209,35 @@ Whether you're a new player learning spellcasting basics or a veteran managing a
 
 ![Single Class Character](./github_media/01_SINGLECLASSCHAR.png)
 
-***A single-class spellcaster with the main spell book interface, highlighting the clean layout and preparation checkboxes***
+**_A single-class spellcaster with the main spell book interface, highlighting the clean layout and preparation checkboxes_**
 
 ![Wizard Spell Book Tab](./github_media/02_WIZARDBOOK.png)
 
-***The wizard-specific Spell Book tab showing learnable spells, cost information***
+**_The wizard-specific Spell Book tab showing learnable spells, cost information_**
 
 ![Multiclass Character](./github_media/03_MULTICLASS.png)
 
-***Each class with spellcasting potential adds a tab, using the icon of the class and the color of the icon to denote different spell preparations.***
+**_Each class with spellcasting potential adds a tab, using the icon of the class and the color of the icon to denote different spell preparations._**
 
 ### Configuration & Customization
 
 ![Player Settings Menu](./github_media/04_SPELLSETTINGS.png)
 
-***The comprehensive settings dialog with class-specific rules, enforcement options, and rule set selection***
+**_The settings dialog with class-specific rules, enforcement options, and rule set selection_**
 
 ![Filter Configuration](./github_media/05_FILTERCONFIGURATION.png)
 
-***The filter configuration interface where users can customize which filters appear and their order***
+**_The filter configuration interface where users can customize which filters appear and their order_**
 
 ![Sidebar Filters in Action](./github_media/06_FILTERS.png)
 
-***Sidebar with various filters applied***
+**_Sidebar with various filters applied_**
 
 ### GM Tools
 
 ![Spell List Manager](./github_media/07_SPELLLISTMANAGER.png)
 
-***Main GM interface showing available spell lists, selection panel, and management options***
+**_Main GM interface showing available spell lists, selection panel, and management options_**
 
 ---
 

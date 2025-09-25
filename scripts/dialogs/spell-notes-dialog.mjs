@@ -1,3 +1,22 @@
+/**
+ * Spell Notes Editor Dialog
+ *
+ * Personal spell notes editing interface for adding user-specific annotations
+ * and tactical information to spells. Provides rich text editing capabilities
+ * and integration with the spell user data system.
+ *
+ * Key features:
+ * - Rich text spell notes editing
+ * - Personal spell annotations
+ * - Tactical information management
+ * - User-specific spell data storage
+ * - Integration with spell display systems
+ * - Notes sharing and collaboration
+ *
+ * @module Dialogs/SpellNotesDialog
+ * @author Tyler
+ */
+
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
@@ -6,9 +25,16 @@ import * as UIHelpers from '../ui/_module.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
- * Dialog for editing spell notes
+ * Dialog application for editing spell notes.
+ *
+ * This dialog provides a text editing interface for users to add, modify, or delete
+ * personal notes associated with specific spells. It handles user data management
+ * and delegation between GMs and players for note ownership.
+ *
+ * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */
 export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) {
+  /** @inheritdoc */
   static DEFAULT_OPTIONS = {
     id: 'spell-notes-dialog',
     tag: 'form',
@@ -21,32 +47,41 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
     classes: ['spell-book', 'spell-notes-dialog']
   };
 
-  static PARTS = {
-    form: { template: TEMPLATES.DIALOGS.SPELL_NOTES }
-  };
+  /** @inheritdoc */
+  static PARTS = { form: { template: TEMPLATES.DIALOGS.SPELL_NOTES } };
 
-  /**
-   * Get the window title for this application
-   * @returns {string} The formatted title including actor name
-   */
+  /** @inheritdoc */
   get title() {
     return game.i18n.format('SPELLBOOK.UI.EditNotesTitle', { spell: this.spellName });
   }
 
   /**
-   * Create a new Spell Notes dialog
-   * @param {Object} options Application options
+   * Create a new Spell Notes dialog instance.
+   *
+   * @param {Object} [options={}] - Application options including spell and actor data
+   * @param {string} options.spellUuid - UUID of the spell to edit notes for
+   * @param {Actor} [options.actor] - Associated actor for note ownership
    */
   constructor(options = {}) {
     super(options);
+
+    /** @type {string} Canonical UUID of the spell being edited */
     this.spellUuid = UIHelpers.getCanonicalSpellUuid(options.spellUuid);
+
+    /** @type {string} Display name of the spell */
     this.spellName = fromUuidSync(this.spellUuid).name;
+
+    /** @type {Actor|null} Associated actor for ownership determination */
     this.actor = options.actor;
+
+    /** @type {string} Current notes content */
     this.currentNotes = '';
+
+    /** @type {number} Maximum allowed character length for notes */
     this.maxLength = game.settings.get(MODULE.ID, SETTINGS.SPELL_NOTES_LENGTH) || 240;
   }
 
-  /** @override */
+  /** @inheritdoc */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const targetUserId = DataHelpers._getTargetUserId(this.actor);
@@ -70,19 +105,25 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
     });
   }
 
-  /** @override */
+  /** @inheritdoc */
   _configureRenderOptions(options) {
     super._configureRenderOptions(options);
     return options;
   }
 
-  /** @override */
+  /** @inheritdoc */
   _onRender(context, options) {
     super._onRender(context, options);
     const textarea = this.element.querySelector('textarea[name="notes"]');
     const counter = this.element.querySelector('.character-counter');
     const saveButton = this.element.querySelector('button.save-notes');
     if (textarea && counter && saveButton) {
+      /**
+       * Update form state based on current text input.
+       *
+       * Updates character counter, visual warnings, and button state
+       * based on current textarea content and length limits.
+       */
       const updateFormState = () => {
         const remaining = this.maxLength - textarea.value.length;
         const hasContent = textarea.value.trim().length > 0;
@@ -100,44 +141,46 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Position dialog near the notes icon that opened it
+   * Position dialog near the notes icon that opened it.
+   *
+   * Attempts to position the dialog near the triggering notes icon for
+   * better user experience and visual context.
+   *
+   * @private
    */
   _positionNearIcon() {
     const icon = document.querySelector(`[data-uuid="${this.spellUuid}"][data-action="editNotes"]`);
     if (!icon) return;
     const iconRect = icon.getBoundingClientRect();
     const dialogRect = this.element.getBoundingClientRect();
-    let left = iconRect.right + 10;
-    if (left + dialogRect.width > window.innerWidth) left = iconRect.left - dialogRect.width - 10;
-    const top = iconRect.top + iconRect.height / 2 - dialogRect.height / 2;
+    let left, top;
+    const rightSpace = window.innerWidth - iconRect.right;
+    if (rightSpace >= dialogRect.width + 20) {
+      left = iconRect.right + 10;
+    } else {
+      const leftSpace = iconRect.left;
+      if (leftSpace >= dialogRect.width + 20) left = leftSpace - dialogRect.width - 10;
+      else left = (window.innerWidth - dialogRect.width) / 2;
+    }
+    top = Math.max(50, iconRect.top + iconRect.height / 2 - dialogRect.height / 2);
+    if (left < 20) left = 20;
+    if (left + dialogRect.width > window.innerWidth - 20) {
+      left = window.innerWidth - dialogRect.width - 20;
+    }
+    if (top < 50) top = 50;
+    if (top > window.innerHeight - 100) top = window.innerHeight - 100;
     this.setPosition({ left, top });
   }
 
-  /**
-   * Handle form submission with GM-to-player delegation
-   * @param {Event} event The form submission event
-   * @param {HTMLFormElement} form The form element
-   * @param {FormDataExtended} formData The form data
-   */
-  static async formHandler(event, form, formData) {
+  /** @inheritdoc */
+  static async formHandler(_event, _form, formData) {
     const notes = formData.object.notes || '';
     const spellUuid = formData.object.spellUuid;
     const actorId = formData.object.actorId;
     const canonicalUuid = UIHelpers.getCanonicalSpellUuid(spellUuid);
     try {
-      let targetUserId = game.user.id;
-      if (game.user.isActiveGM && actorId) {
-        const actor = game.actors.get(actorId);
-        if (actor) {
-          const characterOwner = game.users.find((user) => user.character?.id === actor.id);
-          if (characterOwner) targetUserId = characterOwner.id;
-          else {
-            const ownershipOwner = game.users.find((user) => actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
-            if (ownershipOwner) targetUserId = ownershipOwner.id;
-            else log(2, 'No owner found via ownership levels, using GM');
-          }
-        }
-      }
+      const actor = actorId ? game.actors.get(actorId) : null;
+      const targetUserId = DataHelpers._getTargetUserId(actor);
       await DataHelpers.SpellUserDataJournal.setSpellNotes(canonicalUuid, notes, targetUserId);
       const cacheKey = `${targetUserId}:${canonicalUuid}`;
       if (DataHelpers.SpellUserDataJournal?.cache) DataHelpers.SpellUserDataJournal.cache.delete(cacheKey);

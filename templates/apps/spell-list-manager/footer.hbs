@@ -1,36 +1,121 @@
+{{!--
+/**
+ * Spell List Manager Footer Template
+ *
+ * PURPOSE:
+ * Application footer for the spell list manager providing primary action controls,
+ * utility access, and editing workflow management. Contains UI customization access,
+ * help documentation, application controls, and editing state management
+ * including bulk selection operations and workflow controls.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {boolean} isEditing - Whether spell list manager is currently in editing mode
+ * @param {boolean} selectionMode - Whether bulk selection mode is currently active
+ * @param {number} selectedToAddCount - Count of spells selected for addition
+ * @param {number} selectedToRemoveCount - Count of spells selected for removal
+ * @param {number} totalSelectedCount - Total count of selected spells (add + remove)
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Footer element with contentinfo role for page structure
+ * - Button elements with aria-label attributes
+ * - Icons marked as decorative with aria-hidden="true"
+ * - Selection summary with dynamic count information
+ * - Disabled state management for bulk operations
+ * - Logical grouping of related controls in footer sections
+ *
+ * CUSTOMIZATION POINTS:
+ * - Footer sections adapt based on editing and selection modes
+ * - Button states change dynamically based on selection counts
+ * - Selection mode toggles between individual and bulk operations
+ * - Control visibility controlled through editing state
+ * - Action buttons support different workflow phases
+ *
+ * INTEGRATION:
+ * - Connects to SpellListManager application for workflow management
+ * - Uses module localization keys from SPELLMANAGER and SPELLBOOK namespaces
+ * - Supports UI customization dialog integration
+ * - Links to analytics dashboard and help documentation
+ * - Manages bulk selection and editing workflow states
+ */
+--}}
+
 <div class="manager-footer" role="contentinfo">
 	<div class="footer-content">
+		<!-- Left Footer Section - Utility and customization controls -->
 		<div class="footer-left">
-			<!-- UI Customization Button -->
+			<!-- UI Customization Access Button -->
 			<button type="button" class="ui-customization-button footer-button" data-action="openCustomization"
 				data-tooltip="{{localize 'SPELLBOOK.Settings.DetailsCustomization.MenuLabel'}}"
 				aria-label="{{localize 'SPELLBOOK.Settings.DetailsCustomization.MenuLabel'}}">
 				<i class="fas fa-palette" aria-hidden="true"></i>
 				{{localize "SPELLBOOK.Settings.DetailsCustomization.MenuLabel"}}
 			</button>
-		</div>
-		<div class="footer-center">
+			<!-- Analytics Dashboard Access -->
 			<button type="button" class="analytics-btn" data-action="openAnalyticsDashboard"
 				data-tooltip="{{localize 'SPELLBOOK.Analytics.OpenDashboardTooltip'}}">
 				<i class="fas fa-chart-bar"></i> {{localize "SPELLBOOK.Analytics.OpenDashboard"}}
 			</button>
+
+			<!-- Help Documentation Access -->
 			<button type="button" class="help-button" data-action="showDocumentation"
 				aria-label="{{localize 'SPELLMANAGER.Buttons.Help'}}">
 				<i class="fas fa-question-circle" aria-hidden="true"></i>
 				{{localize "SPELLMANAGER.Buttons.Help"}}
 			</button>
-
-			<button type="button" class="close-button" data-action="closeSpellManager"
-				aria-label="{{localize 'SPELLMANAGER.Buttons.Close'}}">
-				<i class="fas fa-times" aria-hidden="true"></i>
-				{{localize "SPELLMANAGER.Buttons.Close"}}
-			</button>
 		</div>
+
+		<!-- Center Footer Section - Primary application controls -->
+		<div class="footer-center">
+			{{#if isEditing}}
+				{{!-- Edit Mode: Show stats for current spell list --}}
+				{{#if selectedSpellList}}
+					<div class="edit-mode-stats">
+						<span class="spell-count-stat" data-tooltip="{{localize 'SPELLMANAGER.Footer.SpellCountTooltip'}}">
+							<i class="fas fa-magic" aria-hidden="true"></i>
+							{{localize "SPELLMANAGER.Status.SpellCount" count=selectedSpellList.spellCount}}
+						</span>
+						{{#if selectedSpellList.spellSources}}
+							<span class="spell-sources-stat" data-tooltip="{{localize 'SPELLMANAGER.Footer.SpellSourcesTooltip'}}">
+								<i class="fas fa-book" aria-hidden="true"></i>
+								{{#each selectedSpellList.spellSources as |source index|}}
+									{{source}}{{#unless @last}}, {{/unless}}
+								{{/each}}
+							</span>
+						{{/if}}
+					</div>
+				{{/if}}
+			{{else}}
+				{{!-- Non-Edit Mode: Show total stats --}}
+				<div class="global-stats">
+					{{#if availableSpells}}
+						<span class="total-spells-stat" data-tooltip="{{localize 'SPELLMANAGER.Footer.TotalSpellsTooltip'}}">
+							<i class="fas fa-scroll" aria-hidden="true"></i>
+							{{localize "SPELLMANAGER.Footer.TotalSpells" count=availableSpells.length}}
+						</span>
+					{{/if}}
+					{{#if availableSpellLists}}
+						<span class="total-lists-stat" data-tooltip="{{localize 'SPELLMANAGER.Footer.TotalListsTooltip'}}">
+							<i class="fas fa-list" aria-hidden="true"></i>
+							{{localize "SPELLMANAGER.Footer.TotalLists" count=visibleSpellListsCount}}
+							{{#if hiddenSpellListsCount}}
+								<span class="hidden-count" data-tooltip="{{localize 'SPELLMANAGER.Footer.HiddenCountTooltip'}}">
+									({{localize "SPELLMANAGER.Footer.HiddenCount" count=hiddenSpellListsCount}})
+								</span>
+							{{/if}}
+						</span>
+					{{/if}}
+				</div>
+			{{/if}}
+		</div>
+
+		<!-- Right Footer Section - Editing and selection controls -->
 		<div class="footer-right">
 			{{#if isEditing}}
 				<div class="selection-controls">
 					{{#if selectionMode}}
+						<!-- Bulk Selection Mode Controls -->
 						<div class="selection-info">
+							<!-- Dynamic Selection Summary -->
 							<span class="selection-summary">
 								{{#if (and selectedToAddCount selectedToRemoveCount)}}
 									{{localize "SPELLMANAGER.Selection.AddAndRemoveCount" addCount=selectedToAddCount removeCount=selectedToRemoveCount}}
@@ -43,18 +128,23 @@
 								{{/if}}
 							</span>
 						</div>
+
+						<!-- Bulk Save Operation Button -->
 						<button type="button" class="bulk-save-btn" data-action="bulkSave"
 							{{#unless totalSelectedCount}}disabled{{/unless}}
 							aria-label="{{localize 'SPELLMANAGER.BulkOps.SaveChanges' count=totalSelectedCount}}">
 							<i class="fas fa-save" aria-hidden="true"></i>
 							<span class="button-text">{{localize "SPELLMANAGER.BulkOps.SaveChanges" count=totalSelectedCount}}</span>
 						</button>
+
+						<!-- Cancel Selection Mode Button -->
 						<button type="button" class="cancel-selection-btn" data-action="cancelSelection"
 							aria-label="{{localize 'SPELLBOOK.UI.Cancel'}}">
 							<i class="fas fa-times" aria-hidden="true"></i>
 							{{localize "SPELLBOOK.UI.Cancel"}}
 						</button>
 					{{else}}
+						<!-- Enter Bulk Selection Mode Button -->
 						<button type="button" class="toggle-selection-mode" data-action="toggleSelectionMode"
 							aria-label="{{localize 'SPELLMANAGER.Selection.SelectionMode'}}">
 							<i class="fas fa-check-square" aria-hidden="true"></i>

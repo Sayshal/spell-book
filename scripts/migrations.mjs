@@ -1,27 +1,130 @@
-import { DEPRECATED_FLAGS, MODULE, TEMPLATES } from './constants/_module.mjs';
+/**
+ * Spell Book Module Migrations
+ *
+ * Handles data migration and maintenance tasks for the Spell Book module.
+ * This module provides automated migration functionality that runs on world
+ * startup to ensure data integrity, update deprecated configurations, and
+ * maintain proper ownership and organization of module data.
+ *
+ * Migration areas:
+ * - Deprecated flag cleanup from actors and documents
+ * - Spell list folder organization and migration
+ * - Ownership validation and correction
+ * - Compendium pack configuration and sorting
+ *
+ * @module Migrations
+ * @author Tyler
+ */
+
+import { DEPRECATED_FLAGS, MODULE, TEMPLATES, FLAGS, SETTINGS } from './constants/_module.mjs';
 import * as DataHelpers from './data/_module.mjs';
 import { log } from './logger.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
 
-Hooks.on('ready', runAllMigrations);
+/**
+ * Results from deprecated flag migration operations.
+ *
+ * @typedef {Object} DeprecatedFlagResults
+ * @property {number} processed - Number of documents processed
+ * @property {number} invalidFlagRemovals - Number of documents with invalid flags removed
+ * @property {Array<Object>} actors - Array of actor migration information
+ * @property {Array<Object>} affectedDocuments - Array of all affected document information
+ */
 
 /**
- * Run all migration functions in sequence
+ * Results from folder migration operations.
+ *
+ * @typedef {Object} FolderMigrationResults
+ * @property {number} processed - Number of journals migrated
+ * @property {Array<string>} errors - Array of error messages
+ * @property {number} customMoved - Number of custom spell lists moved
+ * @property {number} mergedMoved - Number of merged spell lists moved
+ * @property {Array<string>} foldersCreated - Array of folder names created
+ * @property {Array<Object>} migratedJournals - Array of migrated journal information
  */
-async function runAllMigrations() {
+
+/**
+ * Results from ownership validation operations.
+ *
+ * @typedef {Object} OwnershipValidationResults
+ * @property {number} processed - Total number of documents fixed
+ * @property {Array<string>} errors - Array of error messages
+ * @property {number} userDataFixed - Number of user data documents fixed
+ * @property {number} spellListsFixed - Number of spell list documents fixed
+ * @property {number} actorSpellbooksFixed - Number of actor spellbook documents fixed
+ * @property {number} packsFixed - Number of compendium packs fixed
+ * @property {Array<string>} details - Array of detailed fix descriptions
+ * @property {Array<Object>} fixedDocuments - Array of fixed document information
+ */
+
+/**
+ * Results from pack sorting migration operations.
+ *
+ * @typedef {Object} PackSortingResults
+ * @property {number} processed - Total items processed
+ * @property {number} foldersUpdated - Number of folders updated
+ * @property {number} packsUpdated - Number of packs updated
+ * @property {Array<Object>} errors - Array of error objects with type and details
+ */
+
+/**
+ * Document migration result for individual documents.
+ *
+ * @typedef {Object} DocumentMigrationResult
+ * @property {boolean} wasUpdated - Whether the document was updated
+ * @property {boolean} invalidFlags - Whether invalid flags were found
+ * @property {Array<Object>} removedFlags - Array of removed flag information
+ */
+
+/**
+ * Journal folder migration result for individual journals.
+ *
+ * @typedef {Object} JournalMigrationResult
+ * @property {boolean} success - Whether migration was successful
+ * @property {string} [type] - Type of migration performed ('custom' or 'merged')
+ * @property {string} [targetFolder] - Name of target folder
+ * @property {string} [error] - Error message if migration failed
+ */
+
+/**
+ * Results from custom spell list format migration operations.
+ *
+ * @typedef {Object} CustomSpellListMigrationResults
+ * @property {number} processed - Number of actors processed
+ * @property {number} updated - Number of actors updated with new format
+ * @property {Array<Object>} migratedActors - Array of migrated actor information
+ * @property {Array<string>} errors - Array of error messages
+ */
+
+/**
+ * Run all migration functions in sequence.
+ *
+ * This function orchestrates all migration operations, collecting results
+ * and providing a report. Only runs for GM users to prevent
+ * conflicts. Migrations include deprecated flag cleanup, folder organization,
+ * ownership validation, pack sorting updates, and custom spell list format updates.
+ *
+ * @returns {Promise<void>}
+ */
+export async function runAllMigrations() {
   if (!game.user.isGM) return;
+
   log(3, 'Running all migrations...');
   try {
     const deprecatedFlagResults = await migrateDeprecatedFlags();
     const folderResults = await migrateSpellListFolders();
     const ownershipResults = await validateOwnershipLevels();
     const packSortingResults = await migratePackSorting();
-    const totalProcessed = deprecatedFlagResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed;
-    log(3, `Migration results: deprecated=${deprecatedFlagResults.processed}, folders=${folderResults.processed}, ownership=${ownershipResults.processed}, sorting=${packSortingResults.processed}`);
+    const customSpellListResults = await migrateCustomSpellListFormat();
+    const totalProcessed = deprecatedFlagResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed + customSpellListResults.processed;
+    log(
+      3,
+      `Migration results: deprecated=${deprecatedFlagResults.processed}, folders=${folderResults.processed}, ownership=${ownershipResults.processed}, sorting=${packSortingResults.processed}, customSpellList=${customSpellListResults.processed}`
+    );
     if (totalProcessed > 0) {
       ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.StartNotification'));
-      await logMigrationResults(deprecatedFlagResults, folderResults, ownershipResults, packSortingResults);
+      await logMigrationResults(deprecatedFlagResults, folderResults, ownershipResults, packSortingResults, customSpellListResults);
       ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.CompleteNotification'));
     } else {
       log(3, 'No migrations needed');
@@ -32,10 +135,15 @@ async function runAllMigrations() {
 }
 
 /**
- * Migrate deprecated flags from world actors and compendium documents
- * @returns {Promise<Object>} Migration results with processed count and affected documents
+ * Migrate deprecated flags from world actors and compendium documents.
+ *
+ * Scans all world actors and module compendium documents for deprecated
+ * flags and invalid values, removing them to maintain data cleanliness.
+ *
+ * @returns {Promise<DeprecatedFlagResults>} Migration results with processed count and affected documents
  */
 async function migrateDeprecatedFlags() {
+  /** @type {DeprecatedFlagResults} */
   const results = { processed: 0, invalidFlagRemovals: 0, actors: [], affectedDocuments: [] };
   log(3, 'Migrating world actors and compendium for deprecated flags');
   await migrateCollection(game.actors, results);
@@ -48,10 +156,16 @@ async function migrateDeprecatedFlags() {
 }
 
 /**
- * Migrate a collection of documents for deprecated flags
- * @param {Collection|Array} documents Documents to migrate
- * @param {Object} results Results object to update
- * @param {string|null} packName Pack name if migrating compendium
+ * Migrate a collection of documents for deprecated flags.
+ *
+ * Processes each document in the collection, checking for and removing
+ * deprecated or invalid flags. Updates the results object with migration
+ * information for reporting.
+ *
+ * @param {Collection|Array} documents - Documents to migrate
+ * @param {DeprecatedFlagResults} results - Results object to update
+ * @param {string|null} [packName=null] - Pack name if migrating compendium
+ * @returns {Promise<void>}
  */
 async function migrateCollection(documents, results, packName = null) {
   for (const doc of documents) {
@@ -67,10 +181,14 @@ async function migrateCollection(documents, results, packName = null) {
 }
 
 /**
- * Migrate a single document for deprecated flags
- * @param {Document} doc Document to migrate
- * @param {Array} deprecatedFlags Array of deprecated flag definitions
- * @returns {Promise<Object>} Migration result with update status and removed flags
+ * Migrate a single document for deprecated flags.
+ *
+ * Examines document flags for deprecated or invalid values and removes them.
+ * Returns detailed information about what was changed for reporting purposes.
+ *
+ * @param {Document} doc - Document to migrate
+ * @param {Array} deprecatedFlags - Array of deprecated flag definitions
+ * @returns {Promise<DocumentMigrationResult>} Migration result with update status and removed flags
  */
 async function migrateDocument(doc, deprecatedFlags) {
   const flags = doc.flags?.[MODULE.ID];
@@ -78,12 +196,11 @@ async function migrateDocument(doc, deprecatedFlags) {
   const updates = {};
   const removedFlags = [];
   let hasRemovals = false;
-  const nullValidFlags = ['ruleSetOverride', 'enforcementBehavior'];
+  const nullValidFlags = ['ruleSetOverride', 'enforcementBehavior', 'customSpellList'];
   for (const [key, value] of Object.entries(flags)) {
     const isDeprecated = deprecatedFlags.some((deprecated) => deprecated.key === key);
-    const isInvalid =
-      nullValidFlags.includes(key) ?
-        value === undefined || (typeof value === 'object' && value !== null && !Array.isArray(value) && Object.keys(value).length === 0)
+    const isInvalid = nullValidFlags.includes(key)
+      ? value === undefined || (typeof value === 'object' && value !== null && !Array.isArray(value) && Object.keys(value).length === 0)
       : value === null || value === undefined || (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0);
     if (isDeprecated || isInvalid) {
       updates[`flags.${MODULE.ID}.-=${key}`] = null;
@@ -92,7 +209,6 @@ async function migrateDocument(doc, deprecatedFlags) {
       removedFlags.push({ key, value, reason });
     }
   }
-
   if (hasRemovals) {
     try {
       await doc.update(updates);
@@ -107,12 +223,19 @@ async function migrateDocument(doc, deprecatedFlags) {
 }
 
 /**
- * Migrate spell list journals to appropriate folders
- * @returns {Promise<Object>} Migration results with processed count and moved journals
+ * Migrate spell list journals to appropriate folders.
+ *
+ * Organizes spell list journals into proper folder structure based on their
+ * flags and types. Creates necessary folders if they don't exist and moves
+ * journals from the root level into appropriate categorized folders.
+ *
+ * @returns {Promise<FolderMigrationResults>} Migration results with processed count and moved journals
  */
 async function migrateSpellListFolders() {
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
   if (!customPack) return { processed: 0, errors: [], customMoved: 0, mergedMoved: 0, foldersCreated: [], migratedJournals: [] };
+
+  /** @type {FolderMigrationResults} */
   const results = { processed: 0, errors: [], customMoved: 0, mergedMoved: 0, foldersCreated: [], migratedJournals: [] };
   try {
     const allJournals = await customPack.getDocuments();
@@ -147,10 +270,16 @@ async function migrateSpellListFolders() {
 }
 
 /**
- * Validate and fix ownership levels for all Spell Book documents
- * @returns {Promise<Object>} Validation results with fixed counts and details
+ * Validate and fix ownership levels for all Spell Book documents.
+ *
+ * Ensures proper ownership configuration for user data, spell lists,
+ * actor spellbooks, and compendium packs. Corrects ownership levels
+ * to maintain security and access control.
+ *
+ * @returns {Promise<OwnershipValidationResults>} Validation results with fixed counts and details
  */
 async function validateOwnershipLevels() {
+  /** @type {OwnershipValidationResults} */
   const results = { processed: 0, errors: [], userDataFixed: 0, spellListsFixed: 0, actorSpellbooksFixed: 0, packsFixed: 0, details: [], fixedDocuments: [] };
   log(3, 'Validating ownership levels for Spell Book documents...');
   try {
@@ -187,7 +316,11 @@ async function validateOwnershipLevels() {
 }
 
 /**
- * Validate and fix user data journal and page ownership
+ * Validate and fix user data journal and page ownership.
+ *
+ * Ensures user spell data journals and pages have correct ownership
+ * settings for proper access control and data security.
+ *
  * @returns {Promise<Object>} Validation results for user data
  */
 async function validateUserDataOwnership() {
@@ -202,10 +335,9 @@ async function validateUserDataOwnership() {
     const folderName = game.i18n.localize('SPELLBOOK.UserData.FolderName');
     const userDataJournal = documents.find((doc) => doc.name === folderName && doc.flags?.[MODULE.ID]?.isUserSpellDataJournal);
     if (userDataJournal) {
-      const journalIdentifier = 'User Data Journal';
       const currentOwnership = userDataJournal.ownership || {};
-      const correctJournalOwnership = { ...currentOwnership, default: 0, [game.user.id]: 3 };
-      if (!isOwnershipEqual(userDataJournal.ownership, correctJournalOwnership, journalIdentifier)) {
+      const correctJournalOwnership = { ...currentOwnership, default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
+      if (!isOwnershipEqual(userDataJournal.ownership, correctJournalOwnership)) {
         await userDataJournal.update({ ownership: correctJournalOwnership });
         results.fixed++;
         results.details.push('Fixed user data journal');
@@ -216,10 +348,14 @@ async function validateUserDataOwnership() {
         if (userId && page.flags?.[MODULE.ID]?.isUserSpellData) {
           const user = game.users.get(userId);
           if (!user) continue;
-          const pageIdentifier = `User Page: ${user.name}`;
           const currentPageOwnership = page.ownership || {};
-          const correctPageOwnership = { ...currentPageOwnership, default: 0, [userId]: 3, [game.user.id]: 3 };
-          if (!isOwnershipEqual(page.ownership, correctPageOwnership, pageIdentifier)) {
+          const correctPageOwnership = {
+            ...currentPageOwnership,
+            default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE,
+            [userId]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER,
+            [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER
+          };
+          if (!isOwnershipEqual(page.ownership, correctPageOwnership)) {
             await page.update({ ownership: correctPageOwnership });
             results.fixed++;
             results.details.push(`Fixed user page: ${user.name}`);
@@ -238,7 +374,11 @@ async function validateUserDataOwnership() {
 }
 
 /**
- * Validate and fix spell list journal ownership
+ * Validate and fix spell list journal ownership.
+ *
+ * Ensures spell list journals have appropriate ownership levels for
+ * proper access by players and GMs.
+ *
  * @returns {Promise<Object>} Validation results for spell lists
  */
 async function validateSpellListOwnership() {
@@ -249,18 +389,20 @@ async function validateSpellListOwnership() {
     return results;
   }
   try {
-    const documents = await pack.getDocuments();
-    for (const journal of documents) {
+    const index = await pack.getIndex({ fields: ['name', 'ownership', 'pages.type'] });
+    for (const journalData of index) {
+      const hasSpellPages = journalData.pages?.some((page) => page.type === 'spells');
+      if (!hasSpellPages) continue;
+      const journal = await pack.getDocument(journalData._id);
       if (journal.pages.size === 0) continue;
       const page = journal.pages.contents[0];
       if (page.type !== 'spells') continue;
       const flags = page.flags?.[MODULE.ID] || {};
       const isSpellList = flags.isMerged || flags.isCustom || flags.isNewList;
       if (isSpellList) {
-        const journalIdentifier = `Spell List: ${journal.name}`;
         const currentOwnership = journal.ownership || {};
-        const correctOwnership = { ...currentOwnership, default: 1, [game.user.id]: 3 };
-        if (!isOwnershipEqual(journal.ownership, correctOwnership, journalIdentifier)) {
+        const correctOwnership = { ...currentOwnership, default: CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
+        if (!isOwnershipEqual(journal.ownership, correctOwnership)) {
           await journal.update({ ownership: correctOwnership });
           results.fixed++;
           results.details.push(`Fixed spell list: ${journal.name}`);
@@ -276,7 +418,11 @@ async function validateSpellListOwnership() {
 }
 
 /**
- * Validate and fix actor Spell Book journal and page ownership
+ * Validate and fix actor Spell Book journal and page ownership.
+ *
+ * Ensures actor spellbook journals and pages have ownership that matches
+ * the associated actor's ownership for proper access control.
+ *
  * @returns {Promise<Object>} Validation results for actor spellbooks
  */
 async function validateActorSpellbookOwnership() {
@@ -290,22 +436,25 @@ async function validateActorSpellbookOwnership() {
     const actorSpellbooksFolderName = game.i18n.localize('SPELLBOOK.Folders.ActorSpellbooks');
     const actorSpellbooksFolder = pack.folders.find((f) => f.name === actorSpellbooksFolderName);
     if (!actorSpellbooksFolder) return results;
-    const documents = await pack.getDocuments();
-    const folderDocuments = documents.filter((doc) => doc.folder?.id === actorSpellbooksFolder.id);
-    for (const doc of folderDocuments) {
+    const index = await pack.getIndex({ fields: ['name', 'folder', 'pages.type'] });
+    const folderJournals = index.filter((doc) => doc.folder === actorSpellbooksFolder.id);
+    for (const journalData of folderJournals) {
+      const hasSpellPages = journalData.pages?.some((page) => page.type === 'spells');
+      if (!hasSpellPages) continue;
+      const doc = await pack.getDocument(journalData._id);
       if (!doc.pages) continue;
       for (const page of doc.pages) {
-        const flags = page.flags?.[MODULE.ID];
+        const flags = page.flags?.[MODULE.ID] || {};
         if (!flags?.isActorSpellbook || !flags?.actorId) continue;
         const actorId = flags.actorId;
         const classIdentifier = flags.classIdentifier || 'unknown';
         const actor = game.actors.get(actorId);
         if (!actor) continue;
         const actorOwnership = actor.ownership || {};
-        const ownerUserIds = Object.keys(actorOwnership).filter((userId) => userId !== 'default' && actorOwnership[userId] === 3);
+        const ownerUserIds = Object.keys(actorOwnership).filter((userId) => userId !== 'default' && actorOwnership[userId] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
         if (ownerUserIds.length === 0) continue;
-        const correctPageOwnership = { default: 0, [game.user.id]: 3 };
-        for (const ownerUserId of ownerUserIds) correctPageOwnership[ownerUserId] = 3;
+        const correctPageOwnership = { default: 0, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
+        for (const ownerUserId of ownerUserIds) correctPageOwnership[ownerUserId] = CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
         const currentPageOwnership = page.ownership || {};
         if (!isOwnershipEqual(currentPageOwnership, correctPageOwnership)) {
           try {
@@ -359,60 +508,84 @@ async function validateActorSpellbookOwnership() {
 }
 
 /**
- * Validate and fix compendium pack ownership and visibility
+ * Validate and fix compendium pack ownership and visibility.
+ *
+ * Ensures all module compendium packs have correct ownership levels
+ * and visibility settings for proper user access.
+ *
  * @returns {Promise<Object>} Validation results for packs
  */
 async function validatePackOwnership() {
   const results = { fixed: 0, errors: [], details: [], fixedDocuments: [] };
-  const userDataPack = game.packs.get(MODULE.PACK.USERDATA);
-  const spellsPack = game.packs.get(MODULE.PACK.SPELLS);
-  const macrosPack = game.packs.get(MODULE.PACK.MACROS);
-  const packConfigurations = [
-    { pack: userDataPack, name: 'User Data', expectedOwnership: { PLAYER: 'OWNER', ASSISTANT: 'OWNER' } },
-    { pack: spellsPack, name: 'Spells', expectedOwnership: { PLAYER: 'OWNER', ASSISTANT: 'OWNER' } },
-    { pack: macrosPack, name: 'Macros', expectedOwnership: { PLAYER: 'NONE', ASSISTANT: 'OWNER' } }
-  ];
-  for (const config of packConfigurations) {
-    if (!config.pack) continue;
-    const pack = config.pack;
-    try {
-      const needsOwnershipUpdate = !isRoleOwnershipEqual(pack.ownership, config.expectedOwnership, `${config.name} Pack`);
-      const needsVisibilityUpdate = !pack.visible || pack.getUserLevel(game.user) < 1;
-      if (needsOwnershipUpdate || needsVisibilityUpdate) {
-        const updateReasons = [];
-        const oldState = { ownership: { ...pack.ownership }, visible: pack.visible, locked: pack.locked };
-        if (needsOwnershipUpdate) updateReasons.push('ownership');
-        if (needsVisibilityUpdate) updateReasons.push('visibility');
-        await pack.configure({ ownership: config.expectedOwnership, locked: false, visible: true });
-        results.fixed++;
-        results.details.push(`Fixed ${config.name} pack ${updateReasons.join(' and ')}`);
-        results.fixedDocuments.push({
-          type: 'pack',
-          name: config.name,
-          id: pack.collection,
-          updateReasons: updateReasons,
-          oldState: oldState,
-          newState: { ownership: config.expectedOwnership, visible: true, locked: false }
-        });
-      } else {
-        log(3, `${config.name} pack ownership and visibility are correct`);
+  try {
+    const spellsPack = game.packs.get(MODULE.PACK.SPELLS);
+    const userDataPack = game.packs.get(MODULE.PACK.USERDATA);
+    const macrosPack = game.packs.get(MODULE.PACK.MACROS);
+    const packsToValidate = [
+      { pack: spellsPack, name: 'Spells', expectedOwnership: { PLAYER: 'OWNER', ASSISTANT: 'OWNER', GAMEMASTER: 'OWNER', TRUSTED: 'INHERIT' } },
+      { pack: userDataPack, name: 'User Data', expectedOwnership: { PLAYER: 'OWNER', ASSISTANT: 'OWNER', GAMEMASTER: 'OWNER', TRUSTED: 'INHERIT' } },
+      { pack: macrosPack, name: 'Macros', expectedOwnership: { PLAYER: 'NONE', ASSISTANT: 'OWNER', GAMEMASTER: 'OWNER', TRUSTED: 'INHERIT' } }
+    ];
+    for (const { pack, name, expectedOwnership } of packsToValidate) {
+      if (!pack) {
+        results.errors.push(`${name} pack not found`);
+        continue;
       }
-    } catch (error) {
-      log(1, `Error validating ${config.name} pack ownership:`, error);
-      results.errors.push(`${config.name} pack error: ${error.message}`);
+      const currentOwnership = pack.ownership || {};
+      const normalizeOwnership = (ownership) => {
+        const normalized = {};
+        const sortedKeys = Object.keys(ownership).sort();
+        for (const key of sortedKeys) normalized[key] = ownership[key];
+        return normalized;
+      };
+      const normalizedCurrent = normalizeOwnership(currentOwnership);
+      const normalizedExpected = normalizeOwnership(expectedOwnership);
+      const currentString = JSON.stringify(normalizedCurrent);
+      const expectedString = JSON.stringify(normalizedExpected);
+      if (currentString !== expectedString) {
+        try {
+          await pack.configure({ ownership: expectedOwnership });
+          results.fixed++;
+          results.details.push(`Fixed ${name} pack permissions`);
+          results.fixedDocuments.push({
+            type: 'pack',
+            name: name,
+            id: pack.metadata.id,
+            updateReasons: ['ownership'],
+            oldState: {
+              ownership: currentOwnership,
+              visible: pack.visible,
+              locked: pack.locked
+            },
+            newState: {
+              ownership: expectedOwnership,
+              visible: pack.visible,
+              locked: pack.locked
+            }
+          });
+        } catch (error) {
+          results.errors.push(`Failed to fix ${name} pack: ${error.message}`);
+        }
+      }
     }
+  } catch (error) {
+    log(1, 'Error validating pack ownership:', error);
+    results.errors.push(`Pack ownership validation error: ${error.message}`);
   }
   return results;
 }
 
 /**
- * Compare two ownership objects for equality
- * @param {Object} ownership1 First ownership object
- * @param {Object} ownership2 Second ownership object
- * @param {string} documentName Document name for logging
+ * Compare two ownership objects for equality.
+ *
+ * Performs deep comparison of ownership objects to determine if they
+ * have identical access levels for all users.
+ *
+ * @param {Object} ownership1 - First ownership object
+ * @param {Object} ownership2 - Second ownership object
  * @returns {boolean} Whether ownership objects are equal
  */
-function isOwnershipEqual(ownership1, ownership2, documentName = 'unknown') {
+function isOwnershipEqual(ownership1, ownership2) {
   if (!ownership1 || !ownership2) return false;
   const allKeys = new Set([...Object.keys(ownership1), ...Object.keys(ownership2)]);
   for (const key of allKeys) {
@@ -422,27 +595,31 @@ function isOwnershipEqual(ownership1, ownership2, documentName = 'unknown') {
 }
 
 /**
- * Compare two role-based ownership objects for equality
- * @param {Object} ownership1 First ownership object
- * @param {Object} ownership2 Second ownership object
- * @param {string} documentName Document name for logging
+ * Compare two role-based ownership objects for equality.
+ * Normalizes key ordering to prevent false positives from key order differences.
+ *
+ * @param {Object} ownership1 - First ownership object
+ * @param {Object} ownership2 - Second ownership object
  * @returns {boolean} Whether role ownership objects are equal
  */
-function isRoleOwnershipEqual(ownership1, ownership2, documentName = 'unknown') {
+function isRoleOwnershipEqual(ownership1, ownership2) {
   if (!ownership1 || !ownership2) return false;
   const allKeys = new Set([...Object.keys(ownership1), ...Object.keys(ownership2)]);
-  for (const key of allKeys) {
-    if (ownership1[key] !== ownership2[key]) return false;
-  }
+  if (Object.keys(ownership1).length !== Object.keys(ownership2).length) return false;
+  for (const key of allKeys) if (ownership1[key] !== ownership2[key]) return false;
   return true;
 }
 
 /**
- * Migrate a journal to its appropriate folder based on flags
- * @param {JournalEntry} journal Journal to migrate
- * @param {Folder} customFolder Custom spell lists folder
- * @param {Folder} mergedFolder Merged spell lists folder
- * @returns {Promise<Object>} Migration result with success status and type
+ * Migrate a journal to its appropriate folder based on flags.
+ *
+ * Analyzes journal page flags to determine the correct target folder
+ * and moves the journal accordingly. Also handles name cleanup.
+ *
+ * @param {JournalEntry} journal - Journal to migrate
+ * @param {Folder} customFolder - Custom spell lists folder
+ * @param {Folder} mergedFolder - Merged spell lists folder
+ * @returns {Promise<JournalMigrationResult>} Migration result with success status and type
  */
 async function migrateJournalToFolder(journal, customFolder, mergedFolder) {
   if (!journal || journal.pages.size === 0) return { success: false };
@@ -471,10 +648,15 @@ async function migrateJournalToFolder(journal, customFolder, mergedFolder) {
 }
 
 /**
- * Migrate pack sorting and folder sorting for Spell Book packs
- * @returns {Promise<Object>} Migration results with processed count and updated items
+ * Migrate pack sorting and folder sorting for Spell Book packs.
+ *
+ * Updates compendium pack sort orders and folder sorting modes to ensure
+ * consistent organization and display order.
+ *
+ * @returns {Promise<PackSortingResults>} Migration results with processed count and updated items
  */
 async function migratePackSorting() {
+  /** @type {PackSortingResults} */
   const results = { processed: 0, foldersUpdated: 0, packsUpdated: 0, errors: [] };
   try {
     const packSortingConfig = {
@@ -526,14 +708,72 @@ async function migratePackSorting() {
 }
 
 /**
- * Log detailed migration results to console and create chat message
- * @param {Object} deprecatedResults Results from deprecated flag migration
- * @param {Object} folderResults Results from folder migration
- * @param {Object} ownershipResults Results from ownership validation
- * @param {Object} packSortingResults Results from pack sorting validation
+ * Migrate custom spell list format from string to array.
+ *
+ * Converts legacy single customSpellList string values to array format
+ * to support multiple spell list selection. Scans all world actors for
+ * spellcasting rules and updates the customSpellList format.
+ *
+ * @returns {Promise<CustomSpellListMigrationResults>}
  */
-async function logMigrationResults(deprecatedResults, folderResults, ownershipResults, packSortingResults) {
-  const totalProcessed = deprecatedResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed;
+export async function migrateCustomSpellListFormat() {
+  log(3, 'Starting custom spell list format migration...');
+  const results = { processed: 0, updated: 0, migratedActors: [], errors: [] };
+  try {
+    const actors = game.actors.contents;
+    for (const actor of actors) {
+      try {
+        const currentRules = actor.getFlag(MODULE.ID, FLAGS.SPELLCASTING_RULES) || {};
+        if (Object.keys(currentRules).length === 0) continue;
+        results.processed++;
+        let hasUpdates = false;
+        const updatedRules = { ...currentRules };
+        const migratedClasses = [];
+        for (const [classId, rules] of Object.entries(currentRules)) {
+          if (rules && rules.customSpellList && typeof rules.customSpellList === 'string') {
+            log(3, `Migrating custom spell list for ${actor.name} class ${classId}: "${rules.customSpellList}" -> ["${rules.customSpellList}"]`);
+            updatedRules[classId] = { ...rules, customSpellList: [rules.customSpellList] };
+            migratedClasses.push({ classId: classId, oldValue: rules.customSpellList, newValue: [rules.customSpellList] });
+            hasUpdates = true;
+          }
+        }
+        if (hasUpdates) {
+          await actor.setFlag(MODULE.ID, FLAGS.SPELLCASTING_RULES, updatedRules);
+          results.updated++;
+          results.migratedActors.push({ id: actor.id, name: actor.name, migratedClasses: migratedClasses });
+          log(3, `Migrated custom spell list format for ${actor.name} (${migratedClasses.length} classes)`);
+        }
+      } catch (error) {
+        const errorMessage = `Failed to migrate custom spell list format for actor ${actor.name}: ${error.message}`;
+        results.errors.push(errorMessage);
+        log(1, errorMessage, error);
+      }
+    }
+    if (results.updated > 0) log(2, `Custom spell list format migration completed: ${results.updated}/${results.processed} actors updated`);
+    else log(3, `No custom spell list format migration needed (${results.processed} actors checked)`);
+  } catch (error) {
+    const errorMessage = `Critical error during custom spell list format migration: ${error.message}`;
+    results.errors.push(errorMessage);
+    log(1, errorMessage, error);
+  }
+  return results;
+}
+
+/**
+ * Log migration results to console and chat.
+ *
+ * Provides reporting of all migration operations with detailed
+ * console logging and a formatted chat message for the GM.
+ *
+ * @param {DeprecatedFlagResults} deprecatedResults - Results from deprecated flag migration
+ * @param {FolderMigrationResults} folderResults - Results from folder migration
+ * @param {OwnershipValidationResults} ownershipResults - Results from ownership validation
+ * @param {PackSortingResults} packSortingResults - Results from pack sorting validation
+ * @param {CustomSpellListMigrationResults} customSpellListResults - Results from custom spell list format migration
+ * @returns {Promise<void>}
+ */
+async function logMigrationResults(deprecatedResults, folderResults, ownershipResults, packSortingResults, customSpellListResults) {
+  const totalProcessed = deprecatedResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed + customSpellListResults.processed;
   if (totalProcessed === 0) {
     log(3, 'No migration updates needed');
     return;
@@ -573,27 +813,53 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
     if (packSortingResults.errors.length > 0) console.log('Errors:', packSortingResults.errors);
     console.groupEnd();
   }
+  if (customSpellListResults.processed > 0) {
+    console.group('Custom Spell List Format Migration');
+    console.log(`Processed: ${customSpellListResults.processed} actors`);
+    console.log(`Updated: ${customSpellListResults.updated} actors`);
+    console.log('Migrated actors:', customSpellListResults.migratedActors);
+    if (customSpellListResults.errors.length > 0) console.log('Errors:', customSpellListResults.errors);
+    console.groupEnd();
+  }
   console.groupEnd();
-  const content = await buildChatContent(deprecatedResults, folderResults, ownershipResults, packSortingResults, totalProcessed);
-  ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id, flags: { 'spell-book': { messageType: 'migration-report' } } });
   log(3, `Migration complete: ${totalProcessed} documents/folders processed`);
+  const suppressWarnings = game.settings.get(MODULE.ID, SETTINGS.SUPPRESS_MIGRATION_WARNINGS);
+  if (suppressWarnings) return;
+  const content = await buildChatContent(deprecatedResults, folderResults, ownershipResults, packSortingResults, customSpellListResults);
+  ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id, flags: { 'spell-book': { messageType: 'migration-report' } } });
 }
 
 /**
- * Build chat message content for migration results
- * @param {Object} deprecatedResults Deprecated flag results
- * @param {Object} folderResults Folder migration results
- * @param {Object} ownershipResults Ownership validation results
- * @param {Object} packSortingResults Pack sorting results
- * @param {number} totalProcessed Total processed documents
+ * Build chat message content for migration results.
+ *
+ * Renders a formatted HTML template containing migration results for
+ * display in the chat log.
+ *
+ * @param {DeprecatedFlagResults} deprecatedResults - Deprecated flag results
+ * @param {FolderMigrationResults} folderResults - Folder migration results
+ * @param {OwnershipValidationResults} ownershipResults - Ownership validation results
+ * @param {PackSortingResults} packSortingResults - Pack sorting results
+ * @param {CustomSpellListMigrationResults} customSpellListResults - Custom spell list format results
  * @returns {Promise<string>} Rendered HTML content
  */
-async function buildChatContent(deprecatedResults, folderResults, ownershipResults, packSortingResults, totalProcessed) {
-  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_REPORT, { deprecatedResults, folderResults, ownershipResults, packSortingResults, totalProcessed });
+async function buildChatContent(deprecatedResults, folderResults, ownershipResults, packSortingResults, customSpellListResults) {
+  return await renderTemplate(TEMPLATES.COMPONENTS.MIGRATION_REPORT, {
+    deprecatedResults,
+    folderResults,
+    ownershipResults,
+    packSortingResults,
+    customSpellListResults,
+    totalProcessed: deprecatedResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed + customSpellListResults.processed
+  });
 }
 
 /**
- * Force run all migrations for testing purposes
+ * Force run all migrations for testing purposes.
+ *
+ * Manually triggers all migration operations for development and testing.
+ * This function bypasses normal conditions and forces migration execution.
+ *
+ * @returns {Promise<void>}
  */
 export async function forceMigration() {
   log(2, 'Force running migration for testing...');

@@ -1,13 +1,68 @@
+{{!--
+/**
+ * Spell Details Customization Dialog Template
+ *
+ * PURPOSE:
+ * customization interface for configuring spell display elements
+ * across player spell book and GM spell list manager. Provides separate sections
+ * for UI and metadata elements with select-all controls, wizard book color
+ * customization, and role-based feature access.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {boolean} isGM - Whether current user has GM permissions
+ * @param {Array<Object>} playerUIElements - Player UI customization options
+ * @param {string} playerUIElements[].key - Element identifier
+ * @param {string} playerUIElements[].label - Element label localization key
+ * @param {string} playerUIElements[].description - Element description (HTML allowed)
+ * @param {string} playerUIElements[].checkboxHtml - Pre-rendered checkbox HTML
+ * @param {Array<Object>} playerMetadataElements - Player metadata customization options
+ * @param {string} playerMetadataElements[].key - Element identifier
+ * @param {string} playerMetadataElements[].label - Element label localization key
+ * @param {string} playerMetadataElements[].description - Element description localization key
+ * @param {string} playerMetadataElements[].checkboxHtml - Pre-rendered checkbox HTML
+ * @param {Array<Object>} gmUIElements - GM UI customization options (GM only)
+ * @param {Array<Object>} gmMetadataElements - GM metadata customization options (GM only)
+ * @param {string} selectAllPlayerUICheckbox - Select all player UI checkbox HTML
+ * @param {string} selectAllPlayerMetadataCheckbox - Select all player metadata checkbox HTML
+ * @param {string} selectAllGMUICheckbox - Select all GM UI checkbox HTML (GM only)
+ * @param {string} selectAllGMMetadataCheckbox - Select all GM metadata checkbox HTML (GM only)
+ * @param {string} wizardBookIconColor - Current wizard book icon color value
+ * @param {string} userColor - User's configured color for reference
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic section structure with descriptive headings
+ * - Clickable setting items for easier checkbox interaction
+ * - Select-all controls with proper label associations
+ * - Icon elements marked as decorative with aria-hidden
+ * - Logical grouping of related settings for screen readers
+ * - Clear visual hierarchy with section titles and group headers
+ *
+ * CUSTOMIZATION POINTS:
+ * - Player section always visible for spell book customization
+ * - GM section appears conditionally for spell list manager settings
+ * - Wizard book color picker with user color and default reset options
+ * - Select-all functionality for efficient bulk customization
+ * - Clickable setting items for improved user experience
+ * - Grouped settings for UI elements vs metadata elements
+ *
+ * INTEGRATION:
+ * - Used for spell display customization
+ * - Connects to UI element visibility and styling systems
+ * - Uses module localization keys from SPELLBOOK.Settings.DetailsCustomization namespace
+ * - Supports both player and GM customization workflows
+ */
+--}}
+
 <div class="spell-details-customization-content">
 
-  <!-- Player Spell Book Settings -->
+  <!-- Player Spell Book Settings Section -->
   <section class="customization-section player-section">
     <h3 class="section-title">
       <i class="fas fa-user" aria-hidden="true"></i>
       {{localize "SPELLBOOK.Settings.DetailsCustomization.SpellBook"}}
     </h3>
 
-    <!-- UI Elements -->
+    <!-- Player UI Elements Group -->
     <div class="settings-group">
       <h4 class="group-title">
         <span class="group-title-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.UIElements"}}</span>
@@ -31,23 +86,27 @@
           </div>
         {{/each}}
 
-        {{!-- Wizard Book Icon Color - Added as grid item --}}
+        <!-- Wizard Book Icon Color Setting - Special grid item -->
         <div class="setting-item wizard-book-color-item">
           <div class="setting-item-content">
             <div class="setting-content">
               <span
                 class="setting-name">{{localize "SPELLBOOK.Settings.DetailsCustomization.WizardBookIconColor"}}</span>
               <div class="wizard-book-color-controls">
+                <!-- Color Picker Control -->
                 <color-picker name="wizardBookIconColor" value="{{wizardBookIconColor}}"
                   placeholder="{{userColor}}"></color-picker>
 
+                <!-- Color Control Buttons -->
                 <div class="wizard-book-buttons">
+                  <!-- Use User Color Button -->
                   <button type="button" class="use-user-color-btn" data-action="useUserColor"
                     data-user-color="{{userColor}}"
                     data-tooltip="{{localize 'SPELLBOOK.Settings.DetailsCustomization.WizardBookUseUserColor'}}">
                     <i class="fas fa-user"></i>
                   </button>
 
+                  <!-- Reset to Default Button -->
                   <button type="button" class="reset-default-btn" data-action="resetToDefault"
                     data-tooltip="{{localize 'SPELLBOOK.Settings.DetailsCustomization.WizardBookResetDefault'}}">
                     <i class="fas fa-undo"></i>
@@ -60,7 +119,7 @@
       </div>
     </div>
 
-    <!-- Metadata Elements -->
+    <!-- Player Metadata Elements Group -->
     <div class="settings-group">
       <h4 class="group-title">
         <span class="group-title-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.MetadataElements"}}</span>
@@ -88,7 +147,7 @@
     </div>
   </section>
 
-  <!-- GM Settings (only show if user is GM) -->
+  <!-- GM Settings Section - Only visible to GMs -->
   {{#if isGM}}
     <section class="customization-section gm-section">
       <h3 class="section-title">
@@ -96,7 +155,7 @@
         {{localize "SPELLBOOK.Settings.DetailsCustomization.SpellListManager"}}
       </h3>
 
-      <!-- UI Elements -->
+      <!-- GM UI Elements Group -->
       <div class="settings-group">
         <h4 class="group-title">
           <span class="group-title-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.UIElements"}}</span>
@@ -122,7 +181,7 @@
         </div>
       </div>
 
-      <!-- Metadata Elements -->
+      <!-- GM Metadata Elements Group -->
       <div class="settings-group">
         <h4 class="group-title">
           <span class="group-title-text">{{localize "SPELLBOOK.Settings.DetailsCustomization.MetadataElements"}}</span>
@@ -149,6 +208,8 @@
       </div>
     </section>
   {{/if}}
+
+  <!-- Customization Description -->
   <p class="customization-description">
     {{localize "SPELLBOOK.Settings.DetailsCustomization.Description"}}
   </p>

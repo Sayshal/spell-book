@@ -1,3 +1,22 @@
+/**
+ * User Spell Data Storage and Management
+ *
+ * Provides journal-based storage for user-specific spell data including notes,
+ * favorites, and usage statistics. This module handles data persistence, caching,
+ * and HTML table generation for user spell analytics and personalization features.
+ *
+ * Key features:
+ * - User-specific spell notes and favorites
+ * - Usage statistics tracking
+ * - Journal-based persistent storage
+ * - HTML table generation for analytics
+ * - Actor-specific data organization
+ * - Performance-optimized caching system
+ *
+ * @module DataHelpers/SpellUserData
+ * @author Tyler
+ */
+
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import { UserSpellDataManager } from '../managers/_module.mjs';
@@ -5,16 +24,110 @@ import { UserSpellDataManager } from '../managers/_module.mjs';
 const { renderTemplate } = foundry.applications.handlebars;
 
 /**
- * Journal-based spell user data storage
+ * @typedef {Object} UserSpellData
+ * @property {string} notes - User-written notes for the spell
+ * @property {Object<string, ActorSpellData>} actorData - Per-actor spell data keyed by actor ID
+ */
+
+/**
+ * @typedef {Object} ActorSpellData
+ * @property {boolean} favorited - Whether the spell is favorited for this actor
+ * @property {SpellUsageStats} usageStats - Usage statistics for this actor
+ */
+
+/**
+ * @typedef {Object} SpellUsageStats
+ * @property {number} count - Total number of times spell has been used
+ * @property {number|null} lastUsed - Timestamp of last usage (null if never used)
+ * @property {ContextUsageStats} contextUsage - Usage broken down by context
+ */
+
+/**
+ * @typedef {Object} ContextUsageStats
+ * @property {number} combat - Number of times used in combat
+ * @property {number} exploration - Number of times used during exploration
+ */
+
+/**
+ * @typedef {Object} EnhancedSpellData
+ * @property {UserSpellData|null} userData - Complete user data for the spell
+ * @property {boolean} favorited - Whether the spell is favorited (for convenience)
+ * @property {boolean} hasNotes - Whether the spell has user notes
+ * @property {number} usageCount - Total usage count (for convenience)
+ * @property {number|null} lastUsed - Last usage timestamp (for convenience)
+ */
+
+/**
+ * @typedef {Object} TableRowData
+ * @property {string} uuid - Spell UUID for the table row
+ * @property {string} name - Spell name for display
+ * @property {string} [notes] - User notes content
+ * @property {SpellUsageStats} [stats] - Usage statistics
+ * @property {string} [lastUsedDate] - Formatted last used date
+ */
+
+/**
+ * @typedef {Object} ActorTableData
+ * @property {string} id - Actor ID
+ * @property {string} name - Actor display name
+ * @property {Array<TableRowData>} favoriteSpells - Spells favorited by this actor
+ * @property {Array<TableRowData>} usageSpells - Spells with usage data for this actor
+ */
+
+/**
+ * @typedef {Object} UserPageData
+ * @property {boolean} isGM - Whether the user is a GM
+ * @property {string} userId - User ID for the page
+ * @property {string} userName - User display name
+ * @property {Array<ActorTableData>} [userActors] - Actor data for non-GM users
+ * @property {Array<TableRowData>} [notesSpells] - Spells with notes
+ * @property {string} [notesTitle] - Localized notes section title
+ * @property {string} [spellCol] - Localized spell column header
+ * @property {string} [notesCol] - Localized notes column header
+ * @property {string} [favoritesTitle] - Localized favorites section title
+ * @property {string} [usageTitle] - Localized usage section title
+ * @property {string} [favoritedCol] - Localized favorited column header
+ * @property {string} [combatCol] - Localized combat column header
+ * @property {string} [explorationCol] - Localized exploration column header
+ * @property {string} [totalCol] - Localized total column header
+ * @property {string} [lastUsedCol] - Localized last used column header
+ */
+
+/**
+ * @typedef {Object} HTMLTableContext
+ * @property {string} tableType - Type of table ('spell-notes', 'spell-favorites', 'spell-usage')
+ * @property {string} [actorId] - Actor ID for actor-specific tables
+ * @property {Array<HTMLTableRowElement>} rows - Table rows containing data
+ */
+
+/**
+ * Journal-based spell user data storage system.
+ * Manages user-specific spell data including notes, favorites, and usage statistics
+ * using HTML tables stored in journal pages for persistence and sharing.
  */
 export class SpellUserDataJournal {
+  /**
+   * Cache for user spell data to improve performance.
+   * Maps cache keys to user data objects to avoid repeated parsing.
+   * @type {Map<string, UserSpellData|null>}
+   * @static
+   */
   static cache = new Map();
 
+  /**
+   * Standard name for the user spell data journal.
+   * @type {string}
+   * @static
+   */
   static journalName = 'User Spell Data';
 
   /**
-   * Get the user spell data journal
+   * Get the user spell data journal from the user data pack.
+   * Searches for the main journal that contains all user spell data pages.
+   *
    * @returns {Promise<JournalEntry|null>} Promise that resolves to the user spell data journal or null if not found
+   * @static
+   * @private
    */
   static async _getJournal() {
     const pack = game.packs.get(MODULE.PACK.USERDATA);
@@ -24,9 +137,14 @@ export class SpellUserDataJournal {
   }
 
   /**
-   * Get user page from journal for spell data storage
-   * @param {string} userId User ID to get page for
+   * Get user page from journal for spell data storage.
+   * Finds the specific page within the user data journal that belongs
+   * to the specified user for their personal spell data.
+   *
+   * @param {string} userId - User ID to get page for
    * @returns {Promise<JournalEntryPage|null>} The user's page or null if not found
+   * @static
+   * @private
    */
   static async _getUserPage(userId) {
     const journal = await this._getJournal();
@@ -35,13 +153,20 @@ export class SpellUserDataJournal {
   }
 
   /**
-   * Parse spell data from HTML tables with per-actor structure support
-   * @param {string} htmlContent The page HTML content to parse
-   * @returns {Object} Parsed spell data object
+   * Parse spell data from HTML tables with per-actor structure support.
+   * Extracts user spell data from the structured HTML tables stored in journal pages,
+   * handling notes, favorites, and usage statistics across multiple actors.
+   *
+   * @param {string} htmlContent - The page HTML content to parse
+   * @returns {Object<string, UserSpellData>} Parsed spell data object keyed by spell UUID
+   * @static
+   * @private
    */
   static _parseSpellDataFromHTML(htmlContent) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlContent, 'text/html');
+
+    /** @type {Object<string, UserSpellData>} */
     const spellData = {};
     const notesTable = doc.querySelector('table[data-table-type="spell-notes"]');
     if (notesTable) {
@@ -64,12 +189,7 @@ export class SpellUserDataJournal {
         const favoritedCell = row.querySelector('td:nth-child(2)');
         const favorited = favoritedCell && favoritedCell.textContent.trim().toLowerCase() === 'yes';
         if (!spellData[uuid]) spellData[uuid] = { notes: '', actorData: {} };
-        if (!spellData[uuid].actorData[actorId]) {
-          spellData[uuid].actorData[actorId] = {
-            favorited: false,
-            usageStats: { count: 0, lastUsed: null, contextUsage: { combat: 0, exploration: 0 } }
-          };
-        }
+        if (!spellData[uuid].actorData[actorId]) spellData[uuid].actorData[actorId] = { favorited: false, usageStats: { count: 0, lastUsed: null, contextUsage: { combat: 0, exploration: 0 } } };
         spellData[uuid].actorData[actorId].favorited = favorited;
       });
     });
@@ -90,28 +210,24 @@ export class SpellUserDataJournal {
         const lastUsedText = lastUsedCell ? lastUsedCell.textContent.trim() : null;
         const lastUsed = lastUsedText && lastUsedText !== '-' ? new Date(lastUsedText).getTime() : null;
         if (!spellData[uuid]) spellData[uuid] = { notes: '', actorData: {} };
-        if (!spellData[uuid].actorData[actorId]) {
-          spellData[uuid].actorData[actorId] = {
-            favorited: false,
-            usageStats: { count: 0, lastUsed: null, contextUsage: { combat: 0, exploration: 0 } }
-          };
-        }
-        spellData[uuid].actorData[actorId].usageStats = {
-          count: totalCount,
-          lastUsed: lastUsed,
-          contextUsage: { combat: combatCount, exploration: explorationCount }
-        };
+        if (!spellData[uuid].actorData[actorId]) spellData[uuid].actorData[actorId] = { favorited: false, usageStats: { count: 0, lastUsed: null, contextUsage: { combat: 0, exploration: 0 } } };
+        spellData[uuid].actorData[actorId].usageStats = { count: totalCount, lastUsed: lastUsed, contextUsage: { combat: combatCount, exploration: explorationCount } };
       });
     });
     return spellData;
   }
 
   /**
-   * Generate HTML tables from spell data for journal storage
-   * @param {Object} spellData The spell data to convert to HTML
-   * @param {string} userName Name of the user for display
-   * @param {string} userId User ID for the data
-   * @returns {string} Generated HTML tables content
+   * Generate HTML tables from spell data for journal storage.
+   * Creates structured HTML tables containing user spell data for persistent
+   * storage in journal pages, with separate handling for GM and player data.
+   *
+   * @param {Object<string, UserSpellData>} spellData - The spell data to convert to HTML
+   * @param {string} userName - Name of the user for display headers
+   * @param {string} userId - User ID for the data context
+   * @returns {Promise<string>} Generated HTML tables content ready for journal storage
+   * @static
+   * @private
    */
   static async _generateTablesHTML(spellData, userName, userId) {
     const notesTitle = game.i18n.localize('SPELLBOOK.UserData.SpellNotes');
@@ -128,8 +244,13 @@ export class SpellUserDataJournal {
     const isGM = user?.isGM;
     if (isGM) return await renderTemplate(TEMPLATES.COMPONENTS.USER_SPELL_DATA_TABLES, { isGM: true, userId, userName });
     const userActors = game.actors.filter((actor) => actor.type === 'character' && (actor.ownership[userId] === 3 || user?.character?.id === actor.id));
+
+    /** @type {Array<ActorTableData>} */
     const processedActors = userActors.map((actor) => {
+      /** @type {Array<TableRowData>} */
       const favoriteSpells = [];
+
+      /** @type {Array<TableRowData>} */
       const usageSpells = [];
       for (const [uuid, data] of Object.entries(spellData)) {
         const actorData = data.actorData?.[actor.id];
@@ -156,6 +277,7 @@ export class SpellUserDataJournal {
       }
       return { id: actor.id, name: actor.name, favoriteSpells, usageSpells };
     });
+    /** @type {Array<TableRowData>} */
     const notesSpells = [];
     for (const [uuid, data] of Object.entries(spellData)) {
       if (data.notes && data.notes.trim()) {
@@ -188,11 +310,15 @@ export class SpellUserDataJournal {
   }
 
   /**
-   * Get user data for a specific spell, creating missing infrastructure as needed
-   * @param {string|Object} spellOrUuid Spell UUID or spell object
-   * @param {string} userId User ID (optional)
-   * @param {string} actorId Actor ID (optional)
-   * @returns {Promise<Object|null>} User data object or null
+   * Get user data for a specific spell, creating missing infrastructure as needed.
+   * Retrieves cached or stored user data for a spell, with automatic infrastructure
+   * creation and canonical UUID resolution for consistent data access.
+   *
+   * @param {string|Object} spellOrUuid - Spell UUID or spell object to get data for
+   * @param {string} [userId=null] - User ID (defaults to current user)
+   * @param {string} [actorId=null] - Actor ID for actor-specific data
+   * @returns {Promise<UserSpellData|null>} User data object or null if unavailable
+   * @static
    */
   static async getUserDataForSpell(spellOrUuid, userId = null, actorId = null) {
     try {
@@ -239,12 +365,16 @@ export class SpellUserDataJournal {
   }
 
   /**
-   * Set user data for a spell
-   * @param {string|Object} spellOrUuid Spell UUID or spell object
-   * @param {Object} data Data to set
-   * @param {string} userId User ID (optional)
-   * @param {string} actorId Actor ID (optional)
-   * @returns {Promise<boolean>} Success status
+   * Set user data for a spell with automatic infrastructure management.
+   * Updates user spell data in persistent storage, handling both global
+   * notes and actor-specific favorites and usage statistics.
+   *
+   * @param {string|Object} spellOrUuid - Spell UUID or spell object to set data for
+   * @param {Object} data - Data to set (notes, favorited, usageStats)
+   * @param {string} [userId=null] - User ID (defaults to current user)
+   * @param {string} [actorId=null] - Actor ID for actor-specific data
+   * @returns {Promise<boolean>} Success status of the update operation
+   * @static
    */
   static async setUserDataForSpell(spellOrUuid, data, userId = null, actorId = null) {
     try {
@@ -269,19 +399,13 @@ export class SpellUserDataJournal {
       if (!spellData[canonicalUuid]) spellData[canonicalUuid] = { notes: '', actorData: {} };
       if (actorId) {
         if (!spellData[canonicalUuid].actorData[actorId]) {
-          spellData[canonicalUuid].actorData[actorId] = {
-            favorited: false,
-            usageStats: { count: 0, lastUsed: null, contextUsage: { combat: 0, exploration: 0 } }
-          };
+          spellData[canonicalUuid].actorData[actorId] = { favorited: false, usageStats: { count: 0, lastUsed: null, contextUsage: { combat: 0, exploration: 0 } } };
         }
         if (data.favorited !== undefined) spellData[canonicalUuid].actorData[actorId].favorited = data.favorited;
         if (data.usageStats !== undefined) spellData[canonicalUuid].actorData[actorId].usageStats = data.usageStats;
       } else if (data.notes !== undefined) spellData[canonicalUuid].notes = data.notes;
       const newContent = await this._generateTablesHTML(spellData, user.name, targetUserId);
-      await page.update({
-        'text.content': newContent,
-        [`flags.${MODULE.ID}.lastUpdated`]: Date.now()
-      });
+      await page.update({ 'text.content': newContent, [`flags.${MODULE.ID}.lastUpdated`]: Date.now() });
       const cacheKey = actorId ? `${targetUserId}:${actorId}:${canonicalUuid}` : `${targetUserId}:${canonicalUuid}`;
       this.cache.set(cacheKey, spellData[canonicalUuid]);
       log(3, `Updated spell data in journal for ${canonicalUuid}`);
@@ -293,11 +417,16 @@ export class SpellUserDataJournal {
   }
 
   /**
-   * Enhance spell with user data
-   * @param {Object} spell Spell object to enhance
-   * @param {string} userId User ID (optional)
-   * @param {string} actorId Actor ID (optional)
-   * @returns {Object} Enhanced spell object
+   * Enhance spell with user data for UI display.
+   * Adds user-specific data to spell objects including favorites status,
+   * notes indicators, and usage statistics for enhanced UI presentation.
+   *
+   * @param {Object} spell - Spell object to enhance with user data
+   * @param {string} [userId=null] - User ID (defaults to current user)
+   * @param {string} [actorId=null] - Actor ID for actor-specific data
+   * @returns {EnhancedSpellData} Enhanced spell object with user data properties added
+   * @returns {Object} Spell object
+   * @static
    */
   static enhanceSpellWithUserData(spell, userId = null, actorId = null) {
     const spellUuid = spell?.compendiumUuid || spell?.uuid;
@@ -323,23 +452,20 @@ export class SpellUserDataJournal {
       usageCount = userData.usageStats?.count || 0;
       lastUsed = userData.usageStats?.lastUsed || null;
     }
-    return {
-      ...spell,
-      userData: userData,
-      favorited: favorited,
-      hasNotes: !!(userData?.notes && userData.notes.trim()),
-      usageCount: usageCount,
-      lastUsed: lastUsed
-    };
+    return { ...spell, userData: userData, favorited: favorited, hasNotes: !!(userData?.notes && userData.notes.trim()), usageCount: usageCount, lastUsed: lastUsed };
   }
 
   /**
-   * Set spell favorite status
-   * @param {string|Object} spellOrUuid Spell UUID or spell object
-   * @param {boolean} favorited Favorite status
-   * @param {string} userId User ID (optional)
-   * @param {string} actorId Actor ID (optional)
-   * @returns {Promise<boolean>} Success status
+   * Set spell favorite status for a specific actor.
+   * Updates the favorite status of a spell for a particular actor,
+   * managing the underlying data structure and cache updates.
+   *
+   * @param {string|Object} spellOrUuid - Spell UUID or spell object
+   * @param {boolean} favorited - New favorite status to set
+   * @param {string} [userId=null] - User ID (defaults to current user)
+   * @param {string} [actorId=null] - Actor ID (defaults to user's character)
+   * @returns {Promise<boolean>} Success status of the operation
+   * @static
    */
   static async setSpellFavorite(spellOrUuid, favorited, userId = null, actorId = null) {
     try {
@@ -365,29 +491,15 @@ export class SpellUserDataJournal {
       if (!spellData[canonicalUuid]) spellData[canonicalUuid] = { notes: '', actorData: {} };
       if (targetActorId) {
         if (!spellData[canonicalUuid].actorData[targetActorId]) {
-          spellData[canonicalUuid].actorData[targetActorId] = {
-            favorited: false,
-            usageStats: { count: 0, lastUsed: null, contextUsage: { combat: 0, exploration: 0 } }
-          };
+          spellData[canonicalUuid].actorData[targetActorId] = { favorited: false, usageStats: { count: 0, lastUsed: null, contextUsage: { combat: 0, exploration: 0 } } };
         }
         spellData[canonicalUuid].actorData[targetActorId].favorited = favorited;
       }
       const newContent = await this._generateTablesHTML(spellData, user.name, targetUserId);
       await page.update({ 'text.content': newContent, [`flags.${MODULE.ID}.lastUpdated`]: Date.now() });
       const cacheKey = targetActorId ? `${targetUserId}:${targetActorId}:${canonicalUuid}` : `${targetUserId}:${canonicalUuid}`;
-      if (targetActorId) {
-        const result = {
-          ...spellData[canonicalUuid].actorData[targetActorId],
-          notes: spellData[canonicalUuid].notes
-        };
-        this.cache.set(cacheKey, result);
-      } else {
-        this.cache.set(cacheKey, {
-          notes: spellData[canonicalUuid].notes || '',
-          favorited: false,
-          usageStats: null
-        });
-      }
+      if (targetActorId) this.cache.set(cacheKey, { ...spellData[canonicalUuid].actorData[targetActorId], notes: spellData[canonicalUuid].notes });
+      else this.cache.set(cacheKey, { notes: spellData[canonicalUuid].notes || '', favorited: false, usageStats: null });
       log(3, `Updated spell favorite status for ${canonicalUuid}: ${favorited}`);
       return true;
     } catch (error) {
@@ -397,11 +509,15 @@ export class SpellUserDataJournal {
   }
 
   /**
-   * Set spell notes
-   * @param {string|Object} spellOrUuid Spell UUID or spell object
-   * @param {string} notes Notes text
-   * @param {string} userId User ID (optional)
-   * @returns {Promise<boolean>} Success status
+   * Set spell notes with length validation.
+   * Updates user notes for a spell with automatic truncation based on
+   * module settings and proper cache management.
+   *
+   * @param {string|Object} spellOrUuid - Spell UUID or spell object
+   * @param {string} notes - Notes text to set
+   * @param {string} [userId=null] - User ID (defaults to current user)
+   * @returns {Promise<boolean>} Success status of the operation
+   * @static
    */
   static async setSpellNotes(spellOrUuid, notes, userId = null) {
     try {
@@ -440,9 +556,14 @@ export class SpellUserDataJournal {
   }
 
   /**
-   * Ensure user data infrastructure exists (journal, page, etc.)
-   * @param {string} userId User ID to ensure data for
+   * Ensure user data infrastructure exists (journal, page, etc.).
+   * Creates the necessary journal and page structure for user spell data
+   * storage if it doesn't already exist, with proper error handling.
+   *
+   * @param {string} userId - User ID to ensure data infrastructure for
    * @returns {Promise<void>}
+   * @static
+   * @private
    */
   static async _ensureUserDataInfrastructure(userId) {
     try {
@@ -469,16 +590,7 @@ export class SpellUserDataJournal {
           title: { show: true, level: 1 },
           text: { format: 1, content: await this._generateEmptyUserDataHTML(user.name, userId) },
           ownership: { default: 0, [userId]: 3 },
-          flags: {
-            [MODULE.ID]: {
-              userId: userId,
-              userName: user.name,
-              isUserSpellData: true,
-              created: Date.now(),
-              lastUpdated: Date.now(),
-              dataVersion: '2.0'
-            }
-          },
+          flags: { [MODULE.ID]: { userId: userId, userName: user.name, isUserSpellData: true, created: Date.now(), lastUpdated: Date.now(), dataVersion: '2.0' } },
           sort: 99999
         };
         if (game.user.isGM) pageData.ownership[game.user.id] = 3;
@@ -491,10 +603,15 @@ export class SpellUserDataJournal {
   }
 
   /**
-   * Generate empty user data HTML structure
-   * @param {string} userName User display name
-   * @param {string} userId User ID
-   * @returns {Promise<string>} HTML content
+   * Generate empty user data HTML structure.
+   * Creates the initial HTML structure for a new user's spell data page
+   * using the manager's template system.
+   *
+   * @param {string} userName - User display name for the page
+   * @param {string} userId - User ID for the data context
+   * @returns {Promise<string>} HTML content for empty user data page
+   * @static
+   * @private
    */
   static async _generateEmptyUserDataHTML(userName, userId) {
     try {
