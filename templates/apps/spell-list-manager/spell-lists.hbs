@@ -137,7 +137,11 @@
 				<ul class="spell-list-items folder-content">
 					{{#each customLists as |list|}}
 						<li class="spell-list-item custom-list" data-uuid="{{list.uuid}}" role="listitem"
-							data-tooltip="{{localize 'SPELLMANAGER.Tooltips.CustomList' identifier=list.identifier}}"
+							{{#if (eq list.system.type 'subclass')}}
+							data-tooltip="{{localize 'SPELLMANAGER.Tooltips.CustomList' identifier=list.identifier type=(localize 'TYPES.Item.subclass')}}"
+							{{else}}
+							data-tooltip="{{localize 'SPELLMANAGER.Tooltips.CustomList' identifier=list.identifier type=(localize 'TYPES.Item.class')}}"
+							{{/if}}
 							aria-label="{{list.name}} - {{localize 'SPELLMANAGER.Status.SpellCount' count=list.spellCount}} - {{localize 'SPELLMANAGER.ListSource.Custom'}}">
 							<div class="list-item-header">
 								<div class="list-item-content" data-action="selectSpellList" data-uuid="{{list.uuid}}">
