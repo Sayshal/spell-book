@@ -71,9 +71,9 @@ function flagPurgeScript() {
 }
 export const flagPurge = {
   flagKey: 'flagPurge',
-  version: '1.0.0',
+  version: '1.0.1',
   name: 'Spell Book - Flag Purge',
-  img: 'icons/svg/biohazard.svg',
+  img: 'icons/sundries/flags/banner-standard-tattered-red.webp',
   type: 'script',
   command: `(${flagPurgeScript.toString()})()`
 };

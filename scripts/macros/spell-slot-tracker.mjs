@@ -30,9 +30,9 @@ function spellSlotTrackerScript() {
 }
 export const spellSlotTracker = {
   flagKey: 'spellSlotTracker',
-  version: '1.0.0',
+  version: '1.0.1',
   name: 'Spell Book - Slot Tracker',
-  img: 'icons/svg/circle.svg',
+  img: 'icons/magic/symbols/runes-star-pentagon-magenta.webp',
   type: 'script',
   command: `(${spellSlotTrackerScript.toString()})()`
 };
