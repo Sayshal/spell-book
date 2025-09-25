@@ -28,6 +28,7 @@ import { MacroManager, SpellUsageTracker, UserSpellDataManager } from './manager
 import { registerSettings } from './settings.mjs';
 import * as UIHelpers from './ui/_module.mjs';
 import { runAllMigrations } from './migrations.mjs';
+import { createChatMessage } from './ui/_module.mjs';
 
 /**
  * Initialize hook - Module setup and registration phase.
@@ -65,6 +66,8 @@ Hooks.on('setup', () => {
  * and data preloading for optimal performance.
  */
 Hooks.once('ready', async function () {
+  const suppressWarnings = game.settings.get(MODULE.ID, SETTINGS.SUPPRESS_MIGRATION_WARNINGS);
+  if (!suppressWarnings) Hooks.on('createChatMessage', createChatMessage);
   runAllMigrations();
   UIHelpers.SpellDescriptionInjection.initialize();
   await unlockModuleCompendium();

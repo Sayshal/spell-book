@@ -506,13 +506,16 @@ function formatSpellEntry(entry, pack) {
  */
 export async function createNewSpellList(name, identifier, type = 'class') {
   const customFolder = await getOrCreateCustomFolder();
+  const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
   const journalData = {
     name: name,
     folder: customFolder?.id || null,
+    ownership: ownership,
     pages: [
       {
         name: name,
         type: 'spells',
+        ownership: ownership,
         flags: { [MODULE.ID]: { isCustom: true, isNewList: true, isDuplicate: false, creationDate: Date.now() } },
         system: { identifier: identifier.toLowerCase(), type: type, description: game.i18n.format('SPELLMANAGER.CreateList.CustomDescription', { identifier }), spells: [] }
       }

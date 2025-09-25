@@ -16,7 +16,7 @@
  * @author Tyler
  */
 
-import { DEPRECATED_FLAGS, MODULE, TEMPLATES, FLAGS } from './constants/_module.mjs';
+import { DEPRECATED_FLAGS, MODULE, TEMPLATES, FLAGS, SETTINGS } from './constants/_module.mjs';
 import * as DataHelpers from './data/_module.mjs';
 import { log } from './logger.mjs';
 
@@ -517,45 +517,60 @@ async function validateActorSpellbookOwnership() {
  */
 async function validatePackOwnership() {
   const results = { fixed: 0, errors: [], details: [], fixedDocuments: [] };
-  const userDataPack = game.packs.get(MODULE.PACK.USERDATA);
-  const spellsPack = game.packs.get(MODULE.PACK.SPELLS);
-  const macrosPack = game.packs.get(MODULE.PACK.MACROS);
-
-  /** @type {Array<{pack: CompendiumCollection, name: string, expectedOwnership: Object}>} */
-  const packConfigurations = [
-    { pack: userDataPack, name: 'User Data', expectedOwnership: { PLAYER: 'OWNER', ASSISTANT: 'OWNER' } },
-    { pack: spellsPack, name: 'Spells', expectedOwnership: { PLAYER: 'OWNER', ASSISTANT: 'OWNER' } },
-    { pack: macrosPack, name: 'Macros', expectedOwnership: { PLAYER: 'NONE', ASSISTANT: 'OWNER' } }
-  ];
-  for (const config of packConfigurations) {
-    if (!config.pack) continue;
-    const pack = config.pack;
-    try {
-      const needsOwnershipUpdate = !isRoleOwnershipEqual(pack.ownership, config.expectedOwnership);
-      const needsVisibilityUpdate = !pack.visible || pack.getUserLevel(game.user) < 1;
-      if (needsOwnershipUpdate || needsVisibilityUpdate) {
-        const updateReasons = [];
-        const oldState = { ownership: { ...pack.ownership }, visible: pack.visible, locked: pack.locked };
-        if (needsOwnershipUpdate) updateReasons.push('ownership');
-        if (needsVisibilityUpdate) updateReasons.push('visibility');
-        await pack.configure({ ownership: config.expectedOwnership, locked: false, visible: true });
-        results.fixed++;
-        results.details.push(`Fixed ${config.name} pack ${updateReasons.join(' and ')}`);
-        results.fixedDocuments.push({
-          type: 'pack',
-          name: config.name,
-          id: pack.collection,
-          updateReasons: updateReasons,
-          oldState: oldState,
-          newState: { ownership: config.expectedOwnership, visible: true, locked: false }
-        });
-      } else {
-        log(3, `${config.name} pack ownership and visibility are correct`);
+  try {
+    const spellsPack = game.packs.get(MODULE.PACK.SPELLS);
+    const userDataPack = game.packs.get(MODULE.PACK.USERDATA);
+    const macrosPack = game.packs.get(MODULE.PACK.MACROS);
+    const packsToValidate = [
+      { pack: spellsPack, name: 'Spells', expectedOwnership: { PLAYER: 'OWNER', ASSISTANT: 'OWNER', GAMEMASTER: 'OWNER', TRUSTED: 'INHERIT' } },
+      { pack: userDataPack, name: 'User Data', expectedOwnership: { PLAYER: 'OWNER', ASSISTANT: 'OWNER', GAMEMASTER: 'OWNER', TRUSTED: 'INHERIT' } },
+      { pack: macrosPack, name: 'Macros', expectedOwnership: { PLAYER: 'NONE', ASSISTANT: 'OWNER', GAMEMASTER: 'OWNER', TRUSTED: 'INHERIT' } }
+    ];
+    for (const { pack, name, expectedOwnership } of packsToValidate) {
+      if (!pack) {
+        results.errors.push(`${name} pack not found`);
+        continue;
       }
-    } catch (error) {
-      log(1, `Error validating ${config.name} pack ownership:`, error);
-      results.errors.push(`${config.name} pack error: ${error.message}`);
+      const currentOwnership = pack.ownership || {};
+      const normalizeOwnership = (ownership) => {
+        const normalized = {};
+        const sortedKeys = Object.keys(ownership).sort();
+        for (const key of sortedKeys) normalized[key] = ownership[key];
+        return normalized;
+      };
+      const normalizedCurrent = normalizeOwnership(currentOwnership);
+      const normalizedExpected = normalizeOwnership(expectedOwnership);
+      const currentString = JSON.stringify(normalizedCurrent);
+      const expectedString = JSON.stringify(normalizedExpected);
+      if (currentString !== expectedString) {
+        try {
+          await pack.configure({ ownership: expectedOwnership });
+          results.fixed++;
+          results.details.push(`Fixed ${name} pack permissions`);
+          results.fixedDocuments.push({
+            type: 'pack',
+            name: name,
+            id: pack.metadata.id,
+            updateReasons: ['ownership'],
+            oldState: {
+              ownership: currentOwnership,
+              visible: pack.visible,
+              locked: pack.locked
+            },
+            newState: {
+              ownership: expectedOwnership,
+              visible: pack.visible,
+              locked: pack.locked
+            }
+          });
+        } catch (error) {
+          results.errors.push(`Failed to fix ${name} pack: ${error.message}`);
+        }
+      }
     }
+  } catch (error) {
+    log(1, 'Error validating pack ownership:', error);
+    results.errors.push(`Pack ownership validation error: ${error.message}`);
   }
   return results;
 }
@@ -581,9 +596,7 @@ function isOwnershipEqual(ownership1, ownership2) {
 
 /**
  * Compare two role-based ownership objects for equality.
- *
- * Compares role-based ownership configurations used by compendium packs
- * to determine if access levels are correctly configured.
+ * Normalizes key ordering to prevent false positives from key order differences.
  *
  * @param {Object} ownership1 - First ownership object
  * @param {Object} ownership2 - Second ownership object
@@ -592,9 +605,8 @@ function isOwnershipEqual(ownership1, ownership2) {
 function isRoleOwnershipEqual(ownership1, ownership2) {
   if (!ownership1 || !ownership2) return false;
   const allKeys = new Set([...Object.keys(ownership1), ...Object.keys(ownership2)]);
-  for (const key of allKeys) {
-    if (ownership1[key] !== ownership2[key]) return false;
-  }
+  if (Object.keys(ownership1).length !== Object.keys(ownership2).length) return false;
+  for (const key of allKeys) if (ownership1[key] !== ownership2[key]) return false;
   return true;
 }
 
@@ -810,9 +822,11 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
     console.groupEnd();
   }
   console.groupEnd();
+  log(3, `Migration complete: ${totalProcessed} documents/folders processed`);
+  const suppressWarnings = game.settings.get(MODULE.ID, SETTINGS.SUPPRESS_MIGRATION_WARNINGS);
+  if (suppressWarnings) return;
   const content = await buildChatContent(deprecatedResults, folderResults, ownershipResults, packSortingResults, customSpellListResults);
   ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id, flags: { 'spell-book': { messageType: 'migration-report' } } });
-  log(3, `Migration complete: ${totalProcessed} documents/folders processed`);
 }
 
 /**

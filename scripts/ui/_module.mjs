@@ -14,6 +14,7 @@
  * - Comprehensive filtering and categorization systems
  * - Core UI interaction handlers and management
  * - UI customization and theming capabilities
+ * - Chat Handler for spell book notices
  *
  * @module UIHelpers
  * @author Tyler
@@ -27,3 +28,4 @@ export * from './spell-formatting.mjs';
 export * from './spellbook-filters.mjs';
 export * from './spellbook-ui.mjs';
 export * from './ui-customization.mjs';
+export * from './chat-handler.mjs';

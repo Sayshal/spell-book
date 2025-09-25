@@ -548,6 +548,8 @@ export const SETTINGS = {
   /** @type {string} Default spellcasting rule set for new actors */
   SPELLCASTING_RULE_SET: 'spellcastingRuleSet',
 
+  SUPPRESS_MIGRATION_WARNINGS: 'suppressMigrationWarnings',
+
   /** @type {string} Include actor data in troubleshooter reports */
   TROUBLESHOOTER_INCLUDE_ACTORS: 'troubleshooterIncludeActors',
 
