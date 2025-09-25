@@ -341,8 +341,9 @@ export async function duplicateSpellList(originalSpellList) {
     originalVersion: originalSpellList._stats?.systemVersion || game.system.version,
     isDuplicate: true
   };
+  const modifiedFolder = await getOrCreateModifiedFolder();
   const journalName = `${originalSpellList.parent.name} - ${originalSpellList.name}`;
-  const journalData = { name: journalName, pages: [{ name: originalSpellList.name, type: 'spells', flags: pageData.flags, system: pageData.system }] };
+  const journalData = { name: journalName, folder: modifiedFolder?.id, pages: [{ name: originalSpellList.name, type: 'spells', flags: pageData.flags, system: pageData.system }] };
   const journal = await JournalEntry.create(journalData, { pack: customPack.collection });
   const page = journal.pages.contents[0];
   await updateSpellListMapping(originalSpellList.uuid, page.uuid);
@@ -509,7 +510,7 @@ export async function createNewSpellList(name, identifier, type = 'class') {
   const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
   const journalData = {
     name: name,
-    folder: customFolder?.id || null,
+    folder: customFolder?.id,
     ownership: ownership,
     pages: [
       {
@@ -655,7 +656,7 @@ export async function createMergedSpellList(sourceListUuid, copyFromListUuid, me
   const mergedFolder = await getOrCreateMergedFolder();
   const journalData = {
     name: mergedListName,
-    folder: mergedFolder?.id || null,
+    folder: mergedFolder?.id,
     pages: [
       {
         name: mergedListName,
@@ -723,6 +724,18 @@ export async function getOrCreateCustomFolder() {
  */
 export async function getOrCreateMergedFolder() {
   const folderName = game.i18n.localize('SPELLMANAGER.Folders.MergedSpellListsFolder');
+  return getOrCreateSpellListFolder(folderName);
+}
+
+/**
+ * Get or create the Modified Spell Lists folder.
+ * Ensures the folder for modified standard spell lists exists
+ * in the custom spell lists pack.
+ *
+ * @returns {Promise<Folder|null>} Promise that resolves to the modified spell lists folder or null if creation failed
+ */
+export async function getOrCreateModifiedFolder() {
+  const folderName = game.i18n.localize('SPELLMANAGER.Folders.ModifiedSpellListsFolder');
   return getOrCreateSpellListFolder(folderName);
 }
 

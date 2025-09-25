@@ -40,6 +40,7 @@ const { renderTemplate } = foundry.applications.handlebars;
  * @property {Array<string>} errors - Array of error messages
  * @property {number} customMoved - Number of custom spell lists moved
  * @property {number} mergedMoved - Number of merged spell lists moved
+ * @property {number} modifiedMoved - Number of modified spell lists moved
  * @property {Array<string>} foldersCreated - Array of folder names created
  * @property {Array<Object>} migratedJournals - Array of migrated journal information
  */
@@ -236,24 +237,26 @@ async function migrateSpellListFolders() {
   if (!customPack) return { processed: 0, errors: [], customMoved: 0, mergedMoved: 0, foldersCreated: [], migratedJournals: [] };
 
   /** @type {FolderMigrationResults} */
-  const results = { processed: 0, errors: [], customMoved: 0, mergedMoved: 0, foldersCreated: [], migratedJournals: [] };
+  const results = { processed: 0, errors: [], customMoved: 0, mergedMoved: 0, modifiedMoved: 0, foldersCreated: [], migratedJournals: [] };
   try {
     const allJournals = await customPack.getDocuments();
     const topLevelJournals = allJournals.filter((journal) => !journal.folder);
     if (topLevelJournals.length === 0) return results;
-    log(2, `Found ${topLevelJournals.length} top-level journals to migrate`);
     const customFolder = await DataHelpers.getOrCreateCustomFolder();
     const mergedFolder = await DataHelpers.getOrCreateMergedFolder();
+    const modifiedFolder = await DataHelpers.getOrCreateModifiedFolder();
     if (customFolder) results.foldersCreated.push('custom');
     if (mergedFolder) results.foldersCreated.push('merged');
+    if (modifiedFolder) results.foldersCreated.push('modified');
     for (const journal of topLevelJournals) {
       try {
-        const migrationResult = await migrateJournalToFolder(journal, customFolder, mergedFolder);
+        const migrationResult = await migrateJournalToFolder(journal, customFolder, mergedFolder, modifiedFolder);
         if (migrationResult.success) {
           results.processed++;
           results.migratedJournals.push({ name: journal.name, id: journal.id, type: migrationResult.type, targetFolder: migrationResult.targetFolder });
           if (migrationResult.type === 'custom') results.customMoved++;
           if (migrationResult.type === 'merged') results.mergedMoved++;
+          if (migrationResult.type === 'modified') results.modifiedMoved++;
         } else if (migrationResult.error) {
           results.errors.push(migrationResult.error);
         }
@@ -621,13 +624,14 @@ function isRoleOwnershipEqual(ownership1, ownership2) {
  * @param {Folder} mergedFolder - Merged spell lists folder
  * @returns {Promise<JournalMigrationResult>} Migration result with success status and type
  */
-async function migrateJournalToFolder(journal, customFolder, mergedFolder) {
+async function migrateJournalToFolder(journal, customFolder, mergedFolder, modifiedFolder) {
   if (!journal || journal.pages.size === 0) return { success: false };
   const page = journal.pages.contents[0];
   if (page.type !== 'spells') return { success: false };
   const flags = page.flags?.[MODULE.ID] || {};
   const isMerged = !!flags.isMerged;
   const isCustom = !!flags.isCustom || !!flags.isNewList;
+  const isDuplicate = !!flags.isDuplicate;
   let targetFolder = null;
   let moveType = null;
   if (isMerged && mergedFolder) {
@@ -636,9 +640,15 @@ async function migrateJournalToFolder(journal, customFolder, mergedFolder) {
   } else if (isCustom && customFolder) {
     targetFolder = customFolder;
     moveType = 'custom';
+  } else if (isDuplicate && modifiedFolder) {
+    targetFolder = modifiedFolder;
+    moveType = 'modified';
   }
-  if (!targetFolder) return { success: false, error: `Unknown type: ${journal.name}` };
-  const newName = journal.name.replace(/^(Custom|Merged)\s*-\s*/, '');
+  if (!targetFolder) {
+    log(2, `Unknown spell list type for "${journal.name}", skipping migration`);
+    return { success: false };
+  }
+  const newName = journal.name.replace(/^(Custom|Merged|Modified)\s*-\s*/, '');
   const updateData = { folder: targetFolder.id };
   if (newName !== journal.name) updateData.name = newName;
   await journal.update(updateData);
