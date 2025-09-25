@@ -232,7 +232,8 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
         else await actor.unsetFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS);
       }
     }
-    if (this.parentApp) this.parentApp.render(true);
+    if (this.parentApp) this.parentApp.render();
+    this.render();
   }
 
   /**
