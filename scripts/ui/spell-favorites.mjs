@@ -171,17 +171,19 @@ export async function processFavoritesFromForm(_form, actor) {
       const isFavoritedInJournal = userData?.favorited || false;
       if (isFavoritedInJournal) favoritesToAdd.push(spell);
     }
-    if (favoritesToAdd.length > 0) {
-      const newFavorites = favoritesToAdd.map((spell, index) => ({ type: 'item', id: `.Item.${spell.id}`, sort: 100000 + index }));
+    if (favoritesToAdd.length > 0 || actor.system.favorites?.some((fav) => fav.type === 'item' && fav.id.startsWith('.Item.'))) {
+      const newSpellFavorites = favoritesToAdd.map((spell, index) => ({ type: 'item', id: `.Item.${spell.id}`, sort: 100000 + index }));
       const existingFavorites = actor.system.favorites || [];
-      const nonSpellFavorites = existingFavorites.filter((fav) => fav.type !== 'item' || !fav.id.startsWith('.Item.'));
-      const allFavorites = [...nonSpellFavorites, ...newFavorites];
+      const spellItemIds = new Set(actorSpells.map((spell) => spell.id));
+      const nonSpellFavorites = existingFavorites.filter((fav) => {
+        if (fav.type !== 'item') return true;
+        if (!fav.id.startsWith('.Item.')) return true;
+        const itemId = fav.id.replace('.Item.', '');
+        return !spellItemIds.has(itemId);
+      });
+      const allFavorites = [...nonSpellFavorites, ...newSpellFavorites];
       await actor.update({ 'system.favorites': allFavorites });
-      log(3, `Updated actor.system.favorites with ${newFavorites.length} spell favorites`);
-    } else {
-      const existingFavorites = actor.system.favorites || [];
-      const nonSpellFavorites = existingFavorites.filter((fav) => fav.type !== 'item' || !fav.id.startsWith('.Item.'));
-      if (nonSpellFavorites.length !== existingFavorites.length) await actor.update({ 'system.favorites': nonSpellFavorites });
+      log(3, `Updated actor.system.favorites with ${newSpellFavorites.length} spell favorites, preserved ${nonSpellFavorites.length} non-spell favorites`);
     }
     log(3, `Processed favorites: ${favoritesToAdd.length} spells favorited`);
   } catch (error) {
