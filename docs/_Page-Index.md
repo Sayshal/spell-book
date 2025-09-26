@@ -9,43 +9,20 @@ This file provides a quick reference to all wiki pages organized by category.
 - [Statistical Reporting](Statistical-Reporting)
 - [Usage Pattern Analysis](Usage-Pattern-Analysis)
 
-## Advanced Features - Automation
-
-- [Activity Monitoring](Activity-Monitoring)
-- [Context Tracking](Context-Tracking)
-- [Preparation Validation](Preparation-Validation)
-- [Spell Learning Automation](Spell-Learning-Automation)
-
 ## Advanced Features - Specialized Tools
 
 - [Loadout Management](Loadout-Management)
 - [Scroll Scanner](Scroll-Scanner)
 - [Spell Comparison Matrix](Spell-Comparison-Matrix)
-- [Troubleshooting Tools](Troubleshooting-Tools)
 
 ## Community and Support
 
 - [FAQ](FAQ)
 - [Feature Requests](Feature-Requests)
 
-## Developer Resources - Contributing
-
-- [Code Style Guide](Code-Style-Guide)
-- [Contributing Guidelines](Contributing-Guidelines)
-- [Development Setup](Development-Setup)
-- [Testing Framework](Testing-Framework)
-
-## Developer Resources - Extension
-
-- [API Reference](API-References)
-- [Custom Spell Creation](Custom-Spell-Creation)
-- [Hook System](Hook-System)
-- [Module Architecture](Module-Architecture)
-
 ## Getting Started - Additional
 
 - [Configuration Guide](Configuration-Guide)
-- [First Character Setup](First-Character-Setup)
 
 ## GM Documentation - Advanced Features
 
@@ -53,13 +30,10 @@ This file provides a quick reference to all wiki pages organized by category.
 - [Party Spell Analysis](Party-Spell-Analysis)
 - [Spell List Merging](Spell-List-Merging)
 - [Subclass Spell Management](Subclass-Spell-Management)
-- [Version Tracking](Version-Tracking)
 
 ## GM Documentation - Core GM Tools
 
-- [Compendium Integration](Compendium-Integration)
 - [Custom Spell Lists](Custom-Spell-Lists)
-- [Player Spellbook Access](Player-Spellbook-Access)
 - [Spell List Manager](Spell-List-Manager)
 
 ## GM Documentation - Rule Enforcement
@@ -71,7 +45,6 @@ This file provides a quick reference to all wiki pages organized by category.
 
 ## Integration - Module Compatibility
 
-- [API Integration](API-Integration)
 - [Cauldron of Plentiful Resources Integration](Cauldron-of-Plentiful-Resources-Integration)
 - [Third Party Module Compatibility](Third-Party-Module-Compatibility)
 
@@ -116,14 +89,11 @@ This file provides a quick reference to all wiki pages organized by category.
 - [GM Quick Start](GM-Quick-Start)
 - [Installation and Setup](Installation-and-Setup)
 - [Player Quick Start](Player-Quick-Start)
-- [Troubleshooting](Troubleshooting)
 
 ## Reference Materials - Appendices
 
 - [Class Default Rules](Class-Default-Rules)
-- [Known Issues](Known-Issues)
 - [Spell Preparation Calculations](Spell-Preparation-Calculations)
-- [Version History](Version-History)
 
 ## Reference Materials - Quick Reference
 

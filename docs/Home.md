@@ -11,7 +11,6 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 - **[Installation and Setup](Installation-and-Setup)** - Get Spell Book running in your world
 - **[Player Quick Start](Player-Quick-Start)** - Jump right into spell management
 - **[GM Quick Start](GM-Quick-Start)** - Essential GM tools and configuration
-- **[Troubleshooting](Troubleshooting)** - Common issues and solutions
 
 ## Player Documentation
 
@@ -51,8 +50,6 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 
 - **[Spell List Manager](Spell-List-Manager)** - Creating and editing custom spell lists
 - **[Custom Spell Lists](Custom-Spell-Lists)** - Building homebrew and modified spell lists
-- **[Compendium Integration](Compendium-Integration)** - Working with spell compendiums and sources
-- **[Player Spellbook Access](Player-Spellbook-Access)** - Viewing and managing player spellbooks
 
 ### Rule Enforcement and Configuration
 
@@ -67,7 +64,6 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 - **[Party Spell Analysis](Party-Spell-Analysis)** - Comprehensive party spellcasting coordination tools
 - **[GM Analytics Dashboard](GM-Analytics-Dashboard)** - Cross-player spell usage statistics
 - **[Spell List Merging](Spell-List-Merging)** - Combining multiple spell lists into custom collections
-- **[Version Tracking](Version-Tracking)** - Managing spell list updates and modifications
 
 ## Integration and Compatibility
 
@@ -81,7 +77,6 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 
 - **[Cauldron of Plentiful Resources](Cauldron-of-Plentiful-Resources-Integration)** - CPR automation compatibility
 - **[Third-Party Module Compatibility](Third-Party-Module-Compatibility)** - Working with other popular modules
-- **[API Integration](API-Integration)** - Developer hooks and integration points
 
 ## Technical Documentation
 
@@ -107,13 +102,6 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 
 ## Advanced Features
 
-### Automation and Workflows
-
-- **[Spell Learning Automation](Spell-Learning-Automation)** - Automated wizard spell learning workflows
-- **[Preparation Validation](Preparation-Validation)** - Automatic rule enforcement and validation
-- **[Context Tracking](Context-Tracking)** - Combat vs exploration usage tracking
-- **[Activity Monitoring](Activity-Monitoring)** - Real-time spell usage monitoring
-
 ### Analytics and Reporting
 
 - **[Usage Pattern Analysis](Usage-Pattern-Analysis)** - Identifying spell usage trends
@@ -126,23 +114,6 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 - **[Scroll Scanner](Scroll-Scanner)** - Detecting and managing spell scrolls
 - **[Spell Comparison Matrix](Spell-Comparison-Matrix)** - Advanced spell comparison tools
 - **[Loadout Management](Loadout-Management)** - Managing multiple spell configurations
-- **[Troubleshooting Tools](Troubleshooting-Tools)** - Built-in diagnostic and repair tools
-
-## Developer Resources
-
-### Extension and Modification
-
-- **[Module Architecture](Module-Architecture)** - Understanding the codebase structure
-- **[API Reference](API-Reference)** - Public API for third-party integration
-- **[Hook System](Hook-System)** - Available hooks for extension
-- **[Custom Spell Creation](Custom-Spell-Creation)** - Creating new spells programmatically
-
-### Contributing
-
-- **[Contributing Guidelines](Contributing-Guidelines)** - How to contribute to the project
-- **[Development Setup](Development-Setup)** - Setting up a development environment
-- **[Testing Framework](Testing-Framework)** - Running and writing tests
-- **[Code Style Guide](Code-Style-Guide)** - Coding standards and conventions
 
 ## Reference Materials
 
@@ -157,8 +128,6 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 
 - **[Class Default Rules](Class-Default-Rules)** - PHB-accurate default rules per class
 - **[Spell Preparation Calculations](Spell-Preparation-Calculations)** - How limits are calculated
-- **[Version History](Version-History)** - Feature additions and changes by version
-- **[Known Issues](Known-Issues)** - Current limitations and workarounds
 
 ## Community and Support
 
@@ -174,6 +143,5 @@ New to Spell Book? Start here:
 1. **[Installation and Setup](Installation-and-Setup)** - Get the module installed and configured
 2. **[Player Quick Start](Player-Quick-Start)** or **[GM Quick Start](GM-Quick-Start)** - Learn the basics
 3. **[Configuration Guide](Configuration-Guide)** - Set up your preferred rules and enforcement
-4. **[First Character Setup](First-Character-Setup)** - Configure your first spellcasting character
 
 Ready to dive deeper? Explore the comprehensive feature documentation above, or jump straight to the **[Player Spell Book Interface](Player-Spell-Book-Interface)** to see what Spell Book can do!

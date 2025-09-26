@@ -21,19 +21,6 @@
 - [Party Analysis](Party-Spell-Analysis)
 - [Custom Spell Lists](Custom-Spell-Lists)
 
-## Technical
-
-- [API Reference](API-Reference)
-- [Module Architecture](Module-Architecture)
-- [Integration Guide](API-Integration)
-
-## Reference
-
-- [FAQ](FAQ)
-- [Version History](Version-History)
-- [Known Issues](Known-Issues)
-- [Page Index](_Page-Index)
-
 ## Status Legend
 
 - 🚧 Under Construction
@@ -44,5 +31,4 @@
 ## Quick Links
 
 - [Home](Home)
-- [Troubleshooting](Troubleshooting)
-- [Contributing](Contributing-Guidelines)
+- [FAQ](FAQ)

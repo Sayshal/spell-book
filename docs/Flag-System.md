@@ -12,7 +12,6 @@ This page covers flag system in the Spell Book module for FoundryVTT.
 - [Prerequisites](#prerequisites)
 - [Key Features](#key-features)
 - [Implementation Details](#implementation-details)
-- [API Reference](#api-reference)
 - [Common Issues](#common-issues)
 - [Related Pages](#related-pages)
 
@@ -27,10 +26,6 @@ This page covers flag system in the Spell Book module for FoundryVTT.
 ## Implementation Details
 
 *Detailed instructions coming soon...*
-
-## API Reference
-
-*Advanced configuration and usage patterns coming soon...*
 
 ## Common Issues
 
