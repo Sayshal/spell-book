@@ -2,7 +2,7 @@
 
 Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell management module for FoundryVTT! This wiki provides detailed guidance for players, GMs, and developers on utilizing all the powerful features this module offers.
 
-**Spell Book** transforms spell management from a tedious process into an engaging experience, providing automated rule enforcement, intelligent spell coordination, and analytics across both 2014 and 2024 D&D rulesets.
+**Spell Book** transforms spell management from a tedious process into an engaging experience, providing automated rule enforcement, intelligent spell coordination, and analytics between party members.
 
 ---
 
@@ -12,8 +12,6 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 - **[Player Quick Start](Player-Quick-Start)** - Jump right into spell management
 - **[GM Quick Start](GM-Quick-Start)** - Essential GM tools and configuration
 - **[Troubleshooting](Troubleshooting)** - Common issues and solutions
-
----
 
 ## Player Documentation
 
@@ -47,8 +45,6 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 - **[Party Spell Visualization](Party-Spell-Visualization)** - Viewing party member prepared spells
 - **[Spellcasting Focus Coordination](Spellcasting-Focus-Coordination)** - Managing party spellcasting focus distribution
 
----
-
 ## GM Documentation
 
 ### Core GM Tools
@@ -68,12 +64,10 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 ### Advanced GM Features
 
 - **[Subclass Spell Management](Subclass-Spell-Management)** - Managing subclass-specific spell lists
-- **[Party Spell Analysis](Party-Spell-Analysis)** - Party spellcasting coordination tools
+- **[Party Spell Analysis](Party-Spell-Analysis)** - Comprehensive party spellcasting coordination tools
 - **[GM Analytics Dashboard](GM-Analytics-Dashboard)** - Cross-player spell usage statistics
 - **[Spell List Merging](Spell-List-Merging)** - Combining multiple spell lists into custom collections
 - **[Version Tracking](Version-Tracking)** - Managing spell list updates and modifications
-
----
 
 ## Integration and Compatibility
 
@@ -88,8 +82,6 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 - **[Cauldron of Plentiful Resources](Cauldron-of-Plentiful-Resources-Integration)** - CPR automation compatibility
 - **[Third-Party Module Compatibility](Third-Party-Module-Compatibility)** - Working with other popular modules
 - **[API Integration](API-Integration)** - Developer hooks and integration points
-
----
 
 ## Technical Documentation
 
@@ -113,8 +105,6 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 - **[Cache Management](Cache-Management)** - Understanding spell data caching
 - **[Memory Management](Memory-Management)** - Optimizing memory usage with large parties
 
----
-
 ## Advanced Features
 
 ### Automation and Workflows
@@ -129,7 +119,7 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 - **[Usage Pattern Analysis](Usage-Pattern-Analysis)** - Identifying spell usage trends
 - **[Party Synergy Analysis](Party-Synergy-Analysis)** - Optimizing party spell coordination
 - **[Recommendation System](Recommendation-System)** - Automated spell preparation suggestions
-- **[Statistical Reporting](Statistical-Reporting)** - Usage reports
+- **[Statistical Reporting](Statistical-Reporting)** - Comprehensive usage reports
 
 ### Specialized Tools
 
@@ -137,8 +127,6 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 - **[Spell Comparison Matrix](Spell-Comparison-Matrix)** - Advanced spell comparison tools
 - **[Loadout Management](Loadout-Management)** - Managing multiple spell configurations
 - **[Troubleshooting Tools](Troubleshooting-Tools)** - Built-in diagnostic and repair tools
-
----
 
 ## Developer Resources
 
@@ -156,8 +144,6 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 - **[Testing Framework](Testing-Framework)** - Running and writing tests
 - **[Code Style Guide](Code-Style-Guide)** - Coding standards and conventions
 
----
-
 ## Reference Materials
 
 ### Quick Reference
@@ -174,16 +160,12 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 - **[Version History](Version-History)** - Feature additions and changes by version
 - **[Known Issues](Known-Issues)** - Current limitations and workarounds
 
----
-
 ## Community and Support
 
 - **[FAQ](FAQ)** - Frequently asked questions and answers
 - **[Community Discord](https://discord.gg/PzzUwU9gdz)** - Join the community for support and updates
 - **[Bug Reports](https://github.com/Sayshal/spell-book/issues)** - Report issues and request features
 - **[Feature Requests](Feature-Requests)** - Suggest new functionality
-
----
 
 ## Getting Started
 
@@ -194,4 +176,4 @@ New to Spell Book? Start here:
 3. **[Configuration Guide](Configuration-Guide)** - Set up your preferred rules and enforcement
 4. **[First Character Setup](First-Character-Setup)** - Configure your first spellcasting character
 
-Ready to dive deeper? Explore the feature documentation above, or jump straight to the **[Player Spell Book Interface](Player-Spell-Book-Interface)** to see what Spell Book can do!
+Ready to dive deeper? Explore the comprehensive feature documentation above, or jump straight to the **[Player Spell Book Interface](Player-Spell-Book-Interface)** to see what Spell Book can do!
