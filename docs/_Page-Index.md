@@ -4,7 +4,7 @@
 
 ### Installation and Setup
 
-- **[Installation and Settings](Installation-and-Settings)** - How to install via Foundry and module.json, comprehensive review of all client vs world settings (includes Long Rest Integration settings)
+- **[Installation and Settings](Installation-and-Settings)** - How to install via Foundry and module.json, complete review of all client vs world settings (includes Long Rest Integration settings)
 
 ### Quick Start Guides
 
@@ -28,7 +28,7 @@
 
 ### GM Tools
 
-- **[SpellListManager Interface Overview](SpellListManager-Interface-Overview)** - Comprehensive GM spell management tool
+- **[SpellListManager Interface Overview](SpellListManager-Interface-Overview)** - GM spell management tool
     - How to access Spell List Manager
     - Spell Comparison Dialog
     - Spell Details Customization Dialog
