@@ -1,41 +1,27 @@
 # Multiclass Spellcasting
 
-> **Status:** 🚧 Under Construction - This page is being developed
+## Multiclass Support
 
-## Overview
+### Tab Management
 
-This player guide covers multiclass spellcasting in the Spell Book module for FoundryVTT.
+- Dynamic tab creation for each spellcasting class
+- Class-specific interface elements
+- Visual differentiation between classes
 
-## Table of Contents
+### Spell Slot Calculation
 
-- [Overview](#overview)
-- [Getting Started](#getting-started)
-- [Key Features](#key-features)
-- [Step-by-Step Guide](#step-by-step-guide)
-- [Advanced Usage](#advanced-usage)
-- [Common Issues](#common-issues)
-- [Related Pages](#related-pages)
+- Multiclass spell slot rules
+- Spell slot sharing between classes
+- Pact magic integration
 
-## Getting Started
+### Preparation Management
 
-*Documentation coming soon...*
+- Per-class spell preparation
+- Cross-class spell access
+- Preparation limit calculations
 
-## Key Features
+## Advanced Multiclass Features
 
-*Feature list coming soon...*
-
-## Step-by-Step Guide
-
-*Detailed instructions coming soon...*
-
-## Advanced Usage
-
-*Advanced configuration and usage patterns coming soon...*
-
-## Common Issues
-
-*Troubleshooting information coming soon...*
-
-## Related Pages
-
-*Links to related documentation coming soon...*
+- Spell list merging
+- Class-specific restrictions
+- Subclass spell integration

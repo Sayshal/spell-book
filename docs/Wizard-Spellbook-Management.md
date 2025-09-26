@@ -1,41 +1,27 @@
 # Wizard Spellbook Management
 
-> **Status:** 🚧 Under Construction - This page is being developed
+## Wizard-Specific Features
 
-## Overview
+### Spell Learning
 
-This player guide covers wizard spellbook management in the Spell Book module for FoundryVTT.
+- Learning spells from scrolls
+- Spell copying mechanics
+- Cost and time calculations
 
-## Table of Contents
+### Spellbook Management
 
-- [Overview](#overview)
-- [Getting Started](#getting-started)
-- [Key Features](#key-features)
-- [Step-by-Step Guide](#step-by-step-guide)
-- [Advanced Usage](#advanced-usage)
-- [Common Issues](#common-issues)
-- [Related Pages](#related-pages)
+- Wizard spellbook interface
+- Known vs. prepared spell distinction
+- Spell acquisition tracking
 
-## Getting Started
+### Advanced Features
 
-*Documentation coming soon...*
+- Scroll scanner integration
+- Free spell learning tracking
+- Cantrip swap mechanics
 
-## Key Features
+## Integration
 
-*Feature list coming soon...*
-
-## Step-by-Step Guide
-
-*Detailed instructions coming soon...*
-
-## Advanced Usage
-
-*Advanced configuration and usage patterns coming soon...*
-
-## Common Issues
-
-*Troubleshooting information coming soon...*
-
-## Related Pages
-
-*Links to related documentation coming soon...*
+- Long rest spell learning
+- Party coordination for wizards
+- Analytics for wizard spell usage
