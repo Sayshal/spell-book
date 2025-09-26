@@ -6,142 +6,66 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 
 ---
 
-## Quick Start Guide
+## Getting Started
 
-- **[Installation and Setup](Installation-and-Setup)** - Get Spell Book running in your world
-- **[Player Quick Start](Player-Quick-Start)** - Jump right into spell management
-- **[GM Quick Start](GM-Quick-Start)** - Essential GM tools and configuration
+### Installation and Setup
 
-## Player Documentation
+- **[Installation and Settings](Installation-and-Settings)** - How to install via Foundry and module.json, comprehensive review of all client vs world settings
 
-### Core Features
+### Quick Start Guides
 
-- **[Player Spell Book Interface](Player-Spell-Book-Interface)** - Main spell management interface walkthrough
-- **[Spell Preparation System](Spell-Preparation-System)** - Understanding preparation mechanics and limits
-- **[Multiclass Spellcasting](Multiclass-Spellcasting)** - Managing multiple spellcasting classes
-- **[Class-Specific Tabs](Class-Specific-Tabs)** - Individual class spell management
-- **[Rule Set Support](Rule-Set-Support)** - 2014 Legacy vs 2024 Modern rules
+- **[Player Quick Start](Player-Quick-Start)** - Essential player setup including spell deletion recommendation, preparation basics, footer data reading, multiclassing, and wizard spell learning
+- **[DM Quick Start](DM-Quick-Start)** - Spell List Manager overview and Spellbook Settings Dialog introduction
 
-### Advanced Player Features
+## Applications
 
-- **[Wizard Spellbook Management](Wizard-Spellbook-Management)** - Personal spellbook, learning, and copying spells
-- **[Cantrip Management](Cantrip-Management)** - Cantrip swapping and level-up rules
-- **[Spell Filtering and Search](Spell-Filtering-and-Search)** - Advanced filtering system and customization
-- **[Spell Loadouts](Spell-Loadouts)** - Quick spell configuration presets
-- **[Favorites and Notes](Favorites-and-Notes)** - Personal spell annotations and favorites system
-- **[Spell Comparison Tools](Spell-Comparison-Tools)** - Side-by-side spell analysis
-- **[Filter Configuration](Filter-Configuration)** - Customizing available filters and display options
+### SpellBook Interface
 
-### Analytics and Tracking
+- **[SpellBook Interface Overview](SpellBook-Interface-Overview)** - Complete guide to the main player interface including multiclass tabs, filtering system, scroll scanner, spell comparison, loadouts, notes, and settings
 
-- **[Personal Analytics Dashboard](Personal-Analytics-Dashboard)** - Individual spell usage statistics
-- **[User Data Tracking](User-Data-Tracking)** - How spell data is collected and stored
-- **[Usage Analytics](Usage-Analytics)** - Understanding spell usage patterns and trends
+### GM Tools
+
+- **[SpellListManager Interface Overview](SpellListManager-Interface-Overview)** - Comprehensive GM spell management tool with spell list navigation, management panels, and dialog integration
 
 ### Party Coordination
 
-- **[Party Mode](Party-Mode)** - Collaborative spell coordination with party members
-- **[Party Spell Visualization](Party-Spell-Visualization)** - Viewing party member prepared spells
-- **[Spellcasting Focus Coordination](Spellcasting-Focus-Coordination)** - Managing party spellcasting focus distribution
+- **[PartySpells Interface Overview](PartySpells-Interface-Overview)** - Multi-player spell coordination with Group Actor sheet integration, focus settings, and party synergy analysis
 
-## GM Documentation
+### Analytics and Diagnostics
 
-### Core GM Tools
-
-- **[Spell List Manager](Spell-List-Manager)** - Creating and editing custom spell lists
-- **[Custom Spell Lists](Custom-Spell-Lists)** - Building homebrew and modified spell lists
-
-### Rule Enforcement and Configuration
-
-- **[Rule Enforcement Options](Rule-Enforcement-Options)** - Unenforced, Notify GM, and Enforced modes
-- **[Class Rule Customization](Class-Rule-Customization)** - Per-class spellcasting rule overrides
-- **[Preparation Limits and Bonuses](Preparation-Limits-and-Bonuses)** - Adjusting spell preparation calculations
-- **[Spell Swapping Rules](Spell-Swapping-Rules)** - Configuring when and how spells can be changed
-
-### Advanced GM Features
-
-- **[Subclass Spell Management](Subclass-Spell-Management)** - Managing subclass-specific spell lists
-- **[Party Spell Analysis](Party-Spell-Analysis)** - Comprehensive party spellcasting coordination tools
-- **[GM Analytics Dashboard](GM-Analytics-Dashboard)** - Cross-player spell usage statistics
-- **[Spell List Merging](Spell-List-Merging)** - Combining multiple spell lists into custom collections
-
-## Integration and Compatibility
-
-### System Integration
-
-- **[DnD5e System Integration](DnD5e-System-Integration)** - Native D&D 5e system features
-- **[Tidy5e Sheet Integration](Tidy5e-Sheet-Integration)** - Enhanced Tidy5e character sheet support
-- **[Long Rest Integration](Long-Rest-Integration)** - Automatic spell swapping during rests
-
-### Module Compatibility
-
-- **[Cauldron of Plentiful Resources](Cauldron-of-Plentiful-Resources-Integration)** - CPR automation compatibility
-- **[Third-Party Module Compatibility](Third-Party-Module-Compatibility)** - Working with other popular modules
-
-## Technical Documentation
-
-### Data Management
-
-- **[Spell Data Structure](Spell-Data-Structure)** - Understanding how spell data is stored
-- **[User Data Journaling](User-Data-Journaling)** - Persistent user data storage system
-- **[Export and Import System](Export-and-Import-System)** - Data backup and transfer functionality
-- **[Flag System](Flag-System)** - Actor and item flag management
-
-### Customization
-
-- **[Display Customization](Display-Customization)** - Customizing spell display elements
-- **[UI Customization](UI-Customization)** - Interface appearance and behavior options
-- **[Localization Support](Localization-Support)** - Multi-language support and translation
-- **[Theme Integration](Theme-Integration)** - Working with custom FoundryVTT themes
-
-### Performance and Optimization
-
-- **[Performance Optimization](Performance-Optimization)** - Best practices for large spell collections
-- **[Cache Management](Cache-Management)** - Understanding spell data caching
-- **[Memory Management](Memory-Management)** - Optimizing memory usage with large parties
+- **[SpellAnalyticsDashboard Interface Overview](SpellAnalyticsDashboard-Interface-Overview)** - Usage tracking and analysis with data visualization and reporting
+- **[SpellBook Troubleshooter](SpellBook-Troubleshooter)** - Diagnostic tools and problem resolution
 
 ## Advanced Features
 
-### Analytics and Reporting
+### Automation and Scripting
 
-- **[Usage Pattern Analysis](Usage-Pattern-Analysis)** - Identifying spell usage trends
-- **[Party Synergy Analysis](Party-Synergy-Analysis)** - Optimizing party spell coordination
-- **[Recommendation System](Recommendation-System)** - Automated spell preparation suggestions
-- **[Statistical Reporting](Statistical-Reporting)** - Comprehensive usage reports
+- **[Macros](Macros)** - Complete macro reference including spell management, party coordination, analytics, and utility macros
 
-### Specialized Tools
+## Core Spell Management
 
-- **[Scroll Scanner](Scroll-Scanner)** - Detecting and managing spell scrolls
-- **[Spell Comparison Matrix](Spell-Comparison-Matrix)** - Advanced spell comparison tools
-- **[Loadout Management](Loadout-Management)** - Managing multiple spell configurations
+- **[Spell Preparation System](Spell-Preparation-System)** - Understanding preparation mechanics, rules, and enforcement
+- **[Multiclass Spellcasting](Multiclass-Spellcasting)** - Managing multiple spellcasting classes with dynamic tabs and spell slot calculations
+- **[Wizard Spellbook Management](Wizard-Spellbook-Management)** - Wizard-specific features including spell learning, spellbook management, and scroll integration
 
-## Reference Materials
+## Guides and References
 
-### Quick Reference
+### Configuration Guides
 
-- **[Hotkey Reference](Hotkey-Reference)** - Keyboard shortcuts and quick actions
-- **[Icon Reference](Icon-Reference)** - Understanding interface icons and indicators
-- **[Status Indicators](Status-Indicators)** - Spell preparation and status meanings
-- **[Localization Keys](Localization-Keys)** - Complete list of translatable strings
-
-### Appendices
-
-- **[Class Default Rules](Class-Default-Rules)** - PHB-accurate default rules per class
-- **[Spell Preparation Calculations](Spell-Preparation-Calculations)** - How limits are calculated
+- **[Modifying Existing Spell Lists](Modifying-Existing-Spell-Lists)** - Step-by-step spell list editing and modification workflows
+- **[Creating New Spell Lists](Creating-New-Spell-Lists)** - Custom spell list creation with class identifier reference and advanced features
+- **[Ruleset Types and What They Mean](Ruleset-Types-and-Meanings)** - Understanding different rule enforcement modes and implementation guidelines
 
 ## Community and Support
 
 - **[FAQ](FAQ)** - Frequently asked questions and answers
 - **[Community Discord](https://discord.gg/PzzUwU9gdz)** - Join the community for support and updates
 - **[Bug Reports](https://github.com/Sayshal/spell-book/issues)** - Report issues and request features
-- **[Feature Requests](Feature-Requests)** - Suggest new functionality
 
 ## Getting Started
 
 New to Spell Book? Start here:
 
-1. **[Installation and Setup](Installation-and-Setup)** - Get the module installed and configured
-2. **[Player Quick Start](Player-Quick-Start)** or **[GM Quick Start](GM-Quick-Start)** - Learn the basics
-3. **[Configuration Guide](Configuration-Guide)** - Set up your preferred rules and enforcement
-
-Ready to dive deeper? Explore the comprehensive feature documentation above, or jump straight to the **[Player Spell Book Interface](Player-Spell-Book-Interface)** to see what Spell Book can do!
+1. **[Installation and Settings](Installation-and-Settings)** - Get the module installed and configured
+2. **[Player Quick Start](Player-Quick-Start)** or **[DM Quick Start](DM-Quick-Start)** - Learn the basics
+3. **[SpellBook Interface Overview](SpellBook-Interface-Overview)** - Explore the main interface
