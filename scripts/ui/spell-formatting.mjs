@@ -313,7 +313,7 @@ export function extractRange(spell) {
 /**
  * Extract damage types from spell.
  *
- * Comprehensively analyzes spell data to identify all damage types that the
+ * Analyzes spell data to identify all damage types that the
  * spell can inflict. Checks both legacy damage labels and modern activity-based
  * damage structures to ensure complete coverage across different data formats.
  *

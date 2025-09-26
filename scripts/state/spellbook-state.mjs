@@ -1476,7 +1476,7 @@ export class SpellbookState {
         }
       };
     }
-    await this.app.spellManager.cantripManager.sendComprehensiveGMNotification(notificationData);
+    await this.app.spellManager.cantripManager.sendNotification(notificationData);
   }
 
   /**

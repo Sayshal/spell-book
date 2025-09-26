@@ -226,7 +226,7 @@ export class PartySpellManager {
   /**
    * Get party spell comparison data.
    *
-   * Analyzes all party members' spells and generates a comprehensive
+   * Analyzes all party members' spells and generates a
    * comparison matrix showing spell overlap, preparation status, and
    * coordination opportunities.
    *
