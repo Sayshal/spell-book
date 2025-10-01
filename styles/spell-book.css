@@ -5028,15 +5028,15 @@
     }
 
     .apply-loadout-btn {
-      color: var(--spell-book-bg-option);
+      color: var(--spell-book-color-success);
     }
 
     .overwrite-loadout-btn {
-      color: rgba(255 202 141);
+      color: var(--spell-book-color-warning);
     }
 
     .delete-loadout-btn {
-      color: rgba(255 174 174);
+      color: var(--spell-book-color-error);
     }
 
     .no-loadouts {
