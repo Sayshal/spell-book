@@ -139,7 +139,7 @@ export function registerSettings() {
     requiresReload: true
   });
 
-  if (game.modules.get('chris-premades').active) {
+  if (game.modules.get('chris-premades')?.active) {
     /** Enable Cauldron of Plentiful Resources compatibility */
     game.settings.register(MODULE.ID, SETTINGS.CPR_COMPATIBILITY, {
       name: 'SPELLBOOK.Settings.CPRCompatibility.Name',
