@@ -180,35 +180,10 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   _onRender(context, options) {
     super._onRender(context, options);
-
     const focusSelects = this.element.querySelectorAll('select[data-actor-id]');
-    focusSelects.forEach((select) => {
-      select.addEventListener('change', async (event) => {
-        const actorId = event.target.dataset.actorId;
-        const focus = event.target.value;
-        if (!actorId || !focus) return;
-        const actor = game.actors.get(actorId);
-        if (!actor) return;
-        if (!game.user.isGM && !actor.isOwner) {
-          ui.notifications.warn('SPELLBOOK.Party.NoPermissionToSetFocus', { localize: true });
-          return;
-        }
-        const success = await this.partyManager.setActorSpellcastingFocus(actor, focus);
-        if (success) {
-          ui.notifications.clear();
-          ui.notifications.info('SPELLBOOK.Party.FocusUpdated', { localize: true });
-          this._comparisonData = null;
-        } else {
-          ui.notifications.clear();
-          ui.notifications.error('SPELLBOOK.Party.FocusUpdateError', { localize: true });
-        }
-      });
-    });
-
     this._setupPartyMemberHover();
     this._setupMemberCardContextMenu();
     this._restoreCollapsedLevels();
-
     this._globalClickHandler = (event) => {
       if (!this._filteredActorId) return;
       if (this.element && this.element.contains(event.target)) {
