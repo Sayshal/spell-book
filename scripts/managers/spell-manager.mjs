@@ -617,6 +617,7 @@ export class SpellManager {
     if (spellsToUpdate.length > 0) await this.actor.updateEmbeddedDocuments('Item', spellsToUpdate);
     if (spellIdsToRemove.length > 0) await this.actor.deleteEmbeddedDocuments('Item', spellIdsToRemove);
     await this._updateGlobalPreparedSpellsFlag();
+    await this._cleanupUnpreparedSpells();
     return { cantripChanges, spellChanges };
   }
 
@@ -958,5 +959,24 @@ export class SpellManager {
       }
     }
     return { allowed: true };
+  }
+
+  /**
+   * Clean up unprepared prepared-casting spells if the setting is enabled.
+   *
+   * Checks for spells with method='spell' and prepared=0 (unprepared) and removes them.
+   * This is called at the end of the save process to clean up manually unprepared spells.
+   *
+   * @private
+   * @returns {Promise<void>}
+   */
+  async _cleanupUnpreparedSpells() {
+    const shouldCleanup = game.settings.get(MODULE.ID, SETTINGS.AUTO_DELETE_UNPREPARED_SPELLS);
+    if (!shouldCleanup) return;
+    const unpreparedSpells = this.actor.items.filter((item) => item.type === 'spell' && item.system.method === 'spell' && item.system.prepared === 0);
+    if (unpreparedSpells.length === 0) return;
+    log(3, `Auto-cleanup: Removing ${unpreparedSpells.length} unprepared spell(s)`);
+    const spellIds = unpreparedSpells.map((spell) => spell.id);
+    await this.actor.deleteEmbeddedDocuments('Item', spellIds);
   }
 }

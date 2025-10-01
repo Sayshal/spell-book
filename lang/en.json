@@ -334,6 +334,8 @@
   "SPELLBOOK.Search.Values": "Values",
   "SPELLBOOK.Settings.AdvancedSearchPrefix.Hint": "Single character to trigger advanced search mode. Must not be a letter or number. Common symbols: ^ ! @ # $ % & * + = ? ~ | \\ / < >",
   "SPELLBOOK.Settings.AdvancedSearchPrefix.Name": "Advanced Search Prefix",
+  "SPELLBOOK.Settings.AutoDeleteUnpreparedSpells.Hint": "When enabled, automatically removes unprepared prepared-casting spells from character sheets after saving. This cleans up spells that were manually unprepared through the system UI.",
+  "SPELLBOOK.Settings.AutoDeleteUnpreparedSpells.Name": "Auto-Delete Unprepared Spells",
   "SPELLBOOK.Settings.CPRCompatibility.Changed": "CPR compatibility {status}",
   "SPELLBOOK.Settings.CPRCompatibility.Hint": "When enabled, automatically runs CPR automation setup after spells are added to character sheets.",
   "SPELLBOOK.Settings.CPRCompatibility.Name": "Cauldron of Plentiful Resources Compatibility",

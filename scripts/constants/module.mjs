@@ -413,6 +413,9 @@ export const SETTINGS = {
   /** @type {string} Prefix character for advanced search syntax */
   ADVANCED_SEARCH_PREFIX: 'advancedSearchPrefix',
 
+  /** @type {string} Automatically delete unprepared spells during save */
+  AUTO_DELETE_UNPREPARED_SPELLS: 'autoDeleteUnpreparedSpells',
+
   /** @type {string} Available spellcasting focus options for party mode */
   AVAILABLE_FOCUS_OPTIONS: 'availableFocusOptions',
 

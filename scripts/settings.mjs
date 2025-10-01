@@ -155,6 +155,15 @@ export function registerSettings() {
     });
   }
 
+  game.settings.register(MODULE.ID, SETTINGS.AUTO_DELETE_UNPREPARED_SPELLS, {
+    name: 'SPELLBOOK.Settings.AutoDeleteUnpreparedSpells.Name',
+    hint: 'SPELLBOOK.Settings.AutoDeleteUnpreparedSpells.Hint',
+    scope: 'user',
+    config: true,
+    type: Boolean,
+    default: false
+  });
+
   // ========================================//
   //  UI & UX                                //
   // ========================================//
