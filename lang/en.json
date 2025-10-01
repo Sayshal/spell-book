@@ -211,6 +211,8 @@
   "SPELLBOOK.Migrations.InvalidFlagsRemovedCount": "{count} invalid flags cleaned up",
   "SPELLBOOK.Migrations.MigrationErrors": "Migration Errors",
   "SPELLBOOK.Migrations.MigrationErrorsCount": "{count} errors occurred",
+  "SPELLBOOK.Migrations.NullToArrayMigration": "Spell List Default Value Migration",
+  "SPELLBOOK.Migrations.NullToArrayMigrationCount": "Updated default spell list values for {count} actors",
   "SPELLBOOK.Migrations.OwnershipFixed": "Fixed ownership for {count} documents",
   "SPELLBOOK.Migrations.OwnershipValidation": "Ownership Validation",
   "SPELLBOOK.Migrations.PackOwnershipFixed": "Pack permissions: {count} fixed",

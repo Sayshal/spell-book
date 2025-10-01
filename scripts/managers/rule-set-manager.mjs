@@ -185,12 +185,17 @@ export class RuleSetManager {
   static async updateClassRules(actor, classIdentifier, newRules) {
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const currentRules = classRules[classIdentifier] || {};
-    if (newRules.customSpellList !== undefined && newRules.customSpellList !== currentRules.customSpellList) {
-      const affectedSpells = await RuleSetManager._getAffectedSpellsByListChange(actor, classIdentifier, newRules.customSpellList);
-      if (affectedSpells.length > 0) {
-        const shouldProceed = await RuleSetManager._confirmSpellListChange(actor, classIdentifier, affectedSpells);
-        if (!shouldProceed) return false;
-        await RuleSetManager._unprepareAffectedSpells(actor, classIdentifier, affectedSpells);
+    if (newRules.customSpellList !== undefined) {
+      const oldList = Array.isArray(currentRules.customSpellList) ? currentRules.customSpellList : currentRules.customSpellList ? [currentRules.customSpellList] : [];
+      const newList = Array.isArray(newRules.customSpellList) ? newRules.customSpellList : newRules.customSpellList ? [newRules.customSpellList] : [];
+      const isDifferent = JSON.stringify([...oldList].sort()) !== JSON.stringify([...newList].sort());
+      if (isDifferent) {
+        const affectedSpells = await RuleSetManager._getAffectedSpellsByListChange(actor, classIdentifier, newRules.customSpellList);
+        if (affectedSpells.length > 0) {
+          const shouldProceed = await RuleSetManager._confirmSpellListChange(actor, classIdentifier, affectedSpells);
+          if (!shouldProceed) return false;
+          await RuleSetManager._unprepareAffectedSpells(actor, classIdentifier, affectedSpells);
+        }
       }
     }
     classRules[classIdentifier] = { ...classRules[classIdentifier], ...newRules };
@@ -281,7 +286,7 @@ export class RuleSetManager {
       spellSwapping: MODULE.SWAP_MODES.NONE,
       ritualCasting: MODULE.RITUAL_CASTING_MODES.NONE,
       showCantrips: true,
-      customSpellList: null,
+      customSpellList: [],
       spellPreparationBonus: 0,
       cantripPreparationBonus: 0,
       forceWizardMode: false
