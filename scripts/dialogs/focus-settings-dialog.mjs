@@ -251,10 +251,7 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
     event.preventDefault();
     const focusId = target.dataset.focusId;
     if (!focusId) return;
-    if (this.targetActor && !game.user.isGM && !this.targetActor.isOwner) {
-      ui.notifications.warn(game.i18n.localize('SPELLBOOK.FocusSettings.NoEditPermission'));
-      return;
-    }
+    if (this.targetActor && !game.user.isGM && !this.targetActor.isOwner) return;
     const allCards = target.closest('.focus-grid').querySelectorAll('.focus-card');
     allCards.forEach((card) => {
       card.classList.remove('selected');
@@ -299,7 +296,6 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
       picker.render(true);
     } catch (error) {
       log(1, 'Error opening file picker:', error);
-      ui.notifications.error('Failed to open file picker');
     }
   }
 
@@ -333,14 +329,12 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
       const defaultFocusData = { focuses: MODULE.DEFAULT_FOCUSES };
       await game.settings.set(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS, defaultFocusData);
       if (this.groupActor) await this.groupActor.unsetFlag(MODULE.ID, FLAGS.SELECTED_FOCUS);
-      ui.notifications.info(game.i18n.localize('SPELLBOOK.FocusSettings.ResetSuccess'));
       this.render();
       Object.values(ui.windows).forEach((app) => {
         if (app.constructor.name === 'PartySpellsApp') app.render();
       });
     } catch (error) {
       log(1, 'Failed to reset focus settings:', error);
-      ui.notifications.error(game.i18n.localize('SPELLBOOK.FocusSettings.ResetError'));
     }
   }
 
@@ -400,8 +394,16 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
         }
       }
       try {
-        await groupActor.setFlag(MODULE.ID, FLAGS.SELECTED_FOCUS, currentSelections);
+        const socketHandler = game.modules.get(MODULE.ID)?.socketHandler;
+        for (const [key, value] of Object.entries(formData)) {
+          if (key.startsWith('member-focus-')) {
+            const userId = key.replace('member-focus-', '');
+            const focusId = value && value !== '' && value !== 'null' && value !== 'undefined' ? value : null;
+            await socketHandler.setUserSelectedFocus(groupActor, userId, focusId);
+          }
+        }
         const partyUsers = PartySpellManager.getPartyUsers(groupActor);
+        const currentSelections = groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
         for (const user of partyUsers) {
           const actor = game.actors.get(user.actorId);
           if (!actor) continue;
@@ -411,23 +413,18 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
             const focusObject = focuses.find((f) => f.id === assignedFocusId);
             focusName = focusObject?.name || null;
           }
-          if (focusName) await actor.setFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS, focusName);
-          else await actor.unsetFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS);
+          if (focusName) await socketHandler.setActorSpellcastingFocus(actor, focusName);
+          else if (actor.isOwner || game.user.isGM) await actor.unsetFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS);
         }
-        const verifySelections = groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS);
       } catch (error) {
         log(1, 'Error saving focus selections:', error);
       }
     } else log(2, 'No group actor available for member assignments');
-    ui.notifications.info('SPELLBOOK.FocusSettings.OptionsSaved', { localize: true });
   }
 
   /**
    * Save user focus selection to the group actor.
-   *
-   * Updates the group actor's flags to store the user's selected focus option,
-   * with proper ownership validation and delegation handling. Synchronizes
-   * to individual actor flags for backward compatibility.
+   * Now delegates to socket handler for permission management.
    *
    * @param {Object} formData - The form data containing selection information
    * @param {Actor} groupActor - The group actor to update
@@ -438,15 +435,10 @@ export class FocusSettingsDialog extends HandlebarsApplicationMixin(ApplicationV
   static async _saveUserSelection(formData, groupActor) {
     const selectedFocusId = formData.selectedFocus;
     const targetUserId = formData.targetUserId || game.user.id;
-    if (!groupActor) {
-      ui.notifications.error('SPELLBOOK.FocusSettings.NoGroupActor', { localize: true });
-      return;
-    }
-    const currentSelections = groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
-    if (selectedFocusId) currentSelections[targetUserId] = selectedFocusId;
-    else delete currentSelections[targetUserId];
-    await groupActor.setFlag(MODULE.ID, FLAGS.SELECTED_FOCUS, currentSelections);
-    ui.notifications.info('SPELLBOOK.FocusSettings.SelectionSaved', { localize: true });
+    if (!groupActor) return;
+    const socketHandler = game.modules.get(MODULE.ID)?.socketHandler;
+    const result = await socketHandler.setUserSelectedFocus(groupActor, targetUserId, selectedFocusId || null);
+    if (!result.success) log(1, 'Failed to save user selection:', result.error);
   }
 
   /**

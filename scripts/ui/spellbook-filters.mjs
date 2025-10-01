@@ -22,7 +22,7 @@
  * - Enhanced search syntax including exact phrase matching
  * - Fallback mechanisms for incomplete or missing data
  *
- * The system ensures responsive filtering performance while providing comprehensive
+ * The system ensures responsive filtering performance while providing
  * search and filtering capabilities across all spell properties and metadata.
  *
  * @module UIHelpers/SpellbookFilters

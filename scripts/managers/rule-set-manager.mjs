@@ -185,12 +185,17 @@ export class RuleSetManager {
   static async updateClassRules(actor, classIdentifier, newRules) {
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const currentRules = classRules[classIdentifier] || {};
-    if (newRules.customSpellList !== undefined && newRules.customSpellList !== currentRules.customSpellList) {
-      const affectedSpells = await RuleSetManager._getAffectedSpellsByListChange(actor, classIdentifier, newRules.customSpellList);
-      if (affectedSpells.length > 0) {
-        const shouldProceed = await RuleSetManager._confirmSpellListChange(actor, classIdentifier, affectedSpells);
-        if (!shouldProceed) return false;
-        await RuleSetManager._unprepareAffectedSpells(actor, classIdentifier, affectedSpells);
+    if (newRules.customSpellList !== undefined) {
+      const oldList = Array.isArray(currentRules.customSpellList) ? currentRules.customSpellList : currentRules.customSpellList ? [currentRules.customSpellList] : [];
+      const newList = Array.isArray(newRules.customSpellList) ? newRules.customSpellList : newRules.customSpellList ? [newRules.customSpellList] : [];
+      const isDifferent = JSON.stringify([...oldList].sort()) !== JSON.stringify([...newList].sort());
+      if (isDifferent) {
+        const affectedSpells = await RuleSetManager._getAffectedSpellsByListChange(actor, classIdentifier, newRules.customSpellList);
+        if (affectedSpells.length > 0) {
+          const shouldProceed = await RuleSetManager._confirmSpellListChange(actor, classIdentifier, affectedSpells);
+          if (!shouldProceed) return false;
+          await RuleSetManager._unprepareAffectedSpells(actor, classIdentifier, affectedSpells);
+        }
       }
     }
     classRules[classIdentifier] = { ...classRules[classIdentifier], ...newRules };
@@ -281,7 +286,7 @@ export class RuleSetManager {
       spellSwapping: MODULE.SWAP_MODES.NONE,
       ritualCasting: MODULE.RITUAL_CASTING_MODES.NONE,
       showCantrips: true,
-      customSpellList: null,
+      customSpellList: [],
       spellPreparationBonus: 0,
       cantripPreparationBonus: 0,
       forceWizardMode: false
@@ -462,7 +467,7 @@ export class RuleSetManager {
           if (spell) affectedSpells.push({ name: spell.name, uuid: spellUuid, level: spell.system.level, classSpellKey: classSpellKey });
         } catch (error) {
           log(2, `Error loading spell ${spellUuid} for cleanup check:`, error);
-          affectedSpells.push({ name: 'Unknown Spell', uuid: spellUuid, level: 0, classSpellKey: classSpellKey });
+          affectedSpells.push({ name: game.i18n.localize('SPELLBOOK.UI.UnknownSpell'), uuid: spellUuid, level: 0, classSpellKey: classSpellKey });
         }
       }
     }
@@ -555,12 +560,6 @@ export class RuleSetManager {
     if (spellIdsToRemove.length > 0) await actor.deleteEmbeddedDocuments('Item', spellIdsToRemove);
     const cantripCount = affectedSpells.filter((s) => s.level === 0).length;
     const spellCount = affectedSpells.filter((s) => s.level > 0).length;
-    let message = game.i18n.format('SPELLBOOK.SpellListChange.Completed', { total: affectedSpells.length });
-    if (cantripCount > 0 && spellCount > 0)
-      message += ` (${cantripCount} ${game.i18n.localize('SPELLBOOK.SpellListChange.Cantrips')}, ${spellCount} ${game.i18n.localize('SPELLBOOK.SpellListChange.Spells')})`;
-    else if (cantripCount > 0) message += ` (${cantripCount} ${game.i18n.localize('SPELLBOOK.SpellListChange.Cantrips')})`;
-    else if (spellCount > 0) message += ` (${spellCount} ${game.i18n.localize('SPELLBOOK.SpellListChange.Spells')})`;
-    ui.notifications.info(message);
     log(3, `Unprepared ${affectedSpells.length} spells for ${classIdentifier} due to spell list change`);
   }
 }

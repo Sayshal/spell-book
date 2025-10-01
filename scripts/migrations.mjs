@@ -118,18 +118,15 @@ export async function runAllMigrations() {
     const ownershipResults = await validateOwnershipLevels();
     const packSortingResults = await migratePackSorting();
     const customSpellListResults = await migrateCustomSpellListFormat();
-    const totalProcessed = deprecatedFlagResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed + customSpellListResults.processed;
+    const nullToArrayResults = await migrateCustomSpellListNullToArray();
+    const totalProcessed =
+      deprecatedFlagResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed + customSpellListResults.processed + nullToArrayResults.processed;
     log(
       3,
-      `Migration results: deprecated=${deprecatedFlagResults.processed}, folders=${folderResults.processed}, ownership=${ownershipResults.processed}, sorting=${packSortingResults.processed}, customSpellList=${customSpellListResults.processed}`
+      `Migration results: deprecated=${deprecatedFlagResults.processed}, folders=${folderResults.processed}, ownership=${ownershipResults.processed}, sorting=${packSortingResults.processed}, customSpellList=${customSpellListResults.processed}, nullToArray=${nullToArrayResults.processed}`
     );
-    if (totalProcessed > 0) {
-      ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.StartNotification'));
-      await logMigrationResults(deprecatedFlagResults, folderResults, ownershipResults, packSortingResults, customSpellListResults);
-      ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.CompleteNotification'));
-    } else {
-      log(3, 'No migrations needed');
-    }
+    if (totalProcessed > 0) await logMigrationResults(deprecatedFlagResults, folderResults, ownershipResults, packSortingResults, customSpellListResults, nullToArrayResults);
+    else log(3, 'No migrations needed');
   } catch (error) {
     log(1, 'Error during migrations:', error);
   }
@@ -269,6 +266,64 @@ async function migrateSpellListFolders() {
     log(1, 'Error during spell list folder migration:', error);
     results.errors.push(`Migration error: ${error.message}`);
   }
+  return results;
+}
+
+/**
+ * Migrate null customSpellList values to empty arrays.
+ *
+ * Ensures consistency with new default format where customSpellList
+ * is always an array, preventing false positive spell list change warnings
+ * when changing rule sets without modifying spell lists.
+ *
+ * @returns {Promise<CustomSpellListMigrationResults>}
+ */
+export async function migrateCustomSpellListNullToArray() {
+  log(3, 'Starting custom spell list null-to-array migration...');
+  const results = { processed: 0, updated: 0, migratedActors: [], errors: [] };
+
+  try {
+    const actors = game.actors.contents;
+    for (const actor of actors) {
+      try {
+        const currentRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+        if (Object.keys(currentRules).length === 0) continue;
+
+        results.processed++;
+        let hasUpdates = false;
+        const updatedRules = { ...currentRules };
+        const migratedClasses = [];
+
+        for (const [classId, rules] of Object.entries(currentRules)) {
+          if (rules && rules.customSpellList === null) {
+            log(3, `Migrating null customSpellList to [] for ${actor.name} class ${classId}`);
+            updatedRules[classId] = { ...rules, customSpellList: [] };
+            migratedClasses.push({ classId: classId, oldValue: null, newValue: [] });
+            hasUpdates = true;
+          }
+        }
+
+        if (hasUpdates) {
+          await actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, updatedRules);
+          results.updated++;
+          results.migratedActors.push({ id: actor.id, name: actor.name, migratedClasses: migratedClasses });
+          log(3, `Migrated null customSpellList to [] for ${actor.name} (${migratedClasses.length} classes)`);
+        }
+      } catch (error) {
+        const errorMessage = `Failed to migrate null customSpellList for actor ${actor.name}: ${error.message}`;
+        results.errors.push(errorMessage);
+        log(1, errorMessage, error);
+      }
+    }
+
+    if (results.updated > 0) log(2, `Null customSpellList migration completed: ${results.updated}/${results.processed} actors updated`);
+    else log(3, `No null customSpellList migration needed (${results.processed} actors checked)`);
+  } catch (error) {
+    const errorMessage = `Critical error during null customSpellList migration: ${error.message}`;
+    results.errors.push(errorMessage);
+    log(1, errorMessage, error);
+  }
+
   return results;
 }
 
@@ -831,11 +886,19 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
     if (customSpellListResults.errors.length > 0) console.log('Errors:', customSpellListResults.errors);
     console.groupEnd();
   }
+  if (nullToArrayResults.processed > 0) {
+    console.group('Null CustomSpellList to Array Migration');
+    console.log(`Processed: ${nullToArrayResults.processed} actors`);
+    console.log(`Updated: ${nullToArrayResults.updated} actors`);
+    console.log('Migrated actors:', nullToArrayResults.migratedActors);
+    if (nullToArrayResults.errors.length > 0) console.log('Errors:', nullToArrayResults.errors);
+    console.groupEnd();
+  }
   console.groupEnd();
   log(3, `Migration complete: ${totalProcessed} documents/folders processed`);
   const suppressWarnings = game.settings.get(MODULE.ID, SETTINGS.SUPPRESS_MIGRATION_WARNINGS);
   if (suppressWarnings) return;
-  const content = await buildChatContent(deprecatedResults, folderResults, ownershipResults, packSortingResults, customSpellListResults);
+  const content = await buildChatContent(deprecatedResults, folderResults, ownershipResults, packSortingResults, customSpellListResults, nullToArrayResults);
   ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id, flags: { 'spell-book': { messageType: 'migration-report' } } });
 }
 
@@ -859,6 +922,7 @@ async function buildChatContent(deprecatedResults, folderResults, ownershipResul
     ownershipResults,
     packSortingResults,
     customSpellListResults,
+    nullToArrayResults,
     totalProcessed: deprecatedResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed + customSpellListResults.processed
   });
 }

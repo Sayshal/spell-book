@@ -577,10 +577,8 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
           throw new Error('No data found for selected user');
         }
       }
-      ui.notifications.info(game.i18n.localize('SPELLBOOK.Analytics.ExportSuccess'));
     } catch (error) {
       log(1, 'Error exporting data:', error);
-      ui.notifications.error(game.i18n.localize('SPELLBOOK.Analytics.ExportError'));
     }
   }
 
@@ -652,18 +650,9 @@ export class SpellAnalyticsDashboard extends HandlebarsApplicationMixin(Applicat
           importedCount++;
         }
         SpellUserDataJournal.cache.clear();
-        const message =
-          importedCount > 0
-            ? game.i18n.format('SPELLBOOK.Analytics.ImportSuccessWithCount', {
-                imported: importedCount,
-                skipped: skippedCount
-              })
-            : game.i18n.localize('SPELLBOOK.Analytics.ImportSuccess');
-        ui.notifications.info(message);
         this.render();
       } catch (error) {
         log(1, 'Error importing data:', error);
-        ui.notifications.error(game.i18n.format('SPELLBOOK.Analytics.ImportErrorWithDetail', { error: error.message }));
       }
     };
     input.click();

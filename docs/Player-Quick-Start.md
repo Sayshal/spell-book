@@ -1,41 +1,29 @@
 # Player Quick Start
 
-> **Status:** 🚧 Under Construction - This page is being developed
+## Before Opening SpellBook for the First Time
+>
+> **Important:** For best results, delete all spells that aren't granted by your class, subclass, or an item before opening SpellBook for the first time.
 
-## Overview
+## Essential Player Setup
 
-This page covers player quick start in the Spell Book module for FoundryVTT.
+### How to Prepare Spells
 
-## Table of Contents
+- Reference: [Spell Preparation System](Spell-Preparation-System)
+- Basic preparation mechanics
+- Class-specific preparation rules
 
-- [Overview](#overview)
-- [Getting Started](#getting-started)
-- [Key Features](#key-features)
-- [Step-by-Step Guide](#step-by-step-guide)
-- [Next Steps](#next-steps)
-- [Common Issues](#common-issues)
-- [Related Pages](#related-pages)
+### Reading the Preparation Data in the Footer
 
-## Getting Started
+- Understanding footer information display
+- Preparation counts and limits
+- Reference: [SpellBook Interface Overview](SpellBook-Interface-Overview)
 
-*Documentation coming soon...*
+### Multiclassing
 
-## Key Features
+- Multi-class spellcaster management
+- Reference: [Multiclass Spellcasting](Multiclass-Spellcasting)
 
-*Feature list coming soon...*
+### Wizard Spell Learning
 
-## Step-by-Step Guide
-
-*Detailed instructions coming soon...*
-
-## Next Steps
-
-*what to do after completing this guide coming soon...*
-
-## Common Issues
-
-*Troubleshooting information coming soon...*
-
-## Related Pages
-
-*Links to related documentation coming soon...*
+- Wizard-specific spell learning mechanics
+- Reference: [Wizard Spellbook Management](Wizard-Spellbook-Management)

@@ -722,7 +722,7 @@ export class SpellbookUI {
       item.classList.remove('spell-locked', 'max-prepared');
       if (settings.behavior !== MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) continue;
       const spellUuid = checkbox.dataset.uuid;
-      const spellName = checkbox.dataset.name || 'Unknown Spell';
+      const spellName = checkbox.dataset.name || game.i18n.localize('SPELLBOOK.UI.UnknownSpell');
       const spell = { name: spellName, system: { level: parseInt(spellLevel) || 1 }, sourceClass: spellSourceClass, uuid: spellUuid };
       const canChange = this.app.spellManager.canChangeSpellStatus(spell, isChecked, wasPrepared, isLevelUp, isLongRest, classIdentifier, currentPrepared, maxPrepared);
       if (!canChange.allowed) {

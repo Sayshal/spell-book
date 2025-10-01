@@ -1,41 +1,27 @@
 # Spell Preparation System
 
-> **Status:** 🚧 Under Construction - This page is being developed
+## Core Mechanics
 
-## Overview
+### Preparation Rules
 
-This player guide covers spell preparation system in the Spell Book module for FoundryVTT.
+- Class-specific preparation mechanics
+- Spell slot management
+- Preparation limits and calculations
 
-## Table of Contents
+### Preparation Process
 
-- [Overview](#overview)
-- [Getting Started](#getting-started)
-- [Key Features](#key-features)
-- [Step-by-Step Guide](#step-by-step-guide)
-- [Advanced Usage](#advanced-usage)
-- [Common Issues](#common-issues)
-- [Related Pages](#related-pages)
+- How to prepare spells
+- Changing prepared spells
+- Long rest spell swapping
 
-## Getting Started
+## Advanced Features
 
-*Documentation coming soon...*
+- Multiclass preparation rules
+- Always-prepared spells
+- Granted spell management
 
-## Key Features
+## Rule Enforcement
 
-*Feature list coming soon...*
-
-## Step-by-Step Guide
-
-*Detailed instructions coming soon...*
-
-## Advanced Usage
-
-*Advanced configuration and usage patterns coming soon...*
-
-## Common Issues
-
-*Troubleshooting information coming soon...*
-
-## Related Pages
-
-*Links to related documentation coming soon...*
+- Preparation validation
+- Error handling and notifications
+- GM oversight options

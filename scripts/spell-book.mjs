@@ -29,6 +29,7 @@ import { registerSettings } from './settings.mjs';
 import * as UIHelpers from './ui/_module.mjs';
 import { runAllMigrations } from './migrations.mjs';
 import { createChatMessage } from './ui/_module.mjs';
+import { SocketHandler } from './sockets.mjs';
 
 /**
  * Initialize hook - Module setup and registration phase.
@@ -43,6 +44,8 @@ Hooks.once('init', async function () {
   await preloadTemplates();
   createAPI();
   registerHandlebarsHelpers();
+  const module = game.modules.get(MODULE.ID);
+  module.socketHandler = new SocketHandler();
   log(3, `${MODULE.NAME} initialized!`);
 });
 

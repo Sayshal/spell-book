@@ -78,6 +78,11 @@
     {{> modules/spell-book/templates/components/migration-custom-spell-list-results.hbs customSpellListResults=customSpellListResults}}
   {{/if}}
 
+  <!-- Null to Array Migration Results Component -->
+  {{#if nullToArrayResults.processed}}
+    {{> modules/spell-book/templates/components/migration-null-to-array-results.hbs nullToArrayResults=nullToArrayResults}}
+  {{/if}}
+
   <!-- Migration Apology -->
   <p>{{localize 'SPELLBOOK.Migrations.Apology'}}</p>
 

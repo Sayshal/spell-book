@@ -109,9 +109,8 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
       };
     } catch (error) {
       log(1, `Error preparing troubleshooter context: ${error.message}`);
-      ui.notifications.error('SPELLBOOK.Settings.Troubleshooter.ErrorContext', { localize: true });
       return {
-        output: game.i18n.localize('SPELLBOOK.Settings.Troubleshooter.ErrorReport'),
+        output: 'Error Generation Report',
         includeActors: false,
         ownedActorCount: 0,
         ownedActorNames: ''
@@ -198,7 +197,6 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
       return { filename, exportedCount, includeActors };
     } catch (error) {
       log(1, `Error exporting troubleshooter data: ${error.message}`);
-      ui.notifications.error('SPELLBOOK.Settings.Troubleshooter.ExportError', { localize: true });
       throw error;
     }
   }
@@ -213,20 +211,7 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
   static async _onExportReport(event) {
     try {
       event.preventDefault();
-      const result = await SpellBookTroubleshooter.exportTroubleshooterData();
-      if (result.includeActors && result.exportedCount > 1) {
-        ui.notifications.info(
-          game.i18n.format('SPELLBOOK.Settings.Troubleshooter.ExportSuccessWithActors', {
-            count: result.exportedCount
-          })
-        );
-      } else {
-        ui.notifications.info(
-          game.i18n.format('SPELLBOOK.Settings.Troubleshooter.ExportSuccess', {
-            filename: result.filename
-          })
-        );
-      }
+      await SpellBookTroubleshooter.exportTroubleshooterData();
     } catch (error) {
       log(1, `Error handling export report event: ${error.message}`);
     }
@@ -244,10 +229,8 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
       event.preventDefault();
       const text = SpellBookTroubleshooter.generateTextReport();
       await navigator.clipboard.writeText(text);
-      ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.Troubleshooter.CopySuccess'));
     } catch (error) {
       log(1, `Error copying to clipboard: ${error.message}`);
-      ui.notifications.error('SPELLBOOK.Settings.Troubleshooter.CopyError', { localize: true });
     }
   }
 
@@ -263,7 +246,6 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
       window.open('https://discord.gg/PzzUwU9gdz');
     } catch (error) {
       log(1, `Error opening Discord link: ${error.message}`);
-      ui.notifications.error('SPELLBOOK.Settings.Troubleshooter.LinkError', { localize: true });
     }
   }
 
@@ -279,7 +261,6 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
       window.open('https://github.com/Sayshal/spell-book/issues');
     } catch (error) {
       log(1, `Error opening GitHub link: ${error.message}`);
-      ui.notifications.error('SPELLBOOK.Settings.Troubleshooter.LinkError', { localize: true });
     }
   }
 
@@ -321,10 +302,7 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
         try {
           const fileContent = await file.text();
           const settingsData = SpellBookTroubleshooter._extractSettingsFromTroubleshooter(fileContent);
-          if (!settingsData) {
-            ui.notifications.error('SPELLBOOK.Settings.Troubleshooter.ImportErrorNoData', { localize: true });
-            return;
-          }
+          if (!settingsData) return;
           const confirmed = await foundry.applications.api.DialogV2.confirm({
             window: { title: game.i18n.localize('SPELLBOOK.Settings.Troubleshooter.ImportConfirmTitle') },
             content: `
@@ -342,13 +320,11 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
           if (confirmed) await SpellBookTroubleshooter._importSettings(settingsData);
         } catch (error) {
           log(1, `Error processing import file: ${error.message}`);
-          ui.notifications.error('SPELLBOOK.Settings.Troubleshooter.ImportError', { localize: true });
         }
       };
       input.click();
     } catch (error) {
       log(1, `Error handling import settings event: ${error.message}`);
-      ui.notifications.error('SPELLBOOK.Settings.Troubleshooter.ImportError', { localize: true });
     }
   }
 
@@ -483,15 +459,7 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
           })
         );
       }
-      if (errors.length > 0) {
-        log(1, `Import completed with ${errors.length} errors:`, errors);
-        ui.notifications.warn(
-          game.i18n.format('SPELLBOOK.Settings.Troubleshooter.ImportPartialSuccess', {
-            imported: importedCount,
-            failed: errors.length
-          })
-        );
-      }
+      if (errors.length > 0) log(1, `Import completed with ${errors.length} errors:`, errors);
       if (importedCount > 5) {
         foundry.applications.api.DialogV2.confirm({
           window: { title: game.i18n.localize('SPELLBOOK.Settings.Troubleshooter.ReloadTitle') },
@@ -504,7 +472,6 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
       }
     } catch (error) {
       log(1, `Error during settings import: ${error.message}`);
-      ui.notifications.error('SPELLBOOK.Settings.Troubleshooter.ImportError', { localize: true });
     }
   }
 

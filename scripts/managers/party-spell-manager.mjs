@@ -226,7 +226,7 @@ export class PartySpellManager {
   /**
    * Get party spell comparison data.
    *
-   * Analyzes all party members' spells and generates a comprehensive
+   * Analyzes all party members' spells and generates a
    * comparison matrix showing spell overlap, preparation status, and
    * coordination opportunities.
    *
@@ -379,27 +379,6 @@ export class PartySpellManager {
    */
   getActorSpellcastingFocus(actor) {
     return actor.getFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS) || game.i18n.localize('SPELLBOOK.Party.Focus.None');
-  }
-
-  /**
-   * Set actor's spellcasting focus in individual actor flags.
-   *
-   * Updates the actor's spellcasting focus setting for party coordination.
-   * This updates individual actor flags and is typically called automatically
-   * during focus synchronization from group selections.
-   *
-   * @param {Actor} actor - The actor to update
-   * @param {string} focus - The focus name to set
-   * @returns {Promise<boolean>} Success status of the operation
-   */
-  async setActorSpellcastingFocus(actor, focus) {
-    try {
-      await actor.setFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS, focus);
-      return true;
-    } catch (error) {
-      log(1, `Error setting spellcasting focus for ${actor.name}:`, error);
-      return false;
-    }
   }
 
   /**
@@ -1041,11 +1020,7 @@ export class PartySpellManager {
 
   /**
    * Set user's selected focus for the specified group.
-   *
-   * Updates the spellcasting focus selection for a specific user within
-   * the context of a group actor. Manages the flag data structure to
-   * maintain per-user focus selections and automatically synchronizes
-   * to individual actor flags for backward compatibility.
+   * Now delegates to socket handler for permission management.
    *
    * @param {Actor} groupActor - The group actor to update
    * @param {string} userId - The user ID to set focus for
@@ -1053,15 +1028,19 @@ export class PartySpellManager {
    * @returns {Promise<boolean>} Success status of the operation
    */
   async setUserSelectedFocus(groupActor, userId, focusId) {
-    try {
-      const currentSelections = groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
-      if (focusId) currentSelections[userId] = focusId;
-      else delete currentSelections[userId];
-      await groupActor.setFlag(MODULE.ID, FLAGS.SELECTED_FOCUS, currentSelections);
-      return true;
-    } catch (error) {
-      log(1, `Error setting focus for user ${userId}:`, error);
+    const socketHandler = game.modules.get(MODULE.ID)?.socketHandler;
+
+    if (!socketHandler) {
+      log(1, 'Socket handler not initialized');
       return false;
     }
+
+    const result = await socketHandler.setUserSelectedFocus(groupActor, userId, focusId);
+
+    if (!result.success) {
+      log(1, `Error setting focus for user ${userId}:`, result.error);
+    }
+
+    return result.success;
   }
 }

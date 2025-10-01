@@ -218,10 +218,7 @@ export class ScrollScanner {
     const success = await wizardManager.copySpell(spellUuid, cost, time, isFree);
     if (success) {
       const shouldConsume = game.settings.get(MODULE.ID, SETTINGS.CONSUME_SCROLLS_WHEN_LEARNING);
-      if (shouldConsume) {
-        await actor.deleteEmbeddedDocuments('Item', [scrollItem.id]);
-        ui.notifications.info(game.i18n.format('SPELLBOOK.Scrolls.ScrollConsumed', { scroll: scrollItem.name, spell: spell.name }));
-      }
+      if (shouldConsume) await actor.deleteEmbeddedDocuments('Item', [scrollItem.id]);
       ui.notifications.info(game.i18n.format('SPELLBOOK.Wizard.SpellLearned', { name: spell.name }));
     }
     return success;

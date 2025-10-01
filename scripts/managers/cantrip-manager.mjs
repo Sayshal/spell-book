@@ -532,7 +532,7 @@ export class CantripManager {
    * @param {NotificationData} notificationData - Combined notification data
    * @returns {Promise<void>}
    */
-  async sendComprehensiveGMNotification(notificationData) {
+  async sendNotification(notificationData) {
     const { actorName, classChanges } = notificationData;
     const processedClassChanges = Object.entries(classChanges)
       .map(([key, data]) => {

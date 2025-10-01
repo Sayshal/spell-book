@@ -180,35 +180,10 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   _onRender(context, options) {
     super._onRender(context, options);
-
     const focusSelects = this.element.querySelectorAll('select[data-actor-id]');
-    focusSelects.forEach((select) => {
-      select.addEventListener('change', async (event) => {
-        const actorId = event.target.dataset.actorId;
-        const focus = event.target.value;
-        if (!actorId || !focus) return;
-        const actor = game.actors.get(actorId);
-        if (!actor) return;
-        if (!game.user.isGM && !actor.isOwner) {
-          ui.notifications.warn('SPELLBOOK.Party.NoPermissionToSetFocus', { localize: true });
-          return;
-        }
-        const success = await this.partyManager.setActorSpellcastingFocus(actor, focus);
-        if (success) {
-          ui.notifications.clear();
-          ui.notifications.info('SPELLBOOK.Party.FocusUpdated', { localize: true });
-          this._comparisonData = null;
-        } else {
-          ui.notifications.clear();
-          ui.notifications.error('SPELLBOOK.Party.FocusUpdateError', { localize: true });
-        }
-      });
-    });
-
     this._setupPartyMemberHover();
     this._setupMemberCardContextMenu();
     this._restoreCollapsedLevels();
-
     this._globalClickHandler = (event) => {
       if (!this._filteredActorId) return;
       if (this.element && this.element.contains(event.target)) {
@@ -272,11 +247,7 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
    * @static
    */
   static async showSynergyAnalysis(_event, _target) {
-    if (!this._comparisonData?.synergy) {
-      ui.notifications.warn('SPELLBOOK.Party.NoSynergyData', { localize: true });
-      return;
-    }
-
+    if (!this._comparisonData?.synergy) return;
     const analysisDialog = new SynergyAnalysisDialog(this._comparisonData.synergy);
     analysisDialog.render(true);
   }
@@ -296,7 +267,6 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
     this._comparisonData = null;
     this.partyManager._spellDataCache.clear();
     await this.render();
-    ui.notifications.info('SPELLBOOK.Party.DataRefreshed', { localize: true });
   }
 
   /**
@@ -367,10 +337,7 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
       return;
     }
     if (actor) {
-      if (!actor.isOwner) {
-        ui.notifications.warn(game.i18n.localize('SPELLBOOK.FocusSettings.NoEditPermission'));
-        return;
-      }
+      if (!actor.isOwner) return;
       new FocusSettingsDialog(this.groupActor, actor, this).render(true);
     } else new FocusSettingsDialog(this.groupActor, null, this).render(true);
   }
@@ -466,7 +433,6 @@ export class PartySpells extends HandlebarsApplicationMixin(ApplicationV2) {
         if (action === 'open-actor' && actorId) {
           const targetActor = game.actors.get(actorId);
           if (targetActor && targetActor.testUserPermission(game.user, 'LIMITED')) await targetActor.sheet.render(true);
-          else ui.notifications.warn(game.i18n.localize('SPELLBOOK.Party.NoPermissionToOpenActor'));
         }
         this._hideMemberCardContextMenu();
       });

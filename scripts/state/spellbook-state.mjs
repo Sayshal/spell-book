@@ -586,7 +586,7 @@ export class SpellbookState {
       const spellDeduplicationMap = new Map();
       for (const spell of actorSpells) {
         if (spell?.system?.level === undefined) continue;
-        const spellKey = spell.flags?.core?.sourceId || spell.uuid;
+        const spellKey = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
         const sourceClass = spell.system?.sourceClass || spell.sourceClass || classIdentifier;
         const fullKey = `${sourceClass}:${spellKey}`;
         if (!spellDeduplicationMap.has(fullKey)) {
@@ -615,7 +615,7 @@ export class SpellbookState {
     for (const spell of preparableSpells) {
       const level = spell.system.level;
       const spellName = spell.name.toLowerCase();
-      const spellKey = spell.flags?.core?.sourceId || spell.uuid;
+      const spellKey = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
       if (!processedPreparableSpells.has(spellKey)) {
         if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
         const compendiumUuid = spell.flags?.core?.sourceId || spell.uuid;
@@ -1476,7 +1476,7 @@ export class SpellbookState {
         }
       };
     }
-    await this.app.spellManager.cantripManager.sendComprehensiveGMNotification(notificationData);
+    await this.app.spellManager.cantripManager.sendNotification(notificationData);
   }
 
   /**

@@ -179,13 +179,11 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
       }
       const success = await this.loadoutManager.saveLoadout(name, description, spellConfiguration, this.classIdentifier);
       if (success) {
-        ui.notifications.info(game.i18n.format('SPELLBOOK.Loadouts.Saved', { name }));
         form.reset();
         await this.render({ force: true });
       }
     } catch (error) {
       log(1, 'Error saving loadout:', error);
-      ui.notifications.error(game.i18n.localize('SPELLBOOK.Loadouts.SaveFailed'));
     }
   }
 
@@ -212,7 +210,6 @@ export class SpellLoadoutDialog extends HandlebarsApplicationMixin(ApplicationV2
       const updatedLoadout = { ...existingLoadout, spellConfiguration, updatedAt: Date.now() };
       await this.loadoutManager.actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.${loadoutId}`]: updatedLoadout });
       this.loadoutManager._invalidateCache();
-      ui.notifications.info(game.i18n.format('SPELLBOOK.Loadouts.Overwritten', { name: loadoutName }));
       await this.render(false);
     } catch (error) {
       log(1, 'Error overwriting loadout:', error);

@@ -1674,7 +1674,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     try {
       const mergedList = await DataHelpers.createMergedSpellList(sourceListUuid, copyFromListUuid, mergedListName);
       if (mergedList) {
-        ui.notifications.info(game.i18n.format('SPELLMANAGER.MergeLists.SuccessMessage', { name: mergedListName }));
         if (hideSourceLists) {
           const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
           const sourceList = this.availableSpellLists.find((l) => l.uuid === sourceListUuid);
@@ -1682,17 +1681,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
           const listsToHide = [];
           if (sourceList && !sourceList.isActorOwned && !hiddenLists.includes(sourceListUuid)) listsToHide.push(sourceListUuid);
           if (copyFromList && !copyFromList.isActorOwned && !hiddenLists.includes(copyFromListUuid)) listsToHide.push(copyFromListUuid);
-          if (listsToHide.length > 0) {
-            await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, [...hiddenLists, ...listsToHide]);
-            ui.notifications.info(game.i18n.format('SPELLMANAGER.MergeLists.SourceListsHidden', { count: listsToHide.length }));
-          }
+          if (listsToHide.length > 0) await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, [...hiddenLists, ...listsToHide]);
         }
         await this.loadData();
         await this.selectSpellList(mergedList.uuid);
       }
     } catch (error) {
       log(1, 'Error creating merged spell list:', error);
-      ui.notifications.error(game.i18n.localize('SPELLMANAGER.MergeLists.ErrorMessage'));
     }
   }
 
@@ -2054,7 +2049,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       if (result === 'rename' && formData?.newName && formData.newName !== currentName) await this._performRename(listUuid, formData.newName);
     } catch (error) {
       log(1, 'Error in rename dialog:', error);
-      ui.notifications.error(game.i18n.localize('SPELLMANAGER.Rename.ErrorMessage'));
     }
   }
 
@@ -2182,10 +2176,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       this.selectedSpellList.name = newName;
       await this.loadData();
       await this.selectSpellList(listUuid);
-      ui.notifications.info(game.i18n.format('SPELLMANAGER.Rename.SuccessMessage', { name: newName }));
     } catch (error) {
       log(1, 'Error renaming spell list:', error);
-      ui.notifications.error(game.i18n.localize('SPELLMANAGER.Rename.ErrorMessage'));
     }
   }
 
@@ -2198,10 +2190,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @static
    */
   static async handleMergeLists(_event, _form) {
-    if (this.availableSpellLists.length < 2) {
-      ui.notifications.warn(game.i18n.localize('SPELLMANAGER.MergeLists.InsufficientLists'));
-      return;
-    }
+    if (this.availableSpellLists.length < 2) return;
     const { result, formData } = await this._showMergeListsDialog();
     if (result === 'merge' && formData) await this._mergeListsCallback(formData.sourceListUuid, formData.copyFromListUuid, formData.mergedListName, formData.hideSourceLists);
   }
@@ -2376,19 +2365,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       if (isCurrentlyHidden) {
         const newHiddenLists = hiddenLists.filter((id) => id !== uuid);
         await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, newHiddenLists);
-        ui.notifications.clear();
-        ui.notifications.info(game.i18n.format('SPELLMANAGER.HideList.Unhidden', { name: list.name }));
       } else {
         const newHiddenLists = [...hiddenLists, uuid];
         await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, newHiddenLists);
-        ui.notifications.clear();
-        ui.notifications.info(game.i18n.format('SPELLMANAGER.HideList.Hidden', { name: list.name }));
       }
       this.render(false);
     } catch (error) {
       log(1, 'Error toggling list visibility:', error);
-      ui.notifications.clear();
-      ui.notifications.error(game.i18n.localize('SPELLMANAGER.HideList.ToggleError'));
     }
   }
 

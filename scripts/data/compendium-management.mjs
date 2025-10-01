@@ -749,7 +749,8 @@ export async function getOrCreateModifiedFolder() {
  */
 export function shouldIndexCompendium(pack) {
   const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
-  if (settings && pack.collection in settings) return settings[pack.collection] === true;
+  if (!settings || typeof settings !== 'object' || Object.keys(settings).length === 0) return true;
+  if (pack.collection in settings) return settings[pack.collection] === true;
   return false;
 }
 

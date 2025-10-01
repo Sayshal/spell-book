@@ -199,10 +199,8 @@ export class SpellNotesDialog extends HandlebarsApplicationMixin(ApplicationV2) 
         icon.setAttribute('aria-label', newTooltip);
       });
       await UIHelpers.SpellDescriptionInjection.handleNotesChange(canonicalUuid);
-      ui.notifications.info(game.i18n.localize('SPELLBOOK.UI.NotesUpdated'));
     } catch (error) {
       log(1, 'Error saving spell notes:', error);
-      ui.notifications.error(game.i18n.localize('SPELLBOOK.UI.NotesUpdateFailed'));
     }
   }
 }

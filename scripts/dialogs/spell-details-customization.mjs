@@ -536,10 +536,8 @@ export class SpellDetailsCustomization extends HandlebarsApplicationMixin(Applic
       for (const app of spellbookApps) app.render(false);
       const gmSpellListApps = openApplications.filter((app) => app.constructor.name === 'SpellListManager');
       for (const app of gmSpellListApps) app.render(false);
-      ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.Saved'));
     } catch (error) {
       log(1, 'Error saving spell customization settings:', error);
-      ui.notifications.error(game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.ErrorSaving'));
     }
   }
 }
