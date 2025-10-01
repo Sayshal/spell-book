@@ -230,7 +230,7 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
     const currentSettings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
     const compendiums = await this._getAvailableCompendiums();
     const enabledCompendiums = new Set();
-    for (const pack of game.packs) if (currentSettings[pack.collection] !== false) enabledCompendiums.add(pack.collection);
+    for (const [packId, isEnabled] of Object.entries(currentSettings)) if (isEnabled === true) enabledCompendiums.add(packId);
     context.categories = this._prepareCategories(compendiums.categorizedPacks, enabledCompendiums);
     const summaryData = this._calculateSummaryData(context.categories);
     context.globalSelectAllCheckboxHtml = this._createGlobalSelectAllCheckbox(summaryData.allSelected);

@@ -80,6 +80,9 @@ import * as DataHelpers from './_module.mjs';
  * @returns {Promise<void>}
  */
 export async function preloadSpellData() {
+  const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
+  const isEmptySettings = !settings || typeof settings !== 'object' || Object.keys(settings).length === 0;
+  if (isEmptySettings && game.user.isGM) ui.notifications.warn(game.i18n.localize('SPELLBOOK.Settings.NoCompendiumsConfigured'));
   const isGM = game.user.isGM;
   if (isGM) {
     const setupMode = game.settings.get(MODULE.ID, SETTINGS.SETUP_MODE);
