@@ -125,13 +125,8 @@ export async function runAllMigrations() {
       3,
       `Migration results: deprecated=${deprecatedFlagResults.processed}, folders=${folderResults.processed}, ownership=${ownershipResults.processed}, sorting=${packSortingResults.processed}, customSpellList=${customSpellListResults.processed}, nullToArray=${nullToArrayResults.processed}`
     );
-    if (totalProcessed > 0) {
-      ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.StartNotification'));
-      await logMigrationResults(deprecatedFlagResults, folderResults, ownershipResults, packSortingResults, customSpellListResults, nullToArrayResults);
-      ui.notifications.info(game.i18n.localize('SPELLBOOK.Migrations.CompleteNotification'));
-    } else {
-      log(3, 'No migrations needed');
-    }
+    if (totalProcessed > 0) await logMigrationResults(deprecatedFlagResults, folderResults, ownershipResults, packSortingResults, customSpellListResults, nullToArrayResults);
+    else log(3, 'No migrations needed');
   } catch (error) {
     log(1, 'Error during migrations:', error);
   }

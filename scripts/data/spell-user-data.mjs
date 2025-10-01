@@ -257,7 +257,7 @@ export class SpellUserDataJournal {
         if (actorData?.favorited) {
           try {
             const spell = fromUuidSync(uuid);
-            const spellName = spell?.name || 'Unknown Spell';
+            const spellName = spell?.name || game.i18n.localize('SPELLBOOK.UI.UnknownSpell');
             favoriteSpells.push({ uuid, name: spellName });
           } catch (error) {
             log(2, `Could not resolve spell UUID ${uuid} for favorites table`, error);
@@ -266,7 +266,7 @@ export class SpellUserDataJournal {
         if (actorData?.usageStats && actorData.usageStats.count > 0) {
           try {
             const spell = fromUuidSync(uuid);
-            const spellName = spell?.name || 'Unknown Spell';
+            const spellName = spell?.name || game.i18n.localize('SPELLBOOK.UI.UnknownSpell');
             const stats = actorData.usageStats;
             const lastUsedDate = stats.lastUsed ? new Date(stats.lastUsed).toLocaleDateString() : '-';
             usageSpells.push({ uuid, name: spellName, stats, lastUsedDate });
@@ -283,7 +283,7 @@ export class SpellUserDataJournal {
       if (data.notes && data.notes.trim()) {
         try {
           const spell = fromUuidSync(uuid);
-          const spellName = spell?.name || 'Unknown Spell';
+          const spellName = spell?.name || game.i18n.localize('SPELLBOOK.UI.UnknownSpell');
           notesSpells.push({ uuid, name: spellName, notes: data.notes });
         } catch (error) {
           log(2, `Could not resolve spell UUID ${uuid} for notes table`, error);

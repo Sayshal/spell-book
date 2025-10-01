@@ -268,10 +268,7 @@ function openPartySpellManager(event, groupActor, data) {
   event.preventDefault();
   const creatures = data.actor.system?.creatures || [];
   const partyActors = creatures.filter((memberActor) => memberActor && Object.keys(memberActor?.spellcastingClasses || {}).length > 0);
-  if (partyActors.length === 0) {
-    ui.notifications.warn('SPELLBOOK.Party.NoSpellcasters', { localize: true });
-    return;
-  }
+  if (partyActors.length === 0) return;
   const manager = new PartySpells(partyActors, null, groupActor);
   manager.render(true);
 }
@@ -465,7 +462,6 @@ function createJournalAnalyticsButton() {
       analyticsButton.style.opacity = newSetting ? '1' : '0.6';
       analyticsButton.title = newSetting ? game.i18n.localize('SPELLBOOK.Analytics.TrackingEnabled') : game.i18n.localize('SPELLBOOK.Analytics.TrackingDisabled');
     } catch (error) {
-      ui.notifications.error(game.i18n.localize('SPELLBOOK.Analytics.TrackingToggleError'));
       log(1, 'Error:', error);
     }
   });

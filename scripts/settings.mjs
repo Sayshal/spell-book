@@ -102,10 +102,7 @@ export function registerSettings() {
     scope: 'world',
     config: true,
     type: Boolean,
-    default: true,
-    onChange: (value) => {
-      ui.notifications.info(value ? game.i18n.localize('SPELLBOOK.Settings.SpellUsageTrackingEnabled') : game.i18n.localize('SPELLBOOK.Settings.SpellUsageTrackingDisabled'));
-    }
+    default: true
   });
 
   /** Custom spell list mappings for class-specific spell lists */
@@ -147,11 +144,7 @@ export function registerSettings() {
       scope: 'world',
       config: true,
       type: Boolean,
-      default: false,
-      onChange: (value) => {
-        const status = value ? 'enabled' : 'disabled';
-        ui.notifications.info(game.i18n.format('SPELLBOOK.Settings.CPRCompatibility.Changed', { status }));
-      }
+      default: false
     });
   }
 
@@ -238,17 +231,14 @@ export function registerSettings() {
         if (value.length !== 1) {
           log(2, 'Advanced search prefix must be exactly 1 character, resetting to default');
           game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
-          ui.notifications.warn('Advanced search prefix must be exactly 1 character');
           return;
         }
         if (/[\dA-Za-z]/.test(value)) {
           log(2, 'Advanced search prefix cannot be a letter or number, resetting to default');
           game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
-          ui.notifications.warn('Advanced search prefix cannot be a letter or number');
           return;
         }
         log(3, `Advanced search prefix changed to "${value}"`);
-        ui.notifications.info(`Advanced search prefix updated to "${value}"`);
       } catch (error) {
         log(1, 'Error validating advanced search prefix:', error);
         game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
@@ -271,10 +261,7 @@ export function registerSettings() {
       [MODULE.RULE_SETS.LEGACY]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Legacy',
       [MODULE.RULE_SETS.MODERN]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Modern'
     },
-    default: MODULE.RULE_SETS.LEGACY,
-    onChange: () => {
-      ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.RuleSetChanged'));
-    }
+    default: MODULE.RULE_SETS.LEGACY
   });
 
   /** Default enforcement behavior for spell preparation rules */

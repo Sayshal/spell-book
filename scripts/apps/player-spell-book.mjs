@@ -2132,8 +2132,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             }
           });
         }, 50);
-      } else {
-        ui.notifications.warn(game.i18n.format('SPELLBOOK.Wizard.LearnFailed', { name: spell.name }));
       }
     }
   }
@@ -2321,10 +2319,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static async openPartyManager(_event, _target) {
     const partyActors = PartySpellManager.getPartyActors();
-    if (partyActors.length === 0) {
-      ui.notifications.warn('SPELLBOOK.Party.NoSpellcasters', { localize: true });
-      return;
-    }
+    if (partyActors.length === 0) return;
     const manager = new PartySpells(partyActors, this.actor, this.group);
     manager.render(true);
   }
@@ -2341,7 +2336,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     log(1, 'CURRENT MODE:', { currentMode });
     await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, !currentMode);
     await this.render();
-    ui.notifications.info(!currentMode ? 'SPELLBOOK.Party.PartyModeEnabled' : 'SPELLBOOK.Party.PartyModeDisabled', { localize: true });
   }
 
   /**
@@ -2400,10 +2394,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static async _handleSave(_event, _target) {
     const actor = this.actor;
-    if (!actor) {
-      ui.notifications.error('SPELLBOOK.Errors.NoActor', { localize: true });
-      return;
-    }
+    if (!actor) return;
     log(3, 'Starting spell book save process');
     const form = this.element.querySelector('form') || this.element;
     const existingPreparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};

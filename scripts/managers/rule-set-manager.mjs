@@ -467,7 +467,7 @@ export class RuleSetManager {
           if (spell) affectedSpells.push({ name: spell.name, uuid: spellUuid, level: spell.system.level, classSpellKey: classSpellKey });
         } catch (error) {
           log(2, `Error loading spell ${spellUuid} for cleanup check:`, error);
-          affectedSpells.push({ name: 'Unknown Spell', uuid: spellUuid, level: 0, classSpellKey: classSpellKey });
+          affectedSpells.push({ name: game.i18n.localize('SPELLBOOK.UI.UnknownSpell'), uuid: spellUuid, level: 0, classSpellKey: classSpellKey });
         }
       }
     }
@@ -560,12 +560,6 @@ export class RuleSetManager {
     if (spellIdsToRemove.length > 0) await actor.deleteEmbeddedDocuments('Item', spellIdsToRemove);
     const cantripCount = affectedSpells.filter((s) => s.level === 0).length;
     const spellCount = affectedSpells.filter((s) => s.level > 0).length;
-    let message = game.i18n.format('SPELLBOOK.SpellListChange.Completed', { total: affectedSpells.length });
-    if (cantripCount > 0 && spellCount > 0)
-      message += ` (${cantripCount} ${game.i18n.localize('SPELLBOOK.SpellListChange.Cantrips')}, ${spellCount} ${game.i18n.localize('SPELLBOOK.SpellListChange.Spells')})`;
-    else if (cantripCount > 0) message += ` (${cantripCount} ${game.i18n.localize('SPELLBOOK.SpellListChange.Cantrips')})`;
-    else if (spellCount > 0) message += ` (${spellCount} ${game.i18n.localize('SPELLBOOK.SpellListChange.Spells')})`;
-    ui.notifications.info(message);
     log(3, `Unprepared ${affectedSpells.length} spells for ${classIdentifier} due to spell list change`);
   }
 }

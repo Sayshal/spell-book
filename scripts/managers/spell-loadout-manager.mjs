@@ -172,11 +172,9 @@ export class SpellLoadoutManager {
       if (!this.spellbook) throw new Error('No Spell Book reference available');
       this._applySpellConfiguration(loadout.spellConfiguration, classIdentifier);
       log(3, `Applied loadout: ${loadout.name} to class ${classIdentifier}`);
-      ui.notifications.info(game.i18n.format('SPELLBOOK.Loadouts.Applied', { name: loadout.name }));
       return true;
     } catch (error) {
       log(1, 'Error applying loadout:', error);
-      ui.notifications.error(game.i18n.localize('SPELLBOOK.Loadouts.ApplyFailed'));
       return false;
     }
   }
@@ -199,7 +197,6 @@ export class SpellLoadoutManager {
       await this.actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.-=${loadoutId}`]: null });
       this._invalidateCache();
       log(3, `Deleted loadout: ${loadoutName}`);
-      ui.notifications.info(game.i18n.format('SPELLBOOK.Loadouts.Deleted', { name: loadoutName }));
       return true;
     } catch (error) {
       log(1, 'Error deleting loadout:', error);

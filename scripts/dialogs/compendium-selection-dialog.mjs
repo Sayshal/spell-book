@@ -555,7 +555,6 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
     const settingsChanged = JSON.stringify(originalSettings) !== JSON.stringify(enabledCompendiums);
     await game.settings.set(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS, enabledCompendiums);
     const actualPackCount = Object.values(enabledCompendiums).filter((enabled) => enabled === true).length;
-    ui.notifications.info(game.i18n.format('SPELLBOOK.Settings.CompendiumSelectionUpdated', { count: actualPackCount }));
     if (settingsChanged) {
       const reload = await DialogV2.confirm({
         id: 'reload-world-confirm',
