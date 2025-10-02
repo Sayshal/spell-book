@@ -119,6 +119,7 @@ export async function runAllMigrations() {
     const packSortingResults = await migratePackSorting();
     const customSpellListResults = await migrateCustomSpellListFormat();
     const nullToArrayResults = await migrateCustomSpellListNullToArray();
+    await migrateActorSpellbookTypes();
     const totalProcessed =
       deprecatedFlagResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed + customSpellListResults.processed + nullToArrayResults.processed;
     log(
@@ -325,6 +326,37 @@ export async function migrateCustomSpellListNullToArray() {
   }
 
   return results;
+}
+
+/**
+ * Migrate actor spellbooks to have type 'other'.
+ * Ensures all actor-owned spellbooks have the correct type for registry.
+ *
+ * @returns {Promise<void>}
+ */
+async function migrateActorSpellbookTypes() {
+  const customPack = game.packs.get(MODULE.PACK.SPELLS);
+  if (!customPack) return;
+
+  const journals = await customPack.getDocuments();
+
+  for (const journal of journals) {
+    for (const page of journal.pages) {
+      if (page.type !== 'spells') continue;
+
+      const flags = page.flags?.[MODULE.ID] || {};
+
+      // If it's an actor spellbook and type isn't 'other', fix it
+      if (flags.isActorSpellbook && page.system?.type !== 'actor-spellbook') {
+        try {
+          await page.update({ 'system.type': 'actor-spellbook' });
+          log(3, `Set ${page.name} to type 'actor-spellbook'`);
+        } catch (error) {
+          log(2, `Failed to update ${page.name}:`, error);
+        }
+      }
+    }
+  }
 }
 
 /**

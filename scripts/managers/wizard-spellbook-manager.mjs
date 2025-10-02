@@ -386,6 +386,8 @@ export class WizardSpellbookManager {
     const ownerUserIds = Object.keys(actorOwnership).filter((userId) => userId !== 'default' && actorOwnership[userId] === 3);
     const correctOwnership = { default: 0, [game.user.id]: 3 };
     for (const ownerUserId of ownerUserIds) correctOwnership[ownerUserId] = 3;
+    const cleanActorName = this.actor.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const identifier = `${cleanActorName}-${this.classIdentifier}-spellbook`;
     const journalData = {
       name: journalName,
       folder: folder ? folder.id : null,
@@ -398,7 +400,8 @@ export class WizardSpellbookManager {
           ownership: correctOwnership,
           flags: { [MODULE.ID]: { isActorSpellbook: true, actorId: this.actor.id, classIdentifier: this.classIdentifier } },
           system: {
-            identifier: `${this.actor.id}-${this.classIdentifier}-${MODULE.ID}`,
+            identifier: identifier,
+            type: 'actor-spellbook',
             description: game.i18n.format('SPELLBOOK.Journal.SpellbookDescription', { name: journalName }),
             spells: new Set()
           }

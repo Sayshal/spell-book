@@ -161,7 +161,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       toggleListVisibility: SpellListManager.handleToggleListVisibility,
       openAnalyticsDashboard: SpellListManager.handleOpenAnalyticsDashboard,
       openCustomization: SpellListManager.handleOpenCustomization,
-      compareSpell: SpellListManager.handleCompareSpell
+      compareSpell: SpellListManager.handleCompareSpell,
+      toggleRegistry: SpellListManager.handleToggleRegistry
     },
     classes: ['gm-spell-list-manager'],
     window: { icon: 'fas fa-bars-progress', resizable: true, minimizable: true },
@@ -294,6 +295,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       const flags = this.selectedSpellList.document.flags?.[MODULE.ID] || {};
       const isCustomList = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList;
       context.selectedSpellList.isRenameable = isCustomList || this.selectedSpellList.isMerged;
+      context.selectedSpellList.isRegistryEnabled = DataHelpers.isListEnabledForRegistry(this.selectedSpellList.uuid);
+      context.selectedSpellList.isActorOwned = !!flags.actorId;
     }
     if (context.selectedSpellList?.spellsByLevel) {
       if (this.isEditing && this.selectionMode) {
@@ -2426,6 +2429,30 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     } else if (this.comparisonDialog && this.comparisonSpells.size < 2) {
       this.comparisonDialog.close();
       this.comparisonDialog = null;
+    }
+  }
+
+  /**
+   * Handle toggling registry integration for a spell list.
+   *
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} _form - The form element
+   * @returns {Promise<void>}
+   * @static
+   */
+  static async handleToggleRegistry(event, _form) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!this.selectedSpellList) return;
+    const uuid = this.selectedSpellList.uuid;
+    const checkbox = event.target.closest('input[type="checkbox"]');
+    try {
+      const newState = await DataHelpers.toggleListForRegistry(uuid);
+      checkbox.checked = newState;
+    } catch (error) {
+      log(1, 'Error toggling registry:', error);
+      ui.notifications.error(game.i18n.localize('SPELLBOOK.Registry.ToggleError'));
+      checkbox.checked = !checkbox.checked; // Revert on error
     }
   }
 

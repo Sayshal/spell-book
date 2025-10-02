@@ -63,6 +63,16 @@
 
 			<!-- Header Action Buttons - Context-sensitive list management controls -->
 			<div class="header-buttons" role="toolbar" aria-label="{{localize 'SPELLMANAGER.UI.ListActions'}}">
+
+				<!-- Registry Integration Toggle @todo: Add actual checkbox from our helper instead of this. -->
+				<div class="registry-toggle" data-tooltip="{{localize 'SPELLBOOK.Registry.ToggleTooltip'}}">
+					<label class="checkbox-label">
+						<input type="checkbox" name="registry-enabled" {{#if selectedSpellList.isRegistryEnabled}}checked{{/if}}
+							data-action="toggleRegistry" />
+						<span>{{localize 'SPELLBOOK.Registry.EnableLabel'}}</span>
+					</label>
+				</div>
+
 				{{#unless isEditing}}
 					<!-- View Mode Actions -->
 

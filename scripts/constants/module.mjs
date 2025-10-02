@@ -530,6 +530,8 @@ export const SETTINGS = {
   /** @type {string} Show spell level in player spell details */
   PLAYER_UI_SPELL_LEVEL: 'playerUISpellLevel',
 
+  REGISTRY_ENABLED_LISTS: 'registryEnabledLists',
+
   /** @type {string} Enable setup mode for initial configuration */
   SETUP_MODE: 'setupMode',
 

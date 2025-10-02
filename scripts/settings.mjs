@@ -26,6 +26,7 @@ import { MODULE, SETTINGS } from './constants/_module.mjs';
 import { CompendiumSelectionDialog, SpellDetailsCustomization } from './dialogs/_module.mjs';
 import { log } from './logger.mjs';
 import * as UIHelpers from './ui/_module.mjs';
+import * as DataHelpers from './data/_module.mjs';
 
 /**
  * Register all module settings with Foundry VTT.
@@ -307,6 +308,23 @@ export function registerSettings() {
     config: true,
     type: String,
     default: 'cantrips-known, cantrips'
+  });
+
+  /** Registry-enabled spell lists for D&D 5e SpellListRegistry integration */
+  game.settings.register(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS, {
+    name: game.i18n.localize('SPELLBOOK.Settings.RegistryEnabledLists.Name'),
+    hint: game.i18n.localize('SPELLBOOK.Settings.RegistryEnabledLists.Hint'),
+    scope: 'world',
+    config: false,
+    type: Array,
+    default: [],
+    onChange: async (value) => {
+      log(3, `Registry enabled lists updated: ${value.length} lists`);
+      DataHelpers.clearCustomSpellListCache();
+      if (game.user.isGM) {
+        await DataHelpers.registerCustomSpellLists();
+      }
+    }
   });
 
   // ========================================//
