@@ -3,10 +3,10 @@
  * Spellbook Settings Dialog Template
  *
  * PURPOSE:
- * settings dialog for configuring spell book behavior including
- * global rule overrides, per-class spell management settings, and spellcasting
- * rules customization. Provides detailed configuration interface for all
- * spell book module behaviors with validation and status indicators.
+ * Configuration dialog for spell book behavior including global rule overrides,
+ * per-class spell management settings, and spellcasting rules customization.
+ * Provides detailed configuration interface for all spell book module behaviors
+ * with validation and status indicators.
  *
  * CONTEXT REQUIREMENTS:
  * @param {boolean} hasNotices - Whether any validation notices should be displayed
@@ -14,11 +14,14 @@
  * @param {string} spellcastingClasses[].identifier - Unique class identifier
  * @param {string} spellcastingClasses[].name - Class display name
  * @param {string} spellcastingClasses[].img - Class icon image path (optional)
+ * @param {boolean} spellcastingClasses[].isWizard - Whether class is wizard-enabled
  * @param {Object} spellcastingClasses[].rules - Class rule configuration
  * @param {boolean} spellcastingClasses[].rules._noScaleValue - Whether class lacks scale values
  * @param {boolean} spellcastingClasses[].rules.showCantrips - Whether to show cantrips
  * @param {number} spellcastingClasses[].rules.spellPreparationBonus - Spell prep bonus
  * @param {number} spellcastingClasses[].rules.cantripPreparationBonus - Cantrip prep bonus
+ * @param {number} spellcastingClasses[].rules.spellLearningCostMultiplier - Gold per spell level
+ * @param {number} spellcastingClasses[].rules.spellLearningTimeMultiplier - Hours per spell level
  * @param {boolean} spellcastingClasses[].hasCustomSpellList - Whether using custom spell list
  * @param {string} spellcastingClasses[].customSpellListName - Custom list name
  * @param {Object} spellcastingClasses[].stats - Current class statistics
@@ -46,12 +49,14 @@
  * - Custom spell list integration with visual indicators
  * - Bonus display with clear positive/negative/zero formatting
  * - Conditional field enabling based on related settings
+ * - Wizard-specific spell learning cost and time configuration
  *
  * INTEGRATION:
- * - Used for spell book configuration
+ * - Used for spell book configuration dialog
  * - Connects to spell validation and rule enforcement systems
  * - Uses module localization keys from SPELLBOOK.Settings namespace
  * - Supports D&D 5e spellcasting rule customization
+ * - Integrates wizard spell learning mechanics configuration
  */
 --}}
 
@@ -221,6 +226,26 @@
                   for="cantrip-preparation-bonus-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.CantripPreparationBonus.Label'}}</label>
                 {{{classData.formElements.cantripPreparationBonusControlsHtml}}}
               </div>
+
+              <!-- Spell Learning Cost Multiplier (Wizard-enabled classes only) -->
+              {{#if classData.isWizard}}
+                <div class="setting-row">
+                  <i class="fas fa-question-circle setting-tooltip"
+                    data-tooltip="{{localize 'SPELLBOOK.Settings.SpellLearningCostMultiplier.Hint'}}"></i>
+                  <label
+                    for="spell-learning-cost-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.SpellLearningCostMultiplier.Label'}}</label>
+                  {{{classData.formElements.spellLearningCostControlsHtml}}}
+                </div>
+
+                <!-- Spell Learning Time Multiplier (Wizard-enabled classes only) -->
+                <div class="setting-row">
+                  <i class="fas fa-question-circle setting-tooltip"
+                    data-tooltip="{{localize 'SPELLBOOK.Settings.SpellLearningTimeMultiplier.Hint'}}"></i>
+                  <label
+                    for="spell-learning-time-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.SpellLearningTimeMultiplier.Label'}}</label>
+                  {{{classData.formElements.spellLearningTimeControlsHtml}}}
+                </div>
+              {{/if}}
             </div>
           </div>
         {{/each}}

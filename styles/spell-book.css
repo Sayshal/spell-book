@@ -5413,7 +5413,7 @@
         }
       }
 
-      .preparation-bonus-controls {
+      .counter-group {
         flex: 0 0 auto;
         min-width: fit-content;
       }
@@ -5491,14 +5491,13 @@
       flex-direction: column;
     }
 
-    .preparation-bonus-controls {
+    .counter-group {
       gap: 0.5rem;
       display: flex;
       align-items: center;
       min-width: 8.75rem;
 
-      .prep-bonus-decrease,
-      .prep-bonus-increase {
+      button {
         display: flex;
         justify-content: center;
         align-items: center;
@@ -5524,7 +5523,7 @@
         }
       }
 
-      .prep-bonus-input {
+      input[type='number'] {
         width: 3.75rem;
         min-width: 3.75rem;
         font-weight: bold;

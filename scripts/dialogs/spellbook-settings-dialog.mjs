@@ -129,7 +129,11 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       increaseSpellPrepBonus: SpellbookSettingsDialog.increaseSpellPrepBonus,
       decreaseSpellPrepBonus: SpellbookSettingsDialog.decreaseSpellPrepBonus,
       increaseCantripPrepBonus: SpellbookSettingsDialog.increaseCantripPrepBonus,
-      decreaseCantripPrepBonus: SpellbookSettingsDialog.decreaseCantripPrepBonus
+      decreaseCantripPrepBonus: SpellbookSettingsDialog.decreaseCantripPrepBonus,
+      increaseSpellLearningCost: SpellbookSettingsDialog.increaseSpellLearningCost,
+      decreaseSpellLearningCost: SpellbookSettingsDialog.decreaseSpellLearningCost,
+      increaseSpellLearningTime: SpellbookSettingsDialog.increaseSpellLearningTime,
+      decreaseSpellLearningTime: SpellbookSettingsDialog.decreaseSpellLearningTime
     },
     classes: ['spell-book', 'spellbook-settings-dialog'],
     window: { icon: 'fas fa-book-spells', resizable: false, minimizable: true, positioned: true },
@@ -262,6 +266,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
         const processedClassRules = RuleSetManager.getClassRules(this.actor, identifier);
         const savedRules = currentClassRules[identifier] || {};
+        const isWizard = DataHelpers.isClassWizardEnabled(this.actor, identifier);
         const formRules = {
           showCantrips: 'showCantrips' in savedRules ? savedRules.showCantrips : processedClassRules.showCantrips,
           forceWizardMode: 'forceWizardMode' in savedRules ? savedRules.forceWizardMode : processedClassRules.forceWizardMode,
@@ -271,6 +276,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
           customSpellList: savedRules.customSpellList || processedClassRules.customSpellList || [],
           spellPreparationBonus: 'spellPreparationBonus' in savedRules ? savedRules.spellPreparationBonus : processedClassRules.spellPreparationBonus || 0,
           cantripPreparationBonus: 'cantripPreparationBonus' in savedRules ? savedRules.cantripPreparationBonus : processedClassRules.cantripPreparationBonus || 0,
+          spellLearningCostMultiplier: 'spellLearningCostMultiplier' in savedRules ? savedRules.spellLearningCostMultiplier : processedClassRules.spellLearningCostMultiplier || 50,
+          spellLearningTimeMultiplier: 'spellLearningTimeMultiplier' in savedRules ? savedRules.spellLearningTimeMultiplier : processedClassRules.spellLearningTimeMultiplier || 2,
           _noScaleValue: processedClassRules._noScaleValue
         };
         const spellManager = new SpellManager(this.actor);
@@ -296,6 +303,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
           identifier: identifier,
           img: classItem.img,
           rules: processedClassRules,
+          isWizard: isWizard,
           stats: {
             currentCantrips: currentCantrips,
             maxCantrips: maxCantrips,
@@ -395,6 +403,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     customSpellListsMultiSelect.id = `custom-spell-lists-${identifier}`;
     const spellPreparationBonusControls = this._createSpellPreparationBonusControls(identifier, formRules.spellPreparationBonus);
     const cantripPreparationBonusControls = this._createCantripPreparationBonusControls(identifier, formRules.cantripPreparationBonus);
+    const spellLearningCostControls = this._createSpellLearningCostControls(identifier, formRules.spellLearningCostMultiplier);
+    const spellLearningTimeControls = this._createSpellLearningTimeControls(identifier, formRules.spellLearningTimeMultiplier);
     return {
       showCantripsCheckboxHtml: ValidationHelpers.elementToHtml(showCantripsCheckbox),
       forceWizardModeCheckboxHtml: ValidationHelpers.elementToHtml(forceWizardCheckbox),
@@ -403,7 +413,9 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       ritualCastingSelectHtml: ValidationHelpers.elementToHtml(ritualCastingSelect),
       customSpellListsSelectHtml: ValidationHelpers.elementToHtml(customSpellListsMultiSelect),
       spellPreparationBonusControlsHtml: spellPreparationBonusControls,
-      cantripPreparationBonusControlsHtml: cantripPreparationBonusControls
+      cantripPreparationBonusControlsHtml: cantripPreparationBonusControls,
+      spellLearningCostControlsHtml: spellLearningCostControls,
+      spellLearningTimeControlsHtml: spellLearningTimeControls
     };
   }
 
@@ -441,13 +453,12 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    */
   _createSpellPreparationBonusControls(identifier, currentValue) {
     const container = document.createElement('div');
-    container.className = 'preparation-bonus-controls';
+    container.className = 'counter-group';
     const spellcastingConfig = DataHelpers.getSpellcastingConfigForClass(this.actor, identifier);
     const baseMaxSpells = spellcastingConfig?.preparation?.max || 0;
     const minValue = -baseMaxSpells;
     const decreaseButton = document.createElement('button');
     decreaseButton.type = 'button';
-    decreaseButton.className = 'prep-bonus-decrease';
     decreaseButton.dataset.class = identifier;
     decreaseButton.dataset.action = 'decreaseSpellPrepBonus';
     decreaseButton.textContent = '−';
@@ -463,7 +474,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     input.id = `spell-preparation-bonus-${identifier}`;
     const increaseButton = document.createElement('button');
     increaseButton.type = 'button';
-    increaseButton.className = 'prep-bonus-increase';
     increaseButton.dataset.class = identifier;
     increaseButton.dataset.action = 'increaseSpellPrepBonus';
     increaseButton.textContent = '+';
@@ -487,7 +497,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    */
   _createCantripPreparationBonusControls(identifier, currentValue) {
     const container = document.createElement('div');
-    container.className = 'preparation-bonus-controls';
+    container.className = 'counter-group';
     let baseMaxCantrips = 0;
     const spellcastingData = this.actor.spellcastingClasses?.[identifier];
     if (spellcastingData) {
@@ -510,7 +520,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     const minValue = -baseMaxCantrips;
     const decreaseButton = document.createElement('button');
     decreaseButton.type = 'button';
-    decreaseButton.className = 'prep-bonus-decrease';
     decreaseButton.dataset.class = identifier;
     decreaseButton.dataset.action = 'decreaseCantripPrepBonus';
     decreaseButton.textContent = '−';
@@ -526,7 +535,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     input.id = `cantrip-preparation-bonus-${identifier}`;
     const increaseButton = document.createElement('button');
     increaseButton.type = 'button';
-    increaseButton.className = 'prep-bonus-increase';
     increaseButton.dataset.class = identifier;
     increaseButton.dataset.action = 'increaseCantripPrepBonus';
     increaseButton.textContent = '+';
@@ -534,6 +542,98 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     container.appendChild(decreaseButton);
     container.appendChild(input);
     container.appendChild(increaseButton);
+    return ValidationHelpers.elementToHtml(container);
+  }
+
+  /**
+   * Create spell learning cost multiplier controls for a class.
+   *
+   * Generates the counter group HTML for adjusting spell learning cost multiplier
+   * with increment/decrement buttons and input field.
+   *
+   * @param {string} identifier - The class identifier
+   * @param {number} currentValue - Current cost multiplier value
+   * @returns {string} HTML string for the controls
+   * @private
+   */
+  _createSpellLearningCostControls(identifier, currentValue) {
+    const container = document.createElement('div');
+    container.className = 'counter-group';
+
+    const decreaseButton = document.createElement('button');
+    decreaseButton.type = 'button';
+    decreaseButton.dataset.action = 'decreaseSpellLearningCost';
+    decreaseButton.dataset.class = identifier;
+    decreaseButton.textContent = '−';
+    decreaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.SpellLearningCostMultiplier.Decrease'));
+
+    const input = ValidationHelpers.createNumberInput({
+      name: `class.${identifier}.spellLearningCostMultiplier`,
+      value: currentValue ?? 50,
+      min: 0,
+      step: 5,
+      cssClass: 'learning-cost-input',
+      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.SpellLearningCostMultiplier.Label')
+    });
+    input.id = `spell-learning-cost-${identifier}`;
+
+    const increaseButton = document.createElement('button');
+    increaseButton.type = 'button';
+    increaseButton.dataset.action = 'increaseSpellLearningCost';
+    increaseButton.dataset.class = identifier;
+    increaseButton.textContent = '+';
+    increaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.SpellLearningCostMultiplier.Increase'));
+
+    container.appendChild(decreaseButton);
+    container.appendChild(input);
+    container.appendChild(increaseButton);
+
+    return ValidationHelpers.elementToHtml(container);
+  }
+
+  /**
+   * Create spell learning time multiplier controls for a class.
+   *
+   * Generates the counter group HTML for adjusting spell learning time multiplier
+   * with increment/decrement buttons and input field.
+   *
+   * @param {string} identifier - The class identifier
+   * @param {number} currentValue - Current time multiplier value
+   * @returns {string} HTML string for the controls
+   * @private
+   */
+  _createSpellLearningTimeControls(identifier, currentValue) {
+    const container = document.createElement('div');
+    container.className = 'counter-group';
+
+    const decreaseButton = document.createElement('button');
+    decreaseButton.type = 'button';
+    decreaseButton.dataset.action = 'decreaseSpellLearningTime';
+    decreaseButton.dataset.class = identifier;
+    decreaseButton.textContent = '−';
+    decreaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.SpellLearningTimeMultiplier.Decrease'));
+
+    const input = ValidationHelpers.createNumberInput({
+      name: `class.${identifier}.spellLearningTimeMultiplier`,
+      value: currentValue ?? 2,
+      min: 0,
+      step: 0.5,
+      cssClass: 'learning-time-input',
+      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.SpellLearningTimeMultiplier.Label')
+    });
+    input.id = `spell-learning-time-${identifier}`;
+
+    const increaseButton = document.createElement('button');
+    increaseButton.type = 'button';
+    increaseButton.dataset.action = 'increaseSpellLearningTime';
+    increaseButton.dataset.class = identifier;
+    increaseButton.textContent = '+';
+    increaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.SpellLearningTimeMultiplier.Increase'));
+
+    container.appendChild(decreaseButton);
+    container.appendChild(input);
+    container.appendChild(increaseButton);
+
     return ValidationHelpers.elementToHtml(container);
   }
 
@@ -753,6 +853,54 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     log(3, `Decreased cantrip preparation bonus for ${classIdentifier} to ${newValue}`);
   }
 
+  static increaseSpellLearningCost(_event, target) {
+    const classIdentifier = target.dataset.class;
+    if (!classIdentifier) return;
+    const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellLearningCostMultiplier"]`);
+    if (!input) return;
+    const currentValue = parseInt(input.value) || 50;
+    const newValue = currentValue + 5;
+    input.value = newValue;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    log(3, `Increased spell learning cost for ${classIdentifier} to ${newValue}`);
+  }
+
+  static decreaseSpellLearningCost(_event, target) {
+    const classIdentifier = target.dataset.class;
+    if (!classIdentifier) return;
+    const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellLearningCostMultiplier"]`);
+    if (!input) return;
+    const currentValue = parseInt(input.value) || 50;
+    const newValue = Math.max(0, currentValue - 5);
+    input.value = newValue;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    log(3, `Decreased spell learning cost for ${classIdentifier} to ${newValue}`);
+  }
+
+  static increaseSpellLearningTime(_event, target) {
+    const classIdentifier = target.dataset.class;
+    if (!classIdentifier) return;
+    const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellLearningTimeMultiplier"]`);
+    if (!input) return;
+    const currentValue = parseFloat(input.value) || 2;
+    const newValue = currentValue + 0.5;
+    input.value = newValue;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    log(3, `Increased spell learning time for ${classIdentifier} to ${newValue}`);
+  }
+
+  static decreaseSpellLearningTime(_event, target) {
+    const classIdentifier = target.dataset.class;
+    if (!classIdentifier) return;
+    const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellLearningTimeMultiplier"]`);
+    if (!input) return;
+    const currentValue = parseFloat(input.value) || 2;
+    const newValue = Math.max(0, currentValue - 0.5);
+    input.value = newValue;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    log(3, `Decreased spell learning time for ${classIdentifier} to ${newValue}`);
+  }
+
   /**
    * Update the visual display of class statistics when preparation bonus changes.
    *
@@ -836,6 +984,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         if (rules.cantripPreparationBonus !== undefined) processedRules.cantripPreparationBonus = parseInt(rules.cantripPreparationBonus) || 0;
         if (rules.showCantrips !== undefined) processedRules.showCantrips = Boolean(rules.showCantrips);
         if (rules.forceWizardMode !== undefined) processedRules.forceWizardMode = Boolean(rules.forceWizardMode);
+        if (rules.spellLearningCostMultiplier !== undefined) processedRules.spellLearningCostMultiplier = parseInt(rules.spellLearningCostMultiplier) || 50;
+        if (rules.spellLearningTimeMultiplier !== undefined) processedRules.spellLearningTimeMultiplier = parseFloat(rules.spellLearningTimeMultiplier) || 2;
         if (rules.customSpellList !== undefined) {
           if (Array.isArray(rules.customSpellList)) processedRules.customSpellList = rules.customSpellList.filter((uuid) => uuid && uuid.trim());
           else if (rules.customSpellList) processedRules.customSpellList = [rules.customSpellList];

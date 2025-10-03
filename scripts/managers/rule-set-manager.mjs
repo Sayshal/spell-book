@@ -52,6 +52,8 @@ const { renderTemplate } = foundry.applications.handlebars;
  * @property {number} spellPreparationBonus - Bonus to spell preparation limit
  * @property {number} cantripPreparationBonus - Bonus to cantrip preparation limit
  * @property {boolean} forceWizardMode - Whether to force wizard-style spell management
+ * @property {number} spellLearningCostMultiplier - Gold cost multiplier per spell level (default: 50)
+ * @property {number} spellLearningTimeMultiplier - Time multiplier in hours per spell level (default: 2)
  */
 
 /**
@@ -289,7 +291,9 @@ export class RuleSetManager {
       customSpellList: [],
       spellPreparationBonus: 0,
       cantripPreparationBonus: 0,
-      forceWizardMode: false
+      forceWizardMode: false,
+      spellLearningCostMultiplier: 50,
+      spellLearningTimeMultiplier: 2
     };
     if (ruleSet === MODULE.RULE_SETS.LEGACY) RuleSetManager._applyLegacyDefaults(classIdentifier, defaults);
     else if (ruleSet === MODULE.RULE_SETS.MODERN) RuleSetManager._applyModernDefaults(classIdentifier, defaults);

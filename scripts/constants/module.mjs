@@ -430,6 +430,8 @@ export const SETTINGS = {
   /** @type {string} Custom spell list mappings for classes */
   CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',
 
+  DEDUCT_SPELL_LEARNING_COST: 'deductSpellLearningCost',
+
   /** @type {string} Default enforcement behavior for new actors */
   DEFAULT_ENFORCEMENT_BEHAVIOR: 'defaultEnforcementBehavior',
 

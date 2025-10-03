@@ -33,9 +33,10 @@
  * @author Tyler
  */
 
-import { FLAGS, MODULE } from '../constants/_module.mjs';
+import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
 import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
+import { RuleSetManager } from './rule-set-manager.mjs';
 
 /**
  * Spell copying cost calculation result.
@@ -267,15 +268,73 @@ export class WizardSpellbookManager {
    * Handles the complete spell copying process including cost tracking
    * for paid spells and proper source attribution. Automatically determines
    * whether the spell should be free based on the wizard's remaining free
-   * spell allowance.
+   * spell allowance. Deducts gold cost from actor if world setting is enabled,
+   * converting currencies as needed. Supports any currency configuration.
    *
    * @param {string} spellUuid - UUID of the spell to copy
-   * @param {number} cost - Cost in gold to copy the spell
+   * @param {number} cost - Cost in base currency to copy the spell
    * @param {number} time - Time in hours to copy the spell
    * @param {boolean} [isFree=false] - Whether this is a free spell
    * @returns {Promise<boolean>} Success state
    */
   async copySpell(spellUuid, cost, time, isFree = false) {
+    const shouldDeductCurrency = game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST);
+    if (!isFree && shouldDeductCurrency && cost > 0) {
+      const currencies = CONFIG.DND5E.currencies;
+      const actorCurrency = this.actor.system.currency || {};
+      let baseCurrency = null;
+      const otherCurrencies = [];
+      for (const [currencyType, config] of Object.entries(currencies)) {
+        if (config.conversion === 1) baseCurrency = currencyType;
+        else otherCurrencies.push({ type: currencyType, conversion: config.conversion });
+      }
+      otherCurrencies.sort((a, b) => a.conversion - b.conversion);
+      const deductionOrder = baseCurrency ? [baseCurrency, ...otherCurrencies.map((c) => c.type)] : otherCurrencies.map((c) => c.type);
+      let totalWealthInBase = 0;
+      for (const [currencyType, config] of Object.entries(currencies)) {
+        const amount = actorCurrency[currencyType] || 0;
+        const baseValue = amount / config.conversion;
+        totalWealthInBase += baseValue;
+      }
+      if (totalWealthInBase < cost) {
+        const baseCurrencyLabel = baseCurrency ? currencies[baseCurrency].abbreviation : 'currency';
+        ui.notifications.warning(game.i18n.format('SPELLBOOK.Wizard.InsufficientGold', { cost: cost, current: totalWealthInBase.toFixed(2) }));
+        return false;
+      }
+      let remainingCost = cost;
+      const deductions = {};
+      for (const currencyType of deductionOrder) {
+        if (remainingCost <= 0.001) break;
+        if (!currencies[currencyType]) continue;
+        const available = actorCurrency[currencyType] || 0;
+        if (available <= 0) continue;
+        const config = currencies[currencyType];
+        const baseValuePerUnit = 1 / config.conversion;
+        const neededUnits = Math.ceil(remainingCost / baseValuePerUnit);
+        const toDeduct = Math.min(available, neededUnits);
+        if (toDeduct > 0) {
+          deductions[currencyType] = toDeduct;
+          const baseValueDeducted = toDeduct * baseValuePerUnit;
+          remainingCost -= baseValueDeducted;
+        }
+      }
+      try {
+        const updateData = {};
+        for (const [currencyType, deductAmount] of Object.entries(deductions)) {
+          const currentAmount = actorCurrency[currencyType] || 0;
+          const newAmount = currentAmount - deductAmount;
+          updateData[`system.currency.${currencyType}`] = newAmount;
+          log(1, `${currencyType.toUpperCase()}: ${currentAmount} - ${deductAmount} = ${newAmount}`);
+        }
+        await this.actor.update(updateData);
+        const deductionSummary = Object.entries(deductions)
+          .map(([type, amt]) => `${amt} ${type}`)
+          .join(', ');
+      } catch (error) {
+        log(1, `Failed to deduct currency from ${this.actor.name}:`, error);
+        return false;
+      }
+    }
     const result = !isFree
       ? await this.addSpellToSpellbook(spellUuid, MODULE.WIZARD_SPELL_SOURCE.COPIED, { cost, timeSpent: time })
       : await this.addSpellToSpellbook(spellUuid, MODULE.WIZARD_SPELL_SOURCE.FREE, null);
@@ -286,9 +345,9 @@ export class WizardSpellbookManager {
   /**
    * Calculate cost to copy a spell, accounting for free spells.
    *
-   * Determines the gold cost to copy a spell based on spell level and
-   * the wizard's remaining free spell allowance. Free spells are available
-   * based on wizard level progression and don't require gold payment.
+   * Determines the gold cost to copy a spell based on spell level, class-specific
+   * cost multiplier, and the wizard's remaining free spell allowance. Free spells
+   * are available based on wizard level progression and don't require gold payment.
    *
    * @param {Item5e} spell - The spell to copy
    * @returns {Promise<SpellCopyingCost>} Cost in gold pieces and if it's free
@@ -296,22 +355,26 @@ export class WizardSpellbookManager {
   async getCopyingCost(spell) {
     const isFree = await this.isSpellFree(spell);
     if (isFree) return { cost: 0, isFree: true };
-    const cost = spell.system.level === 0 ? 0 : spell.system.level * 50;
+    const classRules = RuleSetManager.getClassRules(this.actor, this.classIdentifier);
+    const costMultiplier = classRules?.spellLearningCostMultiplier ?? 50;
+    const cost = spell.system.level === 0 ? 0 : spell.system.level * costMultiplier;
     return { cost, isFree: false };
   }
 
   /**
    * Calculate time to copy a spell.
    *
-   * Determines the time requirement to copy a spell based on D&D 5e rules.
-   * Time scales with spell level to represent the complexity of higher-level
-   * magic transcription.
+   * Determines the time requirement to copy a spell based on D&D 5e rules
+   * and class-specific time multiplier. Time scales with spell level to
+   * represent the complexity of higher-level magic transcription.
    *
    * @param {Item5e} spell - The spell to copy
    * @returns {number} Time in hours
    */
   getCopyingTime(spell) {
-    return spell.system.level === 0 ? 1 : spell.system.level * 2;
+    const classRules = RuleSetManager.getClassRules(this.actor, this.classIdentifier);
+    const timeMultiplier = classRules?.spellLearningTimeMultiplier ?? 2;
+    return spell.system.level === 0 ? 1 : spell.system.level * timeMultiplier;
   }
 
   /**

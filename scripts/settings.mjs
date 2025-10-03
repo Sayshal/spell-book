@@ -290,6 +290,16 @@ export function registerSettings() {
     default: true
   });
 
+  /** Whether to deduct gold cost when learning spells */
+  game.settings.register(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST, {
+    name: 'SPELLBOOK.Settings.DeductSpellLearningCost.Name',
+    hint: 'SPELLBOOK.Settings.DeductSpellLearningCost.Hint',
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false
+  });
+
   /** Disable long rest spell swap prompts */
   game.settings.register(MODULE.ID, SETTINGS.DISABLE_LONG_REST_SWAP_PROMPT, {
     name: 'SPELLBOOK.Settings.DisableLongRestSwapPrompt.Name',
