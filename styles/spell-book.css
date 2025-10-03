@@ -111,7 +111,7 @@
   /* ======= GM Manager Specific ======= */
   --spell-book-manager-column-gap: 0.75rem;
   --spell-book-manager-footer-height: 3.75rem;
-  --spell-book-manager-sidebar-width: 17.5rem;
+  --spell-book-manager-sidebar-width: 20rem;
   --spell-book-manager-spells-sidebar-width: 25rem;
 }
 
@@ -2357,7 +2357,7 @@
       display: flex;
       align-items: center;
       font-weight: bold;
-      font-size: var(--spell-book-manager-font-lg);
+      font-size: var(--spell-book-manager-font-md);
 
       i {
         margin-right: var(--spell-book-spacing-md);
@@ -2510,7 +2510,7 @@
     }
 
     h2 {
-      padding: 0;
+      padding: 0 0 0.5rem;
       overflow: hidden;
       color: var(--spell-book-text-primary);
       text-overflow: ellipsis;
@@ -2606,6 +2606,33 @@
     .open-class-button {
       &:hover {
         text-shadow: var(--spell-book-glow-blue);
+      }
+    }
+
+    .registry-toggle {
+      align-items: center;
+      display: flex;
+      justify-content: center;
+      gap: 0.25rem;
+
+      .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: var(--spell-book-spacing-sm);
+        cursor: pointer;
+        margin: 0;
+      }
+
+      dnd5e-checkbox {
+        --button-size: 0.875rem;
+
+        width: 0.875rem;
+        height: 0.875rem;
+        flex-shrink: 0;
+      }
+
+      span {
+        line-height: 1;
       }
     }
   }

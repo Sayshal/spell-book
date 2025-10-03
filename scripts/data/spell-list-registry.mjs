@@ -8,6 +8,17 @@
  * @author Tyler
  */
 
+/**
+ * Registration result structure.
+ *
+ * @typedef {Object} RegistrationResult
+ * @property {number} total - Total lists processed
+ * @property {number} registered - Successfully registered
+ * @property {number} skipped - Skipped (invalid or duplicate)
+ * @property {number} failed - Failed to register
+ * @property {Array<{uuid: string, error: string}>} errors - Error details
+ */
+
 import { MODULE, SETTINGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 
@@ -18,60 +29,37 @@ import { log } from '../logger.mjs';
  */
 export async function registerCustomSpellLists() {
   log(3, 'Registering spell lists with D&D 5e SpellListRegistry');
-
-  const result = {
-    total: 0,
-    registered: 0,
-    skipped: 0,
-    failed: 0,
-    errors: []
-  };
-
+  const result = { total: 0, registered: 0, skipped: 0, failed: 0, errors: [] };
   const enabledUuids = game.settings.get(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS) || [];
-
   if (enabledUuids.length === 0) {
     log(3, 'No spell lists enabled for registry integration');
     return result;
   }
-
   log(3, `Registering ${enabledUuids.length} enabled spell lists`);
-
   for (const uuid of enabledUuids) {
     result.total++;
-
     try {
       const page = await fromUuid(uuid);
-
       if (!page || page.type !== 'spells') {
         log(2, `Invalid spell list: ${uuid}`);
         result.skipped++;
         continue;
       }
-
       if (!page.system?.type || !page.system?.identifier) {
         log(2, `Missing required fields: ${page.name}`);
         result.skipped++;
         continue;
       }
-
-      // Register with the system
       await dnd5e.registry.spellLists.register(uuid);
       result.registered++;
-
-      log(3, `✓ ${page.name} (${page.system.type}:${page.system.identifier})`);
+      log(3, `${page.name} (${page.system.type}:${page.system.identifier})`);
     } catch (error) {
       log(2, `Failed to register ${uuid}:`, error);
       result.failed++;
       result.errors.push({ uuid, error: error.message });
     }
   }
-
   log(3, `Registry complete: ${result.registered} registered, ${result.skipped} skipped, ${result.failed} failed`);
-
-  if (result.registered > 0) {
-    ui.notifications.info(game.i18n.format('SPELLBOOK.Registry.RegisteredNotification', { count: result.registered }));
-  }
-
   return result;
 }
 
@@ -82,7 +70,7 @@ export async function registerCustomSpellLists() {
  * @returns {boolean} True if enabled
  */
 export function isListEnabledForRegistry(uuid) {
-  const enabledLists = game.settings.get(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS) || [];
+  const enabledLists = game.settings.get(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS);
   return enabledLists.includes(uuid);
 }
 
@@ -93,9 +81,8 @@ export function isListEnabledForRegistry(uuid) {
  * @returns {Promise<boolean>} New enabled state
  */
 export async function toggleListForRegistry(uuid) {
-  const enabledLists = game.settings.get(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS) || [];
+  const enabledLists = game.settings.get(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS);
   const isEnabled = enabledLists.includes(uuid);
-
   if (isEnabled) {
     const index = enabledLists.indexOf(uuid);
     enabledLists.splice(index, 1);
@@ -121,21 +108,15 @@ export async function toggleListForRegistry(uuid) {
 export async function getCustomSpellList(type, identifier) {
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
   if (!customPack) return null;
-
   const journals = await customPack.getDocuments();
-
   for (const journal of journals) {
     for (const page of journal.pages) {
       if (page.type !== 'spells') continue;
-
       const pageType = page.system?.type;
       const pageIdentifier = page.system?.identifier?.toLowerCase();
-
       if (pageType === type && pageIdentifier === identifier) {
-        // Found a match - check if it's a custom/modified version
         const flags = page.flags?.[MODULE.ID] || {};
         const isCustom = flags.isCustom || flags.isNewList || flags.isDuplicate;
-
         if (isCustom) {
           log(3, `Found custom spell list: ${type}:${identifier} (${page.name})`);
           return page.system.spells || new Set();
@@ -143,17 +124,5 @@ export async function getCustomSpellList(type, identifier) {
       }
     }
   }
-
   return null;
 }
-
-/**
- * Registration result structure.
- *
- * @typedef {Object} RegistrationResult
- * @property {number} total - Total lists processed
- * @property {number} registered - Successfully registered
- * @property {number} skipped - Skipped (invalid or duplicate)
- * @property {number} failed - Failed to register
- * @property {Array<{uuid: string, error: string}>} errors - Error details
- */

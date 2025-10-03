@@ -296,6 +296,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       const isCustomList = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList;
       context.selectedSpellList.isRenameable = isCustomList || this.selectedSpellList.isMerged;
       context.selectedSpellList.isRegistryEnabled = DataHelpers.isListEnabledForRegistry(this.selectedSpellList.uuid);
+      const registryCheckbox = ValidationHelpers.createCheckbox({
+        name: 'registry-enabled',
+        checked: context.selectedSpellList.isRegistryEnabled,
+        ariaLabel: game.i18n.localize('SPELLBOOK.Registry.EnableLabel')
+      });
+      registryCheckbox.dataset.action = 'toggleRegistry';
+      context.selectedSpellList.registryCheckboxHtml = ValidationHelpers.elementToHtml(registryCheckbox);
       context.selectedSpellList.isActorOwned = !!flags.actorId;
     }
     if (context.selectedSpellList?.spellsByLevel) {
