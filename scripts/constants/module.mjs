@@ -251,7 +251,6 @@
  * Asset file paths used by the module for icons and graphics.
  *
  * @typedef {Object} AssetPaths
- * @property {string} WIZARDBOOK_ICON - Path to wizard book icon image
  * @property {string} MODULE_ICON - Path to module icon image
  */
 
@@ -431,6 +430,8 @@ export const SETTINGS = {
   /** @type {string} Custom spell list mappings for classes */
   CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',
 
+  DEDUCT_SPELL_LEARNING_COST: 'deductSpellLearningCost',
+
   /** @type {string} Default enforcement behavior for new actors */
   DEFAULT_ENFORCEMENT_BEHAVIOR: 'defaultEnforcementBehavior',
 
@@ -530,6 +531,8 @@ export const SETTINGS = {
   /** @type {string} Show spell level in player spell details */
   PLAYER_UI_SPELL_LEVEL: 'playerUISpellLevel',
 
+  REGISTRY_ENABLED_LISTS: 'registryEnabledLists',
+
   /** @type {string} Enable setup mode for initial configuration */
   SETUP_MODE: 'setupMode',
 
@@ -567,9 +570,6 @@ export const SETTINGS = {
  * @type {AssetPaths}
  */
 export const ASSETS = {
-  /** @type {string} Path to wizard book icon (primary module icon) */
-  WIZARDBOOK_ICON: 'modules/spell-book/assets/icon.webp',
-
   /** @type {string} Path to colored module icon for enhanced UI */
-  MODULE_ICON: 'modules/spell-book/assets/icon_colored.webp'
+  MODULE_ICON: 'modules/spell-book/assets/icon_colored.png'
 };

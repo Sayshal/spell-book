@@ -1,1 +1,6 @@
-Credit to Franciis for 'icon.webp' and 'icon_colored.webp'.
+Credit to Franciis for :
+- desk_01.webp
+- desk_02.webp
+- desk_03.webp
+- Desk.webp
+- icon_colored.png

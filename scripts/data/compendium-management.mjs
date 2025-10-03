@@ -503,11 +503,18 @@ function formatSpellEntry(entry, pack) {
  *
  * @param {string} name - The name of the spell list
  * @param {string} identifier - The identifier (typically class name)
+ * @param {string} type - The type of spell list ('class', 'subclass', or 'other')
  * @returns {Promise<JournalEntryPage>} The created spell list page
  */
 export async function createNewSpellList(name, identifier, type = 'class') {
   const customFolder = await getOrCreateCustomFolder();
   const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
+  const validTypes = ['class', 'subclass', 'other'];
+  if (!validTypes.includes(type)) {
+    log(2, `Invalid spell list type "${type}", defaulting to "class"`);
+    type = 'class';
+  }
+
   const journalData = {
     name: name,
     folder: customFolder?.id,
@@ -523,8 +530,11 @@ export async function createNewSpellList(name, identifier, type = 'class') {
     ]
   };
   const journal = await JournalEntry.create(journalData, { pack: MODULE.PACK.SPELLS });
+  const page = journal.pages.contents[0];
   log(3, `Created ${type} spell list: ${name} in folder`);
-  return journal.pages.contents[0];
+  await dnd5e.registry.spellLists.register(page.uuid);
+  log(3, `Registered new spell list with system registry: ${name}`);
+  return page;
 }
 
 /**

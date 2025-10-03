@@ -63,6 +63,7 @@
 
 			<!-- Header Action Buttons - Context-sensitive list management controls -->
 			<div class="header-buttons" role="toolbar" aria-label="{{localize 'SPELLMANAGER.UI.ListActions'}}">
+
 				{{#unless isEditing}}
 					<!-- View Mode Actions -->
 
@@ -96,6 +97,15 @@
 							<i class="fas fa-scroll" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.OpenClass"}}
 						</button>
 					{{/if}}
+
+					<!-- Registry Integration Toggle -->
+					<div class="registry-toggle action-button" data-tooltip="{{localize 'SPELLBOOK.Registry.ToggleTooltip'}}">
+						<label class="checkbox-label">
+							{{{selectedSpellList.registryCheckboxHtml}}}
+							<span>{{localize 'SPELLBOOK.Registry.EnableLabel'}}</span>
+						</label>
+					</div>
+
 				{{else}}
 					<!-- Edit Mode Actions - Custom list management controls -->
 					<div class="custom-list-controls">

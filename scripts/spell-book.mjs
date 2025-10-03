@@ -40,6 +40,7 @@ import { SocketHandler } from './sockets.mjs';
  */
 Hooks.once('init', async function () {
   log(3, `Initializing ${MODULE.NAME}!`);
+  CONFIG.DND5E.spellListTypes['actor-spellbook'] = game.i18n.localize('SPELLBOOK.Registry.ActorSpellBooksGroup');
   await initializeModuleComponents();
   await preloadTemplates();
   createAPI();
@@ -78,6 +79,7 @@ Hooks.once('ready', async function () {
   await UserSpellDataManager.initializeUserSpellData();
   await SpellUsageTracker.initialize();
   await DataHelpers.preloadSpellData();
+  if (game.user.isGM) await DataHelpers.registerCustomSpellLists();
 });
 
 /**
