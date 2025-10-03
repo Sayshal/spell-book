@@ -251,7 +251,6 @@
  * Asset file paths used by the module for icons and graphics.
  *
  * @typedef {Object} AssetPaths
- * @property {string} WIZARDBOOK_ICON - Path to wizard book icon image
  * @property {string} MODULE_ICON - Path to module icon image
  */
 
@@ -569,9 +568,6 @@ export const SETTINGS = {
  * @type {AssetPaths}
  */
 export const ASSETS = {
-  /** @type {string} Path to wizard book icon (primary module icon) */
-  WIZARDBOOK_ICON: 'modules/spell-book/assets/icon.webp',
-
   /** @type {string} Path to colored module icon for enhanced UI */
-  MODULE_ICON: 'modules/spell-book/assets/icon_colored.webp'
+  MODULE_ICON: 'modules/spell-book/assets/icon_colored.png'
 };

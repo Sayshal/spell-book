@@ -441,15 +441,69 @@
       }
 
       &[data-tab^='wizardbook-'] {
+        --wizard-book-color: rgb(139 69 19);
+        --wizard-book-color-hue: 25deg;
+
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+
         img.tab-icon {
-          width: 2.25rem;
-          height: 2.25rem;
+          opacity: 0;
+          width: 2rem; /* Reduced from 2.25rem */
+          height: 2rem;
+          min-width: 2rem; /* Prevent shrinking */
+          min-height: 2rem;
           border: none;
           border-radius: 0;
+          object-fit: contain;
+          margin: auto; /* Center in flex container */
         }
 
-        &.active img.tab-icon {
-          box-shadow: none;
+        /* Colored icon with heavy color treatment */
+        &::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 2rem; /* Match img size */
+          height: 2rem;
+          z-index: 1;
+          background-image: url('../assets/icon_colored.png');
+          background-position: center;
+          background-size: 100% 100%;
+          background-repeat: no-repeat;
+
+          /* Apply heavy color treatment */
+          filter: hue-rotate(var(--wizard-book-color-hue)) saturate(1.5) brightness(0.8) contrast(1.2);
+        }
+
+        /* Additional color burn layer for richness */
+        &::after {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 2rem; /* Match img size */
+          height: 2rem;
+          z-index: 2;
+          background: radial-gradient(circle at center, transparent 30%, var(--wizard-book-color) 100%);
+          mix-blend-mode: color-burn;
+          opacity: 0.6;
+        }
+
+        &.active {
+          &::before {
+            filter: hue-rotate(var(--wizard-book-color-hue)) saturate(2) brightness(0.9) contrast(1.3);
+          }
+
+          &::after {
+            opacity: 0.8;
+          }
         }
       }
 
@@ -6809,7 +6863,7 @@
   width: 100%;
   height: 100%;
   content: '';
-  background-image: url('../assets/icon_colored.webp');
+  background-image: url('../assets/icon_colored.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;

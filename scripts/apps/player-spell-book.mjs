@@ -797,7 +797,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   async _onFirstRender(context, options) {
     await super._onFirstRender(context, options);
     if (this.wizardManagers.size > 0) {
-      this._wizardBookImages = new Map();
+      this._wizardBookColors = new Map();
       const colorPromises = [];
       for (const [identifier, wizardManager] of this.wizardManagers) {
         if (wizardManager.isWizard) {
@@ -814,28 +814,117 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
                   dominantColor = await UIHelpers.extractDominantColor(classData.img);
                   log(3, `Extracted color ${dominantColor} from class image for wizard book ${identifier}`);
                 }
-                const theme = UIHelpers.d ? UIHelpers.d() : 'dark';
-                const background = theme === 'light' ? '#f4f4f4' : '#1b1d24';
-                const contrast = UIHelpers.getContrastRatio ? UIHelpers.getContrastRatio(dominantColor, background) : 'unavailable';
-                const wizardBookImage = await UIHelpers.applyColorOverlay(ASSETS.WIZARDBOOK_ICON, dominantColor);
-                this._wizardBookImages.set(identifier, wizardBookImage);
-                log(3, `Applied ${dominantColor} color overlay to wizardbook for class ${identifier}`);
+                this._wizardBookColors.set(identifier, dominantColor);
+                log(3, `Stored ${dominantColor} color for wizardbook tab ${identifier}`);
               } catch (error) {
-                log(1, `Failed to apply color overlay for class ${identifier}:`, error);
-                this._wizardBookImages.set(identifier, ASSETS.WIZARDBOOK_ICON);
+                log(1, `Failed to extract color for class ${identifier}:`, error);
+                this._wizardBookColors.set(identifier, '#8B4513');
               }
             })();
             colorPromises.push(colorPromise);
           } else {
-            this._wizardBookImages.set(identifier, ASSETS.WIZARDBOOK_ICON);
+            this._wizardBookColors.set(identifier, '#8B4513');
           }
         }
       }
       await Promise.all(colorPromises);
+      this._injectWizardBookColorCSS();
       this.render(false, { parts: ['navigation'] });
     }
     this._stateManager.clearFavoriteSessionState();
     await this._syncJournalToActorState();
+  }
+
+  /**
+   * Inject CSS custom properties for wizard book tab colors.
+   */
+  _injectWizardBookColorCSS() {
+    if (!this._wizardBookColors || this._wizardBookColors.size === 0) return;
+
+    const styleId = 'spell-book-wizard-colors';
+    let styleElement = document.getElementById(styleId);
+
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = styleId;
+      document.head.appendChild(styleElement);
+    }
+
+    let css = '';
+    for (const [identifier, color] of this._wizardBookColors) {
+      const rgb = this._hexToRgb(color);
+      const hsl = rgb ? this._rgbToHsl(rgb.r, rgb.g, rgb.b) : null;
+
+      if (rgb && hsl) {
+        css += `
+        .tabs.tabs-right > .item[data-tab="wizardbook-${identifier}"] {
+          --wizard-book-color: ${color};
+          --wizard-book-color-rgb: ${rgb.r}, ${rgb.g}, ${rgb.b};
+          --wizard-book-color-hue: ${hsl.h}deg;
+        }
+      `;
+      }
+    }
+
+    styleElement.textContent = css;
+  }
+
+  /**
+   * Convert RGB to HSL
+   */
+  _rgbToHsl(r, g, b) {
+    r /= 255;
+    g /= 255;
+    b /= 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h,
+      s,
+      l = (max + min) / 2;
+
+    if (max === min) {
+      h = s = 0;
+    } else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+      switch (max) {
+        case r:
+          h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+          break;
+        case g:
+          h = ((b - r) / d + 2) / 6;
+          break;
+        case b:
+          h = ((r - g) / d + 4) / 6;
+          break;
+      }
+    }
+
+    return {
+      h: Math.round(h * 360),
+      s: Math.round(s * 100),
+      l: Math.round(l * 100)
+    };
+  }
+
+  /**
+   * Convert hex color to RGB components.
+   *
+   * @param {string} hex - Hex color string (e.g., "#FF6B6B")
+   * @returns {{r: number, g: number, b: number}|null} RGB components or null if invalid
+   * @private
+   */
+  _hexToRgb(hex) {
+    const result = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex);
+    return result
+      ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16)
+        }
+      : null;
   }
 
   /**
@@ -1251,7 +1340,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         if (wizardManager && wizardManager.isWizard) {
           const wizardTabId = `wizardbook-${identifier}`;
           const className = classData.name;
-          const wizardBookImage = this._wizardBookImages?.get(identifier) || ASSETS.WIZARDBOOK_ICON;
           tabs[wizardTabId] = {
             id: wizardTabId,
             label: game.i18n.format('SPELLBOOK.Tabs.WizardSpells', { class: className }),
@@ -1259,9 +1347,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             cssClass: this.tabGroups[tabGroup] === wizardTabId ? 'active' : '',
             icon: 'fa-solid fa-book-spells',
             data: {
-              classImg: wizardBookImage,
+              classImg: ASSETS.MODULE_ICON,
               classIdentifier: identifier,
-              className: className
+              className: className,
+              isWizardTab: true
             }
           };
         }
