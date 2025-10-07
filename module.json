@@ -11,7 +11,7 @@
   "compatibility": {
     "maximum": "13.999",
     "minimum": "13",
-    "verified": "13.348"
+    "verified": "13.350"
   },
   "description": "Enhanced spell management for DnD5e. Easily view, prepare, and customize spell lists.",
   "download": "",
@@ -107,7 +107,7 @@
         "compatibility": {
           "maximum": "5.9.9",
           "minimum": "5.1.2",
-          "verified": "5.1.3"
+          "verified": "5.1.9"
         },
         "id": "dnd5e",
         "type": "system"
