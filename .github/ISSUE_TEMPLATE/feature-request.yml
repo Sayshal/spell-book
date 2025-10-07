@@ -1,5 +1,5 @@
 name: Feature Request
-description: 'Request a new feature [NOTE: Check the Roadmap before making a feature request!]'
+description: 'Request a new feature'
 title: '[FEATURE] '
 labels: ['enhancement']
 assignees:
