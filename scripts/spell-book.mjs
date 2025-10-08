@@ -78,7 +78,7 @@ Hooks.once('ready', async function () {
   await MacroManager.initializeMacros();
   await UserSpellDataManager.initializeUserSpellData();
   await SpellUsageTracker.initialize();
-  await DataHelpers.preloadSpellData();
+  await DataHelpers.preloadSpellData(true);
   if (game.user.isGM) await DataHelpers.registerCustomSpellLists();
 });
 

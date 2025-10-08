@@ -77,18 +77,19 @@ import * as DataHelpers from './_module.mjs';
  * Determines the appropriate preloading strategy based on whether the user
  * is a GM with setup mode enabled or a player with an assigned character.
  *
+ * @param {boolean} [showNotification=false] - Whether to show success notification
  * @returns {Promise<void>}
  */
-export async function preloadSpellData() {
+export async function preloadSpellData(showNotification = false) {
   const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
   const isEmptySettings = !settings || typeof settings !== 'object' || Object.keys(settings).length === 0;
   if (isEmptySettings && game.user.isGM) ui.notifications.warn(game.i18n.localize('SPELLBOOK.Settings.NoCompendiumsConfigured'));
   const isGM = game.user.isGM;
   if (isGM) {
     const setupMode = game.settings.get(MODULE.ID, SETTINGS.SETUP_MODE);
-    if (setupMode) return await preloadForGMSetupMode();
+    if (setupMode) return await preloadForGMSetupMode(showNotification);
     else log(3, 'GM Setup Mode disabled - no preloading');
-  } else return await preloadForPlayer();
+  } else return await preloadForPlayer(showNotification);
 }
 
 /**
@@ -96,10 +97,11 @@ export async function preloadSpellData() {
  * Loads all available spell lists and spells from enabled compendiums
  * to provide data for GM configuration interfaces.
  *
+ * @param {boolean} [showNotification=false] - Whether to show success notification
  * @returns {Promise<void>}
  * @private
  */
-async function preloadForGMSetupMode() {
+async function preloadForGMSetupMode(showNotification = false) {
   log(3, 'Starting GM setup mode preload - loading all spells and lists');
   try {
     const allSpellLists = await DataHelpers.findCompendiumSpellLists(true);
@@ -107,8 +109,10 @@ async function preloadForGMSetupMode() {
     const allSpells = await DataHelpers.fetchAllCompendiumSpells();
     const enrichedSpells = enrichSpellsWithIcons(allSpells);
     cachePreloadedData(allSpellLists, enrichedSpells, 'gm-setup');
-    const message = game.i18n.format('SPELLBOOK.Preload.GMSetupReady', { lists: allSpellLists.length, spells: enrichedSpells.length });
-    ui.notifications.success(message, { console: false });
+    if (showNotification) {
+      const message = game.i18n.format('SPELLBOOK.Preload.GMSetupReady', { lists: allSpellLists.length, spells: enrichedSpells.length });
+      ui.notifications.success(message, { console: false });
+    }
     log(3, `GM setup preload completed: ${allSpellLists.length} lists, ${enrichedSpells.length} spells`);
   } catch (error) {
     log(1, 'Error during GM setup mode preload', error);
@@ -120,10 +124,11 @@ async function preloadForGMSetupMode() {
  * Identifies the player's assigned character and loads spell data
  * from their class spell lists and wizard spellbooks if applicable.
  *
+ * @param {boolean} [showNotification=false] - Whether to show success notification
  * @returns {Promise<void>}
  * @private
  */
-async function preloadForPlayer() {
+async function preloadForPlayer(showNotification = false) {
   log(3, 'Starting player preload - loading assigned spell lists and wizard Spell Book');
   try {
     const playerActor = getCurrentPlayerActor();
@@ -138,8 +143,10 @@ async function preloadForPlayer() {
     const relevantSpells = allSpells.filter((spell) => spellUuidsSet.has(spell.uuid));
     const enrichedSpells = enrichSpellsWithIcons(relevantSpells);
     cachePreloadedData([], enrichedSpells, 'player');
-    const message = game.i18n.format('SPELLBOOK.Preload.PlayerReady', { spells: enrichedSpells.length });
-    ui.notifications.success(message, { console: false });
+    if (showNotification) {
+      const message = game.i18n.format('SPELLBOOK.Preload.PlayerReady', { spells: enrichedSpells.length });
+      ui.notifications.success(message, { console: false });
+    }
     log(3, `Player preload completed: ${enrichedSpells.length} spells loaded for ${playerActor.name}`);
   } catch (error) {
     log(1, 'Error during player preload', error);
