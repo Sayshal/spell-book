@@ -887,7 +887,6 @@ export class PartySpellManager {
     }
     if (game.user.isGM) {
       ui.notifications.warn('SPELLBOOK.Party.NoPrimaryPartySet', { localize: true });
-      log(2, 'No primary party set in D&D 5e settings. Please configure a primary party group actor.');
     } else {
       ui.notifications.info('SPELLBOOK.Party.AskGMToSetParty', { localize: true });
     }
