@@ -545,8 +545,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         cssClass: 'loadout-button'
       }
     ];
-    const partyActors = PartySpellManager.getPartyActors();
-    const showPartyButton = partyActors.length !== 0;
+    const primaryGroup = PartySpellManager.getPrimaryGroupForActor(this.actor);
+    let showPartyButton = false;
+    if (primaryGroup) {
+      const creatures = primaryGroup.system?.creatures || [];
+      const spellcasters = creatures.filter((actor) => actor && Object.keys(actor?.spellcastingClasses || {}).length > 0);
+      showPartyButton = spellcasters.length > 0;
+    }
     if (showPartyButton) {
       const isPartyModeEnabled = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
       buttons.push({
@@ -2408,9 +2413,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @static
    */
   static async openPartyManager(_event, _target) {
-    const partyActors = PartySpellManager.getPartyActors();
+    const primaryGroup = PartySpellManager.getPrimaryGroupForActor(this.actor);
+    if (!primaryGroup) return;
+    const partyActors = PartySpellManager.getPartyActors(primaryGroup);
     if (partyActors.length === 0) return;
-    const manager = new PartySpells(partyActors, this.actor, this.group);
+    const manager = new PartySpells(partyActors, this.actor, primaryGroup);
     manager.render(true);
   }
 
@@ -2422,6 +2429,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @static
    */
   static async togglePartyMode(_event, _target) {
+    const primaryGroup = PartySpellManager.getPrimaryGroupForActor(this.actor);
+    if (!primaryGroup) return;
     const currentMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
     log(1, 'CURRENT MODE:', { currentMode });
     await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, !currentMode);
