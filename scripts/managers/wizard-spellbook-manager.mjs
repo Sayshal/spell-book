@@ -522,7 +522,7 @@ export class WizardSpellbookManager {
    * Calculate the maximum number of spells allowed in the wizard's spellbook (cached).
    *
    * Determines the total number of spells the wizard can have in their spellbook
-   * based on class level and module configuration. Uses cached values for
+   * based on class level and class-specific configuration. Uses cached values for
    * performance optimization during repeated calculations.
    *
    * @returns {number} The maximum number of spells allowed
@@ -531,8 +531,9 @@ export class WizardSpellbookManager {
     if (this._maxSpellsCache !== null) return this._maxSpellsCache;
     if (!this.isWizard) return 0;
     const wizardLevel = this.classItem.system.levels || 1;
-    const startingSpells = MODULE.WIZARD_DEFAULTS.STARTING_SPELLS;
-    const spellsPerLevel = MODULE.WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
+    const classRules = RuleSetManager.getClassRules(this.actor, this.classIdentifier);
+    const startingSpells = classRules?.startingSpells ?? MODULE.WIZARD_DEFAULTS.STARTING_SPELLS;
+    const spellsPerLevel = classRules?.spellsPerLevel ?? MODULE.WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
     const maxSpells = startingSpells + Math.max(0, wizardLevel - 1) * spellsPerLevel;
     this._maxSpellsCache = maxSpells;
     log(3, `Maximum ${this.classIdentifier} wizard spells: ${maxSpells} (level ${wizardLevel})`);
@@ -543,7 +544,7 @@ export class WizardSpellbookManager {
    * Get the number of free spells the wizard should have at current level (cached).
    *
    * Calculates the total number of free spells available to the wizard based
-   * on their current level and module configuration. Free spells are gained
+   * on their current level and class-specific configuration. Free spells are gained
    * through level progression and don't require gold payment.
    *
    * @returns {number} The number of free spells
@@ -552,7 +553,10 @@ export class WizardSpellbookManager {
     if (this._freeSpellsCache !== null) return this._freeSpellsCache;
     if (!this.isWizard) return 0;
     const wizardLevel = this.classItem.system.levels || 1;
-    const freeSpells = MODULE.WIZARD_DEFAULTS.STARTING_SPELLS + Math.max(0, wizardLevel - 1) * MODULE.WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
+    const classRules = RuleSetManager.getClassRules(this.actor, this.classIdentifier);
+    const startingSpells = classRules?.startingSpells ?? MODULE.WIZARD_DEFAULTS.STARTING_SPELLS;
+    const spellsPerLevel = classRules?.spellsPerLevel ?? MODULE.WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
+    const freeSpells = startingSpells + Math.max(0, wizardLevel - 1) * spellsPerLevel;
     this._freeSpellsCache = freeSpells;
     return freeSpells;
   }

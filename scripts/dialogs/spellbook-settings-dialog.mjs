@@ -133,7 +133,11 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       increaseSpellLearningCost: SpellbookSettingsDialog.increaseSpellLearningCost,
       decreaseSpellLearningCost: SpellbookSettingsDialog.decreaseSpellLearningCost,
       increaseSpellLearningTime: SpellbookSettingsDialog.increaseSpellLearningTime,
-      decreaseSpellLearningTime: SpellbookSettingsDialog.decreaseSpellLearningTime
+      decreaseSpellLearningTime: SpellbookSettingsDialog.decreaseSpellLearningTime,
+      increaseStartingSpells: SpellbookSettingsDialog.increaseStartingSpells,
+      decreaseStartingSpells: SpellbookSettingsDialog.decreaseStartingSpells,
+      increaseSpellsPerLevel: SpellbookSettingsDialog.increaseSpellsPerLevel,
+      decreaseSpellsPerLevel: SpellbookSettingsDialog.decreaseSpellsPerLevel
     },
     classes: ['spell-book', 'spellbook-settings-dialog'],
     window: { icon: 'fas fa-book-spells', resizable: false, minimizable: true, positioned: true },
@@ -246,6 +250,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
    *
    * @returns {Promise<ClassSettingsData[]>} Array of processed class settings data
    * @private
+   * @todo replace `||` with constants.mjs values
    */
   async _prepareClassSettings() {
     const classSettings = [];
@@ -278,6 +283,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
           cantripPreparationBonus: 'cantripPreparationBonus' in savedRules ? savedRules.cantripPreparationBonus : processedClassRules.cantripPreparationBonus || 0,
           spellLearningCostMultiplier: 'spellLearningCostMultiplier' in savedRules ? savedRules.spellLearningCostMultiplier : processedClassRules.spellLearningCostMultiplier || 50,
           spellLearningTimeMultiplier: 'spellLearningTimeMultiplier' in savedRules ? savedRules.spellLearningTimeMultiplier : processedClassRules.spellLearningTimeMultiplier || 2,
+          startingSpells: 'startingSpells' in savedRules ? savedRules.startingSpells : processedClassRules.startingSpells || 6,
+          spellsPerLevel: 'spellsPerLevel' in savedRules ? savedRules.spellsPerLevel : processedClassRules.spellsPerLevel || 2,
           _noScaleValue: processedClassRules._noScaleValue
         };
         const spellManager = new SpellManager(this.actor);
@@ -405,6 +412,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     const cantripPreparationBonusControls = this._createCantripPreparationBonusControls(identifier, formRules.cantripPreparationBonus);
     const spellLearningCostControls = this._createSpellLearningCostControls(identifier, formRules.spellLearningCostMultiplier);
     const spellLearningTimeControls = this._createSpellLearningTimeControls(identifier, formRules.spellLearningTimeMultiplier);
+    const startingSpellsControls = this._createStartingSpellsControls(identifier, formRules.startingSpells);
+    const spellsPerLevelControls = this._createSpellsPerLevelControls(identifier, formRules.spellsPerLevel);
     return {
       showCantripsCheckboxHtml: ValidationHelpers.elementToHtml(showCantripsCheckbox),
       forceWizardModeCheckboxHtml: ValidationHelpers.elementToHtml(forceWizardCheckbox),
@@ -415,7 +424,9 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       spellPreparationBonusControlsHtml: spellPreparationBonusControls,
       cantripPreparationBonusControlsHtml: cantripPreparationBonusControls,
       spellLearningCostControlsHtml: spellLearningCostControls,
-      spellLearningTimeControlsHtml: spellLearningTimeControls
+      spellLearningTimeControlsHtml: spellLearningTimeControls,
+      startingSpellsControlsHtml: startingSpellsControls,
+      spellsPerLevelControlsHtml: spellsPerLevelControls
     };
   }
 
@@ -629,6 +640,98 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     increaseButton.dataset.class = identifier;
     increaseButton.textContent = '+';
     increaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.SpellLearningTimeMultiplier.Increase'));
+
+    container.appendChild(decreaseButton);
+    container.appendChild(input);
+    container.appendChild(increaseButton);
+
+    return ValidationHelpers.elementToHtml(container);
+  }
+
+  /**
+   * Create starting spells controls for a wizard class.
+   *
+   * Generates the counter group HTML for adjusting starting spells at level 1
+   * with increment/decrement buttons and input field.
+   *
+   * @param {string} identifier - The class identifier
+   * @param {number} currentValue - Current starting spells value
+   * @returns {string} HTML string for the controls
+   * @private
+   */
+  _createStartingSpellsControls(identifier, currentValue) {
+    const container = document.createElement('div');
+    container.className = 'counter-group';
+
+    const decreaseButton = document.createElement('button');
+    decreaseButton.type = 'button';
+    decreaseButton.dataset.action = 'decreaseStartingSpells';
+    decreaseButton.dataset.class = identifier;
+    decreaseButton.textContent = '−';
+    decreaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.StartingSpells.Decrease'));
+
+    const input = ValidationHelpers.createNumberInput({
+      name: `class.${identifier}.startingSpells`,
+      value: currentValue ?? 6,
+      min: 0,
+      step: 1,
+      cssClass: 'starting-spells-input',
+      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.StartingSpells.Label')
+    });
+    input.id = `starting-spells-${identifier}`;
+
+    const increaseButton = document.createElement('button');
+    increaseButton.type = 'button';
+    increaseButton.dataset.action = 'increaseStartingSpells';
+    increaseButton.dataset.class = identifier;
+    increaseButton.textContent = '+';
+    increaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.StartingSpells.Increase'));
+
+    container.appendChild(decreaseButton);
+    container.appendChild(input);
+    container.appendChild(increaseButton);
+
+    return ValidationHelpers.elementToHtml(container);
+  }
+
+  /**
+   * Create spells per level controls for a wizard class.
+   *
+   * Generates the counter group HTML for adjusting spells gained per level
+   * with increment/decrement buttons and input field.
+   *
+   * @param {string} identifier - The class identifier
+   * @param {number} currentValue - Current spells per level value
+   * @returns {string} HTML string for the controls
+   * @private
+   */
+  _createSpellsPerLevelControls(identifier, currentValue) {
+    const container = document.createElement('div');
+    container.className = 'counter-group';
+
+    const decreaseButton = document.createElement('button');
+    decreaseButton.type = 'button';
+    decreaseButton.dataset.action = 'decreaseSpellsPerLevel';
+    decreaseButton.dataset.class = identifier;
+    decreaseButton.textContent = '−';
+    decreaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.SpellsPerLevel.Decrease'));
+
+    const input = ValidationHelpers.createNumberInput({
+      name: `class.${identifier}.spellsPerLevel`,
+      value: currentValue ?? 2,
+      min: 0,
+      step: 1,
+      cssClass: 'spells-per-level-input',
+      ariaLabel: game.i18n.localize('SPELLBOOK.Settings.SpellsPerLevel.Label')
+    });
+    input.id = `spells-per-level-${identifier}`;
+
+    const increaseButton = document.createElement('button');
+    increaseButton.type = 'button';
+    increaseButton.dataset.action = 'increaseSpellsPerLevel';
+    increaseButton.dataset.class = identifier;
+    increaseButton.textContent = '+';
+    increaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.SpellsPerLevel.Increase'));
 
     container.appendChild(decreaseButton);
     container.appendChild(input);
@@ -901,6 +1004,54 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     log(3, `Decreased spell learning time for ${classIdentifier} to ${newValue}`);
   }
 
+  static increaseStartingSpells(_event, target) {
+    const classIdentifier = target.dataset.class;
+    if (!classIdentifier) return;
+    const input = this.element.querySelector(`input[name="class.${classIdentifier}.startingSpells"]`);
+    if (!input) return;
+    const currentValue = parseInt(input.value) || 6;
+    const newValue = currentValue + 1;
+    input.value = newValue;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    log(3, `Increased starting spells for ${classIdentifier} to ${newValue}`);
+  }
+
+  static decreaseStartingSpells(_event, target) {
+    const classIdentifier = target.dataset.class;
+    if (!classIdentifier) return;
+    const input = this.element.querySelector(`input[name="class.${classIdentifier}.startingSpells"]`);
+    if (!input) return;
+    const currentValue = parseInt(input.value) || 6;
+    const newValue = Math.max(0, currentValue - 1);
+    input.value = newValue;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    log(3, `Decreased starting spells for ${classIdentifier} to ${newValue}`);
+  }
+
+  static increaseSpellsPerLevel(_event, target) {
+    const classIdentifier = target.dataset.class;
+    if (!classIdentifier) return;
+    const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellsPerLevel"]`);
+    if (!input) return;
+    const currentValue = parseInt(input.value) || 2;
+    const newValue = currentValue + 1;
+    input.value = newValue;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    log(3, `Increased spells per level for ${classIdentifier} to ${newValue}`);
+  }
+
+  static decreaseSpellsPerLevel(_event, target) {
+    const classIdentifier = target.dataset.class;
+    if (!classIdentifier) return;
+    const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellsPerLevel"]`);
+    if (!input) return;
+    const currentValue = parseInt(input.value) || 2;
+    const newValue = Math.max(0, currentValue - 1);
+    input.value = newValue;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    log(3, `Decreased spells per level for ${classIdentifier} to ${newValue}`);
+  }
+
   /**
    * Update the visual display of class statistics when preparation bonus changes.
    *
@@ -986,6 +1137,8 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
         if (rules.forceWizardMode !== undefined) processedRules.forceWizardMode = Boolean(rules.forceWizardMode);
         if (rules.spellLearningCostMultiplier !== undefined) processedRules.spellLearningCostMultiplier = parseInt(rules.spellLearningCostMultiplier) || 50;
         if (rules.spellLearningTimeMultiplier !== undefined) processedRules.spellLearningTimeMultiplier = parseFloat(rules.spellLearningTimeMultiplier) || 2;
+        if (rules.startingSpells !== undefined) processedRules.startingSpells = parseInt(rules.startingSpells) || 6;
+        if (rules.spellsPerLevel !== undefined) processedRules.spellsPerLevel = parseInt(rules.spellsPerLevel) || 2;
         if (rules.customSpellList !== undefined) {
           if (Array.isArray(rules.customSpellList)) processedRules.customSpellList = rules.customSpellList.filter((uuid) => uuid && uuid.trim());
           else if (rules.customSpellList) processedRules.customSpellList = [rules.customSpellList];

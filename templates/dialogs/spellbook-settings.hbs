@@ -245,6 +245,24 @@
                     for="spell-learning-time-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.SpellLearningTimeMultiplier.Label'}}</label>
                   {{{classData.formElements.spellLearningTimeControlsHtml}}}
                 </div>
+
+                <!-- Starting Spells (Wizard-enabled classes only) -->
+                <div class="setting-row">
+                  <i class="fas fa-question-circle setting-tooltip"
+                    data-tooltip="{{localize 'SPELLBOOK.Settings.StartingSpells.Hint'}}"></i>
+                  <label
+                    for="starting-spells-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.StartingSpells.Label'}}</label>
+                  {{{classData.formElements.startingSpellsControlsHtml}}}
+                </div>
+
+                <!-- Spells Per Level (Wizard-enabled classes only) -->
+                <div class="setting-row">
+                  <i class="fas fa-question-circle setting-tooltip"
+                    data-tooltip="{{localize 'SPELLBOOK.Settings.SpellsPerLevel.Hint'}}"></i>
+                  <label
+                    for="spells-per-level-{{classData.identifier}}">{{localize 'SPELLBOOK.Settings.SpellsPerLevel.Label'}}</label>
+                  {{{classData.formElements.spellsPerLevelControlsHtml}}}
+                </div>
               {{/if}}
             </div>
           </div>
