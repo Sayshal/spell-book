@@ -540,9 +540,10 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
     try {
       addHeader('Spell Book Settings');
       const settingKeys = Object.values(SETTINGS).sort();
-      addLine(`Total Settings: ${settingKeys.length}`);
+      const registeredSettings = settingKeys.filter((key) => game.settings.settings.has(`${MODULE.ID}.${key}`));
+      addLine(`Total Settings: ${registeredSettings.length} (${settingKeys.length} defined)`);
       addLine('');
-      for (const settingKey of settingKeys) {
+      for (const settingKey of registeredSettings) {
         try {
           const value = game.settings.get(MODULE.ID, settingKey);
           let displayValue = value;
@@ -557,7 +558,7 @@ export class SpellBookTroubleshooter extends HandlebarsApplicationMixin(Applicat
       addLine('');
       addLine('=== FULL SETTINGS DATA (for import) ===');
       const fullSettingsData = {};
-      for (const settingKey of settingKeys) {
+      for (const settingKey of registeredSettings) {
         try {
           fullSettingsData[settingKey] = game.settings.get(MODULE.ID, settingKey);
         } catch (settingError) {
