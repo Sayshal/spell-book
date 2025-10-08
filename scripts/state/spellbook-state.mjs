@@ -1345,34 +1345,22 @@ export class SpellbookState {
    * @private
    */
   async _addWizardRitualSpells(classIdentifier, spellDataByClass) {
-    if (!this.app.wizardManager.isWizard) return;
-    const spellbookSpells = await this.app.wizardManager.getSpellbookSpells();
+    const wizardManager = this.app.wizardManagers.get(classIdentifier);
+    if (!wizardManager || !wizardManager.isWizard) return;
+    const spellbookSpells = await wizardManager.getSpellbookSpells();
     const isRitualSpell = (spell) => {
       if (spell.system?.properties && spell.system.properties.has) return spell.system.properties.has('ritual');
       if (spell.system?.properties && Array.isArray(spell.system.properties)) return spell.system.properties.some((prop) => prop.value === 'ritual');
       return spell.system?.components?.ritual || false;
     };
-    let addedCount = 0;
     for (const spellUuid of spellbookSpells) {
       const sourceSpell = await fromUuid(spellUuid);
       if (!sourceSpell || !isRitualSpell(sourceSpell) || sourceSpell.system.level === 0) continue;
-      if (!spellDataByClass[classIdentifier]) spellDataByClass[classIdentifier] = {};
+      if (!spellDataByClass[classIdentifier]) continue;
       const classSpellKey = `${classIdentifier}:${spellUuid}`;
       if (spellDataByClass[classIdentifier][classSpellKey]) {
         spellDataByClass[classIdentifier][classSpellKey].isRitual = true;
-      } else {
-        spellDataByClass[classIdentifier][classSpellKey] = {
-          uuid: spellUuid,
-          name: sourceSpell.name,
-          wasPrepared: false,
-          isPrepared: false,
-          isRitual: true,
-          sourceClass: classIdentifier,
-          classSpellKey,
-          spellLevel: sourceSpell.system.level
-        };
       }
-      addedCount++;
     }
   }
 
@@ -1395,12 +1383,6 @@ export class SpellbookState {
     if (!spellList || !spellList.size) return;
     const spellItems = await DataHelpers.fetchSpellDocuments(spellList, 9);
     if (!spellItems || !spellItems.length) return;
-    const preparedUuids = new Set();
-    if (spellDataByClass[classIdentifier]) {
-      Object.values(spellDataByClass[classIdentifier]).forEach((spellData) => {
-        if (spellData.isPrepared || spellData.wasPrepared) preparedUuids.add(spellData.uuid);
-      });
-    }
     const isRitualSpell = (spell) => {
       if (spell.system?.properties && spell.system.properties.has) return spell.system.properties.has('ritual');
       if (spell.system?.properties && Array.isArray(spell.system.properties)) return spell.system.properties.some((prop) => prop.value === 'ritual');
@@ -1408,36 +1390,12 @@ export class SpellbookState {
     };
     for (const spell of spellItems) {
       const spellUuid = spell.compendiumUuid || spell.uuid;
-      const spellName = spell.name;
-      const spellLevel = spell.system?.level;
       const hasRitual = isRitualSpell(spell);
-      if (!hasRitual) continue;
-      if (spellLevel === 0) continue;
-      if (preparedUuids.has(spellUuid)) continue;
-      const existingRitualSpell = this.actor.items.find(
-        (item) =>
-          item.type === 'spell' &&
-          (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) &&
-          (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier) &&
-          item.system?.method === 'ritual'
-      );
-      if (existingRitualSpell) continue;
-      if (!spellDataByClass[classIdentifier]) spellDataByClass[classIdentifier] = {};
+      if (!hasRitual || spell.system?.level === 0) continue;
+      if (!spellDataByClass[classIdentifier]) continue;
       const classSpellKey = `${classIdentifier}:${spellUuid}`;
       if (spellDataByClass[classIdentifier][classSpellKey]) {
         spellDataByClass[classIdentifier][classSpellKey].isRitual = true;
-        spellDataByClass[classIdentifier][classSpellKey].isPrepared = false;
-      } else {
-        spellDataByClass[classIdentifier][classSpellKey] = {
-          uuid: spellUuid,
-          name: spellName,
-          wasPrepared: false,
-          isPrepared: false,
-          isRitual: true,
-          sourceClass: classIdentifier,
-          classSpellKey,
-          spellLevel: spellLevel
-        };
       }
     }
   }
