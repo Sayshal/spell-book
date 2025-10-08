@@ -96,8 +96,14 @@
           <i class="fas fa-scroll"></i> {{localize "SPELLBOOK.Wizard.LearnSpell"}}
         </button>
       {{else if spell.wizardAction.inSpellbook}}
-        <span class="in-spellbook-tag" aria-label="{{localize 'SPELLBOOK.Wizard.InSpellbook'}}">
-          {{localize "SPELLBOOK.Wizard.InSpellbook"}}
+        <span
+          class="in-spellbook-tag{{#if spell.wizardAction.learningSource}} learned-{{spell.wizardAction.learningSource}}{{/if}}"
+          aria-label="{{localize 'SPELLBOOK.Wizard.InSpellbook'}}">
+          {{#if spell.wizardAction.learningSourceLabel}}
+            {{spell.wizardAction.learningSourceLabel}}
+          {{else}}
+            {{localize "SPELLBOOK.Wizard.InSpellbook"}}
+          {{/if}}
         </span>
       {{else if spell.wizardAction.canLearn}}
         <button class="copy-spell-btn" data-action="learnSpell" data-uuid="{{spell.wizardAction.uuid}}" type="button">

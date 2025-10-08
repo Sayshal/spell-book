@@ -395,8 +395,8 @@ export class WizardSpellbookManager {
     const spells = journalPage.system.spells || new Set();
     spells.add(spellUuid);
     await journalPage.update({ 'system.spells': spells });
-    if (source === MODULE.WIZARD_SPELL_SOURCE.COPIED) {
-      const metadataObj = { spellUuid, dateCopied: Date.now(), cost: metadata?.cost || 0, timeSpent: metadata?.timeSpent || 0 };
+    if (source === MODULE.WIZARD_SPELL_SOURCE.COPIED || source === MODULE.WIZARD_SPELL_SOURCE.SCROLL) {
+      const metadataObj = { spellUuid, dateCopied: Date.now(), cost: metadata?.cost || 0, timeSpent: metadata?.timeSpent || 0, fromScroll: source === MODULE.WIZARD_SPELL_SOURCE.SCROLL };
       const copiedSpellsFlag = `${FLAGS.WIZARD_COPIED_SPELLS}_${this.classIdentifier}`;
       const copiedSpells = this.actor.getFlag(MODULE.ID, copiedSpellsFlag) || [];
       copiedSpells.push(metadataObj);
@@ -609,5 +609,30 @@ export class WizardSpellbookManager {
     if (spell.system.level === 0) return true;
     const remainingFree = await this.getRemainingFreeSpells();
     return remainingFree > 0;
+  }
+
+  /**
+   * Get the learning source for a spell in the spellbook.
+   * Determines how a wizard learned this spell (free level-up, purchased, or from scroll).
+   *
+   * @param {string} spellUuid - UUID of the spell to check
+   * @returns {Promise<string>} Source type: 'free', 'copied', 'scroll', or 'free' as default
+   */
+  async getSpellLearningSource(spellUuid) {
+    // Check if it was copied (purchased)
+    const copiedSpellsFlag = `${FLAGS.WIZARD_COPIED_SPELLS}_${this.classIdentifier}`;
+    const copiedSpells = this.actor.getFlag(MODULE.ID, copiedSpellsFlag) || [];
+    const copiedSpell = copiedSpells.find((s) => s.spellUuid === spellUuid);
+
+    if (copiedSpell) {
+      // Check if it has scroll metadata (indicating it was from a scroll)
+      if (copiedSpell.fromScroll) {
+        return MODULE.WIZARD_SPELL_SOURCE.SCROLL;
+      }
+      return MODULE.WIZARD_SPELL_SOURCE.COPIED;
+    }
+
+    // Default to free if not in copied spells list
+    return MODULE.WIZARD_SPELL_SOURCE.FREE;
   }
 }

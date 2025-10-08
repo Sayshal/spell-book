@@ -353,7 +353,8 @@ export const MODULE = {
     COPIED: 'copied',
     FREE: 'free',
     INITIAL: 'initial',
-    LEVEL_UP: 'levelUp'
+    LEVEL_UP: 'levelUp',
+    SCROLL: 'scroll'
   },
 
   /**

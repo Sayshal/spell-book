@@ -215,10 +215,15 @@ export class ScrollScanner {
     const time = wizardManager.getCopyingTime(spell);
     const shouldProceed = await this._showLearnFromScrollDialog(spell, cost, time, isFree, isAlreadyInSpellbook);
     if (!shouldProceed) return false;
-    const success = await wizardManager.copySpell(spellUuid, cost, time, isFree);
+    const success = await wizardManager.addSpellToSpellbook(spellUuid, MODULE.WIZARD_SPELL_SOURCE.SCROLL, { cost, timeSpent: time });
     if (success) {
+      if (!isFree && cost > 0) {
+        const shouldDeductCurrency = game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST);
+        if (shouldDeductCurrency) await this._deductSpellLearningCost(actor, cost);
+      }
       const shouldConsume = game.settings.get(MODULE.ID, SETTINGS.CONSUME_SCROLLS_WHEN_LEARNING);
       if (shouldConsume) await actor.deleteEmbeddedDocuments('Item', [scrollItem.id]);
+      wizardManager.invalidateCache();
       ui.notifications.info(game.i18n.format('SPELLBOOK.Wizard.SpellLearned', { name: spell.name }));
     }
     return success;
@@ -243,7 +248,7 @@ export class ScrollScanner {
     const content = await renderTemplate(TEMPLATES.DIALOGS.LEARN_FROM_SCROLL, { spell, costText, time, isAlreadyInSpellbook, shouldConsume });
     try {
       const result = await foundry.applications.api.DialogV2.wait({
-        title: game.i18n.format('SPELLBOOK.Wizard.LearnSpellTitle', { name: spell.name }),
+        window: { icon: 'fas fa-scroll', title: game.i18n.format('SPELLBOOK.Wizard.LearnSpellTitle', { name: spell.name }) },
         content: content,
         buttons: [
           { icon: 'fas fa-book', label: game.i18n.localize('SPELLBOOK.Wizard.LearnSpellButton'), action: 'confirm', className: 'dialog-button' },
@@ -255,6 +260,74 @@ export class ScrollScanner {
       return result === 'confirm';
     } catch (error) {
       log(1, 'Error showing learn from scroll dialog:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Deduct spell learning cost from actor's currency.
+   * Handles multi-currency systems and conversions.
+   *
+   * @param {Actor5e} actor - The actor to deduct currency from
+   * @param {number} cost - Cost in base currency
+   * @returns {Promise<boolean>} Success state
+   * @private
+   */
+  static async _deductSpellLearningCost(actor, cost) {
+    const currencies = CONFIG.DND5E.currencies;
+    const actorCurrency = actor.system.currency || {};
+    let baseCurrency = null;
+    const otherCurrencies = [];
+    for (const [currencyType, config] of Object.entries(currencies)) {
+      if (config.conversion === 1) baseCurrency = currencyType;
+      else otherCurrencies.push({ type: currencyType, conversion: config.conversion });
+    }
+    otherCurrencies.sort((a, b) => a.conversion - b.conversion);
+    const deductionOrder = baseCurrency ? [baseCurrency, ...otherCurrencies.map((c) => c.type)] : otherCurrencies.map((c) => c.type);
+    let totalWealthInBase = 0;
+    for (const [currencyType, config] of Object.entries(currencies)) {
+      const amount = actorCurrency[currencyType] || 0;
+      const baseValue = amount / config.conversion;
+      totalWealthInBase += baseValue;
+    }
+    if (totalWealthInBase < cost) {
+      const baseCurrencyLabel = baseCurrency ? currencies[baseCurrency].abbreviation : 'currency';
+      ui.notifications.warn(
+        game.i18n.format('SPELLBOOK.Wizard.InsufficientGold', {
+          cost: cost,
+          current: totalWealthInBase.toFixed(2)
+        })
+      );
+      return false;
+    }
+    let remainingCost = cost;
+    const deductions = {};
+    for (const currencyType of deductionOrder) {
+      if (remainingCost <= 0.001) break;
+      if (!currencies[currencyType]) continue;
+      const available = actorCurrency[currencyType] || 0;
+      if (available <= 0) continue;
+      const config = currencies[currencyType];
+      const baseValuePerUnit = 1 / config.conversion;
+      const neededUnits = Math.ceil(remainingCost / baseValuePerUnit);
+      const toDeduct = Math.min(available, neededUnits);
+      if (toDeduct > 0) {
+        deductions[currencyType] = toDeduct;
+        const baseValueDeducted = toDeduct * baseValuePerUnit;
+        remainingCost -= baseValueDeducted;
+      }
+    }
+    try {
+      const updateData = {};
+      for (const [currencyType, deductAmount] of Object.entries(deductions)) {
+        const currentAmount = actorCurrency[currencyType] || 0;
+        const newAmount = currentAmount - deductAmount;
+        updateData[`system.currency.${currencyType}`] = newAmount;
+      }
+      await actor.update(updateData);
+      return true;
+    } catch (error) {
+      log(1, `Failed to deduct currency from ${actor.name}:`, error);
       return false;
     }
   }

@@ -67,6 +67,9 @@
   --spell-book-tag-pact: rgb(155 89 182 / 100%);
   --spell-book-tag-prepared: rgb(76 175 80 / 100%);
   --spell-book-tag-ritual: rgb(241 196 15 / 100%);
+  --spell-book-tag-learned-free: rgb(76 175 80 / 100%);
+  --spell-book-tag-learned-purchased: rgb(33 150 243 / 100%);
+  --spell-book-tag-learned-scroll: rgb(255 152 0 / 100%);
   /* ======= Shadow Effects ======= */
   --spell-book-shadow-heavy: 0 0 0.5rem rgb(0 0 0 / 75.3%);
   --spell-book-shadow-highlight: 0 0 0.5rem rgb(255 201 25 / 50.2%);
@@ -1728,6 +1731,18 @@
       color: rgb(255 255 255 / 100%);
       font-size: 0.8em;
       background-color: var(--spell-book-tag-learned);
+
+      &.learned-free {
+        background-color: var(--spell-book-tag-learned-free);
+      }
+
+      &.learned-copied {
+        background-color: var(--spell-book-tag-learned-purchased);
+      }
+
+      &.learned-scroll {
+        background-color: var(--spell-book-tag-learned-scroll);
+      }
     }
 
     .copy-spell-btn {

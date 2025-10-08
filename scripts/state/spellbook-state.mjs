@@ -722,6 +722,7 @@ export class SpellbookState {
     const processedSpellUuids = new Set();
     const targetUserId = DataHelpers._getTargetUserId(this.actor);
     const actorId = this.actor?.id;
+    const wizardManager = this.app.wizardManagers.get(classIdentifier);
     for (const spell of spellItems) {
       if (spell?.system?.level === undefined) continue;
       const spellUuid = spell.uuid || spell.compendiumUuid;
@@ -734,6 +735,7 @@ export class SpellbookState {
       spellData.isWizardClass = true;
       spellData.inWizardSpellbook = personalSpellbook.includes(spellUuid);
       spellData.canAddToSpellbook = !spellData.inWizardSpellbook && level > 0;
+      if (spellData.inWizardSpellbook && wizardManager) spellData.learningSource = await wizardManager.getSpellLearningSource(spellUuid);
       spellData.preparation = {
         prepared: false,
         isOwned: false,

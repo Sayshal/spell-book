@@ -967,13 +967,25 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         tooltip: processedSpell.hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes'),
         iconClass: processedSpell.hasNotes ? 'fas fa-sticky-note' : 'far fa-sticky-note'
       };
+      let learningSource = null;
+      let learningSourceLabel = null;
+      if (processedSpell.inWizardSpellbook && processedSpell.sourceClass) {
+        const wizardManager = this.wizardManagers.get(processedSpell.sourceClass);
+        if (wizardManager) {
+          const spellUuid = processedSpell.spellUuid || processedSpell.compendiumUuid;
+          learningSource = await wizardManager.getSpellLearningSource(spellUuid);
+          learningSourceLabel = game.i18n.localize(this._getLearnedLabelKey(learningSource));
+        }
+      }
       const wizardAction = {
         isFromScroll: processedSpell.isFromScroll,
         inSpellbook: processedSpell.inWizardSpellbook,
         canLearn: processedSpell.system?.level > 0 && !processedSpell.inWizardSpellbook && !processedSpell.isFromScroll,
         uuid: processedSpell.spellUuid || processedSpell.compendiumUuid,
         scrollId: processedSpell.scrollId,
-        ariaLabel: game.i18n.format('SPELLBOOK.Scrolls.LearnFromScroll', { name: processedSpell.name })
+        ariaLabel: game.i18n.format('SPELLBOOK.Scrolls.LearnFromScroll', { name: processedSpell.name }),
+        learningSource: learningSource,
+        learningSourceLabel: learningSourceLabel
       };
       const partyIcons = this._preparePartyIconsData(processedSpell);
       const formattedDetails = UIHelpers.UICustomizationHelper.buildPlayerMetadata(processedSpell);
@@ -2208,7 +2220,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         if (spellItem) {
           const buttonContainer = spellItem.querySelector('.wizard-spell-status');
           if (buttonContainer) {
-            buttonContainer.innerHTML = `<span class="in-spellbook-tag" aria-label="Spell is in your spellbook">${game.i18n.localize('SPELLBOOK.Wizard.InSpellbook')}</span>`;
+            const source = costInfo.isFree ? MODULE.WIZARD_SPELL_SOURCE.FREE : MODULE.WIZARD_SPELL_SOURCE.COPIED;
+            const labelKey = this._getLearnedLabelKey(source);
+            buttonContainer.innerHTML = `<span class="in-spellbook-tag learned-${source}" aria-label="Spell is in your spellbook">${game.i18n.localize(labelKey)}</span>`;
           }
           spellItem.classList.add('in-wizard-spellbook', 'prepared-spell');
         }
@@ -2232,6 +2246,25 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
+   * Get the appropriate localization key for a learned spell based on its source.
+   * @param {string} source - The learning source (free, copied, scroll)
+   * @returns {string} Localization key
+   * @private
+   */
+  _getLearnedLabelKey(source) {
+    switch (source) {
+      case MODULE.WIZARD_SPELL_SOURCE.FREE:
+        return 'SPELLBOOK.Wizard.LearnedFree';
+      case MODULE.WIZARD_SPELL_SOURCE.COPIED:
+        return 'SPELLBOOK.Wizard.LearnedPurchased';
+      case MODULE.WIZARD_SPELL_SOURCE.SCROLL:
+        return 'SPELLBOOK.Wizard.LearnedFromScroll';
+      default:
+        return 'SPELLBOOK.Wizard.LearnedFree';
+    }
+  }
+
+  /**
    * Handle learning a spell from a scroll.
    *
    * @param {Event} event - The triggering event
@@ -2247,7 +2280,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!scrollSpellData) return;
     const wizardManager = this.wizardManager;
     if (!wizardManager) return;
-    const success = await DataHelpers.learnSpellFromScroll(this.actor, scrollSpellData, wizardManager);
+    const success = await DataHelpers.ScrollScanner.learnSpellFromScroll(this.actor, scrollSpellData, wizardManager);
     if (success) {
       await this._stateManager.refreshClassSpellData('wizard');
       this.render(false);
