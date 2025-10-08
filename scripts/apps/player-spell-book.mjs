@@ -2220,6 +2220,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
               if (heading) heading.setAttribute('aria-expanded', 'false');
             }
           });
+          this._applyFilters();
         }, 50);
       }
     }

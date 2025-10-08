@@ -298,7 +298,7 @@ export class WizardSpellbookManager {
       }
       if (totalWealthInBase < cost) {
         const baseCurrencyLabel = baseCurrency ? currencies[baseCurrency].abbreviation : 'currency';
-        ui.notifications.warning(game.i18n.format('SPELLBOOK.Wizard.InsufficientGold', { cost: cost, current: totalWealthInBase.toFixed(2) }));
+        ui.notifications.warn(game.i18n.format('SPELLBOOK.Wizard.InsufficientGold', { cost: cost, current: totalWealthInBase.toFixed(2) }));
         return false;
       }
       let remainingCost = cost;
