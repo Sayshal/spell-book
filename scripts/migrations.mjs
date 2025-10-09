@@ -869,7 +869,7 @@ export async function migrateCustomSpellListFormat() {
  * @param {CustomSpellListMigrationResults} customSpellListResults - Results from custom spell list format migration
  * @returns {Promise<void>}
  */
-async function logMigrationResults(deprecatedResults, folderResults, ownershipResults, packSortingResults, customSpellListResults) {
+async function logMigrationResults(deprecatedResults, folderResults, ownershipResults, packSortingResults, customSpellListResults, nullToArrayResults) {
   const totalProcessed = deprecatedResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed + customSpellListResults.processed;
   if (totalProcessed === 0) {
     log(3, 'No migration updates needed');
@@ -930,7 +930,7 @@ async function logMigrationResults(deprecatedResults, folderResults, ownershipRe
   log(3, `Migration complete: ${totalProcessed} documents/folders processed`);
   const suppressWarnings = game.settings.get(MODULE.ID, SETTINGS.SUPPRESS_MIGRATION_WARNINGS);
   if (suppressWarnings) return;
-  const content = await buildChatContent(deprecatedResults, folderResults, ownershipResults, packSortingResults, customSpellListResults, nullToArrayResults);
+  const content = await buildChatContent(deprecatedResults, folderResults, ownershipResults, packSortingResults, customSpellListResults);
   ChatMessage.create({ content: content, whisper: [game.user.id], user: game.user.id, flags: { 'spell-book': { messageType: 'migration-report' } } });
 }
 
@@ -954,7 +954,6 @@ async function buildChatContent(deprecatedResults, folderResults, ownershipResul
     ownershipResults,
     packSortingResults,
     customSpellListResults,
-    nullToArrayResults,
     totalProcessed: deprecatedResults.processed + folderResults.processed + ownershipResults.processed + packSortingResults.processed + customSpellListResults.processed
   });
 }
