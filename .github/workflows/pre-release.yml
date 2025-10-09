@@ -1,88 +1,88 @@
-name: Module Pre-Release
+# name: Module Pre-Release
 
-on:
-  push:
-    branches:
-      - beta
+# on:
+#   push:
+#     branches:
+#       - beta
 
-env:
-  REPO_URL: https://github.com/${{ github.repository }}
+# env:
+#   REPO_URL: https://github.com/${{ github.repository }}
 
-jobs:
-  pre-release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+# jobs:
+#   pre-release:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
 
-      - name: Get Version
-        id: get-version
-        run: |
-          # Extract semver (with or without prerelease suffix)
-          summary=$(git log -1 --pretty=%s)
-          version=$(echo "$summary" | grep -o -E '[v]?[0-9]+\.[0-9]+\.[0-9]+([-\.a-z0-9]*)?' | head -n1 | sed 's/^v//')
+#       - name: Get Version
+#         id: get-version
+#         run: |
+#           # Extract semver (with or without prerelease suffix)
+#           summary=$(git log -1 --pretty=%s)
+#           version=$(echo "$summary" | grep -o -E '[v]?[0-9]+\.[0-9]+\.[0-9]+([-\.a-z0-9]*)?' | head -n1 | sed 's/^v//')
 
-          if [ -z "$version" ]; then
-            echo "No version found in commit message."
-            exit 1
-          fi
+#           if [ -z "$version" ]; then
+#             echo "No version found in commit message."
+#             exit 1
+#           fi
 
-          echo "version=$version" >> $GITHUB_OUTPUT
-          echo "Detected version: $version"
+#           echo "version=$version" >> $GITHUB_OUTPUT
+#           echo "Detected version: $version"
 
-      - name: Update module.json with Version
-        run: node .github/workflows/update-module.js "${{ steps.get-version.outputs.version }}"
+#       - name: Update module.json with Version
+#         run: node .github/workflows/update-module.js "${{ steps.get-version.outputs.version }}"
 
-      - name: Zip Files
-        run: |
-          zip -r ./module.zip \
-            lang/ \
-            scripts/ \
-            styles/ \
-            templates/ \
-            assets/ \
-            LICENSE \
-            module.json \
-            README.md
+#       - name: Zip Files
+#         run: |
+#           zip -r ./module.zip \
+#             lang/ \
+#             scripts/ \
+#             styles/ \
+#             templates/ \
+#             assets/ \
+#             LICENSE \
+#             module.json \
+#             README.md
 
-      - name: Create Pre-Release
-        uses: ncipollo/release-action@v1
-        with:
-          allowUpdates: true
-          name: Pre-Release ${{ steps.get-version.outputs.version }}
-          draft: false
-          prerelease: true
-          body: "This is a pre-release build for testing."
-          token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: './module.zip, ./module.json'
-          tag: ${{ steps.get-version.outputs.version }}
+#       - name: Create Pre-Release
+#         uses: ncipollo/release-action@v1
+#         with:
+#           allowUpdates: true
+#           name: Pre-Release ${{ steps.get-version.outputs.version }}
+#           draft: false
+#           prerelease: true
+#           body: "This is a pre-release build for testing."
+#           token: ${{ secrets.GITHUB_TOKEN }}
+#           artifacts: './module.zip, ./module.json'
+#           tag: ${{ steps.get-version.outputs.version }}
 
-      - name: Post to Discord (Beta)
-        if: always()
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        run: |
-          RELEASE_NOTES=$(git log -1 --pretty=%B | grep '^-' | sed 's/^ //')
+#       - name: Post to Discord (Beta)
+#         if: always()
+#         env:
+#           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+#         run: |
+#           RELEASE_NOTES=$(git log -1 --pretty=%B | grep '^-' | sed 's/^ //')
 
-          JSON_PAYLOAD=$(jq -n \
-            --arg title "🚧 Beta Release: ${{ steps.get-version.outputs.version }}" \
-            --arg version "${{ steps.get-version.outputs.version }}" \
-            --arg release_url "${{ env.REPO_URL }}/releases/download/${{ steps.get-version.outputs.version }}/module.json" \
-            --arg download_url "${{ env.REPO_URL }}/releases/download/${{ steps.get-version.outputs.version }}/module.zip" \
-            --arg release_notes "$RELEASE_NOTES" \
-            '{
-              embeds: [{
-                title: $title,
-                color: 15105570, # orange-ish highlight
-                description: "This is a **beta build** for testing.\n\n**Not intended for production games.**",
-                fields: [
-                  {name: "Version", value: $version, inline: true},
-                  {name: "Manifest", value: $release_url, inline: false},
-                  {name: "Download", value: $download_url, inline: false},
-                  {name: "Notes", value: ($release_notes | if . == "" then "No notes provided." else . end), inline: false}
-                ]
-              }]
-            }')
+#           JSON_PAYLOAD=$(jq -n \
+#             --arg title "🚧 Beta Release: ${{ steps.get-version.outputs.version }}" \
+#             --arg version "${{ steps.get-version.outputs.version }}" \
+#             --arg release_url "${{ env.REPO_URL }}/releases/download/${{ steps.get-version.outputs.version }}/module.json" \
+#             --arg download_url "${{ env.REPO_URL }}/releases/download/${{ steps.get-version.outputs.version }}/module.zip" \
+#             --arg release_notes "$RELEASE_NOTES" \
+#             '{
+#               embeds: [{
+#                 title: $title,
+#                 color: 15105570, # orange-ish highlight
+#                 description: "This is a **beta build** for testing.\n\n**Not intended for production games.**",
+#                 fields: [
+#                   {name: "Version", value: $version, inline: true},
+#                   {name: "Manifest", value: $release_url, inline: false},
+#                   {name: "Download", value: $download_url, inline: false},
+#                   {name: "Notes", value: ($release_notes | if . == "" then "No notes provided." else . end), inline: false}
+#                 ]
+#               }]
+#             }')
 
-          curl -H "Content-Type: application/json" \
-              -d "$JSON_PAYLOAD" \
-              $DISCORD_WEBHOOK
+#           curl -H "Content-Type: application/json" \
+#               -d "$JSON_PAYLOAD" \
+#               $DISCORD_WEBHOOK

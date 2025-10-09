@@ -1,11 +1,59 @@
+{{!--
+/**
+ * Player Spell Book Tab Navigation Template
+ *
+ * PURPOSE:
+ * Navigation interface for switching between different spell book tabs including
+ * class-specific spell preparation tabs and wizard spellbook management. Provides
+ * visual tab switching with support for both icon-based and image-based tab
+ * representations, particularly for multiclass character management.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {boolean} hasMultipleTabs - Whether multiple tabs should be displayed
+ * @param {Array<Object>} tabs - Collection of available tab configurations
+ * @param {string} tabs[].id - Unique tab identifier for navigation targeting
+ * @param {string} tabs[].group - Tab group identifier for coordinated navigation
+ * @param {string} tabs[].cssClass - CSS classes for tab styling and state
+ * @param {string} tabs[].label - Display label for tab (used in tooltips)
+ * @param {string} tabs[].icon - Icon CSS classes for tab display (optional)
+ * @param {Object} tabs[].data - Additional tab data object (optional)
+ * @param {string} tabs[].data.classImg - Class-specific image path for visual tabs (optional)
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Navigation element with semantic nav tag for landmark navigation
+ * - Tab elements with proper data-action and data-tab attributes
+ * - Tooltip attributes for additional context on hover
+ * - Alt text for class image icons describing the tab purpose
+ * - Icon elements marked as decorative with proper CSS classes
+ *
+ * CUSTOMIZATION POINTS:
+ * - Tab display conditionally shows only when multiple tabs exist
+ * - Tab icons support both CSS icon classes and custom class images
+ * - Tab styling adapts through CSS classes for active/inactive states
+ * - Tab positioning uses tabs-right class for layout control
+ * - Visual tab representation switches between icons and images based on data
+ *
+ * INTEGRATION:
+ * - Connects to PlayerSpellBook application tab management system
+ * - Uses data-group="spellbook-tabs" for coordinated tab behavior
+ * - Supports both standard spellcasting and wizard-specific tabs
+ * - Integrates with Foundry VTT's tab navigation system
+ * - Works with application's tab state management and rendering
+ */
+--}}
+
 <nav class="tabs tabs-right" data-group="spellbook-tabs">
   {{#if hasMultipleTabs}}
     {{#each tabs as |tab|}}
+      <!-- Individual Tab Navigation Item - Supports icons and class images -->
       <a class="item {{tab.cssClass}}" data-action="tab" data-tab="{{tab.id}}" data-group="{{tab.group}}"
         data-tooltip="{{tab.label}}">
+
         {{#if tab.data.classImg}}
+          <!-- Class-Specific Image Icon - For visual class representation -->
           <img src="{{tab.data.classImg}}" alt="{{tab.label}}" class="tab-icon">
         {{else if tab.icon}}
+          <!-- CSS Icon - Standard icon fonts for generic tabs -->
           <i class="{{tab.icon}}"></i>
         {{/if}}
       </a>

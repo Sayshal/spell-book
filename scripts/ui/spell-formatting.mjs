@@ -1,11 +1,125 @@
+/**
+ * Spell Display Formatting and Processing Utilities
+ *
+ * This module provides utilities for formatting and processing spell data
+ * for display purposes within the Spell Book module. It handles transformation of raw
+ * spell data into display-ready formats, extraction of filterable metadata, and creation
+ * of formatted presentation elements.
+ *
+ * The module serves as the primary interface between raw spell data and the various
+ * UI components that display spell information. It provides consistent formatting
+ * across different contexts and ensures proper handling of D&D 5e spell properties.
+ *
+ * Key features include:
+ * - Spell list processing with metadata enhancement
+ * - Individual spell item formatting for GM and player interfaces
+ * - Component, activation, and school formatting with localization
+ * - Spell metadata extraction for filtering systems
+ * - Material component processing with cost calculation
+ * - Condition and damage type extraction from spell descriptions
+ * - Icon link generation with proper UUID handling
+ * - Integration with D&D 5e configuration data
+ *
+ * The utilities handle various spell data formats and provide fallback mechanisms
+ * for incomplete or legacy spell data structures.
+ *
+ * @module UIHelpers/SpellFormatting
+ * @author Tyler
+ */
+
 import { MODULE } from '../constants/_module.mjs';
 import * as DataHelpers from '../data/_module.mjs';
 import * as UIHelpers from '../ui/_module.mjs';
+import { log } from '../logger.mjs';
 
 /**
- * Process spell list data for display
- * @param {Object} spellList The spell list to process
- * @returns {Object} Processed spell list with display data
+ * Processed spell list structure with enhanced metadata for display.
+ *
+ * @typedef {Object} ProcessedSpellList
+ * @property {boolean} isCustomList - Whether this is a custom/user-created spell list
+ * @property {boolean} canRestore - Whether the list can be restored from original
+ * @property {string} [originalUuid] - UUID of the original list if this is a duplicate
+ * @property {string} [actorId] - Associated actor ID if this is a player spellbook
+ * @property {boolean} isPlayerSpellbook - Whether this represents a player's spellbook
+ * @property {string} [identifier] - System identifier for class spell lists
+ * @property {boolean} isMerged - Whether this list was created by merging multiple lists
+ * @property {boolean} isClassSpellList - Whether this is a standard class spell list
+ * @property {Array<ProcessedSpellLevel>} [spellsByLevel] - Spells organized by level
+ */
+
+/**
+ * Processed spell level grouping with enhanced spell data.
+ *
+ * @typedef {Object} ProcessedSpellLevel
+ * @property {number} level - Spell level (0-9)
+ * @property {Array<ProcessedSpellItem>} spells - Spells at this level
+ */
+
+/**
+ * Processed spell item structure with display enhancements.
+ *
+ * @typedef {Object} ProcessedSpellItem
+ * @property {string} compendiumUuid - Canonical compendium UUID for the spell
+ * @property {string} cssClasses - CSS classes for styling the spell item
+ * @property {string} dataAttributes - HTML data attributes for the spell element
+ * @property {boolean} showCompare - Whether to show comparison functionality
+ * @property {string} formattedDetails - Formatted metadata string for display
+ */
+
+/**
+ * Spell casting time information structure.
+ *
+ * @typedef {Object} CastingTimeData
+ * @property {string|number} value - Numeric value for casting time
+ * @property {string} type - Type of action (action, bonus, reaction, etc.)
+ * @property {string} label - Formatted display label for casting time
+ */
+
+/**
+ * Spell range information structure.
+ *
+ * @typedef {Object} RangeData
+ * @property {string} units - Range units (feet, miles, touch, etc.)
+ * @property {string} label - Formatted display label for range
+ */
+
+/**
+ * Material component information structure.
+ *
+ * @typedef {Object} MaterialComponentData
+ * @property {boolean} consumed - Whether materials are consumed when cast
+ * @property {number} cost - Gold piece cost of materials
+ * @property {string} value - Description of material components
+ * @property {boolean} hasConsumedMaterials - Whether spell has consumed materials
+ */
+
+/**
+ * spell filter data structure.
+ *
+ * @typedef {Object} SpellFilterData
+ * @property {CastingTimeData} castingTime - Casting time information
+ * @property {RangeData} range - Range information
+ * @property {Array<string>} damageTypes - Array of damage type identifiers
+ * @property {boolean} isRitual - Whether the spell can be cast as a ritual
+ * @property {boolean} concentration - Whether the spell requires concentration
+ * @property {MaterialComponentData} materialComponents - Material component data
+ * @property {boolean} requiresSave - Whether the spell requires a saving throw
+ * @property {Array<string>} conditions - Array of condition identifiers the spell may inflict
+ * @property {boolean} favorited - Whether the spell is marked as favorite
+ */
+
+/**
+ * Process spell list data for display.
+ *
+ * Enhances a raw spell list with metadata flags and display properties needed
+ * for proper rendering in the UI. Analyzes document flags to determine list type,
+ * restoration capabilities, and associated actors or original sources.
+ *
+ * Also processes individual spells within the list to ensure they have the
+ * necessary display enhancements for consistent presentation.
+ *
+ * @param {Object} spellList - The spell list to process
+ * @returns {ProcessedSpellList} Processed spell list with display data
  */
 export function processSpellListForDisplay(spellList) {
   const processed = foundry.utils.deepClone(spellList);
@@ -27,24 +141,33 @@ export function processSpellListForDisplay(spellList) {
 }
 
 /**
- * Process spell item for display in the GM interface
- * @param {Object} spell The spell to process
- * @returns {Object} Processed spell with display data
+ * Process spell item for display in the GM interface.
+ *
+ * Enhances a spell object with display-specific properties including CSS classes,
+ * data attributes, comparison controls, and formatted metadata. Ensures the spell
+ * has a compendium UUID for consistent referencing.
+ *
+ * @param {Object} spell - The spell to process
+ * @returns {ProcessedSpellItem} Processed spell with display data
  */
 export function processSpellItemForDisplay(spell) {
-  if (!spell.compendiumUuid) spell.compendiumUuid = spell.uuid;
   const processed = foundry.utils.deepClone(spell);
   processed.cssClasses = 'spell-item';
-  processed.dataAttributes = `data-uuid="${spell.compendiumUuid}"`;
+  processed.dataAttributes = `data-uuid="${spell.uuid}"`;
   processed.showCompare = UIHelpers.UICustomizationHelper.isGMElementEnabled('compare');
   processed.formattedDetails = UIHelpers.UICustomizationHelper.buildGMMetadata(spell);
   return processed;
 }
 
 /**
- * Format spell components for display
- * @param {Object} spell The spell object
- * @returns {string} - Formatted components string
+ * Format spell components for display.
+ *
+ * Extracts and formats spell components (Verbal, Somatic, Material, etc.) into
+ * a readable string using standard D&D 5e abbreviations. Handles both label-based
+ * and properties-based component data structures.
+ *
+ * @param {Object} spell - The spell object
+ * @returns {string} Formatted components string (e.g., "V, S, M")
  */
 export function formatSpellComponents(spell) {
   const components = [];
@@ -57,9 +180,14 @@ export function formatSpellComponents(spell) {
 }
 
 /**
- * Format spell activation for display
- * @param {Object} spell The spell object
- * @returns {string} - Formatted activation string
+ * Format spell activation for display.
+ *
+ * Converts spell activation data into a human-readable string that describes
+ * the casting time. Handles both pre-computed labels and raw system data,
+ * with proper pluralization for multi-unit casting times.
+ *
+ * @param {Object} spell - The spell object
+ * @returns {string} Formatted activation string (e.g., "1 Action", "2 Bonus Actions")
  */
 export function formatSpellActivation(spell) {
   let result = '';
@@ -75,9 +203,14 @@ export function formatSpellActivation(spell) {
 }
 
 /**
- * Format spell school for display
- * @param {Object} spell The spell object
- * @returns {string} - Formatted school string
+ * Format spell school for display.
+ *
+ * Extracts and formats the spell's school of magic into a readable string.
+ * Uses pre-computed labels when available, otherwise looks up the school
+ * in the D&D 5e configuration data.
+ *
+ * @param {Object} spell - The spell object
+ * @returns {string} Formatted school string (e.g., "Evocation", "Divination")
  */
 export function formatSpellSchool(spell) {
   let result = '';
@@ -87,9 +220,14 @@ export function formatSpellSchool(spell) {
 }
 
 /**
- * Format material components for display when consumed
- * @param {Object} spell The spell object
- * @returns {string} - Formatted material components string
+ * Format material components for display when consumed.
+ *
+ * Creates a formatted string describing material components that are consumed
+ * when the spell is cast. Includes cost information when available and provides
+ * appropriate fallback text for unknown costs.
+ *
+ * @param {Object} spell - The spell object
+ * @returns {string} Formatted material components string with cost information
  */
 export function formatMaterialComponents(spell) {
   const materials = spell.system?.materials;
@@ -103,9 +241,14 @@ export function formatMaterialComponents(spell) {
 }
 
 /**
- * Get localized preparation mode text
- * @param {string} mode The preparation mode
- * @returns {string} - Localized preparation mode text
+ * Get localized preparation mode text.
+ *
+ * Converts a preparation mode identifier into a localized, human-readable string.
+ * Looks up the mode in D&D 5e configuration data and provides capitalized
+ * fallback for unknown modes.
+ *
+ * @param {string} mode - The preparation mode identifier
+ * @returns {string} Localized preparation mode text (e.g., "Prepared", "Known")
  */
 export function getLocalizedPreparationMode(mode) {
   if (!mode) return '';
@@ -115,9 +258,17 @@ export function getLocalizedPreparationMode(mode) {
 }
 
 /**
- * Extracts additional spell data for filtering
- * @param {Object} spell The spell document
- * @returns {Object} - Additional data for filtering
+ * Extracts additional spell data for filtering.
+ *
+ * Performs analysis of a spell to extract all filterable metadata
+ * including casting time, range, damage types, ritual status, concentration
+ * requirements, material components, saving throw requirements, and conditions.
+ *
+ * This data is used by the filtering system to enable advanced spell searches
+ * and categorization throughout the application.
+ *
+ * @param {Object} spell - The spell document
+ * @returns {SpellFilterData} Additional data for filtering
  */
 export function extractSpellFilterData(spell) {
   if (!spell) return {};
@@ -129,38 +280,45 @@ export function extractSpellFilterData(spell) {
   const materialComponents = extractMaterialComponents(spell);
   const requiresSave = checkSpellRequiresSave(spell);
   const conditions = extractSpellConditions(spell);
-  return { castingTime, range, damageTypes, isRitual, concentration, materialComponents, requiresSave, conditions, favorited: false };
+  const spellSource = extractSpellSource(spell);
+  return { castingTime, range, damageTypes, isRitual, concentration, materialComponents, requiresSave, conditions, favorited: false, spellSource: spellSource.label, spellSourceId: spellSource.id };
 }
 
 /**
- * Extract casting time information from spell
- * @param {Object} spell The spell document
- * @returns {Object} - Casting time data
+ * Extract casting time information from spell.
+ *
+ * Analyzes spell activation data to extract structured casting time information
+ * including numeric value, action type, and formatted display label.
+ *
+ * @param {Object} spell - The spell document
+ * @returns {CastingTimeData} Casting time data structure
  */
 export function extractCastingTime(spell) {
-  return {
-    value: spell.system?.activation?.value || '',
-    type: spell.system?.activation?.type || '',
-    label: spell.labels?.activation || ''
-  };
+  return { value: spell.system?.activation?.value || '', type: spell.system?.activation?.type || '', label: spell.labels?.activation || '' };
 }
 
 /**
- * Extract range information from spell
- * @param {Object} spell The spell document
- * @returns {Object} - Range data
+ * Extract range information from spell.
+ *
+ * Analyzes spell range data to extract structured range information including
+ * units and formatted display label for filtering and display purposes.
+ *
+ * @param {Object} spell - The spell document
+ * @returns {RangeData} Range data structure
  */
 export function extractRange(spell) {
-  return {
-    units: spell.system?.range?.units || '',
-    label: spell.labels?.range || ''
-  };
+  return { units: spell.system?.range?.units || '', label: spell.labels?.range || '' };
 }
 
 /**
- * Extract damage types from spell
- * @param {Object} spell The spell document
- * @returns {string[]} - Array of damage types
+ * Extract damage types from spell.
+ *
+ * Analyzes spell data to identify all damage types that the
+ * spell can inflict. Checks both legacy damage labels and modern activity-based
+ * damage structures to ensure complete coverage across different data formats.
+ *
+ * @param {Object} spell - The spell document
+ * @returns {Array<string>} Array of damage type identifiers
  */
 export function extractDamageTypes(spell) {
   const damageTypes = [];
@@ -183,9 +341,14 @@ export function extractDamageTypes(spell) {
 }
 
 /**
- * Check if spell is a ritual
- * @param {Object} spell The spell document
- * @returns {boolean} - Whether the spell is a ritual
+ * Check if spell is a ritual.
+ *
+ * Determines whether a spell can be cast as a ritual by checking multiple
+ * possible data locations including properties sets, component flags, and
+ * label tags. Handles both modern and legacy spell data structures.
+ *
+ * @param {Object} spell - The spell document
+ * @returns {boolean} Whether the spell is a ritual
  */
 export function checkIsRitual(spell) {
   if (spell.system?.properties && typeof spell.system.properties.has === 'function') return spell.system.properties.has('ritual');
@@ -199,9 +362,14 @@ export function checkIsRitual(spell) {
 }
 
 /**
- * Check if spell requires concentration
- * @param {Object} spell The spell document
- * @returns {boolean} - Whether the spell requires concentration
+ * Check if spell requires concentration.
+ *
+ * Determines whether a spell requires concentration to maintain by checking
+ * duration properties and spell property arrays. Handles multiple data
+ * structure variations for detection.
+ *
+ * @param {Object} spell - The spell document
+ * @returns {boolean} Whether the spell requires concentration
  */
 export function checkIsConcentration(spell) {
   if (spell.system.duration?.concentration) return true;
@@ -209,9 +377,14 @@ export function checkIsConcentration(spell) {
 }
 
 /**
- * Extract material component information from spell
- * @param {Object} spell The spell document
- * @returns {Object} - Material component data
+ * Extract material component information from spell.
+ *
+ * Analyzes spell material component data to extract structured information
+ * about component consumption, costs, and descriptions. Used for filtering
+ * and display of material component requirements.
+ *
+ * @param {Object} spell - The spell document
+ * @returns {MaterialComponentData} Material component data structure
  */
 export function extractMaterialComponents(spell) {
   const materials = spell.system?.materials || {};
@@ -220,9 +393,14 @@ export function extractMaterialComponents(spell) {
 }
 
 /**
- * Check if a spell requires a saving throw
- * @param {Object} spell The spell document
- * @returns {boolean} - Whether the spell requires a save
+ * Check if a spell requires a saving throw.
+ *
+ * Determines whether a spell requires targets to make a saving throw by
+ * checking activity data for save-type activities and performing text
+ * analysis of spell descriptions as a fallback method.
+ *
+ * @param {Object} spell - The spell document
+ * @returns {boolean} Whether the spell requires a save
  */
 export function checkSpellRequiresSave(spell) {
   let result = false;
@@ -242,9 +420,14 @@ export function checkSpellRequiresSave(spell) {
 }
 
 /**
- * Extract conditions that might be applied by a spell
- * @param {Object} spell The spell document
- * @returns {string[]} - Array of condition keys
+ * Extract conditions that might be applied by a spell.
+ *
+ * Analyzes spell descriptions to identify conditions that the spell might
+ * inflict on targets. Uses text matching against localized condition names
+ * from the D&D 5e configuration data, excluding pseudo-conditions.
+ *
+ * @param {Object} spell - The spell document
+ * @returns {Array<string>} Array of condition identifiers
  */
 export function extractSpellConditions(spell) {
   const conditions = [];
@@ -261,30 +444,41 @@ export function extractSpellConditions(spell) {
 }
 
 /**
- * Create a spell icon link
- * @param {Object} spell The spell data object
- * @returns {string} - HTML string with icon link
+ * Extract spell source information from spell data.
+ * Gets the spell's source from system.source.custom or system.source.book, handling null/undefined values.
+ *
+ * @param {Object} spell - The spell object to extract source from
+ * @returns {Object} Spell source data with label and normalized ID
+ */
+function extractSpellSource(spell) {
+  let spellSource = spell.system?.source?.custom || spell.system?.source?.book;
+  const noSourceLabel = game.i18n.localize('SPELLMANAGER.Filters.NoSource');
+  if (!spellSource || spellSource.trim() === '') spellSource = noSourceLabel;
+  return { label: spellSource, id: spellSource === noSourceLabel ? 'no-source' : spellSource };
+}
+
+/**
+ * Create a spell icon link.
+ *
+ * Generates a properly formatted HTML content link for a spell that includes
+ * drag-and-drop functionality, tooltip support, and correct UUID referencing.
+ * The link integrates with Foundry's content linking system for seamless
+ * spell reference and interaction.
+ *
+ * @param {Object} spell - The spell data object
+ * @returns {string} HTML string with icon link
  */
 export function createSpellIconLink(spell) {
   if (!spell) return '';
-  const uuid = spell.compendiumUuid || spell.uuid || spell?._stats?.compendiumSource || spell?.system?.parent?.uuid;
+  const uuid = spell.compendiumUuid || spell?._stats?.compendiumSource || spell.uuid;
   const parsed = foundry.utils.parseUuid(uuid);
   const itemId = parsed.id || '';
   const entityType = parsed.type || 'Item';
   let packId = '';
   if (parsed.collection) packId = parsed.collection.collection || '';
-  const result = `<a class="content-link"
-  draggable="true"
-  data-link=""
-  data-uuid="${uuid}"
-  data-id="${itemId}"
-  data-type="${entityType}"
-  data-pack="${packId}"
-  data-tooltip="${spell.name}">
-  <img src="${spell.img}"
-  class="spell-icon"
-  alt="${spell.name}
-  icon"></a>`
+  const result = `<a class="content-link"  draggable="true" data-link="" data-uuid="${uuid}" data-id="${itemId}" data-type="${entityType}" data-pack="${packId}" data-tooltip="${spell.name}">
+    <img src="${spell.img}" class="spell-icon" alt="${spell.name}icon">
+  </a>`
     .replace(/\s+/g, ' ')
     .trim();
   return result;

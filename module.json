@@ -2,7 +2,6 @@
   "authors": [
     {
       "discord": "Tyler",
-      "flags": {},
       "name": "Tyler",
       "url": "https://github.com/Sayshal"
     }
@@ -12,15 +11,26 @@
   "compatibility": {
     "maximum": "13.999",
     "minimum": "13",
-    "verified": "13.348"
+    "verified": "13.350"
   },
   "description": "Enhanced spell management for DnD5e. Easily view, prepare, and customize spell lists.",
   "download": "",
-  "esmodules": ["scripts/spell-book.mjs"],
+  "esmodules": [
+    "scripts/spell-book.mjs"
+  ],
   "flags": {
     "hotReload": {
-      "extensions": ["css", "html", "hbs", "json"],
-      "paths": ["styles", "lang", "templates"]
+      "extensions": [
+        "css",
+        "html",
+        "hbs",
+        "json"
+      ],
+      "paths": [
+        "styles",
+        "lang",
+        "templates"
+      ]
     }
   },
   "id": "spell-book",
@@ -35,21 +45,26 @@
   "manifest": "https://github.com/Sayshal/spell-book/releases/latest/download/module.json",
   "media": [
     {
-      "type": "setup",
-      "url": "modules/spell-book/assets/Desk.webp",
+      "flags": {},
       "loop": false,
-      "flags": {}
+      "type": "setup",
+      "url": "modules/spell-book/assets/Desk.webp"
     }
   ],
   "packFolders": [
     {
       "name": "Spell Book",
-      "packs": ["custom-spell-lists", "spell-book-macros", "user-spell-data"],
+      "packs": [
+        "custom-spell-lists",
+        "spell-book-macros",
+        "user-spell-data"
+      ],
       "sorting": "m"
     }
   ],
   "packs": [
     {
+      "banner": "modules/spell-book/assets/desk_01.webp",
       "label": "Custom Spell Lists",
       "name": "custom-spell-lists",
       "ownership": {
@@ -57,51 +72,53 @@
         "PLAYER": "OWNER"
       },
       "path": "storage/custom-spell-lists",
-      "banner": "modules/spell-book/assets/desk_01.webp",
       "sort": 10000,
       "type": "JournalEntry"
     },
     {
+      "banner": "modules/spell-book/assets/desk_02.webp",
       "label": "User Spell Data",
       "name": "user-spell-data",
       "ownership": {
-        "PLAYER": "OWNER",
-        "ASSISTANT": "OWNER"
+        "ASSISTANT": "OWNER",
+        "PLAYER": "OWNER"
       },
       "path": "/storage/user-spell-data",
-      "banner": "modules/spell-book/assets/desk_02.webp",
       "sort": 20000,
       "type": "JournalEntry"
     },
     {
+      "banner": "modules/spell-book/assets/desk_03.webp",
       "label": "Spell Book Macros",
       "name": "spell-book-macros",
       "ownership": {
         "ASSISTANT": "OWNER",
         "PLAYER": "NONE"
       },
-      "banner": "modules/spell-book/assets/desk_03.webp",
       "sort": 30000,
       "type": "Macro"
     }
   ],
+  "persistentStorage": true,
   "readme": "https://github.com/Sayshal/spell-book?tab=readme-ov-file",
   "relationships": {
     "systems": [
       {
         "compatibility": {
+          "maximum": "5.9.9",
           "minimum": "5.1.2",
-          "verified": "5.1.3",
-          "maximum": "5.9.9"
+          "verified": "5.1.9"
         },
         "id": "dnd5e",
         "type": "system"
       }
     ]
   },
-  "styles": ["styles/spell-book.css"],
+  "socket": true,
+  "styles": [
+    "styles/spell-book.css"
+  ],
   "title": "Spell Book",
   "url": "https://github.com/Sayshal/spell-book",
-  "version": "",
-  "persistentStorage": true
+  "version": ""
 }

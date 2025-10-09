@@ -1,0 +1,136 @@
+import { FLAGS, MODULE } from './constants/_module.mjs';
+import { log } from './logger.mjs';
+
+/**
+ * Socket handler for delegating privileged operations to GM clients.
+ * Uses Foundry's query system for targeted, promise-based communication.
+ */
+export class SocketHandler {
+  constructor() {
+    this.#registerQueries();
+    log(3, 'SocketHandler initialized');
+  }
+
+  /**
+   * Register query handlers in CONFIG.queries
+   * @private
+   */
+  #registerQueries() {
+    const handler = this;
+    CONFIG.queries[MODULE.ID] = async (data, queryOptions) => {
+      try {
+        const { type, config } = data;
+        if (!type) throw new Error('Query missing type');
+        if (!config) throw new Error('Query missing config');
+        log(3, `Processing query type: ${type}`, config);
+        switch (type) {
+          case 'setUserFocus':
+            return await handler.#handleSetUserFocus(config);
+          case 'setActorFocus':
+            return await handler.#handleSetActorFocus(config);
+          default:
+            throw new Error(`Unknown query type: ${type}`);
+        }
+      } catch (error) {
+        log(1, 'Error in query handler:', error);
+        return { success: false, error: error.message };
+      }
+    };
+    log(3, `Registered query handler: ${MODULE.ID}`);
+  }
+
+  /**
+   * Set a user's spellcasting focus in the group actor.
+   * Delegates to GM if current user lacks permission.
+   *
+   * @param {Actor} groupActor - The group actor to update
+   * @param {string} userId - The user ID
+   * @param {string|null} focusId - The focus ID to set (or null to clear)
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async setUserSelectedFocus(groupActor, userId, focusId) {
+    if (game.user.isGM) return await this.#handleSetUserFocus({ groupActorId: groupActor.id, userId, focusId });
+    const gm = game.users.activeGM;
+    if (!gm) {
+      const error = 'No GM is currently online to process this request. Please try again when a GM is available.';
+      log(1, error);
+      return { success: false, error };
+    }
+    log(3, `Delegating setUserFocus to GM: ${gm.name}`);
+    try {
+      const result = await gm.query(MODULE.ID, { type: 'setUserFocus', config: { groupActorId: groupActor.id, userId, focusId } }, { timeout: 10000 });
+      log(3, 'Received response from GM:', result);
+      return result;
+    } catch (error) {
+      log(1, 'Failed to set user focus via GM:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Set an actor's spellcasting focus flag.
+   * Delegates to GM if current user lacks permission.
+   *
+   * @param {Actor} actor - The actor to update
+   * @param {string} focus - The focus name to set
+   * @returns {Promise<{success: boolean, error?: string}>}
+   */
+  async setActorSpellcastingFocus(actor, focus) {
+    if (actor.isOwner) return await this.#handleSetActorFocus({ actorId: actor.id, focus });
+    const gm = game.users.activeGM;
+    if (!gm) {
+      const error = 'No GM is currently online to process this request. Please try again when a GM is available.';
+      return { success: false, error };
+    }
+    log(3, `Delegating setActorFocus to GM: ${gm.name}`);
+    try {
+      const result = await gm.query(MODULE.ID, { type: 'setActorFocus', config: { actorId: actor.id, focus } }, { timeout: 10000 });
+      log(3, 'Received response from GM:', result);
+      return result;
+    } catch (error) {
+      log(1, 'Failed to set actor focus via GM:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Handle setting user focus on group actor (GM side).
+   * @private
+   */
+  async #handleSetUserFocus({ groupActorId, userId, focusId }) {
+    try {
+      const groupActor = game.actors.get(groupActorId);
+      if (!groupActor) return { success: false, error: 'Group actor not found' };
+      const currentSelections = groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
+      if (focusId) currentSelections[userId] = focusId;
+      else delete currentSelections[userId];
+      await groupActor.setFlag(MODULE.ID, FLAGS.SELECTED_FOCUS, currentSelections);
+      log(3, `Successfully set focus for user ${userId} to ${focusId || 'none'}`);
+      return { success: true };
+    } catch (error) {
+      log(1, 'Error in #handleSetUserFocus:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Handle setting actor focus flag (GM side).
+   * @private
+   */
+  async #handleSetActorFocus({ actorId, focus }) {
+    log(3, `Handling setActorFocus - actorId: ${actorId}, focus: ${focus}`);
+    try {
+      const actor = game.actors.get(actorId);
+      if (!actor) {
+        log(1, `Actor not found: ${actorId}`);
+        return { success: false, error: 'Actor not found' };
+      }
+      await actor.setFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS, focus);
+      log(3, `Successfully set focus for actor ${actor.name} to ${focus}`);
+      return { success: true };
+    } catch (error) {
+      log(1, 'Error in #handleSetActorFocus:', error);
+      return { success: false, error: error.message };
+    }
+  }
+}

@@ -1,5 +1,45 @@
+{{!--
+/**
+ * Long Rest Spell Swap Dialog Template
+ *
+ * PURPOSE:
+ * Information dialog displayed during long rest to inform players about
+ * available spell swapping opportunities. Shows which classes allow cantrip
+ * or spell swapping during long rest periods, providing context for spell
+ * management decisions and rule compliance.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {Object} longRestClasses - Long rest spell swapping data by type
+ * @param {Array<Object>} longRestClasses.cantripSwapping - Classes allowing cantrip swaps
+ * @param {string} longRestClasses.cantripSwapping[].name - Class name
+ * @param {Array<Object>} longRestClasses.spellSwapping - Classes allowing spell swaps
+ * @param {string} longRestClasses.spellSwapping[].name - Class name
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic heading structure for swap categories
+ * - List structure for clear presentation of class information
+ * - Introductory paragraph providing context
+ * - Clear separation between cantrip and spell swapping rules
+ *
+ * CUSTOMIZATION POINTS:
+ * - Swap categories display conditionally based on available classes
+ * - Class-specific messaging for different swap types
+ * - Organized presentation of swapping opportunities
+ * - Rule-based information display for player guidance
+ *
+ * INTEGRATION:
+ * - Used during long rest workflow for spell management
+ * - Connects to long rest handling and spell swapping systems
+ * - Uses module localization keys from SPELLBOOK.LongRest namespace
+ * - Supports D&D 5e long rest spell swapping rules
+ */
+--}}
+
 <div class="long-rest-swap-dialog">
+  <!-- Long Rest Swap Introduction -->
   <p>{{localize 'SPELLBOOK.LongRest.SwapPromptIntro'}}</p>
+
+  <!-- Cantrip Swapping Classes -->
   {{#if longRestClasses.cantripSwapping.length}}
     <div class="swap-category">
       <h4>{{localize 'SPELLBOOK.LongRest.CantripSwapping'}}</h4>
@@ -10,6 +50,8 @@
       </ul>
     </div>
   {{/if}}
+
+  <!-- Spell Swapping Classes -->
   {{#if longRestClasses.spellSwapping.length}}
     <div class="swap-category">
       <ul>

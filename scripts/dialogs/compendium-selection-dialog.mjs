@@ -1,3 +1,23 @@
+/**
+ * Compendium Selection Dialog
+ *
+ * Configuration dialog for selecting which compendium packs should be included
+ * in spell indexing and searching operations. Organizes compendiums by source
+ * and provides bulk selection controls for easier management with performance
+ * optimization through selective loading.
+ *
+ * Key features:
+ * - Hierarchical compendium organization by source
+ * - Bulk selection controls (global and category-level)
+ * - Performance-aware pack filtering
+ * - Spell-relevant content detection
+ * - Required pack handling and validation
+ * - User-friendly configuration interface
+ *
+ * @module Dialogs/CompendiumSelectionDialog
+ * @author Tyler
+ */
+
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import * as ValidationHelpers from '../validation/_module.mjs';
@@ -5,17 +25,78 @@ import * as ValidationHelpers from '../validation/_module.mjs';
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
- * Dialog for selecting which compendiums to index for spell searching
+ * @typedef {Object} PackInfo
+ * @property {string} id - The pack collection ID
+ * @property {string} label - Display label for the pack
+ * @property {string} type - Pack metadata type ('Item' or 'JournalEntry')
+ * @property {string} packageName - Name of the package containing this pack
+ * @property {string} packageType - Type of package ('world', 'system', 'module')
+ */
+
+/**
+ * @typedef {Object} OrganizedCompendiums
+ * @property {Map<string, CategoryData>} categories - Map of category names to category data
+ * @property {CategoryData[]} categorizedPacks - Array of categorized pack data sorted by name
+ */
+
+/**
+ * @typedef {Object} CategoryData
+ * @property {string} name - The category/organization name
+ * @property {PackInfo[]} packs - Array of packs in this category
+ */
+
+/**
+ * @typedef {Object} ProcessedCategory
+ * @property {string} name - The category name
+ * @property {ProcessedPack[]} packs - Array of processed packs with form elements
+ * @property {number} enabledCount - Number of enabled packs in category
+ * @property {number} totalCount - Total number of packs in category
+ * @property {boolean} disabled - Whether all packs in category are disabled
+ * @property {string} categorySelectAllCheckboxHtml - HTML for category select-all checkbox
+ */
+
+/**
+ * @typedef {Object} ProcessedPack
+ * @property {string} id - The pack ID
+ * @property {string} label - Pack display label
+ * @property {string} type - Pack type
+ * @property {string} packageName - Package name
+ * @property {string} packageType - Package type
+ * @property {boolean} enabled - Whether pack is currently enabled
+ * @property {boolean} disabled - Whether pack selection is disabled
+ * @property {string} organizationName - Name of organization/category
+ * @property {string} checkboxHtml - HTML for pack checkbox element
+ */
+
+/**
+ * @typedef {Object} CategoryStats
+ * @property {number} enabledCount - Number of enabled packs
+ * @property {number} totalCount - Total number of packs
+ * @property {boolean} allPacksDisabled - Whether all packs are disabled
+ */
+
+/**
+ * @typedef {Object} SummaryData
+ * @property {number} totalPacks - Total number of relevant packs
+ * @property {number} enabledPacks - Number of enabled packs
+ * @property {boolean} allSelected - Whether all packs are selected
+ */
+
+/**
+ * Dialog application for selecting which compendiums to index for spell searching.
+ *
+ * This dialog allows users to configure which compendium packs should be included
+ * in spell indexing and searching operations. It organizes compendiums by source
+ * and provides bulk selection controls for easier management.
+ *
+ * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */
 export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(ApplicationV2) {
+  /** @inheritdoc */
   static DEFAULT_OPTIONS = {
     id: `compendium-selection-${MODULE.ID}`,
     tag: 'form',
-    window: {
-      title: 'SPELLBOOK.Settings.CompendiumSelectionTitle',
-      icon: 'fas fa-books',
-      resizable: false
-    },
+    window: { title: 'SPELLBOOK.Settings.CompendiumSelectionTitle', icon: 'fas fa-books', resizable: false },
     classes: ['spell-book', 'compendium-selection-dialog'],
     form: {
       handler: CompendiumSelectionDialog.formHandler,
@@ -24,15 +105,18 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
     }
   };
 
-  /** @override */
-  static PARTS = {
-    form: { template: TEMPLATES.DIALOGS.COMPENDIUM_SELECTION }
-  };
+  /** @inheritdoc */
+  static PARTS = { form: { template: TEMPLATES.DIALOGS.COMPENDIUM_SELECTION } };
 
   /**
-   * Check if a pack is relevant for spell indexing without full document loading
-   * @param {CompendiumCollection} pack Pack to check
-   * @returns {Promise<boolean>} Whether the pack contains relevant content
+   * Check if a compendium pack contains content relevant for spell indexing.
+   *
+   * This method performs a lightweight check by examining the pack index without
+   * loading full documents, looking for spell-type items or spell pages in journals.
+   *
+   * @param {CompendiumCollection} pack - The compendium pack to analyze
+   * @returns {Promise<boolean>} Whether the pack contains spell-relevant content
+   * @static
    */
   static async _isPackRelevantForSpells(pack) {
     try {
@@ -51,8 +135,13 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Get all available compendiums organized by top-level folder
-   * @returns {Object} Organized compendium data
+   * Retrieve and organize all available compendiums by their top-level folder structure.
+   *
+   * This method processes all compendium packs, filters for spell-relevant content,
+   * and organizes them into categories based on their folder hierarchy or source.
+   *
+   * @returns {Promise<OrganizedCompendiums>} Organized compendium data structure
+   * @private
    */
   async _getAvailableCompendiums() {
     const compendiums = { categories: new Map() };
@@ -60,17 +149,9 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
       if (!['JournalEntry', 'Item'].includes(pack.metadata.type)) continue;
       const isRelevant = await CompendiumSelectionDialog._isPackRelevantForSpells(pack);
       if (!isRelevant) continue;
-      const packInfo = {
-        id: pack.collection,
-        label: pack.title || pack.metadata.label,
-        type: pack.metadata.type,
-        packageName: pack.metadata.packageName,
-        packageType: pack.metadata.packageType
-      };
+      const packInfo = { id: pack.collection, label: pack.title || pack.metadata.label, type: pack.metadata.type, packageName: pack.metadata.packageName, packageType: pack.metadata.packageType };
       const organizationName = this._determineOrganizationName(pack);
-      if (!compendiums.categories.has(organizationName)) {
-        compendiums.categories.set(organizationName, { name: organizationName, packs: [] });
-      }
+      if (!compendiums.categories.has(organizationName)) compendiums.categories.set(organizationName, { name: organizationName, packs: [] });
       compendiums.categories.get(organizationName).packs.push(packInfo);
     }
     compendiums.categorizedPacks = Array.from(compendiums.categories.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -78,9 +159,14 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Determines the organization name for a pack based on its folder structure
-   * @param {CompendiumCollection} pack Pack to analyze
-   * @returns {string} Organization name to use
+   * Determine the appropriate organization name for a compendium pack.
+   *
+   * Uses folder hierarchy when available, falling back to pack title or metadata.
+   * Applies translations for known system folder names to improve user experience.
+   *
+   * @param {CompendiumCollection} pack - The compendium pack to analyze
+   * @returns {string} The organization name to display
+   * @private
    */
   _determineOrganizationName(pack) {
     try {
@@ -94,9 +180,14 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Gets the top-level folder name from a pack's folder hierarchy
-   * @param {CompendiumCollection} pack Pack to analyze
-   * @returns {string|null} Top-level folder name or null if no folder
+   * Extract the top-level folder name from a pack's folder hierarchy.
+   *
+   * Traverses the folder parent chain to find the root-level folder name,
+   * which is used for organizing compendiums in the selection dialog.
+   *
+   * @param {CompendiumCollection} pack - The pack to analyze
+   * @returns {string|null} Top-level folder name or null if no folder structure
+   * @private
    */
   _getPackTopLevelFolderName(pack) {
     if (!pack || !pack.folder) return null;
@@ -104,25 +195,32 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
     if (pack.folder.depth !== 1) {
       const parentFolders = pack.folder.getParentFolders();
       topLevelFolder = parentFolders.at(-1)?.name;
-    } else {
-      topLevelFolder = pack.folder.name;
-    }
+    } else topLevelFolder = pack.folder.name;
     return topLevelFolder || null;
   }
 
   /**
-   * Translates system folder names to more user-friendly names
-   * @todo - Name translations should be localized, at least the end result.
-   * @param {string} name Folder name to translate
-   * @param {string} [id] Optional pack ID for additional context
-   * @returns {string} Translated name
+   * Translate system-specific folder names to more user-friendly display names.
+   *
+   * Provides localized and simplified names for common system folders,
+   * with special handling for homebrew content detection. Attempts to use
+   * CONFIG.DND5E.sourceBooks when available, falling back to manual translations.
+   *
+   * @param {string} name - The raw folder name to translate
+   * @param {string} [id] - Optional pack ID for additional context
+   * @returns {string} The translated, user-friendly name
+   * @private
    */
   _translateSystemFolderName(name, id = null) {
-    if (!name || typeof name !== 'string') return id || 'Unknown Source';
-    const nameTranslations = { 'D&D Legacy Content': 'SRD 5.1', 'D&D Modern Content': 'SRD 5.2' };
-    if (nameTranslations[name]) return nameTranslations[name];
-    for (const [key, value] of Object.entries(nameTranslations)) if (name.includes(key)) return value;
-    if (/[./_-]home[\s_-]?brew[./_-]/i.test(name)) return game.i18n.localize('SPELLBOOK.Settings.CompendiumSelectionHomebrew') || 'Homebrew';
+    if (!name || typeof name !== 'string') return id || game.i18n.localize('SPELLBOOK.Settings.CompendiumSelectionUnknown');
+    if (/[./_-]home[\s_-]?brew[./_-]/i.test(name)) return game.i18n.localize('SPELLBOOK.Settings.CompendiumSelectionHomebrew');
+    const translations = new Map([
+      ['D&D Legacy Content', CONFIG.DND5E?.sourceBooks?.['SRD 5.1']],
+      ['D&D Modern Content', CONFIG.DND5E?.sourceBooks?.['SRD 5.2']],
+      ['Free Rules', CONFIG.DND5E?.sourceBooks?.['Free Rules']]
+    ]);
+    if (translations.has(name)) return game.i18n.localize(translations.get(name));
+    for (const [key, localizationKey] of translations) if (name.includes(key)) return game.i18n.localize(localizationKey);
     return name;
   }
 
@@ -132,7 +230,7 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
     const currentSettings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
     const compendiums = await this._getAvailableCompendiums();
     const enabledCompendiums = new Set();
-    for (const pack of game.packs) if (currentSettings[pack.collection] !== false) enabledCompendiums.add(pack.collection);
+    for (const [packId, isEnabled] of Object.entries(currentSettings)) if (isEnabled === true) enabledCompendiums.add(packId);
     context.categories = this._prepareCategories(compendiums.categorizedPacks, enabledCompendiums);
     const summaryData = this._calculateSummaryData(context.categories);
     context.globalSelectAllCheckboxHtml = this._createGlobalSelectAllCheckbox(summaryData.allSelected);
@@ -141,10 +239,15 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Process categories and create form elements for each pack
-   * @param {Array} categorizedPacks The categorized pack data
-   * @param {Set} enabledCompendiums Set of enabled compendium IDs
-   * @returns {Array} Processed categories with form elements
+   * Process categorized packs and create form elements for each category.
+   *
+   * Transforms raw category data into processed categories with form elements,
+   * statistics, and UI controls for the template rendering.
+   *
+   * @param {CategoryData[]} categorizedPacks - The raw categorized pack data
+   * @param {Set<string>} enabledCompendiums - Set of currently enabled compendium IDs
+   * @returns {ProcessedCategory[]} Array of processed categories with form elements
+   * @private
    */
   _prepareCategories(categorizedPacks, enabledCompendiums) {
     return categorizedPacks.map((category) => {
@@ -163,33 +266,35 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Process packs within a category and create their form elements
-   * @param {Array} packs The packs in the category
-   * @param {Set} enabledCompendiums Set of enabled compendium IDs
-   * @param {string} categoryName Name of the category
-   * @returns {Array} Processed packs with form elements
+   * Process individual packs within a category and create their form elements.
+   *
+   * Creates processed pack objects with checkbox elements and determines
+   * enabled/disabled state based on current settings and module ownership.
+   *
+   * @param {PackInfo[]} packs - Array of packs in the category
+   * @param {Set<string>} enabledCompendiums - Set of enabled compendium IDs
+   * @param {string} categoryName - Name of the parent category
+   * @returns {ProcessedPack[]} Array of processed packs with form elements
+   * @private
    */
   _preparePacksInCategory(packs, enabledCompendiums, categoryName) {
     return packs.map((pack) => {
       const isModulePack = pack.packageName === MODULE.ID;
-      const packData = {
-        ...pack,
-        enabled: enabledCompendiums.has(pack.id) || isModulePack,
-        disabled: isModulePack,
-        organizationName: categoryName
-      };
+      const packData = { ...pack, enabled: enabledCompendiums.has(pack.id) || isModulePack, disabled: isModulePack, organizationName: categoryName };
       const packCheckbox = this._createPackCheckbox(packData);
-      return {
-        ...packData,
-        checkboxHtml: ValidationHelpers.elementToHtml(packCheckbox)
-      };
+      return { ...packData, checkboxHtml: ValidationHelpers.elementToHtml(packCheckbox) };
     });
   }
 
   /**
-   * Calculate statistics for a category
-   * @param {Array} packsInCategory The packs in the category
-   * @returns {Object} Category statistics
+   * Calculate statistics for a category of packs.
+   *
+   * Determines counts and states needed for category-level UI controls
+   * and display elements.
+   *
+   * @param {ProcessedPack[]} packsInCategory - The processed packs in the category
+   * @returns {CategoryStats} Statistics about the category
+   * @private
    */
   _calculateCategoryStats(packsInCategory) {
     const enabledCount = packsInCategory.filter((p) => p.enabled).length;
@@ -199,9 +304,14 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Create a checkbox for an individual pack
-   * @param {Object} packData The pack data
+   * Create a checkbox form element for an individual compendium pack.
+   *
+   * Generates a checkbox with appropriate attributes, labels, and data attributes
+   * for pack selection functionality.
+   *
+   * @param {ProcessedPack} packData - The processed pack data
    * @returns {HTMLElement} The created checkbox element
+   * @private
    */
   _createPackCheckbox(packData) {
     const packCheckbox = ValidationHelpers.createCheckbox({
@@ -217,10 +327,15 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Create a category select all checkbox
-   * @param {string} categoryName Name of the category
-   * @param {Object} categoryStats Category statistics
-   * @returns {HTMLElement} The created checkbox element
+   * Create a select-all checkbox for a category of compendiums.
+   *
+   * Creates a checkbox that allows bulk selection/deselection of all
+   * packs within a specific category.
+   *
+   * @param {string} categoryName - Name of the category
+   * @param {CategoryStats} categoryStats - Statistics about the category
+   * @returns {HTMLElement} The created select-all checkbox element
+   * @private
    */
   _createCategorySelectAllCheckbox(categoryName, categoryStats) {
     const { enabledCount, totalCount, allPacksDisabled } = categoryStats;
@@ -236,25 +351,31 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Calculate summary data for all categories
-   * @param {Array} categories The processed categories
-   * @returns {Object} Summary data including totals and selection state
+   * Calculate summary statistics across all categories.
+   *
+   * Aggregates data from all categories to provide overall statistics
+   * for the global selection controls.
+   *
+   * @param {ProcessedCategory[]} categories - Array of processed categories
+   * @returns {SummaryData} Summary statistics for all categories
+   * @private
    */
   _calculateSummaryData(categories) {
     const totalRelevantPacks = categories.reduce((sum, cat) => sum + cat.totalCount, 0);
     const enabledRelevantPacks = categories.reduce((sum, cat) => sum + cat.enabledCount, 0);
     const allSelected = totalRelevantPacks === enabledRelevantPacks;
-    return {
-      totalPacks: totalRelevantPacks,
-      enabledPacks: enabledRelevantPacks,
-      allSelected
-    };
+    return { totalPacks: totalRelevantPacks, enabledPacks: enabledRelevantPacks, allSelected };
   }
 
   /**
-   * Create the global select all checkbox
-   * @param {boolean} allSelected Whether all packs are selected
-   * @returns {string} HTML string for the checkbox
+   * Create the global select-all checkbox for all compendiums.
+   *
+   * Creates a master checkbox that controls selection state of all
+   * non-disabled compendium packs across all categories.
+   *
+   * @param {boolean} allSelected - Whether all packs are currently selected
+   * @returns {string} HTML string for the global select-all checkbox
+   * @private
    */
   _createGlobalSelectAllCheckbox(allSelected) {
     const globalSelectAllCheckbox = ValidationHelpers.createCheckbox({
@@ -266,14 +387,22 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
     return ValidationHelpers.elementToHtml(globalSelectAllCheckbox);
   }
 
-  /** @override */
+  /** @inheritdoc */
   _onRender(context, options) {
     super._onRender(context, options);
     this._setupEventListeners();
   }
 
   /**
-   * Set up event listeners for checkbox interactions
+   * Set up event listeners for checkbox interactions and bulk selection controls.
+   *
+   * Establishes event handlers for:
+   * - Global select-all functionality
+   * - Category-level select-all functionality
+   * - Individual pack checkbox changes
+   * - Dynamic count updates
+   *
+   * @private
    */
   _setupEventListeners() {
     const form = this.element;
@@ -322,9 +451,14 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Update the count display for a specific category
-   * @param {HTMLElement} form The form element
-   * @param {string} organizationName The organization name to update
+   * Update the count display for a specific category.
+   *
+   * Updates the visual count indicator showing enabled/total packs
+   * for a specific organization category.
+   *
+   * @param {HTMLElement} form - The form element containing the checkboxes
+   * @param {string} organizationName - The organization name to update
+   * @private
    */
   _updateCategoryCount(form, organizationName) {
     const categoryCheckboxes = form.querySelectorAll(`dnd5e-checkbox[data-organization="${organizationName}"][name="compendiumMultiSelect"]`);
@@ -340,8 +474,13 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Update all category counts
-   * @param {HTMLElement} form The form element
+   * Update count displays for all categories.
+   *
+   * Batch update of all category count displays, typically called
+   * after global selection changes.
+   *
+   * @param {HTMLElement} form - The form element containing the checkboxes
+   * @private
    */
   _updateAllCategoryCounts(form) {
     const categorySelectAlls = form.querySelectorAll('dnd5e-checkbox.select-all-category');
@@ -352,9 +491,14 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Update the summary count at the top
-   * @param {HTMLElement} form The form element
-   * @param {NodeList} allCheckboxes All individual checkboxes
+   * Update the summary count display at the top of the dialog.
+   *
+   * Updates the global count indicator showing total enabled packs
+   * across all categories.
+   *
+   * @param {HTMLElement} form - The form element containing the checkboxes
+   * @param {NodeList} allCheckboxes - All individual pack checkboxes
+   * @private
    */
   _updateSummaryCount(form, allCheckboxes) {
     const enabledCountSpan = form.querySelector('.enabled-count');
@@ -365,46 +509,52 @@ export class CompendiumSelectionDialog extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Updates the global "Select All" checkbox state
-   * @param {HTMLElement} form The form element
-   * @param {NodeList} allCheckboxes All individual checkboxes
-   * @param {HTMLElement} globalSelectAll Global select all checkbox
+   * Update the global "Select All" checkbox state based on individual selections.
+   *
+   * Sets the global select-all checkbox to checked when all individual
+   * checkboxes are checked, unchecked otherwise.
+   *
+   * @param {HTMLElement} _form - The form element (unused but maintained for consistency)
+   * @param {NodeList} allCheckboxes - All individual pack checkboxes
+   * @param {HTMLElement} globalSelectAll - The global select-all checkbox
+   * @private
    */
-  _updateGlobalSelectAll(form, allCheckboxes, globalSelectAll) {
+  _updateGlobalSelectAll(_form, allCheckboxes, globalSelectAll) {
     if (!globalSelectAll) return;
     const allChecked = Array.from(allCheckboxes).every((checkbox) => checkbox.checked);
     globalSelectAll.checked = allChecked;
   }
 
   /**
-   * Form handler for saving compendium selection options
-   * @param {Event} event The form submission event
-   * @param {HTMLElement} form The form element
-   * @param {Object} formData The form data
+   * Form submission handler for saving compendium selection configuration.
+   *
+   * Processes form data to determine which compendiums should be enabled,
+   * saves the configuration to settings, and handles world reload if needed.
+   * Module-owned compendiums are automatically enabled and cannot be disabled.
+   *
+   * @param {Event} _event - The form submission event (unused)
+   * @param {HTMLElement} form - The form element containing selection data
+   * @param {Object} _formData - The form data object (unused)
+   * @returns {Promise<void>}
+   * @static
    */
-  static async formHandler(event, form, formData) {
+  static async formHandler(_event, form, _formData) {
     const enabledCompendiums = {};
     const originalSettings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
     for (const pack of game.packs) {
       if (pack.metadata.packageName === MODULE.ID && ['JournalEntry', 'Item'].includes(pack.metadata.type)) {
         const isRelevant = await CompendiumSelectionDialog._isPackRelevantForSpells(pack);
-        if (isRelevant) {
-          enabledCompendiums[pack.collection] = true;
-        }
+        if (isRelevant) enabledCompendiums[pack.collection] = true;
       }
     }
     const relevantCheckboxes = form.querySelectorAll('dnd5e-checkbox[name="compendiumMultiSelect"]:not([disabled])');
     relevantCheckboxes.forEach((checkbox) => {
       const checkboxValue = checkbox.getAttribute('value') || checkbox.value;
-      if (checkboxValue) {
-        enabledCompendiums[checkboxValue] = checkbox.checked;
-        if (checkbox.checked && !(checkboxValue in enabledCompendiums)) userSelectedCount++;
-      }
+      if (checkboxValue) enabledCompendiums[checkboxValue] = checkbox.checked;
     });
     const settingsChanged = JSON.stringify(originalSettings) !== JSON.stringify(enabledCompendiums);
     await game.settings.set(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS, enabledCompendiums);
     const actualPackCount = Object.values(enabledCompendiums).filter((enabled) => enabled === true).length;
-    ui.notifications.info(game.i18n.format('SPELLBOOK.Settings.CompendiumSelectionUpdated', { count: actualPackCount }));
     if (settingsChanged) {
       const reload = await DialogV2.confirm({
         id: 'reload-world-confirm',

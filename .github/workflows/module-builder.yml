@@ -51,7 +51,6 @@ jobs:
           echo "Module URL: $module_url"
           echo "Compat: $compat_min - $compat_verified - $compat_max"
 
-
       - name: Debug Version
         run: |
           echo "Version from previous step: ${{ steps.get-version.outputs.version }}"

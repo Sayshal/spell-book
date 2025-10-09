@@ -1,11 +1,73 @@
+/**
+ * Generic Data Utilities and Helper Functions
+ *
+ * Provides general-purpose utility functions for data manipulation, validation,
+ * and processing used throughout the Spell Book module. This module contains
+ * reusable functions that don't belong to specific functional areas.
+ *
+ * Key features:
+ * - Data validation and sanitization
+ * - Object manipulation utilities
+ * - String processing and formatting
+ * - Array and collection operations
+ * - Configuration data helpers
+ * - General-purpose data transformations
+ *
+ * @module DataHelpers/GenericUtils
+ * @author Tyler
+ */
+
 import { FLAGS, MODULE } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
- * Get spellcasting configuration for a class, checking both main class and subclass
- * @param {Actor5e} actor The actor
- * @param {string} classIdentifier The class identifier
- * @returns {Object|null} Spellcasting configuration or null
+ * @typedef {Object} SpellcastingConfiguration
+ * @property {string} progression - Spellcasting progression type ('none', 'full', 'half', 'third', 'pact', 'artificer')
+ * @property {string} type - Type of spellcasting ('spell', 'pact', 'leveled')
+ * @property {string} [ability] - Primary spellcasting ability score
+ * @property {Object} [preparation] - Spell preparation configuration
+ * @property {number} [levels] - Number of class levels for spellcasting
+ */
+
+/**
+ * @typedef {Object} ClassSpellcastingData
+ * @property {string} id - Item ID of the class
+ * @property {SpellcastingConfiguration} spellcasting - Main class spellcasting configuration
+ * @property {Item5e} _classLink - Reference to the subclass item if applicable
+ * @property {Object} [scaleValues] - Class-specific scale values
+ */
+
+/**
+ * @typedef {Object} ScaleValueEntry
+ * @property {string} identifier - Unique identifier for the scale value
+ * @property {string} type - Type of scale value ('number', 'string', 'die')
+ * @property {*} value - Current value at actor's level
+ * @property {string} [label] - Display label for the scale value
+ */
+
+/**
+ * @typedef {Object} WizardClassData
+ * @property {string} identifier - Class identifier (e.g., 'wizard')
+ * @property {Item5e} classItem - The class item document
+ * @property {boolean} isNaturalWizard - Whether this is a natural wizard class
+ * @property {boolean} isForceWizard - Whether wizard mode is forced via settings
+ */
+
+/**
+ * @typedef {Object} ClassRulesConfiguration
+ * @property {boolean} [forceWizardMode] - Whether to force wizard mode for this class
+ * @property {string} [customSpellList] - UUID of custom spell list to use
+ * @property {Object} [additionalSettings] - Additional class-specific settings
+ */
+
+/**
+ * Get spellcasting configuration for a class, checking both main class and subclass.
+ * Prioritizes main class spellcasting configuration but falls back to subclass
+ * if the main class doesn't have a valid spellcasting progression.
+ *
+ * @param {Actor5e} actor - The actor to check for spellcasting configuration
+ * @param {string} classIdentifier - The class identifier to look up
+ * @returns {SpellcastingConfiguration|null} Spellcasting configuration or null if none found
  */
 export function getSpellcastingConfigForClass(actor, classIdentifier) {
   const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
@@ -18,14 +80,19 @@ export function getSpellcastingConfigForClass(actor, classIdentifier) {
 }
 
 /**
- * Get scale values for a class, checking both main class and subclass
- * @param {Actor5e} actor The actor
- * @param {string} classIdentifier The class identifier
- * @returns {Object|null} Scale values or null
+ * Get scale values for a class, checking both main class and subclass.
+ * Merges scale values from main class, subclass, and spellcasting data
+ * to provide a set of scaling values.
+ *
+ * @param {Actor5e} actor - The actor to check for scale values
+ * @param {string} classIdentifier - The class identifier to look up
+ * @returns {Object<string, ScaleValueEntry>|null} Merged scale values or null if none found
  */
 export function getScaleValuesForClass(actor, classIdentifier) {
   const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
   if (!spellcastingData) return null;
+
+  /** @type {Object<string, ScaleValueEntry>} */
   let mergedScaleValues = {};
   const classItem = actor.items.get(spellcastingData.id);
   if (classItem?.scaleValues) mergedScaleValues = { ...mergedScaleValues, ...classItem.scaleValues };
@@ -35,10 +102,13 @@ export function getScaleValuesForClass(actor, classIdentifier) {
 }
 
 /**
- * Get the item that provides spellcasting for a class (main class or subclass)
- * @param {Actor5e} actor The actor
- * @param {string} classIdentifier The class identifier
- * @returns {Item5e|null} The item providing spellcasting or null
+ * Get the item that provides spellcasting for a class (main class or subclass).
+ * Determines which item (main class or subclass) actually provides the
+ * spellcasting capabilities for proper progression calculations.
+ *
+ * @param {Actor5e} actor - The actor to check for spellcasting source
+ * @param {string} classIdentifier - The class identifier to look up
+ * @returns {Item5e|null} The item providing spellcasting or null if none found
  */
 export function getSpellcastingSourceItem(actor, classIdentifier) {
   const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
@@ -54,10 +124,13 @@ export function getSpellcastingSourceItem(actor, classIdentifier) {
 }
 
 /**
- * Get effective class levels for spellcasting progression
- * @param {Actor5e} actor The actor
- * @param {string} classIdentifier The class identifier
- * @returns {number} Class levels for spellcasting calculations
+ * Get effective class levels for spellcasting progression.
+ * Retrieves the actual class levels that should be used for
+ * spellcasting calculations and progression determination.
+ *
+ * @param {Actor5e} actor - The actor to check for class levels
+ * @param {string} classIdentifier - The class identifier to look up
+ * @returns {number} Class levels for spellcasting calculations (0 if not found)
  */
 export function getSpellcastingLevelsForClass(actor, classIdentifier) {
   const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
@@ -68,8 +141,11 @@ export function getSpellcastingLevelsForClass(actor, classIdentifier) {
 }
 
 /**
- * Check if an actor is considered a wizard
- * @param {Actor5e} actor The actor to check
+ * Check if an actor is considered a wizard.
+ * Determines wizard status by checking for wizard class items and
+ * force wizard mode settings in the actor's class rules.
+ *
+ * @param {Actor5e} actor - The actor to check for wizard status
  * @returns {boolean} True if actor has a wizard class or force wizard mode is enabled
  */
 export function isWizard(actor) {
@@ -86,18 +162,12 @@ export function isWizard(actor) {
 }
 
 /**
- * Get the canonical UUID for a spell
- * @param {Item5e} spell The spell item
- * @returns {string} The spell's UUID
- */
-export function getSpellUuid(spell) {
-  return spell.flags?.core?.sourceId || spell.flags?.dnd5e?.sourceId || spell.system?.parent?._source._stats.compendiumSource || spell.uuid;
-}
-
-/**
- * Find the wizard class item for an actor
- * @param {Actor5e} actor The actor to check
- * @returns {Item5e|null} The wizard class item or null
+ * Find the wizard class item for an actor.
+ * Locates the appropriate wizard class item considering multiple
+ * spellcasting classes and force wizard mode settings.
+ *
+ * @param {Actor5e} actor - The actor to check for wizard class
+ * @returns {Item5e|null} The wizard class item or null if not found
  */
 export function findWizardClass(actor) {
   if (!isWizard(actor)) return null;
@@ -130,11 +200,15 @@ export function findWizardClass(actor) {
 }
 
 /**
- * Get all wizard-enabled classes for an actor (including force wizard mode classes)
- * @param {Actor5e} actor The actor to check
- * @returns {Array} Array of class identifiers that are wizard-enabled
+ * Get all wizard-enabled classes for an actor (including force wizard mode classes).
+ * Returns detailed information about all classes that have wizard functionality
+ * enabled either naturally or through force wizard mode settings.
+ *
+ * @param {Actor5e} actor - The actor to check for wizard-enabled classes
+ * @returns {Array<WizardClassData>} Array of wizard-enabled class data objects
  */
 export function getWizardEnabledClasses(actor) {
+  /** @type {Array<WizardClassData>} */
   const wizardClasses = [];
   const localizedWizardName = game.i18n.localize('SPELLBOOK.Classes.Wizard').toLowerCase();
   const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
@@ -152,9 +226,12 @@ export function getWizardEnabledClasses(actor) {
 }
 
 /**
- * Check if a specific class is wizard-enabled
- * @param {Actor5e} actor The actor to check
- * @param {string} classIdentifier The class identifier to check
+ * Check if a specific class is wizard-enabled.
+ * Determines whether a particular class identifier has wizard functionality
+ * enabled either naturally or through configuration settings.
+ *
+ * @param {Actor5e} actor - The actor to check for wizard-enabled class
+ * @param {string} classIdentifier - The class identifier to check
  * @returns {boolean} True if the class is wizard-enabled
  */
 export function isClassWizardEnabled(actor, classIdentifier) {
@@ -172,9 +249,12 @@ export function isClassWizardEnabled(actor, classIdentifier) {
 }
 
 /**
- * Get the appropriate label/name from a CONFIG object
- * @param {Object} configObject The CONFIG object (e.g., CONFIG.DND5E.spellSchools)
- * @param {string} key The key to look up
+ * Get the appropriate label/name from a CONFIG object.
+ * Safely extracts display labels from D&D 5e configuration objects,
+ * handling various label formats and providing fallbacks.
+ *
+ * @param {Object} configObject - The CONFIG object (e.g., CONFIG.DND5E.spellSchools)
+ * @param {string} key - The key to look up in the configuration object
  * @returns {string} The label/name or empty string if not found
  */
 export function getConfigLabel(configObject, key) {
@@ -187,23 +267,47 @@ export function getConfigLabel(configObject, key) {
 }
 
 /**
- * Get the target user ID for spell data operations
- * @param {Actor5e} actor The actor to determine ownership for
- * @todo - Should be an easier way within dnd5e/foundry to get this done
- * @returns {string} The user ID to use for spell data
+ * Get the target user ID for spell data operations.
+ *
+ * Determines the appropriate user ID for spell data operations using a hierarchical
+ * ownership detection system that prioritizes character ownership, falls back to
+ * document ownership levels, and finally uses GM permissions.
+ *
+ * The detection process follows this priority:
+ * 1. Character ownership: Find user whose assigned character matches the actor
+ * 2. Document ownership: Find user with OWNER-level permissions on the actor
+ * 3. GM fallback: Use the current GM user if no owner is found
+ *
+ * @param {Actor5e} actor - The actor to determine ownership for
+ * @returns {string} The user ID to use for spell data operations
  */
 export function _getTargetUserId(actor) {
   let targetUserId = game.user.id;
-  if (game.user.isActiveGM) {
-    const actorOwner = game.users.find((user) => user?.character?.id === actor?.id);
-    if (actorOwner) targetUserId = actorOwner.id;
-    else log(3, `No owner found for actor ${actor?.name}, using GM`);
+  if (game.user.isActiveGM && actor) {
+    log(3, `GM determining ownership for actor: ${actor.name}`);
+    const characterOwner = game.users.find((user) => user.character?.id === actor.id);
+    if (characterOwner) {
+      targetUserId = characterOwner.id;
+      log(3, `Using character owner: ${characterOwner.name} (${characterOwner.id})`);
+      return targetUserId;
+    }
+    log(3, 'No character owner found, checking ownership levels...');
+    const ownershipOwner = game.users.find((user) => actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+    if (ownershipOwner) {
+      targetUserId = ownershipOwner.id;
+      log(3, `Using ownership owner: ${ownershipOwner.name} (${ownershipOwner.id})`);
+      return targetUserId;
+    }
+    log(3, `No owner found for actor ${actor.name}, using GM`);
   }
   return targetUserId;
 }
 
 /**
- * Check if metric units should be used based on dnd5e system settings
+ * Check if metric units should be used based on dnd5e system settings.
+ * Determines whether to use metric measurements by checking both
+ * length and volume unit settings in the D&D 5e system.
+ *
  * @returns {boolean} True if either length or volume units are set to metric
  */
 export function shouldUseMetricUnits() {

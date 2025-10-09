@@ -1,0 +1,93 @@
+{{!--
+/**
+ * Spell Item Component Template
+ *
+ * PURPOSE:
+ * Individual spell item component for displaying spell details with preparation
+ * controls in standard spellcasting class tabs. Provides comprehensive spell
+ * information including icons, tags, metadata, and preparation checkboxes for
+ * non-wizard spellcasting classes.
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic list item structure for screen readers
+ * - Button elements with proper aria-label attributes
+ * - Tooltip data attributes for additional context
+ * - Action buttons with descriptive labels and ARIA attributes
+ * - Accessible icon markup with aria-hidden for decorative elements
+ *
+ * INTEGRATION:
+ * - Used within spell-level component via partial rendering
+ * - Supports player spell book standard spellcasting tabs
+ * - Integrates with spell preparation, favorites, and notes systems
+ * - Connects to spell comparison and party coordination features
+ * - Works with filter and search systems via data attributes
+ */
+--}}
+
+<li class="{{spell.cssClasses}}" {{{spell.dataAttributes}}}>
+  <div class="spell-name">
+    {{{spell.enrichedIcon}}}
+    <div class="name-stacked">
+      <span class="title">
+        {{spell.name}}
+
+        {{!-- Favorite Star Button --}}
+        {{#if spell.favoriteButton.enabled}}
+          <button type="button" class="spell-favorite-toggle {{#if spell.favoriteButton.favorited}}favorited{{/if}}"
+            data-action="toggleFavorite" data-uuid="{{spell.favoriteButton.uuid}}"
+            data-tooltip="{{spell.favoriteButton.tooltip}}" aria-label="{{spell.favoriteButton.tooltip}}">
+            <i class="{{spell.favoriteButton.iconClass}} fa-star" aria-hidden="true"></i>
+          </button>
+        {{/if}}
+
+        {{!-- Spell Tag --}}
+        {{#if spell.tag}}
+          <span class="tag {{spell.tag.cssClass}}" {{#if spell.tag.tooltip}}data-tooltip="{{spell.tag.tooltip}}"
+            {{/if}}>
+            {{spell.tag.text}}
+          </span>
+        {{/if}}
+
+        {{!-- Party Member Icons --}}
+        {{#if spell.partyIcons.enabled}}
+          <span class="party-icons">
+            {{#each spell.partyIcons.icons as |icon|}}
+              <img src="{{icon.src}}" class="party-member-icon" data-tooltip="{{icon.name}}"
+                data-actor-id="{{icon.actorId}}" style="box-shadow: 0 0 0.1rem 0.1rem {{icon.userColor}};">
+            {{/each}}
+          </span>
+        {{/if}}
+      </span>
+
+      {{!-- Subtitle with Icons and Metadata --}}
+      {{#if (or spell.comparisonIcon.enabled spell.notesIcon.enabled spell.formattedDetails)}}
+        <span class="subtitle" {{#if spell.materialComponentsTooltip}}data-tooltip="{{spell.materialComponentsTooltip}}"
+          {{/if}}>
+          {{!-- Comparison Icon --}}
+          {{#if spell.comparisonIcon.enabled}}
+            <i class="fa-solid fa-clipboard-question spell-compare-icon{{#if spell.comparisonIcon.active}} active{{/if}}"
+              data-action="compareSpell" data-uuid="{{spell.comparisonIcon.uuid}}"
+              data-tooltip="{{spell.comparisonIcon.tooltip}}" aria-label="{{spell.comparisonIcon.ariaLabel}}"></i>
+          {{/if}}
+
+          {{!-- Notes Icon --}}
+          {{#if spell.notesIcon.enabled}}
+            <i class="{{spell.notesIcon.iconClass}} spell-notes-icon" data-uuid="{{spell.notesIcon.uuid}}"
+              data-action="editNotes" data-tooltip="{{spell.notesIcon.tooltip}}"
+              aria-label="{{spell.notesIcon.tooltip}}"></i>
+          {{/if}}
+
+          {{!-- Formatted Details --}}
+          {{#if spell.formattedDetails}}
+            {{{spell.formattedDetails}}}
+          {{/if}}
+        </span>
+      {{/if}}
+    </div>
+  </div>
+
+  {{!-- Spell Preparation Checkbox --}}
+  <div class="spell-preparation dnd5e2">
+    {{{spell.preparationCheckboxHtml}}}
+  </div>
+</li>

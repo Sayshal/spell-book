@@ -1,0 +1,57 @@
+{{!--
+/**
+ * Focus Option Row Component Template
+ *
+ * PURPOSE:
+ * Reusable component template for rendering focus option management rows
+ * in the GM focus settings interface. Provides form controls for editing
+ * focus name, description, icon selection, and deletion.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {number} index - Row index for form field naming
+ * @param {string} [id] - Focus ID (defaults to generated focus-{index})
+ * @param {string} [icon] - Icon path (defaults to mystery-man.svg)
+ * @param {string} [name] - Focus name (empty for new options)
+ * @param {string} [description] - Focus description (empty for new options)
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Hidden form fields for data persistence
+ * - Descriptive tooltips for all interactive elements
+ * - Icon alt text for screen readers
+ * - Semantic button structure with proper ARIA labels
+ *
+ * INTEGRATION:
+ * - Used by FocusSettingsDialog.addFocus() method
+ * - Integrates with existing focus option management flow
+ * - Uses SPELLBOOK.FocusSettings localization namespace
+ */
+--}}
+
+<div class="focus-option-row" data-index="{{index}}">
+  <input type="hidden" name="focus-id-{{index}}" value="{{#if id}}{{id}}{{else}}focus-{{index}}{{/if}}" />
+
+  <!-- Icon Selection Column - Clickable image picker -->
+  <div class="focus-icon-picker" data-action="selectIcon" data-index="{{index}}"
+    data-tooltip="{{localize 'SPELLBOOK.FocusSettings.ClickToChangeIcon'}}">
+    <img src="{{#if icon}}{{icon}}{{else}}icons/svg/mystery-man.svg{{/if}}" alt="Focus Icon"
+      class="focus-icon-preview" />
+    <input type="hidden" name="focus-icon-{{index}}"
+      value="{{#if icon}}{{icon}}{{else}}icons/svg/mystery-man.svg{{/if}}" />
+  </div>
+
+  <!-- Focus Name Input -->
+  <input type="text" name="focus-name-{{index}}" {{#if name}}value="{{name}}" {{/if}}
+    placeholder="{{localize 'SPELLBOOK.FocusSettings.NamePlaceholder'}}"
+    data-tooltip="{{localize 'SPELLBOOK.FocusSettings.NameTooltip'}}" />
+
+  <!-- Focus Description Input -->
+  <input type="text" name="focus-description-{{index}}" {{#if description}}value="{{description}}" {{/if}}
+    placeholder="{{localize 'SPELLBOOK.FocusSettings.DescriptionPlaceholder'}}"
+    data-tooltip="{{localize 'SPELLBOOK.FocusSettings.DescriptionTooltip'}}" />
+
+  <!-- Delete Focus Button -->
+  <button type="button" class="delete-focus" data-action="deleteFocus" data-index="{{index}}"
+    data-tooltip="{{localize 'SPELLBOOK.FocusSettings.DeleteFocus'}}">
+    <i class="fas fa-trash"></i>
+  </button>
+</div>

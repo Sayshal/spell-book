@@ -1,29 +1,86 @@
+{{!--
+/**
+ * Player Spell Book Standard Spells Tab Template
+ *
+ * PURPOSE:
+ * Standard spellcasting tab interface for non-wizard classes providing spell
+ * preparation and management functionality. Displays class-specific information,
+ * validation notices, and serves as a container for dynamically rendered spell
+ * content organized by spell level.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {Object} tab - Tab configuration object with display properties
+ * @param {string} tab.id - Unique tab identifier for DOM targeting
+ * @param {string} tab.cssClass - CSS classes for tab styling and behavior
+ * @param {string} classIdentifier - Unique identifier for the spellcasting class
+ * @param {string} className - Display name for the spellcasting class
+ * @param {boolean} hasError - Whether an error condition exists for display
+ * @param {string} errorMessage - Error message text for display (when hasError is true)
+ * @param {boolean} hasClassNotice - Whether a class validation notice should be displayed
+ * @param {Object} classNotice - Class notice configuration object (when hasClassNotice is true)
+ * @param {string} classNotice.type - Notice type for styling ("warning", "info", "error", etc.)
+ * @param {string} classNotice.icon - Icon CSS classes for notice display
+ * @param {string} classNotice.title - Notice title text
+ * @param {string} classNotice.message - Notice message text (optional)
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Tab container with proper data attributes for tab navigation
+ * - Class header with semantic h2 element for content hierarchy
+ * - Notice sections with role="alert" for important announcements
+ * - Filter results message with role="status" for screen reader updates
+ * - Icons marked as decorative with aria-hidden="true"
+ * - Semantic content structure with containers and headers
+ *
+ * CUSTOMIZATION POINTS:
+ * - Error display uses shared error message component for consistency
+ * - Class notice adapts styling and content based on validation results
+ * - Spell content area serves as dynamic rendering target
+ * - Filter results message toggles visibility based on search state
+ * - Tab styling and behavior controlled through CSS classes
+ *
+ * INTEGRATION:
+ * - Connects to PlayerSpellBook application for class-specific spell management
+ * - Uses shared error message component from templates/components/
+ * - Supports dynamic spell level rendering through JavaScript
+ * - Integrates with spell filtering and search functionality
+ * - Works with application's tab state management system
+ */
+--}}
+
 <div class="spellstab {{tab.id}} tab {{tab.cssClass}}" data-tab="{{tab.id}}" data-group="spellbook-tabs"
   data-class-identifier="{{classIdentifier}}">
+
   <div class="spells-container">
-    {{#if hasError}}
-      {{> "modules/spell-book/templates/components/error-message.hbs" message=errorMessage}}
-    {{else}}
-      <div class="class-header">
-        <h2>{{localize 'SPELLBOOK.Classes.Tab.Header' class=className}}</h2>
-      </div>
-      {{!-- Class Validation Notice --}}
-      {{#if hasClassNotice}}
-        <div class="class-notice">
-          <div class="notice {{classNotice.type}}" role="alert">
-            <i class="{{classNotice.icon}}" aria-hidden="true"></i>
-            <div class="notice-content">
-              <strong>{{classNotice.title}}</strong>
-              {{#if classNotice.message}}
-                <span class="notice-message">{{classNotice.message}}</span>
-              {{/if}}
-            </div>
-          </div>
+    <!-- Class Header Section -->
+    <div class="class-header">
+      <h2>{{className}} Spells</h2>
+    </div>
+
+    <!-- Class Validation Notice -->
+    {{#if hasClassNotice}}
+      <div class="class-notice {{classNotice.type}}" role="alert">
+        <i class="{{classNotice.icon}}" aria-hidden="true"></i>
+        <div class="notice-content">
+          <strong>{{classNotice.title}}</strong>
+          <p>{{classNotice.message}}</p>
         </div>
-      {{/if}}
+      </div>
     {{/if}}
+
+    <!-- Render Spell Levels -->
+    {{#each spellLevels as |levelData|}}
+      {{> "modules/spell-book/templates/components/spell-level.hbs"
+        level=levelData.level
+        levelName=levelData.levelName
+        spells=levelData.spells
+        isCollapsed=levelData.isCollapsed
+        preparedCount=levelData.preparedCount
+        cantripCounter=levelData.cantripCounter}}
+    {{/each}}
+
+    <!-- Filter Results Message -->
     <div class="no-filter-results" style="display: none;" role="status">
-      {{localize 'SPELLBOOK.Filters.NoResults'}}
+      No spells match your filters.
     </div>
   </div>
 </div>

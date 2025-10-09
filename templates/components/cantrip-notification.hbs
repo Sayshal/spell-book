@@ -1,36 +1,125 @@
+{{!--
+/**
+ * Cantrip Change Notification Component Template
+ *
+ * PURPOSE:
+ * Chat message component for notifying GMs about cantrip and spell changes made
+ * to actors. Displays change reports including additions, removals,
+ * and limit violations for cantrips and spells across multiple spellcasting classes.
+ * Provides detailed feedback for spell management validation and oversight.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {string} actorName - Display name of the actor whose spells changed
+ * @param {Array<Object>} classChanges - Array of class-specific spell changes
+ * @param {string} classChanges[].className - Display name of the spellcasting class
+ * @param {boolean} classChanges[].hasChanges - Whether this class has any changes to report
+ * @param {Object} classChanges[].cantripChanges - Cantrip modification data
+ * @param {boolean} classChanges[].cantripChanges.hasChanges - Whether cantrips were modified
+ * @param {string} classChanges[].cantripChanges.removedNames - Comma-separated removed cantrip names
+ * @param {string} classChanges[].cantripChanges.addedNames - Comma-separated added cantrip names
+ * @param {Object} classChanges[].spellChanges - Spell modification data
+ * @param {boolean} classChanges[].spellChanges.hasChanges - Whether spells were modified
+ * @param {string} classChanges[].spellChanges.removedNames - Comma-separated removed spell names
+ * @param {string} classChanges[].spellChanges.addedNames - Comma-separated added spell names
+ * @param {Object} classChanges[].overLimits - Spell/cantrip limit violation data
+ * @param {Object} classChanges[].overLimits.cantrips - Cantrip limit information
+ * @param {boolean} classChanges[].overLimits.cantrips.isOver - Whether cantrip limit exceeded
+ * @param {number} classChanges[].overLimits.cantrips.current - Current cantrip count
+ * @param {number} classChanges[].overLimits.cantrips.max - Maximum allowed cantrips
+ * @param {number} classChanges[].overLimits.cantrips.overCount - Count of excess cantrips
+ * @param {Object} classChanges[].overLimits.spells - Spell limit information
+ * @param {boolean} classChanges[].overLimits.spells.isOver - Whether spell limit exceeded
+ * @param {number} classChanges[].overLimits.spells.current - Current spell count
+ * @param {number} classChanges[].overLimits.spells.max - Maximum allowed spells
+ * @param {number} classChanges[].overLimits.spells.overCount - Count of excess spells
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic HTML structure with proper heading hierarchy (h2, h3, h4)
+ * - List structures for organized change presentation
+ * - Clear separation between different types of changes
+ * - Horizontal rules for visual and semantic content division
+ *
+ * CUSTOMIZATION POINTS:
+ * - Content sections display conditionally based on change detection
+ * - Class-specific changes organized separately for clarity
+ * - Limit violations highlighted with specific formatting
+ * - Change types (additions/removals) clearly distinguished with color coding
+ * - Conditional separators only appear when multiple classes are present
+ *
+ * INTEGRATION:
+ * - Used as chat message content for GM notifications
+ * - Connects to spell management validation systems
+ * - Uses module localization keys from SPELLBOOK.Notifications namespace
+ * - Supports multiclass character spell change reporting
+ * - Integrates with spell limit enforcement systems
+ */
+--}}
+
 <div class="spell-book-chat-message spell-book-update-report">
-  <h4>{{localize 'SPELLBOOK.Notifications.ComprehensiveTitle' name=actorName}}</h4>
+  <!-- Notification Header - Actor name and overall context -->
+  <h2>{{localize 'SPELLBOOK.Chat.UpdateReport.Title' name=actorName}}</h2>
+  <!-- Class-Specific Changes - Iterate through each spellcasting class -->
   {{#each classChanges}}
     {{#if this.hasChanges}}
-      <h5>{{this.className}}</h5>
+      <!-- Class Name Header -->
+      <h3>{{this.className}}</h3>
+      <!-- Cantrip Changes Section - Additions and removals -->
       {{#if this.cantripChanges.hasChanges}}
-        <p><strong>{{localize 'SPELLBOOK.Notifications.CantripChanges'}}:</strong></p>
+        <h4>{{localize 'SPELLBOOK.Notifications.CantripChanges'}}</h4>
         <ul>
+          <!-- Removed Cantrips -->
           {{#if this.cantripChanges.removedNames}}
-            <li><strong>{{localize 'SPELLBOOK.Notifications.Removed'}}:</strong>
+            <li><strong class="removed">{{localize 'SPELLBOOK.Notifications.Removed'}}:</strong>
               {{this.cantripChanges.removedNames}}
             </li>
           {{/if}}
+          <!-- Added Cantrips -->
           {{#if this.cantripChanges.addedNames}}
-            <li><strong>{{localize 'SPELLBOOK.Notifications.Added'}}:</strong>
+            <li><strong class="added">{{localize 'SPELLBOOK.Notifications.Added'}}:</strong>
               {{this.cantripChanges.addedNames}}
             </li>
           {{/if}}
         </ul>
       {{/if}}
+      <!-- Spell Changes Section - Additions and removals -->
+      {{#if this.spellChanges.hasChanges}}
+        <h4>{{localize 'SPELLBOOK.Notifications.SpellChanges'}}</h4>
+        <ul>
+          <!-- Removed Spells -->
+          {{#if this.spellChanges.removedNames}}
+            <li><strong class="removed">{{localize 'SPELLBOOK.Notifications.Removed'}}:</strong>
+              {{this.spellChanges.removedNames}}
+            </li>
+          {{/if}}
+
+          <!-- Added Spells -->
+          {{#if this.spellChanges.addedNames}}
+            <li><strong class="added">{{localize 'SPELLBOOK.Notifications.Added'}}:</strong>
+              {{this.spellChanges.addedNames}}
+            </li>
+          {{/if}}
+        </ul>
+      {{/if}}
+      <!-- Cantrip Limit Violations -->
       {{#if this.overLimits.cantrips.isOver}}
-        <p><strong>{{localize 'SPELLBOOK.Notifications.CantripOverLimit'}}:</strong>
+        <p><strong class="warning">{{localize 'SPELLBOOK.Notifications.CantripOverLimit'}}:</strong>
           {{this.overLimits.cantrips.current}}/{{this.overLimits.cantrips.max}}
           ({{this.overLimits.cantrips.overCount}} over)
         </p>
       {{/if}}
+      <!-- Spell Limit Violations -->
       {{#if this.overLimits.spells.isOver}}
-        <p><strong>{{localize 'SPELLBOOK.Notifications.SpellOverLimit'}}:</strong>
+        <p><strong class="warning">{{localize 'SPELLBOOK.Notifications.SpellOverLimit'}}:</strong>
           {{this.overLimits.spells.current}}/{{this.overLimits.spells.max}}
           ({{this.overLimits.spells.overCount}} over)
         </p>
       {{/if}}
-      <hr>
+      <!-- Class Section Separator - Only show if multiple classes -->
+      {{#if ../classChanges.length}}
+        {{#if (gt ../classChanges.length 1)}}
+          <hr>
+        {{/if}}
+      {{/if}}
     {{/if}}
   {{/each}}
 </div>

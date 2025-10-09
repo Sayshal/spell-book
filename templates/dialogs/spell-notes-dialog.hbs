@@ -1,9 +1,53 @@
+{{!--
+/**
+ * Spell Notes Dialog Template
+ *
+ * PURPOSE:
+ * Text editing dialog for creating and modifying personal spell notes. Provides
+ * textarea input with character counting, validation feedback, and save/cancel
+ * controls. Supports user annotation of spells with personal observations,
+ * strategies, and reminders for enhanced spell management.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {string} notes - Current notes content for the spell
+ * @param {number} maxLength - Maximum allowed character count for notes
+ * @param {number} rows - Number of textarea rows for display
+ * @param {number} charactersRemaining - Remaining character count for validation
+ * @param {string} spellUuid - Unique identifier for the spell being annotated
+ * @param {string} actorId - Actor identifier for note association
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic form structure with proper label associations
+ * - Character counter with visual warning states
+ * - Clear form footer with save and cancel actions
+ * - Hidden inputs for form data persistence
+ * - Textarea with appropriate sizing and limits
+ *
+ * CUSTOMIZATION POINTS:
+ * - Character counter with warning and error states
+ * - Configurable textarea size through rows parameter
+ * - Dynamic character limit validation and display
+ * - Pre-populated content for editing existing notes
+ * - Form submission with actor and spell association
+ *
+ * INTEGRATION:
+ * - Used for personal spell annotation and note-taking
+ * - Connects to user data persistence and spell association systems
+ * - Uses module localization keys from SPELLBOOK.UI namespace
+ * - Supports spell personalization and strategic planning
+ */
+--}}
+
 <div class="spell-notes-dialog-content">
+  <!-- Dialog Body with Notes Form -->
   <div class="dialog-body">
     <div class="form-group">
+      <!-- Notes Textarea with Character Limit -->
       <label for="spell-notes">{{localize "SPELLBOOK.UI.Notes"}}</label>
       <textarea name="notes" id="spell-notes" maxlength="{{maxLength}}"
         placeholder="{{localize 'SPELLBOOK.UI.NotesPlaceholder'}}" rows="{{rows}}">{{notes}}</textarea>
+
+      <!-- Form Footer with Character Counter -->
       <div class="form-footer">
         <span
           class="character-counter {{#if (lt charactersRemaining 20)}}warning{{/if}} {{#if (lt charactersRemaining 0)}}error{{/if}}">
@@ -12,14 +56,21 @@
         <span class="counter-label">{{localize "SPELLBOOK.UI.CharactersRemaining"}}</span>
       </div>
     </div>
+
+    <!-- Hidden Form Data -->
     <input type="hidden" name="spellUuid" value="{{spellUuid}}">
     <input type="hidden" name="actorId" value="{{actorId}}">
   </div>
+
+  <!-- Dialog Action Buttons -->
   <div class="dialog-buttons">
+    <!-- Save Notes Button -->
     <button type="submit" class="save-notes">
       <i class="fas fa-save"></i>
       {{localize "SPELLBOOK.UI.Save"}}
     </button>
+
+    <!-- Cancel Button -->
     <button type="button" class="cancel-notes" data-action="close">
       <i class="fas fa-times"></i>
       {{localize "SPELLBOOK.UI.Cancel"}}

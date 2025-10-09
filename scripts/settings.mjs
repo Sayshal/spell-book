@@ -1,18 +1,56 @@
-import { SpellListManager } from './apps/_module.mjs';
+/**
+ * Spell Book Module Settings Registration
+ *
+ * Registers and manages all configurable settings for the Spell Book module,
+ * including game mechanics, UI preferences, analytics, and party coordination
+ * features. Provides centralized configuration management with proper validation,
+ * defaults, and migration support.
+ *
+ * Settings are organized into logical groups:
+ * - Menus & Classes: Dialog and application launchers
+ * - Core Functionality: Basic module operations and spell data
+ * - UI & UX: User interface preferences and layout
+ * - Spell Behavior: Spellcasting rules and enforcement
+ * - Notes & Annotations: Personal notes and descriptions
+ * - UI Customization: Display element preferences
+ * - Party Spell Tracking: Multi-character coordination
+ * - Technical: Internal configurations and caching
+ * - Troubleshooting: Debugging and diagnostic tools
+ *
+ * @module Settings
+ * @author Tyler
+ */
+
+import { SpellBookTroubleshooter, SpellListManager } from './apps/_module.mjs';
 import { MODULE, SETTINGS } from './constants/_module.mjs';
 import { CompendiumSelectionDialog, SpellDetailsCustomization } from './dialogs/_module.mjs';
 import { log } from './logger.mjs';
 import * as UIHelpers from './ui/_module.mjs';
+import * as DataHelpers from './data/_module.mjs';
 
 /**
- * Register all module settings
+ * Register all module settings with Foundry VTT.
+ *
+ * This function registers the complete configuration interface for the Spell Book module.
+ * Settings are organized into logical groups and include validation, change handlers,
+ * and appropriate scopes (world vs client) for each configuration option.
+ *
+ * The registration process includes:
+ * - Menu items for launching configuration dialogs
+ * - Core functionality settings for spell data and behavior
+ * - User interface customization options
+ * - Technical settings for performance and debugging
+ * - Validation and error handling for setting changes
+ *
+ * @returns {void}
  */
 export function registerSettings() {
   // ========================================//
   //  Menus & Classes                        //
   // ========================================//
 
-  game.settings.registerMenu(MODULE.ID, SETTINGS.OPEN_SPELL_MANAGER, {
+  /** Register spell list manager menu launcher */
+  game.settings.registerMenu(MODULE.ID, 'openSpellListManager', {
     name: 'SPELLBOOK.Settings.OpenSpellListManager.Name',
     hint: 'SPELLBOOK.Settings.OpenSpellListManager.Hint',
     label: 'SPELLBOOK.Settings.OpenSpellListManager.Button',
@@ -22,7 +60,8 @@ export function registerSettings() {
     restricted: true
   });
 
-  game.settings.registerMenu(MODULE.ID, SETTINGS.COMPENDIUM_SELECTION, {
+  /** Register compendium selection dialog menu launcher */
+  game.settings.registerMenu(MODULE.ID, 'compendiumSelection', {
     name: 'SPELLBOOK.Settings.CompendiumSelectionName',
     hint: 'SPELLBOOK.Settings.CompendiumSelectionHint',
     label: 'SPELLBOOK.Settings.CompendiumSelectionButton',
@@ -36,6 +75,7 @@ export function registerSettings() {
   //  Core Functionality                     //
   // ========================================//
 
+  /** Indexed compendiums configuration for spell data caching */
   game.settings.register(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS, {
     name: 'SPELLBOOK.Settings.IndexedCompendiumsName',
     hint: 'SPELLBOOK.Settings.IndexedCompendiumsHint',
@@ -56,18 +96,17 @@ export function registerSettings() {
     }
   });
 
+  /** Enable/disable spell usage analytics tracking */
   game.settings.register(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING, {
     name: 'SPELLBOOK.Settings.EnableSpellUsageTracking.Name',
     hint: 'SPELLBOOK.Settings.EnableSpellUsageTracking.Hint',
     scope: 'world',
     config: true,
     type: Boolean,
-    default: true,
-    onChange: (value) => {
-      ui.notifications.info(value ? game.i18n.localize('SPELLBOOK.Settings.SpellUsageTrackingEnabled') : game.i18n.localize('SPELLBOOK.Settings.SpellUsageTrackingDisabled'));
-    }
+    default: true
   });
 
+  /** Custom spell list mappings for class-specific spell lists */
   game.settings.register(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, {
     name: 'SPELLBOOK.Settings.CustomSpellMappings.Name',
     hint: 'SPELLBOOK.Settings.CustomSpellMappings.Hint',
@@ -87,6 +126,7 @@ export function registerSettings() {
     }
   });
 
+  /** Setup mode for module configuration and initial setup */
   game.settings.register(MODULE.ID, SETTINGS.SETUP_MODE, {
     name: 'SPELLBOOK.Settings.SetupMode.Name',
     hint: 'SPELLBOOK.Settings.SetupMode.Hint',
@@ -97,10 +137,32 @@ export function registerSettings() {
     requiresReload: true
   });
 
+  if (game.modules.get('chris-premades')?.active) {
+    /** Enable Cauldron of Plentiful Resources compatibility */
+    game.settings.register(MODULE.ID, SETTINGS.CPR_COMPATIBILITY, {
+      name: 'SPELLBOOK.Settings.CPRCompatibility.Name',
+      hint: 'SPELLBOOK.Settings.CPRCompatibility.Hint',
+      scope: 'world',
+      config: true,
+      type: Boolean,
+      default: false
+    });
+  }
+
+  game.settings.register(MODULE.ID, SETTINGS.AUTO_DELETE_UNPREPARED_SPELLS, {
+    name: 'SPELLBOOK.Settings.AutoDeleteUnpreparedSpells.Name',
+    hint: 'SPELLBOOK.Settings.AutoDeleteUnpreparedSpells.Hint',
+    scope: 'user',
+    config: true,
+    type: Boolean,
+    default: false
+  });
+
   // ========================================//
   //  UI & UX                                //
   // ========================================//
 
+  /** Spell book window position and size preferences */
   game.settings.register(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION, {
     name: 'SPELLBOOK.Settings.SpellBookPosition.Name',
     hint: 'SPELLBOOK.Settings.SpellBookPosition.Hint',
@@ -110,6 +172,7 @@ export function registerSettings() {
     default: {}
   });
 
+  /** Position sidebar controls at bottom of interface */
   game.settings.register(MODULE.ID, SETTINGS.SIDEBAR_CONTROLS_BOTTOM, {
     name: 'SPELLBOOK.Settings.SidebarControlsBottom.Name',
     hint: 'SPELLBOOK.Settings.SidebarControlsBottom.Hint',
@@ -119,6 +182,7 @@ export function registerSettings() {
     default: false
   });
 
+  /** Enable spell list manager button in journal directory */
   game.settings.register(MODULE.ID, SETTINGS.ENABLE_JOURNAL_BUTTON, {
     name: 'SPELLBOOK.Settings.EnableJournalButton.Name',
     hint: 'SPELLBOOK.Settings.EnableJournalButton.Hint',
@@ -129,6 +193,7 @@ export function registerSettings() {
     requiresReload: true
   });
 
+  /** Maximum number of spells allowed in comparison view */
   game.settings.register(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX, {
     name: 'SPELLBOOK.Settings.SpellComparisonMax.Name',
     hint: 'SPELLBOOK.Settings.SpellComparisonMax.Hint',
@@ -139,6 +204,7 @@ export function registerSettings() {
     range: { min: 2, max: 7, step: 1 }
   });
 
+  /** Wizard book icon color customization */
   game.settings.register(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.WizardBookIconColor',
     scope: 'client',
@@ -153,6 +219,7 @@ export function registerSettings() {
     default: null
   });
 
+  /** Advanced search prefix character configuration */
   game.settings.register(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, {
     name: 'SPELLBOOK.Settings.AdvancedSearchPrefix.Name',
     hint: 'SPELLBOOK.Settings.AdvancedSearchPrefix.Hint',
@@ -165,17 +232,14 @@ export function registerSettings() {
         if (value.length !== 1) {
           log(2, 'Advanced search prefix must be exactly 1 character, resetting to default');
           game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
-          ui.notifications.warn('Advanced search prefix must be exactly 1 character');
           return;
         }
         if (/[\dA-Za-z]/.test(value)) {
           log(2, 'Advanced search prefix cannot be a letter or number, resetting to default');
           game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
-          ui.notifications.warn('Advanced search prefix cannot be a letter or number');
           return;
         }
         log(3, `Advanced search prefix changed to "${value}"`);
-        ui.notifications.info(`Advanced search prefix updated to "${value}"`);
       } catch (error) {
         log(1, 'Error validating advanced search prefix:', error);
         game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
@@ -187,6 +251,7 @@ export function registerSettings() {
   //  Spell Behavior                         //
   // ========================================//
 
+  /** Spellcasting rule set selection (legacy vs modern) */
   game.settings.register(MODULE.ID, SETTINGS.SPELLCASTING_RULE_SET, {
     name: 'SPELLBOOK.Settings.SpellcastingRuleSet.Name',
     hint: 'SPELLBOOK.Settings.SpellcastingRuleSet.Hint',
@@ -197,12 +262,10 @@ export function registerSettings() {
       [MODULE.RULE_SETS.LEGACY]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Legacy',
       [MODULE.RULE_SETS.MODERN]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Modern'
     },
-    default: MODULE.RULE_SETS.LEGACY,
-    onChange: (value) => {
-      ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.RuleSetChanged'));
-    }
+    default: MODULE.RULE_SETS.LEGACY
   });
 
+  /** Default enforcement behavior for spell preparation rules */
   game.settings.register(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR, {
     name: 'SPELLBOOK.Settings.DefaultEnforcementBehavior.Name',
     hint: 'SPELLBOOK.Settings.DefaultEnforcementBehavior.Hint',
@@ -217,6 +280,7 @@ export function registerSettings() {
     default: MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM
   });
 
+  /** Whether to consume scrolls when learning spells from them */
   game.settings.register(MODULE.ID, SETTINGS.CONSUME_SCROLLS_WHEN_LEARNING, {
     name: 'SPELLBOOK.Settings.ConsumeScrollsWhenLearning.Name',
     hint: 'SPELLBOOK.Settings.ConsumeScrollsWhenLearning.Hint',
@@ -226,6 +290,17 @@ export function registerSettings() {
     default: true
   });
 
+  /** Whether to deduct gold cost when learning spells */
+  game.settings.register(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST, {
+    name: 'SPELLBOOK.Settings.DeductSpellLearningCost.Name',
+    hint: 'SPELLBOOK.Settings.DeductSpellLearningCost.Hint',
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false
+  });
+
+  /** Disable long rest spell swap prompts */
   game.settings.register(MODULE.ID, SETTINGS.DISABLE_LONG_REST_SWAP_PROMPT, {
     name: 'SPELLBOOK.Settings.DisableLongRestSwapPrompt.Name',
     hint: 'SPELLBOOK.Settings.DisableLongRestSwapPrompt.Hint',
@@ -235,6 +310,7 @@ export function registerSettings() {
     default: false
   });
 
+  /** Cantrip scaling value configuration for damage calculations */
   game.settings.register(MODULE.ID, SETTINGS.CANTRIP_SCALE_VALUES, {
     name: 'SPELLBOOK.Settings.CantripScaleValues.Name',
     hint: 'SPELLBOOK.Settings.CantripScaleValues.Hint',
@@ -244,10 +320,28 @@ export function registerSettings() {
     default: 'cantrips-known, cantrips'
   });
 
+  /** Registry-enabled spell lists for D&D 5e SpellListRegistry integration */
+  game.settings.register(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS, {
+    name: game.i18n.localize('SPELLBOOK.Settings.RegistryEnabledLists.Name'),
+    hint: game.i18n.localize('SPELLBOOK.Settings.RegistryEnabledLists.Hint'),
+    scope: 'world',
+    config: false,
+    type: Array,
+    default: [],
+    onChange: async (value) => {
+      log(3, `Registry enabled lists updated: ${value.length} lists`);
+      DataHelpers.clearCustomSpellListCache();
+      if (game.user.isGM) {
+        await DataHelpers.registerCustomSpellLists();
+      }
+    }
+  });
+
   // ========================================//
   //  Notes & Annotations                    //
   // ========================================//
 
+  /** Spell notes injection into spell descriptions */
   game.settings.register(MODULE.ID, SETTINGS.SPELL_NOTES_DESC_INJECTION, {
     name: 'SPELLBOOK.Settings.InjectNotesIntoDescriptions.Name',
     hint: 'SPELLBOOK.Settings.InjectNotesIntoDescriptions.Hint',
@@ -265,6 +359,7 @@ export function registerSettings() {
     }
   });
 
+  /** Maximum length for spell notes */
   game.settings.register(MODULE.ID, SETTINGS.SPELL_NOTES_LENGTH, {
     name: 'SPELLBOOK.Settings.NotesMaxLength.Name',
     hint: 'SPELLBOOK.Settings.NotesMaxLength.Hint',
@@ -283,6 +378,7 @@ export function registerSettings() {
   //  UI Customization                       //
   // ========================================//
 
+  /** Spell details customization menu launcher */
   game.settings.registerMenu(MODULE.ID, 'spellDetailsCustomization', {
     name: 'SPELLBOOK.Settings.DetailsCustomization.MenuName',
     hint: 'SPELLBOOK.Settings.DetailsCustomization.MenuHint',
@@ -292,6 +388,7 @@ export function registerSettings() {
     restricted: false
   });
 
+  /** Player UI element visibility settings */
   game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.Favorites',
     scope: 'client',
@@ -396,6 +493,7 @@ export function registerSettings() {
     default: true
   });
 
+  /** GM UI element visibility settings */
   game.settings.register(MODULE.ID, SETTINGS.GM_UI_COMPARE, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.Compare',
     scope: 'client',
@@ -485,9 +583,35 @@ export function registerSettings() {
   });
 
   // ========================================//
+  //  Party Spell Tracking                   //
+  // ========================================//
+
+  /** Available focus options for party spell coordination */
+  game.settings.register(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS, {
+    name: 'SPELLBOOK.Settings.FocusOptions.Name',
+    hint: 'SPELLBOOK.Settings.FocusOptions.Hint',
+    scope: 'world',
+    config: false,
+    type: Array,
+    default: MODULE.DEFAULT_FOCUSES
+  });
+
+  /** Token limit for party mode display */
+  game.settings.register(MODULE.ID, SETTINGS.PARTY_MODE_TOKEN_LIMIT, {
+    name: 'SPELLBOOK.Settings.PartyModeTokenLimit.Name',
+    hint: 'SPELLBOOK.Settings.PartyModeTokenLimit.Hint',
+    scope: 'client',
+    config: true,
+    type: Number,
+    default: 4,
+    range: { min: 2, max: 8, step: 1 }
+  });
+
+  // ========================================//
   //  Technical                              //
   // ========================================//
 
+  /** Filter configuration for spell browser interface */
   game.settings.register(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, {
     name: 'SPELLBOOK.Settings.FilterConfiguration.Name',
     hint: 'SPELLBOOK.Settings.FilterConfiguration.Hint',
@@ -513,6 +637,7 @@ export function registerSettings() {
     }
   });
 
+  /** Hidden spell lists configuration */
   game.settings.register(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, {
     name: 'SPELLBOOK.Settings.HiddenSpellLists.Name',
     hint: 'SPELLBOOK.Settings.HiddenSpellLists.Hint',
@@ -532,10 +657,40 @@ export function registerSettings() {
     }
   });
 
+  /** Suppress migration warnings setting */
+  game.settings.register(MODULE.ID, SETTINGS.SUPPRESS_MIGRATION_WARNINGS, {
+    name: 'SPELLBOOK.Settings.SuppressMigrationWarnings.Name',
+    hint: 'SPELLBOOK.Settings.SuppressMigrationWarnings.Hint',
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false
+  });
+
   // ========================================//
   //  Troubleshooting                        //
   // ========================================//
 
+  /** Troubleshooter menu launcher for diagnostic reports */
+  game.settings.registerMenu(MODULE.ID, 'troubleshooterMenu', {
+    name: 'SPELLBOOK.Settings.Troubleshooter.Menu.Name',
+    hint: 'SPELLBOOK.Settings.Troubleshooter.Menu.Hint',
+    label: 'SPELLBOOK.Settings.Troubleshooter.GenerateReport',
+    icon: 'fas fa-bug',
+    scope: 'world',
+    type: SpellBookTroubleshooter,
+    restricted: true
+  });
+
+  /** Include actor data in troubleshooter reports */
+  game.settings.register(MODULE.ID, SETTINGS.TROUBLESHOOTER_INCLUDE_ACTORS, {
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: false
+  });
+
+  /** Logging level configuration for debug output */
   game.settings.register(MODULE.ID, SETTINGS.LOGGING_LEVEL, {
     name: 'SPELLBOOK.Settings.Logger.Name',
     hint: 'SPELLBOOK.Settings.Logger.Hint',

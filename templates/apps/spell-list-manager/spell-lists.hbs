@@ -1,18 +1,83 @@
+{{!--
+/**
+ * Spell List Manager Spell Lists Sidebar Template
+ *
+ * PURPOSE:
+ * Navigation sidebar for the spell list manager displaying all available spell lists
+ * organized by type and functionality. Provides list selection, visibility management,
+ * and organizational tools for spell list management across different
+ * categories including player spellbooks, custom lists, merged lists, and system lists.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {boolean} hasActorOwnedLists - Whether actor-owned spellbooks exist
+ * @param {Array<Object>} actorOwnedLists - Player spellbook collections
+ * @param {boolean} hasCustomLists - Whether custom spell lists exist
+ * @param {Array<Object>} customLists - User-created custom spell lists
+ * @param {boolean} hasMergedLists - Whether merged spell lists exist
+ * @param {Array<Object>} mergedLists - Combined spell list collections
+ * @param {boolean} hasStandardLists - Whether standard system lists exist
+ * @param {Array<Object>} standardLists - System-provided class spell lists
+ * @param {boolean} hasHiddenLists - Whether hidden spell lists exist
+ * @param {Array<Object>} hiddenSpellLists - Lists hidden from main view
+ * @param {Array<Object>} availableSpellLists - Complete collection of available lists
+ * @param {Object} customListMap - Map for checking custom list relationships
+ *
+ * Each list object contains:
+ * @param {string} list.uuid - Unique identifier for the spell list
+ * @param {string} list.name - Display name for the spell list
+ * @param {number} list.spellCount - Number of spells in the list
+ * @param {string} list.pack - Source compendium pack name
+ * @param {boolean} list.isCustom - Whether list is user-created
+ * @param {boolean} list.isMerged - Whether list is merged from multiple sources
+ * @param {string} list.actorName - Actor name for player spellbooks
+ * @param {string} list.identifier - Custom identifier for custom lists
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Complementary sidebar role with descriptive aria-label
+ * - Collapsible sidebar with aria-expanded state management
+ * - List structures with role="list" and role="listitem" for navigation
+ * - Button elements with aria-label attributes
+ * - Tooltip attributes for additional context information
+ * - Folder structures with proper header and content relationships
+ *
+ * CUSTOMIZATION POINTS:
+ * - List sections display conditionally based on data availability
+ * - Folder icons and styling adapt to list types
+ * - Visibility toggle controls adapt to list capabilities
+ * - List metadata displays appropriate source information
+ * - Empty state shows when no lists are available
+ *
+ * INTEGRATION:
+ * - Connects to SpellListManager application for list navigation
+ * - Uses module localization keys from SPELLMANAGER namespace
+ * - Supports list visibility management and organization
+ * - Integrates with list merging and creation workflows
+ * - Works with folder collapse/expand functionality
+ */
+--}}
+
 <div class="spell-lists-sidebar card" role="complementary"
 	aria-label="{{localize 'SPELLMANAGER.Columns.AvailableLists'}}">
-	<!-- Collapser Button -->
+
+	<!-- Sidebar Collapse Control -->
 	<button type="button" class="sidebar-collapser collapser vertical" data-action="toggleSidebar"
 		aria-label="{{localize 'SPELLMANAGER.Buttons.HideLists'}}" aria-expanded="true">
 		<i class="fas fa-caret-left collapse-indicator" aria-hidden="true"></i>
 	</button>
 
+	<!-- Lists Header - Title and primary actions -->
 	<div class="lists-header">
+		<!-- Merge Lists Action Button -->
 		<button type="button" class="merge-lists-button" data-action="mergeLists"
 			aria-label="{{localize 'SPELLMANAGER.Buttons.MergeLists'}}"
 			data-tooltip="{{localize 'SPELLMANAGER.Tooltips.MergeLists'}}">
 			<i class="fas fa-code-merge" aria-hidden="true"></i>
 		</button>
+
+		<!-- Section Header -->
 		<h2 id="available-lists-heading">{{localize "SPELLMANAGER.Columns.AvailableLists"}}</h2>
+
+		<!-- Create New List Action Button -->
 		<button type="button" class="create-new-button" data-action="createNewList"
 			aria-label="{{localize 'SPELLMANAGER.Buttons.CreateNew'}}"
 			data-tooltip="{{localize 'SPELLMANAGER.Tooltips.CreateNew'}}">
@@ -20,8 +85,10 @@
 		</button>
 	</div>
 
+	<!-- Lists Container - Organized spell list navigation -->
 	<div class="lists-container" role="list" aria-labelledby="available-lists-heading">
-		<!-- Player Spellbooks Section -->
+
+		<!-- Player Spellbooks Section - Actor-owned spell lists -->
 		{{#if hasActorOwnedLists}}
 			<div class="list-folder actor-lists-folder" data-folder-id="actor-lists">
 				<div class="folder-header" data-action="toggleFolder"
@@ -39,7 +106,7 @@
 							<div class="list-item-header">
 								<div class="list-item-content" data-action="selectSpellList" data-uuid="{{list.uuid}}">
 									<div class="list-name">
-										<i class="fas fa-book {{#if list.isCustom}}is-custom-list{{else if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
+										<i class="{{list.icon}} {{#if list.isCustom}}is-custom-list{{else if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
 											aria-hidden="true"></i>
 										<span>{{list.name}}</span>
 									</div>
@@ -50,7 +117,7 @@
 											class="source">{{#if list.actorName}}{{list.actorName}}{{else}}{{localize "SPELLMANAGER.ListSource.Character"}}{{/if}}</span>
 									</div>
 								</div>
-								<!-- No visibility toggle for actor spellbooks as they cannot be hidden -->
+								<!-- Actor spellbooks cannot be hidden, so no visibility toggle -->
 							</div>
 						</li>
 					{{/each}}
@@ -58,7 +125,7 @@
 			</div>
 		{{/if}}
 
-		<!-- Custom Spell Lists Section -->
+		<!-- Custom Spell Lists Section - User-created lists -->
 		{{#if hasCustomLists}}
 			<div class="list-folder custom-lists-folder" data-folder-id="custom-lists">
 				<div class="folder-header" data-action="toggleFolder"
@@ -70,12 +137,16 @@
 				<ul class="spell-list-items folder-content">
 					{{#each customLists as |list|}}
 						<li class="spell-list-item custom-list" data-uuid="{{list.uuid}}" role="listitem"
-							data-tooltip="{{localize 'SPELLMANAGER.Tooltips.CustomList' identifier=list.identifier}}"
+							{{#if (eq list.system.type 'subclass')}}
+							data-tooltip="{{localize 'SPELLMANAGER.Tooltips.CustomList' identifier=list.identifier type=(localize 'TYPES.Item.subclass')}}"
+							{{else}}
+							data-tooltip="{{localize 'SPELLMANAGER.Tooltips.CustomList' identifier=list.identifier type=(localize 'TYPES.Item.class')}}"
+							{{/if}}
 							aria-label="{{list.name}} - {{localize 'SPELLMANAGER.Status.SpellCount' count=list.spellCount}} - {{localize 'SPELLMANAGER.ListSource.Custom'}}">
 							<div class="list-item-header">
 								<div class="list-item-content" data-action="selectSpellList" data-uuid="{{list.uuid}}">
 									<div class="list-name">
-										<i class="fas fa-book is-custom-list" aria-hidden="true"></i>
+										<i class="{{list.icon}} is-custom-list" aria-hidden="true"></i>
 										<span>{{list.name}}</span>
 									</div>
 									<div class="list-meta">
@@ -96,7 +167,7 @@
 			</div>
 		{{/if}}
 
-		<!-- Merged Spell Lists Section -->
+		<!-- Merged Spell Lists Section - Combined lists from multiple sources -->
 		{{#if hasMergedLists}}
 			<div class="list-folder merged-lists-folder" data-folder-id="merged-lists">
 				<div class="folder-header" data-action="toggleFolder"
@@ -113,7 +184,7 @@
 							<div class="list-item-header">
 								<div class="list-item-content" data-action="selectSpellList" data-uuid="{{list.uuid}}">
 									<div class="list-name">
-										<i class="fas fa-book is-merged-list" aria-hidden="true"></i>
+										<i class="{{list.icon}} is-merged-list" aria-hidden="true"></i>
 										<span>{{list.name}}</span>
 									</div>
 									<div class="list-meta">
@@ -134,7 +205,7 @@
 			</div>
 		{{/if}}
 
-		<!-- Standard Spell Lists Section -->
+		<!-- Standard Spell Lists Section - System-provided class lists -->
 		{{#if hasStandardLists}}
 			<div class="list-folder standard-lists-folder" data-folder-id="standard-lists">
 				<div class="folder-header" data-action="toggleFolder"
@@ -151,7 +222,7 @@
 							<div class="list-item-header">
 								<div class="list-item-content" data-action="selectSpellList" data-uuid="{{list.uuid}}">
 									<div class="list-name">
-										<i class="fas fa-book {{#if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
+										<i class="{{list.icon}} {{#if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
 											aria-hidden="true"></i>
 										<span>{{list.name}}</span>
 									</div>
@@ -173,7 +244,7 @@
 			</div>
 		{{/if}}
 
-		<!-- Hidden Spell Lists Section -->
+		<!-- Hidden Spell Lists Section - Lists hidden from main view -->
 		{{#if hasHiddenLists}}
 			<div class="list-folder hidden-lists-folder" data-folder-id="hidden-lists">
 				<div class="folder-header" data-action="toggleFolder"
@@ -191,7 +262,7 @@
 							<div class="list-item-header">
 								<div class="list-item-content" data-action="selectSpellList" data-uuid="{{list.uuid}}">
 									<div class="list-name">
-										<i class="fas fa-book {{#if list.isCustom}}is-custom-list{{else if list.isMerged}}is-merged-list{{else if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
+										<i class="{{list.icon}} {{#if list.isCustom}}is-custom-list{{else if list.isMerged}}is-merged-list{{else if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
 											aria-hidden="true"></i>
 										<span>{{list.name}}</span>
 									</div>
@@ -214,6 +285,7 @@
 			</div>
 		{{/if}}
 
+		<!-- Empty State - Shown when no lists are available -->
 		{{#unless availableSpellLists.length}}
 			{{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLMANAGER.Columns.NoLists")}}
 		{{/unless}}

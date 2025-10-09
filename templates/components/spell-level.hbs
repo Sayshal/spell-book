@@ -1,14 +1,55 @@
+{{!--
+/**
+ * Spell Level Grouping Component Template
+ *
+ * PURPOSE:
+ * Reusable component for organizing and displaying spells by level with collapsible
+ * sections. Provides consistent spell level presentation across the application
+ * with expandable/collapsible functionality, spell counts, and support for both
+ * standard spellcasting and wizard spellbook contexts through template selection.
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Collapsible header with role="button" for keyboard accessibility
+ * - ARIA attributes (aria-expanded, aria-controls) for screen reader support
+ * - Descriptive aria-label for spell count information
+ * - List structure with role="list" for proper semantic navigation
+ * - Visual collapse indicator marked as decorative with aria-hidden
+ * - Proper heading hierarchy for document structure
+ *
+ * TEMPLATE SELECTION LOGIC:
+ * - Uses spell-item-wizard.hbs template when isWizardContext is true
+ * - Uses spell-item.hbs template for standard spellcasting classes
+ * - This separation prevents context bleed during partial rerenders
+ * - Each template has exclusive functionality for its use case
+ *
+ * INTEGRATION:
+ * - Used across spell display templates for consistent level organization
+ * - Supports both player spell book and wizard spellbook contexts
+ * - Integrates with collapse/expand functionality through data-action
+ * - Provides flexible content through template selection pattern
+ * - Works with spell filtering and search systems
+ * - Prevents context pollution during tab switches and partial rerenders
+ */
+--}}
+
 <div class="spell-level" data-level="{{level}}">
-	<h3 class="spell-level-heading" data-action="toggleSpellLevel" role="button" aria-expanded="true"
-		aria-controls="spell-list-{{level}}">
-		<i class="fas fa-caret-down collapse-indicator" aria-hidden="true"></i>
+	<h3 class="spell-level-heading" data-action="toggleSpellLevel" data-level="{{level}}" role="button"
+		aria-expanded="{{#unless isCollapsed}}true{{else}}false{{/unless}}" aria-controls="spell-list-{{level}}">
+		<i class="fas fa-caret-{{#if isCollapsed}}right{{else}}down{{/if}} collapse-indicator" aria-hidden="true"></i>
 		{{levelName}}
-		<span class="spell-count"
-			aria-label="{{localize 'SPELLBOOK.UI.SpellCount' count=spells.length}}">({{spells.length}})</span>
+		<span class="spell-count" aria-label="Spell Count">({{preparedCount}}/{{spells.length}})</span>
+		{{#if cantripCounter.enabled}}
+			<span class="cantrip-counter"
+				title="Current/Maximum Cantrips">[{{cantripCounter.current}}/{{cantripCounter.maximum}}]</span>
+		{{/if}}
 	</h3>
-	<ul id="spell-list-{{level}}" class="spell-list" role="list">
+	<ul class="spell-list" id="spell-list-{{level}}" {{#if isCollapsed}}style="display: none;" {{/if}} role="list">
 		{{#each spells as |spell|}}
-			{{> @partial-block spell}}
+			{{#if ../isWizardContext}}
+				{{> "modules/spell-book/templates/components/spell-item-wizard.hbs" spell=spell}}
+			{{else}}
+				{{> "modules/spell-book/templates/components/spell-item.hbs" spell=spell}}
+			{{/if}}
 		{{/each}}
 	</ul>
 </div>

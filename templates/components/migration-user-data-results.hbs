@@ -1,14 +1,62 @@
+{{!--
+/**
+ * Migration User Data Results Component Template
+ *
+ * PURPOSE:
+ * Component for displaying results of user data migration operations. Shows
+ * statistics for user data processing, individual user details including
+ * data cleanup counts and errors, with support for large user lists through
+ * truncation. Provides detailed feedback about user-specific data migration.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {Object} userDataResults - User data migration results
+ * @param {number} userDataResults.processed - Total number of user data entries processed
+ * @param {Array<Object>} userDataResults.users - Complete array of affected users
+ * @param {Array<Object>} userDataResults.visibleUsers - Array of users to display (may be truncated)
+ * @param {string} userDataResults.visibleUsers[].name - User display name
+ * @param {number} userDataResults.visibleUsers[].cleaned - Count of data entries cleaned for user
+ * @param {Array} userDataResults.visibleUsers[].errors - Array of errors for this user
+ * @param {boolean} userDataResults.hasMoreUsers - Whether the user list is truncated
+ * @param {number} userDataResults.remainingUserCount - Count of users not shown due to truncation
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic paragraph structure for migration overview information
+ * - List structure with proper ul/li markup for user details
+ * - Clear indication of data cleanup and error counts
+ * - Truncation indicator for large user lists
+ *
+ * CUSTOMIZATION POINTS:
+ * - User list can be truncated to manage display size
+ * - Data cleanup counts shown when cleanup occurred
+ * - Error counts displayed when errors were encountered
+ * - Processing statistics provide migration context
+ *
+ * INTEGRATION:
+ * - Used within migration reports
+ * - Connects to user data migration and cleanup systems
+ * - Uses module localization keys from SPELLBOOK.Migrations namespace
+ * - Supports user-specific data validation and cleanup
+ */
+--}}
+
+<!-- User Data Migration Overview -->
 <p><strong>{{localize 'SPELLBOOK.Migrations.UserDataMigration'}}</strong>
   {{localize 'SPELLBOOK.Migrations.UserDataUpdated' count=userDataResults.processed}}
 </p>
+
+<!-- User-Specific Migration Details -->
 {{#if userDataResults.users.length}}
   <ul>
     {{#each userDataResults.visibleUsers}}
       <li>{{this.name}}
+        <!-- Data Cleanup Count -->
         {{#if this.cleaned}}({{localize 'SPELLBOOK.Migrations.EntriesCleaned' count=this.cleaned}}){{/if}}
+        <!-- Error Count -->
         {{#if this.errors.length}}({{localize 'SPELLBOOK.Migrations.ErrorsFound' count=this.errors.length}}){{/if}}
       </li>
     {{/each}}
+
+    <!-- User List Truncation Indicator -->
     {{#if userDataResults.hasMoreUsers}}
       <li>{{localize 'SPELLBOOK.Migrations.AndMoreUsers' count=userDataResults.remainingUserCount}}</li>
     {{/if}}

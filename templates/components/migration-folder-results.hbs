@@ -1,16 +1,69 @@
+{{!--
+/**
+ * Migration Folder Results Component Template
+ *
+ * PURPOSE:
+ * Component for displaying results of spell list folder migration operations.
+ * Shows folder processing statistics, movement counts for different list types,
+ * newly created folders, and any errors encountered. Provides
+ * feedback about folder organization migration outcomes.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {Object} folderResults - Folder migration results data
+ * @param {number} folderResults.processed - Total number of folders processed
+ * @param {number} folderResults.customMoved - Count of custom lists moved to folders
+ * @param {number} folderResults.mergedMoved - Count of merged lists moved to folders
+ * @param {string} folderResults.foldersCreatedNames - Comma-separated list of created folder names
+ * @param {Array} folderResults.errors - Array of errors encountered during migration
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic paragraph structure for migration information
+ * - Strong text for section headers and important information
+ * - Clear separation between different types of results
+ * - Error information properly highlighted
+ *
+ * CUSTOMIZATION POINTS:
+ * - Display adapts based on types of lists moved
+ * - Folder creation information shown when applicable
+ * - Error reporting included when errors occurred
+ * - Count information provides detailed migration feedback
+ *
+ * INTEGRATION:
+ * - Used within migration reports
+ * - Connects to folder organization migration systems
+ * - Uses module localization keys from SPELLBOOK.Migrations namespace
+ * - Supports both custom and merged spell list folder organization
+ */
+--}}
+
+<!-- Folder Migration Overview -->
 <p><strong>{{localize 'SPELLBOOK.Migrations.SpellListFolderMigration'}}:</strong>
   {{localize 'SPELLBOOK.Migrations.SpellListFolderMigrationCount' count=folderResults.processed}}
-  {{#if (and folderResults.customMoved folderResults.mergedMoved)}}
+
+  <!-- List Movement Details - Conditional based on what was moved -->
+  {{#if (and (and folderResults.customMoved folderResults.mergedMoved) folderResults.modifiedMoved)}}
+    {{localize 'SPELLBOOK.Migrations.FolderMigrationAllTypes' customCount=folderResults.customMoved mergedCount=folderResults.mergedMoved modifiedCount=folderResults.modifiedMoved}}
+  {{else if (and folderResults.customMoved folderResults.mergedMoved)}}
     {{localize 'SPELLBOOK.Migrations.FolderMigrationBothTypes' customCount=folderResults.customMoved mergedCount=folderResults.mergedMoved}}
+  {{else if (and folderResults.customMoved folderResults.modifiedMoved)}}
+    {{localize 'SPELLBOOK.Migrations.FolderMigrationCustomAndModified' customCount=folderResults.customMoved modifiedCount=folderResults.modifiedMoved}}
+  {{else if (and folderResults.mergedMoved folderResults.modifiedMoved)}}
+    {{localize 'SPELLBOOK.Migrations.FolderMigrationMergedAndModified' mergedCount=folderResults.mergedMoved modifiedCount=folderResults.modifiedMoved}}
   {{else if folderResults.customMoved}}
     {{localize 'SPELLBOOK.Migrations.FolderMigrationCustomOnly' customCount=folderResults.customMoved}}
   {{else if folderResults.mergedMoved}}
     {{localize 'SPELLBOOK.Migrations.FolderMigrationMergedOnly' mergedCount=folderResults.mergedMoved}}
+  {{else if folderResults.modifiedMoved}}
+    {{localize 'SPELLBOOK.Migrations.FolderMigrationModifiedOnly' modifiedCount=folderResults.modifiedMoved}}
   {{/if}}
 </p>
+
+<!-- Newly Created Folders -->
 {{#if folderResults.foldersCreatedNames}}
   <p><strong>{{localize 'SPELLBOOK.Migrations.FoldersCreated'}}:</strong> {{folderResults.foldersCreatedNames}}</p>
 {{/if}}
+
+<!-- Migration Errors -->
 {{#if folderResults.errors.length}}
   <p><strong>{{localize 'SPELLBOOK.Migrations.MigrationErrors'}}:</strong>
     {{localize 'SPELLBOOK.Migrations.MigrationErrorsCount' count=folderResults.errors.length}}

@@ -1,10 +1,58 @@
+{{!--
+/**
+ * Compendium Selection Dialog Template
+ *
+ * PURPOSE:
+ * Configuration dialog for selecting which compendium packs should be used by
+ * the Spell Book module. Provides hierarchical selection with categories,
+ * global and category-level select-all controls, and performance warnings.
+ * Supports both spell and spell list compendiums with different visual indicators.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {string} globalSelectAllCheckboxHtml - Pre-rendered global select all checkbox
+ * @param {Array<Object>} categories - Array of compendium categories
+ * @param {string} categories[].name - Category display name
+ * @param {boolean} categories[].disabled - Whether category is disabled
+ * @param {number} categories[].enabledCount - Count of enabled packs in category
+ * @param {number} categories[].totalCount - Total count of packs in category
+ * @param {string} categories[].categorySelectAllCheckboxHtml - Category select all checkbox HTML
+ * @param {Array<Object>} categories[].packs - Array of packs in this category
+ * @param {string} categories[].packs[].checkboxHtml - Pack selection checkbox HTML
+ * @param {string} categories[].packs[].label - Pack display name
+ * @param {string} categories[].packs[].type - Pack type ("Item", "JournalEntry", etc.)
+ * @param {boolean} categories[].packs[].disabled - Whether pack is required/disabled
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Dialog header with clear instructions
+ * - Checkbox groups with proper role="group" and aria-label
+ * - Icon elements marked as decorative with aria-hidden
+ * - Hierarchical checkbox structure for easy navigation
+ * - Submit button clearly identified with primary styling
+ *
+ * CUSTOMIZATION POINTS:
+ * - Categories can be disabled based on system requirements
+ * - Pack types displayed with appropriate badges and styling
+ * - Required packs clearly marked and non-selectable
+ * - Performance note provides user guidance for selection
+ * - Select-all controls at global and category levels
+ *
+ * INTEGRATION:
+ * - Used in module settings for compendium configuration
+ * - Connects to spell data loading and filtering systems
+ * - Uses module localization keys from SPELLBOOK.Settings namespace
+ * - Supports performance optimization through selective loading
+ */
+--}}
+
 <div>
+  <!-- Dialog Header with Instructions -->
   <header class="dialog-header">
     <p class="instructions">{{localize "SPELLBOOK.Settings.CompendiumSelectionInstructions"}}</p>
   </header>
 
+  <!-- Compendium Categories Selection -->
   <div class="compendium-categories">
-    {{!-- Global Select All --}}
+    <!-- Global Select All Control -->
     <div class="compendium-global-header">
       <label class="checkbox">
         {{{globalSelectAllCheckboxHtml}}}
@@ -12,21 +60,26 @@
       </label>
     </div>
 
-    {{!-- Organization Groups --}}
+    <!-- Category Groups - Hierarchical organization -->
     {{#each categories as |category|}}
       <div class="category-group {{#if category.disabled}}disabled{{/if}}">
+        <!-- Category Header with Select All -->
         <div class="category-group-header">
           <label class="checkbox {{#if category.disabled}}disabled{{/if}}">
             {{{category.categorySelectAllCheckboxHtml}}}
             <span>{{category.name}} ({{category.enabledCount}}/{{category.totalCount}})</span>
           </label>
         </div>
+
+        <!-- Category Pack Items -->
         <div class="category-group-items" role="group"
           aria-label="{{category.name}} {{localize 'COMPENDIUM.SidebarTitle'}}">
           {{#each category.packs as |pack|}}
             <label class="checkbox compendium-item {{#if pack.disabled}}disabled{{/if}}">
               {{{pack.checkboxHtml}}}
               <span class="pack-name">{{pack.label}}</span>
+
+              <!-- Pack Type Badge -->
               <span class="pack-type-badge {{#if pack.disabled}}required{{/if}}">
                 {{#if pack.disabled}}
                   {{localize "SPELLBOOK.Settings.CompendiumSelectionRequired"}}
@@ -45,16 +98,23 @@
     {{/each}}
   </div>
 
+  <!-- Dialog Footer with Performance Note and Actions -->
   <footer class="dialog-footer">
     <div class="footer-content">
+      <!-- Performance Guidance -->
       <div class="performance-note">
         <i class="fas fa-info-circle" aria-hidden="true"></i>
         {{localize "SPELLBOOK.Settings.CompendiumSelectionPerformanceNote"}}
       </div>
+
+      <!-- Action Buttons -->
       <div class="footer-buttons">
+        <!-- Cancel Button -->
         <button type="button" data-action="close">
-          {{localize "SPELLBOOK.Settings.CompendiumSelectionCancel"}}
+          {{localize "SPELLBOOK.UI.Cancel"}}
         </button>
+
+        <!-- Save Button -->
         <button type="submit" class="primary">
           <i class="fas fa-save" aria-hidden="true"></i>
           {{localize "SPELLBOOK.Settings.CompendiumSelectionSave"}}

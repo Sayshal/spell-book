@@ -1,6 +1,6 @@
 # Welcome to the Spell Book Wiki
 
-Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell management module for FoundryVTT! This wiki provides detailed guidance for players, GMs, and developers on utilizing all the powerful features this module offers.
+Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell management module for FoundryVTT! This wiki provides detailed guidance for players and GMs on utilizing all the powerful features this module offers.
 
 **Spell Book** transforms spell management from a tedious process into an engaging experience, providing automated rule enforcement, intelligent spell coordination, and analytics between party members.
 
@@ -61,11 +61,3 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 - **[FAQ](FAQ)** - Frequently asked questions and answers
 - **[Community Discord](https://discord.gg/PzzUwU9gdz)** - Join the community for support and updates
 - **[Bug Reports](https://github.com/Sayshal/spell-book/issues)** - Report issues and request features
-
-## Getting Started
-
-New to Spell Book? Start here:
-
-1. **[Installation and Settings](Installation-and-Settings)** - Get the module installed and configured
-2. **[Player Quick Start](Player-Quick-Start)** or **[DM Quick Start](DM-Quick-Start)** - Learn the basics
-3. **[SpellBook Interface Overview](SpellBook-Interface-Overview)** - Explore the main interface

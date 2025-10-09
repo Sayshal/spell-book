@@ -1,5 +1,49 @@
+{{!--
+/**
+ * Spell Loadout Management Dialog Template
+ *
+ * PURPOSE:
+ * interface for managing spell preparation loadouts including
+ * creation, application, and management of saved spell configurations. Allows
+ * users to save current spell preparations and quickly switch between different
+ * spell loadouts for various scenarios and encounters.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {string} className - Display name of the spellcasting class
+ * @param {number} currentSpellCount - Current number of prepared spells
+ * @param {string} nameInputHtml - Pre-rendered name input element HTML
+ * @param {string} descriptionInputHtml - Pre-rendered description input element HTML
+ * @param {Array<Object>} existingLoadouts - Array of saved loadout configurations
+ * @param {string} existingLoadouts[].id - Unique loadout identifier
+ * @param {string} existingLoadouts[].name - Loadout display name
+ * @param {string} existingLoadouts[].description - Loadout description (optional)
+ * @param {number} existingLoadouts[].spellCount - Number of spells in loadout
+ * @param {string} existingLoadouts[].formattedDate - Formatted last updated date (optional)
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic fieldset/legend structure for grouped functionality
+ * - Form groups with proper label associations
+ * - Button elements with descriptive icons and text
+ * - Clear separation between creation and management sections
+ * - Metadata display for loadout context and identification
+ *
+ * CUSTOMIZATION POINTS:
+ * - New loadout creation with name and description fields
+ * - Existing loadout management with apply/overwrite/delete actions
+ * - Loadout metadata display with spell counts and timestamps
+ * - Preview icons for spell count visualization
+ * - Empty state messaging when no loadouts exist
+ *
+ * INTEGRATION:
+ * - Used for spell preparation state management and optimization
+ * - Connects to spell preparation persistence and restoration systems
+ * - Uses module localization keys from SPELLBOOK.Loadouts namespace
+ * - Supports quick switching between spell configurations
+ */
+--}}
+
 <div class="spell-loadout-dialog-form">
-  <!-- Header with class info -->
+  <!-- Loadout Header with Class Information -->
   <div class="loadout-header">
     <h3>{{localize 'SPELLBOOK.Loadouts.ManageLoadoutsTitle'}}</h3>
     <p class="class-info">
@@ -11,16 +55,19 @@
   <fieldset class="loadout-section create-loadout">
     <legend>{{localize 'SPELLBOOK.Loadouts.CreateNew'}}</legend>
 
+    <!-- Loadout Name Input -->
     <div class="form-group">
       <label for="loadout-name">{{localize 'SPELLBOOK.Loadouts.LoadoutName'}}</label>
       {{{nameInputHtml}}}
     </div>
 
+    <!-- Loadout Description Input -->
     <div class="form-group">
       <label for="loadout-description">{{localize 'SPELLBOOK.Loadouts.LoadoutDescription'}}</label>
       {{{descriptionInputHtml}}}
     </div>
 
+    <!-- Save Current Loadout Action -->
     <div class="form-actions">
       <button type="button" data-action="saveLoadout" class="save-loadout-btn">
         <i class="fas fa-save"></i>
@@ -29,15 +76,16 @@
     </div>
   </fieldset>
 
-  <!-- Existing Loadouts Section -->
+  <!-- Existing Loadouts Management Section -->
   {{#if existingLoadouts.length}}
     <fieldset class="loadout-section existing-loadouts">
       <legend>{{localize 'SPELLBOOK.Loadouts.ExistingLoadouts'}}</legend>
 
+      <!-- Loadouts List -->
       <div class="loadout-list">
         {{#each existingLoadouts as |loadout|}}
           <div class="loadout-item">
-            <!-- Title row: Name + Description + Preview Icon -->
+            <!-- Loadout Title Row - Name, description, and preview -->
             <div class="loadout-title">
               <div class="loadout-text">
                 <span class="loadout-name">{{loadout.name}}</span>{{#if loadout.description}}. <span
@@ -49,18 +97,23 @@
               {{/if}}
             </div>
 
-            <!-- Actions row: All buttons -->
+            <!-- Loadout Actions Row - Management buttons -->
             <div class="loadout-actions">
+              <!-- Apply Loadout Button -->
               <button type="button" data-action="applyLoadout" data-loadout-id="{{loadout.id}}"
                 class="apply-loadout-btn">
                 <i class="fas fa-check"></i>
                 {{localize 'SPELLBOOK.Loadouts.Apply'}}
               </button>
+
+              <!-- Overwrite Loadout Button -->
               <button type="button" data-action="overwriteLoadout" data-loadout-id="{{loadout.id}}"
                 data-loadout-name="{{loadout.name}}" class="overwrite-loadout-btn">
                 <i class="fas fa-sync-alt"></i>
                 {{localize 'SPELLBOOK.Loadouts.Overwrite'}}
               </button>
+
+              <!-- Delete Loadout Button -->
               <button type="button" data-action="deleteLoadout" data-loadout-id="{{loadout.id}}"
                 data-loadout-name="{{loadout.name}}" class="delete-loadout-btn">
                 <i class="fas fa-trash"></i>
@@ -68,7 +121,7 @@
               </button>
             </div>
 
-            <!-- Footer row: Metadata -->
+            <!-- Loadout Metadata Footer -->
             <div class="loadout-footer">
               <div class="loadout-meta">
                 {{localize 'SPELLBOOK.Loadouts.SpellCount' count=loadout.spellCount}}{{#if loadout.formattedDate}} •
@@ -80,6 +133,7 @@
       </div>
     </fieldset>
   {{else}}
+    <!-- No Loadouts State -->
     <div class="no-loadouts">
       <p>{{localize 'SPELLBOOK.Loadouts.NoLoadouts'}}</p>
     </div>

@@ -1,0 +1,57 @@
+{{!--
+/**
+ * Null CustomSpellList to Array Migration Results Component Template
+ *
+ * PURPOSE:
+ * Component for displaying detailed null-to-array migration results
+ * within the main migration report. Shows actors that were updated to convert
+ * null customSpellList values to empty arrays for consistency.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {Object} nullToArrayResults - Null-to-array migration results
+ * @param {number} nullToArrayResults.processed - Number of actors processed
+ * @param {number} nullToArrayResults.updated - Number of actors updated
+ * @param {Array<Object>} nullToArrayResults.migratedActors - Array of migrated actor data
+ * @param {Array<string>} nullToArrayResults.errors - Array of error messages
+ */
+--}}
+
+{{#if nullToArrayResults.updated}}
+  <div class="null-to-array-migration-results">
+    <p>
+      <strong>{{localize 'SPELLBOOK.Migrations.NullToArrayMigration'}}:</strong>
+      {{localize 'SPELLBOOK.Migrations.NullToArrayMigrationCount' count=nullToArrayResults.updated}}
+    </p>
+
+    {{#if nullToArrayResults.migratedActors.length}}
+      {{#if (lt nullToArrayResults.migratedActors.length 6)}}
+        <ul>
+          {{#each nullToArrayResults.migratedActors as |actor|}}
+            <li>
+              <strong>{{actor.name}}</strong>:
+              {{localize 'SPELLBOOK.Migrations.CustomSpellListClassesMigrated' count=actor.migratedClasses.length}}
+            </li>
+          {{/each}}
+        </ul>
+      {{else}}
+        <p>
+          {{#each (slice nullToArrayResults.migratedActors 0 3) as |actor|}}
+            <strong>{{actor.name}}</strong>{{#unless @last}}, {{/unless}}
+          {{/each}}
+          {{localize 'SPELLBOOK.Migrations.AndMore' count=(subtract nullToArrayResults.migratedActors.length 3)}}
+        </p>
+      {{/if}}
+    {{/if}}
+
+    {{#if nullToArrayResults.errors.length}}
+      <div class="migration-errors">
+        <strong>{{localize 'SPELLBOOK.Migrations.MigrationErrors'}}:</strong>
+        <ul>
+          {{#each nullToArrayResults.errors as |error|}}
+            <li>{{error}}</li>
+          {{/each}}
+        </ul>
+      </div>
+    {{/if}}
+  </div>
+{{/if}}

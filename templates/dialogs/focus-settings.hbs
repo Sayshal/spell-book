@@ -1,0 +1,181 @@
+{{!--
+/**
+ * Focus Settings Dialog Template
+ *
+ * PURPOSE:
+ * Configuration dialog for managing spellcasting focus settings with different
+ * interfaces for GM and player modes. GMs can create/edit focus options and
+ * assign them to party members, while players can select their personal focus
+ * from available options. Supports icon selection, descriptions, and assignments.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {boolean} isGMMode - Whether dialog is in GM management mode vs player selection
+ * @param {Array<Object>} availableFocuses - Array of available focus options
+ * @param {string} availableFocuses[].id - Unique focus identifier
+ * @param {string} availableFocuses[].name - Focus display name
+ * @param {string} availableFocuses[].description - Focus description text
+ * @param {string} availableFocuses[].icon - Focus icon image path
+ * @param {Array<Object>} partyMembers - Array of party member data (GM mode only)
+ * @param {string} partyMembers[].id - Member user identifier
+ * @param {string} partyMembers[].name - Member display name
+ * @param {string} partyMembers[].actorName - Associated actor name (optional)
+ * @param {string} partyMembers[].selectedFocus - Currently selected focus ID (optional)
+ * @param {string} currentSelection - Current user's selected focus ID (player mode)
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic form structure with fieldsets and legends
+ * - Icon selection with descriptive tooltip guidance
+ * - Focus cards with clear selection states in player mode
+ * - Proper form labels and input associations
+ * - Button elements with descriptive icons and text
+ *
+ * CUSTOMIZATION POINTS:
+ * - GM mode supports full focus management with CRUD operations
+ * - Player mode provides simple selection interface with visual cards
+ * - Icon selection integrated with image picker functionality
+ * - Party member assignments with dropdown selection
+ * - Dynamic focus option management with add/delete capabilities
+ *
+ * INTEGRATION:
+ * - Used for party spell coordination and focus management
+ * - Connects to party spell manager and coordination systems
+ * - Uses module localization keys from SPELLBOOK.FocusSettings namespace
+ * - Supports both GM administration and player self-service
+ */
+--}}
+
+<div class="focus-settings-dialog">
+  <div class="focus-settings-content">
+    {{#if isGMMode}}
+      <!-- GM Mode: Focus Management -->
+      <div class="gm-focus-management">
+        <!-- Focus Options Management Section -->
+        <h3>{{localize "SPELLBOOK.FocusSettings.ManageFocuses"}}</h3>
+
+        <!-- Existing Focus Options List -->
+        <div class="focus-options-list">
+          {{#each availableFocuses as |focus|}}
+            <div class="focus-option-row" data-index="{{@index}}">
+              <input type="hidden" name="focus-id-{{@index}}" value="{{focus.id}}" />
+
+              <!-- Icon Selection Column - Clickable image picker -->
+              <div class="focus-icon-picker" data-action="selectIcon" data-index="{{@index}}"
+                data-tooltip="{{localize 'SPELLBOOK.FocusSettings.ClickToChangeIcon'}}">
+                <img src="{{focus.icon}}" alt="Focus Icon" class="focus-icon-preview" />
+                <input type="hidden" name="focus-icon-{{@index}}" value="{{focus.icon}}" />
+              </div>
+
+              <!-- Focus Name Input -->
+              <input type="text" name="focus-name-{{@index}}" value="{{focus.name}}"
+                placeholder="{{localize 'SPELLBOOK.FocusSettings.NamePlaceholder'}}"
+                data-tooltip="{{localize 'SPELLBOOK.FocusSettings.NameTooltip'}}" />
+
+              <!-- Focus Description Input -->
+              <input type="text" name="focus-description-{{@index}}" value="{{focus.description}}"
+                placeholder="{{localize 'SPELLBOOK.FocusSettings.DescriptionPlaceholder'}}"
+                data-tooltip="{{localize 'SPELLBOOK.FocusSettings.DescriptionTooltip'}}" />
+
+              <!-- Delete Focus Button -->
+              <button type="button" class="delete-focus" data-action="deleteFocus" data-index="{{@index}}"
+                data-tooltip="{{localize 'SPELLBOOK.FocusSettings.DeleteFocus'}}">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          {{/each}}
+        </div>
+
+        <!-- Add New Focus Button -->
+        <button type="button" class="add-focus" data-action="addFocus">
+          <i class="fas fa-plus"></i> {{localize "SPELLBOOK.FocusSettings.AddFocus"}}
+        </button>
+
+        <hr>
+
+        <!-- Party Member Focus Assignment Section -->
+        <h3>{{localize "SPELLBOOK.FocusSettings.AssignFocuses"}}</h3>
+        <div class="party-member-assignments">
+          {{#each partyMembers as |member|}}
+            <div class="member-assignment">
+              <!-- Member Information Display -->
+              <div class="member-info">
+                <span class="member-name">{{member.name}}</span>
+                {{#if member.actorName}}
+                  <span class="actor-name">({{member.actorName}})</span>
+                {{/if}}
+              </div>
+
+              <!-- Focus Assignment Dropdown -->
+              <select name="member-focus-{{member.id}}" data-user-id="{{member.id}}">
+                <option value="">{{localize "SPELLBOOK.FocusSettings.NoFocus"}}</option>
+                {{#each @root.availableFocuses as |focus|}}
+                  <option value="{{focus.id}}" {{#if (eq focus.id @member.selectedFocus)}}selected{{/if}}>
+                    {{focus.name}}
+                  </option>
+                {{/each}}
+              </select>
+            </div>
+          {{/each}}
+        </div>
+
+        <input type="hidden" name="action" value="save-focuses" />
+      </div>
+    {{else}}
+      {{#unless isGMMode}}
+        <!-- Player Mode: Personal Focus Selection -->
+        <div class="player-focus-selection">
+          <h3>{{localize "SPELLBOOK.FocusSettings.SelectYourFocus"}}</h3>
+
+          {{#if isReadOnly}}
+            <!-- Read-only view for Observer permissions -->
+            <p class="permission-notice">
+              <i class="fas fa-eye" aria-hidden="true"></i>
+              {{localize "SPELLBOOK.FocusSettings.ViewOnlyMode"}}
+            </p>
+          {{/if}}
+
+          <!-- Focus Selection Grid -->
+          <div class="focus-grid {{#if isReadOnly}}read-only{{/if}}">
+            {{#each availableFocuses as |focus|}}
+              <div class="focus-card {{#if (eq focus.id ../currentSelection)}}selected{{/if}}"
+                {{#unless ../isReadOnly}}data-action="selectFocus" {{/unless}} data-focus-id="{{focus.id}}">
+                <img src="{{focus.icon}}" alt="{{focus.name}}" class="focus-card-icon" />
+                <h4>{{focus.name}}</h4>
+                <p>{{focus.description}}</p>
+              </div>
+            {{/each}}
+          </div>
+
+          <input type="hidden" name="action" value="select-focus" />
+          <input type="hidden" name="selectedFocus" id="selected-focus-input" value="{{currentSelection}}" />
+        </div>
+      {{/unless}}
+    {{/if}}
+  </div>
+
+  <!-- Form Footer with Action Buttons -->
+  <div class="form-footer">
+    {{#if isGMMode}}
+      <!-- Reset Button - GM Only -->
+      <button type="button" data-action="resetFocuses" class="reset-button">
+        <i class="fas fa-undo" aria-hidden="true"></i>
+        {{localize "SPELLBOOK.FocusSettings.ResetToDefaults"}}
+      </button>
+    {{/if}}
+
+    <!-- Cancel Button -->
+    <button type="button" class="cancel-button" data-action="close">
+      <i class="fas fa-times" aria-hidden="true"></i>
+      {{localize "SPELLBOOK.UI.Cancel"}}
+    </button>
+
+    <!-- Save Button - Context-sensitive label -->
+    <button type="submit" class="save-button">
+      <i class="fas fa-save" aria-hidden="true"></i>
+      {{#if isGMMode}}
+        {{localize "SPELLBOOK.FocusSettings.SaveSettings"}}
+      {{else}}
+        {{localize "SPELLBOOK.FocusSettings.SaveSelection"}}
+      {{/if}}
+    </button>
+  </div>
+</div>

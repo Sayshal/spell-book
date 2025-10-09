@@ -1,19 +1,69 @@
+{{!--
+/**
+ * Learn Spell From Scroll Dialog Template
+ *
+ * PURPOSE:
+ * Confirmation dialog for wizard spell copying from spell scrolls. Displays
+ * spell information, copying costs, time requirements, and scroll consumption
+ * warnings. Provides wizards with detailed information before committing to
+ * the spell learning process from magical scrolls.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {Object} spell - Spell object being learned from scroll
+ * @param {string} spell.name - Display name of the spell
+ * @param {boolean} isAlreadyInSpellbook - Whether wizard already knows this spell
+ * @param {string} costText - Formatted cost text for spell copying
+ * @param {string} time - Formatted time string required for copying
+ * @param {boolean} shouldConsume - Whether the scroll will be consumed in the process
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic form structure for dialog content
+ * - Strong text for spell name emphasis
+ * - Notification sections with appropriate warning/info styling
+ * - Clear label-value pairs for cost and time information
+ * - Semantic paragraph structure for instructions
+ *
+ * CUSTOMIZATION POINTS:
+ * - Warning notification appears when spell is already known
+ * - Scroll consumption warning displays conditionally
+ * - Cost and time information provided for informed decisions
+ * - Spell name prominently displayed for confirmation
+ *
+ * INTEGRATION:
+ * - Used in wizard spell learning workflow from scroll items
+ * - Connects to scroll detection and spell copying systems
+ * - Uses module localization keys from SPELLBOOK.Wizard and SPELLBOOK.Scrolls namespaces
+ * - Supports wizard-specific spell acquisition mechanics
+ */
+--}}
+
 <form class="wizard-copy-form">
+  <!-- Spell Learning Confirmation Prompt -->
   <p>{{localize 'SPELLBOOK.Wizard.LearnSpellPromptPrefix'}} <strong>{{spell.name}}</strong>
-    {{localize 'SPELLBOOK.Wizard.LearnSpellPromptSuffix'}}</p>
+    {{localize 'SPELLBOOK.Wizard.LearnSpellPromptSuffix'}}
+  </p>
+
+  <!-- Already Known Warning -->
   {{#if isAlreadyInSpellbook}}
     <p class="notification warning">{{localize 'SPELLBOOK.Wizard.SpellAlreadyKnown'}}</p>
   {{/if}}
+
+  <!-- Spell Copying Cost and Time Details -->
   <div class="copy-details">
+    <!-- Copying Cost Information -->
     <div class="form-group">
       <label>{{localize 'SPELLBOOK.Wizard.CostLabel'}}:</label>
       <span>{{costText}}</span>
     </div>
+
+    <!-- Copying Time Information -->
     <div class="form-group">
       <label>{{localize 'SPELLBOOK.Wizard.TimeLabel'}}:</label>
-      <span>{{localize 'SPELLBOOK.Wizard.SpellCopyTime' hours=time}}</span>
+      <span>{{time}}</span>
     </div>
   </div>
+
+  <!-- Scroll Consumption Warning -->
   {{#if shouldConsume}}
     <p class="notification info">{{localize 'SPELLBOOK.Scrolls.ScrollWillBeConsumed'}}</p>
   {{/if}}

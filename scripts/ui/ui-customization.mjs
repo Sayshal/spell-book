@@ -1,14 +1,109 @@
+/**
+ * UI Customization and Theme Management System
+ *
+ * This module provides UI customization capabilities for the Spell Book
+ * application, managing user preferences for spell metadata display and interface
+ * elements. It handles different customization contexts for player and GM interfaces
+ * while maintaining consistent formatting and localization.
+ *
+ * The customization system operates on two primary contexts:
+ * 1. Player Interface: Spell book application with user-focused elements
+ * 2. GM Interface: Spell list manager with administrative-focused elements
+ *
+ * Key features include:
+ * - Granular control over spell metadata display elements
+ * - Setting-based visibility management for UI components
+ * - Context-aware metadata building for different user roles
+ * - Consistent spell property formatting with D&D 5e integration
+ * - Automatic localization and configuration data integration
+ * - Flexible metadata composition with customizable element ordering
+ *
+ * The system integrates with Foundry VTT's settings system to provide persistent
+ * user preferences while ensuring appropriate element availability based on context.
+ * GM interfaces exclude player-specific elements like favorites and notes while
+ * maintaining all relevant spell information displays.
+ *
+ * @module UIHelpers/UICustomization
+ * @author Tyler
+ */
+
 import { MODULE, SETTINGS } from '../constants/_module.mjs';
 import * as UIHelpers from './_module.mjs';
 
 /**
- * Helper class for managing UI customization settings
+ * Available UI elements that can be toggled in player interfaces.
+ *
+ * @typedef {'favorites'|'compare'|'notes'|'spellLevel'|'components'|'school'|'castingTime'|'range'|'damageTypes'|'conditions'|'save'|'concentration'|'materialComponents'} PlayerUIElement
+ */
+
+/**
+ * Available UI elements that can be toggled in GM interfaces (excludes player-specific elements).
+ *
+ * @typedef {'compare'|'spellLevel'|'components'|'school'|'castingTime'|'range'|'damageTypes'|'conditions'|'save'|'concentration'|'materialComponents'} GMUIElement
+ */
+
+/**
+ * Spell metadata structure used for building display strings.
+ *
+ * @typedef {Object} SpellMetadata
+ * @property {Object} system - Core D&D 5e spell system data
+ * @property {number} system.level - Spell level (0-9)
+ * @property {Object} [system.save] - Saving throw information
+ * @property {string} [system.save.ability] - Ability score for saving throw
+ * @property {Object} [system.range] - Spell range information
+ * @property {number} [system.range.value] - Numeric range value
+ * @property {string} [system.range.units] - Range measurement units
+ * @property {Object} [system.properties] - Spell properties (concentration, ritual, etc.)
+ * @property {Object} [filterData] - Processed filter data for the spell
+ * @property {Array<string>} [filterData.damageTypes] - Damage types the spell can inflict
+ * @property {Array<string>} [filterData.conditions] - Conditions the spell can impose
+ * @property {Object} [labels] - Pre-computed display labels for the spell
+ */
+
+/**
+ * Setting key mapping for UI element visibility controls.
+ *
+ * @typedef {Object} SettingKeyMap
+ * @property {string} favorites - FAVORITES setting key
+ * @property {string} compare - COMPARE setting key
+ * @property {string} notes - NOTES setting key
+ * @property {string} spellLevel - SPELL_LEVEL setting key
+ * @property {string} components - COMPONENTS setting key
+ * @property {string} school - SCHOOL setting key
+ * @property {string} castingTime - CASTING_TIME setting key
+ * @property {string} range - RANGE setting key
+ * @property {string} damageTypes - DAMAGE_TYPES setting key
+ * @property {string} conditions - CONDITIONS setting key
+ * @property {string} save - SAVE setting key
+ * @property {string} concentration - CONCENTRATION setting key
+ * @property {string} materialComponents - MATERIAL_COMPONENTS setting key
+ */
+
+/**
+ * Helper class for managing UI customization settings.
+ *
+ * This static utility class provides UI customization management for
+ * the Spell Book application. It handles setting-based visibility controls for
+ * various UI elements, builds customized metadata displays, and ensures appropriate
+ * element availability based on user context (player vs GM).
+ *
+ * The class integrates with Foundry VTT's settings system to provide persistent
+ * user preferences while maintaining proper context separation between player
+ * and administrative interfaces. It provides both element visibility checking
+ * and metadata building for spell display customization.
  */
 export class UICustomizationHelper {
   /**
-   * Convert element name to setting key format
-   * @param {string} element The element name
-   * @returns {string} The setting key suffix
+   * Convert element name to setting key format.
+   *
+   * Translates UI element names into their corresponding setting key suffixes
+   * for consistent setting lookups. This mapping ensures proper setting
+   * resolution across different UI contexts and element types.
+   *
+   * @param {string} element - The element name to convert
+   * @returns {string} The setting key suffix for the element
+   * @static
+   * @private
    */
   static _convertToSettingKey(element) {
     const settingKeyMap = {
@@ -30,9 +125,15 @@ export class UICustomizationHelper {
   }
 
   /**
-   * Check if a UI element should be shown for SpellBook
-   * @param {string} element The element to check ('favorites', 'compare', 'notes', etc.)
-   * @returns {boolean} Whether the element should be shown
+   * Check if a UI element should be shown for SpellBook player interface.
+   *
+   * Determines element visibility based on player-specific settings. All elements
+   * are available for player interfaces, including user-specific features like
+   * favorites and notes. Returns true by default for backwards compatibility.
+   *
+   * @param {PlayerUIElement} element - The element to check visibility for
+   * @returns {boolean} Whether the element should be displayed in player interface
+   * @static
    */
   static isPlayerElementEnabled(element) {
     const settingKeySuffix = this._convertToSettingKey(element);
@@ -41,9 +142,16 @@ export class UICustomizationHelper {
   }
 
   /**
-   * Check if a UI element should be shown for GMSpellListManager
-   * @param {string} element The element to check ('compare', 'spellLevel', etc.)
-   * @returns {boolean} Whether the element should be shown
+   * Check if a UI element should be shown for GMSpellListManager interface.
+   *
+   * Determines element visibility based on GM-specific settings. Excludes
+   * player-specific elements (favorites, notes) that are not relevant for
+   * administrative spell list management. Returns true by default for
+   * applicable elements.
+   *
+   * @param {GMUIElement} element - The element to check visibility for
+   * @returns {boolean} Whether the element should be displayed in GM interface
+   * @static
    */
   static isGMElementEnabled(element) {
     if (element === 'favorites' || element === 'notes') return false;
@@ -53,10 +161,17 @@ export class UICustomizationHelper {
   }
 
   /**
-   * Check if spell has a specific property
-   * @param {Object} spell The spell object
-   * @param {string} property The property to check for
-   * @returns {boolean} Whether the spell has the property
+   * Check if spell has a specific property.
+   *
+   * Provides robust checking for spell properties across different data structure
+   * formats. Handles Array, Set, and Object-based property storage to ensure
+   * consistent property detection regardless of spell data source or format.
+   *
+   * @param {SpellMetadata} spell - The spell object to check
+   * @param {string} property - The property identifier to check for
+   * @returns {boolean} Whether the spell has the specified property
+   * @static
+   * @private
    */
   static _spellHasProperty(spell, property) {
     if (!spell?.system?.properties) return false;
@@ -67,9 +182,19 @@ export class UICustomizationHelper {
   }
 
   /**
-   * Build custom metadata subtitle for SpellBook
-   * @param {Object} spell The spell object with processed data
-   * @returns {string} Formatted metadata string
+   * Build custom metadata subtitle for SpellBook player interface.
+   *
+   * Constructs a metadata string for spell display in player
+   * interfaces based on enabled UI elements. Combines various spell properties
+   * into a formatted, localized string using bullet separators for readability.
+   *
+   * The metadata includes spell level, components, school, casting time, range,
+   * damage types, conditions, saving throws, concentration requirements, and
+   * material components based on user preferences and spell data availability.
+   *
+   * @param {SpellMetadata} spell - The spell object with processed data
+   * @returns {string} Formatted metadata string for player display
+   * @static
    */
   static buildPlayerMetadata(spell) {
     const metadata = [];
@@ -114,9 +239,20 @@ export class UICustomizationHelper {
   }
 
   /**
-   * Build custom metadata subtitle for GMSpellListManager
-   * @param {Object} spell The spell object with processed data
-   * @returns {string} Formatted metadata string
+   * Build custom metadata subtitle for GMSpellListManager interface.
+   *
+   * Constructs a metadata string for spell display in GM
+   * interfaces based on enabled UI elements. Similar to player metadata
+   * but excludes player-specific elements and focuses on administrative
+   * information relevant to spell list management.
+   *
+   * The metadata composition is identical to player metadata except for
+   * the exclusion of favorites and notes elements, ensuring consistent
+   * spell information display across different interface contexts.
+   *
+   * @param {SpellMetadata} spell - The spell object with processed data
+   * @returns {string} Formatted metadata string for GM display
+   * @static
    */
   static buildGMMetadata(spell) {
     const metadata = [];
@@ -161,9 +297,16 @@ export class UICustomizationHelper {
   }
 
   /**
-   * Format spell level for display
-   * @param {Object} spell The spell object
-   * @returns {string} Formatted spell level
+   * Format spell level for display.
+   *
+   * Converts numeric spell levels into localized display strings using D&D 5e
+   * configuration data. Handles the special case of cantrips (level 0) with
+   * appropriate localization and provides fallback formatting for unknown levels.
+   *
+   * @param {SpellMetadata} spell - The spell object containing level information
+   * @returns {string} Formatted spell level string (e.g., "Cantrip", "1st Level")
+   * @static
+   * @private
    */
   static _formatSpellLevel(spell) {
     if (spell.system?.level === undefined) return '';
@@ -173,9 +316,16 @@ export class UICustomizationHelper {
   }
 
   /**
-   * Format spell range for display
-   * @param {Object} spell The spell object
-   * @returns {string} Formatted range
+   * Format spell range for display.
+   *
+   * Converts spell range data into human-readable strings with proper localization
+   * and unit handling. Handles special range types (self, touch, special) as well
+   * as numeric ranges with appropriate unit labels from D&D 5e configuration.
+   *
+   * @param {SpellMetadata} spell - The spell object containing range information
+   * @returns {string} Formatted range string (e.g., "Touch", "30 feet", "Self")
+   * @static
+   * @private
    */
   static _formatSpellRange(spell) {
     if (!spell.system?.range) return '';

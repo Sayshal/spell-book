@@ -1,23 +1,97 @@
+{{!--
+/**
+ * Migration Report Component Template
+ *
+ * PURPOSE:
+ * migration report component for displaying complete migration
+ * results in chat messages. Integrates multiple migration result components
+ * to provide a unified view of all migration activities including deprecated
+ * data cleanup, folder organization, ownership validation, and user data updates.
+ *
+ * CONTEXT REQUIREMENTS:
+ * @param {number} totalProcessed - Total number of items processed across all migrations
+ * @param {Object} deprecatedResults - Deprecated data cleanup results
+ * @param {number} deprecatedResults.invalidFlagRemovals - Count of invalid flags removed
+ * @param {Array<Object>} deprecatedResults.actors - Array of actors with deprecated data
+ * @param {Object} folderResults - Folder migration results (passed to folder component)
+ * @param {number} folderResults.processed - Number of folders processed
+ * @param {Object} ownershipResults - Ownership validation results (passed to ownership component)
+ * @param {number} ownershipResults.processed - Number of ownership validations performed
+ * @param {Object} userDataResults - User data migration results (passed to user data component)
+ * @param {number} userDataResults.processed - Number of user data entries processed
+ *
+ * ACCESSIBILITY FEATURES:
+ * - Semantic heading structure with descriptive migration information
+ * - Component composition maintains accessibility through sub-components
+ * - Clear content organization with logical flow
+ * - Strong text for important summary information
+ *
+ * CUSTOMIZATION POINTS:
+ * - Migration sections display conditionally based on what was processed
+ * - Sub-components handle their own detailed display logic
+ * - Overall statistics provide migration context
+ * - Apology message maintains user relationship during disruptive updates
+ *
+ * INTEGRATION:
+ * - Used as chat message for migration notifications
+ * - Composes multiple specialized migration result components
+ * - Uses module localization keys from SPELLBOOK.Migrations namespace
+ * - Supports complete migration workflow reporting
+ */
+--}}
+
 <div class="spell-book-chat-message spell-book-migration-report">
+  <!-- Migration Report Header -->
   <h4>{{localize 'SPELLBOOK.Migrations.ChatTitle'}}</h4>
   <p>{{localize 'SPELLBOOK.Migrations.ChatDescription'}}</p>
   <p>{{localize 'SPELLBOOK.Migrations.TotalUpdated' count=totalProcessed}}</p>
+
+  <!-- Deprecated Data Cleanup Results -->
   {{#if deprecatedResults.invalidFlagRemovals}}
     <p><strong>{{localize 'SPELLBOOK.Migrations.InvalidFlagsRemoved'}}:</strong>
       {{localize 'SPELLBOOK.Migrations.InvalidFlagsRemovedCount' count=deprecatedResults.invalidFlagRemovals}}
     </p>
   {{/if}}
+
+  <!-- Folder Migration Results Component -->
   {{#if folderResults.processed}}
     {{> modules/spell-book/templates/components/migration-folder-results.hbs folderResults=folderResults}}
   {{/if}}
+
+  <!-- Ownership Validation Results Component -->
   {{#if ownershipResults.processed}}
     {{> modules/spell-book/templates/components/migration-ownership-results.hbs ownershipResults=ownershipResults}}
   {{/if}}
+
+  <!-- User Data Migration Results Component -->
   {{#if userDataResults.processed}}
     {{> modules/spell-book/templates/components/migration-user-data-results.hbs userDataResults=userDataResults}}
   {{/if}}
+
+  <!-- Actor Update Results Component -->
   {{#if deprecatedResults.actors.length}}
     {{> modules/spell-book/templates/components/migration-actor-list.hbs actors=deprecatedResults.actors}}
   {{/if}}
+
+  <!-- Custom Spell List Format Migration Results -->
+  {{#if customSpellListResults.processed}}
+    {{> modules/spell-book/templates/components/migration-custom-spell-list-results.hbs customSpellListResults=customSpellListResults}}
+  {{/if}}
+
+  <!-- Null to Array Migration Results Component -->
+  {{#if nullToArrayResults.processed}}
+    {{> modules/spell-book/templates/components/migration-null-to-array-results.hbs nullToArrayResults=nullToArrayResults}}
+  {{/if}}
+
+  <!-- Migration Apology -->
   <p>{{localize 'SPELLBOOK.Migrations.Apology'}}</p>
+
+  <!-- Suppression Button Section -->
+  <div class="suppression-actions">
+    <button class="suppress-migration-warnings"
+      data-tooltip="{{localize 'SPELLBOOK.Migrations.SuppressButtonTooltip'}}">
+      <i class="fas fa-eye-slash"></i>
+      {{localize 'SPELLBOOK.Migrations.SuppressButton'}}
+    </button>
+  </div>
 </div>
