@@ -53,7 +53,7 @@ const { renderTemplate } = foundry.applications.handlebars;
  * @property {number} cantripPreparationBonus - Bonus to cantrip preparation limit
  * @property {boolean} forceWizardMode - Whether to force wizard-style spell management
  * @property {number} spellLearningCostMultiplier - Gold cost multiplier per spell level (default: 50)
- * @property {number} spellLearningTimeMultiplier - Time multiplier in hours per spell level (default: 2)
+ * @property {number} spellLearningTimeMultiplier - Time multiplier in minutes per spell level (default: 120)
  * @property {number} startingSpells - Number of free spells at level 1 (default: 6)
  * @property {number} spellsPerLevel - Number of free spells gained per level (default: 2)
  */

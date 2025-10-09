@@ -132,8 +132,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
       decreaseCantripPrepBonus: SpellbookSettingsDialog.decreaseCantripPrepBonus,
       increaseSpellLearningCost: SpellbookSettingsDialog.increaseSpellLearningCost,
       decreaseSpellLearningCost: SpellbookSettingsDialog.decreaseSpellLearningCost,
-      increaseSpellLearningTime: SpellbookSettingsDialog.increaseSpellLearningTime,
-      decreaseSpellLearningTime: SpellbookSettingsDialog.decreaseSpellLearningTime,
       increaseStartingSpells: SpellbookSettingsDialog.increaseStartingSpells,
       decreaseStartingSpells: SpellbookSettingsDialog.decreaseStartingSpells,
       increaseSpellsPerLevel: SpellbookSettingsDialog.increaseSpellsPerLevel,
@@ -282,7 +280,7 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
           spellPreparationBonus: 'spellPreparationBonus' in savedRules ? savedRules.spellPreparationBonus : processedClassRules.spellPreparationBonus || 0,
           cantripPreparationBonus: 'cantripPreparationBonus' in savedRules ? savedRules.cantripPreparationBonus : processedClassRules.cantripPreparationBonus || 0,
           spellLearningCostMultiplier: 'spellLearningCostMultiplier' in savedRules ? savedRules.spellLearningCostMultiplier : processedClassRules.spellLearningCostMultiplier || 50,
-          spellLearningTimeMultiplier: 'spellLearningTimeMultiplier' in savedRules ? savedRules.spellLearningTimeMultiplier : processedClassRules.spellLearningTimeMultiplier || 2,
+          spellLearningTimeMultiplier: 'spellLearningTimeMultiplier' in savedRules ? savedRules.spellLearningTimeMultiplier : processedClassRules.spellLearningTimeMultiplier || 120,
           startingSpells: 'startingSpells' in savedRules ? savedRules.startingSpells : processedClassRules.startingSpells || 6,
           spellsPerLevel: 'spellsPerLevel' in savedRules ? savedRules.spellsPerLevel : processedClassRules.spellsPerLevel || 2,
           _noScaleValue: processedClassRules._noScaleValue
@@ -616,34 +614,17 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
   _createSpellLearningTimeControls(identifier, currentValue) {
     const container = document.createElement('div');
     container.className = 'counter-group';
-
-    const decreaseButton = document.createElement('button');
-    decreaseButton.type = 'button';
-    decreaseButton.dataset.action = 'decreaseSpellLearningTime';
-    decreaseButton.dataset.class = identifier;
-    decreaseButton.textContent = '−';
-    decreaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.SpellLearningTimeMultiplier.Decrease'));
-
     const input = ValidationHelpers.createNumberInput({
       name: `class.${identifier}.spellLearningTimeMultiplier`,
-      value: currentValue ?? 2,
+      value: currentValue ?? 120,
       min: 0,
-      step: 0.5,
+      step: 1,
       cssClass: 'learning-time-input',
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.SpellLearningTimeMultiplier.Label')
     });
     input.id = `spell-learning-time-${identifier}`;
 
-    const increaseButton = document.createElement('button');
-    increaseButton.type = 'button';
-    increaseButton.dataset.action = 'increaseSpellLearningTime';
-    increaseButton.dataset.class = identifier;
-    increaseButton.textContent = '+';
-    increaseButton.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Settings.SpellLearningTimeMultiplier.Increase'));
-
-    container.appendChild(decreaseButton);
     container.appendChild(input);
-    container.appendChild(increaseButton);
 
     return ValidationHelpers.elementToHtml(container);
   }
@@ -978,30 +959,6 @@ export class SpellbookSettingsDialog extends HandlebarsApplicationMixin(Applicat
     input.value = newValue;
     input.dispatchEvent(new Event('change', { bubbles: true }));
     log(3, `Decreased spell learning cost for ${classIdentifier} to ${newValue}`);
-  }
-
-  static increaseSpellLearningTime(_event, target) {
-    const classIdentifier = target.dataset.class;
-    if (!classIdentifier) return;
-    const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellLearningTimeMultiplier"]`);
-    if (!input) return;
-    const currentValue = parseFloat(input.value) || 2;
-    const newValue = currentValue + 0.5;
-    input.value = newValue;
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-    log(3, `Increased spell learning time for ${classIdentifier} to ${newValue}`);
-  }
-
-  static decreaseSpellLearningTime(_event, target) {
-    const classIdentifier = target.dataset.class;
-    if (!classIdentifier) return;
-    const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellLearningTimeMultiplier"]`);
-    if (!input) return;
-    const currentValue = parseFloat(input.value) || 2;
-    const newValue = Math.max(0, currentValue - 0.5);
-    input.value = newValue;
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-    log(3, `Decreased spell learning time for ${classIdentifier} to ${newValue}`);
   }
 
   static increaseStartingSpells(_event, target) {

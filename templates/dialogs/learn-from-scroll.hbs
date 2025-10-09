@@ -13,7 +13,7 @@
  * @param {string} spell.name - Display name of the spell
  * @param {boolean} isAlreadyInSpellbook - Whether wizard already knows this spell
  * @param {string} costText - Formatted cost text for spell copying
- * @param {number} time - Time in hours required for copying
+ * @param {string} time - Formatted time string required for copying
  * @param {boolean} shouldConsume - Whether the scroll will be consumed in the process
  *
  * ACCESSIBILITY FEATURES:
@@ -59,7 +59,7 @@
     <!-- Copying Time Information -->
     <div class="form-group">
       <label>{{localize 'SPELLBOOK.Wizard.TimeLabel'}}:</label>
-      <span>{{localize 'SPELLBOOK.Wizard.SpellCopyTime' hours=time}}</span>
+      <span>{{time}}</span>
     </div>
   </div>
 

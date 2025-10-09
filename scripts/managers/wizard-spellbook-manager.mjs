@@ -362,19 +362,41 @@ export class WizardSpellbookManager {
   }
 
   /**
-   * Calculate time to copy a spell.
+   * Calculate and format time to copy a spell.
    *
    * Determines the time requirement to copy a spell based on D&D 5e rules
    * and class-specific time multiplier. Time scales with spell level to
    * represent the complexity of higher-level magic transcription.
+   * Returns a formatted, localized string.
    *
    * @param {Item5e} spell - The spell to copy
-   * @returns {number} Time in hours
+   * @returns {string} Formatted time string (e.g., "2 hours", "1 hour, 30 minutes")
    */
   getCopyingTime(spell) {
     const classRules = RuleSetManager.getClassRules(this.actor, this.classIdentifier);
-    const timeMultiplier = classRules?.spellLearningTimeMultiplier ?? 2;
-    return spell.system.level === 0 ? 1 : spell.system.level * timeMultiplier;
+    const timeMultiplier = classRules?.spellLearningTimeMultiplier ?? 120;
+    const totalMinutes = spell.system.level === 0 ? 1 : spell.system.level * timeMultiplier;
+    const days = Math.floor(totalMinutes / 1440);
+    const hours = Math.floor((totalMinutes % 1440) / 60);
+    const minutes = totalMinutes % 60;
+    const parts = [];
+    if (days > 0) {
+      const dayLabel = game.i18n.localize(`DND5E.UNITS.TIME.Day.Label`);
+      parts.push(`${days} ${dayLabel}${days !== 1 ? 's' : ''}`);
+    }
+    if (hours > 0) {
+      const hourLabel = game.i18n.localize(`DND5E.UNITS.TIME.Hour.Label`);
+      parts.push(`${hours} ${hourLabel}${hours !== 1 ? 's' : ''}`);
+    }
+    if (minutes > 0) {
+      const minuteLabel = game.i18n.localize(`DND5E.UNITS.TIME.Minute.Label`);
+      parts.push(`${minutes} ${minuteLabel}${minutes !== 1 ? 's' : ''}`);
+    }
+    if (parts.length === 0) {
+      const minuteLabel = game.i18n.localize(`DND5E.UNITS.TIME.Minute.Label`);
+      return `1 ${minuteLabel}`;
+    }
+    return parts.join(', ');
   }
 
   /**

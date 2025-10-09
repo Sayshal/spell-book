@@ -236,7 +236,7 @@ export class ScrollScanner {
    *
    * @param {Item5e} spell - The spell to learn from the scroll
    * @param {number} cost - Gold cost to learn the spell
-   * @param {number} time - Time required to learn the spell (in minutes)
+   * @param {string} time - Formatted time string required to learn the spell
    * @param {boolean} isFree - Whether the spell learning is free
    * @param {boolean} isAlreadyInSpellbook - Whether spell is already known
    * @returns {Promise<boolean>} Whether the user chose to proceed with learning

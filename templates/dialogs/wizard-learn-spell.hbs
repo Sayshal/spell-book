@@ -12,7 +12,7 @@
  * @param {Object} spell - Spell object being learned
  * @param {string} spell.name - Display name of the spell
  * @param {string} costText - Formatted cost text for spell learning
- * @param {number} time - Time in hours required for learning
+ * @param {string} time - Formatted time string required for learning
  *
  * ACCESSIBILITY FEATURES:
  * - Semantic form structure for dialog content
@@ -51,7 +51,7 @@
     <!-- Learning Time Information -->
     <div class="form-group">
       <label>{{localize 'SPELLBOOK.Wizard.TimeLabel'}}:</label>
-      <span>{{localize 'SPELLBOOK.Wizard.SpellCopyTime' hours=time}}</span>
+      <span>{{time}}</span>
     </div>
   </div>
 </form>
