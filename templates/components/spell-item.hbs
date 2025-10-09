@@ -4,22 +4,23 @@
  *
  * PURPOSE:
  * Individual spell item component for displaying spell details with preparation
- * controls, action buttons, and metadata. Handles both regular spellcasting
- * and wizard spellbook contexts with appropriate actions and styling.
- *
- * CONTEXT REQUIREMENTS:
- * @param {ProcessedSpell} spell - Processed spell data for display
+ * controls in standard spellcasting class tabs. Provides comprehensive spell
+ * information including icons, tags, metadata, and preparation checkboxes for
+ * non-wizard spellcasting classes.
  *
  * ACCESSIBILITY FEATURES:
+ * - Semantic list item structure for screen readers
  * - Button elements with proper aria-label attributes
  * - Tooltip data attributes for additional context
- * - Semantic list item structure for screen readers
- * - Action buttons with descriptive labels
+ * - Action buttons with descriptive labels and ARIA attributes
+ * - Accessible icon markup with aria-hidden for decorative elements
  *
  * INTEGRATION:
- * - Used within spell-level component via partial-block pattern
- * - Supports both player spell book and wizard spellbook contexts
+ * - Used within spell-level component via partial rendering
+ * - Supports player spell book standard spellcasting tabs
  * - Integrates with spell preparation, favorites, and notes systems
+ * - Connects to spell comparison and party coordination features
+ * - Works with filter and search systems via data attributes
  */
 --}}
 
@@ -85,36 +86,8 @@
     </div>
   </div>
 
-  {{!-- Spell Actions --}}
-  {{#if (or isWizardContext (isWizardTab @root.activeTab))}}
-    {{!-- Wizard Tab Actions --}}
-    <div class="wizard-spell-status">
-      {{#if spell.wizardAction.isFromScroll}}
-        <button class="copy-spell-btn scroll-spell-btn" data-action="learnFromScroll"
-          data-uuid="{{spell.wizardAction.uuid}}" data-scroll-id="{{spell.wizardAction.scrollId}}" type="button"
-          aria-label="{{spell.wizardAction.ariaLabel}}">
-          <i class="fas fa-scroll"></i> {{localize "SPELLBOOK.Wizard.LearnSpell"}}
-        </button>
-      {{else if spell.wizardAction.inSpellbook}}
-        <span
-          class="in-spellbook-tag{{#if spell.wizardAction.learningSource}} learned-{{spell.wizardAction.learningSource}}{{/if}}"
-          aria-label="{{localize 'SPELLBOOK.Wizard.InSpellbook'}}">
-          {{#if spell.wizardAction.learningSourceLabel}}
-            {{spell.wizardAction.learningSourceLabel}}
-          {{else}}
-            {{localize "SPELLBOOK.Wizard.InSpellbook"}}
-          {{/if}}
-        </span>
-      {{else if spell.wizardAction.canLearn}}
-        <button class="copy-spell-btn" data-action="learnSpell" data-uuid="{{spell.wizardAction.uuid}}" type="button">
-          <i class="fas fa-book"></i> {{localize "SPELLBOOK.Wizard.LearnSpell"}}
-        </button>
-      {{/if}}
-    </div>
-  {{else}}
-    {{!-- Regular Spell Preparation --}}
-    <div class="spell-preparation dnd5e2">
-      {{{spell.preparationCheckboxHtml}}}
-    </div>
-  {{/if}}
+  {{!-- Spell Preparation Checkbox --}}
+  <div class="spell-preparation dnd5e2">
+    {{{spell.preparationCheckboxHtml}}}
+  </div>
 </li>

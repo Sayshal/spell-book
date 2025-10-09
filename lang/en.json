@@ -595,7 +595,7 @@
   "SPELLBOOK.UserData.UsageTitle": "Spell Usage Statistics",
   "SPELLBOOK.UserData.UsageTracking": "Usage Tracking",
   "SPELLBOOK.Wizard.CostLabel": "Cost",
-  "SPELLBOOK.Wizard.InSpellbook": "Already Learned",
+  "SPELLBOOK.Wizard.InSpellbook": "Learned",
   "SPELLBOOK.Wizard.InsufficientGold": "Insufficient gold! You need {cost} gp but only have {current} gp.",
   "SPELLBOOK.Wizard.LearnSpell": "Learn Spell",
   "SPELLBOOK.Wizard.LearnSpellButton": "Learn Spell",

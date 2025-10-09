@@ -5,40 +5,36 @@
  * PURPOSE:
  * Reusable component for organizing and displaying spells by level with collapsible
  * sections. Provides consistent spell level presentation across the application
- * with expandable/collapsible functionality, spell counts, and support for
- * partial block content through Handlebars composition patterns.
- *
- * CONTEXT REQUIREMENTS:
- * @param {number} level - Numeric spell level (0-9, where 0 represents cantrips)
- * @param {string} levelName - Localized display name for the spell level
- * @param {Array<Object>} spells - Array of spell objects for this level
- * @partial-block {Object} spell - Individual spell object passed to partial content
+ * with expandable/collapsible functionality, spell counts, and support for both
+ * standard spellcasting and wizard spellbook contexts through template selection.
  *
  * ACCESSIBILITY FEATURES:
  * - Collapsible header with role="button" for keyboard accessibility
  * - ARIA attributes (aria-expanded, aria-controls) for screen reader support
  * - Descriptive aria-label for spell count information
  * - List structure with role="list" for proper semantic navigation
- * - Visual collapse indicator marked as decorative
+ * - Visual collapse indicator marked as decorative with aria-hidden
+ * - Proper heading hierarchy for document structure
  *
- * CUSTOMIZATION POINTS:
- * - Spell level content provided through partial block composition
- * - Collapse/expand state managed through aria-expanded attribute
- * - Spell count displays current number of spells at this level
- * - Level identification through data-level attribute for styling/scripting
+ * TEMPLATE SELECTION LOGIC:
+ * - Uses spell-item-wizard.hbs template when isWizardContext is true
+ * - Uses spell-item.hbs template for standard spellcasting classes
+ * - This separation prevents context bleed during partial rerenders
+ * - Each template has exclusive functionality for its use case
  *
  * INTEGRATION:
  * - Used across spell display templates for consistent level organization
- * - Supports both player spell book and spell list manager contexts
+ * - Supports both player spell book and wizard spellbook contexts
  * - Integrates with collapse/expand functionality through data-action
- * - Provides flexible content through partial block pattern
+ * - Provides flexible content through template selection pattern
  * - Works with spell filtering and search systems
+ * - Prevents context pollution during tab switches and partial rerenders
  */
 --}}
 
 <div class="spell-level" data-level="{{level}}">
 	<h3 class="spell-level-heading" data-action="toggleSpellLevel" data-level="{{level}}" role="button"
-		aria-expanded="{{#unless isCollapsed}}true{{else}}false{{/unless}}" aria-controls="spell-list-{{level}}" style="">
+		aria-expanded="{{#unless isCollapsed}}true{{else}}false{{/unless}}" aria-controls="spell-list-{{level}}">
 		<i class="fas fa-caret-{{#if isCollapsed}}right{{else}}down{{/if}} collapse-indicator" aria-hidden="true"></i>
 		{{levelName}}
 		<span class="spell-count" aria-label="Spell Count">({{preparedCount}}/{{spells.length}})</span>
@@ -49,7 +45,11 @@
 	</h3>
 	<ul class="spell-list" id="spell-list-{{level}}" {{#if isCollapsed}}style="display: none;" {{/if}} role="list">
 		{{#each spells as |spell|}}
-			{{> "modules/spell-book/templates/components/spell-item.hbs" spell=spell isWizardContext=../isWizardContext}}
+			{{#if ../isWizardContext}}
+				{{> "modules/spell-book/templates/components/spell-item-wizard.hbs" spell=spell}}
+			{{else}}
+				{{> "modules/spell-book/templates/components/spell-item.hbs" spell=spell}}
+			{{/if}}
 		{{/each}}
 	</ul>
 </div>

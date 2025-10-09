@@ -38,6 +38,8 @@
  * @property {string} CANTRIP_NOTIFICATION - GM notification template for cantrip changes
  * @property {string} EMPTY - Empty state component template for when no data is available
  * @property {string} ERROR - Error message component template for displaying errors
+ * @property {string} FOCUS_OPTION_ROW - Focus option row component for focus configuration
+ * @property {string} FOCUS_RESET_DIALOG_CONTENT - Focus reset dialog content component
  * @property {string} LOADING - Loading spinner component template for async operations
  * @property {string} MIGRATION_ACTORS - Migration results actor list template
  * @property {string} MIGRATION_FOLDER - Migration results folder template
@@ -45,6 +47,8 @@
  * @property {string} MIGRATION_REPORT - Migration results summary template
  * @property {string} MIGRATION_CUSTOM_SPELL_LIST_RESULTS - Migration results custom spell list format template
  * @property {string} MIGRATION_USER_DATA - Migration results user data template
+ * @property {string} SPELL_ITEM - Standard spell item component for regular class tabs
+ * @property {string} SPELL_ITEM_WIZARD - Wizard spell item component for wizard spellbook tabs
  * @property {string} SPELL_LEVEL - Spell level grouping component template
  * @property {string} USER_DATA_INTRO - User data introduction template for analytics
  * @property {string} USER_SPELL_DATA_EMPTY - Empty user spell data template
@@ -154,8 +158,10 @@ export const TEMPLATES = {
     /** Error message component for displaying user-friendly error information */
     ERROR: 'modules/spell-book/templates/components/error-message.hbs',
 
+    /** Focus option row component for spellcasting focus configuration */
     FOCUS_OPTION_ROW: 'modules/spell-book/templates/components/focus-options-row.hbs',
 
+    /** Focus reset dialog content component for resetting focus selections */
     FOCUS_RESET_DIALOG_CONTENT: 'modules/spell-book/templates/components/focus-reset-dialog-content.hbs',
 
     /** Loading spinner component for async operations and data fetching */
@@ -179,7 +185,11 @@ export const TEMPLATES = {
     /** Migration results component showing user data changes */
     MIGRATION_USER_DATA: 'modules/spell-book/templates/components/migration-user-data-results.hbs',
 
+    /** Individual spell item component for standard spellcasting class tabs */
     SPELL_ITEM: 'modules/spell-book/templates/components/spell-item.hbs',
+
+    /** Individual spell item component for wizard spellbook tabs with learning actions */
+    SPELL_ITEM_WIZARD: 'modules/spell-book/templates/components/spell-item-wizard.hbs',
 
     /** Spell level grouping component for organizing spells by level */
     SPELL_LEVEL: 'modules/spell-book/templates/components/spell-level.hbs',
