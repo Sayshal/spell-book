@@ -1064,6 +1064,7 @@ export class SpellbookState {
     const totalSpells = personalSpellbook.length;
     const maxSpellsAllowed = wizardManager.getMaxSpellsAllowed();
     const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
+    const maxSpellLevel = DataHelpers.calculateMaxSpellLevel(classItem, this.actor);
     this.scrollSpells = await DataHelpers.ScrollScanner.scanForScrollSpells(this.actor);
     const grantedSpells = this.actor.items
       .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.method && ['pact', 'innate', 'atwill'].includes(i.system.method))))
@@ -1094,7 +1095,38 @@ export class SpellbookState {
       const inFullWizardList = fullWizardSpellList && isSpellInCollection(spell, fullWizardSpellList);
       return isNonCantrip && inFullWizardList;
     });
-    const wizardLevelsGrouped = await this._organizeWizardSpellsForLearning(classSpellsOnly, classIdentifier, personalSpellbook);
+    const copiedSpellsFlag = `${FLAGS.WIZARD_COPIED_SPELLS}_${classIdentifier}`;
+    const copiedSpellsMetadata = this.actor.getFlag(MODULE.ID, copiedSpellsFlag) || [];
+    const scrollLearnedEntries = copiedSpellsMetadata.filter((metadata) => metadata.fromScroll === true);
+    const scrollLearnedUuids = scrollLearnedEntries.map((metadata) => metadata.spellUuid);
+    let scrollLearnedSpells = [];
+    if (scrollLearnedUuids.length > 0) {
+      log(3, `Fetching ${scrollLearnedUuids.length} scroll-learned spells for ${classIdentifier} (max level: ${maxSpellLevel})`);
+      scrollLearnedSpells = await DataHelpers.fetchSpellDocuments(new Set(scrollLearnedUuids), maxSpellLevel);
+      log(
+        3,
+        `Fetched ${scrollLearnedSpells.length} scroll-learned spell documents:`,
+        scrollLearnedSpells.map((s) => s.name)
+      );
+      for (const spell of scrollLearnedSpells) {
+        const spellUuids = getSpellUuids(spell);
+        for (const entry of scrollLearnedEntries) {
+          if (spellUuids.includes(entry.spellUuid)) {
+            spell.learnedFromScroll = true;
+            spell.scrollLearningMetadata = {
+              dateCopied: entry.dateCopied,
+              cost: entry.cost,
+              timeSpent: entry.timeSpent
+            };
+            log(3, `Matched scroll-learned spell: ${spell.name}`);
+            break;
+          }
+        }
+      }
+    }
+    const allWizardbookSpells = [...classSpellsOnly, ...scrollLearnedSpells];
+    log(3, `Total wizardbook spells for ${classIdentifier}: ${allWizardbookSpells.length} (${classSpellsOnly.length} class + ${scrollLearnedSpells.length} scroll)`);
+    const wizardLevelsGrouped = await this._organizeWizardSpellsForLearning(allWizardbookSpells, classIdentifier, personalSpellbook);
     const scrollSpellsForLevel = [];
     for (const scrollSpell of this.scrollSpells) {
       scrollSpell.sourceClass = classIdentifier;
@@ -1173,6 +1205,12 @@ export class SpellbookState {
         if (isWizardBook) {
           spell.canAddToSpellbook = !spell.inWizardSpellbook && spell.system.level > 0;
           spell.isAtMaxSpells = isAtMaxSpells;
+          if (spell.learnedFromScroll && spell.scrollLearningMetadata) {
+            spell.wasLearnedFromScroll = true;
+            spell.scrollLearningInfo = spell.scrollLearningMetadata;
+            spell.canLearnFromScroll = false;
+            spell.canAddToSpellbook = false;
+          }
           if (spell.isFromScroll) {
             spell.canLearnFromScroll = !spell.inWizardSpellbook;
             spell.scrollMetadata = {
@@ -1400,6 +1438,40 @@ export class SpellbookState {
         spellDataByClass[classIdentifier][classSpellKey].isRitual = true;
       }
     }
+  }
+
+  /**
+   * Get scroll-learned spells that aren't in the class spell list.
+   *
+   * Identifies spells that were learned from scrolls (tracked in flags)
+   * and are in the personal spellbook but not in the wizard class spell list.
+   * These spells need to be manually added to the wizardbook tab.
+   *
+   * @param {string} classIdentifier - The class identifier
+   * @param {Array<string>} personalSpellbook - UUIDs of spells in personal spellbook
+   * @param {Set<string>} classSpellListUuids - UUIDs of spells in the class list
+   * @returns {Promise<Array<Item5e>>} Array of scroll-learned spell documents
+   * @private
+   */
+  async _getScrollLearnedSpellsNotInClassList(classIdentifier, personalSpellbook, classSpellListUuids) {
+    const copiedSpellsFlag = `${FLAGS.WIZARD_COPIED_SPELLS}_${classIdentifier}`;
+    const copiedSpells = this.actor.getFlag(MODULE.ID, copiedSpellsFlag) || [];
+    const scrollLearnedUuids = copiedSpells.map((metadata) => metadata.spellUuid).filter((uuid) => personalSpellbook.includes(uuid) && !classSpellListUuids.has(uuid));
+    if (scrollLearnedUuids.length === 0) return [];
+    log(3, `Found ${scrollLearnedUuids.length} scroll-learned spells not in class list for ${classIdentifier}`);
+    const spellDocuments = await DataHelpers.fetchSpellDocuments(new Set(scrollLearnedUuids));
+    for (const spell of spellDocuments) {
+      const metadata = copiedSpells.find((m) => m.spellUuid === spell.uuid);
+      if (metadata) {
+        spell.learnedFromScroll = true;
+        spell.scrollLearningMetadata = {
+          dateCopied: metadata.dateCopied,
+          cost: metadata.cost,
+          timeSpent: metadata.timeSpent
+        };
+      }
+    }
+    return spellDocuments;
   }
 
   /**
