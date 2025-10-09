@@ -587,8 +587,9 @@ export class SpellbookState {
       for (const spell of actorSpells) {
         if (spell?.system?.level === undefined) continue;
         const spellKey = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
+        const normalizedKey = this._normalizeSpellUuid(spellKey);
         const sourceClass = spell.system?.sourceClass || spell.sourceClass || classIdentifier;
-        const fullKey = `${sourceClass}:${spellKey}`;
+        const fullKey = `${sourceClass}:${normalizedKey}`;
         if (!spellDeduplicationMap.has(fullKey)) {
           spellDeduplicationMap.set(fullKey, spell);
         } else {
@@ -616,7 +617,8 @@ export class SpellbookState {
       const level = spell.system.level;
       const spellName = spell.name.toLowerCase();
       const spellKey = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
-      if (!processedPreparableSpells.has(spellKey)) {
+      const normalizedKey = this._normalizeSpellUuid(spellKey);
+      if (!processedPreparableSpells.has(normalizedKey)) {
         if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
         const compendiumUuid = spell.flags?.core?.sourceId || spell.uuid;
         const spellData = { ...spell, compendiumUuid: compendiumUuid };
@@ -630,7 +632,7 @@ export class SpellbookState {
         const enhancedSpell = DataHelpers.SpellUserDataJournal.enhanceSpellWithUserData(spellData, targetUserId, actorId);
         Object.assign(spellData, enhancedSpell);
         spellsByLevel[level].spells.push(spellData);
-        processedPreparableSpells.add(spellKey);
+        processedPreparableSpells.add(normalizedKey);
         processedSpellIds.add(spell.id || spell.uuid);
       }
     }
@@ -640,7 +642,8 @@ export class SpellbookState {
       if (spell?.system?.level === undefined) continue;
       const level = spell.system.level;
       const spellUuid = spell.uuid || spell.compendiumUuid;
-      if (processedPreparableSpells.has(spellUuid)) continue;
+      const normalizedUuid = this._normalizeSpellUuid(spellUuid);
+      if (processedPreparableSpells.has(normalizedUuid)) continue;
       if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
       const spellData = foundry.utils.deepClone(spell);
       let preparedByOtherClass = null;
@@ -704,6 +707,19 @@ export class SpellbookState {
       });
     log(3, `Returning ${sortedLevels.length} levels for ${classIdentifier} with multiple preparation contexts supported`);
     return sortedLevels;
+  }
+
+  /**
+   * Normalize a spell UUID by removing the .Item. segment if present.
+   * This ensures consistent comparison between different UUID formats.
+   *
+   * @param {string} uuid - The UUID to normalize
+   * @returns {string} Normalized UUID
+   * @private
+   */
+  _normalizeSpellUuid(uuid) {
+    if (!uuid) return uuid;
+    return uuid.replace(/\.Item\./g, '.');
   }
 
   /**
