@@ -720,9 +720,16 @@ export class SpellManager {
    * @returns {Promise<void>}
    */
   async _ensureSpellOnActor(uuid, sourceClass, preparationMode, spellsToCreate, spellsToUpdate) {
-    const matchingSpells = this.actor.items.filter(
-      (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
-    );
+    const allMatchingSpells = this.actor.items.filter((i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid));
+    for (const spell of allMatchingSpells) {
+      const spellSourceClass = spell.system?.sourceClass || spell.sourceClass;
+      if (spellSourceClass && spellSourceClass !== sourceClass) continue;
+      const isAlwaysPrepared = spell.system.prepared === 2;
+      const isGranted = !!spell.flags?.dnd5e?.cachedFor;
+      const isSpecialMode = ['innate', 'atwill'].includes(spell.system.method);
+      if (isAlwaysPrepared || isGranted || isSpecialMode) return;
+    }
+    const matchingSpells = allMatchingSpells.filter((i) => i.system.sourceClass === sourceClass || i.sourceClass === sourceClass);
     const existingPreparedSpell = matchingSpells.find((spell) => spell.system.method !== 'ritual' && spell.system.prepared === 1);
     const existingRitualSpell = matchingSpells.find((spell) => spell.system.method === 'ritual');
     const classRules = RuleSetManager.getClassRules(this.actor, sourceClass);
@@ -749,7 +756,8 @@ export class SpellManager {
       }
       return;
     }
-    const existingSpell = matchingSpells[0];
+    const unassignedSpell = allMatchingSpells.find((spell) => !spell.system?.sourceClass && !spell.sourceClass);
+    const existingSpell = unassignedSpell || matchingSpells[0];
     if (existingSpell) {
       const updateData = { _id: existingSpell.id, 'system.method': preparationMode, 'system.prepared': 1 };
       if (existingSpell.system.sourceClass !== sourceClass) updateData['system.sourceClass'] = sourceClass;
