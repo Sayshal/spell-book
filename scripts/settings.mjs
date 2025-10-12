@@ -126,18 +126,18 @@ export function registerSettings() {
     requiresReload: true
   });
 
-  // Disabled until CPR fix in place.
-  // if (game.modules.get('chris-premades')?.active) {
-  //   /** Enable Cauldron of Plentiful Resources compatibility */
-  //   game.settings.register(MODULE.ID, SETTINGS.CPR_COMPATIBILITY, {
-  //     name: 'SPELLBOOK.Settings.CPRCompatibility.Name',
-  //     hint: 'SPELLBOOK.Settings.CPRCompatibility.Hint',
-  //     scope: 'world',
-  //     config: true,
-  //     type: Boolean,
-  //     default: false
-  //   });
-  // }
+  Disabled until CPR fix in place.
+  if (game.modules.get('chris-premades')?.active) {
+    /** Enable Cauldron of Plentiful Resources compatibility */
+    game.settings.register(MODULE.ID, SETTINGS.CPR_COMPATIBILITY, {
+      name: 'SPELLBOOK.Settings.CPRCompatibility.Name',
+      hint: 'SPELLBOOK.Settings.CPRCompatibility.Hint',
+      scope: 'world',
+      config: true,
+      type: Boolean,
+      default: false
+    });
+  }
 
   game.settings.register(MODULE.ID, SETTINGS.AUTO_DELETE_UNPREPARED_SPELLS, {
     name: 'SPELLBOOK.Settings.AutoDeleteUnpreparedSpells.Name',
