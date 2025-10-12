@@ -1,8 +1,7 @@
 /**
  * Chat Message Button Handlers
  *
- * Handles click events for buttons in chat messages, following the pattern
- * used by chris-premades and other modules.
+ * Handles click events for buttons in chat messages.
  */
 
 import { MODULE, SETTINGS } from '../constants/_module.mjs';

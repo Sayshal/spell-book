@@ -72,7 +72,7 @@ export function registerDnD5eIntegration() {
   try {
     Hooks.on('renderActorSheetV2', addSpellbookButton);
     Hooks.on('renderGroupActorSheet', onGroupActorRender);
-    Hooks.on('activateJournalDirectory', addJournalSpellBookButton);
+    Hooks.on('activateCompendiumDirectory', addJournalSpellBookButton);
     Hooks.on('dnd5e.restCompleted', handleRestCompleted);
     log(3, 'Registering DnD5e system integration');
   } catch (error) {
@@ -383,7 +383,6 @@ async function showLongRestSwapDialog(longRestClasses) {
  * @returns {void}
  */
 function addJournalSpellBookButton(app) {
-  if (!game.settings.get(MODULE.ID, SETTINGS.ENABLE_JOURNAL_BUTTON)) return;
   if (!game.user.isGM) return;
   const footer = app.element.querySelector('.directory-footer');
   if (!footer) return;

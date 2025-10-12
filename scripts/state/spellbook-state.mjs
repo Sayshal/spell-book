@@ -604,7 +604,7 @@ export class SpellbookState {
         const spellSourceClass = spell.system?.sourceClass || spell.sourceClass;
         if (spellSourceClass && spellSourceClass !== classIdentifier) continue;
         const preparationMode = spell.system.method;
-        const isSpecialMode = ['innate', 'pact', 'atwill'].includes(preparationMode);
+        const isSpecialMode = ['innate', 'atwill'].includes(preparationMode);
         const isAlwaysPrepared = spell.system.prepared === 2;
         const isGranted = !!spell.flags?.dnd5e?.cachedFor;
         const isOnlySpecial = isSpecialMode || isAlwaysPrepared || isGranted;
@@ -710,7 +710,7 @@ export class SpellbookState {
   }
 
   /**
-   * Normalize a spell UUID by removing the .Item. segment if present.
+   * Normalize a spell UUID by ensuring the .Item. segment is present.
    * This ensures consistent comparison between different UUID formats.
    *
    * @param {string} uuid - The UUID to normalize
@@ -719,7 +719,7 @@ export class SpellbookState {
    */
   _normalizeSpellUuid(uuid) {
     if (!uuid) return uuid;
-    return uuid.replace(/\.Item\./g, '.');
+    return foundry.utils.parseUuid(uuid).uuid;
   }
 
   /**
@@ -853,23 +853,46 @@ export class SpellbookState {
       log(3, 'GROUPED STRUCTURE DETECTED!', { class: classIdentifier, spells: spellLevels, classItem: classItem });
       totalSpellCount = spellLevels.reduce((count, level) => count + (Array.isArray(level.spells) ? level.spells.length : 0), 0);
       const cacheKey = `${classIdentifier}-${totalSpellCount}-${effectiveLevels}`;
-      if (this._preparationStatsCache.has(cacheKey)) return this._preparationStatsCache.get(cacheKey);
+      if (this._preparationStatsCache.has(cacheKey)) {
+        const cached = this._preparationStatsCache.get(cacheKey);
+        return cached;
+      }
       for (const levelData of spellLevels) {
-        if (levelData.level === '0' || levelData.level === 0) continue;
+        const level = levelData.level;
+        if (level === '0' || level === 0) continue;
         if (!Array.isArray(levelData.spells)) continue;
         for (const spell of levelData.spells) {
-          if (spell.system.prepared === 1 && spell.sourceClass === classIdentifier && spell.system.prepared !== 2) preparedCount++;
+          const spellName = spell.name;
+          const prepared = spell.system?.prepared;
+          const method = spell.system?.method;
+          const sourceClass = spell.sourceClass;
+          const cachedFor = spell.flags?.dnd5e?.cachedFor;
+          if (prepared === 2) continue;
+          if (['innate', 'atwill', 'pact'].includes(method)) continue;
+          if (cachedFor) continue;
+          if (prepared === 1 && sourceClass === classIdentifier) preparedCount++;
         }
       }
     } else if (isFlatStructure) {
       log(3, 'FLAT STRUCTURE DETECTED!', { class: classIdentifier, spells: spellLevels, classItem: classItem });
       totalSpellCount = spellLevels.length;
       const cacheKey = `${classIdentifier}-${totalSpellCount}-${effectiveLevels}`;
-      if (this._preparationStatsCache.has(cacheKey)) return this._preparationStatsCache.get(cacheKey);
+      if (this._preparationStatsCache.has(cacheKey)) {
+        const cached = this._preparationStatsCache.get(cacheKey);
+        return cached;
+      }
       for (const spell of spellLevels) {
         const spellLevel = spell.system?.level ?? spell.level ?? spell._levelMetadata?.level;
+        const spellName = spell.name;
         if (spellLevel === 0 || spellLevel === '0') continue;
-        if (spell.system.prepared === 1 && spell.sourceClass === classIdentifier && spell.system.prepared !== 2) preparedCount++;
+        const prepared = spell.system?.prepared;
+        const method = spell.system?.method;
+        const sourceClass = spell.sourceClass;
+        const cachedFor = spell.flags?.dnd5e?.cachedFor;
+        if (prepared === 2) continue;
+        if (['innate', 'atwill', 'pact'].includes(method)) continue;
+        if (cachedFor) continue;
+        if (prepared === 1 && sourceClass === classIdentifier) preparedCount++;
       }
     } else {
       log(1, 'calculatePreparationStats: Unknown structure for spellLevels', spellLevels);

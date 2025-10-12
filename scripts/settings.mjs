@@ -49,17 +49,6 @@ export function registerSettings() {
   //  Menus & Classes                        //
   // ========================================//
 
-  /** Register spell list manager menu launcher */
-  game.settings.registerMenu(MODULE.ID, 'openSpellListManager', {
-    name: 'SPELLBOOK.Settings.OpenSpellListManager.Name',
-    hint: 'SPELLBOOK.Settings.OpenSpellListManager.Hint',
-    label: 'SPELLBOOK.Settings.OpenSpellListManager.Button',
-    icon: 'fas fa-hat-wizard',
-    scope: 'world',
-    type: SpellListManager,
-    restricted: true
-  });
-
   /** Register compendium selection dialog menu launcher */
   game.settings.registerMenu(MODULE.ID, 'compendiumSelection', {
     name: 'SPELLBOOK.Settings.CompendiumSelectionName',
@@ -180,17 +169,6 @@ export function registerSettings() {
     config: false,
     type: Boolean,
     default: false
-  });
-
-  /** Enable spell list manager button in journal directory */
-  game.settings.register(MODULE.ID, SETTINGS.ENABLE_JOURNAL_BUTTON, {
-    name: 'SPELLBOOK.Settings.EnableJournalButton.Name',
-    hint: 'SPELLBOOK.Settings.EnableJournalButton.Hint',
-    scope: 'world',
-    config: true,
-    type: Boolean,
-    default: true,
-    requiresReload: true
   });
 
   /** Maximum number of spells allowed in comparison view */

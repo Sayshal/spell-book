@@ -279,6 +279,10 @@ export class SpellbookUI {
       const spellLevel = spellItem.dataset.spellLevel;
       const spellSourceClass = checkbox.dataset.sourceClass;
       if (spellLevel === '0' || (spellSourceClass && spellSourceClass !== classIdentifier)) return;
+      if (spellItem.querySelector('.tag.always-prepared')) return;
+      if (spellItem.querySelector('.tag.granted')) return;
+      if (spellItem.querySelector('.tag.innate')) return;
+      if (spellItem.querySelector('.tag.atwill')) return;
       if (checkbox.checked) classPreparedCount++;
     });
     classData.spellPreparation.current = classPreparedCount;
