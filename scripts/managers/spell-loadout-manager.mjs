@@ -225,9 +225,17 @@ export class SpellLoadoutManager {
       checkboxes.forEach((checkbox) => {
         const uuid = checkbox.dataset.uuid;
         const isPrepared = checkbox.checked;
-        if (isPrepared) preparedSpells.push(uuid);
+        if (!isPrepared) return;
+        const spellItem = checkbox.closest('.spell-item');
+        if (!spellItem) return;
+        if (spellItem.querySelector('.tag.always-prepared')) return;
+        if (spellItem.querySelector('.tag.granted')) return;
+        if (spellItem.querySelector('.tag.innate')) return;
+        if (spellItem.querySelector('.tag.atwill')) return;
+        if (checkbox.disabled) return;
+        preparedSpells.push(uuid);
       });
-      log(3, `Captured ${preparedSpells.length} prepared spells for ${classIdentifier}`);
+      log(3, `Captured ${preparedSpells.length} prepared spells for ${classIdentifier}`, { spells: preparedSpells });
       return preparedSpells;
     } catch (error) {
       log(1, 'Error capturing current state:', error);
