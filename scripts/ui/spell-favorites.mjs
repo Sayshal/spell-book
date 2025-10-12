@@ -216,9 +216,11 @@ export function findActorSpellByUuid(spellUuid, actor) {
   if (spell && spell.type === 'spell') return spell;
   spell = actor.items.find((item) => {
     if (item.type !== 'spell') return false;
+    if (item._stats?.compendiumSource === spellUuid) return true;
     if (item.flags?.core?.sourceId === spellUuid) return true;
     if (item.uuid === spellUuid) return true;
-    if (spellUuid.startsWith('Compendium.')) {
+    const parsedUuid = foundry.utils.parseUuid(spellUuid);
+    if (parsedUuid.collection) {
       const sourceSpell = fromUuidSync(spellUuid);
       if (sourceSpell && sourceSpell.name === item.name) return true;
     }
@@ -249,12 +251,15 @@ export function findActorSpellByUuid(spellUuid, actor) {
  */
 export function getCanonicalSpellUuid(spellOrUuid) {
   if (typeof spellOrUuid === 'string') {
-    if (spellOrUuid.startsWith('Compendium.')) return spellOrUuid;
+    const parsedUuid = foundry.utils.parseUuid(spellOrUuid);
+    if (parsedUuid.collection?.collection) return spellOrUuid;
     const spell = fromUuidSync(spellOrUuid);
+    if (spell?._stats?.compendiumSource) return spell._stats.compendiumSource;
     if (spell?.flags?.core?.sourceId) return spell.flags.core.sourceId;
     return spellOrUuid;
   }
   if (spellOrUuid?.compendiumUuid) return spellOrUuid.compendiumUuid;
+  if (spellOrUuid?._stats?.compendiumSource) return spellOrUuid._stats.compendiumSource;
   if (spellOrUuid?.flags?.core?.sourceId) return spellOrUuid.flags.core.sourceId;
   return spellOrUuid?.uuid || '';
 }

@@ -1177,12 +1177,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _isSpellOnActor(spellUuid) {
-    return this.actor.items.some((item) => {
-      if (item.type !== 'spell') return false;
-      if (item.flags?.core?.sourceId === spellUuid) return true;
-      if (item.uuid === spellUuid) return true;
-      return false;
-    });
+    return this.actor.items.some((item) => item.type === 'spell' && (item._stats?.compendiumSource === spellUuid || item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid));
   }
 
   /**
@@ -1223,7 +1218,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       let syncCount = 0;
       const changedSpells = [];
       for (const spell of actorSpells) {
-        const spellUuid = spell.flags?.core?.sourceId || spell.uuid;
+        const spellUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
         if (!spellUuid) continue;
         const isFavoritedInActor = actorFavoriteSpellIds.has(spell.id);
         const userData = await DataHelpers.SpellUserDataJournal.getUserDataForSpell(spellUuid, targetUserId, this.actor.id);

@@ -316,7 +316,7 @@ export class PartySpellManager {
       const preparedSpells = [];
       const classSpells = actor.items.filter((item) => item.type === 'spell' && (item.system.sourceClass === classId || item.sourceClass === classId));
       for (const spell of classSpells) {
-        const sourceUuid = spell.flags?.core?.sourceId || spell.uuid;
+        const sourceUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
         const spellDoc = fromUuidSync(spell.uuid);
         const enrichedIcon = UIHelpers.createSpellIconLink({ ...spell, compendiumUuid: sourceUuid });
         const spellData = { uuid: spell.uuid, sourceUuid: sourceUuid, name: spell.name, level: spell.system.level, enrichedIcon: enrichedIcon, prepared: spell.system.prepared === 1 };

@@ -156,7 +156,7 @@ export class SpellUsageTracker {
       const spell = activity.parent.parent;
       const actor = spell.actor;
       if (!actor || actor.type !== 'character') return;
-      const canonicalUuid = spell.flags?.core?.sourceId || spell.uuid;
+      const canonicalUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
       const trackingKey = `${canonicalUuid}-${Date.now()}`;
       if (this.activeTracking.has(trackingKey)) return;
       this.activeTracking.set(trackingKey, true);

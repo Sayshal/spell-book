@@ -553,13 +553,13 @@ export class RuleSetManager {
       const spellItem = actor.items.find(
         (item) =>
           item.type === 'spell' &&
-          (item.flags?.core?.sourceId === affectedSpell.uuid || item.uuid === affectedSpell.uuid) &&
+          (item._stats?.compendiumSource === affectedSpell.uuid || item.flags?.core?.sourceId === affectedSpell.uuid || item.uuid === affectedSpell.uuid) &&
           (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
       );
       if (spellItem) {
         const isGranted = !!spellItem.flags?.dnd5e?.cachedFor;
         const isAlwaysPrepared = spellItem.system.prepared === 2;
-        const isSpecialMode = ['innate', 'pact', 'atwill'].includes(spellItem.system.method);
+        const isSpecialMode = ['innate', 'atwill'].includes(spellItem.system.method);
         if (!isGranted && !isAlwaysPrepared && !isSpecialMode) spellIdsToRemove.push(spellItem.id);
       }
     }

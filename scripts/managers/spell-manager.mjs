@@ -249,7 +249,7 @@ export class SpellManager {
         const actualPreparedSpell = this.actor.items.find(
           (i) =>
             i.type === 'spell' &&
-            (i.flags?.core?.sourceId === spellUuid || i.uuid === spellUuid) &&
+            (i._stats?.compendiumSource === spellUuid || i.flags?.core?.sourceId === spellUuid || i.uuid === spellUuid) &&
             (i.system.sourceClass === classIdentifier || i.sourceClass === classIdentifier) &&
             i.system.prepared === 1 &&
             i.system.method !== 'ritual'
@@ -294,7 +294,7 @@ export class SpellManager {
     let actualSpell = this.actor.items.find(
       (item) =>
         item.type === 'spell' &&
-        (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) &&
+        (item._stats?.compendiumSource === spellUuid || item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) &&
         (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier) &&
         item.system.prepared === 1 &&
         item.system.method !== 'ritual'
@@ -302,12 +302,15 @@ export class SpellManager {
     if (!actualSpell) {
       actualSpell = this.actor.items.find(
         (item) =>
-          item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
+          item.type === 'spell' &&
+          (item._stats?.compendiumSource === spellUuid || item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) &&
+          (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
       );
     }
     if (actualSpell) return this._getOwnedSpellPreparationStatus(actualSpell);
     const unassignedSpell = this.actor.items.find(
-      (item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && !item.system?.sourceClass && !item.sourceClass
+      (item) =>
+        item.type === 'spell' && (item._stats?.compendiumSource === spellUuid || item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && !item.system?.sourceClass && !item.sourceClass
     );
     if (unassignedSpell && classIdentifier) {
       const isAlwaysPrepared = unassignedSpell.system.prepared === 2;
@@ -340,7 +343,7 @@ export class SpellManager {
         };
       }
     }
-    const specialSpell = this.actor.items.find((item) => item.type === 'spell' && (item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid));
+    const specialSpell = this.actor.items.find((item) => item.type === 'spell' && (item._stats?.compendiumSource === spellUuid || item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid));
     if (specialSpell) {
       if (specialSpell.system.prepared === 2) {
         const sourceClass = specialSpell.system?.sourceClass || specialSpell.sourceClass;
@@ -666,17 +669,18 @@ export class SpellManager {
    */
   async _ensureRitualSpellOnActor(uuid, sourceClass, spellsToCreate, spellsToUpdate) {
     const existingRitualSpell = this.actor.items.find(
-      (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass) && i.system?.method === 'ritual'
+      (i) =>
+        i.type === 'spell' &&
+        (i._stats?.compendiumSource === uuid || i.flags?.core?.sourceId === uuid || i.uuid === uuid) &&
+        (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass) &&
+        i.system?.method === 'ritual'
     );
     if (existingRitualSpell) return;
     const sourceSpell = await fromUuid(uuid);
     if (sourceSpell) {
-      const newSpellData = sourceSpell.toObject();
+      const newSpellData = await game.items.fromCompendium(sourceSpell);
       newSpellData.system.method = 'ritual';
       newSpellData.system.prepared = 0;
-      newSpellData.flags = newSpellData.flags || {};
-      newSpellData.flags.core = newSpellData.flags.core || {};
-      newSpellData.flags.core.sourceId = uuid;
       newSpellData.system.sourceClass = sourceClass;
       newSpellData.flags[MODULE.ID] = newSpellData.flags[MODULE.ID] || {};
       newSpellData.flags[MODULE.ID].isModuleRitual = true;
@@ -720,7 +724,7 @@ export class SpellManager {
    * @returns {Promise<void>}
    */
   async _ensureSpellOnActor(uuid, sourceClass, preparationMode, spellsToCreate, spellsToUpdate) {
-    const allMatchingSpells = this.actor.items.filter((i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid));
+    const allMatchingSpells = this.actor.items.filter((i) => i.type === 'spell' && (i._stats?.compendiumSource === uuid || i.flags?.core?.sourceId === uuid || i.uuid === uuid));
     for (const spell of allMatchingSpells) {
       const spellSourceClass = spell.system?.sourceClass || spell.sourceClass;
       if (spellSourceClass && spellSourceClass !== sourceClass) continue;
@@ -745,12 +749,9 @@ export class SpellManager {
     if (existingRitualSpell && isAlwaysRitualCasting && preparationMode === 'spell') {
       const sourceSpell = await fromUuid(uuid);
       if (sourceSpell) {
-        const newSpellData = sourceSpell.toObject();
+        const newSpellData = await game.items.fromCompendium(sourceSpell);
         newSpellData.system.method = preparationMode;
         newSpellData.system.prepared = 1;
-        newSpellData.flags = newSpellData.flags || {};
-        newSpellData.flags.core = newSpellData.flags.core || {};
-        newSpellData.flags.core.sourceId = uuid;
         newSpellData.system.sourceClass = sourceClass;
         spellsToCreate.push(newSpellData);
       }
@@ -766,12 +767,9 @@ export class SpellManager {
     }
     const sourceSpell = await fromUuid(uuid);
     if (sourceSpell) {
-      const newSpellData = sourceSpell.toObject();
+      const newSpellData = await game.items.fromCompendium(sourceSpell);
       newSpellData.system.method = preparationMode;
       newSpellData.system.prepared = 1;
-      newSpellData.flags = newSpellData.flags || {};
-      newSpellData.flags.core = newSpellData.flags.core || {};
-      newSpellData.flags.core.sourceId = uuid;
       newSpellData.system.sourceClass = sourceClass;
       spellsToCreate.push(newSpellData);
     }
@@ -813,7 +811,8 @@ export class SpellManager {
    */
   async _handleUnpreparingSpell(uuid, sourceClass, spellIdsToRemove, spellsToUpdate) {
     const matchingSpells = this.actor.items.filter(
-      (i) => i.type === 'spell' && (i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
+      (i) =>
+        i.type === 'spell' && (i._stats?.compendiumSource === uuid || i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
     );
     if (matchingSpells.length === 0) return;
     let targetSpell = matchingSpells.find((spell) => spell.system.prepared === 1 && spell.system.method !== 'ritual');
@@ -906,7 +905,7 @@ export class SpellManager {
         const actualSpell = this.actor.items.find(
           (item) =>
             item.type === 'spell' &&
-            (item.flags?.core?.sourceId === parsed.spellUuid || item.uuid === parsed.spellUuid) &&
+            (item._stats?.compendiumSource === parsed.spellUuid || item.flags?.core?.sourceId === parsed.spellUuid || item.uuid === parsed.spellUuid) &&
             (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
         );
         if (actualSpell) cleanedKeys.push(spellKey);

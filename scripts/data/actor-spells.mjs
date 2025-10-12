@@ -137,7 +137,6 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
         'labels.school',
         'labels.components',
         'labels.damages',
-        'flags.core.sourceId',
         'flags.core'
       ]
     });
@@ -155,7 +154,7 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
         errors.push({ uuid, reason: 'Not a valid spell document' });
         continue;
       }
-      const sourceUuid = spell.flags?.core?.sourceId || `Compendium.${packId}.${id}`;
+      const sourceUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || foundry.utils.parseUuid(uuid).uuid;
       spell.compendiumUuid = sourceUuid;
       if (spell.system?.level <= maxSpellLevel) spellItems.push(spell);
       else filteredOut.push(spell);
@@ -185,7 +184,7 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
         errors.push({ uuid, reason: 'Not a valid spell document' });
         continue;
       }
-      const sourceUuid = spell.parent && spell.flags?.core?.sourceId ? spell.flags.core.sourceId : uuid;
+      const sourceUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || foundry.utils.parseUuid(uuid).uuid;
       spell.compendiumUuid = sourceUuid;
       if (spell.system?.level <= maxSpellLevel) spellItems.push(spell);
       else filteredOut.push(spell);

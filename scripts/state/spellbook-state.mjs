@@ -587,7 +587,7 @@ export class SpellbookState {
       for (const spell of actorSpells) {
         if (spell?.system?.level === undefined) continue;
         const spellKey = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
-        const normalizedKey = this._normalizeSpellUuid(spellKey);
+        const normalizedKey = UIHelpers.getCanonicalSpellUuid(spellKey);
         const sourceClass = spell.system?.sourceClass || spell.sourceClass || classIdentifier;
         const fullKey = `${sourceClass}:${normalizedKey}`;
         if (!spellDeduplicationMap.has(fullKey)) {
@@ -617,10 +617,10 @@ export class SpellbookState {
       const level = spell.system.level;
       const spellName = spell.name.toLowerCase();
       const spellKey = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
-      const normalizedKey = this._normalizeSpellUuid(spellKey);
+      const normalizedKey = UIHelpers.getCanonicalSpellUuid(spellKey);
       if (!processedPreparableSpells.has(normalizedKey)) {
         if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
-        const compendiumUuid = spell.flags?.core?.sourceId || spell.uuid;
+        const compendiumUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
         const spellData = { ...spell, compendiumUuid: compendiumUuid };
         spellData.sourceClass = classIdentifier;
         spellData.system = spellData.system || {};
@@ -642,7 +642,7 @@ export class SpellbookState {
       if (spell?.system?.level === undefined) continue;
       const level = spell.system.level;
       const spellUuid = spell.uuid || spell.compendiumUuid;
-      const normalizedUuid = this._normalizeSpellUuid(spellUuid);
+      const normalizedUuid = UIHelpers.getCanonicalSpellUuid(spellUuid);
       if (processedPreparableSpells.has(normalizedUuid)) continue;
       if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
       const spellData = foundry.utils.deepClone(spell);
@@ -674,7 +674,7 @@ export class SpellbookState {
     for (const spell of specialModeSpells) {
       const level = spell.system.level;
       if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
-      const compendiumUuid = spell.flags?.core?.sourceId || spell.uuid;
+      const compendiumUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
       const spellData = { ...spell, compendiumUuid: compendiumUuid };
       const sourceClass = spell.system?.sourceClass || spell.sourceClass;
       if (sourceClass) {
@@ -707,19 +707,6 @@ export class SpellbookState {
       });
     log(3, `Returning ${sortedLevels.length} levels for ${classIdentifier} with multiple preparation contexts supported`);
     return sortedLevels;
-  }
-
-  /**
-   * Normalize a spell UUID by ensuring the .Item. segment is present.
-   * This ensures consistent comparison between different UUID formats.
-   *
-   * @param {string} uuid - The UUID to normalize
-   * @returns {string} Normalized UUID
-   * @private
-   */
-  _normalizeSpellUuid(uuid) {
-    if (!uuid) return uuid;
-    return foundry.utils.parseUuid(uuid).uuid;
   }
 
   /**
@@ -1086,6 +1073,7 @@ export class SpellbookState {
       if (spell?.compendiumUuid) uuids.push(spell.compendiumUuid);
       if (spell?.spellUuid) uuids.push(spell.spellUuid);
       if (spell?.uuid) uuids.push(spell.uuid);
+      if (spell?._stats?.compendiumSource) uuids.push(spell._stats.compendiumSource);
       if (spell?.flags?.core?.sourceId) uuids.push(spell.flags.core.sourceId);
       return uuids;
     };
@@ -1109,6 +1097,7 @@ export class SpellbookState {
       .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.method && ['pact', 'innate', 'atwill'].includes(i.system.method))))
       .flatMap((i) => {
         const uuids = [];
+        if (i?._stats?.compendiumSource) uuids.push(i._stats.compendiumSource);
         if (i?.flags?.core?.sourceId) uuids.push(i.flags.core.sourceId);
         if (i?.uuid) uuids.push(i.uuid);
         if (i?.compendiumUuid) uuids.push(i.compendiumUuid);
