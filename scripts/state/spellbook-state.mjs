@@ -604,7 +604,7 @@ export class SpellbookState {
         const spellSourceClass = spell.system?.sourceClass || spell.sourceClass;
         if (spellSourceClass && spellSourceClass !== classIdentifier) continue;
         const preparationMode = spell.system.method;
-        const isSpecialMode = ['innate', 'pact', 'atwill'].includes(preparationMode);
+        const isSpecialMode = ['innate', 'atwill'].includes(preparationMode);
         const isAlwaysPrepared = spell.system.prepared === 2;
         const isGranted = !!spell.flags?.dnd5e?.cachedFor;
         const isOnlySpecial = isSpecialMode || isAlwaysPrepared || isGranted;

@@ -102,6 +102,23 @@
   "persistentStorage": true,
   "readme": "https://github.com/Sayshal/spell-book?tab=readme-ov-file",
   "relationships": {
+    "optional": [
+      {
+        "compatibility": {
+          "verified": "10.0.0"
+        },
+        "id": "tidy5e-sheet",
+        "type": "module"
+      },
+      {
+        "compatibility": {
+          "minimum": "1.3.97",
+          "verified": "1.3.97"
+        },
+        "id": "chris-premades",
+        "type": "module"
+      }
+    ],
     "systems": [
       {
         "compatibility": {
