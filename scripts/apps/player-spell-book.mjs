@@ -2596,7 +2596,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       this.ui.setupCantripUI();
       this.ui.setupSpellLocks();
     }
-    Disabled until CPR fix in place.
     const cprEnabled = game.modules.get('chris-premades')?.active;
     if (cprEnabled) {
       const cprCompatibility = game.settings.get(MODULE.ID, SETTINGS.CPR_COMPATIBILITY);

@@ -126,7 +126,6 @@ export function registerSettings() {
     requiresReload: true
   });
 
-  Disabled until CPR fix in place.
   if (game.modules.get('chris-premades')?.active) {
     /** Enable Cauldron of Plentiful Resources compatibility */
     game.settings.register(MODULE.ID, SETTINGS.CPR_COMPATIBILITY, {
