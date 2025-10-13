@@ -308,10 +308,7 @@ export function registerSettings() {
     default: [],
     onChange: async (value) => {
       log(3, `Registry enabled lists updated: ${value.length} lists`);
-      DataHelpers.clearCustomSpellListCache();
-      if (game.user.isGM) {
-        await DataHelpers.registerCustomSpellLists();
-      }
+      if (game.user.isGM) await DataHelpers.registerCustomSpellLists();
     }
   });
 

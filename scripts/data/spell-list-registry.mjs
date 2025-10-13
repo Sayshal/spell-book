@@ -23,9 +23,10 @@ import { MODULE, SETTINGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
- * Register enabled spell lists with the D&D 5e SpellListRegistry.
+ * Register custom spell lists with the D&D 5e SpellListRegistry.
+ * Automatically removes invalid or missing spell lists from settings.
  *
- * @returns {Promise<RegistrationResult>} Result object with success/failure counts
+ * @returns {Promise<Object>} Registration result statistics
  */
 export async function registerCustomSpellLists() {
   log(3, 'Registering spell lists with D&D 5e SpellListRegistry');
@@ -36,28 +37,35 @@ export async function registerCustomSpellLists() {
     return result;
   }
   log(3, `Registering ${enabledUuids.length} enabled spell lists`);
+  const validUuids = [];
   for (const uuid of enabledUuids) {
     result.total++;
     try {
       const page = await fromUuid(uuid);
       if (!page || page.type !== 'spells') {
-        log(2, `Invalid spell list: ${uuid}`);
+        log(2, `Invalid spell list (will be removed from settings): ${uuid}`);
         result.skipped++;
         continue;
       }
       if (!page.system?.type || !page.system?.identifier) {
-        log(2, `Missing required fields: ${page.name}`);
+        log(2, `Missing required fields (will be removed from settings): ${page.name}`);
         result.skipped++;
         continue;
       }
       await dnd5e.registry.spellLists.register(uuid);
+      validUuids.push(uuid); // Keep this UUID
       result.registered++;
-      log(3, `${page.name} (${page.system.type}:${page.system.identifier})`);
+      log(3, `Registered: ${page.name} (${page.system.type}:${page.system.identifier})`);
     } catch (error) {
-      log(2, `Failed to register ${uuid}:`, error);
+      log(2, `Failed to register ${uuid} (will be removed from settings):`, error);
       result.failed++;
       result.errors.push({ uuid, error: error.message });
     }
+  }
+  if (validUuids.length !== enabledUuids.length) {
+    const removedCount = enabledUuids.length - validUuids.length;
+    log(3, `Removing ${removedCount} invalid spell list(s) from settings`);
+    await game.settings.set(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS, validUuids);
   }
   log(3, `Registry complete: ${result.registered} registered, ${result.skipped} skipped, ${result.failed} failed`);
   return result;
