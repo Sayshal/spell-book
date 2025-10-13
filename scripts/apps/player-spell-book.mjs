@@ -308,14 +308,72 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
     /** @type {SpellComparisonDialog|null} Active comparison dialog */
     this.comparisonDialog = null;
+
+    /** @type {boolean} Whether expensive pre-initialization is complete */
+    this._preInitialized = false;
+
+    /** @type {Map<string, string>} Cached class styling data */
+    this._classStylingCache = null;
+
+    /** @type {boolean} Whether preparation listeners have been set up */
+    this._preparationListenersSetup = false;
+  }
+
+  /**
+   * Pre-initialize expensive data before first render.
+   * Performs all expensive non-DOM operations so the window appears ready.
+   * This method is idempotent and safe to call multiple times.
+   *
+   * @returns {Promise<void>}
+   */
+  async _preInitialize() {
+    if (this._preInitialized) return;
+    log(3, 'Pre-initializing SpellBook data...');
+    const startTime = performance.now();
+    try {
+      if (!this._stateManager._initialized) await this._stateManager.initialize();
+      if (!this._stateManager._classesDetected) this._stateManager.detectSpellcastingClasses();
+      if (!this._classColorsApplied || this._classesChanged) await this._prepareClassStylingData();
+      this._preInitialized = true;
+      const elapsed = performance.now() - startTime;
+      log(3, `Pre-initialization complete in ${elapsed.toFixed(2)}ms`);
+    } catch (error) {
+      log(1, 'Error during pre-initialization:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Pre-calculate class styling data without DOM manipulation.
+   * Prepares colors and styling information for quick application later.
+   *
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _prepareClassStylingData() {
+    if (!this._classStylingCache) this._classStylingCache = new Map();
+    if (this.wizardManagers.size > 0) {
+      for (const [identifier, wizardManager] of this.wizardManagers) {
+        if (wizardManager.isWizard) {
+          const classData = this._stateManager.spellcastingClasses[identifier];
+          if (classData?.item) {
+            try {
+              const color = await UIHelpers.getClassColorForWizardTab(classData.item);
+              this._classStylingCache.set(identifier, color);
+            } catch (error) {
+              log(2, `Error pre-calculating color for ${identifier}:`, error);
+            }
+          }
+        }
+      }
+    }
   }
 
   /** @inheritdoc */
   async _prepareContext(options) {
+    if (!this._preInitialized) await this._preInitialize();
     const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
     const context = this._createBaseContext(options);
-    if (!this._stateManager._initialized) await this._stateManager.initialize();
-    if (!this._stateManager._classesDetected) this._stateManager.detectSpellcastingClasses();
     context.spellcastingClasses = this._stateManager.spellcastingClasses;
     context.activeClass = this._stateManager.activeClass;
     context.activeTab = this.tabGroups['spellbook-tabs'];
@@ -768,168 +826,148 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @inheritdoc */
   async _onRender(context, options) {
-    super._onRender(context, options);
-    this._setupContentWrapper();
-    const sidebarControlsBottom = game.settings.get(MODULE.ID, SETTINGS.SIDEBAR_CONTROLS_BOTTOM);
-    this.element.dataset.sidebarControlsBottom = sidebarControlsBottom;
-    this.ui.setSidebarState();
+    await super._onRender(context, options);
+    if (!options.isFirstRender) {
+      log(3, 'Subsequent render: Updating dynamic content...');
+      this.ui.updateSpellCounts();
+      this.ui.updateSpellPreparationTracking();
+      requestAnimationFrame(() => {
+        if (this._classesChanged) this._setupDeferredUI(context, options);
+      });
+    }
     this.ui.positionFooter();
-    this.ui.setupFilterListeners();
-    if (!this._preparationListenersSetup) {
-      this.setupPreparationListeners();
-      this._preparationListenersSetup = true;
-    }
-    this.ui.applyCollapsedLevels();
-    this.ui.setupCantripUI();
-    this.ui.updateSpellCounts();
-    this.ui.updateSpellPreparationTracking();
-    if (!this._classColorsApplied || this._classesChanged) {
-      await this.ui.applyClassStyling();
-      this._classColorsApplied = true;
-      this._classesChanged = false;
-    }
-    this._setupLoadoutContextMenu();
-    this.ui.setupAdvancedSearch();
-    const favoriteButtons = this.element.querySelectorAll('.spell-favorite-toggle[data-uuid]');
-    if (favoriteButtons.length > 0) {
-      await this._applyFavoriteStatesToButtons(favoriteButtons);
-      favoriteButtons.forEach((button) => button.setAttribute('data-favorites-applied', 'true'));
-    }
-    this._setupPartyContextMenu();
+  }
+
+  /**
+   * Reset initialization state when actor changes.
+   * Ensures fresh data load on next render.
+   *
+   * @returns {void}
+   */
+  _resetInitializationState() {
+    this._preInitialized = false;
+    this._classColorsApplied = false;
+    this._classStylingCache = null;
+    this._preparationListenersSetup = false;
+  }
+
+  /** @inheritdoc */
+  async _preFirstRender(context, options) {
+    await super._preFirstRender(context, options);
+    if (!this._preInitialized) await this._preInitialize();
+    log(3, 'Pre-first render complete, ready for DOM insertion');
   }
 
   /** @inheritdoc */
   async _onFirstRender(context, options) {
     await super._onFirstRender(context, options);
+    log(3, 'First render: Setting up essential UI...');
+    this._setupContentWrapper();
+    const sidebarControlsBottom = game.settings.get(MODULE.ID, SETTINGS.SIDEBAR_CONTROLS_BOTTOM);
+    this.element.dataset.sidebarControlsBottom = sidebarControlsBottom;
+    this.ui.setSidebarState();
+    requestAnimationFrame(() => {
+      this._setupDeferredUI(context, options);
+    });
+  }
+
+  /**
+   * Setup non-critical UI elements after the window is visible.
+   * Called via requestAnimationFrame to ensure smooth initial render.
+   *
+   * @param {ApplicationRenderContext} context - Render context
+   * @param {RenderOptions} options - Render options
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _setupDeferredUI(context, options) {
+    log(3, 'Setting up deferred UI elements...');
+    try {
+      this.ui.setupFilterListeners();
+      if (!this._preparationListenersSetup) {
+        this.setupPreparationListeners();
+        this._preparationListenersSetup = true;
+      }
+      this.ui.applyCollapsedLevels();
+      this.ui.setupCantripUI();
+      this.ui.updateSpellCounts();
+      this.ui.updateSpellPreparationTracking();
+      if (!this._classColorsApplied || this._classesChanged) {
+        await this._applyPreCalculatedClassStyling();
+        this._classColorsApplied = true;
+        this._classesChanged = false;
+      }
+      this._setupLoadoutContextMenu();
+      this._setupPartyContextMenu();
+      this.ui.setupAdvancedSearch();
+      const favoriteButtons = this.element.querySelectorAll('.spell-favorite-toggle[data-uuid]');
+      if (favoriteButtons.length > 0) {
+        await this._applyFavoriteStatesToButtons(favoriteButtons);
+        favoriteButtons.forEach((button) => button.setAttribute('data-favorites-applied', 'true'));
+      }
+      log(3, 'Deferred UI setup complete');
+    } catch (error) {
+      log(1, 'Error during deferred UI setup:', error);
+    }
+  }
+
+  /**
+   * Apply pre-calculated class styling to the DOM.
+   * Uses cached styling data prepared during _prepareClassStylingData.
+   *
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _applyPreCalculatedClassStyling() {
+    if (!this._classStylingCache || this._classStylingCache.size === 0) {
+      await this.ui.applyClassStyling();
+      return;
+    }
     if (this.wizardManagers.size > 0) {
-      this._wizardBookColors = new Map();
-      const colorPromises = [];
       for (const [identifier, wizardManager] of this.wizardManagers) {
         if (wizardManager.isWizard) {
-          const classData = this._stateManager.spellcastingClasses[identifier];
-          if (classData && classData.img) {
-            const colorPromise = (async () => {
-              try {
-                let dominantColor;
-                const customColor = game.settings.get(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR);
-                if (customColor && customColor !== null && customColor !== '') {
-                  dominantColor = customColor.css;
-                  log(3, `Using custom color ${dominantColor} for wizard book ${identifier}`);
-                } else {
-                  dominantColor = await UIHelpers.extractDominantColor(classData.img);
-                  log(3, `Extracted color ${dominantColor} from class image for wizard book ${identifier}`);
-                }
-                this._wizardBookColors.set(identifier, dominantColor);
-                log(3, `Stored ${dominantColor} color for wizardbook tab ${identifier}`);
-              } catch (error) {
-                log(1, `Failed to extract color for class ${identifier}:`, error);
-                this._wizardBookColors.set(identifier, '#8B4513');
-              }
-            })();
-            colorPromises.push(colorPromise);
-          } else {
-            this._wizardBookColors.set(identifier, '#8B4513');
+          const color = this._classStylingCache.get(identifier);
+          if (color) {
+            const wizardTab = this.element.querySelector(`[data-tab="wizardbook-${identifier}"]`);
+            if (wizardTab) wizardTab.style.setProperty('--wizard-book-color', color);
           }
         }
       }
-      await Promise.all(colorPromises);
-      this._injectWizardBookColorCSS();
-      this.render(false, { parts: ['navigation'] });
     }
-    this._stateManager.clearFavoriteSessionState();
-    await this._syncJournalToActorState();
+    await this.ui.applyClassStyling();
   }
 
   /**
    * Inject CSS custom properties for wizard book tab colors.
+   * Uses color utilities to convert hex colors to RGB and HSL for CSS variables.
+   *
+   * @returns {void}
+   * @private
    */
   _injectWizardBookColorCSS() {
     if (!this._wizardBookColors || this._wizardBookColors.size === 0) return;
-
     const styleId = 'spell-book-wizard-colors';
     let styleElement = document.getElementById(styleId);
-
     if (!styleElement) {
       styleElement = document.createElement('style');
       styleElement.id = styleId;
       document.head.appendChild(styleElement);
     }
-
     let css = '';
     for (const [identifier, color] of this._wizardBookColors) {
-      const rgb = this._hexToRgb(color);
-      const hsl = rgb ? this._rgbToHsl(rgb.r, rgb.g, rgb.b) : null;
-
-      if (rgb && hsl) {
+      const rgbString = UIHelpers.getRgbString(color);
+      const hsl = UIHelpers.hexToHsl(color);
+      if (rgbString && hsl) {
         css += `
         .tabs.tabs-right > .item[data-tab="wizardbook-${identifier}"] {
           --wizard-book-color: ${color};
-          --wizard-book-color-rgb: ${rgb.r}, ${rgb.g}, ${rgb.b};
+          --wizard-book-color-rgb: ${rgbString};
           --wizard-book-color-hue: ${hsl.h}deg;
         }
       `;
       }
     }
-
     styleElement.textContent = css;
-  }
-
-  /**
-   * Convert RGB to HSL
-   */
-  _rgbToHsl(r, g, b) {
-    r /= 255;
-    g /= 255;
-    b /= 255;
-
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let h,
-      s,
-      l = (max + min) / 2;
-
-    if (max === min) {
-      h = s = 0;
-    } else {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-
-      switch (max) {
-        case r:
-          h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-          break;
-        case g:
-          h = ((b - r) / d + 2) / 6;
-          break;
-        case b:
-          h = ((r - g) / d + 4) / 6;
-          break;
-      }
-    }
-
-    return {
-      h: Math.round(h * 360),
-      s: Math.round(s * 100),
-      l: Math.round(l * 100)
-    };
-  }
-
-  /**
-   * Convert hex color to RGB components.
-   *
-   * @param {string} hex - Hex color string (e.g., "#FF6B6B")
-   * @returns {{r: number, g: number, b: number}|null} RGB components or null if invalid
-   * @private
-   */
-  _hexToRgb(hex) {
-    const result = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex);
-    return result
-      ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16)
-        }
-      : null;
   }
 
   /**
@@ -1277,6 +1315,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @inheritdoc */
   async _onClose(options) {
+    this._resetInitializationState();
     if (this._formStateCache) this._formStateCache.clear();
     await game.settings.set(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION, this.position);
     SpellBook.DEFAULT_OPTIONS.position = this.position;

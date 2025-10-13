@@ -307,3 +307,19 @@ export async function applyClassColors(sc) {
   if (!se.parentNode) document.head.appendChild(se);
   log(3, 'Applied class-specific colors to CSS with contrast adjustment');
 }
+
+export function hexToRgb(hex) {
+  return h(hex);
+}
+
+export { rgbToHsl };
+
+export function hexToHsl(hex) {
+  const rgb = h(hex);
+  return rgb ? rgbToHsl(rgb.r, rgb.g, rgb.b) : null;
+}
+
+export function getRgbString(hex) {
+  const rgb = h(hex);
+  return rgb ? `${rgb.r}, ${rgb.g}, ${rgb.b}` : null;
+}
