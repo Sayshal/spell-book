@@ -159,27 +159,42 @@ function createSpellBookButton(actor) {
  */
 async function onSpellBookButtonClick(actor, event) {
   event.preventDefault();
-  const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
-  const hasLongRestSwapping = Object.values(classRules).some((rules) => rules.cantripSwapping === 'longRest' || rules.spellSwapping === 'longRest');
-  if (hasLongRestSwapping) {
-    const longRestFlagValue = actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);
-    const cantripSwapTracking = actor.getFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING) || {};
-    let hasCompletedSwaps = false;
-    for (const tracking of Object.values(cantripSwapTracking)) {
-      if (tracking.longRest?.hasLearned && tracking.longRest?.hasUnlearned) {
-        hasCompletedSwaps = true;
-        break;
-      }
-    }
-    if (hasCompletedSwaps) {
-      const spellManager = new SpellManager(actor);
-      await spellManager.cantripManager.resetSwapTracking();
-    }
-    if (longRestFlagValue === undefined || longRestFlagValue === null) actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
+  const button = event.currentTarget;
+  const icon = button.querySelector('img.spell-book-icon');
+  if (icon) {
+    icon.classList.add('fa-spin');
+    button.disabled = true;
   }
-  const spellBook = new SpellBook(actor);
-  await spellBook._preInitialize();
-  spellBook.render(true);
+  try {
+    const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+    const hasLongRestSwapping = Object.values(classRules).some((rules) => rules.cantripSwapping === 'longRest' || rules.spellSwapping === 'longRest');
+    if (hasLongRestSwapping) {
+      const longRestFlagValue = actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);
+      const cantripSwapTracking = actor.getFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING) || {};
+      let hasCompletedSwaps = false;
+      for (const tracking of Object.values(cantripSwapTracking)) {
+        if (tracking.longRest?.hasLearned && tracking.longRest?.hasUnlearned) {
+          hasCompletedSwaps = true;
+          break;
+        }
+      }
+      if (hasCompletedSwaps) {
+        const spellManager = new SpellManager(actor);
+        await spellManager.cantripManager.resetSwapTracking();
+      }
+      if (longRestFlagValue === undefined || longRestFlagValue === null) actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
+    }
+    const spellBook = new SpellBook(actor);
+    await spellBook._preInitialize();
+    spellBook.render(true);
+  } catch (error) {
+    log(1, 'Error opening spell book:', error);
+  } finally {
+    if (icon) {
+      icon.classList.remove('fa-spin');
+      button.disabled = false;
+    }
+  }
 }
 
 /**
