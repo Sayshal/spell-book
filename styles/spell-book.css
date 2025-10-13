@@ -235,7 +235,6 @@
   max-width: calc(100vw - 15.625rem);
   max-height: calc(100vh - 9.375rem);
   overflow: visible;
-  box-shadow: none;
 
   .window-content {
     display: flex;

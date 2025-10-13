@@ -178,6 +178,7 @@ async function onSpellBookButtonClick(actor, event) {
     if (longRestFlagValue === undefined || longRestFlagValue === null) actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
   }
   const spellBook = new SpellBook(actor);
+  await spellBook._preInitialize();
   spellBook.render(true);
 }
 
