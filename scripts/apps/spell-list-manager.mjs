@@ -291,7 +291,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (this.availableSpells.length > 0) this._prepareFilterContext(context);
     if (this.isEditing && this.selectedSpellList) await this._addEditingContext(context);
     if (this.selectedSpellList) {
-      context.selectedSpellList = UIHelpers.processSpellListForDisplay(this.selectedSpellList);
+      context.selectedSpellList = UIHelpers.processSpellListForDisplay(this.selectedSpellList, this.classFolderCache, this.availableSpellLists);
       const flags = this.selectedSpellList.document.flags?.[MODULE.ID] || {};
       const isCustomList = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList;
       context.selectedSpellList.isRenameable = isCustomList || this.selectedSpellList.isMerged;
@@ -474,6 +474,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     try {
       DataHelpers.getValidCustomListMappings();
       this.availableSpellLists = await DataHelpers.findCompendiumSpellLists(true);
+      this.classFolderCache = await this._buildClassFolderCache();
       for (const list of this.availableSpellLists) {
         const document = list.document;
         if (document?.system?.type === 'subclass') {
@@ -1641,7 +1642,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       if (packTopLevelFolder !== topLevelFolderName) continue;
       try {
         const index = await pack.getIndex({ fields: ['type', 'system.identifier'] });
-        const entry = index.find((e) => e.type === 'class' && e.system?.identifier?.toLowerCase() === identifier.toLowerCase());
+        const entry = index.find((e) => (e.type === 'class' || e.type === 'subclass') && e.system?.identifier?.toLowerCase() === identifier.toLowerCase());
         if (entry) {
           const classItem = await pack.getDocument(entry._id);
           log(3, `Found class ${classItem.name} in pack ${pack.metadata.label} (folder: ${packTopLevelFolder})`);
@@ -1653,6 +1654,41 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     }
     log(2, `No class with identifier "${identifier}" found in top-level folder "${topLevelFolderName}"`);
     return null;
+  }
+
+  /**
+   * Build a cache of which identifiers have matching classes in which folders.
+   *
+   * @returns {Promise<Map<string, boolean>>} Map with keys like "FolderName:identifier"
+   * @private
+   */
+  async _buildClassFolderCache() {
+    const cache = new Map();
+    const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
+
+    for (const pack of itemPacks) {
+      let packTopLevelFolder = null;
+      if (pack.folder) {
+        if (pack.folder.depth !== 1) packTopLevelFolder = pack.folder.getParentFolders().at(-1).name;
+        else packTopLevelFolder = pack.folder.name;
+      }
+      if (!packTopLevelFolder) continue;
+
+      try {
+        const index = await pack.getIndex({ fields: ['type', 'system.identifier'] });
+        const classItems = index.filter((e) => (e.type === 'class' || e.type === 'subclass') && e.system?.identifier);
+
+        for (const cls of classItems) {
+          const identifier = cls.system.identifier.toLowerCase();
+          const key = `${packTopLevelFolder}:${identifier}`;
+          cache.set(key, true);
+        }
+      } catch (err) {
+        log(2, `Error indexing pack ${pack.metadata.label}:`, err);
+      }
+    }
+
+    return cache;
   }
 
   /**

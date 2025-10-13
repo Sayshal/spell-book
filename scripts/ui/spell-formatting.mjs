@@ -121,7 +121,7 @@ import { log } from '../logger.mjs';
  * @param {Object} spellList - The spell list to process
  * @returns {ProcessedSpellList} Processed spell list with display data
  */
-export function processSpellListForDisplay(spellList) {
+export function processSpellListForDisplay(spellList, classFolderCache = null, availableSpellLists = null) {
   const processed = foundry.utils.deepClone(spellList);
   processed.isCustomList = !!spellList.document?.flags?.[MODULE.ID]?.isCustom || !!spellList.document?.flags?.[MODULE.ID]?.isDuplicate;
   processed.canRestore = !!(processed.isCustomList && spellList.document.flags?.[MODULE.ID]?.originalUuid);
@@ -129,14 +129,19 @@ export function processSpellListForDisplay(spellList) {
   processed.actorId = spellList.document.flags?.[MODULE.ID]?.actorId;
   processed.isPlayerSpellbook = !!processed.actorId;
   processed.identifier = spellList.document.system?.identifier;
+  const typeKey = spellList.document.system?.type === 'subclass' ? 'TYPES.Item.subclass' : 'TYPES.Item.class';
+  processed.classType = game.i18n.localize(typeKey);
   processed.isMerged = !!spellList.document?.flags?.[MODULE.ID]?.isMerged;
-  processed.isClassSpellList = !processed.isCustomList && !processed.isPlayerSpellbook && !processed.isMerged && !!processed.identifier;
-  if (spellList.spellsByLevel?.length) {
-    processed.spellsByLevel = spellList.spellsByLevel.map((level) => ({
-      ...level,
-      spells: level.spells.map((spell) => processSpellItemForDisplay(spell))
-    }));
+  processed.isClassSpellList = false;
+  if (processed.identifier && !processed.isPlayerSpellbook && !processed.isMerged && classFolderCache && availableSpellLists) {
+    let spellListMeta = availableSpellLists.find((list) => list.uuid === spellList.uuid);
+    if (!spellListMeta || (spellListMeta.isCustom && processed.originalUuid)) if (processed.originalUuid) spellListMeta = availableSpellLists.find((list) => list.uuid === processed.originalUuid);
+    if (spellListMeta?.pack) {
+      const key = `${spellListMeta.pack}:${processed.identifier.toLowerCase()}`;
+      processed.isClassSpellList = classFolderCache.has(key);
+    }
   }
+  if (spellList.spellsByLevel?.length) processed.spellsByLevel = spellList.spellsByLevel.map((level) => ({ ...level, spells: level.spells.map((spell) => processSpellItemForDisplay(spell)) }));
   return processed;
 }
 

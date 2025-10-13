@@ -626,7 +626,7 @@
   "SPELLMANAGER.Buttons.HideLists": "Hide Lists",
   "SPELLMANAGER.Buttons.MergeLists": "Merge Lists",
   "SPELLMANAGER.Buttons.OpenActor": "Open Actor",
-  "SPELLMANAGER.Buttons.OpenClass": "Open Class",
+  "SPELLMANAGER.Buttons.Open": "Open {type}",
   "SPELLMANAGER.Buttons.RemoveSpell": "Remove {name}",
   "SPELLMANAGER.Buttons.Rename": "Rename",
   "SPELLMANAGER.Buttons.Restore": "Restore from Source",

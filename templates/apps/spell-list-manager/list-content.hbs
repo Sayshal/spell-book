@@ -55,6 +55,7 @@
 
 <section class="selected-list-content" role="main" aria-label="{{localize 'SPELLMANAGER.UI.SelectedList'}}">
 	{{#if selectedSpellList}}
+		{{log 'DEBUG' selectedSpellList}}
 		<!-- Selected List Header - Title and action controls -->
 		<div class="selected-list-header">
 			<div class="header-title">
@@ -90,11 +91,12 @@
 						</button>
 					{{/if}}
 
-					<!-- Open Class Button - For class spell lists -->
+					<!-- Open Class/Subclass Button - For class spell lists -->
 					{{#if selectedSpellList.isClassSpellList}}
 						<button type="button" class="open-class-button action-button" data-action="openClass"
-							aria-label="{{localize 'SPELLMANAGER.Buttons.OpenClass'}}">
-							<i class="fas fa-scroll" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.OpenClass"}}
+							aria-label="{{localize 'SPELLMANAGER.Buttons.Open' type=selectedSpellList.classType}}">
+							<i class="fas fa-scroll" aria-hidden="true"></i>
+							{{localize "SPELLMANAGER.Buttons.Open" type=selectedSpellList.classType}}
 						</button>
 					{{/if}}
 
