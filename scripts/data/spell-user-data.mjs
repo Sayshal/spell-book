@@ -325,7 +325,7 @@ export class SpellUserDataJournal {
       const spellUuid = typeof spellOrUuid === 'string' ? spellOrUuid : spellOrUuid?.uuid || spellOrUuid?.compendiumUuid;
       if (!spellUuid) return null;
       let canonicalUuid = spellUuid;
-      if (spellUuid.startsWith('Actor.')) {
+      if (foundry.utils.parseUuid(spellUuid).primaryType === 'Actor') {
         try {
           const spellDoc = fromUuidSync(spellUuid);
           if (spellDoc?._stats?.compendiumSource || spellDoc?.flags?.core?.sourceId) canonicalUuid = spellDoc._stats?.compendiumSource || spellDoc.flags.core.sourceId;
@@ -381,7 +381,7 @@ export class SpellUserDataJournal {
       const spellUuid = typeof spellOrUuid === 'string' ? spellOrUuid : spellOrUuid?.uuid || spellOrUuid?.compendiumUuid;
       if (!spellUuid) return false;
       let canonicalUuid = spellUuid;
-      if (spellUuid.startsWith('Actor.')) {
+      if (foundry.utils.parseUuid(spellUuid).primaryType === 'Actor') {
         try {
           const spellDoc = fromUuidSync(spellUuid);
           if (spellDoc?._stats?.compendiumSource || spellDoc?.flags?.core?.sourceId) canonicalUuid = spellDoc._stats?.compendiumSource || spellDoc.flags.core.sourceId;
@@ -432,7 +432,7 @@ export class SpellUserDataJournal {
     const spellUuid = spell?.compendiumUuid || spell?.uuid;
     if (!spellUuid) return spell;
     let canonicalUuid = spellUuid;
-    if (spellUuid.startsWith('Actor.')) {
+    if (foundry.utils.parseUuid(spellUuid).primaryType === 'Actor') {
       try {
         const spellDoc = fromUuidSync(spellUuid);
         if (spellDoc?._stats?.compendiumSource || spellDoc?.flags?.core?.sourceId) canonicalUuid = spellDoc._stats?.compendiumSource || spellDoc.flags.core.sourceId;

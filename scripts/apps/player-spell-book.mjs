@@ -1411,7 +1411,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /** @inheritdoc */
-  changeTab(tabName, groupName, options = {}) {
+  async changeTab(tabName, groupName, options = {}) {
     const previousTab = this.tabGroups[groupName];
     const isFromWizardTab = previousTab && (previousTab === 'wizardbook' || previousTab.startsWith('wizardbook-'));
     const isToPreparationTab = tabName.endsWith('Tab') && !tabName.startsWith('wizardbook');
@@ -1426,6 +1426,18 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.ui.updateSpellCounts();
     this.ui.updateSpellPreparationTracking();
     this.ui.setupCantripUI();
+    const favoritesEnabled = game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES);
+    if (favoritesEnabled) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      const activeTabElement = this.element.querySelector(`.tab[data-tab="${tabName}"]`);
+      if (activeTabElement) {
+        const favoriteButtons = activeTabElement.querySelectorAll('.spell-favorite-toggle[data-uuid]:not([data-favorites-applied])');
+        if (favoriteButtons.length > 0) {
+          await this._applyFavoriteStatesToButtons(favoriteButtons);
+          favoriteButtons.forEach((button) => button.setAttribute('data-favorites-applied', 'true'));
+        }
+      }
+    }
   }
 
   /**
@@ -2261,10 +2273,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           spellItem.classList.add('in-wizard-spellbook', 'prepared-spell');
         }
         this.render(false);
-        setTimeout(() => {
-          if (activeTab && this.tabGroups['spellbook-tabs'] !== activeTab) {
-            this.changeTab(activeTab, 'spellbook-tabs');
-          }
+        setTimeout(async () => {
+          if (activeTab && this.tabGroups['spellbook-tabs'] !== activeTab) await this.changeTab(activeTab, 'spellbook-tabs');
           collapsedLevels.forEach((levelId) => {
             const levelEl = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
             if (levelEl) {
