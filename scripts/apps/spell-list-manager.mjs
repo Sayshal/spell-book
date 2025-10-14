@@ -970,7 +970,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _setupCheckboxFilters() {
-    const checkboxSelectors = [{ selector: 'input[name="spell-ritual"]', property: 'ritual' }];
+    const checkboxSelectors = [{ selector: 'dnd5e-checkbox[name="filter-ritual"]', property: 'ritual' }];
     for (const { selector, property } of checkboxSelectors) {
       const element = this.element.querySelector(selector);
       if (element) {
@@ -1115,12 +1115,12 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     });
     materialComponentsSelect.id = 'spell-materialComponents';
     const ritualCheckbox = ValidationHelpers.createCheckbox({
-      name: 'spell-ritual',
+      name: 'filter-ritual',
       checked: this.filterState.ritual || false,
       disabled: !this.isEditing,
       ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RitualOnly')
     });
-    ritualCheckbox.id = 'spell-ritual';
+    ritualCheckbox.id = 'filter-ritual';
     const minRangeInput = ValidationHelpers.createNumberInput({
       name: 'spell-min-range',
       value: this.filterState.minRange || '',
