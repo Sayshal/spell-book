@@ -40,15 +40,6 @@
       <span class="title">
         {{spell.name}}
 
-        {{!-- Favorite Star Button --}}
-        {{#if spell.favoriteButton.enabled}}
-          <button type="button" class="spell-favorite-toggle {{#if spell.favoriteButton.favorited}}favorited{{/if}}"
-            data-action="toggleFavorite" data-uuid="{{spell.favoriteButton.uuid}}"
-            data-tooltip="{{spell.favoriteButton.tooltip}}" aria-label="{{spell.favoriteButton.tooltip}}">
-            <i class="{{spell.favoriteButton.iconClass}} fa-star" aria-hidden="true"></i>
-          </button>
-        {{/if}}
-
         {{!-- Spell Tag --}}
         {{#if spell.tag}}
           <span class="tag {{spell.tag.cssClass}}" {{#if spell.tag.tooltip}}data-tooltip="{{spell.tag.tooltip}}"

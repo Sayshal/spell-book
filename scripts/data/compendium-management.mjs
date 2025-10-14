@@ -451,7 +451,32 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
 async function fetchSpellsFromPack(pack, maxLevel) {
   /** @type {Array<FormattedSpellData>} */
   const packSpells = [];
-  const index = await pack.getIndex({ fields: ['type', 'system', 'labels'] });
+  const index = await pack.getIndex({
+    fields: [
+      'type',
+      'labels.activation',
+      'labels.components',
+      'labels.damages',
+      'labels.range',
+      'labels.school',
+      'system.activation.type',
+      'system.activation.value',
+      'system.activities',
+      'system.components.ritual',
+      'system.description.value',
+      'system.duration.concentration',
+      'system.level',
+      'system.materials.consumed',
+      'system.materials.cost',
+      'system.materials.value',
+      'system.properties',
+      'system.range.units',
+      'system.range.value',
+      'system.school',
+      'system.source.book',
+      'system.source.custom'
+    ]
+  });
   const spellEntries = index.filter((e) => e.type === 'spell' && (!maxLevel || e.system?.level <= maxLevel));
   for (const entry of spellEntries) {
     if (!entry.labels) {
@@ -482,7 +507,7 @@ function formatSpellEntry(entry, pack) {
     else topLevelFolderName = pack.folder.name;
   }
   const spell = {
-    uuid: `Compendium.${pack.collection}.Item.${entry._id}`,
+    uuid: foundry.utils.parseUuid(entry.uuid).uuid,
     name: entry.name,
     img: entry.img,
     level: entry.system?.level || 0,

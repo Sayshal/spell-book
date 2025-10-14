@@ -590,9 +590,8 @@ export class SpellbookState {
         const normalizedKey = UIHelpers.getCanonicalSpellUuid(spellKey);
         const sourceClass = spell.system?.sourceClass || spell.sourceClass || classIdentifier;
         const fullKey = `${sourceClass}:${normalizedKey}`;
-        if (!spellDeduplicationMap.has(fullKey)) {
-          spellDeduplicationMap.set(fullKey, spell);
-        } else {
+        if (!spellDeduplicationMap.has(fullKey)) spellDeduplicationMap.set(fullKey, spell);
+        else {
           const existing = spellDeduplicationMap.get(fullKey);
           const currentPriority = this._getSpellDisplayPriority(spell);
           const existingPriority = this._getSpellDisplayPriority(existing);
@@ -615,7 +614,6 @@ export class SpellbookState {
     const processedPreparableSpells = new Set();
     for (const spell of preparableSpells) {
       const level = spell.system.level;
-      const spellName = spell.name.toLowerCase();
       const spellKey = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
       const normalizedKey = UIHelpers.getCanonicalSpellUuid(spellKey);
       if (!processedPreparableSpells.has(normalizedKey)) {
@@ -636,8 +634,48 @@ export class SpellbookState {
         processedSpellIds.add(spell.id || spell.uuid);
       }
     }
-    const compendiumDataPromises = spellItems.map((spell) => DataHelpers.SpellUserDataJournal.getUserDataForSpell(spell.uuid || spell.compendiumUuid, targetUserId, actorId));
-    await Promise.all(compendiumDataPromises);
+    let parsedSpellData = null;
+    if (SPELLBOOK?.preloadedData?.enrichedSpells) {
+      parsedSpellData = {};
+      for (const [key, enrichedSpell] of Object.entries(SPELLBOOK.preloadedData.enrichedSpells)) {
+        const uuid = enrichedSpell.uuid;
+        if (!uuid) continue;
+        parsedSpellData[uuid] = {
+          notes: enrichedSpell.notes || enrichedSpell.filterData?.notes || '',
+          favorited: enrichedSpell.filterData?.favorited || enrichedSpell.favorited || false,
+          usageStats: enrichedSpell.usageStats || null,
+          actorData: enrichedSpell.actorData || {}
+        };
+      }
+    } else {
+      await DataHelpers.SpellUserDataJournal._ensureUserDataInfrastructure(targetUserId);
+      const userPage = await DataHelpers.SpellUserDataJournal._getUserPage(targetUserId);
+      if (userPage) parsedSpellData = DataHelpers.SpellUserDataJournal._parseSpellDataFromHTML(userPage.text.content);
+    }
+    const allSpellsToCache = [
+      ...preparableSpells.map((s) => s._stats?.compendiumSource || s.flags?.core?.sourceId || s.uuid),
+      ...specialModeSpells.map((s) => s._stats?.compendiumSource || s.flags?.core?.sourceId || s.uuid),
+      ...spellItems.map((s) => s.uuid || s.compendiumUuid)
+    ].filter(Boolean);
+    for (const spellUuid of allSpellsToCache) {
+      let canonicalUuid = spellUuid;
+      if (foundry.utils.parseUuid(spellUuid).primaryType === 'Actor') {
+        const spellDoc = fromUuidSync(spellUuid);
+        if (spellDoc?._stats?.compendiumSource || spellDoc?.flags?.core?.sourceId) canonicalUuid = spellDoc._stats?.compendiumSource || spellDoc.flags.core.sourceId;
+      }
+      const quickCacheKey = actorId ? `${targetUserId}:${actorId}:${canonicalUuid}` : `${targetUserId}:${canonicalUuid}`;
+      const originalCacheKey = actorId ? `${targetUserId}:${actorId}:${spellUuid}` : `${targetUserId}:${spellUuid}`;
+      if (DataHelpers.SpellUserDataJournal.cache.has(quickCacheKey) || DataHelpers.SpellUserDataJournal.cache.has(originalCacheKey)) continue;
+      let userData = parsedSpellData?.[canonicalUuid];
+      if (!userData && canonicalUuid !== spellUuid) userData = parsedSpellData?.[spellUuid];
+      const result = !userData
+        ? { notes: '', favorited: false, usageStats: null }
+        : actorId && userData.actorData?.[actorId]
+          ? { ...userData.actorData[actorId], notes: userData.notes }
+          : { notes: userData.notes || '', favorited: false, usageStats: null };
+      DataHelpers.SpellUserDataJournal.cache.set(quickCacheKey, result);
+      if (canonicalUuid !== spellUuid) DataHelpers.SpellUserDataJournal.cache.set(originalCacheKey, result);
+    }
     for (const spell of spellItems) {
       if (spell?.system?.level === undefined) continue;
       const level = spell.system.level;

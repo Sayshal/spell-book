@@ -696,12 +696,12 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     processedSpell.tag = this._getSpellPreparationTag(spell);
     const ariaLabel = spell.preparation.prepared ? game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name }) : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
     const checkbox = ValidationHelpers.createCheckbox({
-      name: `spellPreparation.${spell.compendiumUuid}`,
+      name: `spell-${spell.system.identifier}`,
       checked: spell.preparation.prepared,
       disabled: spell.preparation.disabled,
       ariaLabel: ariaLabel
     });
-    checkbox.id = `prep-${spell.compendiumUuid}`;
+    checkbox.id = `prep-${spell.system.identifier}`;
     checkbox.dataset.uuid = spell.compendiumUuid;
     checkbox.dataset.name = spell.name;
     checkbox.dataset.ritual = spell.filterData?.isRitual || false;
@@ -711,7 +711,25 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     else if (spell.sourceClass) sourceClass = spell.sourceClass;
     else if (spell.preparation?.preparedByOtherClass) sourceClass = spell.preparation.preparedByOtherClass;
     if (sourceClass) checkbox.dataset.sourceClass = sourceClass;
-    else if (spell.preparation?.prepared) log(2, `No source class found for prepared spell: ${spell.name}`);
+    else {
+      const shouldHaveSourceClass = this._shouldSpellHaveSourceClass(spell);
+      if (shouldHaveSourceClass) {
+        const fixedSourceClass = this._attemptToFixSourceClass(spell);
+        if (fixedSourceClass) {
+          log(2, `Auto-fixing missing source class for ${spell.name}: assigning to ${fixedSourceClass}`);
+          checkbox.dataset.sourceClass = fixedSourceClass;
+          if (!this._sourceClassFixQueue) this._sourceClassFixQueue = [];
+          this._sourceClassFixQueue.push({ spellId: spell._id, spellName: spell.name, sourceClass: fixedSourceClass });
+        } else {
+          log(2, `No source class found for prepared spell: ${spell.name}`, {
+            spell,
+            preparation: spell.preparation,
+            sourceItem: spell.preparation?.sourceItem,
+            spellcastingClasses: Object.keys(this.actor.spellcastingClasses || {})
+          });
+        }
+      }
+    }
     if (spell.preparation?.preparedByOtherClass) checkbox.dataset.crossClass = 'true';
     if (spell.preparation.disabled && spell.preparation.disabledReason) checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
     processedSpell.preparationCheckboxHtml = ValidationHelpers.elementToHtml(checkbox);
@@ -724,6 +742,78 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       processedSpell.isInComparison = this.comparisonSpells.has(spell.compendiumUuid);
     }
     return processedSpell;
+  }
+
+  /**
+   * Check if a spell should have a source class.
+   * Only class/subclass spells that are prepared through normal spellcasting need a source class.
+   * Racial spells, feats, and always-prepared/granted spells don't need one.
+   *
+   * @param {Object} spell - The spell to check
+   * @returns {boolean} Whether this spell should have a source class
+   * @private
+   */
+  _shouldSpellHaveSourceClass(spell) {
+    const prep = spell.preparation;
+    if (!prep) return false;
+    if (!prep.prepared) return false;
+    if (prep.alwaysPrepared) return false;
+    if (prep.isGranted) return false;
+    const sourceItemType = prep.sourceItem?.type;
+    if (sourceItemType && sourceItemType !== 'class' && sourceItemType !== 'subclass') return false;
+    return true;
+  }
+
+  /**
+   * Attempt to automatically fix a missing source class.
+   * If the actor has only one spellcasting class, assign it.
+   * If multiple classes exist, try to determine which one based on spell lists.
+   *
+   * @param {Object} spell - The spell to fix
+   * @returns {string|null} The determined source class, or null if couldn't be fixed
+   * @private
+   */
+  _attemptToFixSourceClass(spell) {
+    const spellcastingClasses = this.actor.spellcastingClasses || {};
+    const classIdentifiers = Object.keys(spellcastingClasses);
+    if (classIdentifiers.length === 0) return null;
+    if (classIdentifiers.length === 1) return classIdentifiers[0];
+    if (this._stateManager?.classSpellData) {
+      for (const classIdentifier of classIdentifiers) {
+        const classData = this._stateManager.classSpellData[classIdentifier];
+        if (classData?.spells) {
+          const spellUuid = spell.compendiumUuid || spell.uuid;
+          const isInClassList = classData.spells.some((s) => s.compendiumUuid === spellUuid || s.uuid === spellUuid);
+          if (isInClassList) return classIdentifier;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Apply queued source class fixes to spell items.
+   * Should be called after processing all spells for display.
+   *
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _applySourceClassFixes() {
+    if (!this._sourceClassFixQueue || this._sourceClassFixQueue.length === 0) return;
+    const fixes = this._sourceClassFixQueue;
+    this._sourceClassFixQueue = [];
+    log(2, `Applying ${fixes.length} source class fixes...`);
+    const updates = fixes.map((fix) => ({ _id: fix.spellId, 'system.sourceClass': fix.sourceClass }));
+    try {
+      await this.actor.updateEmbeddedDocuments('Item', updates);
+      log(
+        2,
+        `Successfully fixed source class for ${fixes.length} spells:`,
+        fixes.map((f) => `${f.spellName} → ${f.sourceClass}`)
+      );
+    } catch (error) {
+      log(1, 'Error applying source class fixes:', error);
+    }
   }
 
   /**
@@ -1048,6 +1138,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       };
       processedSpells.push(finalSpell);
     }
+    await this._applySourceClassFixes();
     return processedSpells;
   }
 
@@ -1411,7 +1502,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /** @inheritdoc */
-  changeTab(tabName, groupName, options = {}) {
+  async changeTab(tabName, groupName, options = {}) {
     const previousTab = this.tabGroups[groupName];
     const isFromWizardTab = previousTab && (previousTab === 'wizardbook' || previousTab.startsWith('wizardbook-'));
     const isToPreparationTab = tabName.endsWith('Tab') && !tabName.startsWith('wizardbook');
@@ -1426,6 +1517,18 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.ui.updateSpellCounts();
     this.ui.updateSpellPreparationTracking();
     this.ui.setupCantripUI();
+    const favoritesEnabled = game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES);
+    if (favoritesEnabled) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      const activeTabElement = this.element.querySelector(`.tab[data-tab="${tabName}"]`);
+      if (activeTabElement) {
+        const favoriteButtons = activeTabElement.querySelectorAll('.spell-favorite-toggle[data-uuid]:not([data-favorites-applied])');
+        if (favoriteButtons.length > 0) {
+          await this._applyFavoriteStatesToButtons(favoriteButtons);
+          favoriteButtons.forEach((button) => button.setAttribute('data-favorites-applied', 'true'));
+        }
+      }
+    }
   }
 
   /**
@@ -2261,10 +2364,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           spellItem.classList.add('in-wizard-spellbook', 'prepared-spell');
         }
         this.render(false);
-        setTimeout(() => {
-          if (activeTab && this.tabGroups['spellbook-tabs'] !== activeTab) {
-            this.changeTab(activeTab, 'spellbook-tabs');
-          }
+        setTimeout(async () => {
+          if (activeTab && this.tabGroups['spellbook-tabs'] !== activeTab) await this.changeTab(activeTab, 'spellbook-tabs');
           collapsedLevels.forEach((levelId) => {
             const levelEl = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
             if (levelEl) {
