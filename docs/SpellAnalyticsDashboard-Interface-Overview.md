@@ -1,3 +1,5 @@
+:loudspeaker: NOTE: Under construction - may be incomplete! :loudspeaker:
+
 # SpellAnalyticsDashboard Interface Overview
 
 ## Dashboard Features

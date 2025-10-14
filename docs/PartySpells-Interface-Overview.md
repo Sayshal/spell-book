@@ -1,3 +1,5 @@
+:loudspeaker: NOTE: Under construction - may be incomplete! :loudspeaker:
+
 # PartySpells Interface Overview
 
 ## Party Coordination Features

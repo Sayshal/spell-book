@@ -1,3 +1,5 @@
+:loudspeaker: NOTE: Under construction - may be incomplete! :loudspeaker:
+
 # Modifying Existing Spell Lists
 
 ## Step-by-Step Spell List Editing

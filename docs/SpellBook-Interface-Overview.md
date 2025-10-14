@@ -1,3 +1,5 @@
+:loudspeaker: NOTE: Under construction - may be incomplete! :loudspeaker:
+
 # SpellBook Interface Overview
 
 ## Interface Components

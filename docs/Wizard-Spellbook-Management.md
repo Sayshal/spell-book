@@ -1,3 +1,5 @@
+:loudspeaker: NOTE: Under construction - may be incomplete! :loudspeaker:
+
 # Wizard Spellbook Management
 
 ## Wizard-Specific Features

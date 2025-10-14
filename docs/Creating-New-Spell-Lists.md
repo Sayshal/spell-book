@@ -1,3 +1,5 @@
+:loudspeaker: NOTE: Under construction - may be incomplete! :loudspeaker:
+
 # Creating New Spell Lists
 
 ## Custom Spell List Creation

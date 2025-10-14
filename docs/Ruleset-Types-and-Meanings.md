@@ -1,3 +1,5 @@
+:loudspeaker: NOTE: Under construction - may be incomplete! :loudspeaker:
+
 # Ruleset Types and What They Mean
 
 ## Rule Enforcement Modes

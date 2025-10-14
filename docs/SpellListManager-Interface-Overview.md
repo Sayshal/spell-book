@@ -1,3 +1,5 @@
+:loudspeaker: NOTE: Under construction - may be incomplete! :loudspeaker:
+
 # SpellListManager Interface Overview
 
 ## Accessing Spell List Manager
