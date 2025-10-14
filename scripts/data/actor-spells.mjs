@@ -117,27 +117,32 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
     }
     const index = await pack.getIndex({
       fields: [
-        'name',
         'img',
+        'name',
         'type',
-        'system.level',
-        'system.school',
-        'system.preparation',
-        'system.activation',
-        'system.range',
-        'system.duration',
-        'system.properties',
-        'system.materials',
-        'system.activities',
-        'system.description.value',
-        'system.components',
+        'flags.core.sourceId',
         'labels.activation',
-        'labels.range',
-        'labels.duration',
-        'labels.school',
         'labels.components',
         'labels.damages',
-        'flags.core'
+        'labels.range',
+        'labels.school',
+        'system.activation.type',
+        'system.activation.value',
+        'system.activities',
+        'system.components.ritual',
+        'system.description.value',
+        'system.duration.concentration',
+        'system.level',
+        'system.materials.consumed',
+        'system.materials.cost',
+        'system.materials.value',
+        'system.preparation',
+        'system.properties',
+        'system.range.units',
+        'system.range.value',
+        'system.school',
+        'system.source.book',
+        'system.source.custom'
       ]
     });
 
