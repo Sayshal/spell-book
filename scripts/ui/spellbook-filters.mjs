@@ -109,7 +109,6 @@ import * as ValidationHelpers from '../validation/_module.mjs';
  * field-based queries while also providing traditional dropdown and checkbox filtering.
  * It includes performance optimizations through state caching and efficient DOM updates.
  */
-
 export class SpellbookFilterHelper {
   /**
    * Create a new filter helper.
@@ -373,7 +372,7 @@ export class SpellbookFilterHelper {
   _filterByBasicProperties(spells, filterState) {
     const { name, level, school, castingTime } = filterState;
     let filtered = spells;
-    if (name) filtered = this._filterByEnhancedName(filtered, name);
+    if (name && name.trim()) filtered = this._filterByEnhancedName(filtered, name);
     if (level) {
       const levelValue = parseInt(level);
       filtered = filtered.filter((spell) => spell.level === levelValue);

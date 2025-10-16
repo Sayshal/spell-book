@@ -2535,26 +2535,6 @@
     }
   }
 
-  .merge-spell-lists-form {
-    .checkbox-label {
-      gap: var(--spell-book-spacing-md);
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-
-      span {
-        font-weight: normal;
-      }
-    }
-
-    .hint {
-      margin-top: var(--spell-book-spacing-sm);
-      color: var(--spell-book-text-tertiary);
-      font-style: italic;
-      font-size: var(--spell-book-font-sm);
-    }
-  }
-
   .list-controls {
     margin-top: var(--spell-book-spacing-xl);
     padding: var(--spell-book-spacing-md);
@@ -4374,46 +4354,6 @@
           }
         }
       }
-    }
-  }
-
-  /* ----------------------------------------- */
-  /*  Merge Spell List Dialog                  */
-  /* ----------------------------------------- */
-  &.merge-spell-lists-form {
-    .window-content {
-      padding: 1rem;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: bold;
-      white-space: nowrap;
-    }
-
-    select {
-      width: auto;
-      min-width: 12.5rem;
-      max-width: 100%;
-      margin-bottom: 0.5rem;
-    }
-
-    input[type='text'] {
-      width: 100%;
-      margin-bottom: 0.5rem;
-    }
-
-    .notes {
-      margin: 0.5rem 0 0;
-      color: var(--spell-book-text-tertiary);
-      font-style: italic;
-      font-size: 0.875rem;
-    }
-
-    .validation-error {
-      margin: 0.5rem 0 0;
-      font-size: 0.875rem;
     }
   }
 
@@ -6826,7 +6766,8 @@
 /* ----------------------------------------- */
 /*  Create Spell List Dialog                 */
 /* ----------------------------------------- */
-.create-list-dialog {
+.create-list-dialog,
+.merge-spell-lists-dialog {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -6856,6 +6797,12 @@
   p.hint {
     position: relative;
     font-size: var(--spell-book-font-md);
+  }
+
+  .tag {
+    color: var(--spell-book-text-primary);
+    font-weight: 500;
+    font-size: 0.75rem;
   }
 }
 

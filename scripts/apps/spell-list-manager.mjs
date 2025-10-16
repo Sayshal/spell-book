@@ -896,10 +896,23 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const nameInput = this.element.querySelector('input[name="spell-search"]');
     if (nameInput) {
       nameInput.addEventListener('input', (event) => {
+        const previousValue = this.filterState.name;
         this.filterState.name = event.target.value;
         clearTimeout(this._nameFilterTimer);
         this._nameFilterTimer = setTimeout(() => {
-          this.applyFilters();
+          const wasFiltered = previousValue && previousValue.trim();
+          const isFiltered = this.filterState.name && this.filterState.name.trim();
+          if (wasFiltered !== isFiltered) {
+            const currentInput = this.element.querySelector('input[name="spell-search"]');
+            const cursorPosition = currentInput?.selectionStart;
+            this.render(false, { parts: ['availableSpells'] }).then(() => {
+              const newInput = this.element.querySelector('input[name="spell-search"]');
+              if (newInput && cursorPosition !== undefined) {
+                newInput.focus();
+                newInput.setSelectionRange(cursorPosition, cursorPosition);
+              }
+            });
+          } else this.applyFilters();
         }, 200);
       });
     }
@@ -1242,37 +1255,98 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _prepareMergeListFormData() {
-    const sourceListOptions = this._buildSpellListOptions('SPELLMANAGER.MergeLists.SelectSourceList');
-    const sourceListSelect = ValidationHelpers.createSelect({
-      name: 'sourceList',
-      options: sourceListOptions,
-      required: true,
-      ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.SourceListLabel')
+    // Build spell list options organized by type
+    const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
+    const actorOwnedLists = this.availableSpellLists.filter((list) => list.isActorOwned && !hiddenLists.includes(list.uuid));
+    const customLists = this.availableSpellLists.filter(
+      (list) => !list.isActorOwned && !list.isMerged && (list.isCustom || list.document?.flags?.[MODULE.ID]?.isNewList) && !hiddenLists.includes(list.uuid)
+    );
+    const mergedLists = this.availableSpellLists.filter((list) => !list.isActorOwned && list.isMerged && !hiddenLists.includes(list.uuid));
+    const standardLists = this.availableSpellLists.filter(
+      (list) => !list.isActorOwned && !list.isCustom && !list.isMerged && !list.document?.flags?.[MODULE.ID]?.isNewList && !hiddenLists.includes(list.uuid)
+    );
+
+    // Create multi-select options with group labels
+    const multiSelectOptions = [];
+
+    // Add standard lists
+    standardLists.forEach((list) => {
+      multiSelectOptions.push({
+        value: list.uuid,
+        label: list.name,
+        group: 'SPELLMANAGER.MergeLists.Groups.StandardLists'
+      });
     });
-    sourceListSelect.id = 'source-list';
-    const copyFromListOptions = this._buildSpellListOptions('SPELLMANAGER.MergeLists.SelectCopyFromList');
-    const copyFromListSelect = ValidationHelpers.createSelect({
-      name: 'copyFromList',
-      options: copyFromListOptions,
-      required: true,
-      ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.CopyFromListLabel')
+
+    // Add custom lists
+    customLists.forEach((list) => {
+      multiSelectOptions.push({
+        value: list.uuid,
+        label: list.name,
+        group: 'SPELLMANAGER.MergeLists.Groups.CustomLists'
+      });
     });
-    copyFromListSelect.id = 'copy-from-list';
+
+    // Add merged lists
+    mergedLists.forEach((list) => {
+      multiSelectOptions.push({
+        value: list.uuid,
+        label: list.name,
+        group: 'SPELLMANAGER.MergeLists.Groups.MergedLists'
+      });
+    });
+
+    // Add actor-owned lists
+    actorOwnedLists.forEach((list) => {
+      const label = `${list.name} (${list.actorName || game.i18n.localize('SPELLMANAGER.ListSource.Character')})`;
+      multiSelectOptions.push({
+        value: list.uuid,
+        label: label,
+        group: 'SPELLMANAGER.MergeLists.Groups.PlayerSpellbooks'
+      });
+    });
+
+    // Determine which groups have options
+    const allPossibleGroups = [
+      'SPELLMANAGER.MergeLists.Groups.StandardLists',
+      'SPELLMANAGER.MergeLists.Groups.CustomLists',
+      'SPELLMANAGER.MergeLists.Groups.MergedLists',
+      'SPELLMANAGER.MergeLists.Groups.PlayerSpellbooks'
+    ];
+    const groupsWithOptions = allPossibleGroups.filter((groupKey) => {
+      return multiSelectOptions.some((option) => option.group === groupKey);
+    });
+
+    // Create the multi-select element
+    const spellListsMultiSelect = ValidationHelpers.createMultiSelect(multiSelectOptions, {
+      name: 'spellListsToMerge',
+      selectedValues: [],
+      groups: groupsWithOptions,
+      ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.SpellListsLabel'),
+      cssClass: 'spell-lists-multi-select'
+    });
+    spellListsMultiSelect.id = 'spell-lists-to-merge';
+
+    // Create merged list name input (now required)
     const mergedListNameInput = ValidationHelpers.createTextInput({
       name: 'mergedListName',
       placeholder: game.i18n.localize('SPELLMANAGER.MergeLists.MergedListNamePlaceholder'),
-      ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.MergedListNameLabel')
+      ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.MergedListNameLabel'),
+      required: true
     });
     mergedListNameInput.id = 'merged-list-name';
+
+    // Create hide source lists checkbox
     const hideSourceListsCheckbox = ValidationHelpers.createCheckbox({
       name: 'hideSourceLists',
       checked: false,
-      ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.HideSourceListsLabel')
+      ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.HideSourceListsLabel'),
+      cssClass: 'dnd5e2'
     });
     hideSourceListsCheckbox.id = 'hide-source-lists';
+
     return {
-      sourceListSelectHtml: ValidationHelpers.elementToHtml(sourceListSelect),
-      copyFromListSelectHtml: ValidationHelpers.elementToHtml(copyFromListSelect),
+      spellListsMultiSelectHtml: ValidationHelpers.elementToHtml(spellListsMultiSelect),
       mergedListNameInputHtml: ValidationHelpers.elementToHtml(mergedListNameInput),
       hideSourceListsCheckboxHtml: ValidationHelpers.elementToHtml(hideSourceListsCheckbox)
     };
@@ -1391,7 +1465,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         this._setupCreateListDialogListeners(dialogElement);
       }
     });
-
     return { result, formData };
   }
 
@@ -1404,53 +1477,50 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   async _showMergeListsDialog() {
     let formData = null;
     const formElements = this._prepareMergeListFormData();
-    const context = {
-      actorOwnedLists: this.availableSpellLists.filter((list) => list.isActorOwned),
-      customLists: this.availableSpellLists.filter((list) => !list.isActorOwned && !list.isMerged && (list.isCustom || list.document?.flags?.[MODULE.ID]?.isNewList)),
-      mergedLists: this.availableSpellLists.filter((list) => !list.isActorOwned && list.isMerged),
-      standardLists: this.availableSpellLists.filter((list) => !list.isActorOwned && !list.isCustom && !list.isMerged && !list.document?.flags?.[MODULE.ID]?.isNewList),
-      hasActorOwnedLists: false,
-      hasCustomLists: false,
-      hasMergedLists: false,
-      hasStandardLists: false,
-      formElements
-    };
-    context.hasActorOwnedLists = context.actorOwnedLists.length > 0;
-    context.hasCustomLists = context.customLists.length > 0;
-    context.hasMergedLists = context.mergedLists.length > 0;
-    context.hasStandardLists = context.standardLists.length > 0;
-    const content = await renderTemplate(TEMPLATES.DIALOGS.MERGE_SPELL_LISTS, context);
+    const content = await renderTemplate(TEMPLATES.DIALOGS.MERGE_SPELL_LISTS, { formElements });
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = content;
     const result = await DialogV2.wait({
-      window: { title: game.i18n.localize('SPELLMANAGER.MergeLists.DialogTitle'), icon: 'fas fa-code-merge' },
-      content: content,
-      classes: ['spell-book', 'merge-spell-lists-form'],
+      window: {
+        title: game.i18n.localize('SPELLMANAGER.MergeLists.DialogTitle'),
+        icon: 'fas fa-code-merge',
+        resizable: false,
+        minimizable: false,
+        positioned: true
+      },
+      position: { width: 650, height: 'auto' },
+      content: wrapper,
       buttons: [
         {
           label: game.i18n.localize('SPELLMANAGER.Buttons.MergeLists'),
           icon: 'fas fa-code-merge',
           action: 'merge',
+          default: false,
+          disabled: true,
           callback: (_event, _target, form) => {
             const formElement = form?.querySelector ? form : form.element;
-            const sourceListSelect = formElement.querySelector('[name="sourceList"]');
-            const copyFromListSelect = formElement.querySelector('[name="copyFromList"]');
+            const spellListsMultiSelect = formElement.querySelector('[name="spellListsToMerge"]');
             const mergedListNameInput = formElement.querySelector('[name="mergedListName"]');
             const hideSourceListsCheckbox = formElement.querySelector('[name="hideSourceLists"]');
-            if (!sourceListSelect.value || !copyFromListSelect.value) return false;
-            if (sourceListSelect.value === copyFromListSelect.value) {
-              const errorElement = formElement.querySelector('.validation-error');
-              if (errorElement) errorElement.style.display = 'block';
+            const errorElement = formElement.querySelector('.validation-error');
+            const selectedListUuids = spellListsMultiSelect?.value;
+            if (selectedListUuids.length < 2) {
+              if (errorElement) {
+                errorElement.textContent = game.i18n.localize('SPELLMANAGER.MergeLists.MinimumListsError');
+                errorElement.style.display = 'block';
+              }
               return false;
             }
-            let mergedListName = mergedListNameInput.value.trim();
+            const mergedListName = mergedListNameInput.value.trim();
             if (!mergedListName) {
-              const sourceList = this.availableSpellLists.find((list) => list.uuid === sourceListSelect.value);
-              mergedListName = game.i18n.format('SPELLMANAGER.MergeLists.DefaultMergedName', {
-                sourceName: sourceList.name
-              });
+              if (errorElement) {
+                errorElement.textContent = game.i18n.localize('SPELLMANAGER.MergeLists.NameRequiredError');
+                errorElement.style.display = 'block';
+              }
+              return false;
             }
             formData = {
-              sourceListUuid: sourceListSelect.value,
-              copyFromListUuid: copyFromListSelect.value,
+              spellListUuids: selectedListUuids,
               mergedListName: mergedListName,
               hideSourceLists: hideSourceListsCheckbox ? hideSourceListsCheckbox.checked : false
             };
@@ -1461,9 +1531,15 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       ],
       default: 'cancel',
       rejectClose: false,
-      render: (_event, target, _form) => {
+      render: async (_event, target, _form) => {
         const dialogElement = target.querySelector ? target : target.element;
+        const multiSelect = dialogElement.querySelector('multi-select');
+        if (multiSelect) {
+          await customElements.whenDefined('multi-select');
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+        }
         this._setupMergeListsDialogListeners(dialogElement);
+        target.setPosition({ width: 650, height: 'auto' });
       }
     });
     return { result, formData };
@@ -1569,23 +1645,24 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _setupMergeListsDialogListeners(target) {
-    const sourceListSelect = target.querySelector('#source-list');
-    const copyFromListSelect = target.querySelector('#copy-from-list');
+    const spellListsMultiSelect = target.querySelector('[name="spellListsToMerge"]');
+    const mergedListNameInput = target.querySelector('[name="mergedListName"]');
     const mergeButton = target.querySelector('button[data-action="merge"]');
     const errorElement = target.querySelector('.validation-error');
-    const validateSelections = () => {
-      const sourceValue = sourceListSelect.value;
-      const copyFromValue = copyFromListSelect.value;
-      const hasBothSelections = sourceValue && copyFromValue;
-      const sameListSelected = sourceValue === copyFromValue;
-      if (errorElement) errorElement.style.display = sameListSelected && hasBothSelections ? 'block' : 'none';
-      mergeButton.disabled = !hasBothSelections || sameListSelected;
+    const validateForm = () => {
+      if (errorElement) errorElement.style.display = 'none';
+      let selectedCount = 0;
+      if (spellListsMultiSelect) {
+        const tagsContainer = spellListsMultiSelect.querySelector('.tags.input-element-tags');
+        if (tagsContainer) selectedCount = tagsContainer.querySelectorAll('.tag').length;
+      }
+      const hasName = mergedListNameInput ? mergedListNameInput.value.trim().length > 0 : false;
+      const isValid = selectedCount >= 2 && hasName;
+      if (mergeButton) mergeButton.disabled = !isValid;
     };
-    if (sourceListSelect && copyFromListSelect) {
-      sourceListSelect.addEventListener('change', validateSelections);
-      copyFromListSelect.addEventListener('change', validateSelections);
-      validateSelections();
-    }
+    if (spellListsMultiSelect) spellListsMultiSelect.addEventListener('change', validateForm);
+    if (mergedListNameInput) mergedListNameInput.addEventListener('input', validateForm);
+    validateForm();
   }
 
   /**
@@ -1694,6 +1771,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Create a new spell list.
    *
+   * @param formData - Necessary data to build the temporary form.
    * @returns {Promise<void>}
    * @private
    */
@@ -1711,23 +1789,31 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    *
    * @param {string} sourceListUuid - UUID of the source spell list
    * @param {string} copyFromListUuid - UUID of the list to copy from
+   * @param spellListUuids
    * @param {string} mergedListName - Name for the merged list
    * @param {boolean} [hideSourceLists=false] - Whether to hide source lists after merge
    * @returns {Promise<void>}
    * @private
    */
-  async _mergeListsCallback(sourceListUuid, copyFromListUuid, mergedListName, hideSourceLists = false) {
+  async _mergeListsCallback(spellListUuids, mergedListName, hideSourceLists = false) {
     try {
-      const mergedList = await DataHelpers.createMergedSpellList(sourceListUuid, copyFromListUuid, mergedListName);
+      const mergedList = await DataHelpers.createMergedSpellList(spellListUuids, mergedListName);
       if (mergedList) {
         if (hideSourceLists) {
           const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
-          const sourceList = this.availableSpellLists.find((l) => l.uuid === sourceListUuid);
-          const copyFromList = this.availableSpellLists.find((l) => l.uuid === copyFromListUuid);
           const listsToHide = [];
-          if (sourceList && !sourceList.isActorOwned && !hiddenLists.includes(sourceListUuid)) listsToHide.push(sourceListUuid);
-          if (copyFromList && !copyFromList.isActorOwned && !hiddenLists.includes(copyFromListUuid)) listsToHide.push(copyFromListUuid);
-          if (listsToHide.length > 0) await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, [...hiddenLists, ...listsToHide]);
+
+          // Check each source list to see if it should be hidden
+          for (const uuid of spellListUuids) {
+            const sourceList = this.availableSpellLists.find((l) => l.uuid === uuid);
+            if (sourceList && !sourceList.isActorOwned && !hiddenLists.includes(uuid)) {
+              listsToHide.push(uuid);
+            }
+          }
+
+          if (listsToHide.length > 0) {
+            await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, [...hiddenLists, ...listsToHide]);
+          }
         }
         await this.loadData();
         await this.selectSpellList(mergedList.uuid);
@@ -1783,14 +1869,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (!element) return;
     const spellUuid = element.dataset.uuid;
     if (!this.selectedSpellList || !this.isEditing) return;
-    const uuidExists = this.selectedSpellList.spellUuids.includes(spellUuid);
-    const spellExists = this.selectedSpellList.spells.some((spell) => spell.uuid === spellUuid || spell.compendiumUuid === spellUuid);
     log(3, `Removing spell: ${spellUuid} from list`);
     this.pendingChanges.removed.add(spellUuid);
     this.pendingChanges.added.delete(spellUuid);
-    const originalUuidCount = this.selectedSpellList.spellUuids.length;
     this.selectedSpellList.spellUuids = this.selectedSpellList.spellUuids.filter((uuid) => uuid !== spellUuid);
-    const originalSpellCount = this.selectedSpellList.spells.length;
     this.selectedSpellList.spells = this.selectedSpellList.spells.filter((spell) => spell.uuid !== spellUuid && spell.compendiumUuid !== spellUuid);
     this.selectedSpellList.spellsByLevel = DataHelpers.organizeSpellsByLevel(this.selectedSpellList.spells);
     this._ensureSpellIcons();
@@ -1838,9 +1920,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const document = this.selectedSpellList.document;
     const originalSpells = Array.from(document.system.spells || []);
     const currentSpells = new Set(originalSpells);
-    for (const spellUuid of this.pendingChanges.removed) {
-      const wasDeleted = currentSpells.delete(spellUuid);
-    }
     log(3, `Processing ${this.pendingChanges.added.size} spell additions`);
     for (const spellUuid of this.pendingChanges.added) currentSpells.add(spellUuid);
     await document.update({ 'system.spells': Array.from(currentSpells) });
@@ -2238,7 +2317,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   static async handleMergeLists(_event, _form) {
     if (this.availableSpellLists.length < 2) return;
     const { result, formData } = await this._showMergeListsDialog();
-    if (result === 'merge' && formData) await this._mergeListsCallback(formData.sourceListUuid, formData.copyFromListUuid, formData.mergedListName, formData.hideSourceLists);
+    if (result === 'merge' && formData) {
+      await this._mergeListsCallback(formData.spellListUuids, formData.mergedListName, formData.hideSourceLists);
+    }
   }
 
   /**

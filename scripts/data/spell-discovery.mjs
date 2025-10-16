@@ -136,13 +136,16 @@ export async function getClassSpellList(className, classUuid, actor) {
     const preloadedData = DataHelpers.getPreloadedData();
     if (preloadedData && preloadedData.spellLists.length > 0) {
       log(3, `Checking ${preloadedData.spellLists.length} preloaded spell lists for ${classIdentifier}`);
-      const preloadedMatch = preloadedData.spellLists.find((list) => {
-        if (list.identifier?.toLowerCase() === classIdentifier) {
-          if (topLevelFolderName && list.pack) return list.pack.toLowerCase().includes(topLevelFolderName.toLowerCase());
-          return true;
-        }
-        return false;
-      });
+      const matchingLists = preloadedData.spellLists.filter((list) => list.identifier?.toLowerCase() === classIdentifier);
+      let preloadedMatch = null;
+      if (topLevelFolderName && matchingLists.length > 0) {
+        preloadedMatch = matchingLists.find((list) => list.pack && list.pack.toLowerCase().includes(topLevelFolderName.toLowerCase()));
+        if (preloadedMatch) log(3, `Found spell list from preferred source "${topLevelFolderName}": ${preloadedMatch.name}`);
+      }
+      if (!preloadedMatch && matchingLists.length > 0) {
+        preloadedMatch = matchingLists[0];
+        if (topLevelFolderName) log(2, `No spell list found from source "${topLevelFolderName}" for ${classIdentifier}, using fallback: ${preloadedMatch.name} from ${preloadedMatch.pack}`);
+      }
       if (preloadedMatch && preloadedMatch.spellCount > 0) {
         log(3, `Found preloaded spell list for ${classIdentifier}: ${preloadedMatch.name} (${preloadedMatch.spellCount} spells)`);
         try {
@@ -219,6 +222,7 @@ function getFolderNameFromPack(source) {
  * Find spell list by identifier across all journal packs.
  * Searches all journal entry packs for spell list pages matching
  * the specified type and identifier for spell list discovery.
+ * Only searches packs that are enabled in compendium settings.
  *
  * @param {string} type - Type of spell list ('class' or 'subclass')
  * @param {string} identifier - Identifier to search for in spell lists
@@ -227,7 +231,10 @@ function getFolderNameFromPack(source) {
  * @private
  */
 async function findSpellListByIdentifier(type, identifier, customMappings) {
-  const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
+  const journalPacks = Array.from(game.packs).filter((p) => {
+    if (p.metadata.type !== 'JournalEntry') return false;
+    return DataHelpers.shouldIndexCompendium(p);
+  });
   for (const pack of journalPacks) {
     const spellList = await searchPackForSpellList(pack, type, identifier, customMappings);
     if (spellList) return spellList;
@@ -373,6 +380,7 @@ export function calculateMaxSpellLevel(classItem, actor) {
  * Find spell list by top-level folder name and identifier.
  * Searches for spell lists within packs that match the specified
  * top-level folder name and class identifier for source-specific matching.
+ * Only searches packs that are enabled in compendium settings.
  *
  * @param {string} topLevelFolderName - Top-level folder name to match
  * @param {string} identifier - Class identifier to match
@@ -381,7 +389,10 @@ export function calculateMaxSpellLevel(classItem, actor) {
  * @private
  */
 async function getSpellListFromFolder(topLevelFolderName, identifier, customMappings) {
-  const journalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
+  const journalPacks = Array.from(game.packs).filter((p) => {
+    if (p.metadata.type !== 'JournalEntry') return false;
+    return DataHelpers.shouldIndexCompendium(p);
+  });
   for (const pack of journalPacks) {
     let packTopLevelFolder = null;
     if (pack.folder) packTopLevelFolder = pack.folder.name;
