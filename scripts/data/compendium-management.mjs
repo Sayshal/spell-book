@@ -671,23 +671,44 @@ export async function findClassIdentifiers() {
 }
 
 /**
- * Create a merged spell list from two existing spell lists.
- * Combines spells from a source list and a copy-from list into
- * a new merged spell list with proper tracking metadata.
+ * Create a merged spell list from multiple existing spell lists.
+ * Combines spells from all provided spell lists into a new merged spell list
+ * with proper tracking metadata. Automatically removes duplicates.
  *
- * @param {string} sourceListUuid - UUID of the source spell list
- * @param {string} copyFromListUuid - UUID of the list to copy spells from
+ * @param {Array<string>} spellListUuids - Array of UUIDs of spell lists to merge
  * @param {string} mergedListName - Name for the merged list
  * @returns {Promise<JournalEntryPage>} The created merged spell list page
  */
-export async function createMergedSpellList(sourceListUuid, copyFromListUuid, mergedListName) {
-  const sourceList = await fromUuid(sourceListUuid);
-  const copyFromList = await fromUuid(copyFromListUuid);
-  if (!sourceList || !copyFromList) throw new Error('Unable to load source or copy-from spell lists');
-  const sourceSpells = new Set(sourceList.system.spells || []);
-  const copyFromSpells = new Set(copyFromList.system.spells || []);
-  const mergedSpells = new Set([...sourceSpells, ...copyFromSpells]);
-  const identifier = sourceList.system?.identifier || 'merged';
+export async function createMergedSpellList(spellListUuids, mergedListName) {
+  if (!Array.isArray(spellListUuids) || spellListUuids.length < 2) {
+    throw new Error('At least two spell lists are required to merge');
+  }
+
+  // Load all spell lists
+  const spellLists = [];
+  for (const uuid of spellListUuids) {
+    const list = await fromUuid(uuid);
+    if (!list) throw new Error(`Unable to load spell list: ${uuid}`);
+    spellLists.push(list);
+  }
+
+  // Merge all spells from all lists into a single set (removes duplicates)
+  const mergedSpells = new Set();
+  for (const list of spellLists) {
+    const spells = list.system.spells || [];
+    spells.forEach((spell) => mergedSpells.add(spell));
+  }
+
+  // Use the identifier from the first list, or default to 'merged'
+  const identifier = spellLists[0].system?.identifier || 'merged';
+
+  // Create description listing all source lists
+  const listNames = spellLists.map((list) => list.name).join(', ');
+  const description = game.i18n.format('SPELLMANAGER.CreateList.MultiMergedDescription', {
+    listNames: listNames,
+    count: spellLists.length
+  });
+
   const mergedFolder = await getOrCreateMergedFolder();
   const journalData = {
     name: mergedListName,
@@ -696,17 +717,25 @@ export async function createMergedSpellList(sourceListUuid, copyFromListUuid, me
       {
         name: mergedListName,
         type: 'spells',
-        flags: { [MODULE.ID]: { isCustom: true, isMerged: true, isDuplicate: false, creationDate: Date.now(), sourceListUuid: sourceListUuid, copyFromListUuid: copyFromListUuid } },
+        flags: {
+          [MODULE.ID]: {
+            isCustom: true,
+            isMerged: true,
+            isDuplicate: false,
+            creationDate: Date.now(),
+            sourceListUuids: spellListUuids
+          }
+        },
         system: {
           identifier: identifier.toLowerCase(),
-          description: game.i18n.format('SPELLMANAGER.CreateList.MergedDescription', { sourceList: sourceList.name, copyFromList: copyFromList.name }),
+          description: description,
           spells: Array.from(mergedSpells)
         }
       }
     ]
   };
   const journal = await JournalEntry.create(journalData, { pack: MODULE.PACK.SPELLS });
-  log(3, `Created merged spell list: ${mergedListName} with ${mergedSpells.size} spells in folder`);
+  log(3, `Created merged spell list: ${mergedListName} with ${mergedSpells.size} spells from ${spellLists.length} source lists`);
   return journal.pages.contents[0];
 }
 

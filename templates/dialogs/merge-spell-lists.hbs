@@ -3,15 +3,14 @@
  * Merge Spell Lists Dialog Template
  *
  * PURPOSE:
- * Form dialog for merging two spell lists into a new combined list. Provides
- * source list selection, name configuration, and options for source list
+ * Form dialog for merging multiple spell lists into a new combined list. Provides
+ * multi-select for source lists, mandatory name configuration, and options for source list
  * visibility management. Includes validation and guidance for spell list
  * merging operations with error handling.
  *
  * CONTEXT REQUIREMENTS:
  * @param {Object} formElements - Pre-rendered form element HTML
- * @param {string} formElements.sourceListSelectHtml - Source list dropdown HTML
- * @param {string} formElements.copyFromListSelectHtml - Secondary list dropdown HTML
+ * @param {string} formElements.spellListsMultiSelectHtml - Multi-select for spell lists HTML
  * @param {string} formElements.mergedListNameInputHtml - Merged list name input HTML
  * @param {string} formElements.hideSourceListsCheckboxHtml - Hide sources checkbox HTML
  *
@@ -23,10 +22,10 @@
  * - Hidden validation error section for dynamic error display
  *
  * CUSTOMIZATION POINTS:
- * - Source list selection from available spell lists
- * - Custom naming for merged list results
+ * - Multi-select for choosing any number of spell lists to merge
+ * - Mandatory custom naming for merged list results
  * - Optional hiding of source lists after merge
- * - Validation error display for same-list selection
+ * - Validation error display for insufficient list selection
  * - Guidance hints for user decision-making
  *
  * INTEGRATION:
@@ -37,28 +36,23 @@
  */
 --}}
 
-<div>
-  <!-- Source List Selection -->
-  <div class="form-group source-list">
-    <label for="source-list">{{localize "SPELLMANAGER.MergeLists.SourceListLabel"}}</label>
-    {{{formElements.sourceListSelectHtml}}}
+<div class='merge-spell-lists-dialog'>
+  <!-- Spell Lists Multi-Select -->
+  <div class="form-group">
+    <label for="spell-lists-to-merge">{{localize "SPELLMANAGER.MergeLists.SpellListsLabel"}}</label>
+    {{{formElements.spellListsMultiSelectHtml}}}
+    <p class="hint">{{localize "SPELLMANAGER.MergeLists.SpellListsHint"}}</p>
   </div>
 
-  <!-- Secondary List Selection -->
-  <div class="form-group copy-from-list">
-    <label for="copy-from-list">{{localize "SPELLMANAGER.MergeLists.CopyFromListLabel"}}</label>
-    {{{formElements.copyFromListSelectHtml}}}
-  </div>
-
-  <!-- Merged List Name Configuration -->
-  <div class="form-group merged-list-name">
-    <label for="merged-list-name">{{localize "SPELLMANAGER.MergeLists.MergedListNameLabel"}}</label>
+  <!-- Merged List Name Configuration (Required) -->
+  <div class="form-group">
+    <label for="merged-list-name">{{localize "SPELLMANAGER.MergeLists.MergedListNameLabel"}} <span class="required">*</span></label>
     {{{formElements.mergedListNameInputHtml}}}
-    <p class="hint">{{localize "SPELLMANAGER.MergeLists.MergedListNameNotes"}}</p>
+    <p class="hint">{{localize "SPELLMANAGER.MergeLists.MergedListNameRequired"}}</p>
   </div>
 
   <!-- Source List Visibility Option -->
-  <div class="form-group hide-source-lists">
+  <div class="form-group">
     <label class="checkbox">
       <span class="label-text">{{localize "SPELLMANAGER.MergeLists.HideSourceListsLabel"}}</span>
       {{{formElements.hideSourceListsCheckboxHtml}}}
@@ -67,6 +61,6 @@
   </div>
 
   <!-- Validation Error Display -->
-  <p class="validation-error" style="color: red; display: none;">{{localize "SPELLMANAGER.MergeLists.SameListError"}}
+  <p class="validation-error" style="color: red; display: none;">{{localize "SPELLMANAGER.MergeLists.ValidationError"}}
   </p>
 </div>

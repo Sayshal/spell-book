@@ -4358,74 +4358,6 @@
   }
 
   /* ----------------------------------------- */
-  /*  Merge Spell List Dialog                  */
-  /* ----------------------------------------- */
-  &.merge-spell-lists-form {
-    .window-content {
-      padding: 1rem;
-    }
-
-    .dialog-content > div {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    label {
-      font-size: var(--spell-book-font-xl);
-    }
-
-    label:not(.checkbox) {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: bold;
-      white-space: nowrap;
-    }
-
-    label.checkbox,
-    span {
-      display: flex;
-      align-items: center;
-      gap: 0.5em;
-    }
-
-    .form-group {
-      label.checkbox,
-      span {
-        .label-text {
-          flex: 1;
-          margin-right: 0.5rem;
-        }
-      }
-    }
-
-    select {
-      width: auto;
-      min-width: 12.5rem;
-      max-width: 100%;
-      margin-bottom: 0.5rem;
-    }
-
-    input[type='text'] {
-      width: 100%;
-      margin-bottom: 0.5rem;
-    }
-
-    p.hint {
-      position: relative;
-      font-size: var(--spell-book-font-md);
-      margin-top: 0;
-      color: var(--spell-book-text-tertiary);
-      font-style: italic;
-    }
-
-    .validation-error {
-      margin: 0.5rem 0 0;
-      font-size: 0.875rem;
-    }
-  }
-
-  /* ----------------------------------------- */
   /*  Spell List Manager Helper Dialog         */
   /* ----------------------------------------- */
   &.spell-manager-documentation {
@@ -6834,7 +6766,8 @@
 /* ----------------------------------------- */
 /*  Create Spell List Dialog                 */
 /* ----------------------------------------- */
-.create-list-dialog {
+.create-list-dialog,
+.merge-spell-lists-dialog {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -6864,6 +6797,12 @@
   p.hint {
     position: relative;
     font-size: var(--spell-book-font-md);
+  }
+
+  .tag {
+    color: var(--spell-book-text-primary);
+    font-weight: 500;
+    font-size: 0.75rem;
   }
 }
 
