@@ -372,7 +372,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   async _prepareContext(options) {
     if (!this._preInitialized) await this._preInitialize();
-    const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
     const context = this._createBaseContext(options);
     context.spellcastingClasses = this._stateManager.spellcastingClasses;
     context.activeClass = this._stateManager.activeClass;
@@ -411,7 +410,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         context.classIdentifier = classIdentifier;
         context.className = this._stateManager.classSpellData[classIdentifier].className;
         const rawSpellLevels = this._stateManager.classSpellData[classIdentifier].spellLevels;
-        context.spellLevels = await this._processSpellLevelsForContext(rawSpellLevels, false);
+        context.spellLevels = await this._processSpellLevelsForContext(rawSpellLevels);
         context.spellPreparation = this._stateManager.classSpellData[classIdentifier].spellPreparation;
         context.globalPrepared = this._stateManager.spellPreparation;
         const classNotice = this._prepareClassValidationNotice(classIdentifier, context.className);
@@ -431,7 +430,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const wizardTabData = this._stateManager.tabData?.[partId];
       if (wizardTabData) {
         const rawSpellLevels = wizardTabData.spellLevels || [];
-        context.spellLevels = await this._processSpellLevelsForContext(rawSpellLevels, true);
+        context.spellLevels = await this._processSpellLevelsForContext(rawSpellLevels);
         context.spellPreparation = wizardTabData.spellPreparation;
         context.wizardTotalSpellbookCount = wizardTabData.wizardTotalSpellbookCount || 0;
         context.wizardFreeSpellbookCount = wizardTabData.wizardFreeSpellbookCount || 0;
@@ -957,7 +956,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.element.dataset.sidebarControlsBottom = sidebarControlsBottom;
     this.ui.setSidebarState();
     requestAnimationFrame(() => {
-      this._setupDeferredUI(context, options);
+      this._setupDeferredUI();
     });
   }
 
@@ -965,12 +964,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Setup non-critical UI elements after the window is visible.
    * Called via requestAnimationFrame to ensure smooth initial render.
    *
-   * @param {ApplicationRenderContext} context - Render context
-   * @param {RenderOptions} options - Render options
    * @returns {Promise<void>}
    * @private
    */
-  async _setupDeferredUI(context, options) {
+  async _setupDeferredUI() {
     log(3, 'Setting up deferred UI elements...');
     try {
       this.ui.setupFilterListeners();
@@ -1065,11 +1062,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Prepares ONLY data structures - NO HTML building.
    *
    * @param {Array<Object>} spells - Raw spell data
-   * @param {boolean} isWizardTab - Whether this is a wizard tab
    * @returns {Promise<Array<ProcessedSpell>>} Processed spells ready for template
    * @private
    */
-  async _processSpellsForLevel(spells, isWizardTab) {
+  async _processSpellsForLevel(spells) {
     const processedSpells = [];
     for (const spell of spells) {
       const processedSpell = this._processSpellForDisplay(spell);
@@ -1175,18 +1171,17 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Prepares ONLY data structures - NO HTML building.
    *
    * @param {Array<Object>} spellLevels - Raw spell level data
-   * @param {boolean} isWizardTab - Whether this is a wizard tab
    * @returns {Promise<Array<Object>>} Processed spell levels ready for template
    * @private
    */
-  async _processSpellLevelsForContext(spellLevels, isWizardTab) {
+  async _processSpellLevelsForContext(spellLevels) {
     const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
     const processedLevels = [];
     for (const levelData of spellLevels) {
       const level = String(levelData.level);
       const spells = levelData.spells || [];
       const isCollapsed = collapsedLevels.includes(level);
-      const processedSpells = await this._processSpellsForLevel(spells, isWizardTab);
+      const processedSpells = await this._processSpellsForLevel(spells);
       let preparedCount = 0;
       if (level !== '0') preparedCount = spells.filter((spell) => spell.preparation?.prepared).length;
       const cantripCounter = { enabled: level === '0', current: 0, maximum: 0 };
@@ -1890,7 +1885,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const button = event.currentTarget;
     const buttonRect = button.getBoundingClientRect();
     const menuRect = menu.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
     let finalX = buttonRect.left;
     let finalY = buttonRect.top - menuRect.height - 5;
@@ -2635,13 +2629,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * across re-renders while keeping a separation between form updates
    * and data persistence.
    *
-   * @param {Event} event - The form submission event
+   * @param {Event} _event - The form submission event
    * @param {HTMLElement} form - The form element
-   * @param {Object} formData - The form data
+   * @param {Object} _formData - The form data
    * @returns {Promise<void>}
    * @static
    */
-  static async formHandler(event, form, formData) {
+  static async formHandler(_event, form, _formData) {
     log(3, 'Processing form submission for state cache update');
     this._updateFormStateCache(form);
     log(3, 'Form state cached successfully');

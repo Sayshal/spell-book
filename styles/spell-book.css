@@ -2535,26 +2535,6 @@
     }
   }
 
-  .merge-spell-lists-form {
-    .checkbox-label {
-      gap: var(--spell-book-spacing-md);
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-
-      span {
-        font-weight: normal;
-      }
-    }
-
-    .hint {
-      margin-top: var(--spell-book-spacing-sm);
-      color: var(--spell-book-text-tertiary);
-      font-style: italic;
-      font-size: var(--spell-book-font-sm);
-    }
-  }
-
   .list-controls {
     margin-top: var(--spell-book-spacing-xl);
     padding: var(--spell-book-spacing-md);
@@ -4385,11 +4365,38 @@
       padding: 1rem;
     }
 
+    .dialog-content > div {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
     label {
+      font-size: var(--spell-book-font-xl);
+    }
+
+    label:not(.checkbox) {
       display: block;
       margin-bottom: 0.5rem;
       font-weight: bold;
       white-space: nowrap;
+    }
+
+    label.checkbox,
+    span {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+
+    .form-group {
+      label.checkbox,
+      span {
+        .label-text {
+          flex: 1;
+          margin-right: 0.5rem;
+        }
+      }
     }
 
     select {
@@ -4404,11 +4411,12 @@
       margin-bottom: 0.5rem;
     }
 
-    .notes {
-      margin: 0.5rem 0 0;
+    p.hint {
+      position: relative;
+      font-size: var(--spell-book-font-md);
+      margin-top: 0;
       color: var(--spell-book-text-tertiary);
       font-style: italic;
-      font-size: 0.875rem;
     }
 
     .validation-error {

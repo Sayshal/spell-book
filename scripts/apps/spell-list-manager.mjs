@@ -1267,7 +1267,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const hideSourceListsCheckbox = ValidationHelpers.createCheckbox({
       name: 'hideSourceLists',
       checked: false,
-      ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.HideSourceListsLabel')
+      ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.HideSourceListsLabel'),
+      cssClass: 'dnd5e2'
     });
     hideSourceListsCheckbox.id = 'hide-source-lists';
     return {
@@ -1420,9 +1421,11 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     context.hasMergedLists = context.mergedLists.length > 0;
     context.hasStandardLists = context.standardLists.length > 0;
     const content = await renderTemplate(TEMPLATES.DIALOGS.MERGE_SPELL_LISTS, context);
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = content;
     const result = await DialogV2.wait({
       window: { title: game.i18n.localize('SPELLMANAGER.MergeLists.DialogTitle'), icon: 'fas fa-code-merge' },
-      content: content,
+      content: wrapper,
       classes: ['spell-book', 'merge-spell-lists-form'],
       buttons: [
         {
@@ -1694,6 +1697,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Create a new spell list.
    *
+   * @param formData - Necessary data to build the temporary form.
    * @returns {Promise<void>}
    * @private
    */
@@ -1783,14 +1787,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (!element) return;
     const spellUuid = element.dataset.uuid;
     if (!this.selectedSpellList || !this.isEditing) return;
-    const uuidExists = this.selectedSpellList.spellUuids.includes(spellUuid);
-    const spellExists = this.selectedSpellList.spells.some((spell) => spell.uuid === spellUuid || spell.compendiumUuid === spellUuid);
     log(3, `Removing spell: ${spellUuid} from list`);
     this.pendingChanges.removed.add(spellUuid);
     this.pendingChanges.added.delete(spellUuid);
-    const originalUuidCount = this.selectedSpellList.spellUuids.length;
     this.selectedSpellList.spellUuids = this.selectedSpellList.spellUuids.filter((uuid) => uuid !== spellUuid);
-    const originalSpellCount = this.selectedSpellList.spells.length;
     this.selectedSpellList.spells = this.selectedSpellList.spells.filter((spell) => spell.uuid !== spellUuid && spell.compendiumUuid !== spellUuid);
     this.selectedSpellList.spellsByLevel = DataHelpers.organizeSpellsByLevel(this.selectedSpellList.spells);
     this._ensureSpellIcons();
@@ -1838,9 +1838,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const document = this.selectedSpellList.document;
     const originalSpells = Array.from(document.system.spells || []);
     const currentSpells = new Set(originalSpells);
-    for (const spellUuid of this.pendingChanges.removed) {
-      const wasDeleted = currentSpells.delete(spellUuid);
-    }
     log(3, `Processing ${this.pendingChanges.added.size} spell additions`);
     for (const spellUuid of this.pendingChanges.added) currentSpells.add(spellUuid);
     await document.update({ 'system.spells': Array.from(currentSpells) });
