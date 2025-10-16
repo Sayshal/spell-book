@@ -896,10 +896,23 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const nameInput = this.element.querySelector('input[name="spell-search"]');
     if (nameInput) {
       nameInput.addEventListener('input', (event) => {
+        const previousValue = this.filterState.name;
         this.filterState.name = event.target.value;
         clearTimeout(this._nameFilterTimer);
         this._nameFilterTimer = setTimeout(() => {
-          this.applyFilters();
+          const wasFiltered = previousValue && previousValue.trim();
+          const isFiltered = this.filterState.name && this.filterState.name.trim();
+          if (wasFiltered !== isFiltered) {
+            const currentInput = this.element.querySelector('input[name="spell-search"]');
+            const cursorPosition = currentInput?.selectionStart;
+            this.render(false, { parts: ['availableSpells'] }).then(() => {
+              const newInput = this.element.querySelector('input[name="spell-search"]');
+              if (newInput && cursorPosition !== undefined) {
+                newInput.focus();
+                newInput.setSelectionRange(cursorPosition, cursorPosition);
+              }
+            });
+          } else this.applyFilters();
         }, 200);
       });
     }
