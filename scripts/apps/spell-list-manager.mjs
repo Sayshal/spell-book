@@ -1465,6 +1465,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     let formData = null;
     const formElements = this._prepareMergeListFormData();
     const content = await renderTemplate(TEMPLATES.DIALOGS.MERGE_SPELL_LISTS, { formElements });
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = content;
     const result = await DialogV2.wait({
       window: {
         title: game.i18n.localize('SPELLMANAGER.MergeLists.DialogTitle'),
@@ -1474,7 +1476,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         positioned: true
       },
       position: { width: 650, height: 'auto' },
-      content: content,
+      content: wrapper,
       buttons: [
         {
           label: game.i18n.localize('SPELLMANAGER.Buttons.MergeLists'),
@@ -1488,12 +1490,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
             const mergedListNameInput = formElement.querySelector('[name="mergedListName"]');
             const hideSourceListsCheckbox = formElement.querySelector('[name="hideSourceLists"]');
             const errorElement = formElement.querySelector('.validation-error');
-
-            // Get selected spell list UUIDs from the multi-select
-            const selectedOptions = Array.from(spellListsMultiSelect.selectedOptions);
-            const selectedListUuids = selectedOptions.map((opt) => opt.value).filter((val) => val);
-
-            // Validate: need at least 2 lists to merge
+            const selectedListUuids = spellListsMultiSelect?.value;
             if (selectedListUuids.length < 2) {
               if (errorElement) {
                 errorElement.textContent = game.i18n.localize('SPELLMANAGER.MergeLists.MinimumListsError');
@@ -1501,8 +1498,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
               }
               return false;
             }
-
-            // Validate: merged list name is required
             const mergedListName = mergedListNameInput.value.trim();
             if (!mergedListName) {
               if (errorElement) {
@@ -1511,7 +1506,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
               }
               return false;
             }
-
             formData = {
               spellListUuids: selectedListUuids,
               mergedListName: mergedListName,
@@ -1524,9 +1518,15 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       ],
       default: 'cancel',
       rejectClose: false,
-      render: (_event, target, _form) => {
+      render: async (_event, target, _form) => {
         const dialogElement = target.querySelector ? target : target.element;
+        const multiSelect = dialogElement.querySelector('multi-select');
+        if (multiSelect) {
+          await customElements.whenDefined('multi-select');
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+        }
         this._setupMergeListsDialogListeners(dialogElement);
+        target.setPosition({ width: 650, height: 'auto' });
       }
     });
     return { result, formData };
@@ -1636,36 +1636,19 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const mergedListNameInput = target.querySelector('[name="mergedListName"]');
     const mergeButton = target.querySelector('button[data-action="merge"]');
     const errorElement = target.querySelector('.validation-error');
-
     const validateForm = () => {
-      // Hide error message when user makes changes
-      if (errorElement) {
-        errorElement.style.display = 'none';
+      if (errorElement) errorElement.style.display = 'none';
+      let selectedCount = 0;
+      if (spellListsMultiSelect) {
+        const tagsContainer = spellListsMultiSelect.querySelector('.tags.input-element-tags');
+        if (tagsContainer) selectedCount = tagsContainer.querySelectorAll('.tag').length;
       }
-
-      // Get selected spell list count
-      const selectedOptions = spellListsMultiSelect ? Array.from(spellListsMultiSelect.selectedOptions) : [];
-      const selectedCount = selectedOptions.filter((opt) => opt.value).length;
-
-      // Check if name is provided
       const hasName = mergedListNameInput ? mergedListNameInput.value.trim().length > 0 : false;
-
-      // Enable merge button only if we have at least 2 lists and a name
       const isValid = selectedCount >= 2 && hasName;
-      if (mergeButton) {
-        mergeButton.disabled = !isValid;
-      }
+      if (mergeButton) mergeButton.disabled = !isValid;
     };
-
-    // Attach event listeners
-    if (spellListsMultiSelect) {
-      spellListsMultiSelect.addEventListener('change', validateForm);
-    }
-    if (mergedListNameInput) {
-      mergedListNameInput.addEventListener('input', validateForm);
-    }
-
-    // Initial validation
+    if (spellListsMultiSelect) spellListsMultiSelect.addEventListener('change', validateForm);
+    if (mergedListNameInput) mergedListNameInput.addEventListener('input', validateForm);
     validateForm();
   }
 

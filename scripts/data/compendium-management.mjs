@@ -680,35 +680,21 @@ export async function findClassIdentifiers() {
  * @returns {Promise<JournalEntryPage>} The created merged spell list page
  */
 export async function createMergedSpellList(spellListUuids, mergedListName) {
-  if (!Array.isArray(spellListUuids) || spellListUuids.length < 2) {
-    throw new Error('At least two spell lists are required to merge');
-  }
-
-  // Load all spell lists
+  if (!Array.isArray(spellListUuids) || spellListUuids.length < 2) throw new Error('At least two spell lists are required to merge');
   const spellLists = [];
   for (const uuid of spellListUuids) {
     const list = await fromUuid(uuid);
     if (!list) throw new Error(`Unable to load spell list: ${uuid}`);
     spellLists.push(list);
   }
-
-  // Merge all spells from all lists into a single set (removes duplicates)
   const mergedSpells = new Set();
   for (const list of spellLists) {
     const spells = list.system.spells || [];
     spells.forEach((spell) => mergedSpells.add(spell));
   }
-
-  // Use the identifier from the first list, or default to 'merged'
   const identifier = spellLists[0].system?.identifier || 'merged';
-
-  // Create description listing all source lists
   const listNames = spellLists.map((list) => list.name).join(', ');
-  const description = game.i18n.format('SPELLMANAGER.CreateList.MultiMergedDescription', {
-    listNames: listNames,
-    count: spellLists.length
-  });
-
+  const description = game.i18n.format('SPELLMANAGER.CreateList.MultiMergedDescription', { listNames: listNames, count: spellLists.length });
   const mergedFolder = await getOrCreateMergedFolder();
   const journalData = {
     name: mergedListName,
@@ -717,20 +703,8 @@ export async function createMergedSpellList(spellListUuids, mergedListName) {
       {
         name: mergedListName,
         type: 'spells',
-        flags: {
-          [MODULE.ID]: {
-            isCustom: true,
-            isMerged: true,
-            isDuplicate: false,
-            creationDate: Date.now(),
-            sourceListUuids: spellListUuids
-          }
-        },
-        system: {
-          identifier: identifier.toLowerCase(),
-          description: description,
-          spells: Array.from(mergedSpells)
-        }
+        flags: { [MODULE.ID]: { isCustom: true, isMerged: true, isDuplicate: false, creationDate: Date.now(), sourceListUuids: spellListUuids } },
+        system: { identifier: identifier.toLowerCase(), description: description, spells: Array.from(mergedSpells) }
       }
     ]
   };
