@@ -211,6 +211,10 @@ function getFolderNameFromPack(source) {
 
 /**
  * Find spell list by identifier across all journal packs.
+ * Searches all journal entry packs for spell list pages matching
+ * the specified type and identifier for spell list discovery.
+ * Only searches packs that are enabled in compendium settings.
+ *
  * @param {string} type - Type of spell list ('class' or 'subclass')
  * @param {string} identifier - Identifier to search for in spell lists
  * @param {Object<string, string>} customMappings - Custom spell list mappings
@@ -355,6 +359,10 @@ export function calculateMaxSpellLevel(classItem, actor) {
 
 /**
  * Find spell list by top-level folder name and identifier.
+ * Searches for spell lists within packs that match the specified
+ * top-level folder name and class identifier for source-specific matching.
+ * Only searches packs that are enabled in compendium settings.
+ *
  * @param {string} topLevelFolderName - Top-level folder name to match
  * @param {string} identifier - Class identifier to match
  * @param {Object<string, string>} customMappings - Custom spell list mappings

@@ -407,6 +407,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (wizardTabData) {
         const rawSpellLevels = wizardTabData.spellLevels || [];
         context.spellLevels = await this._processSpellLevelsForContext(rawSpellLevels);
+        context.spellLevels = await this._processSpellLevelsForContext(rawSpellLevels);
         context.spellPreparation = wizardTabData.spellPreparation;
         context.wizardTotalSpellbookCount = wizardTabData.wizardTotalSpellbookCount || 0;
         context.wizardFreeSpellbookCount = wizardTabData.wizardFreeSpellbookCount || 0;
@@ -890,6 +891,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.ui.setSidebarState();
     requestAnimationFrame(() => {
       this._setupDeferredUI();
+      this._setupDeferredUI();
     });
   }
 
@@ -898,6 +900,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @returns {Promise<void>}
    * @private
    */
+  async _setupDeferredUI() {
   async _setupDeferredUI() {
     log(3, 'Setting up deferred UI elements...');
     try {
@@ -990,6 +993,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @returns {Promise<Array<ProcessedSpell>>} Processed spells ready for template
    * @private
    */
+  async _processSpellsForLevel(spells) {
   async _processSpellsForLevel(spells) {
     const processedSpells = [];
     for (const spell of spells) {
@@ -1097,12 +1101,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   async _processSpellLevelsForContext(spellLevels) {
+  async _processSpellLevelsForContext(spellLevels) {
     const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
     const processedLevels = [];
     for (const levelData of spellLevels) {
       const level = String(levelData.level);
       const spells = levelData.spells || [];
       const isCollapsed = collapsedLevels.includes(level);
+      const processedSpells = await this._processSpellsForLevel(spells);
       const processedSpells = await this._processSpellsForLevel(spells);
       let preparedCount = 0;
       if (level !== '0') preparedCount = spells.filter((spell) => spell.preparation?.prepared).length;
@@ -2449,9 +2455,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {Event} _event - The form submission event
    * @param {HTMLElement} form - The form element
    * @param {Object} _formData - The form data
+   * @param {Object} _formData - The form data
    * @returns {Promise<void>}
    * @static
    */
+  static async formHandler(_event, form, _formData) {
   static async formHandler(_event, form, _formData) {
     log(3, 'Processing form submission for state cache update');
     this._updateFormStateCache(form);

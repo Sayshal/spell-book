@@ -638,6 +638,22 @@ export async function createMergedSpellList(spellListUuids, mergedListName) {
   const identifier = spellLists[0].system?.identifier || 'merged';
   const listNames = spellLists.map((list) => list.name).join(', ');
   const description = game.i18n.format('SPELLMANAGER.CreateList.MultiMergedDescription', { listNames: listNames, count: spellLists.length });
+export async function createMergedSpellList(spellListUuids, mergedListName) {
+  if (!Array.isArray(spellListUuids) || spellListUuids.length < 2) throw new Error('At least two spell lists are required to merge');
+  const spellLists = [];
+  for (const uuid of spellListUuids) {
+    const list = await fromUuid(uuid);
+    if (!list) throw new Error(`Unable to load spell list: ${uuid}`);
+    spellLists.push(list);
+  }
+  const mergedSpells = new Set();
+  for (const list of spellLists) {
+    const spells = list.system.spells || [];
+    spells.forEach((spell) => mergedSpells.add(spell));
+  }
+  const identifier = spellLists[0].system?.identifier || 'merged';
+  const listNames = spellLists.map((list) => list.name).join(', ');
+  const description = game.i18n.format('SPELLMANAGER.CreateList.MultiMergedDescription', { listNames: listNames, count: spellLists.length });
   const mergedFolder = await getOrCreateMergedFolder();
   const journalData = {
     name: mergedListName,
@@ -648,10 +664,13 @@ export async function createMergedSpellList(spellListUuids, mergedListName) {
         type: 'spells',
         flags: { [MODULE.ID]: { isCustom: true, isMerged: true, isDuplicate: false, creationDate: Date.now(), sourceListUuids: spellListUuids } },
         system: { identifier: identifier.toLowerCase(), description: description, spells: Array.from(mergedSpells) }
+        flags: { [MODULE.ID]: { isCustom: true, isMerged: true, isDuplicate: false, creationDate: Date.now(), sourceListUuids: spellListUuids } },
+        system: { identifier: identifier.toLowerCase(), description: description, spells: Array.from(mergedSpells) }
       }
     ]
   };
   const journal = await JournalEntry.create(journalData, { pack: MODULE.PACK.SPELLS });
+  log(3, `Created merged spell list: ${mergedListName} with ${mergedSpells.size} spells from ${spellLists.length} source lists`);
   log(3, `Created merged spell list: ${mergedListName} with ${mergedSpells.size} spells from ${spellLists.length} source lists`);
   return journal.pages.contents[0];
 }
