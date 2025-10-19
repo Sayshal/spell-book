@@ -29,22 +29,22 @@
  * INTEGRATION:
  * - Used in scroll detection and identification workflows
  * - Connects to spell scroll scanning and detection systems
- * - Uses module localization keys from SPELLBOOK.ScrollScanner namespace
+ * - Uses module localization keys from SPELLBOOK.ScrollProcessor namespace
  * - Supports spell scroll management and identification tasks
  */
 --}}
 
 <div class="scroll-scanner">
   <!-- Scan Results Header with Count -->
-  <p>{{{localize 'SPELLBOOK.ScrollScanner.ResultsHeader' count=scrolls.length}}}</p>
+  <p>{{{localize 'SPELLBOOK.ScrollProcessor.ResultsHeader' count=scrolls.length}}}</p>
 
   <!-- Scroll Results Table -->
   <div>
     <table>
       <thead>
         <tr>
-          <th>{{localize 'SPELLBOOK.ScrollScanner.TableHeaderName'}}</th>
-          <th>{{localize 'SPELLBOOK.ScrollScanner.TableHeaderUUID'}}</th>
+          <th>{{localize 'SPELLBOOK.ScrollProcessor.TableHeaderName'}}</th>
+          <th>{{localize 'SPELLBOOK.ScrollProcessor.TableHeaderUUID'}}</th>
         </tr>
       </thead>
       <tbody>
@@ -59,5 +59,5 @@
   </div>
 
   <!-- Results Footer with Usage Information -->
-  <p><em>{{localize 'SPELLBOOK.ScrollScanner.ResultsFooter'}}</em></p>
+  <p><em>{{localize 'SPELLBOOK.ScrollProcessor.ResultsFooter'}}</em></p>
 </div>

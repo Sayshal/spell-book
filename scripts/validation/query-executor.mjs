@@ -48,13 +48,10 @@ import { log } from '../logger.mjs';
 
 /**
  * Executes parsed queries against spell data.
- * Supports only AND operations between field conditions for performance and simplicity.
  */
 export class QueryExecutor {
   /**
    * Execute parsed query against spells collection.
-   * Filters the provided spells array based on the parsed query conditions.
-   *
    * @param {ParsedQuery} queryObject - Parsed query object from QueryParser
    * @param {Array<SpellData>} spells - Array of spell data to filter
    * @returns {Array<SpellData>} Filtered spells that match all query conditions
@@ -71,8 +68,6 @@ export class QueryExecutor {
 
   /**
    * Evaluate all conditions against a spell using AND logic.
-   * All conditions must be true for the spell to be included in results.
-   *
    * @private
    * @param {Array<FieldCondition>} conditions - Array of field conditions to evaluate
    * @param {SpellData} spell - Spell data to evaluate against
@@ -84,8 +79,6 @@ export class QueryExecutor {
 
   /**
    * Evaluate single field condition against a spell.
-   * Dispatches to appropriate field-specific evaluation method.
-   *
    * @private
    * @param {FieldCondition} condition - Field condition to evaluate
    * @param {SpellData} spell - Spell data to evaluate
@@ -127,8 +120,6 @@ export class QueryExecutor {
 
   /**
    * Evaluate casting time criteria against spell data.
-   * Supports type:value format (e.g., "action:1", "minute:10").
-   *
    * @private
    * @param {string} value - Expected casting time in "type:value" format
    * @param {SpellData} spell - Spell data to check
@@ -145,8 +136,6 @@ export class QueryExecutor {
 
   /**
    * Evaluate range criteria against spell data.
-   * Supports numeric ranges and range type keywords.
-   *
    * @private
    * @param {string} value - Expected range value or type
    * @param {SpellData} spell - Spell data to check
@@ -172,8 +161,6 @@ export class QueryExecutor {
 
   /**
    * Evaluate damage type criteria against spell data.
-   * Supports comma-separated damage types for OR matching within the field.
-   *
    * @private
    * @param {string} value - Expected damage types (comma-separated)
    * @param {SpellData} spell - Spell data to check
@@ -187,8 +174,6 @@ export class QueryExecutor {
 
   /**
    * Evaluate condition criteria against spell data.
-   * Supports comma-separated conditions for OR matching within the field.
-   *
    * @private
    * @param {string} value - Expected conditions (comma-separated)
    * @param {SpellData} spell - Spell data to check
@@ -202,8 +187,6 @@ export class QueryExecutor {
 
   /**
    * Evaluate requires save criteria against spell data.
-   * Checks whether the spell requires a saving throw.
-   *
    * @private
    * @param {string} value - Expected save requirement ('true' or 'false')
    * @param {SpellData} spell - Spell data to check
@@ -217,8 +200,6 @@ export class QueryExecutor {
 
   /**
    * Evaluate concentration criteria against spell data.
-   * Checks whether the spell requires concentration.
-   *
    * @private
    * @param {string} value - Expected concentration requirement ('true' or 'false')
    * @param {SpellData} spell - Spell data to check
@@ -232,8 +213,6 @@ export class QueryExecutor {
 
   /**
    * Evaluate prepared criteria against spell data.
-   * Checks whether the spell is currently prepared by the actor.
-   *
    * @private
    * @param {string} value - Expected preparation status ('true' or 'false')
    * @param {SpellData} spell - Spell data to check
@@ -247,8 +226,6 @@ export class QueryExecutor {
 
   /**
    * Evaluate ritual criteria against spell data.
-   * Checks whether the spell can be cast as a ritual.
-   *
    * @private
    * @param {string} value - Expected ritual capability ('true' or 'false')
    * @param {SpellData} spell - Spell data to check
@@ -262,8 +239,6 @@ export class QueryExecutor {
 
   /**
    * Evaluate material components criteria against spell data.
-   * Checks whether the spell has consumed or non-consumed material components.
-   *
    * @private
    * @param {string} value - Expected material component status ('consumed' or 'notconsumed')
    * @param {SpellData} spell - Spell data to check

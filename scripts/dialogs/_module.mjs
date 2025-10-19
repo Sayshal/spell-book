@@ -9,11 +9,11 @@
  * @author Tyler
  */
 
-export { CompendiumSelectionDialog } from '../dialogs/compendium-selection-dialog.mjs';
-export { FocusSettingsDialog } from '../dialogs/focus-settings-dialog.mjs';
-export { SpellbookSettingsDialog } from '../dialogs/spellbook-settings-dialog.mjs';
-export { SpellComparisonDialog } from '../dialogs/spell-comparison-dialog.mjs';
-export { SpellDetailsCustomization } from '../dialogs/spell-details-customization.mjs';
-export { SpellLoadoutDialog } from '../dialogs/spell-loadout-dialog.mjs';
-export { SpellNotesDialog } from '../dialogs/spell-notes-dialog.mjs';
-export { SynergyAnalysisDialog } from './synergy-analysis.mjs';
+export { CompendiumSelection } from './compendium-selection.mjs';
+export { DetailsCustomization } from './details-customization.mjs';
+export { FocusSettings } from './focus-settings.mjs';
+export { LoadoutSelector } from './loadout-selector.mjs';
+export { SpellBookSettings } from './spell-book-settings.mjs';
+export { SpellComparison } from './spell-comparison.mjs';
+export { SpellNotes } from './spell-notes.mjs';
+export { SynergyAnalysis } from './synergy-analysis.mjs';

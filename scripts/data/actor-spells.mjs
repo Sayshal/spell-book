@@ -69,9 +69,6 @@ import * as UIHelpers from './_module.mjs';
 
 /**
  * Fast spell document fetching using getIndex instead of getDocument.
- * Optimizes performance by using compendium indexes and batching operations
- * rather than individual document fetches.
- *
  * @param {Set<string>} spellUuids - Set of spell UUIDs to fetch
  * @param {number} maxSpellLevel - Maximum spell level to include in results
  * @returns {Promise<Array<SpellDocument>>} Array of spell documents
@@ -203,9 +200,6 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
 
 /**
  * Organize spells by level for display in GM interface.
- * Groups spells into level-based arrays and sorts them alphabetically
- * within each level for consistent presentation.
- *
  * @param {Array<SpellDocument>} spellItems - Array of spell documents to organize
  * @returns {Array<LevelGroup>} Array of level objects with organized spells
  */

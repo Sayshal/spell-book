@@ -18,8 +18,8 @@
  * - Support for special spell modes (innate, pact, at-will, ritual, always prepared)
  * - Error handling and logging for troubleshooting
  *
- * The manager coordinates with other system components including CantripManager for
- * cantrip-specific functionality, RuleSetManager for class rule application, and
+ * The manager coordinates with other system components including Cantrips for
+ * cantrip-specific functionality, RuleSet for class rule application, and
  * various UI helpers for status display and user interaction.
  *
  * @module Managers/SpellManager
@@ -30,7 +30,7 @@ import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
 import * as DataHelpers from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 import * as UIHelpers from '../ui/_module.mjs';
-import { CantripManager, RuleSetManager } from './_module.mjs';
+import { Cantrips, RuleSet } from './_module.mjs';
 
 /**
  * Spell preparation status information for UI display and validation.
@@ -115,52 +115,22 @@ import { CantripManager, RuleSetManager } from './_module.mjs';
 
 /**
  * Spell Manager - Core spell preparation and management system.
- *
- * This class provides spell management functionality for actors,
- * handling preparation tracking, validation, spell item management, and integration
- * with various spellcasting systems. It coordinates with other managers to provide
- * a complete spellcasting experience while maintaining data integrity and proper
- * rule enforcement.
- *
- * The manager supports complex scenarios including multiclass characters, wizard
- * spellbooks, ritual casting, and various special spell modes while providing
- * appropriate validation and user feedback for all spell management operations.
  */
 export class SpellManager {
   /**
    * Create a new SpellManager for an actor.
-   *
-   * Initializes the spell manager with the specified actor and sets up integration
-   * with the cantrip management system. Determines if the actor is a wizard for
-   * specialized wizard functionality and prepares caching systems for optimal
-   * performance.
-   *
    * @param {Actor5e} actor - The actor to manage spells for
    */
   constructor(actor) {
     /** @type {Actor5e} The actor being managed */
     this.actor = actor;
 
-    /** @type {boolean} Whether this actor has wizard levels */
-    this.isWizard = DataHelpers.isWizard(actor);
-
-    /** @type {Object|null} Cached wizard spellbook data */
-    this._wizardSpellbookCache = null;
-
-    /** @type {Object|null} Wizard-specific manager instance */
-    this._wizardManager = null;
-
-    /** @type {CantripManager} Integrated cantrip management system */
-    this.cantripManager = new CantripManager(actor, this);
+    /** @type {Cantrips} Integrated cantrip management system */
+    this.cantripManager = new Cantrips(actor, this);
   }
 
   /**
    * Get cantrip and spell settings for the actor.
-   *
-   * Retrieves the spell configuration settings for the specified class, including
-   * swap timing, ritual casting rules, display preferences, and enforcement behavior.
-   * If no class identifier is provided, returns default fallback settings.
-   *
    * @param {string} classIdentifier - Class identifier for class-specific rules (required)
    * @returns {ActorSpellSettings} Actor's spell settings
    */
@@ -175,7 +145,7 @@ export class SpellManager {
         behavior: behavior
       };
     }
-    const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
+    const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
     return {
       cantripSwapping: classRules.cantripSwapping || 'none',
       spellSwapping: classRules.spellSwapping || 'none',
@@ -187,10 +157,6 @@ export class SpellManager {
 
   /**
    * Get maximum allowed cantrips for the actor using cached values.
-   *
-   * Delegates to the cantrip manager to retrieve the maximum number of cantrips
-   * allowed for the specified class. Uses cached calculations for optimal performance.
-   *
    * @param {string} classIdentifier - The class identifier to check
    * @returns {number} Maximum allowed cantrips for this class
    */
@@ -201,10 +167,6 @@ export class SpellManager {
 
   /**
    * Get the current count of prepared cantrips for a specific class.
-   *
-   * Delegates to the cantrip manager to count currently prepared cantrips for
-   * the specified class. Used for limit validation and UI display.
-   *
    * @param {string} classIdentifier - The class identifier
    * @returns {number} Currently prepared cantrips count for this class
    */
@@ -215,12 +177,6 @@ export class SpellManager {
 
   /**
    * Get the preparation status for a given spell.
-   *
-   * Performs analysis of a spell's preparation status including
-   * whether it's prepared, owned by the actor, its preparation mode, disability
-   * status, and source information. Now supports preparation context to allow
-   * same spell with multiple preparation methods.
-   *
    * @param {Object} spell - The spell to check
    * @param {string} [classIdentifier=null] - The specific class context
    * @returns {SpellPreparationStatus} Preparation status information
@@ -417,11 +373,6 @@ export class SpellManager {
 
   /**
    * Create a unique key for class-spell combinations.
-   *
-   * Generates a standardized key format for tracking spell preparation by class.
-   * This key format enables efficient lookup and management of class-specific
-   * spell preparations in the actor flag system.
-   *
    * @param {string} spellUuid - The spell UUID
    * @param {string} classIdentifier - The class identifier
    * @returns {string} Unique key for this class-spell combination
@@ -432,11 +383,6 @@ export class SpellManager {
 
   /**
    * Parse a class-spell key back into components.
-   *
-   * Splits a class-spell key created by _createClassSpellKey back into its
-   * component parts. Handles UUIDs that may contain colons by only splitting
-   * on the first colon to separate the class identifier.
-   *
    * @param {string} key - The class-spell key
    * @returns {ClassSpellKeyParsed} Object with classIdentifier and spellUuid
    */
@@ -447,12 +393,6 @@ export class SpellManager {
 
   /**
    * Get preparation status for a spell that's owned by the actor.
-   *
-   * Analyzes an actor-owned spell item to determine its preparation status,
-   * including preparation mode, disability reasons, source information, and
-   * localized display strings. Handles all special preparation modes and
-   * provides status information for UI display.
-   *
    * @private
    * @param {Item5e} spell - The spell item
    * @returns {SpellPreparationStatus} Preparation status information
@@ -490,12 +430,6 @@ export class SpellManager {
 
   /**
    * Determine the source of a spell on the actor.
-   *
-   * Analyzes a spell item to determine what feature, class, or item granted it
-   * to the actor. Checks various flag sources including advancement origins,
-   * cached grants, and class associations to provide source
-   * information for display and management purposes.
-   *
    * @private
    * @param {Item5e} spell - The spell item
    * @returns {SpellSourceInfo|null} Source information for the spell
@@ -549,12 +483,6 @@ export class SpellManager {
 
   /**
    * Save prepared spells for a specific class.
-   *
-   * Processes spell preparation changes for a specific class, handling spell
-   * creation, updates, and removal as needed. Manages the preparation tracking
-   * flags and maintains synchronization between the UI state and actor data.
-   * Returns information about cantrip and spell changes for notification purposes.
-   *
    * @param {string} classIdentifier - The class identifier
    * @param {Object<string, SpellInfo>} classSpellData - Object with spell data keyed by classSpellKey
    * @returns {Promise<ClassSpellSaveResult|null>} Result object with cantrip and spell changes
@@ -593,18 +521,18 @@ export class SpellManager {
         preparedSpellKeys.push(classSpellKey);
         await this._ensureSpellOnActor(uuid, classIdentifier, actualPreparationMode, spellsToCreate, spellsToUpdate);
         if (isRitual) {
-          const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
-          if (classRules.ritualCasting === 'always' || classRules.ritualCasting === 'prepared') await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate, spellsToUpdate);
+          const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
+          if (classRules.ritualCasting === 'always' || classRules.ritualCasting === 'prepared') await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate);
         }
       } else if (wasPrepared) {
-        await this._handleUnpreparingSpell(uuid, classIdentifier, spellIdsToRemove, spellsToUpdate);
+        await this._handleUnpreparingSpell(uuid, classIdentifier, spellIdsToRemove);
         if (isRitual) {
-          const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
-          if (classRules.ritualCasting === 'always') await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate, spellsToUpdate);
+          const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
+          if (classRules.ritualCasting === 'always') await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate);
         }
       } else if (isRitual) {
-        const classRules = RuleSetManager.getClassRules(this.actor, classIdentifier);
-        if (classRules.ritualCasting === 'always') await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate, spellsToUpdate);
+        const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
+        if (classRules.ritualCasting === 'always') await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate);
       }
     }
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
@@ -625,49 +553,14 @@ export class SpellManager {
   }
 
   /**
-   * Clean up ritual spells created by the module for a specific class.
-   *
-   * Removes module-created ritual spells for the specified class that are
-   * no longer needed. This cleanup prevents accumulation of unused ritual
-   * spell items when changing spell preparations or class configurations.
-   *
-   * @private
-   * @param {string} classIdentifier - The class identifier
-   * @param {string[]} spellIdsToRemove - Array to add removal IDs to
-   * @returns {Promise<void>}
-   */
-  async _cleanupModuleRitualSpells(classIdentifier, spellIdsToRemove) {
-    const moduleRitualSpells = this.actor.items.filter(
-      (item) =>
-        item.type === 'spell' &&
-        item.system?.method === 'ritual' &&
-        (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier) &&
-        item.flags?.[MODULE.ID]?.isModuleRitual === true
-    );
-    if (moduleRitualSpells.length > 0) {
-      log(2, `Cleaning up ${moduleRitualSpells.length} module-created ritual spells for ${classIdentifier}`);
-      moduleRitualSpells.forEach((spell) => {
-        spellIdsToRemove.push(spell.id);
-        log(3, `  - Marking for removal: ${spell.name}`);
-      });
-    }
-  }
-
-  /**
    * Ensure a ritual spell exists on the actor in ritual mode.
-   *
-   * Creates or updates a spell to be in ritual casting mode for the specified
-   * class. This enables ritual casting functionality while maintaining proper
-   * spell tracking and source attribution.
-   *
    * @private
    * @param {string} uuid - Spell UUID
    * @param {string} sourceClass - Source class identifier
    * @param {Object[]} spellsToCreate - Array to add creation data to
-   * @param {Object[]} spellsToUpdate - Array to add update data to
    * @returns {Promise<void>}
    */
-  async _ensureRitualSpellOnActor(uuid, sourceClass, spellsToCreate, spellsToUpdate) {
+  async _ensureRitualSpellOnActor(uuid, sourceClass, spellsToCreate) {
     const existingRitualSpell = this.actor.items.find(
       (i) =>
         i.type === 'spell' &&
@@ -692,11 +585,6 @@ export class SpellManager {
 
   /**
    * Get the preparation mode for a specific class.
-   *
-   * Determines the appropriate preparation mode for spells of the specified
-   * class based on the class's spellcasting configuration. Returns 'pact'
-   * for pact magic classes and 'spell' for standard spellcasters.
-   *
    * @private
    * @param {string} classIdentifier - The class identifier
    * @returns {string} The preparation mode ('spell', 'pact', etc.)
@@ -709,12 +597,6 @@ export class SpellManager {
 
   /**
    * Ensure a spell exists on the actor with proper class attribution.
-   *
-   * Creates or updates a spell item on the actor with the specified preparation
-   * mode and class association. Handles existing spells that need updates and
-   * creates new spells as needed. Maintains proper source attribution and
-   * preparation state consistency.
-   *
    * @private
    * @param {string} uuid - Spell UUID
    * @param {string} sourceClass - Source class identifier
@@ -736,7 +618,7 @@ export class SpellManager {
     const matchingSpells = allMatchingSpells.filter((i) => i.system.sourceClass === sourceClass || i.sourceClass === sourceClass);
     const existingPreparedSpell = matchingSpells.find((spell) => spell.system.method !== 'ritual' && spell.system.prepared === 1);
     const existingRitualSpell = matchingSpells.find((spell) => spell.system.method === 'ritual');
-    const classRules = RuleSetManager.getClassRules(this.actor, sourceClass);
+    const classRules = RuleSet.getClassRules(this.actor, sourceClass);
     const isAlwaysRitualCasting = classRules.ritualCasting === 'always';
     if (existingPreparedSpell) {
       if (existingPreparedSpell.system.method !== preparationMode || existingPreparedSpell.system.prepared !== 1 || existingPreparedSpell.system.sourceClass !== sourceClass) {
@@ -777,11 +659,6 @@ export class SpellManager {
 
   /**
    * Update the global prepared spells flag for backward compatibility.
-   *
-   * Maintains the legacy global prepared spells flag by aggregating all
-   * class-specific preparations into a single list. This ensures compatibility
-   * with older code and provides a unified view of all prepared spells.
-   *
    * @private
    * @returns {Promise<void>}
    */
@@ -797,19 +674,13 @@ export class SpellManager {
 
   /**
    * Handle unpreparing a spell for a specific class.
-   *
-   * Manages the removal or mode change of spells when they are unprepared.
-   * Handles special cases like ritual spells for classes with ritual casting
-   * and ensures proper cleanup of spell items while preserving ritual versions.
-   *
    * @private
    * @param {string} uuid - Spell UUID
    * @param {string} sourceClass - Source class identifier
    * @param {string[]} spellIdsToRemove - Array to add removal IDs to
-   * @param {Object[]} spellsToUpdate - Array to add update data to
    * @returns {Promise<void>}
    */
-  async _handleUnpreparingSpell(uuid, sourceClass, spellIdsToRemove, spellsToUpdate) {
+  async _handleUnpreparingSpell(uuid, sourceClass, spellIdsToRemove) {
     const matchingSpells = this.actor.items.filter(
       (i) =>
         i.type === 'spell' && (i._stats?.compendiumSource === uuid || i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
@@ -823,7 +694,7 @@ export class SpellManager {
     const isFromClassFeature = targetSpell.system.prepared === 2;
     if (isAlwaysPrepared || isGranted || isFromClassFeature) return;
     const isRitualSpell = this._isRitualSpell(targetSpell);
-    const classRules = RuleSetManager.getClassRules(this.actor, sourceClass);
+    const classRules = RuleSet.getClassRules(this.actor, sourceClass);
     const ritualCastingEnabled = classRules.ritualCasting === 'always';
     const existingRitualSpell = matchingSpells.find((spell) => spell.system?.method === 'ritual' && spell.id !== targetSpell.id);
     if (isRitualSpell && ritualCastingEnabled && targetSpell.system.level > 0) {
@@ -842,8 +713,6 @@ export class SpellManager {
 
   /**
    * Check if a spell can be cast as a ritual.
-   * Uses the same logic as other parts of the system.
-   *
    * @param {Object} spell - The spell item
    * @returns {boolean} Whether the spell has ritual capability
    * @private
@@ -856,11 +725,6 @@ export class SpellManager {
 
   /**
    * Clean up cantrip entries from class-specific prepared spells.
-   *
-   * Removes cantrip entries from the prepared spells tracking for the specified
-   * class. This is used when cantrip preparation should be handled separately
-   * from regular spell preparation or during cleanup operations.
-   *
    * @param {string} classIdentifier - The class identifier
    * @returns {Promise<void>}
    */
@@ -887,12 +751,6 @@ export class SpellManager {
 
   /**
    * Clean up stale preparation flags that don't correspond to actual spells.
-   *
-   * Removes preparation tracking entries for spells that no longer exist on
-   * the actor or are no longer associated with their tracked classes. This
-   * maintenance operation ensures data integrity and prevents accumulation
-   * of obsolete tracking data.
-   *
    * @returns {Promise<void>}
    */
   async cleanupStalePreparationFlags() {
@@ -922,11 +780,6 @@ export class SpellManager {
 
   /**
    * Determine if a spell can be changed based on class rules and current state.
-   *
-   * Validates whether a spell preparation change is allowed based on class
-   * rules, enforcement settings, current limits, and context (level-up, long rest).
-   * Provides appropriate user feedback for limit violations and rule restrictions.
-   *
    * @param {Item5e} spell - The spell being modified
    * @param {boolean} isChecked - Whether the spell is being checked (true) or unchecked (false)
    * @param {boolean} wasPrepared - Whether the spell was previously prepared
@@ -970,10 +823,6 @@ export class SpellManager {
 
   /**
    * Clean up unprepared prepared-casting spells if the setting is enabled.
-   *
-   * Checks for spells with method='spell' and prepared=0 (unprepared) and removes them.
-   * This is called at the end of the save process to clean up manually unprepared spells.
-   *
    * @private
    * @returns {Promise<void>}
    */

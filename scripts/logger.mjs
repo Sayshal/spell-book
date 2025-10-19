@@ -41,15 +41,6 @@ import { MODULE, SETTINGS } from './constants/_module.mjs';
 
 /**
  * Enhanced logging function with automatic caller file path detection.
- *
- * This function provides level-based logging with automatic extraction of caller
- * file path and line information from the JavaScript call stack. It maintains a
- * persistent log buffer and respects the configured log level for console output.
- *
- * The function automatically prepends caller context (file path:line:column) to log
- * messages and stores all log entries in a global buffer for troubleshooting,
- * regardless of the current log level setting.
- *
  * @param {LogLevel} level - Log level (1=error, 2=warning, 3=verbose)
  * @param {...*} args - Content to log to console (any number of arguments)
  */
@@ -104,8 +95,6 @@ export function log(level, ...args) {
 
 /**
  * Extract meaningful caller file path and line information from a stack trace line.
- * Extracts the relative file path and line:column info from module URLs.
- *
  * @param {string} stackLine - Single line from Error.stack
  * @returns {string|null} - File path with line info or null if not extractable
  */
@@ -113,21 +102,13 @@ function extractCallerInfo(stackLine) {
   const cleanLine = stackLine.replace(/^\s*at\s+/, '');
   const match = cleanLine.match(/\(.*?\/modules\/spell-book(\/[^)]+)\)$/);
   if (match) return match[1];
-  const fallbackMatch = cleanLine.match(/\/modules\/spell-book(\/[^\s]+)/);
+  const fallbackMatch = cleanLine.match(/\/modules\/spell-book(\/\S+)/);
   if (fallbackMatch) return fallbackMatch[1];
   return null;
 }
 
 /**
  * Initialize the logger with current game settings.
- *
- * Retrieves the logging level from game settings and updates the module
- * configuration. This function is called during module initialization
- * to ensure the logger respects user preferences.
- *
- * If settings retrieval fails, defaults to error-level logging (level 1)
- * for safety and logs the initialization error.
- *
  * @returns {void}
  */
 export function initializeLogger() {

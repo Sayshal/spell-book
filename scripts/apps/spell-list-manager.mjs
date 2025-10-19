@@ -25,11 +25,11 @@
 
 import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import * as DataHelpers from '../data/_module.mjs';
-import { SpellComparisonDialog, SpellDetailsCustomization } from '../dialogs/_module.mjs';
+import { SpellComparison, DetailsCustomization } from '../dialogs/_module.mjs';
 import { log } from '../logger.mjs';
 import * as UIHelpers from '../ui/_module.mjs';
 import * as ValidationHelpers from '../validation/_module.mjs';
-import { SpellAnalyticsDashboard } from './_module.mjs';
+import { AnalyticsDashboard } from './_module.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const { renderTemplate } = foundry.applications.handlebars;
@@ -125,12 +125,6 @@ const { renderTemplate } = foundry.applications.handlebars;
 
 /**
  * Spell List Manager application for viewing, editing, and creating spell lists
- * with multi-select functionality for bulk operations.
- *
- * This application provides a interface for GM users to manage
- * spell lists across the system. It combines advanced filtering, multi-selection,
- * and bulk operations with intuitive UI patterns for efficient spell list
- * management at scale.
  */
 export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
@@ -185,11 +179,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Initialize the GM Spell List Manager.
-   *
-   * Sets up state management for spell lists, filtering, selection,
-   * and UI interactions. Initializes all necessary managers and helpers for
-   * advanced spell list operations.
-   *
    * @param {Object} [options={}] - Application options
    */
   constructor(options) {
@@ -231,7 +220,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     /** @type {Set<string>} Set of spell UUIDs for comparison */
     this.comparisonSpells = new Set();
 
-    /** @type {SpellComparisonDialog|null} Active comparison dialog */
+    /** @type {SpellComparison|null} Active comparison dialog */
     this.comparisonDialog = null;
 
     /** @type {FilterState} Current filter state for spell filtering */
@@ -253,8 +242,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       ritual: false
     };
 
-    /** @type {UIHelpers.SpellbookFilterHelper} Filter helper for spell filtering */
-    this.filterHelper = new UIHelpers.SpellbookFilterHelper(this);
+    /** @type {UIHelpers.Filters} Filter helper for spell filtering */
+    this.filterHelper = new UIHelpers.Filters(this);
 
     /** @type {boolean} Whether checkboxes are currently being updated programmatically */
     this.isUpdatingCheckboxes = false;
@@ -268,7 +257,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     context.selectedSpellList = this.selectedSpellList;
     context.availableSpells = this.availableSpells;
     context.filterState = this.filterState;
-    context.settings = { useMetricUnits: DataHelpers.shouldUseMetricUnits() };
+    context.settings = { useMetricUnits: DataHelpers.shouldUseMetric() };
     context.selectionMode = this.selectionMode;
     context.selectedSpellsToAdd = this.selectedSpellsToAdd;
     context.selectedSpellsToRemove = this.selectedSpellsToRemove;
@@ -359,10 +348,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Organize spell lists into categories for the context.
-   *
-   * Categorizes available spell lists into logical groups (actor-owned, custom,
-   * merged, standard, hidden) with proper sorting and metadata for sidebar display.
-   *
    * @param {Object} context - The context object to modify
    * @private
    */
@@ -403,10 +388,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Prepare filter-related context data.
-   *
-   * Processes available spells through the filtering system and adds form elements,
-   * comparison state, and selection checkboxes as appropriate for the current mode.
-   *
    * @param {Object} context - The context object to modify
    * @private
    */
@@ -440,10 +421,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Add editing-specific context data.
-   *
-   * Adds context data specific to editing mode including custom list status,
-   * original version comparison, and restoration capabilities.
-   *
    * @param {Object} context - Context object to modify
    * @returns {Promise<void>}
    * @private
@@ -463,11 +440,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Load spell lists and available spells.
-   *
-   * Performs data loading including spell list discovery,
-   * spell data preloading, and icon enrichment. Handles both preloaded
-   * and fresh data scenarios efficiently.
-   *
    * @returns {Promise<void>}
    */
   async loadData() {
@@ -514,8 +486,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Add icon enrichment to available spells.
-   *
-   * Enriches all available spells with clickable icon links for better UX.
    */
   enrichAvailableSpells() {
     if (!this.availableSpells.length) return;
@@ -524,11 +494,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Load spell details for a list of spell UUIDs.
-   *
-   * Efficiently loads spell details using preloaded data when available,
-   * falling back to compendium fetching for missing spells. Handles
-   * loading states and error recovery.
-   *
    * @param {Array<string>} spellUuids - Array of spell UUIDs to load
    * @returns {Promise<void>}
    */
@@ -569,11 +534,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Select a spell list by UUID.
-   *
-   * Handles spell list selection with duplicate detection, loading states,
-   * and source filter determination. Clears previous selections and
-   * initializes the selected list for display.
-   *
    * @param {string} uuid - The UUID of the spell list to select
    * @returns {Promise<void>}
    */
@@ -601,10 +561,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Determine appropriate source filter based on spell list.
-   *
-   * Automatically sets the source filter based on the selected spell list's
-   * origin, checking for custom list original sources and pack information.
-   *
    * @param {Object} spellList - The spell list document
    */
   determineSourceFilter(spellList) {
@@ -635,10 +591,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Filter available spells using the filter helper.
-   *
-   * Applies filtering to available spells based on current
-   * filter state and selected spell list exclusions.
-   *
    * @returns {Object} Filtered spells with count
    * @private
    */
@@ -656,8 +608,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Check if a spell is in the currently selected list.
-   *
-   *
    * @param {Object} spell - The spell to check
    * @param {Set<string>} selectedSpellUUIDs - Set of UUIDs in the selected list
    * @returns {boolean} Whether the spell is in the selected list
@@ -670,8 +620,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Get a set of UUIDs for spells in the currently selected list.
-   *
-   *
    * @returns {Set<string>} Set of spell UUIDs
    */
   getSelectedSpellUUIDs() {
@@ -688,9 +636,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Apply filters to the DOM elements in the UI.
-   *
-   * Dynamically shows/hides spell elements based on current filter state
-   * without requiring a full re-render for better performance.
    */
   applyFilters() {
     if (this.isUpdatingCheckboxes) return;
@@ -754,7 +699,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Clear all selections and exit selection mode.
-   *
    * @private
    */
   _clearSelections() {
@@ -767,7 +711,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Update selection count display in footer.
-   *
    * @private
    */
   _updateSelectionCount() {
@@ -805,7 +748,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Update spell checkboxes to match current selection.
-   *
    * @private
    */
   _updateSpellCheckboxes() {
@@ -827,7 +769,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Update select all checkbox states (including indeterminate).
-   *
    * @private
    */
   _updateSelectAllCheckboxes() {
@@ -865,7 +806,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Get visible filtered spells for selection operations.
-   *
    * @returns {Array<Object>} Array of visible spell objects
    * @private
    */
@@ -889,7 +829,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Set up name search filter listener.
-   *
    * @private
    */
   _setupNameFilter() {
@@ -920,7 +859,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Set up dropdown filter listeners with debouncing.
-   *
    * @private
    */
   _setupDropdownFilters() {
@@ -955,7 +893,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Set up range filter listeners.
-   *
    * @private
    */
   _setupRangeFilters() {
@@ -979,7 +916,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Set up checkbox filter listeners.
-   *
    * @private
    */
   _setupCheckboxFilters() {
@@ -999,7 +935,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Reset all filters to their default state and clear form inputs.
-   *
    * @returns {void}
    * @private
    */
@@ -1027,11 +962,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Prepare form elements for the spell filters.
-   *
-   * Creates form elements for all filter types including
-   * search inputs, dropdowns, checkboxes, and range inputs with proper
-   * state management and accessibility attributes.
-   *
    * @returns {Object} Object containing all filter form element HTML
    * @private
    */
@@ -1198,7 +1128,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Prepare form data for the create spell list dialog.
-   *
    * @param {Array<Object>} identifierOptions - Available class identifier options
    * @returns {Object} Object containing form element HTML
    * @private
@@ -1250,12 +1179,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Prepare form data for the merge spell lists dialog.
-   *
    * @returns {Object} Object containing form element HTML
    * @private
    */
   _prepareMergeListFormData() {
-    // Build spell list options organized by type
     const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
     const actorOwnedLists = this.availableSpellLists.filter((list) => list.isActorOwned && !hiddenLists.includes(list.uuid));
     const customLists = this.availableSpellLists.filter(
@@ -1265,48 +1192,20 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const standardLists = this.availableSpellLists.filter(
       (list) => !list.isActorOwned && !list.isCustom && !list.isMerged && !list.document?.flags?.[MODULE.ID]?.isNewList && !hiddenLists.includes(list.uuid)
     );
-
-    // Create multi-select options with group labels
     const multiSelectOptions = [];
-
-    // Add standard lists
     standardLists.forEach((list) => {
-      multiSelectOptions.push({
-        value: list.uuid,
-        label: list.name,
-        group: 'SPELLMANAGER.MergeLists.Groups.StandardLists'
-      });
+      multiSelectOptions.push({ value: list.uuid, label: list.name, group: 'SPELLMANAGER.MergeLists.Groups.StandardLists' });
     });
-
-    // Add custom lists
     customLists.forEach((list) => {
-      multiSelectOptions.push({
-        value: list.uuid,
-        label: list.name,
-        group: 'SPELLMANAGER.MergeLists.Groups.CustomLists'
-      });
+      multiSelectOptions.push({ value: list.uuid, label: list.name, group: 'SPELLMANAGER.MergeLists.Groups.CustomLists' });
     });
-
-    // Add merged lists
     mergedLists.forEach((list) => {
-      multiSelectOptions.push({
-        value: list.uuid,
-        label: list.name,
-        group: 'SPELLMANAGER.MergeLists.Groups.MergedLists'
-      });
+      multiSelectOptions.push({ value: list.uuid, label: list.name, group: 'SPELLMANAGER.MergeLists.Groups.MergedLists' });
     });
-
-    // Add actor-owned lists
     actorOwnedLists.forEach((list) => {
       const label = `${list.name} (${list.actorName || game.i18n.localize('SPELLMANAGER.ListSource.Character')})`;
-      multiSelectOptions.push({
-        value: list.uuid,
-        label: label,
-        group: 'SPELLMANAGER.MergeLists.Groups.PlayerSpellbooks'
-      });
+      multiSelectOptions.push({ value: list.uuid, label: label, group: 'SPELLMANAGER.MergeLists.Groups.PlayerSpellbooks' });
     });
-
-    // Determine which groups have options
     const allPossibleGroups = [
       'SPELLMANAGER.MergeLists.Groups.StandardLists',
       'SPELLMANAGER.MergeLists.Groups.CustomLists',
@@ -1316,8 +1215,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const groupsWithOptions = allPossibleGroups.filter((groupKey) => {
       return multiSelectOptions.some((option) => option.group === groupKey);
     });
-
-    // Create the multi-select element
     const spellListsMultiSelect = ValidationHelpers.createMultiSelect(multiSelectOptions, {
       name: 'spellListsToMerge',
       selectedValues: [],
@@ -1326,8 +1223,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       cssClass: 'spell-lists-multi-select'
     });
     spellListsMultiSelect.id = 'spell-lists-to-merge';
-
-    // Create merged list name input (now required)
     const mergedListNameInput = ValidationHelpers.createTextInput({
       name: 'mergedListName',
       placeholder: game.i18n.localize('SPELLMANAGER.MergeLists.MergedListNamePlaceholder'),
@@ -1335,8 +1230,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       required: true
     });
     mergedListNameInput.id = 'merged-list-name';
-
-    // Create hide source lists checkbox
     const hideSourceListsCheckbox = ValidationHelpers.createCheckbox({
       name: 'hideSourceLists',
       checked: false,
@@ -1344,7 +1237,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       cssClass: 'dnd5e2'
     });
     hideSourceListsCheckbox.id = 'hide-source-lists';
-
     return {
       spellListsMultiSelectHtml: ValidationHelpers.elementToHtml(spellListsMultiSelect),
       mergedListNameInputHtml: ValidationHelpers.elementToHtml(mergedListNameInput),
@@ -1354,7 +1246,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Display a confirmation dialog.
-   *
    * @param {Object} options - Dialog configuration options
    * @param {string} [options.title] - The dialog title text
    * @param {string} [options.content] - The dialog message content
@@ -1394,7 +1285,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Show the create list dialog and return result.
-   *
    * @param {Array<Object>} identifierOptions - Class identifier options
    * @returns {Promise<Object>} Dialog result and form data
    * @private
@@ -1470,7 +1360,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Show the merge lists dialog and return result.
-   *
    * @returns {Promise<Object>} Dialog result and form data
    * @private
    */
@@ -1547,7 +1436,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Build spell list options for dropdowns.
-   *
    * @param {string} defaultLabel - Localization key for default option
    * @returns {Array<Object>} Array of option objects
    * @private
@@ -1597,7 +1485,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Set up listeners for the create list dialog.
-   *
    * @param {HTMLElement} target - The dialog DOM element
    * @private
    */
@@ -1640,7 +1527,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Set up listeners for the merge lists dialog.
-   *
    * @param {HTMLElement} target - The dialog DOM element
    * @private
    */
@@ -1667,7 +1553,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Duplicate the selected spell list for editing.
-   *
    * @returns {Promise<void>}
    * @private
    */
@@ -1693,7 +1578,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Ensure all spells in the list have icons.
-   *
    * @private
    */
   _ensureSpellIcons() {
@@ -1702,7 +1586,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Find a class item in a specific top-level folder.
-   *
    * @param {string} identifier - The class identifier to search for
    * @param {string} topLevelFolderName - The top-level folder name to search in
    * @returns {Promise<Item|null>} The found class item or null
@@ -1735,14 +1618,12 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Build a cache of which identifiers have matching classes in which folders.
-   *
    * @returns {Promise<Map<string, boolean>>} Map with keys like "FolderName:identifier"
    * @private
    */
   async _buildClassFolderCache() {
     const cache = new Map();
     const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
-
     for (const pack of itemPacks) {
       let packTopLevelFolder = null;
       if (pack.folder) {
@@ -1750,11 +1631,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         else packTopLevelFolder = pack.folder.name;
       }
       if (!packTopLevelFolder) continue;
-
       try {
         const index = await pack.getIndex({ fields: ['type', 'system.identifier'] });
         const classItems = index.filter((e) => (e.type === 'class' || e.type === 'subclass') && e.system?.identifier);
-
         for (const cls of classItems) {
           const identifier = cls.system.identifier.toLowerCase();
           const key = `${packTopLevelFolder}:${identifier}`;
@@ -1764,13 +1643,11 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         log(2, `Error indexing pack ${pack.metadata.label}:`, err);
       }
     }
-
     return cache;
   }
 
   /**
    * Create a new spell list.
-   *
    * @param formData - Necessary data to build the temporary form.
    * @returns {Promise<void>}
    * @private
@@ -1786,10 +1663,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Create merged spell list.
-   *
-   * @param {string} sourceListUuid - UUID of the source spell list
-   * @param {string} copyFromListUuid - UUID of the list to copy from
-   * @param spellListUuids
+   * @param {string[]} spellListUuids - Array of UUIDs of the spell lists to merge
    * @param {string} mergedListName - Name for the merged list
    * @param {boolean} [hideSourceLists=false] - Whether to hide source lists after merge
    * @returns {Promise<void>}
@@ -1802,13 +1676,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         if (hideSourceLists) {
           const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
           const listsToHide = [];
-
-          // Check each source list to see if it should be hidden
           for (const uuid of spellListUuids) {
             const sourceList = this.availableSpellLists.find((l) => l.uuid === uuid);
-            if (sourceList && !sourceList.isActorOwned && !hiddenLists.includes(uuid)) {
-              listsToHide.push(uuid);
-            }
+            if (sourceList && !sourceList.isActorOwned && !hiddenLists.includes(uuid)) listsToHide.push(uuid);
           }
 
           if (listsToHide.length > 0) {
@@ -1825,7 +1695,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle selecting a spell list.
-   *
    * @param {Event} event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @returns {Promise<void>}
@@ -1839,7 +1708,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle editing a spell list.
-   *
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @returns {Promise<void>}
@@ -1859,7 +1727,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle removing a spell from the list.
-   *
    * @param {Event} event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @static
@@ -1882,7 +1749,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle adding a spell to the list.
-   *
    * @param {Event} event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @static
@@ -1909,7 +1775,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle saving the custom spell list.
-   *
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @returns {Promise<void>}
@@ -1930,7 +1795,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle deleting the custom spell list.
-   *
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @returns {Promise<void>}
@@ -1956,7 +1820,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle restoring from the original spell list.
-   *
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @returns {Promise<void>}
@@ -2005,7 +1868,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle showing the documentation dialog.
-   *
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @static
@@ -2016,7 +1878,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       window: { title: game.i18n.localize('SPELLMANAGER.Documentation.Title'), icon: 'fas fa-question-circle' },
       content: content,
       classes: ['spell-book', 'spell-manager-documentation'],
-      buttons: [{ icon: 'fas fa-check', label: game.i18n.localize('SPELLMANAGER.Buttons.Close'), action: 'close' }],
+      buttons: [{ icon: 'fas fa-check', label: game.i18n.localize('Close'), action: 'close' }],
       position: { width: 650, height: 'auto' },
       default: 'close',
       rejectClose: false
@@ -2024,8 +1886,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle toggling the sidebar collapsed state.
-   *
+   * Handle toggling the sidebar collapsed state
    * @param {Event} event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @static
@@ -2039,7 +1900,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle toggling a spell level's collapsed state.
-   *
    * @param {Event} event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @static
@@ -2068,7 +1928,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle toggling a folder's collapsed state.
-   *
    * @param {Event} event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @static
@@ -2094,7 +1953,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle opening an actor sheet.
-   *
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @static
@@ -2110,7 +1968,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle opening a class item sheet.
-   *
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @static
@@ -2135,7 +1992,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle creating a new spell list.
-   *
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @returns {Promise<void>}
@@ -2156,7 +2012,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle renaming a spell list.
-   *
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @returns {Promise<void>}
@@ -2179,7 +2034,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Show the rename dialog and return result.
-   *
    * @param {string} currentName - Current name of the spell list
    * @returns {Promise<Object>} Dialog result and form data
    * @private
@@ -2227,7 +2081,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Set up listeners for the rename dialog.
-   *
    * @param {HTMLElement} target - The dialog DOM element
    * @param {string} currentName - Current name for comparison
    * @param {Function} validationCallback - Callback to report validation status
@@ -2271,7 +2124,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Check if a spell list name already exists.
-   *
    * @param {string} name - Name to check
    * @returns {boolean} True if name exists
    * @private
@@ -2287,7 +2139,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Perform the actual rename operation.
-   *
    * @param {string} listUuid - UUID of the list to rename
    * @param {string} newName - New name for the list
    * @returns {Promise<void>}
@@ -2308,7 +2159,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle merging spell lists.
-   *
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @returns {Promise<void>}
@@ -2324,7 +2174,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle toggling selection mode.
-   *
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @static
@@ -2343,7 +2192,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle selecting all visible spells.
-   *
    * @param {Event} event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @static
@@ -2388,7 +2236,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle bulk save operation.
-   *
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @returns {Promise<void>}
@@ -2461,7 +2308,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle canceling selection mode.
-   *
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @static
@@ -2473,7 +2319,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle toggling spell list visibility.
-   *
    * @param {Event} event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @returns {Promise<void>}
@@ -2504,33 +2349,30 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle opening the analytics dashboard for GM users.
-   *
    * @param {Event} _event - The click event
    * @param {HTMLElement} _target - The target element that triggered the event
    * @returns {Promise<void>}
    * @static
    */
   static async handleOpenAnalyticsDashboard(_event, _target) {
-    const dashboard = new SpellAnalyticsDashboard({ viewMode: 'gm' });
+    const dashboard = new AnalyticsDashboard({ viewMode: 'gm' });
     dashboard.render(true);
   }
 
   /**
    * Handle opening the spell details customization dialog.
-   *
    * @param {Event} _event - The click event
    * @param {HTMLElement} _target - The target element that triggered the event
    * @returns {Promise<void>}
    * @static
    */
   static async handleOpenCustomization(_event, _target) {
-    const dialog = new SpellDetailsCustomization();
+    const dialog = new DetailsCustomization();
     dialog.render(true);
   }
 
   /**
    * Handle spell comparison selection and dialog management.
-   *
    * @param {MouseEvent} event - The click event
    * @param {HTMLFormElement} _form - The form element (unused)
    * @returns {Promise<void>}
@@ -2544,7 +2386,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     this.render(false);
     if (this.comparisonSpells.size >= 2) {
       if (!this.comparisonDialog) {
-        this.comparisonDialog = new SpellComparisonDialog(this);
+        this.comparisonDialog = new SpellComparison(this);
         this.comparisonDialog.render(true);
       } else {
         this.comparisonDialog.render(false);
@@ -2558,7 +2400,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle toggling registry integration for a spell list.
-   *
    * @param {Event} event - The triggering event
    * @param {HTMLElement} _form - The form element
    * @returns {Promise<void>}
@@ -2595,10 +2436,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Set up event listeners for multi-select functionality.
-   *
-   * Implements multi-select behavior including shift-click range
-   * selection, checkbox management, and keyboard shortcuts for efficient
-   * bulk operations.
    */
   setupMultiSelectListeners() {
     if (!this.isEditing) return;
@@ -2670,7 +2507,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle range selection with shift+click.
-   *
    * @param {string} uuid - The clicked spell UUID
    * @param {boolean} isAvailableSpell - Whether this is an available spell or selected spell
    * @private
@@ -2702,7 +2538,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Update the last selected index for range selection.
-   *
    * @param {string} uuid - The clicked spell UUID
    * @param {boolean} isAvailableSpell - Whether this is an available spell or selected spell
    * @private
@@ -2724,7 +2559,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Create a spell selection checkbox with proper data attributes.
-   *
    * @param {Object} spell - The spell object
    * @param {string} type - 'add' or 'remove'
    * @param {boolean} [isChecked=false] - Whether the checkbox should be checked
@@ -2745,7 +2579,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Create a select-all checkbox with proper data attributes.
-   *
    * @param {string} type - 'add' or 'remove'
    * @returns {string} HTML string for the checkbox
    * @private

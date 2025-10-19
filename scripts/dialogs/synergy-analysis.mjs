@@ -9,31 +9,24 @@
  * @author Tyler
  */
 
-import { MODULE, TEMPLATES } from '../constants/_module.mjs';
-import { log } from '../logger.mjs';
+import { TEMPLATES } from '../constants/_module.mjs';
+
+/**
+ * @typedef {import('../managers/party-mode.mjs').SynergyAnalysis} SynergyAnalysis
+ */
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
  * Synergy Analysis Dialog for displaying party spell analysis.
- *
- * This application provides spell synergy analysis including
- * interactive pie charts, damage type distribution, component analysis,
- * and strategic recommendations for party optimization.
  */
-export class SynergyAnalysisDialog extends HandlebarsApplicationMixin(ApplicationV2) {
+export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   static DEFAULT_OPTIONS = {
     id: 'synergy-analysis-dialog',
     tag: 'div',
     classes: ['spell-book', 'synergy-analysis-dialog'],
-    window: {
-      icon: 'fas fa-chart-pie',
-      resizable: true,
-      minimizable: true,
-      positioned: true,
-      title: 'SPELLBOOK.Party.SynergyAnalysisTitle'
-    },
+    window: { icon: 'fas fa-chart-pie', resizable: true, minimizable: true, positioned: true, title: 'SPELLBOOK.Party.SynergyAnalysisTitle' },
     position: { width: 700, height: 800 }
   };
 
@@ -42,14 +35,13 @@ export class SynergyAnalysisDialog extends HandlebarsApplicationMixin(Applicatio
 
   /**
    * Create a new Synergy Analysis Dialog.
-   *
-   * @param {Object} synergyData - The synergy analysis data to display
+   * @param {SynergyAnalysis} synergyData - The synergy analysis data to display
    * @param {Object} [options={}] - Additional application options
    */
   constructor(synergyData, options = {}) {
     super(options);
 
-    /** @type {Object} The synergy analysis data */
+    /** @type {SynergyAnalysis} The synergy analysis data */
     this.synergyData = synergyData;
   }
 
@@ -63,6 +55,9 @@ export class SynergyAnalysisDialog extends HandlebarsApplicationMixin(Applicatio
 
   /**
    * Prepare component tooltips with spell lists.
+   * @param {SynergyAnalysis} synergy - The synergy analysis data
+   * @returns {Object} Object containing tooltip strings for each component type (verbal, somatic, material, materialCost)
+   * @private
    */
   _prepareComponentTooltips(synergy) {
     const maxSpells = 25;
@@ -76,6 +71,10 @@ export class SynergyAnalysisDialog extends HandlebarsApplicationMixin(Applicatio
 
   /**
    * Format spell list for tooltips.
+   * @param {string[]} spells - Array of spell names
+   * @param {number} maxSpells - Maximum number of spells to display before truncating
+   * @returns {string} Formatted spell list string, truncated if necessary
+   * @private
    */
   _formatSpellList(spells, maxSpells) {
     if (!spells || spells.length === 0) return '';

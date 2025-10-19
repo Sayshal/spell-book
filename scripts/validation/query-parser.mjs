@@ -46,13 +46,10 @@ import { log } from '../logger.mjs';
 
 /**
  * Parser for advanced search query syntax.
- * Supports only FIELD:VALUE syntax with AND operations for simplicity and performance.
  */
 export class QueryParser {
   /**
    * Create a new QueryParser instance with field definitions for parsing search queries.
-   * The field definitions provide alias resolution and value validation capabilities.
-   *
    * @param {FieldDefinitionsType} fieldDefinitions - The field definitions to use for parsing
    */
   constructor(fieldDefinitions) {
@@ -62,8 +59,6 @@ export class QueryParser {
 
   /**
    * Parse advanced search query into executable query object.
-   * Converts search syntax into structured query conditions.
-   *
    * @param {string} query - The query string (without ^ trigger character)
    * @returns {ParsedQueryObject|null} Parsed query object or null if invalid
    */
@@ -83,8 +78,6 @@ export class QueryParser {
 
   /**
    * Parse query into field conditions using AND logic.
-   * Splits query on 'and' keywords and processes each field expression.
-   *
    * @private
    * @param {string} query - The query string to parse
    * @returns {Array<ParsedFieldCondition>} Array of parsed field condition objects
@@ -103,8 +96,6 @@ export class QueryParser {
 
   /**
    * Parse field:value expression into condition object.
-   * Handles field alias resolution, value validation, and normalization.
-   *
    * @private
    * @param {string} expression - The field:value expression to parse
    * @returns {ParsedFieldCondition|null} Parsed field condition or null if invalid
@@ -124,8 +115,6 @@ export class QueryParser {
 
   /**
    * Normalize field values for consistent comparison.
-   * Handles field-specific value normalization and standardization.
-   *
    * @private
    * @param {string} fieldId - The field ID for normalization context
    * @param {string} value - The raw value to normalize

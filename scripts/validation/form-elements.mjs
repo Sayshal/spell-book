@@ -107,9 +107,47 @@
  */
 
 /**
- * Create a checkbox input using D&D 5e styling.
- * Generates a checkbox that matches the D&D 5e system's visual style and behavior.
+ * Configuration options for counter group creation.
  *
+ * @typedef {Object} CounterGroupConfig
+ * @property {string} identifier - Unique identifier for the control
+ * @property {string} decreaseAction - Action name for decrease button (data-action attribute)
+ * @property {string} increaseAction - Action name for increase button (data-action attribute)
+ * @property {string} inputName - Name attribute for the input
+ * @property {number} currentValue - Current value
+ * @property {number} [min] - Minimum allowed value
+ * @property {number} [max] - Maximum allowed value
+ * @property {number} [step=1] - Step increment value
+ * @property {string} decreaseLabel - Localization key for decrease button aria-label
+ * @property {string} increaseLabel - Localization key for increase button aria-label
+ * @property {string} inputLabel - Localization key for input aria-label
+ * @property {string} [inputCssClass] - Additional CSS class for input element
+ */
+
+/**
+ * Configuration for localized option creation.
+ *
+ * @typedef {Object} LocalizedOptionConfig
+ * @property {string} value - The option value
+ * @property {string} labelKey - Localization key for the label
+ */
+
+/**
+ * Configuration options for button creation.
+ *
+ * @typedef {Object} ButtonConfig
+ * @property {string} [type='button'] - Button type ('submit', 'button', 'reset')
+ * @property {string} [name] - Name attribute for the button
+ * @property {string} labelKey - Localization key for button label
+ * @property {string} [iconClass] - Font Awesome icon class (e.g., 'fas fa-save')
+ * @property {string} [cssClass=''] - CSS class for the button
+ * @property {boolean} [disabled=false] - Whether button is disabled
+ * @property {Object} [dataset] - Dataset attributes to apply to the button
+ * @property {string} [ariaLabel] - Optional aria-label override (defaults to labelKey localization)
+ */
+
+/**
+ * Create a checkbox input using D&D 5e styling.
  * @param {CheckboxConfig} config - Configuration options for the checkbox
  * @returns {HTMLElement} The created checkbox element (or label wrapper if label provided)
  */
@@ -131,8 +169,6 @@ export function createCheckbox(config) {
 
 /**
  * Create a number input using D&D 5e styling.
- * Generates a number input that matches the D&D 5e system's visual style and behavior.
- *
  * @param {NumberInputConfig} config - Configuration options for the number input
  * @returns {HTMLElement} The created number input element
  */
@@ -144,8 +180,6 @@ export function createNumberInput(config) {
 
 /**
  * Create a text input using D&D 5e styling.
- * Generates a text input that matches the D&D 5e system's visual style and behavior.
- *
  * @param {TextInputConfig} config - Configuration options for the text input
  * @returns {HTMLElement} The created text input element
  */
@@ -157,8 +191,6 @@ export function createTextInput(config) {
 
 /**
  * Create a select dropdown using D&D 5e styling.
- * Generates a select element with support for option groups and D&D 5e styling.
- *
  * @param {SelectConfig} config - Configuration options for the select dropdown
  * @returns {HTMLElement} The created select element
  */
@@ -196,11 +228,6 @@ export function createSelect(config) {
 
 /**
  * Create a multi-select element using Foundry's native multi-select functionality.
- *
- * Provides a generic wrapper around Foundry's createMultiSelectInput with support
- * for optgroups, localization, sorting, and both dropdown and checkbox styles.
- * Can be configured for any multi-select use case throughout the application.
- *
  * @param {Array<MultiSelectOption>} options - Array of option configurations
  * @param {MultiSelectConfig} config - Multi-select configuration
  * @returns {HTMLElement} The created multi-select element
@@ -224,11 +251,6 @@ export function createMultiSelect(options, config) {
 
 /**
  * Create a multi-select element with pre-grouped options.
- *
- * Convenience function for creating multi-selects when options are already
- * organized into groups. Each option should have a 'group' property that
- * matches one of the provided group labels.
- *
  * @param {Array<MultiSelectOption>} groupedOptions - Options with group properties
  * @param {Array<string>} groups - Ordered array of group labels
  * @param {MultiSelectConfig} config - Multi-select configuration
@@ -242,9 +264,97 @@ export function createGroupedMultiSelect(groupedOptions, groups, config) {
 }
 
 /**
+ * Create a counter group with increment/decrement buttons and number input.
+ * @param {CounterGroupConfig} config - Counter group configuration
+ * @returns {string} HTML string for the complete counter group
+ */
+export function createCounterGroup(config) {
+  const container = document.createElement('div');
+  container.className = 'counter-group';
+  const decreaseButton = document.createElement('button');
+  decreaseButton.type = 'button';
+  decreaseButton.dataset.class = config.identifier;
+  decreaseButton.dataset.action = config.decreaseAction;
+  decreaseButton.textContent = '−';
+  decreaseButton.setAttribute('aria-label', game.i18n.localize(config.decreaseLabel));
+  const input = createNumberInput({
+    name: config.inputName,
+    value: config.currentValue,
+    min: config.min,
+    max: config.max,
+    step: config.step ?? 1,
+    cssClass: config.inputCssClass,
+    ariaLabel: game.i18n.localize(config.inputLabel)
+  });
+  input.id = `${config.identifier}-input`;
+  const increaseButton = document.createElement('button');
+  increaseButton.type = 'button';
+  increaseButton.dataset.class = config.identifier;
+  increaseButton.dataset.action = config.increaseAction;
+  increaseButton.textContent = '+';
+  increaseButton.setAttribute('aria-label', game.i18n.localize(config.increaseLabel));
+  container.appendChild(decreaseButton);
+  container.appendChild(input);
+  container.appendChild(increaseButton);
+  return elementToHtml(container);
+}
+
+/**
+ * Create options array with localized labels and automatic selection.
+ * @param {Array<LocalizedOptionConfig>} optionConfigs - Array of option configurations
+ * @param {string} selectedValue - Currently selected value
+ * @returns {Array<SelectOption>} Array of options with localized labels and selected state
+ */
+export function createLocalizedOptions(optionConfigs, selectedValue) {
+  return optionConfigs.map((config) => ({ value: config.value, label: game.i18n.localize(config.labelKey), selected: selectedValue === config.value }));
+}
+
+/**
+ * Create a select dropdown with localized options.
+ * @param {string} name - Name attribute for the select
+ * @param {Array<LocalizedOptionConfig>} optionConfigs - Option configurations
+ * @param {string} selectedValue - Currently selected value
+ * @param {string} ariaLabelKey - Localization key for aria-label
+ * @param {string} [id] - Optional ID for the select element
+ * @returns {HTMLElement} The created select element
+ */
+export function createLocalizedSelect(name, optionConfigs, selectedValue, ariaLabelKey, id = null) {
+  const options = createLocalizedOptions(optionConfigs, selectedValue);
+  const select = createSelect({ name, options, ariaLabel: game.i18n.localize(ariaLabelKey) });
+  if (id) select.id = id;
+  return select;
+}
+
+/**
+ * Create a button with optional icon and localized label.
+ * @param {ButtonConfig} config - Button configuration options
+ * @returns {HTMLElement} The created button element
+ */
+export function createButton(config) {
+  const button = document.createElement('button');
+  button.type = config.type || 'button';
+  if (config.name) button.name = config.name;
+  button.className = config.cssClass || '';
+  button.disabled = config.disabled || false;
+  const label = game.i18n.localize(config.labelKey);
+  button.setAttribute('aria-label', config.ariaLabel || label);
+  if (config.iconClass) {
+    const icon = document.createElement('i');
+    icon.className = config.iconClass;
+    icon.setAttribute('aria-hidden', 'true');
+    button.appendChild(icon);
+    button.appendChild(document.createTextNode(` ${label}`));
+  } else button.textContent = label;
+  if (config.dataset) {
+    Object.entries(config.dataset).forEach(([key, value]) => {
+      button.dataset[key] = value;
+    });
+  }
+  return button;
+}
+
+/**
  * Convert a DOM element to its HTML string representation.
- * Utility function for converting DOM elements to HTML strings for template rendering.
- *
  * @param {HTMLElement|DocumentFragment|string} element - The DOM element to convert
  * @returns {string} HTML string representation of the element
  */

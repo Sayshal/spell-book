@@ -21,27 +21,15 @@
  * @author Tyler
  */
 
-import { SpellBookTroubleshooter, SpellListManager } from './apps/_module.mjs';
+import { Troubleshooter } from './apps/_module.mjs';
 import { MODULE, SETTINGS } from './constants/_module.mjs';
-import { CompendiumSelectionDialog, SpellDetailsCustomization } from './dialogs/_module.mjs';
+import { CompendiumSelection, DetailsCustomization } from './dialogs/_module.mjs';
 import { log } from './logger.mjs';
 import * as UIHelpers from './ui/_module.mjs';
 import * as DataHelpers from './data/_module.mjs';
 
 /**
  * Register all module settings with Foundry VTT.
- *
- * This function registers the complete configuration interface for the Spell Book module.
- * Settings are organized into logical groups and include validation, change handlers,
- * and appropriate scopes (world vs client) for each configuration option.
- *
- * The registration process includes:
- * - Menu items for launching configuration dialogs
- * - Core functionality settings for spell data and behavior
- * - User interface customization options
- * - Technical settings for performance and debugging
- * - Validation and error handling for setting changes
- *
  * @returns {void}
  */
 export function registerSettings() {
@@ -56,7 +44,7 @@ export function registerSettings() {
     label: 'SPELLBOOK.Settings.CompendiumSelectionButton',
     icon: 'fas fa-books',
     scope: 'world',
-    type: CompendiumSelectionDialog,
+    type: CompendiumSelection,
     restricted: true
   });
 
@@ -330,7 +318,7 @@ export function registerSettings() {
     },
     default: 'off',
     onChange: async (value) => {
-      await UIHelpers.SpellDescriptionInjection.handleSettingChange(value);
+      await UIHelpers.DescriptionInjector.handleSettingChange(value);
     }
   });
 
@@ -359,7 +347,7 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.DetailsCustomization.MenuHint',
     icon: 'fa-solid fa-palette',
     label: 'SPELLBOOK.Settings.DetailsCustomization.MenuLabel',
-    type: SpellDetailsCustomization,
+    type: DetailsCustomization,
     restricted: false
   });
 
@@ -653,7 +641,7 @@ export function registerSettings() {
     label: 'SPELLBOOK.Settings.Troubleshooter.GenerateReport',
     icon: 'fas fa-bug',
     scope: 'world',
-    type: SpellBookTroubleshooter,
+    type: Troubleshooter,
     restricted: true
   });
 

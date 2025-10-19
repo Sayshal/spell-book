@@ -12,7 +12,7 @@
  * - Spell favorites management and quick access
  * - Spell display formatting and presentation utilities
  * - Filtering and categorization systems
- * - Core UI interaction handlers and management
+ * - Core UI interaction handlers, management, checkbox helpers, positioning, and tooltip utilities
  * - UI customization and theming capabilities
  * - Chat Handler for spell book notices
  *
@@ -20,12 +20,12 @@
  * @author Tyler
  */
 
-export * from './advanced-search-manager.mjs';
-export * from './color-utils.mjs';
-export * from './spell-description-injection.mjs';
-export * from './spell-favorites.mjs';
-export * from './spell-formatting.mjs';
-export * from './spellbook-filters.mjs';
-export * from './spellbook-ui.mjs';
-export * from './ui-customization.mjs';
-export * from './chat-handler.mjs';
+export * from './chat.mjs';
+export * from './colors.mjs';
+export * from './custom-ui.mjs';
+export * from './description-injector.mjs';
+export * from './favorites.mjs';
+export * from './filters.mjs';
+export * from './formatting.mjs';
+export * from './search-engine.mjs';
+export * from './spell-book-ui.mjs';

@@ -341,7 +341,18 @@ export const MODULE = {
   WIZARD_DEFAULTS: {
     RITUAL_CASTING: true,
     SPELLS_PER_LEVEL: 2,
-    STARTING_SPELLS: 6
+    STARTING_SPELLS: 6,
+    SPELL_LEARNING_COST_MULTIPLIER: 50,
+    SPELL_LEARNING_TIME_MULTIPLIER: 120
+  },
+
+  /**
+   * Default preparation bonus values for spellcasting classes.
+   * @type {Object}
+   */
+  PREPARATION_DEFAULTS: {
+    SPELL_PREPARATION_BONUS: 0,
+    CANTRIP_PREPARATION_BONUS: 0
   },
 
   /**

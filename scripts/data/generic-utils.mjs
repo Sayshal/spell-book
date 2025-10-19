@@ -17,7 +17,7 @@
  * @author Tyler
  */
 
-import { FLAGS, MODULE } from '../constants/_module.mjs';
+import { FLAGS, MODULE, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -62,9 +62,6 @@ import { log } from '../logger.mjs';
 
 /**
  * Get spellcasting configuration for a class, checking both main class and subclass.
- * Prioritizes main class spellcasting configuration but falls back to subclass
- * if the main class doesn't have a valid spellcasting progression.
- *
  * @param {Actor5e} actor - The actor to check for spellcasting configuration
  * @param {string} classIdentifier - The class identifier to look up
  * @returns {SpellcastingConfiguration|null} Spellcasting configuration or null if none found
@@ -81,9 +78,6 @@ export function getSpellcastingConfigForClass(actor, classIdentifier) {
 
 /**
  * Get scale values for a class, checking both main class and subclass.
- * Merges scale values from main class, subclass, and spellcasting data
- * to provide a set of scaling values.
- *
  * @param {Actor5e} actor - The actor to check for scale values
  * @param {string} classIdentifier - The class identifier to look up
  * @returns {Object<string, ScaleValueEntry>|null} Merged scale values or null if none found
@@ -103,9 +97,6 @@ export function getScaleValuesForClass(actor, classIdentifier) {
 
 /**
  * Get the item that provides spellcasting for a class (main class or subclass).
- * Determines which item (main class or subclass) actually provides the
- * spellcasting capabilities for proper progression calculations.
- *
  * @param {Actor5e} actor - The actor to check for spellcasting source
  * @param {string} classIdentifier - The class identifier to look up
  * @returns {Item5e|null} The item providing spellcasting or null if none found
@@ -125,9 +116,6 @@ export function getSpellcastingSourceItem(actor, classIdentifier) {
 
 /**
  * Get effective class levels for spellcasting progression.
- * Retrieves the actual class levels that should be used for
- * spellcasting calculations and progression determination.
- *
  * @param {Actor5e} actor - The actor to check for class levels
  * @param {string} classIdentifier - The class identifier to look up
  * @returns {number} Class levels for spellcasting calculations (0 if not found)
@@ -142,9 +130,6 @@ export function getSpellcastingLevelsForClass(actor, classIdentifier) {
 
 /**
  * Check if an actor is considered a wizard.
- * Determines wizard status by checking for wizard class items and
- * force wizard mode settings in the actor's class rules.
- *
  * @param {Actor5e} actor - The actor to check for wizard status
  * @returns {boolean} True if actor has a wizard class or force wizard mode is enabled
  */
@@ -163,9 +148,6 @@ export function isWizard(actor) {
 
 /**
  * Find the wizard class item for an actor.
- * Locates the appropriate wizard class item considering multiple
- * spellcasting classes and force wizard mode settings.
- *
  * @param {Actor5e} actor - The actor to check for wizard class
  * @returns {Item5e|null} The wizard class item or null if not found
  */
@@ -201,9 +183,6 @@ export function findWizardClass(actor) {
 
 /**
  * Get all wizard-enabled classes for an actor (including force wizard mode classes).
- * Returns detailed information about all classes that have wizard functionality
- * enabled either naturally or through force wizard mode settings.
- *
  * @param {Actor5e} actor - The actor to check for wizard-enabled classes
  * @returns {Array<WizardClassData>} Array of wizard-enabled class data objects
  */
@@ -227,9 +206,6 @@ export function getWizardEnabledClasses(actor) {
 
 /**
  * Check if a specific class is wizard-enabled.
- * Determines whether a particular class identifier has wizard functionality
- * enabled either naturally or through configuration settings.
- *
  * @param {Actor5e} actor - The actor to check for wizard-enabled class
  * @param {string} classIdentifier - The class identifier to check
  * @returns {boolean} True if the class is wizard-enabled
@@ -250,9 +226,6 @@ export function isClassWizardEnabled(actor, classIdentifier) {
 
 /**
  * Get the appropriate label/name from a CONFIG object.
- * Safely extracts display labels from D&D 5e configuration objects,
- * handling various label formats and providing fallbacks.
- *
  * @param {Object} configObject - The CONFIG object (e.g., CONFIG.DND5E.spellSchools)
  * @param {string} key - The key to look up in the configuration object
  * @returns {string} The label/name or empty string if not found
@@ -268,20 +241,10 @@ export function getConfigLabel(configObject, key) {
 
 /**
  * Get the target user ID for spell data operations.
- *
- * Determines the appropriate user ID for spell data operations using a hierarchical
- * ownership detection system that prioritizes character ownership, falls back to
- * document ownership levels, and finally uses GM permissions.
- *
- * The detection process follows this priority:
- * 1. Character ownership: Find user whose assigned character matches the actor
- * 2. Document ownership: Find user with OWNER-level permissions on the actor
- * 3. GM fallback: Use the current GM user if no owner is found
- *
  * @param {Actor5e} actor - The actor to determine ownership for
  * @returns {string} The user ID to use for spell data operations
  */
-export function _getTargetUserId(actor) {
+export function getTargetUserId(actor) {
   let targetUserId = game.user.id;
   if (game.user.isActiveGM && actor) {
     log(3, `GM determining ownership for actor: ${actor.name}`);
@@ -305,13 +268,61 @@ export function _getTargetUserId(actor) {
 
 /**
  * Check if metric units should be used based on dnd5e system settings.
- * Determines whether to use metric measurements by checking both
- * length and volume unit settings in the D&D 5e system.
- *
  * @returns {boolean} True if either length or volume units are set to metric
  */
-export function shouldUseMetricUnits() {
+export function shouldUseMetric() {
   const metricLength = game.settings.get('dnd5e', 'metricLengthUnits') ?? false;
   const metricVolume = game.settings.get('dnd5e', 'metricVolumeUnits') ?? false;
   return metricLength || metricVolume;
+}
+
+/**
+ * Unlock module compendium packs and create necessary folder structure.
+ * @returns {Promise<void>}
+ */
+export async function unlockModuleCompendium() {
+  const spellsPack = game.packs.find((p) => p.collection === MODULE.PACK.SPELLS);
+  if (spellsPack && spellsPack.locked) await spellsPack.configure({ locked: false });
+  const macrosPack = game.packs.find((p) => p.collection === MODULE.PACK.MACROS);
+  if (macrosPack && macrosPack.locked) await macrosPack.configure({ locked: false });
+  const userdataPack = game.packs.find((p) => p.collection === MODULE.PACK.USERDATA);
+  if (userdataPack && userdataPack.locked) await userdataPack.configure({ locked: false });
+  await createActorSpellbooksFolder(spellsPack);
+}
+
+/**
+ * Create Actor Spellbooks folder in the module compendium pack.
+
+ * @param {CompendiumCollection} pack - The module's spells compendium pack
+ * @returns {Promise<void>}
+ */
+export async function createActorSpellbooksFolder(pack) {
+  if (!pack) return;
+  const folder = pack.folders.find((f) => f.name === game.i18n.localize('SPELLBOOK.Folders.ActorSpellbooks'));
+  if (!folder) {
+    await Folder.create({ name: game.i18n.localize('SPELLBOOK.Folders.ActorSpellbooks'), type: 'JournalEntry' }, { pack: pack.collection });
+    log(3, 'Created Actor Spellbooks folder');
+  }
+}
+
+/**
+ * Preload all Handlebars templates used by the module.
+ * @returns {Promise<void>} Promise that resolves when all templates are loaded
+ */
+export async function preloadTemplates() {
+  /**
+   * Recursively flatten a nested template object into an array of template paths.
+   * @param {Object} obj - The template object to flatten
+   * @param {Array<string>} [result=[]] - The accumulator array for template paths
+   * @returns {Array<string>} Array of flattened template paths
+   */
+  function flattenTemplateObject(obj, result = []) {
+    for (const key in obj) {
+      if (typeof obj[key] === 'string') result.push(obj[key]);
+      else if (typeof obj[key] === 'object') flattenTemplateObject(obj[key], result);
+    }
+    return result;
+  }
+  const templatePaths = flattenTemplateObject(TEMPLATES);
+  return foundry?.applications?.handlebars?.loadTemplates(templatePaths);
 }

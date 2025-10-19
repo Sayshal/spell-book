@@ -4,7 +4,7 @@
  * Provides integration with the D&D 5e system's SpellListRegistry API.
  * Handles opt-in registration of custom spell lists.
  *
- * @module DataHelpers/SpellListRegistryIntegration
+ * @module DataHelpers/Registry
  * @author Tyler
  */
 
@@ -24,8 +24,6 @@ import { log } from '../logger.mjs';
 
 /**
  * Register custom spell lists with the D&D 5e SpellListRegistry.
- * Automatically removes invalid or missing spell lists from settings.
- *
  * @returns {Promise<Object>} Registration result statistics
  */
 export async function registerCustomSpellLists() {
@@ -73,7 +71,6 @@ export async function registerCustomSpellLists() {
 
 /**
  * Check if a spell list is enabled for registry integration.
- *
  * @param {string} uuid - UUID of the spell list
  * @returns {boolean} True if enabled
  */
@@ -84,7 +81,6 @@ export function isListEnabledForRegistry(uuid) {
 
 /**
  * Toggle registry integration for a spell list.
- *
  * @param {string} uuid - UUID of the spell list
  * @returns {Promise<boolean>} New enabled state
  */
@@ -107,8 +103,6 @@ export async function toggleListForRegistry(uuid) {
 
 /**
  * Get custom spell list by type and identifier.
- * This is OUR discovery method that checks custom lists first.
- *
  * @param {string} type - Spell list type ('class', 'subclass', etc.)
  * @param {string} identifier - Spell list identifier
  * @returns {Promise<Set<string>|null>} Set of spell UUIDs or null

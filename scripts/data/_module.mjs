@@ -11,10 +11,10 @@
  */
 
 export * from './actor-spells.mjs';
-export * from './compendium-management.mjs';
+export * from './compendium-processor.mjs';
+export * from './discovery.mjs';
 export * from './generic-utils.mjs';
-export * from './scroll-scanner.mjs';
-export * from './spell-data-preloader.mjs';
-export * from './spell-discovery.mjs';
+export * from './preloader.mjs';
+export * from './scroll-processor.mjs';
 export * from './spell-list-registry.mjs';
-export * from './spell-user-data.mjs';
+export * from './user-data.mjs';

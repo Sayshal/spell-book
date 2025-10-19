@@ -67,15 +67,6 @@ const { DragDrop } = foundry.applications.ux;
 
 /**
  * Application to configure which filters are displayed in the spell browser.
- *
- * This application provides a user-friendly interface for customizing the spell
- * browser filter configuration. Users can enable/disable individual filters,
- * reorder them through intuitive drag-and-drop operations, and reset to default
- * configurations when needed.
- *
- * The application integrates with the Foundry VTT drag-drop system to provide
- * smooth reordering capabilities while maintaining form state and providing
- * visual feedback during drag operations.
  */
 export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
@@ -100,17 +91,12 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Current filter configuration array.
-   *
    * @type {Array<FilterConfigItem>}
    */
   config = [];
 
   /**
    * Create a new filter configuration instance.
-   *
-   * Initializes the configuration dialog with the current filter settings
-   * and establishes the connection to the parent application for updates.
-   *
    * @param {Application} parentApp - The parent application that opened this configuration
    * @param {Object} [options={}] - Additional application options
    */
@@ -125,11 +111,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Initialize the filter configuration from settings or defaults.
-   *
-   * Loads the current filter configuration from game settings, validates it,
-   * and falls back to default configuration if the current settings are
-   * invalid or corrupted. Handles version migration and data structure updates.
-   *
    * @returns {void}
    */
   initializeConfig() {
@@ -161,10 +142,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Get the current valid filter configuration.
-   *
-   * Retrieves and validates the current filter configuration from game settings,
-   * falling back to default configuration if the current settings are invalid.
-   *
    * @returns {Array<FilterConfigItem>} The current filter configuration or default if invalid
    * @static
    */
@@ -181,10 +158,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Prepare filter configuration form data with constructed elements.
-   *
-   * Processes the filter configuration into a format suitable for form rendering,
-   * including HTML checkbox generation and sortability determination.
-   *
    * @returns {Array<Object>} Array of filter configuration objects with form elements
    * @private
    */
@@ -203,10 +176,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Prepare form buttons configuration.
-   *
-   * Creates the button configuration for the form including save and reset
-   * options with appropriate icons and labels.
-   *
    * @returns {Array<Object>} Array of button configurations
    * @private
    */
@@ -233,10 +202,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Set up drag and drop handlers for filter reordering.
-   *
-   * Configures the Foundry VTT drag-drop system with appropriate permissions
-   * and callbacks for handling filter item reordering operations.
-   *
    * @returns {void}
    */
   setupDragDrop() {
@@ -250,10 +215,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Set draggable attributes on filter items.
-   *
-   * Configures the draggable attribute for filter items based on their
-   * sortability, ensuring only reorderable filters can be dragged.
-   *
    * @returns {void}
    */
   setDraggableAttributes() {
@@ -267,10 +228,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Handle drag start event for filter reordering.
-   *
-   * Initiates a drag operation by capturing the current form state and
-   * setting up the drag data transfer. Only allows dragging of sortable items.
-   *
    * @param {DragEvent} event - The drag event
    * @returns {boolean} Whether drag start was successful
    */
@@ -292,10 +249,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Handle drag over event to show drop position.
-   *
-   * Provides visual feedback during drag operations by creating drop placeholders
-   * and highlighting the appropriate drop position based on mouse position.
-   *
    * @param {DragEvent} event - The drag event
    * @param {string} _selector - The selector for drag targets (unused)
    * @returns {void}
@@ -318,10 +271,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Find the target element for dropping based on mouse position.
-   *
-   * Determines the most appropriate drop target by calculating distances
-   * from the mouse position to potential drop targets.
-   *
    * @param {DragEvent} event - The drag event
    * @param {Array<HTMLElement>} items - List of potential drop targets
    * @returns {HTMLElement|null} The target element or null if none found
@@ -344,10 +293,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Handle drop event to reorder filters.
-   *
-   * Processes the drop operation by updating the filter configuration order,
-   * preserving form state, and re-rendering the interface with the new order.
-   *
    * @param {DragEvent} event - The drop event
    * @returns {Promise<boolean>} Whether drop was successful
    */
@@ -387,10 +332,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Update filter order values after reordering.
-   *
-   * Recalculates the order property for all filters based on their
-   * new positions in the configuration array.
-   *
    * @returns {void}
    */
   updateFilterOrder() {
@@ -401,10 +342,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Create a visual placeholder for drop position.
-   *
-   * Inserts a visual indicator showing where the dragged item would be
-   * placed if dropped at the current mouse position.
-   *
    * @param {HTMLElement} targetItem - The target element
    * @param {boolean} dropAfter - Whether to drop after the target
    * @returns {void}
@@ -418,10 +355,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Remove all drop placeholders from the interface.
-   *
-   * Cleans up visual indicators used during drag operations to maintain
-   * a clean interface state.
-   *
    * @returns {void}
    */
   removeDropPlaceholders() {
@@ -431,10 +364,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Clean up visual elements after dragging operations.
-   *
-   * Removes drag-related CSS classes and placeholders to return the
-   * interface to its normal state after drag operations complete.
-   *
    * @returns {void}
    */
   cleanupDragElements() {
@@ -445,10 +374,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Capture current form state for filter enablement.
-   *
-   * Preserves the current enabled/disabled state of all filters during
-   * drag operations to prevent loss of user input.
-   *
    * @returns {Object<string, boolean>} Map of filter IDs to enabled states
    * @private
    */
@@ -464,10 +389,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Process sortable and non-sortable filters from form data.
-   *
-   * Separates filters into sortable and non-sortable groups based on their
-   * configuration and form data, preparing them for final ordering operations.
-   *
    * @param {Array<FilterConfigItem>} filterConfig - The filter configuration
    * @param {Object} formData - Form data from submission
    * @returns {FilterGroups} Sorted filter groups
@@ -494,11 +415,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Update filter ordering based on DOM structure.
-   *
-   * Analyzes the current DOM order of filter elements and updates the
-   * configuration order values accordingly, ensuring the saved configuration
-   * matches the visual order.
-   *
    * @param {Array<FilterConfigItem>} sortableFilters - Filters that can be sorted
    * @param {HTMLFormElement} form - The form element
    * @returns {Array<FilterConfigItem>} Updated sortable filters with correct order
@@ -531,10 +447,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Handle form reset action to restore default configuration.
-   *
-   * Resets the filter configuration to module defaults and re-renders
-   * the interface to reflect the restored settings.
-   *
    * @param {Event} event - The click event
    * @param {HTMLFormElement} _form - The form element (unused)
    * @static

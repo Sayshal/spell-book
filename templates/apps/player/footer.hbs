@@ -10,6 +10,7 @@
  *
  * CONTEXT REQUIREMENTS:
  * @param {string} activeTab - Currently active tab identifier for conditional display
+ * @param {boolean} isWizardTab - Whether the active tab is a wizard tab
  * @param {boolean} wizardHasFreeSpells - Whether wizard has free spell slots available
  * @param {number} wizardRemainingFreeSpells - Number of free wizard spells remaining
  * @param {number} wizardTotalSpellbookCount - Total spells in wizard's spellbook
@@ -50,7 +51,7 @@
  *
  * INTEGRATION:
  * - Connects to PlayerSpellBook application for preparation tracking
- * - Uses custom isWizardTab helper for conditional wizard content
+ * - Uses isWizardTab context property for conditional wizard content
  * - Supports button actions through data-action attributes
  * - Integrates with spell preparation state management system
  * - Updates dynamically when spell preparation changes occur
@@ -58,7 +59,7 @@
 --}}
 
 <footer role="contentinfo">
-  {{#if (isWizardTab activeTab)}}
+  {{#if isWizardTab}}
     <!-- Wizard Spell Book Tab - Free spells tracking and total count display -->
     <div class="spell-book-tracking" aria-live="polite">
       {{#if wizardHasFreeSpells}}
