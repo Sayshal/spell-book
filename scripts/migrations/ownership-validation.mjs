@@ -25,34 +25,38 @@ import { log } from '../logger.mjs';
  * @property {Array<Object>} fixedDocuments - Array of fixed document information
  */
 async function validateOwnershipLevels() {
-  const results = { processed: 0, errors: [], userDataFixed: 0, spellListsFixed: 0, actorSpellbooksFixed: 0, packsFixed: 0, details: [], fixedDocuments: [] };
+  const results = { processed: 0, updated: 0, errors: [], userDataFixed: 0, spellListsFixed: 0, actorSpellbooksFixed: 0, packsFixed: 0, details: [], fixedDocuments: [] };
   log(3, 'Validating ownership levels for Spell Book documents...');
   try {
     const userDataResults = await validateUserDataOwnership();
     results.userDataFixed = userDataResults.fixed;
-    results.processed += userDataResults.fixed;
+    results.processed += userDataResults.checked;
+    results.updated += userDataResults.fixed;
     results.errors.push(...userDataResults.errors);
     results.details.push(...userDataResults.details);
     results.fixedDocuments.push(...userDataResults.fixedDocuments);
     const spellListResults = await validateSpellListOwnership();
     results.spellListsFixed = spellListResults.fixed;
-    results.processed += spellListResults.fixed;
+    results.processed += spellListResults.checked;
+    results.updated += spellListResults.fixed;
     results.errors.push(...spellListResults.errors);
     results.details.push(...spellListResults.details);
     results.fixedDocuments.push(...spellListResults.fixedDocuments);
     const actorSpellbookResults = await validateActorSpellbookOwnership();
     results.actorSpellbooksFixed = actorSpellbookResults.fixed;
-    results.processed += actorSpellbookResults.fixed;
+    results.processed += actorSpellbookResults.checked;
+    results.updated += actorSpellbookResults.fixed;
     results.errors.push(...actorSpellbookResults.errors);
     results.details.push(...actorSpellbookResults.details);
     results.fixedDocuments.push(...actorSpellbookResults.fixedDocuments);
     const packResults = await validatePackOwnership();
     results.packsFixed = packResults.fixed;
-    results.processed += packResults.fixed;
+    results.processed += packResults.checked;
+    results.updated += packResults.fixed;
     results.errors.push(...packResults.errors);
     results.details.push(...packResults.details);
     results.fixedDocuments.push(...packResults.fixedDocuments);
-    log(3, `Ownership validation complete: ${results.processed} documents fixed`);
+    log(3, `Ownership validation complete: ${results.updated} documents fixed (${results.processed} checked)`);
   } catch (error) {
     log(1, 'Error during ownership validation:', error);
     results.errors.push(`Ownership validation error: ${error.message}`);
@@ -66,7 +70,7 @@ async function validateOwnershipLevels() {
  * @returns {Promise<Object>} Validation results for user data
  */
 async function validateUserDataOwnership() {
-  const results = { fixed: 0, errors: [], details: [], fixedDocuments: [] };
+  const results = { checked: 0, fixed: 0, errors: [], details: [], fixedDocuments: [] };
   const pack = game.packs.get(MODULE.PACK.USERDATA);
   if (!pack) {
     results.errors.push('User data pack not found');
@@ -77,6 +81,7 @@ async function validateUserDataOwnership() {
     const folderName = game.i18n.localize('SPELLBOOK.UserData.FolderName');
     const userDataJournal = documents.find((doc) => doc.name === folderName && doc.flags?.[MODULE.ID]?.isUserSpellDataJournal);
     if (userDataJournal) {
+      results.checked++;
       const currentOwnership = userDataJournal.ownership || {};
       const correctJournalOwnership = { ...currentOwnership, default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
       if (!isOwnershipEqual(userDataJournal.ownership, correctJournalOwnership)) {
@@ -88,6 +93,7 @@ async function validateUserDataOwnership() {
       for (const page of userDataJournal.pages) {
         const userId = page.flags?.[MODULE.ID]?.userId;
         if (userId && page.flags?.[MODULE.ID]?.isUserSpellData) {
+          results.checked++;
           const user = game.users.get(userId);
           if (!user) continue;
           const currentPageOwnership = page.ownership || {};
@@ -118,7 +124,7 @@ async function validateUserDataOwnership() {
  * @returns {Promise<Object>} Validation results for spell lists
  */
 async function validateSpellListOwnership() {
-  const results = { fixed: 0, errors: [], details: [], fixedDocuments: [] };
+  const results = { checked: 0, fixed: 0, errors: [], details: [], fixedDocuments: [] };
   const pack = game.packs.get(MODULE.PACK.SPELLS);
   if (!pack) {
     results.errors.push('Spell lists pack not found');
@@ -136,6 +142,7 @@ async function validateSpellListOwnership() {
       const flags = page.flags?.[MODULE.ID] || {};
       const isSpellList = flags.isMerged || flags.isCustom || flags.isNewList;
       if (isSpellList) {
+        results.checked++;
         const currentOwnership = journal.ownership || {};
         const correctOwnership = { ...currentOwnership, default: CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
         if (!isOwnershipEqual(journal.ownership, correctOwnership)) {
@@ -158,7 +165,7 @@ async function validateSpellListOwnership() {
  * @returns {Promise<Object>} Validation results for actor spellbooks
  */
 async function validateActorSpellbookOwnership() {
-  const results = { fixed: 0, errors: [], details: [], fixedDocuments: [] };
+  const results = { checked: 0, fixed: 0, errors: [], details: [], fixedDocuments: [] };
   const pack = game.packs.get(MODULE.PACK.SPELLS);
   if (!pack) {
     results.errors.push('Spells pack not found');
@@ -178,6 +185,7 @@ async function validateActorSpellbookOwnership() {
       for (const page of doc.pages) {
         const flags = page.flags?.[MODULE.ID] || {};
         if (!flags?.isActorSpellbook || !flags?.actorId) continue;
+        results.checked++;
         const actorId = flags.actorId;
         const classIdentifier = flags.classIdentifier || 'unknown';
         const actor = game.actors.get(actorId);
@@ -244,7 +252,7 @@ async function validateActorSpellbookOwnership() {
  * @returns {Promise<Object>} Validation results for packs
  */
 async function validatePackOwnership() {
-  const results = { fixed: 0, errors: [], details: [], fixedDocuments: [] };
+  const results = { checked: 0, fixed: 0, errors: [], details: [], fixedDocuments: [] };
   try {
     const spellsPack = game.packs.get(MODULE.PACK.SPELLS);
     const userDataPack = game.packs.get(MODULE.PACK.USERDATA);
@@ -259,6 +267,7 @@ async function validatePackOwnership() {
         results.errors.push(`${name} pack not found`);
         continue;
       }
+      results.checked++;
       const currentOwnership = pack.ownership || {};
       const normalizeOwnership = (ownership) => {
         const normalized = {};

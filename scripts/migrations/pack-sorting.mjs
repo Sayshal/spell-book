@@ -20,17 +20,18 @@ import { log } from '../logger.mjs';
  * @property {Array<Object>} errors - Array of error objects with type and details
  */
 async function migratePackSorting() {
-  const results = { processed: 0, foldersUpdated: 0, packsUpdated: 0, errors: [] };
+  const results = { processed: 0, updated: 0, foldersUpdated: 0, packsUpdated: 0, errors: [] };
   try {
     const packSortingConfig = { [MODULE.PACK.SPELLS]: 10000, [MODULE.PACK.USERDATA]: 20000, [MODULE.PACK.MACROS]: 30000 };
     for (const [packId, sortValue] of Object.entries(packSortingConfig)) {
       try {
         const pack = game.packs.get(packId);
+        results.processed++;
         if (pack.sort !== sortValue) {
           await pack.configure({ sort: sortValue });
           log(3, `Updated pack ${packId} sort from ${pack.sort} to ${sortValue}`);
           results.packsUpdated++;
-          results.processed++;
+          results.updated++;
         }
       } catch (error) {
         log(1, `Error updating pack ${packId}:`, error);
@@ -42,19 +43,22 @@ async function migratePackSorting() {
       }
     }
     const customPack = game.packs.get(MODULE.PACK.SPELLS);
-    if (customPack?.folder && customPack.folder.sorting !== 'm') {
-      try {
-        await customPack.folder.update({ sorting: 'm' });
-        log(3, `Updated "${customPack.folder.name}" folder sorting to manual ("m")`);
-        results.foldersUpdated++;
-        results.processed++;
-      } catch (error) {
-        log(1, `Failed to update folder ${customPack.folder.name}:`, error);
-        results.errors.push({
-          type: 'folder',
-          name: customPack.folder.name,
-          error: error.message
-        });
+    if (customPack?.folder) {
+      results.processed++;
+      if (customPack.folder.sorting !== 'm') {
+        try {
+          await customPack.folder.update({ sorting: 'm' });
+          log(3, `Updated "${customPack.folder.name}" folder sorting to manual ("m")`);
+          results.foldersUpdated++;
+          results.updated++;
+        } catch (error) {
+          log(1, `Failed to update folder ${customPack.folder.name}:`, error);
+          results.errors.push({
+            type: 'folder',
+            name: customPack.folder.name,
+            error: error.message
+          });
+        }
       }
     }
     if (results.packsUpdated > 0) log(3, `Updated ${results.packsUpdated} pack sort values`);

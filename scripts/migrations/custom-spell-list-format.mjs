@@ -25,11 +25,11 @@ async function migrateCustomSpellListFormat() {
   const results = { processed: 0, updated: 0, migratedActors: [], errors: [] };
   try {
     const actors = game.actors.contents;
+    results.processed = actors.length;
     for (const actor of actors) {
       try {
         const currentRules = actor.getFlag(MODULE.ID, FLAGS.SPELLCASTING_RULES) || {};
         if (Object.keys(currentRules).length === 0) continue;
-        results.processed++;
         let hasUpdates = false;
         const updatedRules = { ...currentRules };
         const migratedClasses = [];

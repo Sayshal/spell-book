@@ -55,21 +55,24 @@ export class Migrations {
     log(3, 'Running all migrations...');
     try {
       const results = {};
-      let totalProcessed = 0;
+      let totalUpdated = 0;
       for (const migration of MIGRATIONS) {
         try {
           log(3, `Running migration: ${migration.name}`);
           const result = await migration.migrate();
           results[migration.key] = result;
-          totalProcessed += result.processed || 0;
+          totalUpdated += result.updated || 0;
         } catch (error) {
           log(1, `Error running migration ${migration.name}:`, error);
           results[migration.key] = { processed: 0, errors: [error.message] };
         }
       }
-      const resultSummary = MIGRATIONS.map((m) => `${m.key}=${results[m.key]?.processed || 0}`).join(', ');
+      const resultSummary = MIGRATIONS.map((m) => {
+        const result = results[m.key] || {};
+        return `${m.key}={processed: ${result.processed || 0}, updated: ${result.updated || 0}}`;
+      }).join(', ');
       log(3, `Migration results: ${resultSummary}`);
-      if (totalProcessed > 0) await this.logMigrationResults(results);
+      if (totalUpdated > 0) await this.logMigrationResults(results);
       else log(3, 'No migrations needed');
     } catch (error) {
       log(1, 'Error during migrations:', error);
@@ -83,22 +86,22 @@ export class Migrations {
    * @static
    */
   static async logMigrationResults(results) {
-    const totalProcessed = Object.values(results).reduce((sum, r) => sum + (r.processed || 0), 0);
-    if (totalProcessed === 0) {
+    const totalUpdated = Object.values(results).reduce((sum, r) => sum + (r.updated || 0), 0);
+    if (totalUpdated === 0) {
       log(3, 'No migration updates needed');
       return;
     }
     console.group('Spell Book Migration Results');
     for (const migration of MIGRATIONS) {
       const result = results[migration.key];
-      if (result && result.processed > 0) {
+      if (result && result.updated > 0) {
         console.group(migration.name);
         console.log('Result:', result);
         console.groupEnd();
       }
     }
     console.groupEnd();
-    log(3, `Migration complete: ${totalProcessed} documents/folders processed`);
+    log(3, `Migration complete: ${totalUpdated} documents/folders updated`);
     const suppressWarnings = game.settings.get(MODULE.ID, SETTINGS.SUPPRESS_MIGRATION_WARNINGS);
     if (suppressWarnings) return;
     const content = await this.buildChatContent(results);

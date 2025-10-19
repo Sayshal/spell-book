@@ -26,11 +26,12 @@ import { log } from '../logger.mjs';
  */
 async function migrateSpellListFolders() {
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
-  if (!customPack) return { processed: 0, errors: [], customMoved: 0, mergedMoved: 0, modifiedMoved: 0, foldersCreated: [], migratedJournals: [] };
-  const results = { processed: 0, errors: [], customMoved: 0, mergedMoved: 0, modifiedMoved: 0, foldersCreated: [], migratedJournals: [] };
+  if (!customPack) return { processed: 0, updated: 0, errors: [], customMoved: 0, mergedMoved: 0, modifiedMoved: 0, foldersCreated: [], migratedJournals: [] };
+  const results = { processed: 0, updated: 0, errors: [], customMoved: 0, mergedMoved: 0, modifiedMoved: 0, foldersCreated: [], migratedJournals: [] };
   try {
     const allJournals = await customPack.getDocuments();
     const topLevelJournals = allJournals.filter((journal) => !journal.folder);
+    results.processed = topLevelJournals.length;
     if (topLevelJournals.length === 0) return results;
     const customFolder = await DataHelpers.getOrCreateCustomFolder();
     const mergedFolder = await DataHelpers.getOrCreateMergedFolder();
@@ -42,7 +43,7 @@ async function migrateSpellListFolders() {
       try {
         const migrationResult = await migrateJournalToFolder(journal, customFolder, mergedFolder, modifiedFolder);
         if (migrationResult.success) {
-          results.processed++;
+          results.updated++;
           results.migratedJournals.push({ name: journal.name, id: journal.id, type: migrationResult.type, targetFolder: migrationResult.targetFolder });
           if (migrationResult.type === 'custom') results.customMoved++;
           if (migrationResult.type === 'merged') results.mergedMoved++;

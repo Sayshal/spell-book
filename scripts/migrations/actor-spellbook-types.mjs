@@ -19,7 +19,7 @@ import { log } from '../logger.mjs';
  * @property {Array<Object>} updatedPages - Array of updated page information
  */
 async function migrateActorSpellbookTypes() {
-  const results = { processed: 0, errors: [], updatedPages: [] };
+  const results = { processed: 0, updated: 0, errors: [], updatedPages: [] };
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
   if (!customPack) return results;
   try {
@@ -28,16 +28,19 @@ async function migrateActorSpellbookTypes() {
       for (const page of journal.pages) {
         if (page.type !== 'spells') continue;
         const flags = page.flags?.[MODULE.ID] || {};
-        if (flags.isActorSpellbook && page.system?.type !== 'actor-spellbook') {
-          try {
-            await page.update({ 'system.type': 'actor-spellbook' });
-            log(3, `Set ${page.name} to type 'actor-spellbook'`);
-            results.processed++;
-            results.updatedPages.push({ name: page.name, id: page.id, journalName: journal.name, journalId: journal.id });
-          } catch (error) {
-            const errorMessage = `Failed to update ${page.name}: ${error.message}`;
-            log(2, errorMessage, error);
-            results.errors.push(errorMessage);
+        if (flags.isActorSpellbook) {
+          results.processed++;
+          if (page.system?.type !== 'actor-spellbook') {
+            try {
+              await page.update({ 'system.type': 'actor-spellbook' });
+              log(3, `Set ${page.name} to type 'actor-spellbook'`);
+              results.updated++;
+              results.updatedPages.push({ name: page.name, id: page.id, journalName: journal.name, journalId: journal.id });
+            } catch (error) {
+              const errorMessage = `Failed to update ${page.name}: ${error.message}`;
+              log(2, errorMessage, error);
+              results.errors.push(errorMessage);
+            }
           }
         }
       }
