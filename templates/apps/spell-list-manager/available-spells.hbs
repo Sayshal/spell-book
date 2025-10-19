@@ -28,7 +28,6 @@
  * @param {string} selectAllAddCheckboxHtml - Select all for addition checkbox HTML
  * @param {Object} filteredSpells - Filtered spell collection data
  * @param {Array<Object>} filteredSpells.spells - Array of filtered spell objects
- * @param {number} filteredSpells.totalFiltered - Total count of filtered spells
  * @param {Object} selectedSpellsToAdd - Map of spells selected for addition
  * @param {Object} settings - Application settings for unit display
  * @param {boolean} settings.useMetricUnits - Whether to display metric units
@@ -217,12 +216,6 @@
 								</li>
 							{{/each}}
 						</ul>
-					</div>
-
-					<!-- Filter Results Count Display -->
-					<div class="filter-count-display" role="status" aria-live="polite">
-						<span
-							class="filter-count">{{localize "SPELLMANAGER.Filters.FilteredSpellCount" count=filteredSpells.totalFiltered}}</span>
 					</div>
 				{{else}}
 					<!-- No Matching Spells State -->

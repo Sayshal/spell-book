@@ -3110,11 +3110,12 @@
 
   .spell-filters {
     display: flex;
-    flex: 0 0 auto;
+    flex: 1;
     flex-direction: column;
-    margin-bottom: var(--spell-book-spacing-md);
     padding: var(--spell-book-spacing-lg);
+    padding-bottom: 0;
     border-radius: var(--spell-book-radius-md);
+    min-height: 0;
 
     label {
       color: var(--spell-book-text-primary);
@@ -3135,14 +3136,6 @@
     max-height: calc(100vh - 31.25rem);
     margin-bottom: 0.3rem;
     overflow-y: auto;
-  }
-
-  .filter-count-display {
-    padding: var(--spell-book-spacing-md);
-    border-top: var(--spell-book-radius-sm) solid var(--spell-book-border-light);
-    color: var(--spell-book-text-tertiary);
-    font-size: var(--spell-book-font-lg);
-    text-align: center;
   }
 
   .filter-search {
