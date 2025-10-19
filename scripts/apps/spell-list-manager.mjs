@@ -836,23 +836,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (nameInput) {
       nameInput.addEventListener('input', (event) => {
         const previousValue = this.filterState.name;
-        const previousValue = this.filterState.name;
         this.filterState.name = event.target.value;
         clearTimeout(this._nameFilterTimer);
         this._nameFilterTimer = setTimeout(() => {
-          const wasFiltered = previousValue && previousValue.trim();
-          const isFiltered = this.filterState.name && this.filterState.name.trim();
-          if (wasFiltered !== isFiltered) {
-            const currentInput = this.element.querySelector('input[name="spell-search"]');
-            const cursorPosition = currentInput?.selectionStart;
-            this.render(false, { parts: ['availableSpells'] }).then(() => {
-              const newInput = this.element.querySelector('input[name="spell-search"]');
-              if (newInput && cursorPosition !== undefined) {
-                newInput.focus();
-                newInput.setSelectionRange(cursorPosition, cursorPosition);
-              }
-            });
-          } else this.applyFilters();
           const wasFiltered = previousValue && previousValue.trim();
           const isFiltered = this.filterState.name && this.filterState.name.trim();
           if (wasFiltered !== isFiltered) {
@@ -1242,24 +1228,16 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       placeholder: game.i18n.localize('SPELLMANAGER.MergeLists.MergedListNamePlaceholder'),
       ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.MergedListNameLabel'),
       required: true
-      ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.MergedListNameLabel'),
-      required: true
     });
     mergedListNameInput.id = 'merged-list-name';
-
-    // Create hide source lists checkbox
     const hideSourceListsCheckbox = ValidationHelpers.createCheckbox({
       name: 'hideSourceLists',
       checked: false,
       ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.HideSourceListsLabel'),
       cssClass: 'dnd5e2'
-      ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.HideSourceListsLabel'),
-      cssClass: 'dnd5e2'
     });
     hideSourceListsCheckbox.id = 'hide-source-lists';
-
     return {
-      spellListsMultiSelectHtml: ValidationHelpers.elementToHtml(spellListsMultiSelect),
       spellListsMultiSelectHtml: ValidationHelpers.elementToHtml(spellListsMultiSelect),
       mergedListNameInputHtml: ValidationHelpers.elementToHtml(mergedListNameInput),
       hideSourceListsCheckboxHtml: ValidationHelpers.elementToHtml(hideSourceListsCheckbox)
@@ -1391,19 +1369,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const content = await renderTemplate(TEMPLATES.DIALOGS.MERGE_SPELL_LISTS, { formElements });
     const wrapper = document.createElement('div');
     wrapper.innerHTML = content;
-    const content = await renderTemplate(TEMPLATES.DIALOGS.MERGE_SPELL_LISTS, { formElements });
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = content;
     const result = await DialogV2.wait({
-      window: {
-        title: game.i18n.localize('SPELLMANAGER.MergeLists.DialogTitle'),
-        icon: 'fas fa-code-merge',
-        resizable: false,
-        minimizable: false,
-        positioned: true
-      },
-      position: { width: 650, height: 'auto' },
-      content: wrapper,
       window: {
         title: game.i18n.localize('SPELLMANAGER.MergeLists.DialogTitle'),
         icon: 'fas fa-code-merge',
@@ -1420,11 +1386,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
           action: 'merge',
           default: false,
           disabled: true,
-          default: false,
-          disabled: true,
           callback: (_event, _target, form) => {
             const formElement = form?.querySelector ? form : form.element;
-            const spellListsMultiSelect = formElement.querySelector('[name="spellListsToMerge"]');
             const spellListsMultiSelect = formElement.querySelector('[name="spellListsToMerge"]');
             const mergedListNameInput = formElement.querySelector('[name="mergedListName"]');
             const hideSourceListsCheckbox = formElement.querySelector('[name="hideSourceLists"]');
@@ -1435,16 +1398,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
                 errorElement.textContent = game.i18n.localize('SPELLMANAGER.MergeLists.MinimumListsError');
                 errorElement.style.display = 'block';
               }
-            const errorElement = formElement.querySelector('.validation-error');
-            const selectedListUuids = spellListsMultiSelect?.value;
-            if (selectedListUuids.length < 2) {
-              if (errorElement) {
-                errorElement.textContent = game.i18n.localize('SPELLMANAGER.MergeLists.MinimumListsError');
-                errorElement.style.display = 'block';
-              }
               return false;
             }
-            const mergedListName = mergedListNameInput.value.trim();
             const mergedListName = mergedListNameInput.value.trim();
             if (!mergedListName) {
               if (errorElement) {
@@ -1452,14 +1407,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
                 errorElement.style.display = 'block';
               }
               return false;
-              if (errorElement) {
-                errorElement.textContent = game.i18n.localize('SPELLMANAGER.MergeLists.NameRequiredError');
-                errorElement.style.display = 'block';
-              }
-              return false;
             }
             formData = {
-              spellListUuids: selectedListUuids,
               spellListUuids: selectedListUuids,
               mergedListName: mergedListName,
               hideSourceLists: hideSourceListsCheckbox ? hideSourceListsCheckbox.checked : false
@@ -1472,20 +1421,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       default: 'cancel',
       rejectClose: false,
       render: async (_event, target, _form) => {
-      render: async (_event, target, _form) => {
         const dialogElement = target.querySelector ? target : target.element;
         const multiSelect = dialogElement.querySelector('multi-select');
         if (multiSelect) {
           await customElements.whenDefined('multi-select');
           await new Promise((resolve) => requestAnimationFrame(resolve));
         }
-        const multiSelect = dialogElement.querySelector('multi-select');
-        if (multiSelect) {
-          await customElements.whenDefined('multi-select');
-          await new Promise((resolve) => requestAnimationFrame(resolve));
-        }
         this._setupMergeListsDialogListeners(dialogElement);
-        target.setPosition({ width: 650, height: 'auto' });
         target.setPosition({ width: 650, height: 'auto' });
       }
     });
@@ -1591,8 +1533,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   _setupMergeListsDialogListeners(target) {
     const spellListsMultiSelect = target.querySelector('[name="spellListsToMerge"]');
     const mergedListNameInput = target.querySelector('[name="mergedListName"]');
-    const spellListsMultiSelect = target.querySelector('[name="spellListsToMerge"]');
-    const mergedListNameInput = target.querySelector('[name="mergedListName"]');
     const mergeButton = target.querySelector('button[data-action="merge"]');
     const errorElement = target.querySelector('.validation-error');
     const validateForm = () => {
@@ -1605,20 +1545,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       const hasName = mergedListNameInput ? mergedListNameInput.value.trim().length > 0 : false;
       const isValid = selectedCount >= 2 && hasName;
       if (mergeButton) mergeButton.disabled = !isValid;
-    const validateForm = () => {
-      if (errorElement) errorElement.style.display = 'none';
-      let selectedCount = 0;
-      if (spellListsMultiSelect) {
-        const tagsContainer = spellListsMultiSelect.querySelector('.tags.input-element-tags');
-        if (tagsContainer) selectedCount = tagsContainer.querySelectorAll('.tag').length;
-      }
-      const hasName = mergedListNameInput ? mergedListNameInput.value.trim().length > 0 : false;
-      const isValid = selectedCount >= 2 && hasName;
-      if (mergeButton) mergeButton.disabled = !isValid;
     };
-    if (spellListsMultiSelect) spellListsMultiSelect.addEventListener('change', validateForm);
-    if (mergedListNameInput) mergedListNameInput.addEventListener('input', validateForm);
-    validateForm();
     if (spellListsMultiSelect) spellListsMultiSelect.addEventListener('change', validateForm);
     if (mergedListNameInput) mergedListNameInput.addEventListener('input', validateForm);
     validateForm();
@@ -1743,9 +1670,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   async _mergeListsCallback(spellListUuids, mergedListName, hideSourceLists = false) {
-  async _mergeListsCallback(spellListUuids, mergedListName, hideSourceLists = false) {
     try {
-      const mergedList = await DataHelpers.createMergedSpellList(spellListUuids, mergedListName);
       const mergedList = await DataHelpers.createMergedSpellList(spellListUuids, mergedListName);
       if (mergedList) {
         if (hideSourceLists) {
@@ -2242,9 +2167,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   static async handleMergeLists(_event, _form) {
     if (this.availableSpellLists.length < 2) return;
     const { result, formData } = await this._showMergeListsDialog();
-    if (result === 'merge' && formData) {
-      await this._mergeListsCallback(formData.spellListUuids, formData.mergedListName, formData.hideSourceLists);
-    }
     if (result === 'merge' && formData) {
       await this._mergeListsCallback(formData.spellListUuids, formData.mergedListName, formData.hideSourceLists);
     }

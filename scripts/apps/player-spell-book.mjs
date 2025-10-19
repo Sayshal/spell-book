@@ -901,7 +901,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   async _setupDeferredUI() {
-  async _setupDeferredUI() {
     log(3, 'Setting up deferred UI elements...');
     try {
       this.ui.setupFilterListeners();
@@ -993,7 +992,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @returns {Promise<Array<ProcessedSpell>>} Processed spells ready for template
    * @private
    */
-  async _processSpellsForLevel(spells) {
   async _processSpellsForLevel(spells) {
     const processedSpells = [];
     for (const spell of spells) {
@@ -1101,14 +1099,12 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   async _processSpellLevelsForContext(spellLevels) {
-  async _processSpellLevelsForContext(spellLevels) {
     const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
     const processedLevels = [];
     for (const levelData of spellLevels) {
       const level = String(levelData.level);
       const spells = levelData.spells || [];
       const isCollapsed = collapsedLevels.includes(level);
-      const processedSpells = await this._processSpellsForLevel(spells);
       const processedSpells = await this._processSpellsForLevel(spells);
       let preparedCount = 0;
       if (level !== '0') preparedCount = spells.filter((spell) => spell.preparation?.prepared).length;
@@ -2459,7 +2455,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @returns {Promise<void>}
    * @static
    */
-  static async formHandler(_event, form, _formData) {
   static async formHandler(_event, form, _formData) {
     log(3, 'Processing form submission for state cache update');
     this._updateFormStateCache(form);
