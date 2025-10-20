@@ -1542,7 +1542,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             });
             break;
           case 'dropdown':
-            const options = UIHelpers.Filters.getOptionsForFilter(filter.id, filterState);
+            const options = UIHelpers.getOptionsForFilter(filter.id, filterState);
             element = ValidationHelpers.createSelect({
               name: `filter-${filter.id}`,
               options: options,
