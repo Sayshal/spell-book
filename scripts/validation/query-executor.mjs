@@ -1,15 +1,15 @@
 /**
  * Advanced Search Query Execution Engine
  *
- * Executes parsed search queries against spell data collections. This module provides
- * the runtime evaluation system for advanced search functionality, supporting field-based
- * filtering with complex criteria and validation logic.
+ * Executes parsed search queries against spell data collections. This module leverages
+ * the DND5e system's built-in filtering capabilities for robust, maintainable query
+ * execution with minimal custom logic.
  *
  * The query executor supports:
  * - Conjunction (AND) operations between field conditions
- * - Complex field-specific evaluation logic
- * - Type-safe spell property access and comparison
- * - Error handling and fallback behavior
+ * - Field-specific evaluation using DND5e filter system
+ * - Type-safe spell property access via foundry.utils.getProperty
+ * - Complex operators (contains, hasany, OR, etc.)
  *
  * @module ValidationHelpers/QueryExecutor
  * @author Tyler
@@ -47,9 +47,143 @@ import { log } from '../logger.mjs';
  */
 
 /**
- * Executes parsed queries against spell data.
+ * Executes parsed queries against spell data using DND5e filter system.
  */
 export class QueryExecutor {
+  /**
+   * Field mapping configuration - converts query field names to DND5e filter descriptions.
+   * @type {Object<string, Function>}
+   * @private
+   */
+  FIELD_MAPPERS = {
+    /**
+     * Name search using case-insensitive contains.
+     * @param value - Query value
+     */
+    name: (value) => ({
+      k: 'name',
+      v: value,
+      o: 'icontains'
+    }),
+
+    /**
+     * Exact level match.
+     * @param value - Query value
+     */
+    level: (value) => ({
+      k: 'level',
+      v: parseInt(value)
+    }),
+
+    /**
+     * School comparison.
+     * @param value - Query value
+     */
+    school: (value) => ({
+      k: 'school',
+      v: value.toLowerCase(),
+      o: 'icontains'
+    }),
+
+    /**
+     * Damage type checking - checks if spell has any of the specified damage types.
+     * @param value - Query value
+     */
+    damageType: (value) => ({
+      k: 'filterData.damageTypes',
+      v: value.split(',').map((t) => t.trim().toLowerCase()),
+      o: 'hasany'
+    }),
+
+    /**
+     * Condition checking - checks if spell inflicts any of the specified conditions.
+     * @param value - Query value
+     */
+    condition: (value) => ({
+      k: 'filterData.conditions',
+      v: value.split(',').map((c) => c.trim().toLowerCase()),
+      o: 'hasany'
+    }),
+
+    /**
+     * Casting time - splits "type:value" format into two separate checks.
+     * @param value - Query value
+     */
+    castingTime: (value) => {
+      const [type, val = '1'] = value.split(':');
+      return [
+        { k: 'system.activation.type', v: type },
+        { k: 'system.activation.value', v: String(val) }
+      ];
+    },
+
+    /**
+     * Range - handles both numeric values and unit types.
+     * Numeric: exact match on system.range.value
+     * Text: contains match on system.range.units
+     * @param value - Query value
+     */
+    range: (value) => {
+      const numValue = parseInt(value);
+      if (!isNaN(numValue)) return { k: 'system.range.value', v: numValue };
+      return { k: 'system.range.units', v: value.toLowerCase(), o: 'icontains' };
+    },
+
+    /**
+     * Concentration requirement - checks multiple possible property locations.
+     * @param value - Query value
+     */
+    concentration: (value) => ({
+      o: 'OR',
+      v: [
+        { k: 'filterData.concentration', v: value === 'true' },
+        { k: 'system.properties.concentration', v: value === 'true' }
+      ]
+    }),
+
+    /**
+     * Ritual capability - checks multiple possible property locations.
+     * @param value - Query value
+     */
+    ritual: (value) => ({
+      o: 'OR',
+      v: [
+        { k: 'filterData.ritual', v: value === 'true' },
+        { k: 'system.properties.ritual', v: value === 'true' }
+      ]
+    }),
+
+    /**
+     * Prepared status - checks both system.preparation.prepared and top-level prepared.
+     * @param value - Query value
+     */
+    prepared: (value) => ({
+      o: 'OR',
+      v: [
+        { k: 'system.preparation.prepared', v: value === 'true' },
+        { k: 'prepared', v: value === 'true' }
+      ]
+    }),
+
+    /**
+     * Save requirement - checks filterData flag.
+     * @param value - Query value
+     */
+    requiresSave: (value) => ({
+      k: 'filterData.requiresSave',
+      v: value === 'true'
+    }),
+
+    /**
+     * Material components - checks if components are consumed.
+     * @param value - Query value
+     */
+    materialComponents: (value) => ({
+      k: 'filterData.materialComponents.consumed',
+      v: value.toLowerCase() === 'consumed'
+    })
+  };
+
   /**
    * Execute parsed query against spells collection.
    * @param {ParsedQuery} queryObject - Parsed query object from QueryParser
@@ -59,7 +193,8 @@ export class QueryExecutor {
   executeQuery(queryObject, spells) {
     if (!queryObject || !spells || queryObject.type !== 'conjunction') return spells;
     try {
-      return spells.filter((spell) => this._evaluateSpell(queryObject.conditions, spell));
+      const filters = this._convertConditions(queryObject.conditions);
+      return spells.filter((spell) => dnd5e.Filter.performCheck(spell, filters));
     } catch (error) {
       log(2, 'Query execution failed:', error);
       return [];
@@ -67,187 +202,21 @@ export class QueryExecutor {
   }
 
   /**
-   * Evaluate all conditions against a spell using AND logic.
+   * Convert query conditions to filter descriptions.
    * @private
-   * @param {Array<FieldCondition>} conditions - Array of field conditions to evaluate
-   * @param {SpellData} spell - Spell data to evaluate against
-   * @returns {boolean} Whether the spell matches all conditions
+   * @param {Array<FieldCondition>} conditions - Query conditions to convert
+   * @returns {Array<Object>} Array of filter descriptions for dnd5e.Filter.performCheck
    */
-  _evaluateSpell(conditions, spell) {
-    return conditions.every((condition) => this._evaluateCondition(condition, spell));
-  }
-
-  /**
-   * Evaluate single field condition against a spell.
-   * @private
-   * @param {FieldCondition} condition - Field condition to evaluate
-   * @param {SpellData} spell - Spell data to evaluate
-   * @returns {boolean} Whether the spell matches the condition
-   */
-  _evaluateCondition(condition, spell) {
-    if (condition.type !== 'field') return false;
-    const { field, value } = condition;
-    switch (field) {
-      case 'name':
-        return spell.name.toLowerCase().includes(value.toLowerCase());
-      case 'level':
-        return spell.level === parseInt(value);
-      case 'school':
-        return spell.school?.toLowerCase() === value.toLowerCase();
-      case 'castingTime':
-        return this._evaluateCastingTime(value, spell);
-      case 'range':
-        return this._evaluateRange(value, spell);
-      case 'damageType':
-        return this._evaluateDamageType(value, spell);
-      case 'condition':
-        return this._evaluateConditionProperty(value, spell);
-      case 'requiresSave':
-        return this._evaluateRequiresSave(value, spell);
-      case 'concentration':
-        return this._evaluateConcentration(value, spell);
-      case 'prepared':
-        return this._evaluatePrepared(value, spell);
-      case 'ritual':
-        return this._evaluateRitual(value, spell);
-      case 'materialComponents':
-        return this._evaluateMaterialComponents(value, spell);
-      default:
-        log(1, 'Unknown field:', field);
-        return false;
+  _convertConditions(conditions) {
+    const filters = [];
+    for (const condition of conditions) {
+      if (condition.type !== 'field') continue;
+      const mapper = this.FIELD_MAPPERS[condition.field];
+      if (!mapper) continue;
+      const filter = mapper(condition.value);
+      if (Array.isArray(filter)) filters.push(...filter);
+      else if (filter) filters.push(filter);
     }
-  }
-
-  /**
-   * Evaluate casting time criteria against spell data.
-   * @private
-   * @param {string} value - Expected casting time in "type:value" format
-   * @param {SpellData} spell - Spell data to check
-   * @returns {boolean} Whether casting time matches the criteria
-   */
-  _evaluateCastingTime(value, spell) {
-    const parts = value.split(':');
-    const expectedType = parts[0];
-    const expectedValue = parts[1] || '1';
-    const spellType = spell.filterData?.castingTime?.type || spell.system?.activation?.type || '';
-    const spellValue = String(spell.filterData?.castingTime?.value || spell.system?.activation?.value || '1');
-    return spellType.toLowerCase() === expectedType && spellValue === expectedValue;
-  }
-
-  /**
-   * Evaluate range criteria against spell data.
-   * @private
-   * @param {string} value - Expected range value or type
-   * @param {SpellData} spell - Spell data to check
-   * @returns {boolean} Whether range matches the criteria
-   */
-  _evaluateRange(value, spell) {
-    const searchRangeValue = parseInt(value);
-    if (!isNaN(searchRangeValue)) {
-      const spellRange = spell.system?.range?.value;
-      if (typeof spellRange === 'number') return spellRange === searchRangeValue;
-      return false;
-    }
-    const spellRangeUnits = spell.filterData?.range?.units || spell.system?.range?.units || '';
-    const normalizedSpellRange = spellRangeUnits.toLowerCase();
-    const normalizedSearchRange = value.toLowerCase();
-    if (normalizedSpellRange === normalizedSearchRange) return true;
-    const validRangeTypes = Object.keys(CONFIG.DND5E.rangeTypes || {});
-    if (validRangeTypes.includes(normalizedSearchRange)) return normalizedSpellRange === normalizedSearchRange;
-    const specialRanges = ['sight', 'unlimited'];
-    if (specialRanges.includes(normalizedSearchRange)) return normalizedSpellRange.includes(normalizedSearchRange);
-    return false;
-  }
-
-  /**
-   * Evaluate damage type criteria against spell data.
-   * @private
-   * @param {string} value - Expected damage types (comma-separated)
-   * @param {SpellData} spell - Spell data to check
-   * @returns {boolean} Whether any damage type matches
-   */
-  _evaluateDamageType(value, spell) {
-    const expectedTypes = value.split(',').map((t) => t.trim().toLowerCase());
-    const spellDamageTypes = spell.filterData?.damageTypes || [];
-    return expectedTypes.some((expectedType) => spellDamageTypes.some((spellType) => spellType.toLowerCase() === expectedType));
-  }
-
-  /**
-   * Evaluate condition criteria against spell data.
-   * @private
-   * @param {string} value - Expected conditions (comma-separated)
-   * @param {SpellData} spell - Spell data to check
-   * @returns {boolean} Whether any condition matches
-   */
-  _evaluateConditionProperty(value, spell) {
-    const expectedConditions = value.split(',').map((c) => c.trim().toLowerCase());
-    const spellConditions = spell.filterData?.conditions || [];
-    return expectedConditions.some((expectedCondition) => spellConditions.some((spellCondition) => spellCondition.toLowerCase() === expectedCondition));
-  }
-
-  /**
-   * Evaluate requires save criteria against spell data.
-   * @private
-   * @param {string} value - Expected save requirement ('true' or 'false')
-   * @param {SpellData} spell - Spell data to check
-   * @returns {boolean} Whether save requirement matches
-   */
-  _evaluateRequiresSave(value, spell) {
-    const expectedSave = value === 'true';
-    const spellRequiresSave = spell.filterData?.requiresSave || false;
-    return expectedSave === spellRequiresSave;
-  }
-
-  /**
-   * Evaluate concentration criteria against spell data.
-   * @private
-   * @param {string} value - Expected concentration requirement ('true' or 'false')
-   * @param {SpellData} spell - Spell data to check
-   * @returns {boolean} Whether concentration requirement matches
-   */
-  _evaluateConcentration(value, spell) {
-    const expectedConcentration = value === 'true';
-    const requiresConcentration = !!(spell.filterData?.concentration || spell.system?.properties?.concentration);
-    return expectedConcentration === requiresConcentration;
-  }
-
-  /**
-   * Evaluate prepared criteria against spell data.
-   * @private
-   * @param {string} value - Expected preparation status ('true' or 'false')
-   * @param {SpellData} spell - Spell data to check
-   * @returns {boolean} Whether preparation status matches
-   */
-  _evaluatePrepared(value, spell) {
-    const expectedPrepared = value === 'true';
-    const isPrepared = !!(spell.system?.preparation?.prepared || spell.prepared);
-    return expectedPrepared === isPrepared;
-  }
-
-  /**
-   * Evaluate ritual criteria against spell data.
-   * @private
-   * @param {string} value - Expected ritual capability ('true' or 'false')
-   * @param {SpellData} spell - Spell data to check
-   * @returns {boolean} Whether ritual capability matches
-   */
-  _evaluateRitual(value, spell) {
-    const expectedRitual = value === 'true';
-    const isRitual = !!(spell.filterData?.ritual || spell.system?.properties?.ritual);
-    return expectedRitual === isRitual;
-  }
-
-  /**
-   * Evaluate material components criteria against spell data.
-   * @private
-   * @param {string} value - Expected material component status ('consumed' or 'notconsumed')
-   * @param {SpellData} spell - Spell data to check
-   * @returns {boolean} Whether material component status matches
-   */
-  _evaluateMaterialComponents(value, spell) {
-    const expectedConsumed = value.toLowerCase() === 'consumed';
-    const materialComponents = spell.filterData?.materialComponents || {};
-    const isConsumed = !!materialComponents.consumed;
-    return expectedConsumed === isConsumed;
+    return filters;
   }
 }
