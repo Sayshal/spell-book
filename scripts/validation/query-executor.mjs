@@ -192,13 +192,8 @@ export class QueryExecutor {
    */
   executeQuery(queryObject, spells) {
     if (!queryObject || !spells || queryObject.type !== 'conjunction') return spells;
-    try {
-      const filters = this._convertConditions(queryObject.conditions);
-      return spells.filter((spell) => dnd5e.Filter.performCheck(spell, filters));
-    } catch (error) {
-      log(2, 'Query execution failed:', error);
-      return [];
-    }
+    const filters = this._convertConditions(queryObject.conditions);
+    return spells.filter((spell) => dnd5e.Filter.performCheck(spell, filters));
   }
 
   /**
