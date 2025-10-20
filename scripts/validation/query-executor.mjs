@@ -15,8 +15,6 @@
  * @author Tyler
  */
 
-import { log } from '../logger.mjs';
-
 /**
  * Parsed query object structure for execution.
  *
