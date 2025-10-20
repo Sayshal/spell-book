@@ -14,14 +14,14 @@
  * - Scroll consumption management
  * - Level-based learning restrictions
  *
- * @module DataHelpers/ScrollProcessor
+ * @module DataUtils/ScrollProcessor
  * @author Tyler
  */
 
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
-import * as UIHelpers from '../ui/_module.mjs';
-import * as DataHelpers from './_module.mjs';
+import * as UIUtils from '../ui/_module.mjs';
+import * as DataUtils from './_module.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
 
@@ -94,7 +94,7 @@ export class ScrollProcessor {
   static async scanForScrollSpells(actor) {
     /** @type {Array<ScrollSpellData>} */
     const scrollSpells = [];
-    if (!DataHelpers.isWizard(actor)) return scrollSpells;
+    if (!DataUtils.isWizard(actor)) return scrollSpells;
     const scrollItems = actor.items.filter((item) => item.type === 'consumable' && item.system?.type?.value === 'scroll');
     for (const scroll of scrollItems) {
       const spellData = await this._extractSpellFromScroll(scroll, actor);
@@ -111,9 +111,9 @@ export class ScrollProcessor {
    * @private
    */
   static async _extractSpellFromScroll(scroll, actor) {
-    const wizardClass = DataHelpers.findWizardClass(actor);
+    const wizardClass = DataUtils.findWizardClass(actor);
     if (!wizardClass) return null;
-    const maxSpellLevel = DataHelpers.calculateMaxSpellLevel(wizardClass, actor);
+    const maxSpellLevel = DataUtils.calculateMaxSpellLevel(wizardClass, actor);
     if (scroll.system?.activities) {
       const activitiesArray = Array.from(scroll.system.activities.values());
       for (const activity of activitiesArray) {
@@ -152,7 +152,7 @@ export class ScrollProcessor {
       const spell = await fromUuid(spellUuid);
       if (!spell || spell.type !== 'spell') return null;
       if (spell.system.level > maxSpellLevel && spell.system.level > 0) return null;
-      const filterData = UIHelpers.extractSpellFilterData(spell);
+      const filterData = UIUtils.extractSpellFilterData(spell);
 
       /** @type {ScrollSpellData} */
       let processedResult = {
@@ -164,7 +164,7 @@ export class ScrollProcessor {
         img: spell.img,
         system: spell.system,
         filterData: filterData,
-        enrichedIcon: UIHelpers.createSpellIconLink(spell),
+        enrichedIcon: UIUtils.createSpellIconLink(spell),
         isFromScroll: true,
         scrollId: scroll.id,
         scrollName: scroll.name,

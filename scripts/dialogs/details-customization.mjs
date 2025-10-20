@@ -19,8 +19,8 @@
 
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
-import * as UIHelpers from '../ui/_module.mjs';
-import * as ValidationHelpers from '../validation/_module.mjs';
+import * as UIUtils from '../ui/_module.mjs';
+import * as ValidationUtils from '../validation/_module.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -143,9 +143,9 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
   _prepareUIElementsWithCheckboxes(type, settings) {
     const elements = this._getUIElementsConfig(type);
     return elements.map((element) => {
-      const checkbox = ValidationHelpers.createCheckbox({ name: `${type}.${element.key}`, checked: settings[element.key] || false, ariaLabel: game.i18n.localize(element.label) });
+      const checkbox = ValidationUtils.createCheckbox({ name: `${type}.${element.key}`, checked: settings[element.key] || false, ariaLabel: game.i18n.localize(element.label) });
       checkbox.id = `${type}-${element.key}`;
-      return { ...element, checkboxHtml: ValidationHelpers.elementToHtml(checkbox) };
+      return { ...element, checkboxHtml: ValidationUtils.elementToHtml(checkbox) };
     });
   }
 
@@ -159,9 +159,9 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
   _prepareMetadataElementsWithCheckboxes(type, settings) {
     const elements = this._getMetadataElementsConfig();
     return elements.map((element) => {
-      const checkbox = ValidationHelpers.createCheckbox({ name: `${type}.${element.key}`, checked: settings[element.key] || false, ariaLabel: game.i18n.localize(element.label) });
+      const checkbox = ValidationUtils.createCheckbox({ name: `${type}.${element.key}`, checked: settings[element.key] || false, ariaLabel: game.i18n.localize(element.label) });
       checkbox.id = `${type}-${element.key}`;
-      return { ...element, checkboxHtml: ValidationHelpers.elementToHtml(checkbox) };
+      return { ...element, checkboxHtml: ValidationUtils.elementToHtml(checkbox) };
     });
   }
 
@@ -173,12 +173,12 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
    * @private
    */
   _createSelectAllCheckbox(id, group) {
-    const checkbox = ValidationHelpers.createCheckbox({ name: id, checked: false, ariaLabel: game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.SelectAll') });
+    const checkbox = ValidationUtils.createCheckbox({ name: id, checked: false, ariaLabel: game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.SelectAll') });
     checkbox.id = id;
     checkbox.dataset.action = 'selectAll';
     checkbox.dataset.group = group;
     checkbox.classList.add('select-all-checkbox');
-    return ValidationHelpers.elementToHtml(checkbox);
+    return ValidationUtils.elementToHtml(checkbox);
   }
 
   /**
@@ -238,7 +238,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
    */
   _setGroupCheckboxes(group, checked) {
     const groupCheckboxes = this.element.querySelectorAll(`[data-group="${group}"].setting-item dnd5e-checkbox`);
-    UIHelpers.setGroupCheckboxes(groupCheckboxes, checked);
+    UIUtils.setGroupCheckboxes(groupCheckboxes, checked);
   }
 
   /**
@@ -249,7 +249,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
   _updateSelectAllState(group) {
     const selectAllCheckbox = this.element.querySelector(`[data-group="${group}"].select-all-checkbox`);
     const groupCheckboxes = this.element.querySelectorAll(`[data-group="${group}"].setting-item dnd5e-checkbox`);
-    UIHelpers.updateSelectAllState(selectAllCheckbox, groupCheckboxes);
+    UIUtils.updateSelectAllState(selectAllCheckbox, groupCheckboxes);
   }
 
   /**

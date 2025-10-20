@@ -14,12 +14,12 @@
  * - Wizard spellbook support
  * - Multi-class spellcaster handling
  *
- * @module DataHelpers/ActorSpells
+ * @module DataUtils/ActorSpells
  * @author Tyler
  */
 
 import { log } from '../logger.mjs';
-import * as UIHelpers from './_module.mjs';
+import * as UIUtils from './_module.mjs';
 
 /**
  * @typedef {Object} SpellDocument
@@ -74,7 +74,7 @@ import * as UIHelpers from './_module.mjs';
  * @returns {Promise<Array<SpellDocument>>} Array of spell documents
  */
 export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
-  const preloadedData = UIHelpers.getPreloadedData();
+  const preloadedData = UIUtils.getPreloadedData();
   if (preloadedData && preloadedData.enrichedSpells.length > 0) {
     const matchingSpells = preloadedData.enrichedSpells.filter((spell) => spellUuids.has(spell.uuid) && spell.system?.level <= maxSpellLevel);
     if (matchingSpells.length === spellUuids.size) return matchingSpells;

@@ -21,11 +21,11 @@
  * different UI contexts while respecting user ownership and providing seamless
  * integration with Foundry's existing favorites functionality.
  *
- * @module UIHelpers/SpellFavorites
+ * @module UIUtils/SpellFavorites
  * @author Tyler
  */
 
-import * as DataHelpers from '../data/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -107,7 +107,7 @@ export async function removeSpellFromActorFavorites(spellUuid, actor) {
 export async function syncFavoritesOnSave(actor, spellData) {
   try {
     for (const uuid of Object.keys(spellData)) {
-      const userData = await DataHelpers.UserData.getUserDataForSpell(uuid, null, actor.id);
+      const userData = await DataUtils.UserData.getUserDataForSpell(uuid, null, actor.id);
       if (userData?.favorited) await addSpellToActorFavorites(uuid, actor);
     }
   } catch (error) {
@@ -123,13 +123,13 @@ export async function syncFavoritesOnSave(actor, spellData) {
  */
 export async function processFavoritesFromForm(_form, actor) {
   try {
-    const targetUserId = DataHelpers.getTargetUserId(actor);
+    const targetUserId = DataUtils.getTargetUserId(actor);
     const actorSpells = actor.items.filter((item) => item.type === 'spell');
     const favoritesToAdd = [];
     log(3, `Checking ${actorSpells.length} spells on actor for favorite status`);
     for (const spell of actorSpells) {
       const canonicalUuid = getCanonicalSpellUuid(spell.uuid);
-      const userData = await DataHelpers.UserData.getUserDataForSpell(canonicalUuid, targetUserId, actor.id);
+      const userData = await DataUtils.UserData.getUserDataForSpell(canonicalUuid, targetUserId, actor.id);
       const isFavoritedInJournal = userData?.favorited || false;
       if (isFavoritedInJournal) favoritesToAdd.push(spell);
     }

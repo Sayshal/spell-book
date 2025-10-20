@@ -13,13 +13,13 @@
  */
 
 import { PlayerFilterConfiguration, AnalyticsDashboard, SpellBook, SpellListManager } from './apps/_module.mjs';
-import * as DataHelpers from './data/_module.mjs';
+import * as DataUtils from './data/_module.mjs';
 import { CompendiumSelection, SpellComparison, DetailsCustomization, LoadoutSelector, SpellNotes, SpellBookSettings } from './dialogs/_module.mjs';
 import { log } from './logger.mjs';
 import { Cantrips, Macros, Migrations, RuleSet, Loadouts, SpellManager, UsageTracker, UserDataSetup, WizardBook } from './managers/_module.mjs';
 import { State } from './state/_module.mjs';
-import * as UIHelpers from './ui/_module.mjs';
-import * as ValidationHelpers from './validation/_module.mjs';
+import * as UIUtils from './ui/_module.mjs';
+import * as ValidationUtils from './validation/_module.mjs';
 import { MODULE } from './constants/_module.mjs';
 
 /**
@@ -32,11 +32,11 @@ export function createAPI() {
       apps: { PlayerFilterConfiguration, SpellBook, AnalyticsDashboard, SpellListManager },
       dialogs: { CompendiumSelection, SpellComparison, DetailsCustomization, LoadoutSelector, SpellNotes, SpellBookSettings },
       utils: {
-        data: DataHelpers,
+        data: DataUtils,
         managers: { Cantrips, Macros, Migrations, RuleSet, Loadouts, SpellManager, UsageTracker, UserDataSetup, WizardBook },
         state: State,
-        ui: UIHelpers,
-        validation: ValidationHelpers
+        ui: UIUtils,
+        validation: ValidationUtils
       },
       migrations: { forceMigration: Migrations.forceMigration },
       preloadedData: null,

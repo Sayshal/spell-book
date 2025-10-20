@@ -25,8 +25,8 @@ import { Troubleshooter } from './apps/_module.mjs';
 import { MODULE, SETTINGS } from './constants/_module.mjs';
 import { CompendiumSelection, DetailsCustomization } from './dialogs/_module.mjs';
 import { log } from './logger.mjs';
-import * as UIHelpers from './ui/_module.mjs';
-import * as DataHelpers from './data/_module.mjs';
+import * as UIUtils from './ui/_module.mjs';
+import * as DataUtils from './data/_module.mjs';
 
 /**
  * Register all module settings with Foundry VTT.
@@ -296,7 +296,7 @@ export function registerSettings() {
     default: [],
     onChange: async (value) => {
       log(3, `Registry enabled lists updated: ${value.length} lists`);
-      if (game.user.isGM) await DataHelpers.registerCustomSpellLists();
+      if (game.user.isGM) await DataUtils.registerCustomSpellLists();
     }
   });
 
@@ -318,7 +318,7 @@ export function registerSettings() {
     },
     default: 'off',
     onChange: async (value) => {
-      await UIHelpers.DescriptionInjector.handleSettingChange(value);
+      await UIUtils.DescriptionInjector.handleSettingChange(value);
     }
   });
 

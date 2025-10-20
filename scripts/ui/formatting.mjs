@@ -23,13 +23,13 @@
  * The utilities handle various spell data formats and provide fallback mechanisms
  * for incomplete or legacy spell data structures.
  *
- * @module UIHelpers/SpellFormatting
+ * @module UIUtils/SpellFormatting
  * @author Tyler
  */
 
 import { MODULE } from '../constants/_module.mjs';
-import * as DataHelpers from '../data/_module.mjs';
-import * as UIHelpers from './_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
+import * as UIUtils from './_module.mjs';
 
 /**
  * Processed spell list structure with enhanced metadata for display.
@@ -147,8 +147,8 @@ export function processSpellItemForDisplay(spell) {
   const processed = foundry.utils.deepClone(spell);
   processed.cssClasses = 'spell-item';
   processed.dataAttributes = `data-uuid="${spell.uuid}"`;
-  processed.showCompare = UIHelpers.CustomUI.isGMElementEnabled('compare');
-  processed.formattedDetails = UIHelpers.CustomUI.buildGMMetadata(spell);
+  processed.showCompare = UIUtils.CustomUI.isGMElementEnabled('compare');
+  processed.formattedDetails = UIUtils.CustomUI.buildGMMetadata(spell);
   return processed;
 }
 
@@ -193,7 +193,7 @@ export function formatSpellActivation(spell) {
 export function formatSpellSchool(spell) {
   let result = '';
   if (spell.labels?.school) result = spell.labels.school;
-  else if (spell.system?.school) result = DataHelpers.getConfigLabel(CONFIG.DND5E.spellSchools, spell.system.school) || spell.system.school;
+  else if (spell.system?.school) result = DataUtils.getConfigLabel(CONFIG.DND5E.spellSchools, spell.system.school) || spell.system.school;
   return result;
 }
 
@@ -250,7 +250,7 @@ export function formatMaterialComponents(spell) {
  */
 export function getLocalizedPreparationMode(mode) {
   if (!mode) return '';
-  const label = DataHelpers.getConfigLabel(CONFIG.DND5E.spellcasting, mode);
+  const label = DataUtils.getConfigLabel(CONFIG.DND5E.spellcasting, mode);
   if (label) return label;
   return mode.charAt(0).toUpperCase() + mode.slice(1);
 }
@@ -388,7 +388,7 @@ export function extractSpellConditions(spell) {
     const lowerDesc = description.toLowerCase();
     for (const [key, condition] of Object.entries(CONFIG.DND5E.conditionTypes)) {
       if (condition.pseudo) continue;
-      const conditionLabel = DataHelpers.getConfigLabel(CONFIG.DND5E.conditionTypes, key);
+      const conditionLabel = DataUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, key);
       if (conditionLabel && lowerDesc.includes(conditionLabel.toLowerCase())) conditions.push(key);
     }
   }

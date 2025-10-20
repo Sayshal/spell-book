@@ -16,7 +16,7 @@
  * - UI customization and theming capabilities
  * - Chat Handler for spell book notices
  *
- * @module UIHelpers
+ * @module UIUtils
  * @author Tyler
  */
 

@@ -24,11 +24,11 @@
  */
 
 import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
-import * as DataHelpers from '../data/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { SpellComparison, DetailsCustomization } from '../dialogs/_module.mjs';
 import { log } from '../logger.mjs';
-import * as UIHelpers from '../ui/_module.mjs';
-import * as ValidationHelpers from '../validation/_module.mjs';
+import * as UIUtils from '../ui/_module.mjs';
+import * as ValidationUtils from '../validation/_module.mjs';
 import { AnalyticsDashboard } from './_module.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -242,8 +242,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       ritual: false
     };
 
-    /** @type {UIHelpers.Filters} Filter helper for spell filtering */
-    this.filterHelper = new UIHelpers.Filters(this);
+    /** @type {UIUtils.Filters} Filter helper for spell filtering */
+    this.filterHelper = new UIUtils.Filters(this);
 
     /** @type {boolean} Whether checkboxes are currently being updated programmatically */
     this.isUpdatingCheckboxes = false;
@@ -257,7 +257,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     context.selectedSpellList = this.selectedSpellList;
     context.availableSpells = this.availableSpells;
     context.filterState = this.filterState;
-    context.settings = { useMetricUnits: DataHelpers.shouldUseMetric() };
+    context.settings = { useMetricUnits: DataUtils.shouldUseMetric() };
     context.selectionMode = this.selectionMode;
     context.selectedSpellsToAdd = this.selectedSpellsToAdd;
     context.selectedSpellsToRemove = this.selectedSpellsToRemove;
@@ -280,18 +280,18 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (this.availableSpells.length > 0) this._prepareFilterContext(context);
     if (this.isEditing && this.selectedSpellList) await this._addEditingContext(context);
     if (this.selectedSpellList) {
-      context.selectedSpellList = UIHelpers.processSpellListForDisplay(this.selectedSpellList, this.classFolderCache, this.availableSpellLists);
+      context.selectedSpellList = UIUtils.processSpellListForDisplay(this.selectedSpellList, this.classFolderCache, this.availableSpellLists);
       const flags = this.selectedSpellList.document.flags?.[MODULE.ID] || {};
       const isCustomList = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList;
       context.selectedSpellList.isRenameable = isCustomList || this.selectedSpellList.isMerged;
-      context.selectedSpellList.isRegistryEnabled = DataHelpers.isListEnabledForRegistry(this.selectedSpellList.uuid);
-      const registryCheckbox = ValidationHelpers.createCheckbox({
+      context.selectedSpellList.isRegistryEnabled = DataUtils.isListEnabledForRegistry(this.selectedSpellList.uuid);
+      const registryCheckbox = ValidationUtils.createCheckbox({
         name: 'registry-enabled',
         checked: context.selectedSpellList.isRegistryEnabled,
         ariaLabel: game.i18n.localize('SPELLBOOK.Registry.EnableLabel')
       });
       registryCheckbox.dataset.action = 'toggleRegistry';
-      context.selectedSpellList.registryCheckboxHtml = ValidationHelpers.elementToHtml(registryCheckbox);
+      context.selectedSpellList.registryCheckboxHtml = ValidationUtils.elementToHtml(registryCheckbox);
       context.selectedSpellList.isActorOwned = !!flags.actorId;
     }
     if (context.selectedSpellList?.spellsByLevel) {
@@ -392,16 +392,16 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _prepareFilterContext(context) {
-    context.spellSources = DataHelpers.prepareSpellSources(this.availableSpells);
-    context.castingTimeOptions = DataHelpers.prepareCastingTimeOptions(this.availableSpells, this.filterState);
-    context.damageTypeOptions = DataHelpers.prepareDamageTypeOptions(this.filterState);
-    context.conditionOptions = DataHelpers.prepareConditionOptions(this.filterState);
+    context.spellSources = DataUtils.prepareSpellSources(this.availableSpells);
+    context.castingTimeOptions = DataUtils.prepareCastingTimeOptions(this.availableSpells, this.filterState);
+    context.damageTypeOptions = DataUtils.prepareDamageTypeOptions(this.filterState);
+    context.conditionOptions = DataUtils.prepareConditionOptions(this.filterState);
     const filteredData = this._filterAvailableSpells();
     const maxSpells = game.settings.get(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX);
     const comparisonFull = this.comparisonSpells.size >= maxSpells;
     if (this.isEditing && this.selectionMode && filteredData.spells) {
       filteredData.spells = filteredData.spells.map((spell) => {
-        const processedSpell = UIHelpers.processSpellItemForDisplay(spell);
+        const processedSpell = UIUtils.processSpellItemForDisplay(spell);
         processedSpell.selectAddCheckboxHtml = this._createSpellSelectCheckbox(spell, 'add', this.selectedSpellsToAdd.has(spell.uuid));
         processedSpell.isInComparison = this.comparisonSpells.has(spell.uuid);
         processedSpell.showCompareLink = !comparisonFull || processedSpell.isInComparison;
@@ -409,7 +409,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       });
     } else if (filteredData.spells) {
       filteredData.spells = filteredData.spells.map((spell) => {
-        const processedSpell = UIHelpers.processSpellItemForDisplay(spell);
+        const processedSpell = UIUtils.processSpellItemForDisplay(spell);
         processedSpell.isInComparison = this.comparisonSpells.has(spell.uuid);
         processedSpell.showCompareLink = !comparisonFull || processedSpell.isInComparison;
         return processedSpell;
@@ -432,7 +432,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       const originalUuid = this.selectedSpellList.document.flags?.[MODULE.ID]?.originalUuid;
       if (originalUuid) {
         context.originalUuid = originalUuid;
-        const compareResult = await DataHelpers.compareListVersions(originalUuid, this.selectedSpellList.document.uuid);
+        const compareResult = await DataUtils.compareListVersions(originalUuid, this.selectedSpellList.document.uuid);
         context.compareInfo = compareResult;
       }
     }
@@ -444,8 +444,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   async loadData() {
     try {
-      DataHelpers.getValidCustomListMappings();
-      this.availableSpellLists = await DataHelpers.findCompendiumSpellLists(true);
+      DataUtils.getValidCustomListMappings();
+      this.availableSpellLists = await DataUtils.findCompendiumSpellLists(true);
       this.classFolderCache = await this._buildClassFolderCache();
       for (const list of this.availableSpellLists) {
         const document = list.document;
@@ -458,22 +458,22 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         }
       }
       this.availableSpellLists.sort((a, b) => a.name.localeCompare(b.name));
-      const preloadedData = DataHelpers.getPreloadedData();
+      const preloadedData = DataUtils.getPreloadedData();
       if (preloadedData && preloadedData.enrichedSpells.length > 0) {
         log(3, `Starting with ${preloadedData.enrichedSpells.length} preloaded spells`);
         this.availableSpells = [...preloadedData.enrichedSpells];
-        const allSpells = await DataHelpers.fetchAllCompendiumSpells();
+        const allSpells = await DataUtils.fetchAllCompendiumSpells();
         const preloadedUuids = new Set(this.availableSpells.map((s) => s.uuid));
         const missingSpells = allSpells.filter((spell) => !preloadedUuids.has(spell.uuid));
         log(3, `Found ${missingSpells.length} missing spells to load`);
         if (missingSpells.length > 0) {
-          for (let spell of missingSpells) spell.enrichedIcon = UIHelpers.createSpellIconLink(spell);
+          for (let spell of missingSpells) spell.enrichedIcon = UIUtils.createSpellIconLink(spell);
           this.availableSpells.push(...missingSpells);
         }
         log(3, `GM Manager loaded: ${this.availableSpells.length} total spells (${preloadedData.enrichedSpells.length} preloaded + ${missingSpells.length} additional)`);
       } else {
         log(3, 'No preloaded data available, loading all spells from scratch');
-        this.availableSpells = await DataHelpers.fetchAllCompendiumSpells();
+        this.availableSpells = await DataUtils.fetchAllCompendiumSpells();
         this.enrichAvailableSpells();
       }
     } catch (error) {
@@ -489,7 +489,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   enrichAvailableSpells() {
     if (!this.availableSpells.length) return;
-    for (let spell of this.availableSpells) spell.enrichedIcon = UIHelpers.createSpellIconLink(spell);
+    for (let spell of this.availableSpells) spell.enrichedIcon = UIUtils.createSpellIconLink(spell);
   }
 
   /**
@@ -503,7 +503,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       this.selectedSpellList.isLoadingSpells = true;
       this.render(false);
       const maxSpellLevel = 9;
-      const preloadedData = DataHelpers.getPreloadedData();
+      const preloadedData = DataUtils.getPreloadedData();
       let spellItems = [];
       if (preloadedData && preloadedData.enrichedSpells.length > 0) {
         log(3, 'Using preloaded spell data for GM spell list');
@@ -512,16 +512,16 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         const missingSpells = spellUuids.filter((uuid) => !preloadedSpells.some((spell) => spell.uuid === uuid));
         if (missingSpells.length > 0) {
           log(3, `Loading ${missingSpells.length} missing spells from compendiums`);
-          const additionalSpells = await DataHelpers.fetchSpellDocuments(new Set(missingSpells), maxSpellLevel);
+          const additionalSpells = await DataUtils.fetchSpellDocuments(new Set(missingSpells), maxSpellLevel);
           spellItems = [...preloadedSpells, ...additionalSpells];
         } else spellItems = preloadedSpells;
-      } else spellItems = await DataHelpers.fetchSpellDocuments(new Set(spellUuids), maxSpellLevel);
+      } else spellItems = await DataUtils.fetchSpellDocuments(new Set(spellUuids), maxSpellLevel);
       for (const spell of spellItems) {
-        if (!spell.enrichedIcon) spell.enrichedIcon = UIHelpers.createSpellIconLink(spell);
+        if (!spell.enrichedIcon) spell.enrichedIcon = UIUtils.createSpellIconLink(spell);
         if (!spell.compendiumUuid) spell.compendiumUuid = spell.uuid;
       }
       this.selectedSpellList.spells = spellItems;
-      this.selectedSpellList.spellsByLevel = DataHelpers.organizeSpellsByLevel(spellItems);
+      this.selectedSpellList.spellsByLevel = DataUtils.organizeSpellsByLevel(spellItems);
       this.selectedSpellList.isLoadingSpells = false;
       log(3, `Loaded ${spellItems.length} spells for spell list`);
     } catch (error) {
@@ -540,7 +540,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   async selectSpellList(uuid) {
     this._clearSelections();
     log(3, `Selecting spell list: ${uuid}`);
-    const duplicate = await DataHelpers.findDuplicateSpellList(uuid);
+    const duplicate = await DataUtils.findDuplicateSpellList(uuid);
     if (duplicate && duplicate.uuid !== uuid) return this.selectSpellList(duplicate.uuid);
     const spellList = await fromUuid(uuid);
     if (!spellList) return;
@@ -966,7 +966,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _prepareFilterElements() {
-    const searchInput = ValidationHelpers.createTextInput({
+    const searchInput = ValidationUtils.createTextInput({
       name: 'spell-search',
       value: this.filterState.name || '',
       placeholder: game.i18n.localize('SPELLMANAGER.Filters.SearchPlaceholder'),
@@ -978,7 +978,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     Object.entries(CONFIG.DND5E.spellLevels).forEach(([level, label]) => {
       levelOptions.push({ value: level, label: label, selected: this.filterState.level === level });
     });
-    const levelSelect = ValidationHelpers.createSelect({
+    const levelSelect = ValidationUtils.createSelect({
       name: 'spell-level',
       options: levelOptions,
       disabled: !this.isEditing,
@@ -987,34 +987,34 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     levelSelect.id = 'spell-level';
     const schoolOptions = [{ value: '', label: game.i18n.localize('SPELLMANAGER.Filters.AllSchools'), selected: !this.filterState.school }];
     Object.entries(CONFIG.DND5E.spellSchools).forEach(([key, _school]) => {
-      const label = DataHelpers.getConfigLabel(CONFIG.DND5E.spellSchools, key);
+      const label = DataUtils.getConfigLabel(CONFIG.DND5E.spellSchools, key);
       schoolOptions.push({ value: key, label, selected: this.filterState.school === key });
     });
-    const schoolSelect = ValidationHelpers.createSelect({
+    const schoolSelect = ValidationUtils.createSelect({
       name: 'spell-school',
       options: schoolOptions,
       disabled: !this.isEditing,
       ariaLabel: game.i18n.localize('SPELLBOOK.Filters.School')
     });
     schoolSelect.id = 'spell-school';
-    const castingTimeOptions = DataHelpers.prepareCastingTimeOptions(this.availableSpells, this.filterState);
-    const castingTimeSelect = ValidationHelpers.createSelect({
+    const castingTimeOptions = DataUtils.prepareCastingTimeOptions(this.availableSpells, this.filterState);
+    const castingTimeSelect = ValidationUtils.createSelect({
       name: 'spell-castingTime',
       options: castingTimeOptions,
       disabled: !this.isEditing,
       ariaLabel: game.i18n.localize('SPELLBOOK.Filters.CastingTime')
     });
     castingTimeSelect.id = 'spell-castingTime';
-    const damageTypeOptions = DataHelpers.prepareDamageTypeOptions(this.filterState);
-    const damageTypeSelect = ValidationHelpers.createSelect({
+    const damageTypeOptions = DataUtils.prepareDamageTypeOptions(this.filterState);
+    const damageTypeSelect = ValidationUtils.createSelect({
       name: 'spell-damageType',
       options: damageTypeOptions,
       disabled: !this.isEditing,
       ariaLabel: game.i18n.localize('SPELLBOOK.Filters.DamageType')
     });
     damageTypeSelect.id = 'spell-damageType';
-    const conditionOptions = DataHelpers.prepareConditionOptions(this.filterState);
-    const conditionSelect = ValidationHelpers.createSelect({
+    const conditionOptions = DataUtils.prepareConditionOptions(this.filterState);
+    const conditionSelect = ValidationUtils.createSelect({
       name: 'spell-condition',
       options: conditionOptions,
       disabled: !this.isEditing,
@@ -1026,7 +1026,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       { value: 'true', label: game.i18n.localize('SPELLBOOK.Filters.True'), selected: this.filterState.requiresSave === 'true' },
       { value: 'false', label: game.i18n.localize('SPELLBOOK.Filters.False'), selected: this.filterState.requiresSave === 'false' }
     ];
-    const requiresSaveSelect = ValidationHelpers.createSelect({
+    const requiresSaveSelect = ValidationUtils.createSelect({
       name: 'spell-requiresSave',
       options: requiresSaveOptions,
       disabled: !this.isEditing,
@@ -1038,7 +1038,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       { value: 'true', label: game.i18n.localize('SPELLBOOK.Filters.True'), selected: this.filterState.concentration === 'true' },
       { value: 'false', label: game.i18n.localize('SPELLBOOK.Filters.False'), selected: this.filterState.concentration === 'false' }
     ];
-    const concentrationSelect = ValidationHelpers.createSelect({
+    const concentrationSelect = ValidationUtils.createSelect({
       name: 'spell-concentration',
       options: concentrationOptions,
       disabled: !this.isEditing,
@@ -1050,21 +1050,21 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       { value: 'consumed', label: game.i18n.localize('SPELLBOOK.Filters.Materials.Consumed'), selected: this.filterState.materialComponents === 'consumed' },
       { value: 'notConsumed', label: game.i18n.localize('SPELLBOOK.Filters.Materials.NotConsumed'), selected: this.filterState.materialComponents === 'notConsumed' }
     ];
-    const materialComponentsSelect = ValidationHelpers.createSelect({
+    const materialComponentsSelect = ValidationUtils.createSelect({
       name: 'spell-materialComponents',
       options: materialComponentsOptions,
       disabled: !this.isEditing,
       ariaLabel: game.i18n.localize('SPELLBOOK.Filters.Materials.Title')
     });
     materialComponentsSelect.id = 'spell-materialComponents';
-    const ritualCheckbox = ValidationHelpers.createCheckbox({
+    const ritualCheckbox = ValidationUtils.createCheckbox({
       name: 'filter-ritual',
       checked: this.filterState.ritual || false,
       disabled: !this.isEditing,
       ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RitualOnly')
     });
     ritualCheckbox.id = 'filter-ritual';
-    const minRangeInput = ValidationHelpers.createNumberInput({
+    const minRangeInput = ValidationUtils.createNumberInput({
       name: 'spell-min-range',
       value: this.filterState.minRange || '',
       placeholder: game.i18n.localize('SPELLBOOK.Filters.RangeMin'),
@@ -1072,7 +1072,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RangeMinLabel')
     });
     minRangeInput.id = 'spell-min-range';
-    const maxRangeInput = ValidationHelpers.createNumberInput({
+    const maxRangeInput = ValidationUtils.createNumberInput({
       name: 'spell-max-range',
       value: this.filterState.maxRange || '',
       placeholder: game.i18n.localize('SPELLBOOK.Filters.RangeMax'),
@@ -1080,28 +1080,28 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RangeMaxLabel')
     });
     maxRangeInput.id = 'spell-max-range';
-    const spellSources = DataHelpers.prepareSpellSources(this.availableSpells);
+    const spellSources = DataUtils.prepareSpellSources(this.availableSpells);
     const currentCompendiumSourceValue = this.filterState.source || 'all';
     const compendiumSourceOptions = spellSources.map((source) => ({
       value: source.id,
       label: source.label,
       selected: currentCompendiumSourceValue === source.id
     }));
-    const compendiumSourceSelect = ValidationHelpers.createSelect({
+    const compendiumSourceSelect = ValidationUtils.createSelect({
       name: 'spell-compendium-source',
       options: compendiumSourceOptions,
       disabled: !this.isEditing,
       ariaLabel: game.i18n.localize('SPELLMANAGER.Filters.CompendiumSource')
     });
     compendiumSourceSelect.id = 'spell-compendium-source';
-    const spellSourceOptions = DataHelpers.prepareSpellSourceOptions(this.availableSpells);
+    const spellSourceOptions = DataUtils.prepareSpellSourceOptions(this.availableSpells);
     const currentSpellSourceValue = this.filterState.spellSource || 'all';
     const spellSourceSelectOptions = spellSourceOptions.map((source) => ({
       value: source.id,
       label: source.label,
       selected: currentSpellSourceValue === source.id
     }));
-    const spellSourceSelect = ValidationHelpers.createSelect({
+    const spellSourceSelect = ValidationUtils.createSelect({
       name: 'spell-source',
       options: spellSourceSelectOptions,
       disabled: !this.isEditing,
@@ -1109,20 +1109,20 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     });
     spellSourceSelect.id = 'spell-source';
     return {
-      searchInputHtml: ValidationHelpers.elementToHtml(searchInput),
-      levelSelectHtml: ValidationHelpers.elementToHtml(levelSelect),
-      schoolSelectHtml: ValidationHelpers.elementToHtml(schoolSelect),
-      castingTimeSelectHtml: ValidationHelpers.elementToHtml(castingTimeSelect),
-      damageTypeSelectHtml: ValidationHelpers.elementToHtml(damageTypeSelect),
-      conditionSelectHtml: ValidationHelpers.elementToHtml(conditionSelect),
-      requiresSaveSelectHtml: ValidationHelpers.elementToHtml(requiresSaveSelect),
-      concentrationSelectHtml: ValidationHelpers.elementToHtml(concentrationSelect),
-      materialComponentsSelectHtml: ValidationHelpers.elementToHtml(materialComponentsSelect),
-      ritualCheckboxHtml: ValidationHelpers.elementToHtml(ritualCheckbox),
-      minRangeInputHtml: ValidationHelpers.elementToHtml(minRangeInput),
-      maxRangeInputHtml: ValidationHelpers.elementToHtml(maxRangeInput),
-      compendiumSourceSelectHtml: ValidationHelpers.elementToHtml(compendiumSourceSelect),
-      sourceSelectHtml: ValidationHelpers.elementToHtml(spellSourceSelect)
+      searchInputHtml: ValidationUtils.elementToHtml(searchInput),
+      levelSelectHtml: ValidationUtils.elementToHtml(levelSelect),
+      schoolSelectHtml: ValidationUtils.elementToHtml(schoolSelect),
+      castingTimeSelectHtml: ValidationUtils.elementToHtml(castingTimeSelect),
+      damageTypeSelectHtml: ValidationUtils.elementToHtml(damageTypeSelect),
+      conditionSelectHtml: ValidationUtils.elementToHtml(conditionSelect),
+      requiresSaveSelectHtml: ValidationUtils.elementToHtml(requiresSaveSelect),
+      concentrationSelectHtml: ValidationUtils.elementToHtml(concentrationSelect),
+      materialComponentsSelectHtml: ValidationUtils.elementToHtml(materialComponentsSelect),
+      ritualCheckboxHtml: ValidationUtils.elementToHtml(ritualCheckbox),
+      minRangeInputHtml: ValidationUtils.elementToHtml(minRangeInput),
+      maxRangeInputHtml: ValidationUtils.elementToHtml(maxRangeInput),
+      compendiumSourceSelectHtml: ValidationUtils.elementToHtml(compendiumSourceSelect),
+      sourceSelectHtml: ValidationUtils.elementToHtml(spellSourceSelect)
     };
   }
 
@@ -1133,7 +1133,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _prepareCreateListFormData(identifierOptions) {
-    const nameInput = ValidationHelpers.createTextInput({
+    const nameInput = ValidationUtils.createTextInput({
       name: 'name',
       required: true,
       ariaLabel: game.i18n.localize('SPELLMANAGER.CreateList.ListNameLabel')
@@ -1149,20 +1149,20 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       label: game.i18n.localize('SPELLMANAGER.CreateList.CustomOption'),
       selected: false
     });
-    const classSelect = ValidationHelpers.createSelect({
+    const classSelect = ValidationUtils.createSelect({
       name: 'identifier',
       options: classOptions,
       ariaLabel: game.i18n.localize('SPELLMANAGER.CreateList.ClassLabel')
     });
     classSelect.id = 'class-identifier';
-    const customInput = ValidationHelpers.createTextInput({
+    const customInput = ValidationUtils.createTextInput({
       name: 'customIdentifier',
       pattern: '[a-z0-9_-]+',
       title: game.i18n.localize('SPELLMANAGER.CreateList.IdentifierNotes'),
       ariaLabel: game.i18n.localize('SPELLMANAGER.CreateList.CustomIdentifierLabel')
     });
     customInput.id = 'custom-identifier';
-    const subclassCheckbox = ValidationHelpers.createCheckbox({
+    const subclassCheckbox = ValidationUtils.createCheckbox({
       name: 'is-subclass',
       checked: false,
       ariaLabel: game.i18n.localize('SPELLMANAGER.CreateList.SubclassLabel'),
@@ -1170,10 +1170,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     });
     subclassCheckbox.id = 'is-subclass';
     return {
-      nameInputHtml: ValidationHelpers.elementToHtml(nameInput),
-      classSelectHtml: ValidationHelpers.elementToHtml(classSelect),
-      customInputHtml: ValidationHelpers.elementToHtml(customInput),
-      subclassCheckboxHtml: ValidationHelpers.elementToHtml(subclassCheckbox)
+      nameInputHtml: ValidationUtils.elementToHtml(nameInput),
+      classSelectHtml: ValidationUtils.elementToHtml(classSelect),
+      customInputHtml: ValidationUtils.elementToHtml(customInput),
+      subclassCheckboxHtml: ValidationUtils.elementToHtml(subclassCheckbox)
     };
   }
 
@@ -1215,7 +1215,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const groupsWithOptions = allPossibleGroups.filter((groupKey) => {
       return multiSelectOptions.some((option) => option.group === groupKey);
     });
-    const spellListsMultiSelect = ValidationHelpers.createMultiSelect(multiSelectOptions, {
+    const spellListsMultiSelect = ValidationUtils.createMultiSelect(multiSelectOptions, {
       name: 'spellListsToMerge',
       selectedValues: [],
       groups: groupsWithOptions,
@@ -1223,14 +1223,14 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       cssClass: 'spell-lists-multi-select'
     });
     spellListsMultiSelect.id = 'spell-lists-to-merge';
-    const mergedListNameInput = ValidationHelpers.createTextInput({
+    const mergedListNameInput = ValidationUtils.createTextInput({
       name: 'mergedListName',
       placeholder: game.i18n.localize('SPELLMANAGER.MergeLists.MergedListNamePlaceholder'),
       ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.MergedListNameLabel'),
       required: true
     });
     mergedListNameInput.id = 'merged-list-name';
-    const hideSourceListsCheckbox = ValidationHelpers.createCheckbox({
+    const hideSourceListsCheckbox = ValidationUtils.createCheckbox({
       name: 'hideSourceLists',
       checked: false,
       ariaLabel: game.i18n.localize('SPELLMANAGER.MergeLists.HideSourceListsLabel'),
@@ -1238,9 +1238,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     });
     hideSourceListsCheckbox.id = 'hide-source-lists';
     return {
-      spellListsMultiSelectHtml: ValidationHelpers.elementToHtml(spellListsMultiSelect),
-      mergedListNameInputHtml: ValidationHelpers.elementToHtml(mergedListNameInput),
-      hideSourceListsCheckboxHtml: ValidationHelpers.elementToHtml(hideSourceListsCheckbox)
+      spellListsMultiSelectHtml: ValidationUtils.elementToHtml(spellListsMultiSelect),
+      mergedListNameInputHtml: ValidationUtils.elementToHtml(mergedListNameInput),
+      hideSourceListsCheckboxHtml: ValidationUtils.elementToHtml(hideSourceListsCheckbox)
     };
   }
 
@@ -1560,7 +1560,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     this._clearSelections();
     let originalSource = '';
     if (this.selectedSpellList.document.pack) originalSource = this.selectedSpellList.document.pack.split('.')[0];
-    const duplicateList = await DataHelpers.duplicateSpellList(this.selectedSpellList.document);
+    const duplicateList = await DataUtils.duplicateSpellList(this.selectedSpellList.document);
     const spells = this.selectedSpellList.spells;
     const spellsByLevel = this.selectedSpellList.spellsByLevel;
     const spellUuids = this.selectedSpellList.spellUuids;
@@ -1581,7 +1581,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _ensureSpellIcons() {
-    for (const level of this.selectedSpellList.spellsByLevel) for (const spell of level.spells) if (!spell.enrichedIcon) spell.enrichedIcon = UIHelpers.createSpellIconLink(spell);
+    for (const level of this.selectedSpellList.spellsByLevel) for (const spell of level.spells) if (!spell.enrichedIcon) spell.enrichedIcon = UIUtils.createSpellIconLink(spell);
   }
 
   /**
@@ -1654,7 +1654,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   async _createNewListCallback(formData) {
     let { name, identifier, isSubclass } = formData;
-    const newList = await DataHelpers.createNewSpellList(name, identifier, isSubclass ? 'subclass' : 'class');
+    const newList = await DataUtils.createNewSpellList(name, identifier, isSubclass ? 'subclass' : 'class');
     if (newList) {
       await this.loadData();
       await this.selectSpellList(newList.uuid);
@@ -1671,7 +1671,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   async _mergeListsCallback(spellListUuids, mergedListName, hideSourceLists = false) {
     try {
-      const mergedList = await DataHelpers.createMergedSpellList(spellListUuids, mergedListName);
+      const mergedList = await DataUtils.createMergedSpellList(spellListUuids, mergedListName);
       if (mergedList) {
         if (hideSourceLists) {
           const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
@@ -1741,7 +1741,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     this.pendingChanges.added.delete(spellUuid);
     this.selectedSpellList.spellUuids = this.selectedSpellList.spellUuids.filter((uuid) => uuid !== spellUuid);
     this.selectedSpellList.spells = this.selectedSpellList.spells.filter((spell) => spell.uuid !== spellUuid && spell.compendiumUuid !== spellUuid);
-    this.selectedSpellList.spellsByLevel = DataHelpers.organizeSpellsByLevel(this.selectedSpellList.spells);
+    this.selectedSpellList.spellsByLevel = DataUtils.organizeSpellsByLevel(this.selectedSpellList.spells);
     this._ensureSpellIcons();
     this.render(false);
     this.applyFilters();
@@ -1764,10 +1764,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (!spell) return;
     const spellCopy = foundry.utils.deepClone(spell);
     spellCopy.compendiumUuid = spellUuid;
-    if (!spellCopy.enrichedIcon) spellCopy.enrichedIcon = UIHelpers.createSpellIconLink(spellCopy);
+    if (!spellCopy.enrichedIcon) spellCopy.enrichedIcon = UIUtils.createSpellIconLink(spellCopy);
     this.selectedSpellList.spellUuids.push(spellUuid);
     this.selectedSpellList.spells.push(spellCopy);
-    this.selectedSpellList.spellsByLevel = DataHelpers.organizeSpellsByLevel(this.selectedSpellList.spells);
+    this.selectedSpellList.spellsByLevel = DataUtils.organizeSpellsByLevel(this.selectedSpellList.spells);
     this._ensureSpellIcons();
     this.render(false);
     this.applyFilters();
@@ -1812,7 +1812,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       confirmCssClass: 'dialog-button-danger'
     });
     if (!confirmed) return;
-    await DataHelpers.removeCustomSpellList(uuid);
+    await DataUtils.removeCustomSpellList(uuid);
     this.selectedSpellList = null;
     this.isEditing = false;
     this.render(false);
@@ -1998,7 +1998,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @static
    */
   static async handleCreateNewList(_event, _form) {
-    const classIdentifiers = await DataHelpers.findClassIdentifiers();
+    const classIdentifiers = await DataUtils.findClassIdentifiers();
     const identifierOptions = Object.entries(classIdentifiers)
       .sort(([, dataA], [, dataB]) => dataA.name.localeCompare(dataB.name))
       .map(([id, data]) => ({
@@ -2284,7 +2284,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
             if (spell) {
               const spellCopy = foundry.utils.deepClone(spell);
               spellCopy.compendiumUuid = spellUuid;
-              if (!spellCopy.enrichedIcon) spellCopy.enrichedIcon = UIHelpers.createSpellIconLink(spellCopy);
+              if (!spellCopy.enrichedIcon) spellCopy.enrichedIcon = UIUtils.createSpellIconLink(spellCopy);
               this.selectedSpellList.spellUuids.push(spellUuid);
               this.selectedSpellList.spells.push(spellCopy);
             } else log(2, `Could not find spell with UUID: ${spellUuid}`);
@@ -2295,7 +2295,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
           }
         }
       }
-      this.selectedSpellList.spellsByLevel = DataHelpers.organizeSpellsByLevel(this.selectedSpellList.spells);
+      this.selectedSpellList.spellsByLevel = DataUtils.organizeSpellsByLevel(this.selectedSpellList.spells);
       this._ensureSpellIcons();
       this._clearSelections();
       if (failed === 0) ui.notifications.info(game.i18n.format('SPELLMANAGER.BulkOps.Completed', { count: processed }));
@@ -2412,7 +2412,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const uuid = this.selectedSpellList.uuid;
     const checkbox = event.target.closest('input[type="checkbox"]');
     try {
-      const newState = await DataHelpers.toggleListForRegistry(uuid);
+      const newState = await DataUtils.toggleListForRegistry(uuid);
       checkbox.checked = newState;
     } catch (error) {
       log(1, 'Error toggling registry:', error);
@@ -2566,7 +2566,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _createSpellSelectCheckbox(spell, type, isChecked = false) {
-    const checkbox = ValidationHelpers.createCheckbox({
+    const checkbox = ValidationUtils.createCheckbox({
       checked: isChecked,
       cssClass: 'spell-select-cb',
       ariaLabel:
@@ -2574,7 +2574,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     });
     checkbox.dataset.type = type;
     checkbox.dataset.uuid = spell.uuid || spell.compendiumUuid;
-    return ValidationHelpers.elementToHtml(checkbox);
+    return ValidationUtils.elementToHtml(checkbox);
   }
 
   /**
@@ -2584,12 +2584,12 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _createSelectAllCheckbox(type) {
-    const checkbox = ValidationHelpers.createCheckbox({
+    const checkbox = ValidationUtils.createCheckbox({
       cssClass: 'select-all-checkbox',
       ariaLabel: type === 'add' ? game.i18n.localize('SPELLMANAGER.Selection.SelectAllToAdd') : game.i18n.localize('SPELLMANAGER.Selection.SelectAllToRemove')
     });
     checkbox.dataset.action = 'selectAll';
     checkbox.dataset.type = type;
-    return ValidationHelpers.elementToHtml(checkbox);
+    return ValidationUtils.elementToHtml(checkbox);
   }
 }

@@ -27,7 +27,7 @@
 
 import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
-import * as UIHelpers from '../ui/_module.mjs';
+import * as UIUtils from '../ui/_module.mjs';
 
 /**
  * Spellcasting focus option configuration.
@@ -265,7 +265,7 @@ export class PartyMode {
       const classSpells = actor.items.filter((item) => item.type === 'spell' && (item.system.sourceClass === classId || item.sourceClass === classId));
       for (const spell of classSpells) {
         const sourceUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
-        const enrichedIcon = UIHelpers.createSpellIconLink({ ...spell, compendiumUuid: sourceUuid });
+        const enrichedIcon = UIUtils.createSpellIconLink({ ...spell, compendiumUuid: sourceUuid });
         const spellData = { uuid: spell.uuid, sourceUuid: sourceUuid, name: spell.name, level: spell.system.level, enrichedIcon: enrichedIcon, prepared: spell.system.prepared === 1 };
         knownSpells.push(spellData);
         if (spellData.prepared) preparedSpells.push(spellData);
@@ -472,12 +472,12 @@ export class PartyMode {
    */
   _extractSpellData(spellDoc) {
     return {
-      isConcentration: UIHelpers.checkIsConcentration(spellDoc),
-      isRitual: UIHelpers.checkIsRitual(spellDoc),
-      damageTypes: UIHelpers.extractDamageTypes(spellDoc),
-      materialComponents: UIHelpers.extractMaterialComponents(spellDoc),
-      rangeData: UIHelpers.extractRange(spellDoc),
-      castingTime: UIHelpers.extractCastingTime(spellDoc)
+      isConcentration: UIUtils.checkIsConcentration(spellDoc),
+      isRitual: UIUtils.checkIsRitual(spellDoc),
+      damageTypes: UIUtils.extractDamageTypes(spellDoc),
+      materialComponents: UIUtils.extractMaterialComponents(spellDoc),
+      rangeData: UIUtils.extractRange(spellDoc),
+      castingTime: UIUtils.extractCastingTime(spellDoc)
     };
   }
 
@@ -785,7 +785,7 @@ export class PartyMode {
             break;
           }
         }
-        const enrichedIcon = spellDoc ? UIHelpers.createSpellIconLink(spellDoc) : '';
+        const enrichedIcon = spellDoc ? UIUtils.createSpellIconLink(spellDoc) : '';
         duplicateSpells.push({
           name: spellName,
           actors: [...actors],

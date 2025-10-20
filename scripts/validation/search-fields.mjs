@@ -12,12 +12,12 @@
  * - Boolean value normalization for consistent filtering
  * - Autocomplete suggestions for valid field values
  *
- * @module ValidationHelpers/SearchFields
+ * @module ValidationUtils/SearchFields
  * @author Tyler
  */
 
 import { MODULE } from '../constants/_module.mjs';
-import * as DataHelpers from '../data/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -81,7 +81,7 @@ export class SearchFields {
               Object.values(CONFIG.DND5E.spellSchools)
                 .map((school) => {
                   const fullKey = school.fullKey?.toUpperCase();
-                  const label = DataHelpers.getConfigLabel(
+                  const label = DataUtils.getConfigLabel(
                     CONFIG.DND5E.spellSchools,
                     Object.keys(CONFIG.DND5E.spellSchools).find((k) => CONFIG.DND5E.spellSchools[k] === school)
                   )?.toUpperCase();
@@ -228,8 +228,8 @@ export class SearchFields {
           };
           return Object.entries(damageTypesWithHealing)
             .sort((a, b) => {
-              const labelA = a[0] === 'healing' ? damageTypesWithHealing.healing.label : DataHelpers.getConfigLabel(CONFIG.DND5E.damageTypes, a[0]);
-              const labelB = b[0] === 'healing' ? damageTypesWithHealing.healing.label : DataHelpers.getConfigLabel(CONFIG.DND5E.damageTypes, b[0]);
+              const labelA = a[0] === 'healing' ? damageTypesWithHealing.healing.label : DataUtils.getConfigLabel(CONFIG.DND5E.damageTypes, a[0]);
+              const labelB = b[0] === 'healing' ? damageTypesWithHealing.healing.label : DataUtils.getConfigLabel(CONFIG.DND5E.damageTypes, b[0]);
               return labelA.localeCompare(labelB);
             })
             .map(([key]) => key.toUpperCase());

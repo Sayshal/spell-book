@@ -18,7 +18,7 @@
  */
 
 import { TEMPLATES } from '../constants/_module.mjs';
-import * as UIHelpers from '../ui/_module.mjs';
+import * as UIUtils from '../ui/_module.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -143,7 +143,7 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _positionRelativeToParent() {
     if (!this.parentApp?.element) return;
-    const position = UIHelpers.calculateOptimalPosition({
+    const position = UIUtils.calculateOptimalPosition({
       triggerElement: this.parentApp.element,
       dialogWidth: this.options.position.width,
       dialogHeight: 400,
@@ -169,11 +169,11 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
       img: spell.img,
       enrichedIcon: this._createEnrichedSpellIcon(spell),
       level: spell.system.level,
-      school: UIHelpers.formatSpellSchool(spell),
-      castingTime: spell.labels?.activation || UIHelpers.formatSpellActivation(spell),
+      school: UIUtils.formatSpellSchool(spell),
+      castingTime: spell.labels?.activation || UIUtils.formatSpellActivation(spell),
       range: spell.labels?.range || `${spell.system.range?.value} ${spell.system.range?.units}`,
       duration: spell.labels?.duration || spell.system.duration?.value,
-      components: UIHelpers.formatSpellComponents(spell),
+      components: UIUtils.formatSpellComponents(spell),
       damage: this._extractDamageInfo(spell),
       description: spell.system.description?.value || ''
     };

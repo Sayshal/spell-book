@@ -23,12 +23,12 @@
  * GM interfaces exclude player-specific elements like favorites and notes while
  * maintaining all relevant spell information displays.
  *
- * @module UIHelpers/UICustomization
+ * @module UIUtils/UICustomization
  * @author Tyler
  */
 
 import { MODULE, SETTINGS } from '../constants/_module.mjs';
-import * as UIHelpers from './_module.mjs';
+import * as UIUtils from './_module.mjs';
 
 /**
  * Available UI elements that can be toggled in player interfaces.
@@ -159,23 +159,23 @@ export class CustomUI {
   static buildPlayerMetadata(spell) {
     const metadata = [];
     if (this.isPlayerElementEnabled('spellLevel')) {
-      const levelText = UIHelpers.formatSpellLevel(spell);
+      const levelText = UIUtils.formatSpellLevel(spell);
       if (levelText) metadata.push(levelText);
     }
     if (this.isPlayerElementEnabled('components')) {
-      const componentsText = UIHelpers.formatSpellComponents(spell);
+      const componentsText = UIUtils.formatSpellComponents(spell);
       if (componentsText) metadata.push(componentsText);
     }
     if (this.isPlayerElementEnabled('school')) {
-      const schoolText = UIHelpers.formatSpellSchool(spell);
+      const schoolText = UIUtils.formatSpellSchool(spell);
       if (schoolText) metadata.push(schoolText);
     }
     if (this.isPlayerElementEnabled('castingTime')) {
-      const castingTimeText = UIHelpers.formatSpellActivation(spell);
+      const castingTimeText = UIUtils.formatSpellActivation(spell);
       if (castingTimeText) metadata.push(castingTimeText);
     }
     if (this.isPlayerElementEnabled('range')) {
-      const rangeText = UIHelpers.formatSpellRange(spell);
+      const rangeText = UIUtils.formatSpellRange(spell);
       if (rangeText) metadata.push(rangeText);
     }
     if (this.isPlayerElementEnabled('damageTypes') && spell.filterData?.damageTypes?.length) {
@@ -192,7 +192,7 @@ export class CustomUI {
     }
     if (this.isPlayerElementEnabled('concentration') && this._spellHasProperty(spell, 'concentration')) metadata.push(game.i18n.localize('DND5E.Concentration'));
     if (this.isPlayerElementEnabled('materialComponents')) {
-      const materialText = UIHelpers.formatMaterialComponents(spell);
+      const materialText = UIUtils.formatMaterialComponents(spell);
       if (materialText) metadata.push(materialText);
     }
     return metadata.join(' • ');
@@ -207,23 +207,23 @@ export class CustomUI {
   static buildGMMetadata(spell) {
     const metadata = [];
     if (this.isGMElementEnabled('spellLevel')) {
-      const levelText = UIHelpers.formatSpellLevel(spell);
+      const levelText = UIUtils.formatSpellLevel(spell);
       if (levelText) metadata.push(levelText);
     }
     if (this.isGMElementEnabled('components')) {
-      const componentsText = UIHelpers.formatSpellComponents(spell);
+      const componentsText = UIUtils.formatSpellComponents(spell);
       if (componentsText) metadata.push(componentsText);
     }
     if (this.isGMElementEnabled('school')) {
-      const schoolText = UIHelpers.formatSpellSchool(spell);
+      const schoolText = UIUtils.formatSpellSchool(spell);
       if (schoolText) metadata.push(schoolText);
     }
     if (this.isGMElementEnabled('castingTime')) {
-      const castingTimeText = UIHelpers.formatSpellActivation(spell);
+      const castingTimeText = UIUtils.formatSpellActivation(spell);
       if (castingTimeText) metadata.push(castingTimeText);
     }
     if (this.isGMElementEnabled('range')) {
-      const rangeText = UIHelpers.formatSpellRange(spell);
+      const rangeText = UIUtils.formatSpellRange(spell);
       if (rangeText) metadata.push(rangeText);
     }
     if (this.isGMElementEnabled('damageTypes') && spell.filterData?.damageTypes?.length) {
@@ -240,10 +240,9 @@ export class CustomUI {
     }
     if (this.isGMElementEnabled('concentration') && this._spellHasProperty(spell, 'concentration')) metadata.push(game.i18n.localize('DND5E.Concentration'));
     if (this.isGMElementEnabled('materialComponents')) {
-      const materialText = UIHelpers.formatMaterialComponents(spell);
+      const materialText = UIUtils.formatMaterialComponents(spell);
       if (materialText) metadata.push(materialText);
     }
     return metadata.join(' • ');
   }
-
 }

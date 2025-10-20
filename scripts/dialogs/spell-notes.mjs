@@ -18,9 +18,9 @@
  */
 
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
-import * as DataHelpers from '../data/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
-import * as UIHelpers from '../ui/_module.mjs';
+import * as UIUtils from '../ui/_module.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -60,7 +60,7 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
     super(options);
 
     /** @type {string} Canonical UUID of the spell being edited */
-    this.spellUuid = UIHelpers.getCanonicalSpellUuid(options.spellUuid);
+    this.spellUuid = UIUtils.getCanonicalSpellUuid(options.spellUuid);
 
     /** @type {string} Display name of the spell */
     this.spellName = fromUuidSync(this.spellUuid).name;
@@ -78,8 +78,8 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    const targetUserId = DataHelpers.getTargetUserId(this.actor);
-    const userData = await DataHelpers.UserData.getUserDataForSpell(this.spellUuid, targetUserId, this.actor?.id);
+    const targetUserId = DataUtils.getTargetUserId(this.actor);
+    const userData = await DataUtils.UserData.getUserDataForSpell(this.spellUuid, targetUserId, this.actor?.id);
     this.currentNotes = userData?.notes || '';
     context.spellUuid = this.spellUuid;
     context.spellName = this.spellName;
@@ -122,7 +122,7 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
     const icon = document.querySelector(`[data-uuid="${this.spellUuid}"][data-action="editNotes"]`);
     if (!icon) return;
     const dialogRect = this.element.getBoundingClientRect();
-    const position = UIHelpers.calculateOptimalPosition({
+    const position = UIUtils.calculateOptimalPosition({
       triggerElement: icon,
       dialogWidth: dialogRect.width,
       dialogHeight: dialogRect.height,
@@ -140,13 +140,13 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
     const notes = formData.object.notes || '';
     const spellUuid = formData.object.spellUuid;
     const actorId = formData.object.actorId;
-    const canonicalUuid = UIHelpers.getCanonicalSpellUuid(spellUuid);
+    const canonicalUuid = UIUtils.getCanonicalSpellUuid(spellUuid);
     try {
       const actor = actorId ? game.actors.get(actorId) : null;
-      const targetUserId = DataHelpers.getTargetUserId(actor);
-      await DataHelpers.UserData.setSpellNotes(canonicalUuid, notes, targetUserId);
+      const targetUserId = DataUtils.getTargetUserId(actor);
+      await DataUtils.UserData.setSpellNotes(canonicalUuid, notes, targetUserId);
       const cacheKey = `${targetUserId}:${canonicalUuid}`;
-      if (DataHelpers.UserData?.cache) DataHelpers.UserData.cache.delete(cacheKey);
+      if (DataUtils.UserData?.cache) DataUtils.UserData.cache.delete(cacheKey);
       const spellbookApp = Array.from(foundry.applications.instances.values()).find((app) => app.constructor.name === 'SpellBook');
       if (spellbookApp) {
         await spellbookApp._state.refreshSpellEnhancements();
@@ -161,7 +161,7 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
         icon.setAttribute('data-tooltip', newTooltip);
         icon.setAttribute('aria-label', newTooltip);
       });
-      await UIHelpers.DescriptionInjector.handleNotesChange(canonicalUuid);
+      await UIUtils.DescriptionInjector.handleNotesChange(canonicalUuid);
     } catch (error) {
       log(1, 'Error saving spell notes:', error);
     }

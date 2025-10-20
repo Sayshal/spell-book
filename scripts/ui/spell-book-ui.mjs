@@ -28,15 +28,15 @@
  * The system ensures consistent user experience while enforcing D&D 5e spellcasting
  * rules and providing enhanced functionality for spell management workflows.
  *
- * @module UIHelpers/SpellBookUI
+ * @module UIUtils/SpellBookUI
  * @author Tyler
  */
 
 import { FLAGS, MODULE } from '../constants/_module.mjs';
-import * as DataHelpers from '../data/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 import { RuleSet } from '../managers/_module.mjs';
-import * as UIHelpers from './_module.mjs';
+import * as UIUtils from './_module.mjs';
 
 /**
  * Spell preparation display data for footer tracking.
@@ -124,8 +124,8 @@ export class SpellBookUI {
     /** @type {number} - Counter to track color application lifecycle */
     this._colorApplicationCount = 0;
 
-    /** @type {UIHelpers.SearchEngine} - Advanced search functionality manager */
-    this.search = new UIHelpers.SearchEngine(app);
+    /** @type {UIUtils.SearchEngine} - Advanced search functionality manager */
+    this.search = new UIUtils.SearchEngine(app);
 
     /** @type {boolean} - Flag to track cantrip UI initialization state */
     this._cantripUIInitialized = false;
@@ -242,7 +242,7 @@ export class SpellBookUI {
     if (!classData) return;
     const classRules = RuleSet.getClassRules(this.app.actor, classIdentifier);
     let baseMaxPrepared = 0;
-    const spellcastingConfig = DataHelpers.getSpellcastingConfigForClass(this.app.actor, classIdentifier);
+    const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(this.app.actor, classIdentifier);
     if (spellcastingConfig?.preparation?.max) baseMaxPrepared = spellcastingConfig.preparation.max;
     else baseMaxPrepared = classData.classItem?.system?.spellcasting?.preparation?.max || 0;
     const preparationBonus = classRules?.spellPreparationBonus || 0;
@@ -597,7 +597,7 @@ export class SpellBookUI {
   async applyClassStyling() {
     if (this._colorApplicationCount > 0) return;
     if (this.app._state.spellcastingClasses) {
-      await UIHelpers.applyClassColors(this.app._state.spellcastingClasses);
+      await UIUtils.applyClassColors(this.app._state.spellcastingClasses);
       this._colorApplicationCount++;
     }
   }

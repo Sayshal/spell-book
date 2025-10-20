@@ -6,7 +6,7 @@
  * actor spell management, compendium operations, spell discovery, user data
  * handling, and various utility functions for data manipulation.
  *
- * @module DataHelpers
+ * @module DataUtils
  * @author Tyler
  */
 

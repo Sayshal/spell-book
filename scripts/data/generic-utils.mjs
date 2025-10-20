@@ -13,7 +13,7 @@
  * - Configuration data helpers
  * - General-purpose data transformations
  *
- * @module DataHelpers/GenericUtils
+ * @module DataUtils/GenericUtils
  * @author Tyler
  */
 

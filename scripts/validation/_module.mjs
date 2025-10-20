@@ -11,7 +11,7 @@
  * - Query Executor: Advanced search query execution engine
  * - Query Parser: Advanced search syntax parsing and normalization
  *
- * @module ValidationHelpers
+ * @module ValidationUtils
  * @author Tyler
  */
 

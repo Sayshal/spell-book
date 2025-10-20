@@ -34,7 +34,7 @@
  */
 
 import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
-import * as DataHelpers from '../data/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 import { RuleSet } from './rule-set.mjs';
 
@@ -163,7 +163,7 @@ export class WizardBook {
     const spellcastingData = this.actor.spellcastingClasses[this.classIdentifier];
     const classItem = this.actor.items.get(spellcastingData.id);
     if (!classItem) return null;
-    if (DataHelpers.isClassWizardEnabled(this.actor, this.classIdentifier)) return classItem;
+    if (DataUtils.isClassWizardEnabled(this.actor, this.classIdentifier)) return classItem;
     return null;
   }
 

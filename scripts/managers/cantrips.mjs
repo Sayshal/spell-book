@@ -19,7 +19,7 @@
  */
 
 import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
-import * as DataHelpers from '../data/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 import { RuleSet } from './_module.mjs';
 
@@ -108,7 +108,7 @@ export class Cantrips {
     this.spellManager = spellManager;
 
     /** @type {boolean} Whether this actor has wizard levels */
-    this.isWizard = DataHelpers.isWizard(actor);
+    this.isWizard = DataUtils.isWizard(actor);
 
     /** @type {Map<string, number>} Cached maximum cantrips by class identifier */
     this._maxCantripsByClass = new Map();
@@ -138,7 +138,7 @@ export class Cantrips {
       return;
     }
     for (const identifier of Object.keys(this.actor.spellcastingClasses)) {
-      const spellcastingConfig = DataHelpers.getSpellcastingConfigForClass(this.actor, identifier);
+      const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(this.actor, identifier);
       if (!spellcastingConfig) continue;
       const maxCantrips = this._calculateMaxCantripsForClass(identifier);
       this._maxCantripsByClass.set(identifier, maxCantrips);
@@ -191,7 +191,7 @@ export class Cantrips {
       .map((v) => v.trim())
       .filter((v) => v.length > 0);
     let baseCantrips = 0;
-    const scaleValues = DataHelpers.getScaleValuesForClass(this.actor, classIdentifier);
+    const scaleValues = DataUtils.getScaleValuesForClass(this.actor, classIdentifier);
     if (scaleValues) {
       for (const key of cantripScaleKeys) {
         const cantripValue = scaleValues[key]?.value;

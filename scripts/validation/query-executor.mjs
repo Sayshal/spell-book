@@ -11,7 +11,7 @@
  * - Type-safe spell property access via foundry.utils.getProperty
  * - Complex operators (contains, hasany, OR, etc.)
  *
- * @module ValidationHelpers/QueryExecutor
+ * @module ValidationUtils/QueryExecutor
  * @author Tyler
  */
 

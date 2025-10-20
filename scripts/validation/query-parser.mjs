@@ -11,11 +11,11 @@
  * - Field alias resolution and value normalization
  * - Boolean value standardization
  *
- * @module ValidationHelpers/QueryParser
+ * @module ValidationUtils/QueryParser
  * @author Tyler
  */
 
-import * as DataHelpers from '../data/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -127,7 +127,7 @@ export class QueryParser {
       const schoolKeys = Object.keys(CONFIG.DND5E.spellSchools || {});
       if (schoolKeys.includes(normalizedValue)) return normalizedValue;
       for (const [key, school] of Object.entries(CONFIG.DND5E.spellSchools || {})) {
-        const schoolLabel = DataHelpers.getConfigLabel(CONFIG.DND5E.spellSchools, key);
+        const schoolLabel = DataUtils.getConfigLabel(CONFIG.DND5E.spellSchools, key);
         if (school.fullKey === normalizedValue || schoolLabel?.toLowerCase() === normalizedValue) return key;
       }
       return normalizedValue;

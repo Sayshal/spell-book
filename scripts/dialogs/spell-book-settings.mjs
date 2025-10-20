@@ -18,10 +18,10 @@
  */
 
 import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
-import * as DataHelpers from '../data/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 import { RuleSet, SpellManager } from '../managers/_module.mjs';
-import * as ValidationHelpers from '../validation/_module.mjs';
+import * as ValidationUtils from '../validation/_module.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -208,13 +208,13 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
       { value: 'notifyGM', label: game.i18n.localize('SPELLBOOK.Settings.EnforcementBehavior.NotifyGM'), selected: enforcementValue === 'notifyGM' },
       { value: 'enforced', label: game.i18n.localize('SPELLBOOK.Settings.EnforcementBehavior.Enforced'), selected: enforcementValue === 'enforced' }
     ];
-    const ruleSetSelect = ValidationHelpers.createSelect({
+    const ruleSetSelect = ValidationUtils.createSelect({
       name: 'ruleSetOverride',
       options: ruleSetOptions,
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.RuleSetOverride.Label')
     });
     ruleSetSelect.id = 'rule-set-override';
-    const enforcementSelect = ValidationHelpers.createSelect({
+    const enforcementSelect = ValidationUtils.createSelect({
       name: 'enforcementBehavior',
       options: enforcementOptions,
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.EnforcementBehavior.Label')
@@ -225,8 +225,8 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
       ruleSetOverride,
       enforcementBehavior,
       currentRuleSetLabel: globalRuleSetLabel,
-      ruleSetSelectHtml: ValidationHelpers.elementToHtml(ruleSetSelect),
-      enforcementSelectHtml: ValidationHelpers.elementToHtml(enforcementSelect)
+      ruleSetSelectHtml: ValidationUtils.elementToHtml(ruleSetSelect),
+      enforcementSelectHtml: ValidationUtils.elementToHtml(enforcementSelect)
     };
   }
 
@@ -254,7 +254,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
         const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
         const processedClassRules = RuleSet.getClassRules(this.actor, identifier);
         const savedRules = currentClassRules[identifier] || {};
-        const isWizard = DataHelpers.isClassWizardEnabled(this.actor, identifier);
+        const isWizard = DataUtils.isClassWizardEnabled(this.actor, identifier);
         const formRules = {
           showCantrips: 'showCantrips' in savedRules ? savedRules.showCantrips : processedClassRules.showCantrips,
           forceWizardMode: 'forceWizardMode' in savedRules ? savedRules.forceWizardMode : processedClassRules.forceWizardMode,
@@ -262,10 +262,18 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
           spellSwapping: savedRules.spellSwapping || processedClassRules.spellSwapping || MODULE.SWAP_MODES.NONE,
           ritualCasting: savedRules.ritualCasting || processedClassRules.ritualCasting || MODULE.RITUAL_CASTING_MODES.NONE,
           customSpellList: savedRules.customSpellList || processedClassRules.customSpellList || [],
-          spellPreparationBonus: 'spellPreparationBonus' in savedRules ? savedRules.spellPreparationBonus : processedClassRules.spellPreparationBonus || MODULE.PREPARATION_DEFAULTS.SPELL_PREPARATION_BONUS,
-          cantripPreparationBonus: 'cantripPreparationBonus' in savedRules ? savedRules.cantripPreparationBonus : processedClassRules.cantripPreparationBonus || MODULE.PREPARATION_DEFAULTS.CANTRIP_PREPARATION_BONUS,
-          spellLearningCostMultiplier: 'spellLearningCostMultiplier' in savedRules ? savedRules.spellLearningCostMultiplier : processedClassRules.spellLearningCostMultiplier || MODULE.WIZARD_DEFAULTS.SPELL_LEARNING_COST_MULTIPLIER,
-          spellLearningTimeMultiplier: 'spellLearningTimeMultiplier' in savedRules ? savedRules.spellLearningTimeMultiplier : processedClassRules.spellLearningTimeMultiplier || MODULE.WIZARD_DEFAULTS.SPELL_LEARNING_TIME_MULTIPLIER,
+          spellPreparationBonus:
+            'spellPreparationBonus' in savedRules ? savedRules.spellPreparationBonus : processedClassRules.spellPreparationBonus || MODULE.PREPARATION_DEFAULTS.SPELL_PREPARATION_BONUS,
+          cantripPreparationBonus:
+            'cantripPreparationBonus' in savedRules ? savedRules.cantripPreparationBonus : processedClassRules.cantripPreparationBonus || MODULE.PREPARATION_DEFAULTS.CANTRIP_PREPARATION_BONUS,
+          spellLearningCostMultiplier:
+            'spellLearningCostMultiplier' in savedRules
+              ? savedRules.spellLearningCostMultiplier
+              : processedClassRules.spellLearningCostMultiplier || MODULE.WIZARD_DEFAULTS.SPELL_LEARNING_COST_MULTIPLIER,
+          spellLearningTimeMultiplier:
+            'spellLearningTimeMultiplier' in savedRules
+              ? savedRules.spellLearningTimeMultiplier
+              : processedClassRules.spellLearningTimeMultiplier || MODULE.WIZARD_DEFAULTS.SPELL_LEARNING_TIME_MULTIPLIER,
           startingSpells: 'startingSpells' in savedRules ? savedRules.startingSpells : processedClassRules.startingSpells || MODULE.WIZARD_DEFAULTS.STARTING_SPELLS,
           spellsPerLevel: 'spellsPerLevel' in savedRules ? savedRules.spellsPerLevel : processedClassRules.spellsPerLevel || MODULE.WIZARD_DEFAULTS.SPELLS_PER_LEVEL,
           _noScaleValue: processedClassRules._noScaleValue
@@ -287,7 +295,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
             }
           }
         }
-        const classValidationHelpers = this._prepareClassFormElements(identifier, formRules, availableSpellLists);
+        const classValidationUtils = this._prepareClassFormElements(identifier, formRules, availableSpellLists);
         const classData = {
           name: classItem.name,
           identifier: identifier,
@@ -304,7 +312,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
           customSpellListName: customSpellListNames.length > 0 ? customSpellListNames.join(', ') : null,
           customSpellListNames: customSpellListNames,
           customSpellListCount: customSpellLists.length,
-          formElements: classValidationHelpers,
+          formElements: classValidationUtils,
           spellcastingSource: spellcastingSource
         };
         classSettings.push(classData);
@@ -323,21 +331,21 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   _prepareClassFormElements(identifier, formRules, availableSpellLists) {
-    const showCantripsCheckbox = ValidationHelpers.createCheckbox({
+    const showCantripsCheckbox = ValidationUtils.createCheckbox({
       name: `class.${identifier}.showCantrips`,
       checked: formRules.showCantrips,
       disabled: formRules._noScaleValue,
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.ShowCantrips.Label')
     });
     showCantripsCheckbox.id = `show-cantrips-${identifier}`;
-    const forceWizardCheckbox = ValidationHelpers.createCheckbox({
+    const forceWizardCheckbox = ValidationUtils.createCheckbox({
       name: `class.${identifier}.forceWizardMode`,
       checked: formRules.forceWizardMode,
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.ForceWizardMode.Label')
     });
     forceWizardCheckbox.id = `force-wizard-mode-${identifier}`;
     const cantripSwappingValue = formRules.cantripSwapping;
-    const cantripSwappingSelect = ValidationHelpers.createLocalizedSelect(
+    const cantripSwappingSelect = ValidationUtils.createLocalizedSelect(
       `class.${identifier}.cantripSwapping`,
       [
         { value: 'none', labelKey: 'SPELLBOOK.Settings.CantripSwapping.None' },
@@ -349,7 +357,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
       `cantrip-swapping-${identifier}`
     );
     const spellSwappingValue = formRules.spellSwapping;
-    const spellSwappingSelect = ValidationHelpers.createLocalizedSelect(
+    const spellSwappingSelect = ValidationUtils.createLocalizedSelect(
       `class.${identifier}.spellSwapping`,
       [
         { value: 'none', labelKey: 'SPELLBOOK.Settings.SpellSwapping.None' },
@@ -361,7 +369,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
       `spell-swapping-${identifier}`
     );
     const ritualCastingValue = formRules.ritualCasting;
-    const ritualCastingSelect = ValidationHelpers.createLocalizedSelect(
+    const ritualCastingSelect = ValidationUtils.createLocalizedSelect(
       `class.${identifier}.ritualCasting`,
       [
         { value: 'none', labelKey: 'SPELLBOOK.Settings.RitualCasting.None' },
@@ -378,7 +386,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
     const groupsWithOptions = allPossibleGroups.filter((groupKey) => {
       return multiSelectOptions.some((option) => option.group === groupKey);
     });
-    const customSpellListsMultiSelect = ValidationHelpers.createMultiSelect(multiSelectOptions, {
+    const customSpellListsMultiSelect = ValidationUtils.createMultiSelect(multiSelectOptions, {
       name: `class.${identifier}.customSpellList`,
       selectedValues: currentCustomSpellLists,
       groups: groupsWithOptions,
@@ -393,12 +401,12 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
     const startingSpellsControls = this._createStartingSpellsControls(identifier, formRules.startingSpells);
     const spellsPerLevelControls = this._createSpellsPerLevelControls(identifier, formRules.spellsPerLevel);
     return {
-      showCantripsCheckboxHtml: ValidationHelpers.elementToHtml(showCantripsCheckbox),
-      forceWizardModeCheckboxHtml: ValidationHelpers.elementToHtml(forceWizardCheckbox),
-      cantripSwappingSelectHtml: ValidationHelpers.elementToHtml(cantripSwappingSelect),
-      spellSwappingSelectHtml: ValidationHelpers.elementToHtml(spellSwappingSelect),
-      ritualCastingSelectHtml: ValidationHelpers.elementToHtml(ritualCastingSelect),
-      customSpellListsSelectHtml: ValidationHelpers.elementToHtml(customSpellListsMultiSelect),
+      showCantripsCheckboxHtml: ValidationUtils.elementToHtml(showCantripsCheckbox),
+      forceWizardModeCheckboxHtml: ValidationUtils.elementToHtml(forceWizardCheckbox),
+      cantripSwappingSelectHtml: ValidationUtils.elementToHtml(cantripSwappingSelect),
+      spellSwappingSelectHtml: ValidationUtils.elementToHtml(spellSwappingSelect),
+      ritualCastingSelectHtml: ValidationUtils.elementToHtml(ritualCastingSelect),
+      customSpellListsSelectHtml: ValidationUtils.elementToHtml(customSpellListsMultiSelect),
       spellPreparationBonusControlsHtml: spellPreparationBonusControls,
       cantripPreparationBonusControlsHtml: cantripPreparationBonusControls,
       spellLearningCostControlsHtml: spellLearningCostControls,
@@ -433,10 +441,10 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   _createSpellPreparationBonusControls(identifier, currentValue) {
-    const spellcastingConfig = DataHelpers.getSpellcastingConfigForClass(this.actor, identifier);
+    const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(this.actor, identifier);
     const baseMaxSpells = spellcastingConfig?.preparation?.max || 0;
     const minValue = -baseMaxSpells;
-    return ValidationHelpers.createCounterGroup({
+    return ValidationUtils.createCounterGroup({
       identifier: `spell-preparation-bonus-${identifier}`,
       decreaseAction: 'decreaseSpellPrepBonus',
       increaseAction: 'increaseSpellPrepBonus',
@@ -467,7 +475,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
         .split(',')
         .map((v) => v.trim())
         .filter((v) => v.length > 0);
-      const scaleValues = DataHelpers.getScaleValuesForClass(this.actor, identifier);
+      const scaleValues = DataUtils.getScaleValuesForClass(this.actor, identifier);
       if (scaleValues) {
         for (const key of cantripScaleKeys) {
           const cantripValue = scaleValues[key]?.value;
@@ -479,7 +487,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
       }
     }
     const minValue = -baseMaxCantrips;
-    return ValidationHelpers.createCounterGroup({
+    return ValidationUtils.createCounterGroup({
       identifier: `cantrip-preparation-bonus-${identifier}`,
       decreaseAction: 'decreaseCantripPrepBonus',
       increaseAction: 'increaseCantripPrepBonus',
@@ -502,7 +510,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   _createSpellLearningCostControls(identifier, currentValue) {
-    return ValidationHelpers.createCounterGroup({
+    return ValidationUtils.createCounterGroup({
       identifier: `spell-learning-cost-${identifier}`,
       decreaseAction: 'decreaseSpellLearningCost',
       increaseAction: 'increaseSpellLearningCost',
@@ -527,7 +535,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
   _createSpellLearningTimeControls(identifier, currentValue) {
     const container = document.createElement('div');
     container.className = 'counter-group';
-    const input = ValidationHelpers.createNumberInput({
+    const input = ValidationUtils.createNumberInput({
       name: `class.${identifier}.spellLearningTimeMultiplier`,
       value: currentValue ?? 120,
       min: 0,
@@ -537,7 +545,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
     });
     input.id = `spell-learning-time-${identifier}`;
     container.appendChild(input);
-    return ValidationHelpers.elementToHtml(container);
+    return ValidationUtils.elementToHtml(container);
   }
 
   /**
@@ -548,7 +556,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   _createStartingSpellsControls(identifier, currentValue) {
-    return ValidationHelpers.createCounterGroup({
+    return ValidationUtils.createCounterGroup({
       identifier: `starting-spells-${identifier}`,
       decreaseAction: 'decreaseStartingSpells',
       increaseAction: 'increaseStartingSpells',
@@ -571,7 +579,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   _createSpellsPerLevelControls(identifier, currentValue) {
-    return ValidationHelpers.createCounterGroup({
+    return ValidationUtils.createCounterGroup({
       identifier: `spells-per-level-${identifier}`,
       decreaseAction: 'decreaseSpellsPerLevel',
       increaseAction: 'increaseSpellsPerLevel',
@@ -598,7 +606,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
       const allJournalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
       const journalPacks = [];
       for (const pack of allJournalPacks) {
-        const shouldShow = await DataHelpers.shouldShowInSettings(pack);
+        const shouldShow = await DataUtils.shouldShowInSettings(pack);
         if (shouldShow) journalPacks.push(pack);
       }
       for (const pack of journalPacks) {
@@ -682,7 +690,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellPreparationBonus"]`);
     if (!input) return;
-    const spellcastingConfig = DataHelpers.getSpellcastingConfigForClass(this.actor, classIdentifier);
+    const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
     const baseMax = spellcastingConfig?.preparation?.max || 0;
     const minimumBonus = -baseMax;
     const currentValue = parseInt(input.value) || 0;
@@ -699,14 +707,14 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   _prepareSubmitButton() {
-    const submitButton = ValidationHelpers.createButton({
+    const submitButton = ValidationUtils.createButton({
       type: 'submit',
       name: 'submit',
       labelKey: 'SPELLBOOK.Settings.SaveButton',
       iconClass: 'fas fa-save',
       cssClass: 'submit-button'
     });
-    return { submitButtonHtml: ValidationHelpers.elementToHtml(submitButton) };
+    return { submitButtonHtml: ValidationUtils.elementToHtml(submitButton) };
   }
 
   /**
@@ -747,7 +755,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
         .split(',')
         .map((v) => v.trim())
         .filter((v) => v.length > 0);
-      const scaleValues = DataHelpers.getScaleValuesForClass(this.actor, classIdentifier);
+      const scaleValues = DataUtils.getScaleValuesForClass(this.actor, classIdentifier);
       if (scaleValues) {
         for (const key of cantripScaleKeys) {
           const cantripValue = scaleValues[key]?.value;

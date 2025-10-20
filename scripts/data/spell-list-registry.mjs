@@ -4,7 +4,7 @@
  * Provides integration with the D&D 5e system's SpellListRegistry API.
  * Handles opt-in registration of custom spell lists.
  *
- * @module DataHelpers/Registry
+ * @module DataUtils/Registry
  * @author Tyler
  */
 

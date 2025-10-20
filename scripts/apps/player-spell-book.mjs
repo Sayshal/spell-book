@@ -26,13 +26,13 @@
  */
 
 import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
-import * as DataHelpers from '../data/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { SpellComparison, DetailsCustomization, LoadoutSelector, SpellNotes, SpellBookSettings } from '../dialogs/_module.mjs';
 import { log } from '../logger.mjs';
 import { Loadouts, SpellManager, WizardBook, PartyMode } from '../managers/_module.mjs';
 import { State } from '../state/_module.mjs';
-import * as UIHelpers from '../ui/_module.mjs';
-import * as ValidationHelpers from '../validation/_module.mjs';
+import * as UIUtils from '../ui/_module.mjs';
+import * as ValidationUtils from '../validation/_module.mjs';
 import { PlayerFilterConfiguration, AnalyticsDashboard, PartyCoordinator } from './_module.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -219,17 +219,17 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.wizardManagers = new Map();
 
     // Initialize wizard managers for all wizard-enabled classes
-    const wizardClasses = DataHelpers.getWizardEnabledClasses(actor);
+    const wizardClasses = DataUtils.getWizardEnabledClasses(actor);
     for (const { identifier } of wizardClasses) this.wizardManagers.set(identifier, new WizardBook(actor, identifier));
 
     /** @type {State} State manager for the application */
     this._state = new State(this);
 
-    /** @type {UIHelpers.SpellBookUI} UI helper for interface management */
-    this.ui = new UIHelpers.SpellBookUI(this);
+    /** @type {UIUtils.SpellBookUI} UI helper for interface management */
+    this.ui = new UIUtils.SpellBookUI(this);
 
-    /** @type {UIHelpers.Filters} Filter helper for spell filtering */
-    this.filterHelper = new UIHelpers.Filters(this);
+    /** @type {UIUtils.Filters} Filter helper for spell filtering */
+    this.filterHelper = new UIUtils.Filters(this);
 
     /** @type {Map} Ritual managers by class (currently unused) */
     this.ritualManagers = new Map();
@@ -333,7 +333,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           const classData = this._state.spellcastingClasses[identifier];
           if (classData?.item) {
             try {
-              const color = await UIHelpers.getClassColorForWizardTab(classData.item);
+              const color = await UIUtils.getClassColorForWizardTab(classData.item);
               this._classStylingCache.set(identifier, color);
             } catch (error) {
               log(2, `Error pre-calculating color for ${identifier}:`, error);
@@ -402,7 +402,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       context.className = this._state.classSpellData[classIdentifier]?.className || classIdentifier;
       const wizardManager = this.wizardManagers.get(classIdentifier);
       context.isWizard = wizardManager?.isWizard || false;
-      context.isForceWizard = wizardManager?.classItem && DataHelpers.isClassWizardEnabled(this.actor, classIdentifier);
+      context.isForceWizard = wizardManager?.classItem && DataUtils.isClassWizardEnabled(this.actor, classIdentifier);
       const wizardTabData = this._state.tabData?.[partId];
       if (wizardTabData) {
         const rawSpellLevels = wizardTabData.spellLevels || [];
@@ -616,7 +616,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         log(3, `Registered class tab part: ${tabId}`);
       }
     }
-    const wizardClasses = DataHelpers.getWizardEnabledClasses(this.actor);
+    const wizardClasses = DataUtils.getWizardEnabledClasses(this.actor);
     for (const { identifier } of wizardClasses) {
       const tabId = `wizardbook-${identifier}`;
       this.constructor.PARTS[tabId] = {
@@ -650,7 +650,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     processedSpell.dataAttributes = this._getSpellDataAttributes(spell);
     processedSpell.tag = this._getSpellPreparationTag(spell);
     const ariaLabel = spell.preparation.prepared ? game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name }) : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
-    const checkbox = ValidationHelpers.createCheckbox({
+    const checkbox = ValidationUtils.createCheckbox({
       name: `spell-${spell.system.identifier}`,
       checked: spell.preparation.prepared,
       disabled: spell.preparation.disabled,
@@ -687,7 +687,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     if (spell.preparation?.preparedByOtherClass) checkbox.dataset.crossClass = 'true';
     if (spell.preparation.disabled && spell.preparation.disabledReason) checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
-    processedSpell.preparationCheckboxHtml = ValidationHelpers.elementToHtml(checkbox);
+    processedSpell.preparationCheckboxHtml = ValidationUtils.elementToHtml(checkbox);
     if (spell.sourceClass && this._state.wizardSpellbookCache) {
       const classSpellbook = this._state.wizardSpellbookCache.get(spell.sourceClass);
       processedSpell.inWizardSpellbook = classSpellbook ? classSpellbook.includes(spell.compendiumUuid) : false;
@@ -1001,21 +1001,21 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const processedSpell = this._processSpellForDisplay(spell);
       const spellUuid = processedSpell.uuid || processedSpell.compendiumUuid;
       const comparisonIcon = {
-        enabled: UIHelpers.CustomUI.isPlayerElementEnabled('compare') && processedSpell.showCompareLink,
+        enabled: UIUtils.CustomUI.isPlayerElementEnabled('compare') && processedSpell.showCompareLink,
         active: processedSpell.isInComparison,
         uuid: processedSpell.compendiumUuid,
         tooltip: game.i18n.localize('SPELLBOOK.Comparison.Compare'),
         ariaLabel: game.i18n.format('SPELLBOOK.Comparison.CompareSpell', { name: processedSpell.name })
       };
       const favoriteButton = {
-        enabled: UIHelpers.CustomUI.isPlayerElementEnabled('favorites') && spellUuid,
+        enabled: UIUtils.CustomUI.isPlayerElementEnabled('favorites') && spellUuid,
         favorited: processedSpell.favorited,
         uuid: spellUuid,
         tooltip: processedSpell.favorited ? game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites') : game.i18n.localize('SPELLBOOK.UI.AddToFavorites'),
         iconClass: processedSpell.favorited ? 'fas' : 'far'
       };
       const notesIcon = {
-        enabled: UIHelpers.CustomUI.isPlayerElementEnabled('notes') && spellUuid,
+        enabled: UIUtils.CustomUI.isPlayerElementEnabled('notes') && spellUuid,
         hasNotes: processedSpell.hasNotes,
         uuid: spellUuid,
         tooltip: processedSpell.hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes'),
@@ -1042,7 +1042,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         learningSourceLabel: learningSourceLabel
       };
       const partyIcons = this._preparePartyIconsData(processedSpell);
-      const formattedDetails = UIHelpers.CustomUI.buildPlayerMetadata(processedSpell);
+      const formattedDetails = UIUtils.CustomUI.buildPlayerMetadata(processedSpell);
       let materialComponentsTooltip = '';
       const hasMaterialComponents = processedSpell.filterData?.materialComponents?.hasConsumedMaterials === true;
       if (hasMaterialComponents && formattedDetails) {
@@ -1167,14 +1167,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   async _applyFavoriteStatesToButtons(buttons) {
-    const targetUserId = DataHelpers.getTargetUserId(this.actor);
+    const targetUserId = DataUtils.getTargetUserId(this.actor);
     let updatedCount = 0;
     for (const button of buttons) {
       const spellUuid = button.dataset.uuid;
       if (!spellUuid) continue;
       let isFavorited = this._state.getFavoriteSessionState(spellUuid);
       if (isFavorited === null) {
-        const userData = await DataHelpers.UserData.getUserDataForSpell(spellUuid, targetUserId, this.actor.id);
+        const userData = await DataUtils.UserData.getUserDataForSpell(spellUuid, targetUserId, this.actor.id);
         const journalFavorited = userData?.favorited || false;
         const isOnActor = this._isSpellOnActor(spellUuid);
         if (isOnActor && journalFavorited) isFavorited = true;
@@ -1245,24 +1245,24 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const actorFavorites = this.actor.system.favorites || [];
       const actorFavoriteSpellIds = new Set(actorFavorites.filter((fav) => fav.type === 'item' && fav.id.startsWith('.Item.')).map((fav) => fav.id.replace('.Item.', '')));
       const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
-      const targetUserId = DataHelpers.getTargetUserId(this.actor);
+      const targetUserId = DataUtils.getTargetUserId(this.actor);
       let syncCount = 0;
       const changedSpells = [];
       for (const spell of actorSpells) {
         const spellUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
         if (!spellUuid) continue;
         const isFavoritedInActor = actorFavoriteSpellIds.has(spell.id);
-        const userData = await DataHelpers.UserData.getUserDataForSpell(spellUuid, targetUserId, this.actor.id);
+        const userData = await DataUtils.UserData.getUserDataForSpell(spellUuid, targetUserId, this.actor.id);
         const isFavoritedInJournal = userData?.favorited || false;
         if (isFavoritedInJournal && !isFavoritedInActor) {
           log(3, `Unfavoriting ${spell.name} in journal to match actor state`);
-          await DataHelpers.UserData.setSpellFavorite(spellUuid, false);
+          await DataUtils.UserData.setSpellFavorite(spellUuid, false);
           changedSpells.push({ uuid: spellUuid, newState: false });
           syncCount++;
         }
         if (!isFavoritedInJournal && isFavoritedInActor) {
           log(3, `Favoriting ${spell.name} in journal to match actor state`);
-          await DataHelpers.UserData.setSpellFavorite(spellUuid, true);
+          await DataUtils.UserData.setSpellFavorite(spellUuid, true);
           changedSpells.push({ uuid: spellUuid, newState: true });
           syncCount++;
         }
@@ -1533,7 +1533,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         let element;
         switch (filter.type) {
           case 'search':
-            element = ValidationHelpers.createTextInput({
+            element = ValidationUtils.createTextInput({
               name: `filter-${filter.id}`,
               value: filterState[filter.id] || '',
               placeholder: `${game.i18n.localize(filter.label)}...`,
@@ -1542,15 +1542,15 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             });
             break;
           case 'dropdown':
-            const options = UIHelpers.getOptionsForFilter(filter.id, filterState);
-            element = ValidationHelpers.createSelect({
+            const options = UIUtils.getOptionsForFilter(filter.id, filterState);
+            element = ValidationUtils.createSelect({
               name: `filter-${filter.id}`,
               options: options,
               ariaLabel: game.i18n.localize(filter.label)
             });
             break;
           case 'checkbox':
-            element = ValidationHelpers.createCheckbox({
+            element = ValidationUtils.createCheckbox({
               name: `filter-${filter.id}`,
               checked: filterState[filter.id] || false,
               label: game.i18n.localize(filter.label),
@@ -1559,14 +1559,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             break;
           case 'range':
             element = this._createRangeFilterElement(filter.id, filterState);
-            result.unit = DataHelpers.shouldUseMetric() ? 'meters' : 'feet';
+            result.unit = DataUtils.shouldUseMetric() ? 'meters' : 'feet';
             break;
           default:
             log(2, `Unknown filter type: ${filter.type} for filter ${filter.id}`);
             return null;
         }
         if (!element) return null;
-        result.elementHtml = ValidationHelpers.elementToHtml(element);
+        result.elementHtml = ValidationUtils.elementToHtml(element);
         return result;
       })
       .filter(Boolean);
@@ -1585,7 +1585,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     container.className = 'range-inputs';
     container.setAttribute('role', 'group');
     container.setAttribute('aria-labelledby', `${filterId}-label`);
-    const minInput = ValidationHelpers.createNumberInput({
+    const minInput = ValidationUtils.createNumberInput({
       name: 'filter-min-range',
       value: filterState.minRange || '',
       placeholder: game.i18n.localize('SPELLBOOK.Filters.RangeMin'),
@@ -1595,7 +1595,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     separator.className = 'range-separator';
     separator.setAttribute('aria-hidden', 'true');
     separator.innerHTML = '<dnd5e-icon src="systems/dnd5e/icons/svg/range-connector.svg"></dnd5e-icon>';
-    const maxInput = ValidationHelpers.createNumberInput({
+    const maxInput = ValidationUtils.createNumberInput({
       name: 'filter-max-range',
       value: filterState.maxRange || '',
       placeholder: game.i18n.localize('SPELLBOOK.Filters.RangeMax'),
@@ -2250,7 +2250,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!scrollSpellData) return;
     const wizardManager = this.wizardManager;
     if (!wizardManager) return;
-    const success = await DataHelpers.ScrollProcessor.learnSpellFromScroll(this.actor, scrollSpellData, wizardManager);
+    const success = await DataUtils.ScrollProcessor.learnSpellFromScroll(this.actor, scrollSpellData, wizardManager);
     if (success) {
       await this._state.refreshClassSpellData('wizard');
       this.render(false);
@@ -2290,23 +2290,23 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         if (actorOwner) targetUserId = actorOwner.id;
         else log(2, `No owner found for actor ${this.actor.name}, applying to GM`);
       }
-      const userData = await DataHelpers.UserData.getUserDataForSpell(spellUuid, targetUserId, targetActorId);
+      const userData = await DataUtils.UserData.getUserDataForSpell(spellUuid, targetUserId, targetActorId);
       const currentlyFavorited = userData?.favorited || false;
       const newFavoriteStatus = !currentlyFavorited;
       this._state.updateFavoriteSessionState(spellUuid, newFavoriteStatus);
-      const success = await DataHelpers.UserData.setSpellFavorite(spellUuid, newFavoriteStatus, targetUserId, targetActorId);
+      const success = await DataUtils.UserData.setSpellFavorite(spellUuid, newFavoriteStatus, targetUserId, targetActorId);
       if (!success) {
         log(1, `Failed to persist favorite status for ${spellUuid}`);
         this._state.updateFavoriteSessionState(spellUuid, currentlyFavorited);
         return;
       }
-      if (newFavoriteStatus) await UIHelpers.addSpellToActorFavorites(spellUuid, this.actor);
-      else await UIHelpers.removeSpellFromActorFavorites(spellUuid, this.actor);
+      if (newFavoriteStatus) await UIUtils.addSpellToActorFavorites(spellUuid, this.actor);
+      else await UIUtils.removeSpellFromActorFavorites(spellUuid, this.actor);
       SpellBook._updateFavoriteButtonState(target, newFavoriteStatus);
       log(3, `Successfully toggled favorite for spell ${spellUuid}: ${newFavoriteStatus}`);
     } catch (error) {
       log(1, 'Error in handleToggleFavorite:', error);
-      const userData = await DataHelpers.UserData.getUserDataForSpell(spellUuid, null, this.actor.id);
+      const userData = await DataUtils.UserData.getUserDataForSpell(spellUuid, null, this.actor.id);
       this._state.updateFavoriteSessionState(spellUuid, userData?.favorited || false);
     }
   }
@@ -2536,7 +2536,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     await this._state.sendGMNotifications(spellDataByClass, allChangesByClass);
     await this._state.handlePostProcessing(actor);
     this._newlyCheckedCantrips.clear();
-    await UIHelpers.processFavoritesFromForm(form, actor);
+    await UIUtils.processFavoritesFromForm(form, actor);
     this._formStateCache.clear();
     if (actor.sheet.rendered) actor.sheet.render(true);
     if (this.ui && this.rendered) {

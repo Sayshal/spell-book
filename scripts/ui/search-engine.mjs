@@ -20,13 +20,13 @@
  * 1. Standard Mode: Fuzzy name matching with recent search suggestions
  * 2. Advanced Mode: Field-based query syntax with intelligent field and value suggestions
  *
- * @module UIHelpers/SearchEngine
+ * @module UIUtils/SearchEngine
  * @author Tyler
  */
 
 import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
-import * as ValidationHelpers from '../validation/_module.mjs';
+import * as ValidationUtils from '../validation/_module.mjs';
 
 /**
  * Parsed query structure returned by the query parser.
@@ -91,8 +91,8 @@ export class SearchEngine {
     /** @type {HTMLButtonElement|null} - Clear button element for search input */
     this.clearButtonElement = null;
 
-    /** @type {ValidationHelpers.SearchFields} - Field definitions for advanced search syntax */
-    this.fieldDefinitions = new ValidationHelpers.SearchFields();
+    /** @type {ValidationUtils.SearchFields} - Field definitions for advanced search syntax */
+    this.fieldDefinitions = new ValidationUtils.SearchFields();
 
     /** @type {number|null} - Timeout ID for focus event debouncing */
     this.focusDebounceTimeout = null;
@@ -130,11 +130,11 @@ export class SearchEngine {
     /** @type {Map<string, ParsedQuery|null>} - Cache for parsed queries to avoid reprocessing */
     this.queryCache = new Map();
 
-    /** @type {ValidationHelpers.QueryExecutor} - Query executor for advanced search operations */
-    this.queryExecutor = new ValidationHelpers.QueryExecutor();
+    /** @type {ValidationUtils.QueryExecutor} - Query executor for advanced search operations */
+    this.queryExecutor = new ValidationUtils.QueryExecutor();
 
-    /** @type {ValidationHelpers.QueryParser} - Parser for advanced search syntax */
-    this.queryParser = new ValidationHelpers.QueryParser(this.fieldDefinitions);
+    /** @type {ValidationUtils.QueryParser} - Parser for advanced search syntax */
+    this.queryParser = new ValidationUtils.QueryParser(this.fieldDefinitions);
 
     /** @type {HTMLInputElement|null} - Main search input element */
     this.searchInputElement = null;

@@ -12,7 +12,7 @@
  * - Flexible styling and layout options
  * - Generic multi-select wrapper with optgroup support
  *
- * @module ValidationHelpers/FormElements
+ * @module ValidationUtils/FormElements
  * @author Tyler
  */
 

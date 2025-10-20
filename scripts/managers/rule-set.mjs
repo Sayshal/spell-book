@@ -25,7 +25,7 @@
  */
 
 import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
-import * as DataHelpers from '../data/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
@@ -396,7 +396,7 @@ export class RuleSet {
     } else {
       const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
       const classItem = spellcastingData ? actor.items.get(spellcastingData.id) : null;
-      if (classItem) newSpellList = await DataHelpers.getClassSpellList(classItem.name.toLowerCase(), classItem.uuid, actor);
+      if (classItem) newSpellList = await DataUtils.getClassSpellList(classItem.name.toLowerCase(), classItem.uuid, actor);
     }
     const affectedSpells = [];
     for (const classSpellKey of classPreparedSpells) {

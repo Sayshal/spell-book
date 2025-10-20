@@ -35,13 +35,13 @@
 import { createAPI } from './api.mjs';
 import { SpellBook } from './apps/_module.mjs';
 import { MODULE, SETTINGS } from './constants/_module.mjs';
-import * as DataHelpers from './data/_module.mjs';
+import * as DataUtils from './data/_module.mjs';
 import { unlockModuleCompendium, preloadTemplates } from './data/generic-utils.mjs';
 import { registerDnD5eIntegration, registerTidy5eIntegration } from './integrations/_module.mjs';
 import { initializeLogger, log } from './logger.mjs';
 import { Macros, Migrations, UsageTracker, UserDataSetup } from './managers/_module.mjs';
 import { registerSettings } from './settings.mjs';
-import * as UIHelpers from './ui/_module.mjs';
+import * as UIUtils from './ui/_module.mjs';
 import { createChatMessage } from './ui/_module.mjs';
 import { SocketHandler } from './sockets.mjs';
 
@@ -69,23 +69,23 @@ Hooks.once('ready', async function () {
   const suppressWarnings = game.settings.get(MODULE.ID, SETTINGS.SUPPRESS_MIGRATION_WARNINGS);
   if (!suppressWarnings) Hooks.on('createChatMessage', createChatMessage);
   Migrations.runAllMigrations();
-  UIHelpers.DescriptionInjector.initialize();
+  UIUtils.DescriptionInjector.initialize();
   await unlockModuleCompendium();
   await Macros.initializeMacros();
   await UserDataSetup.initializeUserSpellData();
   await UsageTracker.initialize();
-  await DataHelpers.preloadData(true);
-  if (game.user.isGM) await DataHelpers.registerCustomSpellLists();
+  await DataUtils.preloadData(true);
+  if (game.user.isGM) await DataUtils.registerCustomSpellLists();
 });
 
 Hooks.on('createJournalEntryPage', (page, _options, _userId) => {
-  if (DataHelpers.shouldInvalidateCacheForPage(page)) DataHelpers.invalidateSpellListCache();
+  if (DataUtils.shouldInvalidateCacheForPage(page)) DataUtils.invalidateSpellListCache();
 });
 
 Hooks.on('updateJournalEntryPage', (page, changes, _options, _userId) => {
-  if (DataHelpers.shouldInvalidateCacheForPage(page)) if (changes.system?.spells || changes.system?.identifier || changes.flags) DataHelpers.invalidateSpellListCache();
+  if (DataUtils.shouldInvalidateCacheForPage(page)) if (changes.system?.spells || changes.system?.identifier || changes.flags) DataUtils.invalidateSpellListCache();
 });
 
 Hooks.on('deleteJournalEntryPage', (page, _options, _userId) => {
-  if (DataHelpers.shouldInvalidateCacheForPage(page)) DataHelpers.invalidateSpellListCache();
+  if (DataUtils.shouldInvalidateCacheForPage(page)) DataUtils.invalidateSpellListCache();
 });

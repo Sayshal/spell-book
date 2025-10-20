@@ -27,9 +27,9 @@
  */
 
 import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
-import * as DataHelpers from '../data/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
-import * as UIHelpers from '../ui/_module.mjs';
+import * as UIUtils from '../ui/_module.mjs';
 import { Cantrips, RuleSet } from './_module.mjs';
 
 /**
@@ -338,7 +338,7 @@ export class SpellManager {
         const sourceClass = specialSpell.system?.sourceClass || specialSpell.sourceClass;
         const spellcastingData = sourceClass ? this.actor.spellcastingClasses?.[sourceClass] : null;
         const classItem = spellcastingData ? this.actor.items.get(spellcastingData.id) : null;
-        const localizedMode = UIHelpers.getLocalizedPreparationMode(specialSpell.system.method);
+        const localizedMode = UIUtils.getLocalizedPreparationMode(specialSpell.system.method);
         return {
           prepared: true,
           isOwned: false,
@@ -402,7 +402,7 @@ export class SpellManager {
     const alwaysPrepared = spell.system.prepared === 2;
     const isInnateCasting = preparationMode === 'innate';
     const isAtWill = preparationMode === 'atwill';
-    const localizedPreparationMode = UIHelpers.getLocalizedPreparationMode(preparationMode);
+    const localizedPreparationMode = UIUtils.getLocalizedPreparationMode(preparationMode);
     const sourceInfo = this._determineSpellSource(spell);
     const isGranted = !!sourceInfo && !!spell.flags?.dnd5e?.cachedFor;
     const actuallyPrepared = !!(isGranted || alwaysPrepared || isInnateCasting || isAtWill || spell.system.prepared === 1);
@@ -457,14 +457,14 @@ export class SpellManager {
     const sourceClassId = spell.system?.sourceClass || spell.sourceClass;
     if (preparationMode === 'always') {
       if (sourceClassId && this.actor.spellcastingClasses?.[sourceClassId]) {
-        const spellcastingSource = DataHelpers.getSpellcastingSourceItem(this.actor, sourceClassId);
+        const spellcastingSource = DataUtils.getSpellcastingSourceItem(this.actor, sourceClassId);
         if (spellcastingSource && spellcastingSource.type === 'subclass') return { name: spellcastingSource.name, type: 'subclass', id: spellcastingSource.id };
       }
       const subclass = this.actor.items.find((i) => i.type === 'subclass');
       if (subclass) return { name: subclass.name, type: 'subclass', id: subclass.id };
     } else if (preparationMode === 'pact') {
       if (sourceClassId && this.actor.spellcastingClasses?.[sourceClassId]) {
-        const spellcastingSource = DataHelpers.getSpellcastingSourceItem(this.actor, sourceClassId);
+        const spellcastingSource = DataUtils.getSpellcastingSourceItem(this.actor, sourceClassId);
         if (spellcastingSource && spellcastingSource.type === 'subclass') return { name: spellcastingSource.name, type: 'subclass', id: spellcastingSource.id };
       }
       const subclass = this.actor.items.find((i) => i.type === 'subclass');
@@ -472,7 +472,7 @@ export class SpellManager {
       return { name: game.i18n.localize('SPELLBOOK.SpellSource.PactMagic'), type: 'class' };
     } else {
       if (sourceClassId && this.actor.spellcastingClasses?.[sourceClassId]) {
-        const spellcastingSource = DataHelpers.getSpellcastingSourceItem(this.actor, sourceClassId);
+        const spellcastingSource = DataUtils.getSpellcastingSourceItem(this.actor, sourceClassId);
         if (spellcastingSource) return { name: spellcastingSource.name, type: spellcastingSource.type, id: spellcastingSource.id };
       }
       const classItem = this.actor.items.find((i) => i.type === 'class');
@@ -590,7 +590,7 @@ export class SpellManager {
    * @returns {string} The preparation mode ('spell', 'pact', etc.)
    */
   _getClassPreparationMode(classIdentifier) {
-    const spellcastingConfig = DataHelpers.getSpellcastingConfigForClass(this.actor, classIdentifier);
+    const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
     if (spellcastingConfig?.type === 'pact') return 'pact';
     return 'spell';
   }

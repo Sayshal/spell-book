@@ -14,14 +14,14 @@
  * - Source prioritization with fallback discovery chains
  * - Cross-reference spell resolution and validation
  *
- * @module DataHelpers/Discovery
+ * @module DataUtils/Discovery
  * @author Tyler
  */
 
 import { MODULE, SETTINGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import { RuleSet } from '../managers/_module.mjs';
-import * as DataHelpers from './_module.mjs';
+import * as DataUtils from './_module.mjs';
 
 /**
  * @typedef {Object} ClassSpellListResult
@@ -127,7 +127,7 @@ export async function getClassSpellList(className, classUuid, actor) {
     classIdentifier = classItem?.system?.identifier?.toLowerCase();
     const topLevelFolderName = getFolderNameFromPack(classItem?._stats?.compendiumSource);
     if (!classIdentifier) return new Set();
-    const preloadedData = DataHelpers.getPreloadedData();
+    const preloadedData = DataUtils.getPreloadedData();
     if (preloadedData && preloadedData.spellLists.length > 0) {
       log(3, `Checking ${preloadedData.spellLists.length} preloaded spell lists for ${classIdentifier}`);
       const matchingLists = preloadedData.spellLists.filter((list) => list.identifier?.toLowerCase() === classIdentifier);
@@ -224,7 +224,7 @@ function getFolderNameFromPack(source) {
 async function findSpellListByIdentifier(type, identifier, customMappings) {
   const journalPacks = Array.from(game.packs).filter((p) => {
     if (p.metadata.type !== 'JournalEntry') return false;
-    return DataHelpers.shouldIndexCompendium(p);
+    return DataUtils.shouldIndexCompendium(p);
   });
   for (const pack of journalPacks) {
     const spellList = await searchPackForSpellList(pack, type, identifier, customMappings);
@@ -299,14 +299,14 @@ async function findCustomSpellListByIdentifier(identifier) {
 export function calculateMaxSpellLevel(classItem, actor) {
   if (!classItem || !actor) return 0;
   const classIdentifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
-  const spellcastingConfig = DataHelpers.getSpellcastingConfigForClass(actor, classIdentifier);
+  const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(actor, classIdentifier);
   if (!spellcastingConfig) {
     log(3, `No spellcasting configuration found for class ${classIdentifier}`);
     return 0;
   }
   const spellcastingType = spellcastingConfig.type;
   const classKey = classItem.identifier || classItem.name?.slugify() || 'class';
-  const classLevels = DataHelpers.getSpellcastingLevelsForClass(actor, classIdentifier);
+  const classLevels = DataUtils.getSpellcastingLevelsForClass(actor, classIdentifier);
   if (spellcastingType === 'spell') {
     /** @type {ClassProgression} */
     const progression = { spell: 0, [classKey]: classLevels };
@@ -322,7 +322,7 @@ export function calculateMaxSpellLevel(classItem, actor) {
     /** @type {Object<string, SpellSlotData>} */
     const spells = Object.fromEntries(spellLevels.map((l) => [`spell${l}`, { level: l }]));
     try {
-      const spellcastingSource = DataHelpers.getSpellcastingSourceItem(actor, classIdentifier);
+      const spellcastingSource = DataUtils.getSpellcastingSourceItem(actor, classIdentifier);
       actor.constructor.computeClassProgression(progression, spellcastingSource, { spellcasting: spellcastingConfig });
       actor.constructor.prepareSpellcastingSlots(spells, 'spell', progression, { actor });
       return Object.values(spells).reduce((maxLevel, spellData) => {
@@ -342,7 +342,7 @@ export function calculateMaxSpellLevel(classItem, actor) {
     /** @type {ClassProgression} */
     const progression = { pact: 0, [classKey]: classLevels };
     try {
-      const spellcastingSource = DataHelpers.getSpellcastingSourceItem(actor, classIdentifier);
+      const spellcastingSource = DataUtils.getSpellcastingSourceItem(actor, classIdentifier);
       actor.constructor.computeClassProgression(progression, spellcastingSource, { spellcasting: spellcastingConfig });
       actor.constructor.prepareSpellcastingSlots(spells, 'pact', progression, { actor });
       const pactLevel = spells.pact?.level || 0;
@@ -372,7 +372,7 @@ export function calculateMaxSpellLevel(classItem, actor) {
 async function getSpellListFromFolder(topLevelFolderName, identifier, customMappings) {
   const journalPacks = Array.from(game.packs).filter((p) => {
     if (p.metadata.type !== 'JournalEntry') return false;
-    return DataHelpers.shouldIndexCompendium(p);
+    return DataUtils.shouldIndexCompendium(p);
   });
   for (const pack of journalPacks) {
     let packTopLevelFolder = null;

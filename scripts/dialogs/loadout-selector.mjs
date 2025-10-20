@@ -20,8 +20,8 @@
 import { FLAGS, MODULE, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import { Loadouts } from '../managers/_module.mjs';
-import * as UIHelpers from '../ui/_module.mjs';
-import * as ValidationHelpers from '../validation/_module.mjs';
+import * as UIUtils from '../ui/_module.mjs';
+import * as ValidationUtils from '../validation/_module.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -121,18 +121,18 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
     }));
     const currentState = this.loadoutManager.captureCurrentState(this.classIdentifier);
     context.currentSpellCount = currentState.length;
-    const nameInput = ValidationHelpers.createTextInput({
+    const nameInput = ValidationUtils.createTextInput({
       name: 'loadout-name',
       placeholder: game.i18n.localize('SPELLBOOK.Loadouts.NamePlaceholder'),
       ariaLabel: game.i18n.localize('SPELLBOOK.Loadouts.LoadoutName')
     });
-    context.nameInputHtml = ValidationHelpers.elementToHtml(nameInput);
-    const descriptionInput = ValidationHelpers.createTextInput({
+    context.nameInputHtml = ValidationUtils.elementToHtml(nameInput);
+    const descriptionInput = ValidationUtils.createTextInput({
       name: 'loadout-description',
       placeholder: game.i18n.localize('SPELLBOOK.Loadouts.DescriptionPlaceholder'),
       ariaLabel: game.i18n.localize('SPELLBOOK.Loadouts.LoadoutDescription')
     });
-    context.descriptionInputHtml = ValidationHelpers.elementToHtml(descriptionInput);
+    context.descriptionInputHtml = ValidationUtils.elementToHtml(descriptionInput);
     return context;
   }
 
@@ -251,10 +251,10 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
         await this._showSpellPreview(event);
       });
       icon.addEventListener('mouseleave', () => {
-        UIHelpers.hideTooltip('spell-preview-tooltip');
+        UIUtils.hideTooltip('spell-preview-tooltip');
       });
       icon.addEventListener('mousemove', (event) => {
-        UIHelpers.updateTooltipPosition('spell-preview-tooltip', event, 15);
+        UIUtils.updateTooltipPosition('spell-preview-tooltip', event, 15);
       });
       icon.addEventListener(
         'wheel',
@@ -288,7 +288,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
         <div class="loading">${game.i18n.localize('SPELLBOOK.Loadouts.LoadingSpells')}</div>
       </div>
     `;
-    UIHelpers.showTooltip('spell-preview-tooltip', loadingContent, event, 'spell-preview-tooltip');
+    UIUtils.showTooltip('spell-preview-tooltip', loadingContent, event, 'spell-preview-tooltip');
     try {
       const spellData = await Promise.all(
         loadout.spellConfiguration.map(async (uuid) => {
@@ -308,7 +308,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
             <div class="no-spells">${game.i18n.localize('SPELLBOOK.Loadouts.NoValidSpells')}</div>
           </div>
         `;
-        UIHelpers.showTooltip('spell-preview-tooltip', noSpellsContent, null, 'spell-preview-tooltip');
+        UIUtils.showTooltip('spell-preview-tooltip', noSpellsContent, null, 'spell-preview-tooltip');
         return;
       }
       const spellsHtml = validSpells
@@ -332,7 +332,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
           </div>
         </div>
       `;
-      UIHelpers.showTooltip('spell-preview-tooltip', content, null, 'spell-preview-tooltip');
+      UIUtils.showTooltip('spell-preview-tooltip', content, null, 'spell-preview-tooltip');
     } catch (error) {
       log(1, 'Error showing spell preview:', error);
       const errorContent = `
@@ -340,13 +340,13 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
           <div class="error">${game.i18n.localize('SPELLBOOK.Loadouts.ErrorLoadingPreview')}</div>
         </div>
       `;
-      UIHelpers.showTooltip('spell-preview-tooltip', errorContent, null, 'spell-preview-tooltip');
+      UIUtils.showTooltip('spell-preview-tooltip', errorContent, null, 'spell-preview-tooltip');
     }
   }
 
   /** @override */
   _onClose() {
-    UIHelpers.removeTooltip('spell-preview-tooltip');
+    UIUtils.removeTooltip('spell-preview-tooltip');
     super._onClose();
   }
 }

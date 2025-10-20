@@ -20,7 +20,7 @@
 
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
-import * as ValidationHelpers from '../validation/_module.mjs';
+import * as ValidationUtils from '../validation/_module.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -230,7 +230,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
         enabledCount: categoryStats.enabledCount,
         totalCount: categoryStats.totalCount,
         disabled: categoryStats.allPacksDisabled,
-        categorySelectAllCheckboxHtml: ValidationHelpers.elementToHtml(categorySelectAllCheckbox)
+        categorySelectAllCheckboxHtml: ValidationUtils.elementToHtml(categorySelectAllCheckbox)
       };
     });
   }
@@ -248,7 +248,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
       const isModulePack = pack.packageName === MODULE.ID;
       const packData = { ...pack, enabled: enabledCompendiums.has(pack.id) || isModulePack, disabled: isModulePack, organizationName: categoryName };
       const packCheckbox = this._createPackCheckbox(packData);
-      return { ...packData, checkboxHtml: ValidationHelpers.elementToHtml(packCheckbox) };
+      return { ...packData, checkboxHtml: ValidationUtils.elementToHtml(packCheckbox) };
     });
   }
 
@@ -272,7 +272,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   _createPackCheckbox(packData) {
-    const packCheckbox = ValidationHelpers.createCheckbox({
+    const packCheckbox = ValidationUtils.createCheckbox({
       name: 'compendiumMultiSelect',
       checked: packData.enabled,
       disabled: packData.disabled,
@@ -293,7 +293,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    */
   _createCategorySelectAllCheckbox(categoryName, categoryStats) {
     const { enabledCount, totalCount, allPacksDisabled } = categoryStats;
-    const categorySelectAllCheckbox = ValidationHelpers.createCheckbox({
+    const categorySelectAllCheckbox = ValidationUtils.createCheckbox({
       name: `select-all-category-${categoryName}`,
       checked: enabledCount === totalCount,
       disabled: allPacksDisabled,
@@ -324,13 +324,13 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   _createGlobalSelectAllCheckbox(allSelected) {
-    const globalSelectAllCheckbox = ValidationHelpers.createCheckbox({
+    const globalSelectAllCheckbox = ValidationUtils.createCheckbox({
       name: 'select-all-global',
       checked: allSelected,
       cssClass: 'select-all-global',
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.CompendiumSelectionSelectAll')
     });
-    return ValidationHelpers.elementToHtml(globalSelectAllCheckbox);
+    return ValidationUtils.elementToHtml(globalSelectAllCheckbox);
   }
 
   /** @inheritdoc */

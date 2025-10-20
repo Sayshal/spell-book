@@ -13,7 +13,7 @@
  * - Actor-specific data organization
  * - Performance-optimized caching system
  *
- * @module DataHelpers/SpellUserData
+ * @module DataUtils/SpellUserData
  * @author Tyler
  */
 

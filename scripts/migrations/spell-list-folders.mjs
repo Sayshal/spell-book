@@ -10,7 +10,7 @@
  */
 
 import { MODULE } from '../constants/_module.mjs';
-import * as DataHelpers from '../data/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -33,9 +33,9 @@ async function migrateSpellListFolders() {
     const topLevelJournals = allJournals.filter((journal) => !journal.folder);
     results.processed = topLevelJournals.length;
     if (topLevelJournals.length === 0) return results;
-    const customFolder = await DataHelpers.getOrCreateCustomFolder();
-    const mergedFolder = await DataHelpers.getOrCreateMergedFolder();
-    const modifiedFolder = await DataHelpers.getOrCreateModifiedFolder();
+    const customFolder = await DataUtils.getOrCreateCustomFolder();
+    const mergedFolder = await DataUtils.getOrCreateMergedFolder();
+    const modifiedFolder = await DataUtils.getOrCreateModifiedFolder();
     if (customFolder) results.foldersCreated.push('custom');
     if (mergedFolder) results.foldersCreated.push('merged');
     if (modifiedFolder) results.foldersCreated.push('modified');

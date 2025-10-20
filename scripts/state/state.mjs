@@ -20,10 +20,10 @@
  */
 
 import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
-import * as DataHelpers from '../data/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 import { RuleSet } from '../managers/_module.mjs';
-import * as UIHelpers from '../ui/_module.mjs';
+import * as UIUtils from '../ui/_module.mjs';
 
 /**
  * Spell preparation statistics for a class.
@@ -194,7 +194,7 @@ export class State {
     if (!this._classesDetected) this.detectSpellcastingClasses();
     await this.app.spellManager.cleanupStalePreparationFlags();
     await this.loadSpellData();
-    const wizardClasses = DataHelpers.getWizardEnabledClasses(this.actor);
+    const wizardClasses = DataUtils.getWizardEnabledClasses(this.actor);
     if (wizardClasses.length > 0) {
       log(3, `Checking wizard data for ${wizardClasses.length} wizard classes`);
       const wizardPromises = wizardClasses
@@ -419,7 +419,7 @@ export class State {
    */
   async loadSpellData() {
     RuleSet.initializeNewClasses(this.actor);
-    const wizardClasses = DataHelpers.getWizardEnabledClasses(this.actor);
+    const wizardClasses = DataUtils.getWizardEnabledClasses(this.actor);
     for (const { identifier } of wizardClasses) {
       const wizardManager = this.app.wizardManagers.get(identifier);
       if (wizardManager) await this.cacheWizardSpellbook(identifier);
@@ -437,7 +437,7 @@ export class State {
         continue;
       }
       log(3, `Processing class ${identifier} (${classItem.name})`);
-      if (DataHelpers.isClassWizardEnabled(this.actor, identifier)) {
+      if (DataUtils.isClassWizardEnabled(this.actor, identifier)) {
         log(3, `Loading wizard spell data for ${identifier}`);
         await this.loadWizardSpellData(classItem, identifier);
       } else {
@@ -470,7 +470,7 @@ export class State {
     const className = classItem.name.toLowerCase();
     const classUuid = classItem.uuid;
     log(3, `Getting spell list for class ${identifier} (${className})`);
-    const spellList = await DataHelpers.getClassSpellList(className, classUuid, this.actor);
+    const spellList = await DataUtils.getClassSpellList(className, classUuid, this.actor);
     if (!spellList || !spellList.size) {
       log(2, `No spell list found for class ${identifier} (${className}) - spell list size: ${spellList?.size || 0}`);
       const prepStats = this.calculatePreparationStats(identifier, [], classItem);
@@ -479,10 +479,10 @@ export class State {
       return;
     }
     log(3, `Found spell list with ${spellList.size} spells for ${identifier}`);
-    let maxSpellLevel = DataHelpers.calculateMaxSpellLevel(classItem, this.actor);
+    let maxSpellLevel = DataUtils.calculateMaxSpellLevel(classItem, this.actor);
     const hideCantrips = this._shouldHideCantrips(identifier);
     if (hideCantrips && maxSpellLevel > 0) maxSpellLevel = Math.max(1, maxSpellLevel);
-    const preloadedData = DataHelpers.getPreloadedData();
+    const preloadedData = DataUtils.getPreloadedData();
     let spellItems = [];
     if (preloadedData && preloadedData.enrichedSpells.length > 0) {
       log(3, `Using preloaded spell data for ${identifier} class`);
@@ -491,10 +491,10 @@ export class State {
       const missingSpells = Array.from(spellList).filter((uuid) => !preloadedSpells.some((spell) => spell.uuid === uuid));
       if (missingSpells.length > 0) {
         log(3, `Loading ${missingSpells.length} missing spells for ${identifier}`);
-        const additionalSpells = await DataHelpers.fetchSpellDocuments(new Set(missingSpells), maxSpellLevel);
+        const additionalSpells = await DataUtils.fetchSpellDocuments(new Set(missingSpells), maxSpellLevel);
         spellItems = [...preloadedSpells, ...additionalSpells];
       } else spellItems = preloadedSpells;
-    } else spellItems = await DataHelpers.fetchSpellDocuments(spellList, maxSpellLevel);
+    } else spellItems = await DataUtils.fetchSpellDocuments(spellList, maxSpellLevel);
     if (!spellItems || !spellItems.length) return;
     await this.processAndOrganizeSpellsForClass(identifier, spellItems, classItem);
   }
@@ -509,7 +509,7 @@ export class State {
   async _organizeSpellsByLevelForClass(spellItems, classIdentifier) {
     const spellsByLevel = {};
     const processedSpellIds = new Set();
-    const targetUserId = DataHelpers.getTargetUserId(this.actor);
+    const targetUserId = DataUtils.getTargetUserId(this.actor);
     const actorId = this.actor?.id;
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const preparableSpells = [];
@@ -520,7 +520,7 @@ export class State {
       for (const spell of actorSpells) {
         if (spell?.system?.level === undefined) continue;
         const spellKey = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
-        const normalizedKey = UIHelpers.getCanonicalSpellUuid(spellKey);
+        const normalizedKey = UIUtils.getCanonicalSpellUuid(spellKey);
         const sourceClass = spell.system?.sourceClass || spell.sourceClass || classIdentifier;
         const fullKey = `${sourceClass}:${normalizedKey}`;
         if (!spellDeduplicationMap.has(fullKey)) spellDeduplicationMap.set(fullKey, spell);
@@ -548,7 +548,7 @@ export class State {
     for (const spell of preparableSpells) {
       const level = spell.system.level;
       const spellKey = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
-      const normalizedKey = UIHelpers.getCanonicalSpellUuid(spellKey);
+      const normalizedKey = UIUtils.getCanonicalSpellUuid(spellKey);
       if (!processedPreparableSpells.has(normalizedKey)) {
         if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
         const compendiumUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
@@ -558,9 +558,9 @@ export class State {
         spellData.system.sourceClass = classIdentifier;
         if (spell.system?.method !== 'ritual' && spell.system?.components?.ritual) spellData.canCastAsRitual = true;
         spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, classIdentifier);
-        spellData.filterData = UIHelpers.extractSpellFilterData(spell);
-        spellData.enrichedIcon = UIHelpers.createSpellIconLink(spell);
-        const enhancedSpell = DataHelpers.UserData.enhanceSpellWithUserData(spellData, targetUserId, actorId);
+        spellData.filterData = UIUtils.extractSpellFilterData(spell);
+        spellData.enrichedIcon = UIUtils.createSpellIconLink(spell);
+        const enhancedSpell = DataUtils.UserData.enhanceSpellWithUserData(spellData, targetUserId, actorId);
         Object.assign(spellData, enhancedSpell);
         spellsByLevel[level].spells.push(spellData);
         processedPreparableSpells.add(normalizedKey);
@@ -581,9 +581,9 @@ export class State {
         };
       }
     } else {
-      await DataHelpers.UserData._ensureUserDataInfrastructure(targetUserId);
-      const userPage = await DataHelpers.UserData._getUserPage(targetUserId);
-      if (userPage) parsedSpellData = DataHelpers.UserData._parseSpellDataFromHTML(userPage.text.content);
+      await DataUtils.UserData._ensureUserDataInfrastructure(targetUserId);
+      const userPage = await DataUtils.UserData._getUserPage(targetUserId);
+      if (userPage) parsedSpellData = DataUtils.UserData._parseSpellDataFromHTML(userPage.text.content);
     }
     const allSpellsToCache = [
       ...preparableSpells.map((s) => s._stats?.compendiumSource || s.flags?.core?.sourceId || s.uuid),
@@ -598,7 +598,7 @@ export class State {
       }
       const quickCacheKey = actorId ? `${targetUserId}:${actorId}:${canonicalUuid}` : `${targetUserId}:${canonicalUuid}`;
       const originalCacheKey = actorId ? `${targetUserId}:${actorId}:${spellUuid}` : `${targetUserId}:${spellUuid}`;
-      if (DataHelpers.UserData.cache.has(quickCacheKey) || DataHelpers.UserData.cache.has(originalCacheKey)) continue;
+      if (DataUtils.UserData.cache.has(quickCacheKey) || DataUtils.UserData.cache.has(originalCacheKey)) continue;
       let userData = parsedSpellData?.[canonicalUuid];
       if (!userData && canonicalUuid !== spellUuid) userData = parsedSpellData?.[spellUuid];
       const result = !userData
@@ -606,14 +606,14 @@ export class State {
         : actorId && userData.actorData?.[actorId]
           ? { ...userData.actorData[actorId], notes: userData.notes }
           : { notes: userData.notes || '', favorited: false, usageStats: null };
-      DataHelpers.UserData.cache.set(quickCacheKey, result);
-      if (canonicalUuid !== spellUuid) DataHelpers.UserData.cache.set(originalCacheKey, result);
+      DataUtils.UserData.cache.set(quickCacheKey, result);
+      if (canonicalUuid !== spellUuid) DataUtils.UserData.cache.set(originalCacheKey, result);
     }
     for (const spell of spellItems) {
       if (spell?.system?.level === undefined) continue;
       const level = spell.system.level;
       const spellUuid = spell.uuid || spell.compendiumUuid;
-      const normalizedUuid = UIHelpers.getCanonicalSpellUuid(spellUuid);
+      const normalizedUuid = UIUtils.getCanonicalSpellUuid(spellUuid);
       if (processedPreparableSpells.has(normalizedUuid)) continue;
       if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
       const spellData = foundry.utils.deepClone(spell);
@@ -635,9 +635,9 @@ export class State {
       }
       spellData._preparationContext = 'preparable';
       if (this.app.spellManager) spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, classIdentifier);
-      spellData.filterData = UIHelpers.extractSpellFilterData(spell);
-      spellData.enrichedIcon = UIHelpers.createSpellIconLink(spell);
-      const enhancedSpell = DataHelpers.UserData.enhanceSpellWithUserData(spellData, targetUserId, actorId);
+      spellData.filterData = UIUtils.extractSpellFilterData(spell);
+      spellData.enrichedIcon = UIUtils.createSpellIconLink(spell);
+      const enhancedSpell = DataUtils.UserData.enhanceSpellWithUserData(spellData, targetUserId, actorId);
       Object.assign(spellData, enhancedSpell);
       spellsByLevel[level].spells.push(spellData);
       processedSpellIds.add(spell.id || spell.compendiumUuid || spell.uuid);
@@ -656,9 +656,9 @@ export class State {
       spellData._preparationContext = 'special';
       if (spell.system?.method !== 'ritual' && spell.system?.components?.ritual) spellData.canCastAsRitual = true;
       spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, sourceClass || classIdentifier);
-      spellData.filterData = UIHelpers.extractSpellFilterData(spell);
-      spellData.enrichedIcon = UIHelpers.createSpellIconLink(spell);
-      const enhancedSpell = DataHelpers.UserData.enhanceSpellWithUserData(spellData, targetUserId, actorId);
+      spellData.filterData = UIUtils.extractSpellFilterData(spell);
+      spellData.enrichedIcon = UIUtils.createSpellIconLink(spell);
+      const enhancedSpell = DataUtils.UserData.enhanceSpellWithUserData(spellData, targetUserId, actorId);
       Object.assign(spellData, enhancedSpell);
       spellsByLevel[level].spells.push(spellData);
     }
@@ -691,7 +691,7 @@ export class State {
   async _organizeWizardSpellsForLearning(spellItems, classIdentifier, personalSpellbook) {
     const spellsByLevel = {};
     const processedSpellUuids = new Set();
-    const targetUserId = DataHelpers.getTargetUserId(this.actor);
+    const targetUserId = DataUtils.getTargetUserId(this.actor);
     const actorId = this.actor?.id;
     const wizardManager = this.app.wizardManagers.get(classIdentifier);
     for (const spell of spellItems) {
@@ -720,9 +720,9 @@ export class State {
         disabledReason: '',
         _isWizardLearning: true
       };
-      spellData.filterData = UIHelpers.extractSpellFilterData(spell);
-      spellData.enrichedIcon = UIHelpers.createSpellIconLink(spell);
-      const enhancedSpell = DataHelpers.UserData.enhanceSpellWithUserData(spellData, targetUserId, actorId);
+      spellData.filterData = UIUtils.extractSpellFilterData(spell);
+      spellData.enrichedIcon = UIUtils.createSpellIconLink(spell);
+      const enhancedSpell = DataUtils.UserData.enhanceSpellWithUserData(spellData, targetUserId, actorId);
       Object.assign(spellData, enhancedSpell);
       spellsByLevel[level].spells.push(spellData);
       processedSpellUuids.add(spellUuid);
@@ -791,7 +791,7 @@ export class State {
     const isFlatStructure = spellLevels.length > 0 && spellLevels[0] && ('system' in spellLevels[0] || 'level' in spellLevels[0]);
     let totalSpellCount = 0;
     let preparedCount = 0;
-    const effectiveLevels = DataHelpers.getSpellcastingLevelsForClass(this.actor, classIdentifier);
+    const effectiveLevels = DataUtils.getSpellcastingLevelsForClass(this.actor, classIdentifier);
     if (isGroupedStructure) {
       log(3, 'GROUPED STRUCTURE DETECTED!', { class: classIdentifier, spells: spellLevels, classItem: classItem });
       totalSpellCount = spellLevels.reduce((count, level) => count + (Array.isArray(level.spells) ? level.spells.length : 0), 0);
@@ -839,7 +839,7 @@ export class State {
       log(1, 'calculatePreparationStats: Unknown structure for spellLevels', spellLevels);
     }
     let baseMaxPrepared = 0;
-    const spellcastingConfig = DataHelpers.getSpellcastingConfigForClass(this.actor, classIdentifier);
+    const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
     if (spellcastingConfig?.preparation?.max) baseMaxPrepared = spellcastingConfig.preparation.max;
     else baseMaxPrepared = classItem?.system?.spellcasting?.preparation?.max || 0;
     const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
@@ -938,8 +938,8 @@ export class State {
   async loadWizardSpellData(classItem, classIdentifier) {
     const className = classItem.name.toLowerCase();
     const classUuid = classItem.uuid;
-    const maxSpellLevel = DataHelpers.calculateMaxSpellLevel(classItem, this.actor);
-    const fullSpellList = await DataHelpers.getClassSpellList(className, classUuid, this.actor);
+    const maxSpellLevel = DataUtils.calculateMaxSpellLevel(classItem, this.actor);
+    const fullSpellList = await DataUtils.getClassSpellList(className, classUuid, this.actor);
     if (!fullSpellList || !fullSpellList.size) return;
     const wizardManager = this.app.wizardManagers.get(classIdentifier);
     if (!wizardManager || !wizardManager.isWizard) return;
@@ -948,7 +948,7 @@ export class State {
     this._fullWizardSpellLists.set(classIdentifier, new Set(fullSpellList));
     const allUuids = new Set([...fullSpellList, ...personalSpellbook]);
     const effectiveMaxLevel = Math.max(1, maxSpellLevel);
-    const preloadedData = DataHelpers.getPreloadedData();
+    const preloadedData = DataUtils.getPreloadedData();
     let spellItems = [];
     if (preloadedData && preloadedData.enrichedSpells.length > 0) {
       log(3, `Using preloaded spell data for ${classIdentifier} wizard spells`);
@@ -957,10 +957,10 @@ export class State {
       const missingSpells = allUuidsArray.filter((uuid) => !preloadedSpells.some((spell) => spell.uuid === uuid));
       if (missingSpells.length > 0) {
         log(3, `Loading ${missingSpells.length} missing wizard spells for ${classIdentifier}`);
-        const additionalSpells = await DataHelpers.fetchSpellDocuments(new Set(missingSpells), effectiveMaxLevel);
+        const additionalSpells = await DataUtils.fetchSpellDocuments(new Set(missingSpells), effectiveMaxLevel);
         spellItems = [...preloadedSpells, ...additionalSpells];
       } else spellItems = preloadedSpells;
-    } else spellItems = await DataHelpers.fetchSpellDocuments(allUuids, effectiveMaxLevel);
+    } else spellItems = await DataUtils.fetchSpellDocuments(allUuids, effectiveMaxLevel);
     if (!spellItems || !spellItems.length) {
       log(1, `No spell items found for wizard ${classIdentifier}`);
       return;
@@ -1012,8 +1012,8 @@ export class State {
     const totalSpells = personalSpellbook.length;
     const maxSpellsAllowed = wizardManager.getMaxSpellsAllowed();
     const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
-    const maxSpellLevel = DataHelpers.calculateMaxSpellLevel(classItem, this.actor);
-    this.scrollSpells = await DataHelpers.ScrollProcessor.scanForScrollSpells(this.actor);
+    const maxSpellLevel = DataUtils.calculateMaxSpellLevel(classItem, this.actor);
+    this.scrollSpells = await DataUtils.ScrollProcessor.scanForScrollSpells(this.actor);
     const grantedSpells = this.actor.items
       .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.method && ['pact', 'innate', 'atwill'].includes(i.system.method))))
       .flatMap((i) => {
@@ -1051,7 +1051,7 @@ export class State {
     let scrollLearnedSpells = [];
     if (scrollLearnedUuids.length > 0) {
       log(3, `Fetching ${scrollLearnedUuids.length} scroll-learned spells for ${classIdentifier} (max level: ${maxSpellLevel})`);
-      scrollLearnedSpells = await DataHelpers.fetchSpellDocuments(new Set(scrollLearnedUuids), maxSpellLevel);
+      scrollLearnedSpells = await DataUtils.fetchSpellDocuments(new Set(scrollLearnedUuids), maxSpellLevel);
       log(
         3,
         `Fetched ${scrollLearnedSpells.length} scroll-learned spell documents:`,
@@ -1164,7 +1164,7 @@ export class State {
             };
           }
         }
-        if (!spell.enrichedIcon) spell.enrichedIcon = UIHelpers.createSpellIconLink(spell);
+        if (!spell.enrichedIcon) spell.enrichedIcon = UIUtils.createSpellIconLink(spell);
       }
     }
   }
@@ -1175,7 +1175,7 @@ export class State {
    */
   async waitForWizardDataCompletion() {
     if (this._initialized) {
-      const wizardClasses = DataHelpers.getWizardEnabledClasses(this.actor);
+      const wizardClasses = DataUtils.getWizardEnabledClasses(this.actor);
       for (const { identifier } of wizardClasses) {
         const wizardTabId = `wizardbook-${identifier}`;
         if (!this.tabData[wizardTabId]) {
@@ -1224,7 +1224,7 @@ export class State {
     if (wizardManager) wizardManager.invalidateCache();
     const classItem = this.actor.items.get(classData.id);
     if (!classItem) return;
-    if (DataHelpers.isClassWizardEnabled(this.actor, classIdentifier)) {
+    if (DataUtils.isClassWizardEnabled(this.actor, classIdentifier)) {
       await this.cacheWizardSpellbook(classIdentifier);
       await this.loadWizardSpellData(classItem, classIdentifier);
     } else {
@@ -1330,9 +1330,9 @@ export class State {
   async _addClassRitualSpells(classIdentifier, classData, spellDataByClass) {
     const className = classData.name.toLowerCase();
     const classUuid = classData.uuid;
-    const spellList = await DataHelpers.getClassSpellList(className, classUuid, this.actor);
+    const spellList = await DataUtils.getClassSpellList(className, classUuid, this.actor);
     if (!spellList || !spellList.size) return;
-    const spellItems = await DataHelpers.fetchSpellDocuments(spellList, 9);
+    const spellItems = await DataUtils.fetchSpellDocuments(spellList, 9);
     if (!spellItems || !spellItems.length) return;
     const isRitualSpell = (spell) => {
       if (spell.system?.properties && spell.system.properties.has) return spell.system.properties.has('ritual');
@@ -1363,7 +1363,7 @@ export class State {
     const scrollLearnedUuids = copiedSpells.map((metadata) => metadata.spellUuid).filter((uuid) => personalSpellbook.includes(uuid) && !classSpellListUuids.has(uuid));
     if (scrollLearnedUuids.length === 0) return [];
     log(3, `Found ${scrollLearnedUuids.length} scroll-learned spells not in class list for ${classIdentifier}`);
-    const spellDocuments = await DataHelpers.fetchSpellDocuments(new Set(scrollLearnedUuids));
+    const spellDocuments = await DataUtils.fetchSpellDocuments(new Set(scrollLearnedUuids));
     for (const spell of spellDocuments) {
       const metadata = copiedSpells.find((m) => m.spellUuid === spell.uuid);
       if (metadata) {
@@ -1444,14 +1444,14 @@ export class State {
    * @returns {Promise<void>}
    */
   async refreshSpellEnhancements() {
-    const targetUserId = DataHelpers.getTargetUserId(this.app.actor);
-    if (DataHelpers.UserData?.cache) for (const key of DataHelpers.UserData.cache.keys()) if (key.startsWith(`${targetUserId}:`)) DataHelpers.UserData.cache.delete(key);
+    const targetUserId = DataUtils.getTargetUserId(this.app.actor);
+    if (DataUtils.UserData?.cache) for (const key of DataUtils.UserData.cache.keys()) if (key.startsWith(`${targetUserId}:`)) DataUtils.UserData.cache.delete(key);
     for (const classData of Object.values(this.classSpellData)) {
       if (classData.spellLevels) {
-        const userDataPromises = classData.spellLevels.map((spell) => DataHelpers.UserData.getUserDataForSpell(spell.uuid || spell.compendiumUuid, targetUserId, this.app.actor?.id));
+        const userDataPromises = classData.spellLevels.map((spell) => DataUtils.UserData.getUserDataForSpell(spell.uuid || spell.compendiumUuid, targetUserId, this.app.actor?.id));
         await Promise.all(userDataPromises);
         for (const spell of classData.spellLevels) {
-          const enhancedSpell = DataHelpers.UserData.enhanceSpellWithUserData(spell, targetUserId, this.app.actor?.id);
+          const enhancedSpell = DataUtils.UserData.enhanceSpellWithUserData(spell, targetUserId, this.app.actor?.id);
           Object.assign(spell, enhancedSpell);
         }
       }

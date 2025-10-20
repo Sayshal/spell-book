@@ -28,12 +28,12 @@
  * The system ensures responsive filtering performance while providing
  * search and filtering capabilities across all spell properties and metadata.
  *
- * @module UIHelpers/SpellbookFilters
+ * @module UIUtils/SpellbookFilters
  * @author Tyler
  */
 
 import { MODULE, SETTINGS } from '../constants/_module.mjs';
-import * as DataHelpers from '../data/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -676,7 +676,7 @@ export function getOptionsForFilter(filterId, filterState) {
       break;
     case 'school':
       Object.entries(CONFIG.DND5E.spellSchools).forEach(([key, _school]) => {
-        const label = DataHelpers.getConfigLabel(CONFIG.DND5E.spellSchools, key);
+        const label = DataUtils.getConfigLabel(CONFIG.DND5E.spellSchools, key);
         options.push({ value: key, label, selected: filterState.school === key });
       });
       break;
@@ -691,12 +691,12 @@ export function getOptionsForFilter(filterId, filterState) {
       };
       Object.entries(damageTypes)
         .sort((a, b) => {
-          const labelA = a[0] === 'healing' ? damageTypes.healing.label : DataHelpers.getConfigLabel(CONFIG.DND5E.damageTypes, a[0]) || a[0];
-          const labelB = b[0] === 'healing' ? damageTypes.healing.label : DataHelpers.getConfigLabel(CONFIG.DND5E.damageTypes, b[0]) || b[0];
+          const labelA = a[0] === 'healing' ? damageTypes.healing.label : DataUtils.getConfigLabel(CONFIG.DND5E.damageTypes, a[0]) || a[0];
+          const labelB = b[0] === 'healing' ? damageTypes.healing.label : DataUtils.getConfigLabel(CONFIG.DND5E.damageTypes, b[0]) || b[0];
           return labelA.localeCompare(labelB);
         })
         .forEach(([key, _type]) => {
-          const label = key === 'healing' ? damageTypes.healing.label : DataHelpers.getConfigLabel(CONFIG.DND5E.damageTypes, key) || key;
+          const label = key === 'healing' ? damageTypes.healing.label : DataUtils.getConfigLabel(CONFIG.DND5E.damageTypes, key) || key;
           options.push({ value: key, label, selected: filterState.damageType === key });
         });
       break;
@@ -704,12 +704,12 @@ export function getOptionsForFilter(filterId, filterState) {
       Object.entries(CONFIG.DND5E.conditionTypes)
         .filter(([_key, condition]) => !condition.pseudo)
         .sort((a, b) => {
-          const labelA = DataHelpers.getConfigLabel(CONFIG.DND5E.conditionTypes, a[0]);
-          const labelB = DataHelpers.getConfigLabel(CONFIG.DND5E.conditionTypes, b[0]);
+          const labelA = DataUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, a[0]);
+          const labelB = DataUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, b[0]);
           return labelA.localeCompare(labelB);
         })
         .forEach(([key, _condition]) => {
-          const label = DataHelpers.getConfigLabel(CONFIG.DND5E.conditionTypes, key);
+          const label = DataUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, key);
           options.push({ value: key, label, selected: filterState.condition === key });
         });
       break;
@@ -770,5 +770,5 @@ export function getCastingTimeOptions(filterState) {
 function convertRangeToStandardUnit(units, value) {
   if (!units || !value) return 0;
   let inFeet = units === 'ft' ? value : units === 'mi' ? value * 5280 : units === 'spec' ? 0 : value;
-  return DataHelpers.shouldUseMetric() ? Math.round(inFeet * 0.3048) : inFeet;
+  return DataUtils.shouldUseMetric() ? Math.round(inFeet * 0.3048) : inFeet;
 }

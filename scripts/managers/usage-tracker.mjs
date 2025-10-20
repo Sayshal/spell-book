@@ -25,7 +25,7 @@
  */
 
 import { MODULE, SETTINGS } from '../constants/_module.mjs';
-import * as DataHelpers from '../data/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -162,7 +162,7 @@ export class UsageTracker {
     try {
       const owningUser = game.users.find((user) => user.character?.id === actor.id);
       const targetUserId = owningUser?.id || game.user.id;
-      const userData = (await DataHelpers.UserData.getUserDataForSpell(spellUuid, targetUserId, actor.id)) || {};
+      const userData = (await DataUtils.UserData.getUserDataForSpell(spellUuid, targetUserId, actor.id)) || {};
       const currentStats = userData.usageStats || { count: 0, lastUsed: null, contextUsage: { combat: 0, exploration: 0 } };
       const newStats = {
         count: currentStats.count + 1,
@@ -172,7 +172,7 @@ export class UsageTracker {
           exploration: currentStats.contextUsage.exploration + (context === 'exploration' ? 1 : 0)
         }
       };
-      await DataHelpers.UserData.setUserDataForSpell(spellUuid, { ...userData, usageStats: newStats }, targetUserId, actor.id);
+      await DataUtils.UserData.setUserDataForSpell(spellUuid, { ...userData, usageStats: newStats }, targetUserId, actor.id);
     } catch (error) {
       log(1, 'Error recording spell usage:', error);
     }
