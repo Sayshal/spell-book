@@ -143,10 +143,11 @@ export class CustomUI {
    * @private
    */
   static _spellHasProperty(spell, property) {
-    if (!spell?.system?.properties) return false;
-    if (Array.isArray(spell.system.properties)) return spell.system.properties.includes(property);
-    else if (spell.system.properties instanceof Set) return spell.system.properties.has(property);
-    else if (typeof spell.system.properties === 'object') return !!spell.system.properties[property];
+    if (!foundry.utils.hasProperty(spell, 'system.properties')) return false;
+    const properties = foundry.utils.getProperty(spell, 'system.properties');
+    if (Array.isArray(properties)) return properties.includes(property);
+    else if (properties instanceof Set) return properties.has(property);
+    else if (typeof properties === 'object') return !!properties[property];
     return false;
   }
 
@@ -179,16 +180,19 @@ export class CustomUI {
       if (rangeText) metadata.push(rangeText);
     }
     if (this.isPlayerElementEnabled('damageTypes') && spell.filterData?.damageTypes?.length) {
-      const damageTypes = spell.filterData.damageTypes.map((type) => CONFIG.DND5E?.damageTypes?.[type]?.label || type).join(', ');
+      const damageTypes = spell.filterData.damageTypes.map((type) => foundry.utils.getProperty(CONFIG.DND5E, `damageTypes.${type}.label`) || type).join(', ');
       metadata.push(damageTypes);
     }
     if (this.isPlayerElementEnabled('conditions') && spell.filterData?.conditions?.length) {
-      const conditions = spell.filterData.conditions.map((condition) => CONFIG.DND5E?.conditionTypes?.[condition]?.label || condition).join(', ');
+      const conditions = spell.filterData.conditions.map((condition) => foundry.utils.getProperty(CONFIG.DND5E, `conditionTypes.${condition}.label`) || condition).join(', ');
       metadata.push(conditions);
     }
-    if (this.isPlayerElementEnabled('save') && spell.system?.save?.ability) {
-      const saveLabel = CONFIG.DND5E?.abilities?.[spell.system.save.ability]?.label || spell.system.save.ability;
-      metadata.push(`${saveLabel} Save`);
+    if (this.isPlayerElementEnabled('save')) {
+      const saveAbility = foundry.utils.getProperty(spell, 'system.save.ability');
+      if (saveAbility) {
+        const saveLabel = foundry.utils.getProperty(CONFIG.DND5E, `abilities.${saveAbility}.label`) || saveAbility;
+        metadata.push(`${saveLabel} Save`);
+      }
     }
     if (this.isPlayerElementEnabled('concentration') && this._spellHasProperty(spell, 'concentration')) metadata.push(game.i18n.localize('DND5E.Concentration'));
     if (this.isPlayerElementEnabled('materialComponents')) {
@@ -227,16 +231,19 @@ export class CustomUI {
       if (rangeText) metadata.push(rangeText);
     }
     if (this.isGMElementEnabled('damageTypes') && spell.filterData?.damageTypes?.length) {
-      const damageTypes = spell.filterData.damageTypes.map((type) => CONFIG.DND5E?.damageTypes?.[type]?.label || type).join(', ');
+      const damageTypes = spell.filterData.damageTypes.map((type) => foundry.utils.getProperty(CONFIG.DND5E, `damageTypes.${type}.label`) || type).join(', ');
       metadata.push(damageTypes);
     }
     if (this.isGMElementEnabled('conditions') && spell.filterData?.conditions?.length) {
-      const conditions = spell.filterData.conditions.map((condition) => CONFIG.DND5E?.conditionTypes?.[condition]?.label || condition).join(', ');
+      const conditions = spell.filterData.conditions.map((condition) => foundry.utils.getProperty(CONFIG.DND5E, `conditionTypes.${condition}.label`) || condition).join(', ');
       metadata.push(conditions);
     }
-    if (this.isGMElementEnabled('save') && spell.system?.save?.ability) {
-      const saveLabel = CONFIG.DND5E?.abilities?.[spell.system.save.ability]?.label || spell.system.save.ability;
-      metadata.push(`${saveLabel} Save`);
+    if (this.isGMElementEnabled('save')) {
+      const saveAbility = foundry.utils.getProperty(spell, 'system.save.ability');
+      if (saveAbility) {
+        const saveLabel = foundry.utils.getProperty(CONFIG.DND5E, `abilities.${saveAbility}.label`) || saveAbility;
+        metadata.push(`${saveLabel} Save`); /** @todo' Localize? */
+      }
     }
     if (this.isGMElementEnabled('concentration') && this._spellHasProperty(spell, 'concentration')) metadata.push(game.i18n.localize('DND5E.Concentration'));
     if (this.isGMElementEnabled('materialComponents')) {

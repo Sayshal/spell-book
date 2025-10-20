@@ -158,13 +158,19 @@ export function processSpellItemForDisplay(spell) {
  * @returns {string} Formatted components string (e.g., "V, S, M")
  */
 export function formatSpellComponents(spell) {
-  const components = [];
-  if (spell.labels?.components?.all) for (const c of spell.labels.components.all) components.push(c.abbr);
-  else if (spell.system?.properties?.length) {
+  if (spell.labels?.components?.all) {
+    const components = [];
+    for (const c of spell.labels.components.all) components.push(c.abbr);
+    return components.join(', ');
+  }
+  if (spell.labels?.components?.vsm) return spell.labels.components.vsm;
+  if (spell.system?.properties?.length) {
+    const components = [];
     const componentMap = { vocal: 'V', somatic: 'S', material: 'M', concentration: 'C', ritual: 'R' };
     for (const prop of spell.system.properties) if (componentMap[prop]) components.push(componentMap[prop]);
+    return components.join(', ');
   }
-  return components.join(', ');
+  return '';
 }
 
 /**
@@ -173,16 +179,15 @@ export function formatSpellComponents(spell) {
  * @returns {string} Formatted activation string (e.g., "1 Action", "2 Bonus Actions")
  */
 export function formatSpellActivation(spell) {
-  let result = '';
-  if (spell.labels?.activation) result = spell.labels.activation;
-  else if (spell.system?.activation?.type) {
+  if (spell.labels?.activation) return spell.labels.activation;
+  if (spell.system?.activation?.type) {
     const type = spell.system.activation.type;
     const value = spell.system.activation.value || 1;
     const typeLabel = CONFIG.DND5E.abilityActivationTypes[type];
-    if (value === 1 || value === null) result = typeLabel;
-    else result = `${value} ${typeLabel}s`;
+    if (value === 1 || value === null) return typeLabel;
+    return `${value} ${typeLabel}s`;
   }
-  return result;
+  return '';
 }
 
 /**
@@ -191,10 +196,9 @@ export function formatSpellActivation(spell) {
  * @returns {string} Formatted school string (e.g., "Evocation", "Divination")
  */
 export function formatSpellSchool(spell) {
-  let result = '';
-  if (spell.labels?.school) result = spell.labels.school;
-  else if (spell.system?.school) result = DataUtils.getConfigLabel(CONFIG.DND5E.spellSchools, spell.system.school) || spell.system.school;
-  return result;
+  if (spell.labels?.school) return spell.labels.school;
+  if (spell.system?.school) return DataUtils.getConfigLabel(CONFIG.DND5E.spellSchools, spell.system.school) || spell.system.school;
+  return '';
 }
 
 /**
@@ -203,6 +207,7 @@ export function formatSpellSchool(spell) {
  * @returns {string} Formatted spell level string (e.g., "Cantrip", "1st Level")
  */
 export function formatSpellLevel(spell) {
+  if (spell.labels?.level) return spell.labels.level;
   if (spell.system?.level === undefined) return '';
   const level = spell.system.level;
   if (level === 0) return game.i18n.localize('DND5E.SpellCantrip');
@@ -215,6 +220,7 @@ export function formatSpellLevel(spell) {
  * @returns {string} Formatted range string (e.g., "Touch", "30 feet", "Self")
  */
 export function formatSpellRange(spell) {
+  if (spell.labels?.range) return spell.labels.range;
   if (!spell.system?.range) return '';
   const range = spell.system.range;
   if (range.units === 'self') return game.i18n.localize('DND5E.DistSelf');
@@ -233,6 +239,7 @@ export function formatSpellRange(spell) {
  * @returns {string} Formatted material components string with cost information
  */
 export function formatMaterialComponents(spell) {
+  if (spell.labels?.materials) return spell.labels.materials;
   const materials = spell.system?.materials;
   let result = '';
   if (materials && materials.consumed) {

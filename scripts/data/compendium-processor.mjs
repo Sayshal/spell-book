@@ -447,6 +447,34 @@ async function fetchSpellsFromPack(pack, maxLevel) {
       entry.labels = {};
       if (entry.system?.level !== undefined) entry.labels.level = CONFIG.DND5E.spellLevels[entry.system.level];
       if (entry.system?.school) entry.labels.school = DataUtils.getConfigLabel(CONFIG.DND5E.spellSchools, entry.system.school);
+      if (entry.system?.activation?.type) {
+        const type = entry.system.activation.type;
+        const value = entry.system.activation.value || 1;
+        const typeLabel = CONFIG.DND5E.abilityActivationTypes[type];
+        entry.labels.activation = value === 1 || value === null ? typeLabel : `${value} ${typeLabel}s`;
+      }
+      if (entry.system?.range) {
+        const range = entry.system.range;
+        if (range.units === 'self') entry.labels.range = game.i18n.localize('DND5E.DistSelf');
+        else if (range.units === 'touch') entry.labels.range = game.i18n.localize('DND5E.DistTouch');
+        else if (range.units === 'spec') entry.labels.range = game.i18n.localize('DND5E.Special');
+        else if (range.value && range.units) {
+          const unitLabel = CONFIG.DND5E?.movementUnits?.[range.units]?.label || range.units;
+          entry.labels.range = `${range.value} ${unitLabel}`;
+        }
+      }
+      if (entry.system?.properties?.length) {
+        const components = [];
+        const componentMap = { vocal: 'V', somatic: 'S', material: 'M', concentration: 'C', ritual: 'R' };
+        for (const prop of entry.system.properties) if (componentMap[prop]) components.push(componentMap[prop]);
+        if (components.length > 0) entry.labels.components = { vsm: components.join(', ') };
+      }
+      if (entry.system?.materials?.consumed) {
+        const materials = entry.system.materials;
+        if (materials.cost && materials.cost > 0) entry.labels.materials = game.i18n.format('SPELLBOOK.MaterialComponents.Cost', { cost: materials.cost });
+        else if (materials.value) entry.labels.materials = materials.value;
+        else entry.labels.materials = game.i18n.localize('SPELLBOOK.MaterialComponents.UnknownCost');
+      }
     }
     const spell = formatSpellEntry(entry, pack);
     packSpells.push(spell);
