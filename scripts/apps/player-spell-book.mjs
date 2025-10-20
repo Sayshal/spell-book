@@ -971,14 +971,17 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     let css = '';
     for (const [identifier, color] of this._wizardBookColors) {
-      const rgbString = UIHelpers.getRgbString(color);
-      const hsl = UIHelpers.hexToHsl(color);
-      if (rgbString && hsl) {
+      const colorObj = foundry.utils.Color.fromString(color);
+      if (colorObj.valid) {
+        const r = Math.round(colorObj.r * 255);
+        const g = Math.round(colorObj.g * 255);
+        const b = Math.round(colorObj.b * 255);
+        const [h] = colorObj.hsl;
         css += `
         .tabs.tabs-right > .item[data-tab="wizardbook-${identifier}"] {
           --wizard-book-color: ${color};
-          --wizard-book-color-rgb: ${rgbString};
-          --wizard-book-color-hue: ${hsl.h}deg;
+          --wizard-book-color-rgb: ${r}, ${g}, ${b};
+          --wizard-book-color-hue: ${h * 360}deg;
         }
       `;
       }
