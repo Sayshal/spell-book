@@ -1559,7 +1559,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             break;
           case 'range':
             element = this._createRangeFilterElement(filter.id, filterState);
-            result.unit = DataUtils.shouldUseMetric() ? 'meters' : 'feet';
+            result.unit = dnd5e.utils.defaultUnits('length') === 'm' ? 'meters' : 'feet';
             break;
           default:
             log(2, `Unknown filter type: ${filter.type} for filter ${filter.id}`);

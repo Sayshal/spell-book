@@ -257,7 +257,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     context.selectedSpellList = this.selectedSpellList;
     context.availableSpells = this.availableSpells;
     context.filterState = this.filterState;
-    context.settings = { useMetricUnits: DataUtils.shouldUseMetric() };
+    context.settings = { useMetricUnits: dnd5e.utils.defaultUnits('length') === 'm' };
     context.selectionMode = this.selectionMode;
     context.selectedSpellsToAdd = this.selectedSpellsToAdd;
     context.selectedSpellsToRemove = this.selectedSpellsToRemove;

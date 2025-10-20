@@ -328,17 +328,15 @@ export class Filters {
     const { name, level, school, castingTime } = filterState;
     let filtered = spells;
     if (name && name.trim()) filtered = this._filterByEnhancedName(filtered, name);
-    if (level) {
-      const levelValue = parseInt(level);
-      filtered = filtered.filter((spell) => spell.level === levelValue);
-    }
-    if (school) filtered = filtered.filter((spell) => spell.school === school);
+    if (level) filtered = filtered.filter((spell) => dnd5e.Filter.performCheck(spell, { k: 'level', v: parseInt(level), o: 'exact' }));
+    if (school) filtered = filtered.filter((spell) => dnd5e.Filter.performCheck(spell, { k: 'school', v: school, o: 'exact' }));
     if (castingTime) {
+      const [filterType, filterValue] = castingTime.split(':');
       filtered = filtered.filter((spell) => {
-        const [filterType, filterValue] = castingTime.split(':');
-        const spellCastingType = spell.filterData?.castingTime?.type || spell.system?.activation?.type || '';
+        const castingTimeTypeMatch = dnd5e.Filter.performCheck(spell, { k: 'filterData.castingTime.type', v: filterType, o: 'exact' });
+        if (!castingTimeTypeMatch) return dnd5e.Filter.performCheck(spell, { k: 'system.activation.type', v: filterType, o: 'exact' });
         const spellCastingValue = String(spell.filterData?.castingTime?.value || spell.system?.activation?.value || '1');
-        return spellCastingType === filterType && spellCastingValue === filterValue;
+        return castingTimeTypeMatch && spellCastingValue === filterValue;
       });
     }
     return filtered;
@@ -411,9 +409,10 @@ export class Filters {
       if (!(spell.filterData?.range?.units || spell.system?.range?.units)) return true;
       const rangeUnits = spell.filterData?.range?.units || spell.system?.range?.units || '';
       const rangeValue = parseInt(spell.system?.range?.value || 0);
-      let standardizedRange = rangeValue;
-      if (rangeUnits === 'mi') standardizedRange = rangeValue * 5280;
-      else if (rangeUnits === 'spec') standardizedRange = 0;
+      const standardizedRange = convertRangeToStandardUnit(rangeUnits, rangeValue);
+      const filters = [];
+      if (minRange) filters.push({ k: '', v: parseInt(minRange), o: 'gte' });
+      if (maxRange) filters.push({ k: '', v: parseInt(maxRange), o: 'lte' });
       const minRangeVal = minRange ? parseInt(minRange) : 0;
       const maxRangeVal = maxRange ? parseInt(maxRange) : Infinity;
       return standardizedRange >= minRangeVal && standardizedRange <= maxRangeVal;
@@ -435,15 +434,11 @@ export class Filters {
     if (damageType) {
       filtered = filtered.filter((spell) => {
         const spellDamageTypes = Array.isArray(spell.filterData?.damageTypes) ? spell.filterData.damageTypes : [];
-        return spellDamageTypes.length > 0 && spellDamageTypes.includes(damageType);
+        if (spellDamageTypes.length === 0) return false;
+        return dnd5e.Filter.performCheck(spell, { k: 'filterData.damageTypes', v: damageType, o: 'has' });
       });
     }
-    if (condition) {
-      filtered = filtered.filter((spell) => {
-        const spellConditions = Array.isArray(spell.filterData?.conditions) ? spell.filterData.conditions : [];
-        return spellConditions.includes(condition);
-      });
-    }
+    if (condition) filtered = filtered.filter((spell) => dnd5e.Filter.performCheck(spell, { k: 'filterData.conditions', v: condition, o: 'has' }));
     return filtered;
   }
 
@@ -458,25 +453,25 @@ export class Filters {
     const { requiresSave, concentration, ritual, favorited, materialComponents } = filterState;
     let filtered = spells;
     if (requiresSave) {
-      filtered = filtered.filter((spell) => {
-        const spellRequiresSave = spell.filterData?.requiresSave || false;
-        return (requiresSave === 'true' && spellRequiresSave) || (requiresSave === 'false' && !spellRequiresSave);
-      });
+      const expectedValue = requiresSave === 'true';
+      filtered = filtered.filter((spell) => dnd5e.Filter.performCheck(spell, { k: 'filterData.requiresSave', v: expectedValue, o: 'exact' }));
     }
     if (concentration) {
+      const expectedValue = concentration === 'true';
       filtered = filtered.filter((spell) => {
         const requiresConcentration = !!spell.filterData?.concentration;
-        return (concentration === 'true' && requiresConcentration) || (concentration === 'false' && !requiresConcentration);
+        return requiresConcentration === expectedValue;
       });
     }
     if (materialComponents) {
+      const expectedValue = materialComponents === 'consumed';
       filtered = filtered.filter((spell) => {
         const hasMaterialComponents = spell.filterData?.materialComponents?.hasConsumedMaterials || false;
-        return (materialComponents === 'consumed' && hasMaterialComponents) || (materialComponents === 'notConsumed' && !hasMaterialComponents);
+        return hasMaterialComponents === expectedValue;
       });
     }
-    if (favorited) filtered = filtered.filter((spell) => !!spell.favorited);
-    if (ritual) filtered = filtered.filter((spell) => !!spell.filterData?.isRitual);
+    if (favorited) filtered = filtered.filter((spell) => dnd5e.Filter.performCheck(spell, { k: 'favorited', v: true, o: 'exact' }));
+    if (ritual) filtered = filtered.filter((spell) => dnd5e.Filter.performCheck(spell, { k: 'filterData.isRitual', v: true, o: 'exact' }));
     return filtered;
   }
 
@@ -762,13 +757,23 @@ export function getCastingTimeOptions(filterState) {
 }
 
 /**
- * Convert a spell range to feet (or meters based on D&D 5e system settings).
+ * Convert a spell range to standard units (feet or meters based on D&D 5e system settings).
+ * Uses dnd5e.utils.convertLength and dnd5e.utils.defaultUnits for proper metric support.
  * @param {string} units - The range units (ft, mi, spec, etc.)
  * @param {number} value - The range value to convert
  * @returns {number} The converted range value in standard units
  */
 function convertRangeToStandardUnit(units, value) {
   if (!units || !value) return 0;
-  let inFeet = units === 'ft' ? value : units === 'mi' ? value * 5280 : units === 'spec' ? 0 : value;
-  return DataUtils.shouldUseMetric() ? Math.round(inFeet * 0.3048) : inFeet;
+  if (units === 'spec') return 0;
+
+  // Convert to feet first if needed
+  const inFeet = units === 'ft' ? value : units === 'mi' ? value * 5280 : value;
+
+  // Use dnd5e utility to handle metric conversion
+  const defaultUnit = dnd5e.utils.defaultUnits('length'); // Returns "ft" or "m" based on settings
+  if (defaultUnit === 'm') {
+    return Math.round(dnd5e.utils.convertLength(inFeet, 'ft', 'm'));
+  }
+  return inFeet;
 }
