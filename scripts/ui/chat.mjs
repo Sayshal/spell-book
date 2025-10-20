@@ -1,5 +1,24 @@
 /**
  * Chat Message Button Handlers
+ *
+ * @todo Refactor to use Foundry's TypeDataModel system for chat messages
+ *
+ * CURRENT APPROACH:
+ * - Manual DOM querying with setTimeout to wait for render
+ * - Manual event listener attachment
+ * - Switch statement for different message types
+ *
+ * RECOMMENDED APPROACH:
+ * Instead of this manual approach, investigate using:
+ * - Custom TypeDataModel extending foundry.abstract.TypeDataModel
+ * - Register in CONFIG.ChatMessage.dataModels (or similar DND5e pattern)
+ * - Use metadata.actions for automatic button event wiring
+ * - Template-based rendering via _prepareContext()
+ *
+ * REFERENCES:
+ * - dnd5e/module/data/chat-message/request-message-data.mjs
+ * - dnd5e/module/data/chat-message/rest-message-data.mjs
+ * - dnd5e/module/data/abstract/chat-message-data-model.mjs
  */
 
 import { MODULE, SETTINGS } from '../constants/_module.mjs';
