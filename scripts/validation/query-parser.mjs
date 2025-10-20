@@ -98,6 +98,7 @@ export class QueryParser {
    * Parse field:value expression into condition object.
    * @private
    * @param {string} expression - The field:value expression to parse
+   * @todo [5.2.X] Use foundry.utils.formatIdentifier() when available in public API
    * @returns {ParsedFieldCondition|null} Parsed field condition or null if invalid
    */
   _parseFieldExpression(expression) {
@@ -124,10 +125,11 @@ export class QueryParser {
     if (['requiresSave', 'concentration', 'prepared', 'ritual'].includes(fieldId)) return this.fieldDefinitions.normalizeBooleanValue(value);
     if (fieldId === 'school') {
       const normalizedValue = value.toLowerCase();
-      const schoolKeys = Object.keys(CONFIG.DND5E.spellSchools || {});
+      const spellSchools = foundry.utils.getProperty(CONFIG, 'DND5E.spellSchools') ?? {};
+      const schoolKeys = Object.keys(spellSchools);
       if (schoolKeys.includes(normalizedValue)) return normalizedValue;
-      for (const [key, school] of Object.entries(CONFIG.DND5E.spellSchools || {})) {
-        const schoolLabel = DataUtils.getConfigLabel(CONFIG.DND5E.spellSchools, key);
+      for (const [key, school] of Object.entries(spellSchools)) {
+        const schoolLabel = DataUtils.getConfigLabel(spellSchools, key);
         if (school.fullKey === normalizedValue || schoolLabel?.toLowerCase() === normalizedValue) return key;
       }
       return normalizedValue;
