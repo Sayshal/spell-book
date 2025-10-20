@@ -186,9 +186,10 @@ export class DescriptionInjector {
    * @static
    */
   static formatNotesForDescription(notes) {
-    const escapedNotes = notes.replace(/\n/g, '<br>');
+    const formattedNotes = dnd5e.utils.formatText(notes);
+    const sanitizedNotes = foundry.utils.cleanHTML(formattedNotes);
     const personalNotesLabel = game.i18n.localize('SPELLBOOK.UI.PersonalNotes');
-    return `<div class='spell-book-personal-notes'><strong>${personalNotesLabel}:</strong> ${escapedNotes}</div>`;
+    return `<div class='spell-book-personal-notes'><strong>${personalNotesLabel}:</strong> ${sanitizedNotes}</div>`;
   }
 
   /**
