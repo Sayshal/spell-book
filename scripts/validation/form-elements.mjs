@@ -195,35 +195,20 @@ export function createTextInput(config) {
  * @returns {HTMLElement} The created select element
  */
 export function createSelect(config) {
-  const select = document.createElement('select');
-  select.name = config.name;
-  if (config.ariaLabel) select.setAttribute('aria-label', config.ariaLabel);
-  if (config.disabled) select.disabled = true;
-  if (config.cssClass) select.className = config.cssClass;
-  if (config.options && Array.isArray(config.options)) {
-    let currentOptgroup = null;
-    for (const option of config.options) {
-      if (option.optgroup === 'start') {
-        currentOptgroup = document.createElement('optgroup');
-        currentOptgroup.label = option.label;
-        select.appendChild(currentOptgroup);
-      } else if (option.optgroup === 'end') {
-        currentOptgroup = null;
-      } else {
-        const optionEl = document.createElement('option');
-        optionEl.value = option.value;
-        optionEl.textContent = option.label;
-        if (option.selected) {
-          optionEl.selected = true;
-          optionEl.setAttribute('selected', 'selected');
-        }
-        if (option.disabled) optionEl.disabled = true;
-        if (currentOptgroup) currentOptgroup.appendChild(optionEl);
-        else select.appendChild(optionEl);
-      }
-    }
+  const options = [];
+  let currentGroup = null;
+  for (const option of config.options) {
+    if (option.optgroup === 'start') currentGroup = option.label;
+    else if (option.optgroup === 'end') currentGroup = null;
+    else options.push({ value: option.value, label: option.label, selected: option.selected, disabled: option.disabled, group: currentGroup, rule: option.rule, dataset: option.dataset });
   }
-  return select;
+  return foundry.applications.fields.createSelectInput({
+    name: config.name,
+    options: options,
+    aria: config.ariaLabel ? { label: config.ariaLabel } : undefined,
+    disabled: config.disabled,
+    classes: config.cssClass
+  });
 }
 
 /**
