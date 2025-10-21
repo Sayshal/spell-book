@@ -63,6 +63,13 @@ async function migrateSpellListFolders() {
   return results;
 }
 
+/** Types are checked in order, first match wins. */
+const SPELL_LIST_TYPE_CONFIG = [
+  { type: 'merged', check: (flags) => !!flags.isMerged, getFolderFn: (folders) => folders.mergedFolder },
+  { type: 'custom', check: (flags) => !!flags.isCustom || !!flags.isNewList, getFolderFn: (folders) => folders.customFolder },
+  { type: 'modified', check: (flags) => !!flags.isDuplicate, getFolderFn: (folders) => folders.modifiedFolder }
+];
+
 /**
  * Migrate a journal to its appropriate folder based on flags.
  * @param {JournalEntry} journal - Journal to migrate
@@ -76,23 +83,15 @@ async function migrateJournalToFolder(journal, customFolder, mergedFolder, modif
   const page = journal.pages.contents[0];
   if (page.type !== 'spells') return { success: false };
   const flags = page.flags?.[MODULE.ID] || {};
-  const isMerged = !!flags.isMerged;
-  const isCustom = !!flags.isCustom || !!flags.isNewList;
-  const isDuplicate = !!flags.isDuplicate;
-  let targetFolder = null;
-  let moveType = null;
-  if (isMerged && mergedFolder) {
-    targetFolder = mergedFolder;
-    moveType = 'merged';
-  } else if (isCustom && customFolder) {
-    targetFolder = customFolder;
-    moveType = 'custom';
-  } else if (isDuplicate && modifiedFolder) {
-    targetFolder = modifiedFolder;
-    moveType = 'modified';
-  }
-  if (!targetFolder) {
+  const folders = { customFolder, mergedFolder, modifiedFolder };
+  const matchedConfig = SPELL_LIST_TYPE_CONFIG.find((config) => config.check(flags));
+  if (!matchedConfig) {
     log(2, `Unknown spell list type for "${journal.name}", skipping migration`);
+    return { success: false };
+  }
+  const targetFolder = matchedConfig.getFolderFn(folders);
+  if (!targetFolder) {
+    log(2, `Folder not available for type "${matchedConfig.type}" on "${journal.name}", skipping migration`);
     return { success: false };
   }
   const newName = journal.name.replace(/^(Custom|Merged|Modified)\s*-\s*/, '');
@@ -100,8 +99,8 @@ async function migrateJournalToFolder(journal, customFolder, mergedFolder, modif
   if (newName !== journal.name) updateData.name = newName;
   await journal.update(updateData);
   if (newName !== page.name) await page.update({ name: newName });
-  log(3, `Migrated ${moveType} journal "${journal.name}" to folder "${targetFolder.name}"`);
-  return { success: true, type: moveType, targetFolder: targetFolder.name };
+  log(3, `Migrated ${matchedConfig.type} journal "${journal.name}" to folder "${targetFolder.name}"`);
+  return { success: true, type: matchedConfig.type, targetFolder: targetFolder.name };
 }
 
 export const spellListFolders = {

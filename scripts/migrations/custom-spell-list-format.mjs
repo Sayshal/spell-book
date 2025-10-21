@@ -29,7 +29,7 @@ async function migrateCustomSpellListFormat() {
     for (const actor of actors) {
       try {
         const currentRules = actor.getFlag(MODULE.ID, FLAGS.SPELLCASTING_RULES) || {};
-        if (Object.keys(currentRules).length === 0) continue;
+        if (foundry.utils.isEmpty(currentRules)) continue;
         let hasUpdates = false;
         const updatedRules = { ...currentRules };
         const migratedClasses = [];

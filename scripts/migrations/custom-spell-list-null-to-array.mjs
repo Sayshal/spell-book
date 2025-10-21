@@ -28,7 +28,7 @@ async function migrateCustomSpellListNullToArray() {
     for (const actor of actors) {
       try {
         const currentRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
-        if (Object.keys(currentRules).length === 0) continue;
+        if (foundry.utils.isEmpty(currentRules)) continue;
         results.processed++;
         let hasUpdates = false;
         const updatedRules = { ...currentRules };
