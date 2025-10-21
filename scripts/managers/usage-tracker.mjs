@@ -120,11 +120,14 @@ export class UsageTracker {
   async _handleActivityConsumption(activity, _usageConfig, _messageConfig, _updates) {
     try {
       if (!game.settings.get(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING)) return;
-      if (activity.parent?.parent?.type !== 'spell') return;
+      if (foundry.utils.getProperty(activity, 'parent.parent.type') !== 'spell') return;
       const spell = activity.parent.parent;
       const actor = spell.actor;
       if (!actor || actor.type !== 'character') return;
-      const canonicalUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
+      const canonicalUuid =
+        foundry.utils.getProperty(spell, '_stats.compendiumSource') ||
+        foundry.utils.getProperty(spell, 'flags.core.sourceId') ||
+        spell.uuid;
       const trackingKey = `${canonicalUuid}-${Date.now()}`;
       if (this.activeTracking.has(trackingKey)) return;
       this.activeTracking.set(trackingKey, true);
@@ -172,7 +175,8 @@ export class UsageTracker {
           exploration: currentStats.contextUsage.exploration + (context === 'exploration' ? 1 : 0)
         }
       };
-      await DataUtils.UserData.setUserDataForSpell(spellUuid, { ...userData, usageStats: newStats }, targetUserId, actor.id);
+      const updatedData = foundry.utils.mergeObject(userData, { usageStats: newStats }, { inplace: false });
+      await DataUtils.UserData.setUserDataForSpell(spellUuid, updatedData, targetUserId, actor.id);
     } catch (error) {
       log(1, 'Error recording spell usage:', error);
     }
