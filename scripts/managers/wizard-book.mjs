@@ -297,18 +297,7 @@ export class WizardBook {
     const classRules = RuleSet.getClassRules(this.actor, this.classIdentifier);
     const timeMultiplier = classRules?.spellLearningTimeMultiplier ?? 120;
     const totalMinutes = spell.system.level === 0 ? 1 : spell.system.level * timeMultiplier;
-    const days = Math.floor(totalMinutes / 1440);
-    const hours = Math.floor((totalMinutes % 1440) / 60);
-    const minutes = totalMinutes % 60;
-    const parts = [];
-    const dayLabel = game.i18n.localize(`DND5E.UNITS.TIME.Day.Label`);
-    const hourLabel = game.i18n.localize(`DND5E.UNITS.TIME.Hour.Label`);
-    const minuteLabel = game.i18n.localize(`DND5E.UNITS.TIME.Minute.Label`);
-    if (days > 0) parts.push(`${days} ${dayLabel}${days !== 1 ? 's' : ''}`);
-    if (hours > 0) parts.push(`${hours} ${hourLabel}${hours !== 1 ? 's' : ''}`);
-    if (minutes > 0) parts.push(`${minutes} ${minuteLabel}${minutes !== 1 ? 's' : ''}`);
-    if (parts.length === 0) return `1 ${minuteLabel}`;
-    return parts.join(', ');
+    return dnd5e.utils.formatTime(totalMinutes, 'minute');
   }
 
   /**
