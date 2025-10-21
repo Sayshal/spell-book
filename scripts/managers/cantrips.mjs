@@ -24,72 +24,37 @@ import { log } from '../logger.mjs';
 import { RuleSet } from './_module.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
+const { BooleanField, StringField, ArrayField } = foundry.data.fields;
+const { DataModel } = foundry.abstract;
 
 /**
  * Cantrip swap tracking data structure for managing changes during level-up or long rest.
- *
- * @typedef {Object} CantripSwapTrackingData
- * @property {boolean} hasUnlearned - Whether a cantrip has been unlearned
- * @property {string|null} unlearned - UUID of the unlearned cantrip
- * @property {boolean} hasLearned - Whether a new cantrip has been learned
- * @property {string|null} learned - UUID of the newly learned cantrip
- * @property {string[]} originalChecked - Array of originally prepared cantrip UUIDs
  */
-
-/**
- * Cantrip change notification data for GM reports.
- *
- * @typedef {Object} CantripChangeData
- * @property {Array<{name: string}>} removed - Array of removed cantrip objects
- * @property {Array<{name: string}>} added - Array of added cantrip objects
- * @property {string|null} removedNames - Comma-separated names of removed cantrips
- * @property {string|null} addedNames - Comma-separated names of added cantrips
- * @property {boolean} hasChanges - Whether any cantrip changes occurred
- */
-
-/**
- * Over-limit warning data for cantrips and spells.
- *
- * @typedef {Object} OverLimitData
- * @property {OverLimitInfo} cantrips - Cantrip over-limit information
- * @property {OverLimitInfo} spells - Spell over-limit information
- */
-
-/**
- * Individual over-limit information for a specific spell type.
- *
- * @typedef {Object} OverLimitInfo
- * @property {number} current - Current number of prepared spells/cantrips
- * @property {number} max - Maximum allowed spells/cantrips
- * @property {boolean} isOver - Whether currently over the limit
- * @property {number} overCount - Number of spells/cantrips over the limit
- */
-
-/**
- * Notification data for GM reports.
- *
- * @typedef {Object} NotificationData
- * @property {string} actorName - Name of the actor with changes
- * @property {Object<string, ClassChangeData>} classChanges - Changes organized by class identifier
- */
-
-/**
- * Class-specific change data for notification processing.
- *
- * @typedef {Object} ClassChangeData
- * @property {string} classIdentifier - The class identifier
- * @property {CantripChangeData} cantripChanges - Cantrip change information
- * @property {OverLimitData} overLimits - Over-limit warning data
- * @property {boolean} hasChanges - Whether any changes occurred for this class
- */
+class CantripSwapTrackingData extends DataModel {
+  /** @inheritdoc */
+  static defineSchema() {
+    return {
+      hasUnlearned: new BooleanField({ initial: false }),
+      unlearned: new StringField({ nullable: true, initial: null }),
+      hasLearned: new BooleanField({ initial: false }),
+      learned: new StringField({ nullable: true, initial: null }),
+      originalChecked: new ArrayField(new StringField(), { initial: [] })
+    };
+  }
+}
 
 /**
  * Cantrip validation result for preparation attempts.
- *
- * @typedef {Object} CantripValidationResult
- * @property {boolean} allowed - Whether the cantrip preparation is allowed
- * @property {string} [message] - Localization key for error message if not allowed
  */
+class CantripValidationResult extends DataModel {
+  /** @inheritdoc */
+  static defineSchema() {
+    return {
+      allowed: new BooleanField({ initial: false }),
+      message: new StringField({ nullable: true, initial: null })
+    };
+  }
+}
 
 /**
  * Cantrip Manager - Single source of truth for cantrip calculations and swap mechanics.
@@ -217,9 +182,14 @@ export class Cantrips {
    * @returns {number} Currently prepared cantrips count
    */
   getCurrentCount(classIdentifier = null) {
-    if (!classIdentifier) return this.actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1).length;
-    return this.actor.items.filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1 && (i.system.sourceClass === classIdentifier || i.sourceClass === classIdentifier))
-      .length;
+    if (!classIdentifier) {
+      return this.actor.items.reduce((count, i) => {
+        return count + (i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1 ? 1 : 0);
+      }, 0);
+    }
+    return this.actor.items.reduce((count, i) => {
+      return count + (i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1 && (i.system.sourceClass === classIdentifier || i.sourceClass === classIdentifier) ? 1 : 0);
+    }, 0);
   }
 
   /**
@@ -258,11 +228,11 @@ export class Cantrips {
    * @returns {CantripValidationResult} Validation result with allowed status and error message
    */
   canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest, uiCantripCount, classIdentifier) {
-    if (spell.system.level !== 0) return { allowed: true };
+    if (spell.system.level !== 0) return new CantripValidationResult({ allowed: true });
     if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
     if (!classIdentifier) {
       log(2, `No class identifier for cantrip ${spell.name}, allowing change but may cause issues`);
-      return { allowed: true };
+      return new CantripValidationResult({ allowed: true });
     }
     const settings = this.spellManager.getSettings(classIdentifier);
     if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.UNENFORCED || settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
@@ -274,42 +244,42 @@ export class Cantrips {
           ui.notifications.info(game.i18n.format('SPELLBOOK.Notifications.OverLimitWarning', { type: 'cantrips', current: currentCount + 1, max: maxCantrips }));
         }
       }
-      return { allowed: true };
+      return new CantripValidationResult({ allowed: true });
     }
     if (isChecked) {
       const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount(classIdentifier);
       const maxCantrips = this._getMaxCantripsForClass(classIdentifier);
       log(3, `Cantrip check: ${spell.name} for class ${classIdentifier}, current: ${currentCount}, max: ${maxCantrips}`);
-      if (currentCount >= maxCantrips) return { allowed: false, message: 'SPELLBOOK.Cantrips.MaximumReached' };
-      return { allowed: true };
+      if (currentCount >= maxCantrips) return new CantripValidationResult({ allowed: false, message: 'SPELLBOOK.Cantrips.MaximumReached' });
+      return new CantripValidationResult({ allowed: true });
     }
     const cantripSwapping = settings.cantripSwapping || 'none';
     switch (cantripSwapping) {
       case 'none':
-        return { allowed: false, message: 'SPELLBOOK.Cantrips.LockedLegacy' };
+        return new CantripValidationResult({ allowed: false, message: 'SPELLBOOK.Cantrips.LockedLegacy' });
       case 'levelUp':
-        if (!isLevelUp) return { allowed: false, message: 'SPELLBOOK.Cantrips.LockedOutsideLevelUp' };
+        if (!isLevelUp) return new CantripValidationResult({ allowed: false, message: 'SPELLBOOK.Cantrips.LockedOutsideLevelUp' });
         break;
       case 'longRest':
         const isWizard = classIdentifier === MODULE.CLASS_IDENTIFIERS.WIZARD;
-        if (!isWizard) return { allowed: false, message: 'SPELLBOOK.Cantrips.WizardRuleOnly' };
-        if (!isLongRest) return { allowed: false, message: 'SPELLBOOK.Cantrips.LockedOutsideLongRest' };
+        if (!isWizard) return new CantripValidationResult({ allowed: false, message: 'SPELLBOOK.Cantrips.WizardRuleOnly' });
+        if (!isLongRest) return new CantripValidationResult({ allowed: false, message: 'SPELLBOOK.Cantrips.LockedOutsideLongRest' });
         break;
     }
     const trackingData = this._getSwapTrackingData(isLevelUp, isLongRest, classIdentifier);
     const spellUuid = spell.uuid;
     if ((isLevelUp && cantripSwapping === 'levelUp') || (isLongRest && cantripSwapping === 'longRest')) {
       if (!isChecked && trackingData.hasUnlearned && trackingData.unlearned !== spellUuid && trackingData.originalChecked.includes(spellUuid)) {
-        return { allowed: false, message: 'SPELLBOOK.Cantrips.OnlyOneSwap' };
+        return new CantripValidationResult({ allowed: false, message: 'SPELLBOOK.Cantrips.OnlyOneSwap' });
       }
       if (isChecked && trackingData.hasLearned && trackingData.learned !== spellUuid && !trackingData.originalChecked.includes(spellUuid)) {
-        return { allowed: false, message: 'SPELLBOOK.Cantrips.OnlyOneSwap' };
+        return new CantripValidationResult({ allowed: false, message: 'SPELLBOOK.Cantrips.OnlyOneSwap' });
       }
       if (isChecked && !trackingData.hasUnlearned && !trackingData.originalChecked.includes(spellUuid)) {
-        return { allowed: false, message: 'SPELLBOOK.Cantrips.MustUnlearnFirst' };
+        return new CantripValidationResult({ allowed: false, message: 'SPELLBOOK.Cantrips.MustUnlearnFirst' });
       }
     }
-    return { allowed: true };
+    return new CantripValidationResult({ allowed: true });
   }
 
   /**
@@ -321,10 +291,10 @@ export class Cantrips {
    * @returns {CantripSwapTrackingData} Current tracking data
    */
   _getSwapTrackingData(isLevelUp, isLongRest, classIdentifier) {
-    if (!isLevelUp && !isLongRest) return { hasUnlearned: false, unlearned: null, hasLearned: false, learned: null, originalChecked: [] };
+    if (!isLevelUp && !isLongRest) return new CantripSwapTrackingData();
     const flagName = isLevelUp ? `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.levelUp` : `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.longRest`;
     const data = this.actor.getFlag(MODULE.ID, flagName);
-    return data || { hasUnlearned: false, unlearned: null, hasLearned: false, learned: null, originalChecked: [] };
+    return data ? new CantripSwapTrackingData(data) : new CantripSwapTrackingData();
   }
 
   /**
@@ -352,38 +322,24 @@ export class Cantrips {
     if (cantripSwapping === 'none') return;
     if (cantripSwapping === 'longRest' && classIdentifier !== MODULE.CLASS_IDENTIFIERS.WIZARD) return;
     const flagName = isLevelUp ? `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.levelUp` : `${FLAGS.CANTRIP_SWAP_TRACKING}.${classIdentifier}.longRest`;
-    let tracking = this.actor.getFlag(MODULE.ID, flagName);
+    let trackingData = this.actor.getFlag(MODULE.ID, flagName);
+    let tracking = trackingData ? new CantripSwapTrackingData(trackingData) : null;
     if (!tracking) {
       const preparedCantrips = this.actor.items
         .filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1 && (i.sourceClass === classIdentifier || i.system.sourceClass === classIdentifier))
         .map((i) => i.uuid);
-      tracking = { hasUnlearned: false, unlearned: null, hasLearned: false, learned: null, originalChecked: preparedCantrips };
-      this.actor.setFlag(MODULE.ID, flagName, tracking);
+      tracking = new CantripSwapTrackingData({ originalChecked: preparedCantrips });
+      this.actor.setFlag(MODULE.ID, flagName, tracking.toObject());
     }
     if (!isChecked && tracking.originalChecked.includes(spellUuid)) {
-      if (tracking.unlearned === spellUuid) {
-        tracking.hasUnlearned = false;
-        tracking.unlearned = null;
-      } else {
-        tracking.hasUnlearned = true;
-        tracking.unlearned = spellUuid;
-      }
+      if (tracking.unlearned === spellUuid) foundry.utils.mergeObject(tracking, { hasUnlearned: false, unlearned: null });
+      else foundry.utils.mergeObject(tracking, { hasUnlearned: true, unlearned: spellUuid });
     } else if (isChecked && !tracking.originalChecked.includes(spellUuid)) {
-      if (tracking.learned === spellUuid) {
-        tracking.hasLearned = false;
-        tracking.learned = null;
-      } else {
-        tracking.hasLearned = true;
-        tracking.learned = spellUuid;
-      }
-    } else if (!isChecked && tracking.learned === spellUuid) {
-      tracking.hasLearned = false;
-      tracking.learned = null;
-    } else if (isChecked && tracking.unlearned === spellUuid) {
-      tracking.hasUnlearned = false;
-      tracking.unlearned = null;
-    }
-    this.actor.setFlag(MODULE.ID, flagName, tracking);
+      if (tracking.learned === spellUuid) foundry.utils.mergeObject(tracking, { hasLearned: false, learned: null });
+      else foundry.utils.mergeObject(tracking, { hasLearned: true, learned: spellUuid });
+    } else if (!isChecked && tracking.learned === spellUuid) foundry.utils.mergeObject(tracking, { hasLearned: false, learned: null });
+    else if (isChecked && tracking.unlearned === spellUuid) foundry.utils.mergeObject(tracking, { hasUnlearned: false, unlearned: null });
+    this.actor.setFlag(MODULE.ID, flagName, tracking.toObject());
   }
 
   /**
