@@ -229,6 +229,7 @@
   "SPELLBOOK.Party.Analysis.TotalSpells": "Total Unique Spells",
   "SPELLBOOK.Party.Analysis.TotalSpellsTooltip": "Total unique spells known across all party members",
   "SPELLBOOK.Party.Analysis.VerbalTooltip": "Spells requiring verbal components - can be silenced",
+  "SPELLBOOK.Party.AndMoreSpells": "... and {count} more",
   "SPELLBOOK.Party.AskGMToSetParty": "Ask your GM to set up a primary party group actor to use party spell features.",
   "SPELLBOOK.Party.DefaultGroupName": "Party",
   "SPELLBOOK.Party.DisablePartyMode": "Disable Party Mode",

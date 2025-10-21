@@ -48,7 +48,7 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    Object.assign(context, this.synergyData);
+    foundry.utils.mergeObject(context, this.synergyData);
     context.componentTooltips = this._prepareComponentTooltips(this.synergyData);
     return context;
   }
@@ -77,10 +77,13 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _formatSpellList(spells, maxSpells) {
-    if (!spells || spells.length === 0) return '';
+    if (!spells?.length) return '';
     const displaySpells = spells.slice(0, maxSpells);
     let tooltip = displaySpells.join(', ');
-    if (spells.length > maxSpells) tooltip += `... and ${spells.length - maxSpells} more`;
+    if (spells.length > maxSpells) {
+      const remaining = spells.length - maxSpells;
+      tooltip += game.i18n.format('SPELLBOOK.Party.AndMoreSpells', { count: remaining });
+    }
     return tooltip;
   }
 }
