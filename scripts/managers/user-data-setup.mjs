@@ -211,15 +211,13 @@ export class UserDataSetup {
     if (!journal) return false;
     const existingPage = journal.pages.find((page) => page.flags?.[MODULE.ID]?.userId === userId);
     if (existingPage) return false;
-    const pageData = {
+    const basePageData = { type: 'text', title: { show: true, level: 1 }, text: { format: 1 }, ownership: { default: 0 }, flags: { [MODULE.ID]: { isUserSpellData: true } }, sort: 99999 };
+    const pageData = foundry.utils.mergeObject(basePageData, {
       name: user.name,
-      type: 'text',
-      title: { show: true, level: 1 },
-      text: { format: 1, content: await this._generateEmptyTablesHTML(user.name, userId) },
-      ownership: { default: 0, [userId]: 3, [game.user.id]: 3 },
-      flags: { [MODULE.ID]: { userId: userId, userName: user.name, isUserSpellData: true, created: Date.now(), lastUpdated: Date.now(), dataVersion: '2.0' } },
-      sort: 99999
-    };
+      text: { content: await this._generateEmptyTablesHTML(user.name, userId) },
+      ownership: { [userId]: 3, [game.user.id]: 3 },
+      flags: { [MODULE.ID]: { userId: userId, userName: user.name, created: Date.now(), lastUpdated: Date.now(), dataVersion: '2.0' } }
+    });
     await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
     log(3, `Created spell data table for user: ${user.name} with per-actor structure`);
     return true;
@@ -233,17 +231,15 @@ export class UserDataSetup {
    */
   async _createIntroductoryPage(journal) {
     const existingIntro = journal.pages.find((page) => page.flags?.[MODULE.ID]?.isIntroPage);
-    const content = await renderTemplate(TEMPLATES.COMPONENTS.USER_DATA_INTRO);
     if (existingIntro) return;
-    const pageData = {
+    const content = await renderTemplate(TEMPLATES.COMPONENTS.USER_DATA_INTRO);
+    const basePageData = { type: 'text', title: { show: true, level: 1 }, text: { format: 1 }, ownership: { default: 0 }, flags: { [MODULE.ID]: { isIntroPage: true } }, sort: 10 };
+    const pageData = foundry.utils.mergeObject(basePageData, {
       name: game.i18n.localize('SPELLBOOK.UserData.IntroPageTitle'),
-      type: 'text',
-      title: { show: true, level: 1 },
-      text: { format: 1, content: content },
-      ownership: { default: 0, [game.user.id]: 3 },
-      flags: { [MODULE.ID]: { isIntroPage: true, created: Date.now() } },
-      sort: 10
-    };
+      text: { content: content },
+      ownership: { [game.user.id]: 3 },
+      flags: { [MODULE.ID]: { created: Date.now() } }
+    });
     await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
     log(3, 'Created introductory page for user spell data');
   }
