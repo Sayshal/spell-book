@@ -147,6 +147,12 @@ export class SearchEngine {
 
     /** @type {string} - Prefix character that triggers advanced search mode */
     this.searchPrefix = game.settings.get(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX);
+
+    /** @type {foundry.utils.WordTree|null} - WordTree for efficient fuzzy spell name matching */
+    this.spellNameTree = null;
+
+    /** @type {number|null} - Timestamp of last WordTree build for cache invalidation */
+    this.treeLastBuilt = null;
   }
 
   /**
@@ -185,6 +191,34 @@ export class SearchEngine {
       this.queryCache.set(query, null);
       return null;
     }
+  }
+
+  /**
+   * Build or rebuild the WordTree index for efficient fuzzy spell name matching.
+   * Uses Foundry's WordTree utility for case-insensitive prefix-based lookups.
+   * @returns {void}
+   */
+  buildSpellNameTree() {
+    const spells = this.app._state?.getCurrentSpellList() || [];
+    if (!spells.length) return;
+    this.spellNameTree = new foundry.utils.WordTree();
+    for (const spell of spells) if (spell.name) this.spellNameTree.addLeaf(spell.name, spell);
+    this.treeLastBuilt = Date.now();
+    log(3, `WordTree built with ${spells.length} spell names`);
+  }
+
+  /**
+   * Ensure the spell name tree is built and current.
+   * Rebuilds if not yet built or if spell data has changed.
+   * @todo: Add cache invalidation logic based on spell data changes
+   * @returns {boolean} Whether tree is ready for use
+   */
+  ensureSpellNameTree() {
+    if (!this.spellNameTree || !this.treeLastBuilt) {
+      this.buildSpellNameTree();
+      return !!this.spellNameTree;
+    }
+    return !!this.spellNameTree;
   }
 
   /**
@@ -681,14 +715,17 @@ export class SearchEngine {
   }
 
   /**
-   * Generate HTML content for fuzzy spell name matches.
+   * Generate HTML content for fuzzy spell name matches using WordTree.
    * @param {string} query - The search query string
    * @returns {string} HTML string containing search suggestions or no matches message
    */
   _generateFuzzyMatches(query) {
     let content = `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Suggestions')}</div>`;
-    const spells = this.app._state?.getCurrentSpellList() || [];
-    const matches = spells.filter((spell) => spell.name.toLowerCase().includes(query.toLowerCase())).slice(0, 5);
+    if (!this.ensureSpellNameTree()) {
+      content += `<div class="search-status">${game.i18n.localize('SPELLBOOK.Search.NoMatches')}</div>`;
+      return content;
+    }
+    const matches = this.spellNameTree.lookup(query, { limit: 5 });
     if (matches.length > 0) {
       matches.forEach((spell) => {
         const tooltipAttr = spell.name.length > 32 ? `data-tooltip="${spell.name}"` : '';
@@ -983,6 +1020,16 @@ export class SearchEngine {
   }
 
   /**
+   * Invalidate the spell name tree cache, forcing a rebuild on next use.
+   * @returns {void}
+   */
+  invalidateSpellNameTree() {
+    this.spellNameTree = null;
+    this.treeLastBuilt = null;
+    log(3, 'WordTree cache invalidated');
+  }
+
+  /**
    * Clean up event listeners, timeouts, and DOM elements.
    * @returns {void}
    */
@@ -1002,6 +1049,7 @@ export class SearchEngine {
     this.isDropdownVisible = false;
     this.selectedSuggestionIndex = -1;
     this.queryCache.clear();
+    this.invalidateSpellNameTree();
     this.isInitialized = false;
     log(3, 'Advanced search manager cleaned up');
   }
