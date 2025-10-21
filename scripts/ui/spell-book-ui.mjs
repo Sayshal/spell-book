@@ -38,6 +38,9 @@ import { log } from '../logger.mjs';
 import { RuleSet } from '../managers/_module.mjs';
 import * as UIUtils from './_module.mjs';
 
+const { getProperty, setProperty, debounce } = foundry.utils;
+const { formatNumber } = dnd5e.utils;
+
 /**
  * Spell preparation display data for footer tracking.
  *
@@ -193,12 +196,13 @@ export class SpellBookUI {
     if (searchInput) {
       const originalInput = this.element.querySelector('.sidebar .advanced-search-input');
       if (originalInput) searchInput.value = originalInput.value;
-      searchInput.addEventListener('input', (event) => {
+      const debouncedInputHandler = debounce((event) => {
         if (originalInput) {
           originalInput.value = event.target.value;
           originalInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
-      });
+      }, 150);
+      searchInput.addEventListener('input', debouncedInputHandler);
       if (this.search) this.search.setupCollapsedFooterSearch(searchInput);
     }
     if (clearButton) {
@@ -243,9 +247,8 @@ export class SpellBookUI {
     const classRules = RuleSet.getClassRules(this.app.actor, classIdentifier);
     let baseMaxPrepared = 0;
     const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(this.app.actor, classIdentifier);
-    if (spellcastingConfig?.preparation?.max) baseMaxPrepared = spellcastingConfig.preparation.max;
-    else baseMaxPrepared = classData.classItem?.system?.spellcasting?.preparation?.max || 0;
-    const preparationBonus = classRules?.spellPreparationBonus || 0;
+    baseMaxPrepared = getProperty(spellcastingConfig, 'preparation.max') || getProperty(classData, 'classItem.system.spellcasting.preparation.max') || 0;
+    const preparationBonus = getProperty(classRules, 'spellPreparationBonus') || 0;
     const classMaxPrepared = baseMaxPrepared + preparationBonus;
     let classPreparedCount = 0;
     const allCheckboxes = activeTabContent.querySelectorAll('dnd5e-checkbox[data-uuid]');
@@ -261,8 +264,8 @@ export class SpellBookUI {
       if (spellItem.querySelector('.tag.atwill')) return;
       if (checkbox.checked) classPreparedCount++;
     });
-    classData.spellPreparation.current = classPreparedCount;
-    classData.spellPreparation.maximum = classMaxPrepared;
+    setProperty(classData, 'spellPreparation.current', classPreparedCount);
+    setProperty(classData, 'spellPreparation.maximum', classMaxPrepared);
     const isClassAtMax = classPreparedCount >= classMaxPrepared;
     const settings = this.app.spellManager.getSettings(classIdentifier);
     if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) this._enforcePerClassSpellLimits(activeTabContent, classIdentifier, isClassAtMax);
@@ -283,7 +286,7 @@ export class SpellBookUI {
     const prepTrackingContainer = this.element.querySelector('.spell-prep-tracking');
     if (!prepTrackingContainer) return;
     const globalCurrentEl = prepTrackingContainer.querySelector('.global-current-count');
-    if (globalCurrentEl) globalCurrentEl.textContent = globalPrepared.current;
+    if (globalCurrentEl) globalCurrentEl.textContent = formatNumber(globalPrepared.current);
     const isGloballyAtMax = globalPrepared.current >= globalPrepared.maximum;
     const globalPrepCount = prepTrackingContainer.querySelector('.global-prep-count');
     if (globalPrepCount) globalPrepCount.classList.toggle('at-max', isGloballyAtMax);
@@ -292,10 +295,12 @@ export class SpellBookUI {
       const classId = classPrepEl.dataset.classIdentifier;
       if (!classId) return;
       const classSpellData = this.app._state.classSpellData[classId];
-      const isThisClassAtMax = classSpellData ? classSpellData.spellPreparation.current >= classSpellData.spellPreparation.maximum : false;
+      const current = getProperty(classSpellData, 'spellPreparation.current') || 0;
+      const maximum = getProperty(classSpellData, 'spellPreparation.maximum') || 0;
+      const isThisClassAtMax = current >= maximum;
       classPrepEl.classList.toggle('at-max', isThisClassAtMax);
       const classCurrentEl = classPrepEl.querySelector('.class-current');
-      if (classCurrentEl && classSpellData) classCurrentEl.textContent = classSpellData.spellPreparation.current;
+      if (classCurrentEl && classSpellData) classCurrentEl.textContent = formatNumber(getProperty(classSpellData, 'spellPreparation.current') || 0);
     });
     this.element.classList.toggle('at-max-spells', isGloballyAtMax);
     log(3, `Updated footer: active class ${activeClassIdentifier} at max: ${isActiveClassAtMax}, global at max: ${isGloballyAtMax}`);
@@ -376,15 +381,14 @@ export class SpellBookUI {
       const preparedCount = preparedSpells.length;
       const totalAvailable = countableSpells.length;
       const countDisplay = levelContainer.querySelector('.spell-count');
-      if (countDisplay) {
-        countDisplay.textContent = totalAvailable > 0 ? `(${preparedCount}/${totalAvailable})` : '';
-      } else if (totalAvailable > 0) {
+      if (countDisplay) countDisplay.textContent = totalAvailable > 0 ? `(${formatNumber(preparedCount)}/${formatNumber(totalAvailable)})` : '';
+      else if (totalAvailable > 0) {
         const levelHeading = levelContainer.querySelector('.spell-level-heading');
         if (levelHeading) {
           const newCount = document.createElement('span');
           newCount.className = 'spell-count';
           newCount.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.SpellCount'));
-          newCount.textContent = `(${preparedCount}/${totalAvailable})`;
+          newCount.textContent = `(${formatNumber(preparedCount)}/${formatNumber(totalAvailable)})`;
           const cantripCounter = levelHeading.querySelector('.cantrip-counter');
           if (cantripCounter) levelHeading.insertBefore(newCount, cantripCounter);
           else levelHeading.appendChild(newCount);
@@ -487,8 +491,7 @@ export class SpellBookUI {
       if (spellCount) spellCount.after(counterElem);
       else levelHeading.appendChild(counterElem);
     }
-    const newContent = `[${currentCount}/${maxCantrips}]`;
-    counterElem.textContent = newContent;
+    counterElem.textContent = `[${formatNumber(currentCount)}/${formatNumber(maxCantrips)}]`;
     counterElem.title = game.i18n.localize('SPELLBOOK.Cantrips.CounterTooltip');
     counterElem.style.display = '';
     counterElem.classList.toggle('at-max', currentCount >= maxCantrips);
@@ -617,8 +620,8 @@ export class SpellBookUI {
     const settings = this.app.spellManager.getSettings(classIdentifier);
     const classData = this.app._state.classSpellData[classIdentifier];
     if (!classData) return;
-    const currentPrepared = classData.spellPreparation.current || 0;
-    const maxPrepared = classData.spellPreparation.maximum || 0;
+    const currentPrepared = getProperty(classData, 'spellPreparation.current') || 0;
+    const maxPrepared = getProperty(classData, 'spellPreparation.maximum') || 0;
     const spellItems = activeTabContent.querySelectorAll('.spell-item');
     const isLevelUp = this.app.spellManager.cantripManager.canBeLeveledUp();
     const isLongRest = this.app._isLongRest;
