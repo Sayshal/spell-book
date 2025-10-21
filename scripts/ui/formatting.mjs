@@ -408,12 +408,26 @@ function extractSpellSource(spell) {
 
 /**
  * Create a spell icon link.
- * Uses the DND5E system's linkForUuid utility for consistency with system link generation.
  * @param {Object} spell - The spell data object
  * @returns {string} HTML string with icon link
  */
 export function createSpellIconLink(spell) {
-  if (!spell) return '';
   const uuid = spell.compendiumUuid || spell?._stats?.compendiumSource || spell.uuid;
-  return dnd5e.utils.linkForUuid(uuid, { img: spell.img, cssClass: 'spell-icon' });
+  let doc = fromUuidSync(uuid);
+  if (uuid.startsWith('Compendium.') && !(doc instanceof foundry.abstract.Document)) {
+    const { collection } = foundry.utils.parseUuid(uuid);
+    const cls = collection.documentClass;
+    doc = new cls(foundry.utils.deepClone(doc), { pack: collection.metadata.id });
+  }
+  const parsed = foundry.utils.parseUuid(uuid);
+  const itemId = parsed.id;
+  const entityType = parsed.type;
+  let packId;
+  if (parsed.collection) packId = parsed.collection.collection;
+  const result = `<a class="content-link" draggable="true" data-link="" data-uuid="${uuid}" data-id="${itemId}" data-type="${entityType}" data-pack="${packId}" data-tooltip="${spell.name}">
+    <img src="${spell.img}" class="spell-icon" alt="${spell.name} icon">
+  </a>`
+    .replace(/\s+/g, ' ')
+    .trim();
+  return result;
 }
