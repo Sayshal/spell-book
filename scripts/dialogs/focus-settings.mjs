@@ -234,8 +234,7 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
       if (existingIcon) existingIcon.remove();
     });
     target.classList.add('selected');
-    const selectedIcon = document.createElement('i');
-    selectedIcon.className = 'fa-solid fa-check selected-icon';
+    const selectedIcon = dnd5e.utils.generateIcon('fa-solid fa-check selected-icon');
     target.appendChild(selectedIcon);
     const hiddenInput = target.closest('form').querySelector('#selected-focus-input');
     if (hiddenInput) hiddenInput.value = focusId;
@@ -332,33 +331,30 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
    * @static
    */
   static async _saveFocusOptions(formData, groupActor) {
+    const expanded = foundry.utils.expandObject(formData);
     const focuses = [];
-    let index = 0;
-    while (formData[`focus-name-${index}`] !== undefined) {
-      const name = formData[`focus-name-${index}`];
-      const icon = formData[`focus-icon-${index}`] || 'icons/svg/mystery-man.svg';
-      const description = formData[`focus-description-${index}`] || '';
-      const id = formData[`focus-id-${index}`] || `focus-${index}`;
-      if (name && name.trim()) focuses.push({ id: id, name: name.trim(), icon: icon, description: description.trim() });
-      index++;
+    if (expanded.focus) {
+      const maxIndex = Math.max(
+        ...Object.keys(expanded.focus.name).map(Number),
+        ...Object.keys(expanded.focus.icon).map(Number),
+        ...Object.keys(expanded.focus.description).map(Number),
+        ...Object.keys(expanded.focus.id).map(Number),
+        -1
+      );
+      for (let i = 0; i <= maxIndex; i++) {
+        const name = expanded.focus.name?.[i];
+        const icon = expanded.focus.icon?.[i];
+        const description = expanded.focus.description?.[i];
+        const id = expanded.focus.id?.[i];
+        if (name && name.trim()) focuses.push({ id, name: name.trim(), icon, description: description.trim() });
+      }
     }
     await game.settings.set(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS, { focuses: focuses });
     if (groupActor) {
-      const currentSelections = groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
-      const memberAssignments = {};
-      for (const [key, value] of Object.entries(formData)) {
-        if (key.startsWith('member-focus-')) {
-          const userId = key.replace('member-focus-', '');
-          memberAssignments[key] = { userId, value };
-          if (value && typeof value === 'string' && value.trim() && value !== '' && value !== 'null' && value !== 'undefined') currentSelections[userId] = value;
-          else delete currentSelections[userId];
-        }
-      }
       try {
         const socketHandler = game.modules.get(MODULE.ID)?.socketHandler;
-        for (const [key, value] of Object.entries(formData)) {
-          if (key.startsWith('member-focus-')) {
-            const userId = key.replace('member-focus-', '');
+        if (expanded.member?.focus) {
+          for (const [userId, value] of Object.entries(expanded.member.focus)) {
             const focusId = value && value !== '' && value !== 'null' && value !== 'undefined' ? value : null;
             await socketHandler.setUserSelectedFocus(groupActor, userId, focusId);
           }
@@ -408,8 +404,7 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
     const selectedCards = this.element.querySelectorAll('.focus-card.selected');
     selectedCards.forEach((card) => {
       if (!card.querySelector('.selected-icon')) {
-        const selectedIcon = document.createElement('i');
-        selectedIcon.className = 'fa-solid fa-check selected-icon';
+        const selectedIcon = dnd5e.utils.generateIcon('fa-solid fa-check selected-icon');
         card.appendChild(selectedIcon);
       }
     });
