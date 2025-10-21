@@ -190,11 +190,8 @@ export class PartyMode {
     /** @type {Actor|null} The actor whose SpellBook opened this manager */
     this.viewingActor = viewingActor;
 
-    /** @type {Map<string, ClassSpellCache>} Cache for spell data by actor-class key */
-    this._spellDataCache = new Map();
-
-    /** @type {number} Timestamp of last cache update for invalidation */
-    this._lastCacheTime = 0;
+    /** @type {foundry.utils.IterableWeakMap<Actor, Map<string, ClassSpellCache>>} Cache for spell data by actor, with GC-friendly weak references */
+    this._spellDataCache = new foundry.utils.IterableWeakMap();
   }
 
   /**
@@ -203,7 +200,7 @@ export class PartyMode {
    * @returns {boolean} True if actor can cast spells
    */
   isSpellcaster(actor) {
-    return Object.keys(actor?.spellcastingClasses || {}).length > 0;
+    return Object.keys(foundry.utils.getProperty(actor, 'spellcastingClasses') || {}).length > 0;
   }
 
   /**
@@ -256,23 +253,34 @@ export class PartyMode {
    * @returns {Promise<ClassSpellCache|null>} Class spell data or null on error
    */
   async getClassSpells(actor, classId) {
-    const cacheKey = `${actor.id}-${classId}`;
-    const now = Date.now();
-    if (this._spellDataCache.has(cacheKey) && now - this._lastCacheTime < 30000) return this._spellDataCache.get(cacheKey);
+    let actorCache = this._spellDataCache.get(actor);
+    if (actorCache?.has(classId)) return actorCache.get(classId);
     try {
       const knownSpells = [];
       const preparedSpells = [];
-      const classSpells = actor.items.filter((item) => item.type === 'spell' && (item.system.sourceClass === classId || item.sourceClass === classId));
+      const classSpells = actor.items.filter(
+        (item) => item.type === 'spell' && (foundry.utils.getProperty(item, 'system.sourceClass') === classId || foundry.utils.getProperty(item, 'sourceClass') === classId)
+      );
       for (const spell of classSpells) {
-        const sourceUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
+        const sourceUuid = foundry.utils.getProperty(spell, '_stats.compendiumSource') || foundry.utils.getProperty(spell, 'flags.core.sourceId') || spell.uuid;
         const enrichedIcon = UIUtils.createSpellIconLink({ ...spell, compendiumUuid: sourceUuid });
-        const spellData = { uuid: spell.uuid, sourceUuid: sourceUuid, name: spell.name, level: spell.system.level, enrichedIcon: enrichedIcon, prepared: spell.system.prepared === 1 };
+        const spellData = {
+          uuid: spell.uuid,
+          sourceUuid: sourceUuid,
+          name: spell.name,
+          level: foundry.utils.getProperty(spell, 'system.level'),
+          enrichedIcon: enrichedIcon,
+          prepared: foundry.utils.getProperty(spell, 'system.prepared') === 1
+        };
         knownSpells.push(spellData);
         if (spellData.prepared) preparedSpells.push(spellData);
       }
       const result = { known: knownSpells, prepared: preparedSpells };
-      this._spellDataCache.set(cacheKey, result);
-      this._lastCacheTime = now;
+      if (!actorCache) {
+        actorCache = new Map();
+        this._spellDataCache.set(actor, actorCache);
+      }
+      actorCache.set(classId, result);
       return result;
     } catch (error) {
       log(1, `Error getting class spells for ${actor.name}:${classId}:`, error);
@@ -288,9 +296,10 @@ export class PartyMode {
    * @returns {string} Enhanced class name with subclass
    */
   getEnhancedClassName(actor, classId, classData) {
-    const baseClassName = classData.name || classId;
-    if (classData._classLink && classData._classLink.name) return `${classData._classLink.name} ${baseClassName}`;
-    const subclassItem = actor.items.find((item) => item.type === 'subclass' && item.system?.classIdentifier === classId);
+    const baseClassName = foundry.utils.getProperty(classData, 'name') || classId;
+    const classLinkName = foundry.utils.getProperty(classData, '_classLink.name');
+    if (classLinkName) return `${classLinkName} ${baseClassName}`;
+    const subclassItem = actor.items.find((item) => item.type === 'subclass' && foundry.utils.getProperty(item, 'system.classIdentifier') === classId);
     if (subclassItem) return `${subclassItem.name} ${baseClassName}`;
     return baseClassName;
   }
@@ -574,7 +583,7 @@ export class PartyMode {
    * @returns {void}
    */
   _updateSchoolData(spellDoc, actorName, analysis, collectors) {
-    const school = spellDoc.system.school;
+    const school = foundry.utils.getProperty(spellDoc, 'system.school');
     if (school) {
       collectors.spellSchools[school] = (collectors.spellSchools[school] || 0) + 1;
       if (!analysis.memberContributions.schools.has(school)) analysis.memberContributions.schools.set(school, []);
@@ -592,7 +601,7 @@ export class PartyMode {
    * @returns {void}
    */
   _updateComponentData(spellData, spellDoc, actorName, analysis, collectors) {
-    const comp = spellDoc.system.properties;
+    const comp = foundry.utils.getProperty(spellDoc, 'system.properties');
     const spellRef = `${actorName}: ${spellDoc.name}`;
     if (comp?.has?.('vocal')) {
       collectors.components.verbal++;
@@ -605,7 +614,7 @@ export class PartyMode {
     if (comp?.has?.('material')) {
       collectors.components.material++;
       analysis.memberContributions.components.material.push(spellRef);
-      if (spellData.materialComponents.hasConsumedMaterials) {
+      if (foundry.utils.getProperty(spellData, 'materialComponents.hasConsumedMaterials')) {
         collectors.components.materialCost++;
         analysis.memberContributions.components.materialCost.push(spellRef);
       }
@@ -620,14 +629,14 @@ export class PartyMode {
    * @returns {void}
    */
   _updateMiscData(spellData, spellDoc, collectors) {
-    const level = spellDoc.system.level || 0;
+    const level = foundry.utils.getProperty(spellDoc, 'system.level') || 0;
     collectors.spellLevels[level]++;
-    const save = spellDoc.system.save?.ability;
+    const save = foundry.utils.getProperty(spellDoc, 'system.save.ability');
     if (save) collectors.savingThrows[save] = (collectors.savingThrows[save] || 0) + 1;
-    if (spellData.rangeData.units === 'self') collectors.ranges.self++;
-    else if (spellData.rangeData.units === 'touch') collectors.ranges.touch++;
+    if (foundry.utils.getProperty(spellData, 'rangeData.units') === 'self') collectors.ranges.self++;
+    else if (foundry.utils.getProperty(spellData, 'rangeData.units') === 'touch') collectors.ranges.touch++;
     else collectors.ranges.ranged++;
-    const duration = spellDoc.system.duration;
+    const duration = foundry.utils.getProperty(spellDoc, 'system.duration');
     if (spellData.isConcentration) collectors.durations.concentration++;
     else if (duration?.units === 'inst') collectors.durations.instantaneous++;
     else collectors.durations.timed++;
@@ -641,7 +650,7 @@ export class PartyMode {
    * @returns {void}
    */
   _analyzeActorStats(actor, actorStats, analysis) {
-    const actorPreparedCount = actor.totalSpellsPrepared || 0;
+    const actorPreparedCount = foundry.utils.getProperty(actor, 'totalSpellsPrepared') || 0;
     if (actorPreparedCount > 0 && actorStats.concentrationCount / actorPreparedCount > 0.6) {
       analysis.memberContributions.highConcentration.push({
         name: actor.name,
@@ -864,15 +873,15 @@ export class PartyMode {
    */
   static getPartyActors(groupActor = null) {
     if (groupActor && groupActor.type === 'group') {
-      const creatures = groupActor.system?.creatures || [];
-      return creatures.filter((actor) => actor && Object.keys(actor?.spellcastingClasses || {}).length > 0);
+      const creatures = foundry.utils.getProperty(groupActor, 'system.creatures') || [];
+      return creatures.filter((actor) => actor && Object.keys(foundry.utils.getProperty(actor, 'spellcastingClasses') || {}).length > 0);
     }
     try {
       const primaryPartyData = game.settings.get('dnd5e', 'primaryParty');
-      const primaryPartyActor = primaryPartyData?.actor;
+      const primaryPartyActor = foundry.utils.getProperty(primaryPartyData, 'actor');
       if (primaryPartyActor && primaryPartyActor.type === 'group') {
-        const creatures = primaryPartyActor.system?.creatures || [];
-        const spellcasters = creatures.filter((actor) => actor && Object.keys(actor?.spellcastingClasses || {}).length > 0);
+        const creatures = foundry.utils.getProperty(primaryPartyActor, 'system.creatures') || [];
+        const spellcasters = creatures.filter((actor) => actor && Object.keys(foundry.utils.getProperty(actor, 'spellcastingClasses') || {}).length > 0);
         if (spellcasters.length > 0) return spellcasters;
       }
     } catch (error) {
@@ -910,7 +919,7 @@ export class PartyMode {
     if (!actor) return [];
     const groups = [];
     for (const groupActor of game.actors.filter((a) => a.type === 'group')) {
-      const creatures = groupActor.system?.creatures || [];
+      const creatures = foundry.utils.getProperty(groupActor, 'system.creatures') || [];
       if (creatures.some((creature) => creature?.id === actor.id)) groups.push(groupActor);
     }
     return groups;
@@ -926,9 +935,9 @@ export class PartyMode {
     if (!actor) return null;
     try {
       const primaryPartyData = game.settings.get('dnd5e', 'primaryParty');
-      const primaryPartyActor = primaryPartyData?.actor;
+      const primaryPartyActor = foundry.utils.getProperty(primaryPartyData, 'actor');
       if (primaryPartyActor && primaryPartyActor.type === 'group') {
-        const creatures = primaryPartyActor.system?.creatures || [];
+        const creatures = foundry.utils.getProperty(primaryPartyActor, 'system.creatures') || [];
         if (creatures.some((creature) => creature?.id === actor.id)) return primaryPartyActor;
       }
     } catch (error) {
@@ -945,8 +954,8 @@ export class PartyMode {
    */
   static getAvailableFocuses() {
     const focusData = game.settings.get(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS);
-    const focuses = focusData?.focuses || [];
-    return focuses.map((focus) => focus.name);
+    const focuses = foundry.utils.getProperty(focusData, 'focuses') || [];
+    return focuses.map((focus) => foundry.utils.getProperty(focus, 'name'));
   }
 
   /**
@@ -957,7 +966,7 @@ export class PartyMode {
   static getAvailableFocusOptions() {
     const settingData = game.settings.get(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS);
     const focusData = Array.isArray(settingData) ? settingData[0] : settingData;
-    return focusData?.focuses || [];
+    return foundry.utils.getProperty(focusData, 'focuses') || [];
   }
 
   /**
@@ -972,8 +981,8 @@ export class PartyMode {
     if (!selectedFocusId) return null;
     const settingData = game.settings.get(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS);
     const focusData = Array.isArray(settingData) ? settingData[0] : settingData;
-    const availableFocuses = focusData?.focuses || [];
-    return availableFocuses.find((f) => f.id === selectedFocusId) || null;
+    const availableFocuses = foundry.utils.getProperty(focusData, 'focuses') || [];
+    return availableFocuses.find((f) => foundry.utils.getProperty(f, 'id') === selectedFocusId) || null;
   }
 
   /**
