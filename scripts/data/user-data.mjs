@@ -152,8 +152,7 @@ export class UserData {
    * @private
    */
   static _parseSpellDataFromHTML(htmlContent) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlContent, 'text/html');
+    const doc = foundry.utils.parseHTML(htmlContent);
 
     /** @type {Object<string, UserSpellData>} */
     const spellData = {};
@@ -254,7 +253,7 @@ export class UserData {
             const spell = fromUuidSync(uuid);
             const spellName = spell?.name || game.i18n.localize('SPELLBOOK.UI.UnknownSpell');
             const stats = actorData.usageStats;
-            const lastUsedDate = stats.lastUsed ? new Date(stats.lastUsed).toLocaleDateString() : '-';
+            const lastUsedDate = stats.lastUsed ? foundry.utils.timeSince(stats.lastUsed) : '-';
             usageSpells.push({ uuid, name: spellName, stats, lastUsedDate });
           } catch (error) {
             log(2, `Could not resolve spell UUID ${uuid} for usage table`, error);
@@ -493,7 +492,7 @@ export class UserData {
   static async setSpellNotes(spellOrUuid, notes, userId = null) {
     try {
       const maxLength = game.settings.get(MODULE.ID, SETTINGS.SPELL_NOTES_LENGTH) || 240;
-      const trimmedNotes = notes ? notes.substring(0, maxLength) : '';
+      const trimmedNotes = notes ? foundry.utils.cleanHTML(notes.substring(0, maxLength)) : '';
       const spellUuid = typeof spellOrUuid === 'string' ? spellOrUuid : spellOrUuid?.uuid || spellOrUuid?.compendiumUuid;
       if (!spellUuid) return false;
       let canonicalUuid = spellUuid;
