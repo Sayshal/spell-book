@@ -167,7 +167,7 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
       uuid: spell.uuid,
       name: spell.name,
       img: spell.img,
-      enrichedIcon: this._createEnrichedSpellIcon(spell),
+      enrichedIcon: UIUtils.createSpellIconLink(spell),
       level: spell.system.level,
       school: UIUtils.formatSpellSchool(spell),
       castingTime: spell.labels?.activation || UIUtils.formatSpellActivation(spell),
@@ -177,24 +177,6 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
       damage: this._extractDamageInfo(spell),
       description: spell.system.description?.value || ''
     };
-  }
-
-  /**
-   * Create an enriched content link for a spell icon.
-   * @param {Object} spell - The spell document
-   * @returns {string} HTML string for the enriched icon link
-   * @private
-   */
-  _createEnrichedSpellIcon(spell) {
-    const uuid = spell.uuid;
-    const parsed = foundry.utils.parseUuid(uuid);
-    const itemId = parsed.id || '';
-    const entityType = parsed.type || 'Item';
-    let packId = '';
-    if (parsed.collection) packId = parsed.collection.collection || '';
-    return `<a class="content-link" draggable="true" data-link="" data-uuid="${uuid}" data-id="${itemId}" data-type="${entityType}" data-pack="${packId}" data-tooltip="${spell.name}">
-      <img src="${spell.img}" class="spell-icon" alt="${spell.name} icon">
-    </a>`;
   }
 
   /**
