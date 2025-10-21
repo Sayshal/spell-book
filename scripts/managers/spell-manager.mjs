@@ -138,18 +138,18 @@ export class SpellManager {
     const behavior = this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM;
     if (!classIdentifier) {
       return {
-        cantripSwapping: 'none',
-        spellSwapping: 'none',
-        ritualCasting: 'none',
+        cantripSwapping: MODULE.SWAP_MODES.NONE,
+        spellSwapping: MODULE.SWAP_MODES.NONE,
+        ritualCasting: MODULE.RITUAL_CASTING_MODES.NONE,
         showCantrips: true,
         behavior: behavior
       };
     }
     const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
     return {
-      cantripSwapping: classRules.cantripSwapping || 'none',
-      spellSwapping: classRules.spellSwapping || 'none',
-      ritualCasting: classRules.ritualCasting || 'none',
+      cantripSwapping: classRules.cantripSwapping || MODULE.SWAP_MODES.NONE,
+      spellSwapping: classRules.spellSwapping || MODULE.SWAP_MODES.NONE,
+      ritualCasting: classRules.ritualCasting || MODULE.RITUAL_CASTING_MODES.NONE,
       showCantrips: classRules.showCantrips !== false,
       behavior: behavior
     };
@@ -208,7 +208,7 @@ export class SpellManager {
             (i._stats?.compendiumSource === spellUuid || i.flags?.core?.sourceId === spellUuid || i.uuid === spellUuid) &&
             (i.system.sourceClass === classIdentifier || i.sourceClass === classIdentifier) &&
             i.system.prepared === 1 &&
-            i.system.method !== 'ritual'
+            i.system.method !== MODULE.PREPARATION_MODES.RITUAL
         );
         if (actualPreparedSpell) isPreparedForClass = true;
       }
@@ -221,7 +221,7 @@ export class SpellManager {
           return {
             prepared: false,
             isOwned: false,
-            preparationMode: 'spell',
+            preparationMode: MODULE.PREPARATION_MODES.SPELL,
             localizedPreparationMode: game.i18n.localize('SPELLBOOK.Preparation.Prepared'),
             disabled: false,
             disabledReason: game.i18n.format('SPELLBOOK.Preparation.PreparedByOtherClass', { class: classItem?.name || otherClass }),
@@ -253,7 +253,7 @@ export class SpellManager {
         (item._stats?.compendiumSource === spellUuid || item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) &&
         (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier) &&
         item.system.prepared === 1 &&
-        item.system.method !== 'ritual'
+        item.system.method !== MODULE.PREPARATION_MODES.RITUAL
     );
     if (!actualSpell) {
       actualSpell = this.actor.items.find(
@@ -271,7 +271,7 @@ export class SpellManager {
     if (unassignedSpell && classIdentifier) {
       const isAlwaysPrepared = unassignedSpell.system.prepared === 2;
       const isGranted = !!unassignedSpell.flags?.dnd5e?.cachedFor;
-      const isSpecialMode = ['innate', 'pact', 'atwill', 'ritual'].includes(unassignedSpell.system.method);
+      const isSpecialMode = MODULE.SPECIAL_PREPARATION_MODES.includes(unassignedSpell.system.method);
       if (!isAlwaysPrepared && !isGranted && !isSpecialMode) {
         unassignedSpell.sourceClass = classIdentifier;
         if (unassignedSpell.system) unassignedSpell.system.sourceClass = classIdentifier;
@@ -288,7 +288,7 @@ export class SpellManager {
         return {
           prepared: true,
           isOwned: false,
-          preparationMode: 'spell',
+          preparationMode: MODULE.PREPARATION_MODES.SPELL,
           localizedPreparationMode: game.i18n.localize('SPELLBOOK.Preparation.Prepared'),
           disabled: true,
           disabledReason: game.i18n.format('SPELLBOOK.Preparation.PreparedByOtherClass', { class: classItem?.name || otherClass }),
@@ -308,7 +308,7 @@ export class SpellManager {
         return {
           prepared: true,
           isOwned: false,
-          preparationMode: 'always',
+          preparationMode: MODULE.PREPARATION_MODES.ALWAYS,
           disabled: true,
           alwaysPrepared: true,
           disabledReason: game.i18n.format('SPELLBOOK.Preparation.AlwaysPreparedByClass', { class: classItem?.name || sourceClass || 'Feature' }),
@@ -323,7 +323,7 @@ export class SpellManager {
         return {
           prepared: true,
           isOwned: false,
-          preparationMode: 'granted',
+          preparationMode: MODULE.PREPARATION_MODES.GRANTED,
           disabled: true,
           isGranted: true,
           disabledReason: game.i18n.format('SPELLBOOK.SpellSource.GrantedByItem', { item: grantingItem?.name || 'Feature' }),
@@ -333,7 +333,7 @@ export class SpellManager {
           isCantripLocked: false
         };
       }
-      const specialModes = ['innate', 'pact', 'atwill', 'ritual'];
+      const specialModes = MODULE.SPECIAL_PREPARATION_MODES;
       if (specialModes.includes(specialSpell.system.method)) {
         const sourceClass = specialSpell.system?.sourceClass || specialSpell.sourceClass;
         const spellcastingData = sourceClass ? this.actor.spellcastingClasses?.[sourceClass] : null;
@@ -400,8 +400,8 @@ export class SpellManager {
   _getOwnedSpellPreparationStatus(spell) {
     const preparationMode = spell.system.method;
     const alwaysPrepared = spell.system.prepared === 2;
-    const isInnateCasting = preparationMode === 'innate';
-    const isAtWill = preparationMode === 'atwill';
+    const isInnateCasting = preparationMode === MODULE.PREPARATION_MODES.INNATE;
+    const isAtWill = preparationMode === MODULE.PREPARATION_MODES.AT_WILL;
     const localizedPreparationMode = UIUtils.getLocalizedPreparationMode(preparationMode);
     const sourceInfo = this._determineSpellSource(spell);
     const isGranted = !!sourceInfo && !!spell.flags?.dnd5e?.cachedFor;
@@ -455,14 +455,14 @@ export class SpellManager {
     }
     const preparationMode = spell.system.method;
     const sourceClassId = spell.system?.sourceClass || spell.sourceClass;
-    if (preparationMode === 'always') {
+    if (preparationMode === MODULE.PREPARATION_MODES.ALWAYS) {
       if (sourceClassId && this.actor.spellcastingClasses?.[sourceClassId]) {
         const spellcastingSource = DataUtils.getSpellcastingSourceItem(this.actor, sourceClassId);
         if (spellcastingSource && spellcastingSource.type === 'subclass') return { name: spellcastingSource.name, type: 'subclass', id: spellcastingSource.id };
       }
       const subclass = this.actor.items.find((i) => i.type === 'subclass');
       if (subclass) return { name: subclass.name, type: 'subclass', id: subclass.id };
-    } else if (preparationMode === 'pact') {
+    } else if (preparationMode === MODULE.PREPARATION_MODES.PACT) {
       if (sourceClassId && this.actor.spellcastingClasses?.[sourceClassId]) {
         const spellcastingSource = DataUtils.getSpellcastingSourceItem(this.actor, sourceClassId);
         if (spellcastingSource && spellcastingSource.type === 'subclass') return { name: spellcastingSource.name, type: 'subclass', id: spellcastingSource.id };
@@ -515,24 +515,25 @@ export class SpellManager {
           spellChanges.hasChanges = true;
         }
       }
-      let actualPreparationMode = 'spell';
+      let actualPreparationMode = MODULE.PREPARATION_MODES.SPELL;
       if (spellLevel > 0) actualPreparationMode = preparationMode || defaultPreparationMode;
       if (isPrepared) {
         preparedSpellKeys.push(classSpellKey);
         await this._ensureSpellOnActor(uuid, classIdentifier, actualPreparationMode, spellsToCreate, spellsToUpdate);
         if (isRitual) {
           const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
-          if (classRules.ritualCasting === 'always' || classRules.ritualCasting === 'prepared') await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate);
+          if (classRules.ritualCasting === MODULE.RITUAL_CASTING_MODES.ALWAYS || classRules.ritualCasting === MODULE.RITUAL_CASTING_MODES.PREPARED)
+            await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate);
         }
       } else if (wasPrepared) {
         await this._handleUnpreparingSpell(uuid, classIdentifier, spellIdsToRemove);
         if (isRitual) {
           const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
-          if (classRules.ritualCasting === 'always') await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate);
+          if (classRules.ritualCasting === MODULE.RITUAL_CASTING_MODES.ALWAYS) await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate);
         }
       } else if (isRitual) {
         const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
-        if (classRules.ritualCasting === 'always') await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate);
+        if (classRules.ritualCasting === MODULE.RITUAL_CASTING_MODES.ALWAYS) await this._ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate);
       }
     }
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
@@ -566,13 +567,13 @@ export class SpellManager {
         i.type === 'spell' &&
         (i._stats?.compendiumSource === uuid || i.flags?.core?.sourceId === uuid || i.uuid === uuid) &&
         (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass) &&
-        i.system?.method === 'ritual'
+        i.system?.method === MODULE.PREPARATION_MODES.RITUAL
     );
     if (existingRitualSpell) return;
     const sourceSpell = await fromUuid(uuid);
     if (sourceSpell) {
       const newSpellData = await game.items.fromCompendium(sourceSpell);
-      newSpellData.system.method = 'ritual';
+      newSpellData.system.method = MODULE.PREPARATION_MODES.RITUAL;
       newSpellData.system.prepared = 0;
       newSpellData.system.sourceClass = sourceClass;
       newSpellData.flags[MODULE.ID] = newSpellData.flags[MODULE.ID] || {};
@@ -591,8 +592,8 @@ export class SpellManager {
    */
   _getClassPreparationMode(classIdentifier) {
     const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
-    if (spellcastingConfig?.type === 'pact') return 'pact';
-    return 'spell';
+    if (spellcastingConfig?.type === MODULE.PREPARATION_MODES.PACT) return MODULE.PREPARATION_MODES.PACT;
+    return MODULE.PREPARATION_MODES.SPELL;
   }
 
   /**
@@ -612,14 +613,14 @@ export class SpellManager {
       if (spellSourceClass && spellSourceClass !== sourceClass) continue;
       const isAlwaysPrepared = spell.system.prepared === 2;
       const isGranted = !!spell.flags?.dnd5e?.cachedFor;
-      const isSpecialMode = ['innate', 'atwill'].includes(spell.system.method);
+      const isSpecialMode = [MODULE.PREPARATION_MODES.INNATE, MODULE.PREPARATION_MODES.AT_WILL].includes(spell.system.method);
       if (isAlwaysPrepared || isGranted || isSpecialMode) return;
     }
     const matchingSpells = allMatchingSpells.filter((i) => i.system.sourceClass === sourceClass || i.sourceClass === sourceClass);
-    const existingPreparedSpell = matchingSpells.find((spell) => spell.system.method !== 'ritual' && spell.system.prepared === 1);
-    const existingRitualSpell = matchingSpells.find((spell) => spell.system.method === 'ritual');
+    const existingPreparedSpell = matchingSpells.find((spell) => spell.system.method !== MODULE.PREPARATION_MODES.RITUAL && spell.system.prepared === 1);
+    const existingRitualSpell = matchingSpells.find((spell) => spell.system.method === MODULE.PREPARATION_MODES.RITUAL);
     const classRules = RuleSet.getClassRules(this.actor, sourceClass);
-    const isAlwaysRitualCasting = classRules.ritualCasting === 'always';
+    const isAlwaysRitualCasting = classRules.ritualCasting === MODULE.RITUAL_CASTING_MODES.ALWAYS;
     if (existingPreparedSpell) {
       if (existingPreparedSpell.system.method !== preparationMode || existingPreparedSpell.system.prepared !== 1 || existingPreparedSpell.system.sourceClass !== sourceClass) {
         const updateData = { _id: existingPreparedSpell.id, 'system.method': preparationMode, 'system.prepared': 1 };
@@ -628,7 +629,7 @@ export class SpellManager {
       }
       return;
     }
-    if (existingRitualSpell && isAlwaysRitualCasting && preparationMode === 'spell') {
+    if (existingRitualSpell && isAlwaysRitualCasting && preparationMode === MODULE.PREPARATION_MODES.SPELL) {
       const sourceSpell = await fromUuid(uuid);
       if (sourceSpell) {
         const newSpellData = await game.items.fromCompendium(sourceSpell);
@@ -686,7 +687,7 @@ export class SpellManager {
         i.type === 'spell' && (i._stats?.compendiumSource === uuid || i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
     );
     if (matchingSpells.length === 0) return;
-    let targetSpell = matchingSpells.find((spell) => spell.system.prepared === 1 && spell.system.method !== 'ritual');
+    let targetSpell = matchingSpells.find((spell) => spell.system.prepared === 1 && spell.system.method !== MODULE.PREPARATION_MODES.RITUAL);
     if (!targetSpell) targetSpell = matchingSpells.find((spell) => spell.system.prepared === 1);
     if (!targetSpell) return;
     const isAlwaysPrepared = targetSpell.system.prepared === 2;
@@ -695,10 +696,10 @@ export class SpellManager {
     if (isAlwaysPrepared || isGranted || isFromClassFeature) return;
     const isRitualSpell = this._isRitualSpell(targetSpell);
     const classRules = RuleSet.getClassRules(this.actor, sourceClass);
-    const ritualCastingEnabled = classRules.ritualCasting === 'always';
-    const existingRitualSpell = matchingSpells.find((spell) => spell.system?.method === 'ritual' && spell.id !== targetSpell.id);
+    const ritualCastingEnabled = classRules.ritualCasting === MODULE.RITUAL_CASTING_MODES.ALWAYS;
+    const existingRitualSpell = matchingSpells.find((spell) => spell.system?.method === MODULE.PREPARATION_MODES.RITUAL && spell.id !== targetSpell.id);
     if (isRitualSpell && ritualCastingEnabled && targetSpell.system.level > 0) {
-      if (targetSpell.system.method === 'ritual') {
+      if (targetSpell.system.method === MODULE.PREPARATION_MODES.RITUAL) {
         return;
       } else if (existingRitualSpell) {
         spellIdsToRemove.push(targetSpell.id);
@@ -806,14 +807,14 @@ export class SpellManager {
     }
     if (isChecked && currentPrepared >= maxPrepared) return { allowed: false, message: 'SPELLBOOK.Preparation.ClassAtMaximum' };
     if (!isChecked && wasPrepared) {
-      const spellSwapping = settings.spellSwapping || 'none';
+      const spellSwapping = settings.spellSwapping || MODULE.SWAP_MODES.NONE;
       switch (spellSwapping) {
-        case 'none':
+        case MODULE.SWAP_MODES.NONE:
           return { allowed: false, message: 'SPELLBOOK.Spells.LockedNoSwapping' };
-        case 'levelUp':
+        case MODULE.SWAP_MODES.LEVEL_UP:
           if (!isLevelUp) return { allowed: false, message: 'SPELLBOOK.Spells.LockedOutsideLevelUp' };
           break;
-        case 'longRest':
+        case MODULE.SWAP_MODES.LONG_REST:
           if (!isLongRest) return { allowed: false, message: 'SPELLBOOK.Spells.LockedOutsideLongRest' };
           break;
       }
@@ -829,7 +830,7 @@ export class SpellManager {
   async _cleanupUnpreparedSpells() {
     const shouldCleanup = game.settings.get(MODULE.ID, SETTINGS.AUTO_DELETE_UNPREPARED_SPELLS);
     if (!shouldCleanup) return;
-    const unpreparedSpells = this.actor.items.filter((item) => item.type === 'spell' && item.system.method === 'spell' && item.system.prepared === 0);
+    const unpreparedSpells = this.actor.items.filter((item) => item.type === 'spell' && item.system.method === MODULE.PREPARATION_MODES.SPELL && item.system.prepared === 0);
     if (unpreparedSpells.length === 0) return;
     log(3, `Auto-cleanup: Removing ${unpreparedSpells.length} unprepared spell(s)`);
     const spellIds = unpreparedSpells.map((spell) => spell.id);
