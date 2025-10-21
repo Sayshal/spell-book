@@ -330,14 +330,7 @@ export function extractDamageTypes(spell) {
  * @returns {boolean} Whether the spell is a ritual
  */
 export function checkIsRitual(spell) {
-  if (spell.system?.properties && typeof spell.system.properties.has === 'function') return spell.system.properties.has('ritual');
-  if (spell.system?.properties && Array.isArray(spell.system.properties)) {
-    if (spell.system.properties.includes('ritual')) return true;
-    return spell.system.properties.some((prop) => (typeof prop === 'object' && prop.value === 'ritual') || (typeof prop === 'string' && prop === 'ritual'));
-  }
-  if (spell.system?.components?.ritual) return true;
-  if (spell.labels?.components?.tags?.includes(game.i18n.localize('DND5E.ITEM.Property.Ritual'))) return true;
-  return false;
+  return spell.system?.properties?.has?.('ritual') ?? false;
 }
 
 /**
@@ -346,8 +339,7 @@ export function checkIsRitual(spell) {
  * @returns {boolean} Whether the spell requires concentration
  */
 export function checkIsConcentration(spell) {
-  if (spell.system.duration?.concentration) return true;
-  return spell.system.properties && Array.isArray(spell.system.properties) && spell.system.properties.includes('concentration');
+  return spell.system?.properties?.has?.('concentration') ?? false;
 }
 
 /**
@@ -418,6 +410,10 @@ function extractSpellSource(spell) {
  * Create a spell icon link.
  * @param {Object} spell - The spell data object
  * @returns {string} HTML string with icon link
+ * @todo: Investigate if dnd5e.utils.linkForUuid() could be used here.
+ * Note: linkForUuid uses doc.toAnchor() which may return text-based anchors
+ * rather than image-based ones. This function creates an <img> tag which
+ * may be a specific requirement for spell icons. Test before replacing.
  */
 export function createSpellIconLink(spell) {
   if (!spell) return '';

@@ -223,6 +223,7 @@ export class State {
 
   /**
    * Detect and initialize all spellcasting classes for the actor.
+   * @todo: Consider using dnd5e.utils.formatIdentifier() when it becomes available
    * @returns {void}
    */
   detectSpellcastingClasses() {
@@ -370,6 +371,7 @@ export class State {
   /**
    * Determine the preparation mode for a given class.
    * @param {Item} classItem - The class item to analyze
+   * @todo: Consider using dnd5e.utils.formatIdentifier() when it becomes available
    * @returns {string} The preparation mode ('spell', 'pact', etc.)
    */
   getClassPreparationMode(classItem) {
@@ -400,6 +402,7 @@ export class State {
   /**
    * Determine spell swapping rules for a given class.
    * @param {Item} classItem - The class item to analyze
+   * @todo: Consider using dnd5e.utils.formatIdentifier() when it becomes available
    * @returns {SwapRules} Spell swapping rules for the class
    */
   getClassSwapRules(classItem) {
@@ -486,7 +489,7 @@ export class State {
     let spellItems = [];
     if (preloadedData && preloadedData.enrichedSpells.length > 0) {
       log(3, `Using preloaded spell data for ${identifier} class`);
-      const spellUuidsSet = new Set(Array.from(spellList));
+      const spellUuidsSet = new Set(spellList);
       const preloadedSpells = preloadedData.enrichedSpells.filter((spell) => spellUuidsSet.has(spell.uuid) && spell.system.level <= maxSpellLevel);
       const missingSpells = Array.from(spellList).filter((uuid) => !preloadedSpells.some((spell) => spell.uuid === uuid));
       if (missingSpells.length > 0) {
@@ -1303,11 +1306,7 @@ export class State {
     const wizardManager = this.app.wizardManagers.get(classIdentifier);
     if (!wizardManager || !wizardManager.isWizard) return;
     const spellbookSpells = await wizardManager.getSpellbookSpells();
-    const isRitualSpell = (spell) => {
-      if (spell.system?.properties && spell.system.properties.has) return spell.system.properties.has('ritual');
-      if (spell.system?.properties && Array.isArray(spell.system.properties)) return spell.system.properties.some((prop) => prop.value === 'ritual');
-      return spell.system?.components?.ritual || false;
-    };
+    const isRitualSpell = (spell) => spell.system?.properties?.has?.('ritual') ?? false;
     for (const spellUuid of spellbookSpells) {
       const sourceSpell = await fromUuid(spellUuid);
       if (!sourceSpell || !isRitualSpell(sourceSpell) || sourceSpell.system.level === 0) continue;
@@ -1334,11 +1333,7 @@ export class State {
     if (!spellList || !spellList.size) return;
     const spellItems = await DataUtils.fetchSpellDocuments(spellList, 9);
     if (!spellItems || !spellItems.length) return;
-    const isRitualSpell = (spell) => {
-      if (spell.system?.properties && spell.system.properties.has) return spell.system.properties.has('ritual');
-      if (spell.system?.properties && Array.isArray(spell.system.properties)) return spell.system.properties.some((prop) => prop.value === 'ritual');
-      return spell.system?.components?.ritual || false;
-    };
+    const isRitualSpell = (spell) => spell.system?.properties?.has?.('ritual') ?? false;
     for (const spell of spellItems) {
       const spellUuid = spell.compendiumUuid || spell.uuid;
       const hasRitual = isRitualSpell(spell);

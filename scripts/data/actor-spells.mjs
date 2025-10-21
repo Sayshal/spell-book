@@ -163,16 +163,18 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
     }
   }
   if (nonCompendiumUuids.length > 0) {
-    const fallbackPromises = nonCompendiumUuids.map(async (uuid) => {
-      try {
-        const spell = await fromUuid(uuid);
-        return { uuid, spell, success: true };
-      } catch (error) {
-        return { uuid, error, success: false };
-      }
-    });
-    const fallbackResults = await Promise.all(fallbackPromises);
-    for (const result of fallbackResults) {
+    const semaphore = new foundry.utils.Semaphore(5);
+    const fallbackResults = [];
+    for (const uuid of nonCompendiumUuids) {
+      fallbackResults.push(
+        semaphore.add(() => {
+          const spell = fromUuidSync(uuid);
+          return { uuid, spell, success: true };
+        })
+      );
+    }
+    const resolvedResults = await Promise.all(fallbackResults);
+    for (const result of resolvedResults) {
       if (!result.success) {
         errors.push({ uuid: result.uuid, reason: result.error?.message || 'Unknown error' });
         continue;
