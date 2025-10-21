@@ -116,24 +116,7 @@ export class RuleSet {
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const existingRules = classRules[classIdentifier];
     if (existingRules) {
-      let classExists = false;
-      if (actor.spellcastingClasses) {
-        for (const spellcastingData of Object.values(actor.spellcastingClasses)) {
-          const classItem = spellcastingData;
-          const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
-          if (identifier === classIdentifier) {
-            let hasSpellcasting = classItem.system.spellcasting?.progression && classItem.system.spellcasting.progression !== 'none';
-            if (!hasSpellcasting && spellcastingData._classLink) {
-              const subclassItem = spellcastingData._classLink;
-              hasSpellcasting = subclassItem.system.spellcasting?.progression && subclassItem.system.spellcasting.progression !== 'none';
-            }
-            if (hasSpellcasting) {
-              classExists = true;
-              break;
-            }
-          }
-        }
-      }
+      const classExists = actor.spellcastingClasses?.[classIdentifier] !== undefined;
       if (!classExists) {
         log(2, `Class rules found for non-existent class: ${classIdentifier}. Will be cleaned up on next Spell Book open.`);
         const ruleSet = RuleSet.getEffectiveRuleSet(actor);
@@ -208,21 +191,13 @@ export class RuleSet {
    */
   static _detectSpellcastingClasses(actor) {
     const classes = {};
-    if (actor.spellcastingClasses) {
-      for (const spellcastingData of Object.values(actor.spellcastingClasses)) {
-        const classItem = spellcastingData;
-        let spellcastingConfig = classItem.system?.spellcasting;
-        let spellcastingSource = classItem;
-        if (!spellcastingConfig?.progression || spellcastingConfig.progression === 'none') {
-          const subclassItem = spellcastingData._classLink;
-          if (subclassItem?.system?.spellcasting?.progression && subclassItem.system.spellcasting.progression !== 'none') {
-            spellcastingConfig = subclassItem.system.spellcasting;
-            spellcastingSource = subclassItem;
-          } else continue;
-        }
-        const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
-        classes[identifier] = { name: classItem.name, item: classItem, spellcasting: spellcastingConfig, spellcastingSource: spellcastingSource };
-      }
+    if (!actor.spellcastingClasses) return classes;
+    for (const [identifier, classItem] of Object.entries(actor.spellcastingClasses)) {
+      const spellcastingConfig = classItem.spellcasting;
+      if (!spellcastingConfig) continue;
+      const subclass = classItem.subclass;
+      const spellcastingSource = subclass?.system?.spellcasting?.progression && subclass.system.spellcasting.progression !== 'none' ? subclass : classItem;
+      classes[identifier] = { name: classItem.name, item: classItem, spellcasting: spellcastingConfig, spellcastingSource: spellcastingSource };
     }
     return classes;
   }
@@ -368,34 +343,27 @@ export class RuleSet {
     let newSpellList = new Set();
     if (newSpellListUuid) {
       const spellListUuids = Array.isArray(newSpellListUuid) ? newSpellListUuid : [newSpellListUuid];
-      if (spellListUuids.length > 0) {
-        log(3, `Loading ${spellListUuids.length} spell list(s) for affected spells check: ${spellListUuids.join(', ')}`);
-        const spellSets = [];
-        for (const uuid of spellListUuids) {
-          if (!uuid || typeof uuid !== 'string') {
-            log(2, `Invalid spell list UUID in affected spells check: ${uuid}`);
-            continue;
+      const validUuids = spellListUuids.filter((uuid) => uuid && typeof uuid === 'string');
+      if (validUuids.length > 0) {
+        log(3, `Loading ${validUuids.length} spell list(s) for affected spells check: ${validUuids.join(', ')}`);
+        const spellListPromises = validUuids.map(async (uuid) => {
+          const spellListDoc = await fromUuid(uuid);
+          if (spellListDoc?.system?.spells?.size > 0) {
+            log(3, `Loaded spell list for affected check: ${spellListDoc.name} (${spellListDoc.system.spells.size} spells)`);
+            return spellListDoc.system.spells;
+          } else {
+            log(2, `Spell list has no spells for affected check: ${uuid}`);
+            return null;
           }
-          try {
-            const spellListDoc = await fromUuid(uuid);
-            if (spellListDoc && spellListDoc.system?.spells && spellListDoc.system.spells.size > 0) {
-              spellSets.push(spellListDoc.system.spells);
-              log(3, `Loaded spell list for affected check: ${spellListDoc.name} (${spellListDoc.system.spells.size} spells)`);
-            } else {
-              log(2, `Spell list has no spells for affected check: ${uuid}`);
-            }
-          } catch (error) {
-            log(1, `Error loading spell list for affected spells check ${uuid}:`, error);
-          }
-        }
+        });
+        const spellSets = (await Promise.all(spellListPromises)).filter((set) => set !== null);
         if (spellSets.length > 0) {
           for (const spellSet of spellSets) for (const spell of spellSet) newSpellList.add(spell);
           log(3, `Merged ${spellSets.length} spell lists for affected spells check: ${newSpellList.size} total spells`);
         }
       }
     } else {
-      const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
-      const classItem = spellcastingData ? actor.items.get(spellcastingData.id) : null;
+      const classItem = actor.spellcastingClasses?.[classIdentifier];
       if (classItem) newSpellList = await DataUtils.getClassSpellList(classItem.name.toLowerCase(), classItem.uuid, actor);
     }
     const affectedSpells = [];
@@ -403,13 +371,8 @@ export class RuleSet {
       const [, ...uuidParts] = classSpellKey.split(':');
       const spellUuid = uuidParts.join(':');
       if (!newSpellList.has(spellUuid)) {
-        try {
-          const spell = await fromUuid(spellUuid);
-          if (spell) affectedSpells.push({ name: spell.name, uuid: spellUuid, level: spell.system.level, classSpellKey: classSpellKey });
-        } catch (error) {
-          log(2, `Error loading spell ${spellUuid} for cleanup check:`, error);
-          affectedSpells.push({ name: game.i18n.localize('SPELLBOOK.UI.UnknownSpell'), uuid: spellUuid, level: 0, classSpellKey: classSpellKey });
-        }
+        const spell = await fromUuid(spellUuid);
+        if (spell) affectedSpells.push({ name: spell.name, uuid: spellUuid, level: spell.system.level, classSpellKey: classSpellKey });
       }
     }
     return affectedSpells;
@@ -425,29 +388,23 @@ export class RuleSet {
    * @static
    */
   static async _confirmSpellListChange(actor, classIdentifier, affectedSpells) {
-    const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
-    const classItem = spellcastingData ? actor.items.get(spellcastingData.id) : null;
+    const classItem = actor.spellcastingClasses?.[classIdentifier];
     const className = classItem?.name || classIdentifier;
     const cantripCount = affectedSpells.filter((s) => s.level === 0).length;
     const spellCount = affectedSpells.filter((s) => s.level > 0).length;
     const context = { className, totalAffected: affectedSpells.length, cantripCount, spellCount, affectedSpells };
-    try {
-      const content = await renderTemplate(TEMPLATES.DIALOGS.SPELL_LIST_CHANGE_CONFIRMATION, context);
-      const result = await foundry.applications.api.DialogV2.wait({
-        title: game.i18n.localize('SPELLBOOK.SpellListChange.Title'),
-        content: content,
-        buttons: [
-          { icon: 'fas fa-check', label: 'SPELLBOOK.SpellListChange.Proceed', action: 'confirm', className: 'dialog-button' },
-          { icon: 'fas fa-times', label: 'SPELLBOOK.UI.Cancel', action: 'cancel', className: 'dialog-button' }
-        ],
-        default: 'cancel',
-        rejectClose: false
-      });
-      return result === 'confirm';
-    } catch (error) {
-      log(1, 'Error showing spell list change confirmation dialog:', error);
-      return false;
-    }
+    const content = await renderTemplate(TEMPLATES.DIALOGS.SPELL_LIST_CHANGE_CONFIRMATION, context);
+    const result = await foundry.applications.api.DialogV2.wait({
+      title: game.i18n.localize('SPELLBOOK.SpellListChange.Title'),
+      content: content,
+      buttons: [
+        { icon: 'fas fa-check', label: 'SPELLBOOK.SpellListChange.Proceed', action: 'confirm', className: 'dialog-button' },
+        { icon: 'fas fa-times', label: 'SPELLBOOK.UI.Cancel', action: 'cancel', className: 'dialog-button' }
+      ],
+      default: 'cancel',
+      rejectClose: false
+    });
+    return result === 'confirm';
   }
 
   /**
@@ -463,30 +420,28 @@ export class RuleSet {
     const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const classPreparedSpells = preparedByClass[classIdentifier] || [];
     const affectedKeys = new Set(affectedSpells.map((s) => s.classSpellKey));
-    const newClassPreparedSpells = classPreparedSpells.filter((key) => !affectedKeys.has(key));
-    preparedByClass[classIdentifier] = newClassPreparedSpells;
-    actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
+    preparedByClass[classIdentifier] = classPreparedSpells.filter((key) => !affectedKeys.has(key));
+    await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
     const allPreparedKeys = Object.values(preparedByClass).flat();
     const allPreparedUuids = allPreparedKeys.map((key) => {
       const [, ...uuidParts] = key.split(':');
       return uuidParts.join(':');
     });
-    actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS, allPreparedUuids);
-    const spellIdsToRemove = [];
-    for (const affectedSpell of affectedSpells) {
-      const spellItem = actor.items.find(
-        (item) =>
-          item.type === 'spell' &&
-          (item._stats?.compendiumSource === affectedSpell.uuid || item.flags?.core?.sourceId === affectedSpell.uuid || item.uuid === affectedSpell.uuid) &&
-          (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
-      );
-      if (spellItem) {
-        const isGranted = !!spellItem.flags?.dnd5e?.cachedFor;
-        const isAlwaysPrepared = spellItem.system.prepared === 2;
-        const isSpecialMode = ['innate', 'atwill'].includes(spellItem.system.method);
-        if (!isGranted && !isAlwaysPrepared && !isSpecialMode) spellIdsToRemove.push(spellItem.id);
-      }
-    }
+    await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS, allPreparedUuids);
+    const affectedUuids = new Set(affectedSpells.map((s) => s.uuid));
+    const spellIdsToRemove = actor.items
+      .filter((item) => {
+        if (item.type !== 'spell') return false;
+        const sourceId = item._stats?.compendiumSource || item.flags?.core?.sourceId || item.uuid;
+        if (!affectedUuids.has(sourceId)) return false;
+        const itemClass = item.system?.sourceClass || item.sourceClass;
+        if (itemClass !== classIdentifier) return false;
+        const isGranted = !!item.flags?.dnd5e?.cachedFor;
+        const isAlwaysPrepared = item.system?.prepared === 2;
+        const isSpecialMode = ['innate', 'atwill'].includes(item.system?.method);
+        return !isGranted && !isAlwaysPrepared && !isSpecialMode;
+      })
+      .map((item) => item.id);
     if (spellIdsToRemove.length > 0) await actor.deleteEmbeddedDocuments('Item', spellIdsToRemove);
     log(3, `Unprepared ${affectedSpells.length} spells for ${classIdentifier} due to spell list change`);
   }
