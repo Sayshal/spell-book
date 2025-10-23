@@ -205,7 +205,7 @@ export class SpellManager {
         const actualPreparedSpell = this.actor.items.find(
           (i) =>
             i.type === 'spell' &&
-            (i._stats?.compendiumSource === spellUuid || i.flags?.core?.sourceId === spellUuid || i.uuid === spellUuid) &&
+            (i._stats?.compendiumSource === spellUuid || i.uuid === spellUuid) &&
             (i.system.sourceClass === classIdentifier || i.sourceClass === classIdentifier) &&
             i.system.prepared === 1 &&
             i.system.method !== MODULE.PREPARATION_MODES.RITUAL
@@ -250,7 +250,7 @@ export class SpellManager {
     let actualSpell = this.actor.items.find(
       (item) =>
         item.type === 'spell' &&
-        (item._stats?.compendiumSource === spellUuid || item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) &&
+        (item._stats?.compendiumSource === spellUuid || item.uuid === spellUuid) &&
         (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier) &&
         item.system.prepared === 1 &&
         item.system.method !== MODULE.PREPARATION_MODES.RITUAL
@@ -259,15 +259,13 @@ export class SpellManager {
       actualSpell = this.actor.items.find(
         (item) =>
           item.type === 'spell' &&
-          (item._stats?.compendiumSource === spellUuid || item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) &&
+          (item._stats?.compendiumSource === spellUuid || item.uuid === spellUuid) &&
           (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
       );
     }
     if (actualSpell) return this._getOwnedSpellPreparationStatus(actualSpell);
-    const unassignedSpell = this.actor.items.find(
-      (item) =>
-        item.type === 'spell' && (item._stats?.compendiumSource === spellUuid || item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid) && !item.system?.sourceClass && !item.sourceClass
-    );
+    /** @todo is this ||/&& logic correct here? */
+    const unassignedSpell = this.actor.items.find((i) =>i.type === 'spell' && (i._stats?.compendiumSource === spellUuid || i.uuid === spellUuid) && !i.system?.sourceClass && !i.sourceClass);
     if (unassignedSpell && classIdentifier) {
       const isAlwaysPrepared = unassignedSpell.system.prepared === 2;
       const isGranted = !!unassignedSpell.flags?.dnd5e?.cachedFor;
@@ -299,7 +297,7 @@ export class SpellManager {
         };
       }
     }
-    const specialSpell = this.actor.items.find((item) => item.type === 'spell' && (item._stats?.compendiumSource === spellUuid || item.flags?.core?.sourceId === spellUuid || item.uuid === spellUuid));
+    const specialSpell = this.actor.items.find((item) => item.type === 'spell' && (item._stats?.compendiumSource === spellUuid || item.uuid === spellUuid));
     if (specialSpell) {
       if (specialSpell.system.prepared === 2) {
         const sourceClass = specialSpell.system?.sourceClass || specialSpell.sourceClass;
@@ -565,7 +563,7 @@ export class SpellManager {
     const existingRitualSpell = this.actor.items.find(
       (i) =>
         i.type === 'spell' &&
-        (i._stats?.compendiumSource === uuid || i.flags?.core?.sourceId === uuid || i.uuid === uuid) &&
+        (i._stats?.compendiumSource === uuid || i.uuid === uuid) &&
         (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass) &&
         i.system?.method === MODULE.PREPARATION_MODES.RITUAL
     );
@@ -580,7 +578,6 @@ export class SpellManager {
       newSpellData.flags[MODULE.ID].isModuleRitual = true;
       spellsToCreate.push(newSpellData);
     } else {
-      log(1, 'ERROR: Could not load source spell for ritual creation', { uuid: uuid, sourceClass: sourceClass });
     }
   }
 
@@ -607,7 +604,7 @@ export class SpellManager {
    * @returns {Promise<void>}
    */
   async _ensureSpellOnActor(uuid, sourceClass, preparationMode, spellsToCreate, spellsToUpdate) {
-    const allMatchingSpells = this.actor.items.filter((i) => i.type === 'spell' && (i._stats?.compendiumSource === uuid || i.flags?.core?.sourceId === uuid || i.uuid === uuid));
+    const allMatchingSpells = this.actor.items.filter((i) => i.type === 'spell' && (i._stats?.compendiumSource === uuid || i.uuid === uuid));
     for (const spell of allMatchingSpells) {
       const spellSourceClass = spell.system?.sourceClass || spell.sourceClass;
       if (spellSourceClass && spellSourceClass !== sourceClass) continue;
@@ -684,7 +681,7 @@ export class SpellManager {
   async _handleUnpreparingSpell(uuid, sourceClass, spellIdsToRemove) {
     const matchingSpells = this.actor.items.filter(
       (i) =>
-        i.type === 'spell' && (i._stats?.compendiumSource === uuid || i.flags?.core?.sourceId === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
+        i.type === 'spell' && (i._stats?.compendiumSource === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
     );
     if (matchingSpells.length === 0) return;
     let targetSpell = matchingSpells.find((spell) => spell.system.prepared === 1 && spell.system.method !== MODULE.PREPARATION_MODES.RITUAL);
@@ -739,7 +736,6 @@ export class SpellManager {
         const spell = await fromUuid(parsed.spellUuid);
         if (spell && spell.system.level !== 0) cleanedSpells.push(classSpellKey);
       } catch (error) {
-        log(1, 'Error', error);
         cleanedSpells.push(classSpellKey);
       }
     }
@@ -764,7 +760,7 @@ export class SpellManager {
         const actualSpell = this.actor.items.find(
           (item) =>
             item.type === 'spell' &&
-            (item._stats?.compendiumSource === parsed.spellUuid || item.flags?.core?.sourceId === parsed.spellUuid || item.uuid === parsed.spellUuid) &&
+            (item._stats?.compendiumSource === parsed.spellUuid || item.uuid === parsed.spellUuid) &&
             (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
         );
         if (actualSpell) cleanedKeys.push(spellKey);
@@ -775,7 +771,6 @@ export class SpellManager {
     if (hasChanges) {
       await this.actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
       await this._updateGlobalPreparedSpellsFlag();
-      log(2, 'Cleaned up stale preparation flags');
     }
   }
 

@@ -105,7 +105,6 @@ export class UsageTracker {
     const instance = this.getInstance();
     Hooks.on('dnd5e.activityConsumption', instance._handleActivityConsumption.bind(instance));
     this._initialized = true;
-    log(3, 'Spell usage tracker initialized');
   }
 
   /**
@@ -124,10 +123,7 @@ export class UsageTracker {
       const spell = activity.parent.parent;
       const actor = spell.actor;
       if (!actor || actor.type !== 'character') return;
-      const canonicalUuid =
-        foundry.utils.getProperty(spell, '_stats.compendiumSource') ||
-        foundry.utils.getProperty(spell, 'flags.core.sourceId') ||
-        spell.uuid;
+      const canonicalUuid = foundry.utils.getProperty(spell, '_stats.compendiumSource') || foundry.utils.getProperty(spell, 'flags.core.sourceId') || spell.uuid;
       const trackingKey = `${canonicalUuid}-${Date.now()}`;
       if (this.activeTracking.has(trackingKey)) return;
       this.activeTracking.set(trackingKey, true);
@@ -135,9 +131,7 @@ export class UsageTracker {
       await this._recordSpellUsage(canonicalUuid, context, actor);
       setTimeout(() => this.activeTracking.delete(trackingKey), 1000);
       log(3, `Tracked spell usage for actor ${actor.name}: ${spell.name} (${context})`);
-    } catch (error) {
-      log(1, 'Error tracking spell usage:', error);
-    }
+    } catch (error) {}
   }
 
   /**
@@ -177,8 +171,6 @@ export class UsageTracker {
       };
       const updatedData = foundry.utils.mergeObject(userData, { usageStats: newStats }, { inplace: false });
       await DataUtils.UserData.setUserDataForSpell(spellUuid, updatedData, targetUserId, actor.id);
-    } catch (error) {
-      log(1, 'Error recording spell usage:', error);
-    }
+    } catch (error) {}
   }
 }

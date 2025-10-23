@@ -9,7 +9,7 @@ function spellsNotInListsScript() {
         const spells = packIndex.filter((item) => item.type === 'spell');
         spells.forEach((spell) => allSpells.add(spell.uuid));
       }
-      SPELLBOOK.log(3, `Found ${allSpells.size} total spells across all packs`);
+      SPELLBOOK.
       const spellLists = await SPELLBOOK.utils.data.findCompendiumSpellLists();
       const spellsInLists = new Set();
       for (const list of spellLists) {
@@ -22,10 +22,10 @@ function spellsNotInListsScript() {
             });
           }
         } catch (error) {
-          SPELLBOOK.log(2, `Error processing spell list ${list.name}:`, error);
+          SPELLBOOK.
         }
       }
-      SPELLBOOK.log(3, `Found ${spellsInLists.size} spells in spell lists`);
+      SPELLBOOK.
       const spellsNotInLists = [];
       for (const spellUuid of allSpells) {
         if (!spellsInLists.has(spellUuid)) {
@@ -39,14 +39,14 @@ function spellsNotInListsScript() {
               });
             }
           } catch (error) {
-            SPELLBOOK.log(2, `Error loading spell ${spellUuid}:`, error);
+            SPELLBOOK.
           }
         }
       }
       spellsNotInLists.sort((a, b) => a.name.localeCompare(b.name));
-      await showSpellsNotInListsDialog(spellsNotInLists);
+      await showSpellsNotInListsDia
     } catch (error) {
-      SPELLBOOK.log(1, 'Error finding spells not in lists:', error);
+      SPELLBOOK.
       ui.notifications.clear();
       ui.notifications.error(`Error: ${error.message}`);
     }
@@ -94,7 +94,7 @@ function spellsNotInListsScript() {
     }).then((result) => {
       if (result === 'copy') {
         const spellNames = spells.map((s) => `${s.name} (${s.uuid})`).join('\n');
-        SPELLBOOK.log(3, `Spells not in lists:\n${spellNames}`);
+        SPELLBOOK.
         ui.notifications.info('Spell list copied to console (F12)');
       }
     });

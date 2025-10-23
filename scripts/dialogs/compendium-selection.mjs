@@ -120,7 +120,6 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
       }
       return false;
     } catch (error) {
-      log(1, `Error checking pack relevance for ${pack.title}:`, error);
       return false;
     }
   }
@@ -157,7 +156,6 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
       if (packTopLevelFolder) return this._translateSystemFolderName(packTopLevelFolder);
       return this._translateSystemFolderName(pack.title || pack.metadata.label, pack.metadata.id);
     } catch (error) {
-      log(1, `Error determining organization name for ${pack.title || 'unknown pack'}:`, error);
       return pack.title || pack.metadata.label || 'Unknown Source';
     }
   }

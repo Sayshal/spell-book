@@ -118,7 +118,6 @@ export class RuleSet {
     if (existingRules) {
       const classExists = actor.spellcastingClasses?.[classIdentifier] !== undefined;
       if (!classExists) {
-        log(2, `Class rules found for non-existent class: ${classIdentifier}. Will be cleaned up on next Spell Book open.`);
         const ruleSet = RuleSet.getEffectiveRuleSet(actor);
         return RuleSet._getClassDefaults(classIdentifier, ruleSet);
       }
@@ -153,9 +152,9 @@ export class RuleSet {
       }
     }
     classRules[classIdentifier] = { ...classRules[classIdentifier], ...newRules };
-    log(3, `Updating class rules for ${classIdentifier}:`, classRules[classIdentifier]);
+
     actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
-    log(3, `Updated class rules for ${classIdentifier} on ${actor.name}`);
+
     return true;
   }
 
@@ -178,7 +177,6 @@ export class RuleSet {
     }
     if (hasNewClasses) {
       actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, existingRules);
-      log(3, `Initialized rules for new spellcasting classes on ${actor.name}`);
     }
   }
 
@@ -352,14 +350,12 @@ export class RuleSet {
             log(3, `Loaded spell list for affected check: ${spellListDoc.name} (${spellListDoc.system.spells.size} spells)`);
             return spellListDoc.system.spells;
           } else {
-            log(2, `Spell list has no spells for affected check: ${uuid}`);
             return null;
           }
         });
         const spellSets = (await Promise.all(spellListPromises)).filter((set) => set !== null);
         if (spellSets.length > 0) {
           for (const spellSet of spellSets) for (const spell of spellSet) newSpellList.add(spell);
-          log(3, `Merged ${spellSets.length} spell lists for affected spells check: ${newSpellList.size} total spells`);
         }
       }
     } else {
@@ -432,7 +428,7 @@ export class RuleSet {
     const spellIdsToRemove = actor.items
       .filter((item) => {
         if (item.type !== 'spell') return false;
-        const sourceId = item._stats?.compendiumSource || item.flags?.core?.sourceId || item.uuid;
+        const sourceId = item._stats?.compendiumSource || item.uuid;
         if (!affectedUuids.has(sourceId)) return false;
         const itemClass = item.system?.sourceClass || item.sourceClass;
         if (itemClass !== classIdentifier) return false;
@@ -443,6 +439,5 @@ export class RuleSet {
       })
       .map((item) => item.id);
     if (spellIdsToRemove.length > 0) await actor.deleteEmbeddedDocuments('Item', spellIdsToRemove);
-    log(3, `Unprepared ${affectedSpells.length} spells for ${classIdentifier} due to spell list change`);
   }
 }

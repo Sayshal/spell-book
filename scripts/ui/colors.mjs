@@ -45,7 +45,6 @@ export async function applyClassColors(spellcastingClasses) {
         const image = new Image();
         image.crossOrigin = 'anonymous';
         const timeout = setTimeout(() => {
-          log(2, `Timeout loading image for color extraction: ${img}`);
           resolve(fallbackColor);
         }, 5000);
         image.onload = () => {
@@ -90,7 +89,7 @@ export async function applyClassColors(spellcastingClasses) {
         };
         image.onerror = () => {
           clearTimeout(timeout);
-          log(2, 'Could not load image for color extraction:', img);
+
           resolve(fallbackColor);
         };
         image.src = img;
@@ -99,7 +98,6 @@ export async function applyClassColors(spellcastingClasses) {
       if (extractedColor && typeof extractedColor === 'string' && extractedColor.match(/^#[\dA-Fa-f]{6}$/)) {
         color = _adjustColorForContrast(extractedColor, background, 4.5);
       } else {
-        log(2, `Invalid color extracted for class ${classId}, using fallback`);
         color = _adjustColorForContrast(fallbackColor, background, 4.5);
       }
     } else {
@@ -107,7 +105,6 @@ export async function applyClassColors(spellcastingClasses) {
     }
 
     if (!color || typeof color !== 'string' || !color.match(/^#[\dA-Fa-f]{6}$/)) {
-      log(2, `Final color validation failed for class ${classId}, using raw fallback`);
       color = fallbackColor;
     }
 
@@ -116,7 +113,6 @@ export async function applyClassColors(spellcastingClasses) {
 
   styleElement.textContent = css;
   if (!styleElement.parentNode) document.head.appendChild(styleElement);
-  log(3, 'Applied class-specific colors to CSS with contrast adjustment');
 }
 
 /**

@@ -5,17 +5,6 @@
  * party members. This application provides spell comparison, focus assignment, synergy
  * analysis, and collaborative spell planning capabilities for groups of spellcasters.
  *
- * Key features:
- * - Cross-party spell comparison and visualization
- * - Individual spellcasting focus assignment and management
- * - Member-based spell filtering and highlighting
- * - Collapsible spell level organization with state persistence
- * - Spell synergy analysis for optimization
- * - Real-time data refresh and cache management
- * - Drag-and-drop spell level reordering
- * - Hover-based spell highlighting for party coordination
- * - Dual-flag focus system integration with group and individual actor flags
- *
  * @module Applications/PartyCoordinator
  * @author Tyler
  */
@@ -23,6 +12,7 @@
 import { MODULE, TEMPLATES } from '../constants/_module.mjs';
 import { PartyMode } from '../managers/_module.mjs';
 import { FocusSettings, SynergyAnalysis } from '../dialogs/_module.mjs';
+import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -120,6 +110,8 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
 
     /** @type {string|null} Currently filtered actor ID for spell display */
     this._filteredActorId = null;
+
+    log(1, 'PartyCoordinator constructed.');
   }
 
   /** @inheritdoc */
@@ -161,6 +153,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
         }
       });
     }
+    log(3, 'PartyCoordinator Context:', { context });
     return context;
   }
 
@@ -178,13 +171,15 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
       }
       if (!event.target.closest('#member-card-context-menu')) this._hideMemberCardContextMenu();
     };
-    document.addEventListener('click', this._globalClickHandler);
+    document.addEventListener('click', this._globalClickHandler); /** @todo: Why do we need a global click handler? */
+    log(3, 'Rendering.');
   }
 
   /** @inheritdoc */
   async _onClose(options = {}) {
     if (this._globalClickHandler) document.removeEventListener('click', this._globalClickHandler);
     this._hideMemberCardContextMenu();
+    log(3, 'Closing window.');
     return super._onClose(options);
   }
 
@@ -194,7 +189,9 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   getAvailableFocusOptions() {
     const focuses = PartyMode.getAvailableFocuses();
-    return focuses.map((focus) => ({ value: focus, label: focus }));
+    const availableFocuses = focuses.map((focus) => ({ value: focus, label: focus }));
+    log(3, 'Constructed available focuses:', { availableFocuses });
+    return availableFocuses;
   }
 
   /**
@@ -203,14 +200,17 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @returns {Array<SpellLevelGroup>} Array of spell level group objects
    */
   getSpellLevelGroups(spellsByLevel) {
-    const levels = Object.keys(spellsByLevel)
+    const levelsMapped = Object.keys(spellsByLevel)
       .map((l) => parseInt(l))
-      .sort((a, b) => a - b);
-    return levels.map((level) => ({
-      level,
-      levelName: level === 0 ? game.i18n.localize('SPELLBOOK.SpellLevel.Cantrip') : game.i18n.format('SPELLBOOK.SpellLevel.Numbered', { level }),
-      spells: Object.values(spellsByLevel[level]).sort((a, b) => a.name.localeCompare(b.name))
-    }));
+      .sort((a, b) => a - b)
+      .map((level) => ({
+        level,
+        levelName: level === 0 ? game.i18n.localize('SPELLBOOK.SpellLevel.Cantrip') : game.i18n.format('SPELLBOOK.SpellLevel.Numbered', { level }),
+        spells: Object.values(spellsByLevel[level]).sort((a, b) => a.name.localeCompare(b.name))
+      }));
+
+    log(3, 'Spell levels mapped:', levelsMapped);
+    return levelsMapped;
   }
 
   /**
@@ -219,10 +219,10 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @param {HTMLElement} _target - The clicked element
    * @static
    */
-  static async showSynergyAnalysis(_event, _target) {
+  static showSynergyAnalysis(_event, _target) {
+    log(3, 'Show Analysis called.');
     if (!this._comparisonData?.synergy) return;
-    const analysisDialog = new SynergyAnalysis(this._comparisonData.synergy);
-    analysisDialog.render(true);
+    new SynergyAnalysis(this._comparisonData.synergy).render({ force: true });
   }
 
   /**
@@ -231,10 +231,11 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @param {HTMLElement} _target - The clicked element
    * @static
    */
-  static async refreshData(_event, _target) {
+  static refreshData(_event, _target) {
+    log(3, 'Refresh Data called.');
     this._comparisonData = null;
     this.partyManager._spellDataCache.clear();
-    await this.render();
+    this.render();
   }
 
   /**
@@ -258,6 +259,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
     if (header) header.setAttribute('aria-expanded', !isCollapsed);
     if (spellList) spellList.style.display = isCollapsed ? 'none' : '';
     if (collapseIcon) collapseIcon.className = `fas fa-caret-${isCollapsed ? 'right' : 'down'} collapse-indicator`;
+    log(3, 'Toggle Spell Level called.', { levelContainer, isCollapsed, collapsedLevels });
   }
 
   /**
@@ -266,7 +268,8 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @param {HTMLElement} target - The clicked element with data-actor-id attribute
    * @static
    */
-  static async filterMemberSpells(event, target) {
+  static filterMemberSpells(event, target) {
+    log(3, 'Filter Member Spells called.');
     event.stopPropagation();
     const actorId = target.dataset.actorId;
     if (!actorId) return;
@@ -285,16 +288,13 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   static async openFocusSettings(event, target) {
     event.stopPropagation();
-    const actorId = target.dataset.actorId;
-    const actor = actorId ? game.actors.get(actorId) : null;
-    if (game.user.isGM) {
-      new FocusSettings(this.groupActor, null, this).render(true);
-      return;
-    }
-    if (actor) {
-      if (!actor.isOwner) return;
-      new FocusSettings(this.groupActor, actor, this).render(true);
-    } else new FocusSettings(this.groupActor, null, this).render(true);
+    const actor = game.actors.get(target.dataset.actorId || '');
+    const isGM = game.user.isGM;
+    const actorAllowed = actor && actor.isOwner;
+    const actorForSettings = isGM ? null : actorAllowed ? actor : null;
+    if (!isGM && actor && !actor.isOwner) return;
+    new FocusSettings(this.groupActor, actorForSettings, this).render(true);
+    log(3, 'Open Focus Settings called.', { actor, isGM, actorAllowed, actorForSettings });
   }
 
   /**
@@ -302,6 +302,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _setupPartyMemberHover() {
+    log(3, 'Setup Party Member Hover called.');
     const memberCards = this.element.querySelectorAll('.member-card');
     memberCards.forEach((card) => {
       const actorId = card.dataset.actorId;
@@ -334,6 +335,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _setupMemberCardContextMenu() {
+    log(3, 'Setup Member Card Context called.');
     const memberCards = this.element.querySelectorAll('.member-card');
     memberCards.forEach((card) => {
       const actorId = card.dataset.actorId;
@@ -356,6 +358,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   async _showMemberCardContextMenu(event, actor) {
+    log(3, 'Show Member Card Context called.');
     this._hideMemberCardContextMenu();
     try {
       const contextMenu = document.createElement('div');
@@ -382,7 +385,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
       });
       this._activeMemberCardContextMenu = contextMenu;
     } catch (error) {
-      console.error('Error showing member card context menu:', error);
+      log(1, 'Error showing member card context menu:', error);
     }
   }
 
@@ -393,6 +396,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _positionMemberCardContextMenu(event, menu) {
+    log(3, 'Position Member Card Context called.');
     const menuRect = menu.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
@@ -411,6 +415,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _hideMemberCardContextMenu() {
+    log(3, 'Hide Member Card Context called.');
     if (this._activeMemberCardContextMenu) {
       this._activeMemberCardContextMenu.remove();
       this._activeMemberCardContextMenu = null;
@@ -422,6 +427,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _restoreCollapsedLevels() {
+    log(3, 'Restore Collapsed Levels called.');
     const collapsedLevels = game.user.getFlag(MODULE.ID, 'partyCollapsedLevels') || [];
     collapsedLevels.forEach((levelId) => {
       const levelContainer = this.element.querySelector(`.spell-level-group[data-spell-level="${levelId}"]`);
@@ -443,6 +449,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _applySpellFilter(actorId) {
+    log(3, 'Apply Spell Filter called.');
     this._filteredActorId = actorId;
     const spellItems = this.element.querySelectorAll('.spell-comparison-item');
     spellItems.forEach((spellItem) => {
@@ -453,9 +460,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
         actorSpellStatus.classList.add('filtered-actor');
         const otherStatuses = spellItem.querySelectorAll(`.actor-spell-status:not([data-actor-id="${actorId}"])`);
         otherStatuses.forEach((status) => status.classList.add('dimmed'));
-      } else {
-        spellItem.style.display = 'none';
-      }
+      } else spellItem.style.display = 'none';
     });
     this._updateLevelHeadersForFilter();
     this._updateMemberCardStates(actorId);
@@ -467,6 +472,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _clearSpellFilter() {
+    log(3, 'Clear Spell Filter called.');
     this._filteredActorId = null;
     const spellItems = this.element.querySelectorAll('.spell-comparison-item');
     spellItems.forEach((spellItem) => {
@@ -488,6 +494,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _updateMemberCardStates(filteredActorId) {
+    log(3, 'Updating member card states.');
     const memberCards = this.element.querySelectorAll('.member-card');
     memberCards.forEach((card) => {
       const actorId = card.dataset.actorId;
@@ -506,6 +513,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _updateLevelHeadersForFilter() {
+    log(3, 'Updating level headers for filter.');
     const levelGroups = this.element.querySelectorAll('.spell-level-group');
     levelGroups.forEach((levelGroup) => {
       const spellItems = levelGroup.querySelectorAll('.spell-comparison-item');

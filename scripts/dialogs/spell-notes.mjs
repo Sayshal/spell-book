@@ -162,8 +162,6 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
         icon.setAttribute('aria-label', newTooltip);
       });
       await UIUtils.DescriptionInjector.handleNotesChange(canonicalUuid);
-    } catch (error) {
-      log(1, 'Error saving spell notes:', error);
-    }
+    } catch (error) {}
   }
 }

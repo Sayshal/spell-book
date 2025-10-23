@@ -61,15 +61,8 @@ export function registerSettings() {
     type: Object,
     default: {},
     onChange: (value) => {
-      try {
-        if (typeof value !== 'object' || value === null) {
-          log(2, 'Invalid indexed compendiums format, resetting to default');
-          game.settings.set(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS, {});
-        }
-        if (window.spellBookCompendiumCache) window.spellBookCompendiumCache.clear();
-      } catch (error) {
-        log(1, 'Error validating indexed compendiums setting:', error);
-      }
+      if (typeof value !== 'object' || value === null) game.settings.set(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS, {});
+      if (window.spellBookCompendiumCache) window.spellBookCompendiumCache.clear();
     }
   });
 
@@ -92,14 +85,7 @@ export function registerSettings() {
     type: Object,
     default: {},
     onChange: (value) => {
-      try {
-        if (typeof value !== 'object' || value === null) {
-          log(2, 'Invalid custom spell mappings format, resetting to default');
-          game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, {});
-        }
-      } catch (error) {
-        log(1, 'Error validating custom spell mappings:', error);
-      }
+      if (typeof value !== 'object' || value === null) game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, {});
     }
   });
 
@@ -194,22 +180,7 @@ export function registerSettings() {
     type: String,
     default: '^',
     onChange: (value) => {
-      try {
-        if (value.length !== 1) {
-          log(2, 'Advanced search prefix must be exactly 1 character, resetting to default');
-          game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
-          return;
-        }
-        if (/[\dA-Za-z]/.test(value)) {
-          log(2, 'Advanced search prefix cannot be a letter or number, resetting to default');
-          game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
-          return;
-        }
-        log(3, `Advanced search prefix changed to "${value}"`);
-      } catch (error) {
-        log(1, 'Error validating advanced search prefix:', error);
-        game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
-      }
+      if (value.length !== 1 || /[\dA-Za-z]/.test(value)) game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
     }
   });
 
@@ -294,9 +265,8 @@ export function registerSettings() {
     config: false,
     type: Array,
     default: [],
-    onChange: async (value) => {
-      log(3, `Registry enabled lists updated: ${value.length} lists`);
-      if (game.user.isGM) await DataUtils.registerCustomSpellLists();
+    onChange: async () => {
+      await DataUtils.registerCustomSpellLists();
     }
   });
 
@@ -586,16 +556,8 @@ export function registerSettings() {
       filters: MODULE.DEFAULT_FILTER_CONFIG
     },
     onChange: (value) => {
-      try {
-        if (!value || !Array.isArray(value.filters)) {
-          log(2, 'Invalid filter configuration format, resetting to default');
-          game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, {
-            version: MODULE.DEFAULT_FILTER_CONFIG_VERSION,
-            filters: MODULE.DEFAULT_FILTER_CONFIG
-          });
-        }
-      } catch (error) {
-        log(1, 'Error validating filter configuration:', error);
+      if (!value || !Array.isArray(value.filters)) {
+        game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, { version: MODULE.DEFAULT_FILTER_CONFIG_VERSION, filters: MODULE.DEFAULT_FILTER_CONFIG });
       }
     }
   });
@@ -609,14 +571,7 @@ export function registerSettings() {
     type: Array,
     default: [],
     onChange: (value) => {
-      try {
-        if (!Array.isArray(value)) {
-          log(2, 'Invalid hidden spell lists format, resetting to default');
-          game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, []);
-        }
-      } catch (error) {
-        log(1, 'Error validating hidden spell lists setting:', error);
-      }
+      if (!Array.isArray(value)) game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, []);
     }
   });
 
@@ -669,7 +624,8 @@ export function registerSettings() {
     default: 2,
     onChange: (value) => {
       MODULE.LOG_LEVEL = parseInt(value);
-      log(3, `Logging level changed to ${MODULE.LOG_LEVEL}`);
     }
   });
+
+  log(3, 'Module settings registered.');
 }

@@ -10,7 +10,6 @@ export class SocketHandler {
    */
   constructor() {
     this.#registerQueries();
-    log(3, 'SocketHandler initialized');
   }
 
   /**
@@ -25,7 +24,6 @@ export class SocketHandler {
         const { type, config } = data;
         if (!type) throw new Error('Query missing type');
         if (!config) throw new Error('Query missing config');
-        log(3, `Processing query type: ${type}`, config);
         switch (type) {
           case 'setUserFocus':
             return await handler.#handleSetUserFocus(config);
@@ -35,11 +33,9 @@ export class SocketHandler {
             throw new Error(`Unknown query type: ${type}`);
         }
       } catch (error) {
-        log(1, 'Error in query handler:', error);
         return { success: false, error: error.message };
       }
     };
-    log(3, `Registered query handler: ${MODULE.ID}`);
   }
 
   /**
@@ -102,19 +98,13 @@ export class SocketHandler {
    * @returns {Promise<{success: boolean, error?: string}>} Result object indicating success or failure
    */
   async #handleSetUserFocus({ groupActorId, userId, focusId }) {
-    try {
-      const groupActor = game.actors.get(groupActorId);
-      if (!groupActor) return { success: false, error: 'Group actor not found' };
-      const currentSelections = groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
-      if (focusId) currentSelections[userId] = focusId;
-      else delete currentSelections[userId];
-      await groupActor.setFlag(MODULE.ID, FLAGS.SELECTED_FOCUS, currentSelections);
-      log(3, `Successfully set focus for user ${userId} to ${focusId || 'none'}`);
-      return { success: true };
-    } catch (error) {
-      log(1, 'Error in #handleSetUserFocus:', error);
-      return { success: false, error: error.message };
-    }
+    const groupActor = game.actors.get(groupActorId);
+    if (!groupActor) return { success: false, error: 'Group actor not found' };
+    const currentSelections = groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
+    if (focusId) currentSelections[userId] = focusId;
+    else delete currentSelections[userId];
+    await groupActor.setFlag(MODULE.ID, FLAGS.SELECTED_FOCUS, currentSelections);
+    return { success: true };
   }
 
   /**
@@ -126,19 +116,9 @@ export class SocketHandler {
    * @returns {Promise<{success: boolean, error?: string}>} Result object indicating success or failure
    */
   async #handleSetActorFocus({ actorId, focus }) {
-    log(3, `Handling setActorFocus - actorId: ${actorId}, focus: ${focus}`);
-    try {
-      const actor = game.actors.get(actorId);
-      if (!actor) {
-        log(1, `Actor not found: ${actorId}`);
-        return { success: false, error: 'Actor not found' };
-      }
-      await actor.setFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS, focus);
-      log(3, `Successfully set focus for actor ${actor.name} to ${focus}`);
-      return { success: true };
-    } catch (error) {
-      log(1, 'Error in #handleSetActorFocus:', error);
-      return { success: false, error: error.message };
-    }
+    const actor = game.actors.get(actorId);
+    if (!actor) return { success: false, error: 'Actor not found' };
+    await actor.setFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS, focus);
+    return { success: true };
   }
 }

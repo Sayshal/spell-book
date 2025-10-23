@@ -169,9 +169,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
         form.reset();
         await this.render({ force: true });
       }
-    } catch (error) {
-      log(1, 'Error saving loadout:', error);
-    }
+    } catch (error) {}
   }
 
   /**
@@ -193,9 +191,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
       await this.loadoutManager.actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.${loadoutId}`]: updatedLoadout });
       this.loadoutManager._invalidateCache();
       await this.render(false);
-    } catch (error) {
-      log(1, 'Error overwriting loadout:', error);
-    }
+    } catch (error) {}
   }
 
   /**
@@ -216,9 +212,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
       try {
         const success = await this.loadoutManager.deleteLoadout(loadoutId);
         if (success) await this.render(false);
-      } catch (error) {
-        log(1, 'Error deleting loadout:', error);
-      }
+      } catch (error) {}
     }
   }
 
@@ -235,9 +229,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       const success = this.loadoutManager.applyLoadout(loadoutId, this.classIdentifier);
       if (success) this.close();
-    } catch (error) {
-      log(1, 'Error applying loadout:', error);
-    }
+    } catch (error) {}
   }
 
   /**
@@ -334,7 +326,6 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
       `;
       UIUtils.showTooltip('spell-preview-tooltip', content, null, 'spell-preview-tooltip');
     } catch (error) {
-      log(1, 'Error showing spell preview:', error);
       const errorContent = `
         <div class="tooltip-content">
           <div class="error">${game.i18n.localize('SPELLBOOK.Loadouts.ErrorLoadingPreview')}</div>

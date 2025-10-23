@@ -68,7 +68,6 @@ export function registerDnD5eIntegration() {
   Hooks.on('renderGroupActorSheet', onGroupActorRender);
   Hooks.on('activateCompendiumDirectory', addJournalSpellBookButton);
   Hooks.on('dnd5e.restCompleted', handleRestCompleted);
-  log(3, 'Registering DnD5e system integration');
 }
 
 /**
@@ -160,7 +159,6 @@ async function onSpellBookButtonClick(actor, event) {
     await spellBook._preInitialize();
     spellBook.render(true);
   } catch (error) {
-    log(1, 'Error opening spell book:', error);
   } finally {
     if (icon) {
       icon.classList.remove('fa-spin');
@@ -181,18 +179,15 @@ function onGroupActorRender(_sheet, element, data) {
   if (!canAddPartySpellButton(actor, data)) return;
   const headerButtons = element.querySelector('.sheet-header-buttons');
   if (!headerButtons) {
-    log(2, 'Could not find .sheet-header-buttons in group actor sheet');
     return;
   }
   const longRestButton = headerButtons.querySelector('.long-rest.gold-button');
   if (!longRestButton) {
-    log(2, 'Could not find long rest button in group actor sheet');
     return;
   }
   if (headerButtons.querySelector('.party-spell-button')) return;
   const button = createPartySpellButton(actor, data);
   longRestButton.insertAdjacentElement('afterend', button);
-  log(3, 'Added party spell button to group actor sheet');
 }
 
 /**
@@ -251,7 +246,7 @@ function openPartySpellManager(event, groupActor, data) {
  */
 async function handleRestCompleted(actor, result, _config) {
   if (!result.longRest) return;
-  log(3, `Long rest completed for ${actor.name}, processing all spellcasting classes`);
+
   const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
   let hasAnyLongRestMechanics = false;
   const longRestClasses = { cantripSwapping: [], spellSwapping: [] };
@@ -260,7 +255,7 @@ async function handleRestCompleted(actor, result, _config) {
     const needsCantripSwap = rules.cantripSwapping === 'longRest';
     if (needsSpellSwap || needsCantripSwap) {
       hasAnyLongRestMechanics = true;
-      log(3, `Class ${classIdentifier} needs long rest mechanics: spell swap=${needsSpellSwap}, cantrip swap=${needsCantripSwap}`);
+
       const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
       const classItem = spellcastingData ? actor.items.get(spellcastingData.id) : null;
       const className = classItem?.name || classIdentifier;
@@ -271,16 +266,14 @@ async function handleRestCompleted(actor, result, _config) {
         if (!swapTracking[classIdentifier]) swapTracking[classIdentifier] = {};
         swapTracking[classIdentifier].longRest = true;
         actor.setFlag(MODULE.ID, FLAGS.SWAP_TRACKING, swapTracking);
-        log(3, `Set spell swap flag for class ${classIdentifier}`);
       }
     }
   }
   if (hasAnyLongRestMechanics) {
     actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
-    log(3, `Set long rest completion flag for ${actor.name} - available for all classes that need it`);
+
     await handleLongRestSwapPrompt(actor, longRestClasses);
   } else {
-    log(3, `No classes on ${actor.name} require long rest mechanics, skipping`);
   }
 }
 
@@ -293,13 +286,12 @@ async function handleRestCompleted(actor, result, _config) {
 async function handleLongRestSwapPrompt(actor, longRestClasses) {
   const isPromptDisabled = game.settings.get(MODULE.ID, SETTINGS.DISABLE_LONG_REST_SWAP_PROMPT);
   if (isPromptDisabled) {
-    log(3, 'Long rest swap prompt disabled by user preference, flag already set');
     const classNames = [...longRestClasses.cantripSwapping.map((c) => c.name), ...longRestClasses.spellSwapping.map((c) => c.name)];
     const uniqueClassNames = [...new Set(classNames)];
     ui.notifications.info(game.i18n.format('SPELLBOOK.LongRest.SwapAvailableNotification', { name: actor.name, classes: uniqueClassNames.join(', ') }));
     return;
   }
-  const dialogResult = await showLongRestSwapDialog(longRestClasses);
+  const dialogResult = await showLongRestSwapDia;
   if (dialogResult === 'confirm') {
     const spellBook = new SpellBook(actor);
     spellBook.render(true);
@@ -394,9 +386,7 @@ function createJournalAnalyticsButton() {
       await game.settings.set(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING, newSetting);
       analyticsButton.style.opacity = newSetting ? '1' : '0.6';
       analyticsButton.title = newSetting ? game.i18n.localize('SPELLBOOK.Analytics.TrackingEnabled') : game.i18n.localize('SPELLBOOK.Analytics.TrackingDisabled');
-    } catch (error) {
-      log(1, 'Error:', error);
-    }
+    } catch (error) {}
   });
   const trackingEnabled = game.settings.get(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING);
   analyticsButton.style.opacity = trackingEnabled ? '1' : '0.6';

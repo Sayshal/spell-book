@@ -85,7 +85,6 @@ export class DescriptionInjector {
    * @static
    */
   static async handleSettingChange(newValue) {
-    log(3, `Notes injection setting changed to: ${newValue}`);
     if (newValue === 'off') await this.removeAllNotesFromDescriptions();
     else await this.reapplyAllNotes();
   }
@@ -100,7 +99,6 @@ export class DescriptionInjector {
       const spellItems = actor.items.filter((item) => item.type === 'spell');
       for (const spell of spellItems) await this.removeNotesFromDescription(spell);
     }
-    log(3, 'Removed all notes from spell descriptions');
   }
 
   /**
@@ -113,7 +111,6 @@ export class DescriptionInjector {
       const spellItems = actor.items.filter((item) => item.type === 'spell');
       for (const spell of spellItems) await this.updateSpellDescription(spell);
     }
-    log(3, 'Re-applied all notes to spell descriptions');
   }
 
   /**
@@ -206,7 +203,6 @@ export class DescriptionInjector {
     if (injectionMode === 'before') newDescription = notesHtml + currentDescription;
     else newDescription = currentDescription + notesHtml;
     await spellItem.update({ 'system.description.value': newDescription }, { ['spellBookModuleUpdate']: true });
-    log(3, `Added notes to spell description: ${spellItem.name}`);
   }
 
   /**
@@ -224,7 +220,6 @@ export class DescriptionInjector {
     if (injectionMode === 'before') newDescription = notesHtml + newDescription;
     else newDescription = newDescription + notesHtml;
     await spellItem.update({ 'system.description.value': newDescription }, { ['spellBookModuleUpdate']: true });
-    log(3, `Updated notes in spell description: ${spellItem.name}`);
   }
 
   /**
@@ -240,7 +235,6 @@ export class DescriptionInjector {
     const newDescription = currentDescription.replace(notesRegex, '');
     if (newDescription !== currentDescription) {
       await spellItem.update({ 'system.description.value': newDescription }, { ['spellBookModuleUpdate']: true });
-      log(3, `Removed notes from spell description: ${spellItem.name}`);
     }
   }
 

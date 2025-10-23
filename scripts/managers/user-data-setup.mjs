@@ -82,7 +82,7 @@ export class UserDataSetup {
    */
   static async initializeUserSpellData() {
     if (!game.user.isGM) return;
-    log(3, 'Initializing user spell data journal system...');
+
     const manager = new UserDataSetup();
     await manager._ensureJournalSetup();
     let setupCount = 0;
@@ -91,8 +91,8 @@ export class UserDataSetup {
       const created = await manager._ensureUserTable(user.id);
       if (created) setupCount++;
     }
-    if (setupCount > 0) log(3, `Created spell data tables for ${setupCount} users`);
-    else log(3, 'All user spell data tables already exist');
+    if (setupCount > 0)
+    else
   }
 
   /**
@@ -105,7 +105,7 @@ export class UserDataSetup {
     this.journalName = game.i18n.localize('SPELLBOOK.UserData.FolderName');
     const pack = game.packs.get(MODULE.PACK.USERDATA);
     if (!pack) {
-      log(1, 'Spells pack not found for user data setup');
+
       return;
     }
     await this._ensureFolder(pack);
@@ -122,7 +122,7 @@ export class UserDataSetup {
     let folder = pack.folders.find((f) => f.name === this.folderName);
     if (!folder) {
       folder = await Folder.create({ name: this.folderName, type: 'JournalEntry', color: '#4a90e2', sorting: 'm' }, { pack: pack.collection });
-      log(3, `Created user data folder: ${this.folderName}`);
+
     }
     return folder;
   }
@@ -147,7 +147,7 @@ export class UserDataSetup {
         },
         { pack: pack.collection }
       );
-      log(3, `Created user spell data journal: ${this.journalName}`);
+
     }
     await this._createIntroductoryPage(journal);
     return journal;
@@ -219,7 +219,7 @@ export class UserDataSetup {
       flags: { [MODULE.ID]: { userId: userId, userName: user.name, created: Date.now(), lastUpdated: Date.now(), dataVersion: '2.0' } }
     });
     await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
-    log(3, `Created spell data table for user: ${user.name} with per-actor structure`);
+
     return true;
   }
 
@@ -241,6 +241,6 @@ export class UserDataSetup {
       flags: { [MODULE.ID]: { created: Date.now() } }
     });
     await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
-    log(3, 'Created introductory page for user spell data');
+
   }
 }

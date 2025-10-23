@@ -70,7 +70,6 @@ function handleMigrationReportButtons(element, message) {
       await game.settings.set(MODULE.ID, SETTINGS.SUPPRESS_MIGRATION_WARNINGS, true);
       ui.notifications.info(game.i18n.localize('SPELLBOOK.Settings.SuppressMigrationWarnings.Enabled'));
       await message.delete();
-      log(3, 'Migration warnings suppressed by user');
     }
   });
 }

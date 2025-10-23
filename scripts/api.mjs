@@ -27,75 +27,46 @@ import { MODULE } from './constants/_module.mjs';
  * @returns {SpellBookAPI|null} The API object, or null if creation failed
  */
 export function createAPI() {
-  try {
-    const api = {
-      apps: { PlayerFilterConfiguration, SpellBook, AnalyticsDashboard, SpellListManager },
-      dialogs: { CompendiumSelection, SpellComparison, DetailsCustomization, LoadoutSelector, SpellNotes, SpellBookSettings },
-      utils: {
-        data: DataUtils,
-        managers: { Cantrips, Macros, Migrations, RuleSet, Loadouts, SpellManager, UsageTracker, UserDataSetup, WizardBook },
-        state: State,
-        ui: UIUtils,
-        validation: ValidationUtils
-      },
-      migrations: { forceMigration: Migrations.forceMigration },
-      preloadedData: null,
-      openSpellBookForActor: (actor) => {
-        if (!actor) {
-          log(1, 'No actor provided');
-          return null;
-        }
-        const spellBook = new SpellBook(actor);
-        spellBook.render(true);
-        return spellBook;
-      },
-      openSpellListManager: () => {
-        const manager = new SpellListManager();
-        manager.render(true);
-        return manager;
-      },
-      openAnalyticsDashboard: (options = {}) => {
-        const viewMode = options.viewMode || (game.user.isGM ? 'gm' : 'personal');
-        const userId = options.userId || game.user.id;
-        const dashboard = new AnalyticsDashboard({ viewMode: viewMode, userId: userId });
-        dashboard.render(true);
-        return dashboard;
-      },
-      openSpellNotesDialog: (spellUuid) => {
-        if (!spellUuid) {
-          log(1, 'No spell UUID provided');
-          return null;
-        }
-        const dialog = new SpellNotes({ spellUuid });
-        dialog.render(true);
-        return dialog;
-      },
-      openSpellLoadoutDialog: (actor, spellbook, classIdentifier) => {
-        if (!actor || !spellbook || !classIdentifier) {
-          log(1, 'Missing required parameters for loadout dialog');
-          return null;
-        }
-        const dialog = new LoadoutSelector(actor, spellbook, classIdentifier);
-        dialog.render(true);
-        return dialog;
-      },
-      openSpellbookSettingsDialog: (actor) => {
-        if (!actor) {
-          log(1, 'No actor provided');
-          return null;
-        }
-        const dialog = new SpellBookSettings(actor);
-        dialog.render(true);
-        return dialog;
-      },
-      log
-    };
-    globalThis.SPELLBOOK = api;
-    game.modules.get(MODULE.ID).api = api;
-    log(3, 'Module API registered with all components');
-    return api;
-  } catch (error) {
-    log(1, 'Error creating API:', error);
-    return null;
-  }
+  const api = {
+    apps: { PlayerFilterConfiguration, SpellBook, AnalyticsDashboard, SpellListManager },
+    dialogs: { CompendiumSelection, SpellComparison, DetailsCustomization, LoadoutSelector, SpellNotes, SpellBookSettings },
+    utils: {
+      data: DataUtils,
+      managers: { Cantrips, Macros, Migrations, RuleSet, Loadouts, SpellManager, UsageTracker, UserDataSetup, WizardBook },
+      state: State,
+      ui: UIUtils,
+      validation: ValidationUtils
+    },
+    migrations: { forceMigration: Migrations.forceMigration },
+    preloadedData: null,
+    openSpellBookForActor: (actor) => {
+      if (!actor) return null;
+      new SpellBook(actor).render({ force: true });
+    },
+    openSpellListManager: () => {
+      new SpellListManager().render({ force: true });
+    },
+    openAnalyticsDashboard: (options = {}) => {
+      const viewMode = options.viewMode || (game.user.isGM ? 'gm' : 'personal');
+      const userId = options.userId || game.user.id;
+      new AnalyticsDashboard({ viewMode: viewMode, userId: userId }).render({ force: true });
+    },
+    openSpellNotesDialog: (spellUuid) => {
+      if (!spellUuid) return null;
+      new SpellNotes({ spellUuid }).render({ force: true });
+    },
+    openSpellLoadoutDialog: (actor, spellbook, classIdentifier) => {
+      if (!actor || !spellbook || !classIdentifier) return null;
+      new LoadoutSelector(actor, spellbook, classIdentifier).render({ force: true });
+    },
+    openSpellbookSettingsDialog: (actor) => {
+      if (!actor) return null;
+      new SpellBookSettings(actor).render({ force: true });
+    },
+    log
+  };
+  globalThis.SPELLBOOK = api;
+  game.modules.get(MODULE.ID).api = api;
+  log(3, 'Module API registered:', { globalAPI: SPELLBOOK, localAPI: game.modules.get(MODULE.ID).api });
+  return api;
 }

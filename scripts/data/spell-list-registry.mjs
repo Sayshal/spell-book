@@ -27,14 +27,12 @@ import { log } from '../logger.mjs';
  * @returns {Promise<Object>} Registration result statistics
  */
 export async function registerCustomSpellLists() {
-  log(3, 'Registering spell lists with D&D 5e SpellListRegistry');
   const result = { total: 0, registered: 0, skipped: 0, failed: 0, errors: [] };
   const enabledUuids = game.settings.get(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS) || [];
   if (enabledUuids.length === 0) {
-    log(3, 'No spell lists enabled for registry integration');
     return result;
   }
-  log(3, `Registering ${enabledUuids.length} enabled spell lists`);
+
   const validUuids = [];
   for (const uuid of enabledUuids) {
     result.total++;
@@ -65,7 +63,7 @@ export async function registerCustomSpellLists() {
     log(3, `Removing ${removedCount} invalid spell list(s) from settings`);
     await game.settings.set(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS, validUuids);
   }
-  log(3, `Registry complete: ${result.registered} registered, ${result.skipped} skipped, ${result.failed} failed`);
+
   return result;
 }
 
@@ -91,12 +89,12 @@ export async function toggleListForRegistry(uuid) {
     const index = enabledLists.indexOf(uuid);
     enabledLists.splice(index, 1);
     await game.settings.set(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS, enabledLists);
-    log(3, `Disabled registry for: ${uuid}`);
+
     return false;
   } else {
     enabledLists.push(uuid);
     await game.settings.set(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS, enabledLists);
-    log(3, `Enabled registry for: ${uuid}`);
+
     return true;
   }
 }

@@ -290,7 +290,6 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
               const customList = await fromUuid(uuid);
               customSpellListNames.push(customList?.name || game.i18n.localize('SPELLBOOK.Settings.UnknownList'));
             } catch (error) {
-              log(2, `Error loading custom spell list ${uuid}:`, error);
               customSpellListNames.push(game.i18n.localize('SPELLBOOK.Settings.UnknownList'));
             }
           }
@@ -652,10 +651,9 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
         return { value: list.uuid, label: label, type: list.type };
       });
       spellListOptions.sort((a, b) => a.label.localeCompare(b.label));
-      log(3, `Prepared ${spellListOptions.length} spell list options for settings dialog`);
+
       return spellListOptions;
     } catch (error) {
-      log(1, 'Error preparing spell list options:', error);
       return [];
     }
   }
@@ -676,7 +674,6 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
     input.value = newValue;
     input.dispatchEvent(new Event('change', { bubbles: true }));
     this._updateClassStatsDisplay(classIdentifier, 'spell', newValue);
-    log(3, `Increased spell preparation bonus for ${classIdentifier} to ${newValue}`);
   }
 
   /**
@@ -698,7 +695,6 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
     input.value = newValue;
     input.dispatchEvent(new Event('change', { bubbles: true }));
     this._updateClassStatsDisplay(classIdentifier, 'spell', newValue);
-    log(3, `Decreased spell preparation bonus for ${classIdentifier} to ${newValue}`);
   }
 
   /**
@@ -733,7 +729,6 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
     input.value = newValue;
     input.dispatchEvent(new Event('change', { bubbles: true }));
     this._updateClassStatsDisplay(classIdentifier, 'cantrip', newValue);
-    log(3, `Increased cantrip preparation bonus for ${classIdentifier} to ${newValue}`);
   }
 
   /**
@@ -772,7 +767,6 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
     input.value = newValue;
     input.dispatchEvent(new Event('change', { bubbles: true }));
     this._updateClassStatsDisplay(classIdentifier, 'cantrip', newValue);
-    log(3, `Decreased cantrip preparation bonus for ${classIdentifier} to ${newValue}`);
   }
 
   /**
@@ -790,7 +784,6 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
     const newValue = currentValue + 5;
     input.value = newValue;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-    log(3, `Increased spell learning cost for ${classIdentifier} to ${newValue}`);
   }
 
   /**
@@ -808,7 +801,6 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
     const newValue = Math.max(0, currentValue - 5);
     input.value = newValue;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-    log(3, `Decreased spell learning cost for ${classIdentifier} to ${newValue}`);
   }
 
   /**
@@ -826,7 +818,6 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
     const newValue = currentValue + 1;
     input.value = newValue;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-    log(3, `Increased starting spells for ${classIdentifier} to ${newValue}`);
   }
 
   /**
@@ -844,7 +835,6 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
     const newValue = Math.max(0, currentValue - 1);
     input.value = newValue;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-    log(3, `Decreased starting spells for ${classIdentifier} to ${newValue}`);
   }
 
   /**
@@ -862,7 +852,6 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
     const newValue = currentValue + 1;
     input.value = newValue;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-    log(3, `Increased spells per level for ${classIdentifier} to ${newValue}`);
   }
 
   /**
@@ -880,7 +869,6 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
     const newValue = Math.max(0, currentValue - 1);
     input.value = newValue;
     input.dispatchEvent(new Event('change', { bubbles: true }));
-    log(3, `Decreased spells per level for ${classIdentifier} to ${newValue}`);
   }
 
   /**

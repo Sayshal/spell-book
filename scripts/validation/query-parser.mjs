@@ -68,10 +68,10 @@ export class QueryParser {
       const conditions = this._parseConditions(query.trim());
       if (!conditions || conditions.length === 0) return null;
       const parsed = { type: 'conjunction', conditions: conditions };
-      log(3, 'Query parsed successfully:', parsed);
+
       return parsed;
     } catch (error) {
-      log(2, 'Query parsing failed:', error);
+
       return null;
     }
   }
@@ -109,7 +109,7 @@ export class QueryParser {
     const fieldId = this.fieldDefinitions.getFieldId(fieldAlias);
     if (!fieldId) return null;
     if (!value || value === '') return null;
-    if (fieldId === 'range' && value.match(/^\d+-?$/)) log(3, `Partial range value detected: ${value}`);
+    if (fieldId === 'range' && value.match(/^\d+-?$/))
     else if (!this.fieldDefinitions.validateValue(fieldId, value)) return null;
     return { type: 'field', field: fieldId, value: this._normalizeValue(fieldId, value) };
   }

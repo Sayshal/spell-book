@@ -380,7 +380,6 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
     const colorPicker = target.closest('.wizard-book-color-controls').querySelector('color-picker[name="wizardBookIconColor"]');
     if (colorPicker) {
       colorPicker.value = userColor;
-      log(3, `Set wizard book color to user color: ${userColor}`);
     }
   }
 
@@ -396,7 +395,6 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
     if (colorPicker) {
       const savedColor = game.settings.get(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR);
       colorPicker.value = savedColor || '';
-      log(3, `Reset wizard book color to default: ${savedColor || 'empty'}`);
     }
   }
 
@@ -446,8 +444,6 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
       for (const app of spellbookApps) app.render(false);
       const gmSpellListApps = openApplications.filter((app) => app.constructor.name === 'SpellListManager');
       for (const app of gmSpellListApps) app.render(false);
-    } catch (error) {
-      log(1, 'Error saving spell customization settings:', error);
-    }
+    } catch (error) {}
   }
 }

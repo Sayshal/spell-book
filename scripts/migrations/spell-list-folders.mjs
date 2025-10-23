@@ -52,12 +52,10 @@ async function migrateSpellListFolders() {
           results.errors.push(migrationResult.error);
         }
       } catch (error) {
-        log(1, `Error migrating journal ${journal.name}:`, error);
         results.errors.push(`${journal.name}: ${error.message}`);
       }
     }
   } catch (error) {
-    log(1, 'Error during spell list folder migration:', error);
     results.errors.push(`Migration error: ${error.message}`);
   }
   return results;
@@ -86,12 +84,10 @@ async function migrateJournalToFolder(journal, customFolder, mergedFolder, modif
   const folders = { customFolder, mergedFolder, modifiedFolder };
   const matchedConfig = SPELL_LIST_TYPE_CONFIG.find((config) => config.check(flags));
   if (!matchedConfig) {
-    log(2, `Unknown spell list type for "${journal.name}", skipping migration`);
     return { success: false };
   }
   const targetFolder = matchedConfig.getFolderFn(folders);
   if (!targetFolder) {
-    log(2, `Folder not available for type "${matchedConfig.type}" on "${journal.name}", skipping migration`);
     return { success: false };
   }
   const newName = journal.name.replace(/^(Custom|Merged|Modified)\s*-\s*/, '');
@@ -99,7 +95,7 @@ async function migrateJournalToFolder(journal, customFolder, mergedFolder, modif
   if (newName !== journal.name) updateData.name = newName;
   await journal.update(updateData);
   if (newName !== page.name) await page.update({ name: newName });
-  log(3, `Migrated ${matchedConfig.type} journal "${journal.name}" to folder "${targetFolder.name}"`);
+
   return { success: true, type: matchedConfig.type, targetFolder: targetFolder.name };
 }
 

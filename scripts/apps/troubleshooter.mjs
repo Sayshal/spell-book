@@ -100,7 +100,6 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
         ownedActorNames: ownedActors.map((a) => a.name).join(', ')
       };
     } catch (error) {
-      log(1, `Error preparing troubleshooter context: ${error.message}`);
       return {
         output: 'Error Generation Report',
         includeActors: false,
@@ -134,7 +133,6 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
       this._addSpellBookLogData(addLine, addHeader);
       return reportLines.join('\n');
     } catch (error) {
-      log(1, `Error generating text report: ${error.message}`);
       throw error;
     }
   }
@@ -171,14 +169,11 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
             const actorFilename = `actor-${actor.name.slugify()}-${timestamp}.json`;
             foundry.utils.saveDataToFile(JSON.stringify(actorData, null, 2), 'text/json', actorFilename);
             exportedCount++;
-          } catch (actorError) {
-            log(1, `Error exporting actor ${actor.name}: ${actorError.message}`);
-          }
+          } catch (actorError) {}
         }
       }
       return { filename, exportedCount, includeActors };
     } catch (error) {
-      log(1, `Error exporting troubleshooter data: ${error.message}`);
       throw error;
     }
   }
@@ -193,9 +188,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       event.preventDefault();
       await Troubleshooter.exportTroubleshooterData();
-    } catch (error) {
-      log(1, `Error handling export report event: ${error.message}`);
-    }
+    } catch (error) {}
   }
 
   /**
@@ -209,9 +202,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
       event.preventDefault();
       const text = Troubleshooter.generateTextReport();
       await navigator.clipboard.writeText(text);
-    } catch (error) {
-      log(1, `Error copying to clipboard: ${error.message}`);
-    }
+    } catch (error) {}
   }
 
   /**
@@ -223,9 +214,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       event.preventDefault();
       window.open('https://discord.gg/PzzUwU9gdz');
-    } catch (error) {
-      log(1, `Error opening Discord link: ${error.message}`);
-    }
+    } catch (error) {}
   }
 
   /**
@@ -237,9 +226,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       event.preventDefault();
       window.open('https://github.com/Sayshal/spell-book/issues');
-    } catch (error) {
-      log(1, `Error opening GitHub link: ${error.message}`);
-    }
+    } catch (error) {}
   }
 
   /**
@@ -251,9 +238,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
     try {
       const checked = event.target.checked;
       game.settings.set(MODULE.ID, SETTINGS.TROUBLESHOOTER_INCLUDE_ACTORS, checked);
-    } catch (error) {
-      log(1, `Error toggling include actors setting: ${error.message}`);
-    }
+    } catch (error) {}
   }
 
   /**
@@ -290,14 +275,10 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
             rejectClose: false
           });
           if (confirmed) await Troubleshooter._importSettings(settingsData);
-        } catch (error) {
-          log(1, `Error processing import file: ${error.message}`);
-        }
+        } catch (error) {}
       };
       input.click();
-    } catch (error) {
-      log(1, `Error handling import settings event: ${error.message}`);
-    }
+    } catch (error) {}
   }
 
   /**
@@ -312,21 +293,18 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
       const marker = '=== FULL SETTINGS DATA (for import) ===';
       const markerIndex = fileContent.indexOf(marker);
       if (markerIndex === -1) {
-        log(2, 'Settings data marker not found in file');
         return null;
       }
       const jsonStart = markerIndex + marker.length;
       const jsonContent = fileContent.substring(jsonStart).trim();
       const jsonMatch = jsonContent.match(/^({[\S\s]*})/);
       if (!jsonMatch) {
-        log(2, 'No JSON object found after settings marker');
         return null;
       }
       const settingsData = JSON.parse(jsonMatch[1]);
       log(3, `Extracted ${Object.keys(settingsData).length} settings from troubleshooter file`);
       return settingsData;
     } catch (error) {
-      log(1, `Error extracting settings from troubleshooter: ${error.message}`);
       return null;
     }
   }
@@ -349,14 +327,12 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
         try {
           const validSettingKeys = Object.values(SETTINGS);
           if (!validSettingKeys.includes(settingKey)) {
-            log(2, `Skipping unknown setting: ${settingKey}`);
             skippedCount++;
             continue;
           }
           const settingValue = settingData && typeof settingData === 'object' && 'value' in settingData ? settingData.value : settingData;
           const currentValue = game.settings.get(MODULE.ID, settingKey);
           if (JSON.stringify(currentValue) === JSON.stringify(settingValue)) {
-            log(3, `Skipping unchanged setting: ${settingKey}`);
             skippedCount++;
             continue;
           }
@@ -364,7 +340,6 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
           importedCount++;
           log(3, `Imported setting ${settingKey}: ${JSON.stringify(currentValue)} -> ${JSON.stringify(settingValue)}`);
         } catch (settingError) {
-          log(1, `Error importing setting ${settingKey}: ${settingError.message}`);
           errors.push(`${settingKey}: ${settingError.message}`);
         }
       }
@@ -374,14 +349,12 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
         try {
           const validSettingKeys = Object.values(SETTINGS);
           if (!validSettingKeys.includes(settingKey)) {
-            log(2, `Skipping unknown deferred setting: ${settingKey}`);
             skippedCount++;
             continue;
           }
           const settingValue = settingData && typeof settingData === 'object' && 'value' in settingData ? settingData.value : settingData;
           const currentValue = game.settings.get(MODULE.ID, settingKey);
           if (JSON.stringify(currentValue) === JSON.stringify(settingValue)) {
-            log(3, `Skipping unchanged deferred setting: ${settingKey}`);
             skippedCount++;
             continue;
           }
@@ -409,7 +382,6 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
             log(3, `Imported deferred setting ${settingKey}: ${JSON.stringify(currentValue)} -> ${JSON.stringify(settingValue)}`);
           }
         } catch (settingError) {
-          log(1, `Error importing deferred setting ${settingKey}: ${settingError.message}`);
           errors.push(`${settingKey}: ${settingError.message}`);
         }
       }
@@ -421,20 +393,18 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
           })
         );
       }
-      if (errors.length > 0) log(1, `Import completed with ${errors.length} errors:`, errors);
-      if (importedCount > 5) {
-        foundry.applications.api.DialogV2.confirm({
-          window: { title: game.i18n.localize('SPELLBOOK.Settings.Troubleshooter.ReloadTitle') },
-          content: `<p>${game.i18n.localize('SPELLBOOK.Settings.Troubleshooter.ReloadMessage')}</p>`,
-          yes: { icon: '<i class="fa-solid fa-refresh"></i>', label: game.i18n.localize('SPELLBOOK.Settings.Troubleshooter.ReloadConfirm'), callback: () => foundry.utils.debouncedReload() },
-          no: { icon: '<i class="fa-solid fa-times"></i>', label: game.i18n.localize('SPELLBOOK.Settings.Troubleshooter.ReloadCancel') },
-          modal: true,
-          rejectClose: false
-        });
-      }
-    } catch (error) {
-      log(1, `Error during settings import: ${error.message}`);
-    }
+      if (errors.length > 0)
+        if (importedCount > 5) {
+          foundry.applications.api.DialogV2.confirm({
+            window: { title: game.i18n.localize('SPELLBOOK.Settings.Troubleshooter.ReloadTitle') },
+            content: `<p>${game.i18n.localize('SPELLBOOK.Settings.Troubleshooter.ReloadMessage')}</p>`,
+            yes: { icon: '<i class="fa-solid fa-refresh"></i>', label: game.i18n.localize('SPELLBOOK.Settings.Troubleshooter.ReloadConfirm'), callback: () => foundry.utils.debouncedReload() },
+            no: { icon: '<i class="fa-solid fa-times"></i>', label: game.i18n.localize('SPELLBOOK.Settings.Troubleshooter.ReloadCancel') },
+            modal: true,
+            rejectClose: false
+          });
+        }
+    } catch (error) {}
   }
 
   /**
@@ -455,7 +425,6 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
       addLine(`Active Scene: ${game.scenes.active?.name || 'None'}`);
       addLine(`Timestamp: ${new Date().toISOString()}`);
     } catch (error) {
-      log(1, `Error adding game information: ${error.message}`);
       addLine('[Error retrieving game information]');
     }
   }
@@ -482,7 +451,6 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
         addLine(`  ${module.title}: ${module.version}`);
       }
     } catch (error) {
-      log(1, `Error adding module information: ${error.message}`);
       addLine('[Error retrieving module information]');
     }
   }
@@ -511,7 +479,6 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
           addLine(`${settingKey}: ${displayValue}`);
         } catch (settingError) {
           addLine(`${settingKey}: [Error retrieving setting]`);
-          log(2, `Error getting setting ${settingKey}:`, settingError);
         }
       }
       addLine('');
@@ -522,12 +489,10 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
           fullSettingsData[settingKey] = game.settings.get(MODULE.ID, settingKey);
         } catch (settingError) {
           fullSettingsData[settingKey] = '[Error retrieving value]';
-          log(1, settingError);
         }
       }
       addLine(JSON.stringify(fullSettingsData, null, 2));
     } catch (error) {
-      log(1, `Error adding Spell Book settings: ${error.message}`);
       addLine('[Error retrieving Spell Book settings]');
     }
   }
@@ -574,7 +539,6 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
             addLine(`${logEntry.timestamp || 'unknown'} [${(logEntry.type || 'log').toUpperCase()}] ${processedContent}`);
           } catch (itemError) {
             addLine(`${logEntry.timestamp || 'unknown'} [ERROR] [Error processing log entry]`);
-            log(1, itemError);
           }
         }
       } else {
@@ -582,7 +546,6 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
         addLine('No Spell Book logs found.');
       }
     } catch (error) {
-      log(1, `Error adding Spell Book log data: ${error.message}`);
       addLine('[Error retrieving Spell Book log data]');
     }
   }

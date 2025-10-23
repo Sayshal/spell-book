@@ -98,7 +98,6 @@ export class Cantrips {
     this._maxCantripsByClass.clear();
     this._totalMaxCantrips = 0;
     if (!this.actor.spellcastingClasses) {
-      log(2, 'No spellcastingClasses found on actor');
       this._cacheInitialized = true;
       return;
     }
@@ -108,10 +107,8 @@ export class Cantrips {
       const maxCantrips = this._calculateMaxCantripsForClass(identifier);
       this._maxCantripsByClass.set(identifier, maxCantrips);
       this._totalMaxCantrips += maxCantrips;
-      log(3, `Cached max cantrips for ${identifier}: ${maxCantrips}`);
     }
     this._cacheInitialized = true;
-    log(3, `Total max cantrips across all classes: ${this._totalMaxCantrips}`);
   }
 
   /**
@@ -162,7 +159,7 @@ export class Cantrips {
         const cantripValue = scaleValues[key]?.value;
         if (cantripValue !== undefined) {
           baseCantrips = cantripValue;
-          log(3, `Found cantrip scale value '${key}' = ${baseCantrips} for class ${classIdentifier}`);
+
           break;
         }
       }
@@ -172,7 +169,7 @@ export class Cantrips {
     if (classRules && classRules.showCantrips === false) return 0;
     const preparationBonus = classRules?.cantripPreparationBonus || 0;
     const totalMaxCantrips = Math.max(0, baseCantrips + preparationBonus);
-    log(3, `Max cantrips for ${classIdentifier}: ${baseCantrips} base + ${preparationBonus} bonus = ${totalMaxCantrips}`);
+
     return totalMaxCantrips;
   }
 
@@ -213,7 +210,7 @@ export class Cantrips {
     const previousMax = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX) || 0;
     const currentLevel = this.actor.system.details.level;
     const currentMax = this._getTotalMaxCantrips();
-    log(3, `Level-up check: previous level=${previousLevel}, current level=${currentLevel}, previous max=${previousMax}, current max=${currentMax}`);
+
     return (previousLevel === 0 && currentLevel > 0) || ((currentLevel > previousLevel || currentMax > previousMax) && previousLevel > 0);
   }
 
@@ -231,7 +228,6 @@ export class Cantrips {
     if (spell.system.level !== 0) return new CantripValidationResult({ allowed: true });
     if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
     if (!classIdentifier) {
-      log(2, `No class identifier for cantrip ${spell.name}, allowing change but may cause issues`);
       return new CantripValidationResult({ allowed: true });
     }
     const settings = this.spellManager.getSettings(classIdentifier);
@@ -249,7 +245,7 @@ export class Cantrips {
     if (isChecked) {
       const currentCount = uiCantripCount !== null ? uiCantripCount : this.getCurrentCount(classIdentifier);
       const maxCantrips = this._getMaxCantripsForClass(classIdentifier);
-      log(3, `Cantrip check: ${spell.name} for class ${classIdentifier}, current: ${currentCount}, max: ${maxCantrips}`);
+
       if (currentCount >= maxCantrips) return new CantripValidationResult({ allowed: false, message: 'SPELLBOOK.Cantrips.MaximumReached' });
       return new CantripValidationResult({ allowed: true });
     }
@@ -311,7 +307,6 @@ export class Cantrips {
     if (!classIdentifier) {
       classIdentifier = spell.sourceClass || spell.system?.sourceClass;
       if (!classIdentifier) {
-        log(2, `No class identifier for cantrip ${spell.name}, tracking may be inaccurate`);
         return;
       }
     }

@@ -460,24 +460,21 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       this.availableSpellLists.sort((a, b) => a.name.localeCompare(b.name));
       const preloadedData = DataUtils.getPreloadedData();
       if (preloadedData && preloadedData.enrichedSpells.length > 0) {
-        log(3, `Starting with ${preloadedData.enrichedSpells.length} preloaded spells`);
         this.availableSpells = [...preloadedData.enrichedSpells];
         const allSpells = await DataUtils.fetchAllCompendiumSpells();
         const preloadedUuids = new Set(this.availableSpells.map((s) => s.uuid));
         const missingSpells = allSpells.filter((spell) => !preloadedUuids.has(spell.uuid));
-        log(3, `Found ${missingSpells.length} missing spells to load`);
         if (missingSpells.length > 0) {
           for (let spell of missingSpells) spell.enrichedIcon = UIUtils.createSpellIconLink(spell);
           this.availableSpells.push(...missingSpells);
         }
         log(3, `GM Manager loaded: ${this.availableSpells.length} total spells (${preloadedData.enrichedSpells.length} preloaded + ${missingSpells.length} additional)`);
       } else {
-        log(3, 'No preloaded data available, loading all spells from scratch');
         this.availableSpells = await DataUtils.fetchAllCompendiumSpells();
         this.enrichAvailableSpells();
       }
     } catch (error) {
-      log(1, 'Error loading spell lists:', error);
+      log(1, 'Error', error);
     } finally {
       this.isLoading = false;
       this.render(false);
@@ -499,36 +496,27 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   async loadSpellDetails(spellUuids) {
     if (!this.selectedSpellList) return;
-    try {
-      this.selectedSpellList.isLoadingSpells = true;
-      this.render(false);
-      const maxSpellLevel = 9;
-      const preloadedData = DataUtils.getPreloadedData();
-      let spellItems = [];
-      if (preloadedData && preloadedData.enrichedSpells.length > 0) {
-        log(3, 'Using preloaded spell data for GM spell list');
-        const spellUuidsSet = new Set(spellUuids);
-        const preloadedSpells = preloadedData.enrichedSpells.filter((spell) => spellUuidsSet.has(spell.uuid));
-        const missingSpells = spellUuids.filter((uuid) => !preloadedSpells.some((spell) => spell.uuid === uuid));
-        if (missingSpells.length > 0) {
-          log(3, `Loading ${missingSpells.length} missing spells from compendiums`);
-          const additionalSpells = await DataUtils.fetchSpellDocuments(new Set(missingSpells), maxSpellLevel);
-          spellItems = [...preloadedSpells, ...additionalSpells];
-        } else spellItems = preloadedSpells;
-      } else spellItems = await DataUtils.fetchSpellDocuments(new Set(spellUuids), maxSpellLevel);
-      for (const spell of spellItems) {
-        if (!spell.enrichedIcon) spell.enrichedIcon = UIUtils.createSpellIconLink(spell);
-        if (!spell.compendiumUuid) spell.compendiumUuid = spell.uuid;
-      }
-      this.selectedSpellList.spells = spellItems;
-      this.selectedSpellList.spellsByLevel = DataUtils.organizeSpellsByLevel(spellItems);
-      this.selectedSpellList.isLoadingSpells = false;
-      log(3, `Loaded ${spellItems.length} spells for spell list`);
-    } catch (error) {
-      log(1, 'Error loading spell details:', error);
-      this.selectedSpellList.isLoadingSpells = false;
-      this.selectedSpellList.hasError = true;
+    this.selectedSpellList.isLoadingSpells = true;
+    this.render(false);
+    const maxSpellLevel = 9;
+    const preloadedData = DataUtils.getPreloadedData();
+    let spellItems = [];
+    if (preloadedData && preloadedData.enrichedSpells.length > 0) {
+      const spellUuidsSet = new Set(spellUuids);
+      const preloadedSpells = preloadedData.enrichedSpells.filter((spell) => spellUuidsSet.has(spell.uuid));
+      const missingSpells = spellUuids.filter((uuid) => !preloadedSpells.some((spell) => spell.uuid === uuid));
+      if (missingSpells.length > 0) {
+        const additionalSpells = await DataUtils.fetchSpellDocuments(new Set(missingSpells), maxSpellLevel);
+        spellItems = [...preloadedSpells, ...additionalSpells];
+      } else spellItems = preloadedSpells;
+    } else spellItems = await DataUtils.fetchSpellDocuments(new Set(spellUuids), maxSpellLevel);
+    for (const spell of spellItems) {
+      if (!spell.enrichedIcon) spell.enrichedIcon = UIUtils.createSpellIconLink(spell);
+      if (!spell.compendiumUuid) spell.compendiumUuid = spell.uuid;
     }
+    this.selectedSpellList.spells = spellItems;
+    this.selectedSpellList.spellsByLevel = DataUtils.organizeSpellsByLevel(spellItems);
+    this.selectedSpellList.isLoadingSpells = false;
     this.render(false);
   }
 
@@ -539,7 +527,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   async selectSpellList(uuid) {
     this._clearSelections();
-    log(3, `Selecting spell list: ${uuid}`);
     const duplicate = await DataUtils.findDuplicateSpellList(uuid);
     if (duplicate && duplicate.uuid !== uuid) return this.selectSpellList(duplicate.uuid);
     const spellList = await fromUuid(uuid);
@@ -565,7 +552,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   determineSourceFilter(spellList) {
     try {
-      log(3, 'Determining source filter for spell list');
       let sourceFilter = 'all';
       const isCustomList = !!spellList.flags?.[MODULE.ID]?.isDuplicate;
       if (isCustomList) {
@@ -574,17 +560,14 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
           const parsedUuid = foundry.utils.parseUuid(originalUuid);
           const packageName = parsedUuid.collection.metadata.packageName.split('.')[0];
           sourceFilter = packageName;
-          log(3, `Using original source: ${sourceFilter}`);
         }
       } else if (spellList.pack) {
         const packageName = spellList.pack.split('.')[0];
         sourceFilter = packageName;
-        log(3, `Using current pack source: ${sourceFilter}`);
       }
       this.filterState.source = sourceFilter;
-      log(3, `Set source filter to: ${sourceFilter}`);
     } catch (error) {
-      log(1, 'Error determining source filter:', error);
+      log(1, 'Error', error);
       this.filterState.source = 'all';
     }
   }
@@ -596,14 +579,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   _filterAvailableSpells() {
     if (!this.isEditing) return { spells: [], totalFiltered: 0 };
-    try {
-      const selectedSpellUUIDs = this.getSelectedSpellUUIDs();
-      const result = this.filterHelper.filterAvailableSpells(this.availableSpells, selectedSpellUUIDs, this.isSpellInSelectedList.bind(this), this.filterState);
-      return result;
-    } catch (error) {
-      log(1, 'Error filtering available spells:', error);
-      return { spells: [], totalFiltered: 0 };
-    }
+    const selectedSpellUUIDs = this.getSelectedSpellUUIDs();
+    const result = this.filterHelper.filterAvailableSpells(this.availableSpells, selectedSpellUUIDs, this.isSpellInSelectedList.bind(this), this.filterState);
+    return result;
   }
 
   /**
@@ -623,15 +601,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @returns {Set<string>} Set of spell UUIDs
    */
   getSelectedSpellUUIDs() {
-    try {
-      if (!this.selectedSpellList?.spells) return new Set();
-      const selectedSpellUUIDs = new Set();
-      for (const spell of this.selectedSpellList.spells) if (spell.uuid) selectedSpellUUIDs.add(spell.uuid);
-      return selectedSpellUUIDs;
-    } catch (error) {
-      log(1, 'Error getting selected spell UUIDs:', error);
-      return new Set();
-    }
+    if (!this.selectedSpellList?.spells) return new Set();
+    const selectedSpellUUIDs = new Set();
+    for (const spell of this.selectedSpellList.spells) if (spell.uuid) selectedSpellUUIDs.add(spell.uuid);
+    return selectedSpellUUIDs;
   }
 
   /**
@@ -1265,22 +1238,17 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     cancelIcon = 'fas fa-times',
     confirmCssClass = ''
   }) {
-    try {
-      const result = await DialogV2.wait({
-        title,
-        content: `<p>${content}</p>`,
-        buttons: [
-          { icon: `${confirmIcon}`, label: confirmLabel, action: 'confirm', className: `dialog-button ${confirmCssClass}` },
-          { icon: `${cancelIcon}`, label: cancelLabel, action: 'cancel', className: 'dialog-button' }
-        ],
-        default: 'cancel',
-        rejectClose: false
-      });
-      return result === 'confirm';
-    } catch (error) {
-      log(1, 'Error showing confirmation dialog:', error);
-      return false;
-    }
+    const result = await DialogV2.wait({
+      title,
+      content: `<p>${content}</p>`,
+      buttons: [
+        { icon: `${confirmIcon}`, label: confirmLabel, action: 'confirm', className: `dialog-button ${confirmCssClass}` },
+        { icon: `${cancelIcon}`, label: cancelLabel, action: 'cancel', className: 'dialog-button' }
+      ],
+      default: 'cancel',
+      rejectClose: false
+    });
+    return result === 'confirm';
   }
 
   /**
@@ -1600,19 +1568,14 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         else packTopLevelFolder = pack.folder.name;
       }
       if (packTopLevelFolder !== topLevelFolderName) continue;
-      try {
-        const index = await pack.getIndex({ fields: ['type', 'system.identifier'] });
-        const entry = index.find((e) => (e.type === 'class' || e.type === 'subclass') && e.system?.identifier?.toLowerCase() === identifier.toLowerCase());
-        if (entry) {
-          const classItem = await pack.getDocument(entry._id);
-          log(3, `Found class ${classItem.name} in pack ${pack.metadata.label} (folder: ${packTopLevelFolder})`);
-          return classItem;
-        }
-      } catch (err) {
-        log(2, `Error searching pack ${pack.metadata.label}:`, err);
+      const index = await pack.getIndex({ fields: ['type', 'system.identifier'] });
+      const entry = index.find((e) => (e.type === 'class' || e.type === 'subclass') && e.system?.identifier?.toLowerCase() === identifier.toLowerCase());
+      if (entry) {
+        const classItem = await pack.getDocument(entry._id);
+        log(3, `Found class ${classItem.name} in pack ${pack.metadata.label} (folder: ${packTopLevelFolder})`);
+        return classItem;
       }
     }
-    log(2, `No class with identifier "${identifier}" found in top-level folder "${topLevelFolderName}"`);
     return null;
   }
 
@@ -1631,16 +1594,12 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         else packTopLevelFolder = pack.folder.name;
       }
       if (!packTopLevelFolder) continue;
-      try {
-        const index = await pack.getIndex({ fields: ['type', 'system.identifier'] });
-        const classItems = index.filter((e) => (e.type === 'class' || e.type === 'subclass') && e.system?.identifier);
-        for (const cls of classItems) {
-          const identifier = cls.system.identifier.toLowerCase();
-          const key = `${packTopLevelFolder}:${identifier}`;
-          cache.set(key, true);
-        }
-      } catch (err) {
-        log(2, `Error indexing pack ${pack.metadata.label}:`, err);
+      const index = await pack.getIndex({ fields: ['type', 'system.identifier'] });
+      const classItems = index.filter((e) => (e.type === 'class' || e.type === 'subclass') && e.system?.identifier);
+      for (const cls of classItems) {
+        const identifier = cls.system.identifier.toLowerCase();
+        const key = `${packTopLevelFolder}:${identifier}`;
+        cache.set(key, true);
       }
     }
     return cache;
@@ -1670,26 +1629,19 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   async _mergeListsCallback(spellListUuids, mergedListName, hideSourceLists = false) {
-    try {
-      const mergedList = await DataUtils.createMergedSpellList(spellListUuids, mergedListName);
-      if (mergedList) {
-        if (hideSourceLists) {
-          const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
-          const listsToHide = [];
-          for (const uuid of spellListUuids) {
-            const sourceList = this.availableSpellLists.find((l) => l.uuid === uuid);
-            if (sourceList && !sourceList.isActorOwned && !hiddenLists.includes(uuid)) listsToHide.push(uuid);
-          }
-
-          if (listsToHide.length > 0) {
-            await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, [...hiddenLists, ...listsToHide]);
-          }
+    const mergedList = await DataUtils.createMergedSpellList(spellListUuids, mergedListName);
+    if (mergedList) {
+      if (hideSourceLists) {
+        const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
+        const listsToHide = [];
+        for (const uuid of spellListUuids) {
+          const sourceList = this.availableSpellLists.find((l) => l.uuid === uuid);
+          if (sourceList && !sourceList.isActorOwned && !hiddenLists.includes(uuid)) listsToHide.push(uuid);
         }
-        await this.loadData();
-        await this.selectSpellList(mergedList.uuid);
+        if (listsToHide.length > 0) await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, [...hiddenLists, ...listsToHide]);
       }
-    } catch (error) {
-      log(1, 'Error creating merged spell list:', error);
+      await this.loadData();
+      await this.selectSpellList(mergedList.uuid);
     }
   }
 
@@ -1736,7 +1688,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (!element) return;
     const spellUuid = element.dataset.uuid;
     if (!this.selectedSpellList || !this.isEditing) return;
-    log(3, `Removing spell: ${spellUuid} from list`);
     this.pendingChanges.removed.add(spellUuid);
     this.pendingChanges.added.delete(spellUuid);
     this.selectedSpellList.spellUuids = this.selectedSpellList.spellUuids.filter((uuid) => uuid !== spellUuid);
@@ -1785,7 +1736,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const document = this.selectedSpellList.document;
     const originalSpells = Array.from(document.system.spells || []);
     const currentSpells = new Set(originalSpells);
-    log(3, `Processing ${this.pendingChanges.added.size} spell additions`);
     for (const spellUuid of this.pendingChanges.added) currentSpells.add(spellUuid);
     await document.update({ 'system.spells': Array.from(currentSpells) });
     this.pendingChanges = { added: new Set(), removed: new Set() };
@@ -1838,22 +1788,18 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       confirmCssClass: 'dialog-button-warning'
     });
     if (!confirmed) return;
-    try {
-      const originalList = await fromUuid(originalUuid);
-      if (!originalList) return;
-      const originalSpells = Array.from(originalList.system.spells || []);
-      await this.selectedSpellList.document.update({
-        'system.spells': originalSpells,
-        [`flags.${MODULE.ID}.originalModTime`]: originalList._stats?.modifiedTime || 0,
-        [`flags.${MODULE.ID}.originalVersion`]: originalList._stats?.systemVersion || game.system.version
-      });
-      this.selectedSpellList.spellUuids = originalSpells;
-      await this.loadSpellDetails(originalSpells);
-      this.isEditing = false;
-      this.render(false);
-    } catch (error) {
-      log(1, 'Error restoring from original:', error);
-    }
+    const originalList = await fromUuid(originalUuid);
+    if (!originalList) return;
+    const originalSpells = Array.from(originalList.system.spells || []);
+    await this.selectedSpellList.document.update({
+      'system.spells': originalSpells,
+      [`flags.${MODULE.ID}.originalModTime`]: originalList._stats?.modifiedTime || 0,
+      [`flags.${MODULE.ID}.originalVersion`]: originalList._stats?.systemVersion || game.system.version
+    });
+    this.selectedSpellList.spellUuids = originalSpells;
+    await this.loadSpellDetails(originalSpells);
+    this.isEditing = false;
+    this.render(false);
   }
 
   /** @inheritdoc */
@@ -1983,11 +1929,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     }
     if (!spellListMeta) return;
     const topLevelFolderName = spellListMeta.pack;
-    log(3, `Searching for class ${identifier} in source: ${topLevelFolderName}`);
     const classItem = await this._findClassInTopLevelFolder(identifier, topLevelFolderName);
     if (!classItem) return;
     await classItem.sheet.render(true);
-    log(3, `Opened class sheet for ${classItem.name} from ${topLevelFolderName}`);
   }
 
   /**
@@ -2024,12 +1968,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const flags = this.selectedSpellList.document.flags?.[MODULE.ID] || {};
     const isRenameable = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList || this.selectedSpellList.isMerged;
     if (!isRenameable) return;
-    try {
-      const { result, formData } = await this._showRenameDialog(currentName);
-      if (result === 'rename' && formData?.newName && formData.newName !== currentName) await this._performRename(listUuid, formData.newName);
-    } catch (error) {
-      log(1, 'Error in rename dialog:', error);
-    }
+    const { result, formData } = await this._showRenameDia;
+    if (result === 'rename' && formData?.newName && formData.newName !== currentName) await this._performRename(listUuid, formData.newName);
   }
 
   /**
@@ -2145,16 +2085,12 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   async _performRename(listUuid, newName) {
-    try {
-      const document = this.selectedSpellList.document;
-      if (document.parent && document.parent.pages.size === 1) await document.parent.update({ name: newName });
-      await document.update({ name: newName });
-      this.selectedSpellList.name = newName;
-      await this.loadData();
-      await this.selectSpellList(listUuid);
-    } catch (error) {
-      log(1, 'Error renaming spell list:', error);
-    }
+    const document = this.selectedSpellList.document;
+    if (document.parent && document.parent.pages.size === 1) await document.parent.update({ name: newName });
+    await document.update({ name: newName });
+    this.selectedSpellList.name = newName;
+    await this.loadData();
+    await this.selectSpellList(listUuid);
   }
 
   /**
@@ -2166,7 +2102,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   static async handleMergeLists(_event, _form) {
     if (this.availableSpellLists.length < 2) return;
-    const { result, formData } = await this._showMergeListsDialog();
+    const { result, formData } = await this._showMergeListsDia;
     if (result === 'merge' && formData) {
       await this._mergeListsCallback(formData.spellListUuids, formData.mergedListName, formData.hideSourceLists);
     }
@@ -2258,52 +2194,47 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       confirmCssClass: 'dialog-button-success'
     });
     if (!confirmed) return;
-    try {
-      let processed = 0;
-      let failed = 0;
-      if (removeCount > 0) {
-        for (const spellUuid of this.selectedSpellsToRemove) {
-          try {
-            this.pendingChanges.removed.add(spellUuid);
-            this.pendingChanges.added.delete(spellUuid);
-            this.selectedSpellList.spellUuids = this.selectedSpellList.spellUuids.filter((uuid) => uuid !== spellUuid);
-            this.selectedSpellList.spells = this.selectedSpellList.spells.filter((spell) => spell.uuid !== spellUuid && spell.compendiumUuid !== spellUuid);
-            processed++;
-          } catch (error) {
-            log(1, `Failed to remove spell ${spellUuid}:`, error);
-            failed++;
-          }
+    let processed = 0;
+    let failed = 0;
+    if (removeCount > 0) {
+      for (const spellUuid of this.selectedSpellsToRemove) {
+        try {
+          this.pendingChanges.removed.add(spellUuid);
+          this.pendingChanges.added.delete(spellUuid);
+          this.selectedSpellList.spellUuids = this.selectedSpellList.spellUuids.filter((uuid) => uuid !== spellUuid);
+          this.selectedSpellList.spells = this.selectedSpellList.spells.filter((spell) => spell.uuid !== spellUuid && spell.compendiumUuid !== spellUuid);
+          processed++;
+        } catch (error) {
+          log(1, 'Error', error);
+          failed++;
         }
       }
-      if (addCount > 0) {
-        for (const spellUuid of this.selectedSpellsToAdd) {
-          try {
-            this.pendingChanges.added.add(spellUuid);
-            this.pendingChanges.removed.delete(spellUuid);
-            const spell = this.availableSpells.find((s) => s.uuid === spellUuid);
-            if (spell) {
-              const spellCopy = foundry.utils.deepClone(spell);
-              spellCopy.compendiumUuid = spellUuid;
-              if (!spellCopy.enrichedIcon) spellCopy.enrichedIcon = UIUtils.createSpellIconLink(spellCopy);
-              this.selectedSpellList.spellUuids.push(spellUuid);
-              this.selectedSpellList.spells.push(spellCopy);
-            } else log(2, `Could not find spell with UUID: ${spellUuid}`);
-            processed++;
-          } catch (error) {
-            log(1, `Failed to add spell ${spellUuid}:`, error);
-            failed++;
-          }
-        }
-      }
-      this.selectedSpellList.spellsByLevel = DataUtils.organizeSpellsByLevel(this.selectedSpellList.spells);
-      this._ensureSpellIcons();
-      this._clearSelections();
-      if (failed === 0) ui.notifications.info(game.i18n.format('SPELLMANAGER.BulkOps.Completed', { count: processed }));
-      else ui.notifications.warn(game.i18n.format('SPELLMANAGER.BulkOps.PartialFailure', { success: processed, total: totalCount, failed }));
-      this.render(false);
-    } catch (error) {
-      log(1, 'Error in bulk save operation:', error);
     }
+    if (addCount > 0) {
+      for (const spellUuid of this.selectedSpellsToAdd) {
+        try {
+          this.pendingChanges.added.add(spellUuid);
+          this.pendingChanges.removed.delete(spellUuid);
+          const spell = this.availableSpells.find((s) => s.uuid === spellUuid);
+          if (spell) {
+            const spellCopy = foundry.utils.deepClone(spell);
+            spellCopy.compendiumUuid = spellUuid;
+            if (!spellCopy.enrichedIcon) spellCopy.enrichedIcon = UIUtils.createSpellIconLink(spellCopy);
+            this.selectedSpellList.spellUuids.push(spellUuid);
+            this.selectedSpellList.spells.push(spellCopy);
+          } else processed++;
+        } catch (error) {
+          log(1, 'Error', error);
+          failed++;
+        }
+      }
+    }
+    this.selectedSpellList.spellsByLevel = DataUtils.organizeSpellsByLevel(this.selectedSpellList.spells);
+    this._ensureSpellIcons();
+    this._clearSelections();
+    if (failed === 0) ui.notifications.info(game.i18n.format('SPELLMANAGER.BulkOps.Completed', { count: processed }));
+    else ui.notifications.warn(game.i18n.format('SPELLMANAGER.BulkOps.PartialFailure', { success: processed, total: totalCount, failed }));
+    this.render(false);
   }
 
   /**
@@ -2333,18 +2264,14 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (!list || list.isActorOwned) return;
     const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
     const isCurrentlyHidden = hiddenLists.includes(uuid);
-    try {
-      if (isCurrentlyHidden) {
-        const newHiddenLists = hiddenLists.filter((id) => id !== uuid);
-        await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, newHiddenLists);
-      } else {
-        const newHiddenLists = [...hiddenLists, uuid];
-        await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, newHiddenLists);
-      }
-      this.render(false);
-    } catch (error) {
-      log(1, 'Error toggling list visibility:', error);
+    if (isCurrentlyHidden) {
+      const newHiddenLists = hiddenLists.filter((id) => id !== uuid);
+      await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, newHiddenLists);
+    } else {
+      const newHiddenLists = [...hiddenLists, uuid];
+      await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, newHiddenLists);
     }
+    this.render(false);
   }
 
   /**
@@ -2411,14 +2338,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (!this.selectedSpellList) return;
     const uuid = this.selectedSpellList.uuid;
     const checkbox = event.target.closest('input[type="checkbox"]');
-    try {
-      const newState = await DataUtils.toggleListForRegistry(uuid);
-      checkbox.checked = newState;
-    } catch (error) {
-      log(1, 'Error toggling registry:', error);
-      ui.notifications.error(game.i18n.localize('SPELLBOOK.Registry.ToggleError'));
-      checkbox.checked = !checkbox.checked; // Revert on error
-    }
+    const newState = await DataUtils.toggleListForRegistry(uuid);
+    checkbox.checked = newState;
   }
 
   /** @inheritdoc */

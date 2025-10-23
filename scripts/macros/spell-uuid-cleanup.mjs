@@ -33,7 +33,7 @@ function spellUuidCleanupScript() {
       modal: true
     });
     if (result !== 'confirm') return;
-    SPELLBOOK.log(3, 'Starting spell list cleanup - checking for invalid UUIDs...');
+    SPELLBOOK.
     const results = { listsProcessed: 0, listsUpdated: 0, totalSpellsChecked: 0, totalSpellsRemoved: 0, errors: [], details: [] };
     const modulePacks = Array.from(game.packs).filter((pack) => pack.metadata.type === 'JournalEntry' && pack.metadata.packageName === 'spell-book');
     SPELLBOOK.log(3, `Found ${modulePacks.length} journal pack(s) to process`);
@@ -48,7 +48,7 @@ function spellUuidCleanupScript() {
           const originalCount = originalSpells.length;
           results.totalSpellsChecked += originalCount;
           if (originalCount === 0) {
-            SPELLBOOK.log(3, `Skipping empty spell list: ${page.name}`);
+            SPELLBOOK.
             continue;
           }
           SPELLBOOK.log(3, `Checking spell list: "${page.name}" (${originalCount} spells)`);
@@ -73,33 +73,33 @@ function spellUuidCleanupScript() {
               removedSpells: invalidSpells
             };
             results.details.push(listDetail);
-            SPELLBOOK.log(3, `Updated "${page.name}": removed ${invalidSpells.length} invalid spells, ${validSpells.length} remain`);
+            SPELLBOOK.
             for (const invalid of invalidSpells) SPELLBOOK.log(3, `  Removed: ${invalid.uuid} (${invalid.reason})`);
-          } else SPELLBOOK.log(3, `"${page.name}" - all ${originalCount} spells are valid`);
+          } else SPELLBOOK.
         }
       }
     }
     SPELLBOOK.log(3, '='.repeat(60));
-    SPELLBOOK.log(3, 'SPELL LIST CLEANUP COMPLETE');
+    SPELLBOOK.
     SPELLBOOK.log(3, '='.repeat(60));
-    SPELLBOOK.log(3, `Lists processed: ${results.listsProcessed}`);
-    SPELLBOOK.log(3, `Lists updated: ${results.listsUpdated}`);
-    SPELLBOOK.log(3, `Total spells checked: ${results.totalSpellsChecked}`);
-    SPELLBOOK.log(3, `Total spells removed: ${results.totalSpellsRemoved}`);
-    SPELLBOOK.log(3, `Errors encountered: ${results.errors.length}`);
+    SPELLBOOK.
+    SPELLBOOK.
+    SPELLBOOK.
+    SPELLBOOK.
+    SPELLBOOK.
     if (results.details.length > 0) {
-      SPELLBOOK.log(3, '\nDETAILED RESULTS:');
+      SPELLBOOK.
       for (const detail of results.details) {
         SPELLBOOK.log(3, `\n"${detail.page}" (${detail.journal})`);
-        SPELLBOOK.log(3, `  Original: ${detail.originalCount} spells`);
-        SPELLBOOK.log(3, `  Remaining: ${detail.validCount} spells`);
-        SPELLBOOK.log(3, `  Removed: ${detail.removedCount} spells`);
-        SPELLBOOK.log(3, `  UUID: ${detail.uuid}`);
+        SPELLBOOK.
+        SPELLBOOK.
+        SPELLBOOK.
+        SPELLBOOK.
       }
     }
     if (results.errors.length > 0) {
-      SPELLBOOK.log(3, '\nERRORS:');
-      for (const error of results.errors) SPELLBOOK.log(3, `  ${error}`);
+      SPELLBOOK.
+      for (const error of results.errors) SPELLBOOK.
     }
     if (results.totalSpellsRemoved > 0) {
       ui.notifications.info(`Cleanup complete: Removed ${results.totalSpellsRemoved} invalid spells from ${results.listsUpdated} spell list(s). Check console for details.`);

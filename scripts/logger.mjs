@@ -115,7 +115,6 @@ export function initializeLogger() {
   try {
     const logLevel = game.settings.get(MODULE.ID, SETTINGS.LOGGING_LEVEL);
     MODULE.LOG_LEVEL = parseInt(logLevel) || 0;
-    log(3, `Logger initialized with level ${MODULE.LOG_LEVEL}`);
   } catch (error) {
     console.error(`${MODULE.ID} | Error initializing logger:`, error);
     MODULE.LOG_LEVEL = 1;

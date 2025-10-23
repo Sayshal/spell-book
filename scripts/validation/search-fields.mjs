@@ -57,7 +57,6 @@ export class SearchFields {
         this._setupValueValidator(filter.id);
       }
     }
-    log(3, 'Field definitions initialized:', this.fieldMap);
   }
 
   /**

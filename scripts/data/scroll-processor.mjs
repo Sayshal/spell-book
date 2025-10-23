@@ -182,7 +182,6 @@ export class ScrollProcessor {
       };
       return processedResult;
     } catch (error) {
-      log(1, `Error processing spell from scroll ${scroll.name}:`, error);
       return null;
     }
   }
@@ -199,7 +198,7 @@ export class ScrollProcessor {
     const isAlreadyInSpellbook = await wizardManager.isSpellInSpellbook(spellUuid);
     const { cost, isFree } = await wizardManager.getCopyingCost(spell);
     const time = wizardManager.getCopyingTime(spell);
-    const shouldProceed = await this._showLearnFromScrollDialog(spell, cost, time, isFree, isAlreadyInSpellbook);
+    const shouldProceed = await this._showLearnFromScrollDia;
     if (!shouldProceed) return false;
     const success = await wizardManager.addSpellToSpellbook(spellUuid, MODULE.WIZARD_SPELL_SOURCE.SCROLL, { cost, timeSpent: time });
     if (success) {
@@ -242,7 +241,6 @@ export class ScrollProcessor {
       });
       return result === 'confirm';
     } catch (error) {
-      log(1, 'Error showing learn from scroll dialog:', error);
       return false;
     }
   }
@@ -302,7 +300,6 @@ export class ScrollProcessor {
       await actor.update(updateData);
       return true;
     } catch (error) {
-      log(1, `Failed to deduct currency from ${actor.name}:`, error);
       return false;
     }
   }

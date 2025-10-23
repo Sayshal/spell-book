@@ -111,13 +111,13 @@ export async function findCompendiumSpellLists(includeHidden = true) {
     return shouldIndexCompendium(p);
   });
 
-  log(3, `Scanning ${journalPacks.length} enabled journal compendiums for spell lists`);
+
   await processStandardPacks(journalPacks, spellLists);
   await processCustomPack(spellLists);
   if (!includeHidden && !game.user.isGM) {
     const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
     const filteredLists = spellLists.filter((list) => !hiddenLists.includes(list.uuid));
-    log(3, `Filtered out ${spellLists.length - filteredLists.length} hidden spell lists.`);
+
     spellLists.length = 0;
     spellLists.push(...filteredLists);
   }
@@ -292,11 +292,11 @@ export async function getValidCustomListMappings() {
   for (const [originalUuid, customUuid] of Object.entries(mappings)) {
     const customDoc = await fromUuid(customUuid);
     if (customDoc) validMappings[originalUuid] = customUuid;
-    else log(2, `Custom list ${customUuid} no longer exists, removing mapping`);
+    else
   }
   if (Object.keys(validMappings).length !== Object.keys(mappings).length) {
     await game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, validMappings);
-    log(2, 'Updated spell list mappings, removed invalid entries');
+
   }
   return validMappings;
 }
@@ -308,7 +308,7 @@ export async function getValidCustomListMappings() {
  */
 export async function duplicateSpellList(originalSpellList) {
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
-  if (!customPack) log(1, 'Custom spell lists pack not found');
+  if (!customPack)
   const existingDuplicate = await findDuplicateSpellList(originalSpellList.uuid);
   if (existingDuplicate) return existingDuplicate;
   const pageData = originalSpellList.toObject();
@@ -392,7 +392,7 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
   const itemPacks = allItemPacks.filter((p) => {
     return shouldIndexCompendium(p);
   });
-  log(3, `Fetching spells from ${itemPacks.length} enabled item compendiums`);
+
   for (const pack of itemPacks) {
     const packSpells = await fetchSpellsFromPack(pack, maxLevel);
     spells.push(...packSpells);
@@ -401,7 +401,7 @@ export async function fetchAllCompendiumSpells(maxLevel = 9) {
     if (a.level !== b.level) return a.level - b.level;
     return a.name.localeCompare(b.name);
   });
-  log(3, `Fetched ${spells.length} compendium spells from ${itemPacks.length} enabled compendiums`);
+
   return spells;
 }
 
@@ -522,7 +522,7 @@ export async function createNewSpellList(name, identifier, type = 'class') {
   const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
   const validTypes = ['class', 'subclass', 'other'];
   if (!validTypes.includes(type)) {
-    log(2, `Invalid spell list type "${type}", defaulting to "class"`);
+
     type = 'class';
   }
 
@@ -542,9 +542,9 @@ export async function createNewSpellList(name, identifier, type = 'class') {
   };
   const journal = await JournalEntry.create(journalData, { pack: MODULE.PACK.SPELLS });
   const page = journal.pages.contents[0];
-  log(3, `Created ${type} spell list: ${name} in folder`);
+
   await dnd5e.registry.spellLists.register(page.uuid);
-  log(3, `Registered new spell list with system registry: ${name}`);
+
   return page;
 }
 
@@ -680,7 +680,7 @@ export async function createMergedSpellList(spellListUuids, mergedListName) {
     ]
   };
   const journal = await JournalEntry.create(journalData, { pack: MODULE.PACK.SPELLS });
-  log(3, `Created merged spell list: ${mergedListName} with ${mergedSpells.size} spells from ${spellLists.length} source lists`);
+
   return journal.pages.contents[0];
 }
 
@@ -693,7 +693,7 @@ export async function createMergedSpellList(spellListUuids, mergedListName) {
 async function getOrCreateSpellListFolder(folderName) {
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
   if (!customPack) {
-    log(1, 'Custom spell lists pack not found');
+
     return null;
   }
   const existingFolder = customPack.folders.find((f) => f.name === folderName);
@@ -701,10 +701,10 @@ async function getOrCreateSpellListFolder(folderName) {
   try {
     const folderData = { name: folderName, type: 'JournalEntry', folder: null };
     const folder = await Folder.create(folderData, { pack: customPack.collection });
-    log(3, `Created spell list folder: ${folderName}`);
+
     return folder;
   } catch (error) {
-    log(1, `Failed to create folder ${folderName}:`, error);
+
     return null;
   }
 }
@@ -762,7 +762,7 @@ export async function shouldShowInSettings(pack) {
       const hasSpells = index.some((entry) => entry.type === 'spell');
       return hasSpells;
     } catch (error) {
-      log(1, error);
+
       return false;
     }
   } else if (pack.metadata.type === 'JournalEntry') {
@@ -771,7 +771,7 @@ export async function shouldShowInSettings(pack) {
       const hasSpellPages = index.some((entry) => entry.pages?.some((page) => page.type === 'spells'));
       return hasSpellPages;
     } catch (error) {
-      log(1, error);
+
       return false;
     }
   }

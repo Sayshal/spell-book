@@ -140,7 +140,6 @@ export class WizardBook {
   async _initializeCache() {
     this._maxSpellsCache = this.getMaxSpellsAllowed();
     this._freeSpellsCache = this.getTotalFreeSpells();
-    log(3, `Initialized wizard cache for ${this.classIdentifier}: max=${this._maxSpellsCache}, free=${this._freeSpellsCache}`);
   }
 
   /**
@@ -263,7 +262,6 @@ export class WizardBook {
         }
         await this.actor.update(updateData);
       } catch (error) {
-        log(1, `Failed to deduct currency from ${this.actor.name}:`, error);
         return false;
       }
     }
@@ -320,7 +318,7 @@ export class WizardBook {
       copiedSpells.push(metadataObj);
       await this.actor.setFlag(MODULE.ID, copiedSpellsFlag, copiedSpells);
     }
-    log(3, `Added spell ${spellUuid} to ${this.actor.name}'s ${this.classIdentifier} spellbook`);
+
     this.invalidateCache();
     return true;
   }
@@ -339,7 +337,7 @@ export class WizardBook {
         return document;
       }
     }
-    log(2, `No spellbook journal found for actor ${this.actor.id}, class ${this.classIdentifier}`);
+
     return null;
   }
 
@@ -379,7 +377,7 @@ export class WizardBook {
       ]
     };
     const journal = await JournalEntry.create(journalData, { pack: customPack.collection });
-    log(3, `Created new spellbook journal for ${this.actor.name} ${this.classIdentifier}: ${journal.uuid}`);
+
     return journal;
   }
 
@@ -397,7 +395,6 @@ export class WizardBook {
       const newJournal = await this.createSpellbookJournal();
       return newJournal;
     } catch (error) {
-      log(1, `Error getting or creating spellbook journal for ${this.actor.name} ${this.classIdentifier}:`, error);
       return null;
     } finally {
       WizardBook._journalCreationLocks.delete(lockKey);

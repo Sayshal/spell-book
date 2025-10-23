@@ -247,21 +247,19 @@ export function getConfigLabel(configObject, key) {
 export function getTargetUserId(actor) {
   let targetUserId = game.user.id;
   if (game.user.isActiveGM && actor) {
-    log(3, `GM determining ownership for actor: ${actor.name}`);
     const characterOwner = game.users.find((user) => user.character?.id === actor.id);
     if (characterOwner) {
       targetUserId = characterOwner.id;
       log(3, `Using character owner: ${characterOwner.name} (${characterOwner.id})`);
       return targetUserId;
     }
-    log(3, 'No character owner found, checking ownership levels...');
+
     const ownershipOwner = game.users.find((user) => actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
     if (ownershipOwner) {
       targetUserId = ownershipOwner.id;
       log(3, `Using ownership owner: ${ownershipOwner.name} (${ownershipOwner.id})`);
       return targetUserId;
     }
-    log(3, `No owner found for actor ${actor.name}, using GM`);
   }
   return targetUserId;
 }
@@ -291,7 +289,6 @@ export async function createActorSpellbooksFolder(pack) {
   const folder = pack.folders.find((f) => f.name === game.i18n.localize('SPELLBOOK.Folders.ActorSpellbooks'));
   if (!folder) {
     await Folder.create({ name: game.i18n.localize('SPELLBOOK.Folders.ActorSpellbooks'), type: 'JournalEntry' }, { pack: pack.collection });
-    log(3, 'Created Actor Spellbooks folder');
   }
 }
 

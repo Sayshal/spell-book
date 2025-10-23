@@ -283,7 +283,6 @@ export class PartyMode {
       actorCache.set(classId, result);
       return result;
     } catch (error) {
-      log(1, `Error getting class spells for ${actor.name}:${classId}:`, error);
       return null;
     }
   }
@@ -884,9 +883,7 @@ export class PartyMode {
         const spellcasters = creatures.filter((actor) => actor && Object.keys(foundry.utils.getProperty(actor, 'spellcastingClasses') || {}).length > 0);
         if (spellcasters.length > 0) return spellcasters;
       }
-    } catch (error) {
-      log(2, 'Error accessing primary party setting:', error);
-    }
+    } catch (error) {}
     if (game.user.isGM) ui.notifications.warn('SPELLBOOK.Party.NoPrimaryPartySet', { localize: true });
     else ui.notifications.info('SPELLBOOK.Party.AskGMToSetParty', { localize: true });
     return [];
@@ -995,11 +992,9 @@ export class PartyMode {
   async setUserSelectedFocus(groupActor, userId, focusId) {
     const socketHandler = game.modules.get(MODULE.ID)?.socketHandler;
     if (!socketHandler) {
-      log(1, 'Socket handler not initialized');
       return false;
     }
     const result = await socketHandler.setUserSelectedFocus(groupActor, userId, focusId);
-    if (!result.success) log(1, `Error setting focus for user ${userId}:`, result.error);
-    return result.success;
+    if (!result.success) return result.success;
   }
 }

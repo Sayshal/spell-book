@@ -38,7 +38,6 @@ export function registerTidy5eIntegration() {
   Hooks.on('tidy5e-sheet.renderActorSheet', onTidy5eRender);
   Hooks.on('renderTidy5eCharacterSheet', onTidy5eRender);
   Hooks.on('renderTidy5eCharacterSheetQuadrone', onTidy5eQuadroneRender);
-  log(3, 'Registered Tidy5e sheet integration');
 }
 
 /**
@@ -165,7 +164,6 @@ async function openSpellbook(event, actor) {
     await spellBook._preInitialize();
     spellBook.render(true);
   } catch (error) {
-    log(1, 'Error opening Tidy5e spell book:', error);
   } finally {
     if (icon) {
       icon.classList.remove('fa-spin');

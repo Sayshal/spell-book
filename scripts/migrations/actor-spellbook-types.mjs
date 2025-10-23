@@ -33,12 +33,12 @@ async function migrateActorSpellbookTypes() {
           if (page.system?.type !== 'actor-spellbook') {
             try {
               await page.update({ 'system.type': 'actor-spellbook' });
-              log(3, `Set ${page.name} to type 'actor-spellbook'`);
+
               results.updated++;
               results.updatedPages.push({ name: page.name, id: page.id, journalName: journal.name, journalId: journal.id });
             } catch (error) {
               const errorMessage = `Failed to update ${page.name}: ${error.message}`;
-              log(2, errorMessage, error);
+
               results.errors.push(errorMessage);
             }
           }
@@ -48,7 +48,6 @@ async function migrateActorSpellbookTypes() {
   } catch (error) {
     const errorMessage = `Critical error during actor spellbook type migration: ${error.message}`;
     results.errors.push(errorMessage);
-    log(1, errorMessage, error);
   }
   return results;
 }

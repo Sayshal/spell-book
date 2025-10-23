@@ -238,7 +238,7 @@ export class Filters {
   filterAvailableSpells(availableSpells, selectedSpellUUIDs, isSpellInSelectedList, filterState = null) {
     try {
       const filters = filterState || this.getFilterState();
-      log(3, 'Beginning Filtering:', selectedSpellUUIDs.size, 'selected spells out of', availableSpells.length, 'total available');
+
       let remainingSpells = [...availableSpells];
       remainingSpells = this._filterBySelectedList(remainingSpells, selectedSpellUUIDs, isSpellInSelectedList);
       remainingSpells = this._filterBySource(remainingSpells, filters);
@@ -247,10 +247,9 @@ export class Filters {
       remainingSpells = this._filterByRange(remainingSpells, filters);
       remainingSpells = this._filterByDamageAndConditions(remainingSpells, filters);
       remainingSpells = this._filterBySpecialProperties(remainingSpells, filters);
-      log(3, 'Final spells count:', remainingSpells.length);
+
       return { spells: remainingSpells, totalFiltered: remainingSpells.length };
     } catch (error) {
-      log(1, 'ERROR in Filters Filter Available Spells:', error);
       return { spells: [], totalFiltered: 0 };
     }
   }
@@ -265,7 +264,7 @@ export class Filters {
    */
   _filterBySelectedList(spells, selectedSpellUUIDs, isSpellInSelectedList) {
     const filtered = spells.filter((spell) => !isSpellInSelectedList(spell, selectedSpellUUIDs));
-    log(3, 'After in-list filter:', filtered.length, 'spells remaining');
+
     return filtered;
   }
 
@@ -286,7 +285,6 @@ export class Filters {
       return spellSource.includes(source) || spellSource === source || packName.toLowerCase().includes(source.toLowerCase());
     });
     if (filtered.length === 0 && beforeCount > 0) {
-      log(3, `Source '${source}' filtered out all spells, resetting to show all sources`);
       filterState.source = 'all';
       return spells;
     }
@@ -309,11 +307,10 @@ export class Filters {
       return spellSourceId === spellSource;
     });
     if (filtered.length === 0 && beforeCount > 0) {
-      log(3, `Spell Source '${spellSource}' filtered out all spells, resetting to show all sources`);
       filterState.spellSource = 'all';
       return spells;
     }
-    log(3, 'After spell source filter:', filtered.length, 'spells remaining');
+
     return filtered;
   }
 
@@ -355,23 +352,21 @@ export class Filters {
     if (query.startsWith(this.searchPrefix)) {
       const search = this.app.ui?.search;
       if (search && search.isCurrentQueryAdvanced()) {
-        log(3, 'Using advanced query execution');
         const filtered = search.executeAdvancedQuery(spells);
-        log(3, 'Advanced query results:', filtered.length);
+
         return filtered;
       } else return [];
     }
     const exactPhraseMatch = query.match(/^["'](.+?)["']$/);
     if (exactPhraseMatch) {
       const phrase = exactPhraseMatch[1].toLowerCase();
-      log(3, 'Exact phrase search for:', phrase);
+
       const filtered = spells.filter((spell) => {
         const spellName = spell.name ? spell.name.toLowerCase() : '';
         const matches = spellName.includes(phrase);
-        if (matches) log(3, 'Exact phrase match found:', spell.name);
-        return matches;
+        if (matches) return matches;
       });
-      log(3, 'Exact phrase search results:', filtered.length);
+
       return filtered;
     }
     const queryWords = query
@@ -391,7 +386,7 @@ export class Filters {
       const anyWordMatches = queryWords.some((word) => spellName.includes(word));
       return anyWordMatches;
     });
-    log(3, 'Fuzzy search results:', filtered.length);
+
     return filtered;
   }
 
@@ -417,7 +412,7 @@ export class Filters {
       const maxRangeVal = maxRange ? parseInt(maxRange) : Infinity;
       return standardizedRange >= minRangeVal && standardizedRange <= maxRangeVal;
     });
-    log(3, 'After range filter:', filtered.length, 'spells remaining');
+
     return filtered;
   }
 
@@ -497,9 +492,7 @@ export class Filters {
       }
       this._updateNoResultsDisplay(visibleCount);
       this._updateLevelContainers(levelVisibilityMap);
-    } catch (error) {
-      log(1, 'Error applying filters:', error);
-    }
+    } catch (error) {}
   }
 
   /**

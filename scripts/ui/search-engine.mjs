@@ -187,7 +187,7 @@ export class SearchEngine {
       this.queryCache.set(query, parsed);
       return parsed;
     } catch (error) {
-      log(1, 'Error:', error);
+
       this.queryCache.set(query, null);
       return null;
     }
@@ -204,7 +204,7 @@ export class SearchEngine {
     this.spellNameTree = new foundry.utils.WordTree();
     for (const spell of spells) if (spell.name) this.spellNameTree.addLeaf(spell.name, spell);
     this.treeLastBuilt = Date.now();
-    log(3, `WordTree built with ${spells.length} spell names`);
+
   }
 
   /**
@@ -226,10 +226,10 @@ export class SearchEngine {
    * @returns {void}
    */
   setupSearchInterface() {
-    log(3, 'Starting setupSearchInterface...');
+
     const searchInput = this.element.querySelector('input[name="filter-name"]');
     if (!searchInput) {
-      log(1, 'No search input found, aborting setupSearchInterface');
+
       return;
     }
     const hasAdvancedClass = searchInput.classList.contains('advanced-search-input');
@@ -246,7 +246,7 @@ export class SearchEngine {
     this.searchInputElement = searchInput;
     this.createClearButton();
     this.createDropdown();
-    log(3, 'Search interface setup complete');
+
   }
 
   /**
@@ -294,7 +294,7 @@ export class SearchEngine {
     if (this.clearButtonElement) this.clearButtonElement.addEventListener('click', this.clearSearch.bind(this));
     this.boundHandleDocumentClick = this.handleDocumentClick.bind(this);
     document.addEventListener('click', this.boundHandleDocumentClick);
-    log(3, 'Event listeners setup complete');
+
   }
 
   /**
@@ -314,10 +314,10 @@ export class SearchEngine {
           if (!this.app._state._initialized) await this.app._state.initialize();
           await new Promise((resolve) => setTimeout(resolve, 50));
         } catch (error) {
-          log(2, 'Error ensuring spell data for advanced search:', error);
+
         }
         this.updateDropdownContent(query);
-        if (this.isAdvancedQueryComplete(query)) log(3, 'Advanced query appears complete, but waiting for Enter key');
+        if (this.isAdvancedQueryComplete(query))
       }, 150);
     } else {
       this.searchTimeout = setTimeout(async () => {
@@ -325,7 +325,7 @@ export class SearchEngine {
           if (!this.app._state._initialized) await this.app._state.initialize();
           await new Promise((resolve) => setTimeout(resolve, 50));
         } catch (error) {
-          log(1, 'Error ensuring spell data for fuzzy search:', error);
+
         }
         this.updateDropdownContent(query);
         this.performSearch(query);
@@ -346,7 +346,7 @@ export class SearchEngine {
       const parsed = this.parseAndCacheQuery(queryWithoutTrigger);
       return parsed !== null;
     } catch (error) {
-      log(1, 'Query validation failed:', error.message);
+
       return false;
     }
   }
@@ -424,7 +424,7 @@ export class SearchEngine {
    */
   handleDocumentClick(event) {
     if (event.target.closest('.clear-recent-search')) {
-      log(3, 'Handling clear recent search click');
+
       event.preventDefault();
       event.stopPropagation();
       const suggestionElement = event.target.closest('.search-suggestion');
@@ -459,13 +459,13 @@ export class SearchEngine {
     this.searchInputElement.value = query;
     this.searchInputElement.dispatchEvent(new Event('input', { bubbles: true }));
     if (suggestionElement.classList.contains('submit-query')) {
-      log(3, `[${suggestionId}] Submit query - calling performSearch`);
+
       this.performSearch(query);
       this.addToRecentSearches(query);
       this.hideDropdown();
-      log(3, `[${suggestionId}] Submit query completed`);
+
     } else {
-      log(3, `[${suggestionId}] Not submit query - updating dropdown content`);
+
       this.lastDropdownQuery = null;
       if (this.searchTimeout) {
         clearTimeout(this.searchTimeout);
@@ -473,7 +473,7 @@ export class SearchEngine {
       }
       this.updateDropdownContent(query);
       if (!this.isDropdownVisible) this.showDropdown();
-      log(3, `[${suggestionId}] Dropdown content updated and shown`);
+
     }
     setTimeout(() => {
       this.isProcessingSuggestion = false;
@@ -502,7 +502,7 @@ export class SearchEngine {
     activeInput.setAttribute('aria-expanded', 'true');
     this.isDropdownVisible = true;
     this.selectedSuggestionIndex = -1;
-    log(3, 'Search dropdown shown below input');
+
   }
 
   /**
@@ -517,7 +517,7 @@ export class SearchEngine {
     this.searchInputElement.setAttribute('aria-expanded', 'false');
     this.isDropdownVisible = false;
     this.selectedSuggestionIndex = -1;
-    log(3, 'Search dropdown hidden');
+
   }
 
   /**
@@ -534,7 +534,7 @@ export class SearchEngine {
     if (this.isAdvancedQuery) content += this._generateAdvancedQueryContent(query);
     else content += this._generateStandardQueryContent(query);
     dropdown.innerHTML = content;
-    log(3, 'Dropdown content updated for query:', query);
+
   }
 
   /**
@@ -569,10 +569,10 @@ export class SearchEngine {
       return content;
     }
     const endsWithFieldColon = this.queryEndsWithFieldColon(queryWithoutTrigger);
-    log(3, `endsWithFieldColon result: "${endsWithFieldColon}"`);
+
     if (endsWithFieldColon) {
       const fieldId = this.fieldDefinitions.getFieldId(endsWithFieldColon);
-      log(3, `fieldId resolved to: "${fieldId}"`);
+
       content += `<div class="search-status info">${game.i18n.localize('SPELLBOOK.Search.EnterValue')}</div>`;
       if (fieldId === 'range') {
         content += `<div class="search-note">
@@ -583,7 +583,7 @@ export class SearchEngine {
       }
       if (fieldId) {
         const validValues = this.fieldDefinitions.getValidValuesForField(fieldId);
-        log(3, `validValues for ${fieldId}:`, validValues);
+
         if (validValues.length > 0) {
           content += `<div class="search-section-header">${game.i18n.localize('SPELLBOOK.Search.Values')}</div>`;
           validValues.forEach((value) => {
@@ -758,21 +758,21 @@ export class SearchEngine {
   async performSearch(query) {
     const searchId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     if (this.isProcessingSearch) return;
-    log(3, `performSearch [${searchId}] started with query: "${query}"`);
+
     this.isProcessingSearch = true;
     try {
       if (query && query.startsWith(this.searchPrefix)) {
-        log(3, `[${searchId}] Processing advanced query`);
+
         const parsedQuery = this.parseAndCacheQuery(query.substring(1));
         if (parsedQuery) {
           this.isAdvancedQuery = true;
           this.parsedQuery = parsedQuery;
-          log(3, `[${searchId}] Calling applyAdvancedQueryToFilters`);
+
           this.applyAdvancedQueryToFilters(parsedQuery);
           this.app.filterHelper.invalidateFilterCache();
           this.app.filterHelper.applyFilters();
           this.isProcessingSearch = false;
-          log(3, `[${searchId}] Advanced query processing completed`);
+
           return;
         }
       }
@@ -782,7 +782,7 @@ export class SearchEngine {
       this.app.filterHelper.applyFilters();
       this.isProcessingSearch = false;
     } catch (error) {
-      log(1, `performSearch [${searchId}] error:`, error);
+
       this.isProcessingSearch = false;
     }
   }
@@ -815,7 +815,7 @@ export class SearchEngine {
       searchInput.dispatchEvent(new Event('input', { bubbles: true }));
       this.updateClearButtonVisibility();
     }
-    log(3, 'Advanced query filters applied');
+
   }
 
   /**
@@ -884,7 +884,7 @@ export class SearchEngine {
       filterElement.value = value;
       filterElement.dispatchEvent(new Event('input', { bubbles: true }));
     }
-    log(3, `Set filter ${fieldId} to: ${value}`);
+
   }
 
   /**
@@ -981,7 +981,7 @@ export class SearchEngine {
       const recent = this.actor.getFlag(MODULE.ID, FLAGS.RECENT_SEARCHES) || [];
       return Array.isArray(recent) ? recent : [];
     } catch (error) {
-      log(1, 'Error getting recent searches:', error);
+
       return [];
     }
   }
@@ -1001,9 +1001,9 @@ export class SearchEngine {
       recentSearches.unshift(trimmedQuery);
       const limitedSearches = recentSearches.slice(0, 8);
       this.actor.setFlag(MODULE.ID, FLAGS.RECENT_SEARCHES, limitedSearches);
-      log(3, 'Added to recent searches:', trimmedQuery);
+
     } catch (error) {
-      log(1, 'Error adding to recent searches:', error);
+
     }
   }
 
@@ -1016,7 +1016,7 @@ export class SearchEngine {
     const recentSearches = this.getRecentSearches();
     const updatedSearches = recentSearches.filter((search) => search !== query);
     this.actor.setFlag(MODULE.ID, FLAGS.RECENT_SEARCHES, updatedSearches);
-    log(3, 'Removed from recent searches:', query);
+
   }
 
   /**
@@ -1026,7 +1026,7 @@ export class SearchEngine {
   invalidateSpellNameTree() {
     this.spellNameTree = null;
     this.treeLastBuilt = null;
-    log(3, 'WordTree cache invalidated');
+
   }
 
   /**
@@ -1034,7 +1034,7 @@ export class SearchEngine {
    * @returns {void}
    */
   cleanup() {
-    log(3, 'SearchEngine cleanup called');
+
     if (this.searchTimeout) {
       clearTimeout(this.searchTimeout);
       this.searchTimeout = null;
@@ -1051,6 +1051,6 @@ export class SearchEngine {
     this.queryCache.clear();
     this.invalidateSpellNameTree();
     this.isInitialized = false;
-    log(3, 'Advanced search manager cleaned up');
+
   }
 }

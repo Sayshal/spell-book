@@ -69,10 +69,9 @@ export async function addSpellToActorFavorites(spellUuid, actor) {
     const newFavorite = { type: 'item', id: favoriteId, sort: 100000 + currentFavorites.length };
     const updatedFavorites = [...currentFavorites, newFavorite];
     await actor.update({ 'system.favorites': updatedFavorites });
-    log(3, `Added spell ${actorSpell.name} to actor favorites`);
+
     return true;
   } catch (error) {
-    log(1, 'Error adding spell to actor favorites:', error);
     return false;
   }
 }
@@ -93,7 +92,6 @@ export async function removeSpellFromActorFavorites(spellUuid, actor) {
     if (updatedFavorites.length !== currentFavorites.length) await actor.update({ 'system.favorites': updatedFavorites });
     return true;
   } catch (error) {
-    log(1, 'Error removing spell from actor favorites:', error);
     return false;
   }
 }
@@ -110,9 +108,7 @@ export async function syncFavoritesOnSave(actor, spellData) {
       const userData = await DataUtils.UserData.getUserDataForSpell(uuid, null, actor.id);
       if (userData?.favorited) await addSpellToActorFavorites(uuid, actor);
     }
-  } catch (error) {
-    log(1, 'Error syncing favorites on save:', error);
-  }
+  } catch (error) {}
 }
 
 /**
@@ -126,7 +122,7 @@ export async function processFavoritesFromForm(_form, actor) {
     const targetUserId = DataUtils.getTargetUserId(actor);
     const actorSpells = actor.items.filter((item) => item.type === 'spell');
     const favoritesToAdd = [];
-    log(3, `Checking ${actorSpells.length} spells on actor for favorite status`);
+
     for (const spell of actorSpells) {
       const canonicalUuid = getCanonicalSpellUuid(spell.uuid);
       const userData = await DataUtils.UserData.getUserDataForSpell(canonicalUuid, targetUserId, actor.id);
@@ -145,12 +141,8 @@ export async function processFavoritesFromForm(_form, actor) {
       });
       const allFavorites = [...nonSpellFavorites, ...newSpellFavorites];
       await actor.update({ 'system.favorites': allFavorites });
-      log(3, `Updated actor.system.favorites with ${newSpellFavorites.length} spell favorites, preserved ${nonSpellFavorites.length} non-spell favorites`);
     }
-    log(3, `Processed favorites: ${favoritesToAdd.length} spells favorited`);
-  } catch (error) {
-    log(1, 'Error processing favorites in form:', error);
-  }
+  } catch (error) {}
 }
 
 /**
@@ -165,7 +157,6 @@ export function findActorSpellByUuid(spellUuid, actor) {
   spell = actor.items.find((item) => {
     if (item.type !== 'spell') return false;
     if (item._stats?.compendiumSource === spellUuid) return true;
-    if (item.flags?.core?.sourceId === spellUuid) return true;
     if (item.uuid === spellUuid) return true;
     const parsedUuid = foundry.utils.parseUuid(spellUuid);
     if (parsedUuid.collection) {
@@ -188,11 +179,9 @@ export function getCanonicalSpellUuid(spellOrUuid) {
     if (parsedUuid.collection?.collection) return spellOrUuid;
     const spell = fromUuidSync(spellOrUuid);
     if (spell?._stats?.compendiumSource) return spell._stats.compendiumSource;
-    if (spell?.flags?.core?.sourceId) return spell.flags.core.sourceId;
     return spellOrUuid;
   }
   if (spellOrUuid?.compendiumUuid) return spellOrUuid.compendiumUuid;
   if (spellOrUuid?._stats?.compendiumSource) return spellOrUuid._stats.compendiumSource;
-  if (spellOrUuid?.flags?.core?.sourceId) return spellOrUuid.flags.core.sourceId;
   return spellOrUuid?.uuid || '';
 }

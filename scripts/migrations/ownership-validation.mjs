@@ -26,7 +26,7 @@ import { log } from '../logger.mjs';
  */
 async function validateOwnershipLevels() {
   const results = { processed: 0, updated: 0, errors: [], userDataFixed: 0, spellListsFixed: 0, actorSpellbooksFixed: 0, packsFixed: 0, details: [], fixedDocuments: [] };
-  log(3, 'Validating ownership levels for Spell Book documents...');
+
   try {
     const userDataResults = await validateUserDataOwnership();
     results.userDataFixed = userDataResults.fixed;
@@ -58,7 +58,7 @@ async function validateOwnershipLevels() {
     results.fixedDocuments.push(...packResults.fixedDocuments);
     log(3, `Ownership validation complete: ${results.updated} documents fixed (${results.processed} checked)`);
   } catch (error) {
-    log(1, 'Error during ownership validation:', error);
+
     results.errors.push(`Ownership validation error: ${error.message}`);
   }
   return results;
@@ -111,9 +111,9 @@ async function validateUserDataOwnership() {
           }
         }
       }
-    } else log(3, 'No user data journal found');
+    } else
   } catch (error) {
-    log(1, 'Error validating user data ownership:', error);
+
     results.errors.push(`User data ownership error: ${error.message}`);
   }
   return results;
@@ -154,7 +154,7 @@ async function validateSpellListOwnership() {
       }
     }
   } catch (error) {
-    log(1, 'Error validating spell list ownership:', error);
+
     results.errors.push(`Spell list ownership error: ${error.message}`);
   }
   return results;
@@ -298,7 +298,7 @@ async function validatePackOwnership() {
       }
     }
   } catch (error) {
-    log(1, 'Error validating pack ownership:', error);
+
     results.errors.push(`Pack ownership validation error: ${error.message}`);
   }
   return results;

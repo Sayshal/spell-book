@@ -104,8 +104,7 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
 
   /** @type {Array<SpellDocument>} */
   const filteredOut = [];
-  log(3, `Fetching spell documents: ${spellUuids.size} spells, max level ${maxSpellLevel}`);
-  log(3, `Grouped into ${compendiumGroups.size} compendiums + ${nonCompendiumUuids.length} non-compendium UUIDs`);
+
   for (const [packId, uuidData] of compendiumGroups) {
     const pack = game.packs.get(packId);
     if (!pack) {
@@ -156,7 +155,7 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
         errors.push({ uuid, reason: 'Not a valid spell document' });
         continue;
       }
-      const sourceUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || foundry.utils.parseUuid(uuid).uuid;
+      const sourceUuid = spell._stats?.compendiumSource || foundry.utils.parseUuid(uuid).uuid;
       spell.compendiumUuid = sourceUuid;
       if (spell.system?.level <= maxSpellLevel) spellItems.push(spell);
       else filteredOut.push(spell);
@@ -188,16 +187,13 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
         errors.push({ uuid, reason: 'Not a valid spell document' });
         continue;
       }
-      const sourceUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || foundry.utils.parseUuid(uuid).uuid;
+      const sourceUuid = spell._stats?.compendiumSource || foundry.utils.parseUuid(uuid).uuid;
       spell.compendiumUuid = sourceUuid;
       if (spell.system?.level <= maxSpellLevel) spellItems.push(spell);
       else filteredOut.push(spell);
     }
   }
-  if (errors.length > 0) log(2, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`, { errors });
-  if (filteredOut.length > 0) log(3, `Filtered out ${filteredOut.length} spells above level ${maxSpellLevel}`);
-  log(3, `Successfully fetched ${spellItems.length}/${spellUuids.size} spells`);
-  return spellItems;
+  if (errors.length > 0) if (filteredOut.length > 0) return spellItems;
 }
 
 /**

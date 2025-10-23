@@ -68,12 +68,10 @@ export class Macros {
    * @static
    */
   static async initializeMacros() {
-    log(3, 'Initializing compendium macros...');
     const pack = game.packs.get(MODULE.PACK.MACROS);
     if (!pack) return;
     for (const macro of MACROS) await this.ensureCompendiumMacroExists(pack, macro);
     await this.cleanupObsoleteMacros();
-    log(3, 'All compendium macros initialized successfully');
   }
 
   /**
@@ -93,7 +91,6 @@ export class Macros {
         log(3, `Compendium macro "${name}" is up to date (v${version})`);
         return existingMacro;
       } else {
-        log(3, `Updating compendium macro "${name}" from v${currentVersion || 'unknown'} to v${version}`);
         await existingMacro.update({
           name: name,
           command: command,

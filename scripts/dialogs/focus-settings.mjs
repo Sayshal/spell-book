@@ -265,7 +265,7 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
       });
       picker.render(true);
     } catch (error) {
-      log(1, 'Error opening file picker:', error);
+
     }
   }
 
@@ -299,7 +299,7 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
         if (app.constructor.name === 'PartySpellsApp') app.render();
       });
     } catch (error) {
-      log(1, 'Failed to reset focus settings:', error);
+
     }
   }
 
@@ -374,9 +374,9 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
           else if (actor.isOwner || game.user.isGM) await actor.unsetFlag(MODULE.ID, FLAGS.SPELLCASTING_FOCUS);
         }
       } catch (error) {
-        log(1, 'Error saving focus selections:', error);
+
       }
-    } else log(2, 'No group actor available for member assignments');
+    } else
   }
 
   /**
@@ -393,7 +393,7 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!groupActor) return;
     const socketHandler = game.modules.get(MODULE.ID)?.socketHandler;
     const result = await socketHandler.setUserSelectedFocus(groupActor, targetUserId, selectedFocusId || null);
-    if (!result.success) log(1, 'Failed to save user selection:', result.error);
+    if (!result.success)
   }
 
   /**

@@ -46,7 +46,6 @@ import { createChatMessage } from './ui/_module.mjs';
 import { SocketHandler } from './sockets.mjs';
 
 Hooks.once('init', async function () {
-  log(3, `Initializing ${MODULE.NAME}!`);
   CONFIG.DND5E.spellListTypes['actor-spellbook'] = game.i18n.localize('SPELLBOOK.Registry.ActorSpellBooksGroup');
   registerSettings();
   initializeLogger();
@@ -56,13 +55,14 @@ Hooks.once('init', async function () {
   createAPI();
   const module = game.modules.get(MODULE.ID);
   module.socketHandler = new SocketHandler();
-  log(3, `${MODULE.NAME} initialized!`);
+  log(3, 'Module initialized.');
 });
 
 Hooks.on('setup', () => {
   let position = game.settings.get(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION);
   if (!position || (typeof position === 'object' && Object.keys(position).length === 0)) position = { height: 875, width: 600 };
   SpellBook.DEFAULT_OPTIONS.position = position;
+  log(3, 'Spell Book position restored.');
 });
 
 Hooks.once('ready', async function () {
@@ -76,6 +76,7 @@ Hooks.once('ready', async function () {
   await UsageTracker.initialize();
   await DataUtils.preloadData(true);
   if (game.user.isGM) await DataUtils.registerCustomSpellLists();
+  log(3, 'Module ready.');
 });
 
 Hooks.on('createJournalEntryPage', (page, _options, _userId) => {

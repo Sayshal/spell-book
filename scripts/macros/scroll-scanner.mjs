@@ -23,20 +23,20 @@ function scrollScannerScript() {
                 });
               }
             } catch (error) {
-              SPELLBOOK.log(2, `Error loading consumable ${consumable.uuid}:`, error);
+              SPELLBOOK.
             }
           }
         } catch (error) {
-          SPELLBOOK.log(2, `Error processing pack ${pack.collection}:`, error);
+          SPELLBOOK.
         }
       }
 
       scrolls.sort((a, b) => a.name.localeCompare(b.name));
-      SPELLBOOK.log(3, `Found ${scrolls.length} scrolls across all compendiums`);
+      SPELLBOOK.
 
-      await showScrollsDialog(scrolls);
+      await showScrollsDia
     } catch (error) {
-      SPELLBOOK.log(1, 'Error finding scrolls in compendiums:', error);
+      SPELLBOOK.
       ui.notifications.clear();
       ui.notifications.error(`Error: ${error.message}`);
     }
@@ -96,7 +96,7 @@ function scrollScannerScript() {
     }).then((result) => {
       if (result === 'copy') {
         const scrollList = scrolls.map((s) => `${s.name} (${s.uuid}) - ${s.source}`).join('\n');
-        SPELLBOOK.log(3, `Scrolls found in compendiums:\n${scrollList}`);
+        SPELLBOOK.
         ui.notifications.info('Scroll list copied to console (F12)');
       }
     });

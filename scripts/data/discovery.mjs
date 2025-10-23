@@ -95,7 +95,7 @@ export async function getClassSpellList(className, classUuid, actor) {
           const sourceNames = [];
           for (const uuid of customSpellListUuids) {
             if (!uuid || typeof uuid !== 'string') {
-              log(2, `Invalid custom spell list UUID: ${uuid}`);
+
               continue;
             }
             try {
@@ -105,17 +105,17 @@ export async function getClassSpellList(className, classUuid, actor) {
                 sourceNames.push(customSpellList.name || 'Unknown List');
                 log(3, `Loaded custom spell list: ${customSpellList.name} (${customSpellList.system.spells.size} spells)`);
               } else {
-                log(2, `Custom spell list has no spells: ${uuid}`);
+
               }
             } catch (error) {
-              log(1, `Error loading custom spell list ${uuid}:`, error);
+
             }
           }
           if (spellSets.length > 0) {
             finalSpellSet = mergeSpellSets(spellSets, sourceNames);
-            log(3, `Successfully merged ${spellSets.length} custom spell lists for ${className}: ${finalSpellSet.size} total spells`);
+
           } else {
-            log(2, `No valid custom spell lists found for ${className}, falling back to default discovery`);
+
           }
         }
       }
@@ -129,16 +129,16 @@ export async function getClassSpellList(className, classUuid, actor) {
     if (!classIdentifier) return new Set();
     const preloadedData = DataUtils.getPreloadedData();
     if (preloadedData && preloadedData.spellLists.length > 0) {
-      log(3, `Checking ${preloadedData.spellLists.length} preloaded spell lists for ${classIdentifier}`);
+
       const matchingLists = preloadedData.spellLists.filter((list) => list.identifier?.toLowerCase() === classIdentifier);
       let preloadedMatch = null;
       if (topLevelFolderName && matchingLists.length > 0) {
         preloadedMatch = matchingLists.find((list) => list.pack && list.pack.toLowerCase().includes(topLevelFolderName.toLowerCase()));
-        if (preloadedMatch) log(3, `Found spell list from preferred source "${topLevelFolderName}": ${preloadedMatch.name}`);
+        if (preloadedMatch)
       }
       if (!preloadedMatch && matchingLists.length > 0) {
         preloadedMatch = matchingLists[0];
-        if (topLevelFolderName) log(2, `No spell list found from source "${topLevelFolderName}" for ${classIdentifier}, using fallback: ${preloadedMatch.name} from ${preloadedMatch.pack}`);
+        if (topLevelFolderName)
       }
       if (preloadedMatch && preloadedMatch.spellCount > 0) {
         log(3, `Found preloaded spell list for ${classIdentifier}: ${preloadedMatch.name} (${preloadedMatch.spellCount} spells)`);
@@ -146,7 +146,7 @@ export async function getClassSpellList(className, classUuid, actor) {
           const document = await fromUuid(preloadedMatch.uuid);
           if (document?.system?.spells && document.system.spells.size > 0) finalSpellSet = document.system.spells;
         } catch (error) {
-          log(2, `Error loading preloaded spell list ${preloadedMatch.uuid}:`, error);
+
         }
       }
     }
@@ -172,13 +172,13 @@ export async function getClassSpellList(className, classUuid, actor) {
       const subclassItem = spellcastingData._classLink;
       const subclassIdentifier = subclassItem.system?.identifier?.toLowerCase();
       if (subclassIdentifier) {
-        log(3, `Checking for subclass spell list: ${subclassIdentifier}`);
+
         const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
         const subclassSpellList = await findSpellListByIdentifier('subclass', subclassIdentifier, customMappings);
         if (subclassSpellList && subclassSpellList.size > 0) {
-          log(3, `Found subclass spell list for ${subclassIdentifier}, adding ${subclassSpellList.size} spells`);
+
           subclassSpellList.forEach((spell) => finalSpellSet.add(spell));
-          log(3, `Total spells after adding subclass: ${finalSpellSet.size}`);
+
         }
       }
     }
@@ -203,9 +203,9 @@ function getFolderNameFromPack(source) {
     let currentFolder = pack.folder;
     while (currentFolder && currentFolder.depth > 1) currentFolder = currentFolder.folder;
     if (currentFolder && currentFolder.depth === 1) return currentFolder.name;
-    else log(1, `Could not find top level folder, final depth: ${currentFolder?.depth || 'undefined'}`);
+    else
   }
-  log(1, `No folder structure found for pack: ${packCollection}`);
+
   return 'Unknown';
 }
 
@@ -301,7 +301,7 @@ export function calculateMaxSpellLevel(classItem, actor) {
   const classIdentifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
   const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(actor, classIdentifier);
   if (!spellcastingConfig) {
-    log(3, `No spellcasting configuration found for class ${classIdentifier}`);
+
     return 0;
   }
   const spellcastingType = spellcastingConfig.type;
@@ -312,7 +312,7 @@ export function calculateMaxSpellLevel(classItem, actor) {
     const progression = { spell: 0, [classKey]: classLevels };
     const spellSlotTable = CONFIG.DND5E.spellcasting.spell.table;
     if (!spellSlotTable || !spellSlotTable.length) {
-      log(1, 'No spell slot table found');
+
       return 0;
     }
     const maxPossibleSpellLevel = spellSlotTable[spellSlotTable.length - 1].length;
@@ -332,7 +332,7 @@ export function calculateMaxSpellLevel(classItem, actor) {
         return Math.max(maxLevel, level || -1);
       }, 0);
     } catch (error) {
-      log(1, 'Error calculating spell progression:', error);
+
       return 0;
     }
   } else if (spellcastingType === 'pact') {
@@ -346,14 +346,14 @@ export function calculateMaxSpellLevel(classItem, actor) {
       actor.constructor.computeClassProgression(progression, spellcastingSource, { spellcasting: spellcastingConfig });
       actor.constructor.prepareSpellcastingSlots(spells, 'pact', progression, { actor });
       const pactLevel = spells.pact?.level || 0;
-      log(3, `Calculated pact spell level: ${pactLevel} for class ${classIdentifier}`);
+
       return pactLevel;
     } catch (error) {
-      log(1, 'Error calculating pact progression:', error);
+
       return 0;
     }
   }
-  log(3, `Unsupported spellcasting type: ${spellcastingType} for class ${classIdentifier}`);
+
   return 0;
 }
 
@@ -381,7 +381,7 @@ async function getSpellListFromFolder(topLevelFolderName, identifier, customMapp
     const spellList = await searchPackForSpellList(pack, 'class', identifier, customMappings);
     if (spellList) return spellList;
   }
-  log(2, `No spell list found for folder "${topLevelFolderName}", identifier "${identifier}"`);
+
   return null;
 }
 
@@ -407,9 +407,9 @@ function mergeSpellSets(spellSets, sourceNames = []) {
       totalSpells += spellSet.size;
       log(3, `Merged ${spellSet.size} spells from ${sourceName} (${added} new, ${spellSet.size - added} duplicates)`);
     } else {
-      log(3, `No spells found in ${sourceName}`);
+
     }
   }
-  log(3, `Spell list merge complete: ${mergedSet.size} unique spells from ${totalSpells} total spells across ${spellSets.length} lists`);
+
   return mergedSet;
 }

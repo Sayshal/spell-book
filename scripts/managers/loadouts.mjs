@@ -74,12 +74,11 @@ export class Loadouts {
     if (!this._loadoutsCache || now - this._lastCacheTime > cacheTimeout) {
       this._loadoutsCache = this.actor.getFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS) || {};
       this._lastCacheTime = now;
-      log(3, 'Loaded loadouts from cache:', this._loadoutsCache);
     }
     const allLoadouts = Object.values(this._loadoutsCache);
     if (classIdentifier) {
       const filtered = allLoadouts.filter((loadout) => !loadout.classIdentifier || loadout.classIdentifier === classIdentifier);
-      log(3, `Filtered loadouts for ${classIdentifier}:`, filtered);
+
       return filtered;
     }
     return allLoadouts;
@@ -100,10 +99,9 @@ export class Loadouts {
       const loadout = { id: loadoutId, name: name.trim(), description: description?.trim() || '', classIdentifier, spellConfiguration, createdAt: Date.now(), updatedAt: Date.now() };
       await this.actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.${loadoutId}`]: loadout });
       this._invalidateCache();
-      log(3, `Saved loadout: ${name} for ${classIdentifier || 'all classes'}`);
+
       return true;
     } catch (error) {
-      log(1, 'Error saving loadout:', error);
       return false;
     }
   }
@@ -118,7 +116,6 @@ export class Loadouts {
       const loadouts = this.actor.getFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS) || {};
       return loadouts[loadoutId] || null;
     } catch (error) {
-      log(1, 'Error loading loadout:', error);
       return null;
     }
   }
@@ -135,10 +132,9 @@ export class Loadouts {
       if (!loadout) throw new Error('Loadout not found');
       if (!this.spellbook) throw new Error('No Spell Book reference available');
       this._applySpellConfiguration(loadout.spellConfiguration, classIdentifier);
-      log(3, `Applied loadout: ${loadout.name} to class ${classIdentifier}`);
+
       return true;
     } catch (error) {
-      log(1, 'Error applying loadout:', error);
       return false;
     }
   }
@@ -155,10 +151,9 @@ export class Loadouts {
       const loadoutName = existingLoadouts[loadoutId].name;
       await this.actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.-=${loadoutId}`]: null });
       this._invalidateCache();
-      log(3, `Deleted loadout: ${loadoutName}`);
+
       return true;
     } catch (error) {
-      log(1, 'Error deleting loadout:', error);
       return false;
     }
   }
@@ -188,10 +183,9 @@ export class Loadouts {
         if (checkbox.disabled) return;
         preparedSpells.push(uuid);
       });
-      log(3, `Captured ${preparedSpells.length} prepared spells for ${classIdentifier}`, { spells: preparedSpells });
+
       return preparedSpells;
     } catch (error) {
-      log(1, 'Error capturing current state:', error);
       return [];
     }
   }

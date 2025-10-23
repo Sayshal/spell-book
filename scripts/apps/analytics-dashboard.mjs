@@ -6,16 +6,6 @@
  * of spell usage patterns, favorites, notes, and contextual usage breakdowns across
  * combat and exploration scenarios.
  *
- * Key features:
- * - Personal and GM analytics views with user switching
- * - Spell usage statistics and trends analysis
- * - Context-based usage breakdowns (combat vs exploration)
- * - Data export/import functionality with JSON format support
- * - User data management with clear and reset capabilities
- * - Visual progress bars and statistical representations
- * - Real-time data refresh and cache management
- * - Integration with spell user data journaling system
- *
  * @module Applications/AnalyticsDashboard
  * @author Tyler
  */
@@ -163,6 +153,8 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
 
     /** @type {number|null} Timestamp of last data refresh */
     this.lastRefresh = null;
+
+    log(1, 'AnalyticsDashboard constructed.');
   }
 
   /** @inheritdoc */
@@ -175,17 +167,15 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     this.analytics = await this._computeAnalytics();
-    const analyticsForTemplate = { ...this.analytics, userBreakdown: this.analytics.userBreakdown instanceof Map ? Object.fromEntries(this.analytics.userBreakdown) : this.analytics.userBreakdown };
-    return {
-      ...context,
-      viewMode: this.viewMode,
-      isGM: game.user.isGM,
-      analytics: analyticsForTemplate,
-      users: game.users.filter((u) => !u.isGM),
-      selectedUserId: this.selectedUserId,
-      selectedUser: game.users.get(this.selectedUserId),
-      lastRefresh: this.lastRefresh ? foundry.utils.timeSince(this.lastRefresh) : null
-    };
+    context.viewMode = this.viewMode;
+    context.isGM = game.user.isGM;
+    context.analytics = { ...this.analytics, userBreakdown: this.analytics.userBreakdown instanceof Map ? Object.fromEntries(this.analytics.userBreakdown) : this.analytics.userBreakdown };
+    context.users = game.users.filter((u) => !u.isGM);
+    context.selectedUserId = this.selectedUserId;
+    context.selectedUser = game.users.get(this.selectedUserId);
+    context.lastRefresh = this.lastRefresh ? foundry.utils.timeSince(this.lastRefresh) : null;
+    log(3, 'Analytics Context:', { context });
+    return context;
   }
 
   /** @inheritdoc */
@@ -201,12 +191,14 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
       this._adjustContextBarFontSizes(combatElement, combatPercent);
       this._adjustContextBarFontSizes(explorationElement, explorationPercent);
     }
+    log(3, 'Rendering');
   }
 
   /**
    * Adjust font size of context bar labels based on available width.
    * @param {HTMLElement} element - The context bar element
    * @param {number} percent - The percentage width of the bar
+   * @todo This seems excessive?
    * @private
    */
   _adjustContextBarFontSizes(element, percent) {
@@ -219,6 +211,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
     else if (percent <= 30) fontSize = '0.8rem';
     else fontSize = '0.875rem';
     label.style.fontSize = fontSize;
+    log(3, 'Adjusting context bar font size(s).');
   }
 
   /**
@@ -228,7 +221,6 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
    */
   async _computeAnalytics() {
     try {
-      log(3, 'Computing analytics data...');
       const analytics = {
         totalSpells: 0,
         totalCasts: 0,
@@ -249,6 +241,8 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
     } catch (error) {
       log(1, 'Error computing analytics:', error);
       return this._getEmptyAnalytics();
+    } finally {
+      log(3, 'Computed analytics.');
     }
   }
 
@@ -269,7 +263,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
         analytics.totalCasts += userData.usageStats.count;
         analytics.contextBreakdown.combat += userData.usageStats.contextUsage?.combat || 0;
         analytics.contextBreakdown.exploration += userData.usageStats.contextUsage?.exploration || 0;
-        const spellName = this._getSpellNameFromUuid(spellUuid);
+        const spellName = fromUuidSync(spellUuid).name;
         const usageData = { uuid: spellUuid, name: spellName, count: userData.usageStats.count, lastUsed: userData.usageStats.lastUsed };
         analytics.mostUsedSpells.push(usageData);
         if (userData.usageStats.lastUsed && Date.now() - userData.usageStats.lastUsed < 30 * 24 * 60 * 60 * 1000) analytics.recentActivity.push(usageData);
@@ -292,6 +286,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
     }
     analytics.mostUsedSpells.sort((a, b) => b.count - a.count).splice(10);
     analytics.recentActivity.sort((a, b) => b.lastUsed - a.lastUsed).splice(10);
+    log(3, 'Computed personal analytics.');
   }
 
   /**
@@ -331,6 +326,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
     }
     analytics.mostUsedSpells.sort((a, b) => b.count - a.count).splice(20);
     analytics.recentActivity.sort((a, b) => b.lastUsed - a.lastUsed).splice(20);
+    log(3, 'Computed GM analytics.');
   }
 
   /**
@@ -367,22 +363,12 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
           }
         }
       }
+      log(3, 'All user spell data aggregated:', { aggregatedData });
       return aggregatedData;
     } catch (error) {
-      log(1, 'Error fetching user spell data:', error);
+      log(1, 'Error getting all user spelldata:', error);
       return {};
     }
-  }
-
-  /**
-   * Get spell name from UUID for display purposes.
-   * @param {string} uuid - Spell UUID to resolve
-   * @returns {string} Spell name or undefined if not found
-   * @private
-   */
-  _getSpellNameFromUuid(uuid) {
-    const spell = fromUuidSync(uuid);
-    return spell?.name;
   }
 
   /**
@@ -391,6 +377,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
    * @private
    */
   _getEmptyAnalytics() {
+    log(3, 'Empty Analytics fetched.');
     return {
       totalSpells: 0,
       totalCasts: 0,
@@ -413,6 +400,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
    * @static
    */
   static async handleSwitchView(_event, target) {
+    log(3, 'Switch View called.');
     const viewMode = target.dataset.viewMode;
     this.viewMode = viewMode;
     this.render();
@@ -426,62 +414,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
    * @static
    */
   static async handleExportData(_event, _target) {
-    await this._exportUserData();
-  }
-
-  /**
-   * Handle importing user spell data from JSON files.
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} _target - The target element that triggered the import
-   * @returns {Promise<void>}
-   * @static
-   */
-  static async handleImportData(_event, _target) {
-    await this._importUserData();
-  }
-
-  /**
-   * Handle clearing user spell data with confirmation.
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} _target - The target element that triggered the clear operation
-   * @returns {Promise<void>}
-   * @static
-   */
-  static async handleClearData(_event, _target) {
-    await this._clearUserData();
-  }
-
-  /**
-   * Handle refreshing analytics statistics by clearing cache and re-rendering.
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} _target - The target element that triggered the refresh
-   * @returns {Promise<void>}
-   * @static
-   */
-  static async handleRefreshStats(_event, _target) {
-    this.analytics = null;
-    this.render();
-  }
-
-  /**
-   * Handle viewing data for a specific user in personal mode.
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} target - The target element containing user ID data
-   * @returns {Promise<void>}
-   * @static
-   */
-  static async handleViewUserData(_event, target) {
-    const userId = target.dataset.userId;
-    this.selectedUserId = userId;
-    this.render();
-  }
-
-  /**
-   * Export user data to JSON with embedded HTML content.
-   * @returns {Promise<void>}
-   * @private
-   */
-  async _exportUserData() {
+    log(3, 'Export Data called.');
     try {
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
 
@@ -528,16 +461,19 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
         }
       }
     } catch (error) {
-      log(1, 'Error exporting data:', error);
+      log(1, 'Error Exporting Data:', error);
     }
   }
 
   /**
-   * Import user data from JSON with embedded HTML content.
+   * Handle importing user spell data from JSON files.
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} _target - The target element that triggered the import
    * @returns {Promise<void>}
-   * @private
+   * @static
    */
-  async _importUserData() {
+  static async handleImportData(_event, _target) {
+    log(3, 'Import Data called.');
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
@@ -573,15 +509,9 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
         if (confirmed !== 'confirm') return;
         for (const [userId, userData] of Object.entries(importData.userData)) {
           const user = game.users.get(userId);
-          if (!user) {
-            log(2, `Skipping import for non-existent user: ${userData.userName} (${userId})`);
-            continue;
-          }
+          if (!user) continue;
           let page = await UserData._getUserPage(userId);
-          if (!page) {
-            log(2, `No existing page found for user ${user.name}, skipping import`);
-            continue;
-          }
+          if (!page) continue;
           await page.update({
             'text.content': userData.htmlContent,
             [`flags.${MODULE.ID}.lastUpdated`]: Date.now(),
@@ -592,18 +522,21 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
         UserData.cache.clear();
         this.render();
       } catch (error) {
-        log(1, 'Error importing data:', error);
+        log(1, 'Error Importing Data:', error);
       }
     };
     input.click();
   }
 
   /**
-   * Clear user data with confirmation using UserDataSetup.
+   * Handle clearing user spell data with confirmation.
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} _target - The target element that triggered the clear operation
    * @returns {Promise<void>}
-   * @private
+   * @static
    */
-  async _clearUserData() {
+  static async handleClearData(_event, _target) {
+    log(3, 'Clear Data called.');
     const confirmed = await foundry.applications.api.DialogV2.wait({
       window: { title: game.i18n.localize('SPELLBOOK.Analytics.ClearDataTitle') },
       content: `<p>${game.i18n.localize('SPELLBOOK.Analytics.ClearDataContent')}</p>`,
@@ -652,8 +585,34 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
       ui.notifications.info(message);
       this.render();
     } catch (error) {
-      log(1, 'Error clearing data:', error);
-      ui.notifications.error(game.i18n.localize('SPELLBOOK.Analytics.ClearDataError'));
+      log(1, 'Error Clearing Data:', error);
     }
+  }
+
+  /**
+   * Handle refreshing analytics statistics by clearing cache and re-rendering.
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} _target - The target element that triggered the refresh
+   * @returns {Promise<void>}
+   * @static
+   */
+  static async handleRefreshStats(_event, _target) {
+    log(3, 'Refresh Stats called.');
+    this.analytics = null;
+    this.render();
+  }
+
+  /**
+   * Handle viewing data for a specific user in personal mode.
+   * @param {Event} _event - The click event
+   * @param {HTMLElement} target - The target element containing user ID data
+   * @returns {Promise<void>}
+   * @static
+   */
+  static async handleViewUserData(_event, target) {
+    log(3, 'View User Data called.');
+    const userId = target.dataset.userId;
+    this.selectedUserId = userId;
+    this.render();
   }
 }

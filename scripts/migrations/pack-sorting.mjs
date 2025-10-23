@@ -29,12 +29,12 @@ async function migratePackSorting() {
         results.processed++;
         if (pack.sort !== sortValue) {
           await pack.configure({ sort: sortValue });
-          log(3, `Updated pack ${packId} sort from ${pack.sort} to ${sortValue}`);
+
           results.packsUpdated++;
           results.updated++;
         }
       } catch (error) {
-        log(1, `Error updating pack ${packId}:`, error);
+
         results.errors.push({
           type: 'pack',
           packId,
@@ -52,7 +52,7 @@ async function migratePackSorting() {
           results.foldersUpdated++;
           results.updated++;
         } catch (error) {
-          log(1, `Failed to update folder ${customPack.folder.name}:`, error);
+
           results.errors.push({
             type: 'folder',
             name: customPack.folder.name,
@@ -61,10 +61,10 @@ async function migratePackSorting() {
         }
       }
     }
-    if (results.packsUpdated > 0) log(3, `Updated ${results.packsUpdated} pack sort values`);
-    if (results.foldersUpdated > 0) log(3, `Updated ${results.foldersUpdated} pack folders to use manual sorting`);
+    if (results.packsUpdated > 0)
+    if (results.foldersUpdated > 0)
   } catch (error) {
-    log(1, 'Error during pack sorting migration:', error);
+
     results.errors.push({ type: 'generalMigration', error: error.message });
   }
   return results;

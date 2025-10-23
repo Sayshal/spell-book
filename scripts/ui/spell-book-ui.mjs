@@ -303,7 +303,6 @@ export class SpellBookUI {
       if (classCurrentEl && classSpellData) classCurrentEl.textContent = formatNumber(getProperty(classSpellData, 'spellPreparation.current') || 0);
     });
     this.element.classList.toggle('at-max-spells', isGloballyAtMax);
-    log(3, `Updated footer: active class ${activeClassIdentifier} at max: ${isActiveClassAtMax}, global at max: ${isGloballyAtMax}`);
   }
 
   /**
@@ -336,7 +335,6 @@ export class SpellBookUI {
         spellItem.classList.remove('max-prepared');
       }
     });
-    log(3, `Applied per-class spell limits for ${classIdentifier}, at max: ${isClassAtMax}`);
   }
 
   /**
@@ -446,7 +444,6 @@ export class SpellBookUI {
   setupAdvancedSearch() {
     if (this.search && this.search.isInitialized) return;
     this.search.initialize();
-    log(3, 'Advanced search initialized successfully');
   }
 
   /**
@@ -673,7 +670,6 @@ export class SpellBookUI {
         }
       }
     }
-    log(3, `Applied spell locks for ${classIdentifier}, prepared: ${currentPrepared}/${maxPrepared}`);
   }
 }
 

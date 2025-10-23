@@ -244,9 +244,7 @@ export class UserData {
             const spell = fromUuidSync(uuid);
             const spellName = spell?.name || game.i18n.localize('SPELLBOOK.UI.UnknownSpell');
             favoriteSpells.push({ uuid, name: spellName });
-          } catch (error) {
-            log(2, `Could not resolve spell UUID ${uuid} for favorites table`, error);
-          }
+          } catch (error) {}
         }
         if (actorData?.usageStats && actorData.usageStats.count > 0) {
           try {
@@ -255,9 +253,7 @@ export class UserData {
             const stats = actorData.usageStats;
             const lastUsedDate = stats.lastUsed ? foundry.utils.timeSince(stats.lastUsed) : '-';
             usageSpells.push({ uuid, name: spellName, stats, lastUsedDate });
-          } catch (error) {
-            log(2, `Could not resolve spell UUID ${uuid} for usage table`, error);
-          }
+          } catch (error) {}
         }
       }
       return { id: actor.id, name: actor.name, favoriteSpells, usageSpells };
@@ -270,9 +266,7 @@ export class UserData {
           const spell = fromUuidSync(uuid);
           const spellName = spell?.name || game.i18n.localize('SPELLBOOK.UI.UnknownSpell');
           notesSpells.push({ uuid, name: spellName, notes: data.notes });
-        } catch (error) {
-          log(2, `Could not resolve spell UUID ${uuid} for notes table`, error);
-        }
+        } catch (error) {}
       }
     }
     return await renderTemplate(TEMPLATES.COMPONENTS.USER_SPELL_DATA_TABLES, {
@@ -310,9 +304,8 @@ export class UserData {
       if (foundry.utils.parseUuid(spellUuid).primaryType === 'Actor') {
         try {
           const spellDoc = fromUuidSync(spellUuid);
-          if (spellDoc?._stats?.compendiumSource || spellDoc?.flags?.core?.sourceId) canonicalUuid = spellDoc._stats?.compendiumSource || spellDoc.flags.core.sourceId;
+          if (spellDoc?._stats?.compendiumSource) canonicalUuid = spellDoc._stats?.compendiumSource || spellDoc.flags.core.sourceId;
         } catch (error) {
-          log(1, 'Error:', error);
           canonicalUuid = spellUuid;
         }
       }
@@ -326,7 +319,6 @@ export class UserData {
       await this._ensureUserDataInfrastructure(targetUserId);
       const page = await this._getUserPage(targetUserId);
       if (!page) {
-        log(1, `Failed to create or find user page for user ${targetUserId}`);
         this.cache.set(cacheKey, null);
         return null;
       }
@@ -339,7 +331,6 @@ export class UserData {
       this.cache.set(cacheKey, result);
       return result;
     } catch (error) {
-      log(1, 'Error getting user spell data:', error);
       const cacheKey = actorId ? `${userId || game.user.id}:${actorId}:${spellOrUuid}` : `${userId || game.user.id}:${spellOrUuid}`;
       this.cache.set(cacheKey, null);
       return null;
@@ -363,9 +354,8 @@ export class UserData {
       if (foundry.utils.parseUuid(spellUuid).primaryType === 'Actor') {
         try {
           const spellDoc = fromUuidSync(spellUuid);
-          if (spellDoc?._stats?.compendiumSource || spellDoc?.flags?.core?.sourceId) canonicalUuid = spellDoc._stats?.compendiumSource || spellDoc.flags.core.sourceId;
+          if (spellDoc?._stats?.compendiumSource) canonicalUuid = spellDoc._stats?.compendiumSource || spellDoc.flags.core.sourceId;
         } catch (error) {
-          log(1, 'Error:', error);
           canonicalUuid = spellUuid;
         }
       }
@@ -387,10 +377,9 @@ export class UserData {
       await page.update({ 'text.content': newContent, [`flags.${MODULE.ID}.lastUpdated`]: Date.now() });
       const cacheKey = actorId ? `${targetUserId}:${actorId}:${canonicalUuid}` : `${targetUserId}:${canonicalUuid}`;
       this.cache.set(cacheKey, spellData[canonicalUuid]);
-      log(3, `Updated spell data in journal for ${canonicalUuid}`);
+
       return true;
     } catch (error) {
-      log(1, 'Error setting user spell data in journal:', error);
       return false;
     }
   }
@@ -410,9 +399,8 @@ export class UserData {
     if (foundry.utils.parseUuid(spellUuid).primaryType === 'Actor') {
       try {
         const spellDoc = fromUuidSync(spellUuid);
-        if (spellDoc?._stats?.compendiumSource || spellDoc?.flags?.core?.sourceId) canonicalUuid = spellDoc._stats?.compendiumSource || spellDoc.flags.core.sourceId;
+        if (spellDoc?._stats?.compendiumSource) canonicalUuid = spellDoc._stats?.compendiumSource || spellDoc.flags.core.sourceId;
       } catch (error) {
-        log(1, 'Error:', error);
         canonicalUuid = spellUuid;
       }
     }
@@ -448,9 +436,8 @@ export class UserData {
       if (parsedUuid.documentType === 'Actor' || parsedUuid.primaryType === 'Actor') {
         try {
           const spellDoc = fromUuidSync(spellUuid);
-          if (spellDoc?._stats?.compendiumSource || spellDoc?.flags?.core?.sourceId) canonicalUuid = spellDoc._stats?.compendiumSource || spellDoc.flags.core.sourceId;
+          if (spellDoc?._stats?.compendiumSource) canonicalUuid = spellDoc._stats?.compendiumSource || spellDoc.flags.core.sourceId;
         } catch (error) {
-          log(1, 'Error:', error);
           canonicalUuid = spellUuid;
         }
       }
@@ -473,10 +460,9 @@ export class UserData {
       const cacheKey = targetActorId ? `${targetUserId}:${targetActorId}:${canonicalUuid}` : `${targetUserId}:${canonicalUuid}`;
       if (targetActorId) this.cache.set(cacheKey, { ...spellData[canonicalUuid].actorData[targetActorId], notes: spellData[canonicalUuid].notes });
       else this.cache.set(cacheKey, { notes: spellData[canonicalUuid].notes || '', favorited: false, usageStats: null });
-      log(3, `Updated spell favorite status for ${canonicalUuid}: ${favorited}`);
+
       return true;
     } catch (error) {
-      log(1, 'Error setting spell favorite:', error);
       return false;
     }
   }
@@ -500,9 +486,8 @@ export class UserData {
       if (parsedUuid.documentType === 'Actor' || parsedUuid.primaryType === 'Actor') {
         try {
           const spellDoc = fromUuidSync(spellUuid);
-          if (spellDoc?._stats?.compendiumSource || spellDoc?.flags?.core?.sourceId) canonicalUuid = spellDoc._stats?.compendiumSource || spellDoc.flags.core.sourceId;
+          if (spellDoc?._stats?.compendiumSource) canonicalUuid = spellDoc._stats?.compendiumSource || spellDoc.flags.core.sourceId;
         } catch (error) {
-          log(1, 'Error:', error);
           canonicalUuid = spellUuid;
         }
       }
@@ -518,10 +503,9 @@ export class UserData {
       await page.update({ 'text.content': newContent, [`flags.${MODULE.ID}.lastUpdated`]: Date.now() });
       const cacheKey = `${targetUserId}:${canonicalUuid}`;
       this.cache.set(cacheKey, spellData[canonicalUuid]);
-      log(3, `Updated spell notes for ${canonicalUuid}`);
+
       return true;
     } catch (error) {
-      log(1, 'Error setting spell notes:', error);
       return false;
     }
   }
@@ -542,14 +526,12 @@ export class UserData {
         journal = await this._getJournal();
       }
       if (!journal) {
-        log(1, 'Failed to create user spell data journal');
         return;
       }
       const existingPage = await this._getUserPage(userId);
       if (!existingPage) {
         const user = game.users.get(userId);
         if (!user) {
-          log(2, `User ${userId} not found, cannot create user data page`);
           return;
         }
         const pageData = {
@@ -563,11 +545,8 @@ export class UserData {
         };
         if (game.user.isGM) pageData.ownership[game.user.id] = 3;
         await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
-        log(3, `Created user data page for user: ${user.name}`);
       }
-    } catch (error) {
-      log(1, 'Error ensuring user data infrastructure:', error);
-    }
+    } catch (error) {}
   }
 
   /**
@@ -583,7 +562,6 @@ export class UserData {
       const manager = new UserDataSetup();
       return await manager._generateEmptyTablesHTML(userName, userId);
     } catch (error) {
-      log(1, 'Error generating empty user data HTML:', error);
       return null;
     }
   }

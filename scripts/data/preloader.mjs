@@ -85,7 +85,7 @@ export async function preloadData(showNotification = false) {
   if (isGM) {
     const setupMode = game.settings.get(MODULE.ID, SETTINGS.SETUP_MODE);
     if (setupMode) return await preloadForGM(showNotification);
-    else log(3, 'GM Setup Mode disabled - no preloading');
+    else
   } else return await preloadForPlayer(showNotification);
 }
 
@@ -96,7 +96,7 @@ export async function preloadData(showNotification = false) {
  * @private
  */
 async function preloadForGM(showNotification = false) {
-  log(3, 'Starting GM setup mode preload - loading all spells and lists');
+
   try {
     const allSpellLists = await DataUtils.findCompendiumSpellLists(true);
     allSpellLists.sort((a, b) => a.name.localeCompare(b.name));
@@ -107,9 +107,9 @@ async function preloadForGM(showNotification = false) {
       const message = game.i18n.format('SPELLBOOK.Preload.GMSetupReady', { lists: allSpellLists.length, spells: enrichedSpells.length });
       ui.notifications.success(message, { console: false });
     }
-    log(3, `GM setup preload completed: ${allSpellLists.length} lists, ${enrichedSpells.length} spells`);
+
   } catch (error) {
-    log(1, 'Error during GM setup mode preload', error);
+
   }
 }
 
@@ -120,12 +120,12 @@ async function preloadForGM(showNotification = false) {
  * @private
  */
 async function preloadForPlayer(showNotification = false) {
-  log(3, 'Starting player preload - loading assigned spell lists and wizard Spell Book');
+
   try {
     const playerActor = getCurrentPlayerActor();
     if (!playerActor) {
       cachePreloadedData([], [], 'no-character');
-      log(3, 'No assigned character found for player - no preloading');
+
       return;
     }
     const spellUuids = await collectPlayerSpellUuids(playerActor);
@@ -138,9 +138,9 @@ async function preloadForPlayer(showNotification = false) {
       const message = game.i18n.format('SPELLBOOK.Preload.PlayerReady', { spells: enrichedSpells.length });
       ui.notifications.success(message, { console: false });
     }
-    log(3, `Player preload completed: ${enrichedSpells.length} spells loaded for ${playerActor.name}`);
+
   } catch (error) {
-    log(1, 'Error during player preload', error);
+
   }
 }
 
@@ -185,7 +185,7 @@ async function getSpellsFromActorSpellLists(actor) {
   for (const [classIdentifier, classData] of Object.entries(actor.spellcastingClasses)) {
     const classItem = actor.items.get(classData.id);
     if (!classItem) {
-      log(2, `Could not find class item for ${classIdentifier}`);
+
       continue;
     }
     const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(actor, classIdentifier);
@@ -198,7 +198,7 @@ async function getSpellsFromActorSpellLists(actor) {
       log(3, `Found ${spellList.size} spells for ${className} class (${classIdentifier})`);
     }
   }
-  log(3, `Total spell UUIDs from actor spell lists: ${spellUuids.length}`);
+
   return spellUuids;
 }
 
@@ -223,15 +223,15 @@ async function getActorSpellbookSpells(actor) {
             const spellsSet = journalPage.system.spells;
             if (spellsSet instanceof Set) spellsSet.forEach((spellUuid) => spellUuids.push(spellUuid));
             else if (Array.isArray(spellsSet)) spellUuids.push(...spellsSet);
-            log(3, `Found ${spellsSet.size || spellsSet.length} spells in ${identifier} Spell Book`);
+
           }
         }
       }
     } catch (error) {
-      log(2, `Error getting Spell Book spells for ${identifier}:`, error);
+
     }
   }
-  log(3, `Total spell UUIDs from wizard spellbooks: ${spellUuids.length}`);
+
   return spellUuids;
 }
 
@@ -270,7 +270,7 @@ function cachePreloadedData(spellLists, enrichedSpells, mode) {
  */
 export function invalidateSpellListCache() {
   if (globalThis.SPELLBOOK?.preloadedData) {
-    log(3, 'Invalidating preloaded spell data due to compendium changes');
+
     globalThis.SPELLBOOK.preloadedData = null;
     if (game.user.isGM) {
       setTimeout(async () => {
