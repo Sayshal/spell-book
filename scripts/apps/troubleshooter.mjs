@@ -6,16 +6,6 @@
  * information, module settings, filtered console logs, and optionally exports owned
  * actor data for debugging support.
  *
- * Key features:
- * - Generates formatted troubleshooting reports with system and module information
- * - Filters console logs to show only Spell Book-related entries with smart processing
- * - Optionally exports all GM-owned actor data as individual JSON files
- * - Provides copy-to-clipboard functionality for quick sharing
- * - Includes direct links to Discord support and GitHub issues
- * - Settings import/export functionality for configuration troubleshooting
- * - Error handling and user feedback
- * - Automatic metadata inclusion for debugging context
- *
  * @module Applications/Troubleshooter
  * @author Tyler
  */
