@@ -85,7 +85,6 @@ export async function preloadData(showNotification = false) {
   if (isGM) {
     const setupMode = game.settings.get(MODULE.ID, SETTINGS.SETUP_MODE);
     if (setupMode) return await preloadForGM(showNotification);
-    else
   } else return await preloadForPlayer(showNotification);
 }
 
@@ -96,7 +95,6 @@ export async function preloadData(showNotification = false) {
  * @private
  */
 async function preloadForGM(showNotification = false) {
-
   try {
     const allSpellLists = await DataUtils.findCompendiumSpellLists(true);
     allSpellLists.sort((a, b) => a.name.localeCompare(b.name));
@@ -107,10 +105,7 @@ async function preloadForGM(showNotification = false) {
       const message = game.i18n.format('SPELLBOOK.Preload.GMSetupReady', { lists: allSpellLists.length, spells: enrichedSpells.length });
       ui.notifications.success(message, { console: false });
     }
-
-  } catch (error) {
-
-  }
+  } catch (error) {}
 }
 
 /**
@@ -120,7 +115,6 @@ async function preloadForGM(showNotification = false) {
  * @private
  */
 async function preloadForPlayer(showNotification = false) {
-
   try {
     const playerActor = getCurrentPlayerActor();
     if (!playerActor) {
@@ -138,10 +132,7 @@ async function preloadForPlayer(showNotification = false) {
       const message = game.i18n.format('SPELLBOOK.Preload.PlayerReady', { spells: enrichedSpells.length });
       ui.notifications.success(message, { console: false });
     }
-
-  } catch (error) {
-
-  }
+  } catch (error) {}
 }
 
 /**
@@ -185,7 +176,6 @@ async function getSpellsFromActorSpellLists(actor) {
   for (const [classIdentifier, classData] of Object.entries(actor.spellcastingClasses)) {
     const classItem = actor.items.get(classData.id);
     if (!classItem) {
-
       continue;
     }
     const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(actor, classIdentifier);
@@ -223,13 +213,10 @@ async function getActorSpellbookSpells(actor) {
             const spellsSet = journalPage.system.spells;
             if (spellsSet instanceof Set) spellsSet.forEach((spellUuid) => spellUuids.push(spellUuid));
             else if (Array.isArray(spellsSet)) spellUuids.push(...spellsSet);
-
           }
         }
       }
-    } catch (error) {
-
-    }
+    } catch (error) {}
   }
 
   return spellUuids;
@@ -270,7 +257,6 @@ function cachePreloadedData(spellLists, enrichedSpells, mode) {
  */
 export function invalidateSpellListCache() {
   if (globalThis.SPELLBOOK?.preloadedData) {
-
     globalThis.SPELLBOOK.preloadedData = null;
     if (game.user.isGM) {
       setTimeout(async () => {
