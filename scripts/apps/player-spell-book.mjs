@@ -126,6 +126,7 @@ const { renderTemplate } = foundry.applications.handlebars;
 /**
  * Player-facing Spell Book application for managing prepared spells.
  * @todo action handles have access to event and target, NOT form - fix.
+ * @todo reorganize code by flow state.
  */
 export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
@@ -180,7 +181,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @returns {WizardBook|null} The primary wizard manager instance or null if none found
    */
   get wizardManager() {
-    log(3, 'Retrieving wizardmaanger.', { managers: this.wizardManager });
+    log(3, 'Retrieving wizardmanger.', { managers: this.wizardManager });
     for (const [identifier, manager] of this.wizardManagers) if (manager.isWizard) if (identifier === 'wizard') return manager;
     for (const [manager] of this.wizardManagers) if (manager.isWizard) return manager;
     return null;
