@@ -6,14 +6,6 @@
  * and spell slot calculations. This module handles the complex interactions
  * between actors, their classes, and their spell collections.
  *
- * Key features:
- * - Spellcasting class detection and analysis
- * - Spell preparation status tracking
- * - Spell slot calculation and management
- * - Class-specific spell list integration
- * - Wizard spellbook support
- * - Multi-class spellcaster handling
- *
  * @module DataUtils/ActorSpells
  * @author Tyler
  */
