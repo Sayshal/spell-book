@@ -9,6 +9,8 @@
  * @author Tyler
  */
 
+import { log } from '../logger.mjs';
+
 /**
  * Spellcasting focus option configuration.
  *
@@ -461,6 +463,7 @@ export const MODULE = {
    * @type {string[]}
    */
   get SPECIAL_PREPARATION_MODES() {
+    log(3, 'Fetching special preparation modes.');
     return [this.PREPARATION_MODES.INNATE, this.PREPARATION_MODES.PACT, this.PREPARATION_MODES.AT_WILL, this.PREPARATION_MODES.RITUAL];
   }
 };
