@@ -19,7 +19,7 @@
  */
 
 import { log } from '../logger.mjs';
-import * as UIUtils from './_module.mjs';
+import * as DataUtils from './_module.mjs';
 
 /**
  * @typedef {Object} SpellDocument
@@ -68,13 +68,14 @@ import * as UIUtils from './_module.mjs';
  */
 
 /**
- * Fast spell document fetching using getIndex instead of getDocument.
+ * Fast spell document fetching.
  * @param {Set<string>} spellUuids - Set of spell UUIDs to fetch
  * @param {number} maxSpellLevel - Maximum spell level to include in results
  * @returns {Promise<Array<SpellDocument>>} Array of spell documents
  */
 export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
-  const preloadedData = UIUtils.getPreloadedData();
+  log(3, 'Fetching spell documents!', { spellUuids, maxSpellLevel });
+  const preloadedData = DataUtils.getPreloadedData();
   if (preloadedData && preloadedData.enrichedSpells.length > 0) {
     const matchingSpells = preloadedData.enrichedSpells.filter((spell) => spellUuids.has(spell.uuid) && spell.system?.level <= maxSpellLevel);
     if (matchingSpells.length === spellUuids.size) return matchingSpells;
@@ -84,7 +85,7 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
   const compendiumGroups = new Map();
 
   /** @type {Array<string>} */
-  const nonCompendiumUuids = [];
+  const worldUuids = [];
   for (const uuid of spellUuids) {
     const parsed = foundry.utils.parseUuid(uuid);
     if (parsed.collection && parsed.id) {
@@ -92,7 +93,7 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
       if (!compendiumGroups.has(packId)) compendiumGroups.set(packId, []);
       compendiumGroups.get(packId).push({ uuid, id: parsed.id });
     } else {
-      nonCompendiumUuids.push(uuid);
+      worldUuids.push(uuid);
     }
   }
 
@@ -161,10 +162,10 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
       else filteredOut.push(spell);
     }
   }
-  if (nonCompendiumUuids.length > 0) {
+  if (worldUuids.length > 0) {
     const semaphore = new foundry.utils.Semaphore(5);
     const fallbackResults = [];
-    for (const uuid of nonCompendiumUuids) {
+    for (const uuid of worldUuids) {
       fallbackResults.push(
         semaphore.add(() => {
           const spell = fromUuidSync(uuid);
@@ -202,6 +203,7 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
  * @returns {Array<LevelGroup>} Array of level objects with organized spells
  */
 export function organizeSpellsByLevel(spellItems) {
+  log(3, 'Organizing spells by level!', { spellItems });
   if (!spellItems || !Array.isArray(spellItems)) return [];
 
   /** @type {Object<number, Array<SpellDocument>>} */
@@ -212,16 +214,11 @@ export function organizeSpellsByLevel(spellItems) {
     if (!spellsByLevel[level]) spellsByLevel[level] = [];
     spellsByLevel[level].push(spell);
   }
-  for (const level in spellsByLevel) {
-    if (level in spellsByLevel) spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
-  }
+  for (const level in spellsByLevel) if (level in spellsByLevel) spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
 
   /** @type {Array<LevelGroup>} */
   const levelArray = [];
   const sortedLevels = Object.keys(spellsByLevel).sort((a, b) => Number(a) - Number(b));
-  for (const level of sortedLevels) {
-    const levelName = CONFIG.DND5E.spellLevels[level] || `Level ${level}`;
-    levelArray.push({ level: Number(level), levelName: levelName, spells: spellsByLevel[level] });
-  }
+  for (const level of sortedLevels) levelArray.push({ level: Number(level), levelName: CONFIG.DND5E.spellLevels[level], spells: spellsByLevel[level] });
   return levelArray;
 }
