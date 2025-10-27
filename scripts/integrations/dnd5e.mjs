@@ -6,14 +6,6 @@
  * UI button injection, long rest processing, spell swap mechanics, and party spell
  * coordination features.
  *
- * Integration features:
- * - Character sheet spell book button injection
- * - Group actor party spell management
- * - Long rest spell/cantrip swap processing
- * - Journal directory spell management buttons
- * - Analytics dashboard integration
- * - Rest completion event handling
- *
  * @module Integrations/DnD5e
  * @author Tyler
  */
@@ -30,6 +22,7 @@ const { renderTemplate } = foundry.applications.handlebars;
  * @returns {void}
  */
 export function registerDnD5eIntegration() {
+  log(3, 'Registering D&D 5e integration hooks.');
   Hooks.on('renderActorSheetV2', addSpellbookButton);
   Hooks.on('renderGroupActorSheet', onGroupActorRender);
   Hooks.on('activateCompendiumDirectory', addJournalSpellBookButton);
@@ -44,6 +37,7 @@ export function registerDnD5eIntegration() {
  * @returns {void}
  */
 function addSpellbookButton(_app, html, data) {
+  log(3, 'Adding spellbook button to character sheet.', { actorId: data.actor?.id });
   const actor = data.actor;
   if (!canAddSpellbookButton(actor, html)) return;
   const spellsTab = html.querySelector('section.tab[data-tab="spells"]');
@@ -56,6 +50,7 @@ function addSpellbookButton(_app, html, data) {
   const listItem = document.createElement('li');
   listItem.appendChild(button);
   filterButton.parentElement.insertAdjacentElement('afterend', listItem);
+  log(3, 'Spellbook button added successfully.', { actorId: actor.id });
 }
 
 /**
@@ -66,9 +61,16 @@ function addSpellbookButton(_app, html, data) {
  */
 function canAddSpellbookButton(actor, html) {
   const canCast = Object.keys(actor?.spellcastingClasses || {}).length > 0;
-  if (!canCast) return false;
+  if (!canCast) {
+    log(3, 'Cannot add spellbook button: actor has no spellcasting classes.', { actorId: actor?.id });
+    return false;
+  }
   const hasSpellsTab = html.querySelector('section.tab[data-tab="spells"]');
-  if (!hasSpellsTab) return false;
+  if (!hasSpellsTab) {
+    log(3, 'Cannot add spellbook button: no spells tab found.', { actorId: actor?.id });
+    return false;
+  }
+  log(3, 'Can add spellbook button.', { actorId: actor.id });
   return true;
 }
 
@@ -78,6 +80,7 @@ function canAddSpellbookButton(actor, html) {
  * @returns {HTMLElement} The created button element
  */
 function createSpellBookButton(actor) {
+  log(3, 'Creating spellbook button.', { actorId: actor.id });
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'unbutton filter-control always-interactive spell-book-button';
@@ -95,6 +98,7 @@ function createSpellBookButton(actor) {
  * @returns {Promise<void>}
  */
 async function onSpellBookButtonClick(actor, event) {
+  log(3, 'Spellbook button clicked.', { actorId: actor.id });
   event.preventDefault();
   const button = event.currentTarget;
   const icon = button.querySelector('img.spell-book-icon');
@@ -105,6 +109,7 @@ async function onSpellBookButtonClick(actor, event) {
   try {
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const hasLongRestSwapping = Object.values(classRules).some((rules) => rules.cantripSwapping === 'longRest' || rules.spellSwapping === 'longRest');
+    log(3, 'Checking long rest swapping mechanics.', { actorId: actor.id, hasLongRestSwapping });
     if (hasLongRestSwapping) {
       const longRestFlagValue = actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);
       const cantripSwapTracking = actor.getFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING) || {};
@@ -116,15 +121,21 @@ async function onSpellBookButtonClick(actor, event) {
         }
       }
       if (hasCompletedSwaps) {
+        log(3, 'Resetting cantrip swap tracking.', { actorId: actor.id });
         const spellManager = new SpellManager(actor);
         await spellManager.cantripManager.resetSwapTracking();
       }
-      if (longRestFlagValue === undefined || longRestFlagValue === null) actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
+      if (longRestFlagValue === undefined || longRestFlagValue === null) {
+        log(3, 'Setting long rest completed flag.', { actorId: actor.id });
+        actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
+      }
     }
     const spellBook = new SpellBook(actor);
     await spellBook._preInitialize();
     spellBook.render(true);
+    log(3, 'Spellbook rendered successfully.', { actorId: actor.id });
   } catch (error) {
+    log(1, 'Error opening spellbook.', { actorId: actor.id, error });
   } finally {
     if (icon) {
       icon.classList.remove('fa-spin');
@@ -141,19 +152,26 @@ async function onSpellBookButtonClick(actor, event) {
  * @returns {void}
  */
 function onGroupActorRender(_sheet, element, data) {
+  log(3, 'Group actor sheet rendering.', { actorId: data.actor?.id });
   const actor = data.actor;
   if (!canAddPartySpellButton(actor, data)) return;
   const headerButtons = element.querySelector('.sheet-header-buttons');
   if (!headerButtons) {
+    log(3, 'No header buttons found in group sheet.', { actorId: actor.id });
     return;
   }
   const longRestButton = headerButtons.querySelector('.long-rest.gold-button');
   if (!longRestButton) {
+    log(3, 'No long rest button found in group sheet.', { actorId: actor.id });
     return;
   }
-  if (headerButtons.querySelector('.party-spell-button')) return;
+  if (headerButtons.querySelector('.party-spell-button')) {
+    log(3, 'Party spell button already exists.', { actorId: actor.id });
+    return;
+  }
   const button = createPartySpellButton(actor, data);
   longRestButton.insertAdjacentElement('afterend', button);
+  log(3, 'Party spell button added to group sheet.', { actorId: actor.id });
 }
 
 /**
@@ -163,10 +181,15 @@ function onGroupActorRender(_sheet, element, data) {
  * @returns {boolean} True if button should be added
  */
 function canAddPartySpellButton(actor, data) {
-  if (actor.type !== 'group') return false;
+  if (actor.type !== 'group') {
+    log(3, 'Cannot add party spell button: actor is not a group.', { actorId: actor?.id, type: actor?.type });
+    return false;
+  }
   const creatures = data.actor.system?.creatures || [];
   const spellcasters = creatures.filter((memberActor) => memberActor && Object.keys(memberActor?.spellcastingClasses || {}).length > 0);
-  return spellcasters.length > 0;
+  const canAdd = spellcasters.length > 0;
+  log(3, 'Checking if party spell button can be added.', { actorId: actor.id, spellcasterCount: spellcasters.length, canAdd });
+  return canAdd;
 }
 
 /**
@@ -176,6 +199,7 @@ function canAddPartySpellButton(actor, data) {
  * @returns {HTMLElement} The button element
  */
 function createPartySpellButton(groupActor, data) {
+  log(3, 'Creating party spell button.', { actorId: groupActor.id });
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'party-spell-button gold-button';
@@ -195,12 +219,17 @@ function createPartySpellButton(groupActor, data) {
  * @returns {void}
  */
 function openPartySpellManager(event, groupActor, data) {
+  log(3, 'Opening party spell manager.', { actorId: groupActor.id });
   event.preventDefault();
   const creatures = data.actor.system?.creatures || [];
   const partyActors = creatures.filter((memberActor) => memberActor && Object.keys(memberActor?.spellcastingClasses || {}).length > 0);
-  if (partyActors.length === 0) return;
+  if (partyActors.length === 0) {
+    log(3, 'No spellcasters in party.', { actorId: groupActor.id });
+    return;
+  }
   const manager = new PartyCoordinator(partyActors, null, groupActor);
   manager.render(true);
+  log(3, 'Party coordinator rendered.', { actorId: groupActor.id, partyActorCount: partyActors.length });
 }
 
 /**
@@ -211,6 +240,7 @@ function openPartySpellManager(event, groupActor, data) {
  * @returns {Promise<void>}
  */
 async function handleRestCompleted(actor, result, _config) {
+  log(3, 'Rest completed hook triggered.', { actorId: actor.id, isLongRest: result.longRest });
   if (!result.longRest) return;
 
   const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
@@ -225,6 +255,7 @@ async function handleRestCompleted(actor, result, _config) {
       const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
       const classItem = spellcastingData ? actor.items.get(spellcastingData.id) : null;
       const className = classItem?.name || classIdentifier;
+      log(3, 'Class needs long rest mechanics.', { actorId: actor.id, classIdentifier, className, needsCantripSwap, needsSpellSwap });
       if (needsCantripSwap) longRestClasses.cantripSwapping.push({ identifier: classIdentifier, name: className });
       if (needsSpellSwap) {
         longRestClasses.spellSwapping.push({ identifier: classIdentifier, name: className });
@@ -232,14 +263,16 @@ async function handleRestCompleted(actor, result, _config) {
         if (!swapTracking[classIdentifier]) swapTracking[classIdentifier] = {};
         swapTracking[classIdentifier].longRest = true;
         actor.setFlag(MODULE.ID, FLAGS.SWAP_TRACKING, swapTracking);
+        log(3, 'Updated swap tracking for class.', { actorId: actor.id, classIdentifier });
       }
     }
   }
   if (hasAnyLongRestMechanics) {
     actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
-
+    log(3, 'Long rest mechanics detected, showing prompt.', { actorId: actor.id, longRestClasses });
     await handleLongRestSwapPrompt(actor, longRestClasses);
   } else {
+    log(3, 'No long rest mechanics for this actor.', { actorId: actor.id });
   }
 }
 
@@ -250,17 +283,21 @@ async function handleRestCompleted(actor, result, _config) {
  * @returns {Promise<void>}
  */
 async function handleLongRestSwapPrompt(actor, longRestClasses) {
+  log(3, 'Handling long rest swap prompt.', { actorId: actor.id, longRestClasses });
   const isPromptDisabled = game.settings.get(MODULE.ID, SETTINGS.DISABLE_LONG_REST_SWAP_PROMPT);
   if (isPromptDisabled) {
     const classNames = [...longRestClasses.cantripSwapping.map((c) => c.name), ...longRestClasses.spellSwapping.map((c) => c.name)];
     const uniqueClassNames = [...new Set(classNames)];
     ui.notifications.info(game.i18n.format('SPELLBOOK.LongRest.SwapAvailableNotification', { name: actor.name, classes: uniqueClassNames.join(', ') }));
+    log(3, 'Long rest prompt disabled, showing notification.', { actorId: actor.id, classes: uniqueClassNames });
     return;
   }
   const dialogResult = await showLongRestSwapDialog(longRestClasses);
+  log(3, 'Long rest dialog result.', { actorId: actor.id, dialogResult });
   if (dialogResult === 'confirm') {
     const spellBook = new SpellBook(actor);
     spellBook.render(true);
+    log(3, 'Spellbook opened from long rest prompt.', { actorId: actor.id });
   }
 }
 
@@ -270,6 +307,7 @@ async function handleLongRestSwapPrompt(actor, longRestClasses) {
  * @returns {Promise<string>} The dialog result action ('confirm' or 'cancel')
  */
 async function showLongRestSwapDialog(longRestClasses) {
+  log(3, 'Showing long rest swap dialog.', { longRestClasses });
   const content = await renderTemplate(TEMPLATES.DIALOGS.LONG_REST_SWAP, { longRestClasses });
   return foundry.applications.api.DialogV2.wait({
     content: content,
@@ -290,12 +328,23 @@ async function showLongRestSwapDialog(longRestClasses) {
  * @returns {void}
  */
 function addJournalSpellBookButton(app) {
-  if (!game.user.isGM) return;
+  log(3, 'Adding journal spell book buttons.');
+  if (!game.user.isGM) {
+    log(3, 'User is not GM, skipping journal buttons.');
+    return;
+  }
   const footer = app.element.querySelector('.directory-footer');
-  if (!footer) return;
-  if (footer.querySelector('.spell-book-buttons-container')) return;
+  if (!footer) {
+    log(3, 'No directory footer found.');
+    return;
+  }
+  if (footer.querySelector('.spell-book-buttons-container')) {
+    log(3, 'Spell book buttons already exist.');
+    return;
+  }
   const container = createJournalButtonsContainer();
   footer.appendChild(container);
+  log(3, 'Journal spell book buttons added.');
 }
 
 /**
@@ -303,6 +352,7 @@ function addJournalSpellBookButton(app) {
  * @returns {HTMLElement} Container element with spell book buttons
  */
 function createJournalButtonsContainer() {
+  log(3, 'Creating journal buttons container.');
   const container = document.createElement('div');
   container.classList.add('spell-book-buttons-container');
   container.style.display = 'flex';
@@ -321,11 +371,13 @@ function createJournalButtonsContainer() {
  * @returns {HTMLElement} Button element for opening spell list manager
  */
 function createJournalManagerButton() {
+  log(3, 'Creating journal manager button.');
   const managerButton = document.createElement('button');
   managerButton.classList.add('spell-book-journal-button');
   managerButton.innerHTML = `<i class="fas fa-bars-progress"></i> ${game.i18n.localize('SPELLBOOK.UI.JournalButton')}`;
   const manager = new SpellListManager();
   managerButton.addEventListener('click', () => {
+    log(3, 'Journal manager button clicked.');
     manager.render(true);
   });
   return managerButton;
@@ -336,14 +388,17 @@ function createJournalManagerButton() {
  * @returns {HTMLElement} Button element for opening analytics dashboard
  */
 function createJournalAnalyticsButton() {
+  log(3, 'Creating journal analytics button.');
   const analyticsButton = document.createElement('button');
   analyticsButton.classList.add('spell-book-analytics-button');
   analyticsButton.innerHTML = `<i class="fas fa-chart-bar"></i> ${game.i18n.localize('SPELLBOOK.Analytics.OpenDashboard')}`;
   const dashboard = new AnalyticsDashboard({ viewMode: 'gm', userId: game.user.id });
   analyticsButton.addEventListener('click', () => {
+    log(3, 'Analytics button clicked.');
     dashboard.render(true);
   });
   analyticsButton.addEventListener('contextmenu', async (event) => {
+    log(3, 'Analytics button right-clicked, toggling tracking.');
     event.preventDefault();
     event.stopPropagation();
     const currentSetting = game.settings.get(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING);
@@ -352,7 +407,10 @@ function createJournalAnalyticsButton() {
       await game.settings.set(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING, newSetting);
       analyticsButton.style.opacity = newSetting ? '1' : '0.6';
       analyticsButton.title = newSetting ? game.i18n.localize('SPELLBOOK.Analytics.TrackingEnabled') : game.i18n.localize('SPELLBOOK.Analytics.TrackingDisabled');
-    } catch (error) {}
+      log(3, 'Spell usage tracking toggled.', { newSetting });
+    } catch (error) {
+      log(1, 'Error toggling spell usage tracking.', { error });
+    }
   });
   const trackingEnabled = game.settings.get(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING);
   analyticsButton.style.opacity = trackingEnabled ? '1' : '0.6';

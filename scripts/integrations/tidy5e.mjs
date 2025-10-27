@@ -6,12 +6,6 @@
  * injection for accessing the Spell Book application directly from Tidy5e
  * character sheets.
  *
- * Integration features:
- * - Classic Tidy5e sheet button injection
- * - Quadrone Tidy5e sheet button injection
- * - Spellcasting capability detection
- * - Consistent styling and placement
- *
  * @module Integrations/Tidy5e
  * @author Tyler
  */
@@ -26,6 +20,7 @@ import { log } from '../logger.mjs';
  * @returns {void}
  */
 export function registerTidy5eIntegration() {
+  log(3, 'Registering Tidy5e integration hooks.');
   Hooks.on('tidy5e-sheet.renderActorSheet', onTidy5eRender);
   Hooks.on('renderTidy5eCharacterSheet', onTidy5eRender);
   Hooks.on('renderTidy5eCharacterSheetQuadrone', onTidy5eQuadroneRender);
@@ -39,17 +34,31 @@ export function registerTidy5eIntegration() {
  * @returns {void}
  */
 function onTidy5eRender(_sheet, element, data) {
+  log(3, 'Tidy5e classic sheet rendering.', { actorId: data.actor?.id });
   const actor = data.actor;
   if (!canAddTidySpellbookButton(actor, element)) return;
   const spellsTab = element.querySelector('.spellbook');
-  if (!spellsTab) return;
+  if (!spellsTab) {
+    log(3, 'No spellbook tab found in Tidy5e classic sheet.', { actorId: actor.id });
+    return;
+  }
   const utilityToolbar = spellsTab.querySelector('[data-tidy-sheet-part="utility-toolbar"]');
-  if (!utilityToolbar) return;
+  if (!utilityToolbar) {
+    log(3, 'No utility toolbar found in Tidy5e classic sheet.', { actorId: actor.id });
+    return;
+  }
   const searchContainer = utilityToolbar.querySelector('[data-tidy-sheet-part="search-container"]');
-  if (!searchContainer) return;
-  if (utilityToolbar.querySelector('.spell-book-button')) return;
+  if (!searchContainer) {
+    log(3, 'No search container found in Tidy5e classic sheet.', { actorId: actor.id });
+    return;
+  }
+  if (utilityToolbar.querySelector('.spell-book-button')) {
+    log(3, 'Spell book button already exists in Tidy5e classic sheet.', { actorId: actor.id });
+    return;
+  }
   const button = createTidySpellbookButton(actor);
   searchContainer.insertAdjacentElement('afterend', button);
+  log(3, 'Spell book button added to Tidy5e classic sheet.', { actorId: actor.id });
 }
 
 /**
@@ -60,17 +69,31 @@ function onTidy5eRender(_sheet, element, data) {
  * @returns {void}
  */
 function onTidy5eQuadroneRender(_sheet, element, data) {
+  log(3, 'Tidy5e Quadrone sheet rendering.', { actorId: data.actor?.id });
   const actor = data.actor;
   if (!canAddTidySpellbookButton(actor, element)) return;
   const spellsTab = element.querySelector('.tidy-tab.spellbook');
-  if (!spellsTab) return;
+  if (!spellsTab) {
+    log(3, 'No spellbook tab found in Tidy5e Quadrone sheet.', { actorId: actor.id });
+    return;
+  }
   const actionBar = spellsTab.querySelector('[data-tidy-sheet-part="action-bar"]');
-  if (!actionBar) return;
+  if (!actionBar) {
+    log(3, 'No action bar found in Tidy5e Quadrone sheet.', { actorId: actor.id });
+    return;
+  }
   const buttonGroup = actionBar.querySelector('.button-group');
-  if (!buttonGroup) return;
-  if (actionBar.querySelector('.spell-book-button')) return;
+  if (!buttonGroup) {
+    log(3, 'No button group found in Tidy5e Quadrone sheet.', { actorId: actor.id });
+    return;
+  }
+  if (actionBar.querySelector('.spell-book-button')) {
+    log(3, 'Spell book button already exists in Tidy5e Quadrone sheet.', { actorId: actor.id });
+    return;
+  }
   const button = createTidySpellbookButtonQuadrone(actor);
   buttonGroup.insertAdjacentElement('beforebegin', button);
+  log(3, 'Spell book button added to Tidy5e Quadrone sheet.', { actorId: actor.id });
 }
 
 /**
@@ -81,9 +104,16 @@ function onTidy5eQuadroneRender(_sheet, element, data) {
  */
 function canAddTidySpellbookButton(actor, element) {
   const canCast = Object.keys(actor?.spellcastingClasses || {}).length > 0;
-  if (!canCast) return false;
+  if (!canCast) {
+    log(3, 'Cannot add Tidy5e spellbook button: actor has no spellcasting classes.', { actorId: actor?.id });
+    return false;
+  }
   const hasSpellbook = element.querySelector('.spellbook') || element.querySelector('.tidy-tab.spellbook');
-  if (!hasSpellbook) return false;
+  if (!hasSpellbook) {
+    log(3, 'Cannot add Tidy5e spellbook button: no spellbook section found.', { actorId: actor?.id });
+    return false;
+  }
+  log(3, 'Can add Tidy5e spellbook button.', { actorId: actor.id });
   return true;
 }
 
@@ -93,6 +123,7 @@ function canAddTidySpellbookButton(actor, element) {
  * @returns {HTMLElement} The created button element for Tidy5e classic sheets
  */
 function createTidySpellbookButton(actor) {
+  log(3, 'Creating Tidy5e classic spellbook button.', { actorId: actor.id });
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'inline-icon-button spell-book-button';
@@ -109,6 +140,7 @@ function createTidySpellbookButton(actor) {
  * @returns {HTMLElement} The created button element for Tidy5e Quadrone sheets
  */
 function createTidySpellbookButtonQuadrone(actor) {
+  log(3, 'Creating Tidy5e Quadrone spellbook button.', { actorId: actor.id });
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'button button-icon-only spell-book-button';
@@ -125,6 +157,7 @@ function createTidySpellbookButtonQuadrone(actor) {
  * @returns {Promise<void>}
  */
 async function openSpellbook(event, actor) {
+  log(3, 'Tidy5e spellbook button clicked.', { actorId: actor.id });
   event.preventDefault();
   const button = event.currentTarget;
   const icon = button.querySelector('img.spell-book-icon');
@@ -135,6 +168,7 @@ async function openSpellbook(event, actor) {
   try {
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const hasLongRestSwapping = Object.values(classRules).some((rules) => rules.cantripSwapping === 'longRest' || rules.spellSwapping === 'longRest');
+    log(3, 'Checking long rest swapping mechanics for Tidy5e.', { actorId: actor.id, hasLongRestSwapping });
     if (hasLongRestSwapping) {
       const longRestFlagValue = actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);
       const cantripSwapTracking = actor.getFlag(MODULE.ID, FLAGS.CANTRIP_SWAP_TRACKING) || {};
@@ -146,15 +180,21 @@ async function openSpellbook(event, actor) {
         }
       }
       if (hasCompletedSwaps) {
+        log(3, 'Resetting cantrip swap tracking for Tidy5e.', { actorId: actor.id });
         const spellManager = new SpellManager(actor);
         await spellManager.cantripManager.resetSwapTracking();
       }
-      if (longRestFlagValue === undefined || longRestFlagValue === null) actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
+      if (longRestFlagValue === undefined || longRestFlagValue === null) {
+        log(3, 'Setting long rest completed flag for Tidy5e.', { actorId: actor.id });
+        actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
+      }
     }
     const spellBook = new SpellBook(actor);
     await spellBook._preInitialize();
     spellBook.render(true);
+    log(3, 'Spellbook rendered successfully from Tidy5e.', { actorId: actor.id });
   } catch (error) {
+    log(1, 'Error opening spellbook from Tidy5e.', { actorId: actor.id, error });
   } finally {
     if (icon) {
       icon.classList.remove('fa-spin');

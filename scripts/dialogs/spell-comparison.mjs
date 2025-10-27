@@ -42,6 +42,7 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
 
     /** @type {Object} Reference to the parent Spell Book application */
     this.parentApp = parentApp;
+    log(3, 'SpellComparison constructed.', { parentApp, options });
   }
 
   /** @inheritdoc */
@@ -66,6 +67,7 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @inheritdoc */
   _onFirstRender(context, options) {
+    log(3, 'First render.', { context, options });
     super._onFirstRender(context, options);
     this._calculateOptimalSize();
     this._positionRelativeToParent();
@@ -87,7 +89,7 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
     const optimalWidth = Math.max(minWidth, Math.min(maxWidth, calculatedWidth));
     this.options.position.width = optimalWidth;
     if (this.element) this.element.style.width = `${optimalWidth}px`;
-    log(3, 'Calculating optimal size...');
+    log(3, 'Calculated optimal size.', { spellCount, optimalWidth });
   }
 
   /**
@@ -107,7 +109,7 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
       preferredSide: 'right'
     });
     this.setPosition(position);
-    log(3, 'Positioning relative to parent...');
+    log(3, 'Positioned relative to parent.', { position });
   }
 
   /**
@@ -118,8 +120,7 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _processSpellForComparison(spell) {
-    log(3, 'Processing spell for comparison:', { spell });
-    return {
+    const processed = {
       uuid: spell.uuid,
       name: spell.name,
       img: spell.img,
@@ -133,6 +134,8 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
       damage: this._extractDamageInfo(spell),
       description: spell.system.description?.value || ''
     };
+    log(3, 'Processed spell for comparison.', { spell: spell.name, processed });
+    return processed;
   }
 
   /**
@@ -171,6 +174,7 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       }
     }
+    log(3, 'Extracted damage info.', { spell: spell.name, damageInfo });
     return damageInfo;
   }
 
@@ -181,6 +185,7 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _buildComparisonTable(spells) {
+    log(3, 'Building comparison table.', { spellCount: spells.length });
     if (!spells.length) return { properties: [] };
     const maxDamage = Math.max(...spells.map((s) => s.damage.maxDice).filter((d) => d > 0));
     const properties = [
@@ -241,6 +246,7 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
         }))
       }
     ];
+    log(3, 'Built comparison table.', { propertyCount: properties.length, maxDamage });
     return { properties, maxDamage };
   }
 
@@ -252,5 +258,6 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
       this.parentApp.comparisonDialog = null;
       this.parentApp.render(false);
     }
+    log(3, 'Spell comparison closed.');
   }
 }

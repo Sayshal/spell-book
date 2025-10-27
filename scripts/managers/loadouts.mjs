@@ -6,16 +6,6 @@
  * loadouts for different scenarios (combat, exploration, social, etc.) and quickly
  * switch between them without manually re-selecting each spell.
  *
- * Key features:
- * - Save current spell preparation state as named loadouts
- * - Load and apply saved loadouts to quickly change spell preparation
- * - Class-specific loadouts with optional cross-class compatibility
- * - Caching system for optimal performance when accessing loadouts frequently
- * - Integration with SpellBook UI for seamless checkbox state management
- * - Error handling and user feedback
- * - Persistent storage using actor flags for cross-session availability
- * - Validation and cleanup of loadout data
- *
  * Loadouts are stored as actor flags and include metadata such as creation timestamps,
  * descriptions, and class associations. The manager handles both UI state updates
  * and underlying data synchronization when applying loadouts.
@@ -37,6 +27,7 @@ export class Loadouts {
    * @param {SpellBook} [spellbook=null] - Optional Spell Book reference for UI integration
    */
   constructor(actor, spellbook = null) {
+    log(3, 'Creating Loadouts instance.', { actorId: actor.id, hasSpellbook: !!spellbook });
     /** @type {Actor} The actor whose loadouts are being managed */
     this.actor = actor;
 
@@ -56,16 +47,18 @@ export class Loadouts {
    * @returns {SpellLoadout[]} Array of loadout objects
    */
   getAvailableLoadouts(classIdentifier = null) {
+    log(3, 'Getting available loadouts.', { actorId: this.actor.id, classIdentifier });
     const cacheTimeout = 30000;
     const now = Date.now();
     if (!this._loadoutsCache || now - this._lastCacheTime > cacheTimeout) {
       this._loadoutsCache = this.actor.getFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS) || {};
       this._lastCacheTime = now;
+      log(3, 'Loadouts cache refreshed.', { actorId: this.actor.id, loadoutCount: Object.keys(this._loadoutsCache).length });
     }
     const allLoadouts = Object.values(this._loadoutsCache);
     if (classIdentifier) {
       const filtered = allLoadouts.filter((loadout) => !loadout.classIdentifier || loadout.classIdentifier === classIdentifier);
-
+      log(3, 'Filtered loadouts for class.', { actorId: this.actor.id, classIdentifier, filteredCount: filtered.length });
       return filtered;
     }
     return allLoadouts;
@@ -80,15 +73,17 @@ export class Loadouts {
    * @returns {Promise<boolean>} Success status
    */
   async saveLoadout(name, description, spellConfiguration, classIdentifier = null) {
+    log(3, 'Saving loadout.', { actorId: this.actor.id, name, classIdentifier, spellCount: spellConfiguration.length });
     try {
       if (!name || !name.trim()) throw new Error('Loadout name is required');
       const loadoutId = foundry.utils.randomID();
       const loadout = { id: loadoutId, name: name.trim(), description: description?.trim() || '', classIdentifier, spellConfiguration, createdAt: Date.now(), updatedAt: Date.now() };
       await this.actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.${loadoutId}`]: loadout });
       this._invalidateCache();
-
+      log(3, 'Loadout saved successfully.', { actorId: this.actor.id, loadoutId, name });
       return true;
     } catch (error) {
+      log(1, 'Error saving loadout.', { actorId: this.actor.id, name, error });
       return false;
     }
   }
@@ -99,10 +94,15 @@ export class Loadouts {
    * @returns {SpellLoadout|null} The loadout object or null if not found
    */
   loadLoadout(loadoutId) {
+    log(3, 'Loading loadout.', { actorId: this.actor.id, loadoutId });
     try {
       const loadouts = this.actor.getFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS) || {};
-      return loadouts[loadoutId] || null;
+      const loadout = loadouts[loadoutId] || null;
+      if (loadout) log(3, 'Loadout loaded successfully.', { actorId: this.actor.id, loadoutId, name: loadout.name });
+      else log(2, 'Loadout not found.', { actorId: this.actor.id, loadoutId });
+      return loadout;
     } catch (error) {
+      log(1, 'Error loading loadout.', { actorId: this.actor.id, loadoutId, error });
       return null;
     }
   }
@@ -114,14 +114,16 @@ export class Loadouts {
    * @returns {boolean} Success status
    */
   applyLoadout(loadoutId, classIdentifier) {
+    log(3, 'Applying loadout.', { actorId: this.actor.id, loadoutId, classIdentifier });
     try {
       const loadout = this.loadLoadout(loadoutId);
       if (!loadout) throw new Error('Loadout not found');
       if (!this.spellbook) throw new Error('No Spell Book reference available');
       this._applySpellConfiguration(loadout.spellConfiguration, classIdentifier);
-
+      log(3, 'Loadout applied successfully.', { actorId: this.actor.id, loadoutId, classIdentifier });
       return true;
     } catch (error) {
+      log(1, 'Error applying loadout.', { actorId: this.actor.id, loadoutId, classIdentifier, error });
       return false;
     }
   }
@@ -132,15 +134,17 @@ export class Loadouts {
    * @returns {Promise<boolean>} Success status
    */
   async deleteLoadout(loadoutId) {
+    log(3, 'Deleting loadout.', { actorId: this.actor.id, loadoutId });
     try {
       const existingLoadouts = this.actor.getFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS) || {};
       if (!existingLoadouts[loadoutId]) throw new Error('Loadout not found');
       const loadoutName = existingLoadouts[loadoutId].name;
       await this.actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.-=${loadoutId}`]: null });
       this._invalidateCache();
-
+      log(3, 'Loadout deleted successfully.', { actorId: this.actor.id, loadoutId, loadoutName });
       return true;
     } catch (error) {
+      log(1, 'Error deleting loadout.', { actorId: this.actor.id, loadoutId, error });
       return false;
     }
   }
@@ -151,6 +155,7 @@ export class Loadouts {
    * @returns {string[]} Array of prepared spell UUIDs
    */
   captureCurrentState(classIdentifier) {
+    log(3, 'Capturing current state.', { actorId: this.actor.id, classIdentifier });
     try {
       if (!this.spellbook) throw new Error('No Spell Book reference available');
       const preparedSpells = [];
@@ -170,9 +175,10 @@ export class Loadouts {
         if (checkbox.disabled) return;
         preparedSpells.push(uuid);
       });
-
+      log(3, 'Current state captured.', { actorId: this.actor.id, classIdentifier, spellCount: preparedSpells.length });
       return preparedSpells;
     } catch (error) {
+      log(1, 'Error capturing current state.', { actorId: this.actor.id, classIdentifier, error });
       return [];
     }
   }
@@ -185,6 +191,7 @@ export class Loadouts {
    * @returns {void}
    */
   _applySpellConfiguration(spellConfiguration, classIdentifier) {
+    log(3, 'Applying spell configuration.', { actorId: this.actor.id, classIdentifier, spellCount: spellConfiguration.length });
     if (!this.spellbook) throw new Error('No Spell Book reference available');
     const formElement = this.spellbook.element;
     if (!formElement) throw new Error('Spell Book element not found');
@@ -208,6 +215,7 @@ export class Loadouts {
       this.spellbook.ui.updateSpellPreparationTracking();
       this.spellbook.ui.updateSpellCounts();
     }
+    log(3, 'Spell configuration applied.', { actorId: this.actor.id, classIdentifier });
   }
 
   /**
@@ -216,6 +224,7 @@ export class Loadouts {
    * @returns {void}
    */
   _invalidateCache() {
+    log(3, 'Invalidating loadouts cache.', { actorId: this.actor.id });
     this._loadoutsCache = null;
     this._lastCacheTime = 0;
   }

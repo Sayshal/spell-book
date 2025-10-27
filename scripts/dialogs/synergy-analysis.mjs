@@ -10,6 +10,7 @@
  */
 
 import { TEMPLATES } from '../constants/_module.mjs';
+import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -36,6 +37,7 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   constructor(synergyData, options = {}) {
     super(options);
+    log(3, 'SynergyAnalysis constructed.', { synergyData, options });
 
     /** @type {SynergyAnalysis} The synergy analysis data */
     this.synergyData = synergyData;
@@ -46,6 +48,7 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
     const context = await super._prepareContext(options);
     foundry.utils.mergeObject(context, this.synergyData);
     context.componentTooltips = this._prepareComponentTooltips(this.synergyData);
+    log(3, 'Context prepared.', { options, context });
     return context;
   }
 
@@ -56,13 +59,16 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _prepareComponentTooltips(synergy) {
+    log(3, 'Preparing component tooltips.', { synergy });
     const maxSpells = 25;
-    return {
+    const tooltips = {
       verbal: this._formatSpellList(synergy.memberContributions?.components?.verbal, maxSpells),
       somatic: this._formatSpellList(synergy.memberContributions?.components?.somatic, maxSpells),
       material: this._formatSpellList(synergy.memberContributions?.components?.material, maxSpells),
       materialCost: this._formatSpellList(synergy.memberContributions?.components?.materialCost, maxSpells)
     };
+    log(3, 'Component tooltips prepared.', { tooltips });
+    return tooltips;
   }
 
   /**
@@ -73,6 +79,7 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _formatSpellList(spells, maxSpells) {
+    log(3, 'Formatting spell list.', { spellCount: spells?.length, maxSpells });
     if (!spells?.length) return '';
     const displaySpells = spells.slice(0, maxSpells);
     let tooltip = displaySpells.join(', ');
@@ -80,6 +87,7 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
       const remaining = spells.length - maxSpells;
       tooltip += game.i18n.format('SPELLBOOK.Party.AndMoreSpells', { count: remaining });
     }
+    log(3, 'Spell list formatted.', { tooltip });
     return tooltip;
   }
 }

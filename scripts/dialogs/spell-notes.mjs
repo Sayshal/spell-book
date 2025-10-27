@@ -5,14 +5,6 @@
  * and tactical information to spells. Provides rich text editing capabilities
  * and integration with the spell user data system.
  *
- * Key features:
- * - Rich text spell notes editing
- * - Personal spell annotations
- * - Tactical information management
- * - User-specific spell data storage
- * - Integration with spell display systems
- * - Notes sharing and collaboration
- *
  * @module Dialogs/SpellNotes
  * @author Tyler
  */
@@ -58,6 +50,7 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   constructor(options = {}) {
     super(options);
+    log(3, 'SpellNotes constructed.', { options });
 
     /** @type {string} Canonical UUID of the spell being edited */
     this.spellUuid = UIUtils.getCanonicalSpellUuid(options.spellUuid);
@@ -88,11 +81,13 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
     context.rows = Math.max(3, Math.min(8, Math.ceil(this.currentNotes.length / 50)));
     context.charactersRemaining = this.maxLength - this.currentNotes.length;
     context.actorId = this.actor?.id;
+    log(3, 'Context prepared.', { options, context });
     return context;
   }
 
   /** @inheritdoc */
   _onRender(context, options) {
+    log(3, 'Rendering.', { context, options });
     super._onRender(context, options);
     const textarea = this.element.querySelector('textarea[name="notes"]');
     const counter = this.element.querySelector('.character-counter');
@@ -133,6 +128,7 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
       preferredSide: 'right'
     });
     this.setPosition(position);
+    log(3, 'Positioned near icon.', { position });
   }
 
   /** @inheritdoc */
@@ -162,6 +158,9 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
         icon.setAttribute('aria-label', newTooltip);
       });
       await UIUtils.DescriptionInjector.handleNotesChange(canonicalUuid);
-    } catch (error) {}
+      log(3, 'Form submission handled.', { canonicalUuid, notes, formData: formData.object });
+    } catch (error) {
+      log(1, 'Error handling form submission.', { error });
+    }
   }
 }
