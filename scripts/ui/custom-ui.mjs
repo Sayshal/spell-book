@@ -31,55 +31,6 @@ import { MODULE, SETTINGS } from '../constants/_module.mjs';
 import * as UIUtils from './_module.mjs';
 
 /**
- * Available UI elements that can be toggled in player interfaces.
- *
- * @typedef {'favorites'|'compare'|'notes'|'spellLevel'|'components'|'school'|'castingTime'|'range'|'damageTypes'|'conditions'|'save'|'concentration'|'materialComponents'} PlayerUIElement
- */
-
-/**
- * Available UI elements that can be toggled in GM interfaces (excludes player-specific elements).
- *
- * @typedef {'compare'|'spellLevel'|'components'|'school'|'castingTime'|'range'|'damageTypes'|'conditions'|'save'|'concentration'|'materialComponents'} GMUIElement
- */
-
-/**
- * Spell metadata structure used for building display strings.
- *
- * @typedef {Object} SpellMetadata
- * @property {Object} system - Core D&D 5e spell system data
- * @property {number} system.level - Spell level (0-9)
- * @property {Object} [system.save] - Saving throw information
- * @property {string} [system.save.ability] - Ability score for saving throw
- * @property {Object} [system.range] - Spell range information
- * @property {number} [system.range.value] - Numeric range value
- * @property {string} [system.range.units] - Range measurement units
- * @property {Object} [system.properties] - Spell properties (concentration, ritual, etc.)
- * @property {Object} [filterData] - Processed filter data for the spell
- * @property {Array<string>} [filterData.damageTypes] - Damage types the spell can inflict
- * @property {Array<string>} [filterData.conditions] - Conditions the spell can impose
- * @property {Object} [labels] - Pre-computed display labels for the spell
- */
-
-/**
- * Setting key mapping for UI element visibility controls.
- *
- * @typedef {Object} SettingKeyMap
- * @property {string} favorites - FAVORITES setting key
- * @property {string} compare - COMPARE setting key
- * @property {string} notes - NOTES setting key
- * @property {string} spellLevel - SPELL_LEVEL setting key
- * @property {string} components - COMPONENTS setting key
- * @property {string} school - SCHOOL setting key
- * @property {string} castingTime - CASTING_TIME setting key
- * @property {string} range - RANGE setting key
- * @property {string} damageTypes - DAMAGE_TYPES setting key
- * @property {string} conditions - CONDITIONS setting key
- * @property {string} save - SAVE setting key
- * @property {string} concentration - CONCENTRATION setting key
- * @property {string} materialComponents - MATERIAL_COMPONENTS setting key
- */
-
-/**
  * Helper class for managing UI customization settings.
  */
 export class CustomUI {

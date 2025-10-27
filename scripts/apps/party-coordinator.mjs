@@ -17,52 +17,6 @@ import { log } from '../logger.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
- * Spellcasting focus option for party coordination.
- *
- * @typedef {Object} FocusOption
- * @property {string} id - Unique identifier for the focus option (e.g., 'focus-damage', 'focus-healer')
- * @property {string} name - Display name of the focus option (e.g., 'Offensive Mage', 'Support')
- * @property {string} icon - File path to the focus option icon image
- * @property {string} description - Descriptive text explaining the focus role and strategy
- */
-
-/**
- * Party spell comparison data structure with focus integration.
- *
- * @typedef {Object} PartySpellComparison
- * @property {Object<string, Object>} spellsByLevel - Spells organized by level
- * @property {ActorSpellData[]} actors - Array of party member data with spell information and focus assignments
- * @property {Object} synergy - Spell synergy analysis data
- * @property {string[]} availableFocuses - Available spellcasting focus options
- */
-
-/**
- * Actor spell data structure for party analysis with focus coordination.
- *
- * @typedef {Object} ActorSpellData
- * @property {string} id - Actor ID
- * @property {string} name - Actor name
- * @property {boolean} hasPermission - Whether current user can view actor details
- * @property {string} token - Actor image/token path
- * @property {string} focus - Legacy focus setting (for backward compatibility)
- * @property {string|null} selectedFocus - Selected focus name from group coordination
- * @property {string|null} selectedFocusId - Selected focus ID from group coordination
- * @property {string|null} selectedFocusIcon - Selected focus icon path from group coordination
- * @property {SpellcasterData[]} spellcasters - Array of spellcasting class data
- * @property {number} totalSpellsKnown - Total known spells across all classes
- * @property {number} totalSpellsPrepared - Total prepared spells across all classes
- */
-
-/**
- * Spell level group structure for UI display.
- *
- * @typedef {Object} SpellLevelGroup
- * @property {number} level - The spell level (0-9)
- * @property {string} levelName - Display name for the spell level
- * @property {Array<Object>} spells - Array of spells at this level
- */
-
-/**
  * Party Spell Manager application for viewing party spell coordination.
  */
 export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) {

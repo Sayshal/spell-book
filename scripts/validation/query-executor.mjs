@@ -16,35 +16,6 @@
  */
 
 /**
- * Parsed query object structure for execution.
- *
- * @typedef {Object} ParsedQuery
- * @property {string} type - Query type (currently only 'conjunction' supported)
- * @property {Array<FieldCondition>} conditions - Array of field conditions to evaluate
- */
-
-/**
- * Individual field condition within a query.
- *
- * @typedef {Object} FieldCondition
- * @property {string} type - Condition type (should be 'field')
- * @property {string} field - Field identifier to evaluate against
- * @property {string} value - Expected value for the field condition
- */
-
-/**
- * Spell data structure for query evaluation.
- *
- * @typedef {Object} SpellData
- * @property {string} name - Spell name for text searching
- * @property {number} level - Spell level (0-9)
- * @property {string} school - Spell school identifier
- * @property {Object} [system] - D&D 5e system data for the spell
- * @property {Object} [filterData] - Pre-processed filter data for performance
- * @property {boolean} [prepared] - Whether the spell is prepared (for actors)
- */
-
-/**
  * Executes parsed queries against spell data using DND5e filter system.
  */
 export class QueryExecutor {

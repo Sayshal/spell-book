@@ -39,54 +39,6 @@ import { log } from '../logger.mjs';
 import { RuleSet } from './rule-set.mjs';
 
 /**
- * Spell copying cost calculation result.
- *
- * @typedef {Object} SpellCopyingCost
- * @property {number} cost - Cost in gold pieces to copy the spell
- * @property {boolean} isFree - Whether the spell can be copied for free
- */
-
-/**
- * Spell metadata for copied spells tracking.
- *
- * @typedef {Object} CopiedSpellMetadata
- * @property {string} spellUuid - UUID of the copied spell
- * @property {number} dateCopied - Timestamp when the spell was copied
- * @property {number} cost - Gold cost paid to copy the spell
- * @property {number} timeSpent - Time in hours spent copying the spell
- */
-
-/**
- * Journal ownership configuration for spellbook access.
- *
- * @typedef {Object} JournalOwnership
- * @property {number} default - Default permission level (0 for none)
- * @property {number} [userId] - Permission level for specific users (3 for owner)
- */
-
-/**
- * Spellbook journal data structure for creation.
- *
- * @typedef {Object} SpellbookJournalData
- * @property {string} name - Name of the journal (actor name or actor + class)
- * @property {string|null} folder - Folder ID for organization
- * @property {JournalOwnership} ownership - Ownership and permission configuration
- * @property {Object} flags - Module-specific flags and metadata
- * @property {Array<SpellbookPageData>} pages - Array of journal pages
- */
-
-/**
- * Spellbook page data for spell storage.
- *
- * @typedef {Object} SpellbookPageData
- * @property {string} name - Page name
- * @property {string} type - Page type ('spells')
- * @property {JournalOwnership} ownership - Page-specific permissions
- * @property {Object} flags - Page-specific flags
- * @property {Object} system - System data including spell collection
- */
-
-/**
  * Wizard Spellbook Manager - Journal-based wizard spell management system.
  */
 export class WizardBook {

@@ -6,14 +6,6 @@
  * and provides bulk selection controls for easier management with performance
  * optimization through selective loading.
  *
- * Key features:
- * - Hierarchical compendium organization by source
- * - Bulk selection controls (global and category-level)
- * - Performance-aware pack filtering
- * - Spell-relevant content detection
- * - Required pack handling and validation
- * - User-friendly configuration interface
- *
  * @module Dialogs/CompendiumSelection
  * @author Tyler
  */
@@ -23,64 +15,6 @@ import { log } from '../logger.mjs';
 import * as ValidationUtils from '../validation/_module.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
-
-/**
- * @typedef {Object} PackInfo
- * @property {string} id - The pack collection ID
- * @property {string} label - Display label for the pack
- * @property {string} type - Pack metadata type ('Item' or 'JournalEntry')
- * @property {string} packageName - Name of the package containing this pack
- * @property {string} packageType - Type of package ('world', 'system', 'module')
- */
-
-/**
- * @typedef {Object} OrganizedCompendiums
- * @property {Map<string, CategoryData>} categories - Map of category names to category data
- * @property {CategoryData[]} categorizedPacks - Array of categorized pack data sorted by name
- */
-
-/**
- * @typedef {Object} CategoryData
- * @property {string} name - The category/organization name
- * @property {PackInfo[]} packs - Array of packs in this category
- */
-
-/**
- * @typedef {Object} ProcessedCategory
- * @property {string} name - The category name
- * @property {ProcessedPack[]} packs - Array of processed packs with form elements
- * @property {number} enabledCount - Number of enabled packs in category
- * @property {number} totalCount - Total number of packs in category
- * @property {boolean} disabled - Whether all packs in category are disabled
- * @property {string} categorySelectAllCheckboxHtml - HTML for category select-all checkbox
- */
-
-/**
- * @typedef {Object} ProcessedPack
- * @property {string} id - The pack ID
- * @property {string} label - Pack display label
- * @property {string} type - Pack type
- * @property {string} packageName - Package name
- * @property {string} packageType - Package type
- * @property {boolean} enabled - Whether pack is currently enabled
- * @property {boolean} disabled - Whether pack selection is disabled
- * @property {string} organizationName - Name of organization/category
- * @property {string} checkboxHtml - HTML for pack checkbox element
- */
-
-/**
- * @typedef {Object} CategoryStats
- * @property {number} enabledCount - Number of enabled packs
- * @property {number} totalCount - Total number of packs
- * @property {boolean} allPacksDisabled - Whether all packs are disabled
- */
-
-/**
- * @typedef {Object} SummaryData
- * @property {number} totalPacks - Total number of relevant packs
- * @property {number} enabledPacks - Number of enabled packs
- * @property {boolean} allSelected - Whether all packs are selected
- */
 
 /**
  * Dialog application for selecting which compendiums to index for spell searching.
@@ -93,11 +27,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
     tag: 'form',
     window: { title: 'SPELLBOOK.Settings.CompendiumSelectionTitle', icon: 'fas fa-books', resizable: false },
     classes: ['spell-book', 'compendium-selection-dialog'],
-    form: {
-      handler: CompendiumSelection.formHandler,
-      submitOnChange: false,
-      closeOnSubmit: true
-    }
+    form: { handler: CompendiumSelection.formHandler, submitOnChange: false, closeOnSubmit: true }
   };
 
   /** @inheritdoc */
@@ -110,18 +40,15 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @static
    */
   static async _isPackRelevantForSpells(pack) {
-    try {
-      if (pack.metadata.type === 'Item') {
-        const index = await pack.getIndex({ fields: ['type'] });
-        return index.some((entry) => entry.type === 'spell');
-      } else if (pack.metadata.type === 'JournalEntry') {
-        const index = await pack.getIndex({ fields: ['pages'] });
-        return index.some((entry) => entry.pages?.some((page) => page.type === 'spells'));
-      }
-      return false;
-    } catch (error) {
-      return false;
+    log(3, `Checking if ${pack.name} is relevant for SpellBook.`);
+    if (pack.metadata.type === 'Item') {
+      const index = await pack.getIndex({ fields: ['type'] });
+      return index.some((entry) => entry.type === 'spell');
+    } else if (pack.metadata.type === 'JournalEntry') {
+      const index = await pack.getIndex({ fields: ['pages'] });
+      return index.some((entry) => entry.pages?.some((page) => page.type === 'spells'));
     }
+    return false;
   }
 
   /**
@@ -141,6 +68,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
       compendiums.categories.get(organizationName).packs.push(packInfo);
     }
     compendiums.categorizedPacks = Array.from(compendiums.categories.values()).sort((a, b) => a.name.localeCompare(b.name));
+    log(3, 'Found compendiums for selection:', { compendiums });
     return compendiums;
   }
 
@@ -151,13 +79,9 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   _determineOrganizationName(pack) {
-    try {
-      const packTopLevelFolder = this._getPackTopLevelFolderName(pack);
-      if (packTopLevelFolder) return this._translateSystemFolderName(packTopLevelFolder);
-      return this._translateSystemFolderName(pack.title || pack.metadata.label, pack.metadata.id);
-    } catch (error) {
-      return pack.title || pack.metadata.label || 'Unknown Source';
-    }
+    const packTopLevelFolder = this._getPackTopLevelFolderName(pack);
+    if (packTopLevelFolder) return this._translateSystemFolderName(packTopLevelFolder);
+    return this._translateSystemFolderName(pack.title || pack.metadata.label, pack.metadata.id);
   }
 
   /**

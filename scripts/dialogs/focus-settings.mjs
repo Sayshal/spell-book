@@ -26,33 +26,6 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const { renderTemplate } = foundry.applications.handlebars;
 
 /**
- * Spellcasting focus option configuration.
- *
- * @typedef {Object} FocusOption
- * @property {string} id - Unique identifier for the focus option (e.g., 'focus-damage', 'focus-healer')
- * @property {string} name - Display name of the focus option (e.g., 'Offensive Mage', 'Support')
- * @property {string} icon - File path to the focus option icon image
- * @property {string} description - Descriptive text explaining the focus role and strategy
- */
-
-/**
- * Focus selections mapping stored in group actor flags.
- *
- * @typedef {Object} FocusSelections
- * @property {Object<string, string>} selections - Maps user IDs to selected focus option IDs
- */
-
-/**
- * Party member data with focus assignment information.
- *
- * @typedef {Object} PartyMember
- * @property {string} id - User ID
- * @property {string} name - User display name
- * @property {string|null} actorName - Associated actor name (if available)
- * @property {string|null} selectedFocus - Currently selected focus option ID
- */
-
-/**
  * Dialog application for managing spellcasting focus settings.
  * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */

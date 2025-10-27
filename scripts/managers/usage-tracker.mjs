@@ -29,31 +29,6 @@ import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
- * Spell usage statistics data structure for analytics.
- *
- * @typedef {Object} SpellUsageStats
- * @property {number} count - Total number of times the spell has been used
- * @property {number|null} lastUsed - Timestamp of most recent usage
- * @property {ContextUsageBreakdown} contextUsage - Usage breakdown by context
- */
-
-/**
- * Context-specific usage breakdown for analytics.
- *
- * @typedef {Object} ContextUsageBreakdown
- * @property {number} combat - Number of times used in combat
- * @property {number} exploration - Number of times used outside combat
- */
-
-/**
- * Spell user data structure containing usage statistics.
- *
- * @typedef {Object} SpellUserData
- * @property {SpellUsageStats} [usageStats] - Usage statistics for this spell
- * @property {Object} [otherData] - Other user-specific spell data
- */
-
-/**
  * Spell Usage Tracker - Singleton analytics and tracking system.
  */
 export class UsageTracker {

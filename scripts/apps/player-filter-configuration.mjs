@@ -19,43 +19,6 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const { DragDrop } = foundry.applications.ux;
 
 /**
- * Filter configuration item structure.
- *
- * @typedef {Object} FilterConfigItem
- * @property {string} id - Unique filter identifier
- * @property {string} type - Filter type ('search', 'dropdown', 'range', 'checkbox')
- * @property {boolean} enabled - Whether the filter is enabled
- * @property {number} order - Display order for the filter
- * @property {string} label - Localization key for the filter label
- * @property {boolean} sortable - Whether the filter can be reordered
- * @property {Array<string>} [searchAliases] - Alternative search terms
- */
-
-/**
- * Form data structure for filter configuration.
- *
- * @typedef {Object} FilterFormData
- * @property {Object} object - Form data object with filter states
- * @property {Array<FilterConfigItem>} filters - Array of filter configurations
- */
-
-/**
- * Drag operation data structure.
- *
- * @typedef {Object} DragData
- * @property {string} type - Type of drag operation ('filter-config')
- * @property {string} index - Index of the dragged filter item
- */
-
-/**
- * Filter group processing result.
- *
- * @typedef {Object} FilterGroups
- * @property {Array<FilterConfigItem>} sortableFilters - Filters that can be reordered
- * @property {Array<FilterConfigItem>} nonSortableFilters - Fixed-position filters
- */
-
-/**
  * Application to configure which filters are displayed in the spell browser.
  */
 export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(ApplicationV2) {

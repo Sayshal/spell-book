@@ -29,31 +29,6 @@ import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
- * Foundry VTT favorite item structure for actor.system.favorites.
- *
- * @typedef {Object} ActorFavorite
- * @property {string} type - Type of favorite, typically 'item' for spells
- * @property {string} id - Reference ID in format '.Item.{itemId}' for actor items
- * @property {number} sort - Sort order for favorites display (higher = later)
- */
-
-/**
- * Spell preparation data structure containing spell UUIDs and their states.
- *
- * @typedef {Object<string, Object>} SpellPreparationData
- * @description Object mapping spell UUIDs to their preparation data
- */
-
-/**
- * Enhanced spell user data from journal storage.
- *
- * @typedef {Object} SpellUserData
- * @property {boolean} [favorited] - Whether the spell is marked as favorite
- * @property {string} [notes] - User's personal notes for the spell
- * @property {Object} [customizations] - User-specific spell customizations
- */
-
-/**
  * Add spell to actor.system.favorites.
  * @param {string} spellUuid - The spell UUID (compendium or actor)
  * @param {Actor5e} actor - The actor to update

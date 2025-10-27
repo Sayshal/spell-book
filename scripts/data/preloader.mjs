@@ -16,55 +16,6 @@ import * as UIUtils from '../ui/_module.mjs';
 import * as DataUtils from './_module.mjs';
 
 /**
- * @typedef {Object} PreloadedSpellData
- * @property {Array<SpellListMetadata>} spellLists - Array of available spell lists
- * @property {Array<EnrichedSpellData>} enrichedSpells - Array of enriched spell data
- * @property {number} timestamp - Timestamp when data was preloaded
- * @property {string} version - Module version when data was preloaded
- * @property {string} mode - Preload mode used ('gm-setup', 'player', 'no-character')
- */
-
-/**
- * @typedef {Object} EnrichedSpellData
- * @property {string} uuid - Unique identifier for the spell
- * @property {string} name - Display name of the spell
- * @property {string} img - Image path for the spell icon
- * @property {number} level - Spell level (0-9)
- * @property {string} school - School of magic identifier
- * @property {string} sourceId - Source identifier for filtering
- * @property {string} packName - Display name of the source pack
- * @property {Object} system - System-specific spell data
- * @property {Object} labels - Computed labels for display
- * @property {Object} filterData - Extracted filter data for UI
- * @property {string} enrichedIcon - HTML string for spell icon link
- */
-
-/**
- * @typedef {Object} PlayerActor
- * @property {string} _id - Unique actor ID
- * @property {string} name - Actor display name
- * @property {string} type - Actor type (should be 'character')
- * @property {Object} spellcastingClasses - Spellcasting class data
- * @property {Collection} items - Actor's item collection
- */
-
-/**
- * @typedef {Object} SpellbookData
- * @property {JournalEntry} journal - The spellbook journal document
- * @property {JournalEntryPage} page - The spells page within the journal
- * @property {Set<string>|Array<string>} spells - Collection of spell UUIDs
- */
-
-/**
- * @typedef {Object} PreloadResult
- * @property {boolean} success - Whether preloading completed successfully
- * @property {string} mode - The preload mode that was used
- * @property {number} spellListCount - Number of spell lists loaded
- * @property {number} spellCount - Number of spells loaded
- * @property {string} [error] - Error message if preloading failed
- */
-
-/**
  * Preload spell data based on user role and settings.
  * @param {boolean} [showNotification=false] - Whether to show success notification
  * @returns {Promise<void>}

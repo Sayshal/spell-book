@@ -11,10 +11,6 @@
 
 import { TEMPLATES } from '../constants/_module.mjs';
 
-/**
- * @typedef {import('../managers/party-mode.mjs').SynergyAnalysis} SynergyAnalysis
- */
-
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**

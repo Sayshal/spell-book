@@ -28,19 +28,6 @@ import { FLAGS, MODULE } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
- * Spell loadout data structure for saving and loading configurations.
- *
- * @typedef {Object} SpellLoadout
- * @property {string} id - Unique loadout identifier
- * @property {string} name - User-friendly loadout name
- * @property {string} description - Optional loadout description
- * @property {string|null} classIdentifier - Associated class identifier, or null for all classes
- * @property {string[]} spellConfiguration - Array of spell UUIDs in this loadout
- * @property {number} createdAt - Timestamp when loadout was created
- * @property {number} updatedAt - Timestamp when loadout was last modified
- */
-
-/**
  * Spell Loadout Manager - Quick preparation switching and configuration management.
  */
 export class Loadouts {

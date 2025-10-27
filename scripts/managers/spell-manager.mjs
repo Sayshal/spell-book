@@ -33,87 +33,6 @@ import * as UIUtils from '../ui/_module.mjs';
 import { Cantrips, RuleSet } from './_module.mjs';
 
 /**
- * Spell preparation status information for UI display and validation.
- *
- * @typedef {Object} SpellPreparationStatus
- * @property {boolean} prepared - Whether the spell is currently prepared
- * @property {boolean} isOwned - Whether the spell exists as an item on the actor
- * @property {string|null} preparationMode - The spell's preparation mode ('spell', 'pact', 'innate', etc.)
- * @property {boolean} disabled - Whether the preparation checkbox should be disabled
- * @property {boolean} alwaysPrepared - Whether the spell is always prepared (preparation mode 2)
- * @property {Object|null} sourceItem - Information about the item granting this spell
- * @property {boolean} isGranted - Whether the spell is granted by another item/feature
- * @property {string} localizedPreparationMode - Localized display name for preparation mode
- * @property {boolean} isCantripLocked - Whether cantrip is locked due to limits (cantrips only)
- * @property {string} [disabledReason] - Localization key for why preparation is disabled
- * @property {string} [cantripLockReason] - Localization key for cantrip lock reason
- */
-
-/**
- * Actor spell settings configuration for a specific class.
- *
- * @typedef {Object} ActorSpellSettings
- * @property {string} cantripSwapping - When cantrips can be swapped ('none', 'levelUp', 'longRest')
- * @property {string} spellSwapping - When spells can be swapped ('none', 'levelUp', 'longRest')
- * @property {string} ritualCasting - Ritual casting restrictions ('none', 'prepared', 'always')
- * @property {boolean} showCantrips - Whether to display cantrips for this class
- * @property {string} behavior - Enforcement behavior ('enforced', 'unenforced', 'notifyGM')
- */
-
-/**
- * Spell information for class-specific preparation tracking.
- *
- * @typedef {Object} SpellInfo
- * @property {string} uuid - Spell document UUID
- * @property {boolean} isPrepared - Whether the spell should be prepared
- * @property {boolean} wasPrepared - Whether the spell was previously prepared
- * @property {number} spellLevel - Spell level (0 for cantrips)
- * @property {string} [preparationMode] - Preparation mode for this spell
- * @property {string} [name] - Spell name for tracking and logging
- */
-
-/**
- * Class spell key parsing result.
- *
- * @typedef {Object} ClassSpellKeyParsed
- * @property {string} classIdentifier - The class identifier portion
- * @property {string} spellUuid - The spell UUID portion
- */
-
-/**
- * Spell source information for tracking spell origins.
- *
- * @typedef {Object} SpellSourceInfo
- * @property {string} name - Name of the source item/feature
- * @property {string} type - Type of source ('class', 'subclass', 'feat', etc.)
- * @property {string} [id] - Item ID of the source (if applicable)
- */
-
-/**
- * Spell change validation result.
- *
- * @typedef {Object} SpellChangeValidation
- * @property {boolean} allowed - Whether the spell change is allowed
- * @property {string} [message] - Localization key for error message if not allowed
- */
-
-/**
- * Cantrip change tracking for notifications.
- *
- * @typedef {Object} CantripChangeTracking
- * @property {string[]} added - Names of cantrips that were added
- * @property {string[]} removed - Names of cantrips that were removed
- * @property {boolean} hasChanges - Whether any cantrip changes occurred
- */
-
-/**
- * Class spell save result containing change information.
- *
- * @typedef {Object} ClassSpellSaveResult
- * @property {CantripChangeTracking} cantripChanges - Information about cantrip changes
- */
-
-/**
  * Spell Manager - Core spell preparation and management system.
  */
 export class SpellManager {
@@ -258,14 +177,12 @@ export class SpellManager {
     if (!actualSpell) {
       actualSpell = this.actor.items.find(
         (item) =>
-          item.type === 'spell' &&
-          (item._stats?.compendiumSource === spellUuid || item.uuid === spellUuid) &&
-          (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
+          item.type === 'spell' && (item._stats?.compendiumSource === spellUuid || item.uuid === spellUuid) && (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
       );
     }
     if (actualSpell) return this._getOwnedSpellPreparationStatus(actualSpell);
     /** @todo is this ||/&& logic correct here? */
-    const unassignedSpell = this.actor.items.find((i) =>i.type === 'spell' && (i._stats?.compendiumSource === spellUuid || i.uuid === spellUuid) && !i.system?.sourceClass && !i.sourceClass);
+    const unassignedSpell = this.actor.items.find((i) => i.type === 'spell' && (i._stats?.compendiumSource === spellUuid || i.uuid === spellUuid) && !i.system?.sourceClass && !i.sourceClass);
     if (unassignedSpell && classIdentifier) {
       const isAlwaysPrepared = unassignedSpell.system.prepared === 2;
       const isGranted = !!unassignedSpell.flags?.dnd5e?.cachedFor;
@@ -680,8 +597,7 @@ export class SpellManager {
    */
   async _handleUnpreparingSpell(uuid, sourceClass, spellIdsToRemove) {
     const matchingSpells = this.actor.items.filter(
-      (i) =>
-        i.type === 'spell' && (i._stats?.compendiumSource === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
+      (i) => i.type === 'spell' && (i._stats?.compendiumSource === uuid || i.uuid === uuid) && (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass)
     );
     if (matchingSpells.length === 0) return;
     let targetSpell = matchingSpells.find((spell) => spell.system.prepared === 1 && spell.system.method !== MODULE.PREPARATION_MODES.RITUAL);

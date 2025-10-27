@@ -20,26 +20,6 @@
 import { MODULE, SETTINGS } from './constants/_module.mjs';
 
 /**
- * Log levels for filtering and categorizing log output.
- *
- * @typedef {1|2|3} LogLevel
- * @description
- * - 1: Error level - Critical errors only
- * - 2: Warning level - Errors and warnings
- * - 3: Debug level - All messages including verbose debug info
- */
-
-/**
- * Log entry structure stored in the global console log buffer.
- *
- * @typedef {Object} LogEntry
- * @property {'error'|'warn'|'debug'} type - Type of log entry based on level
- * @property {string} timestamp - HH:MM:SS formatted timestamp
- * @property {LogLevel} level - Numeric log level (1=error, 2=warn, 3=debug)
- * @property {Array<*>} content - Array of arguments passed to the log function
- */
-
-/**
  * Enhanced logging function with automatic caller file path detection.
  * @param {LogLevel} level - Log level (1=error, 2=warning, 3=verbose)
  * @param {...*} args - Content to log to console (any number of arguments)

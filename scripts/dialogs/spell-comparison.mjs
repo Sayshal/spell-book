@@ -23,48 +23,6 @@ import * as UIUtils from '../ui/_module.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
- * @typedef {Object} ProcessedSpell
- * @property {string} uuid - The spell's UUID
- * @property {string} name - Spell name
- * @property {string} img - Spell icon path
- * @property {string} enrichedIcon - HTML for enriched spell icon link
- * @property {number} level - Spell level (0 for cantrips)
- * @property {string} school - Formatted spell school
- * @property {string} castingTime - Formatted casting time/activation
- * @property {string} range - Formatted spell range
- * @property {string} duration - Formatted spell duration
- * @property {string} components - Formatted spell components
- * @property {DamageInfo} damage - Extracted damage information
- * @property {string} description - Spell description HTML
- */
-
-/**
- * @typedef {Object} DamageInfo
- * @property {string} formula - Damage formula string (e.g., "1d8 + 2d6")
- * @property {string[]} types - Array of damage type identifiers
- * @property {number} maxDice - Maximum possible dice damage value
- */
-
-/**
- * @typedef {Object} ComparisonProperty
- * @property {string} name - Localized property name for display
- * @property {string} key - Property key identifier
- * @property {PropertyValue[]} values - Array of values for each compared spell
- */
-
-/**
- * @typedef {Object} PropertyValue
- * @property {string} value - Formatted value to display
- * @property {boolean} highlight - Whether this value should be visually highlighted
- */
-
-/**
- * @typedef {Object} ComparisonTableData
- * @property {ComparisonProperty[]} properties - Array of property comparisons
- * @property {number} maxDamage - Maximum damage value across all spells for highlighting
- */
-
-/**
  * Dialog application for comparing multiple spells side-by-side.
  * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */

@@ -25,55 +25,6 @@ import * as ValidationUtils from '../validation/_module.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
- * @typedef {Object} UIElementConfig
- * @property {string} key - The setting key identifier
- * @property {string} label - Localization key for the element label
- * @property {string} description - HTML description content for the element
- * @property {string} checkboxHtml - Generated HTML for the checkbox form element
- */
-
-/**
- * @typedef {Object} MetadataElementConfig
- * @property {string} key - The setting key identifier
- * @property {string} label - Localization key for the element label
- * @property {string} description - Localization key for the element description
- * @property {string} checkboxHtml - Generated HTML for the checkbox form element
- */
-
-/**
- * @typedef {Object} PlayerSettings
- * @property {boolean} favorites - Whether to show favorites functionality
- * @property {boolean} compare - Whether to show spell comparison tools
- * @property {boolean} notes - Whether to show spell notes functionality
- * @property {boolean} spellLevel - Whether to show spell level metadata
- * @property {boolean} components - Whether to show spell components metadata
- * @property {boolean} school - Whether to show spell school metadata
- * @property {boolean} castingTime - Whether to show casting time metadata
- * @property {boolean} range - Whether to show spell range metadata
- * @property {boolean} damageTypes - Whether to show damage types metadata
- * @property {boolean} conditions - Whether to show conditions metadata
- * @property {boolean} save - Whether to show saving throw metadata
- * @property {boolean} concentration - Whether to show concentration metadata
- * @property {boolean} materialComponents - Whether to show material components metadata
- * @property {boolean} sidebarControlsBottom - Whether to position sidebar controls at bottom
- */
-
-/**
- * @typedef {Object} GMSettings
- * @property {boolean} compare - Whether to show spell comparison tools for GMs
- * @property {boolean} spellLevel - Whether to show spell level metadata for GMs
- * @property {boolean} components - Whether to show spell components metadata for GMs
- * @property {boolean} school - Whether to show spell school metadata for GMs
- * @property {boolean} castingTime - Whether to show casting time metadata for GMs
- * @property {boolean} range - Whether to show spell range metadata for GMs
- * @property {boolean} damageTypes - Whether to show damage types metadata for GMs
- * @property {boolean} conditions - Whether to show conditions metadata for GMs
- * @property {boolean} save - Whether to show saving throw metadata for GMs
- * @property {boolean} concentration - Whether to show concentration metadata for GMs
- * @property {boolean} materialComponents - Whether to show material components metadata for GMs
- */
-
-/**
  * Dialog application for customizing spell detail display settings and preferences.
  * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */

@@ -16,38 +16,6 @@ import { log } from '../logger.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
- * Troubleshooter export result information.
- *
- * @typedef {Object} ExportResult
- * @property {string} filename - The primary troubleshooting report filename
- * @property {number} exportedCount - Total number of files exported
- * @property {boolean} includeActors - Whether actor data was included
- */
-
-/**
- * Settings import validation result.
- *
- * @typedef {Object} ImportResult
- * @property {number} imported - Number of settings successfully imported
- * @property {number} skipped - Number of settings skipped
- * @property {Array<string>} errors - Array of error messages
- */
-
-/**
- * Actor export metadata for troubleshooting context.
- *
- * @typedef {Object} ActorExportMetadata
- * @property {string} worldId - Current world ID
- * @property {string} uuid - Actor UUID
- * @property {string} coreVersion - Foundry VTT core version
- * @property {string} systemId - Game system ID
- * @property {string} systemVersion - Game system version
- * @property {string} exportedBy - User ID of exporter
- * @property {string} exportedAt - ISO timestamp of export
- * @property {boolean} troubleshooterExport - Flag indicating troubleshooter export
- */
-
-/**
  * Spell Book Troubleshooter Application.
  */
 export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {

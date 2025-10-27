@@ -29,51 +29,6 @@ import { log } from '../logger.mjs';
 import * as ValidationUtils from '../validation/_module.mjs';
 
 /**
- * Parsed query structure returned by the query parser.
- *
- * @typedef {Object} ParsedQuery
- * @property {string} type - Query type ('conjunction', 'field', etc.)
- * @property {Array<ParsedQueryCondition>} conditions - Array of query conditions for conjunction queries
- * @property {string} [field] - Field name for field-type queries
- * @property {string} [value] - Field value for field-type queries
- */
-
-/**
- * Individual condition within a parsed query.
- *
- * @typedef {Object} ParsedQueryCondition
- * @property {string} type - Condition type ('field')
- * @property {string} field - Field identifier for the condition
- * @property {string} value - Value to match for the condition
- */
-
-/**
- * Result object for incomplete value detection during typing.
- *
- * @typedef {Object} IncompleteValueMatch
- * @property {string} field - Field identifier being typed
- * @property {string} value - Current incomplete value being typed
- */
-
-/**
- * Range parsing result for range-based field queries.
- *
- * @typedef {Object} RangeParseResult
- * @property {number|null} min - Minimum range value or null if not specified
- * @property {number|null} max - Maximum range value or null if not specified
- */
-
-/**
- * Search suggestion data structure for dropdown display.
- *
- * @typedef {Object} SearchSuggestion
- * @property {string} query - Complete query string for this suggestion
- * @property {string} text - Display text for the suggestion
- * @property {string} type - Suggestion type ('field', 'value', 'execute', 'recent', 'fuzzy')
- * @property {boolean} [isSubmittable] - Whether selecting this suggestion should execute search
- */
-
-/**
  * Advanced search manager for handling Google-style search with recent searches and fuzzy matching.
  */
 export class SearchEngine {

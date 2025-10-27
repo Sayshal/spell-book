@@ -16,63 +16,6 @@ import * as UIUtils from '../ui/_module.mjs';
 import * as DataUtils from './_module.mjs';
 
 /**
- * @typedef {Object} ScrollSpellData
- * @property {Item5e} scrollItem - The original scroll item from actor inventory
- * @property {Item5e} spell - The extracted spell document
- * @property {string} spellUuid - UUID of the spell for identification
- * @property {string} name - Display name of the spell
- * @property {number} level - Spell level (0-9)
- * @property {string} img - Image path for the spell icon
- * @property {Object} system - System-specific spell data
- * @property {Object} filterData - Extracted filter data for UI display
- * @property {string} enrichedIcon - HTML string for spell icon link
- * @property {boolean} isFromScroll - Flag indicating this spell comes from a scroll
- * @property {string} scrollId - ID of the source scroll item
- * @property {string} scrollName - Display name of the source scroll
- * @property {SpellPreparationData} preparation - Preparation state information
- */
-
-/**
- * @typedef {Object} SpellPreparationData
- * @property {boolean} prepared - Whether the spell is currently prepared
- * @property {boolean} disabled - Whether preparation controls are disabled
- * @property {string} preparationMode - Mode of preparation ('scroll' for scroll spells)
- * @property {boolean} isOwned - Whether the spell is owned by the actor
- * @property {boolean} alwaysPrepared - Whether the spell is always prepared
- * @property {Item5e|null} sourceItem - Source item providing the spell
- * @property {boolean} isGranted - Whether the spell is granted by features
- * @property {string} localizedPreparationMode - Localized preparation mode string
- * @property {string} disabledReason - Localization key for why preparation is disabled
- */
-
-/**
- * @typedef {Object} ScrollActivityData
- * @property {string} [uuid] - UUID of the spell referenced by the activity
- * @property {Array<EffectReference>} [effects] - Array of effect references
- * @property {Object} spell - Spell reference data
- */
-
-/**
- * @typedef {Object} EffectReference
- * @property {string} _id - ID of the effect within the scroll item
- * @property {string} [origin] - Origin UUID of the effect (may be spell UUID)
- */
-
-/**
- * @typedef {Object} SpellLearningCost
- * @property {number} cost - Gold cost to learn the spell
- * @property {boolean} isFree - Whether learning is free due to wizard features
- */
-
-/**
- * @typedef {Object} DialogButtonConfig
- * @property {string} icon - Font Awesome icon class
- * @property {string} label - Localized button label
- * @property {string} action - Action identifier for the button
- * @property {string} className - CSS class for styling
- */
-
-/**
  * Scanner for spell scrolls in actor inventory.
  */
 export class ScrollProcessor {

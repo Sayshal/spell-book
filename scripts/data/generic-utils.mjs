@@ -13,46 +13,6 @@ import { FLAGS, MODULE, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
- * @typedef {Object} SpellcastingConfiguration
- * @property {string} progression - Spellcasting progression type ('none', 'full', 'half', 'third', 'pact', 'artificer')
- * @property {string} type - Type of spellcasting ('spell', 'pact', 'leveled')
- * @property {string} [ability] - Primary spellcasting ability score
- * @property {Object} [preparation] - Spell preparation configuration
- * @property {number} [levels] - Number of class levels for spellcasting
- */
-
-/**
- * @typedef {Object} ClassSpellcastingData
- * @property {string} id - Item ID of the class
- * @property {SpellcastingConfiguration} spellcasting - Main class spellcasting configuration
- * @property {Item5e} _classLink - Reference to the subclass item if applicable
- * @property {Object} [scaleValues] - Class-specific scale values
- */
-
-/**
- * @typedef {Object} ScaleValueEntry
- * @property {string} identifier - Unique identifier for the scale value
- * @property {string} type - Type of scale value ('number', 'string', 'die')
- * @property {*} value - Current value at actor's level
- * @property {string} [label] - Display label for the scale value
- */
-
-/**
- * @typedef {Object} WizardClassData
- * @property {string} identifier - Class identifier (e.g., 'wizard')
- * @property {Item5e} classItem - The class item document
- * @property {boolean} isNaturalWizard - Whether this is a natural wizard class
- * @property {boolean} isForceWizard - Whether wizard mode is forced via settings
- */
-
-/**
- * @typedef {Object} ClassRulesConfiguration
- * @property {boolean} [forceWizardMode] - Whether to force wizard mode for this class
- * @property {string} [customSpellList] - UUID of custom spell list to use
- * @property {Object} [additionalSettings] - Additional class-specific settings
- */
-
-/**
  * Get spellcasting configuration for a class, checking both main class and subclass.
  * @param {Actor5e} actor - The actor to check for spellcasting configuration
  * @param {string} classIdentifier - The class identifier to look up

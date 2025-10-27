@@ -26,40 +26,6 @@ import { SpellManager } from '../managers/_module.mjs';
 const { renderTemplate } = foundry.applications.handlebars;
 
 /**
- * Long rest class configuration for swap mechanics.
- *
- * @typedef {Object} LongRestClasses
- * @property {Array<ClassSwapInfo>} cantripSwapping - Classes that can swap cantrips on long rest
- * @property {Array<ClassSwapInfo>} spellSwapping - Classes that can swap spells on long rest
- */
-
-/**
- * Class swap information for long rest mechanics.
- *
- * @typedef {Object} ClassSwapInfo
- * @property {string} identifier - The class identifier
- * @property {string} name - The display name of the class
- */
-
-/**
- * Sheet data object passed to render hooks.
- *
- * @typedef {Object} SheetData
- * @property {Actor5e} actor - The actor being rendered
- * @property {Object} system - The actor's system data
- * @property {Array} [creatures] - Group actor members (for group actors)
- */
-
-/**
- * Rest result data from D&D 5e rest completion.
- *
- * @typedef {Object} RestResult
- * @property {boolean} longRest - Whether this was a long rest
- * @property {boolean} shortRest - Whether this was a short rest
- * @property {Object} [updates] - Updates applied during rest
- */
-
-/**
  * Register hooks related to D&D 5e system integration.
  * @returns {void}
  */

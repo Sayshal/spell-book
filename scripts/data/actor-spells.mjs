@@ -14,52 +14,6 @@ import { log } from '../logger.mjs';
 import * as DataUtils from './_module.mjs';
 
 /**
- * @typedef {Object} SpellDocument
- * @property {string} uuid - Unique identifier for the spell
- * @property {string} name - Display name of the spell
- * @property {string} img - Image path for the spell icon
- * @property {string} type - Document type (should be 'spell')
- * @property {SpellSystemData} system - System-specific spell data
- * @property {Object} labels - Computed labels for display
- * @property {Object} flags - Document flags and metadata
- * @property {string} [compendiumUuid] - UUID of the source compendium document
- */
-
-/**
- * @typedef {Object} SpellSystemData
- * @property {number} level - Spell level (0-9, where 0 is cantrip)
- * @property {string} school - School of magic identifier
- * @property {Object} preparation - Spell preparation configuration
- * @property {Object} activation - Spell activation requirements
- * @property {Object} range - Spell range information
- * @property {Object} duration - Spell duration data
- * @property {Array} properties - Array of spell property flags
- * @property {Object} materials - Material component requirements
- * @property {Map} activities - Map of spell activities
- * @property {Object} description - Spell description content
- * @property {Object} components - Spell component requirements
- */
-
-/**
- * @typedef {Object} CompendiumGroupData
- * @property {string} uuid - Full UUID of the spell
- * @property {string} id - Document ID within the compendium
- */
-
-/**
- * @typedef {Object} SpellFetchError
- * @property {string} uuid - UUID that failed to fetch
- * @property {string} reason - Human-readable error reason
- */
-
-/**
- * @typedef {Object} LevelGroup
- * @property {number} level - Numeric spell level
- * @property {string} levelName - Localized display name for the level
- * @property {Array<SpellDocument>} spells - Array of spells at this level
- */
-
-/**
  * Fast spell document fetching.
  * @param {Set<string>} spellUuids - Set of spell UUIDs to fetch
  * @param {number} maxSpellLevel - Maximum spell level to include in results

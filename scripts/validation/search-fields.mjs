@@ -21,14 +21,6 @@ import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
- * Field validation function that checks if a value is valid for a specific field.
- *
- * @typedef {function} FieldValidator
- * @param {string} value - The value to validate
- * @returns {boolean} Whether the value is valid for the field
- */
-
-/**
  * Field definitions for advanced search syntax.
  * Manages field mappings, validation, and autocomplete functionality for the search system.
  */

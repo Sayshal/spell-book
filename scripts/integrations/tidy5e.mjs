@@ -22,15 +22,6 @@ import { ASSETS, MODULE, FLAGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
- * Tidy5e sheet data object passed to render hooks.
- *
- * @typedef {Object} Tidy5eSheetData
- * @property {Actor5e} actor - The actor being rendered
- * @property {Object} system - The actor's system data
- * @property {Object} [spellcastingClasses] - Available spellcasting classes
- */
-
-/**
  * Register hooks related to Tidy5e sheet integration.
  * @returns {void}
  */

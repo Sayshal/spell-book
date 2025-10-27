@@ -31,44 +31,6 @@ import { log } from '../logger.mjs';
 const { renderTemplate } = foundry.applications.handlebars;
 
 /**
- * Spellcasting class data structure for rule management.
- *
- * @typedef {Object} SpellcastingClassData
- * @property {string} name - Display name of the class
- * @property {Item5e} item - The class item document
- * @property {Object} spellcasting - Spellcasting configuration from the class
- * @property {Item5e} spellcastingSource - The item providing spellcasting (class or subclass)
- */
-
-/**
- * Class rule configuration object defining spellcasting behavior.
- *
- * @typedef {Object} ClassRules
- * @property {string} cantripSwapping - When cantrips can be swapped ('none', 'levelUp', 'longRest')
- * @property {string} spellSwapping - When spells can be swapped ('none', 'levelUp', 'longRest')
- * @property {string} ritualCasting - Ritual casting restrictions ('none', 'prepared', 'always')
- * @property {boolean} showCantrips - Whether to show cantrips for this class
- * @property {string|null} customSpellList - UUID of custom spell list document
- * @property {number} spellPreparationBonus - Bonus to spell preparation limit
- * @property {number} cantripPreparationBonus - Bonus to cantrip preparation limit
- * @property {boolean} forceWizardMode - Whether to force wizard-style spell management
- * @property {number} spellLearningCostMultiplier - Gold cost multiplier per spell level (default: 50)
- * @property {number} spellLearningTimeMultiplier - Time multiplier in minutes per spell level (default: 120)
- * @property {number} startingSpells - Number of free spells at level 1 (default: 6)
- * @property {number} spellsPerLevel - Number of free spells gained per level (default: 2)
- */
-
-/**
- * Affected spell data for spell list change validation.
- *
- * @typedef {Object} AffectedSpellData
- * @property {string} name - Spell name
- * @property {string} uuid - Spell document UUID
- * @property {number} level - Spell level (0 for cantrips)
- * @property {string} classSpellKey - Internal class spell key for tracking
- */
-
-/**
  * Rule Set Manager - Centralized spellcasting rule configuration and management.
  */
 export class RuleSet {

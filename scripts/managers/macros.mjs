@@ -30,35 +30,6 @@ import * as m from '../macros/_module.mjs';
 const MACROS = Object.values(m);
 
 /**
- * Macro configuration object defining macro properties and metadata.
- *
- * @typedef {Object} MacroConfiguration
- * @property {string} flagKey - Unique flag identifier for the macro
- * @property {string} version - Version string for update tracking
- * @property {string} name - Display name of the macro
- * @property {string} command - JavaScript command or script content
- * @property {string} [img] - Icon image path for the macro
- * @property {string} [type] - Macro type (typically 'script')
- */
-
-/**
- * Macro flag data structure for version and management tracking.
- *
- * @typedef {Object} MacroFlagData
- * @property {string} version - Current version of the macro
- * @property {number} created - Timestamp when macro was first created
- * @property {number} lastUpdated - Timestamp of last update
- * @property {boolean} managedByModule - Whether this macro is managed by the module
- */
-
-/**
- * Module flag structure containing macro management data.
- *
- * @typedef {Object} ModuleFlagStructure
- * @property {Object<string, MacroFlagData>} [flagKey] - Flag data indexed by flag key
- */
-
-/**
  * Macro Manager - Centralized macro management and versioning system.
  */
 export class Macros {

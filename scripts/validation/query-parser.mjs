@@ -19,32 +19,6 @@ import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
- * Field definitions class instance for field validation and mapping.
- *
- * @typedef {Object} FieldDefinitionsType
- * @property {function(string): string|null} getFieldId - Get field ID from alias
- * @property {function(string, string): boolean} validateValue - Validate field value
- * @property {function(string): string} normalizeBooleanValue - Normalize boolean values
- */
-
-/**
- * Parsed query structure ready for execution.
- *
- * @typedef {Object} ParsedQueryObject
- * @property {string} type - Query type ('conjunction' for AND operations)
- * @property {Array<ParsedFieldCondition>} conditions - Array of field conditions
- */
-
-/**
- * Individual parsed field condition.
- *
- * @typedef {Object} ParsedFieldCondition
- * @property {string} type - Condition type ('field')
- * @property {string} field - Normalized field identifier
- * @property {string} value - Normalized field value
- */
-
-/**
  * Parser for advanced search query syntax.
  */
 export class QueryParser {

@@ -31,17 +31,6 @@ const { renderTemplate } = foundry.applications.handlebars;
 const MIGRATIONS = Object.values(m);
 
 /**
- * Migration configuration object defining migration properties and metadata.
- *
- * @typedef {Object} MigrationConfiguration
- * @property {string} key - Unique key identifier for the migration
- * @property {string} version - Version string for tracking
- * @property {string} name - Display name of the migration
- * @property {string} description - Description of what the migration does
- * @property {Function} migrate - Migration function that returns results
- */
-
-/**
  * Migration Manager - Centralized migration execution and reporting system.
  */
 export class Migrations {

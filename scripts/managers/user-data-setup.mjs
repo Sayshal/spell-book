@@ -36,31 +36,6 @@ import { log } from '../logger.mjs';
 const { renderTemplate } = foundry.applications.handlebars;
 
 /**
- * User actor information for data table generation.
- *
- * @typedef {Object} UserActorInfo
- * @property {string} id - Actor ID
- * @property {string} name - Actor display name
- */
-
-/**
- * Journal page data structure for user spell data storage.
- *
- * @typedef {Object} UserSpellDataPageData
- * @property {string} name - Page name (user name)
- * @property {string} type - Page type (always 'text')
- * @property {Object} title - Title configuration object
- * @property {boolean} title.show - Whether to show the title
- * @property {number} title.level - Heading level for the title
- * @property {Object} text - Text content configuration
- * @property {number} text.format - Text format (1 for HTML)
- * @property {string} text.content - HTML content of the page
- * @property {Object} ownership - Permission configuration
- * @property {Object} flags - Module-specific flags and metadata
- * @property {number} sort - Sort order for page display
- */
-
-/**
  * User Spell Data Manager - Journal-based persistent storage system.
  */
 export class UserDataSetup {

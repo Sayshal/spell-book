@@ -26,38 +26,6 @@ import * as ValidationUtils from '../validation/_module.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
- * @typedef {Object} LoadoutData
- * @property {string} id - Unique identifier for the loadout
- * @property {string} name - Display name of the loadout
- * @property {string} description - Optional description text
- * @property {string[]} spellConfiguration - Array of spell UUIDs in the loadout
- * @property {string} classIdentifier - Class this loadout is associated with
- * @property {number} createdAt - Timestamp when loadout was created
- * @property {number} updatedAt - Timestamp when loadout was last modified
- */
-
-/**
- * @typedef {Object} LoadoutWithMetadata
- * @property {string} id - Unique identifier for the loadout
- * @property {string} name - Display name of the loadout
- * @property {string} description - Optional description text
- * @property {string[]} spellConfiguration - Array of spell UUIDs in the loadout
- * @property {string} classIdentifier - Class this loadout is associated with
- * @property {number} createdAt - Timestamp when loadout was created
- * @property {number} updatedAt - Timestamp when loadout was last modified
- * @property {number} spellCount - Number of spells in the loadout
- * @property {string|null} formattedDate - Human-readable time since last update
- */
-
-/**
- * @typedef {Object} SpellPreviewData
- * @property {string} name - Spell name
- * @property {string} img - Spell icon path
- * @property {number} level - Spell level (0 for cantrips)
- * @property {string} uuid - Spell UUID
- */
-
-/**
  * Dialog application for managing spell loadouts.
  * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */

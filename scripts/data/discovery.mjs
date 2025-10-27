@@ -16,53 +16,6 @@ import { RuleSet } from '../managers/_module.mjs';
 import * as DataUtils from './_module.mjs';
 
 /**
- * @typedef {Object} ClassSpellListResult
- * @property {Set<string>} spells - Set of spell UUIDs in the class spell list
- * @property {string} source - Source identifier for the spell list
- * @property {string} [identifier] - Class identifier for the spell list
- * @property {boolean} isCustom - Whether this is a custom spell list
- */
-
-/**
- * @typedef {Object} SpellcastingProgressionData
- * @property {string} type - Type of spellcasting ('spell', 'pact', 'leveled')
- * @property {string} progression - Progression type ('full', 'half', 'third', 'pact', 'artificer')
- * @property {string} [ability] - Primary spellcasting ability score
- * @property {number} [levels] - Number of class levels for calculations
- */
-
-/**
- * @typedef {Object} ClassProgression
- * @property {number} spell - Spell progression level
- * @property {number} pact - Pact progression level
- * @property {number} [classKey] - Class-specific progression level
- */
-
-/**
- * @typedef {Object} SpellSlotData
- * @property {number} level - Spell level (1-9)
- * @property {number} [max] - Maximum spell slots available
- * @property {number} [value] - Current spell slots available
- * @property {boolean} [override] - Whether slots are overridden
- */
-
-/**
- * @typedef {Object} CompendiumSearchContext
- * @property {string} classIdentifier - Identifier of the class being searched
- * @property {string} [topLevelFolderName] - Top-level folder name for source matching
- * @property {Object<string, string>} customMappings - Custom spell list mappings
- * @property {string} [classUuid] - UUID of the class item
- */
-
-/**
- * @typedef {Object} FolderHierarchy
- * @property {string} name - Folder name
- * @property {number} depth - Folder depth in hierarchy
- * @property {Folder} [folder] - Parent folder reference
- * @property {Array<Folder>} [children] - Child folders
- */
-
-/**
  * Get spell list for a specific class.
  * @param {string} className - The name of the class to find spell list for
  * @param {string} [classUuid] - UUID of the class item for additional context

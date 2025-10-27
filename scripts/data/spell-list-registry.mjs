@@ -8,17 +8,6 @@
  * @author Tyler
  */
 
-/**
- * Registration result structure.
- *
- * @typedef {Object} RegistrationResult
- * @property {number} total - Total lists processed
- * @property {number} registered - Successfully registered
- * @property {number} skipped - Skipped (invalid or duplicate)
- * @property {number} failed - Failed to register
- * @property {Array<{uuid: string, error: string}>} errors - Error details
- */
-
 import { MODULE, SETTINGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 

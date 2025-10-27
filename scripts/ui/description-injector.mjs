@@ -31,32 +31,6 @@ import { log } from '../logger.mjs';
 import * as UIUtils from './_module.mjs';
 
 /**
- * Notes injection mode configuration options.
- *
- * @typedef {'off'|'before'|'after'} InjectionMode
- * @description Defines where notes should be injected relative to spell descriptions
- * - off: No injection of notes into descriptions
- * - before: Notes appear before the original spell description
- * - after: Notes appear after the original spell description
- */
-
-/**
- * Spell user data structure containing notes and other user-specific information.
- *
- * @typedef {Object} SpellUserData
- * @property {string} [notes] - User's personal notes for the spell
- * @property {boolean} [favorited] - Whether the spell is marked as favorite
- * @property {Object} [customizations] - User-specific spell customizations
- */
-
-/**
- * Spell update tracking key structure for recursion prevention.
- *
- * @typedef {string} SpellUpdateKey
- * @description Formatted as "actorId-spellUuid" to uniquely identify spell update operations
- */
-
-/**
  * Class to handle injecting notes into spell descriptions on actor items.
  */
 export class DescriptionInjector {
