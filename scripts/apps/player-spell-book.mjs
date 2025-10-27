@@ -181,7 +181,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @returns {WizardBook|null} The primary wizard manager instance or null if none found
    */
   get wizardManager() {
-    log(3, 'Retrieving wizardmanger.', { managers: this.wizardManager });
+    log(3, 'Retrieving wizardmanger.', { managers: this.wizardManagers });
     for (const [identifier, manager] of this.wizardManagers) if (manager.isWizard) if (identifier === 'wizard') return manager;
     for (const [manager] of this.wizardManagers) if (manager.isWizard) return manager;
     return null;
@@ -288,7 +288,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     /** @type {boolean} Whether preparation listeners have been set up */
     this._preparationListenersSetup = false;
 
-    log(1, 'PlayerSpellBook constructed.');
+    log(3, 'PlayerSpellBook constructed.');
   }
 
   /**
@@ -327,7 +327,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   async _prepareContext(options) {
     if (!this._preInitialized) await this._preInitialize();
-    const context = this._createBaseContext(options);
+    const context = await this._createBaseContext(options);
     context.spellcastingClasses = this._state.spellcastingClasses;
     context.activeClass = this._state.activeClass;
     context.activeTab = this.tabGroups['spellbook-tabs'];
@@ -475,8 +475,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @returns {Object} The base context
    * @private
    */
-  _createBaseContext(options) {
-    const context = super._prepareContext(options);
+  async _createBaseContext(options) {
+    const context = await super._prepareContext(options);
 
     /** @type {Array<SpellBookButton>} */
     const buttons = [

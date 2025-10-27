@@ -187,7 +187,6 @@ export class SearchEngine {
       this.queryCache.set(query, parsed);
       return parsed;
     } catch (error) {
-
       this.queryCache.set(query, null);
       return null;
     }
@@ -204,7 +203,6 @@ export class SearchEngine {
     this.spellNameTree = new foundry.utils.WordTree();
     for (const spell of spells) if (spell.name) this.spellNameTree.addLeaf(spell.name, spell);
     this.treeLastBuilt = Date.now();
-
   }
 
   /**
@@ -226,10 +224,8 @@ export class SearchEngine {
    * @returns {void}
    */
   setupSearchInterface() {
-
     const searchInput = this.element.querySelector('input[name="filter-name"]');
     if (!searchInput) {
-
       return;
     }
     const hasAdvancedClass = searchInput.classList.contains('advanced-search-input');
@@ -246,7 +242,6 @@ export class SearchEngine {
     this.searchInputElement = searchInput;
     this.createClearButton();
     this.createDropdown();
-
   }
 
   /**
@@ -294,7 +289,6 @@ export class SearchEngine {
     if (this.clearButtonElement) this.clearButtonElement.addEventListener('click', this.clearSearch.bind(this));
     this.boundHandleDocumentClick = this.handleDocumentClick.bind(this);
     document.addEventListener('click', this.boundHandleDocumentClick);
-
   }
 
   /**
@@ -313,20 +307,16 @@ export class SearchEngine {
         try {
           if (!this.app._state._initialized) await this.app._state.initialize();
           await new Promise((resolve) => setTimeout(resolve, 50));
-        } catch (error) {
-
-        }
+        } catch (error) {}
         this.updateDropdownContent(query);
-        if (this.isAdvancedQueryComplete(query))
+        if (this.isAdvancedQueryComplete(query)) log(3, 'Advanced query appears complete, but waiting for Enter key');
       }, 150);
     } else {
       this.searchTimeout = setTimeout(async () => {
         try {
           if (!this.app._state._initialized) await this.app._state.initialize();
           await new Promise((resolve) => setTimeout(resolve, 50));
-        } catch (error) {
-
-        }
+        } catch (error) {}
         this.updateDropdownContent(query);
         this.performSearch(query);
       }, 800);
@@ -346,7 +336,6 @@ export class SearchEngine {
       const parsed = this.parseAndCacheQuery(queryWithoutTrigger);
       return parsed !== null;
     } catch (error) {
-
       return false;
     }
   }
@@ -424,7 +413,6 @@ export class SearchEngine {
    */
   handleDocumentClick(event) {
     if (event.target.closest('.clear-recent-search')) {
-
       event.preventDefault();
       event.stopPropagation();
       const suggestionElement = event.target.closest('.search-suggestion');
@@ -459,13 +447,10 @@ export class SearchEngine {
     this.searchInputElement.value = query;
     this.searchInputElement.dispatchEvent(new Event('input', { bubbles: true }));
     if (suggestionElement.classList.contains('submit-query')) {
-
       this.performSearch(query);
       this.addToRecentSearches(query);
       this.hideDropdown();
-
     } else {
-
       this.lastDropdownQuery = null;
       if (this.searchTimeout) {
         clearTimeout(this.searchTimeout);
@@ -473,7 +458,6 @@ export class SearchEngine {
       }
       this.updateDropdownContent(query);
       if (!this.isDropdownVisible) this.showDropdown();
-
     }
     setTimeout(() => {
       this.isProcessingSuggestion = false;
@@ -502,7 +486,6 @@ export class SearchEngine {
     activeInput.setAttribute('aria-expanded', 'true');
     this.isDropdownVisible = true;
     this.selectedSuggestionIndex = -1;
-
   }
 
   /**
@@ -517,7 +500,6 @@ export class SearchEngine {
     this.searchInputElement.setAttribute('aria-expanded', 'false');
     this.isDropdownVisible = false;
     this.selectedSuggestionIndex = -1;
-
   }
 
   /**
@@ -534,7 +516,6 @@ export class SearchEngine {
     if (this.isAdvancedQuery) content += this._generateAdvancedQueryContent(query);
     else content += this._generateStandardQueryContent(query);
     dropdown.innerHTML = content;
-
   }
 
   /**
@@ -762,7 +743,6 @@ export class SearchEngine {
     this.isProcessingSearch = true;
     try {
       if (query && query.startsWith(this.searchPrefix)) {
-
         const parsedQuery = this.parseAndCacheQuery(query.substring(1));
         if (parsedQuery) {
           this.isAdvancedQuery = true;
@@ -782,7 +762,6 @@ export class SearchEngine {
       this.app.filterHelper.applyFilters();
       this.isProcessingSearch = false;
     } catch (error) {
-
       this.isProcessingSearch = false;
     }
   }
@@ -815,7 +794,6 @@ export class SearchEngine {
       searchInput.dispatchEvent(new Event('input', { bubbles: true }));
       this.updateClearButtonVisibility();
     }
-
   }
 
   /**
@@ -884,7 +862,6 @@ export class SearchEngine {
       filterElement.value = value;
       filterElement.dispatchEvent(new Event('input', { bubbles: true }));
     }
-
   }
 
   /**
@@ -981,7 +958,6 @@ export class SearchEngine {
       const recent = this.actor.getFlag(MODULE.ID, FLAGS.RECENT_SEARCHES) || [];
       return Array.isArray(recent) ? recent : [];
     } catch (error) {
-
       return [];
     }
   }
@@ -1001,10 +977,7 @@ export class SearchEngine {
       recentSearches.unshift(trimmedQuery);
       const limitedSearches = recentSearches.slice(0, 8);
       this.actor.setFlag(MODULE.ID, FLAGS.RECENT_SEARCHES, limitedSearches);
-
-    } catch (error) {
-
-    }
+    } catch (error) {}
   }
 
   /**
@@ -1016,7 +989,6 @@ export class SearchEngine {
     const recentSearches = this.getRecentSearches();
     const updatedSearches = recentSearches.filter((search) => search !== query);
     this.actor.setFlag(MODULE.ID, FLAGS.RECENT_SEARCHES, updatedSearches);
-
   }
 
   /**
@@ -1026,7 +998,6 @@ export class SearchEngine {
   invalidateSpellNameTree() {
     this.spellNameTree = null;
     this.treeLastBuilt = null;
-
   }
 
   /**
@@ -1034,7 +1005,6 @@ export class SearchEngine {
    * @returns {void}
    */
   cleanup() {
-
     if (this.searchTimeout) {
       clearTimeout(this.searchTimeout);
       this.searchTimeout = null;
@@ -1051,6 +1021,5 @@ export class SearchEngine {
     this.queryCache.clear();
     this.invalidateSpellNameTree();
     this.isInitialized = false;
-
   }
 }

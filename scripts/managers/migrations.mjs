@@ -58,12 +58,10 @@ export class Migrations {
       let totalUpdated = 0;
       for (const migration of MIGRATIONS) {
         try {
-
           const result = await migration.migrate();
           results[migration.key] = result;
           totalUpdated += result.updated || 0;
         } catch (error) {
-
           results[migration.key] = { processed: 0, errors: [error.message] };
         }
       }
@@ -73,10 +71,8 @@ export class Migrations {
       }).join(', ');
 
       if (totalUpdated > 0) await this.logMigrationResults(results);
-      else
-    } catch (error) {
-
-    }
+      else log(3, 'No migrations needed');
+    } catch (error) {}
   }
 
   /**
@@ -88,7 +84,6 @@ export class Migrations {
   static async logMigrationResults(results) {
     const totalUpdated = Object.values(results).reduce((sum, r) => sum + (r.updated || 0), 0);
     if (totalUpdated === 0) {
-
       return;
     }
     console.group('Spell Book Migration Results');
@@ -96,8 +91,7 @@ export class Migrations {
       const result = results[migration.key];
       if (result && result.updated > 0) {
         console.group(migration.name);
-        console.
-        console.groupEnd();
+        console.console.groupEnd();
       }
     }
     console.groupEnd();
@@ -129,8 +123,6 @@ export class Migrations {
    * @static
    */
   static async forceMigration() {
-
     await this.runAllMigrations();
-
   }
 }

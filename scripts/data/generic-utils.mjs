@@ -5,14 +5,6 @@
  * and processing used throughout the Spell Book module. This module contains
  * reusable functions that don't belong to specific functional areas.
  *
- * Key features:
- * - Data validation and sanitization
- * - Object manipulation utilities
- * - String processing and formatting
- * - Array and collection operations
- * - Configuration data helpers
- * - General-purpose data transformations
- *
  * @module DataUtils/GenericUtils
  * @author Tyler
  */
@@ -64,9 +56,11 @@ import { log } from '../logger.mjs';
  * Get spellcasting configuration for a class, checking both main class and subclass.
  * @param {Actor5e} actor - The actor to check for spellcasting configuration
  * @param {string} classIdentifier - The class identifier to look up
+ * @todo Does the return on mainClassSpellcasting mean subclassSpellcasting will never return?
  * @returns {SpellcastingConfiguration|null} Spellcasting configuration or null if none found
  */
 export function getSpellcastingConfigForClass(actor, classIdentifier) {
+  log(3, 'Getting spellcasting config for class.', { actor, classIdentifier });
   const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
   if (!spellcastingData) return null;
   const mainClassSpellcasting = spellcastingData.spellcasting;
@@ -83,6 +77,7 @@ export function getSpellcastingConfigForClass(actor, classIdentifier) {
  * @returns {Object<string, ScaleValueEntry>|null} Merged scale values or null if none found
  */
 export function getScaleValuesForClass(actor, classIdentifier) {
+  log(3, 'Getting scale values for class', { actor, classIdentifier });
   const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
   if (!spellcastingData) return null;
 
@@ -102,6 +97,7 @@ export function getScaleValuesForClass(actor, classIdentifier) {
  * @returns {Item5e|null} The item providing spellcasting or null if none found
  */
 export function getSpellcastingSourceItem(actor, classIdentifier) {
+  log(3, 'Getting spellcasting source items.', { actor, classIdentifier });
   const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
   if (!spellcastingData) return null;
   const mainClass = actor.items.get(spellcastingData.id);
@@ -118,29 +114,25 @@ export function getSpellcastingSourceItem(actor, classIdentifier) {
  * Get effective class levels for spellcasting progression.
  * @param {Actor5e} actor - The actor to check for class levels
  * @param {string} classIdentifier - The class identifier to look up
- * @returns {number} Class levels for spellcasting calculations (0 if not found)
+ * @returns {number} Class levels for spellcasting calculations
  */
 export function getSpellcastingLevelsForClass(actor, classIdentifier) {
-  const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
-  if (!spellcastingData) return 0;
-  const mainClass = actor.items.get(spellcastingData.id);
+  log(3, 'Getting spellcasting levels for class', { actor, classIdentifier });
+  const mainClass = actor.spellcastingClasses?.[classIdentifier];
   if (!mainClass) return 0;
-  return mainClass.system?.levels || 0;
+  return mainClass.system?.levels;
 }
 
 /**
  * Check if an actor is considered a wizard.
  * @param {Actor5e} actor - The actor to check for wizard status
+ * @todo We need to find a way to combine: isWizard, findWizardClass, getWizardEnabledClasses, isClassWizardEnabled
  * @returns {boolean} True if actor has a wizard class or force wizard mode is enabled
  */
 export function isWizard(actor) {
+  log(3, 'Checking is wizard!', { actor });
   const localizedWizardName = game.i18n.localize('SPELLBOOK.Classes.Wizard').toLowerCase();
-  if (actor.spellcastingClasses) {
-    for (const classData of Object.values(actor.spellcastingClasses)) {
-      const classItem = actor.items.get(classData.id);
-      if (classItem && classItem.name.toLowerCase() === localizedWizardName) return true;
-    }
-  }
+  if (actor.spellcastingClasses) for (const classData of Object.values(actor.spellcastingClasses)) if (classData.name.toLowerCase() === localizedWizardName) return true;
   const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
   const hasForceWizardMode = Object.values(classRules).some((rules) => rules.forceWizardMode === true);
   return hasForceWizardMode;
@@ -152,31 +144,16 @@ export function isWizard(actor) {
  * @returns {Item5e|null} The wizard class item or null if not found
  */
 export function findWizardClass(actor) {
+  log(3, 'Finding wizard class.', { actor });
+  const localizedWizardName = game.i18n.localize('SPELLBOOK.Classes.Wizard').toLowerCase();
   if (!isWizard(actor)) return null;
   if (actor.spellcastingClasses) {
     const spellcastingClasses = Object.values(actor.spellcastingClasses);
-    if (spellcastingClasses.length === 1) {
-      const classData = spellcastingClasses[0];
-      return actor.items.get(classData.id);
-    }
-    if (spellcastingClasses.length >= 2) {
-      const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
-      for (const classData of spellcastingClasses) {
-        const classItem = actor.items.get(classData.id);
-        if (!classItem) continue;
-        const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
-        if (classRules[identifier]?.forceWizardMode === true) return classItem;
-      }
-      for (const classData of spellcastingClasses) {
-        const classItem = actor.items.get(classData.id);
-        if (classItem?.system.identifier?.toLowerCase() === 'wizard') return classItem;
-      }
-      const localizedWizardName = game.i18n.localize('SPELLBOOK.Classes.Wizard').toLowerCase();
-      for (const classData of spellcastingClasses) {
-        const classItem = actor.items.get(classData.id);
-        if (classItem?.name.toLowerCase() === localizedWizardName) return classItem;
-      }
-    }
+    if (spellcastingClasses.length === 1) return spellcastingClasses[0];
+    const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+    for (const classData of spellcastingClasses) if (classRules[classData.system.identifier]?.forceWizardMode === true) return classData;
+    for (const classData of spellcastingClasses) if (classData?.system.identifier?.toLowerCase() === 'wizard') return classData;
+    for (const classData of spellcastingClasses) if (classData?.name.toLowerCase() === localizedWizardName) return classData;
   }
   return null;
 }
@@ -187,6 +164,7 @@ export function findWizardClass(actor) {
  * @returns {Array<WizardClassData>} Array of wizard-enabled class data objects
  */
 export function getWizardEnabledClasses(actor) {
+  log(3, 'Collecting all wizard classes for actor.', { actor });
   /** @type {Array<WizardClassData>} */
   const wizardClasses = [];
   const localizedWizardName = game.i18n.localize('SPELLBOOK.Classes.Wizard').toLowerCase();
@@ -211,12 +189,11 @@ export function getWizardEnabledClasses(actor) {
  * @returns {boolean} True if the class is wizard-enabled
  */
 export function isClassWizardEnabled(actor, classIdentifier) {
+  log(3, 'Checking if class wizard enabled.', { actor, classIdentifier });
   if (actor.spellcastingClasses?.[classIdentifier]) {
     const classData = actor.spellcastingClasses[classIdentifier];
-    const classItem = actor.items.get(classData.id);
-    if (!classItem) return false;
     const localizedWizardName = game.i18n.localize('SPELLBOOK.Classes.Wizard').toLowerCase();
-    const isNaturalWizard = classItem.name.toLowerCase() === localizedWizardName;
+    const isNaturalWizard = classData.name.toLowerCase() === localizedWizardName;
     if (isNaturalWizard) return true;
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     return classRules[classIdentifier]?.forceWizardMode === true;
@@ -245,6 +222,7 @@ export function getConfigLabel(configObject, key) {
  * @returns {string} The user ID to use for spell data operations
  */
 export function getTargetUserId(actor) {
+  log(3, 'Getting target user ID.', { actor });
   let targetUserId = game.user.id;
   if (game.user.isActiveGM && actor) {
     const characterOwner = game.users.find((user) => user.character?.id === actor.id);
@@ -253,7 +231,6 @@ export function getTargetUserId(actor) {
       log(3, `Using character owner: ${characterOwner.name} (${characterOwner.id})`);
       return targetUserId;
     }
-
     const ownershipOwner = game.users.find((user) => actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
     if (ownershipOwner) {
       targetUserId = ownershipOwner.id;
@@ -266,9 +243,11 @@ export function getTargetUserId(actor) {
 
 /**
  * Unlock module compendium packs and create necessary folder structure.
+ * @todo We can just do game.packs.get(MODULE.ETC) here.
  * @returns {Promise<void>}
  */
 export async function unlockModuleCompendium() {
+  log(3, 'Unlocking module compendiums.');
   const spellsPack = game.packs.find((p) => p.collection === MODULE.PACK.SPELLS);
   if (spellsPack && spellsPack.locked) await spellsPack.configure({ locked: false });
   const macrosPack = game.packs.find((p) => p.collection === MODULE.PACK.MACROS);
@@ -285,31 +264,23 @@ export async function unlockModuleCompendium() {
  * @returns {Promise<void>}
  */
 export async function createActorSpellbooksFolder(pack) {
-  if (!pack) return;
+  log(3, 'Validating folder structure exists.');
   const folder = pack.folders.find((f) => f.name === game.i18n.localize('SPELLBOOK.Folders.ActorSpellbooks'));
-  if (!folder) {
-    await Folder.create({ name: game.i18n.localize('SPELLBOOK.Folders.ActorSpellbooks'), type: 'JournalEntry' }, { pack: pack.collection });
-  }
+  if (!folder) await Folder.create({ name: game.i18n.localize('SPELLBOOK.Folders.ActorSpellbooks'), type: 'JournalEntry' }, { pack: pack.collection });
 }
 
 /**
  * Preload all Handlebars templates used by the module.
+ * Recursively walks the TEMPLATES object to collect all .hbs paths and load them.
+ * @param obj
+ * @param paths
  * @returns {Promise<void>} Promise that resolves when all templates are loaded
  */
-export async function preloadTemplates() {
-  /**
-   * Recursively flatten a nested template object into an array of template paths.
-   * @param {Object} obj - The template object to flatten
-   * @param {Array<string>} [result=[]] - The accumulator array for template paths
-   * @returns {Array<string>} Array of flattened template paths
-   */
-  function flattenTemplateObject(obj, result = []) {
-    for (const key in obj) {
-      if (typeof obj[key] === 'string') result.push(obj[key]);
-      else if (typeof obj[key] === 'object') flattenTemplateObject(obj[key], result);
-    }
-    return result;
+export async function preloadTemplates(obj = TEMPLATES, paths = []) {
+  for (const key in obj) {
+    const value = obj[key];
+    if (typeof value === 'string') paths.push(value);
+    else if (typeof value === 'object') await preloadTemplates(value, paths);
   }
-  const templatePaths = flattenTemplateObject(TEMPLATES);
-  return foundry?.applications?.handlebars?.loadTemplates(templatePaths);
+  if (obj === TEMPLATES) return foundry?.applications?.handlebars?.loadTemplates(paths);
 }

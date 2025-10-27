@@ -29,10 +29,7 @@ import { log } from '../logger.mjs';
 export async function registerCustomSpellLists() {
   const result = { total: 0, registered: 0, skipped: 0, failed: 0, errors: [] };
   const enabledUuids = game.settings.get(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS) || [];
-  if (enabledUuids.length === 0) {
-    return result;
-  }
-
+  if (enabledUuids.length === 0) return result;
   const validUuids = [];
   for (const uuid of enabledUuids) {
     result.total++;
@@ -49,7 +46,7 @@ export async function registerCustomSpellLists() {
         continue;
       }
       await dnd5e.registry.spellLists.register(uuid);
-      validUuids.push(uuid); // Keep this UUID
+      validUuids.push(uuid);
       result.registered++;
       log(3, `Registered: ${page.name} (${page.system.type}:${page.system.identifier})`);
     } catch (error) {
@@ -63,7 +60,6 @@ export async function registerCustomSpellLists() {
     log(3, `Removing ${removedCount} invalid spell list(s) from settings`);
     await game.settings.set(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS, validUuids);
   }
-
   return result;
 }
 
@@ -73,8 +69,7 @@ export async function registerCustomSpellLists() {
  * @returns {boolean} True if enabled
  */
 export function isListEnabledForRegistry(uuid) {
-  const enabledLists = game.settings.get(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS);
-  return enabledLists.includes(uuid);
+  return game.settings.get(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS).includes(uuid);
 }
 
 /**
@@ -89,40 +84,10 @@ export async function toggleListForRegistry(uuid) {
     const index = enabledLists.indexOf(uuid);
     enabledLists.splice(index, 1);
     await game.settings.set(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS, enabledLists);
-
     return false;
   } else {
     enabledLists.push(uuid);
     await game.settings.set(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS, enabledLists);
-
     return true;
   }
-}
-
-/**
- * Get custom spell list by type and identifier.
- * @param {string} type - Spell list type ('class', 'subclass', etc.)
- * @param {string} identifier - Spell list identifier
- * @returns {Promise<Set<string>|null>} Set of spell UUIDs or null
- */
-export async function getCustomSpellList(type, identifier) {
-  const customPack = game.packs.get(MODULE.PACK.SPELLS);
-  if (!customPack) return null;
-  const journals = await customPack.getDocuments();
-  for (const journal of journals) {
-    for (const page of journal.pages) {
-      if (page.type !== 'spells') continue;
-      const pageType = page.system?.type;
-      const pageIdentifier = page.system?.identifier?.toLowerCase();
-      if (pageType === type && pageIdentifier === identifier) {
-        const flags = page.flags?.[MODULE.ID] || {};
-        const isCustom = flags.isCustom || flags.isNewList || flags.isDuplicate;
-        if (isCustom) {
-          log(3, `Found custom spell list: ${type}:${identifier} (${page.name})`);
-          return page.system.spells || new Set();
-        }
-      }
-    }
-  }
-  return null;
 }

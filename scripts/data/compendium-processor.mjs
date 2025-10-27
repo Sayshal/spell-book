@@ -490,7 +490,6 @@ async function fetchSpellsFromPack(pack, maxLevel) {
  * @private
  */
 function formatSpellEntry(entry, pack) {
-  log(3, 'Formatting spell entry.', { entry, pack });
   let topLevelFolder = pack.metadata.label;
   if (pack.folder) {
     if (pack.folder.depth !== 1) topLevelFolder = pack.folder.getParentFolders().at(-1).name;

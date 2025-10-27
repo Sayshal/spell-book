@@ -291,7 +291,7 @@ async function handleLongRestSwapPrompt(actor, longRestClasses) {
     ui.notifications.info(game.i18n.format('SPELLBOOK.LongRest.SwapAvailableNotification', { name: actor.name, classes: uniqueClassNames.join(', ') }));
     return;
   }
-  const dialogResult = await showLongRestSwapDia;
+  const dialogResult = await showLongRestSwapDialog(longRestClasses);
   if (dialogResult === 'confirm') {
     const spellBook = new SpellBook(actor);
     spellBook.render(true);

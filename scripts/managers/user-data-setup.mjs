@@ -91,8 +91,8 @@ export class UserDataSetup {
       const created = await manager._ensureUserTable(user.id);
       if (created) setupCount++;
     }
-    if (setupCount > 0)
-    else
+    if (setupCount > 0) log(3, `Created spell data tables for ${setupCount} users`);
+    else log(3, 'All user spell data tables already exist');
   }
 
   /**
@@ -104,10 +104,6 @@ export class UserDataSetup {
     this.folderName = game.i18n.localize('SPELLBOOK.UserData.FolderName');
     this.journalName = game.i18n.localize('SPELLBOOK.UserData.FolderName');
     const pack = game.packs.get(MODULE.PACK.USERDATA);
-    if (!pack) {
-
-      return;
-    }
     await this._ensureFolder(pack);
     await this._ensureJournal(pack);
   }
@@ -122,7 +118,6 @@ export class UserDataSetup {
     let folder = pack.folders.find((f) => f.name === this.folderName);
     if (!folder) {
       folder = await Folder.create({ name: this.folderName, type: 'JournalEntry', color: '#4a90e2', sorting: 'm' }, { pack: pack.collection });
-
     }
     return folder;
   }
@@ -147,7 +142,6 @@ export class UserDataSetup {
         },
         { pack: pack.collection }
       );
-
     }
     await this._createIntroductoryPage(journal);
     return journal;
@@ -241,6 +235,5 @@ export class UserDataSetup {
       flags: { [MODULE.ID]: { created: Date.now() } }
     });
     await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
-
   }
 }

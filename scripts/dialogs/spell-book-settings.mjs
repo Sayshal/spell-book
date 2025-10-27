@@ -964,7 +964,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
     if (Object.keys(cantripVisibilityChanges).length > 0) await SpellBookSettings._handleCantripVisibilityChanges(actor, cantripVisibilityChanges);
     if (this.parentApp) {
       await this.parentApp.close();
-      SPELLBOOK.openSpellBookForActor(actor).render({ force: true });
+      SPELLBOOK.openSpellBookForActor(actor);
     }
     return actor;
   }

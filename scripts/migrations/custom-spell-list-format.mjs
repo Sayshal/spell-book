@@ -21,7 +21,6 @@ import { log } from '../logger.mjs';
  * @property {Array<string>} errors - Array of error messages
  */
 async function migrateCustomSpellListFormat() {
-
   const results = { processed: 0, updated: 0, migratedActors: [], errors: [] };
   try {
     const actors = game.actors.contents;
@@ -35,7 +34,6 @@ async function migrateCustomSpellListFormat() {
         const migratedClasses = [];
         for (const [classId, rules] of Object.entries(currentRules)) {
           if (rules && rules.customSpellList && typeof rules.customSpellList === 'string') {
-
             updatedRules[classId] = { ...rules, customSpellList: [rules.customSpellList] };
             migratedClasses.push({ classId: classId, oldValue: rules.customSpellList, newValue: [rules.customSpellList] });
             hasUpdates = true;
@@ -50,15 +48,13 @@ async function migrateCustomSpellListFormat() {
       } catch (error) {
         const errorMessage = `Failed to migrate custom spell list format for actor ${actor.name}: ${error.message}`;
         results.errors.push(errorMessage);
-
       }
     }
-    if (results.updated > 0)
+    if (results.updated > 0) log(2, `Custom spell list format migration completed: ${results.updated}/${results.processed} actors updated`);
     else log(3, `No custom spell list format migration needed (${results.processed} actors checked)`);
   } catch (error) {
     const errorMessage = `Critical error during custom spell list format migration: ${error.message}`;
     results.errors.push(errorMessage);
-
   }
   return results;
 }

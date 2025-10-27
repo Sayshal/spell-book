@@ -6,24 +6,14 @@
  * This module supports the complete workflow from scroll detection to spell
  * acquisition with proper cost calculation and validation.
  *
- * Key features:
- * - Spell scroll inventory scanning
- * - Learnable spell extraction and validation
- * - Wizard spell learning workflow
- * - Cost calculation for spell copying
- * - Scroll consumption management
- * - Level-based learning restrictions
- *
  * @module DataUtils/ScrollProcessor
  * @author Tyler
  */
 
-import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
+import { MODULE, SETTINGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import * as UIUtils from '../ui/_module.mjs';
 import * as DataUtils from './_module.mjs';
-
-const { renderTemplate } = foundry.applications.handlebars;
 
 /**
  * @typedef {Object} ScrollSpellData
@@ -92,6 +82,7 @@ export class ScrollProcessor {
    * @returns {Promise<Array<ScrollSpellData>>} Array of scroll spell data objects
    */
   static async scanForScrollSpells(actor) {
+    log(3, `Checking ${actor.name} for spell scrolls.`);
     /** @type {Array<ScrollSpellData>} */
     const scrollSpells = [];
     if (!DataUtils.isWizard(actor)) return scrollSpells;
@@ -111,6 +102,7 @@ export class ScrollProcessor {
    * @private
    */
   static async _extractSpellFromScroll(scroll, actor) {
+    log(3, `Extracting ${scroll.name} from ${actor.name}'s inventory.`, { scroll, actor });
     const wizardClass = DataUtils.findWizardClass(actor);
     if (!wizardClass) return null;
     const maxSpellLevel = DataUtils.calculateMaxSpellLevel(wizardClass, actor);
@@ -148,42 +140,39 @@ export class ScrollProcessor {
    * @private
    */
   static async _processScrollSpell(scroll, spellUuid, maxSpellLevel) {
-    try {
-      const spell = await fromUuid(spellUuid);
-      if (!spell || spell.type !== 'spell') return null;
-      if (spell.system.level > maxSpellLevel && spell.system.level > 0) return null;
-      const filterData = UIUtils.extractSpellFilterData(spell);
+    log(3, 'Processing scroll spell.', { scroll, spellUuid, maxSpellLevel });
+    const spell = await fromUuid(spellUuid);
+    if (!spell || spell.type !== 'spell') return null;
+    if (spell.system.level > maxSpellLevel && spell.system.level > 0) return null;
+    const filterData = UIUtils.extractSpellFilterData(spell);
 
-      /** @type {ScrollSpellData} */
-      let processedResult = {
-        scrollItem: scroll,
-        spell: spell,
-        spellUuid: spellUuid,
-        name: spell.name,
-        level: spell.system.level,
-        img: spell.img,
-        system: spell.system,
-        filterData: filterData,
-        enrichedIcon: UIUtils.createSpellIconLink(spell),
-        isFromScroll: true,
-        scrollId: scroll.id,
-        scrollName: scroll.name,
-        preparation: {
-          prepared: false,
-          disabled: true,
-          preparationMode: 'scroll',
-          isOwned: false,
-          alwaysPrepared: false,
-          sourceItem: null,
-          isGranted: false,
-          localizedPreparationMode: '',
-          disabledReason: 'SPELLBOOK.Scrolls.NotPreparable'
-        }
-      };
-      return processedResult;
-    } catch (error) {
-      return null;
-    }
+    /** @type {ScrollSpellData} */
+    let processedResult = {
+      scrollItem: scroll,
+      spell: spell,
+      spellUuid: spellUuid,
+      name: spell.name,
+      level: spell.system.level,
+      img: spell.img,
+      system: spell.system,
+      filterData: filterData,
+      enrichedIcon: UIUtils.createSpellIconLink(spell),
+      isFromScroll: true,
+      scrollId: scroll.id,
+      scrollName: scroll.name,
+      preparation: {
+        prepared: false,
+        disabled: true,
+        preparationMode: 'scroll',
+        isOwned: false,
+        alwaysPrepared: false,
+        sourceItem: null,
+        isGranted: false,
+        localizedPreparationMode: '',
+        disabledReason: 'SPELLBOOK.Scrolls.NotPreparable'
+      }
+    };
+    return processedResult;
   }
 
   /**
@@ -192,8 +181,10 @@ export class ScrollProcessor {
    * @param {ScrollSpellData} scrollSpellData - The scroll spell data to learn from
    * @param {WizardBook} wizardManager - The wizard manager instance
    * @returns {Promise<boolean>} Whether the learning process was successful
+   * @todo isAlreadyInSpellbook isn't used here... But I think it should be?
    */
   static async learnSpellFromScroll(actor, scrollSpellData, wizardManager) {
+    log(3, 'Learning spell from scroll.', { actor, scrollSpellData, wizardManager });
     const { spell, scrollItem, spellUuid } = scrollSpellData;
     const isAlreadyInSpellbook = await wizardManager.isSpellInSpellbook(spellUuid);
     const { cost, isFree } = await wizardManager.getCopyingCost(spell);
@@ -203,8 +194,8 @@ export class ScrollProcessor {
     const success = await wizardManager.addSpellToSpellbook(spellUuid, MODULE.WIZARD_SPELL_SOURCE.SCROLL, { cost, timeSpent: time });
     if (success) {
       if (!isFree && cost > 0) {
-        const shouldDeductCurrency = game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST);
-        if (shouldDeductCurrency) await this._deductSpellLearningCost(actor, cost);
+        const deductGold = game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST);
+        if (deductGold) await this._deductSpellLearningCost(actor, cost);
       }
       const shouldConsume = game.settings.get(MODULE.ID, SETTINGS.CONSUME_SCROLLS_WHEN_LEARNING);
       if (shouldConsume) await actor.deleteEmbeddedDocuments('Item', [scrollItem.id]);
@@ -215,37 +206,6 @@ export class ScrollProcessor {
   }
 
   /**
-   * Show dialog for learning spell from scroll.
-   * @param {Item5e} spell - The spell to learn from the scroll
-   * @param {number} cost - Gold cost to learn the spell
-   * @param {string} time - Formatted time string required to learn the spell
-   * @param {boolean} isFree - Whether the spell learning is free
-   * @param {boolean} isAlreadyInSpellbook - Whether spell is already known
-   * @returns {Promise<boolean>} Whether the user chose to proceed with learning
-   * @private
-   */
-  static async _showLearnFromScrollDialog(spell, cost, time, isFree, isAlreadyInSpellbook) {
-    const costText = isFree ? game.i18n.localize('SPELLBOOK.Wizard.SpellCopyFree') : game.i18n.format('SPELLBOOK.Wizard.SpellCopyCost', { cost });
-    const shouldConsume = game.settings.get(MODULE.ID, SETTINGS.CONSUME_SCROLLS_WHEN_LEARNING);
-    const content = await renderTemplate(TEMPLATES.DIALOGS.LEARN_FROM_SCROLL, { spell, costText, time, isAlreadyInSpellbook, shouldConsume });
-    try {
-      const result = await foundry.applications.api.DialogV2.wait({
-        window: { icon: 'fas fa-scroll', title: game.i18n.format('SPELLBOOK.Wizard.LearnSpellTitle', { name: spell.name }) },
-        content: content,
-        buttons: [
-          { icon: 'fas fa-book', label: game.i18n.localize('SPELLBOOK.Wizard.LearnSpellButton'), action: 'confirm', className: 'dialog-button' },
-          { icon: 'fas fa-times', label: game.i18n.localize('SPELLBOOK.UI.Cancel'), action: 'cancel', className: 'dialog-button' }
-        ],
-        default: 'confirm',
-        rejectClose: false
-      });
-      return result === 'confirm';
-    } catch (error) {
-      return false;
-    }
-  }
-
-  /**
    * Deduct spell learning cost from actor's currency.
    * @param {Actor5e} actor - The actor to deduct currency from
    * @param {number} cost - Cost in base currency
@@ -253,6 +213,7 @@ export class ScrollProcessor {
    * @private
    */
   static async _deductSpellLearningCost(actor, cost) {
+    log(3, 'Deducting money for scroll learning.', { actor, cost });
     const currencies = CONFIG.DND5E.currencies;
     const actorCurrency = actor.system.currency || {};
     let baseCurrency = null;
@@ -290,17 +251,13 @@ export class ScrollProcessor {
         remainingCost -= baseValueDeducted;
       }
     }
-    try {
-      const updateData = {};
-      for (const [currencyType, deductAmount] of Object.entries(deductions)) {
-        const currentAmount = actorCurrency[currencyType] || 0;
-        const newAmount = currentAmount - deductAmount;
-        updateData[`system.currency.${currencyType}`] = newAmount;
-      }
-      await actor.update(updateData);
-      return true;
-    } catch (error) {
-      return false;
+    const updateData = {};
+    for (const [currencyType, deductAmount] of Object.entries(deductions)) {
+      const currentAmount = actorCurrency[currencyType] || 0;
+      const newAmount = currentAmount - deductAmount;
+      updateData[`system.currency.${currencyType}`] = newAmount;
     }
+    await actor.update(updateData);
+    return true;
   }
 }

@@ -21,7 +21,6 @@ import { log } from '../logger.mjs';
  * @property {Array<string>} errors - Array of error messages
  */
 async function migrateCustomSpellListNullToArray() {
-
   const results = { processed: 0, updated: 0, migratedActors: [], errors: [] };
   try {
     const actors = game.actors.contents;
@@ -35,7 +34,6 @@ async function migrateCustomSpellListNullToArray() {
         const migratedClasses = [];
         for (const [classId, rules] of Object.entries(currentRules)) {
           if (rules && rules.customSpellList === null) {
-
             updatedRules[classId] = { ...rules, customSpellList: [] };
             migratedClasses.push({ classId: classId, oldValue: null, newValue: [] });
             hasUpdates = true;
@@ -50,15 +48,13 @@ async function migrateCustomSpellListNullToArray() {
       } catch (error) {
         const errorMessage = `Failed to migrate null customSpellList for actor ${actor.name}: ${error.message}`;
         results.errors.push(errorMessage);
-
       }
     }
-    if (results.updated > 0)
+    if (results.updated > 0) log(2, `Null customSpellList migration completed: ${results.updated}/${results.processed} actors updated`);
     else log(3, `No null customSpellList migration needed (${results.processed} actors checked)`);
   } catch (error) {
     const errorMessage = `Critical error during null customSpellList migration: ${error.message}`;
     results.errors.push(errorMessage);
-
   }
   return results;
 }

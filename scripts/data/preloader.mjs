@@ -5,14 +5,6 @@
  * This module handles bulk spell loading, cache management, and provides
  * optimized access to frequently used spell data across the application.
  *
- * Key features:
- * - Bulk spell data preloading
- * - Intelligent caching strategies
- * - Player-specific spell filtering
- * - Performance optimization for large datasets
- * - Memory-efficient data storage
- * - Version-aware cache invalidation
- *
  * @module DataUtils/SpellDataPreloader
  * @author Tyler
  */
@@ -76,8 +68,10 @@ import * as DataUtils from './_module.mjs';
  * Preload spell data based on user role and settings.
  * @param {boolean} [showNotification=false] - Whether to show success notification
  * @returns {Promise<void>}
+ * @todo isGM but !setupMode, GM should still load spell/spell lists for each player in a party actor.
  */
 export async function preloadData(showNotification = false) {
+  log(3, 'Preloading data.');
   const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
   const isEmptySettings = !settings || typeof settings !== 'object' || Object.keys(settings).length === 0;
   if (isEmptySettings && game.user.isGM) ui.notifications.warn(game.i18n.localize('SPELLBOOK.Settings.NoCompendiumsConfigured'));
@@ -95,17 +89,16 @@ export async function preloadData(showNotification = false) {
  * @private
  */
 async function preloadForGM(showNotification = false) {
-  try {
-    const allSpellLists = await DataUtils.findCompendiumSpellLists(true);
-    allSpellLists.sort((a, b) => a.name.localeCompare(b.name));
-    const allSpells = await DataUtils.fetchAllCompendiumSpells();
-    const enrichedSpells = enrichSpellsWithIcons(allSpells);
-    cachePreloadedData(allSpellLists, enrichedSpells, 'gm-setup');
-    if (showNotification) {
-      const message = game.i18n.format('SPELLBOOK.Preload.GMSetupReady', { lists: allSpellLists.length, spells: enrichedSpells.length });
-      ui.notifications.success(message, { console: false });
-    }
-  } catch (error) {}
+  log(3, 'Preloading data for GM.');
+  const allSpellLists = await DataUtils.findCompendiumSpellLists(true);
+  allSpellLists.sort((a, b) => a.name.localeCompare(b.name));
+  const allSpells = await DataUtils.fetchAllCompendiumSpells();
+  const enrichedSpells = enrichSpellsWithIcons(allSpells);
+  cachePreloadedData(allSpellLists, enrichedSpells, 'gm-setup');
+  if (showNotification) {
+    const message = game.i18n.format('SPELLBOOK.Preload.GMSetupReady', { lists: allSpellLists.length, spells: enrichedSpells.length });
+    ui.notifications.success(message, { console: false });
+  }
 }
 
 /**
@@ -115,34 +108,22 @@ async function preloadForGM(showNotification = false) {
  * @private
  */
 async function preloadForPlayer(showNotification = false) {
-  try {
-    const playerActor = getCurrentPlayerActor();
-    if (!playerActor) {
-      cachePreloadedData([], [], 'no-character');
-
-      return;
-    }
-    const spellUuids = await collectPlayerSpellUuids(playerActor);
-    const spellUuidsSet = new Set(spellUuids);
-    const allSpells = await DataUtils.fetchAllCompendiumSpells();
-    const relevantSpells = allSpells.filter((spell) => spellUuidsSet.has(spell.uuid));
-    const enrichedSpells = enrichSpellsWithIcons(relevantSpells);
-    cachePreloadedData([], enrichedSpells, 'player');
-    if (showNotification) {
-      const message = game.i18n.format('SPELLBOOK.Preload.PlayerReady', { spells: enrichedSpells.length });
-      ui.notifications.success(message, { console: false });
-    }
-  } catch (error) {}
-}
-
-/**
- * Get the current player's assigned character.
- * @returns {PlayerActor|null} The player's character or null if none assigned
- * @private
- */
-function getCurrentPlayerActor() {
-  const currentPlayer = game.users.players.find((player) => player._id === game.user.id);
-  return currentPlayer?.character || null;
+  log(3, 'Preloading data for player.');
+  const playerActor = game?.user?.character;
+  if (!playerActor) {
+    log(3, 'No player actor found, preloading data with "no-char" mode.');
+    cachePreloadedData([], [], 'no-character');
+    return;
+  }
+  const spellUuids = await collectPlayerSpellUuids(playerActor);
+  const allSpells = await DataUtils.fetchAllCompendiumSpells();
+  const relevantSpells = allSpells.filter((spell) => spellUuids.has(spell.uuid));
+  const enrichedSpells = enrichSpellsWithIcons(relevantSpells);
+  cachePreloadedData([], enrichedSpells, 'player');
+  if (showNotification) {
+    const message = game.i18n.format('SPELLBOOK.Preload.PlayerReady', { spells: enrichedSpells.length });
+    ui.notifications.success(message, { console: false });
+  }
 }
 
 /**
@@ -152,6 +133,7 @@ function getCurrentPlayerActor() {
  * @private
  */
 async function collectPlayerSpellUuids(actor) {
+  log(3, 'Collecting player spells for:', { character: actor.name, actor });
   /** @type {Set<string>} */
   let spellUuids = new Set();
   const assignedListSpells = await getSpellsFromActorSpellLists(actor);
@@ -170,14 +152,13 @@ async function collectPlayerSpellUuids(actor) {
  * @private
  */
 async function getSpellsFromActorSpellLists(actor) {
+  log(3, 'Getting spells from actor spell lists for:', { character: actor.name, actor });
   /** @type {Array<string>} */
   const spellUuids = [];
   if (!actor.spellcastingClasses) return spellUuids;
   for (const [classIdentifier, classData] of Object.entries(actor.spellcastingClasses)) {
     const classItem = actor.items.get(classData.id);
-    if (!classItem) {
-      continue;
-    }
+    if (!classItem) continue;
     const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(actor, classIdentifier);
     if (!spellcastingConfig) continue;
     const className = classItem.name.toLowerCase();
@@ -188,7 +169,6 @@ async function getSpellsFromActorSpellLists(actor) {
       log(3, `Found ${spellList.size} spells for ${className} class (${classIdentifier})`);
     }
   }
-
   return spellUuids;
 }
 
@@ -196,29 +176,28 @@ async function getSpellsFromActorSpellLists(actor) {
  * Get spell UUIDs from actor's wizard spellbooks.
  * @param {PlayerActor} actor - The actor to check for wizard spellbooks
  * @returns {Promise<Array<string>>} Array of spell UUIDs from wizard spellbooks
+ * @todo Should we destroy this wizardbook after getting the object we need here?
  * @private
  */
 async function getActorSpellbookSpells(actor) {
+  log(3, 'Getting actor spellbook spells for:', { character: actor.name, actor });
   /** @type {Array<string>} */
   const spellUuids = [];
   const wizardClasses = DataUtils.getWizardEnabledClasses(actor);
   for (const { identifier } of wizardClasses) {
-    try {
-      const wizardManager = new WizardBook(actor, identifier);
-      if (wizardManager.isWizard) {
-        const spellbookJournal = await wizardManager.findSpellbookJournal();
-        if (spellbookJournal) {
-          const journalPage = spellbookJournal.pages.find((p) => p.type === 'spells');
-          if (journalPage && journalPage.system.spells) {
-            const spellsSet = journalPage.system.spells;
-            if (spellsSet instanceof Set) spellsSet.forEach((spellUuid) => spellUuids.push(spellUuid));
-            else if (Array.isArray(spellsSet)) spellUuids.push(...spellsSet);
-          }
+    const wizardManager = new WizardBook(actor, identifier);
+    if (wizardManager.isWizard) {
+      const spellbookJournal = await wizardManager.findSpellbookJournal();
+      if (spellbookJournal) {
+        const journalPage = spellbookJournal.pages.find((p) => p.type === 'spells');
+        if (journalPage && journalPage.system.spells) {
+          const spellsSet = journalPage.system.spells;
+          if (spellsSet instanceof Set) spellsSet.forEach((spellUuid) => spellUuids.push(spellUuid));
+          else if (Array.isArray(spellsSet)) spellUuids.push(...spellsSet);
         }
       }
-    } catch (error) {}
+    }
   }
-
   return spellUuids;
 }
 
@@ -226,16 +205,18 @@ async function getActorSpellbookSpells(actor) {
  * Check if preloaded data is available and valid.
  * @returns {boolean} True if valid preloaded data exists
  */
-export function hasValidPreloadedData() {
+function hasValidPreloadedData() {
   const preloadedData = globalThis.SPELLBOOK?.preloadedData;
-  if (!preloadedData) return false;
   const currentVersion = game.modules.get(MODULE.ID).version;
-  return preloadedData.version === currentVersion;
+  const validPreloaded = preloadedData?.version === currentVersion;
+  log(3, 'Is this valid preload data?', { valid: !!validPreloaded });
+  return validPreloaded;
 }
 
 /**
  * Get preloaded spell data if valid.
  * @returns {PreloadedSpellData|null} Preloaded data or null if invalid
+ * @todo Do we need this 'wrapper' for hasValidPreloadedData? Can we merge?
  */
 export function getPreloadedData() {
   return hasValidPreloadedData() ? globalThis.SPELLBOOK.preloadedData : null;
@@ -256,6 +237,7 @@ function cachePreloadedData(spellLists, enrichedSpells, mode) {
  * Invalidate spell cache when relevant compendium content changes.
  */
 export function invalidateSpellListCache() {
+  log(3, 'Invalidating spell list cache.');
   if (globalThis.SPELLBOOK?.preloadedData) {
     globalThis.SPELLBOOK.preloadedData = null;
     if (game.user.isGM) {
@@ -273,6 +255,7 @@ export function invalidateSpellListCache() {
  * @returns {boolean} True if this page affects spell lists and should invalidate cache
  */
 export function shouldInvalidateCacheForPage(page) {
+  log(3, 'Checking if invalidation required for:', { page });
   if (page.type !== 'spells') return false;
   if (page.system?.type === 'other') return false;
   const journal = page.parent;

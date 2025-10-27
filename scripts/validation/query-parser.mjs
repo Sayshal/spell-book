@@ -71,7 +71,6 @@ export class QueryParser {
 
       return parsed;
     } catch (error) {
-
       return null;
     }
   }
@@ -109,7 +108,7 @@ export class QueryParser {
     const fieldId = this.fieldDefinitions.getFieldId(fieldAlias);
     if (!fieldId) return null;
     if (!value || value === '') return null;
-    if (fieldId === 'range' && value.match(/^\d+-?$/))
+    if (fieldId === 'range' && value.match(/^\d+-?$/)) log(3, `Partial range value detected: ${value}`);
     else if (!this.fieldDefinitions.validateValue(fieldId, value)) return null;
     return { type: 'field', field: fieldId, value: this._normalizeValue(fieldId, value) };
   }

@@ -58,7 +58,6 @@ async function validateOwnershipLevels() {
     results.fixedDocuments.push(...packResults.fixedDocuments);
     log(3, `Ownership validation complete: ${results.updated} documents fixed (${results.processed} checked)`);
   } catch (error) {
-
     results.errors.push(`Ownership validation error: ${error.message}`);
   }
   return results;
@@ -111,9 +110,8 @@ async function validateUserDataOwnership() {
           }
         }
       }
-    } else
+    } else log(3, 'No user data journal found');
   } catch (error) {
-
     results.errors.push(`User data ownership error: ${error.message}`);
   }
   return results;
@@ -154,7 +152,6 @@ async function validateSpellListOwnership() {
       }
     }
   } catch (error) {
-
     results.errors.push(`Spell list ownership error: ${error.message}`);
   }
   return results;
@@ -298,7 +295,6 @@ async function validatePackOwnership() {
       }
     }
   } catch (error) {
-
     results.errors.push(`Pack ownership validation error: ${error.message}`);
   }
   return results;

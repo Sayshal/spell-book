@@ -34,7 +34,6 @@ async function migratePackSorting() {
           results.updated++;
         }
       } catch (error) {
-
         results.errors.push({
           type: 'pack',
           packId,
@@ -52,7 +51,6 @@ async function migratePackSorting() {
           results.foldersUpdated++;
           results.updated++;
         } catch (error) {
-
           results.errors.push({
             type: 'folder',
             name: customPack.folder.name,
@@ -61,10 +59,9 @@ async function migratePackSorting() {
         }
       }
     }
-    if (results.packsUpdated > 0)
-    if (results.foldersUpdated > 0)
+    if (results.packsUpdated > 0) log(3, `Updated ${results.packsUpdated} pack sort values`);
+    if (results.foldersUpdated > 0) log(3, `Updated ${results.foldersUpdated} pack folders to use manual sorting`);
   } catch (error) {
-
     results.errors.push({ type: 'generalMigration', error: error.message });
   }
   return results;

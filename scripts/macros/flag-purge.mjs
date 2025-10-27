@@ -60,14 +60,14 @@ function flagPurgeScript() {
         const itemIds = actor.items.map((item) => item.id);
         if (itemIds.length > 0) await actor.deleteEmbeddedDocuments('Item', itemIds);
         purgedCount++;
-        SPELLBOOK.
+        SPELLBOOK.log(3, `Purged flags and items for actor: ${actor.name}`);
       } catch (error) {
-        SPELLBOOK.
+        SPELLBOOK.log(1, `Error purging actor ${actor.name}:`, error);
       }
     }
     ui.notifications.info(`Successfully purged ${purgedCount} actor(s).`);
   }
-  showFlagPurgeDia
+  showFlagPurgeDialog();
 }
 export const flagPurge = {
   flagKey: 'flagPurge',
