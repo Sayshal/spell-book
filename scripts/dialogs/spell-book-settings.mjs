@@ -5,14 +5,6 @@
  * Provides settings management for individual character spellbooks
  * including display options, preparation modes, and integration preferences.
  *
- * Key features:
- * - Actor-specific spellbook configuration
- * - Display and UI preference management
- * - Spell preparation behavior settings
- * - Integration toggle controls
- * - Performance optimization options
- * - User preference persistence
- *
  * @module Dialogs/SpellBookSettings
  * @author Tyler
  */
@@ -66,6 +58,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    */
   constructor(actor, options = {}) {
     super(options);
+    log(3, 'SpellBookSettings constructor.', { actor, options });
 
     /** @type {Actor5e} The actor being configured */
     this.actor = actor;
@@ -94,6 +87,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
     context.RITUAL_CASTING_MODES = MODULE.RITUAL_CASTING_MODES;
     context.ENFORCEMENT_BEHAVIOR = MODULE.ENFORCEMENT_BEHAVIOR;
     context.actor = this.actor;
+    log(3, 'SpellBookSettings context prepared.', { context });
     return context;
   }
 
@@ -103,6 +97,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   _prepareGlobalSettingsFormData() {
+    log(3, 'Preparing global settings form data.');
     const ruleSetOverride = this.actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE);
     const enforcementBehavior = this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR);
     const globalRuleSet = game.settings.get(MODULE.ID, SETTINGS.SPELLCASTING_RULE_SET);
@@ -134,6 +129,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
       ariaLabel: game.i18n.localize('SPELLBOOK.Settings.EnforcementBehavior.Label')
     });
     enforcementSelect.id = 'enforcement-behavior';
+    log(3, 'Global settings form data prepared.');
     return {
       currentRuleSet: globalRuleSet,
       ruleSetOverride,
@@ -150,6 +146,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   async _prepareClassSettings() {
+    log(3, 'Preparing class settings.');
     const classSettings = [];
     const availableSpellLists = await this._prepareSpellListOptions();
     const currentClassRules = this.actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
@@ -204,6 +201,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
               const customList = await fromUuid(uuid);
               customSpellListNames.push(customList?.name || game.i18n.localize('SPELLBOOK.Settings.UnknownList'));
             } catch (error) {
+              log(1, 'Error displaying custom spell lists.', { customSpellListNames, error });
               customSpellListNames.push(game.i18n.localize('SPELLBOOK.Settings.UnknownList'));
             }
           }
@@ -232,6 +230,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
       }
     }
     classSettings.sort((a, b) => a.name.localeCompare(b.name));
+    log(3, 'Class settings prepared.', { classSettings });
     return classSettings;
   }
 
@@ -244,6 +243,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   _prepareClassFormElements(identifier, formRules, availableSpellLists) {
+    log(3, 'Preparing class form elements.', { identifier, formRules });
     const showCantripsCheckbox = ValidationUtils.createCheckbox({
       name: `class.${identifier}.showCantrips`,
       checked: formRules.showCantrips,
@@ -313,6 +313,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
     const spellLearningTimeControls = this._createSpellLearningTimeControls(identifier, formRules.spellLearningTimeMultiplier);
     const startingSpellsControls = this._createStartingSpellsControls(identifier, formRules.startingSpells);
     const spellsPerLevelControls = this._createSpellsPerLevelControls(identifier, formRules.spellsPerLevel);
+    log(3, 'Class form elements prepared.', { identifier });
     return {
       showCantripsCheckboxHtml: ValidationUtils.elementToHtml(showCantripsCheckbox),
       forceWizardModeCheckboxHtml: ValidationUtils.elementToHtml(forceWizardCheckbox),
@@ -336,6 +337,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   _getSpellListGroupLabel(type) {
+    log(3, 'Getting spell list group label.', { type });
     switch (type) {
       case 'class':
         return 'SPELLBOOK.Settings.SpellListGroups.Class';
@@ -354,6 +356,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   _createSpellPreparationBonusControls(identifier, currentValue) {
+    log(3, 'Creating spell preparation bonus controls.', { identifier, currentValue });
     const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(this.actor, identifier);
     const baseMaxSpells = spellcastingConfig?.preparation?.max || 0;
     const minValue = -baseMaxSpells;
@@ -380,6 +383,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   _createCantripPreparationBonusControls(identifier, currentValue) {
+    log(3, 'Creating cantrip preparation bonus controls.', { identifier, currentValue });
     let baseMaxCantrips = 0;
     const spellcastingData = this.actor.spellcastingClasses?.[identifier];
     if (spellcastingData) {
@@ -423,6 +427,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   _createSpellLearningCostControls(identifier, currentValue) {
+    log(3, 'Creating spell learning cost controls.', { identifier, currentValue });
     return ValidationUtils.createCounterGroup({
       identifier: `spell-learning-cost-${identifier}`,
       decreaseAction: 'decreaseSpellLearningCost',
@@ -446,6 +451,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   _createSpellLearningTimeControls(identifier, currentValue) {
+    log(3, 'Creating spell learning time controls.', { identifier, currentValue });
     const container = document.createElement('div');
     container.className = 'counter-group';
     const input = ValidationUtils.createNumberInput({
@@ -469,6 +475,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   _createStartingSpellsControls(identifier, currentValue) {
+    log(3, 'Creating starting spells controls.', { identifier, currentValue });
     return ValidationUtils.createCounterGroup({
       identifier: `starting-spells-${identifier}`,
       decreaseAction: 'decreaseStartingSpells',
@@ -492,6 +499,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   _createSpellsPerLevelControls(identifier, currentValue) {
+    log(3, 'Creating spells per level controls.', { identifier, currentValue });
     return ValidationUtils.createCounterGroup({
       identifier: `spells-per-level-${identifier}`,
       decreaseAction: 'decreaseSpellsPerLevel',
@@ -513,6 +521,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   async _prepareSpellListOptions() {
+    log(3, 'Preparing spell list options.');
     try {
       const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
       const allSpellLists = [];
@@ -540,16 +549,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
             const isActorOwned = !!flags.actorId;
             const isCustom = !!flags.isCustom || !!flags.isNewList;
             const isMerged = !!flags.isMerged;
-            allSpellLists.push({
-              uuid: page.uuid,
-              name: page.name,
-              pack: topLevelFolderName,
-              isActorOwned,
-              isCustom,
-              isMerged,
-              flags,
-              type: page.system?.type || 'other'
-            });
+            allSpellLists.push({ uuid: page.uuid, name: page.name, pack: topLevelFolderName, isActorOwned, isCustom, isMerged, flags, type: page.system?.type || 'other' });
           }
         }
       }
@@ -565,9 +565,10 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
         return { value: list.uuid, label: label, type: list.type };
       });
       spellListOptions.sort((a, b) => a.label.localeCompare(b.label));
-
+      log(3, 'Spell list options prepared.', { count: spellListOptions.length });
       return spellListOptions;
     } catch (error) {
+      log(1, 'Error preparing spell list options.', { error });
       return [];
     }
   }
@@ -579,6 +580,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @static
    */
   static increaseSpellPrepBonus(_event, target) {
+    log(3, 'Increasing spell prep bonus.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellPreparationBonus"]`);
@@ -597,6 +599,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @static
    */
   static decreaseSpellPrepBonus(_event, target) {
+    log(3, 'Decreasing spell prep bonus.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellPreparationBonus"]`);
@@ -617,6 +620,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   _prepareSubmitButton() {
+    log(3, 'Preparing submit button.');
     const submitButton = ValidationUtils.createButton({
       type: 'submit',
       name: 'submit',
@@ -634,6 +638,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @static
    */
   static increaseCantripPrepBonus(_event, target) {
+    log(3, 'Increasing cantrip prep bonus.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.cantripPreparationBonus"]`);
@@ -652,6 +657,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @static
    */
   static decreaseCantripPrepBonus(_event, target) {
+    log(3, 'Decreasing cantrip prep bonus.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.cantripPreparationBonus"]`);
@@ -690,6 +696,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @static
    */
   static increaseSpellLearningCost(_event, target) {
+    log(3, 'Increasing spell learning cost.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellLearningCostMultiplier"]`);
@@ -707,6 +714,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @static
    */
   static decreaseSpellLearningCost(_event, target) {
+    log(3, 'Decreasing spell learning cost.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellLearningCostMultiplier"]`);
@@ -724,6 +732,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @static
    */
   static increaseStartingSpells(_event, target) {
+    log(3, 'Increasing starting spells.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.startingSpells"]`);
@@ -741,6 +750,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @static
    */
   static decreaseStartingSpells(_event, target) {
+    log(3, 'Decreasing starting spells.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.startingSpells"]`);
@@ -758,6 +768,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @static
    */
   static increaseSpellsPerLevel(_event, target) {
+    log(3, 'Increasing spells per level.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellsPerLevel"]`);
@@ -775,6 +786,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @static
    */
   static decreaseSpellsPerLevel(_event, target) {
+    log(3, 'Decreasing spells per level.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
     const input = this.element.querySelector(`input[name="class.${classIdentifier}.spellsPerLevel"]`);
@@ -793,6 +805,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   _updateClassStatsDisplay(classIdentifier, bonusType, newBonus) {
+    log(3, 'Updating class stats display.', { classIdentifier, bonusType, newBonus });
     const classSection = this.element.querySelector(`[data-class="${classIdentifier}"]`);
     const selector = bonusType === 'spell' ? '.spell-preparation-bonus' : '.cantrip-preparation-bonus';
     const bonusDisplay = classSection?.querySelector(selector);
@@ -814,6 +827,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    * @private
    */
   static async _handleCantripVisibilityChanges(actor, changes) {
+    log(3, 'Handling cantrip visibility changes.', { actor, changes });
     const spellManager = new SpellManager(actor);
     for (const [classId, changeType] of Object.entries(changes)) {
       if (changeType === 'disabled') {
@@ -831,6 +845,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
 
   /** @inheritdoc */
   static async formHandler(event, _form, formData) {
+    log(3, 'SpellBookSettings form handler triggered.', { event, formData });
     event.preventDefault();
     const actor = this.actor;
     if (!actor) throw new Error('No actor provided to form handler');
@@ -880,6 +895,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
       await this.parentApp.close();
       SPELLBOOK.openSpellBookForActor(actor);
     }
+    log(3, 'SpellBookSettings form handler completed successfully.');
     return actor;
   }
 }

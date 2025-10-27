@@ -5,14 +5,6 @@
  * Provides loadout management capabilities for quickly switching between
  * different spell preparation setups and tactical configurations.
  *
- * Key features:
- * - Spell preparation loadout management
- * - Quick-switch preparation configurations
- * - Loadout saving and restoration
- * - Tactical preparation templates
- * - Multi-class loadout support
- * - Integration with spell preparation systems
- *
  * @module Dialogs/LoadoutSelector
  * @author Tyler
  */
@@ -59,6 +51,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   constructor(actor, spellbook, classIdentifier, options = {}) {
     super(options);
+    log(3, 'Constructing LoadoutSelector dialog.', { actorId: actor?.id, classIdentifier });
 
     /** @type {SpellBook} Reference to the parent spell book application */
     this.spellbook = spellbook;
@@ -72,12 +65,14 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @override */
   get title() {
+    log(3, 'Getting loadout selector title.', { classIdentifier: this.classIdentifier });
     const className = this.spellbook._state.classSpellData[this.classIdentifier]?.className || this.classIdentifier;
     return game.i18n.format('SPELLBOOK.Loadouts.DialogTitle', { class: className });
   }
 
   /** @inheritdoc */
   async _prepareContext(options) {
+    log(3, 'Preparing context for loadout selector.', { options, classIdentifier: this.classIdentifier });
     const context = await super._prepareContext(options);
     context.classIdentifier = this.classIdentifier;
     context.className = this.spellbook._state.classSpellData[this.classIdentifier]?.className || this.classIdentifier;
@@ -89,6 +84,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
     }));
     const currentState = this.loadoutManager.captureCurrentState(this.classIdentifier);
     context.currentSpellCount = currentState.length;
+    log(3, 'Prepared loadout context.', { loadoutCount: existingLoadouts.length, currentSpellCount: context.currentSpellCount });
     const nameInput = ValidationUtils.createTextInput({
       name: 'loadout-name',
       placeholder: game.i18n.localize('SPELLBOOK.Loadouts.NamePlaceholder'),
@@ -106,6 +102,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @override */
   async _onRender(context, options) {
+    log(3, 'Rendering loadout selector dialog.', { context, options });
     await super._onRender(context, options);
     this._setupSpellPreviewHandlers();
   }
@@ -118,6 +115,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
    * @static
    */
   static async saveLoadout(_event, target) {
+    log(3, 'Saving new loadout.');
     const form = target.closest('form');
     const formData = new FormData(form);
     const name = formData.get('loadout-name')?.trim();
@@ -132,12 +130,15 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
         ui.notifications.warn(game.i18n.localize('SPELLBOOK.Loadouts.NoSpellsPrepared'));
         return;
       }
+      log(3, 'Captured spell configuration.', { name, spellCount: spellConfiguration.length });
       const success = await this.loadoutManager.saveLoadout(name, description, spellConfiguration, this.classIdentifier);
       if (success) {
         form.reset();
         await this.render({ force: true });
       }
-    } catch (error) {}
+    } catch (error) {
+      log(1, 'Error saving loadout.', { error });
+    }
   }
 
   /**
@@ -148,6 +149,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
    * @static
    */
   static async overwriteLoadout(_event, target) {
+    log(3, 'Overwriting existing loadout.', { loadoutId: target.dataset.loadoutId });
     const loadoutId = target.dataset.loadoutId;
     if (!loadoutId) return;
     try {
@@ -159,7 +161,9 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
       await this.loadoutManager.actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.${loadoutId}`]: updatedLoadout });
       this.loadoutManager._invalidateCache();
       await this.render(false);
-    } catch (error) {}
+    } catch (error) {
+      log(1, 'Error overwriting loadout.', { error });
+    }
   }
 
   /**
@@ -170,6 +174,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
    * @static
    */
   static async deleteLoadout(_event, target) {
+    log(3, 'Deleting loadout.', { loadoutId: target.dataset.loadoutId });
     const loadoutId = target.dataset.loadoutId;
     if (!loadoutId) return;
     const confirmed = await foundry.applications.api.DialogV2.confirm({
@@ -180,7 +185,9 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
       try {
         const success = await this.loadoutManager.deleteLoadout(loadoutId);
         if (success) await this.render(false);
-      } catch (error) {}
+      } catch (error) {
+        log(1, 'Error deleting loadout.', { error });
+      }
     }
   }
 
@@ -192,12 +199,15 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
    * @static
    */
   static applyLoadout(_event, target) {
+    log(3, 'Applying loadout.', { loadoutId: target.dataset.loadoutId });
     const loadoutId = target.dataset.loadoutId;
     if (!loadoutId) return;
     try {
       const success = this.loadoutManager.applyLoadout(loadoutId, this.classIdentifier);
       if (success) this.close();
-    } catch (error) {}
+    } catch (error) {
+      log(1, 'Error applying loadout.', { error });
+    }
   }
 
   /**
@@ -205,6 +215,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _setupSpellPreviewHandlers() {
+    log(3, 'Setting up spell preview handlers.');
     const previewIcons = this.element.querySelectorAll('.spell-preview-icon');
     previewIcons.forEach((icon) => {
       icon.addEventListener('mouseenter', async (event) => {
@@ -240,6 +251,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   async _showSpellPreview(event) {
+    log(3, 'Showing spell preview.', { loadoutId: event.target.dataset.loadoutId });
     const loadoutId = event.target.dataset.loadoutId;
     const loadout = this.loadoutManager.loadLoadout(loadoutId);
     if (!loadout || !loadout.spellConfiguration) return;
@@ -262,6 +274,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
           if (a.level !== b.level) return a.level - b.level;
           return a.name.localeCompare(b.name);
         });
+      log(3, 'Loaded spell preview data.', { validSpellCount: validSpells.length });
       if (validSpells.length === 0) {
         const noSpellsContent = `
           <div class="tooltip-content">
@@ -294,6 +307,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
       `;
       UIUtils.showTooltip('spell-preview-tooltip', content, null, 'spell-preview-tooltip');
     } catch (error) {
+      log(1, 'Error showing spell preview.', { error });
       const errorContent = `
         <div class="tooltip-content">
           <div class="error">${game.i18n.localize('SPELLBOOK.Loadouts.ErrorLoadingPreview')}</div>
@@ -305,6 +319,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @override */
   _onClose() {
+    log(3, 'Closing loadout selector dialog.');
     UIUtils.removeTooltip('spell-preview-tooltip');
     super._onClose();
   }

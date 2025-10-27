@@ -5,14 +5,6 @@
  * Allows users to configure which spell information is shown, how it's formatted,
  * and how spell details integrate with character sheets and other interfaces.
  *
- * Key features:
- * - Spell detail display customization
- * - Information formatting preferences
- * - Integration behavior configuration
- * - UI layout and presentation options
- * - Per-actor customization support
- * - Real-time preview capabilities
- *
  * @module Dialogs/DetailsCustomization
  * @author Tyler
  */
@@ -55,6 +47,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
 
   /** @inheritdoc */
   async _prepareContext(_options) {
+    log(3, 'Preparing context for details customization.', { options: _options });
     const context = await super._prepareContext(_options);
     context.isGM = game.user.isGM;
     context.playerSettings = this._getPlayerSettings();
@@ -78,6 +71,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
 
   /** @inheritdoc */
   _onRender(context, options) {
+    log(3, 'Rendering details customization dialog.', { context, options });
     super._onRender(context, options);
     this._setupClickableSettings();
     this._setupSelectAllListeners();
@@ -92,6 +86,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
    * @private
    */
   _prepareUIElementsWithCheckboxes(type, settings) {
+    log(3, 'Preparing UI elements with checkboxes.', { type, settingsKeys: Object.keys(settings) });
     const elements = this._getUIElementsConfig(type);
     return elements.map((element) => {
       const checkbox = ValidationUtils.createCheckbox({ name: `${type}.${element.key}`, checked: settings[element.key] || false, ariaLabel: game.i18n.localize(element.label) });
@@ -108,6 +103,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
    * @private
    */
   _prepareMetadataElementsWithCheckboxes(type, settings) {
+    log(3, 'Preparing metadata elements with checkboxes.', { type, settingsKeys: Object.keys(settings) });
     const elements = this._getMetadataElementsConfig();
     return elements.map((element) => {
       const checkbox = ValidationUtils.createCheckbox({ name: `${type}.${element.key}`, checked: settings[element.key] || false, ariaLabel: game.i18n.localize(element.label) });
@@ -124,6 +120,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
    * @private
    */
   _createSelectAllCheckbox(id, group) {
+    log(3, 'Creating select-all checkbox.', { id, group });
     const checkbox = ValidationUtils.createCheckbox({ name: id, checked: false, ariaLabel: game.i18n.localize('SPELLBOOK.Settings.DetailsCustomization.SelectAll') });
     checkbox.id = id;
     checkbox.dataset.action = 'selectAll';
@@ -137,6 +134,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
    * @private
    */
   _setupClickableSettings() {
+    log(3, 'Setting up clickable settings.');
     const clickableSettings = this.element.querySelectorAll('.clickable-setting');
     clickableSettings.forEach((setting) => {
       setting.addEventListener('click', (event) => {
@@ -144,6 +142,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
         const checkboxId = setting.dataset.checkboxId;
         const checkbox = this.element.querySelector(`#${checkboxId}`);
         if (checkbox) {
+          log(3, 'Clickable setting toggled.', { checkboxId, checked: !checkbox.checked });
           checkbox.checked = !checkbox.checked;
           checkbox.dispatchEvent(new Event('change', { bubbles: true }));
           this._updateSelectAllState(setting.dataset.group);
@@ -163,11 +162,13 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
    * @private
    */
   _setupSelectAllListeners() {
+    log(3, 'Setting up select-all listeners.');
     const selectAllCheckboxes = this.element.querySelectorAll('.select-all-checkbox');
     selectAllCheckboxes.forEach((checkbox) => {
       checkbox.addEventListener('change', (_event) => {
         const group = checkbox.dataset.group;
         const isChecked = checkbox.checked;
+        log(3, 'Select-all checkbox changed.', { group, isChecked });
         this._setGroupCheckboxes(group, isChecked);
       });
     });
@@ -176,7 +177,10 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
       checkbox.addEventListener('change', (_event) => {
         const settingItem = checkbox.closest('.setting-item');
         const group = settingItem?.dataset.group;
-        if (group) this._updateSelectAllState(group);
+        if (group) {
+          log(3, 'Individual checkbox changed.', { group, checkboxId: checkbox.id });
+          this._updateSelectAllState(group);
+        }
       });
     });
   }
@@ -188,6 +192,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
    * @private
    */
   _setGroupCheckboxes(group, checked) {
+    log(3, 'Setting group checkboxes.', { group, checked });
     const groupCheckboxes = this.element.querySelectorAll(`[data-group="${group}"].setting-item dnd5e-checkbox`);
     UIUtils.setGroupCheckboxes(groupCheckboxes, checked);
   }
@@ -198,6 +203,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
    * @private
    */
   _updateSelectAllState(group) {
+    log(3, 'Updating select-all state.', { group });
     const selectAllCheckbox = this.element.querySelector(`[data-group="${group}"].select-all-checkbox`);
     const groupCheckboxes = this.element.querySelectorAll(`[data-group="${group}"].setting-item dnd5e-checkbox`);
     UIUtils.updateSelectAllState(selectAllCheckbox, groupCheckboxes);
@@ -208,6 +214,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
    * @private
    */
   _updateSelectAllStates() {
+    log(3, 'Updating all select-all states.');
     ['player-ui', 'player-metadata', 'gm-ui', 'gm-metadata'].forEach((group) => {
       this._updateSelectAllState(group);
     });
@@ -219,6 +226,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
    * @private
    */
   _getPlayerSettings() {
+    log(3, 'Getting player settings.');
     return {
       favorites: game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES),
       compare: game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_COMPARE),
@@ -243,6 +251,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
    * @private
    */
   _getGMSettings() {
+    log(3, 'Getting GM settings.');
     return {
       compare: game.settings.get(MODULE.ID, SETTINGS.GM_UI_COMPARE),
       spellLevel: game.settings.get(MODULE.ID, SETTINGS.GM_UI_SPELL_LEVEL),
@@ -265,6 +274,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
    * @private
    */
   _getUIElementsConfig(type) {
+    log(3, 'Getting UI elements config.', { type });
     if (type === 'player') {
       return [
         {
@@ -305,6 +315,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
    * @private
    */
   _getMetadataElementsConfig() {
+    log(3, 'Getting metadata elements config.');
     return [
       { key: 'spellLevel', label: 'SPELLBOOK.Settings.DetailsCustomization.SpellLevel', description: 'SPELLBOOK.Settings.DetailsCustomization.SpellLevelDesc' },
       { key: 'components', label: 'SPELLBOOK.Settings.DetailsCustomization.Components', description: 'SPELLBOOK.Settings.DetailsCustomization.ComponentsDesc' },
@@ -327,6 +338,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
    * @static
    */
   static async useUserColor(_event, target) {
+    log(3, 'Using user color for wizard book icon.');
     const userColor = target.dataset.userColor || game.user.color;
     const colorPicker = target.closest('.wizard-book-color-controls').querySelector('color-picker[name="wizardBookIconColor"]');
     if (colorPicker) {
@@ -342,6 +354,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
    * @static
    */
   static async resetToDefault(_event, target) {
+    log(3, 'Resetting wizard book icon color to default.');
     const colorPicker = target.closest('.wizard-book-color-controls').querySelector('color-picker[name="wizardBookIconColor"]');
     if (colorPicker) {
       const savedColor = game.settings.get(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR);
@@ -351,9 +364,11 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
 
   /** @inheritdoc */
   static async formHandler(_event, _form, formData) {
+    log(3, 'Handling form submission for details customization.');
     try {
       const expandedData = foundry.utils.expandObject(formData.object);
       if (expandedData.player) {
+        log(3, 'Saving player settings.');
         await Promise.all([
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES, expandedData.player.favorites || false),
           game.settings.set(MODULE.ID, SETTINGS.PLAYER_UI_COMPARE, expandedData.player.compare || false),
@@ -372,10 +387,12 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
         ]);
       }
       if (expandedData.wizardBookIconColor !== undefined) {
+        log(3, 'Saving wizard book icon color.', { color: expandedData.wizardBookIconColor });
         const colorValue = expandedData.wizardBookIconColor || null;
         await game.settings.set(MODULE.ID, SETTINGS.WIZARD_BOOK_ICON_COLOR, colorValue);
       }
       if (expandedData.gm && game.user.isGM) {
+        log(3, 'Saving GM settings.');
         await Promise.all([
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_COMPARE, expandedData.gm.compare || false),
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_SPELL_LEVEL, expandedData.gm.spellLevel || false),
@@ -390,11 +407,14 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
           game.settings.set(MODULE.ID, SETTINGS.GM_UI_MATERIAL_COMPONENTS, expandedData.gm.materialComponents || false)
         ]);
       }
+      log(3, 'Re-rendering open Spell Book applications.');
       const openApplications = Array.from(foundry.applications.instances.values());
       const spellbookApps = openApplications.filter((app) => app.constructor.name === 'SpellBook');
       for (const app of spellbookApps) app.render(false);
       const gmSpellListApps = openApplications.filter((app) => app.constructor.name === 'SpellListManager');
       for (const app of gmSpellListApps) app.render(false);
-    } catch (error) {}
+    } catch (error) {
+      log(1, 'Error saving details customization settings.', { error });
+    }
   }
 }

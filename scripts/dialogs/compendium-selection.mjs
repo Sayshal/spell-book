@@ -57,6 +57,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   async _getAvailableCompendiums() {
+    log(3, 'Getting available compendiums.');
     const compendiums = { categories: new Map() };
     for (const pack of game.packs) {
       if (!['JournalEntry', 'Item'].includes(pack.metadata.type)) continue;
@@ -79,6 +80,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   _determineOrganizationName(pack) {
+    log(3, 'Determining organization name for pack.', { packName: pack.title || pack.metadata.label });
     const packTopLevelFolder = this._getPackTopLevelFolderName(pack);
     if (packTopLevelFolder) return this._translateSystemFolderName(packTopLevelFolder);
     return this._translateSystemFolderName(pack.title || pack.metadata.label, pack.metadata.id);
@@ -91,6 +93,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   _getPackTopLevelFolderName(pack) {
+    log(3, 'Getting pack top level folder name.', { packName: pack.title || pack.metadata.label });
     if (!pack || !pack.folder) return null;
     let topLevelFolder;
     if (pack.folder.depth !== 1) {
@@ -108,6 +111,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   _translateSystemFolderName(name, id = null) {
+    log(3, 'Translating system folder name.', { name, id });
     if (!name || typeof name !== 'string') return id || game.i18n.localize('SPELLBOOK.Settings.CompendiumSelectionUnknown');
     if (/[./_-]home[\s_-]?brew[./_-]/i.test(name)) return game.i18n.localize('SPELLBOOK.Settings.CompendiumSelectionHomebrew');
     const translations = new Map([
@@ -122,6 +126,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
 
   /** @inheritdoc */
   async _prepareContext(options) {
+    log(3, 'Preparing context for compendium selection.', { options });
     const context = await super._prepareContext(options);
     const currentSettings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
     const compendiums = await this._getAvailableCompendiums();
@@ -142,6 +147,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   _prepareCategories(categorizedPacks, enabledCompendiums) {
+    log(3, 'Preparing categories.', { categoryCount: categorizedPacks.length, enabledCount: enabledCompendiums.size });
     return categorizedPacks.map((category) => {
       const packsInCategory = this._preparePacksInCategory(category.packs, enabledCompendiums, category.name);
       const categoryStats = this._calculateCategoryStats(packsInCategory);
@@ -166,6 +172,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   _preparePacksInCategory(packs, enabledCompendiums, categoryName) {
+    log(3, 'Preparing packs in category.', { categoryName, packCount: packs.length });
     return packs.map((pack) => {
       const isModulePack = pack.packageName === MODULE.ID;
       const packData = { ...pack, enabled: enabledCompendiums.has(pack.id) || isModulePack, disabled: isModulePack, organizationName: categoryName };
@@ -181,6 +188,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   _calculateCategoryStats(packsInCategory) {
+    log(3, 'Calculating category stats.', { packCount: packsInCategory.length });
     const enabledCount = packsInCategory.filter((p) => p.enabled).length;
     const totalCount = packsInCategory.length;
     const allPacksDisabled = packsInCategory.every((pack) => pack.disabled);
@@ -194,6 +202,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   _createPackCheckbox(packData) {
+    log(3, 'Creating pack checkbox.', { packId: packData.id, enabled: packData.enabled, disabled: packData.disabled });
     const packCheckbox = ValidationUtils.createCheckbox({
       name: 'compendiumMultiSelect',
       checked: packData.enabled,
@@ -214,6 +223,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   _createCategorySelectAllCheckbox(categoryName, categoryStats) {
+    log(3, 'Creating category select-all checkbox.', { categoryName, ...categoryStats });
     const { enabledCount, totalCount, allPacksDisabled } = categoryStats;
     const categorySelectAllCheckbox = ValidationUtils.createCheckbox({
       name: `select-all-category-${categoryName}`,
@@ -233,6 +243,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   _calculateSummaryData(categories) {
+    log(3, 'Calculating summary data.', { categoryCount: categories.length });
     const totalRelevantPacks = categories.reduce((sum, cat) => sum + cat.totalCount, 0);
     const enabledRelevantPacks = categories.reduce((sum, cat) => sum + cat.enabledCount, 0);
     const allSelected = totalRelevantPacks === enabledRelevantPacks;
@@ -246,6 +257,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   _createGlobalSelectAllCheckbox(allSelected) {
+    log(3, 'Creating global select-all checkbox.', { allSelected });
     const globalSelectAllCheckbox = ValidationUtils.createCheckbox({
       name: 'select-all-global',
       checked: allSelected,
@@ -257,6 +269,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
 
   /** @inheritdoc */
   _onRender(context, options) {
+    log(3, 'Rendering compendium selection dialog.', { context, options });
     super._onRender(context, options);
     this._setupEventListeners();
   }
@@ -266,12 +279,14 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   _setupEventListeners() {
+    log(3, 'Setting up event listeners for compendium selection.');
     const form = this.element;
     const allItemCheckboxes = form.querySelectorAll('dnd5e-checkbox[name="compendiumMultiSelect"]');
     const globalSelectAll = form.querySelector('dnd5e-checkbox.select-all-global');
     const categorySelectAlls = form.querySelectorAll('dnd5e-checkbox.select-all-category');
     if (globalSelectAll) {
       globalSelectAll.addEventListener('change', (event) => {
+        log(3, 'Global select-all changed.', { checked: event.target.checked });
         const isChecked = event.target.checked;
         allItemCheckboxes.forEach((checkbox) => {
           if (!checkbox.disabled) checkbox.checked = isChecked;
@@ -286,6 +301,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
     categorySelectAlls.forEach((checkbox) => {
       if (checkbox.disabled) return;
       checkbox.addEventListener('change', (event) => {
+        log(3, 'Category select-all changed.', { organization: event.target.dataset.organization, checked: event.target.checked });
         const organizationName = event.target.dataset.organization;
         const isChecked = event.target.checked;
         const categoryCheckboxes = form.querySelectorAll(`dnd5e-checkbox[data-organization="${organizationName}"][name="compendiumMultiSelect"]`);
@@ -299,6 +315,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
     });
     allItemCheckboxes.forEach((checkbox) => {
       checkbox.addEventListener('change', (event) => {
+        log(3, 'Individual pack checkbox changed.', { organization: event.target.dataset.organization });
         const organizationName = event.target.dataset.organization;
         const categoryCheckboxes = form.querySelectorAll(`dnd5e-checkbox[data-organization="${organizationName}"][name="compendiumMultiSelect"]`);
         const selectAllCheckbox = form.querySelector(`dnd5e-checkbox.select-all-category[data-organization="${organizationName}"]`);
@@ -318,6 +335,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   _updateCategoryCount(form, organizationName) {
+    log(3, 'Updating category count.', { organizationName });
     const categoryCheckboxes = form.querySelectorAll(`dnd5e-checkbox[data-organization="${organizationName}"][name="compendiumMultiSelect"]`);
     const categoryHeader = form.querySelector(`dnd5e-checkbox.select-all-category[data-organization="${organizationName}"]`);
     if (!categoryHeader) return;
@@ -336,6 +354,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   _updateAllCategoryCounts(form) {
+    log(3, 'Updating all category counts.');
     const categorySelectAlls = form.querySelectorAll('dnd5e-checkbox.select-all-category');
     categorySelectAlls.forEach((checkbox) => {
       const organizationName = checkbox.dataset.organization;
@@ -350,6 +369,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   _updateSummaryCount(form, allCheckboxes) {
+    log(3, 'Updating summary count.');
     const enabledCountSpan = form.querySelector('.enabled-count');
     if (enabledCountSpan) {
       const checkedCount = Array.from(allCheckboxes).filter((checkbox) => checkbox.checked).length;
@@ -365,6 +385,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @private
    */
   _updateGlobalSelectAll(_form, allCheckboxes, globalSelectAll) {
+    log(3, 'Updating global select-all state.');
     if (!globalSelectAll) return;
     const allChecked = Array.from(allCheckboxes).every((checkbox) => checkbox.checked);
     globalSelectAll.checked = allChecked;
@@ -379,6 +400,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * @static
    */
   static async formHandler(_event, form, _formData) {
+    log(3, 'Handling form submission for compendium selection.');
     const enabledCompendiums = {};
     const originalSettings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
     for (const pack of game.packs) {
@@ -393,6 +415,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
       if (checkboxValue) enabledCompendiums[checkboxValue] = checkbox.checked;
     });
     const settingsChanged = JSON.stringify(originalSettings) !== JSON.stringify(enabledCompendiums);
+    log(3, 'Saving compendium selection settings.', { settingsChanged, enabledCount: Object.keys(enabledCompendiums).length });
     await game.settings.set(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS, enabledCompendiums);
     if (settingsChanged) {
       const reload = await DialogV2.confirm({

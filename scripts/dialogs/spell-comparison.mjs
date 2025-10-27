@@ -5,20 +5,13 @@
  * evaluation. Provides spell data comparison including statistics,
  * effects, and tactical analysis for informed spellcasting decisions.
  *
- * Key features:
- * - Side-by-side spell comparison interface
- * - Detailed statistics and effect analysis
- * - Visual difference highlighting
- * - Tactical comparison metrics
- * - Export and sharing capabilities
- * - Integration with spell selection workflows
- *
  * @module Dialogs/SpellComparison
  * @author Tyler
  */
 
 import { TEMPLATES } from '../constants/_module.mjs';
 import * as UIUtils from '../ui/_module.mjs';
+import { log } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -62,11 +55,12 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
     const spellUuids = Array.from(this.parentApp.comparisonSpells);
     const spells = [];
     for (const uuid of spellUuids) {
-      const spell = fromUuidSync(uuid);
+      const spell = await fromUuid(uuid);
       if (spell) spells.push(this._processSpellForComparison(spell));
     }
     context.spells = spells;
     context.comparisonData = this._buildComparisonTable(spells);
+    log(3, 'Spell Comparison Context.', { options, context });
     return context;
   }
 
@@ -93,6 +87,7 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
     const optimalWidth = Math.max(minWidth, Math.min(maxWidth, calculatedWidth));
     this.options.position.width = optimalWidth;
     if (this.element) this.element.style.width = `${optimalWidth}px`;
+    log(3, 'Calculating optimal size...');
   }
 
   /**
@@ -112,15 +107,18 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
       preferredSide: 'right'
     });
     this.setPosition(position);
+    log(3, 'Positioning relative to parent...');
   }
 
   /**
    * Process a spell document into standardized format for comparison display.
    * @param {Object} spell - The spell document to process
    * @returns {ProcessedSpell} Processed spell data for comparison display
+   * @todo range issues when using touch or self.
    * @private
    */
   _processSpellForComparison(spell) {
+    log(3, 'Processing spell for comparison:', { spell });
     return {
       uuid: spell.uuid,
       name: spell.name,
