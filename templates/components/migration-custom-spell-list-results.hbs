@@ -1,21 +1,3 @@
-{{!--
-/**
- * Custom Spell List Format Migration Results Component Template
- *
- * PURPOSE:
- * Component for displaying detailed custom spell list format migration results
- * within the main migration report. Shows actors that were updated and the
- * classes that had their spell list format migrated from string to array.
- *
- * CONTEXT REQUIREMENTS:
- * @param {Object} customSpellListResults - Custom spell list migration results
- * @param {number} customSpellListResults.processed - Number of actors processed
- * @param {number} customSpellListResults.updated - Number of actors updated
- * @param {Array<Object>} customSpellListResults.migratedActors - Array of migrated actor data
- * @param {Array<string>} customSpellListResults.errors - Array of error messages
- */
---}}
-
 {{#if customSpellListResults.updated}}
   <div class="custom-spell-list-migration-results">
     <p>

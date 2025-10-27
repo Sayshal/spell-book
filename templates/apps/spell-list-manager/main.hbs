@@ -1,39 +1,3 @@
-{{!--
-/**
- * Spell List Manager Main Layout Template
- *
- * PURPOSE:
- * Primary structural template for the spell list manager application providing
- * the overall container and state management for loading and error conditions.
- * Serves as the foundation for the three-panel spell list management interface
- * while handling application-level states and shared component integration.
- *
- * CONTEXT REQUIREMENTS:
- * @param {boolean} isLoading - Whether application is in loading state
- * @param {boolean} hasError - Whether application has encountered an error
- * @param {string} errorMessage - Error message text for display (when hasError is true)
- *
- * ACCESSIBILITY FEATURES:
- * - Application role container for screen reader application identification
- * - Loading and error states use shared accessible components
- * - Container classes provide styling context for different application states
- * - Semantic structure supports overall application layout
- *
- * CUSTOMIZATION POINTS:
- * - Container styling adapts to loading and error states through CSS classes
- * - Loading spinner size and message configurable through component parameters
- * - Error display uses shared component for consistency across application
- * - Application state management through conditional rendering
- *
- * INTEGRATION:
- * - Connects to SpellListManager application as primary container
- * - Uses shared components for loading and error state display
- * - Serves as foundation for three-panel manager interface layout
- * - Supports application-level state management and error handling
- * - Works with part-based rendering system for panel management
- */
---}}
-
 <div class="gm-spell-list-manager-container {{#if isLoading}}loading-state{{else if hasError}}error-state{{/if}}"
 	role="application">
 

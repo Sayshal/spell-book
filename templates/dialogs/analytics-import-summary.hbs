@@ -1,39 +1,3 @@
-{{!--
-/**
- * Analytics Import Summary Dialog Template
- *
- * PURPOSE:
- * Summary dialog for analytics data import operations displaying metadata about
- * the imported data including export information, user counts, and import warnings.
- * Provides users with context about the data they're importing and potential
- * risks of overwriting existing analytics information.
- *
- * CONTEXT REQUIREMENTS:
- * @param {string} exportDate - Formatted date when the data was originally exported
- * @param {string} exportedBy - Name/identifier of user who created the export
- * @param {number} userCount - Number of users included in the import data
- * @param {string} userNames - Comma-separated list of user names in the import
- *
- * ACCESSIBILITY FEATURES:
- * - Semantic HTML structure with clear content organization
- * - Strong text for important labels and warning titles
- * - Warning section with appropriate styling for user attention
- * - Clear information hierarchy for easy scanning
- *
- * CUSTOMIZATION POINTS:
- * - Import metadata displayed for user review
- * - Warning message provides clear context about data replacement
- * - User information helps identify the scope of imported data
- * - Date information provides temporal context for import decisions
- *
- * INTEGRATION:
- * - Used in analytics dashboard import workflow
- * - Connects to data import validation and confirmation systems
- * - Uses module localization keys from SPELLBOOK.Analytics namespace
- * - Supports user decision-making for data import operations
- */
---}}
-
 <!-- Import Summary Information -->
 <div class="import-summary">
   <!-- Export Date Information -->

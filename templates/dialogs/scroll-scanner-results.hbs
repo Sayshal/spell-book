@@ -1,39 +1,3 @@
-{{!--
-/**
- * Scroll Scanner Results Dialog Template
- *
- * PURPOSE:
- * Results display dialog for spell scroll detection operations showing all
- * identified spell scrolls in the current scene or inventory. Provides tabular
- * presentation of scroll names and UUIDs for identification and reference
- * purposes, with contextual information about the scanning process.
- *
- * CONTEXT REQUIREMENTS:
- * @param {Array<Object>} scrolls - Array of detected spell scroll objects
- * @param {string} scrolls[].name - Display name of the spell scroll
- * @param {string} scrolls[].uuid - Unique identifier for the scroll item
- *
- * ACCESSIBILITY FEATURES:
- * - Semantic table structure with proper thead/tbody sections
- * - Table headers with descriptive column names
- * - Clear data presentation in organized rows
- * - Introductory and concluding context paragraphs
- * - Emphasis text for important user guidance
- *
- * CUSTOMIZATION POINTS:
- * - Results header includes dynamic count of found scrolls
- * - Table displays scroll identification data
- * - Footer provides context about scan results usage
- * - Scroll data organized for easy reference and identification
- *
- * INTEGRATION:
- * - Used in scroll detection and identification workflows
- * - Connects to spell scroll scanning and detection systems
- * - Uses module localization keys from SPELLBOOK.ScrollProcessor namespace
- * - Supports spell scroll management and identification tasks
- */
---}}
-
 <div class="scroll-scanner">
   <!-- Scan Results Header with Count -->
   <p>{{{localize 'SPELLBOOK.ScrollProcessor.ResultsHeader' count=scrolls.length}}}</p>

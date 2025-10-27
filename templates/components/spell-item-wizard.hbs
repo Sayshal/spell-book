@@ -1,38 +1,3 @@
-{{!--
-/**
- * Wizard Spell Item Component Template
- *
- * PURPOSE:
- * Individual spell item component for displaying spell details with wizard-specific
- * actions in wizardbook tabs. Provides spell learning controls, spellbook status
- * indicators, and scroll-based learning functionality exclusive to wizard characters.
- *
- * ACCESSIBILITY FEATURES:
- * - Semantic list item structure for screen readers
- * - Button elements with proper aria-label attributes
- * - Tooltip data attributes for additional context
- * - Action buttons with descriptive labels and ARIA attributes
- * - Status indicators with accessible labels
- * - Accessible icon markup with aria-hidden for decorative elements
- *
- * WIZARD-SPECIFIC FEATURES:
- * - Learn from scroll button: Appears when spell is available from a scroll item
- * - Learn spell button: Standard spell learning for spells not yet in spellbook
- * - In spellbook tag: Status indicator for spells already learned
- * - Conditional display based on spell level (cantrips cannot be learned)
- * - Integration with wizard spell learning mechanics and gold cost system
- *
- *
- * INTEGRATION:
- * - Used within spell-level component via partial rendering for wizard tabs only
- * - Supports player spell book wizardbook tabs exclusively
- * - Connects to wizard spell learning system and scroll scanner
- * - Integrates with spell comparison, favorites, and notes systems
- * - Works with filter and search systems via data attributes
- * - Triggers wizard-specific dialogs for spell learning confirmation
- */
---}}
-
 <li class="{{spell.cssClasses}}" {{{spell.dataAttributes}}}>
   <div class="spell-name">
     {{{spell.enrichedIcon}}}

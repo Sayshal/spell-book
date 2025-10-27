@@ -1,34 +1,3 @@
-{{!--
-/**
- * Empty State Component Template
- *
- * PURPOSE:
- * Reusable component for displaying empty state messages when no data is available
- * or no results match current filters. Provides consistent user feedback across
- * the application for empty collections, failed searches, or uninitialized states.
- * Supports both custom messages and default fallback text.
- *
- * CONTEXT REQUIREMENTS:
- * @param {string} [message] - Optional custom message to display (falls back to default)
- *
- * ACCESSIBILITY FEATURES:
- * - Status role for screen reader announcement of state changes
- * - Semantic paragraph structure for message content
- * - Consistent styling context for empty state recognition
- *
- * CUSTOMIZATION POINTS:
- * - Message content adaptable through context parameter
- * - Default fallback message provides consistent experience
- * - Styling controlled through CSS class targeting
- *
- * INTEGRATION:
- * - Used across multiple templates for consistent empty state display
- * - Supports spell lists, search results, and data collections
- * - Integrates with filtering and search systems
- * - Provides user feedback for application state changes
- */
---}}
-
 <div class="empty-state" role="status">
 	<p>{{#if message}}{{message}}{{else}}{{localize 'SPELLBOOK.UI.NoResults'}}{{/if}}</p>
 </div>

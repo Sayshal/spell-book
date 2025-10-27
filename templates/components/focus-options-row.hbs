@@ -1,32 +1,3 @@
-{{!--
-/**
- * Focus Option Row Component Template
- *
- * PURPOSE:
- * Reusable component template for rendering focus option management rows
- * in the GM focus settings interface. Provides form controls for editing
- * focus name, description, icon selection, and deletion.
- *
- * CONTEXT REQUIREMENTS:
- * @param {number} index - Row index for form field naming
- * @param {string} [id] - Focus ID (defaults to generated focus-{index})
- * @param {string} [icon] - Icon path (defaults to mystery-man.svg)
- * @param {string} [name] - Focus name (empty for new options)
- * @param {string} [description] - Focus description (empty for new options)
- *
- * ACCESSIBILITY FEATURES:
- * - Hidden form fields for data persistence
- * - Descriptive tooltips for all interactive elements
- * - Icon alt text for screen readers
- * - Semantic button structure with proper ARIA labels
- *
- * INTEGRATION:
- * - Used by FocusSettings.addFocus() method
- * - Integrates with existing focus option management flow
- * - Uses SPELLBOOK.FocusSettings localization namespace
- */
---}}
-
 <div class="focus-option-row" data-index="{{index}}">
   <input type="hidden" name="focus-id-{{index}}" value="{{#if id}}{{id}}{{else}}focus-{{index}}{{/if}}" />
 
