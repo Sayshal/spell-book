@@ -6,17 +6,6 @@
  * tracking party spell pools, managing spellcasting focuses,
  * and generating coordination recommendations.
  *
- * Key features:
- * - Party spell pool analysis and comparison matrices
- * - Spell synergy detection and damage type distribution analysis
- * - Spellcasting focus coordination and user selection management
- * - Permission-based spell data access with graceful degradation
- * - Caching system for performance optimization with spell data
- * - Integration with D&D 5e primary party settings and group actors
- * - Recommendation system for spell preparation
- * - Multi-class spellcaster support with enhanced class name display
- * - Dual-flag focus system with group and individual actor synchronization
- *
  * The manager supports both primary party integration through D&D 5e settings
  * and manual group actor specification, providing flexible party management
  * options for different campaign styles and group compositions.
@@ -39,6 +28,7 @@ export class PartyMode {
    * @param {Actor} [viewingActor=null] - The actor who opened this view
    */
   constructor(partyActors = [], viewingActor = null) {
+    log(3, 'Creating PartyMode instance.', { actorCount: partyActors.length, viewingActor: viewingActor?.name });
     /** @type {Actor[]} Array of spellcasting actors in the party */
     this.partyActors = partyActors.filter((actor) => this.isSpellcaster(actor));
 
@@ -63,6 +53,7 @@ export class PartyMode {
    * @returns {Promise<Object>} Party spell comparison data
    */
   async getPartySpellComparison() {
+    log(3, 'Getting party spell comparison.');
     const comparisonData = { actors: [], spellsByLevel: {}, synergy: await this.getSpellSynergyAnalysis() };
     for (const actor of this.partyActors) {
       const actorData = await this.getActorSpellData(actor);
@@ -78,6 +69,7 @@ export class PartyMode {
    * @returns {Promise<ActorSpellData|null>} Actor spell data or null if no permission
    */
   async getActorSpellData(actor) {
+    log(3, 'Getting actor spell data.', { actorName: actor.name });
     if (!this.hasViewPermission(actor)) return { id: actor.id, name: actor.name, hasPermission: false, token: actor.img, spellcasters: [], totalSpellsKnown: 0, totalSpellsPrepared: 0 };
     const actorData = { id: actor.id, name: actor.name, hasPermission: true, token: actor.img, spellcasters: [], totalSpellsKnown: 0, totalSpellsPrepared: 0 };
     for (const [classId, classData] of Object.entries(actor.spellcastingClasses || {})) {
@@ -108,6 +100,7 @@ export class PartyMode {
    * @returns {Promise<ClassSpellCache|null>} Class spell data or null on error
    */
   async getClassSpells(actor, classId) {
+    log(3, 'Getting class spells.', { actorName: actor.name, classId });
     let actorCache = this._spellDataCache.get(actor);
     if (actorCache?.has(classId)) return actorCache.get(classId);
     try {
@@ -138,6 +131,7 @@ export class PartyMode {
       actorCache.set(classId, result);
       return result;
     } catch (error) {
+      log(1, 'Error getting class spells.', { actorName: actor.name, classId, error });
       return null;
     }
   }
@@ -150,12 +144,12 @@ export class PartyMode {
    * @returns {string} Enhanced class name with subclass
    */
   getEnhancedClassName(actor, classId, classData) {
-    const baseClassName = foundry.utils.getProperty(classData, 'name') || classId;
-    const classLinkName = foundry.utils.getProperty(classData, '_classLink.name');
-    if (classLinkName) return `${classLinkName} ${baseClassName}`;
+    const className = foundry.utils.getProperty(classData, 'name') || classId;
+    const subClassName = foundry.utils.getProperty(classData, '_classLink.name');
+    if (subClassName) return `${subClassName} ${className}`;
     const subclassItem = actor.items.find((item) => item.type === 'subclass' && foundry.utils.getProperty(item, 'system.classIdentifier') === classId);
-    if (subclassItem) return `${subclassItem.name} ${baseClassName}`;
-    return baseClassName;
+    if (subclassItem) return `${subclassItem.name} ${className}`;
+    return className;
   }
 
   /**
@@ -182,6 +176,7 @@ export class PartyMode {
    * @returns {void}
    */
   organizeSpellsByLevel(comparisonData) {
+    log(3, 'Organizing spells by level.');
     const spellsByLevel = {};
     for (const actorData of comparisonData.actors) {
       if (!actorData.hasPermission) continue;
@@ -211,6 +206,7 @@ export class PartyMode {
    * @returns {Promise<SynergyAnalysis>} Complete synergy analysis data including damage distribution, concentration metrics, and recommendations
    */
   async getSpellSynergyAnalysis() {
+    log(3, 'Getting spell synergy analysis.');
     const analysis = this._initializeAnalysisStructure();
     const collectors = this._initializeDataCollectors();
     for (const actor of this.partyActors) {
@@ -225,6 +221,7 @@ export class PartyMode {
   /**
    * Initialize the analysis data structure.
    * @returns {Object} Empty analysis structure with all metrics initialized to zero/empty arrays
+   * @private
    */
   _initializeAnalysisStructure() {
     return {
@@ -264,6 +261,7 @@ export class PartyMode {
   /**
    * Initialize data collection objects.
    * @returns {Object} Empty data collector structure with Sets, Maps, and counters for tracking spell data during analysis
+   * @private
    */
   _initializeDataCollectors() {
     return {
@@ -289,6 +287,7 @@ export class PartyMode {
    * @param {Object} analysis - The analysis data structure being populated
    * @param {Object} collectors - The data collection objects tracking counts and sets
    * @returns {Promise<void>}
+   * @private
    */
   async _analyzeActorSpells(actor, analysis, collectors) {
     const focus = this.getActorSpellcastingFocus(actor);
@@ -313,6 +312,7 @@ export class PartyMode {
    * @param {Object} collectors - The data collection objects tracking counts and sets
    * @param {Object} actorStats - Actor-specific statistics being accumulated
    * @returns {Promise<void>}
+   * @private
    */
   async _analyzeSpell(spell, actor, analysis, collectors, actorStats) {
     collectors.allPreparedSpells.add(spell.uuid);
@@ -326,12 +326,14 @@ export class PartyMode {
     this._updateSchoolData(spellDoc, actor.name, analysis, collectors);
     this._updateComponentData(spellData, spellDoc, actor.name, analysis, collectors);
     this._updateMiscData(spellData, spellDoc, collectors);
+    log(3, 'Analyzing spell.', { spell, actor, analysis, collectors, actorStats });
   }
 
   /**
    * Extract spell data from a spell document.
    * @param {Item} spellDoc - The spell document to extract data from
    * @returns {Object} Extracted spell properties including concentration, ritual, damage types, components, range, and casting time
+   * @private
    */
   _extractSpellData(spellDoc) {
     return {
@@ -351,6 +353,7 @@ export class PartyMode {
    * @param {Object} analysis - The analysis data structure being populated
    * @param {Object} collectors - The data collection objects tracking focus counts
    * @returns {void}
+   * @private
    */
   _trackFocus(focus, actorName, analysis, collectors) {
     collectors.focusTypes[focus] = (collectors.focusTypes[focus] || 0) + 1;
@@ -364,6 +367,7 @@ export class PartyMode {
    * @param {string} actorName - The name of the actor who has this spell
    * @param {Object} collectors - The data collection objects tracking spell occurrences
    * @returns {void}
+   * @private
    */
   _trackDuplicateSpell(spellDoc, actorName, collectors) {
     const spellName = spellDoc.name;
@@ -380,6 +384,7 @@ export class PartyMode {
    * @param {Object} collectors - The data collection objects tracking concentration counts
    * @param {Object} actorStats - Actor-specific statistics being accumulated
    * @returns {void}
+   * @private
    */
   _updateConcentrationData(spellData, spellDoc, actorName, analysis, collectors, actorStats) {
     if (spellData.isConcentration) {
@@ -399,6 +404,7 @@ export class PartyMode {
    * @param {Object} collectors - The data collection objects tracking ritual counts
    * @param {Object} actorStats - Actor-specific statistics being accumulated
    * @returns {void}
+   * @private
    */
   _updateRitualData(spellData, spellDoc, actorName, analysis, collectors, actorStats) {
     if (spellData.isRitual) {
@@ -418,6 +424,7 @@ export class PartyMode {
    * @param {Object} collectors - The data collection objects tracking damage type counts
    * @param {Object} actorStats - Actor-specific statistics being accumulated
    * @returns {void}
+   * @private
    */
   _updateDamageTypeData(spellData, spellDoc, actorName, analysis, collectors, actorStats) {
     for (const damageType of spellData.damageTypes) {
@@ -435,6 +442,7 @@ export class PartyMode {
    * @param {Object} analysis - The analysis data structure being populated
    * @param {Object} collectors - The data collection objects tracking school counts
    * @returns {void}
+   * @private
    */
   _updateSchoolData(spellDoc, actorName, analysis, collectors) {
     const school = foundry.utils.getProperty(spellDoc, 'system.school');
@@ -453,6 +461,7 @@ export class PartyMode {
    * @param {Object} analysis - The analysis data structure being populated
    * @param {Object} collectors - The data collection objects tracking component counts
    * @returns {void}
+   * @private
    */
   _updateComponentData(spellData, spellDoc, actorName, analysis, collectors) {
     const comp = foundry.utils.getProperty(spellDoc, 'system.properties');
@@ -481,6 +490,7 @@ export class PartyMode {
    * @param {Item} spellDoc - The spell document
    * @param {Object} collectors - The data collection objects tracking levels, saves, ranges, and durations
    * @returns {void}
+   * @private
    */
   _updateMiscData(spellData, spellDoc, collectors) {
     const level = foundry.utils.getProperty(spellDoc, 'system.level') || 0;
@@ -502,6 +512,7 @@ export class PartyMode {
    * @param {Object} actorStats - Actor-specific statistics collected during spell analysis
    * @param {Object} analysis - The analysis data structure being populated with actor-specific warnings
    * @returns {void}
+   * @private
    */
   _analyzeActorStats(actor, actorStats, analysis) {
     const actorPreparedCount = foundry.utils.getProperty(actor, 'totalSpellsPrepared') || 0;
@@ -526,6 +537,7 @@ export class PartyMode {
         typeCount: actorStats.damageTypes.size
       });
     }
+    log(3, 'Analyzed actor stats:', { actor, actorStats, analysis });
   }
 
   /**
@@ -533,8 +545,10 @@ export class PartyMode {
    * @param {Object} analysis - The analysis data structure to populate with final results
    * @param {Object} collectors - The data collection objects containing raw counts and sets
    * @returns {void}
+   * @private
    */
   _processCollectedData(analysis, collectors) {
+    log(3, 'Processing data from:', { analysis, collectors });
     analysis.totalSpells = collectors.allSpells.size;
     analysis.totalPreparedSpells = collectors.allPreparedSpells.size;
     analysis.concentrationSpells = collectors.concentrationCount;
@@ -551,6 +565,7 @@ export class PartyMode {
     analysis.rangeAnalysis = collectors.ranges;
     analysis.durationAnalysis = collectors.durations;
     this._createMemberLists(analysis);
+    log(3, 'Processed data:', { analysis, collectors });
   }
 
   /**
@@ -558,6 +573,7 @@ export class PartyMode {
    * @param {Object} analysis - The analysis data structure to populate with damage distribution
    * @param {Object} collectors - The data collection objects containing damage type counts
    * @returns {void}
+   * @private
    */
   _processDamageDistribution(analysis, collectors) {
     analysis.damageDistribution = Object.entries(collectors.damageTypes).map(([type, count]) => ({
@@ -574,6 +590,7 @@ export class PartyMode {
    * @param {Object} analysis - The analysis data structure to populate with focus distribution
    * @param {Object} collectors - The data collection objects containing focus type counts
    * @returns {void}
+   * @private
    */
   _processFocusDistribution(analysis, collectors) {
     analysis.focusDistribution = Object.entries(collectors.focusTypes).map(([focus, count]) => ({
@@ -588,6 +605,7 @@ export class PartyMode {
    * @param {Object} analysis - The analysis data structure to populate with school distribution
    * @param {Object} collectors - The data collection objects containing school counts
    * @returns {void}
+   * @private
    */
   _processSchoolDistribution(analysis, collectors) {
     analysis.spellSchoolDistribution = Object.entries(collectors.spellSchools).map(([school, count]) => ({
@@ -604,6 +622,7 @@ export class PartyMode {
    * @param {Object} analysis - The analysis data structure to populate with level distribution
    * @param {Object} collectors - The data collection objects containing spell level counts
    * @returns {void}
+   * @private
    */
   _processLevelDistribution(analysis, collectors) {
     analysis.spellLevelDistribution = collectors.spellLevels
@@ -621,6 +640,7 @@ export class PartyMode {
    * @param {Object} analysis - The analysis data structure to populate with saving throw distribution
    * @param {Object} collectors - The data collection objects containing saving throw counts
    * @returns {void}
+   * @private
    */
   _processSavingThrowDistribution(analysis, collectors) {
     analysis.savingThrowDistribution = Object.entries(collectors.savingThrows).map(([save, count]) => ({
@@ -635,6 +655,7 @@ export class PartyMode {
    * @param {Object} analysis - The analysis data structure to populate with duplicate spell information
    * @param {Object} collectors - The data collection objects containing spell occurrence data
    * @returns {void}
+   * @private
    */
   _processDuplicateSpells(analysis, collectors) {
     const duplicateSpells = [];
@@ -666,6 +687,7 @@ export class PartyMode {
    * @param {Object} analysis - The analysis data structure to populate with unbalanced focus warnings
    * @param {Object} collectors - The data collection objects containing focus distribution data
    * @returns {void}
+   * @private
    */
   _processUnbalancedFocus(analysis, collectors) {
     const focusEntries = Object.entries(collectors.focusTypes);
@@ -682,6 +704,7 @@ export class PartyMode {
    * Localize damage type with fallbacks for healing/temphp.
    * @param {string} damageType - The damage type identifier to localize
    * @returns {string} Localized damage type name
+   * @private
    */
   _localizeDamageType(damageType) {
     if (damageType === 'healing') return game.i18n.localize('DND5E.Healing');
@@ -694,6 +717,7 @@ export class PartyMode {
    * Create member lists for tooltip display.
    * @param {Object} analysis - The analysis data structure to populate with member lists for tooltips
    * @returns {void}
+   * @private
    */
   _createMemberLists(analysis) {
     analysis.concentrationMembers = Array.from(analysis.memberContributions.concentration.entries()).map(([name, spells]) => ({ name: name, spells: spells, count: spells.length }));
@@ -706,6 +730,7 @@ export class PartyMode {
    * @returns {string[]} Array of recommendation localization keys
    */
   generateEnhancedRecommendations(analysis) {
+    log(3, 'Generating enhanced recommendations.');
     const recommendations = [];
     if (analysis.concentrationPercentage > 70) recommendations.push('SPELLBOOK.Party.Recommendations.HighConcentration');
     if (analysis.ritualSpells < 3 && analysis.totalSpells > 20) recommendations.push('SPELLBOOK.Party.Recommendations.LowRituals');
@@ -716,6 +741,7 @@ export class PartyMode {
       recommendations.push('SPELLBOOK.Party.Recommendations.LowLevelHeavy');
     }
     if (analysis.savingThrowDistribution.length < 3) recommendations.push('SPELLBOOK.Party.Recommendations.LimitedSavingThrows');
+    log(3, 'Recommendations generated:', { recommendations });
     return recommendations;
   }
 
@@ -726,6 +752,7 @@ export class PartyMode {
    * @static
    */
   static getPartyActors(groupActor = null) {
+    log(3, 'Getting party actors.', { groupActorName: groupActor?.name });
     if (groupActor && groupActor.type === 'group') {
       const creatures = foundry.utils.getProperty(groupActor, 'system.creatures') || [];
       return creatures.filter((actor) => actor && Object.keys(foundry.utils.getProperty(actor, 'spellcastingClasses') || {}).length > 0);
@@ -738,7 +765,9 @@ export class PartyMode {
         const spellcasters = creatures.filter((actor) => actor && Object.keys(foundry.utils.getProperty(actor, 'spellcastingClasses') || {}).length > 0);
         if (spellcasters.length > 0) return spellcasters;
       }
-    } catch (error) {}
+    } catch (error) {
+      log(1, 'Error getting primary party.', { error });
+    }
     if (game.user.isGM) ui.notifications.warn('SPELLBOOK.Party.NoPrimaryPartySet', { localize: true });
     else ui.notifications.info('SPELLBOOK.Party.AskGMToSetParty', { localize: true });
     return [];
@@ -751,6 +780,7 @@ export class PartyMode {
    * @static
    */
   static getPartyUsers(groupActor) {
+    log(3, 'Getting party users.', { groupActorName: groupActor?.name });
     if (!groupActor || groupActor.type !== 'group') return [];
     const partyActors = this.getPartyActors(groupActor);
     const partyUsers = [];
@@ -768,6 +798,7 @@ export class PartyMode {
    * @static
    */
   static findGroupsForActor(actor) {
+    log(3, 'Finding groups for actor.', { actorName: actor?.name });
     if (!actor) return [];
     const groups = [];
     for (const groupActor of game.actors.filter((a) => a.type === 'group')) {
@@ -779,11 +810,12 @@ export class PartyMode {
 
   /**
    * Get the primary group for an actor.
-   * @param {Actor} actor - The actor to find primary group for
-   * @returns {Actor|null} The primary group actor or null if none found
+   * @param {Actor} actor - The actor to find the primary group for
+   * @returns {Actor|null} The primary group actor or null
    * @static
    */
   static getPrimaryGroupForActor(actor) {
+    log(3, 'Getting primary group for actor.', { actorName: actor?.name });
     if (!actor) return null;
     try {
       const primaryPartyData = game.settings.get('dnd5e', 'primaryParty');
@@ -793,10 +825,10 @@ export class PartyMode {
         if (creatures.some((creature) => creature?.id === actor.id)) return primaryPartyActor;
       }
     } catch (error) {
-      console.warn('Error accessing primary party setting:', error);
+      log(1, 'Error getting primary party data.', { error });
     }
     const groups = this.findGroupsForActor(actor);
-    return groups.length > 0 ? groups[0] : null;
+    return groups[0] || null;
   }
 
   /**
@@ -805,17 +837,19 @@ export class PartyMode {
    * @static
    */
   static getAvailableFocuses() {
-    const focusData = game.settings.get(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS);
-    const focuses = foundry.utils.getProperty(focusData, 'focuses') || [];
-    return focuses.map((focus) => foundry.utils.getProperty(focus, 'name'));
+    log(3, 'Getting available focuses.');
+    const settingData = game.settings.get(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS);
+    const focusData = Array.isArray(settingData) ? settingData[0] : settingData;
+    return foundry.utils.getProperty(focusData, 'focuses') || [];
   }
 
   /**
-   * Get available focus options with full data from world settings.
+   * Get available spellcasting focus options with full details.
    * @returns {FocusOption[]} Array of focus option objects with complete data
    * @static
    */
   static getAvailableFocusOptions() {
+    log(3, 'Getting available focus options.');
     const settingData = game.settings.get(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS);
     const focusData = Array.isArray(settingData) ? settingData[0] : settingData;
     return foundry.utils.getProperty(focusData, 'focuses') || [];
@@ -828,6 +862,7 @@ export class PartyMode {
    * @returns {FocusOption|null} The selected focus object with id, name, icon, and description, or null if no focus selected
    */
   getUserSelectedFocus(groupActor, userId) {
+    log(3, 'Getting user selected focus.', { userId });
     const userSelections = groupActor?.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
     const selectedFocusId = userSelections[userId];
     if (!selectedFocusId) return null;
@@ -845,11 +880,14 @@ export class PartyMode {
    * @returns {Promise<boolean>} Success status of the operation
    */
   async setUserSelectedFocus(groupActor, userId, focusId) {
+    log(3, 'Setting user selected focus.', { userId, focusId });
     const socketHandler = game.modules.get(MODULE.ID)?.socketHandler;
     if (!socketHandler) {
+      log(1, 'Socket handler not available for setUserSelectedFocus.');
       return false;
     }
     const result = await socketHandler.setUserSelectedFocus(groupActor, userId, focusId);
-    if (!result.success) return result.success;
+    if (!result.success) log(2, 'Failed to set user selected focus.', { userId, focusId });
+    return result.success;
   }
 }
