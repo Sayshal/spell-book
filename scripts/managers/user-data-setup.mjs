@@ -6,26 +6,6 @@
  * a persistent storage solution using Foundry's compendium system to store user
  * data that persists across game sessions and world migrations.
  *
- * Key features:
- * - Automatic journal and folder structure creation in compendium packs
- * - Per-user data table generation with appropriate permissions
- * - HTML template rendering for structured data display
- * - Multi-actor support for users with multiple characters
- * - GM-specific handling and player data segregation
- * - Introductory documentation page creation
- * - Localized content generation for internationalization support
- * - Version tracking for data migration and compatibility
- *
- * The system creates a hierarchical structure within the user data compendium:
- * - Main folder for organization
- * - Master journal entry containing all user data
- * - Individual pages for each user with structured HTML tables
- * - Introductory page with usage instructions
- *
- * Data is stored as HTML tables within journal pages, providing a human-readable
- * format that can be easily viewed and edited within Foundry's journal system
- * while maintaining programmatic access for module functionality.
- *
  * @module Managers/UserDataSetup
  * @author Tyler
  */
@@ -56,8 +36,8 @@ export class UserDataSetup {
    * @static
    */
   static async initializeUserSpellData() {
+    log(3, 'Initializing user spell data system.');
     if (!game.user.isGM) return;
-
     const manager = new UserDataSetup();
     await manager._ensureJournalSetup();
     let setupCount = 0;
@@ -76,6 +56,7 @@ export class UserDataSetup {
    * @returns {Promise<void>}
    */
   async _ensureJournalSetup() {
+    log(3, 'Ensuring journal setup.');
     this.folderName = game.i18n.localize('SPELLBOOK.UserData.FolderName');
     this.journalName = game.i18n.localize('SPELLBOOK.UserData.FolderName');
     const pack = game.packs.get(MODULE.PACK.USERDATA);
@@ -90,10 +71,9 @@ export class UserDataSetup {
    * @returns {Promise<Folder>} Promise that resolves to the existing or newly created folder
    */
   async _ensureFolder(pack) {
+    log(3, 'Ensuring folder exists.', { folderName: this.folderName });
     let folder = pack.folders.find((f) => f.name === this.folderName);
-    if (!folder) {
-      folder = await Folder.create({ name: this.folderName, type: 'JournalEntry', color: '#4a90e2', sorting: 'm' }, { pack: pack.collection });
-    }
+    if (!folder) folder = await Folder.create({ name: this.folderName, type: 'JournalEntry', color: '#4a90e2', sorting: 'm' }, { pack: pack.collection });
     return folder;
   }
 
@@ -104,6 +84,7 @@ export class UserDataSetup {
    * @returns {Promise<JournalEntry>} Promise that resolves to the existing or newly created journal entry
    */
   async _ensureJournal(pack) {
+    log(3, 'Ensuring journal exists.', { journalName: this.journalName });
     const documents = await pack.getDocuments();
     let journal = documents.find((doc) => doc.name === this.journalName && doc.flags?.[MODULE.ID]?.isUserSpellDataJournal);
     if (!journal) {
@@ -130,6 +111,7 @@ export class UserDataSetup {
    * @returns {Promise<string>} HTML content
    */
   async _generateEmptyTablesHTML(userName, userId) {
+    log(3, 'Generating empty tables HTML.', { userName, userId });
     const notesTitle = game.i18n.localize('SPELLBOOK.UserData.SpellNotes');
     const spellCol = game.i18n.localize('SPELLBOOK.UserData.SpellColumn');
     const notesCol = game.i18n.localize('SPELLBOOK.UserData.NotesColumn');
@@ -170,6 +152,7 @@ export class UserDataSetup {
    * @returns {Promise<boolean>} True if created, false if existed
    */
   async _ensureUserTable(userId) {
+    log(3, 'Ensuring user table exists.', { userId });
     const user = game.users.get(userId);
     if (!user) return false;
     if (user.isGM) return false;
@@ -188,7 +171,6 @@ export class UserDataSetup {
       flags: { [MODULE.ID]: { userId: userId, userName: user.name, created: Date.now(), lastUpdated: Date.now(), dataVersion: '2.0' } }
     });
     await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
-
     return true;
   }
 
@@ -199,6 +181,7 @@ export class UserDataSetup {
    * @returns {Promise<void>}
    */
   async _createIntroductoryPage(journal) {
+    log(3, 'Creating introductory page.', { journalId: journal.id });
     const existingIntro = journal.pages.find((page) => page.flags?.[MODULE.ID]?.isIntroPage);
     if (existingIntro) return;
     const content = await renderTemplate(TEMPLATES.COMPONENTS.USER_DATA_INTRO);

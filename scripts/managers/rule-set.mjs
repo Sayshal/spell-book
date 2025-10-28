@@ -6,20 +6,6 @@
  * applying legacy or modern spellcasting rules, managing per-class configurations,
  * and handling spell list changes with proper validation and cleanup.
  *
- * Key features:
- * - Legacy and modern rule set application with class-specific defaults
- * - Dynamic spellcasting class detection and configuration initialization
- * - Per-class rule customization with spell preparation bonuses and swap mechanics
- * - Custom spell list integration with affected spell validation
- * - Automatic cleanup of spells when changing spell lists
- * - Confirmation dialogs for rule changes affecting prepared spells
- * - Integration with actor flag system for persistent rule storage
- * - Support for multiclass characters with individual class rule management
- *
- * The manager distinguishes between legacy rules (more restrictive, closer to PHB)
- * and modern rules (more flexible, incorporating optional rules and house rules)
- * while allowing per-class customization for complex multiclass scenarios.
- *
  * @module Managers/RuleSet
  * @author Tyler
  */
@@ -42,6 +28,7 @@ export class RuleSet {
    * @static
    */
   static applyRuleSetToActor(actor, ruleSet) {
+    log(3, `Applying rule set to actor.`, { actorName: actor.name, actorId: actor.id, ruleSet });
     const spellcastingClasses = RuleSet._detectSpellcastingClasses(actor);
     const existingClassRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const classRules = {};
@@ -62,9 +49,12 @@ export class RuleSet {
    * @static
    */
   static getEffectiveRuleSet(actor) {
+    log(3, `Getting effective rule set for actor.`, { actorName: actor.name, actorId: actor.id });
     const override = actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE);
     if (override) return override;
-    return game.settings.get(MODULE.ID, SETTINGS.SPELLCASTING_RULE_SET) || MODULE.RULE_SETS.LEGACY;
+    const effectiveRuleSet = game.settings.get(MODULE.ID, SETTINGS.SPELLCASTING_RULE_SET) || MODULE.RULE_SETS.LEGACY;
+    log(3, `Effective rule set determined.`, { actorName: actor.name, effectiveRuleSet });
+    return effectiveRuleSet;
   }
 
   /**
@@ -75,6 +65,7 @@ export class RuleSet {
    * @static
    */
   static getClassRules(actor, classIdentifier) {
+    log(3, `Getting class rules.`, { actorName: actor.name, actorId: actor.id, classIdentifier });
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const existingRules = classRules[classIdentifier];
     if (existingRules) {
@@ -86,7 +77,9 @@ export class RuleSet {
       return existingRules;
     }
     const ruleSet = RuleSet.getEffectiveRuleSet(actor);
-    return RuleSet._getClassDefaults(classIdentifier, ruleSet);
+    const defaults = RuleSet._getClassDefaults(classIdentifier, ruleSet);
+    log(3, `Class rules retrieved.`, { actorName: actor.name, classIdentifier, hasExistingRules: !!existingRules, defaults });
+    return defaults;
   }
 
   /**
@@ -98,6 +91,7 @@ export class RuleSet {
    * @static
    */
   static async updateClassRules(actor, classIdentifier, newRules) {
+    log(3, `Updating class rules.`, { actorName: actor.name, actorId: actor.id, classIdentifier, newRules });
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const currentRules = classRules[classIdentifier] || {};
     if (newRules.customSpellList !== undefined) {
@@ -105,18 +99,22 @@ export class RuleSet {
       const newList = Array.isArray(newRules.customSpellList) ? newRules.customSpellList : newRules.customSpellList ? [newRules.customSpellList] : [];
       const isDifferent = JSON.stringify([...oldList].sort()) !== JSON.stringify([...newList].sort());
       if (isDifferent) {
+        log(3, `Custom spell list changed, checking for affected spells.`, { actorName: actor.name, classIdentifier });
         const affectedSpells = await RuleSet._getAffectedSpellsByListChange(actor, classIdentifier, newRules.customSpellList);
         if (affectedSpells.length > 0) {
+          log(3, `Found affected spells, requesting confirmation.`, { actorName: actor.name, classIdentifier, affectedCount: affectedSpells.length });
           const shouldProceed = await RuleSet._confirmSpellListChange(actor, classIdentifier, affectedSpells);
-          if (!shouldProceed) return false;
+          if (!shouldProceed) {
+            log(3, `User cancelled spell list change.`, { actorName: actor.name, classIdentifier });
+            return false;
+          }
           await RuleSet._unprepareAffectedSpells(actor, classIdentifier, affectedSpells);
         }
       }
     }
     classRules[classIdentifier] = { ...classRules[classIdentifier], ...newRules };
-
     actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
-
+    log(3, `Class rules updated successfully.`, { actorName: actor.name, classIdentifier });
     return true;
   }
 
@@ -127,6 +125,7 @@ export class RuleSet {
    * @static
    */
   static initializeNewClasses(actor) {
+    log(3, `Initializing new classes for actor.`, { actorName: actor.name, actorId: actor.id });
     const spellcastingClasses = RuleSet._detectSpellcastingClasses(actor);
     const existingRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const ruleSet = RuleSet.getEffectiveRuleSet(actor);
@@ -139,7 +138,8 @@ export class RuleSet {
     }
     if (hasNewClasses) {
       actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, existingRules);
-    }
+      log(3, `New classes initialized.`, { actorName: actor.name, classCount: Object.keys(spellcastingClasses).length });
+    } else log(3, `No new classes to initialize.`, { actorName: actor.name });
   }
 
   /**
@@ -150,8 +150,12 @@ export class RuleSet {
    * @static
    */
   static _detectSpellcastingClasses(actor) {
+    log(3, `Detecting spellcasting classes.`, { actorName: actor.name, actorId: actor.id });
     const classes = {};
-    if (!actor.spellcastingClasses) return classes;
+    if (!actor.spellcastingClasses) {
+      log(3, `No spellcasting classes found on actor.`, { actorName: actor.name });
+      return classes;
+    }
     for (const [identifier, classItem] of Object.entries(actor.spellcastingClasses)) {
       const spellcastingConfig = classItem.spellcasting;
       if (!spellcastingConfig) continue;
@@ -159,6 +163,7 @@ export class RuleSet {
       const spellcastingSource = subclass?.system?.spellcasting?.progression && subclass.system.spellcasting.progression !== 'none' ? subclass : classItem;
       classes[identifier] = { name: classItem.name, item: classItem, spellcasting: spellcastingConfig, spellcastingSource: spellcastingSource };
     }
+    log(3, `Detected spellcasting classes.`, { actorName: actor.name, classCount: Object.keys(classes).length, classIdentifiers: Object.keys(classes) });
     return classes;
   }
 
@@ -171,6 +176,7 @@ export class RuleSet {
    * @static
    */
   static _getClassDefaults(classIdentifier, ruleSet) {
+    log(3, `Getting class defaults.`, { classIdentifier, ruleSet });
     const defaults = {
       cantripSwapping: MODULE.SWAP_MODES.NONE,
       spellSwapping: MODULE.SWAP_MODES.NONE,
@@ -185,6 +191,7 @@ export class RuleSet {
     };
     if (ruleSet === MODULE.RULE_SETS.LEGACY) RuleSet._applyLegacyDefaults(classIdentifier, defaults);
     else if (ruleSet === MODULE.RULE_SETS.MODERN) RuleSet._applyModernDefaults(classIdentifier, defaults);
+    log(3, `Class defaults determined.`, { classIdentifier, ruleSet });
     return defaults;
   }
 
@@ -197,6 +204,7 @@ export class RuleSet {
    * @static
    */
   static _applyLegacyDefaults(classIdentifier, defaults) {
+    log(3, `Applying legacy defaults for class.`, { classIdentifier });
     defaults.cantripSwapping = MODULE.SWAP_MODES.NONE;
     defaults.ritualCasting = MODULE.RITUAL_CASTING_MODES.NONE;
     switch (classIdentifier) {
@@ -235,6 +243,7 @@ export class RuleSet {
         defaults.showCantrips = true;
         break;
     }
+    log(3, `Legacy defaults applied.`, { classIdentifier });
   }
 
   /**
@@ -246,6 +255,7 @@ export class RuleSet {
    * @static
    */
   static _applyModernDefaults(classIdentifier, defaults) {
+    log(3, `Applying modern defaults for class.`, { classIdentifier });
     defaults.cantripSwapping = MODULE.SWAP_MODES.LEVEL_UP;
     defaults.ritualCasting = MODULE.RITUAL_CASTING_MODES.NONE;
     switch (classIdentifier) {
@@ -285,6 +295,7 @@ export class RuleSet {
         defaults.showCantrips = true;
         break;
     }
+    log(3, `Modern defaults applied.`, { classIdentifier });
   }
 
   /**
@@ -297,9 +308,13 @@ export class RuleSet {
    * @static
    */
   static async _getAffectedSpellsByListChange(actor, classIdentifier, newSpellListUuid) {
+    log(3, `Getting affected spells by list change.`, { actorName: actor.name, actorId: actor.id, classIdentifier, newSpellListUuid });
     const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const classPreparedSpells = preparedByClass[classIdentifier] || [];
-    if (classPreparedSpells.length === 0) return [];
+    if (classPreparedSpells.length === 0) {
+      log(3, `No prepared spells for class, no affected spells.`, { actorName: actor.name, classIdentifier });
+      return [];
+    }
     let newSpellList = new Set();
     if (newSpellListUuid) {
       const spellListUuids = Array.isArray(newSpellListUuid) ? newSpellListUuid : [newSpellListUuid];
@@ -311,14 +326,10 @@ export class RuleSet {
           if (spellListDoc?.system?.spells?.size > 0) {
             log(3, `Loaded spell list for affected check: ${spellListDoc.name} (${spellListDoc.system.spells.size} spells)`);
             return spellListDoc.system.spells;
-          } else {
-            return null;
-          }
+          } else return null;
         });
         const spellSets = (await Promise.all(spellListPromises)).filter((set) => set !== null);
-        if (spellSets.length > 0) {
-          for (const spellSet of spellSets) for (const spell of spellSet) newSpellList.add(spell);
-        }
+        if (spellSets.length > 0) for (const spellSet of spellSets) for (const spell of spellSet) newSpellList.add(spell);
       }
     } else {
       const classItem = actor.spellcastingClasses?.[classIdentifier];
@@ -333,6 +344,7 @@ export class RuleSet {
         if (spell) affectedSpells.push({ name: spell.name, uuid: spellUuid, level: spell.system.level, classSpellKey: classSpellKey });
       }
     }
+    log(3, `Affected spells determined.`, { actorName: actor.name, classIdentifier, affectedCount: affectedSpells.length });
     return affectedSpells;
   }
 
@@ -346,6 +358,7 @@ export class RuleSet {
    * @static
    */
   static async _confirmSpellListChange(actor, classIdentifier, affectedSpells) {
+    log(3, `Showing spell list change confirmation dialog.`, { actorName: actor.name, classIdentifier, affectedCount: affectedSpells.length });
     const classItem = actor.spellcastingClasses?.[classIdentifier];
     const className = classItem?.name || classIdentifier;
     const cantripCount = affectedSpells.filter((s) => s.level === 0).length;
@@ -362,6 +375,7 @@ export class RuleSet {
       default: 'cancel',
       rejectClose: false
     });
+    log(3, `User responded to spell list change confirmation.`, { actorName: actor.name, classIdentifier, confirmed: result === 'confirm' });
     return result === 'confirm';
   }
 
@@ -375,6 +389,7 @@ export class RuleSet {
    * @static
    */
   static async _unprepareAffectedSpells(actor, classIdentifier, affectedSpells) {
+    log(3, `Unpreparing affected spells.`, { actorName: actor.name, actorId: actor.id, classIdentifier, affectedCount: affectedSpells.length });
     const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const classPreparedSpells = preparedByClass[classIdentifier] || [];
     const affectedKeys = new Set(affectedSpells.map((s) => s.classSpellKey));
@@ -400,6 +415,10 @@ export class RuleSet {
         return !isGranted && !isAlwaysPrepared && !isSpecialMode;
       })
       .map((item) => item.id);
-    if (spellIdsToRemove.length > 0) await actor.deleteEmbeddedDocuments('Item', spellIdsToRemove);
+    if (spellIdsToRemove.length > 0) {
+      log(3, `Removing ${spellIdsToRemove.length} spell items from actor.`, { actorName: actor.name, classIdentifier });
+      await actor.deleteEmbeddedDocuments('Item', spellIdsToRemove);
+    }
+    log(3, `Affected spells unprepared successfully.`, { actorName: actor.name, classIdentifier, spellsRemoved: spellIdsToRemove.length });
   }
 }

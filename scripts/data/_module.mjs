@@ -1,11 +1,5 @@
 /**
  * Data helpers module exports for the Spell Book module.
- *
- * This module provides centralized access to all data management and processing
- * utilities used throughout the Spell Book module. It includes functions for
- * actor spell management, compendium operations, spell discovery, user data
- * handling, and various utility functions for data manipulation.
- *
  * @module DataUtils
  * @author Tyler
  */

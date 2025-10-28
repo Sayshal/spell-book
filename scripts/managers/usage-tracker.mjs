@@ -6,20 +6,6 @@
  * statistics. This singleton class integrates with Foundry's hook system to
  * automatically capture spell usage events and store detailed usage statistics.
  *
- * Key features:
- * - Automatic spell usage detection through D&D 5e activity consumption hooks
- * - Context-aware tracking distinguishing between combat and exploration usage
- * - Singleton pattern ensuring unified tracking across the entire game session
- * - Integration with user data journal system for persistent storage
- * - Duplicate event prevention through active tracking mechanisms
- * - Character actor filtering to focus on player character spell usage
- * - Error handling and logging for reliability
- * - User-specific data storage associating usage with character owners
- *
- * The tracker operates transparently in the background, requiring no direct user
- * interaction while providing valuable analytics data for the spell analytics
- * dashboard and other reporting features.
- *
  * @module Managers/UsageTracker
  * @author Tyler
  */
@@ -58,6 +44,7 @@ export class UsageTracker {
      * @type {Map<string, boolean>}
      */
     this.activeTracking = new Map();
+    log(3, `UsageTracker instance created.`);
   }
 
   /**
@@ -80,6 +67,7 @@ export class UsageTracker {
     const instance = this.getInstance();
     Hooks.on('dnd5e.activityConsumption', instance._handleActivityConsumption.bind(instance));
     this._initialized = true;
+    log(3, `UsageTracker initialized and hook registered.`);
   }
 
   /**
@@ -92,21 +80,28 @@ export class UsageTracker {
    * @returns {Promise<void>}
    */
   async _handleActivityConsumption(activity, _usageConfig, _messageConfig, _updates) {
-    try {
-      if (!game.settings.get(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING)) return;
-      if (foundry.utils.getProperty(activity, 'parent.parent.type') !== 'spell') return;
-      const spell = activity.parent.parent;
-      const actor = spell.actor;
-      if (!actor || actor.type !== 'character') return;
-      const canonicalUuid = foundry.utils.getProperty(spell, '_stats.compendiumSource') || foundry.utils.getProperty(spell, 'flags.core.sourceId') || spell.uuid;
-      const trackingKey = `${canonicalUuid}-${Date.now()}`;
-      if (this.activeTracking.has(trackingKey)) return;
-      this.activeTracking.set(trackingKey, true);
-      const context = this._detectUsageContext(actor);
-      await this._recordSpellUsage(canonicalUuid, context, actor);
-      setTimeout(() => this.activeTracking.delete(trackingKey), 1000);
-      log(3, `Tracked spell usage for actor ${actor.name}: ${spell.name} (${context})`);
-    } catch (error) {}
+    log(3, `Handling activity consumption event.`, { activityType: activity?.type });
+    const trackingEnabled = game.settings.get(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING);
+    if (!trackingEnabled) return;
+    const parentType = foundry.utils.getProperty(activity, 'parent.parent.type');
+    if (parentType !== 'spell') return;
+    const spell = activity.parent.parent;
+    const actor = spell.actor;
+    if (!actor) return;
+    if (actor.type !== 'character') return;
+    log(3, `Processing spell usage for tracking.`, { actorName: actor.name, spellName: spell.name });
+    const canonicalUuid = foundry.utils.getProperty(spell, '_stats.compendiumSource') || foundry.utils.getProperty(spell, 'flags.core.sourceId') || spell.uuid;
+    const trackingKey = `${canonicalUuid}-${Date.now()}`;
+    if (this.activeTracking.has(trackingKey)) return;
+    this.activeTracking.set(trackingKey, true);
+    log(3, `Tracking event registered.`, { trackingKey, activeTrackingSize: this.activeTracking.size });
+    const context = this._detectUsageContext(actor);
+    await this._recordSpellUsage(canonicalUuid, context, actor);
+    setTimeout(() => {
+      this.activeTracking.delete(trackingKey);
+      log(3, `Tracking event cleanup completed.`, { trackingKey });
+    }, 1000);
+    log(3, `Tracked spell usage for actor ${actor.name}: ${spell.name} (${context})`);
   }
 
   /**
@@ -116,10 +111,13 @@ export class UsageTracker {
    * @returns {string} Either 'combat' or 'exploration'
    */
   _detectUsageContext(actor) {
+    log(3, `Detecting usage context.`, { actorName: actor.name, actorId: actor.id, hasCombat: !!game.combat });
     if (!game.combat) return 'exploration';
     const combatants = [...game.combat.combatants.values()];
     const isInCombat = combatants.some((combatant) => combatant.actorId === actor.id);
-    return isInCombat ? 'combat' : 'exploration';
+    const context = isInCombat ? 'combat' : 'exploration';
+    log(3, `Usage context determined.`, { actorName: actor.name, context, combatantCount: combatants.length });
+    return context;
   }
 
   /**
@@ -132,6 +130,7 @@ export class UsageTracker {
    */
   async _recordSpellUsage(spellUuid, context, actor) {
     try {
+      log(3, `Recording spell usage.`, { spellUuid, context, actorName: actor.name, actorId: actor.id });
       const owningUser = game.users.find((user) => user.character?.id === actor.id);
       const targetUserId = owningUser?.id || game.user.id;
       const userData = (await DataUtils.UserData.getUserDataForSpell(spellUuid, targetUserId, actor.id)) || {};
@@ -144,8 +143,11 @@ export class UsageTracker {
           exploration: currentStats.contextUsage.exploration + (context === 'exploration' ? 1 : 0)
         }
       };
+      log(3, `New usage stats calculated.`, { spellUuid, count: newStats.count, combatCount: newStats.contextUsage.combat, explorationCount: newStats.contextUsage.exploration });
       const updatedData = foundry.utils.mergeObject(userData, { usageStats: newStats }, { inplace: false });
       await DataUtils.UserData.setUserDataForSpell(spellUuid, updatedData, targetUserId, actor.id);
-    } catch (error) {}
+    } catch (error) {
+      log(1, `Error recording spell usage:`, error, { spellUuid, context, actorName: actor.name });
+    }
   }
 }
