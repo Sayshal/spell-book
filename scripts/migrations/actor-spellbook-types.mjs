@@ -1,9 +1,5 @@
 /**
  * Actor Spellbook Types Migration
- *
- * Migrates actor spellbooks to have type 'actor-spellbook'.
- * This migration ensures all actor spellbook pages have the correct type set.
- *
  * @module Migrations/ActorSpellbookTypes
  * @author Tyler
  */
@@ -33,12 +29,10 @@ async function migrateActorSpellbookTypes() {
           if (page.system?.type !== 'actor-spellbook') {
             try {
               await page.update({ 'system.type': 'actor-spellbook' });
-
               results.updated++;
               results.updatedPages.push({ name: page.name, id: page.id, journalName: journal.name, journalId: journal.id });
             } catch (error) {
               const errorMessage = `Failed to update ${page.name}: ${error.message}`;
-
               results.errors.push(errorMessage);
             }
           }
@@ -49,6 +43,7 @@ async function migrateActorSpellbookTypes() {
     const errorMessage = `Critical error during actor spellbook type migration: ${error.message}`;
     results.errors.push(errorMessage);
   }
+  log(3, 'Actor SpellBook Types Migration Completed:', { results });
   return results;
 }
 

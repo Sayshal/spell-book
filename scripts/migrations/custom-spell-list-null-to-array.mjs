@@ -1,10 +1,5 @@
 /**
  * Custom Spell List Null to Array Migration
- *
- * Migrates null customSpellList values to empty arrays.
- * This migration ensures all custom spell list fields are properly initialized
- * as arrays instead of null values.
- *
  * @module Migrations/CustomSpellListNullToArray
  * @author Tyler
  */
@@ -43,19 +38,17 @@ async function migrateCustomSpellListNullToArray() {
           await actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, updatedRules);
           results.updated++;
           results.migratedActors.push({ id: actor.id, name: actor.name, migratedClasses: migratedClasses });
-          log(3, `Migrated null customSpellList to [] for ${actor.name} (${migratedClasses.length} classes)`);
         }
       } catch (error) {
         const errorMessage = `Failed to migrate null customSpellList for actor ${actor.name}: ${error.message}`;
         results.errors.push(errorMessage);
       }
     }
-    if (results.updated > 0) log(2, `Null customSpellList migration completed: ${results.updated}/${results.processed} actors updated`);
-    else log(3, `No null customSpellList migration needed (${results.processed} actors checked)`);
   } catch (error) {
     const errorMessage = `Critical error during null customSpellList migration: ${error.message}`;
     results.errors.push(errorMessage);
   }
+  log(3, 'Custom Spell List Null->Array Migration Completed:', { results });
   return results;
 }
 

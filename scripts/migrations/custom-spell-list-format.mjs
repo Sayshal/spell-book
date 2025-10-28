@@ -1,10 +1,5 @@
 /**
  * Custom Spell List Format Migration
- *
- * Migrates custom spell list format from string to array.
- * This migration ensures all custom spell list references are stored as arrays
- * rather than strings for consistent data handling.
- *
  * @module Migrations/CustomSpellListFormat
  * @author Tyler
  */
@@ -43,19 +38,17 @@ async function migrateCustomSpellListFormat() {
           await actor.setFlag(MODULE.ID, FLAGS.SPELLCASTING_RULES, updatedRules);
           results.updated++;
           results.migratedActors.push({ id: actor.id, name: actor.name, migratedClasses: migratedClasses });
-          log(3, `Migrated custom spell list format for ${actor.name} (${migratedClasses.length} classes)`);
         }
       } catch (error) {
         const errorMessage = `Failed to migrate custom spell list format for actor ${actor.name}: ${error.message}`;
         results.errors.push(errorMessage);
       }
     }
-    if (results.updated > 0) log(2, `Custom spell list format migration completed: ${results.updated}/${results.processed} actors updated`);
-    else log(3, `No custom spell list format migration needed (${results.processed} actors checked)`);
   } catch (error) {
     const errorMessage = `Critical error during custom spell list format migration: ${error.message}`;
     results.errors.push(errorMessage);
   }
+  log(3, 'Custom Spell List Format Migration Completed:', { results });
   return results;
 }
 

@@ -1,10 +1,5 @@
 /**
  * Spell List Folders Migration
- *
- * Migrates spell list journals to appropriate folders based on their type.
- * This migration organizes spell lists into Custom, Merged, and Modified folders
- * within the spell lists compendium pack.
- *
  * @module Migrations/SpellListFolders
  * @author Tyler
  */
@@ -58,6 +53,7 @@ async function migrateSpellListFolders() {
   } catch (error) {
     results.errors.push(`Migration error: ${error.message}`);
   }
+  log(3, 'Spell List Folder Migration Completed:', { results });
   return results;
 }
 

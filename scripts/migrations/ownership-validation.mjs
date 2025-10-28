@@ -1,9 +1,5 @@
 /**
  * Ownership Validation Migration
- *
- * Validates and fixes ownership levels for all Spell Book documents including
- * user data, spell lists, actor spellbooks, and compendium packs.
- *
  * @module Migrations/OwnershipValidation
  * @author Tyler
  */
@@ -26,7 +22,6 @@ import { log } from '../logger.mjs';
  */
 async function validateOwnershipLevels() {
   const results = { processed: 0, updated: 0, errors: [], userDataFixed: 0, spellListsFixed: 0, actorSpellbooksFixed: 0, packsFixed: 0, details: [], fixedDocuments: [] };
-
   try {
     const userDataResults = await validateUserDataOwnership();
     results.userDataFixed = userDataResults.fixed;
@@ -56,10 +51,10 @@ async function validateOwnershipLevels() {
     results.errors.push(...packResults.errors);
     results.details.push(...packResults.details);
     results.fixedDocuments.push(...packResults.fixedDocuments);
-    log(3, `Ownership validation complete: ${results.updated} documents fixed (${results.processed} checked)`);
   } catch (error) {
     results.errors.push(`Ownership validation error: ${error.message}`);
   }
+  log(3, `Ownership validation complete: ${results.updated} documents fixed (${results.processed} checked)`, { results });
   return results;
 }
 
@@ -110,7 +105,7 @@ async function validateUserDataOwnership() {
           }
         }
       }
-    } else log(3, 'No user data journal found');
+    }
   } catch (error) {
     results.errors.push(`User data ownership error: ${error.message}`);
   }

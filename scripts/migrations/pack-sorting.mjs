@@ -1,9 +1,5 @@
 /**
  * Pack Sorting Migration
- *
- * Migrates pack sorting and folder sorting for Spell Book packs.
- * Ensures packs have correct sort values and folders use manual sorting.
- *
  * @module Migrations/PackSorting
  * @author Tyler
  */
@@ -29,16 +25,11 @@ async function migratePackSorting() {
         results.processed++;
         if (pack.sort !== sortValue) {
           await pack.configure({ sort: sortValue });
-
           results.packsUpdated++;
           results.updated++;
         }
       } catch (error) {
-        results.errors.push({
-          type: 'pack',
-          packId,
-          error: error.message
-        });
+        results.errors.push({ type: 'pack', packId, error: error.message });
       }
     }
     const customPack = game.packs.get(MODULE.PACK.SPELLS);
@@ -47,23 +38,17 @@ async function migratePackSorting() {
       if (customPack.folder.sorting !== 'm') {
         try {
           await customPack.folder.update({ sorting: 'm' });
-          log(3, `Updated "${customPack.folder.name}" folder sorting to manual ("m")`);
           results.foldersUpdated++;
           results.updated++;
         } catch (error) {
-          results.errors.push({
-            type: 'folder',
-            name: customPack.folder.name,
-            error: error.message
-          });
+          results.errors.push({ type: 'folder', name: customPack.folder.name, error: error.message });
         }
       }
     }
-    if (results.packsUpdated > 0) log(3, `Updated ${results.packsUpdated} pack sort values`);
-    if (results.foldersUpdated > 0) log(3, `Updated ${results.foldersUpdated} pack folders to use manual sorting`);
   } catch (error) {
     results.errors.push({ type: 'generalMigration', error: error.message });
   }
+  log(3, 'Pack Sorting Migration Completed:', { results });
   return results;
 }
 
