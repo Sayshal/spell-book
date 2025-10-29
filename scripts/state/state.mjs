@@ -6,15 +6,6 @@
  * spellcasting class detection, spell preparation tracking, wizard spellbook management,
  * and ritual casting functionality.
  *
- * Key responsibilities:
- * - Spellcasting class detection and initialization
- * - Spell data loading and organization by class and level
- * - Preparation statistics calculation and caching
- * - Wizard spellbook management and integration
- * - Ritual spell handling and automatic addition
- * - Long rest mechanics and swap tracking
- * - State synchronization and cache management
- *
  * @module State/State
  * @author Tyler
  */
@@ -34,6 +25,8 @@ export class State {
    * @param {SpellBook} app - Spell Book application instance
    */
   constructor(app) {
+    log(3, 'Constructing State manager', { actorName: app.actor?.name, actorId: app.actor?.id });
+
     /** @type {SpellBook} The parent Spell Book application */
     this.app = app;
 
@@ -183,6 +176,7 @@ export class State {
     this._cleanupStaleClassData(currentClassIds);
     if (Object.keys(this.spellcastingClasses).length > 0 && !this.activeClass) this.activeClass = Object.keys(this.spellcastingClasses)[0];
     this._classesDetected = true;
+    log(3, 'Spellcasting classes detected', { classCount: Object.keys(this.spellcastingClasses).length, classIds: Object.keys(this.spellcastingClasses), activeClass: this.activeClass });
   }
 
   /**
@@ -193,6 +187,7 @@ export class State {
   _cleanupStaleClassData(currentClassIds) {
     this._cleanupStaleFlags(currentClassIds);
     this._cleanupStaleManagers(currentClassIds);
+    log(3, 'Stale class data cleanup completed');
   }
 
   /**
@@ -249,6 +244,7 @@ export class State {
       const classId = flagKey.substring(separatorIndex + 1);
       if (!currentClassIds.includes(classId)) this.actor.unsetFlag(MODULE.ID, flagKey);
     }
+    log(3, 'Stale flags cleanup completed');
   }
 
   /**
@@ -260,21 +256,26 @@ export class State {
     if (this.app.wizardManagers) {
       const wizardManagerKeys = [...this.app.wizardManagers.keys()];
       for (const classId of wizardManagerKeys) if (!currentClassIds.includes(classId)) this.app.wizardManagers.delete(classId);
+      log(3, 'Cleaned wizard managers', { before: wizardManagerKeys.length, after: this.app.wizardManagers.size });
     }
     if (this.app.ritualManagers) {
       const ritualManagerKeys = [...this.app.ritualManagers.keys()];
       for (const classId of ritualManagerKeys) if (!currentClassIds.includes(classId)) this.app.ritualManagers.delete(classId);
+      log(3, 'Cleaned ritual managers', { before: ritualManagerKeys.length, after: this.app.ritualManagers.size });
     }
     if (this.wizardbookCache) {
       const wizardCacheKeys = [...this.wizardbookCache.keys()];
       for (const classId of wizardCacheKeys) if (!currentClassIds.includes(classId)) this.wizardbookCache.delete(classId);
+      log(3, 'Cleaned wizardbook cache', { before: wizardCacheKeys.length, after: this.wizardbookCache.size });
     }
     if (this.app._wizardBookImages) {
       const wizardImageKeys = [...this.app._wizardBookImages.keys()];
       for (const classId of wizardImageKeys) if (!currentClassIds.includes(classId)) this.app._wizardBookImages.delete(classId);
+      log(3, 'Cleaned wizard book images', { before: wizardImageKeys.length, after: this.app._wizardBookImages.size });
     }
     this._preparationStatsCache.clear();
     this._classDetectionCache.clear();
+    log(3, 'Stale managers cleanup completed');
   }
 
   /**
@@ -286,6 +287,7 @@ export class State {
   getClassPreparationMode(classItem) {
     let prepMode = 'spell';
     if (classItem.system.spellcasting?.type === 'pact') prepMode = 'pact';
+    log(3, 'Preparation mode determined', { className: classItem.name, prepMode });
     return prepMode;
   }
 
@@ -296,7 +298,7 @@ export class State {
    */
   getClassRitualRules(classItem) {
     const rules = { canCastRituals: false, mustPrepare: false, fromSpellbook: false };
-    const identifier = classItem.system?.identifier?.toLowerCase() || '';
+    const identifier = classItem.system?.identifier;
     if (identifier === MODULE.CLASS_IDENTIFIERS.WIZARD) {
       rules.canCastRituals = true;
       rules.mustPrepare = false;
@@ -305,6 +307,7 @@ export class State {
       rules.canCastRituals = true;
       rules.mustPrepare = true;
     }
+    log(3, 'Ritual rules determined', { className: classItem.name, rules });
     return rules;
   }
 
@@ -315,13 +318,14 @@ export class State {
    * @returns {SwapRules} Spell swapping rules for the class
    */
   getClassSwapRules(classItem) {
-    const identifier = classItem.system?.identifier?.toLowerCase() || '';
+    const identifier = classItem.system?.identifier;
     const rules = { canSwapCantrips: false, cantripSwapMode: 'none', canSwapSpells: false, spellSwapMode: 'none' };
     const classRules = RuleSet.getClassRules(this.actor, identifier);
     rules.canSwapCantrips = classRules.cantripSwapping !== 'none';
     rules.cantripSwapMode = classRules.cantripSwapping || 'none';
     rules.canSwapSpells = classRules.spellSwapping !== 'none';
     rules.spellSwapMode = classRules.spellSwapping || 'none';
+    log(3, 'Swap rules determined', { className: classItem.name, rules });
     return rules;
   }
 
@@ -482,6 +486,7 @@ export class State {
     let parsedSpellData = null;
     if (SPELLBOOK?.preloadedData?.enrichedSpells) {
       parsedSpellData = {};
+      // eslint-disable-next-line no-unused-vars
       for (const [key, enrichedSpell] of Object.entries(SPELLBOOK.preloadedData.enrichedSpells)) {
         const uuid = enrichedSpell.uuid;
         if (!uuid) continue;
@@ -642,6 +647,7 @@ export class State {
     for (const level in spellsByLevel) if (level in spellsByLevel) spellsByLevel[level].spells.sort((a, b) => a.name.localeCompare(b.name));
     const sortedLevels = Object.entries(spellsByLevel)
       .sort(([a], [b]) => Number(a) - Number(b))
+      // eslint-disable-next-line no-unused-vars
       .map(([level, data]) => data);
     log(3, `Organized ${sortedLevels.length} spell levels for wizard spellbook (${classIdentifier})`);
     return sortedLevels;
@@ -656,11 +662,13 @@ export class State {
   _getSpellDisplayPriority(spell) {
     const method = spell.system?.method;
     const prepared = spell.system?.prepared;
-    if (prepared === 1) return 100;
-    if (prepared === 2) return 90;
-    if (['innate', 'pact', 'atwill'].includes(method)) return 50;
-    if (method === 'ritual') return 10;
-    return 30;
+    let priority = 30;
+    if (prepared === 1) priority = 100;
+    else if (prepared === 2) priority = 90;
+    else if (['innate', 'pact', 'atwill'].includes(method)) priority = 50;
+    else if (method === 'ritual') priority = 10;
+    log(3, 'Spell display priority calculated', { spellName: spell.name, method, prepared, priority });
+    return priority;
   }
 
   /**
@@ -685,6 +693,7 @@ export class State {
     const prepStats = this.calculatePreparationStats(identifier, allSpells, classItem);
     this.classSpellData[identifier] = { spellLevels, className: classItem.name, spellPreparation: prepStats, classItem, identifier };
     if (this._shouldHideCantrips(identifier)) this.classSpellData[identifier].spellLevels = spellLevels.filter((levelData) => levelData.level !== '0' && levelData.level !== 0);
+    log(3, 'Spells processed and organized', { identifier, levelCount: this.classSpellData[identifier].spellLevels.length, prepStats });
   }
 
   /**
@@ -747,9 +756,7 @@ export class State {
         if (cachedFor) continue;
         if (prepared === 1 && sourceClass === classIdentifier) preparedCount++;
       }
-    } else {
-      log(1, 'calculatePreparationStats: Unknown structure for spellLevels', spellLevels);
-    }
+    } else log(1, 'calculatePreparationStats: Unknown structure for spellLevels', spellLevels);
     let baseMaxPrepared = 0;
     const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
     if (spellcastingConfig?.preparation?.max) baseMaxPrepared = spellcastingConfig.preparation.max;
@@ -788,12 +795,17 @@ export class State {
    * @private
    */
   _shouldHideCantrips(identifier) {
-    if (this._classDetectionCache.has(identifier)) return this._classDetectionCache.get(identifier);
+    if (this._classDetectionCache.has(identifier)) {
+      const cached = this._classDetectionCache.get(identifier);
+      log(3, 'Using cached cantrip visibility', { identifier, shouldHide: cached });
+      return cached;
+    }
     const classRules = RuleSet.getClassRules(this.actor, identifier);
     let shouldHide = false;
     if (classRules && classRules.showCantrips !== undefined) shouldHide = !classRules.showCantrips;
     else shouldHide = [MODULE.CLASS_IDENTIFIERS.PALADIN, MODULE.CLASS_IDENTIFIERS.RANGER].includes(identifier);
     this._classDetectionCache.set(identifier, shouldHide);
+    log(3, 'Cantrip visibility determined', { identifier, shouldHide });
     return shouldHide;
   }
 
@@ -808,7 +820,8 @@ export class State {
       this.spellLevels = this.classSpellData[identifier].spellLevels || [];
       this.className = this.classSpellData[identifier].className || '';
       this.spellPreparation = this.classSpellData[identifier].spellPreparation || { current: 0, maximum: 0 };
-    }
+      log(3, 'Active class set', { identifier, className: this.className, spellLevelCount: this.spellLevels.length });
+    } else log(2, 'Attempted to set active class that does not exist in classSpellData', { identifier });
   }
 
   /**
@@ -823,7 +836,7 @@ export class State {
         return classRules.cantripSwapping === 'levelUp';
       });
       if (hasLevelUpSwapping) ui.notifications.info(game.i18n.localize('SPELLBOOK.Cantrips.LevelUpModern'));
-    }
+    } else log(3, 'No cantrip level-up detected');
   }
 
   /**
@@ -835,10 +848,10 @@ export class State {
     const wizardManager = this.app.wizardManagers.get(classIdentifier);
     if (wizardManager && wizardManager.isWizard) {
       if (!this.wizardbookCache) this.wizardbookCache = new Map();
-      this.wizardbookCache.set(classIdentifier, await wizardManager.getSpellbookSpells());
-    } else {
-      log(2, `No wizard manager found for class ${classIdentifier} during cache`);
-    }
+      const spells = await wizardManager.getSpellbookSpells();
+      this.wizardbookCache.set(classIdentifier, spells);
+      log(3, 'Wizard spellbook cached', { classIdentifier, spellCount: spells.length });
+    } else log(2, `No wizard manager found for class ${classIdentifier} during cache`);
   }
 
   /**
@@ -998,11 +1011,7 @@ export class State {
       scrollSpellsForLevel.push(scrollSpell);
     }
     if (scrollSpellsForLevel.length > 0) {
-      const learnFromScrollLevel = {
-        level: 'scroll',
-        name: game.i18n.localize('SPELLBOOK.Scrolls.LearnFromScroll'),
-        spells: scrollSpellsForLevel
-      };
+      const learnFromScrollLevel = { level: 'scroll', name: game.i18n.localize('SPELLBOOK.Scrolls.LearnFromScroll'), spells: scrollSpellsForLevel };
       wizardLevelsGrouped.unshift(learnFromScrollLevel);
     }
     const filteredWizardLevelsGrouped = wizardLevelsGrouped.filter((levelData) => {
@@ -1079,6 +1088,7 @@ export class State {
         if (!spell.enrichedIcon) spell.enrichedIcon = UIUtils.createSpellIconLink(spell);
       }
     }
+    log(3, 'Wizard book spells enriched', { levelCount: spellLevelsGrouped.length, isWizardBook, isAtMaxSpells });
   }
 
   /**
@@ -1099,6 +1109,7 @@ export class State {
           }
         }
       }
+      log(3, 'Wizard data completion check finished');
       return;
     }
     log(3, 'State not initialized, forcing complete initialization');
@@ -1112,13 +1123,16 @@ export class State {
    */
   getClassTabData(identifier) {
     if (this.classSpellData[identifier]) {
-      return {
+      const tabData = {
         spellLevels: this.classSpellData[identifier].spellLevels || [],
         className: this.classSpellData[identifier].className || '',
         spellPreparation: this.classSpellData[identifier].spellPreparation || { current: 0, maximum: 0 },
         identifier: identifier
       };
+      log(3, 'Class tab data retrieved', { identifier, levelCount: tabData.spellLevels.length });
+      return tabData;
     }
+    log(2, 'Class tab data not found', { identifier });
     return null;
   }
 
@@ -1129,17 +1143,25 @@ export class State {
    */
   async refreshClassSpellData(classIdentifier) {
     const classData = this.spellcastingClasses[classIdentifier];
-    if (!classData) return;
+    if (!classData) {
+      log(2, 'Cannot refresh spell data for unknown class', { classIdentifier });
+      return;
+    }
     this._preparationStatsCache.clear();
     this.scrollSpells = [];
     const wizardManager = this.app.wizardManagers.get(classIdentifier);
     if (wizardManager) wizardManager.invalidateCache();
     const classItem = this.actor.items.get(classData.id);
-    if (!classItem) return;
+    if (!classItem) {
+      log(2, 'Class item not found during refresh', { classIdentifier, classDataId: classData.id });
+      return;
+    }
     if (DataUtils.isClassWizardEnabled(this.actor, classIdentifier)) {
+      log(3, 'Refreshing wizard spell data', { classIdentifier });
       await this.cacheWizardSpellbook(classIdentifier);
       await this.loadWizardSpellData(classItem, classIdentifier);
     } else {
+      log(3, 'Refreshing regular spell data', { classIdentifier });
       await this.loadClassSpellData(classIdentifier, classItem);
     }
     this.updateGlobalPreparationCount();
@@ -1151,8 +1173,10 @@ export class State {
    * @returns {Promise<void>}
    */
   async handlePostProcessing(actor) {
+    log(3, 'Handling post-processing', { actorName: actor.name, isLongRest: this.isLongRest });
     if (this.app.spellManager.cantripManager.canBeLeveledUp()) await this.app.spellManager.cantripManager.completeCantripsLevelUp();
     if (this.isLongRest) {
+      log(3, 'Resetting long rest state and swap tracking');
       await this.app.spellManager.cantripManager.resetSwapTracking();
       actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, false);
       this.isLongRest = false;
@@ -1169,12 +1193,14 @@ export class State {
     for (const [classIdentifier, classData] of Object.entries(this.spellcastingClasses)) {
       const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
       if (classRules.ritualCasting === 'always') {
+        log(3, 'Processing ritual spells for class', { classIdentifier });
         const wizardManager = this.app.wizardManagers.get(classIdentifier);
         const isWizard = wizardManager?.isWizard;
         if (isWizard) await this._addWizardRitualSpells(classIdentifier, spellDataByClass);
         else await this._addClassRitualSpells(classIdentifier, classData, spellDataByClass);
       }
     }
+    log(3, 'Missing ritual spells added');
   }
 
   /**
@@ -1195,13 +1221,17 @@ export class State {
             item.flags?.[MODULE.ID]?.isModuleRitual === true
         );
         if (moduleRitualSpells.length > 0) {
+          log(3, 'Found ritual spells to remove for class', { classIdentifier, count: moduleRitualSpells.length });
           moduleRitualSpells.forEach((spell) => {
             spellIdsToRemove.push(spell.id);
           });
         }
       }
     }
-    if (spellIdsToRemove.length > 0) await this.actor.deleteEmbeddedDocuments('Item', spellIdsToRemove);
+    if (spellIdsToRemove.length > 0) {
+      log(3, 'Removing disabled ritual spells', { count: spellIdsToRemove.length });
+      await this.actor.deleteEmbeddedDocuments('Item', spellIdsToRemove);
+    } else log(3, 'No disabled ritual spells to remove');
   }
 
   /**
@@ -1213,7 +1243,10 @@ export class State {
    */
   async _addWizardRitualSpells(classIdentifier, spellDataByClass) {
     const wizardManager = this.app.wizardManagers.get(classIdentifier);
-    if (!wizardManager || !wizardManager.isWizard) return;
+    if (!wizardManager || !wizardManager.isWizard) {
+      log(2, 'No wizard manager found for adding ritual spells', { classIdentifier });
+      return;
+    }
     const spellbookSpells = await wizardManager.getSpellbookSpells();
     const isRitualSpell = (spell) => {
       if (spell.system?.properties && spell.system.properties.has) return spell.system.properties.has('ritual');
@@ -1229,6 +1262,7 @@ export class State {
         spellDataByClass[classIdentifier][classSpellKey].isRitual = true;
       }
     }
+    log(3, 'Wizard ritual spells added', { classIdentifier });
   }
 
   /**
@@ -1260,6 +1294,7 @@ export class State {
       const classSpellKey = `${classIdentifier}:${spellUuid}`;
       if (spellDataByClass[classIdentifier][classSpellKey]) spellDataByClass[classIdentifier][classSpellKey].isRitual = true;
     }
+    log(3, 'Class ritual spells added', { classIdentifier });
   }
 
   /**
@@ -1275,7 +1310,7 @@ export class State {
     const copiedSpells = this.actor.getFlag(MODULE.ID, copiedSpellsFlag) || [];
     const scrollLearnedUuids = copiedSpells.map((metadata) => metadata.spellUuid).filter((uuid) => personalSpellbook.includes(uuid) && !classSpellListUuids.has(uuid));
     if (scrollLearnedUuids.length === 0) return [];
-    log(3, `Found ${scrollLearnedUuids.length} scroll-learned spells not in class list for ${classIdentifier}`);
+    log(3, 'Found scroll-learned spells not in class list', { classIdentifier, count: scrollLearnedUuids.length });
     const spellDocuments = await DataUtils.fetchSpellDocuments(new Set(scrollLearnedUuids));
     for (const spell of spellDocuments) {
       const metadata = copiedSpells.find((m) => m.spellUuid === spell.uuid);
@@ -1288,6 +1323,7 @@ export class State {
         };
       }
     }
+    log(3, 'Scroll-learned spells retrieved', { classIdentifier, count: spellDocuments.length });
     return spellDocuments;
   }
 
@@ -1320,6 +1356,7 @@ export class State {
         }
       };
     }
+    log(3, 'Sending GM notifications', { actorName: this.actor.name, classCount: Object.keys(notificationData.classChanges).length });
     await this.app.spellManager.cantripManager.sendNotification(notificationData);
   }
 
@@ -1332,7 +1369,7 @@ export class State {
   updateFavoriteSessionState(spellUuid, favorited) {
     if (!this.app._favoriteSessionState) this.app._favoriteSessionState = new Map();
     this.app._favoriteSessionState.set(spellUuid, favorited);
-    log(3, `Updated session favorite state for ${spellUuid}: ${favorited}`);
+    log(3, 'Updated session favorite state', { spellUuid, favorited });
   }
 
   /**
@@ -1341,7 +1378,9 @@ export class State {
    * @returns {boolean|null} Session favorite state or null if not set
    */
   getFavoriteSessionState(spellUuid) {
-    return this.app._favoriteSessionState?.get(spellUuid) || null;
+    const state = this.app._favoriteSessionState?.get(spellUuid) || null;
+    log(3, 'Retrieved session favorite state', { spellUuid, state });
+    return state;
   }
 
   /**
@@ -1349,6 +1388,7 @@ export class State {
    * @returns {void}
    */
   clearFavoriteSessionState() {
+    log(3, 'Clearing favorite session state');
     if (this.app._favoriteSessionState) this.app._favoriteSessionState.clear();
   }
 
@@ -1369,6 +1409,7 @@ export class State {
         }
       }
     }
+    log(3, 'Spell enhancements refreshed');
   }
 
   /**
@@ -1377,6 +1418,8 @@ export class State {
    */
   getCurrentSpellList() {
     if (!this.activeClass || !this.classSpellData[this.activeClass]) return [];
-    return this.classSpellData[this.activeClass].spellLevels || [];
+    const spellLevels = this.classSpellData[this.activeClass].spellLevels;
+    log(3, 'Current spell list retrieved', { activeClass: this.activeClass, levelCount: spellLevels.length });
+    return spellLevels;
   }
 }
