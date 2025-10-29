@@ -142,7 +142,7 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
   }
   if (errors.length > 0) log(2, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`, { errors });
   if (filteredOut.length > 0) log(3, `Filtered out ${filteredOut.length} spells above level ${maxSpellLevel}`);
-  log(3, `Successfully fetched ${spellItems.length}/${spellUuids.size} spells`);
+  log(3, `Successfully fetched ${spellItems.length}/${spellUuids.size} spells`, { spellItems, filteredOut, spellUuids });
   return spellItems;
 }
 

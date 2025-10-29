@@ -746,7 +746,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.ui.setSidebarState();
     requestAnimationFrame(() => {
       this._setupDeferredUI();
-      this._setupDeferredUI();
     });
   }
 
@@ -844,12 +843,12 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Process spells for a spell level during context preparation.
    * @param {Array<Object>} spells - Raw spell data
+   * @param {Set<string>} enabledElements - Cached set of enabled UI elements
    * @returns {Promise<Array<ProcessedSpell>>} Processed spells ready for template
    * @private
    */
-  async _processSpellsForLevel(spells) {
+  async _processSpellsForLevel(spells, enabledElements) {
     log(3, 'Beginning spells for level processing:', { spells });
-    const enabledElements = UIUtils.CustomUI.getEnabledPlayerElements();
     const processedSpells = [];
     for (const spell of spells) {
       const processedSpell = this._processSpellForDisplay(spell);
@@ -959,12 +958,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   async _processSpellLevelsForContext(spellLevels) {
     log(3, 'Processing spell levels for context:', { spellLevels });
     const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
+    const enabledElements = UIUtils.CustomUI.getEnabledPlayerElements();
     const processedLevels = [];
     for (const levelData of spellLevels) {
       const level = String(levelData.level);
       const spells = levelData.spells || [];
       const isCollapsed = collapsedLevels.includes(level);
-      const processedSpells = await this._processSpellsForLevel(spells);
+      const processedSpells = await this._processSpellsForLevel(spells, enabledElements);
       let preparedCount = 0;
       if (level !== '0') preparedCount = spells.filter((spell) => spell.preparation?.prepared).length;
       const cantripCounter = { enabled: level === '0', current: 0, maximum: 0 };
