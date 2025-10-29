@@ -160,7 +160,7 @@ export class SpellBookUI {
     log(3, 'Updating spell preparation tracking.', { classIdentifier });
     const classRules = RuleSet.getClassRules(this.app.actor, classIdentifier);
     let baseMaxPrepared = 0;
-    const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(this.app.actor, classIdentifier);
+    const spellcastingConfig = this.app._state.getSpellcastingConfigForClass(classIdentifier);
     baseMaxPrepared = getProperty(spellcastingConfig, 'preparation.max') || getProperty(classData, 'classItem.system.spellcasting.preparation.max') || 0;
     const preparationBonus = getProperty(classRules, 'spellPreparationBonus') || 0;
     const classMaxPrepared = baseMaxPrepared + preparationBonus;

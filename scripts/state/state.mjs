@@ -45,6 +45,18 @@ export class State {
     /** @type {Map<string, PreparationStats>} Cache for preparation statistics */
     this._preparationStatsCache = new Map();
 
+    /** @type {Array<WizardClassData>|null} Cache for wizard-enabled classes */
+    this._wizardClassesCache = null;
+
+    /** @type {Map<string, Object>} Cache for spellcasting configurations per class */
+    this._spellcastingConfigCache = new Map();
+
+    /** @type {Map<string, Object>} Cache for spellcasting source items per class */
+    this._spellcastingSourceCache = new Map();
+
+    /** @type {Map<string, number>} Cache for spellcasting levels per class */
+    this._spellcastingLevelsCache = new Map();
+
     /** @type {string|null} Currently active class identifier */
     this.activeClass = null;
 
@@ -86,6 +98,78 @@ export class State {
   }
 
   /**
+   * Get wizard-enabled classes with caching.
+   * @returns {Array<WizardClassData>} Array of wizard-enabled class data objects
+   */
+  getWizardEnabledClasses() {
+    if (this._wizardClassesCache === null) {
+      this._wizardClassesCache = DataUtils.getWizardEnabledClasses(this.actor);
+      log(3, 'Wizard classes cached in State', { count: this._wizardClassesCache.length });
+    }
+    return this._wizardClassesCache;
+  }
+
+  /**
+   * Invalidate wizard classes cache (call when actor classes change).
+   */
+  invalidateWizardClassesCache() {
+    log(3, 'Invalidating wizard classes cache');
+    this._wizardClassesCache = null;
+  }
+
+  /**
+   * Get spellcasting config for a class with caching.
+   * @param {string} classIdentifier - Class identifier
+   * @returns {Object|null} Spellcasting configuration or null
+   */
+  getSpellcastingConfigForClass(classIdentifier) {
+    if (!this._spellcastingConfigCache.has(classIdentifier)) {
+      const config = DataUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
+      this._spellcastingConfigCache.set(classIdentifier, config);
+      log(3, 'Spellcasting config cached in State', { classIdentifier, hasConfig: !!config });
+    }
+    return this._spellcastingConfigCache.get(classIdentifier);
+  }
+
+  /**
+   * Get spellcasting source item for a class with caching.
+   * @param {string} classIdentifier - Class identifier
+   * @returns {Object|null} Source item or null
+   */
+  getSpellcastingSourceItem(classIdentifier) {
+    if (!this._spellcastingSourceCache.has(classIdentifier)) {
+      const source = DataUtils.getSpellcastingSourceItem(this.actor, classIdentifier);
+      this._spellcastingSourceCache.set(classIdentifier, source);
+      log(3, 'Spellcasting source item cached in State', { classIdentifier, hasSource: !!source });
+    }
+    return this._spellcastingSourceCache.get(classIdentifier);
+  }
+
+  /**
+   * Get spellcasting levels for a class with caching.
+   * @param {string} classIdentifier - Class identifier
+   * @returns {number} Class levels for spellcasting
+   */
+  getSpellcastingLevelsForClass(classIdentifier) {
+    if (!this._spellcastingLevelsCache.has(classIdentifier)) {
+      const levels = DataUtils.getSpellcastingLevelsForClass(this.actor, classIdentifier);
+      this._spellcastingLevelsCache.set(classIdentifier, levels);
+      log(3, 'Spellcasting levels cached in State', { classIdentifier, levels });
+    }
+    return this._spellcastingLevelsCache.get(classIdentifier);
+  }
+
+  /**
+   * Invalidate all spellcasting caches (call when actor classes/levels change).
+   */
+  invalidateSpellcastingCaches() {
+    log(3, 'Invalidating spellcasting caches');
+    this._spellcastingConfigCache.clear();
+    this._spellcastingSourceCache.clear();
+    this._spellcastingLevelsCache.clear();
+  }
+
+  /**
    * Initialize state manager and load all spell data.
    * @returns {Promise<boolean>} True if initialization successful, false otherwise
    */
@@ -96,7 +180,7 @@ export class State {
     if (!this._classesDetected) this.detectSpellcastingClasses();
     await this.app.spellManager.cleanupStalePreparationFlags();
     await this.loadSpellData();
-    const wizardClasses = DataUtils.getWizardEnabledClasses(this.actor);
+    const wizardClasses = this.getWizardEnabledClasses();
     if (wizardClasses.length > 0) {
       log(3, `Checking wizard data for ${wizardClasses.length} wizard classes`);
       const wizardPromises = wizardClasses
@@ -335,7 +419,7 @@ export class State {
    */
   async loadSpellData() {
     RuleSet.initializeNewClasses(this.actor);
-    const wizardClasses = DataUtils.getWizardEnabledClasses(this.actor);
+    const wizardClasses = this.getWizardEnabledClasses();
     for (const { identifier } of wizardClasses) {
       const wizardManager = this.app.wizardManagers.get(identifier);
       if (wizardManager) await this.cacheWizardSpellbook(identifier);
@@ -712,7 +796,7 @@ export class State {
     const isFlatStructure = spellLevels.length > 0 && spellLevels[0] && ('system' in spellLevels[0] || 'level' in spellLevels[0]);
     let totalSpellCount = 0;
     let preparedCount = 0;
-    const effectiveLevels = DataUtils.getSpellcastingLevelsForClass(this.actor, classIdentifier);
+    const effectiveLevels = this.getSpellcastingLevelsForClass(classIdentifier);
     if (isGroupedStructure) {
       log(3, 'GROUPED STRUCTURE DETECTED!', { class: classIdentifier, spells: spellLevels, classItem: classItem });
       totalSpellCount = spellLevels.reduce((count, level) => count + (Array.isArray(level.spells) ? level.spells.length : 0), 0);
@@ -758,7 +842,7 @@ export class State {
       }
     } else log(1, 'calculatePreparationStats: Unknown structure for spellLevels', spellLevels);
     let baseMaxPrepared = 0;
-    const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
+    const spellcastingConfig = this.getSpellcastingConfigForClass(classIdentifier);
     if (spellcastingConfig?.preparation?.max) baseMaxPrepared = spellcastingConfig.preparation.max;
     else baseMaxPrepared = classItem?.system?.spellcasting?.preparation?.max || 0;
     const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
@@ -1097,7 +1181,7 @@ export class State {
    */
   async waitForWizardDataCompletion() {
     if (this._initialized) {
-      const wizardClasses = DataUtils.getWizardEnabledClasses(this.actor);
+      const wizardClasses = this.getWizardEnabledClasses();
       for (const { identifier } of wizardClasses) {
         const wizardTabId = `wizardbook-${identifier}`;
         if (!this.tabData[wizardTabId]) {

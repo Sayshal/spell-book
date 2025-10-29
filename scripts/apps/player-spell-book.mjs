@@ -102,7 +102,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.group = PartyMode.getPrimaryGroupForActor(actor);
 
     /** @type {SpellManager} Main spell management instance */
-    this.spellManager = new SpellManager(actor);
+    this.spellManager = new SpellManager(actor, this);
 
     /** @type {Map<string, WizardBook>} Wizard managers by class identifier */
     this.wizardManagers = new Map();
@@ -498,7 +498,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!spell.compendiumUuid) spell.compendiumUuid = spell.uuid;
     processedSpell.cssClasses = this._getSpellCssClasses(spell);
     processedSpell.dataAttributes = this._getSpellDataAttributes(spell);
-    processedSpell.tag = this._getSpellPreparationTag(spell);
+    if (!spell.tag) spell.tag = this._getSpellPreparationTag(spell);
+    processedSpell.tag = spell.tag;
     const ariaLabel = spell.preparation.prepared ? game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name }) : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
     const checkbox = ValidationUtils.createCheckbox({
       name: `spell-${spell.system.identifier}`,

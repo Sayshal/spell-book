@@ -23,11 +23,15 @@ export class SpellManager {
   /**
    * Create a new SpellManager for an actor.
    * @param {Actor5e} actor - The actor to manage spells for
+   * @param {SpellBook} app - The parent spell book application (optional)
    */
-  constructor(actor) {
+  constructor(actor, app = null) {
     log(3, `Creating SpellManager.`, { actorName: actor.name, actorId: actor.id });
     /** @type {Actor5e} The actor being managed */
     this.actor = actor;
+
+    /** @type {SpellBook|null} The parent spell book application */
+    this.app = app;
 
     /** @type {Map<string, ActorSpellSettings>} Cached settings by class identifier */
     this._settingsCache = new Map();
@@ -387,7 +391,7 @@ export class SpellManager {
     if (preparationMode === MODULE.PREPARATION_MODES.ALWAYS) {
       log(3, `Checking always prepared spell source.`, { actorName: this.actor.name, spellName: spell.name, sourceClassId });
       if (sourceClassId && this.actor.spellcastingClasses?.[sourceClassId]) {
-        const spellcastingSource = DataUtils.getSpellcastingSourceItem(this.actor, sourceClassId);
+        const spellcastingSource = this.app?._state?.getSpellcastingSourceItem?.(sourceClassId) ?? DataUtils.getSpellcastingSourceItem(this.actor, sourceClassId);
         if (spellcastingSource && spellcastingSource.type === 'subclass') {
           log(3, `Spell source determined as subclass (always prepared).`, { actorName: this.actor.name, spellName: spell.name, sourceName: spellcastingSource.name });
           return { name: spellcastingSource.name, type: 'subclass', id: spellcastingSource.id };
@@ -401,7 +405,7 @@ export class SpellManager {
     } else if (preparationMode === MODULE.PREPARATION_MODES.PACT) {
       log(3, `Checking pact magic spell source.`, { actorName: this.actor.name, spellName: spell.name, sourceClassId });
       if (sourceClassId && this.actor.spellcastingClasses?.[sourceClassId]) {
-        const spellcastingSource = DataUtils.getSpellcastingSourceItem(this.actor, sourceClassId);
+        const spellcastingSource = this.app?._state?.getSpellcastingSourceItem?.(sourceClassId) ?? DataUtils.getSpellcastingSourceItem(this.actor, sourceClassId);
         if (spellcastingSource && spellcastingSource.type === 'subclass') {
           log(3, `Spell source determined as subclass (pact magic).`, { actorName: this.actor.name, spellName: spell.name, sourceName: spellcastingSource.name });
           return { name: spellcastingSource.name, type: 'subclass', id: spellcastingSource.id };
@@ -417,7 +421,7 @@ export class SpellManager {
     } else {
       log(3, `Checking standard spell source.`, { actorName: this.actor.name, spellName: spell.name, sourceClassId });
       if (sourceClassId && this.actor.spellcastingClasses?.[sourceClassId]) {
-        const spellcastingSource = DataUtils.getSpellcastingSourceItem(this.actor, sourceClassId);
+        const spellcastingSource = this.app?._state?.getSpellcastingSourceItem?.(sourceClassId) ?? DataUtils.getSpellcastingSourceItem(this.actor, sourceClassId);
         if (spellcastingSource) {
           log(3, `Spell source determined from spellcasting source.`, { actorName: this.actor.name, spellName: spell.name, sourceName: spellcastingSource.name, sourceType: spellcastingSource.type });
           return { name: spellcastingSource.name, type: spellcastingSource.type, id: spellcastingSource.id };
@@ -561,7 +565,7 @@ export class SpellManager {
    */
   _getClassPreparationMode(classIdentifier) {
     log(3, `Getting class preparation mode.`, { actorName: this.actor.name, classIdentifier });
-    const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
+    const spellcastingConfig = this.app?._state?.getSpellcastingConfigForClass?.(classIdentifier) ?? DataUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
     if (spellcastingConfig?.type === MODULE.PREPARATION_MODES.PACT) return MODULE.PREPARATION_MODES.PACT;
     return MODULE.PREPARATION_MODES.SPELL;
   }

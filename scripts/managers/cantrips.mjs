@@ -101,7 +101,7 @@ export class Cantrips {
       return;
     }
     for (const identifier of Object.keys(this.actor.spellcastingClasses)) {
-      const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(this.actor, identifier);
+      const spellcastingConfig = this.spellManager.app?._state?.getSpellcastingConfigForClass?.(identifier) ?? DataUtils.getSpellcastingConfigForClass(this.actor, identifier);
       if (!spellcastingConfig) continue;
       const maxCantrips = this._calculateMaxCantripsForClass(identifier);
       this._maxCantripsByClass.set(identifier, maxCantrips);
