@@ -165,6 +165,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const wizardFlagChanged = changedFlags.some((flag) => flag.startsWith(FLAGS.WIZARD_COPIED_SPELLS));
         if ((cantripFlagChanged || wizardFlagChanged) && this.rendered) {
           this.spellManager.cantripManager.clearCache();
+          this.spellManager.clearSettingsCache();
           this.render(false);
         }
       }

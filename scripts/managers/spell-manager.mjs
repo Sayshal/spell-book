@@ -29,9 +29,20 @@ export class SpellManager {
     /** @type {Actor5e} The actor being managed */
     this.actor = actor;
 
+    /** @type {Map<string, ActorSpellSettings>} Cached settings by class identifier */
+    this._settingsCache = new Map();
+
     /** @type {Cantrips} Integrated cantrip management system */
     this.cantripManager = new Cantrips(actor, this);
     log(3, `SpellManager created.`, { actorName: actor.name, actorId: actor.id });
+  }
+
+  /**
+   * Clear settings cache. Call this when enforcement behavior or class rules change.
+   * @returns {void}
+   */
+  clearSettingsCache() {
+    this._settingsCache.clear();
   }
 
   /**
@@ -40,6 +51,7 @@ export class SpellManager {
    * @returns {ActorSpellSettings} Actor's spell settings
    */
   getSettings(classIdentifier) {
+    if (this._settingsCache.has(classIdentifier)) return this._settingsCache.get(classIdentifier);
     const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
     const settings = {
       cantripSwapping: classRules.cantripSwapping || MODULE.SWAP_MODES.NONE,
@@ -48,6 +60,7 @@ export class SpellManager {
       showCantrips: classRules.showCantrips !== false,
       behavior: this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR)
     };
+    this._settingsCache.set(classIdentifier, settings);
     log(3, `Settings retrieved.`, { actorName: this.actor.name, classIdentifier, settings });
     return settings;
   }
