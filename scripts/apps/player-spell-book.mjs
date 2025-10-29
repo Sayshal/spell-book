@@ -636,7 +636,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       `data-material-components="${spell.filterData?.materialComponents?.hasConsumedMaterials || false}"`
     ];
     if (spell.sourceClass) attributes.push(`data-source-class="${spell.sourceClass}"`);
-    log(3, 'Spell attributes retrieved:', { spell, attributes });
     return attributes.join(' ');
   }
 
@@ -648,7 +647,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _getSpellCssClasses(spell) {
-    log(3, 'Spell classes discovery.', { spell });
     const classes = ['spell-item'];
     if (spell.preparation?.isOwned) classes.push('owned-spell');
     if (spell.preparation?.prepared) classes.push('prepared-spell');
@@ -931,7 +929,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _preparePartyIconsData(spellData) {
-    log(3, 'Preparing party icons data...');
     const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
     if (!isPartyMode) return { enabled: false, icons: [] };
     const partyActors = PartyMode.getPartyActors();
