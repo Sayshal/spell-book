@@ -486,14 +486,24 @@ export class State {
     let spellItems = [];
     if (preloadedData && preloadedData.enrichedSpells.length > 0) {
       log(3, `Using preloaded spell data for ${identifier} class`);
-      const spellUuidsSet = new Set(Array.from(spellList));
-      const preloadedSpells = preloadedData.enrichedSpells.filter((spell) => spellUuidsSet.has(spell.uuid) && spell.system.level <= maxSpellLevel);
-      const missingSpells = Array.from(spellList).filter((uuid) => !preloadedSpells.some((spell) => spell.uuid === uuid));
-      if (missingSpells.length > 0) {
-        log(3, `Loading ${missingSpells.length} missing spells for ${identifier}`);
-        const additionalSpells = await DataUtils.fetchSpellDocuments(new Set(missingSpells), maxSpellLevel);
+      const preloadedUuidsMap = new Map();
+      for (const spell of preloadedData.enrichedSpells) if (spell.system.level <= maxSpellLevel) preloadedUuidsMap.set(spell.uuid, spell);
+      const preloadedSpells = [];
+      const actuallyMissingSpells = [];
+      for (const uuid of spellList) {
+        const preloaded = preloadedUuidsMap.get(uuid);
+        if (preloaded) preloadedSpells.push(preloaded);
+        else actuallyMissingSpells.push(uuid);
+      }
+      const spellsFilteredByLevel = spellList.size - preloadedSpells.length - actuallyMissingSpells.length;
+      if (actuallyMissingSpells.length > 0) {
+        log(3, `Found ${preloadedSpells.length} preloaded spells for ${identifier}, loading ${actuallyMissingSpells.length} missing spells (${spellsFilteredByLevel} filtered by level cap)`);
+        const additionalSpells = await DataUtils.fetchSpellDocuments(new Set(actuallyMissingSpells), maxSpellLevel);
         spellItems = [...preloadedSpells, ...additionalSpells];
-      } else spellItems = preloadedSpells;
+      } else {
+        log(3, `All ${preloadedSpells.length} spells for ${identifier} found in preloaded data (${spellsFilteredByLevel} filtered by level cap)`);
+        spellItems = preloadedSpells;
+      }
     } else spellItems = await DataUtils.fetchSpellDocuments(spellList, maxSpellLevel);
     if (!spellItems || !spellItems.length) return;
     await this.processAndOrganizeSpellsForClass(identifier, spellItems, classItem);
@@ -544,6 +554,7 @@ export class State {
         else preparableSpells.push(spell);
       }
     }
+    const batchData = this.app.spellManager.prepareBatchData(classIdentifier);
     const processedPreparableSpells = new Set();
     for (const spell of preparableSpells) {
       const level = spell.system.level;
@@ -557,7 +568,7 @@ export class State {
         spellData.system = spellData.system || {};
         spellData.system.sourceClass = classIdentifier;
         if (spell.system?.method !== 'ritual' && spell.system?.components?.ritual) spellData.canCastAsRitual = true;
-        spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, classIdentifier);
+        spellData.preparation = this.app.spellManager.getSpellPreparationStatusFromBatch(spellData, classIdentifier, batchData);
         spellData.filterData = UIUtils.extractSpellFilterData(spell);
         spellData.enrichedIcon = UIUtils.createSpellIconLink(spell);
         const enhancedSpell = DataUtils.UserData.enhanceSpellWithUserData(spellData, targetUserId, actorId);
@@ -635,7 +646,7 @@ export class State {
         spellData.preparation.preparedByOtherClass = preparedByOtherClass;
       }
       spellData._preparationContext = 'preparable';
-      if (this.app.spellManager) spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, classIdentifier);
+      if (this.app.spellManager) spellData.preparation = this.app.spellManager.getSpellPreparationStatusFromBatch(spellData, classIdentifier, batchData);
       spellData.filterData = UIUtils.extractSpellFilterData(spell);
       spellData.enrichedIcon = UIUtils.createSpellIconLink(spell);
       const enhancedSpell = DataUtils.UserData.enhanceSpellWithUserData(spellData, targetUserId, actorId);
@@ -656,7 +667,7 @@ export class State {
       }
       spellData._preparationContext = 'special';
       if (spell.system?.method !== 'ritual' && spell.system?.components?.ritual) spellData.canCastAsRitual = true;
-      spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, sourceClass || classIdentifier);
+      spellData.preparation = this.app.spellManager.getSpellPreparationStatusFromBatch(spellData, sourceClass || classIdentifier, batchData);
       spellData.filterData = UIUtils.extractSpellFilterData(spell);
       spellData.enrichedIcon = UIUtils.createSpellIconLink(spell);
       const enhancedSpell = DataUtils.UserData.enhanceSpellWithUserData(spellData, targetUserId, actorId);
@@ -961,14 +972,33 @@ export class State {
     let spellItems = [];
     if (preloadedData && preloadedData.enrichedSpells.length > 0) {
       log(3, `Using preloaded spell data for ${classIdentifier} wizard spells`);
-      const allUuidsArray = Array.from(allUuids);
-      const preloadedSpells = preloadedData.enrichedSpells.filter((spell) => allUuidsArray.includes(spell.uuid) && spell.system.level <= effectiveMaxLevel);
-      const missingSpells = allUuidsArray.filter((uuid) => !preloadedSpells.some((spell) => spell.uuid === uuid));
-      if (missingSpells.length > 0) {
-        log(3, `Loading ${missingSpells.length} missing wizard spells for ${classIdentifier}`);
-        const additionalSpells = await DataUtils.fetchSpellDocuments(new Set(missingSpells), effectiveMaxLevel);
+      // Build a map of preloaded spells that are within the level cap
+      const preloadedUuidsMap = new Map();
+      for (const spell of preloadedData.enrichedSpells) {
+        if (spell.system.level <= effectiveMaxLevel) {
+          preloadedUuidsMap.set(spell.uuid, spell);
+        }
+      }
+      // Collect preloaded spells and identify actually missing ones
+      const preloadedSpells = [];
+      const actuallyMissingSpells = [];
+      for (const uuid of allUuids) {
+        const preloaded = preloadedUuidsMap.get(uuid);
+        if (preloaded) preloadedSpells.push(preloaded);
+        else actuallyMissingSpells.push(uuid);
+      }
+      const spellsFilteredByLevel = allUuids.size - preloadedSpells.length - actuallyMissingSpells.length;
+      if (actuallyMissingSpells.length > 0) {
+        log(
+          3,
+          `Found ${preloadedSpells.length} preloaded wizard spells for ${classIdentifier}, loading ${actuallyMissingSpells.length} missing spells (${spellsFilteredByLevel} filtered by level cap)`
+        );
+        const additionalSpells = await DataUtils.fetchSpellDocuments(new Set(actuallyMissingSpells), effectiveMaxLevel);
         spellItems = [...preloadedSpells, ...additionalSpells];
-      } else spellItems = preloadedSpells;
+      } else {
+        log(3, `All ${preloadedSpells.length} wizard spells for ${classIdentifier} found in preloaded data (${spellsFilteredByLevel} filtered by level cap)`);
+        spellItems = preloadedSpells;
+      }
     } else spellItems = await DataUtils.fetchSpellDocuments(allUuids, effectiveMaxLevel);
     if (!spellItems || !spellItems.length) {
       log(1, `No spell items found for wizard ${classIdentifier}`);
@@ -1463,7 +1493,6 @@ export class State {
    */
   getFavoriteSessionState(spellUuid) {
     const state = this.app._favoriteSessionState?.get(spellUuid) || null;
-    log(3, 'Retrieved session favorite state', { spellUuid, state });
     return state;
   }
 

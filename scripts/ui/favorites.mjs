@@ -127,6 +127,7 @@ export function findActorSpellByUuid(spellUuid, actor) {
  * @returns {string} Canonical UUID for favorites storage
  */
 export function getCanonicalSpellUuid(spellOrUuid) {
+  if (typeof spellOrUuid === 'string' && spellOrUuid.includes('.Item.')) return spellOrUuid;
   let result;
   if (typeof spellOrUuid === 'string') {
     const parsedUuid = foundry.utils.parseUuid(spellOrUuid);

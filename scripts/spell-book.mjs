@@ -44,6 +44,7 @@ Hooks.on('setup', () => {
 Hooks.once('ready', async function () {
   const suppressWarnings = game.settings.get(MODULE.ID, SETTINGS.SUPPRESS_MIGRATION_WARNINGS);
   if (!suppressWarnings) Hooks.on('createChatMessage', createChatMessage);
+  DataUtils.initializePackIndexCache();
   Migrations.runAllMigrations();
   UIUtils.DescriptionInjector.initialize();
   await unlockModuleCompendium();

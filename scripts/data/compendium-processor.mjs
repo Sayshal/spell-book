@@ -15,6 +15,12 @@ import * as UIUtils from '../ui/_module.mjs';
 import * as DataUtils from './_module.mjs';
 
 /**
+ * Cache for pack indexing status to avoid repeated settings reads.
+ * @type {Map<string, boolean>|null}
+ */
+let _indexedPacksCache = null;
+
+/**
  * Scan compendiums for spell lists with optional visibility filtering.
  * @param {boolean} [includeHidden=true] - Whether to include hidden spell lists in results
  * @returns {Promise<Array<SpellListMetadata>>} Array of spell list objects with metadata
@@ -647,16 +653,38 @@ export async function getOrCreateModifiedFolder() {
 }
 
 /**
+ * Initialize the pack index cache by reading settings once and storing results.
+ */
+export function initializePackIndexCache() {
+  log(3, 'Initializing pack index cache');
+  const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
+  _indexedPacksCache = new Map();
+  for (const pack of game.packs) {
+    let isIndexed = true;
+    if (settings && typeof settings === 'object' && Object.keys(settings).length > 0) isIndexed = pack.collection in settings ? settings[pack.collection] === true : false;
+    _indexedPacksCache.set(pack.collection, isIndexed);
+  }
+  log(3, `Pack index cache initialized with ${_indexedPacksCache.size} packs`);
+}
+
+/**
+ * Invalidate the pack index cache, forcing it to rebuild on next access.
+ * Call this when indexed compendium settings change.
+ */
+export function invalidatePackIndexCache() {
+  log(3, 'Invalidating pack index cache');
+  _indexedPacksCache = null;
+}
+
+/**
  * Check if a compendium should be indexed for spell operations.
  * @param {CompendiumCollection} pack - The pack to check
  * @returns {boolean} Whether the pack should be indexed
  */
 export function shouldIndexCompendium(pack) {
-  log(3, 'Checking if pack should be indexed:', pack.metadata.name);
-  const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
-  if (!settings || typeof settings !== 'object' || Object.keys(settings).length === 0) return true;
-  if (pack.collection in settings) return settings[pack.collection] === true;
-  return false;
+  if (_indexedPacksCache === null) initializePackIndexCache();
+  const isIndexed = _indexedPacksCache.get(pack.collection);
+  return isIndexed ?? true;
 }
 
 /**

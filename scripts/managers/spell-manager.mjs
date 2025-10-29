@@ -293,6 +293,214 @@ export class SpellManager {
   }
 
   /**
+   * Prepare batch data for efficient spell processing.
+   * @param {string} classIdentifier - The class identifier to prepare data for
+   * @returns {Object} Batch data containing Maps and cached values for O(1) lookups
+   */
+  prepareBatchData(classIdentifier) {
+    log(3, 'Preparing batch data for spell processing', { actorName: this.actor.name, classIdentifier });
+    const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
+    const classPreparedSpells = preparedByClass[classIdentifier] || [];
+    const ownedSpellsMap = new Map();
+    const unassignedSpellsMap = new Map();
+    for (const item of this.actor.items) {
+      if (item.type !== 'spell') continue;
+      const spellUuid = item._stats?.compendiumSource || item.uuid;
+      const sourceClass = item.system?.sourceClass || item.sourceClass;
+      if (!sourceClass) unassignedSpellsMap.set(spellUuid, item);
+      else {
+        if (!ownedSpellsMap.has(spellUuid)) ownedSpellsMap.set(spellUuid, []);
+        ownedSpellsMap.get(spellUuid).push({ item, sourceClass, prepared: item.system.prepared, method: item.system.method });
+      }
+    }
+    const preparedByOtherClassMap = new Map();
+    for (const [otherClass, preparedSpells] of Object.entries(preparedByClass)) {
+      if (otherClass === classIdentifier) continue;
+      for (const preparedKey of preparedSpells) {
+        const parts = preparedKey.split(':');
+        const spellUuid = parts.slice(1).join(':');
+        preparedByOtherClassMap.set(spellUuid, otherClass);
+      }
+    }
+    const cantripLimits = classIdentifier ? { max: this.cantripManager._getMaxCantripsForClass(classIdentifier), current: this.cantripManager.getCurrentCount(classIdentifier) } : null;
+    const cantripSettings = classIdentifier ? this.getSettings(classIdentifier) : null;
+    log(3, 'Batch data prepared', {
+      actor: this.actor.name,
+      classIdentifier,
+      ownedSpells: ownedSpellsMap.size,
+      unassignedSpells: unassignedSpellsMap.size,
+      preparedByOtherClass: preparedByOtherClassMap.size
+    });
+    return { preparedByClass, classPreparedSpells, ownedSpellsMap, unassignedSpellsMap, preparedByOtherClassMap, cantripLimits, cantripSettings };
+  }
+
+  /**
+   * Get spell preparation status using pre-fetched batch data.
+   * @param {Object} spell - The spell to check
+   * @param {string} classIdentifier - The specific class context
+   * @param {Object} batchData - Pre-fetched batch data from prepareBatchData()
+   * @returns {SpellPreparationStatus} Preparation status information
+   */
+  getSpellPreparationStatusFromBatch(spell, classIdentifier, batchData) {
+    const defaultStatus = {
+      prepared: false,
+      isOwned: false,
+      preparationMode: null,
+      disabled: false,
+      alwaysPrepared: false,
+      sourceItem: null,
+      isGranted: false,
+      localizedPreparationMode: '',
+      isCantripLocked: false
+    };
+    if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
+    const spellUuid = spell.compendiumUuid || spell.uuid;
+    const isPreparableContext = spell._preparationContext === 'preparable';
+    if (isPreparableContext) {
+      const spellKey = this._createClassSpellKey(spellUuid, classIdentifier);
+      let isPreparedForClass = batchData.classPreparedSpells.includes(spellKey);
+      if (!isPreparedForClass) {
+        const ownedVersions = batchData.ownedSpellsMap.get(spellUuid);
+        if (ownedVersions) {
+          const preparedVersion = ownedVersions.find((v) => v.sourceClass === classIdentifier && v.prepared === 1 && v.method !== MODULE.PREPARATION_MODES.RITUAL);
+          if (preparedVersion) isPreparedForClass = true;
+        }
+      }
+      const preparedByOtherClass = batchData.preparedByOtherClassMap.get(spellUuid);
+      if (preparedByOtherClass) {
+        const spellcastingData = this.actor.spellcastingClasses?.[preparedByOtherClass];
+        const classItem = spellcastingData ? this.actor.items.get(spellcastingData.id) : null;
+        return {
+          prepared: false,
+          isOwned: false,
+          preparationMode: MODULE.PREPARATION_MODES.SPELL,
+          localizedPreparationMode: game.i18n.localize('SPELLBOOK.Preparation.Prepared'),
+          disabled: false,
+          disabledReason: game.i18n.format('SPELLBOOK.Preparation.PreparedByOtherClass', { class: classItem?.name || preparedByOtherClass }),
+          alwaysPrepared: false,
+          isGranted: false,
+          sourceItem: null,
+          isCantripLocked: false,
+          preparedByOtherClass: preparedByOtherClass
+        };
+      }
+      defaultStatus.prepared = isPreparedForClass;
+      if (spell.system?.level === 0 && batchData.cantripLimits) {
+        const { max, current } = batchData.cantripLimits;
+        const isAtMax = current >= max;
+        if (isAtMax && !isPreparedForClass) {
+          const { behavior } = batchData.cantripSettings;
+          defaultStatus.isCantripLocked = behavior === MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED;
+          defaultStatus.cantripLockReason = 'SPELLBOOK.Cantrips.MaximumReached';
+        }
+      }
+      return defaultStatus;
+    }
+    const ownedVersions = batchData.ownedSpellsMap.get(spellUuid);
+    if (ownedVersions) {
+      const preparedVersion = ownedVersions.find((v) => v.sourceClass === classIdentifier && v.prepared === 1 && v.method !== MODULE.PREPARATION_MODES.RITUAL);
+      if (preparedVersion) return this._getOwnedSpellPreparationStatus(preparedVersion.item);
+      const classVersion = ownedVersions.find((v) => v.sourceClass === classIdentifier);
+      if (classVersion) return this._getOwnedSpellPreparationStatus(classVersion.item);
+    }
+    const unassignedSpell = batchData.unassignedSpellsMap.get(spellUuid);
+    if (unassignedSpell && classIdentifier) {
+      const isAlwaysPrepared = unassignedSpell.system.prepared === 2;
+      const isGranted = !!unassignedSpell.flags?.dnd5e?.cachedFor;
+      const isSpecialMode = MODULE.SPECIAL_PREPARATION_MODES.includes(unassignedSpell.system.method);
+      if (!isAlwaysPrepared && !isGranted && !isSpecialMode) {
+        unassignedSpell.sourceClass = classIdentifier;
+        if (unassignedSpell.system) unassignedSpell.system.sourceClass = classIdentifier;
+      }
+      return this._getOwnedSpellPreparationStatus(unassignedSpell);
+    }
+    const preparedByOtherClass = batchData.preparedByOtherClassMap.get(spellUuid);
+    if (preparedByOtherClass) {
+      const spellcastingData = this.actor.spellcastingClasses?.[preparedByOtherClass];
+      const classItem = spellcastingData ? this.actor.items.get(spellcastingData.id) : null;
+      return {
+        prepared: true,
+        isOwned: false,
+        preparationMode: MODULE.PREPARATION_MODES.SPELL,
+        localizedPreparationMode: game.i18n.localize('SPELLBOOK.Preparation.Prepared'),
+        disabled: true,
+        disabledReason: game.i18n.format('SPELLBOOK.Preparation.PreparedByOtherClass', { class: classItem?.name || preparedByOtherClass }),
+        alwaysPrepared: false,
+        isGranted: false,
+        sourceItem: null,
+        isCantripLocked: false
+      };
+    }
+    const specialSpell = this.actor.items.find((item) => item.type === 'spell' && (item._stats?.compendiumSource === spellUuid || item.uuid === spellUuid));
+    if (specialSpell) {
+      if (specialSpell.system.prepared === 2) {
+        const sourceClass = specialSpell.system?.sourceClass || specialSpell.sourceClass;
+        const spellcastingData = sourceClass ? this.actor.spellcastingClasses?.[sourceClass] : null;
+        const classItem = spellcastingData ? this.actor.items.get(spellcastingData.id) : null;
+        return {
+          prepared: true,
+          isOwned: false,
+          preparationMode: MODULE.PREPARATION_MODES.ALWAYS,
+          disabled: true,
+          alwaysPrepared: true,
+          disabledReason: game.i18n.format('SPELLBOOK.Preparation.AlwaysPreparedByClass', { class: classItem?.name || sourceClass || 'Feature' }),
+          localizedPreparationMode: game.i18n.localize('SPELLBOOK.Preparation.Always'),
+          sourceItem: this._determineSpellSource(specialSpell),
+          isGranted: false,
+          isCantripLocked: false
+        };
+      }
+      if (specialSpell.flags?.dnd5e?.cachedFor) {
+        const grantingItem = this.actor.items.get(specialSpell.flags.dnd5e.cachedFor);
+        return {
+          prepared: true,
+          isOwned: false,
+          preparationMode: MODULE.PREPARATION_MODES.GRANTED,
+          disabled: true,
+          isGranted: true,
+          disabledReason: game.i18n.format('SPELLBOOK.SpellSource.GrantedByItem', { item: grantingItem?.name || 'Feature' }),
+          localizedPreparationMode: game.i18n.localize('SPELLBOOK.SpellSource.Granted'),
+          sourceItem: grantingItem,
+          alwaysPrepared: false,
+          isCantripLocked: false
+        };
+      }
+      const specialModes = MODULE.SPECIAL_PREPARATION_MODES;
+      if (specialModes.includes(specialSpell.system.method)) {
+        const sourceClass = specialSpell.system?.sourceClass || specialSpell.sourceClass;
+        const spellcastingData = sourceClass ? this.actor.spellcastingClasses?.[sourceClass] : null;
+        const classItem = spellcastingData ? this.actor.items.get(spellcastingData.id) : null;
+        const localizedMode = UIUtils.getLocalizedPreparationMode(specialSpell.system.method);
+        return {
+          prepared: true,
+          isOwned: false,
+          preparationMode: specialSpell.system.method,
+          disabled: true,
+          disabledReason: game.i18n.format('SPELLBOOK.Preparation.SpecialModeByClass', { mode: localizedMode, class: classItem?.name || sourceClass || classIdentifier }),
+          localizedPreparationMode: localizedMode,
+          alwaysPrepared: false,
+          isGranted: false,
+          sourceItem: this._determineSpellSource(specialSpell),
+          isCantripLocked: false
+        };
+      }
+    }
+    const spellKey = this._createClassSpellKey(spellUuid, classIdentifier);
+    const isPreparedForClass = batchData.classPreparedSpells.includes(spellKey);
+    defaultStatus.prepared = isPreparedForClass;
+    if (spell.system?.level === 0 && batchData.cantripLimits) {
+      const { max, current } = batchData.cantripLimits;
+      const isAtMax = current >= max;
+      if (isAtMax && !isPreparedForClass) {
+        const { behavior } = batchData.cantripSettings;
+        defaultStatus.isCantripLocked = behavior === MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED;
+        defaultStatus.cantripLockReason = 'SPELLBOOK.Cantrips.MaximumReached';
+      }
+    }
+    return defaultStatus;
+  }
+
+  /**
    * Create a unique key for class-spell combinations.
    * @param {string} spellUuid - The spell UUID
    * @param {string} classIdentifier - The class identifier

@@ -144,6 +144,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     /** @type {UIUtils.Filters} Filter helper for spell filtering */
     this.filterHelper = new UIUtils.Filters(this);
 
+    /** @type {Set<string>} Cached enabled UI elements for GM interface */
+    this.enabledElements = UIUtils.CustomUI.getEnabledGMElements();
+
     /** @type {boolean} Whether checkboxes are currently being updated programmatically */
     this.isUpdatingCheckboxes = false;
 
@@ -181,7 +184,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (this.availableSpells.length > 0) this._prepareFilterContext(context);
     if (this.isEditing && this.selectedSpellList) await this._addEditingContext(context);
     if (this.selectedSpellList) {
-      const enabledElements = UIUtils.CustomUI.getEnabledGMElements();
+      const enabledElements = this.enabledElements;
       context.selectedSpellList = UIUtils.processSpellListForDisplay(this.selectedSpellList, this.classFolderCache, this.availableSpellLists, enabledElements);
       const flags = this.selectedSpellList.document.flags?.[MODULE.ID] || {};
       const isCustomList = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList;
@@ -299,7 +302,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const filteredData = this._filterAvailableSpells();
     const maxSpells = game.settings.get(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX);
     const comparisonFull = this.comparisonSpells.size >= maxSpells;
-    const enabledElements = UIUtils.CustomUI.getEnabledGMElements();
+    const enabledElements = this.enabledElements;
     if (this.isEditing && this.selectionMode && filteredData.spells) {
       filteredData.spells = filteredData.spells.map((spell) => {
         const processedSpell = UIUtils.processSpellItemForDisplay(spell, enabledElements);

@@ -44,7 +44,7 @@ export function registerSettings() {
     type: new foundry.data.fields.ObjectField(),
     onChange: (value) => {
       if (typeof value !== 'object' || value === null) game.settings.set(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS, {});
-      if (window.spellBookCompendiumCache) window.spellBookCompendiumCache.clear();
+      DataUtils.invalidatePackIndexCache();
     }
   });
 

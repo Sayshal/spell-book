@@ -116,7 +116,6 @@ export class CustomUI {
     if (Array.isArray(properties)) hasProperty = properties.includes(property);
     else if (properties instanceof Set) hasProperty = properties.has(property);
     else if (typeof properties === 'object') hasProperty = !!properties[property];
-    log(3, 'Checking spell property.', { spell: spell.name, property, hasProperty });
     return hasProperty;
   }
 

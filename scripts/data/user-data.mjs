@@ -208,7 +208,6 @@ export class UserData {
    * @static
    */
   static async getUserDataForSpell(spellOrUuid, userId = null, actorId = null) {
-    log(3, 'Getting user data for spell.', { spellOrUuid, userId, actorId });
     const spellUuid = typeof spellOrUuid === 'string' ? spellOrUuid : spellOrUuid?.uuid || spellOrUuid?.compendiumUuid;
     if (!spellUuid) return null;
     let canonicalUuid = spellUuid;

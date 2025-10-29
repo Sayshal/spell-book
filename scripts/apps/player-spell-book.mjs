@@ -120,6 +120,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     /** @type {UIUtils.Filters} Filter helper for spell filtering */
     this.filterHelper = new UIUtils.Filters(this);
 
+    /** @type {Set<string>} Cached enabled UI elements for player interface */
+    this.enabledElements = UIUtils.CustomUI.getEnabledPlayerElements();
+
     /** @type {Map} Ritual managers by class (currently unused) */
     this.ritualManagers = new Map();
 
@@ -359,7 +362,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _getInputCacheKey(input) {
-    log(3, 'Input Cache Key required:', { input });
     if (input.disabled || input.readonly) return null;
     if (input.name) return `name:${input.name}`;
     if ((input.type === 'checkbox' || input.matches('dnd5e-checkbox')) && input.dataset.uuid) {
@@ -959,7 +961,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   async _processSpellLevelsForContext(spellLevels) {
     log(3, 'Processing spell levels for context:', { spellLevels });
     const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
-    const enabledElements = UIUtils.CustomUI.getEnabledPlayerElements();
+    const enabledElements = this.enabledElements;
     const processedLevels = [];
     for (const levelData of spellLevels) {
       const level = String(levelData.level);
