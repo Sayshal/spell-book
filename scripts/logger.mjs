@@ -16,14 +16,14 @@ export function log(level, ...args) {
   if (configuredLogLevel > 0 && level <= configuredLogLevel) {
     switch (level) {
       case 1:
-        console.error(`%c${MODULE.ID}%c |`, 'background: #991b1b; color: white; font-weight: bold; padding: 2px 4px; border-radius: 3px;', 'color: white;', ...args);
+        console.error(`%c${MODULE.ID}%c |`, 'color: #ef4444; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 0 0 1px #000;', 'color: #9ca3af;', ...args);
         break;
       case 2:
-        console.warn(`%c${MODULE.ID}%c |`, 'background: #c2410c; color: black; font-weight: bold; padding: 2px 4px; border-radius: 3px;', 'color: black;', ...args);
+        console.warn(`%c${MODULE.ID}%c |`, 'color: #fb923c; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 0 0 1px #000;', 'color: #9ca3af;', ...args);
         break;
       case 3:
       default:
-        console.debug(`%c${MODULE.ID}%c |`, 'background: #7c3aed; color: white; font-weight: bold; padding: 2px 4px; border-radius: 3px;', 'color: white;', ...args);
+        console.debug(`%c${MODULE.ID}%c |`, 'color: #a78bfa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 0 0 1px #000;', 'color: #9ca3af;', ...args);
         break;
     }
   }

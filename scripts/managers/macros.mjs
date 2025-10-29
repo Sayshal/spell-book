@@ -52,11 +52,9 @@ export class Macros {
     const existingMacro = packDocuments.find((macro) => macro.getFlag(MODULE.ID, flagKey) !== undefined);
     if (existingMacro) {
       const currentVersion = existingMacro.getFlag(MODULE.ID, `${flagKey}.version`);
-      if (currentVersion === version) {
-        log(3, `Compendium macro "${name}" is up to date (v${version})`);
-        return existingMacro;
-      } else {
-        log(3, `Updating compendium macro "${name}" from v${currentVersion} to v${version}`);
+      if (currentVersion === version) return existingMacro;
+      else {
+        log(3, `Updating compendium macro "${name}" from ${currentVersion} --> ${version}`);
         await existingMacro.update({
           name: name,
           command: command,
@@ -108,10 +106,8 @@ export class Macros {
    * @static
    */
   static async cleanupObsoleteMacros() {
-    log(3, 'Cleaning up obsolete macros.');
     const currentFlagKeys = MACROS.map((def) => def.flagKey);
     const managedMacros = await this.getManagedMacros();
-    let deletedCount = 0;
     for (const macro of managedMacros) {
       const moduleFlags = macro.getFlag(MODULE.ID);
       const macroFlagKeys = Object.keys(moduleFlags || {});
@@ -119,9 +115,7 @@ export class Macros {
       if (isObsolete) {
         log(3, 'Deleting obsolete macro.', { macroId: macro.id, name: macro.name });
         await macro.delete();
-        deletedCount++;
       }
     }
-    log(3, 'Obsolete macro cleanup complete.', { deletedCount });
   }
 }

@@ -652,7 +652,7 @@ export async function getOrCreateModifiedFolder() {
  * @returns {boolean} Whether the pack should be indexed
  */
 export function shouldIndexCompendium(pack) {
-  log(3, 'Checking if pack should be indexed.', pack.metadata.name);
+  log(3, 'Checking if pack should be indexed:', pack.metadata.name);
   const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
   if (!settings || typeof settings !== 'object' || Object.keys(settings).length === 0) return true;
   if (pack.collection in settings) return settings[pack.collection] === true;
