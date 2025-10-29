@@ -6,28 +6,6 @@
  * enhancements. It serves as the central coordinator for all UI-related functionality
  * including layout management, search integration, and spell interaction controls.
  *
- * The UI system manages multiple interconnected aspects:
- * - Sidebar and footer layout with responsive positioning
- * - Advanced search integration and collapsed state handling
- * - Spell preparation tracking with per-class enforcement
- * - Cantrip selection with rule-based restrictions
- * - Spell locking based on class rules and limits
- * - Dynamic count displays and visual feedback
- * - Class-specific styling and color theming
- *
- * Key features include:
- * - Real-time spell preparation limit enforcement
- * - Granular per-class spell preparation tracking
- * - Advanced search manager integration
- * - Rule-based cantrip swapping with multiple modes
- * - Dynamic UI state persistence via user flags
- * - Responsive layout management for different view states
- * - Visual feedback for preparation limits and restrictions
- * - Integration with spell management and validation systems
- *
- * The system ensures consistent user experience while enforcing D&D 5e spellcasting
- * rules and providing enhanced functionality for spell management workflows.
- *
  * @module UIUtils/SpellBookUI
  * @author Tyler
  */
@@ -61,6 +39,8 @@ export class SpellBookUI {
 
     /** @type {boolean} - Flag to track cantrip UI initialization state */
     this._cantripUIInitialized = false;
+
+    log(3, 'SpellBookUI initialized.', { actor: app.actor?.name });
   }
 
   /**
@@ -78,6 +58,7 @@ export class SpellBookUI {
   setSidebarState() {
     const sidebarCollapsed = game.user.getFlag(MODULE.ID, FLAGS.SIDEBAR_COLLAPSED);
     if (sidebarCollapsed) this.element.classList.add('sidebar-collapsed');
+    log(3, 'Sidebar state set.', { collapsed: sidebarCollapsed });
   }
 
   /**
@@ -88,6 +69,7 @@ export class SpellBookUI {
     const footer = this.element.querySelector('footer');
     if (!footer) return;
     const isSidebarCollapsed = this.element.classList.contains('sidebar-collapsed');
+    log(3, 'Positioning footer.', { sidebarCollapsed: isSidebarCollapsed });
     const sidebarFooterContainer = this.element.querySelector('.sidebar-footer-container');
     const collapsedFooter = this.element.querySelector('.collapsed-footer');
     const collapsedFooterSearch = this.element.querySelector('.collapsed-footer-search');
@@ -120,6 +102,7 @@ export class SpellBookUI {
    * @returns {void}
    */
   setupCollapsedFooterSearch(searchElement) {
+    log(3, 'Setting up collapsed footer search.');
     const searchInput = searchElement.querySelector('.advanced-search-input');
     const clearButton = searchElement.querySelector('.search-input-clear');
     if (searchInput) {
@@ -150,6 +133,7 @@ export class SpellBookUI {
    */
   setupFilterListeners() {
     const filterInputs = this.element.querySelectorAll('.spell-filters input, .spell-filters select');
+    log(3, 'Setting up filter listeners.', { filterCount: filterInputs.length });
     filterInputs.forEach((input) => {
       const eventType = input.type === 'checkbox' ? 'change' : 'input';
       input.addEventListener(eventType, () => {
@@ -173,6 +157,7 @@ export class SpellBookUI {
     if (!classIdentifier) return;
     const classData = this.app._state.classSpellData[classIdentifier];
     if (!classData) return;
+    log(3, 'Updating spell preparation tracking.', { classIdentifier });
     const classRules = RuleSet.getClassRules(this.app.actor, classIdentifier);
     let baseMaxPrepared = 0;
     const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(this.app.actor, classIdentifier);
@@ -200,20 +185,20 @@ export class SpellBookUI {
     if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) this._enforcePerClassSpellLimits(activeTabContent, classIdentifier, isClassAtMax);
     this.app._state.updateGlobalPreparationCount();
     const globalPrepared = this.app._state.spellPreparation;
-    this._updateFooterPreparationDisplay(classIdentifier, isClassAtMax, globalPrepared);
+    this._updateFooterPreparationDisplay(globalPrepared);
+    log(3, 'Spell preparation tracking updated.', { classPreparedCount, classMaxPrepared });
   }
 
   /**
    * Update the footer preparation display with granular at-max styling.
-   * @param {string} activeClassIdentifier - The currently active class identifier
-   * @param {boolean} isActiveClassAtMax - Whether the active class is at maximum
    * @param {PreparationDisplayData} globalPrepared - Global preparation counts
    * @returns {void}
    * @private
    */
-  _updateFooterPreparationDisplay(activeClassIdentifier, isActiveClassAtMax, globalPrepared) {
+  _updateFooterPreparationDisplay(globalPrepared) {
     const prepTrackingContainer = this.element.querySelector('.spell-prep-tracking');
     if (!prepTrackingContainer) return;
+    log(3, 'Updating footer preparation display.', { current: globalPrepared.current, max: globalPrepared.maximum });
     const globalCurrentEl = prepTrackingContainer.querySelector('.global-current-count');
     if (globalCurrentEl) globalCurrentEl.textContent = formatNumber(globalPrepared.current);
     const isGloballyAtMax = globalPrepared.current >= globalPrepared.maximum;
@@ -245,6 +230,7 @@ export class SpellBookUI {
   _enforcePerClassSpellLimits(tabContent, classIdentifier, isClassAtMax) {
     const spellCheckboxes = tabContent.querySelectorAll('dnd5e-checkbox[data-uuid]');
     const classData = this.app._state.classSpellData[classIdentifier];
+    log(3, 'Enforcing per-class spell limits.', { classIdentifier, isClassAtMax, checkboxCount: spellCheckboxes.length });
     spellCheckboxes.forEach((checkbox) => {
       const spellItem = checkbox.closest('.spell-item');
       if (!spellItem) return;
@@ -276,6 +262,7 @@ export class SpellBookUI {
     if (!activeTab) return;
     const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
     if (!activeTabContent) return;
+    log(3, 'Updating spell counts.', { activeTab });
     if (activeTab === 'wizardbook') {
       const countDisplays = activeTabContent.querySelectorAll('.spell-count');
       countDisplays.forEach((countDisplay) => countDisplay.remove());
@@ -330,6 +317,7 @@ export class SpellBookUI {
    */
   applyCollapsedLevels() {
     const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
+    log(3, 'Applying collapsed levels.', { collapsedCount: collapsedLevels.length });
     for (const levelId of collapsedLevels) {
       const levelContainer = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
       if (levelContainer) levelContainer.classList.add('collapsed');
@@ -344,6 +332,7 @@ export class SpellBookUI {
     const activeTab = this.app.tabGroups['spellbook-tabs'];
     const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
     if (!activeTabContent) return;
+    log(3, 'Setting up cantrip UI.', { activeTab });
     const cantripLevel = activeTabContent.querySelector('.spell-level[data-level="0"]');
     if (cantripLevel) {
       this.setupCantripLocks(true);
@@ -372,6 +361,7 @@ export class SpellBookUI {
    */
   setupAdvancedSearch() {
     if (this.search && this.search.isInitialized) return;
+    log(3, 'Setting up advanced search.');
     this.search.initialize();
   }
 
@@ -395,6 +385,7 @@ export class SpellBookUI {
     const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
     const classIdentifier = activeTabContent?.dataset.classIdentifier;
     if (!classIdentifier) return { current: 0, max: 0 };
+    log(3, 'Updating cantrip counter.', { classIdentifier });
     const maxCantrips = this.app.spellManager.cantripManager._getMaxCantripsForClass(classIdentifier);
     let currentCount = 0;
     const cantripItems = cantripLevel.querySelectorAll('.spell-item');
@@ -422,6 +413,7 @@ export class SpellBookUI {
     counterElem.style.display = '';
     counterElem.classList.toggle('at-max', currentCount >= maxCantrips);
     if (!skipLockSetup) this.setupCantripLocks();
+    log(3, 'Cantrip counter updated.', { current: currentCount, max: maxCantrips });
     return { current: currentCount, max: maxCantrips };
   }
 
@@ -439,6 +431,7 @@ export class SpellBookUI {
     if (!classIdentifier) return;
     const cantripItems = activeTabContent.querySelectorAll('.spell-item[data-spell-level="0"]');
     if (!cantripItems.length) return;
+    log(3, 'Setting up cantrip locks.', { classIdentifier, applyRuleLocks, cantripCount: cantripItems.length });
     const settings = this.app.spellManager.getSettings(classIdentifier);
     let currentCount = 0;
     let maxCantrips = 0;
@@ -485,6 +478,7 @@ export class SpellBookUI {
     const isLevelUp = this.app.spellManager.cantripManager.canBeLeveledUp();
     const isLongRest = this.app._isLongRest;
     const uuid = checkbox.dataset.uuid;
+    log(3, 'Applying rule-based cantrip locks.', { classIdentifier, isLevelUp, isLongRest, swapMode: settings.cantripSwapping });
     const preparedByClass = this.app.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const classPreparedSpells = preparedByClass[classIdentifier] || [];
     const classSpellKey = `${classIdentifier}:${uuid}`;
@@ -525,6 +519,7 @@ export class SpellBookUI {
    */
   async applyClassStyling() {
     if (this._colorApplicationCount > 0) return;
+    log(3, 'Applying class styling.', { classCount: this.app._state.spellcastingClasses?.length || 0 });
     if (this.app._state.spellcastingClasses) {
       await UIUtils.applyClassColors(this.app._state.spellcastingClasses);
       this._colorApplicationCount++;
@@ -546,6 +541,7 @@ export class SpellBookUI {
     const settings = this.app.spellManager.getSettings(classIdentifier);
     const classData = this.app._state.classSpellData[classIdentifier];
     if (!classData) return;
+    log(3, 'Setting up spell locks.', { classIdentifier, behavior: settings.behavior });
     const currentPrepared = getProperty(classData, 'spellPreparation.current') || 0;
     const maxPrepared = getProperty(classData, 'spellPreparation.maximum') || 0;
     const spellItems = activeTabContent.querySelectorAll('.spell-item');
@@ -611,6 +607,7 @@ export function updateSelectAllState(selectAllCheckbox, childCheckboxes) {
   if (!selectAllCheckbox || !childCheckboxes || childCheckboxes.length === 0) return;
   const checkboxArray = Array.from(childCheckboxes);
   const checkedCount = checkboxArray.filter((cb) => cb.checked).length;
+  log(3, 'Updating select-all state.', { total: checkboxArray.length, checked: checkedCount });
   if (checkedCount === 0) {
     selectAllCheckbox.checked = false;
     selectAllCheckbox.indeterminate = false;
@@ -630,35 +627,11 @@ export function updateSelectAllState(selectAllCheckbox, childCheckboxes) {
  * @param {boolean} [skipDisabled=true] - Whether to skip disabled checkboxes
  */
 export function setGroupCheckboxes(checkboxes, checked, skipDisabled = true) {
+  log(3, 'Setting group checkboxes.', { count: checkboxes.length, checked, skipDisabled });
   Array.from(checkboxes).forEach((checkbox) => {
     if (skipDisabled && checkbox.disabled) return;
     checkbox.checked = checked;
   });
-}
-
-/**
- * Calculate statistics for a collection of items with enabled/checked states.
- * @param {Array|NodeList} items - Array of items or checkboxes to analyze
- * @param {Function|string} [enabledCheck='enabled'] - Function to check if item is enabled, or property name
- * @param {Function|string} [disabledCheck='disabled'] - Function to check if item is disabled, or property name
- * @returns {CollectionStats} Statistics object with counts and flags
- */
-export function calculateCollectionStats(items, enabledCheck = 'enabled', disabledCheck = 'disabled') {
-  const itemArray = Array.from(items);
-  const totalCount = itemArray.length;
-  const enabledFn = typeof enabledCheck === 'function' ? enabledCheck : (item) => item[enabledCheck] || item.checked;
-  const disabledFn = typeof disabledCheck === 'function' ? disabledCheck : (item) => item[disabledCheck] || item.disabled;
-  const enabledCount = itemArray.filter(enabledFn).length;
-  const disabledCount = itemArray.filter(disabledFn).length;
-  return {
-    enabledCount,
-    totalCount,
-    disabledCount,
-    allEnabled: enabledCount === totalCount,
-    allDisabled: disabledCount === totalCount,
-    noneEnabled: enabledCount === 0,
-    percentage: totalCount > 0 ? Math.round((enabledCount / totalCount) * 100) : 0
-  };
 }
 
 /**
@@ -692,7 +665,7 @@ export function calculateOptimalPosition(config) {
  * @param {HTMLElement} tooltip - The tooltip element to position
  * @param {number} [offset=15] - Offset from cursor in pixels
  */
-export function positionTooltipAtCursor(event, tooltip, offset = 15) {
+function positionTooltipAtCursor(event, tooltip, offset = 15) {
   const rect = tooltip.getBoundingClientRect();
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
@@ -710,7 +683,7 @@ export function positionTooltipAtCursor(event, tooltip, offset = 15) {
  * @param {string} [className='tooltip'] - CSS class for the tooltip
  * @returns {HTMLElement} The tooltip element
  */
-export function getOrCreateTooltip(id, className = 'tooltip') {
+function getOrCreateTooltip(id, className = 'tooltip') {
   let tooltip = document.getElementById(id);
   if (!tooltip) {
     tooltip = document.createElement('div');
@@ -741,24 +714,8 @@ export function showTooltip(tooltipId, content, event = null, className = 'toolt
   }
   tooltip.style.display = 'block';
   if (event) positionTooltipAtCursor(event, tooltip);
+  log(3, 'Showing tooltip.', { tooltipId, hasEvent: !!event });
   return tooltip;
-}
-
-/**
- * Show a loading state in the tooltip.
- * @param {string} tooltipId - Unique tooltip ID
- * @param {MouseEvent} [event=null] - Optional mouse event for cursor positioning
- * @param {string} [className='tooltip'] - CSS class for the tooltip
- * @returns {HTMLElement} The tooltip element
- */
-export function showLoadingTooltip(tooltipId, event = null, className = 'tooltip') {
-  const loadingContent = `
-    <div class="tooltip-loading">
-      <i class="fas fa-spinner fa-spin"></i>
-      <span>${game.i18n.localize('SPELLBOOK.UI.Loading')}</span>
-    </div>
-  `;
-  return showTooltip(tooltipId, loadingContent, event, className);
 }
 
 /**

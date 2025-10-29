@@ -5,22 +5,6 @@
  * on actor items within Foundry VTT. It handles dynamic insertion, removal, and
  * updating of personal notes based on user preferences and spell data changes.
  *
- * The injection system supports multiple modes:
- * - Off: No notes injection
- * - Before: Notes appear before the spell description
- * - After: Notes appear after the spell description
- *
- * Key features include:
- * - Automatic notes injection on spell creation and updates
- * - Recursion prevention for update loops
- * - User ownership detection for proper notes retrieval
- * - HTML formatting with proper styling and localization
- * - Cross-actor spell synchronization for note changes
- * - Setting-based injection mode switching with bulk operations
- *
- * The system integrates with the spell user data journal to retrieve notes
- * and ensures proper ownership handling for GM-managed actors.
- *
  * @module UIUtils/DescriptionInjector
  * @author Tyler
  */
@@ -59,6 +43,7 @@ export class DescriptionInjector {
    * @static
    */
   static async handleSettingChange(newValue) {
+    log(3, 'Handling description injection setting change.', { newValue });
     if (newValue === 'off') await this.removeAllNotesFromDescriptions();
     else await this.reapplyAllNotes();
   }
@@ -73,6 +58,7 @@ export class DescriptionInjector {
       const spellItems = actor.items.filter((item) => item.type === 'spell');
       for (const spell of spellItems) await this.removeNotesFromDescription(spell);
     }
+    log(3, 'All notes removed from descriptions.');
   }
 
   /**
@@ -85,6 +71,7 @@ export class DescriptionInjector {
       const spellItems = actor.items.filter((item) => item.type === 'spell');
       for (const spell of spellItems) await this.updateSpellDescription(spell);
     }
+    log(3, 'All notes reapplied to descriptions.');
   }
 
   /**
@@ -97,6 +84,7 @@ export class DescriptionInjector {
    */
   static async onCreateItem(item, _options, _userId) {
     if (item.type !== 'spell' || !item.parent || item.parent.documentName !== 'Actor') return;
+    log(3, 'Item created, updating spell description.', { item: item.name });
     await this.updateSpellDescription(item);
   }
 
@@ -115,6 +103,7 @@ export class DescriptionInjector {
     const spellKey = `${item.parent.id}-${item.id}`;
     if (this._updatingSpells.has(spellKey)) return;
     if (changes.system?.description) await this.updateSpellDescription(item);
+    log(3, 'Item updated, updating spell description.', { item: item.name, hasDescriptionChange: !!changes.system?.description });
   }
 
   /**
@@ -129,6 +118,7 @@ export class DescriptionInjector {
     const actor = spellItem.parent;
     const targetUserId = DataUtils.getTargetUserId(actor);
     const injectionMode = game.settings.get(MODULE.ID, 'injectNotesIntoDescriptions');
+    log(3, 'Updating spell description.', { spell: spellItem.name, injectionMode });
     if (injectionMode === 'off') return;
     const userData = await DataUtils.UserData.getUserDataForSpell(canonicalUuid, targetUserId, actor?.id);
     if (!userData?.notes || !userData.notes.trim()) {
@@ -160,6 +150,7 @@ export class DescriptionInjector {
     const formattedNotes = dnd5e.utils.formatText(notes);
     const sanitizedNotes = foundry.utils.cleanHTML(formattedNotes);
     const personalNotesLabel = game.i18n.localize('SPELLBOOK.UI.PersonalNotes');
+    log(3, 'Formatted notes for description.', { notesLength: notes?.length });
     return `<div class='spell-book-personal-notes'><strong>${personalNotesLabel}:</strong> ${sanitizedNotes}</div>`;
   }
 
@@ -176,6 +167,7 @@ export class DescriptionInjector {
     let newDescription;
     if (injectionMode === 'before') newDescription = notesHtml + currentDescription;
     else newDescription = currentDescription + notesHtml;
+    log(3, 'Adding notes to description.', { spell: spellItem.name, injectionMode });
     await spellItem.update({ 'system.description.value': newDescription }, { ['spellBookModuleUpdate']: true });
   }
 
@@ -193,6 +185,7 @@ export class DescriptionInjector {
     let newDescription = currentDescription.replace(notesRegex, '');
     if (injectionMode === 'before') newDescription = notesHtml + newDescription;
     else newDescription = newDescription + notesHtml;
+    log(3, 'Replacing notes in description.', { spell: spellItem.name, injectionMode });
     await spellItem.update({ 'system.description.value': newDescription }, { ['spellBookModuleUpdate']: true });
   }
 
@@ -208,6 +201,7 @@ export class DescriptionInjector {
     const notesRegex = /<div class='spell-book-personal-notes'[^>]*>.*?<\/div>/gs;
     const newDescription = currentDescription.replace(notesRegex, '');
     if (newDescription !== currentDescription) {
+      log(3, 'Removing notes from description.', { spell: spellItem.name });
       await spellItem.update({ 'system.description.value': newDescription }, { ['spellBookModuleUpdate']: true });
     }
   }
@@ -220,6 +214,7 @@ export class DescriptionInjector {
    */
   static async handleNotesChange(spellUuid) {
     const canonicalUuid = UIUtils.getCanonicalSpellUuid(spellUuid);
+    log(3, 'Handling notes change for spell.', { spellUuid, canonicalUuid });
     for (const actor of game.actors) {
       const matchingSpells = actor.items.filter((item) => {
         if (item.type !== 'spell') return false;

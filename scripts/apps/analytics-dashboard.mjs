@@ -57,7 +57,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
     /** @type {string} Selected user ID for analytics */
     this.selectedUserId = options.userId || game.user.id;
 
-    /** @type {AnalyticsData|null} Cached analytics data */
+    /** @type {Object|null} Cached analytics data */
     this.analytics = null;
 
     /** @type {number|null} Timestamp of last data refresh */
@@ -326,8 +326,6 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
     log(3, 'Export Data called.');
     try {
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-
-      /** @type {ExportData} */
       const exportData = {
         version: game.modules.get(MODULE.ID).version,
         timestamp: Date.now(),

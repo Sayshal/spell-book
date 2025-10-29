@@ -5,22 +5,6 @@
  * module, handling synchronization between the journal-based user data system and
  * Foundry VTT's native actor favorites system.
  *
- * The favorites system operates on two levels:
- * 1. Journal Storage: User-specific favorites stored in spell user data journals
- * 2. Actor Integration: Synchronization with actor.system.favorites for native UI support
- *
- * Key features include:
- * - Automatic synchronization between journal and actor favorites
- * - Enhanced UUID matching for spell identification across different contexts
- * - Owner-aware favorites processing for GM-managed actors
- * - Form-based favorites processing with bulk operations
- * - Canonical UUID resolution for consistent favorites storage
- * - Integration with native Foundry VTT favorites system
- *
- * The system ensures that spell favorites are consistently maintained across
- * different UI contexts while respecting user ownership and providing seamless
- * integration with Foundry's existing favorites functionality.
- *
  * @module UIUtils/SpellFavorites
  * @author Tyler
  */
@@ -35,20 +19,16 @@ import { log } from '../logger.mjs';
  * @returns {Promise<boolean>} Success status of the operation
  */
 export async function addSpellToActorFavorites(spellUuid, actor) {
-  try {
-    const actorSpell = findActorSpellByUuid(spellUuid, actor);
-    if (!actorSpell) return false;
-    const currentFavorites = actor.system.favorites || [];
-    const favoriteId = `.Item.${actorSpell.id}`;
-    if (currentFavorites.some((fav) => fav.id === favoriteId)) return true;
-    const newFavorite = { type: 'item', id: favoriteId, sort: 100000 + currentFavorites.length };
-    const updatedFavorites = [...currentFavorites, newFavorite];
-    await actor.update({ 'system.favorites': updatedFavorites });
-
-    return true;
-  } catch (error) {
-    return false;
-  }
+  const actorSpell = findActorSpellByUuid(spellUuid, actor);
+  if (!actorSpell) return false;
+  const currentFavorites = actor.system.favorites || [];
+  const favoriteId = `.Item.${actorSpell.id}`;
+  if (currentFavorites.some((fav) => fav.id === favoriteId)) return true;
+  const newFavorite = { type: 'item', id: favoriteId, sort: 100000 + currentFavorites.length };
+  const updatedFavorites = [...currentFavorites, newFavorite];
+  await actor.update({ 'system.favorites': updatedFavorites });
+  log(3, 'Added spell to actor favorites.', { spell: actorSpell.name, actor: actor.name });
+  return true;
 }
 
 /**
@@ -58,17 +38,16 @@ export async function addSpellToActorFavorites(spellUuid, actor) {
  * @returns {Promise<boolean>} Success status of the operation
  */
 export async function removeSpellFromActorFavorites(spellUuid, actor) {
-  try {
-    const actorSpell = findActorSpellByUuid(spellUuid, actor);
-    if (!actorSpell) return true;
-    const currentFavorites = actor.system.favorites || [];
-    const favoriteId = `.Item.${actorSpell.id}`;
-    const updatedFavorites = currentFavorites.filter((fav) => fav.id !== favoriteId);
-    if (updatedFavorites.length !== currentFavorites.length) await actor.update({ 'system.favorites': updatedFavorites });
-    return true;
-  } catch (error) {
-    return false;
+  const actorSpell = findActorSpellByUuid(spellUuid, actor);
+  if (!actorSpell) return true;
+  const currentFavorites = actor.system.favorites || [];
+  const favoriteId = `.Item.${actorSpell.id}`;
+  const updatedFavorites = currentFavorites.filter((fav) => fav.id !== favoriteId);
+  if (updatedFavorites.length !== currentFavorites.length) {
+    await actor.update({ 'system.favorites': updatedFavorites });
+    log(3, 'Removed spell from actor favorites.', { spell: actorSpell.name, actor: actor.name });
   }
+  return true;
 }
 
 /**
@@ -78,12 +57,11 @@ export async function removeSpellFromActorFavorites(spellUuid, actor) {
  * @returns {Promise<void>}
  */
 export async function syncFavoritesOnSave(actor, spellData) {
-  try {
-    for (const uuid of Object.keys(spellData)) {
-      const userData = await DataUtils.UserData.getUserDataForSpell(uuid, null, actor.id);
-      if (userData?.favorited) await addSpellToActorFavorites(uuid, actor);
-    }
-  } catch (error) {}
+  for (const uuid of Object.keys(spellData)) {
+    const userData = await DataUtils.UserData.getUserDataForSpell(uuid, null, actor.id);
+    if (userData?.favorited) await addSpellToActorFavorites(uuid, actor);
+  }
+  log(3, 'Favorites synced on save.', { actor: actor.name, spellCount: Object.keys(spellData).length });
 }
 
 /**
@@ -93,31 +71,29 @@ export async function syncFavoritesOnSave(actor, spellData) {
  * @returns {Promise<void>}
  */
 export async function processFavoritesFromForm(_form, actor) {
-  try {
-    const targetUserId = DataUtils.getTargetUserId(actor);
-    const actorSpells = actor.items.filter((item) => item.type === 'spell');
-    const favoritesToAdd = [];
-
-    for (const spell of actorSpells) {
-      const canonicalUuid = getCanonicalSpellUuid(spell.uuid);
-      const userData = await DataUtils.UserData.getUserDataForSpell(canonicalUuid, targetUserId, actor.id);
-      const isFavoritedInJournal = userData?.favorited || false;
-      if (isFavoritedInJournal) favoritesToAdd.push(spell);
-    }
-    if (favoritesToAdd.length > 0 || actor.system.favorites?.some((fav) => fav.type === 'item' && fav.id.startsWith('.Item.'))) {
-      const newSpellFavorites = favoritesToAdd.map((spell, index) => ({ type: 'item', id: `.Item.${spell.id}`, sort: 100000 + index }));
-      const existingFavorites = actor.system.favorites || [];
-      const spellItemIds = new Set(actorSpells.map((spell) => spell.id));
-      const nonSpellFavorites = existingFavorites.filter((fav) => {
-        if (fav.type !== 'item') return true;
-        if (!fav.id.startsWith('.Item.')) return true;
-        const itemId = fav.id.replace('.Item.', '');
-        return !spellItemIds.has(itemId);
-      });
-      const allFavorites = [...nonSpellFavorites, ...newSpellFavorites];
-      await actor.update({ 'system.favorites': allFavorites });
-    }
-  } catch (error) {}
+  const targetUserId = DataUtils.getTargetUserId(actor);
+  const actorSpells = actor.items.filter((item) => item.type === 'spell');
+  const favoritesToAdd = [];
+  for (const spell of actorSpells) {
+    const canonicalUuid = getCanonicalSpellUuid(spell.uuid);
+    const userData = await DataUtils.UserData.getUserDataForSpell(canonicalUuid, targetUserId, actor.id);
+    const isFavoritedInJournal = userData?.favorited || false;
+    if (isFavoritedInJournal) favoritesToAdd.push(spell);
+  }
+  if (favoritesToAdd.length > 0 || actor.system.favorites?.some((fav) => fav.type === 'item' && fav.id.startsWith('.Item.'))) {
+    const newSpellFavorites = favoritesToAdd.map((spell, index) => ({ type: 'item', id: `.Item.${spell.id}`, sort: 100000 + index }));
+    const existingFavorites = actor.system.favorites || [];
+    const spellItemIds = new Set(actorSpells.map((spell) => spell.id));
+    const nonSpellFavorites = existingFavorites.filter((fav) => {
+      if (fav.type !== 'item') return true;
+      if (!fav.id.startsWith('.Item.')) return true;
+      const itemId = fav.id.replace('.Item.', '');
+      return !spellItemIds.has(itemId);
+    });
+    const allFavorites = [...nonSpellFavorites, ...newSpellFavorites];
+    await actor.update({ 'system.favorites': allFavorites });
+    log(3, 'Favorites processed from form.', { favoritesToAdd: favoritesToAdd.length });
+  }
 }
 
 /**
@@ -140,6 +116,8 @@ export function findActorSpellByUuid(spellUuid, actor) {
     }
     return false;
   });
+  if (spell) log(3, 'Found actor spell by UUID match.', { spell: spell.name, actor: actor.name });
+  else log(1, 'Actor spell not found.', { spellUuid, actor: actor.name });
   return spell || null;
 }
 
@@ -149,14 +127,20 @@ export function findActorSpellByUuid(spellUuid, actor) {
  * @returns {string} Canonical UUID for favorites storage
  */
 export function getCanonicalSpellUuid(spellOrUuid) {
+  let result;
   if (typeof spellOrUuid === 'string') {
     const parsedUuid = foundry.utils.parseUuid(spellOrUuid);
-    if (parsedUuid.collection?.collection) return spellOrUuid;
-    const spell = fromUuidSync(spellOrUuid);
-    if (spell?._stats?.compendiumSource) return spell._stats.compendiumSource;
-    return spellOrUuid;
+    if (parsedUuid.collection?.collection) result = spellOrUuid;
+    else {
+      const spell = fromUuidSync(spellOrUuid);
+      if (spell?._stats?.compendiumSource) result = spell._stats.compendiumSource;
+      else result = spellOrUuid;
+    }
+  } else {
+    if (spellOrUuid?.compendiumUuid) result = spellOrUuid.compendiumUuid;
+    else if (spellOrUuid?._stats?.compendiumSource) result = spellOrUuid._stats.compendiumSource;
+    else result = spellOrUuid?.uuid || '';
   }
-  if (spellOrUuid?.compendiumUuid) return spellOrUuid.compendiumUuid;
-  if (spellOrUuid?._stats?.compendiumSource) return spellOrUuid._stats.compendiumSource;
-  return spellOrUuid?.uuid || '';
+  log(3, 'Got canonical spell UUID.', { input: typeof spellOrUuid === 'string' ? spellOrUuid : spellOrUuid?.name, result });
+  return result;
 }

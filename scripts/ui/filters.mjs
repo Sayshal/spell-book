@@ -6,28 +6,6 @@
  * spells. It includes advanced search integration, caching mechanisms, and sophisticated
  * matching algorithms for various spell properties.
  *
- * The filtering system operates on multiple levels:
- * - Basic property filtering (name, level, school, casting time)
- * - Advanced search query execution with field-based syntax
- * - Range-based filtering with unit conversion
- * - Damage type and condition filtering
- * - Special property filtering (ritual, concentration, saves)
- * - Enhanced name matching with fuzzy search and exact phrase support
- * - Filter option generation for dropdown controls
- *
- * Key features include:
- * - Cached filter state management for performance optimization
- * - Integration with advanced search manager for complex queries
- * - Real-time DOM filtering with visibility management
- * - Level container statistics and visibility tracking
- * - Enhanced search syntax including exact phrase matching
- * - Fallback mechanisms for incomplete or missing data
- * - Dynamic filter option generation based on D&D 5e configuration
- * - Range unit conversion with metric system support
- *
- * The system ensures responsive filtering performance while providing
- * search and filtering capabilities across all spell properties and metadata.
- *
  * @module UIUtils/SpellbookFilters
  * @author Tyler
  */
@@ -45,7 +23,7 @@ export class Filters {
    * @param {SpellBook} app - The parent application instance
    */
   constructor(app) {
-    /** @type {SpellBook} - The parent spell book application */
+    /** @type {class} - The parent spell book application */
     this.app = app;
 
     /** @type {FilterState|null} - Cached filter state to avoid repeated DOM queries */
@@ -56,6 +34,7 @@ export class Filters {
 
     /** @type {string} - Prefix character that triggers advanced search mode */
     this.searchPrefix = game.settings.get(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX);
+    log(3, 'Filters constructed.');
   }
 
   /**
@@ -73,6 +52,7 @@ export class Filters {
   invalidateFilterCache() {
     this._cachedFilterState = null;
     this._lastFilterUpdate = 0;
+    log(3, 'Filter cache invalidated.');
   }
 
   /**
@@ -81,7 +61,10 @@ export class Filters {
    */
   getFilterState() {
     const now = Date.now();
-    if (this._cachedFilterState && now - this._lastFilterUpdate < 1000) return this._cachedFilterState;
+    if (this._cachedFilterState && now - this._lastFilterUpdate < 1000) {
+      log(3, 'Returning cached filter state.');
+      return this._cachedFilterState;
+    }
     if (!this.element) {
       return {
         name: '',
@@ -121,6 +104,7 @@ export class Filters {
       spellSource: this.element.querySelector('[name="spell-source"]')?.value || ''
     };
     this._lastFilterUpdate = now;
+    log(3, 'Filter state retrieved from DOM.', { name: this._cachedFilterState.name, level: this._cachedFilterState.level });
     return this._cachedFilterState;
   }
 
@@ -143,6 +127,7 @@ export class Filters {
       checkbox.checked = false;
     });
     this.invalidateFilterCache();
+    log(3, 'Filter controls reset complete.');
   }
 
   /**
@@ -154,22 +139,17 @@ export class Filters {
    * @returns {FilterResult} Filtered spells with count information
    */
   filterAvailableSpells(availableSpells, selectedSpellUUIDs, isSpellInSelectedList, filterState = null) {
-    try {
-      const filters = filterState || this.getFilterState();
-
-      let remainingSpells = [...availableSpells];
-      remainingSpells = this._filterBySelectedList(remainingSpells, selectedSpellUUIDs, isSpellInSelectedList);
-      remainingSpells = this._filterBySource(remainingSpells, filters);
-      remainingSpells = this._filterBySpellSource(remainingSpells, filters);
-      remainingSpells = this._filterByBasicProperties(remainingSpells, filters);
-      remainingSpells = this._filterByRange(remainingSpells, filters);
-      remainingSpells = this._filterByDamageAndConditions(remainingSpells, filters);
-      remainingSpells = this._filterBySpecialProperties(remainingSpells, filters);
-
-      return { spells: remainingSpells, totalFiltered: remainingSpells.length };
-    } catch (error) {
-      return { spells: [], totalFiltered: 0 };
-    }
+    const filters = filterState || this.getFilterState();
+    let remainingSpells = [...availableSpells];
+    remainingSpells = this._filterBySelectedList(remainingSpells, selectedSpellUUIDs, isSpellInSelectedList);
+    remainingSpells = this._filterBySource(remainingSpells, filters);
+    remainingSpells = this._filterBySpellSource(remainingSpells, filters);
+    remainingSpells = this._filterByBasicProperties(remainingSpells, filters);
+    remainingSpells = this._filterByRange(remainingSpells, filters);
+    remainingSpells = this._filterByDamageAndConditions(remainingSpells, filters);
+    remainingSpells = this._filterBySpecialProperties(remainingSpells, filters);
+    log(3, 'Available spells filtered.', { filteredCount: remainingSpells.length });
+    return { spells: remainingSpells, totalFiltered: remainingSpells.length };
   }
 
   /**
@@ -181,9 +161,7 @@ export class Filters {
    * @private
    */
   _filterBySelectedList(spells, selectedSpellUUIDs, isSpellInSelectedList) {
-    const filtered = spells.filter((spell) => !isSpellInSelectedList(spell, selectedSpellUUIDs));
-
-    return filtered;
+    return spells.filter((spell) => !isSpellInSelectedList(spell, selectedSpellUUIDs));
   }
 
   /**
@@ -204,8 +182,10 @@ export class Filters {
     });
     if (filtered.length === 0 && beforeCount > 0) {
       filterState.source = 'all';
+      log(3, 'Source filter returned no results, resetting to all.', { source });
       return spells;
     }
+    log(3, 'Filtered by source.', { source, beforeCount, afterCount: filtered.length });
     return filtered;
   }
 
@@ -226,9 +206,10 @@ export class Filters {
     });
     if (filtered.length === 0 && beforeCount > 0) {
       filterState.spellSource = 'all';
+      log(3, 'Spell source filter returned no results, resetting to all.', { spellSource });
       return spells;
     }
-
+    log(3, 'Filtered by spell source.', { spellSource, beforeCount, afterCount: filtered.length });
     return filtered;
   }
 
@@ -254,6 +235,7 @@ export class Filters {
         return castingTimeTypeMatch && spellCastingValue === filterValue;
       });
     }
+    log(3, 'Filtered by basic properties.', { name, level, school, castingTime, resultCount: filtered.length });
     return filtered;
   }
 
@@ -271,20 +253,19 @@ export class Filters {
       const search = this.app.ui?.search;
       if (search && search.isCurrentQueryAdvanced()) {
         const filtered = search.executeAdvancedQuery(spells);
-
+        log(3, 'Filtered by advanced search.', { query, resultCount: filtered.length });
         return filtered;
       } else return [];
     }
     const exactPhraseMatch = query.match(/^["'](.+?)["']$/);
     if (exactPhraseMatch) {
       const phrase = exactPhraseMatch[1].toLowerCase();
-
       const filtered = spells.filter((spell) => {
         const spellName = spell.name ? spell.name.toLowerCase() : '';
         const matches = spellName.includes(phrase);
         if (matches) return matches;
       });
-
+      log(3, 'Filtered by exact phrase.', { phrase, resultCount: filtered.length });
       return filtered;
     }
     const queryWords = query
@@ -304,7 +285,7 @@ export class Filters {
       const anyWordMatches = queryWords.some((word) => spellName.includes(word));
       return anyWordMatches;
     });
-
+    log(3, 'Filtered by enhanced name.', { query, resultCount: filtered.length });
     return filtered;
   }
 
@@ -330,7 +311,7 @@ export class Filters {
       const maxRangeVal = maxRange ? parseInt(maxRange) : Infinity;
       return standardizedRange >= minRangeVal && standardizedRange <= maxRangeVal;
     });
-
+    log(3, 'Filtered by range.', { minRange, maxRange, resultCount: filtered.length });
     return filtered;
   }
 
@@ -352,6 +333,7 @@ export class Filters {
       });
     }
     if (condition) filtered = filtered.filter((spell) => dnd5e.Filter.performCheck(spell, { k: 'filterData.conditions', v: condition, o: 'has' }));
+    log(3, 'Filtered by damage and conditions.', { damageType, condition, resultCount: filtered.length });
     return filtered;
   }
 
@@ -385,6 +367,7 @@ export class Filters {
     }
     if (favorited) filtered = filtered.filter((spell) => dnd5e.Filter.performCheck(spell, { k: 'favorited', v: true, o: 'exact' }));
     if (ritual) filtered = filtered.filter((spell) => dnd5e.Filter.performCheck(spell, { k: 'filterData.isRitual', v: true, o: 'exact' }));
+    log(3, 'Filtered by special properties.', { requiresSave, concentration, ritual, favorited, materialComponents, resultCount: filtered.length });
     return filtered;
   }
 
@@ -393,24 +376,24 @@ export class Filters {
    * @returns {void}
    */
   applyFilters() {
-    try {
-      if (!this.element) return;
-      const filters = this.getFilterState();
-      const spellItems = this.element.querySelectorAll('.spell-item');
-      let visibleCount = 0;
-      const levelVisibilityMap = new Map();
-      for (const item of spellItems) {
-        const spellData = this._extractSpellDataFromElement(item);
-        const visible = this._checkSpellVisibility(filters, spellData);
-        item.style.display = visible ? '' : 'none';
-        if (visible) {
-          visibleCount++;
-          this._updateLevelVisibilityStats(levelVisibilityMap, spellData, item);
-        }
+    if (!this.element) return;
+    log(3, 'Applying filters to spell list.');
+    const filters = this.getFilterState();
+    const spellItems = this.element.querySelectorAll('.spell-item');
+    let visibleCount = 0;
+    const levelVisibilityMap = new Map();
+    for (const item of spellItems) {
+      const spellData = this._extractSpellDataFromElement(item);
+      const visible = this._checkSpellVisibility(filters, spellData);
+      item.style.display = visible ? '' : 'none';
+      if (visible) {
+        visibleCount++;
+        this._updateLevelVisibilityStats(levelVisibilityMap, spellData, item);
       }
-      this._updateNoResultsDisplay(visibleCount);
-      this._updateLevelContainers(levelVisibilityMap);
-    } catch (error) {}
+    }
+    this._updateNoResultsDisplay(visibleCount);
+    this._updateLevelContainers(levelVisibilityMap);
+    log(3, 'Filters applied to spell list.', { totalSpells: spellItems.length, visibleCount });
   }
 
   /**
@@ -534,10 +517,7 @@ export class Filters {
     const query = searchQuery.trim();
     const spellNameLower = spellName.toLowerCase().trim();
     const exactPhraseMatch = query.match(/^["'](.+?)["']$/);
-    if (exactPhraseMatch) {
-      const phrase = exactPhraseMatch[1].toLowerCase().trim();
-      return spellNameLower === phrase;
-    }
+    if (exactPhraseMatch) return spellNameLower === exactPhraseMatch[1].toLowerCase().trim();
     const queryWords = query
       .toLowerCase()
       .split(/\s+/)
@@ -633,6 +613,7 @@ export function getOptionsForFilter(filterId, filterState) {
       );
       break;
   }
+  log(3, 'Generated filter options.', { filterId, optionsCount: options.length });
   return options;
 }
 
@@ -643,7 +624,6 @@ export function getOptionsForFilter(filterId, filterState) {
  * @private
  */
 export function getCastingTimeOptions(filterState) {
-  /** @type {Array<CastingTimeConfig>} */
   const castingTimes = [
     { type: 'action', value: 1, priority: 1 },
     { type: 'bonus', value: 1, priority: 2 },
@@ -664,12 +644,12 @@ export function getCastingTimeOptions(filterState) {
       const combo = `${type}:${value}`;
       options.push({ value: combo, label, selected: filterState.castingTime === combo });
     });
+  log(3, 'Generated casting time options.', { optionsCount: options.length });
   return options;
 }
 
 /**
  * Convert a spell range to standard units (feet or meters based on D&D 5e system settings).
- * Uses dnd5e.utils.convertLength and dnd5e.utils.defaultUnits for proper metric support.
  * @param {string} units - The range units (ft, mi, spec, etc.)
  * @param {number} value - The range value to convert
  * @returns {number} The converted range value in standard units
@@ -677,14 +657,8 @@ export function getCastingTimeOptions(filterState) {
 function convertRangeToStandardUnit(units, value) {
   if (!units || !value) return 0;
   if (units === 'spec') return 0;
-
-  // Convert to feet first if needed
   const inFeet = units === 'ft' ? value : units === 'mi' ? value * 5280 : value;
-
-  // Use dnd5e utility to handle metric conversion
-  const defaultUnit = dnd5e.utils.defaultUnits('length'); // Returns "ft" or "m" based on settings
-  if (defaultUnit === 'm') {
-    return Math.round(dnd5e.utils.convertLength(inFeet, 'ft', 'm'));
-  }
+  const defaultUnit = dnd5e.utils.defaultUnits('length');
+  if (defaultUnit === 'm') return Math.round(dnd5e.utils.convertLength(inFeet, 'ft', 'm'));
   return inFeet;
 }

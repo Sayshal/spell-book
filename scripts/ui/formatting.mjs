@@ -6,29 +6,13 @@
  * spell data into display-ready formats, extraction of filterable metadata, and creation
  * of formatted presentation elements.
  *
- * The module serves as the primary interface between raw spell data and the various
- * UI components that display spell information. It provides consistent formatting
- * across different contexts and ensures proper handling of D&D 5e spell properties.
- *
- * Key features include:
- * - Spell list processing with metadata enhancement
- * - Individual spell item formatting for GM and player interfaces
- * - Component, activation, and school formatting with localization
- * - Spell metadata extraction for filtering systems
- * - Material component processing with cost calculation
- * - Condition and damage type extraction from spell descriptions
- * - Icon link generation with proper UUID handling
- * - Integration with D&D 5e configuration data
- *
- * The utilities handle various spell data formats and provide fallback mechanisms
- * for incomplete or legacy spell data structures.
- *
  * @module UIUtils/SpellFormatting
  * @author Tyler
  */
 
 import { MODULE } from '../constants/_module.mjs';
 import * as DataUtils from '../data/_module.mjs';
+import { log } from '../logger.mjs';
 import * as UIUtils from './_module.mjs';
 
 /**
@@ -39,6 +23,7 @@ import * as UIUtils from './_module.mjs';
  * @returns {ProcessedSpellList} Processed spell list with display data
  */
 export function processSpellListForDisplay(spellList, classFolderCache = null, availableSpellLists = null) {
+  log(3, 'Processing spell list for display.', { spellListName: spellList.document?.name, isCustom: !!spellList.document?.flags?.[MODULE.ID]?.isCustom });
   const processed = foundry.utils.deepClone(spellList);
   processed.isCustomList = !!spellList.document?.flags?.[MODULE.ID]?.isCustom || !!spellList.document?.flags?.[MODULE.ID]?.isDuplicate;
   processed.canRestore = !!(processed.isCustomList && spellList.document.flags?.[MODULE.ID]?.originalUuid);
@@ -59,6 +44,7 @@ export function processSpellListForDisplay(spellList, classFolderCache = null, a
     }
   }
   if (spellList.spellsByLevel?.length) processed.spellsByLevel = spellList.spellsByLevel.map((level) => ({ ...level, spells: level.spells.map((spell) => processSpellItemForDisplay(spell)) }));
+  log(3, 'Spell list processed for display.', { isPlayerSpellbook: processed.isPlayerSpellbook, spellLevels: processed.spellsByLevel?.length });
   return processed;
 }
 
@@ -73,6 +59,7 @@ export function processSpellItemForDisplay(spell) {
   processed.dataAttributes = `data-uuid="${spell.uuid}"`;
   processed.showCompare = UIUtils.CustomUI.isGMElementEnabled('compare');
   processed.formattedDetails = UIUtils.CustomUI.buildGMMetadata(spell);
+  log(3, 'Spell item processed for display.', { spell: spell.name });
   return processed;
 }
 
@@ -201,8 +188,10 @@ export function extractSpellFilterData(spell) {
   const materialComponents = extractMaterialComponents(spell);
   const requiresSave = checkSpellRequiresSave(spell);
   const conditions = extractSpellConditions(spell);
-  const spellSource = extractSpellSource(spell);
-  return { castingTime, range, damageTypes, isRitual, concentration, materialComponents, requiresSave, conditions, favorited: false, spellSource: spellSource.label, spellSourceId: spellSource.id };
+  const source = extractSpellSource(spell);
+  const result = { castingTime, range, damageTypes, isRitual, concentration, materialComponents, requiresSave, conditions, favorited: false, spellSource: source.label, spellSourceId: source.id };
+  log(3, 'Spell filter data extracted.', { spell: spell.name, damageTypesCount: damageTypes.length, conditionsCount: conditions.length, result });
+  return result;
 }
 
 /**
@@ -245,6 +234,7 @@ export function extractDamageTypes(spell) {
       }
     }
   }
+  log(3, 'Extracted damage types.', { spell: spell.name, damageTypes });
   return damageTypes;
 }
 
@@ -296,6 +286,7 @@ export function checkSpellRequiresSave(spell) {
     const saveText = game.i18n.localize('SPELLBOOK.Filters.SavingThrow').toLowerCase();
     if (spell.system.description.value.toLowerCase().includes(saveText)) result = true;
   }
+  log(3, 'Checked if spell requires save.', { spell: spell.name, requiresSave: result });
   return result;
 }
 
@@ -315,6 +306,7 @@ export function extractSpellConditions(spell) {
       if (conditionLabel && lowerDesc.includes(conditionLabel.toLowerCase())) conditions.push(key);
     }
   }
+  log(3, 'Extracted spell conditions.', { spell: spell.name, conditions });
   return conditions;
 }
 
@@ -353,5 +345,6 @@ export function createSpellIconLink(spell) {
   </a>`
     .replace(/\s+/g, ' ')
     .trim();
+  log(3, 'Created spell icon link.', { spell: spell.name, uuid });
   return result;
 }
