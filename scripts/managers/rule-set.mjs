@@ -21,6 +21,14 @@ const { renderTemplate } = foundry.applications.handlebars;
  */
 export class RuleSet {
   /**
+   * Cache for class rules by actor. Uses WeakMap for automatic cleanup when actors are deleted.
+   * @type {WeakMap<Actor5e, Map<string, ClassRules>>}
+   * @private
+   * @static
+   */
+  static _classRules = new WeakMap();
+
+  /**
    * Apply a rule set to an actor, populating class-specific defaults.
    * @param {Actor5e} actor - The actor to configure
    * @param {string} ruleSet - The rule set to apply ('legacy' or 'modern')
@@ -39,6 +47,7 @@ export class RuleSet {
     }
     actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
     actor.setFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE, ruleSet);
+    if (this._classRules.has(actor)) this._classRules.delete(actor);
     log(3, `Applied ${ruleSet} rule set to ${actor.name} for ${Object.keys(classRules).length} classes`);
   }
 
@@ -65,21 +74,26 @@ export class RuleSet {
    * @static
    */
   static getClassRules(actor, classIdentifier) {
+    if (!this._classRules.has(actor)) this._classRules.set(actor, new Map());
+    const actorCache = this._classRules.get(actor);
+    if (actorCache.has(classIdentifier)) return actorCache.get(classIdentifier);
     log(3, `Getting class rules.`, { actorName: actor.name, actorId: actor.id, classIdentifier });
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const existingRules = classRules[classIdentifier];
+    let rules;
     if (existingRules) {
       const classExists = actor.spellcastingClasses?.[classIdentifier] !== undefined;
       if (!classExists) {
         const ruleSet = RuleSet.getEffectiveRuleSet(actor);
-        return RuleSet._getClassDefaults(classIdentifier, ruleSet);
-      }
-      return existingRules;
+        rules = RuleSet._getClassDefaults(classIdentifier, ruleSet);
+      } else rules = existingRules;
+    } else {
+      const ruleSet = RuleSet.getEffectiveRuleSet(actor);
+      rules = RuleSet._getClassDefaults(classIdentifier, ruleSet);
     }
-    const ruleSet = RuleSet.getEffectiveRuleSet(actor);
-    const defaults = RuleSet._getClassDefaults(classIdentifier, ruleSet);
-    log(3, `Class rules retrieved.`, { actorName: actor.name, classIdentifier, hasExistingRules: !!existingRules, defaults });
-    return defaults;
+    log(3, `Class rules retrieved.`, { actorName: actor.name, classIdentifier, hasExistingRules: !!existingRules });
+    actorCache.set(classIdentifier, rules);
+    return rules;
   }
 
   /**
@@ -114,6 +128,7 @@ export class RuleSet {
     }
     classRules[classIdentifier] = { ...classRules[classIdentifier], ...newRules };
     actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
+    if (this._classRules.has(actor)) this._classRules.delete(actor);
     log(3, `Class rules updated successfully.`, { actorName: actor.name, classIdentifier });
     return true;
   }
@@ -138,6 +153,7 @@ export class RuleSet {
     }
     if (hasNewClasses) {
       actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, existingRules);
+      if (this._classRules.has(actor)) this._classRules.delete(actor);
       log(3, `New classes initialized.`, { actorName: actor.name, classCount: Object.keys(spellcastingClasses).length });
     } else log(3, `No new classes to initialize.`, { actorName: actor.name });
   }
