@@ -5,20 +5,9 @@
  * with a focus on WCAG 2.0 contrast compliance. It leverages Foundry VTT's core Color
  * utilities while providing specialized functionality for:
  *
- * - Dominant color extraction from class icons
- * - WCAG 2.0 compliant contrast ratio calculation
- * - Automatic color adjustment to meet accessibility standards
- * - Dynamic CSS generation for class-specific color themes
- * - Theme-aware background color detection
- *
- * The system ensures all applied colors meet WCAG AA standards (4.5:1 contrast ratio)
- * for optimal readability across light and dark UI themes.
- *
  * @module ui/colors
  * @author Tyler
  */
-
-import { log } from '../logger.mjs';
 
 const THEME_BACKGROUNDS = { light: '#f4f4f4', dark: '#1b1d24' };
 
@@ -34,12 +23,10 @@ export async function applyClassColors(spellcastingClasses) {
   const theme = game.settings.get('core', 'uiConfig').colorScheme.applications;
   const background = THEME_BACKGROUNDS[theme] || THEME_BACKGROUNDS.light || '#f4f4f4';
   let css = '';
-
   for (const [classId, classData] of Object.entries(spellcastingClasses)) {
     const img = classData.img;
-    const fallbackColor = '#8B4513'; // Saddle brown
+    const fallbackColor = '#8B4513';
     let color = fallbackColor;
-
     if (img && img !== 'icons/svg/mystery-man.svg') {
       const extractedColor = await new Promise((resolve) => {
         const image = new Image();
@@ -57,15 +44,12 @@ export async function applyClassColors(spellcastingClasses) {
           ctx.drawImage(image, 0, 0, size, size);
           const imageData = ctx.getImageData(0, 0, size, size).data;
           const colorMap = new Map();
-          // Sample every 16 pixels for performance
           for (let i = 0; i < imageData.length; i += 16) {
             const r = imageData[i];
             const g = imageData[i + 1];
             const b = imageData[i + 2];
             const alpha = imageData[i + 3];
-            // Skip transparent and very light pixels
             if (alpha < 128 || (r > 240 && g > 240 && b > 240)) continue;
-            // Group similar colors into buckets
             const rGrouped = Math.floor(r / 32) * 32;
             const gGrouped = Math.floor(g / 32) * 32;
             const bGrouped = Math.floor(b / 32) * 32;
@@ -89,28 +73,16 @@ export async function applyClassColors(spellcastingClasses) {
         };
         image.onerror = () => {
           clearTimeout(timeout);
-
           resolve(fallbackColor);
         };
         image.src = img;
       });
-
-      if (extractedColor && typeof extractedColor === 'string' && extractedColor.match(/^#[\dA-Fa-f]{6}$/)) {
-        color = _adjustColorForContrast(extractedColor, background, 4.5);
-      } else {
-        color = _adjustColorForContrast(fallbackColor, background, 4.5);
-      }
-    } else {
-      color = _adjustColorForContrast(fallbackColor, background, 4.5);
-    }
-
-    if (!color || typeof color !== 'string' || !color.match(/^#[\dA-Fa-f]{6}$/)) {
-      color = fallbackColor;
-    }
-
+      if (extractedColor && typeof extractedColor === 'string' && extractedColor.match(/^#[\dA-Fa-f]{6}$/)) color = _adjustColorForContrast(extractedColor, background, 4.5);
+      else color = _adjustColorForContrast(fallbackColor, background, 4.5);
+    } else color = _adjustColorForContrast(fallbackColor, background, 4.5);
+    if (!color || typeof color !== 'string' || !color.match(/^#[\dA-Fa-f]{6}$/)) color = fallbackColor;
     css += `.spell-prep-tracking .class-prep-count[data-class-identifier="${classId}"] .class-name{color:${color}}.spell-prep-tracking .class-prep-count[data-class-identifier="${classId}"].active-class{font-weight:bold}.spell-prep-tracking .class-prep-count[data-class-identifier="${classId}"].active-class .class-name{color:${color};text-shadow:0 0 3px ${color}40}`;
   }
-
   styleElement.textContent = css;
   if (!styleElement.parentNode) document.head.appendChild(styleElement);
 }
@@ -124,11 +96,7 @@ export async function applyClassColors(spellcastingClasses) {
 function hexToRgb(hex) {
   const color = foundry.utils.Color.fromString(hex);
   if (!color.valid) return null;
-  return {
-    r: Math.round(color.r * 255),
-    g: Math.round(color.g * 255),
-    b: Math.round(color.b * 255)
-  };
+  return { r: Math.round(color.r * 255), g: Math.round(color.g * 255), b: Math.round(color.b * 255) };
 }
 
 /**
@@ -141,11 +109,7 @@ function hexToRgb(hex) {
  */
 function _hslToRgb(hue, saturation, lightness) {
   const color = foundry.utils.Color.fromHSL([hue / 360, saturation / 100, lightness / 100]);
-  return {
-    r: Math.round(color.r * 255),
-    g: Math.round(color.g * 255),
-    b: Math.round(color.b * 255)
-  };
+  return { r: Math.round(color.r * 255), g: Math.round(color.g * 255), b: Math.round(color.b * 255) };
 }
 
 /**
