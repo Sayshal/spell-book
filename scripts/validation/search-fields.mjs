@@ -6,19 +6,12 @@
  * identifiers, validates search values against field constraints, and provides
  * autocomplete suggestions for search terms.
  *
- * The field definition system supports:
- * - Field alias to ID mapping for flexible search syntax
- * - Value validation based on D&D 5e configuration data
- * - Boolean value normalization for consistent filtering
- * - Autocomplete suggestions for valid field values
- *
  * @module ValidationUtils/SearchFields
  * @author Tyler
  */
 
 import { MODULE } from '../constants/_module.mjs';
 import * as DataUtils from '../data/_module.mjs';
-import { log } from '../logger.mjs';
 
 /**
  * Field definitions for advanced search syntax.

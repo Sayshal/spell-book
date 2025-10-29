@@ -5,13 +5,6 @@
  * and behavior. This module wraps Foundry's field creation system to provide
  * consistent form controls throughout the Spell Book module interface.
  *
- * Key Features:
- * - D&D 5e system styling consistency
- * - Configuration options for all form elements
- * - Accessibility support with ARIA labels
- * - Flexible styling and layout options
- * - Generic multi-select wrapper with optgroup support
- *
  * @module ValidationUtils/FormElements
  * @author Tyler
  */
@@ -112,10 +105,7 @@ export function createMultiSelect(options, config) {
  * @returns {HTMLElement} The created multi-select element
  */
 export function createGroupedMultiSelect(groupedOptions, groups, config) {
-  return createMultiSelect(groupedOptions, {
-    ...config,
-    groups: groups
-  });
+  return createMultiSelect(groupedOptions, { ...config, groups: groups });
 }
 
 /**

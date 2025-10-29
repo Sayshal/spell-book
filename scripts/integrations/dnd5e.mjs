@@ -37,7 +37,6 @@ export function registerDnD5eIntegration() {
  * @returns {void}
  */
 function addSpellbookButton(_app, html, data) {
-  log(3, 'Adding spellbook button to character sheet.', { actorId: data.actor?.id });
   const actor = data.actor;
   if (!canAddSpellbookButton(actor, html)) return;
   const spellsTab = html.querySelector('section.tab[data-tab="spells"]');
@@ -70,7 +69,6 @@ function canAddSpellbookButton(actor, html) {
     log(3, 'Cannot add spellbook button: no spells tab found.', { actorId: actor?.id });
     return false;
   }
-  log(3, 'Can add spellbook button.', { actorId: actor.id });
   return true;
 }
 
@@ -80,7 +78,6 @@ function canAddSpellbookButton(actor, html) {
  * @returns {HTMLElement} The created button element
  */
 function createSpellBookButton(actor) {
-  log(3, 'Creating spellbook button.', { actorId: actor.id });
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'unbutton filter-control always-interactive spell-book-button';

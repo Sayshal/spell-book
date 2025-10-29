@@ -4,30 +4,6 @@
  * Primary initialization file for the Spell Book module. This module orchestrates
  * the complete startup sequence through three Foundry lifecycle hooks.
  *
- * Initialization
- * - Registers custom spell list type in DND5E configuration
- * - Registers module settings
- * - Initializes logger system
- * - Registers dnd5e and tidy5e-sheet integrations
- * - Preloads templates for performance optimization
- * - Creates and registers module API
- * - Initializes socket handler for multiplayer functionality
- *
- * Setup
- * - Restores SpellBook window position from saved settings
- *
- * Ready
- * - Optionally registers chat message hook for migration warnings
- * - Runs all data migrations
- * - Initializes description injector for spell details
- * - Unlocks module compendium for editing
- * - Initializes macros, user spell data, and usage tracking
- * - Preloads spell and spell list data
- * - Registers custom spell lists (GM only)
- *
- * Journal Entry Hooks:
- * - Invalidates spell list cache when custom spell list journal pages are created, updated, or deleted
- *
  * @module SpellBook
  * @author Tyler
  */

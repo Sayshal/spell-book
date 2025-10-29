@@ -5,9 +5,6 @@
  * This module creates and registers the global SPELLBOOK API object that allows
  * other modules and macros to interact with Spell Book features programmatically.
  *
- * The API exposes applications, dialogs, utility functions, and convenience methods
- * for opening various UI components and accessing module state.
- *
  * @module API
  * @author Tyler
  */

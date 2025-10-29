@@ -41,8 +41,9 @@ export class UserDataSetup {
     const manager = new UserDataSetup();
     await manager._ensureJournalSetup();
     let setupCount = 0;
+    log(3, `Ensuring user tables exist for ${game.users.length}`);
     for (const user of game.users) {
-      if (user.isGM) continue;
+      if (user.isGM) continue; /** @todo should this be continue or break? */
       const created = await manager._ensureUserTable(user.id);
       if (created) setupCount++;
     }
@@ -152,7 +153,6 @@ export class UserDataSetup {
    * @returns {Promise<boolean>} True if created, false if existed
    */
   async _ensureUserTable(userId) {
-    log(3, 'Ensuring user table exists.', { userId });
     const user = game.users.get(userId);
     if (!user) return false;
     if (user.isGM) return false;

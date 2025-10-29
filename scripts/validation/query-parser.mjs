@@ -5,18 +5,11 @@
  * the parsing logic for field-based search queries, supporting field aliases, value
  * validation, and query normalization for the advanced search system.
  *
- * Supported Syntax:
- * - Field:Value expressions (e.g., "level:3", "school:evocation")
- * - AND operations between field conditions
- * - Field alias resolution and value normalization
- * - Boolean value standardization
- *
  * @module ValidationUtils/QueryParser
  * @author Tyler
  */
 
 import * as DataUtils from '../data/_module.mjs';
-import { log } from '../logger.mjs';
 
 /**
  * Parser for advanced search query syntax.
@@ -37,16 +30,11 @@ export class QueryParser {
    * @returns {ParsedQueryObject|null} Parsed query object or null if invalid
    */
   parseQuery(query) {
-    try {
-      if (!query || !query.trim()) return null;
-      const conditions = this._parseConditions(query.trim());
-      if (!conditions || conditions.length === 0) return null;
-      const parsed = { type: 'conjunction', conditions: conditions };
-
-      return parsed;
-    } catch (error) {
-      return null;
-    }
+    if (!query || !query.trim()) return null;
+    const conditions = this._parseConditions(query.trim());
+    if (!conditions || conditions.length === 0) return null;
+    const parsed = { type: 'conjunction', conditions: conditions };
+    return parsed;
   }
 
   /**
@@ -82,7 +70,6 @@ export class QueryParser {
     const fieldId = this.fieldDefinitions.getFieldId(fieldAlias);
     if (!fieldId) return null;
     if (!value || value === '') return null;
-    if (fieldId === 'range' && value.match(/^\d+-?$/)) log(3, `Partial range value detected: ${value}`);
     else if (!this.fieldDefinitions.validateValue(fieldId, value)) return null;
     return { type: 'field', field: fieldId, value: this._normalizeValue(fieldId, value) };
   }

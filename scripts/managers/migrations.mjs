@@ -39,12 +39,10 @@ export class Migrations {
       const results = {};
       let totalUpdated = 0;
       for (const migration of MIGRATIONS) {
-        log(3, 'Running migration.', { key: migration.key, name: migration.name });
         try {
           const result = await migration.migrate();
           results[migration.key] = result;
           totalUpdated += result.updated || 0;
-          log(3, 'Migration completed.', { key: migration.key, processed: result.processed, updated: result.updated });
         } catch (error) {
           log(1, 'Migration failed.', { key: migration.key, error });
           results[migration.key] = { processed: 0, errors: [error.message] };

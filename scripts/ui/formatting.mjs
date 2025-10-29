@@ -190,7 +190,6 @@ export function extractSpellFilterData(spell) {
   const conditions = extractSpellConditions(spell);
   const source = extractSpellSource(spell);
   const result = { castingTime, range, damageTypes, isRitual, concentration, materialComponents, requiresSave, conditions, favorited: false, spellSource: source.label, spellSourceId: source.id };
-  log(3, 'Spell filter data extracted.', { spell: spell.name, damageTypesCount: damageTypes.length, conditionsCount: conditions.length, result });
   return result;
 }
 
@@ -234,7 +233,6 @@ export function extractDamageTypes(spell) {
       }
     }
   }
-  log(3, 'Extracted damage types.', { spell: spell.name, damageTypes });
   return damageTypes;
 }
 
@@ -286,7 +284,6 @@ export function checkSpellRequiresSave(spell) {
     const saveText = game.i18n.localize('SPELLBOOK.Filters.SavingThrow').toLowerCase();
     if (spell.system.description.value.toLowerCase().includes(saveText)) result = true;
   }
-  log(3, 'Checked if spell requires save.', { spell: spell.name, requiresSave: result });
   return result;
 }
 
@@ -306,7 +303,6 @@ export function extractSpellConditions(spell) {
       if (conditionLabel && lowerDesc.includes(conditionLabel.toLowerCase())) conditions.push(key);
     }
   }
-  log(3, 'Extracted spell conditions.', { spell: spell.name, conditions });
   return conditions;
 }
 
@@ -345,6 +341,5 @@ export function createSpellIconLink(spell) {
   </a>`
     .replace(/\s+/g, ' ')
     .trim();
-  log(3, 'Created spell icon link.', { spell: spell.name, uuid });
   return result;
 }

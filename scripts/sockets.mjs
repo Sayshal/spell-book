@@ -1,3 +1,9 @@
+/**
+ * Spell Book Module Socket Registration
+ * @module Sockets
+ * @author Tyler
+ */
+
 import { FLAGS, MODULE } from './constants/_module.mjs';
 import { log } from './logger.mjs';
 

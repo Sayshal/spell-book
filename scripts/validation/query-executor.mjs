@@ -5,12 +5,6 @@
  * the DND5e system's built-in filtering capabilities for robust, maintainable query
  * execution with minimal custom logic.
  *
- * The query executor supports:
- * - Conjunction (AND) operations between field conditions
- * - Field-specific evaluation using DND5e filter system
- * - Type-safe spell property access via foundry.utils.getProperty
- * - Complex operators (contains, hasany, OR, etc.)
- *
  * @module ValidationUtils/QueryExecutor
  * @author Tyler
  */
@@ -29,50 +23,31 @@ export class QueryExecutor {
      * Name search using case-insensitive contains.
      * @param value - Query value
      */
-    name: (value) => ({
-      k: 'name',
-      v: value,
-      o: 'icontains'
-    }),
+    name: (value) => ({ k: 'name', v: value, o: 'icontains' }),
 
     /**
      * Exact level match.
      * @param value - Query value
      */
-    level: (value) => ({
-      k: 'level',
-      v: parseInt(value)
-    }),
+    level: (value) => ({ k: 'level', v: parseInt(value) }),
 
     /**
      * School comparison.
      * @param value - Query value
      */
-    school: (value) => ({
-      k: 'school',
-      v: value.toLowerCase(),
-      o: 'icontains'
-    }),
+    school: (value) => ({ k: 'school', v: value.toLowerCase(), o: 'icontains' }),
 
     /**
      * Damage type checking - checks if spell has any of the specified damage types.
      * @param value - Query value
      */
-    damageType: (value) => ({
-      k: 'filterData.damageTypes',
-      v: value.split(',').map((t) => t.trim().toLowerCase()),
-      o: 'hasany'
-    }),
+    damageType: (value) => ({ k: 'filterData.damageTypes', v: value.split(',').map((t) => t.trim().toLowerCase()), o: 'hasany' }),
 
     /**
      * Condition checking - checks if spell inflicts any of the specified conditions.
      * @param value - Query value
      */
-    condition: (value) => ({
-      k: 'filterData.conditions',
-      v: value.split(',').map((c) => c.trim().toLowerCase()),
-      o: 'hasany'
-    }),
+    condition: (value) => ({ k: 'filterData.conditions', v: value.split(',').map((c) => c.trim().toLowerCase()), o: 'hasany' }),
 
     /**
      * Casting time - splits "type:value" format into two separate checks.
@@ -138,19 +113,13 @@ export class QueryExecutor {
      * Save requirement - checks filterData flag.
      * @param value - Query value
      */
-    requiresSave: (value) => ({
-      k: 'filterData.requiresSave',
-      v: value === 'true'
-    }),
+    requiresSave: (value) => ({ k: 'filterData.requiresSave', v: value === 'true' }),
 
     /**
      * Material components - checks if components are consumed.
      * @param value - Query value
      */
-    materialComponents: (value) => ({
-      k: 'filterData.materialComponents.consumed',
-      v: value.toLowerCase() === 'consumed'
-    })
+    materialComponents: (value) => ({ k: 'filterData.materialComponents.consumed', v: value.toLowerCase() === 'consumed' })
   };
 
   /**
