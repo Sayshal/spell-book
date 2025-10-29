@@ -40,25 +40,13 @@ export class SpellManager {
    * @returns {ActorSpellSettings} Actor's spell settings
    */
   getSettings(classIdentifier) {
-    log(3, `Getting spell settings.`, { actorName: this.actor.name, classIdentifier });
-    const behavior = this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR) || MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM;
-    if (!classIdentifier) {
-      log(3, `No class identifier provided, returning default settings.`, { actorName: this.actor.name });
-      return {
-        cantripSwapping: MODULE.SWAP_MODES.NONE,
-        spellSwapping: MODULE.SWAP_MODES.NONE,
-        ritualCasting: MODULE.RITUAL_CASTING_MODES.NONE,
-        showCantrips: true,
-        behavior: behavior
-      };
-    }
     const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
     const settings = {
       cantripSwapping: classRules.cantripSwapping || MODULE.SWAP_MODES.NONE,
       spellSwapping: classRules.spellSwapping || MODULE.SWAP_MODES.NONE,
       ritualCasting: classRules.ritualCasting || MODULE.RITUAL_CASTING_MODES.NONE,
       showCantrips: classRules.showCantrips !== false,
-      behavior: behavior
+      behavior: this.actor.getFlag(MODULE.ID, FLAGS.ENFORCEMENT_BEHAVIOR) || game.settings.get(MODULE.ID, SETTINGS.DEFAULT_ENFORCEMENT_BEHAVIOR)
     };
     log(3, `Settings retrieved.`, { actorName: this.actor.name, classIdentifier, settings });
     return settings;
