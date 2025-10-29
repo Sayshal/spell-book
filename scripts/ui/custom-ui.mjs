@@ -76,6 +76,32 @@ export class CustomUI {
   }
 
   /**
+   * Get all enabled UI elements for player interface in a single call.
+   * @returns {Set<string>} Set of enabled element names
+   * @static
+   */
+  static getEnabledPlayerElements() {
+    const elements = ['compare', 'favorites', 'notes', 'spellLevel', 'components', 'school', 'castingTime', 'range', 'damageTypes', 'conditions', 'save', 'concentration', 'materialComponents'];
+    const enabled = new Set();
+    for (const element of elements) if (this.isPlayerElementEnabled(element)) enabled.add(element);
+    log(3, 'Retrieved enabled player elements.', { count: enabled.size, elements: Array.from(enabled) });
+    return enabled;
+  }
+
+  /**
+   * Get all enabled UI elements for GM interface in a single call.
+   * @returns {Set<string>} Set of enabled element names
+   * @static
+   */
+  static getEnabledGMElements() {
+    const elements = ['compare', 'spellLevel', 'components', 'school', 'castingTime', 'range', 'damageTypes', 'conditions', 'save', 'concentration', 'materialComponents'];
+    const enabled = new Set();
+    for (const element of elements) if (this.isGMElementEnabled(element)) enabled.add(element);
+    log(3, 'Retrieved enabled GM elements.', { count: enabled.size, elements: Array.from(enabled) });
+    return enabled;
+  }
+
+  /**
    * Check if spell has a specific property.
    * @param {SpellMetadata} spell - The spell object to check
    * @param {string} property - The property identifier to check for
@@ -97,14 +123,16 @@ export class CustomUI {
   /**
    * Build custom metadata subtitle for SpellBook player interface.
    * @param {SpellMetadata} spell - The spell object with processed data
+   * @param {Set<string>} [enabledElements] - Set of enabled element names. If not provided, will check settings for each element.
    * @returns {string} Formatted metadata string for player display
    * @static
    */
-  static buildPlayerMetadata(spell) {
+  static buildPlayerMetadata(spell, enabledElements = null) {
     const metadata = [];
     const elements = ['spellLevel', 'components', 'school', 'castingTime', 'range', 'damageTypes', 'conditions', 'save', 'concentration', 'materialComponents'];
     for (const element of elements) {
-      if (!this.isPlayerElementEnabled(element)) continue;
+      const isEnabled = enabledElements ? enabledElements.has(element) : this.isPlayerElementEnabled(element);
+      if (!isEnabled) continue;
       switch (element) {
         case 'spellLevel': {
           const levelText = UIUtils.formatSpellLevel(spell);
@@ -174,14 +202,16 @@ export class CustomUI {
   /**
    * Build custom metadata subtitle for GMSpellListManager interface.
    * @param {SpellMetadata} spell - The spell object with processed data
+   * @param {Set<string>} [enabledElements] - Set of enabled element names. If not provided, will check settings for each element.
    * @returns {string} Formatted metadata string for GM display
    * @static
    */
-  static buildGMMetadata(spell) {
+  static buildGMMetadata(spell, enabledElements = null) {
     const metadata = [];
     const elements = ['spellLevel', 'components', 'school', 'castingTime', 'range', 'damageTypes', 'conditions', 'save', 'concentration', 'materialComponents'];
     for (const element of elements) {
-      if (!this.isGMElementEnabled(element)) continue;
+      const isEnabled = enabledElements ? enabledElements.has(element) : this.isGMElementEnabled(element);
+      if (!isEnabled) continue;
       switch (element) {
         case 'spellLevel': {
           const levelText = UIUtils.formatSpellLevel(spell);

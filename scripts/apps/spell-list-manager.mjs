@@ -181,7 +181,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (this.availableSpells.length > 0) this._prepareFilterContext(context);
     if (this.isEditing && this.selectedSpellList) await this._addEditingContext(context);
     if (this.selectedSpellList) {
-      context.selectedSpellList = UIUtils.processSpellListForDisplay(this.selectedSpellList, this.classFolderCache, this.availableSpellLists);
+      const enabledElements = UIUtils.CustomUI.getEnabledGMElements();
+      context.selectedSpellList = UIUtils.processSpellListForDisplay(this.selectedSpellList, this.classFolderCache, this.availableSpellLists, enabledElements);
       const flags = this.selectedSpellList.document.flags?.[MODULE.ID] || {};
       const isCustomList = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList;
       context.selectedSpellList.isRenameable = isCustomList || this.selectedSpellList.isMerged;
@@ -298,9 +299,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const filteredData = this._filterAvailableSpells();
     const maxSpells = game.settings.get(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX);
     const comparisonFull = this.comparisonSpells.size >= maxSpells;
+    const enabledElements = UIUtils.CustomUI.getEnabledGMElements();
     if (this.isEditing && this.selectionMode && filteredData.spells) {
       filteredData.spells = filteredData.spells.map((spell) => {
-        const processedSpell = UIUtils.processSpellItemForDisplay(spell);
+        const processedSpell = UIUtils.processSpellItemForDisplay(spell, enabledElements);
         processedSpell.selectAddCheckboxHtml = this._createSpellSelectCheckbox(spell, 'add', this.selectedSpellsToAdd.has(spell.uuid));
         processedSpell.isInComparison = this.comparisonSpells.has(spell.uuid);
         processedSpell.showCompareLink = !comparisonFull || processedSpell.isInComparison;
@@ -308,7 +310,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       });
     } else if (filteredData.spells) {
       filteredData.spells = filteredData.spells.map((spell) => {
-        const processedSpell = UIUtils.processSpellItemForDisplay(spell);
+        const processedSpell = UIUtils.processSpellItemForDisplay(spell, enabledElements);
         processedSpell.isInComparison = this.comparisonSpells.has(spell.uuid);
         processedSpell.showCompareLink = !comparisonFull || processedSpell.isInComparison;
         return processedSpell;

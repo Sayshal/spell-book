@@ -850,26 +850,27 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   async _processSpellsForLevel(spells) {
     log(3, 'Beginning spells for level processing:', { spells });
+    const enabledElements = UIUtils.CustomUI.getEnabledPlayerElements();
     const processedSpells = [];
     for (const spell of spells) {
       const processedSpell = this._processSpellForDisplay(spell);
       const spellUuid = processedSpell.uuid || processedSpell.compendiumUuid;
       const comparisonIcon = {
-        enabled: UIUtils.CustomUI.isPlayerElementEnabled('compare') && processedSpell.showCompareLink,
+        enabled: enabledElements.has('compare') && processedSpell.showCompareLink,
         active: processedSpell.isInComparison,
         uuid: processedSpell.compendiumUuid,
         tooltip: game.i18n.localize('SPELLBOOK.Comparison.Compare'),
         ariaLabel: game.i18n.format('SPELLBOOK.Comparison.CompareSpell', { name: processedSpell.name })
       };
       const favoriteButton = {
-        enabled: UIUtils.CustomUI.isPlayerElementEnabled('favorites') && spellUuid,
+        enabled: enabledElements.has('favorites') && spellUuid,
         favorited: processedSpell.favorited,
         uuid: spellUuid,
         tooltip: processedSpell.favorited ? game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites') : game.i18n.localize('SPELLBOOK.UI.AddToFavorites'),
         iconClass: processedSpell.favorited ? 'fas' : 'far'
       };
       const notesIcon = {
-        enabled: UIUtils.CustomUI.isPlayerElementEnabled('notes') && spellUuid,
+        enabled: enabledElements.has('notes') && spellUuid,
         hasNotes: processedSpell.hasNotes,
         uuid: spellUuid,
         tooltip: processedSpell.hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes'),
@@ -896,7 +897,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         learningSourceLabel: learningSourceLabel
       };
       const partyIcons = this._preparePartyIconsData(processedSpell);
-      const formattedDetails = UIUtils.CustomUI.buildPlayerMetadata(processedSpell);
+      const formattedDetails = UIUtils.CustomUI.buildPlayerMetadata(processedSpell, enabledElements);
       let materialComponentsTooltip = '';
       const hasMaterialComponents = processedSpell.filterData?.materialComponents?.hasConsumedMaterials === true;
       if (hasMaterialComponents && formattedDetails) {

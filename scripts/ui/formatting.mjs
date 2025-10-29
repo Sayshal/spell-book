@@ -20,9 +20,10 @@ import * as UIUtils from './_module.mjs';
  * @param {Object} spellList - The spell list to process
  * @param {Map<string, any>|null} [classFolderCache=null] - Cache of class folders keyed by pack:identifier
  * @param {Array<Object>|null} [availableSpellLists=null] - Array of available spell list metadata objects
+ * @param {Set<string>} [enabledElements] - Set of enabled element names. If not provided, will check settings for each element.
  * @returns {ProcessedSpellList} Processed spell list with display data
  */
-export function processSpellListForDisplay(spellList, classFolderCache = null, availableSpellLists = null) {
+export function processSpellListForDisplay(spellList, classFolderCache = null, availableSpellLists = null, enabledElements = null) {
   log(3, 'Processing spell list for display.', { spellListName: spellList.document?.name, isCustom: !!spellList.document?.flags?.[MODULE.ID]?.isCustom });
   const processed = foundry.utils.deepClone(spellList);
   processed.isCustomList = !!spellList.document?.flags?.[MODULE.ID]?.isCustom || !!spellList.document?.flags?.[MODULE.ID]?.isDuplicate;
@@ -43,7 +44,9 @@ export function processSpellListForDisplay(spellList, classFolderCache = null, a
       processed.isClassSpellList = classFolderCache.has(key);
     }
   }
-  if (spellList.spellsByLevel?.length) processed.spellsByLevel = spellList.spellsByLevel.map((level) => ({ ...level, spells: level.spells.map((spell) => processSpellItemForDisplay(spell)) }));
+  if (spellList.spellsByLevel?.length) {
+    processed.spellsByLevel = spellList.spellsByLevel.map((level) => ({ ...level, spells: level.spells.map((spell) => processSpellItemForDisplay(spell, enabledElements)) }));
+  }
   log(3, 'Spell list processed for display.', { isPlayerSpellbook: processed.isPlayerSpellbook, spellLevels: processed.spellsByLevel?.length });
   return processed;
 }
@@ -51,14 +54,15 @@ export function processSpellListForDisplay(spellList, classFolderCache = null, a
 /**
  * Process spell item for display in the GM interface.
  * @param {Object} spell - The spell to process
+ * @param {Set<string>} [enabledElements] - Set of enabled element names. If not provided, will check settings for each element.
  * @returns {ProcessedSpellItem} Processed spell with display data
  */
-export function processSpellItemForDisplay(spell) {
+export function processSpellItemForDisplay(spell, enabledElements = null) {
   const processed = foundry.utils.deepClone(spell);
   processed.cssClasses = 'spell-item';
   processed.dataAttributes = `data-uuid="${spell.uuid}"`;
-  processed.showCompare = UIUtils.CustomUI.isGMElementEnabled('compare');
-  processed.formattedDetails = UIUtils.CustomUI.buildGMMetadata(spell);
+  processed.showCompare = enabledElements ? enabledElements.has('compare') : UIUtils.CustomUI.isGMElementEnabled('compare');
+  processed.formattedDetails = UIUtils.CustomUI.buildGMMetadata(spell, enabledElements);
   log(3, 'Spell item processed for display.', { spell: spell.name });
   return processed;
 }
