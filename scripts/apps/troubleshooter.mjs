@@ -45,8 +45,8 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /** @inheritdoc */
-  _prepareContext(options) {
-    const context = super._prepareContext(options);
+  async _prepareContext(options) {
+    const context = await super._prepareContext(options);
     const ownedActors = game.actors.filter((actor) => actor.isOwner);
     context.includeActors = game.settings.get(MODULE.ID, SETTINGS.TROUBLESHOOTER_INCLUDE_ACTORS);
     context.output = Troubleshooter.generateTextReport();

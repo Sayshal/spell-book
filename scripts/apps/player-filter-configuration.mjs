@@ -93,8 +93,8 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   }
 
   /** @inheritdoc */
-  _prepareContext(options) {
-    const context = super._prepareContext(options);
+  async _prepareContext(options) {
+    const context = await super._prepareContext(options);
     if (!Array.isArray(this.config) || this.config.length === 0) this.initializeConfig();
     context.filterConfig = this._prepareFilterConfigFormData();
     context.buttons = this._prepareFormButtons();
