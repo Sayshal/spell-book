@@ -72,6 +72,12 @@ export class Cantrips {
     /** @type {number} Cached total maximum cantrips across all classes */
     this._totalMaxCantrips = 0;
 
+    /** @type {Map<string, number>} Cached current cantrip counts by class identifier */
+    this._currentCountByClass = new Map();
+
+    /** @type {number|null} Cached total current cantrip count across all classes */
+    this._totalCurrentCount = null;
+
     /** @type {boolean} Whether the cache has been initialized */
     this._cacheInitialized = false;
 
@@ -113,6 +119,8 @@ export class Cantrips {
     log(3, 'Clearing cantrip cache.', { actorId: this.actor.id });
     this._maxCantripsByClass.clear();
     this._totalMaxCantrips = 0;
+    this._currentCountByClass.clear();
+    this._totalCurrentCount = null;
     this._cacheInitialized = false;
   }
 
@@ -123,9 +131,7 @@ export class Cantrips {
    */
   _getMaxCantripsForClass(classIdentifier) {
     if (!this._cacheInitialized) this._initializeCache();
-    const result = this._maxCantripsByClass.get(classIdentifier) || 0;
-    log(3, 'Getting max cantrips for class.', { actorId: this.actor.id, classIdentifier, maxCantrips: result });
-    return result;
+    return this._maxCantripsByClass.get(classIdentifier) || 0;
   }
 
   /**
@@ -134,7 +140,6 @@ export class Cantrips {
    */
   _getTotalMaxCantrips() {
     if (!this._cacheInitialized) this._initializeCache();
-    log(3, 'Getting total max cantrips.', { actorId: this.actor.id, totalMaxCantrips: this._totalMaxCantrips });
     return this._totalMaxCantrips;
   }
 
@@ -179,15 +184,19 @@ export class Cantrips {
    */
   getCurrentCount(classIdentifier = null) {
     if (!classIdentifier) {
+      if (this._totalCurrentCount !== null) return this._totalCurrentCount;
       const count = this.actor.items.reduce((count, i) => {
         return count + (i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1 ? 1 : 0);
       }, 0);
+      this._totalCurrentCount = count;
       log(3, 'Getting current cantrip count (all classes).', { actorId: this.actor.id, count });
       return count;
     }
+    if (this._currentCountByClass.has(classIdentifier)) return this._currentCountByClass.get(classIdentifier);
     const count = this.actor.items.reduce((count, i) => {
       return count + (i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1 && (i.system.sourceClass === classIdentifier || i.sourceClass === classIdentifier) ? 1 : 0);
     }, 0);
+    this._currentCountByClass.set(classIdentifier, count);
     log(3, 'Getting current cantrip count for class.', { actorId: this.actor.id, classIdentifier, count });
     return count;
   }

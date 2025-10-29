@@ -510,6 +510,8 @@ export class SpellManager {
     }
     await this._updateGlobalPreparedSpellsFlag();
     await this._cleanupUnpreparedSpells();
+    this.cantripManager._currentCountByClass.clear();
+    this.cantripManager._totalCurrentCount = null;
     log(3, `Class-specific prepared spells saved.`, { actorName: this.actor.name, classIdentifier, cantripChanges, spellChanges });
     return { cantripChanges, spellChanges };
   }
