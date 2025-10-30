@@ -30,12 +30,12 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
     position: { width: 800, height: 'auto' },
     classes: ['spell-book', 'analytics-dashboard'],
     actions: {
-      switchView: AnalyticsDashboard.handleSwitchView,
-      exportData: AnalyticsDashboard.handleExportData,
-      importData: AnalyticsDashboard.handleImportData,
-      clearData: AnalyticsDashboard.handleClearData,
-      refreshStats: AnalyticsDashboard.handleRefreshStats,
-      viewUserData: AnalyticsDashboard.handleViewUserData
+      clearData: this.#clearData,
+      exportData: this.#exportData,
+      importData: this.#importData,
+      refreshStats: this.#refreshStats,
+      switchView: this.#switchView,
+      viewData: this.#viewData
     }
   };
 
@@ -302,13 +302,12 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Handle switching between view modes in the analytics dashboard.
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} target - The target element containing view mode data
-   * @returns {Promise<void>}
-   * @static
+   * Handle switching view.
+   * @this AnalyticsDashboard
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async handleSwitchView(_event, target) {
+  static async #switchView(_event, target) {
     log(3, 'Switch View called.');
     const viewMode = target.dataset.viewMode;
     this.viewMode = viewMode;
@@ -316,13 +315,12 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Handle exporting user spell data to JSON format.
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} _target - The target element that triggered the export
-   * @returns {Promise<void>}
-   * @static
+   * Handle exporting data.
+   * @this AnalyticsDashboard
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleExportData(_event, _target) {
+  static async #exportData(_event, _target) {
     log(3, 'Export Data called.');
     try {
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
@@ -373,13 +371,12 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Handle importing user spell data from JSON files.
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} _target - The target element that triggered the import
-   * @returns {Promise<void>}
-   * @static
+   * Handle importing data.
+   * @this AnalyticsDashboard
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleImportData(_event, _target) {
+  static async #importData(_event, _target) {
     log(3, 'Import Data called.');
     const input = document.createElement('input');
     input.type = 'file';
@@ -436,13 +433,12 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Handle clearing user spell data with confirmation.
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} _target - The target element that triggered the clear operation
-   * @returns {Promise<void>}
-   * @static
+   * Handle clearing data.
+   * @this AnalyticsDashboard
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleClearData(_event, _target) {
+  static async #clearData(_event, _target) {
     log(3, 'Clear Data called.');
     const confirmed = await foundry.applications.api.DialogV2.wait({
       window: { title: game.i18n.localize('SPELLBOOK.Analytics.ClearDataTitle') },
@@ -497,26 +493,24 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   /**
-   * Handle refreshing analytics statistics by clearing cache and re-rendering.
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} _target - The target element that triggered the refresh
-   * @returns {Promise<void>}
-   * @static
+   * Handle refreshing stats.
+   * @this AnalyticsDashboard
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleRefreshStats(_event, _target) {
+  static async #refreshStats(_event, _target) {
     log(3, 'Refresh Stats called.');
     this.analytics = null;
     this.render();
   }
 
   /**
-   * Handle viewing data for a specific user in personal mode.
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} target - The target element containing user ID data
-   * @returns {Promise<void>}
-   * @static
+   * Handle viewing data.
+   * @this AnalyticsDashboard
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async handleViewUserData(_event, target) {
+  static async #viewData(_event, target) {
     log(3, 'View User Data called.');
     const userId = target.dataset.userId;
     this.selectedUserId = userId;

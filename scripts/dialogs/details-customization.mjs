@@ -32,8 +32,8 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
       submitOnChange: false
     },
     actions: {
-      useUserColor: DetailsCustomization.useUserColor,
-      resetToDefault: DetailsCustomization.resetToDefault
+      useUserColor: this.#useUserColor,
+      reset: this.#reset
     },
     position: { height: 600, width: 800 },
     window: { title: 'SPELLBOOK.Settings.DetailsCustomization.Title', icon: 'fa-solid fa-palette', resizable: true }
@@ -331,29 +331,25 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
   }
 
   /**
-   * Action handler to set wizard book icon color to current user's color.
-   * @param {Event} _event - The triggering event (unused)
-   * @param {HTMLElement} target - The target element containing user color data
-   * @returns {Promise<void>}
-   * @static
+   * Handle using user color.
+   * @this DetailsCustomization
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async useUserColor(_event, target) {
+  static async #useUserColor(_event, target) {
     log(3, 'Using user color for wizard book icon.');
     const userColor = target.dataset.userColor || game.user.color;
     const colorPicker = target.closest('.wizard-book-color-controls').querySelector('color-picker[name="wizardBookIconColor"]');
-    if (colorPicker) {
-      colorPicker.value = userColor;
-    }
+    if (colorPicker) colorPicker.value = userColor;
   }
 
   /**
-   * Action handler to reset wizard book icon color to default/saved setting.
-   * @param {Event} _event - The triggering event (unused)
-   * @param {HTMLElement} target - The target element within color controls
-   * @returns {Promise<void>}
-   * @static
+   * Handle resetting color.
+   * @this DetailsCustomization
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async resetToDefault(_event, target) {
+  static async #reset(_event, target) {
     log(3, 'Resetting wizard book icon color to default.');
     const colorPicker = target.closest('.wizard-book-color-controls').querySelector('color-picker[name="wizardBookIconColor"]');
     if (colorPicker) {

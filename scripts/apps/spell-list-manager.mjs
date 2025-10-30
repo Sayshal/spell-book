@@ -31,31 +31,31 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     id: `gm-spell-list-manager-${MODULE.ID}`,
     tag: 'div',
     actions: {
-      addSpell: SpellListManager.handleAddSpell,
-      bulkSave: SpellListManager.handleBulkSave,
-      cancelSelection: SpellListManager.handleCancelSelection,
-      compareSpell: SpellListManager.handleCompareSpell,
-      createNewList: SpellListManager.handleCreateNewList,
-      deleteCustomList: SpellListManager.handleDeleteCustomList,
-      editSpellList: SpellListManager.handleEditSpellList,
-      mergeLists: SpellListManager.handleMergeLists,
-      openActor: SpellListManager.handleOpenActor,
-      openAnalyticsDashboard: SpellListManager.handleOpenAnalyticsDashboard,
-      openClass: SpellListManager.handleOpenClass,
-      openCustomization: SpellListManager.handleOpenCustomization,
-      removeSpell: SpellListManager.handleRemoveSpell,
-      renameSpellList: SpellListManager.handleRenameSpellList,
-      restoreOriginal: SpellListManager.handleRestoreOriginal,
-      saveCustomList: SpellListManager.handleSaveCustomList,
-      selectAll: SpellListManager.handleSelectAll,
-      selectSpellList: SpellListManager.handleSelectSpellList,
-      showDocumentation: SpellListManager.handleShowDocumentation,
-      toggleFolder: SpellListManager.handleToggleFolder,
-      toggleListVisibility: SpellListManager.handleToggleListVisibility,
-      toggleRegistry: SpellListManager.handleToggleRegistry,
-      toggleSelectionMode: SpellListManager.handleToggleSelectionMode,
-      toggleSidebar: SpellListManager.handleToggleSidebar,
-      toggleSpellLevel: SpellListManager.handleToggleSpellLevel
+      addSpell: this.#addSpell,
+      bulkSave: this.#bulkSave,
+      cancelSelection: this.#cancelSelection,
+      compareSpell: this.#compareSpell,
+      createList: this.#createList,
+      deleteList: this.#deleteList,
+      editList: this.#editList,
+      hideList: this.#hideList,
+      mergeLists: this.#mergeLists,
+      openActor: this.#openActorSheet,
+      openAnalytics: this.#openAnalytics,
+      openClass: this.#openClass,
+      openCustomization: this.#openCustomization,
+      registerList: this.#registerList,
+      removeSpell: this.#removeSpell,
+      renameList: this.#renameList,
+      restoreList: this.#restoreList,
+      saveList: this.#saveList,
+      selectAll: this.#selectAll,
+      selectList: this.#selectList,
+      showDocs: this.#showDocs,
+      toggleFolder: this.#toggleFolder,
+      toggleSelectionMode: this.#toggleSelectionMode,
+      toggleSidebar: this.#toggleSidebar,
+      toggleSpellHeader: this.#toggleSpellHeader
     },
     classes: ['gm-spell-list-manager'],
     window: { icon: 'fas fa-bars-progress', resizable: true, minimizable: true },
@@ -195,7 +195,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         checked: context.selectedSpellList.isRegistryEnabled,
         ariaLabel: game.i18n.localize('SPELLBOOK.Registry.EnableLabel')
       });
-      registryCheckbox.dataset.action = 'toggleRegistry';
+      registryCheckbox.dataset.action = 'registerList';
       context.selectedSpellList.registryCheckboxHtml = ValidationUtils.elementToHtml(registryCheckbox);
       context.selectedSpellList.isActorOwned = !!flags.actorId;
     }
@@ -1540,29 +1540,26 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle selecting a spell list.
-   * @param {Event} event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @returns {Promise<void>}
-   * @todo can we combined this into this.selectSpellList()?
-   * @static
+   * Handle selecting spell list.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async handleSelectSpellList(event, _form) {
-    log(3, 'Handling select spell list.', { event, _form });
-    const element = event.target.closest('[data-uuid]');
+  static async #selectList(_event, target) {
+    log(3, 'Handling select spell list.', { _event, target });
+    const element = target.closest('[data-uuid]');
     if (!element) return;
     await this.selectSpellList(element.dataset.uuid);
   }
 
   /**
-   * Handle editing a spell list.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @returns {Promise<void>}
-   * @static
+   * Handle editing list.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleEditSpellList(_event, _form) {
-    log(3, 'Handling edit spell list.', { _event, _form });
+  static async #editList(_event, _target) {
+    log(3, 'Handling edit spell list.', { _event, _target });
     if (!this.selectedSpellList) return;
     this.pendingChanges = { added: new Set(), removed: new Set() };
     const flags = this.selectedSpellList.document.flags?.[MODULE.ID] || {};
@@ -1575,14 +1572,14 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle removing a spell from the list.
-   * @param {Event} event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Handle removing spell.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static handleRemoveSpell(event, _form) {
-    log(3, 'Handling remove spell list.', { event, _form });
-    const element = event.target.closest('[data-uuid]');
+  static #removeSpell(_event, target) {
+    log(3, 'Handling remove spell list.', { _event, target });
+    const element = target.closest('[data-uuid]');
     if (!element) return;
     const spellUuid = element.dataset.uuid;
     if (!this.selectedSpellList || !this.isEditing) return;
@@ -1597,14 +1594,14 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle adding a spell to the list.
-   * @param {Event} event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Handle adding spell.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static handleAddSpell(event, _form) {
-    log(3, 'Handling add spell list.', { event, _form });
-    const element = event.target.closest('[data-uuid]');
+  static #addSpell(_event, target) {
+    log(3, 'Handling add spell list.', { _event, target });
+    const element = target.closest('[data-uuid]');
     if (!element) return;
     let spellUuid = element.dataset.uuid;
     if (!this.selectedSpellList || !this.isEditing) return;
@@ -1624,14 +1621,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle saving the custom spell list.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @returns {Promise<void>}
-   * @static
+   * Handle saving list.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleSaveCustomList(_event, _form) {
-    log(3, 'Handling save custom spell list.', { _event, _form });
+  static async #saveList(_event, _target) {
+    log(3, 'Handling save custom spell list.', { _event, _target });
     if (!this.selectedSpellList || !this.isEditing) return;
     const document = this.selectedSpellList.document;
     const originalSpells = Array.from(document.system.spells || []);
@@ -1644,14 +1640,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle deleting the custom spell list.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @returns {Promise<void>}
-   * @static
+   * Handle deleting list.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleDeleteCustomList(_event, _form) {
-    log(3, 'Handling delete custom spell list.', { _event, _form });
+  static async #deleteList(_event, _target) {
+    log(3, 'Handling delete custom spell list.', { _event, _target });
     if (!this.selectedSpellList) return;
     const uuid = this.selectedSpellList.uuid;
     const listName = this.selectedSpellList.name;
@@ -1670,14 +1665,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle restoring from the original spell list.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @returns {Promise<void>}
-   * @static
+   * Handle restoring list.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleRestoreOriginal(_event, _form) {
-    log(3, 'Handling restore original spell list.', { _event, _form });
+  static async #restoreList(_event, _target) {
+    log(3, 'Handling restore original spell list.', { _event, _target });
     if (!this.selectedSpellList) return;
     const originalUuid = this.selectedSpellList.document.flags?.[MODULE.ID]?.originalUuid;
     if (!originalUuid) return;
@@ -1716,13 +1710,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle showing the documentation dialog.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Handle showing documentation dialog.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleShowDocumentation(_event, _form) {
-    log(3, 'Handling show documentation.', { _event, _form });
+  static async #showDocs(_event, _target) {
+    log(3, 'Handling show documentation.', { _event, _target });
     const content = await renderTemplate(TEMPLATES.DIALOGS.MANAGER_DOCUMENTATION, {});
     await DialogV2.wait({
       window: { title: game.i18n.localize('SPELLMANAGER.Documentation.Title'), icon: 'fas fa-question-circle' },
@@ -1736,28 +1730,28 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle toggling the sidebar collapsed state
-   * @param {Event} event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Handle toggling the sidebar.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static handleToggleSidebar(event, _form) {
-    log(3, 'Handling toggle sidebar.', { event, _form });
+  static #toggleSidebar(_event, target) {
+    log(3, 'Handling toggle sidebar.', { event, target });
     const isCollapsing = !this.element.classList.contains('sidebar-collapsed');
     this.element.classList.toggle('sidebar-collapsed');
-    const caretIcon = event.currentTarget.querySelector('.collapse-indicator');
+    const caretIcon = target.querySelector('.collapse-indicator');
     if (caretIcon) caretIcon.className = isCollapsing ? 'fas fa-caret-right collapse-indicator' : 'fas fa-caret-left collapse-indicator';
   }
 
   /**
-   * Handle toggling a spell level's collapsed state.
-   * @param {Event} event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Handle toggling the spell header.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static handleToggleSpellLevel(event, _form) {
-    log(3, 'Handling toggle spell level.', { event, _form });
-    const levelContainer = event.target.closest('.spell-level');
+  static #toggleSpellHeader(_event, target) {
+    log(3, 'Handling toggle spell level.', { _event, target });
+    const levelContainer = target.closest('.spell-level');
     if (!levelContainer || !levelContainer.classList.contains('spell-level')) return;
     const levelId = levelContainer.dataset.level;
     levelContainer.classList.toggle('collapsed');
@@ -1779,14 +1773,14 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle toggling a folder's collapsed state.
-   * @param {Event} event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Handle toggling folder collapsed state.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static handleToggleFolder(event, _form) {
-    log(3, 'Handling toggle folder.', { event, _form });
-    const folderContainer = event.target.closest('.list-folder');
+  static #toggleFolder(_event, target) {
+    log(3, 'Handling toggle folder.', { _event, target });
+    const folderContainer = target.closest('.list-folder');
     if (!folderContainer) return;
     const folderId = folderContainer.dataset.folderId;
     if (!folderId) return;
@@ -1805,13 +1799,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle opening an actor sheet.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Handle open actor sheet.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleOpenActor(_event, _form) {
-    log(3, 'Handling open actor.', { _event, _form });
+  static async #openActorSheet(_event, _target) {
+    log(3, 'Handling open actor.', { _event, _target });
     const document = this.selectedSpellList.document;
     const actorId = document.flags?.[MODULE.ID]?.actorId;
     if (!actorId) return;
@@ -1821,13 +1815,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle opening a class item sheet.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Handle open class item.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleOpenClass(_event, _form) {
-    log(3, 'Handling open class.', { _event, _form });
+  static async #openClass(_event, _target) {
+    log(3, 'Handling open class.', { _event, _target });
     const selectedSpellList = this.selectedSpellList;
     const identifier = selectedSpellList.document.system?.identifier;
     if (!identifier) return;
@@ -1844,14 +1838,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle creating a new spell list.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @returns {Promise<void>}
-   * @static
+   * Handle creating new list.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleCreateNewList(_event, _form) {
-    log(3, 'Handling create new list.', { _event, _form });
+  static async #createList(_event, _target) {
+    log(3, 'Handling create new list.', { _event, _target });
     const classIdentifiers = await DataUtils.findClassIdentifiers();
     const identifierOptions = Object.entries(classIdentifiers)
       .sort(([, dataA], [, dataB]) => dataA.name.localeCompare(dataB.name))
@@ -1865,14 +1858,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle renaming a spell list.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @returns {Promise<void>}
-   * @static
+   * Handle renaming spell list.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleRenameSpellList(_event, _form) {
-    log(3, 'Handling rename spell list.', { _event, _form });
+  static async #renameList(_event, _target) {
+    log(3, 'Handling rename spell list.', { _event, _target });
     if (!this.selectedSpellList) return;
     const currentName = this.selectedSpellList.name;
     const listUuid = this.selectedSpellList.uuid;
@@ -2009,14 +2001,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle merging spell lists.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @returns {Promise<void>}
-   * @static
+   * Handle merging lists.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleMergeLists(_event, _form) {
-    log(3, 'Handling merging lists.', { _event, _form });
+  static async #mergeLists(_event, _target) {
+    log(3, 'Handling merging lists.', { _event, _target });
     if (this.availableSpellLists.length < 2) return;
     const { result, formData } = await this._showMergeListsDia;
     if (result === 'merge' && formData) await this._mergeListsCallback(formData.spellListUuids, formData.mergedListName, formData.hideSourceLists);
@@ -2024,12 +2015,12 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle toggling selection mode.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static handleToggleSelectionMode(_event, _form) {
-    log(3, 'Handling toggle selecting mode.', { _event, _form });
+  static #toggleSelectionMode(_event, _target) {
+    log(3, 'Handling toggle selecting mode.', { _event, _target });
     this.selectionMode = !this.selectionMode;
     if (!this.selectionMode) this._clearSelections();
     else {
@@ -2041,20 +2032,19 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle selecting all visible spells.
-   * @param {Event} event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Handle selecting all spells.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static handleSelectAll(event, _form) {
-    log(3, 'Handling select all.', { event, _form });
+  static #selectAll(_event, target) {
+    log(3, 'Handling select all.', { event, target });
     if (this.isSelectingAll) return;
     this.isSelectingAll = true;
-    const checkbox = event.target;
-    const type = checkbox.dataset.type;
+    const type = target.dataset.type;
     if (type === 'add') {
       const visibleSpells = this._getVisibleSpells();
-      if (checkbox.checked) {
+      if (target.checked) {
         visibleSpells.forEach((spell) => {
           this.selectedSpellsToAdd.add(spell.uuid);
         });
@@ -2065,7 +2055,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       }
     } else if (type === 'remove') {
       const currentSpells = this.selectedSpellList?.spells || [];
-      if (checkbox.checked) {
+      if (target.checked) {
         currentSpells.forEach((spell) => {
           const spellUuid = spell.uuid || spell.compendiumUuid;
           this.selectedSpellsToRemove.add(spellUuid);
@@ -2087,13 +2077,12 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Handle bulk save operation.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @returns {Promise<void>}
-   * @static
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleBulkSave(_event, _form) {
-    log(3, 'Handling bulk save.', { _event, _form });
+  static async #bulkSave(_event, _target) {
+    log(3, 'Handling bulk save.', { _event, _target });
     const addCount = this.selectedSpellsToAdd.size;
     const removeCount = this.selectedSpellsToRemove.size;
     const totalCount = addCount + removeCount;
@@ -2154,26 +2143,25 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle canceling selection mode.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Handle cancelling current selection.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static handleCancelSelection(_event, _form) {
-    log(3, 'Handling cancel selection.', { _event, _form });
+  static #cancelSelection(_event, _target) {
+    log(3, 'Handling cancel selection.', { _event, _target });
     this._clearSelections();
     this.render(false);
   }
 
   /**
-   * Handle toggling spell list visibility.
-   * @param {Event} event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @returns {Promise<void>}
-   * @static
+   * Handle hiding spell list.
+   * @this SpellListManager
+   * @param {PointerEvent} event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleToggleListVisibility(event, _form) {
-    log(3, 'Handling toggle list visibility.', { event, _form });
+  static async #hideList(event, _target) {
+    log(3, 'Handling toggle list visibility.', { event, _target });
     event.stopPropagation();
     const listItem = event.target.closest('[data-uuid]');
     if (!listItem) return;
@@ -2193,39 +2181,36 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle opening the analytics dashboard for GM users.
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} _target - The target element that triggered the event
-   * @returns {Promise<void>}
-   * @static
+   * Handle open analytics dashboard.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleOpenAnalyticsDashboard(_event, _target) {
+  static async #openAnalytics(_event, _target) {
     log(3, 'Opening Analytics Dashboard');
     new AnalyticsDashboard({ viewMode: 'gm' }).render({ force: true });
   }
 
   /**
-   * Handle opening the spell details customization dialog.
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} _target - The target element that triggered the event
-   * @returns {Promise<void>}
-   * @static
+   * Handle opening customization dialog.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleOpenCustomization(_event, _target) {
+  static async #openCustomization(_event, _target) {
     log(3, 'Opening Customization Dashboard');
     new DetailsCustomization().render({ force: true });
   }
 
   /**
-   * Handle spell comparison selection and dialog management.
-   * @param {MouseEvent} event - The click event
-   * @param {HTMLFormElement} _form - The form element (unused)
-   * @returns {Promise<void>}
-   * @static
+   * Handle comparing spells.
+   * @this SpellListManager
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async handleCompareSpell(event, _form) {
-    log(3, 'Handling spell comparison', { event, _form });
-    const spellUuid = event.target.dataset.uuid;
+  static async #compareSpell(_event, target) {
+    log(3, 'Handling spell comparison', { _event, target });
+    const spellUuid = target.dataset.uuid;
     const maxSpells = game.settings.get(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX);
     if (this.comparisonSpells.has(spellUuid)) this.comparisonSpells.delete(spellUuid);
     else if (this.comparisonSpells.size < maxSpells) this.comparisonSpells.add(spellUuid);
@@ -2245,19 +2230,18 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Handle toggling registry integration for a spell list.
-   * @param {Event} event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @returns {Promise<void>}
-   * @static
+   * Handle adding list to registry.
+   * @this SpellListManager
+   * @param {PointerEvent} event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async handleToggleRegistry(event, _form) {
-    log(3, 'Handling toggle registry', { event, _form });
+  static async #registerList(event, target) {
+    log(3, 'Handling toggle registry', { event, target });
     event.preventDefault();
     event.stopPropagation();
     if (!this.selectedSpellList) return;
     const uuid = this.selectedSpellList.uuid;
-    const checkbox = event.target.closest('input[type="checkbox"]');
+    const checkbox = target.closest('input[type="checkbox"]');
     const newState = await DataUtils.toggleListForRegistry(uuid);
     checkbox.checked = newState;
   }
@@ -2337,7 +2321,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         event.preventDefault();
       } else if (event.key === 'Enter' && this.selectedSpellsToAdd.size + this.selectedSpellsToRemove.size > 0) {
         const bulkSaveBtn = this.element.querySelector('.bulk-save-btn');
-        if (bulkSaveBtn && !bulkSaveBtn.disabled) SpellListManager.handleBulkSave.call(this, { target: bulkSaveBtn }, null);
+        if (bulkSaveBtn && !bulkSaveBtn.disabled) this.#bulkSave.call(this, { target: bulkSaveBtn }, null);
         event.preventDefault();
       }
     });

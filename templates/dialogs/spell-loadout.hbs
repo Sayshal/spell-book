@@ -25,7 +25,7 @@
 
     <!-- Save Current Loadout Action -->
     <div class="form-actions">
-      <button type="button" data-action="saveLoadout" class="save-loadout-btn">
+      <button type="button" data-action="save" class="save-loadout-btn">
         <i class="fas fa-save"></i>
         {{localize 'SPELLBOOK.Loadouts.SaveCurrent'}}
       </button>
@@ -56,21 +56,21 @@
             <!-- Loadout Actions Row - Management buttons -->
             <div class="loadout-actions">
               <!-- Apply Loadout Button -->
-              <button type="button" data-action="applyLoadout" data-loadout-id="{{loadout.id}}"
+              <button type="button" data-action="apply" data-loadout-id="{{loadout.id}}"
                 class="apply-loadout-btn">
                 <i class="fas fa-check"></i>
                 {{localize 'SPELLBOOK.Loadouts.Apply'}}
               </button>
 
               <!-- Overwrite Loadout Button -->
-              <button type="button" data-action="overwriteLoadout" data-loadout-id="{{loadout.id}}"
+              <button type="button" data-action="overwrite" data-loadout-id="{{loadout.id}}"
                 data-loadout-name="{{loadout.name}}" class="overwrite-loadout-btn">
                 <i class="fas fa-sync-alt"></i>
                 {{localize 'SPELLBOOK.Loadouts.Overwrite'}}
               </button>
 
               <!-- Delete Loadout Button -->
-              <button type="button" data-action="deleteLoadout" data-loadout-id="{{loadout.id}}"
+              <button type="button" data-action="delete" data-loadout-id="{{loadout.id}}"
                 data-loadout-name="{{loadout.name}}" class="delete-loadout-btn">
                 <i class="fas fa-trash"></i>
                 {{localize 'SPELLBOOK.Loadouts.Delete'}}

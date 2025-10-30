@@ -14,7 +14,7 @@
       </button>
 
       <!-- Synergy Analysis Launcher -->
-      <button type="button" class="analysis-button" data-action="showSynergyAnalysis"
+      <button type="button" class="analysis-button" data-action="openSynergy"
         data-tooltip="{{localize 'SPELLBOOK.Party.ShowSynergyAnalysis'}}">
         <i class="fas fa-chart-line" aria-hidden="true"></i>
         {{localize "SPELLBOOK.Party.SynergyAnalysis"}}
@@ -74,7 +74,7 @@
               {{#if actor.selectedFocus}}
                 <!-- Active Focus Display -->
                 <div class="member-focus-display {{#unless (or @root.user.isGM actor.isOwner)}}read-only{{/unless}}"
-                  {{#if (or @root.user.isGM actor.isOwner)}}data-action="openFocusSettings" {{/if}}
+                  {{#if (or @root.user.isGM actor.isOwner)}}data-action="openFocus" {{/if}}
                   data-actor-id="{{actor.id}}"
                   data-tooltip="{{#if (or @root.user.isGM actor.isOwner)}}{{localize 'SPELLBOOK.FocusSettings.ClickToEdit'}} - {{/if}}{{actor.selectedFocus}}">
                   {{#if actor.selectedFocusIcon}}
@@ -86,7 +86,7 @@
               {{else}}
                 <!-- No Focus Set Indicator -->
                 <div class="member-focus-none {{#unless (or @root.user.isGM actor.isOwner)}}read-only{{/unless}}"
-                  {{#if (or @root.user.isGM actor.isOwner)}}data-action="openFocusSettings" {{/if}}
+                  {{#if (or @root.user.isGM actor.isOwner)}}data-action="openFocus" {{/if}}
                   data-actor-id="{{actor.id}}"
                   data-tooltip="{{#if (or @root.user.isGM actor.isOwner)}}{{localize 'SPELLBOOK.FocusSettings.ClickToSetFocus'}}{{else}}{{localize 'SPELLBOOK.FocusSettings.NoFocusSet'}}{{/if}}">
                   <i class="fas fa-cog"></i>
@@ -106,7 +106,7 @@
         <!-- Spell Level Group - Collapsible section for each spell level -->
         <div class="spell-level-group" data-spell-level="{{levelGroup.level}}">
           <!-- Level Header - Clickable toggle for expand/collapse -->
-          <h4 class="level-header" data-action="toggleSpellLevel" role="button" aria-expanded="true"
+          <h4 class="level-header" data-action="toggleSpellHeader" role="button" aria-expanded="true"
             aria-controls="spell-list-{{levelGroup.level}}">
             <i class="fas fa-caret-down collapse-indicator" aria-hidden="true"></i>
             <span class="level-name">{{levelGroup.levelName}}</span>

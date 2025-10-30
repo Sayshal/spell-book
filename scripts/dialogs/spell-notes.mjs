@@ -114,7 +114,7 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _positionNearIcon() {
-    const icon = document.querySelector(`[data-uuid="${this.spellUuid}"][data-action="editNotes"]`);
+    const icon = document.querySelector(`[data-uuid="${this.spellUuid}"][data-action="editNote"]`);
     if (!icon) return;
     const dialogRect = this.element.getBoundingClientRect();
     const position = UIUtils.calculateOptimalPosition({
@@ -149,7 +149,7 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
         spellbookApp.render(false);
       }
       const hasNotes = !!(notes && notes.trim());
-      const notesIcons = document.querySelectorAll(`[data-uuid="${canonicalUuid}"][data-action="editNotes"]`);
+      const notesIcons = document.querySelectorAll(`[data-uuid="${canonicalUuid}"][data-action="editNote"]`);
       notesIcons.forEach((icon) => {
         const newIconClass = hasNotes ? 'fas fa-sticky-note' : 'far fa-sticky-note';
         const newTooltip = hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes');

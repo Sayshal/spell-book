@@ -27,12 +27,12 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
     window: { icon: 'fa-solid fa-bug', resizable: false },
     tag: 'div',
     actions: {
-      copyToClipboard: Troubleshooter.handleClipboardCopy,
-      exportReport: Troubleshooter.handleReportExport,
-      importSettings: Troubleshooter.handleSettingsImport,
-      openDiscord: Troubleshooter.handleDiscord,
-      openGithub: Troubleshooter.handleGithub,
-      toggleIncludeActors: Troubleshooter.handleActorInclusion
+      copy: this.#copy,
+      export: this.#export,
+      importSettings: this.#importSettings,
+      includeActors: this.#includeActors,
+      openDiscord: this.#openDiscord,
+      openGithub: this.#openGithub
     }
   };
 
@@ -82,12 +82,14 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Export the troubleshooting report and optionally actor data.
+   * Handle exporting troubleshooter.
+   * @this Troubleshooter
+   * @param {PointerEvent} event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    * @returns {Promise<ExportResult>} Export result information
-   * @static
    */
-  static async exportTroubleshooterData() {
-    log(3, 'Exporting troubleshooter data.');
+  static async #export(event, _target) {
+    log(3, 'Handling report export.', { event, _target });
     const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
     const includeActors = game.settings.get(MODULE.ID, SETTINGS.TROUBLESHOOTER_INCLUDE_ACTORS);
     const output = this.generateTextReport();
@@ -122,76 +124,61 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle the export report button click event.
-   * @param {Event} event - The triggering event
-   * @returns {Promise<void>}
-   * @todo Do we need to prevent default? Also, missing target parameter.
-   * @static
+   * Handle copying to clipboard.
+   * @this Troubleshooter
+   * @param {PointerEvent} event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleReportExport(event) {
-    log(3, 'Handling report export.', { event });
+  static async #copy(event, _target) {
+    log(3, 'Handling clipboard copy.', { event, _target });
     event.preventDefault();
-    await Troubleshooter.exportTroubleshooterData();
-  }
-
-  /**
-   * Handle the copy to clipboard button click event.
-   * @param {Event} event - The triggering event
-   * @returns {Promise<void>}
-   * @todo Do we need to prevent default? Also, missing target parameter.
-   * @static
-   */
-  static async handleClipboardCopy(event) {
-    log(3, 'Handling clipboard copy.', { event });
-    event.preventDefault();
-    const text = Troubleshooter.generateTextReport();
+    const text = this.generateTextReport();
     await navigator.clipboard.writeText(text);
   }
 
   /**
-   * Handle the open Discord button click event.
-   * @param {Event} event - The triggering event
-   * @todo Do we need to prevent default? Also, missing target parameter.
-   * @static
+   * Handle opening discord.
+   * @this Troubleshooter
+   * @param {PointerEvent} event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static handleDiscord(event) {
-    log(3, 'Handling open discord.', { event });
+  static #openDiscord(event, _target) {
+    log(3, 'Handling open discord.', { event, _target });
     event.preventDefault();
     window.open('https://discord.gg/PzzUwU9gdz');
   }
 
   /**
-   * Handle the open GitHub button click event.
-   * @param {Event} event - The triggering event
-   * @todo Do we need to prevent default? Also, missing target parameter.
-   * @static
+   * Handle opening github.
+   * @this Troubleshooter
+   * @param {PointerEvent} event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static handleGithub(event) {
-    log(3, 'Handling open github.', { event });
+  static #openGithub(event, _target) {
+    log(3, 'Handling open github.', { event, _target });
     event.preventDefault();
     window.open('https://github.com/Sayshal/spell-book/issues');
   }
 
   /**
-   * Handle the include actors checkbox toggle event.
-   * @param {Event} event - The triggering event
-   * @todo Missing target parameter.
-   * @static
+   * Handle actor export inclusion.
+   * @this Troubleshooter
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static handleActorInclusion(event) {
-    log(3, 'Handling actor inclusion.', { event });
-    game.settings.set(MODULE.ID, SETTINGS.TROUBLESHOOTER_INCLUDE_ACTORS, event.target.checked);
+  static #includeActors(_event, target) {
+    log(3, 'Handling actor inclusion.', { _event, target });
+    game.settings.set(MODULE.ID, SETTINGS.TROUBLESHOOTER_INCLUDE_ACTORS, target.checked);
   }
 
   /**
-   * Handle the import settings button click event.
-   * @param {Event} event - The triggering event
-   * @returns {Promise<void>}
-   * @todo Do we need to prevent default? Also, missing target parameter.
-   * @static
+   * Handle importing settings.
+   * @this Troubleshooter
+   * @param {PointerEvent} event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleSettingsImport(event) {
-    log(3, 'Handling settings import.', { event });
+  static async #importSettings(event, _target) {
+    log(3, 'Handling settings import.', { event, _target });
     event.preventDefault();
     const input = document.createElement('input');
     input.type = 'file';
@@ -200,7 +187,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
       const file = fileEvent.target.files[0];
       if (!file) return;
       const fileContent = await file.text();
-      const settingsData = Troubleshooter._extractSettingsFromTroubleshooter(fileContent);
+      const settingsData = this._extractSettingsFromTroubleshooter(fileContent);
       if (!settingsData) return;
       const confirmed = await foundry.applications.api.DialogV2.confirm({
         window: { title: game.i18n.localize('SPELLBOOK.Settings.Troubleshooter.ImportConfirmTitle') },
@@ -216,7 +203,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
         modal: true,
         rejectClose: false
       });
-      if (confirmed) await Troubleshooter._importSettings(settingsData);
+      if (confirmed) await this._importSettings(settingsData);
     };
     input.click();
   }

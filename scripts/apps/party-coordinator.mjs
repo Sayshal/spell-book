@@ -25,11 +25,11 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
     id: 'party-spell-manager',
     tag: 'div',
     actions: {
-      showSynergyAnalysis: PartyCoordinator.showSynergyAnalysis,
-      refreshData: PartyCoordinator.refreshData,
-      toggleSpellLevel: PartyCoordinator.toggleSpellLevel,
-      filterMemberSpells: PartyCoordinator.filterMemberSpells,
-      openFocusSettings: PartyCoordinator.openFocusSettings
+      openSynergy: this.#openSynergy,
+      refreshData: this.#refreshData,
+      toggleSpellHeader: this.#toggleSpellHeader,
+      filterMemberSpells: this.#filterMemberSpell,
+      openFocus: this.#openFocus
     },
     classes: ['spell-book', 'party-spell-manager'],
     window: { icon: 'spell-book-module-icon', resizable: true, minimizable: true, positioned: true },
@@ -168,24 +168,24 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Show synergy analysis dialog for party spell optimization.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _target - The clicked element
-   * @static
+   * Handle opening synergy analysis dialog.
+   * @this PartyCoordinator
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static showSynergyAnalysis(_event, _target) {
+  static #openSynergy(_event, _target) {
     log(3, 'Show Analysis called.');
     if (!this._comparisonData?.synergy) return;
     new SynergyAnalysis(this._comparisonData.synergy).render({ force: true });
   }
 
   /**
-   * Refresh party spell data and clear caches.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _target - The clicked element
-   * @static
+   * Handle refreshing data.
+   * @this PartyCoordinator
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static refreshData(_event, _target) {
+  static #refreshData(_event, _target) {
     log(3, 'Refresh Data called.');
     this._comparisonData = null;
     this.partyManager._spellDataCache.clear();
@@ -193,12 +193,12 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Toggle spell level section visibility.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} target - The clicked element with data-level attribute
-   * @static
+   * Handle toggling spell header.
+   * @this PartyCoordinator
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static toggleSpellLevel(_event, target) {
+  static #toggleSpellHeader(_event, target) {
     const levelContainer = target.closest('.spell-level-group');
     if (!levelContainer) return;
     const levelId = levelContainer.dataset.spellLevel;
@@ -217,12 +217,12 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Filter spells to show only those known/prepared by a specific member.
-   * @param {Event} event - The triggering event
-   * @param {HTMLElement} target - The clicked element with data-actor-id attribute
-   * @static
+   * Handle filtering member spells.
+   * @this PartyCoordinator
+   * @param {PointerEvent} event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static filterMemberSpells(event, target) {
+  static #filterMemberSpell(event, target) {
     log(3, 'Filter Member Spells called.');
     event.stopPropagation();
     const actorId = target.dataset.actorId;
@@ -235,12 +235,12 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Open focus settings dialog for party coordination.
-   * @param {Event} event - The triggering event
-   * @param {HTMLElement} target - The clicked element with optional data-actor-id
-   * @static
+   * Handle opening focus settings.
+   * @this PartyCoordinator
+   * @param {PointerEvent} event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async openFocusSettings(event, target) {
+  static async #openFocus(event, target) {
     event.stopPropagation();
     const actor = game.actors.get(target.dataset.actorId || '');
     const isGM = game.user.isGM;

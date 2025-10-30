@@ -32,11 +32,11 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
       closeOnSubmit: true
     },
     actions: {
-      addFocus: FocusSettings.addFocus,
-      deleteFocus: FocusSettings.deleteFocus,
-      selectFocus: FocusSettings.selectFocus,
-      selectIcon: FocusSettings.selectIcon,
-      resetFocuses: FocusSettings.resetFocuses
+      addFocus: this.#addFocus,
+      deleteFocus: this.#deleteFocus,
+      selectFocus: this.#selectFocus,
+      selectIcon: this.#selectIcon,
+      resetFocuses: this.#resetFocuses
     },
     position: { width: 600, height: 'auto' }
   };
@@ -115,12 +115,12 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Add a new focus option row to the management interface (GM only).
-   * @param {Event} _event - The triggering click event
-   * @param {HTMLElement} target - The clicked element
-   * @static
+   * Handle adding focus.
+   * @this FocusSettings
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async addFocus(_event, target) {
+  static async #addFocus(_event, target) {
     log(3, 'Adding new focus option.');
     if (!game.user.isGM) return;
     const container = target.closest('form').querySelector('.focus-options-list');
@@ -131,13 +131,12 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Delete a specific focus option and clean up assignments (GM only).
-   * @param {Event} event - The triggering click event
-   * @param {HTMLElement} target - The clicked element with data-index attribute
-   * @returns {Promise<void>}
-   * @static
+   * Handle deleting focus.
+   * @this FocusSettings
+   * @param {PointerEvent} event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async deleteFocus(event, target) {
+  static async #deleteFocus(event, target) {
     log(3, 'Deleting focus option.');
     event.preventDefault();
     event.stopPropagation();
@@ -191,12 +190,12 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle focus card selection in player mode.
-   * @param {Event} event - The triggering click event
-   * @param {HTMLElement} target - The clicked focus card element
-   * @static
+   * Handle selecting focus.
+   * @this FocusSettings
+   * @param {PointerEvent} event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async selectFocus(event, target) {
+  static async #selectFocus(event, target) {
     log(3, 'Selecting focus.', { focusId: target.dataset.focusId });
     event.preventDefault();
     const focusId = target.dataset.focusId;
@@ -216,13 +215,12 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Action handler for icon selection via file picker.
-   * @param {Event} event - The triggering click event
-   * @param {HTMLElement} target - The clicked element
-   * @returns {Promise<void>}
-   * @static
+   * Handle selecting icon.
+   * @this FocusSettings
+   * @param {PointerEvent} event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async selectIcon(event, target) {
+  static async #selectIcon(event, target) {
     log(3, 'Selecting icon.', { index: target.dataset.index });
     event.preventDefault();
     const index = target.dataset.index;
@@ -247,13 +245,12 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Reset focus options to default magical archetypes.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _target - The clicked element
-   * @returns {Promise<void>}
-   * @static
+   * Handle resetting focus.
+   * @this FocusSettings
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async resetFocuses(_event, _target) {
+  static async #resetFocuses(_event, _target) {
     log(3, 'Resetting focuses to defaults.');
     try {
       const content = await renderTemplate(TEMPLATES.COMPONENTS.FOCUS_RESET_DIALOG_CONTENT);
@@ -289,14 +286,14 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
     const action = formData.object?.action || formData.action;
     if (game.user.isGM && action === 'save-focuses') {
       log(3, 'Saving focus options (GM).');
-      await FocusSettings._saveFocusOptions(formData.object || formData, this.groupActor);
+      await this._saveFocusOptions(formData.object || formData, this.groupActor);
       if (this.parentApp) {
         this.parentApp._comparisonData = null;
         this.parentApp.render();
       }
     } else if (action === 'select-focus') {
       log(3, 'Saving user focus selection.');
-      await FocusSettings._saveUserSelection(formData.object || formData, this.groupActor);
+      await this._saveUserSelection(formData.object || formData, this.groupActor);
       if (this.parentApp) {
         this.parentApp._comparisonData = null;
         this.parentApp.render();

@@ -38,7 +38,7 @@
           {{!-- Notes Icon --}}
           {{#if spell.notesIcon.enabled}}
             <i class="{{spell.notesIcon.iconClass}} spell-notes-icon" data-uuid="{{spell.notesIcon.uuid}}"
-              data-action="editNotes" data-tooltip="{{spell.notesIcon.tooltip}}"
+              data-action="editNote" data-tooltip="{{spell.notesIcon.tooltip}}"
               aria-label="{{spell.notesIcon.tooltip}}"></i>
           {{/if}}
 
@@ -55,7 +55,7 @@
   <div class="wizard-spell-status">
     {{#if spell.wizardAction.isFromScroll}}
       {{!-- Learn from Scroll Button --}}
-      <button class="copy-spell-btn scroll-spell-btn" data-action="learnFromScroll"
+      <button class="copy-spell-btn scroll-spell-btn" data-action="learnSpellFromScroll"
         data-uuid="{{spell.wizardAction.uuid}}" data-scroll-id="{{spell.wizardAction.scrollId}}" type="button"
         aria-label="{{spell.wizardAction.ariaLabel}}">
         <i class="fas fa-scroll"></i> {{localize "SPELLBOOK.Wizard.LearnSpell"}}

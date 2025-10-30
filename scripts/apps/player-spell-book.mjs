@@ -25,7 +25,6 @@ const { renderTemplate } = foundry.applications.handlebars;
 
 /**
  * Player-facing Spell Book application for managing prepared spells.
- * @todo action handles have access to event and target, NOT form - fix.
  * @todo reorganize code by flow state.
  */
 export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -39,23 +38,23 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       submitOnChange: true
     },
     actions: {
-      compareSpell: SpellBook.handleSpellComparison,
-      configureCantripSettings: SpellBook.handleCantripSettings,
-      configureFilters: SpellBook.handleFilterConfiguration,
-      editNotes: SpellBook.handleNoteEditing,
-      filterSpells: SpellBook.handleSpellFiltering,
-      learnFromScroll: SpellBook.handleScrollLearning,
-      learnSpell: SpellBook.handleSpellLearning,
-      openAnalyticsDashboard: SpellBook.handleAnalyticsDashboard,
-      openCustomization: SpellBook.handleCustomizationDialog,
-      openLoadoutDialog: SpellBook.handleLoadoutDialog,
-      openPartyManager: SpellBook.handlePartyManager,
-      reset: SpellBook.handleReset,
-      save: SpellBook.handleSave,
-      toggleFavorite: SpellBook.handleFavoriteToggling,
-      togglePartyMode: SpellBook.handlePartyModeToggle,
-      toggleSidebar: SpellBook.handleSidebarToggling,
-      toggleSpellLevel: SpellBook.handleSpellLevelToggling
+      compareSpell: this.#compareSpell,
+      editNote: this.#editNote,
+      filterSpells: this.handleSpellFiltering,
+      learnSpell: this.#learnSpell,
+      learnSpellFromScroll: this.#learnSpellFromScroll,
+      openAnalytics: this.#openAnalytics,
+      openCustomization: this.#openCustomization,
+      openFilterConfig: this.#openFilterConfig,
+      openLoadoutDialog: this.#openLoadouts,
+      openPartyManager: this.#openPartyMode,
+      openSettings: this.#openSettings,
+      reset: this.#reset,
+      save: this.#save,
+      toggleFavorite: this.#toggleFavorite,
+      togglePartyMode: this.#togglePartyMode,
+      toggleSidebar: this.#toggleSidebar,
+      toggleSpellHeader: this.#toggleSpellHeader
     },
     classes: ['spell-book', 'vertical-tabs'],
     window: { icon: 'spell-book-module-icon', resizable: true, minimizable: true, positioned: true },
@@ -401,7 +400,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       },
       {
         type: 'button',
-        action: 'openAnalyticsDashboard',
+        action: 'openAnalytics',
         icon: 'fas fa-chart-bar',
         label: 'SPELLBOOK.Analytics.OpenDashboard',
         tooltip: 'SPELLBOOK.Analytics.OpenDashboardTooltip',
@@ -1448,7 +1447,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _setupLoadoutContextMenu() {
     log(3, 'Setting up loadout context menu.');
-    const loadoutButton = this.element.querySelector('[data-action="handleLoadoutDialog"]');
+    const loadoutButton = this.element.querySelector('[data-action="openLoadoutDialog"]');
     if (!loadoutButton) return;
     loadoutButton.addEventListener('contextmenu', async (event) => {
       event.preventDefault();
@@ -1463,7 +1462,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _setupPartyContextMenu() {
     log(3, 'Setting up partymode context menu.');
-    const partyButton = this.element.querySelector('[data-action="handlePartyManager"]');
+    const partyButton = this.element.querySelector('[data-action="openPartyManager"]');
     if (!partyButton) return;
     partyButton.addEventListener('contextmenu', async (event) => {
       event.preventDefault();
@@ -1545,7 +1544,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       switch (action) {
         case 'enable-party-mode':
         case 'disable-party-mode':
-          await SpellBook.handlePartyModeToggle.call(this, clickEvent, item);
+          await this.#togglePartyMode.call(this, clickEvent, item);
           break;
       }
       this._hidePartyContextMenu();
@@ -1820,42 +1819,42 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Toggle sidebar visibility.
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Handle toggling sidebar.
+   * @this SpellBook
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static handleSidebarToggling(event, _form) {
-    log(3, 'Handling sidebar toggling!', { event, _form });
+  static #toggleSidebar(_event, target) {
+    log(3, 'Handling sidebar toggling!', { _event, target });
     const isCollapsing = !this.element.classList.contains('sidebar-collapsed');
     this.element.classList.toggle('sidebar-collapsed');
-    const caretIcon = event.currentTarget.querySelector('.collapse-indicator');
+    const caretIcon = target.querySelector('.collapse-indicator');
     if (caretIcon) caretIcon.className = isCollapsing ? 'fas fa-caret-right collapse-indicator' : 'fas fa-caret-left collapse-indicator';
     this.ui.positionFooter();
     game.user.setFlag(MODULE.ID, FLAGS.SIDEBAR_COLLAPSED, isCollapsing);
   }
 
   /**
-   * Apply filters to spells.
-   * @param {Event} _event - The event
-   * @param {HTMLElement} _form - The form element
+   * Handle opening spellbook filter configuration.
+   * @this SpellBook
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    * @todo This action handler isn't used in a template so shouldn't be an action.
-   * @static
    */
-  static handleSpellFiltering(_event, _form) {
-    log(3, 'Handling spell filtering.', { _event, _form });
+  static handleSpellFiltering(_event, _target) {
+    log(3, 'Handling spell filtering.', { _event, _target });
     this.filterHelper.invalidateFilterCache();
     this.filterHelper.applyFilters();
   }
 
   /**
    * Handle reset button click.
-   * @param {Event} event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * @this SpellBook
+   * @param {PointerEvent} event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static handleReset(event, _form) {
-    log(3, 'Handling reset.', { event, _form });
+  static #reset(event, _target) {
+    log(3, 'Handling reset.', { event, _target });
     const isShiftReset = event.shiftKey;
     if (isShiftReset) {
       const checkboxes = this.element.querySelectorAll('dnd5e-checkbox[data-uuid]:not([disabled])');
@@ -1920,14 +1919,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Toggle spell level expansion/collapse.
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} form - The form element
-   * @static
+   * Handle toggling spell header.
+   * @this SpellBook
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static handleSpellLevelToggling(_event, form) {
-    log(3, 'Handling spell level toggling.', { _event, form });
-    const levelContainer = form.parentElement;
+  static #toggleSpellHeader(_event, target) {
+    log(3, 'Handling spell level toggling.', { _event, target });
+    const levelContainer = target.parentElement;
     if (!levelContainer || !levelContainer.classList.contains('spell-level')) return;
     const levelId = levelContainer.dataset.level;
     levelContainer.classList.toggle('collapsed');
@@ -1949,36 +1948,36 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Open filter configuration dialog.
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Handle opening spellbook filter configuration.
+   * @this SpellBook
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static handleFilterConfiguration(_event, _form) {
-    log(3, 'Handling spell level toggling.', { _event, _form });
+  static #openFilterConfig(_event, _target) {
+    log(3, 'Handling spell level toggling.', { _event, _target });
     new PlayerFilterConfiguration(this).render({ force: true });
   }
 
   /**
-   * Open cantrip settings dialog.
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Handle opening spellbook settings dialog.
+   * @this SpellBook
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static handleCantripSettings(_event, _form) {
-    log(3, 'Handling spell level toggling.', { _event, _form });
+  static #openSettings(_event, _target) {
+    log(3, 'Handling spell level toggling.', { _event, _target });
     new SpellBookSettings(this.actor, { parentApp: this }).render({ force: true });
   }
 
   /**
-   * Handle learn spell button click.
-   * @param {Event} event - The click event
-   * @returns {Promise<void>}
-   * @static
+   * Handle learning spell.
+   * @this SpellBook
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async handleSpellLearning(event) {
-    log(3, 'Handling spell learning.', { event });
-    const spellUuid = event.target.dataset.uuid;
+  static async #learnSpell(_event, target) {
+    log(3, 'Handling spell learning.', { _event, target });
+    const spellUuid = target.dataset.uuid;
     if (!spellUuid) return;
     const collapsedLevels = Array.from(this.element.querySelectorAll('.spell-level.collapsed')).map((el) => el.dataset.level);
     const activeTab = this.tabGroups['spellbook-tabs'];
@@ -2057,15 +2056,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Handle learning a spell from a scroll.
-   * @param {Event} event - The triggering event
-   * @param {HTMLElement} _form - The form element
-   * @returns {Promise<void>}
-   * @static
+   * @this SpellBook
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async handleScrollLearning(event, _form) {
-    log(3, 'Handling spell level toggling.', { event, _form });
-    const spellUuid = event.target.dataset.uuid;
-    const scrollId = event.target.dataset.scrollId;
+  static async #learnSpellFromScroll(_event, target) {
+    log(3, 'Handling spell level toggling.', { _event, target });
+    const spellUuid = target.dataset.uuid;
+    const scrollId = target.dataset.scrollId;
     const activeTab = this.tabGroups['spellbook-tabs'];
     const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
     const classIdentifier = activeTabContent?.dataset.classIdentifier || this._state.activeClass;
@@ -2083,13 +2081,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Open the spell loadout dialog.
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} _form - The form element
-   * @static
+   * Handle opening loadout dialog.
+   * @this SpellBook
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleLoadoutDialog(_event, _form) {
-    log(3, 'Handling loadout dialog.', { _event, _form });
+  static async #openLoadouts(_event, _target) {
+    log(3, 'Handling loadout dialog.', { _event, _target });
     const activeTab = this.tabGroups['spellbook-tabs'];
     const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
     const classIdentifier = activeTabContent?.dataset.classIdentifier || this._state.activeClass;
@@ -2099,11 +2097,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Handle toggling spell favorite status.
-   * @param {Event} event - The click event
-   * @param {HTMLElement} target - The target element containing spell data
-   * @static
+   * @this SpellBook
+   * @param {PointerEvent} event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async handleFavoriteToggling(event, target) {
+  static async #toggleFavorite(event, target) {
     log(3, 'Handling favorite toggling.', { event, target });
     event.preventDefault();
     const spellUuid = target.dataset.uuid;
@@ -2164,42 +2162,41 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle opening spell notes dialog.
-   * @param {Event} event - The click event
-   * @param {HTMLElement} target - The target element containing spell data
-   * @static
+   * Handle opening spell note dialog.
+   * @this SpellBook
+   * @param {PointerEvent} event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
+   * @todo Should be able to get spellName from a .closest() on target?
    */
-  static async handleNoteEditing(event, target) {
+  static async #editNote(event, target) {
     log(3, 'Handling note editing.', { event, target });
     event.preventDefault();
     const spellUuid = target.dataset.uuid;
     if (!spellUuid) return;
     const spellName = fromUuidSync(spellUuid).name;
-    new SpellNotes({ spellUuid, spellName, actor: this.actor }).render(true);
+    new SpellNotes({ spellUuid, spellName, actor: this.actor }).render({ force: true });
   }
 
   /**
-   * Handle opening the spell analytics dashboard.
-   * @param {MouseEvent} _event - The click event (unused)
-   * @param {HTMLElement} _target - The target element (unused)
-   * @returns {Promise<void>}
-   * @static
+   * Handle opening analytics dashboard.
+   * @this SpellBook
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleAnalyticsDashboard(_event, _target) {
+  static async #openAnalytics(_event, _target) {
     log(3, 'Handling analytics dashboard opening.', { _event, _target });
     new AnalyticsDashboard().render({ force: true });
   }
 
   /**
    * Handle spell comparison selection and dialog management.
-   * @param {MouseEvent} event - The click event
-   * @param {HTMLFormElement} _form - The form element (unused)
-   * @returns {Promise<void>}
-   * @static
+   * @this SpellBook
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async handleSpellComparison(event, _form) {
-    log(3, 'Handling spell comparison.', { event, _form });
-    const spellUuid = event.target.dataset.uuid;
+  static async #compareSpell(_event, target) {
+    log(3, 'Handling spell comparison.', { _event, target });
+    const spellUuid = target.dataset.uuid;
     const maxSpells = game.settings.get(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX);
     if (this.comparisonSpells.has(spellUuid)) this.comparisonSpells.delete(spellUuid);
     else if (this.comparisonSpells.size < maxSpells) this.comparisonSpells.add(spellUuid);
@@ -2216,23 +2213,23 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle opening spell details customization dialog.
-   * @param {Event} _event - The click event
-   * @param {HTMLElement} _target - The target element that triggered the event
-   * @static
+   * Handle opening customization dialog.
+   * @this SpellBook
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static handleCustomizationDialog(_event, _target) {
+  static #openCustomization(_event, _target) {
     log(3, 'Handling opening customization dialog.', { _event, _target });
     new DetailsCustomization().render({ force: true });
   }
 
   /**
-   * Open party spell manager.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _target - The event target
-   * @static
+   * Handle opening party manager.
+   * @this SpellBook
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handlePartyManager(_event, _target) {
+  static async #openPartyMode(_event, _target) {
     log(3, 'Handling opening party manager.', { _event, _target });
     const primaryGroup = PartyMode.getPrimaryGroupForActor(this.actor);
     if (!primaryGroup) return;
@@ -2242,13 +2239,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Toggle party mode visualization.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _target - The event target
+   * Handle toggling party mode.
+   * @this SpellBook
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    * @todo This isn't called in a template, only in _showPartyContext, shoudl inline this probably?
-   * @static
    */
-  static async handlePartyModeToggle(_event, _target) {
+  static async #togglePartyMode(_event, _target) {
     log(3, 'Handling partymode toggle.', { _event, _target });
     const primaryGroup = PartyMode.getPrimaryGroupForActor(this.actor);
     if (!primaryGroup) return;
@@ -2305,13 +2302,12 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle save action to commit cached changes to the actor.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _target - The event target
-   * @returns {Promise<void>}
-   * @static
+   * Handle save button click.
+   * @this SpellBook
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static async handleSave(_event, _target) {
+  static async #save(_event, _target) {
     log(3, 'Handling save.', { _event, _target });
     const actor = this.actor;
     if (!actor) return;

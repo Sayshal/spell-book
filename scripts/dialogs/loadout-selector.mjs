@@ -27,10 +27,10 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
     id: 'spell-loadout-dialog',
     tag: 'form',
     actions: {
-      saveLoadout: LoadoutSelector.saveLoadout,
-      applyLoadout: LoadoutSelector.applyLoadout,
-      overwriteLoadout: LoadoutSelector.overwriteLoadout,
-      deleteLoadout: LoadoutSelector.deleteLoadout
+      save: this.#save,
+      apply: this.#apply,
+      overwrite: this.#overwrite,
+      delete: this.#delete
     },
     classes: ['spell-book', 'spell-loadout-dialog'],
     window: { icon: 'fas fa-toolbox', resizable: true, minimizable: false, positioned: true },
@@ -108,13 +108,12 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Action handler to save current spell configuration as a new loadout.
-   * @param {Event} _event - The form event (unused)
-   * @param {HTMLElement} target - The clicked element
-   * @returns {Promise<void>}
-   * @static
+   * Handle saving loadout.
+   * @this LoadoutSelector
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async saveLoadout(_event, target) {
+  static async #save(_event, target) {
     log(3, 'Saving new loadout.');
     const form = target.closest('form');
     const formData = new FormData(form);
@@ -142,13 +141,12 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Action handler to overwrite an existing loadout with current configuration.
-   * @param {Event} _event - The click event (unused)
-   * @param {HTMLElement} target - The clicked element with loadout data
-   * @returns {Promise<void>}
-   * @static
+   * Handle overwriting loadout.
+   * @this LoadoutSelector
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async overwriteLoadout(_event, target) {
+  static async #overwrite(_event, target) {
     log(3, 'Overwriting existing loadout.', { loadoutId: target.dataset.loadoutId });
     const loadoutId = target.dataset.loadoutId;
     if (!loadoutId) return;
@@ -167,13 +165,12 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Action handler to delete a loadout after user confirmation.
-   * @param {Event} _event - The click event (unused)
-   * @param {HTMLElement} target - The clicked element with loadout data
-   * @returns {Promise<void>}
-   * @static
+   * Handle deleting loadout.
+   * @this LoadoutSelector
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async deleteLoadout(_event, target) {
+  static async #delete(_event, target) {
     log(3, 'Deleting loadout.', { loadoutId: target.dataset.loadoutId });
     const loadoutId = target.dataset.loadoutId;
     if (!loadoutId) return;
@@ -192,13 +189,12 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Action handler to apply a saved loadout to current spell configuration.
-   * @param {Event} _event - The click event (unused)
-   * @param {HTMLElement} target - The clicked element with loadout data
-   * @returns {void}
-   * @static
+   * Handle applying loadout.
+   * @this LoadoutSelector
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static applyLoadout(_event, target) {
+  static #apply(_event, target) {
     log(3, 'Applying loadout.', { loadoutId: target.dataset.loadoutId });
     const loadoutId = target.dataset.loadoutId;
     if (!loadoutId) return;

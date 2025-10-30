@@ -35,7 +35,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       submitOnChange: false
     },
     position: { top: 75 },
-    actions: { reset: PlayerFilterConfiguration.handleReset },
+    actions: { reset: this.#reset },
     dragDrop: [{ dragSelector: '.filter-config-item', dropSelector: '.filter-config-list' }]
   };
 
@@ -393,12 +393,12 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
   }
 
   /**
-   * Handle form reset action to restore default configuration.
-   * @param {Event} event - The click event
-   * @param {HTMLFormElement} _form - The form element (unused)
-   * @static
+   * Handle resetting application.
+   * @this PlayerFilterConfiguration
+   * @param {PointerEvent} event - The originating click event.
+   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
-  static handleReset(event, _form) {
+  static #reset(event, _target) {
     event.preventDefault();
     this.config = foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG);
     this.render(false);

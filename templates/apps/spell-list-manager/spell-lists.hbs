@@ -20,7 +20,7 @@
 		<h2 id="available-lists-heading">{{localize "SPELLMANAGER.Columns.AvailableLists"}}</h2>
 
 		<!-- Create New List Action Button -->
-		<button type="button" class="create-new-button" data-action="createNewList"
+		<button type="button" class="create-new-button" data-action="createList"
 			aria-label="{{localize 'SPELLMANAGER.Buttons.CreateNew'}}"
 			data-tooltip="{{localize 'SPELLMANAGER.Tooltips.CreateNew'}}">
 			<i class="fas fa-plus" aria-hidden="true"></i>
@@ -46,7 +46,7 @@
 							data-tooltip="{{localize 'SPELLMANAGER.Tooltips.ActorSpellbook' actorName=list.actorName}}"
 							aria-label="{{list.name}} - {{localize 'SPELLMANAGER.Status.SpellCount' count=list.spellCount}} - {{list.pack}}">
 							<div class="list-item-header">
-								<div class="list-item-content" data-action="selectSpellList" data-uuid="{{list.uuid}}">
+								<div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
 									<div class="list-name">
 										<i class="{{list.icon}} {{#if list.isCustom}}is-custom-list{{else if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
 											aria-hidden="true"></i>
@@ -86,7 +86,7 @@
 							{{/if}}
 							aria-label="{{list.name}} - {{localize 'SPELLMANAGER.Status.SpellCount' count=list.spellCount}} - {{localize 'SPELLMANAGER.ListSource.Custom'}}">
 							<div class="list-item-header">
-								<div class="list-item-content" data-action="selectSpellList" data-uuid="{{list.uuid}}">
+								<div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
 									<div class="list-name">
 										<i class="{{list.icon}} is-custom-list" aria-hidden="true"></i>
 										<span>{{list.name}}</span>
@@ -97,7 +97,7 @@
 										<span class="source">{{localize "SPELLMANAGER.ListSource.Custom"}}</span>
 									</div>
 								</div>
-								<button type="button" class="visibility-toggle" data-action="toggleListVisibility"
+								<button type="button" class="visibility-toggle" data-action="hideList"
 									data-uuid="{{list.uuid}}" aria-label="{{localize 'SPELLMANAGER.HideList.Hide' name=list.name}}"
 									data-tooltip="{{localize 'SPELLMANAGER.HideList.HideTooltip'}}">
 									<i class="fas fa-eye" aria-hidden="true"></i>
@@ -124,7 +124,7 @@
 							data-tooltip="{{localize 'SPELLMANAGER.Tooltips.MergedList'}}"
 							aria-label="{{list.name}} - {{localize 'SPELLMANAGER.Status.SpellCount' count=list.spellCount}} - {{localize 'SPELLMANAGER.ListSource.Merged'}}">
 							<div class="list-item-header">
-								<div class="list-item-content" data-action="selectSpellList" data-uuid="{{list.uuid}}">
+								<div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
 									<div class="list-name">
 										<i class="{{list.icon}} is-merged-list" aria-hidden="true"></i>
 										<span>{{list.name}}</span>
@@ -135,7 +135,7 @@
 										<span class="source">{{localize "SPELLMANAGER.ListSource.Merged"}}</span>
 									</div>
 								</div>
-								<button type="button" class="visibility-toggle" data-action="toggleListVisibility"
+								<button type="button" class="visibility-toggle" data-action="hideList"
 									data-uuid="{{list.uuid}}" aria-label="{{localize 'SPELLMANAGER.HideList.Hide' name=list.name}}"
 									data-tooltip="{{localize 'SPELLMANAGER.HideList.HideTooltip'}}">
 									<i class="fas fa-eye" aria-hidden="true"></i>
@@ -162,7 +162,7 @@
 							data-tooltip="{{#if (lookup ../customListMap list.uuid)}}{{localize 'SPELLMANAGER.Tooltips.ModifiedList' class=list.name source=list.pack}}{{else}}{{localize 'SPELLMANAGER.Tooltips.StandardList' class=list.name source=list.pack}}{{/if}}"
 							aria-label="{{list.name}} - {{localize 'SPELLMANAGER.Status.SpellCount' count=list.spellCount}} - {{list.pack}}">
 							<div class="list-item-header">
-								<div class="list-item-content" data-action="selectSpellList" data-uuid="{{list.uuid}}">
+								<div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
 									<div class="list-name">
 										<i class="{{list.icon}} {{#if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
 											aria-hidden="true"></i>
@@ -174,7 +174,7 @@
 										<span class="source">{{list.pack}}</span>
 									</div>
 								</div>
-								<button type="button" class="visibility-toggle" data-action="toggleListVisibility"
+								<button type="button" class="visibility-toggle" data-action="hideList"
 									data-uuid="{{list.uuid}}" aria-label="{{localize 'SPELLMANAGER.HideList.Hide' name=list.name}}"
 									data-tooltip="{{localize 'SPELLMANAGER.HideList.HideTooltip'}}">
 									<i class="fas fa-eye" aria-hidden="true"></i>
@@ -202,7 +202,7 @@
 							data-uuid="{{list.uuid}}" role="listitem" data-tooltip="{{localize 'SPELLMANAGER.Tooltips.HiddenList'}}"
 							aria-label="{{list.name}} - {{localize 'SPELLMANAGER.Status.SpellCount' count=list.spellCount}} - {{localize 'SPELLMANAGER.HideList.Hidden'}}">
 							<div class="list-item-header">
-								<div class="list-item-content" data-action="selectSpellList" data-uuid="{{list.uuid}}">
+								<div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
 									<div class="list-name">
 										<i class="{{list.icon}} {{#if list.isCustom}}is-custom-list{{else if list.isMerged}}is-merged-list{{else if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
 											aria-hidden="true"></i>
@@ -215,7 +215,7 @@
 											class="source">{{#if list.isMerged}}{{localize "SPELLMANAGER.ListSource.Merged"}}{{else if list.isCustom}}{{localize "SPELLMANAGER.ListSource.Custom"}}{{else}}{{list.pack}}{{/if}}</span>
 									</div>
 								</div>
-								<button type="button" class="visibility-toggle" data-action="toggleListVisibility"
+								<button type="button" class="visibility-toggle" data-action="hideList"
 									data-uuid="{{list.uuid}}" aria-label="{{localize 'SPELLMANAGER.HideList.Unhide' name=list.name}}"
 									data-tooltip="{{localize 'SPELLMANAGER.HideList.UnhideTooltip'}}">
 									<i class="fas fa-eye-slash" aria-hidden="true"></i>

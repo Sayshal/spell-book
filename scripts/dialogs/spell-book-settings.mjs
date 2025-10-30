@@ -32,16 +32,16 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
       submitOnChange: false
     },
     actions: {
-      increaseSpellPrepBonus: SpellBookSettings.increaseSpellPrepBonus,
-      decreaseSpellPrepBonus: SpellBookSettings.decreaseSpellPrepBonus,
-      increaseCantripPrepBonus: SpellBookSettings.increaseCantripPrepBonus,
-      decreaseCantripPrepBonus: SpellBookSettings.decreaseCantripPrepBonus,
-      increaseSpellLearningCost: SpellBookSettings.increaseSpellLearningCost,
-      decreaseSpellLearningCost: SpellBookSettings.decreaseSpellLearningCost,
-      increaseStartingSpells: SpellBookSettings.increaseStartingSpells,
-      decreaseStartingSpells: SpellBookSettings.decreaseStartingSpells,
-      increaseSpellsPerLevel: SpellBookSettings.increaseSpellsPerLevel,
-      decreaseSpellsPerLevel: SpellBookSettings.decreaseSpellsPerLevel
+      increaseSpellPrepBonus: this.#increaseSpellPrepBonus,
+      decreaseSpellPrepBonus: this.#decreaseSpellPrepBonus,
+      increaseCantripPrepBonus: this.#increaseCantripPrepBonus,
+      decreaseCantripPrepBonus: this.#decreaseCantripPrepBonus,
+      increaseSpellLearningCost: this.#increaseSpellLearningCost,
+      decreaseSpellLearningCost: this.#decreaseSpellLearningCost,
+      increaseStartingSpells: this.#increaseStartingSpells,
+      decreaseStartingSpells: this.#decreaseStartingSpells,
+      increaseSpellsPerLevel: this.#increaseSpellsPerLevel,
+      decreaseSpellsPerLevel: this.#decreaseSpellsPerLevel
     },
     classes: ['spell-book', 'spellbook-settings-dialog'],
     window: { icon: 'fas fa-book-spells', resizable: false, minimizable: true, positioned: true },
@@ -574,12 +574,12 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
   }
 
   /**
-   * Action handler to increase spell preparation bonus for a specific class.
-   * @param {Event} _event - The click event (unused)
-   * @param {HTMLElement} target - The clicked button element
-   * @static
+   * Handle increasing spell prep bonus.
+   * @this SpellBookSettings
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static increaseSpellPrepBonus(_event, target) {
+  static #increaseSpellPrepBonus(_event, target) {
     log(3, 'Increasing spell prep bonus.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
@@ -593,12 +593,12 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
   }
 
   /**
-   * Action handler to decrease spell preparation bonus for a specific class.
-   * @param {Event} _event - The click event (unused)
-   * @param {HTMLElement} target - The clicked button element
-   * @static
+   * Handle decreasing spell prep bonus.
+   * @this SpellBookSettings
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static decreaseSpellPrepBonus(_event, target) {
+  static #decreaseSpellPrepBonus(_event, target) {
     log(3, 'Decreasing spell prep bonus.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
@@ -632,12 +632,12 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
   }
 
   /**
-   * Action handler to increase cantrip preparation bonus for a specific class.
-   * @param {Event} _event - The click event (unused)
-   * @param {HTMLElement} target - The clicked button element
-   * @static
+   * Handle increasing cantrip prep bonus.
+   * @this SpellBookSettings
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static increaseCantripPrepBonus(_event, target) {
+  static #increaseCantripPrepBonus(_event, target) {
     log(3, 'Increasing cantrip prep bonus.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
@@ -651,12 +651,12 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
   }
 
   /**
-   * Action handler to decrease cantrip preparation bonus for a specific class.
-   * @param {Event} _event - The click event (unused)
-   * @param {HTMLElement} target - The clicked button element
-   * @static
+   * Handle decreasing cantrip prep bonus.
+   * @this SpellBookSettings
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static decreaseCantripPrepBonus(_event, target) {
+  static #decreaseCantripPrepBonus(_event, target) {
     log(3, 'Decreasing cantrip prep bonus.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
@@ -690,12 +690,12 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
   }
 
   /**
-   * Action handler to increase spell learning cost multiplier for a specific class.
-   * @param {Event} _event - The click event (unused)
-   * @param {HTMLElement} target - The clicked button element
-   * @static
+   * Handle increasing learning cost.
+   * @this SpellBookSettings
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static increaseSpellLearningCost(_event, target) {
+  static #increaseSpellLearningCost(_event, target) {
     log(3, 'Increasing spell learning cost.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
@@ -708,12 +708,12 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
   }
 
   /**
-   * Action handler to decrease spell learning cost multiplier for a specific class.
-   * @param {Event} _event - The click event (unused)
-   * @param {HTMLElement} target - The clicked button element
-   * @static
+   * Handle decreasing learning cost.
+   * @this SpellBookSettings
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static decreaseSpellLearningCost(_event, target) {
+  static #decreaseSpellLearningCost(_event, target) {
     log(3, 'Decreasing spell learning cost.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
@@ -726,12 +726,12 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
   }
 
   /**
-   * Action handler to increase starting spells for a wizard class.
-   * @param {Event} _event - The click event (unused)
-   * @param {HTMLElement} target - The clicked button element
-   * @static
+   * Handle increasing starting spells.
+   * @this SpellBookSettings
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static increaseStartingSpells(_event, target) {
+  static #increaseStartingSpells(_event, target) {
     log(3, 'Increasing starting spells.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
@@ -744,12 +744,12 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
   }
 
   /**
-   * Action handler to decrease starting spells for a wizard class.
-   * @param {Event} _event - The click event (unused)
-   * @param {HTMLElement} target - The clicked button element
-   * @static
+   * Handle decreasing starting spells.
+   * @this SpellBookSettings
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static decreaseStartingSpells(_event, target) {
+  static #decreaseStartingSpells(_event, target) {
     log(3, 'Decreasing starting spells.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
@@ -762,12 +762,12 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
   }
 
   /**
-   * Action handler to increase spells per level for a wizard class.
-   * @param {Event} _event - The click event (unused)
-   * @param {HTMLElement} target - The clicked button element
-   * @static
+   * Handle increasing spells per level.
+   * @this SpellBookSettings
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static increaseSpellsPerLevel(_event, target) {
+  static #increaseSpellsPerLevel(_event, target) {
     log(3, 'Increasing spells per level.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
@@ -780,12 +780,12 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
   }
 
   /**
-   * Action handler to decrease spells per level for a wizard class.
-   * @param {Event} _event - The click event (unused)
-   * @param {HTMLElement} target - The clicked button element
-   * @static
+   * Handle decreasing spells per level.
+   * @this SpellBookSettings
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static decreaseSpellsPerLevel(_event, target) {
+  static #decreaseSpellsPerLevel(_event, target) {
     log(3, 'Decreasing spells per level.', { target });
     const classIdentifier = target.dataset.class;
     if (!classIdentifier) return;
@@ -890,7 +890,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
         await RuleSet.updateClassRules(actor, classId, processedRules);
       }
     }
-    if (Object.keys(cantripVisibilityChanges).length > 0) await SpellBookSettings._handleCantripVisibilityChanges(actor, cantripVisibilityChanges);
+    if (Object.keys(cantripVisibilityChanges).length > 0) await this._handleCantripVisibilityChanges(actor, cantripVisibilityChanges);
     if (this.parentApp) {
       await this.parentApp.close();
       SPELLBOOK.openSpellBookForActor(actor);

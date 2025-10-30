@@ -14,14 +14,14 @@
 					<!-- View Mode Actions -->
 
 					<!-- Edit List Button -->
-					<button type="button" class="edit-button action-button" data-action="editSpellList"
+					<button type="button" class="edit-button action-button" data-action="editList"
 						data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Edit'}}">
 						<i class="fas fa-edit" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Edit"}}
 					</button>
 
 					<!-- Rename List Button - Only for renameable lists -->
 					{{#if selectedSpellList.isRenameable}}
-						<button type="button" class="rename-button action-button" data-action="renameSpellList"
+						<button type="button" class="rename-button action-button" data-action="renameList"
 							data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Rename'}}"
 							data-tooltip="{{localize 'SPELLMANAGER.Tooltips.Rename'}}">
 							<i class="fas fa-pen" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Rename"}}
@@ -63,20 +63,20 @@
 							{{/if}}
 
 							<!-- Restore to Original Button -->
-							<button type="button" class="restore-button action-button" data-action="restoreOriginal"
+							<button type="button" class="restore-button action-button" data-action="restoreList"
 								data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Restore'}}">
 								<i class="fas fa-sync" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Restore"}}
 							</button>
 						{{/if}}
 
 						<!-- Delete Custom List Button -->
-						<button type="button" class="delete-button action-button" data-action="deleteCustomList"
+						<button type="button" class="delete-button action-button" data-action="deleteList"
 							data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Delete'}}">
 							<i class="fas fa-trash" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Delete"}}
 						</button>
 
 						<!-- Save Custom List Button -->
-						<button type="button" class="save-button action-button" data-action="saveCustomList"
+						<button type="button" class="save-button action-button" data-action="saveList"
 							data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Save'}}">
 							<i class="fas fa-save" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Save"}}
 						</button>

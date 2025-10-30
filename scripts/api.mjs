@@ -43,7 +43,7 @@ export function createAPI() {
     openSpellListManager: () => {
       new SpellListManager().render({ force: true });
     },
-    openAnalyticsDashboard: (options = {}) => {
+    openAnalytics: (options = {}) => {
       const viewMode = options.viewMode || (game.user.isGM ? 'gm' : 'personal');
       const userId = options.userId || game.user.id;
       new AnalyticsDashboard({ viewMode: viewMode, userId: userId }).render({ force: true });
