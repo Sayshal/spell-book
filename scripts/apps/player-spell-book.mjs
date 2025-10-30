@@ -1729,7 +1729,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (isChecked && !wasPrepared) this._newlyCheckedCantrips.add(uuid);
     else if (!isChecked && this._newlyCheckedCantrips.has(uuid)) this._newlyCheckedCantrips.delete(uuid);
     if (spellItem) spellItem.classList.toggle('prepared-spell', isChecked);
-    this.ui.updateCantripCounter(null, false);
+    this.ui.updateCantripCounter(null, true);
+    this.ui.setupCantripLocks();
   }
 
   /**

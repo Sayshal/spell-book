@@ -15,6 +15,12 @@ import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
+ * Cached filter options (without selected state)
+ * @type {Map<string, Array<{value: string, label: string}>>}
+ */
+const FILTER_OPTIONS_CACHE = new Map();
+
+/**
  * Helper class for filtering spells in the Spell Book application with cached filter state.
  */
 export class Filters {
@@ -547,30 +553,27 @@ export class Filters {
 }
 
 /**
- * Prepare filter options based on filter type and current state.
- * @param {string} filterId - The filter identifier (level, school, etc.)
- * @param {Object} filterState - Current filter state with selected values
- * @returns {Array<FilterOption>} Options for the dropdown control
+ * Get base filter options (cached, without selected state).
+ * @param {string} filterId - The filter identifier
+ * @returns {Array<{value: string, label: string}>} Base options
+ * @private
  */
-export function getOptionsForFilter(filterId, filterState) {
+function _getBaseFilterOptions(filterId) {
+  if (FILTER_OPTIONS_CACHE.has(filterId)) return FILTER_OPTIONS_CACHE.get(filterId);
   const options = [{ value: '', label: game.i18n.localize('SPELLBOOK.Filters.All') }];
   switch (filterId) {
     case 'level':
       Object.entries(CONFIG.DND5E.spellLevels).forEach(([level, label]) => {
-        options.push({ value: level, label: label, selected: filterState.level === level });
+        options.push({ value: level, label: label });
       });
       break;
     case 'school':
       Object.entries(CONFIG.DND5E.spellSchools).forEach(([key, _school]) => {
         const label = DataUtils.getConfigLabel(CONFIG.DND5E.spellSchools, key);
-        options.push({ value: key, label, selected: filterState.school === key });
+        options.push({ value: key, label });
       });
       break;
-    case 'castingTime':
-      const uniqueTypes = getCastingTimeOptions(filterState);
-      options.push(...uniqueTypes);
-      break;
-    case 'damageType':
+    case 'damageType': {
       const damageTypes = {
         ...CONFIG.DND5E.damageTypes,
         healing: { label: game.i18n.localize('DND5E.Healing'), name: game.i18n.localize('DND5E.Healing') }
@@ -583,9 +586,10 @@ export function getOptionsForFilter(filterId, filterState) {
         })
         .forEach(([key, _type]) => {
           const label = key === 'healing' ? damageTypes.healing.label : DataUtils.getConfigLabel(CONFIG.DND5E.damageTypes, key) || key;
-          options.push({ value: key, label, selected: filterState.damageType === key });
+          options.push({ value: key, label });
         });
       break;
+    }
     case 'condition':
       Object.entries(CONFIG.DND5E.conditionTypes)
         .filter(([_key, condition]) => !condition.pseudo)
@@ -596,24 +600,44 @@ export function getOptionsForFilter(filterId, filterState) {
         })
         .forEach(([key, _condition]) => {
           const label = DataUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, key);
-          options.push({ value: key, label, selected: filterState.condition === key });
+          options.push({ value: key, label });
         });
       break;
     case 'requiresSave':
     case 'concentration':
-      options.push(
-        { value: 'true', label: game.i18n.localize('SPELLBOOK.Filters.True'), selected: filterState[filterId] === 'true' },
-        { value: 'false', label: game.i18n.localize('SPELLBOOK.Filters.False'), selected: filterState[filterId] === 'false' }
-      );
+      options.push({ value: 'true', label: game.i18n.localize('SPELLBOOK.Filters.True') }, { value: 'false', label: game.i18n.localize('SPELLBOOK.Filters.False') });
       break;
     case 'materialComponents':
       options.push(
-        { value: 'consumed', label: game.i18n.localize('SPELLBOOK.Filters.Materials.Consumed'), selected: filterState.materialComponents === 'consumed' },
-        { value: 'notConsumed', label: game.i18n.localize('SPELLBOOK.Filters.Materials.NotConsumed'), selected: filterState.materialComponents === 'notConsumed' }
+        { value: 'consumed', label: game.i18n.localize('SPELLBOOK.Filters.Materials.Consumed') },
+        { value: 'notConsumed', label: game.i18n.localize('SPELLBOOK.Filters.Materials.NotConsumed') }
       );
       break;
   }
-  log(3, 'Generated filter options.', { filterId, optionsCount: options.length });
+  FILTER_OPTIONS_CACHE.set(filterId, options);
+  return options;
+}
+
+/**
+ * Prepare filter options based on filter type and current state.
+ * @param {string} filterId - The filter identifier (level, school, etc.)
+ * @param {Object} filterState - Current filter state with selected values
+ * @returns {Array<FilterOption>} Options for the dropdown control
+ */
+export function getOptionsForFilter(filterId, filterState) {
+  if (filterId === 'castingTime') {
+    const options = [{ value: '', label: game.i18n.localize('SPELLBOOK.Filters.All') }];
+    const uniqueTypes = getCastingTimeOptions(filterState);
+    options.push(...uniqueTypes);
+    log(3, 'Generated filter options (dynamic).', { filterId, optionsCount: options.length });
+    return options;
+  }
+  const baseOptions = _getBaseFilterOptions(filterId);
+  const options = baseOptions.map((opt) => ({
+    ...opt,
+    selected: opt.value === filterState[filterId] || (filterId === 'materialComponents' && opt.value === filterState.materialComponents)
+  }));
+  log(3, 'Generated filter options (cached).', { filterId, optionsCount: options.length });
   return options;
 }
 

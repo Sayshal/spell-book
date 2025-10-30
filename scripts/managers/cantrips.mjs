@@ -81,6 +81,9 @@ export class Cantrips {
     /** @type {boolean} Whether the cache has been initialized */
     this._cacheInitialized = false;
 
+    /** @type {boolean|null} Cached level-up check result */
+    this._cachedLevelUpCheck = null;
+
     // Initialize cache on construction
     this._initializeCache();
     log(3, 'Cantrips instance created.', { actorId: actor.id, isWizard: this.isWizard });
@@ -206,12 +209,14 @@ export class Cantrips {
    * @returns {boolean} Whether cantrips can be changed due to level-up
    */
   canBeLeveledUp() {
+    if (this._cachedLevelUpCheck !== null) return this._cachedLevelUpCheck;
     const previousLevel = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL) || 0;
     const previousMax = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_CANTRIP_MAX) || 0;
     const currentLevel = this.actor.system.details.level;
     const currentMax = this._getTotalMaxCantrips();
     const result = (previousLevel === 0 && currentLevel > 0) || ((currentLevel > previousLevel || currentMax > previousMax) && previousLevel > 0);
-    log(3, 'Checking if cantrips can be leveled up.', { actorId: this.actor.id, previousLevel, previousMax, currentLevel, currentMax, result });
+    this._cachedLevelUpCheck = result;
+    log(3, 'Checking if cantrips can be leveled up (cached).', { actorId: this.actor.id, previousLevel, previousMax, currentLevel, currentMax, result });
     return result;
   }
 
