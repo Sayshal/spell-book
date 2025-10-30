@@ -242,8 +242,8 @@ export async function createActorSpellbooksFolder(pack) {
 /**
  * Preload all Handlebars templates used by the module.
  * Recursively walks the TEMPLATES object to collect all .hbs paths and load them.
- * @param obj
- * @param paths
+ * @param obj - TEMPLATES object for iteration
+ * @param paths - Paths to run through loadTemplates for registration
  * @returns {Promise<void>} Promise that resolves when all templates are loaded
  */
 export async function preloadTemplates(obj = TEMPLATES, paths = []) {
