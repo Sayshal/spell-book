@@ -104,15 +104,15 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     /** @type {SpellManager} Main spell management instance */
     this.spellManager = new SpellManager(actor, this);
 
+    /** @type {State} State manager for the application */
+    this._state = new State(this);
+
     /** @type {Map<string, WizardBook>} Wizard managers by class identifier */
     this.wizardManagers = new Map();
 
     // Initialize wizard managers for all wizard-enabled classes
-    const wizardClasses = DataUtils.getWizardEnabledClasses(actor);
+    const wizardClasses = this._state.getWizardEnabledClasses();
     for (const { identifier } of wizardClasses) this.wizardManagers.set(identifier, new WizardBook(actor, identifier));
-
-    /** @type {State} State manager for the application */
-    this._state = new State(this);
 
     /** @type {UIUtils.SpellBookUI} UI helper for interface management */
     this.ui = new UIUtils.SpellBookUI(this);
@@ -467,7 +467,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         log(3, 'Registering class part:', { identifier, classData });
       }
     }
-    const wizardClasses = DataUtils.getWizardEnabledClasses(this.actor);
+    const wizardClasses = this._state.getWizardEnabledClasses();
     for (const { identifier } of wizardClasses) {
       const tabId = `wizardbook-${identifier}`;
       this.constructor.PARTS[tabId] = {

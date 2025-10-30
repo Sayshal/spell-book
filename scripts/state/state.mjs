@@ -255,6 +255,9 @@ export class State {
         this.classPrepModes[identifier] = this.getClassPreparationMode(spellcastingSource);
         this.classRitualRules[identifier] = this.getClassRitualRules(spellcastingSource);
         this.classSwapRules[identifier] = this.getClassSwapRules(spellcastingSource);
+        this.getSpellcastingConfigForClass(identifier);
+        this.getSpellcastingLevelsForClass(identifier);
+        this.getSpellcastingSourceForClass(identifier);
       }
     }
     this._cleanupStaleClassData(currentClassIds);
