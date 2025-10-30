@@ -286,7 +286,6 @@ export class UserData {
    * @static
    */
   static enhanceSpellWithUserData(spell, userId = null, actorId = null) {
-    log(3, 'Enhancing spell with user data.', { spell, userId, actorId });
     const spellUuid = spell?.compendiumUuid || spell?.uuid;
     if (!spellUuid) return spell;
     let canonicalUuid = spellUuid;

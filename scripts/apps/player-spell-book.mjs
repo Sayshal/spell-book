@@ -1721,7 +1721,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (!canChange.allowed) {
         checkbox.checked = !isChecked;
         if (canChange.message) ui.notifications.warn(game.i18n.localize(canChange.message));
-        this.ui.updateCantripCounter(null, true);
+        this.ui.updateCantripCounter();
         return;
       }
     }
@@ -1729,7 +1729,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (isChecked && !wasPrepared) this._newlyCheckedCantrips.add(uuid);
     else if (!isChecked && this._newlyCheckedCantrips.has(uuid)) this._newlyCheckedCantrips.delete(uuid);
     if (spellItem) spellItem.classList.toggle('prepared-spell', isChecked);
-    this.ui.updateCantripCounter(null, true);
     this.ui.setupCantripLocks();
   }
 
@@ -2376,10 +2375,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     await UIUtils.processFavoritesFromForm(form, actor);
     this._formStateCache.clear();
     if (actor.sheet.rendered) actor.sheet.render(true);
-    if (this.ui && this.rendered) {
-      this.ui.setupCantripUI();
-      this.ui.setupSpellLocks();
-    }
     if (game.modules.get('chris-premades')?.active && game.settings.get(MODULE.ID, SETTINGS.CPR_COMPATIBILITY)) await chrisPremades.utils.actorUtils.updateAll(actor);
     ui.notifications.info('SPELLBOOK.UI.ChangesSaved', { localize: true });
     this.close();

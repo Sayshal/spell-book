@@ -177,11 +177,18 @@ export function getConfigLabel(configObject, key) {
 }
 
 /**
- * Get the target user ID for spell data operations.
+ * Cache for target user ID lookups, keyed by actor ID.
+ * @type {Map<string, string>}
+ */
+const targetUserIdCache = new Map();
+
+/**
+ * Get the target user ID for spell data operations (cached).
  * @param {Actor5e} actor - The actor to determine ownership for
  * @returns {string} The user ID to use for spell data operations
  */
 export function getTargetUserId(actor) {
+  if (actor?.id && targetUserIdCache.has(actor.id)) return targetUserIdCache.get(actor.id);
   log(3, 'Getting target user ID.', { actor });
   let targetUserId = game.user.id;
   if (game.user.isActiveGM && actor) {
@@ -189,15 +196,18 @@ export function getTargetUserId(actor) {
     if (characterOwner) {
       targetUserId = characterOwner.id;
       log(3, `Using character owner: ${characterOwner.name} (${characterOwner.id})`);
+      if (actor.id) targetUserIdCache.set(actor.id, targetUserId);
       return targetUserId;
     }
     const ownershipOwner = game.users.find((user) => actor.ownership[user.id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
     if (ownershipOwner) {
       targetUserId = ownershipOwner.id;
       log(3, `Using ownership owner: ${ownershipOwner.name} (${ownershipOwner.id})`);
+      if (actor.id) targetUserIdCache.set(actor.id, targetUserId);
       return targetUserId;
     }
   }
+  if (actor?.id) targetUserIdCache.set(actor.id, targetUserId);
   return targetUserId;
 }
 
