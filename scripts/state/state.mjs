@@ -257,7 +257,7 @@ export class State {
         this.classSwapRules[identifier] = this.getClassSwapRules(spellcastingSource);
         this.getSpellcastingConfigForClass(identifier);
         this.getSpellcastingLevelsForClass(identifier);
-        this.getSpellcastingSourceForClass(identifier);
+        this.getSpellcastingSourceItem(identifier);
       }
     }
     this._cleanupStaleClassData(currentClassIds);
