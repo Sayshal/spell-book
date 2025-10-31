@@ -26,11 +26,7 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
     const matchingSpells = preloadedData.enrichedSpells.filter((spell) => spellUuids.has(spell.uuid) && spell.system?.level <= maxSpellLevel);
     if (matchingSpells.length === spellUuids.size) return matchingSpells;
   }
-
-  /** @type {Map<string, Array<CompendiumGroupData>>} */
   const compendiumGroups = new Map();
-
-  /** @type {Array<string>} */
   const worldUuids = [];
   for (const uuid of spellUuids) {
     const parsed = foundry.utils.parseUuid(uuid);
@@ -42,16 +38,9 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
       worldUuids.push(uuid);
     }
   }
-
-  /** @type {Array<SpellDocument>} */
   const spellItems = [];
-
-  /** @type {Array<SpellFetchError>} */
   const errors = [];
-
-  /** @type {Array<SpellDocument>} */
   const filteredOut = [];
-
   for (const [packId, uuidData] of compendiumGroups) {
     const pack = game.packs.get(packId);
     if (!pack) {
@@ -88,8 +77,6 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
         'system.source.custom'
       ]
     });
-
-    /** @type {Map<string, Object>} */
     const spellMap = new Map();
     for (const entry of index) if (entry.type === 'spell') spellMap.set(entry._id, entry);
     for (const { uuid, id } of uuidData) {
@@ -113,8 +100,8 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
     const fallbackResults = [];
     for (const uuid of worldUuids) {
       fallbackResults.push(
-        semaphore.add(() => {
-          const spell = fromUuidSync(uuid);
+        semaphore.add(async () => {
+          const spell = await fromUuid(uuid);
           return { uuid, spell, success: true };
         })
       );
@@ -154,8 +141,6 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
 export function organizeSpellsByLevel(spellItems) {
   log(3, 'Organizing spells by level!', { spellItems });
   if (!spellItems || !Array.isArray(spellItems)) return [];
-
-  /** @type {Object<number, Array<SpellDocument>>} */
   const spellsByLevel = {};
   for (const spell of spellItems) {
     if (spell?.system?.level === undefined) continue;
@@ -164,8 +149,6 @@ export function organizeSpellsByLevel(spellItems) {
     spellsByLevel[level].push(spell);
   }
   for (const level in spellsByLevel) if (level in spellsByLevel) spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
-
-  /** @type {Array<LevelGroup>} */
   const levelArray = [];
   const sortedLevels = Object.keys(spellsByLevel).sort((a, b) => Number(a) - Number(b));
   for (const level of sortedLevels) levelArray.push({ level: Number(level), levelName: CONFIG.DND5E.spellLevels[level], spells: spellsByLevel[level] });
