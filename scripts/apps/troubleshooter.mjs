@@ -387,7 +387,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Add filtered Spell Book log data to the troubleshooting report.
+   * Add complete console log data to the troubleshooting report.
    * @param {function(string): void} addLine - Function to add a line to the report
    * @param {function(string): void} addHeader - Function to add a section header
    * @returns {void}
@@ -395,25 +395,16 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   static _addSpellBookLogData(addLine, addHeader) {
-    log(3, 'Adding SpellBook log data.');
-    const allLogs = window.console_logs || [];
-    const spellBookLogs = allLogs.filter((log) => {
-      if (!log.content || !Array.isArray(log.content)) return false;
-      return log.content.some((item) => {
-        /** @todo This is too restrictive as well. */
-        if (typeof item === 'string') return item.includes(MODULE.ID);
-        return false;
-      });
-    });
-    if (spellBookLogs.length) {
-      addHeader('Spell Book Log Data');
+    log(3, 'Adding complete console log data.');
+    if (window.console_logs.length) {
+      addHeader('Complete Console Log Data');
       const logLevel = MODULE.LOG_LEVEL || 0;
       const logLevelName = logLevel === 0 ? 'Disabled' : logLevel === 1 ? 'Errors' : logLevel === 2 ? 'Warnings' : 'Verbose';
-      addLine(`Log Level: ${logLevel} (${logLevelName})`);
-      addLine(`Total Spell Book logs: ${spellBookLogs.length}`);
-      addLine('Recent Spell Book logs:');
-      const recentLogs = spellBookLogs.slice(-50); /** @todo This is not enough logs. */
-      for (const logEntry of recentLogs) {
+      addLine(`Spell Book Log Level: ${logLevel} (${logLevelName})`);
+      addLine(`Total console logs captured: ${window.console_logs.length}`);
+      addLine('');
+      addLine('All console logs:');
+      for (const logEntry of window.console_logs) {
         const processedContent = logEntry.content
           .map((item) => {
             if (typeof item === 'string') return item;
@@ -428,8 +419,8 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
         addLine(`${logEntry.timestamp || 'unknown'} [${(logEntry.type || 'log').toUpperCase()}] ${processedContent}`);
       }
     } else {
-      addHeader('Spell Book Log Data');
-      addLine('No Spell Book logs found.');
+      addHeader('Complete Console Log Data');
+      addLine('No console logs found.');
     }
   }
 }
