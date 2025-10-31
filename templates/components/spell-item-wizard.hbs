@@ -5,12 +5,13 @@
       <span class="title">
         {{spell.name}}
 
-        {{!-- Spell Tag --}}
-        {{#if spell.tag}}
-          <span class="tag {{spell.tag.cssClass}}" {{#if spell.tag.tooltip}}data-tooltip="{{spell.tag.tooltip}}"
-            {{/if}}>
-            {{spell.tag.text}}
-          </span>
+        {{!-- Spell Tags --}}
+        {{#if spell.tags}}
+          {{#each spell.tags as |tag|}}
+            <span class="tag {{tag.cssClass}}" {{#if tag.tooltip}}data-tooltip="{{tag.tooltip}}" {{/if}}>
+              {{tag.text}}
+            </span>
+          {{/each}}
         {{/if}}
 
         {{!-- Party Member Icons --}}
@@ -60,7 +61,7 @@
         aria-label="{{spell.wizardAction.ariaLabel}}">
         <i class="fas fa-scroll"></i> {{localize "SPELLBOOK.Wizard.LearnSpell"}}
       </button>
-{{else if spell.wizardAction.inSpellbook}}
+    {{else if spell.wizardAction.inSpellbook}}
       {{!-- Already in Spellbook Status with Learning Source --}}
       <span
         class="in-spellbook-tag{{#if spell.wizardAction.learningSource}} learned-{{spell.wizardAction.learningSource}}{{/if}}"

@@ -525,62 +525,7 @@ export class State {
     const targetUserId = DataUtils.getTargetUserId(this.actor);
     const actorId = this.actor?.id;
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
-    const preparableSpells = [];
-    const specialModeSpells = [];
-    if (this.actor) {
-      const actorSpells = this.actor.items.filter((item) => item.type === 'spell');
-      const spellDeduplicationMap = new Map();
-      for (const spell of actorSpells) {
-        if (spell?.system?.level === undefined) continue;
-        const spellKey = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
-        const normalizedKey = UIUtils.getCanonicalSpellUuid(spellKey);
-        const sourceClass = spell.system?.sourceClass || spell.sourceClass || classIdentifier;
-        const fullKey = `${sourceClass}:${normalizedKey}`;
-        if (!spellDeduplicationMap.has(fullKey)) spellDeduplicationMap.set(fullKey, spell);
-        else {
-          const existing = spellDeduplicationMap.get(fullKey);
-          const currentPriority = this._getSpellDisplayPriority(spell);
-          const existingPriority = this._getSpellDisplayPriority(existing);
-          if (currentPriority > existingPriority) spellDeduplicationMap.set(fullKey, spell);
-        }
-      }
-      for (const spell of spellDeduplicationMap.values()) {
-        if (spell?.system?.level === undefined) continue;
-        const spellSourceClass = spell.system?.sourceClass || spell.sourceClass;
-        if (spellSourceClass && spellSourceClass !== classIdentifier) continue;
-        const preparationMode = spell.system.method;
-        const isSpecialMode = ['innate', 'atwill'].includes(preparationMode);
-        const isAlwaysPrepared = spell.system.prepared === 2;
-        const isGranted = !!spell.flags?.dnd5e?.cachedFor;
-        const isOnlySpecial = isSpecialMode || isAlwaysPrepared || isGranted;
-        if (isOnlySpecial) specialModeSpells.push(spell);
-        else preparableSpells.push(spell);
-      }
-    }
     const batchData = this.app.spellManager.prepareBatchData(classIdentifier);
-    const processedPreparableSpells = new Set();
-    for (const spell of preparableSpells) {
-      const level = spell.system.level;
-      const spellKey = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
-      const normalizedKey = UIUtils.getCanonicalSpellUuid(spellKey);
-      if (!processedPreparableSpells.has(normalizedKey)) {
-        if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
-        const compendiumUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
-        const spellData = { ...spell, compendiumUuid: compendiumUuid };
-        spellData.sourceClass = classIdentifier;
-        spellData.system = spellData.system || {};
-        spellData.system.sourceClass = classIdentifier;
-        if (spell.system?.method !== 'ritual' && spell.system?.components?.ritual) spellData.canCastAsRitual = true;
-        spellData.preparation = this.app.spellManager.getSpellPreparationStatusFromBatch(spellData, classIdentifier, batchData);
-        spellData.filterData = UIUtils.extractSpellFilterData(spell);
-        spellData.enrichedIcon = UIUtils.createSpellIconLink(spell);
-        const enhancedSpell = DataUtils.UserData.enhanceSpellWithUserData(spellData, targetUserId, actorId);
-        Object.assign(spellData, enhancedSpell);
-        spellsByLevel[level].spells.push(spellData);
-        processedPreparableSpells.add(normalizedKey);
-        processedSpellIds.add(spell.id || spell.uuid);
-      }
-    }
     let parsedSpellData = null;
     if (SPELLBOOK?.preloadedData?.enrichedSpells) {
       parsedSpellData = {};
@@ -600,11 +545,7 @@ export class State {
       const userPage = await DataUtils.UserData._getUserPage(targetUserId);
       if (userPage) parsedSpellData = DataUtils.UserData._parseSpellDataFromHTML(userPage.text.content);
     }
-    const allSpellsToCache = [
-      ...preparableSpells.map((s) => s._stats?.compendiumSource || s.flags?.core?.sourceId || s.uuid),
-      ...specialModeSpells.map((s) => s._stats?.compendiumSource || s.flags?.core?.sourceId || s.uuid),
-      ...spellItems.map((s) => s.uuid || s.compendiumUuid)
-    ].filter(Boolean);
+    const allSpellsToCache = spellItems.map((s) => s.uuid || s.compendiumUuid).filter(Boolean);
     for (const spellUuid of allSpellsToCache) {
       let canonicalUuid = spellUuid;
       if (foundry.utils.parseUuid(spellUuid).primaryType === 'Actor') {
@@ -629,9 +570,44 @@ export class State {
       const level = spell.system.level;
       const spellUuid = spell.uuid || spell.compendiumUuid;
       const normalizedUuid = UIUtils.getCanonicalSpellUuid(spellUuid);
-      if (processedPreparableSpells.has(normalizedUuid)) continue;
       if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
       const spellData = foundry.utils.deepClone(spell);
+      const ownedVersions = batchData.ownedSpellsMap?.get(normalizedUuid);
+      if (ownedVersions) {
+        spellData.aggregatedModes = {
+          hasGranted: false,
+          hasAlwaysPrepared: false,
+          hasInnate: false,
+          hasAtWill: false,
+          hasRitual: false,
+          hasPact: false,
+          hasPrepared: false,
+          isPreparedForCheckbox: false
+        };
+        for (const version of ownedVersions) {
+          const ownedSpell = version.item;
+          const isCurrentClass = version.sourceClass === classIdentifier;
+          if (ownedSpell.flags?.dnd5e?.cachedFor) {
+            spellData.aggregatedModes.hasGranted = true;
+            if (!spellData.flags) spellData.flags = foundry.utils.deepClone(ownedSpell.flags);
+          }
+          if (ownedSpell.system.prepared === 2) {
+            spellData.aggregatedModes.hasAlwaysPrepared = true;
+            if (isCurrentClass && (!spellData.system.prepared || spellData.system.prepared < 2)) spellData.system.prepared = 2;
+          }
+          if (ownedSpell.system.method === MODULE.PREPARATION_MODES.INNATE) spellData.aggregatedModes.hasInnate = true;
+          if (ownedSpell.system.method === MODULE.PREPARATION_MODES.AT_WILL) spellData.aggregatedModes.hasAtWill = true;
+          if (ownedSpell.system.method === MODULE.PREPARATION_MODES.RITUAL) spellData.aggregatedModes.hasRitual = true;
+          if (ownedSpell.system.method === MODULE.PREPARATION_MODES.PACT) {
+            spellData.aggregatedModes.hasPact = true;
+            if (isCurrentClass && ownedSpell.system.prepared === 1) spellData.aggregatedModes.isPreparedForCheckbox = true;
+          }
+          if (ownedSpell.system.method === MODULE.PREPARATION_MODES.SPELL && ownedSpell.system.prepared === 1) {
+            spellData.aggregatedModes.hasPrepared = true;
+            if (isCurrentClass) spellData.aggregatedModes.isPreparedForCheckbox = true;
+          }
+        }
+      }
       let preparedByOtherClass = null;
       for (const [otherClass, preparedSpells] of Object.entries(preparedByClass)) {
         if (otherClass === classIdentifier) continue;
@@ -648,7 +624,7 @@ export class State {
         spellData.preparation = spellData.preparation || {};
         spellData.preparation.preparedByOtherClass = preparedByOtherClass;
       }
-      spellData._preparationContext = 'preparable';
+      if (spell.system?.method !== 'ritual' && spell.system?.components?.ritual) spellData.canCastAsRitual = true;
       if (this.app.spellManager) spellData.preparation = this.app.spellManager.getSpellPreparationStatusFromBatch(spellData, classIdentifier, batchData);
       spellData.filterData = UIUtils.extractSpellFilterData(spell);
       spellData.enrichedIcon = UIUtils.createSpellIconLink(spell);
@@ -656,26 +632,6 @@ export class State {
       Object.assign(spellData, enhancedSpell);
       spellsByLevel[level].spells.push(spellData);
       processedSpellIds.add(spell.id || spell.compendiumUuid || spell.uuid);
-    }
-    for (const spell of specialModeSpells) {
-      const level = spell.system.level;
-      if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
-      const compendiumUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
-      const spellData = { ...spell, compendiumUuid: compendiumUuid };
-      const sourceClass = spell.system?.sourceClass || spell.sourceClass;
-      if (sourceClass) {
-        spellData.sourceClass = sourceClass;
-        spellData.system = spellData.system || {};
-        spellData.system.sourceClass = sourceClass;
-      }
-      spellData._preparationContext = 'special';
-      if (spell.system?.method !== 'ritual' && spell.system?.components?.ritual) spellData.canCastAsRitual = true;
-      spellData.preparation = this.app.spellManager.getSpellPreparationStatusFromBatch(spellData, sourceClass || classIdentifier, batchData);
-      spellData.filterData = UIUtils.extractSpellFilterData(spell);
-      spellData.enrichedIcon = UIUtils.createSpellIconLink(spell);
-      const enhancedSpell = DataUtils.UserData.enhanceSpellWithUserData(spellData, targetUserId, actorId);
-      Object.assign(spellData, enhancedSpell);
-      spellsByLevel[level].spells.push(spellData);
     }
     for (const level in spellsByLevel) if (level in spellsByLevel) spellsByLevel[level].spells.sort((a, b) => a.name.localeCompare(b.name));
     const sortedLevels = Object.entries(spellsByLevel)
@@ -691,7 +647,7 @@ export class State {
         }
         return data;
       });
-    log(3, `Returning ${sortedLevels.length} levels for ${classIdentifier} with multiple preparation contexts supported`);
+    log(3, `Returning ${sortedLevels.length} levels for ${classIdentifier}`);
     return sortedLevels;
   }
 
@@ -722,19 +678,7 @@ export class State {
       spellData.inWizardSpellbook = personalSpellbook.includes(spellUuid);
       spellData.canAddToSpellbook = !spellData.inWizardSpellbook && level > 0;
       if (spellData.inWizardSpellbook && wizardManager) spellData.learningSource = await wizardManager.getSpellLearningSource(spellUuid);
-      spellData.preparation = {
-        prepared: false,
-        isOwned: false,
-        preparationMode: null,
-        disabled: true,
-        alwaysPrepared: false,
-        sourceItem: null,
-        isGranted: false,
-        localizedPreparationMode: '',
-        isCantripLocked: false,
-        disabledReason: '',
-        _isWizardLearning: true
-      };
+      spellData.preparation = { prepared: false, disabled: true, disabledReason: '', _isWizardLearning: true };
       spellData.filterData = UIUtils.extractSpellFilterData(spell);
       spellData.enrichedIcon = UIUtils.createSpellIconLink(spell);
       const enhancedSpell = DataUtils.UserData.enhanceSpellWithUserData(spellData, targetUserId, actorId);
@@ -749,24 +693,6 @@ export class State {
       .map(([level, data]) => data);
     log(3, `Organized ${sortedLevels.length} spell levels for wizard spellbook (${classIdentifier})`);
     return sortedLevels;
-  }
-
-  /**
-   * Get display priority for spell deduplication.
-   * @param {Object} spell - The spell item
-   * @returns {number} Priority value (higher = more important to display)
-   * @private
-   */
-  _getSpellDisplayPriority(spell) {
-    const method = spell.system?.method;
-    const prepared = spell.system?.prepared;
-    let priority = 30;
-    if (prepared === 1) priority = 100;
-    else if (prepared === 2) priority = 90;
-    else if (['innate', 'pact', 'atwill'].includes(method)) priority = 50;
-    else if (method === 'ritual') priority = 10;
-    log(3, 'Spell display priority calculated', { spellName: spell.name, method, prepared, priority });
-    return priority;
   }
 
   /**

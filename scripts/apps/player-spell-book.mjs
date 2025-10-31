@@ -499,8 +499,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!spell.compendiumUuid) spell.compendiumUuid = spell.uuid;
     processedSpell.cssClasses = this._getSpellCssClasses(spell);
     processedSpell.dataAttributes = this._getSpellDataAttributes(spell);
-    if (!spell.tag) spell.tag = this._getSpellPreparationTag(spell);
-    processedSpell.tag = spell.tag;
+    if (!spell.tags) spell.tags = this._getSpellPreparationTag(spell);
+    processedSpell.tags = spell.tags;
     const ariaLabel = spell.preparation.prepared ? game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name }) : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
     const checkbox = ValidationUtils.createCheckbox({
       name: `spell-${spell.system.identifier}`,
@@ -530,14 +530,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           log(2, `No source class found for prepared spell: ${spell.name}`, {
             spell,
             preparation: spell.preparation,
-            sourceItem: spell.preparation?.sourceItem,
             spellcastingClasses: Object.keys(this.actor.spellcastingClasses || {})
           });
         }
       }
     }
     if (spell.preparation?.preparedByOtherClass) checkbox.dataset.crossClass = 'true';
-    if (spell.preparation.disabled && spell.preparation.disabledReason) checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
+    if (spell.preparation?.disabled && spell.preparation?.disabledReason) checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
     processedSpell.preparationCheckboxHtml = ValidationUtils.elementToHtml(checkbox);
     if (spell.sourceClass && this._state.wizardbookCache) {
       const classSpellbook = this._state.wizardbookCache.get(spell.sourceClass);
@@ -560,13 +559,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _shouldSpellHaveSourceClass(spell) {
     log(3, `Checking if ${spell.name} should have source class set.`, { spell });
-    const prep = spell.preparation;
-    if (!prep) return false;
-    if (!prep.prepared) return false;
-    if (prep.alwaysPrepared) return false;
-    if (prep.isGranted) return false;
-    const sourceItemType = prep.sourceItem?.type;
-    if (sourceItemType && sourceItemType !== 'class' && sourceItemType !== 'subclass') return false;
+    if (!spell.preparation?.prepared) return false;
+    if (spell.system?.prepared === 2) return false;
+    if (spell.flags?.dnd5e?.cachedFor) return false;
     return true;
   }
 
@@ -646,12 +641,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Get CSS classes for a spell item.
    * @param {Object} spell - The spell object
    * @todo Does this method name make sense? Can this logic be done in a better way without a seperate method?
+   * @todo does this work with the new spell.tags system?
    * @returns {string} Space-separated CSS classes
    * @private
    */
   _getSpellCssClasses(spell) {
     const classes = ['spell-item'];
-    if (spell.preparation?.isOwned) classes.push('owned-spell');
+    if (spell._id) classes.push('owned-spell');
     if (spell.preparation?.prepared) classes.push('prepared-spell');
     if (this._state.wizardbookCache && spell.sourceClass) {
       const classSpellbook = this._state.wizardbookCache.get(spell.sourceClass);
@@ -661,47 +657,41 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Get the preparation tag for a spell.
+   * Get the preparation tags for a spell.
    * @param {Object} spell - The spell object
-   * @todo we have this and _getSpellCssClasses? Why?
-   * @returns {Object|null} Tag information or null
+   * @returns {Array} Array of tag objects
    * @private
    */
   _getSpellPreparationTag(spell) {
-    log(3, 'Getting spell tag(s)', { spell });
-    if (!spell.preparation) return null;
-    if (spell.preparation.alwaysPrepared) {
-      return {
-        cssClass: 'always-prepared',
-        text: game.i18n.localize('SPELLBOOK.Preparation.Always'),
-        tooltip: spell.preparation.sourceItem?.name || game.i18n.localize('SPELLBOOK.Preparation.AlwaysTooltip')
-      };
+    log(3, 'Getting spell tag(s)', { spellName: spell.name, flags: spell.flags, system: spell.system, preparation: spell.preparation, aggregatedModes: spell.aggregatedModes });
+    const tags = [];
+    const sourceClass = spell.system?.sourceClass || spell.sourceClass;
+    const modes = spell.aggregatedModes;
+    if (modes?.hasAlwaysPrepared || spell.system?.prepared === 2) {
+      let tooltip = game.i18n.localize('SPELLBOOK.Preparation.AlwaysTooltip');
+      if (sourceClass && this.actor?.spellcastingClasses?.[sourceClass]) {
+        const spellcastingData = this.actor.spellcastingClasses[sourceClass];
+        const classItem = this.actor.items.get(spellcastingData.id);
+        if (classItem?.type === 'subclass') tooltip = classItem.name;
+        else if (classItem?.type === 'class') {
+          const subclass = this.actor.items.find((i) => i.type === 'subclass' && i.system?.classIdentifier === sourceClass);
+          tooltip = subclass?.name || classItem.name;
+        }
+      }
+      tags.push({ cssClass: 'always-prepared', text: game.i18n.localize('SPELLBOOK.Preparation.Always'), tooltip: tooltip });
     }
-    if (spell.preparation.isGranted) {
-      return {
-        cssClass: 'granted',
-        text: game.i18n.localize('SPELLBOOK.SpellSource.Granted'),
-        tooltip: spell.preparation.sourceItem?.name
-      };
+    if (modes?.hasGranted) {
+      const cachedFor = spell.flags?.dnd5e?.cachedFor;
+      const itemId = foundry.utils.parseUuid(cachedFor, { relative: this.actor }).embedded[1];
+      const grantingItem = this.actor?.items.get(itemId);
+      tags.push({ cssClass: 'granted', text: game.i18n.localize('SPELLBOOK.SpellSource.Granted'), tooltip: grantingItem.name });
     }
-    const modes = { pact: true, innate: true, ritual: true, atwill: true };
-    if (modes[spell.preparation.preparationMode]) {
-      return {
-        cssClass: spell.preparation.preparationMode,
-        text: spell.preparation.localizedPreparationMode,
-        tooltip: spell.preparation.sourceItem?.name
-      };
-    }
-    if (spell.preparation.preparationMode === 'spell' && spell.preparation.prepared) {
-      let tooltip = '';
-      if (spell.preparation.disabled && spell.preparation.disabledReason) tooltip = spell.preparation.disabledReason;
-      return {
-        cssClass: 'prepared',
-        text: game.i18n.localize('SPELLBOOK.Preparation.Prepared'),
-        tooltip: tooltip
-      };
-    }
-    return null;
+    if (modes?.hasInnate) tags.push({ cssClass: 'innate', text: game.i18n.localize('SPELLBOOK.Preparation.Innate'), tooltip: game.i18n.localize('SPELLBOOK.Preparation.InnateTooltip') });
+    if (modes?.hasAtWill) tags.push({ cssClass: 'atwill', text: game.i18n.localize('SPELLBOOK.Preparation.AtWill'), tooltip: game.i18n.localize('SPELLBOOK.Preparation.AtWillTooltip') });
+    if (modes?.hasRitual) tags.push({ cssClass: 'ritual', text: game.i18n.localize('SPELLBOOK.Preparation.Ritual'), tooltip: game.i18n.localize('SPELLBOOK.Preparation.RitualTooltip') });
+    if (modes?.hasPact) tags.push({ cssClass: 'pact', text: game.i18n.localize('SPELLBOOK.Preparation.Pact'), tooltip: game.i18n.localize('SPELLBOOK.SpellSource.PactMagic') });
+    if (modes?.hasPrepared) tags.push({ cssClass: 'prepared', text: game.i18n.localize('SPELLBOOK.Preparation.Prepared'), tooltip: game.i18n.localize('SPELLBOOK.Preparation.PreparedTooltip') });
+    return tags;
   }
 
   /** @inheritdoc */
@@ -1453,6 +1443,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       event.preventDefault();
       await this._showLoadoutContextMenu(event);
     });
+    /** @todo This is way overkill. */
     document.addEventListener('click', this._hideLoadoutContextMenu.bind(this));
   }
 
@@ -1468,6 +1459,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       event.preventDefault();
       await this._showPartyContextMenu(event);
     });
+    /** @todo This is way overkill. */
     document.addEventListener('click', this._hidePartyContextMenu.bind(this));
   }
 
@@ -1605,7 +1597,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _hideLoadoutContextMenu() {
-    log(3, 'Hiding loadout context menu.');
     const existingMenu = document.getElementById('spell-loadout-context-menu');
     if (existingMenu) existingMenu.remove();
     this._activeContextMenu = null;
@@ -1616,7 +1607,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   _hidePartyContextMenu() {
-    log(3, 'Hiding party context menu.');
     const existingMenu = document.getElementById('party-context-menu');
     if (existingMenu) existingMenu.remove();
     this._activePartyContextMenu = null;
@@ -2306,6 +2296,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @this SpellBook
    * @param {PointerEvent} _event - The originating click event.
    * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
+   * @todo Non- prepared Revivify spells are slowly being removed.
    */
   static async #save(_event, _target) {
     log(3, 'Handling save.', { _event, _target });
@@ -2324,11 +2315,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const sourceClass = checkbox.dataset.sourceClass || 'unknown';
       const spellItem = checkbox.closest('.spell-item');
       const spellLevel = spellItem?.dataset.spellLevel ? parseInt(spellItem.dataset.spellLevel) : 0;
-      const isAlwaysPrepared = spellItem?.querySelector('.tag.always-prepared');
-      const isGranted = spellItem?.querySelector('.tag.granted');
-      const isInnate = spellItem?.querySelector('.tag.innate');
-      const isAtWill = spellItem?.querySelector('.tag.atwill');
-      if (isAlwaysPrepared || isGranted || isInnate || isAtWill) continue;
       if (!spellDataByClass[sourceClass]) spellDataByClass[sourceClass] = {};
       const classSpellKey = `${sourceClass}:${uuid}`;
       const classData = this._state.classSpellData[sourceClass];
@@ -2336,22 +2322,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const isPactCaster = classItem?.system?.spellcasting?.type === 'pact';
       let preparationMode = 'spell';
       if (isPactCaster && spellLevel > 0) preparationMode = 'pact';
-      spellDataByClass[sourceClass][classSpellKey] = {
-        uuid,
-        name,
-        wasPrepared,
-        isPrepared,
-        isRitual,
-        sourceClass,
-        spellItem,
-        spellLevel,
-        isAlwaysPrepared,
-        isGranted,
-        isInnate,
-        isAtWill,
-        classSpellKey,
-        preparationMode
-      };
+      spellDataByClass[sourceClass][classSpellKey] = { uuid, name, wasPrepared, isPrepared, isRitual, sourceClass, spellItem, spellLevel, classSpellKey, preparationMode };
     }
     this._state.clearFavoriteSessionState();
     await this._state.addMissingRitualSpells(spellDataByClass);
