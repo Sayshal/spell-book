@@ -27,7 +27,7 @@ export class ScrollProcessor {
   static async scanForScrollSpells(actor) {
     /** @type {Array<ScrollSpellData>} */
     const scrollSpells = [];
-    if (!DataUtils.isWizard(actor)) return scrollSpells;
+    if (!Object.keys(DataUtils.getWizardData(actor)).length) return scrollSpells;
     const scrollItems = actor.items.filter((item) => item.type === 'consumable' && item.system?.type?.value === 'scroll');
     for (const scroll of scrollItems) {
       const spellData = await this._extractSpellFromScroll(scroll, actor);
@@ -46,8 +46,11 @@ export class ScrollProcessor {
    */
   static async _extractSpellFromScroll(scroll, actor) {
     log(3, `Extracting ${scroll.name} from ${actor.name}'s inventory.`, { scroll, actor });
-    const wizardClass = DataUtils.findWizardClass(actor);
-    if (!wizardClass) return null;
+    const wizardData = DataUtils.getWizardData(actor);
+    const entries = Object.entries(wizardData);
+    if (!entries.length) return null;
+    const wizardClass =
+      entries.find(([_, d]) => d.isForceWizard)?.[1]?.classData || wizardData.wizard?.classData || entries.find(([_, d]) => d.isNaturalWizard)?.[1]?.classData || entries[0][1].classData;
     const maxSpellLevel = DataUtils.calculateMaxSpellLevel(wizardClass, actor);
     if (scroll.system?.activities) {
       const activitiesArray = Array.from(scroll.system.activities.values());

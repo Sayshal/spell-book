@@ -64,7 +64,7 @@ export class Cantrips {
     this.spellManager = spellManager;
 
     /** @type {boolean} Whether this actor has wizard levels */
-    this.isWizard = DataUtils.isWizard(actor);
+    this.isWizard = !!Object.keys(DataUtils.getWizardData(actor)).length;
 
     /** @type {Map<string, number>} Cached maximum cantrips by class identifier */
     this._maxCantripsByClass = new Map();

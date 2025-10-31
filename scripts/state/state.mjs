@@ -103,7 +103,13 @@ export class State {
    */
   getWizardEnabledClasses() {
     if (this._wizardClassesCache === null) {
-      this._wizardClassesCache = DataUtils.getWizardEnabledClasses(this.actor);
+      const wizardData = DataUtils.getWizardData(this.actor);
+      this._wizardClassesCache = Object.entries(wizardData).map(([identifier, data]) => ({
+        identifier,
+        classItem: data.classData,
+        isNaturalWizard: data.isNaturalWizard,
+        isForceWizard: data.isForceWizard
+      }));
       log(3, 'Wizard classes cached in State', { count: this._wizardClassesCache.length });
     }
     return this._wizardClassesCache;
@@ -440,7 +446,7 @@ export class State {
         continue;
       }
       log(3, `Processing class ${identifier} (${classItem.name})`);
-      if (DataUtils.isClassWizardEnabled(this.actor, identifier)) {
+      if (identifier in DataUtils.getWizardData(this.actor)) {
         log(3, `Loading wizard spell data for ${identifier}`);
         await this.loadWizardSpellData(classItem, identifier);
       } else {
@@ -1200,7 +1206,7 @@ export class State {
       log(2, 'Class item not found during refresh', { classIdentifier, classDataId: classData.id });
       return;
     }
-    if (DataUtils.isClassWizardEnabled(this.actor, classIdentifier)) {
+    if (classIdentifier in DataUtils.getWizardData(this.actor)) {
       log(3, 'Refreshing wizard spell data', { classIdentifier });
       await this.cacheWizardSpellbook(classIdentifier);
       await this.loadWizardSpellData(classItem, classIdentifier);

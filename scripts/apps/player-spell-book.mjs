@@ -284,7 +284,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       context.className = this._state.classSpellData[classIdentifier]?.className || classIdentifier;
       const wizardManager = this.wizardManagers.get(classIdentifier);
       context.isWizard = wizardManager?.isWizard || false;
-      context.isForceWizard = wizardManager?.classItem && DataUtils.isClassWizardEnabled(this.actor, classIdentifier);
+      context.isForceWizard = DataUtils.getWizardData(this.actor)[classIdentifier]?.isForceWizard ?? false;
       const wizardTabData = this._state.tabData?.[partId];
       if (wizardTabData) {
         const rawSpellLevels = wizardTabData.spellLevels || [];

@@ -97,7 +97,7 @@ export class WizardBook {
     const spellcastingData = this.actor.spellcastingClasses[this.classIdentifier];
     const classItem = this.actor.items.get(spellcastingData.id);
     if (!classItem) return null;
-    if (DataUtils.isClassWizardEnabled(this.actor, this.classIdentifier)) return classItem;
+    if (this.classIdentifier in DataUtils.getWizardData(this.actor)) return classItem;
     return null;
   }
 

@@ -165,7 +165,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
         const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
         const processedClassRules = RuleSet.getClassRules(this.actor, identifier);
         const savedRules = currentClassRules[identifier] || {};
-        const isWizard = DataUtils.isClassWizardEnabled(this.actor, identifier);
+        const isWizard = identifier in DataUtils.getWizardData(this.actor);
         const formRules = {
           showCantrips: 'showCantrips' in savedRules ? savedRules.showCantrips : processedClassRules.showCantrips,
           forceWizardMode: 'forceWizardMode' in savedRules ? savedRules.forceWizardMode : processedClassRules.forceWizardMode,

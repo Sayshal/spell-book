@@ -141,7 +141,7 @@ async function collectPlayerSpellUuids(actor) {
     spellUuids.add(uuid);
     if (level !== undefined) spellLevels.add(level);
   });
-  if (DataUtils.isWizard(actor)) {
+  if (Object.keys(DataUtils.getWizardData(actor)).length) {
     const spellbookSpells = await getActorSpellbookSpells(actor);
     spellbookSpells.forEach(({ uuid, level }) => {
       spellUuids.add(uuid);
@@ -190,8 +190,8 @@ async function getSpellsFromActorSpellLists(actor) {
 async function getActorSpellbookSpells(actor) {
   log(3, 'Getting actor spellbook spells for:', { character: actor.name, actor });
   const spellData = [];
-  const wizardClasses = DataUtils.getWizardEnabledClasses(actor);
-  for (const { identifier } of wizardClasses) {
+  const wizardData = DataUtils.getWizardData(actor);
+  for (const identifier of Object.keys(wizardData)) {
     const wizardManager = new WizardBook(actor, identifier);
     try {
       if (wizardManager.isWizard) {
