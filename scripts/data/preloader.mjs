@@ -56,6 +56,7 @@ async function preloadForGM(showNotification = false) {
  * Preload relevant spell data for player characters.
  * @param {boolean} [showNotification=false] - Whether to show success notification
  * @returns {Promise<void>}
+ * @todo This should filter based on what spellLevels are required as well, to save even more time.
  * @private
  */
 async function preloadForPlayer(showNotification = false) {
