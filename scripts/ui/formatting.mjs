@@ -132,19 +132,21 @@ export function formatSpellLevel(spell) {
 /**
  * Format spell range for display.
  * @param {Object} spell - The spell object containing range information
+ * @param actor
  * @returns {string} Formatted range string (e.g., "Touch", "30 feet", "Self")
  */
-export function formatSpellRange(spell) {
-  if (spell.labels?.range) return spell.labels.range;
-  if (!spell.system?.range) return '';
+export function formatSpellRange(spell, actor) {
   const range = spell.system.range;
   if (range.units === 'self') return game.i18n.localize('DND5E.DistSelf');
   if (range.units === 'touch') return game.i18n.localize('DND5E.DistTouch');
   if (range.units === 'spec') return game.i18n.localize('DND5E.Special');
+  if (range.units === 'any') return game.i18n.localize('DND5E.DistAny');
   if (range.value && range.units) {
+    const rangeValue = dnd5e.utils.simplifyBonus(range.value, actor);
     const unitLabel = CONFIG.DND5E?.movementUnits?.[range.units]?.label || range.units;
-    return `${range.value} ${unitLabel}`;
+    return `${rangeValue} ${unitLabel}`;
   }
+  if (spell.labels?.range) return spell.labels.range;
   return '';
 }
 

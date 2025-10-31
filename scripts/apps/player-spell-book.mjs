@@ -887,7 +887,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         learningSourceLabel: learningSourceLabel
       };
       const partyIcons = this._preparePartyIconsData(processedSpell);
-      const formattedDetails = UIUtils.CustomUI.buildPlayerMetadata(processedSpell, enabledElements);
+      const formattedDetails = UIUtils.CustomUI.buildPlayerMetadata(processedSpell, enabledElements, this.actor);
       let materialComponentsTooltip = '';
       const hasMaterialComponents = processedSpell.filterData?.materialComponents?.hasConsumedMaterials === true;
       if (hasMaterialComponents && formattedDetails) {

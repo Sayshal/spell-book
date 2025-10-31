@@ -123,10 +123,11 @@ export class CustomUI {
    * Build custom metadata subtitle for SpellBook player interface.
    * @param {SpellMetadata} spell - The spell object with processed data
    * @param {Set<string>} [enabledElements] - Set of enabled element names. If not provided, will check settings for each element.
+   * @param actor Current actor
    * @returns {string} Formatted metadata string for player display
    * @static
    */
-  static buildPlayerMetadata(spell, enabledElements = null) {
+  static buildPlayerMetadata(spell, enabledElements = null, actor) {
     const metadata = [];
     const elements = ['spellLevel', 'components', 'school', 'castingTime', 'range', 'damageTypes', 'conditions', 'save', 'concentration', 'materialComponents'];
     for (const element of elements) {
@@ -154,7 +155,7 @@ export class CustomUI {
           break;
         }
         case 'range': {
-          const rangeText = UIUtils.formatSpellRange(spell);
+          const rangeText = UIUtils.formatSpellRange(spell, actor);
           if (rangeText) metadata.push(rangeText);
           break;
         }
