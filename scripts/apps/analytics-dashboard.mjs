@@ -63,7 +63,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
     /** @type {number|null} Timestamp of last data refresh */
     this.lastRefresh = null;
 
-    log(1, 'AnalyticsDashboard constructed.');
+    log(3, 'AnalyticsDashboard constructed.');
   }
 
   /** @inheritdoc */

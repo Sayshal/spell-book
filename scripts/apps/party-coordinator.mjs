@@ -65,7 +65,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
     /** @type {string|null} Currently filtered actor ID for spell display */
     this._filteredActorId = null;
 
-    log(1, 'PartyCoordinator constructed.');
+    log(3, 'PartyCoordinator constructed.');
   }
 
   /** @inheritdoc */

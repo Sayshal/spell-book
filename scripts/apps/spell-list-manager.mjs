@@ -150,7 +150,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     /** @type {boolean} Whether checkboxes are currently being updated programmatically */
     this.isUpdatingCheckboxes = false;
 
-    log(1, 'SpellListManager constructed.');
+    log(3, 'SpellListManager constructed.');
   }
 
   /** @inheritdoc */
