@@ -686,7 +686,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const cachedFor = spell.flags?.dnd5e?.cachedFor;
       const itemId = foundry.utils.parseUuid(cachedFor, { relative: this.actor }).embedded[1];
       const grantingItem = this.actor?.items.get(itemId);
-      tags.push({ cssClass: 'granted', text: game.i18n.localize('SPELLBOOK.SpellSource.Granted'), tooltip: grantingItem.name });
+      tags.push({ cssClass: 'granted', text: game.i18n.localize('SPELLBOOK.SpellSource.Granted'), tooltip: grantingItem?.name || '' });
     }
     if (modes?.hasInnate) tags.push({ cssClass: 'innate', text: game.i18n.localize('SPELLBOOK.Preparation.Innate'), tooltip: game.i18n.localize('SPELLBOOK.Preparation.InnateTooltip') });
     if (modes?.hasRitual) tags.push({ cssClass: 'ritual', text: game.i18n.localize('SPELLBOOK.Preparation.Ritual'), tooltip: game.i18n.localize('SPELLBOOK.Preparation.RitualTooltip') });

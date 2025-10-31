@@ -10,7 +10,7 @@
  * @author Tyler
  */
 
-import { MODULE, SETTINGS } from '../constants/_module.mjs';
+import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import * as UIUtils from '../ui/_module.mjs';
 import * as DataUtils from './_module.mjs';
@@ -25,7 +25,6 @@ export class ScrollProcessor {
    * @returns {Promise<Array<ScrollSpellData>>} Array of scroll spell data objects
    */
   static async scanForScrollSpells(actor) {
-    log(3, `Checking ${actor.name} for spell scrolls.`);
     /** @type {Array<ScrollSpellData>} */
     const scrollSpells = [];
     if (!DataUtils.isWizard(actor)) return scrollSpells;
@@ -34,6 +33,7 @@ export class ScrollProcessor {
       const spellData = await this._extractSpellFromScroll(scroll, actor);
       if (spellData) scrollSpells.push(spellData);
     }
+    log(3, `Checking ${actor.name} for spell scrolls.`, { scrollItems, scrollSpells });
     return scrollSpells;
   }
 
@@ -124,7 +124,6 @@ export class ScrollProcessor {
    * @param {ScrollSpellData} scrollSpellData - The scroll spell data to learn from
    * @param {WizardBook} wizardManager - The wizard manager instance
    * @returns {Promise<boolean>} Whether the learning process was successful
-   * @todo isAlreadyInSpellbook isn't used here... But I think it should be?
    */
   static async learnSpellFromScroll(actor, scrollSpellData, wizardManager) {
     log(3, 'Learning spell from scroll.', { actor, scrollSpellData, wizardManager });
@@ -132,9 +131,20 @@ export class ScrollProcessor {
     const isAlreadyInSpellbook = await wizardManager.isSpellInSpellbook(spellUuid);
     const { cost, isFree } = await wizardManager.getCopyingCost(spell);
     const time = wizardManager.getCopyingTime(spell);
-    const shouldProceed = await this._showLearnFromScrollDia;
+    if (!isFree && cost > 0) {
+      const deductGold = game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST);
+      if (deductGold) {
+        const canAfford = this._checkCanAffordSpell(actor, cost);
+        if (!canAfford) {
+          ui.notifications.warn(game.i18n.localize('SPELLBOOK.Wizard.InsufficientGold'));
+          return false;
+        }
+      }
+    }
+    const shouldProceed = await this._showLearnFromScrollDialog(spell, cost, time, isFree, isAlreadyInSpellbook);
     if (!shouldProceed) return false;
     const success = await wizardManager.addSpellToSpellbook(spellUuid, MODULE.WIZARD_SPELL_SOURCE.SCROLL, { cost, timeSpent: time });
+    log(3, 'Spell added to spellbook?', { success });
     if (success) {
       if (!isFree && cost > 0) {
         const deductGold = game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST);
@@ -149,58 +159,58 @@ export class ScrollProcessor {
   }
 
   /**
-   * Deduct spell learning cost from actor's currency.
+   * Show dialog for learning spell from scroll.
+   * @param {Item5e} spell - The spell to learn from the scroll
+   * @param {number} cost - Gold cost to learn the spell
+   * @param {string} time - Formatted time string required to learn the spell
+   * @param {boolean} isFree - Whether the spell learning is free
+   * @param {boolean} isAlreadyInSpellbook - Whether spell is already known
+   * @returns {Promise<boolean>} Whether the user chose to proceed with learning
+   * @private
+   */
+  static async _showLearnFromScrollDialog(spell, cost, time, isFree, isAlreadyInSpellbook) {
+    const costText = isFree ? game.i18n.localize('SPELLBOOK.Wizard.SpellCopyFree') : game.i18n.format('SPELLBOOK.Wizard.SpellCopyCost', { cost });
+    const shouldConsume = game.settings.get(MODULE.ID, SETTINGS.CONSUME_SCROLLS_WHEN_LEARNING);
+    const content = await foundry.applications.handlebars.renderTemplate(TEMPLATES.DIALOGS.LEARN_FROM_SCROLL, { spell, costText, time, isAlreadyInSpellbook, shouldConsume });
+    try {
+      const result = await foundry.applications.api.DialogV2.wait({
+        window: { icon: 'fas fa-scroll', title: game.i18n.format('SPELLBOOK.Wizard.LearnSpellTitle', { name: spell.name }) },
+        content: content,
+        buttons: [
+          { icon: 'fas fa-book', label: game.i18n.localize('SPELLBOOK.Wizard.LearnSpellButton'), action: 'confirm', className: 'dialog-button' },
+          { icon: 'fas fa-times', label: game.i18n.localize('SPELLBOOK.UI.Cancel'), action: 'cancel', className: 'dialog-button' }
+        ],
+        default: 'confirm',
+        rejectClose: false
+      });
+      return result === 'confirm';
+    } catch (error) {
+      log(1, 'Error showing learn from scroll dialog:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if actor can afford the spell learning cost without actually deducting.
+   * @param {Actor5e} actor - The actor to check
+   * @param {number} cost - Cost in gold pieces
+   * @returns {boolean} Whether the actor can afford the cost
+   * @private
+   */
+  static _checkCanAffordSpell(actor, cost) {
+    const updates = dnd5e.applications.CurrencyManager.getActorCurrencyUpdates(actor, cost, 'gp', { priority: 'low', exact: false });
+    return !updates.remainder;
+  }
+
+  /**
+   * Deduct spell learning cost from actor's currency using the DND5e system's currency manager.
    * @param {Actor5e} actor - The actor to deduct currency from
-   * @param {number} cost - Cost in base currency
-   * @returns {Promise<boolean>} Success state
+   * @param {number} cost - Cost in gold pieces
+   * @returns {Promise<void>}
    * @private
    */
   static async _deductSpellLearningCost(actor, cost) {
     log(3, 'Deducting money for scroll learning.', { actor, cost });
-    const currencies = CONFIG.DND5E.currencies;
-    const actorCurrency = actor.system.currency || {};
-    let baseCurrency = null;
-    const otherCurrencies = [];
-    for (const [currencyType, config] of Object.entries(currencies)) {
-      if (config.conversion === 1) baseCurrency = currencyType;
-      else otherCurrencies.push({ type: currencyType, conversion: config.conversion });
-    }
-    otherCurrencies.sort((a, b) => a.conversion - b.conversion);
-    const deductionOrder = baseCurrency ? [baseCurrency, ...otherCurrencies.map((c) => c.type)] : otherCurrencies.map((c) => c.type);
-    let totalWealthInBase = 0;
-    for (const [currencyType, config] of Object.entries(currencies)) {
-      const amount = actorCurrency[currencyType] || 0;
-      const baseValue = amount / config.conversion;
-      totalWealthInBase += baseValue;
-    }
-    if (totalWealthInBase < cost) {
-      ui.notifications.warn(game.i18n.format('SPELLBOOK.Wizard.InsufficientGold', { cost: cost, current: totalWealthInBase.toFixed(2) }));
-      return false;
-    }
-    let remainingCost = cost;
-    const deductions = {};
-    for (const currencyType of deductionOrder) {
-      if (remainingCost <= 0.001) break;
-      if (!currencies[currencyType]) continue;
-      const available = actorCurrency[currencyType] || 0;
-      if (available <= 0) continue;
-      const config = currencies[currencyType];
-      const baseValuePerUnit = 1 / config.conversion;
-      const neededUnits = Math.ceil(remainingCost / baseValuePerUnit);
-      const toDeduct = Math.min(available, neededUnits);
-      if (toDeduct > 0) {
-        deductions[currencyType] = toDeduct;
-        const baseValueDeducted = toDeduct * baseValuePerUnit;
-        remainingCost -= baseValueDeducted;
-      }
-    }
-    const updateData = {};
-    for (const [currencyType, deductAmount] of Object.entries(deductions)) {
-      const currentAmount = actorCurrency[currencyType] || 0;
-      const newAmount = currentAmount - deductAmount;
-      updateData[`system.currency.${currencyType}`] = newAmount;
-    }
-    await actor.update(updateData);
-    return true;
+    await dnd5e.applications.CurrencyManager.deductActorCurrency(actor, cost, 'gp', { priority: 'low', exact: false });
   }
 }

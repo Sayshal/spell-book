@@ -1347,6 +1347,7 @@ export class State {
    * @param {Array<string>} personalSpellbook - UUIDs of spells in personal spellbook
    * @param {Set<string>} classSpellListUuids - UUIDs of spells in the class list
    * @returns {Promise<Array<Item5e>>} Array of scroll-learned spell documents
+   * @todo This was never wired in anywhere.
    * @private
    */
   async _getScrollLearnedSpellsNotInClassList(classIdentifier, personalSpellbook, classSpellListUuids) {
