@@ -589,7 +589,8 @@ export class State {
           const isCurrentClass = version.sourceClass === classIdentifier;
           if (ownedSpell.flags?.dnd5e?.cachedFor) {
             spellData.aggregatedModes.hasGranted = true;
-            if (!spellData.flags) spellData.flags = foundry.utils.deepClone(ownedSpell.flags);
+            if (!spellData.flags) spellData.flags = {};
+            foundry.utils.mergeObject(spellData.flags, ownedSpell.flags, { inplace: true });
           }
           if (ownedSpell.system.prepared === 2) {
             spellData.aggregatedModes.hasAlwaysPrepared = true;
