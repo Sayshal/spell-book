@@ -30,7 +30,7 @@ export async function getClassSpellList(className, classUuid, actor) {
   if (actor) {
     classItem = await fromUuid(classUuid);
     if (classItem) {
-      classIdentifier = classItem?.system?.identifier?.toLowerCase() || className.toLowerCase();
+      classIdentifier = foundry.utils.getProperty(classItem, 'system.identifier');
       const classRules = RuleSet.getClassRules(actor, classIdentifier);
       if (classRules.customSpellList) {
         const customSpellListUuids = Array.isArray(classRules.customSpellList) ? classRules.customSpellList : [classRules.customSpellList];
@@ -55,8 +55,8 @@ export async function getClassSpellList(className, classUuid, actor) {
   if (finalSpellSet.size === 0) {
     if (!classItem) classItem = await fromUuid(classUuid);
     if (!classItem) return new Set();
-    classIdentifier = classItem?.system?.identifier?.toLowerCase();
-    const topLevelFolderName = getFolderNameFromPack(classItem?._stats?.compendiumSource);
+    classIdentifier = foundry.utils.getProperty(classItem, 'system.identifier');
+    const topLevelFolderName = getFolderNameFromPack(foundry.utils.getProperty(classItem, '_stats.compendiumSource'));
     if (!classIdentifier) return new Set();
     const preloadedData = DataUtils.getPreloadedData();
     if (preloadedData && preloadedData.spellLists.length > 0) {
@@ -96,7 +96,7 @@ export async function getClassSpellList(className, classUuid, actor) {
     const spellcastingData = actor.spellcastingClasses?.[classIdentifier];
     if (spellcastingData?._classLink) {
       const subclassItem = spellcastingData._classLink;
-      const subclassIdentifier = subclassItem.system?.identifier?.toLowerCase();
+      const subclassIdentifier = foundry.utils.getProperty(subclassItem, 'system.identifier');
       if (subclassIdentifier) {
         const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
         const subclassSpellList = await findSpellListByIdentifier('subclass', subclassIdentifier, customMappings);
@@ -171,7 +171,7 @@ async function searchPackForSpellList(pack, type, identifier, customMappings) {
       if (page.type !== 'spells') continue;
       if (!page.system?.identifier || !page.system?.spells) continue;
       const pageType = page.system.type;
-      const pageIdentifier = page.system.identifier.toLowerCase();
+      const pageIdentifier = foundry.utils.getProperty(page, 'system.identifier');
       if (pageType === type && pageIdentifier === identifier) {
         if (customMappings[page.uuid]) {
           const customList = await fromUuid(customMappings[page.uuid]);
@@ -203,7 +203,7 @@ async function findCustomSpellListByIdentifier(identifier) {
       if (page.type !== 'spells') continue;
       const flags = page.flags?.[MODULE.ID] || {};
       if (!flags.isCustom && !flags.isNewList) continue;
-      const pageIdentifier = page.system?.identifier?.toLowerCase() || '';
+      const pageIdentifier = foundry.utils.getProperty(page, 'system.identifier') || '';
       if (pageIdentifier === identifier && page.system.spells.size > 0) return page.system.spells;
     }
   }
@@ -219,23 +219,19 @@ async function findCustomSpellListByIdentifier(identifier) {
 export function calculateMaxSpellLevel(classItem, actor) {
   log(3, 'Calculating max spell level.', { classItem, actor });
   if (!classItem || !actor) return 0;
-  const classIdentifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
+  const classIdentifier = foundry.utils.getProperty(classItem, 'system.identifier') || classItem.name.toLowerCase();
   const spellcastingConfig = DataUtils.getSpellcastingConfigForClass(actor, classIdentifier);
   if (!spellcastingConfig) return 0;
   const spellcastingType = spellcastingConfig.type;
-  const classKey = classItem.identifier || classItem.name?.slugify() || 'class';
+  const classKey = foundry.utils.getProperty(classItem, 'identifier') || classItem.name?.slugify() || 'class';
   const classLevels = DataUtils.getSpellcastingLevelsForClass(actor, classIdentifier);
   if (spellcastingType === 'spell') {
-    /** @type {ClassProgression} */
     const progression = { spell: 0, [classKey]: classLevels };
     const spellSlotTable = CONFIG.DND5E.spellcasting.spell.table;
     if (!spellSlotTable || !spellSlotTable.length) return 0;
-
     const maxPossibleSpellLevel = spellSlotTable[spellSlotTable.length - 1].length;
     const spellLevels = [];
     for (let i = 1; i <= maxPossibleSpellLevel; i++) spellLevels.push(i);
-
-    /** @type {Object<string, SpellSlotData>} */
     const spells = Object.fromEntries(spellLevels.map((l) => [`spell${l}`, { level: l }]));
     const spellcastingSource = DataUtils.getSpellcastingSourceItem(actor, classIdentifier);
     actor.constructor.computeClassProgression(progression, spellcastingSource, { spellcasting: spellcastingConfig });
@@ -247,10 +243,7 @@ export function calculateMaxSpellLevel(classItem, actor) {
       return Math.max(maxLevel, level || -1);
     }, 0);
   } else if (spellcastingType === 'pact') {
-    /** @type {Object<string, Object>} */
     const spells = { pact: {} };
-
-    /** @type {ClassProgression} */
     const progression = { pact: 0, [classKey]: classLevels };
     const spellcastingSource = DataUtils.getSpellcastingSourceItem(actor, classIdentifier);
     actor.constructor.computeClassProgression(progression, spellcastingSource, { spellcasting: spellcastingConfig });

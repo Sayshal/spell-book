@@ -96,27 +96,49 @@ export function prepareSpellSources(availableSpells) {
 }
 
 /**
- * Process journal packs for spell lists.
- * @param {Array<CompendiumCollection>} journalPacks - Array of journal packs to process
+ * Process a single journal pack for spell lists.
+ * @param {CompendiumCollection} pack - The pack to process
  * @param {Array<SpellListMetadata>} spellLists - Array to store results in
+ * @param {boolean} isCustomPack - Whether this is the custom spell lists pack
  * @private
  */
-async function processPacks(journalPacks, spellLists) {
-  log(3, 'Processing standard journal packs.', { journalPacks, spellLists });
-  for (const pack of journalPacks) {
-    if (pack.metadata.id === MODULE.PACK.SPELLS) continue;
-    let topLevelFolder;
-    if (pack.folder) {
-      if (pack.folder.depth !== 1) topLevelFolder = pack.folder.getParentFolders().at(-1).name;
-      else topLevelFolder = pack.folder.name;
-    }
-    const index = await pack.getIndex({ fields: ['name', 'pages.type'] });
-    for (const journalData of index) {
+async function processPackForSpellLists(pack, spellLists, isCustomPack = false) {
+  log(3, `Processing ${isCustomPack ? 'custom' : 'standard'} journal pack.`, { pack, spellLists });
+  let topLevelFolder;
+  if (!isCustomPack && pack.folder) {
+    if (pack.folder.depth !== 1) topLevelFolder = pack.folder.getParentFolders().at(-1).name;
+    else topLevelFolder = pack.folder.name;
+  }
+  const indexFields = isCustomPack ? undefined : { fields: ['name', 'pages.type'] };
+  const index = await pack.getIndex(indexFields);
+  for (const journalData of index) {
+    if (!isCustomPack) {
       const hasSpellPages = journalData.pages?.some((page) => page.type === 'spells');
       if (!hasSpellPages) continue;
-      const journal = await pack.getDocument(journalData._id);
-      for (const page of journal.pages) {
-        if (page.type !== 'spells' || page.system?.type === 'other') continue;
+    }
+    const journal = await pack.getDocument(journalData._id);
+    for (const page of journal.pages) {
+      if (page.type !== 'spells') continue;
+      if (isCustomPack) {
+        const flags = page.flags?.[MODULE.ID] || {};
+        if (flags.isDuplicate || flags.originalUuid) continue;
+        const isMerged = !!flags.isMerged;
+        const isCustom = !isMerged;
+        spellLists.push({
+          uuid: page.uuid,
+          name: page.name,
+          journal: journal.name,
+          pack: pack.metadata.label,
+          packageName: pack.metadata.packageName,
+          system: page.system,
+          spellCount: page.system.spells?.size,
+          identifier: page.system.identifier,
+          isCustom: isCustom,
+          isMerged: isMerged,
+          document: page
+        });
+      } else {
+        if (page.system?.type === 'other') continue;
         spellLists.push({
           uuid: page.uuid,
           name: page.name,
@@ -134,48 +156,33 @@ async function processPacks(journalPacks, spellLists) {
 }
 
 /**
- * Process custom spell lists pack.
+ * Process journal packs for spell lists.
+ * @param {Array<CompendiumCollection>} journalPacks - Array of journal packs to process
  * @param {Array<SpellListMetadata>} spellLists - Array to store results in
- * @todo Can this not just get combined into processPacks?
  * @private
  */
-async function processCustomPack(spellLists) {
-  log(3, 'Processing custom journal pack.', { spellLists });
-  const customPack = game.packs.get(MODULE.PACK.SPELLS);
-  if (!customPack) return;
-  const index = await customPack.getIndex();
-  for (const journalData of index) {
-    const journal = await customPack.getDocument(journalData._id);
-    for (const page of journal.pages) {
-      if (page.type !== 'spells') continue;
-      const flags = page.flags?.[MODULE.ID] || {};
-      if (flags.isDuplicate || flags.originalUuid) continue;
-      const isMerged = !!flags.isMerged;
-      const isCustom = !isMerged;
-      spellLists.push({
-        uuid: page.uuid,
-        name: page.name,
-        journal: journal.name,
-        pack: customPack.metadata.label,
-        packageName: customPack.metadata.packageName,
-        system: page.system,
-        spellCount: page.system.spells?.size,
-        identifier: page.system.identifier,
-        isCustom: isCustom,
-        isMerged: isMerged,
-        document: page
-      });
-    }
+async function processPacks(journalPacks, spellLists) {
+  for (const pack of journalPacks) {
+    if (pack.metadata.id === MODULE.PACK.SPELLS) continue;
+    await processPackForSpellLists(pack, spellLists, false);
   }
 }
 
 /**
- * Compare versions of original and custom spell lists.
+ * Process custom spell lists pack.
+ * @param {Array<SpellListMetadata>} spellLists - Array to store results in
+ * @private
+ */
+async function processCustomPack(spellLists) {
+  const customPack = game.packs.get(MODULE.PACK.SPELLS);
+  if (!customPack) return;
+  await processPackForSpellLists(customPack, spellLists, true);
+}
+
+/**
+ * Compare versions of original and custom spell lists to detect updates.
  * @param {string} originalUuid - UUID of the original spell list
  * @param {string} customUuid - UUID of the custom spell list
- * @todo What is this really for? It's only called in spell-list-manager and is
- * set to context.compareInfo which is used to decide if a notice should be posted:
- * {{#if selectedSpellList.compareInfo.hasOriginalChanged}}
  * @returns {Promise<VersionComparisonResult>} Comparison results with change analysis
  */
 export async function compareListVersions(originalUuid, customUuid) {
@@ -229,7 +236,6 @@ export async function getValidCustomListMappings() {
 /**
  * Duplicate a spell list to the custom pack.
  * @param {JournalEntryPage} originalSpellList - The original spell list document to duplicate
- * @todo Can't we just do a deepClone and then add the flag data?
  * @returns {Promise<JournalEntryPage>} The duplicated spell list page
  */
 export async function duplicateSpellList(originalSpellList) {
@@ -237,7 +243,7 @@ export async function duplicateSpellList(originalSpellList) {
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
   const existingDuplicate = await findDuplicateSpellList(originalSpellList.uuid);
   if (existingDuplicate) return existingDuplicate;
-  const pageData = originalSpellList.toObject();
+  const pageData = foundry.utils.deepClone(originalSpellList.toObject());
   pageData.flags = pageData.flags || {};
   pageData.flags[MODULE.ID] = {
     originalUuid: originalSpellList.uuid,
@@ -246,7 +252,7 @@ export async function duplicateSpellList(originalSpellList) {
     originalVersion: originalSpellList._stats?.systemVersion || game.system.version,
     isDuplicate: true
   };
-  const modifiedFolder = await getOrCreateModifiedFolder();
+  const modifiedFolder = await getOrCreateSpellListFolder('modified');
   const journalName = `${originalSpellList.parent.name} - ${originalSpellList.name}`;
   const journalData = { name: journalName, folder: modifiedFolder?.id, pages: [{ name: originalSpellList.name, type: 'spells', flags: pageData.flags, system: pageData.system }] };
   const journal = await JournalEntry.create(journalData, { pack: customPack.collection });
@@ -311,11 +317,10 @@ export async function removeCustomSpellList(duplicateUuid) {
 
 /**
  * Fetch all compendium spells with level filtering.
- * @param {number} [maxLevel=9] - Maximum spell level to include in results
- * @todo Replace maxLevel=9 with a check of the largest key number in CONFIG.DND5E.spellLevels
  * @returns {Promise<Array<FormattedSpellData>>} Array of formatted spell items
  */
-export async function fetchAllCompendiumSpells(maxLevel = 9) {
+export async function fetchAllCompendiumSpells() {
+  const maxLevel = Math.max(...Object.keys(CONFIG.DND5E.spellLevels).map(Number));
   log(3, 'Fetching all compendium spells.');
   /** @type {Array<FormattedSpellData>} */
   const spells = [];
@@ -449,7 +454,7 @@ function formatSpellEntry(entry, pack) {
  */
 export async function createNewSpellList(name, identifier, type) {
   log(3, 'Creating new spell list.', { name, identifier, type });
-  const customFolder = await getOrCreateCustomFolder();
+  const customFolder = await getOrCreateSpellListFolder('custom');
   const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
   const journalData = {
     name: name,
@@ -591,7 +596,7 @@ export async function createMergedSpellList(spellListUuids, mergedListName) {
   const identifier = spellLists[0].system?.identifier || 'merged';
   const listNames = spellLists.map((list) => list.name).join(', ');
   const description = game.i18n.format('SPELLMANAGER.CreateList.MultiMergedDescription', { listNames: listNames, count: spellLists.length });
-  const mergedFolder = await getOrCreateMergedFolder();
+  const mergedFolder = await getOrCreateSpellListFolder('merged');
   const journalData = {
     name: mergedListName,
     folder: mergedFolder?.id,
@@ -610,12 +615,15 @@ export async function createMergedSpellList(spellListUuids, mergedListName) {
 
 /**
  * Get or create a folder in the custom spell lists pack.
- * @param {string} folderName - Name of the folder to create or find
+ * @param {string} folderType - The type of folder to create ('custom', 'merged', or 'modified')
  * @returns {Promise<Folder|null>} The folder document or null if creation failed
- * @todo Combine the four getOrCreate functions into 1 function with a switch statement.
- * @private
  */
-async function getOrCreateSpellListFolder(folderName) {
+export async function getOrCreateSpellListFolder(folderType) {
+  let localizationKey;
+  if (folderType === 'custom') localizationKey = 'SPELLMANAGER.Folders.CustomSpellListsFolder';
+  if (folderType === 'merged') localizationKey = 'SPELLMANAGER.Folders.MergedSpellListsFolder';
+  if (folderType === 'modified') localizationKey = 'SPELLMANAGER.Folders.ModifiedSpellListsFolder';
+  const folderName = game.i18n.localize(localizationKey);
   log(3, 'Getting (or creating) Spell List Folder', { folderName });
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
   const existingFolder = customPack.folders.find((f) => f.name === folderName);
@@ -623,33 +631,6 @@ async function getOrCreateSpellListFolder(folderName) {
   const folderData = { name: folderName, type: 'JournalEntry', folder: null };
   const folder = await Folder.create(folderData, { pack: customPack.collection });
   return folder;
-}
-
-/**
- * Get or create the Custom Spell Lists folder.
- * @returns {Promise<Folder|null>} Promise that resolves to the custom spell lists folder or null if creation failed
- */
-export async function getOrCreateCustomFolder() {
-  const folderName = game.i18n.localize('SPELLMANAGER.Folders.CustomSpellListsFolder');
-  return getOrCreateSpellListFolder(folderName);
-}
-
-/**
- * Get or create the Merged Spell Lists folder.
- * @returns {Promise<Folder|null>} Promise that resolves to the merged spell lists folder or null if creation failed
- */
-export async function getOrCreateMergedFolder() {
-  const folderName = game.i18n.localize('SPELLMANAGER.Folders.MergedSpellListsFolder');
-  return getOrCreateSpellListFolder(folderName);
-}
-
-/**
- * Get or create the Modified Spell Lists folder.
- * @returns {Promise<Folder|null>} Promise that resolves to the modified spell lists folder or null if creation failed
- */
-export async function getOrCreateModifiedFolder() {
-  const folderName = game.i18n.localize('SPELLMANAGER.Folders.ModifiedSpellListsFolder');
-  return getOrCreateSpellListFolder(folderName);
 }
 
 /**

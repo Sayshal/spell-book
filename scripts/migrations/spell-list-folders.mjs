@@ -28,9 +28,9 @@ async function migrateSpellListFolders() {
     const topLevelJournals = allJournals.filter((journal) => !journal.folder);
     results.processed = topLevelJournals.length;
     if (topLevelJournals.length === 0) return results;
-    const customFolder = await DataUtils.getOrCreateCustomFolder();
-    const mergedFolder = await DataUtils.getOrCreateMergedFolder();
-    const modifiedFolder = await DataUtils.getOrCreateModifiedFolder();
+    const customFolder = await DataUtils.getOrCreateSpellListFolder('custom');
+    const mergedFolder = await DataUtils.getOrCreateSpellListFolder('merged');
+    const modifiedFolder = await DataUtils.getOrCreateSpellListFolder('modified');
     if (customFolder) results.foldersCreated.push('custom');
     if (mergedFolder) results.foldersCreated.push('merged');
     if (modifiedFolder) results.foldersCreated.push('modified');
