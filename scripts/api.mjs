@@ -36,12 +36,16 @@ export function createAPI() {
     },
     migrations: { forceMigration: Migrations.forceMigration },
     preloadedData: null,
-    openSpellBookForActor: (actor) => {
+    openSpellBookForActor: async (actor) => {
       if (!actor) return null;
-      new SpellBook(actor).render({ force: true });
+      const spellbook = new SpellBook(actor);
+      await spellbook._preInitialize();
+      spellbook.render({ force: true });
     },
-    openSpellListManager: () => {
-      new SpellListManager().render({ force: true });
+    openSpellListManager: async () => {
+      const manager = new SpellListManager();
+      await manager._preInitialize();
+      manager.render({ force: true });
     },
     openAnalytics: (options = {}) => {
       const viewMode = options.viewMode || (game.user.isGM ? 'gm' : 'personal');

@@ -195,7 +195,6 @@ export class CustomUI {
       }
     }
     const result = metadata.join(' • ');
-    log(3, 'Built player metadata.', { spell: spell.name, metadata, result });
     return result;
   }
 
@@ -274,7 +273,6 @@ export class CustomUI {
       }
     }
     const result = metadata.join(' • ');
-    log(3, 'Built GM metadata.', { spell: spell.name, metadata, result });
     return result;
   }
 }

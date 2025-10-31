@@ -150,7 +150,21 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     /** @type {boolean} Whether checkboxes are currently being updated programmatically */
     this.isUpdatingCheckboxes = false;
 
+    /** @type {boolean} Whether pre-initialization has completed */
+    this._preInitialized = false;
+
     log(3, 'SpellListManager constructed.');
+  }
+
+  /**
+   * Pre-initialize data before first render.
+   * @returns {Promise<void>}
+   */
+  async _preInitialize() {
+    if (this._preInitialized) return;
+    await this.loadData();
+    this._preInitialized = true;
+    log(3, 'Pre-initialization complete.');
   }
 
   /** @inheritdoc */
@@ -320,7 +334,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       });
     }
     context.filteredSpells = filteredData;
-    context.filterFormElements = this._prepareFilterElements();
+    context.filterFormElements = this._prepareFilterElements(context.spellSources, context.castingTimeOptions, context.damageTypeOptions, context.conditionOptions);
     log(3, 'Prepared filter context:', { context });
   }
 
@@ -349,7 +363,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @returns {Promise<void>}
    */
   async loadData() {
-    log(3, 'Loading data)');
+    log(3, 'Loading data');
     try {
       DataUtils.getValidCustomListMappings();
       this.availableSpellLists = await DataUtils.findCompendiumSpellLists(true);
@@ -385,7 +399,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       log(1, 'Error', error);
     } finally {
       this.isLoading = false;
-      this.render(false);
     }
   }
 
@@ -397,8 +410,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   async loadSpellDetails(spellUuids) {
     log(3, 'Loading spell details:', { spellUuids });
     if (!this.selectedSpellList) return;
-    this.selectedSpellList.isLoadingSpells = true;
-    this.render(false);
     const maxSpellLevel = 9;
     const preloadedData = DataUtils.getPreloadedData();
     let spellItems = [];
@@ -418,7 +429,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     this.selectedSpellList.spells = spellItems;
     this.selectedSpellList.spellsByLevel = DataUtils.organizeSpellsByLevel(spellItems);
     this.selectedSpellList.isLoadingSpells = false;
-    this.render(false);
+    this.render(false, { parts: ['content', 'footer'] });
   }
 
   /**
@@ -444,7 +455,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       isLoadingSpells: true
     };
     this.determineSourceFilter(spellList);
-    this.render(false);
+    this.render(false, { parts: ['sidebar', 'content', 'footer'] });
     await this.loadSpellDetails(spellUuids);
   }
 
@@ -496,7 +507,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @returns {boolean} Whether the spell is in the selected list
    */
   isSpellInSelectedList(spell, selectedSpellUUIDs) {
-    log(3, 'Is spell in selected list?', { spell: spell, uuids: selectedSpellUUIDs, exists: !!selectedSpellUUIDs.has(spell.uuid) });
     if (!selectedSpellUUIDs.size) return false;
     if (selectedSpellUUIDs.has(spell.uuid)) return true;
     return false;
@@ -860,10 +870,14 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Prepare form elements for the spell filters.
+   * @param {Array} spellSources - Pre-computed spell sources
+   * @param {Array} castingTimeOptions - Pre-computed casting time options
+   * @param {Array} damageTypeOptions - Pre-computed damage type options
+   * @param {Array} conditionOptions - Pre-computed condition options
    * @returns {Object} Object containing all filter form element HTML
    * @private
    */
-  _prepareFilterElements() {
+  _prepareFilterElements(spellSources, castingTimeOptions, damageTypeOptions, conditionOptions) {
     log(3, 'Preparing filter elements.');
     const searchInput = ValidationUtils.createTextInput({
       name: 'spell-search',
@@ -896,7 +910,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       ariaLabel: game.i18n.localize('SPELLBOOK.Filters.School')
     });
     schoolSelect.id = 'spell-school';
-    const castingTimeOptions = DataUtils.prepareCastingTimeOptions(this.availableSpells, this.filterState);
     const castingTimeSelect = ValidationUtils.createSelect({
       name: 'spell-castingTime',
       options: castingTimeOptions,
@@ -904,7 +917,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       ariaLabel: game.i18n.localize('SPELLBOOK.Filters.CastingTime')
     });
     castingTimeSelect.id = 'spell-castingTime';
-    const damageTypeOptions = DataUtils.prepareDamageTypeOptions(this.filterState);
     const damageTypeSelect = ValidationUtils.createSelect({
       name: 'spell-damageType',
       options: damageTypeOptions,
@@ -912,7 +924,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       ariaLabel: game.i18n.localize('SPELLBOOK.Filters.DamageType')
     });
     damageTypeSelect.id = 'spell-damageType';
-    const conditionOptions = DataUtils.prepareConditionOptions(this.filterState);
     const conditionSelect = ValidationUtils.createSelect({
       name: 'spell-condition',
       options: conditionOptions,
@@ -979,7 +990,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RangeMaxLabel')
     });
     maxRangeInput.id = 'spell-max-range';
-    const spellSources = DataUtils.prepareSpellSources(this.availableSpells);
     const currentCompendiumSourceValue = this.filterState.source || 'all';
     const compendiumSourceOptions = spellSources.map((source) => ({
       value: source.id,
@@ -1567,7 +1577,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const isActorSpellbook = !!flags.isActorSpellbook;
     if (!isCustom && !isActorSpellbook) await this._duplicateForEditing();
     this.isEditing = true;
-    this.render(false);
+    this.render(false, { parts: ['content', 'availableSpells', 'footer'] });
     setTimeout(() => this.applyFilters(), 100);
   }
 
@@ -1589,7 +1599,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     this.selectedSpellList.spells = this.selectedSpellList.spells.filter((spell) => spell.uuid !== spellUuid && spell.compendiumUuid !== spellUuid);
     this.selectedSpellList.spellsByLevel = DataUtils.organizeSpellsByLevel(this.selectedSpellList.spells);
     this._ensureSpellIcons();
-    this.render(false);
+    this.render(false, { parts: ['content', 'availableSpells'] });
     this.applyFilters();
   }
 
@@ -1616,7 +1626,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     this.selectedSpellList.spells.push(spellCopy);
     this.selectedSpellList.spellsByLevel = DataUtils.organizeSpellsByLevel(this.selectedSpellList.spells);
     this._ensureSpellIcons();
-    this.render(false);
+    this.render(false, { parts: ['content', 'availableSpells'] });
     this.applyFilters();
   }
 
@@ -1662,7 +1672,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     await DataUtils.removeCustomSpellList(uuid);
     this.selectedSpellList = null;
     this.isEditing = false;
-    this.render(false);
+    this.render(false, { parts: ['sidebar', 'content', 'footer'] });
   }
 
   /**
@@ -1694,9 +1704,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       [`flags.${MODULE.ID}.originalVersion`]: originalList._stats?.systemVersion || game.system.version
     });
     this.selectedSpellList.spellUuids = originalSpells;
-    await this.loadSpellDetails(originalSpells);
     this.isEditing = false;
-    this.render(false);
+    await this.loadSpellDetails(originalSpells);
   }
 
   /** @inheritdoc */
@@ -1872,7 +1881,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const flags = this.selectedSpellList.document.flags?.[MODULE.ID] || {};
     const isRenameable = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList || this.selectedSpellList.isMerged;
     if (!isRenameable) return;
-    const { result, formData } = await this._showRenameDia;
+    const { result, formData } = await this._showRenameDialog(currentName);
     if (result === 'rename' && formData?.newName && formData.newName !== currentName) await this._performRename(listUuid, formData.newName);
   }
 
@@ -2010,7 +2019,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   static async #mergeLists(_event, _target) {
     log(3, 'Handling merging lists.', { _event, _target });
     if (this.availableSpellLists.length < 2) return;
-    const { result, formData } = await this._showMergeListsDia;
+    const { result, formData } = await this._showMergeListsDialog();
     if (result === 'merge' && formData) await this._mergeListsCallback(formData.spellListUuids, formData.mergedListName, formData.hideSourceLists);
   }
 
@@ -2029,7 +2038,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       this.selectedSpellsToRemove.clear();
       this.lastSelectedIndex = { add: -1, remove: -1 };
     }
-    this.render(false);
+    this.render(false, { parts: ['content', 'availableSpells', 'footer'] });
   }
 
   /**
@@ -2140,7 +2149,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     this._clearSelections();
     if (failed === 0) ui.notifications.info(game.i18n.format('SPELLMANAGER.BulkOps.Completed', { count: processed }));
     else ui.notifications.warn(game.i18n.format('SPELLMANAGER.BulkOps.PartialFailure', { success: processed, total: totalCount, failed }));
-    this.render(false);
+    this.render(false, { parts: ['content', 'footer'] });
   }
 
   /**
@@ -2152,7 +2161,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   static #cancelSelection(_event, _target) {
     log(3, 'Handling cancel selection.', { _event, _target });
     this._clearSelections();
-    this.render(false);
+    this.render(false, { parts: ['content', 'availableSpells'] });
   }
 
   /**
@@ -2178,7 +2187,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       const newHiddenLists = [...hiddenLists, uuid];
       await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, newHiddenLists);
     }
-    this.render(false);
+    this.render(false, { parts: ['sidebar', 'footer'] });
   }
 
   /**
@@ -2215,7 +2224,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const maxSpells = game.settings.get(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX);
     if (this.comparisonSpells.has(spellUuid)) this.comparisonSpells.delete(spellUuid);
     else if (this.comparisonSpells.size < maxSpells) this.comparisonSpells.add(spellUuid);
-    this.render(false);
+    this.render(false, { parts: ['content', 'availableSpells'] });
     if (this.comparisonSpells.size >= 2) {
       if (!this.comparisonDialog) {
         this.comparisonDialog = new SpellComparison(this);
@@ -2242,17 +2251,17 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     event.stopPropagation();
     if (!this.selectedSpellList) return;
     const uuid = this.selectedSpellList.uuid;
-    const checkbox = target.closest('input[type="checkbox"]');
     const newState = await DataUtils.toggleListForRegistry(uuid);
-    checkbox.checked = newState;
+    target.checked = newState;
   }
 
   /** @inheritdoc */
   async _onRender(context, options) {
     log(3, 'Rendering application!', { context, options });
     super._onRender(context, options);
-    if (this.isLoading) {
-      await this.loadData();
+    if (!this._preInitialized) {
+      await this._preInitialize();
+      this.render(false);
       return;
     }
     this.setupFilterListeners();
@@ -2318,7 +2327,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       if (!this.selectionMode) return;
       if (event.key === 'Escape') {
         this._clearSelections();
-        this.render(false);
+        this.render(false, { parts: ['content', 'availableSpells'] });
         event.preventDefault();
       } else if (event.key === 'Enter' && this.selectedSpellsToAdd.size + this.selectedSpellsToRemove.size > 0) {
         const bulkSaveBtn = this.element.querySelector('.bulk-save-btn');

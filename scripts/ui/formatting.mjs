@@ -63,7 +63,6 @@ export function processSpellItemForDisplay(spell, enabledElements = null) {
   processed.dataAttributes = `data-uuid="${spell.uuid}"`;
   processed.showCompare = enabledElements ? enabledElements.has('compare') : UIUtils.CustomUI.isGMElementEnabled('compare');
   processed.formattedDetails = UIUtils.CustomUI.buildGMMetadata(spell, enabledElements);
-  log(3, 'Spell item processed for display.', { spell: spell.name });
   return processed;
 }
 

@@ -372,9 +372,10 @@ function createJournalManagerButton() {
   const managerButton = document.createElement('button');
   managerButton.classList.add('spell-book-journal-button');
   managerButton.innerHTML = `<i class="fas fa-bars-progress"></i> ${game.i18n.localize('SPELLBOOK.UI.JournalButton')}`;
-  const manager = new SpellListManager();
-  managerButton.addEventListener('click', () => {
+  managerButton.addEventListener('click', async () => {
     log(3, 'Journal manager button clicked.');
+    const manager = new SpellListManager();
+    await manager._preInitialize();
     manager.render(true);
   });
   return managerButton;
