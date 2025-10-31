@@ -509,7 +509,7 @@ export function prepareCastingTimeOptions(availableSpells, filterState) {
  * @returns {Array<FilterOption>} Array of options for the dropdown
  */
 export function prepareDamageTypeOptions(filterState) {
-  log(3, 'Prepare casting time options.', { filterState });
+  log(3, 'Prepare damage types options.', { filterState });
   const options = [{ value: '', label: game.i18n.localize('SPELLBOOK.Filters.All'), selected: !filterState.damageType }];
   const damageTypes = { ...CONFIG.DND5E.damageTypes, healing: { label: game.i18n.localize('DND5E.Healing') } };
   Object.entries(damageTypes)
