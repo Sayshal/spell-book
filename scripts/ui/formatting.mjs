@@ -132,7 +132,7 @@ export function formatSpellLevel(spell) {
 /**
  * Format spell range for display.
  * @param {Object} spell - The spell object containing range information
- * @param actor
+ * @param actor Current actor
  * @returns {string} Formatted range string (e.g., "Touch", "30 feet", "Self")
  */
 export function formatSpellRange(spell, actor) {
