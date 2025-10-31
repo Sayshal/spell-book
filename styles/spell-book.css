@@ -1102,6 +1102,48 @@
         object-fit: cover;
         transition: var(--spell-book-transition-fast);
       }
+
+      .tag {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        width: 1rem;
+        height: 1rem;
+        border-radius: 50%;
+        margin-left: 0.1rem;
+        color: rgb(0 0 0 / 100%);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-align: center;
+
+        &.always-prepared {
+          background-color: var(--spell-book-tag-always);
+        }
+
+        &.granted {
+          background-color: var(--spell-book-tag-granted);
+        }
+
+        &.pact {
+          background-color: var(--spell-book-tag-pact);
+        }
+
+        &.innate {
+          background-color: var(--spell-book-tag-innate);
+        }
+
+        &.ritual {
+          background-color: var(--spell-book-tag-ritual);
+        }
+
+        &.atwill {
+          background-color: var(--spell-book-tag-atwill);
+        }
+
+        &.prepared {
+          background-color: var(--spell-book-tag-prepared);
+        }
+      }
     }
 
     .subtitle {
@@ -1181,48 +1223,6 @@
     color: rgb(0 0 0 / 100%);
     font-weight: 600;
     font-size: 0.75rem;
-  }
-
-  .tag {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    width: 1rem;
-    height: 1rem;
-    border-radius: 50%;
-    margin-left: 0.1rem;
-    color: rgb(0 0 0 / 100%);
-    font-weight: 600;
-    font-size: 0.75rem;
-    text-align: center;
-
-    &.always-prepared {
-      background-color: var(--spell-book-tag-always);
-    }
-
-    &.granted {
-      background-color: var(--spell-book-tag-granted);
-    }
-
-    &.pact {
-      background-color: var(--spell-book-tag-pact);
-    }
-
-    &.innate {
-      background-color: var(--spell-book-tag-innate);
-    }
-
-    &.ritual {
-      background-color: var(--spell-book-tag-ritual);
-    }
-
-    &.atwill {
-      background-color: var(--spell-book-tag-atwill);
-    }
-
-    &.prepared {
-      background-color: var(--spell-book-tag-prepared);
-    }
   }
 
   .spell-details {
