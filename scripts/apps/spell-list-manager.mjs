@@ -1578,7 +1578,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
   static #removeSpell(_event, target) {
-    log(3, 'Handling remove spell list.', { _event, target });
+    log(3, 'Handling remove spell.', { _event, target });
     const element = target.closest('[data-uuid]');
     if (!element) return;
     const spellUuid = element.dataset.uuid;
@@ -1633,6 +1633,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const originalSpells = Array.from(document.system.spells || []);
     const currentSpells = new Set(originalSpells);
     for (const spellUuid of this.pendingChanges.added) currentSpells.add(spellUuid);
+    for (const spellUuid of this.pendingChanges.removed) currentSpells.delete(spellUuid);
     await document.update({ 'system.spells': Array.from(currentSpells) });
     this.pendingChanges = { added: new Set(), removed: new Set() };
     this.isEditing = false;
