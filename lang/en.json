@@ -259,6 +259,7 @@
   "SPELLBOOK.Party.Spells": "spells",
   "SPELLBOOK.Party.SynergyAnalysis": "Synergy Analysis",
   "SPELLBOOK.Party.SynergyAnalysisTitle": "Party Spell Synergy Analysis",
+  "SPELLBOOK.Preload.GMPartyReady": "Spell Book ready for party! ({actors} actors, {spells} spells loaded)",
   "SPELLBOOK.Preload.GMSetupReady": "Spell Book ready for GM setup! ({lists} lists, {spells} spells)",
   "SPELLBOOK.Preload.PlayerReady": "Your Spell Book is ready! ({spells} spells loaded)",
   "SPELLBOOK.Preparation.Always": "A",

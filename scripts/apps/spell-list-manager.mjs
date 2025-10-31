@@ -380,8 +380,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       }
       this.availableSpellLists.sort((a, b) => a.name.localeCompare(b.name));
       const preloadedData = DataUtils.getPreloadedData();
-      if (preloadedData && preloadedData.enrichedSpells.length > 0) {
-        this.availableSpells = [...preloadedData.enrichedSpells];
+      if (preloadedData && preloadedData.enrichedSpells.size > 0) {
+        this.availableSpells = Array.from(preloadedData.enrichedSpells.values());
         const allSpells = await DataUtils.fetchAllCompendiumSpells();
         const preloadedUuids = new Set(this.availableSpells.map((s) => s.uuid));
         const missingSpells = allSpells.filter((spell) => !preloadedUuids.has(spell.uuid));
@@ -389,7 +389,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
           for (let spell of missingSpells) spell.enrichedIcon = UIUtils.createSpellIconLink(spell);
           this.availableSpells.push(...missingSpells);
         }
-        log(3, `GM Manager loaded: ${this.availableSpells.length} total spells (${preloadedData.enrichedSpells.length} preloaded + ${missingSpells.length} additional)`);
+        log(3, `GM Manager loaded: ${this.availableSpells.length} total spells (${preloadedData.enrichedSpells.size} preloaded + ${missingSpells.length} additional)`);
       } else {
         this.availableSpells = await DataUtils.fetchAllCompendiumSpells();
         if (!this.availableSpells.length) return;
@@ -413,7 +413,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const maxSpellLevel = 9;
     const preloadedData = DataUtils.getPreloadedData();
     let spellItems = [];
-    if (preloadedData && preloadedData.enrichedSpells.length > 0) {
+    if (preloadedData && preloadedData.enrichedSpells.size > 0) {
       const spellUuidsSet = new Set(spellUuids);
       const preloadedSpells = preloadedData.enrichedSpells.filter((spell) => spellUuidsSet.has(spell.uuid));
       const missingSpells = spellUuids.filter((uuid) => !preloadedSpells.some((spell) => spell.uuid === uuid));

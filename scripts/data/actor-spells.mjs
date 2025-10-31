@@ -22,7 +22,7 @@ import * as DataUtils from './_module.mjs';
 export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
   log(3, 'Fetching spell documents!', { spellUuids, maxSpellLevel });
   const preloadedData = DataUtils.getPreloadedData();
-  if (preloadedData && preloadedData.enrichedSpells.length > 0) {
+  if (preloadedData && preloadedData.enrichedSpells.size > 0) {
     const matchingSpells = preloadedData.enrichedSpells.filter((spell) => spellUuids.has(spell.uuid) && spell.system?.level <= maxSpellLevel);
     if (matchingSpells.length === spellUuids.size) return matchingSpells;
   }

@@ -359,7 +359,7 @@ export class WizardBook {
     const spellsPerLevel = classRules?.spellsPerLevel ?? MODULE.WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
     const maxSpells = startingSpells + Math.max(0, wizardLevel - 1) * spellsPerLevel;
     this._maxSpellsCache = maxSpells;
-    log(3, `Maximum ${this.classIdentifier} wizard spells: ${maxSpells} (level ${wizardLevel})`);
+    log(3, `Maximum wizard spells: ${maxSpells} (level ${wizardLevel})`);
     return maxSpells;
   }
 

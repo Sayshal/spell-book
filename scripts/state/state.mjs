@@ -487,10 +487,10 @@ export class State {
     if (hideCantrips && maxSpellLevel > 0) maxSpellLevel = Math.max(1, maxSpellLevel);
     const preloadedData = DataUtils.getPreloadedData();
     let spellItems = [];
-    if (preloadedData && preloadedData.enrichedSpells.length > 0) {
+    if (preloadedData && preloadedData.enrichedSpells.size > 0) {
       log(3, `Using preloaded spell data for ${identifier} class`);
       const preloadedUuidsMap = new Map();
-      for (const spell of preloadedData.enrichedSpells) if (spell.system.level <= maxSpellLevel) preloadedUuidsMap.set(spell.uuid, spell);
+      for (const spell of preloadedData.enrichedSpells.values()) if (spell.system.level <= maxSpellLevel) preloadedUuidsMap.set(spell.uuid, spell);
       const preloadedSpells = [];
       const actuallyMissingSpells = [];
       for (const uuid of spellList) {
@@ -530,7 +530,7 @@ export class State {
     if (SPELLBOOK?.preloadedData?.enrichedSpells) {
       parsedSpellData = {};
       // eslint-disable-next-line no-unused-vars
-      for (const [key, enrichedSpell] of Object.entries(SPELLBOOK.preloadedData.enrichedSpells)) {
+      for (const [key, enrichedSpell] of SPELLBOOK.preloadedData.enrichedSpells.entries()) {
         const uuid = enrichedSpell.uuid;
         if (!uuid) continue;
         parsedSpellData[uuid] = {
@@ -900,11 +900,11 @@ export class State {
     const effectiveMaxLevel = Math.max(1, maxSpellLevel);
     const preloadedData = DataUtils.getPreloadedData();
     let spellItems = [];
-    if (preloadedData && preloadedData.enrichedSpells.length > 0) {
+    if (preloadedData && preloadedData.enrichedSpells.size > 0) {
       log(3, `Using preloaded spell data for ${classIdentifier} wizard spells`);
       // Build a map of preloaded spells that are within the level cap
       const preloadedUuidsMap = new Map();
-      for (const spell of preloadedData.enrichedSpells) {
+      for (const spell of preloadedData.enrichedSpells.values()) {
         if (spell.system.level <= effectiveMaxLevel) {
           preloadedUuidsMap.set(spell.uuid, spell);
         }
