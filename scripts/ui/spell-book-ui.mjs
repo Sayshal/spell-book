@@ -11,7 +11,6 @@
  */
 
 import { FLAGS, MODULE } from '../constants/_module.mjs';
-import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 import { RuleSet } from '../managers/_module.mjs';
 import * as UIUtils from './_module.mjs';
