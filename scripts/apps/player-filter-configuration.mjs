@@ -265,7 +265,9 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       if (sourceIndex < newIndex) newIndex--;
       const [movedItem] = this.config.splice(sourceIndex, 1);
       this.config.splice(newIndex, 0, movedItem);
-      this.updateFilterOrder();
+      this.config.forEach((filter, idx) => {
+        filter.order = (idx + 1) * 10;
+      });
       if (this._formState) for (const filter of this.config) if (filter.id in this._formState) filter.enabled = this._formState[filter.id];
       this.render(false);
       log(3, 'Dropped!');
@@ -277,18 +279,6 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
       this.cleanupDragElements();
       delete this._formState;
     }
-  }
-
-  /**
-   * Update filter order values after reordering.
-   * @todo: Two methods same name?
-   * @returns {void}
-   */
-  updateFilterOrder() {
-    this.config.forEach((filter, idx) => {
-      filter.order = (idx + 1) * 10;
-    });
-    log(3, 'Updating filter order!');
   }
 
   /**
