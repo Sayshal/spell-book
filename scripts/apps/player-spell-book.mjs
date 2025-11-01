@@ -68,6 +68,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   };
 
   /** @inheritdoc */
+  static TABS = {
+    'spellbook-tabs': {
+      tabs: [],
+      initial: null
+    }
+  };
+
+  /** @inheritdoc */
   get title() {
     return game.i18n.format('SPELLBOOK.Application.ActorTitle', { name: this.actor.name });
   }
@@ -226,13 +234,45 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /** @inheritdoc */
+  _getTabsConfig(group) {
+    if (group !== 'spellbook-tabs') return super._getTabsConfig(group);
+    const tabs = [];
+    let initial = null;
+    if (this._state.spellcastingClasses) {
+      const sortedClassIdentifiers = Object.keys(this._state.spellcastingClasses).sort();
+      for (const identifier of sortedClassIdentifiers) {
+        const classData = this._state.spellcastingClasses[identifier];
+        const classTabId = `${identifier}Tab`;
+        const iconPath = classData?.img || ASSETS.MODULE_ICON;
+        tabs.push({ id: classTabId, label: game.i18n.format('SPELLBOOK.Tabs.ClassSpells', { class: classData.name }), classImg: iconPath, classIdentifier: identifier, className: classData.name });
+        const wizardManager = this.wizardManagers.get(identifier);
+        if (wizardManager && wizardManager.isWizard) {
+          const wizardTabId = `wizardbook-${identifier}`;
+          const className = classData.name;
+          tabs.push({
+            id: wizardTabId,
+            label: game.i18n.format('SPELLBOOK.Tabs.WizardSpells', { class: className }),
+            icon: 'fa-solid fa-book-spells',
+            classImg: ASSETS.MODULE_ICON,
+            classIdentifier: identifier,
+            className: className,
+            isWizardTab: true
+          });
+        }
+      }
+    }
+    initial = tabs.length > 0 ? tabs[0].id : null;
+    return { tabs, initial };
+  }
+
+  /** @inheritdoc */
   async _prepareContext(options) {
     if (!this._preInitialized) await this._preInitialize();
     const context = await this._createBaseContext(options);
     context.spellcastingClasses = this._state.spellcastingClasses;
     context.activeClass = this._state.activeClass;
     context.activeTab = this.tabGroups['spellbook-tabs'];
-    context.tabs = this._getTabs();
+    context.tabs = this._prepareTabs('spellbook-tabs');
     context.globalPrepared = this._state.spellPreparation;
     context.classPreparationData = this._prepareClassPreparationData();
     context.isWizard = !this.wizardManager?.isWizard;
@@ -1085,115 +1125,16 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     document.addEventListener('change', this._preparationListener);
   }
 
-  /**
-   * Get tabs for the application including multiple wizard tabs.
-   * @returns {Object<string, SpellBookTab>} The tab configuration
-   * @todo Convert to V13 TABS object.
-   * @private
-   */
-  _getTabs() {
-    log(3, 'Getting tabs');
-    const tabGroup = 'spellbook-tabs';
-    const tabs = {};
-    if (!this.tabGroups[tabGroup] && this._state.activeClass) this.tabGroups[tabGroup] = `${this._state.activeClass}Tab`;
-    else if (!this.tabGroups[tabGroup] && this.wizardManagers.size > 0) {
-      const firstWizardClass = Array.from(this.wizardManagers.keys())[0];
-      this.tabGroups[tabGroup] = `wizardbook-${firstWizardClass}`;
-    } else if (!this.tabGroups[tabGroup] && Object.keys(this._state.spellcastingClasses || {}).length > 0) {
-      this.tabGroups[tabGroup] = `${Object.keys(this._state.spellcastingClasses)[0]}Tab`;
-    }
-    if (this._state.spellcastingClasses) {
-      const sortedClassIdentifiers = Object.keys(this._state.spellcastingClasses).sort();
-      for (const identifier of sortedClassIdentifiers) {
-        const classData = this._state.spellcastingClasses[identifier];
-        const classTabId = `${identifier}Tab`;
-        const iconPath = classData?.img || ASSETS.MODULE_ICON;
-        tabs[classTabId] = {
-          id: classTabId,
-          label: game.i18n.format('SPELLBOOK.Tabs.ClassSpells', { class: classData.name }),
-          group: tabGroup,
-          cssClass: this.tabGroups[tabGroup] === classTabId ? 'active' : '',
-          icon: 'spell-book-module-icon',
-          data: {
-            classImg: iconPath,
-            classIdentifier: identifier,
-            className: classData.name
-          }
-        };
-        const wizardManager = this.wizardManagers.get(identifier);
-        if (wizardManager && wizardManager.isWizard) {
-          const wizardTabId = `wizardbook-${identifier}`;
-          const className = classData.name;
-          tabs[wizardTabId] = {
-            id: wizardTabId,
-            label: game.i18n.format('SPELLBOOK.Tabs.WizardSpells', { class: className }),
-            group: tabGroup,
-            cssClass: this.tabGroups[tabGroup] === wizardTabId ? 'active' : '',
-            icon: 'fa-solid fa-book-spells',
-            data: {
-              classImg: ASSETS.MODULE_ICON,
-              classIdentifier: identifier,
-              className: className,
-              isWizardTab: true
-            }
-          };
-        }
-      }
-    }
-    return tabs;
-  }
-
   /** @inheritdoc */
   async changeTab(tabName, groupName, options = {}) {
     log(3, 'Changing tab...', { tabName, groupName, options });
-    const previousTab = this.tabGroups[groupName];
-    const isFromWizardTab = previousTab && (previousTab === 'wizardbook' || previousTab.startsWith('wizardbook-'));
-    const isToPreparationTab = tabName.endsWith('Tab') && !tabName.startsWith('wizardbook');
     super.changeTab(tabName, groupName, options);
     const classMatch = tabName.match(/^([^T]+)Tab$/);
     const classIdentifier = classMatch ? classMatch[1] : null;
     if (classIdentifier && this._state.classSpellData[classIdentifier]) this._state.setActiveClass(classIdentifier);
-    this._state.updateGlobalPreparationCount();
-    this._switchTabVisibility(tabName);
-    if (isFromWizardTab && isToPreparationTab) this.render(false, { parts: [tabName, 'footer'] });
-    else this.render(false, { parts: ['footer'] });
     this.ui.updateSpellCounts();
     this.ui.updateSpellPreparationTracking();
-    this.ui.setupCantripUI();
-    const favoritesEnabled = game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES);
-    if (favoritesEnabled) {
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      const activeTabElement = this.element.querySelector(`.tab[data-tab="${tabName}"]`);
-      if (activeTabElement) {
-        const favoriteButtons = activeTabElement.querySelectorAll('.spell-favorite-toggle[data-uuid]:not([data-favorites-applied])');
-        if (favoriteButtons.length > 0) {
-          await this._applyFavoriteStatesToButtons(favoriteButtons);
-          favoriteButtons.forEach((button) => button.setAttribute('data-favorites-applied', 'true'));
-        }
-      }
-    }
-  }
-
-  /**
-   * Switch tab visibility without re-rendering.
-   * @param {string} activeTabName - The tab to make active
-   * @todo Remove this method after converting to V13 TABS static property - tab switching should be handled automatically
-   * @private
-   */
-  _switchTabVisibility(activeTabName) {
-    log(3, 'Switching tab:', activeTabName);
-    this.element.querySelectorAll('.tab').forEach((tab) => {
-      tab.classList.remove('active');
-      tab.style.display = 'none';
-    });
-    const activeTab = this.element.querySelector(`.tab[data-tab="${activeTabName}"]`);
-    if (activeTab) {
-      activeTab.classList.add('active');
-      activeTab.style.display = 'block';
-    }
-    this.element.querySelectorAll('.tabs .item').forEach((item) => {
-      item.classList.toggle('active', item.dataset.tab === activeTabName);
-    });
+    this.render(false, { parts: ['footer'] });
   }
 
   /** @inheritdoc */

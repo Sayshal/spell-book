@@ -117,7 +117,7 @@ export function findActorSpellByUuid(spellUuid, actor) {
     return false;
   });
   if (spell) log(3, 'Found actor spell by UUID match.', { spell: spell.name, actor: actor.name });
-  else log(1, 'Actor spell not found.', { spellUuid, actor: actor.name });
+  else log(3, 'Actor spell not found.', { spellUuid, actor: actor.name });
   return spell || null;
 }
 

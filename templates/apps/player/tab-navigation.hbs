@@ -5,9 +5,9 @@
       <a class="item {{tab.cssClass}}" data-action="tab" data-tab="{{tab.id}}" data-group="{{tab.group}}"
         data-tooltip="{{tab.label}}">
 
-        {{#if tab.data.classImg}}
+        {{#if tab.classImg}}
           <!-- Class-Specific Image Icon - For visual class representation -->
-          <img src="{{tab.data.classImg}}" alt="{{tab.label}}" class="tab-icon">
+          <img src="{{tab.classImg}}" alt="{{tab.label}}" class="tab-icon">
         {{else if tab.icon}}
           <!-- CSS Icon - Standard icon fonts for generic tabs -->
           <i class="{{tab.icon}}"></i>
