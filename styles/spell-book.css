@@ -13,7 +13,7 @@
   --spell-book-bg-disabled: rgb(0 0 0 / 3.1%);
   --spell-book-bg-item-active: rgb(0 0 0 / 15.3%);
   --spell-book-bg-item-hover: rgb(0 0 0 / 10.2%);
-  --spell-book-bg-item: rgb(0 0 0 / 5.1%);
+  --spell-book-bg-item: rgb(0 0 0 / 2%);
   --spell-book-bg-option-active: rgb(255 255 255 / 15.3%);
   --spell-book-bg-option-hover: rgb(255 255 255 / 10.2%);
   --spell-book-bg-option: rgb(255 255 255 / 5.1%);
@@ -184,7 +184,7 @@
   --spell-book-bg-disabled: rgb(0 0 0 / 2%);
   --spell-book-bg-item-active: rgb(0 0 0 / 8.2%);
   --spell-book-bg-item-hover: rgb(0 0 0 / 5.1%);
-  --spell-book-bg-item: rgb(0 0 0 / 3.1%);
+  --spell-book-bg-item: rgb(0 0 0 / 2%);
   --spell-book-bg-option-active: rgb(0 0 0 / 8.2%);
   --spell-book-bg-option-hover: rgb(0 0 0 / 5.1%);
   --spell-book-bg-option: rgb(0 0 0 / 3.1%);
@@ -978,10 +978,6 @@
     border-radius: var(--spell-book-radius-md);
     overflow: hidden;
     background: var(--spell-book-bg-item);
-
-    &.owned-spell {
-      background-color: rgb(0 0 0 / 2%);
-    }
 
     &.prepared-spell {
       background-color: var(--spell-book-bg-prepared);

@@ -40,7 +40,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     actions: {
       compareSpell: this.#compareSpell,
       editNote: this.#editNote,
-      filterSpells: this.handleSpellFiltering,
       learnSpell: this.#learnSpell,
       learnSpellFromScroll: this.#learnSpellFromScroll,
       openAnalytics: this.#openAnalytics,
@@ -52,7 +51,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       reset: this.#reset,
       save: this.#save,
       toggleFavorite: this.#toggleFavorite,
-      togglePartyMode: this.#togglePartyMode,
       toggleSidebar: this.#toggleSidebar,
       toggleSpellHeader: this.#toggleSpellHeader
     },
@@ -76,13 +74,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Get the primary wizard manager for backward compatibility.
-   * @todo do we need both for loops here? They are extremely identical.
    * @returns {WizardBook|null} The primary wizard manager instance or null if none found
    */
   get wizardManager() {
     log(3, 'Retrieving wizardmanger.', { managers: this.wizardManagers });
-    for (const [identifier, manager] of this.wizardManagers) if (manager.isWizard) if (identifier === 'wizard') return manager;
-    for (const [manager] of this.wizardManagers) if (manager.isWizard) return manager;
+    const wizardEntry = this.wizardManagers.get('wizard');
+    if (wizardEntry?.isWizard) return wizardEntry;
+    for (const manager of this.wizardManagers.values()) if (manager.isWizard) return manager;
     return null;
   }
 
@@ -379,8 +377,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   async _createBaseContext(options) {
     const context = await super._prepareContext(options);
-
-    /** @type {Array<SpellBookButton>} */
     const buttons = [
       {
         type: 'button',
@@ -434,19 +430,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
     log(3, 'Base context created:', { options, context, buttons });
-    /** @todo Is all this context required? spellSchools isnt used within the templates, for example. */
-    return {
-      ...context,
-      actor: this.actor,
-      spellLevels: this.spellLevels || [],
-      className: this.className || '',
-      filters: this.filterHelper.getFilterState(),
-      spellSchools: CONFIG.DND5E.spellSchools,
-      buttons: buttons,
-      actorId: this.actor.id,
-      spellPreparation: this.spellPreparation || { current: 0, maximum: 0 },
-      isGM: game.user.isGM
-    };
+    return { ...context, spellLevels: this.spellLevels, className: this.className, filters: this.filterHelper.getFilterState(), buttons: buttons, isGM: game.user.isGM };
   }
 
   /**
@@ -497,7 +481,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   _processSpellForDisplay(spell) {
     const processedSpell = foundry.utils.deepClone(spell);
     if (!spell.compendiumUuid) spell.compendiumUuid = spell.uuid;
-    processedSpell.cssClasses = this._getSpellCssClasses(spell);
+    const classes = ['spell-item'];
+    if (spell.preparation?.prepared) classes.push('prepared-spell');
+    if (this._state.wizardbookCache && spell.sourceClass) {
+      const classSpellbook = this._state.wizardbookCache.get(spell.sourceClass);
+      if (classSpellbook?.includes(spell.compendiumUuid)) classes.push('in-wizard-spellbook');
+    }
+    processedSpell.cssClasses = classes.join(' ');
     processedSpell.dataAttributes = this._getSpellDataAttributes(spell);
     if (!spell.tags) spell.tags = this._getSpellPreparationTag(spell);
     processedSpell.tags = spell.tags;
@@ -546,8 +536,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       processedSpell.showCompareLink = true;
       processedSpell.isInComparison = this.comparisonSpells.has(spell.compendiumUuid);
     }
-    /** @todo:  Is this overkill? Does this data need to be on the spell or should be derived and put onto the checkbox element directly in the DOM?*/
-    log(3, 'Processed Spell:', { spell: processedSpell.name, original: spell });
     return processedSpell;
   }
 
@@ -566,48 +554,39 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Attempt to automatically fix a missing source class.
-   * @param {Object} spell - The spell to fix
-   * @returns {string|null} The determined source class, or null if couldn't be fixed
+   * DETECTION: Attempt to automatically determine the correct source class for a prepared spell.
+   * @param {Object} spell - The spell to analyze
+   * @returns {string|null} The determined source class identifier, or null if couldn't be determined
    * @private
    */
   _attemptToFixSourceClass(spell) {
-    log(3, `Fixing source class for ${spell.name}.`, { spell });
+    log(3, `Detecting source class for ${spell.name}.`, { spell });
     const spellcastingClasses = this.actor.spellcastingClasses || {};
     const classIdentifiers = Object.keys(spellcastingClasses);
     if (classIdentifiers.length === 0) return null;
     if (classIdentifiers.length === 1) return classIdentifiers[0];
     if (this._state?.classSpellData) {
+      const spellUuid = spell.compendiumUuid || spell.uuid;
       for (const classIdentifier of classIdentifiers) {
         const classData = this._state.classSpellData[classIdentifier];
-        if (classData?.spells) {
-          const spellUuid = spell.compendiumUuid || spell.uuid;
-          const isInClassList = classData.spells.some((s) => s.compendiumUuid === spellUuid || s.uuid === spellUuid);
-          if (isInClassList) return classIdentifier;
-        }
+        if (classData?.spells?.some((s) => s.compendiumUuid === spellUuid || s.uuid === spellUuid)) return classIdentifier;
       }
     }
     return null;
   }
 
   /**
-   * Apply queued source class fixes to spell items.
+   * APPLICATION: Apply all queued source class fixes to the actor in a single batch update.
    * @returns {Promise<void>}
-   * @todo Is this needed? We have _attemptToFixSourceClass already? Or at least the logic seems to be way too complicated.
    * @private
    */
   async _applySourceClassFixes() {
-    log(3, `Fixing source class in queue.`, { fixes: this._sourceClassFixQueue });
-    if (!this._sourceClassFixQueue || this._sourceClassFixQueue.length === 0) return;
-    const fixes = this._sourceClassFixQueue;
+    if (!this._sourceClassFixQueue?.length) return;
+    log(3, `Applying ${this._sourceClassFixQueue.length} source class fix${this._sourceClassFixQueue.length !== 1 ? 'es' : ''}.`);
+    const updates = this._sourceClassFixQueue.map((fix) => ({ _id: fix.spellId, 'system.sourceClass': fix.sourceClass }));
     this._sourceClassFixQueue = [];
-    const updates = fixes.map((fix) => ({ _id: fix.spellId, 'system.sourceClass': fix.sourceClass }));
     await this.actor.updateEmbeddedDocuments('Item', updates);
-    log(
-      2,
-      `Successfully fixed source class for ${fixes.length} spells:`,
-      fixes.map((f) => `${f.spellName} → ${f.sourceClass}`)
-    );
+    log(3, `Successfully fixed source class for ${updates.length} spell${updates.length !== 1 ? 's' : ''}.`);
   }
 
   /**
@@ -635,25 +614,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     ];
     if (spell.sourceClass) attributes.push(`data-source-class="${spell.sourceClass}"`);
     return attributes.join(' ');
-  }
-
-  /**
-   * Get CSS classes for a spell item.
-   * @param {Object} spell - The spell object
-   * @todo Does this method name make sense? Can this logic be done in a better way without a seperate method?
-   * @todo does this work with the new spell.tags system?
-   * @returns {string} Space-separated CSS classes
-   * @private
-   */
-  _getSpellCssClasses(spell) {
-    const classes = ['spell-item'];
-    if (spell._id) classes.push('owned-spell');
-    if (spell.preparation?.prepared) classes.push('prepared-spell');
-    if (this._state.wizardbookCache && spell.sourceClass) {
-      const classSpellbook = this._state.wizardbookCache.get(spell.sourceClass);
-      if (classSpellbook && classSpellbook.includes(spell.compendiumUuid)) classes.push('in-wizard-spellbook');
-    }
-    return classes.join(' ');
   }
 
   /**
@@ -1099,7 +1059,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     if (this._isLongRest) this.actor.unsetFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);
     if (this._flagChangeHook) Hooks.off('updateActor', this._flagChangeHook);
-    document.removeEventListener('click', this._hideLoadoutContextMenu.bind(this));
+    if (this._loadoutClickHandler) document.removeEventListener('click', this._loadoutClickHandler);
+    if (this._partyClickHandler) document.removeEventListener('click', this._partyClickHandler);
     const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
     if (isPartyMode) await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, false);
     if (this.ui?.search) this.ui.search.cleanup();
@@ -1108,7 +1069,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Set up event listeners for spell preparation checkboxes and filter checkboxes.
-   * @todo Is this required anymore? Since we have submitOnChange true? Meaning our formHandler executes on every change to our form.
    * @private
    */
   setupPreparationListeners() {
@@ -1117,7 +1077,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this._preparationListener = async (event) => {
       const target = event.target;
       if (target.matches('dnd5e-checkbox[data-uuid]')) await this._handlePreparationChange(event);
-      else if (target.matches('dnd5e-checkbox[name^="filter-"]')) SpellBook.handleSpellFiltering.call(this);
+      else if (target.matches('dnd5e-checkbox[name^="filter-"]')) {
+        this.filterHelper.invalidateFilterCache();
+        this.filterHelper.applyFilters();
+      }
     };
     document.addEventListener('change', this._preparationListener);
   }
@@ -1214,13 +1177,12 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Switch tab visibility without re-rendering.
    * @param {string} activeTabName - The tab to make active
-   * @todo This shouldn't be necessary since switching tabs shouldn't cause a re-render of anything except footer (on purpose)
+   * @todo Remove this method after converting to V13 TABS static property - tab switching should be handled automatically
    * @private
    */
   _switchTabVisibility(activeTabName) {
     log(3, 'Switching tab:', activeTabName);
-    const allTabs = this.element.querySelectorAll('.tab');
-    allTabs.forEach((tab) => {
+    this.element.querySelectorAll('.tab').forEach((tab) => {
       tab.classList.remove('active');
       tab.style.display = 'none';
     });
@@ -1229,10 +1191,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       activeTab.classList.add('active');
       activeTab.style.display = 'block';
     }
-    const navItems = this.element.querySelectorAll('.tabs .item');
-    navItems.forEach((item) => {
-      item.classList.remove('active');
-      if (item.dataset.tab === activeTabName) item.classList.add('active');
+    this.element.querySelectorAll('.tabs .item').forEach((item) => {
+      item.classList.toggle('active', item.dataset.tab === activeTabName);
     });
   }
 
@@ -1443,8 +1403,12 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       event.preventDefault();
       await this._showLoadoutContextMenu(event);
     });
-    /** @todo This is way overkill. */
-    document.addEventListener('click', this._hideLoadoutContextMenu.bind(this));
+    this._loadoutClickHandler = (event) => {
+      if (!event.target.closest('#spell-loadout-context-menu')) {
+        this._hideLoadoutContextMenu();
+        document.removeEventListener('click', this._loadoutClickHandler);
+      }
+    };
   }
 
   /**
@@ -1459,8 +1423,12 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       event.preventDefault();
       await this._showPartyContextMenu(event);
     });
-    /** @todo This is way overkill. */
-    document.addEventListener('click', this._hidePartyContextMenu.bind(this));
+    this._partyClickHandler = (event) => {
+      if (!event.target.closest('#party-context-menu')) {
+        this._hidePartyContextMenu();
+        document.removeEventListener('click', this._partyClickHandler);
+      }
+    };
   }
 
   /**
@@ -1495,6 +1463,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     contextMenu.innerHTML = menuItems;
     document.body.appendChild(contextMenu);
     this._positionLoadoutContextMenu(event, contextMenu);
+    setTimeout(() => document.addEventListener('click', this._loadoutClickHandler), 0);
     contextMenu.addEventListener('click', async (clickEvent) => {
       const item = clickEvent.target.closest('.context-menu-item');
       if (!item || item.classList.contains('separator')) return;
@@ -1529,6 +1498,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     `;
     document.body.appendChild(contextMenu);
     this._positionPartyContextMenu(event, contextMenu);
+    setTimeout(() => document.addEventListener('click', this._partyClickHandler), 0);
     contextMenu.addEventListener('click', async (clickEvent) => {
       const item = clickEvent.target.closest('.context-menu-item');
       if (!item) return;
@@ -1536,7 +1506,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       switch (action) {
         case 'enable-party-mode':
         case 'disable-party-mode':
-          await this.#togglePartyMode.call(this, clickEvent, item);
+          await this._togglePartyMode();
           break;
       }
       this._hidePartyContextMenu();
@@ -1652,7 +1622,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {string} sourceClass - The source class identifier
    * @param {boolean} wasPrepared - Whether the spell was previously prepared
    * @param {boolean} isChecked - Whether the spell is being checked
-   * @todo Why do we have _handlePreparationChange and _handleSpellPreparationChange?
    * @returns {Promise<void>}
    * @private
    */
@@ -1725,7 +1694,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Update wizard tab data after learning a spell.
    * @param {boolean} isFree - Whether the spell was learned for free
    * @param {string} [classIdentifier] - The class identifier for the wizard tab
-   * @todo Do we need this to update the footer if submitOnChange = true?
    * @private
    */
   _updatewizardbookDataAfterSpellLearning(isFree, classIdentifier) {
@@ -1746,39 +1714,29 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Migrate filter configuration from old version to new version.
    * @param {Array} oldConfig - The old filter configuration
    * @returns {Array} The migrated configuration
-   * @todo This logic should be moved to the filter config file and
-   * honestly we can probably remove this logic/special handling in
-   * favor of just checking setting vs DEFAULT_FILTER_CONFIG and if
-   * its changed, update it.
    * @private
    */
   _migrateFilterConfiguration(oldConfig) {
     log(3, 'Migrating filter config.');
-    const existingFilters = new Map(oldConfig.map((f) => [f.id, f]));
-    const migratedConfig = MODULE.DEFAULT_FILTER_CONFIG.map((defaultFilter) => {
-      const existingFilter = existingFilters.get(defaultFilter.id);
-      if (existingFilter) return { ...defaultFilter, enabled: existingFilter.enabled, order: existingFilter.order !== undefined ? existingFilter.order : defaultFilter.order };
-      else return foundry.utils.deepClone(defaultFilter);
+    const userPreferences = new Map(oldConfig.map((f) => [f.id, { enabled: f.enabled, order: f.order }]));
+    return MODULE.DEFAULT_FILTER_CONFIG.map((defaultFilter) => {
+      const userPref = userPreferences.get(defaultFilter.id);
+      return userPref ? { ...defaultFilter, enabled: userPref.enabled, order: userPref.order ?? defaultFilter.order } : foundry.utils.deepClone(defaultFilter);
     });
-    return migratedConfig;
   }
 
   /**
-   * Ensure filter configuration integrity by adding missing filters and removing obsolete ones.
+   * Ensure filter configuration integrity using foundry.utils.mergeObject.
    * @param {Array} filterConfig - Current filter configuration
    * @returns {Array} Updated filter configuration
-   * @todo This seems overly complex and unecessary. If saved
-   * filters doesn't include all the keys in DEFAULT, reset saved
-   * filters to DEFAULT (or attempt a merge.)
    * @private
    */
   _ensureFilterIntegrity(filterConfig) {
     log(3, 'Ensuring filter config integrity.');
-    const existingFilters = new Map(filterConfig.map((f) => [f.id, f]));
-    const defaultFilterIds = new Set(MODULE.DEFAULT_FILTER_CONFIG.map((f) => f.id));
-    for (const defaultFilter of MODULE.DEFAULT_FILTER_CONFIG) if (!existingFilters.has(defaultFilter.id)) filterConfig.push(foundry.utils.deepClone(defaultFilter));
-    filterConfig = filterConfig.filter((filter) => defaultFilterIds.has(filter.id));
-    return filterConfig;
+    const userFilters = new Map(filterConfig.map((f) => [f.id, f]));
+    const validDefaultIds = new Set(MODULE.DEFAULT_FILTER_CONFIG.map((f) => f.id));
+    const result = MODULE.DEFAULT_FILTER_CONFIG.map((defaultFilter) => userFilters.get(defaultFilter.id) ?? foundry.utils.deepClone(defaultFilter));
+    return result.concat(filterConfig.filter((f) => !validDefaultIds.has(f.id) && userFilters.has(f.id)));
   }
 
   /**
@@ -1822,19 +1780,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (caretIcon) caretIcon.className = isCollapsing ? 'fas fa-caret-right collapse-indicator' : 'fas fa-caret-left collapse-indicator';
     this.ui.positionFooter();
     game.user.setFlag(MODULE.ID, FLAGS.SIDEBAR_COLLAPSED, isCollapsing);
-  }
-
-  /**
-   * Handle opening spellbook filter configuration.
-   * @this SpellBook
-   * @param {PointerEvent} _event - The originating click event.
-   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
-   * @todo This action handler isn't used in a template so shouldn't be an action.
-   */
-  static handleSpellFiltering(_event, _target) {
-    log(3, 'Handling spell filtering.', { _event, _target });
-    this.filterHelper.invalidateFilterCache();
-    this.filterHelper.applyFilters();
   }
 
   /**
@@ -2156,14 +2101,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @this SpellBook
    * @param {PointerEvent} event - The originating click event.
    * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
-   * @todo Should be able to get spellName from a .closest() on target?
    */
   static async #editNote(event, target) {
     log(3, 'Handling note editing.', { event, target });
     event.preventDefault();
     const spellUuid = target.dataset.uuid;
     if (!spellUuid) return;
-    const spellName = fromUuidSync(spellUuid).name;
+    const spellName = target.closest('.name-stacked')?.querySelector('.title')?.textContent?.trim();
+    if (!spellName) return;
     new SpellNotes({ spellUuid, spellName, actor: this.actor }).render({ force: true });
   }
 
@@ -2229,14 +2174,12 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle toggling party mode.
-   * @this SpellBook
-   * @param {PointerEvent} _event - The originating click event.
-   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
-   * @todo This isn't called in a template, only in _showPartyContext, shoudl inline this probably?
+   * Handle toggling party mode (called from context menu).
+   * @returns {Promise<void>}
+   * @private
    */
-  static async #togglePartyMode(_event, _target) {
-    log(3, 'Handling partymode toggle.', { _event, _target });
+  async _togglePartyMode() {
+    log(3, 'Handling partymode toggle.');
     const primaryGroup = PartyMode.getPrimaryGroupForActor(this.actor);
     if (!primaryGroup) return;
     const currentMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
@@ -2249,19 +2192,18 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {Actor} actor - The actor to check
    * @param {string} spellUuid - The spell UUID
    * @returns {boolean} True if actor has spell prepared
-   * @todo what does this do? Why do we need it?
    * @private
    */
   _actorHasSpellPrepared(actor, spellUuid) {
     log(3, 'Confirming if actor has the spell prepared.', { actor, spellUuid });
     if (!PartyMode.prototype.hasViewPermission(actor)) return false;
     const preparedSpells = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS) || [];
-    const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     if (preparedSpells.includes(spellUuid)) return true;
+    const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     for (const classSpells of Object.values(preparedByClass)) {
       for (const spellKey of classSpells) {
         const parsed = this.spellManager._parseClassSpellKey(spellKey);
-        if (parsed && parsed.spellUuid === spellUuid) return true;
+        if (parsed?.spellUuid === spellUuid) return true;
       }
     }
     return false;
@@ -2296,7 +2238,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @this SpellBook
    * @param {PointerEvent} _event - The originating click event.
    * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
-   * @todo Non- prepared Revivify spells are slowly being removed.
+   * @todo Investigate bug: Non-prepared Revivify spells are slowly being removed from actors
    */
   static async #save(_event, _target) {
     log(3, 'Handling save.', { _event, _target });
