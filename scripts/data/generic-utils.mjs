@@ -96,7 +96,6 @@ export function getWizardData(actor) {
       if (isNaturalWizard || isForceWizard) wizardData[identifier] = { isNaturalWizard, isForceWizard, classData };
     }
   }
-  log(1, 'Get Wizard Data!', { wizardData });
   return wizardData;
 }
 
