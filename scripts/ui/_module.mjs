@@ -8,6 +8,7 @@ export * from './chat.mjs';
 export * from './colors.mjs';
 export * from './custom-ui.mjs';
 export * from './description-injector.mjs';
+export * from './dialogs.mjs';
 export * from './favorites.mjs';
 export * from './filters.mjs';
 export * from './formatting.mjs';

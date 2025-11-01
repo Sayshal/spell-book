@@ -22,8 +22,7 @@ const { renderTemplate } = foundry.applications.handlebars;
 
 /**
  * Spell List Manager application for viewing, editing, and creating spell lists
- * @todo action handles have access to event and target, NOT form - fix.
- * @todo reorganize code by flow state.
+ * @todo reorganize code by flow state. [Move methods around in order of actions, factory methods - SKIP THIS FOR NOW]
  */
 export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
@@ -526,7 +525,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Apply filters to the DOM elements in the UI.
-   * @todo I'd really like this to be replaced with a call to this.filterHelper.applyFilters
    */
   applyFilters() {
     log(3, 'Applying filters.');
@@ -606,7 +604,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Update selection count display in footer.
-   * @todo is there a better way to do this?
    * @private
    */
   _updateSelectionCount() {
@@ -645,7 +642,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Update spell checkboxes to match current selection.
-   * @todo is there a better/native way of doing this?
    * @private
    */
   _updateSpellCheckboxes() {
@@ -821,16 +817,17 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Set up checkbox filter listeners.
-   * @todo Can we remove the selector/property and just filter dnd5e-checkboxes within the filter DOM area?
    * @private
    */
   _setupCheckboxFilters() {
     log(3, 'Setting up checkbox filters.');
-    const checkboxSelectors = [{ selector: 'dnd5e-checkbox[name="filter-ritual"]', property: 'ritual' }];
-    for (const { selector, property } of checkboxSelectors) {
-      const element = this.element.querySelector(selector);
-      if (element) {
-        element.addEventListener('change', (event) => {
+    const filterArea = this.element.querySelector('.spell-filters');
+    if (!filterArea) return;
+    const checkboxes = filterArea.querySelectorAll('dnd5e-checkbox[name^="filter-"]');
+    for (const checkbox of checkboxes) {
+      const property = checkbox.name.replace('filter-', '');
+      if (Object.prototype.hasOwnProperty.call(this.filterState, property)) {
+        checkbox.addEventListener('change', (event) => {
           if (this.filterState[property] !== event.target.checked) {
             this.filterState[property] = event.target.checked;
             this.applyFilters();
@@ -1156,42 +1153,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Display a confirmation dialog.
-   * @param {Object} options - Dialog configuration options
-   * @param {string} [options.title] - The dialog title text
-   * @param {string} [options.content] - The dialog message content
-   * @param {string} [options.confirmLabel] - Text label for the confirm button
-   * @param {string} [options.confirmIcon] - FontAwesome icon class for the confirm button
-   * @param {string} [options.cancelLabel] - Text label for the cancel button
-   * @param {string} [options.cancelIcon] - FontAwesome icon class for the cancel button
-   * @param {string} [options.confirmCssClass] - Additional CSS class for the confirm button styling
-   * @todo Does this need to be in here? Can we extract to a helper and use elsewhere?
-   * @returns {Promise<boolean>} Whether confirmed
-   */
-  async confirmDialog({
-    title = game.i18n.localize('SPELLMANAGER.Confirm.Title'),
-    content = game.i18n.localize('SPELLMANAGER.Confirm.Content'),
-    confirmLabel = game.i18n.localize('SPELLMANAGER.Confirm.Confirm'),
-    confirmIcon = 'fas fa-check',
-    cancelLabel = game.i18n.localize('SPELLBOOK.UI.Cancel'),
-    cancelIcon = 'fas fa-times',
-    confirmCssClass = ''
-  }) {
-    const result = await DialogV2.wait({
-      title,
-      content: `<p>${content}</p>`,
-      buttons: [
-        { icon: `${confirmIcon}`, label: confirmLabel, action: 'confirm', className: `dialog-button ${confirmCssClass}` },
-        { icon: `${cancelIcon}`, label: cancelLabel, action: 'cancel', className: 'dialog-button' }
-      ],
-      default: 'cancel',
-      rejectClose: false
-    });
-    log(3, 'Confirmation dialog called:', { result });
-    return result === 'confirm';
-  }
-
-  /**
    * Show the create list dialog and return result.
    * @param {Array<Object>} identifierOptions - Class identifier options
    * @returns {Promise<Object>} Dialog result and form data
@@ -1441,25 +1402,20 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Ensure all spells in the list have icons.
-   * @private
-   * @todo Is this required? Don't we run UIUtils.createSpellIconLink enough in here?
-   */
-  _ensureSpellIcons() {
-    log(3, 'Ensuring spell icons are enriched.');
-    for (const level of this.selectedSpellList.spellsByLevel) for (const spell of level.spells) if (!spell.enrichedIcon) spell.enrichedIcon = UIUtils.createSpellIconLink(spell);
-  }
-
-  /**
    * Find a class item in a specific top-level folder.
+   * Uses the class folder cache for early exit optimization when the class doesn't exist.
    * @param {string} identifier - The class identifier to search for
    * @param {string} topLevelFolderName - The top-level folder name to search in
    * @returns {Promise<Item|null>} The found class item or null
-   * @todo What is this for? Do we do this already elsewhere and can steal?
    * @private
    */
   async _findClassInTopLevelFolder(identifier, topLevelFolderName) {
-    log(3, 'Finding class in toplevelfolder:', { identifier, topLevelFolderName });
+    log(3, 'Finding class in top-level folder:', { identifier, topLevelFolderName });
+    const key = `${topLevelFolderName}:${identifier.toLowerCase()}`;
+    if (this.classFolderCache && !this.classFolderCache.has(key)) {
+      log(3, 'Class not found in cache, skipping pack search.');
+      return null;
+    }
     const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
     for (const pack of itemPacks) {
       let packTopLevelFolder = null;
@@ -1483,7 +1439,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * Build a cache of which identifiers have matching classes in which folders.
    * @returns {Promise<Map<string, boolean>>} Map with keys like "FolderName:identifier"
    * @private
-   * @todo Why don't we use this or the result cache in _findClassInTopLevelFolder?
    */
   async _buildClassFolderCache() {
     const cache = new Map();
@@ -1598,7 +1553,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     this.selectedSpellList.spellUuids = this.selectedSpellList.spellUuids.filter((uuid) => uuid !== spellUuid);
     this.selectedSpellList.spells = this.selectedSpellList.spells.filter((spell) => spell.uuid !== spellUuid && spell.compendiumUuid !== spellUuid);
     this.selectedSpellList.spellsByLevel = DataUtils.organizeSpellsByLevel(this.selectedSpellList.spells);
-    this._ensureSpellIcons();
     this.render(false, { parts: ['content', 'availableSpells'] });
     this.applyFilters();
   }
@@ -1625,7 +1579,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     this.selectedSpellList.spellUuids.push(spellUuid);
     this.selectedSpellList.spells.push(spellCopy);
     this.selectedSpellList.spellsByLevel = DataUtils.organizeSpellsByLevel(this.selectedSpellList.spells);
-    this._ensureSpellIcons();
     this.render(false, { parts: ['content', 'availableSpells'] });
     this.applyFilters();
   }
@@ -1661,7 +1614,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (!this.selectedSpellList) return;
     const uuid = this.selectedSpellList.uuid;
     const listName = this.selectedSpellList.name;
-    const confirmed = await this.confirmDialog({
+    const confirmed = await UIUtils.confirmDialog({
       title: game.i18n.localize('SPELLMANAGER.Confirm.DeleteTitle'),
       content: game.i18n.format('SPELLMANAGER.Confirm.DeleteContent', { name: `<strong>${listName}</strong>` }),
       confirmLabel: game.i18n.localize('SPELLMANAGER.Confirm.DeleteButton'),
@@ -1687,7 +1640,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const originalUuid = this.selectedSpellList.document.flags?.[MODULE.ID]?.originalUuid;
     if (!originalUuid) return;
     const listName = this.selectedSpellList.name;
-    const confirmed = await this.confirmDialog({
+    const confirmed = await UIUtils.confirmDialog({
       title: game.i18n.localize('SPELLMANAGER.Confirm.RestoreTitle'),
       content: game.i18n.format('SPELLMANAGER.Confirm.RestoreContent', { name: `<strong>${listName}</strong>` }),
       confirmLabel: game.i18n.localize('SPELLMANAGER.Confirm.RestoreButton'),
@@ -2101,7 +2054,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (addCount > 0 && removeCount > 0) confirmMessage = game.i18n.format('SPELLMANAGER.BulkOps.ConfirmAddAndRemove', { addCount, removeCount });
     else if (addCount > 0) confirmMessage = game.i18n.format('SPELLMANAGER.BulkOps.ConfirmAdd', { count: addCount });
     else confirmMessage = game.i18n.format('SPELLMANAGER.BulkOps.ConfirmRemove', { count: removeCount });
-    const confirmed = await this.confirmDialog({
+    const confirmed = await UIUtils.confirmDialog({
       title: game.i18n.localize('SPELLMANAGER.BulkOps.ConfirmSave'),
       content: confirmMessage,
       confirmLabel: game.i18n.format('SPELLMANAGER.BulkOps.SaveChanges', { count: totalCount }),
@@ -2145,7 +2098,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       }
     }
     this.selectedSpellList.spellsByLevel = DataUtils.organizeSpellsByLevel(this.selectedSpellList.spells);
-    this._ensureSpellIcons();
     this._clearSelections();
     if (failed === 0) ui.notifications.info(game.i18n.format('SPELLMANAGER.BulkOps.Completed', { count: processed }));
     else ui.notifications.warn(game.i18n.format('SPELLMANAGER.BulkOps.PartialFailure', { success: processed, total: totalCount, failed }));
