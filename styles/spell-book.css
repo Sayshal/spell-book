@@ -3617,11 +3617,36 @@
         font-weight: bold;
         text-shadow: 0.0625rem 0.0625rem 0.125rem rgba(0 0 0 / 70%);
         transition: var(--spell-book-transition-normal);
+        container-type: inline-size;
 
         .context-label {
           padding: 0 0.25rem;
           font-size: 0.875rem;
           white-space: nowrap;
+        }
+      }
+
+      @container (max-width: 5rem) {
+        .context-label {
+          font-size: 0.65rem;
+        }
+      }
+
+      @container (min-width: 5.01rem) and (max-width: 10rem) {
+        .context-label {
+          font-size: 0.7rem;
+        }
+      }
+
+      @container (min-width: 10.01rem) and (max-width: 20rem) {
+        .context-label {
+          font-size: 0.75rem;
+        }
+      }
+
+      @container (min-width: 20.01rem) and (max-width: 30rem) {
+        .context-label {
+          font-size: 0.8rem;
         }
       }
 

@@ -97,30 +97,8 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
       const explorationPercent = this.analytics.contextBreakdown.explorationPercent || 0;
       combatElement.style.width = `${combatPercent}%`;
       explorationElement.style.width = `${explorationPercent}%`;
-      this._adjustContextBarFontSizes(combatElement, combatPercent);
-      this._adjustContextBarFontSizes(explorationElement, explorationPercent);
     }
     log(3, 'Rendering');
-  }
-
-  /**
-   * Adjust font size of context bar labels based on available width.
-   * @param {HTMLElement} element - The context bar element
-   * @param {number} percent - The percentage width of the bar
-   * @todo This seems excessive?
-   * @private
-   */
-  _adjustContextBarFontSizes(element, percent) {
-    const label = element.querySelector('.context-label');
-    if (!label) return;
-    let fontSize;
-    if (percent <= 5) fontSize = '0.65rem';
-    else if (percent <= 10) fontSize = '0.7rem';
-    else if (percent <= 20) fontSize = '0.75rem';
-    else if (percent <= 30) fontSize = '0.8rem';
-    else fontSize = '0.875rem';
-    label.style.fontSize = fontSize;
-    log(3, 'Adjusting context bar font size(s).');
   }
 
   /**
@@ -168,22 +146,20 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
       analytics.totalSpells++;
       if (userData.favorited) analytics.totalFavorites++;
       if (userData.notes?.trim()) analytics.totalNotes++;
+      const spell = fromUuidSync(spellUuid);
+      if (!spell) continue;
       if (userData.usageStats?.count > 0) {
         analytics.totalCasts += userData.usageStats.count;
         analytics.contextBreakdown.combat += userData.usageStats.contextUsage?.combat || 0;
         analytics.contextBreakdown.exploration += userData.usageStats.contextUsage?.exploration || 0;
-        const spellName = fromUuidSync(spellUuid).name;
-        const usageData = { uuid: spellUuid, name: spellName, count: userData.usageStats.count, lastUsed: userData.usageStats.lastUsed };
+        const usageData = { uuid: spellUuid, name: spell.name, count: userData.usageStats.count, lastUsed: userData.usageStats.lastUsed };
         analytics.mostUsedSpells.push(usageData);
         if (userData.usageStats.lastUsed && Date.now() - userData.usageStats.lastUsed < 30 * 24 * 60 * 60 * 1000) analytics.recentActivity.push(usageData);
       }
-      const spell = fromUuidSync(spellUuid);
-      if (spell) {
-        const school = spell.system?.school || 'unknown';
-        const level = spell.system?.level || 0;
-        analytics.spellsBySchool.set(school, (analytics.spellsBySchool.get(school) || 0) + (userData.usageStats?.count || 0));
-        analytics.spellsByLevel.set(level, (analytics.spellsByLevel.get(level) || 0) + (userData.usageStats?.count || 0));
-      }
+      const school = spell.system?.school || 'unknown';
+      const level = spell.system?.level || 0;
+      analytics.spellsBySchool.set(school, (analytics.spellsBySchool.get(school) || 0) + (userData.usageStats?.count || 0));
+      analytics.spellsByLevel.set(level, (analytics.spellsByLevel.get(level) || 0) + (userData.usageStats?.count || 0));
     }
     const totalContextUsage = analytics.contextBreakdown.combat + analytics.contextBreakdown.exploration;
     if (totalContextUsage > 0) {
