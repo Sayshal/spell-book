@@ -1134,6 +1134,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (classIdentifier && this._state.classSpellData[classIdentifier]) this._state.setActiveClass(classIdentifier);
     this.ui.updateSpellCounts();
     this.ui.updateSpellPreparationTracking();
+    this.ui.setupCantripUI();
     this.render(false, { parts: ['footer'] });
   }
 

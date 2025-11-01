@@ -757,14 +757,14 @@ export class State {
         if (level === '0' || level === 0) continue;
         if (!Array.isArray(levelData.spells)) continue;
         for (const spell of levelData.spells) {
-          const prepared = spell.system?.prepared;
           const method = spell.system?.method;
           const sourceClass = spell.sourceClass;
           const cachedFor = spell.flags?.dnd5e?.cachedFor;
-          if (prepared === 2) continue;
+          const isPrepared = spell.preparation?.prepared;
+          if (spell.system?.prepared === 2) continue;
           if (['innate', 'atwill', 'pact'].includes(method)) continue;
           if (cachedFor) continue;
-          if (prepared === 1 && sourceClass === classIdentifier) preparedCount++;
+          if (isPrepared && sourceClass === classIdentifier) preparedCount++;
         }
       }
     } else if (isFlatStructure) {
@@ -778,14 +778,14 @@ export class State {
       for (const spell of spellLevels) {
         const spellLevel = spell.system?.level ?? spell.level ?? spell._levelMetadata?.level;
         if (spellLevel === 0 || spellLevel === '0') continue;
-        const prepared = spell.system?.prepared;
         const method = spell.system?.method;
         const sourceClass = spell.sourceClass;
         const cachedFor = spell.flags?.dnd5e?.cachedFor;
-        if (prepared === 2) continue;
+        const isPrepared = spell.preparation?.prepared;
+        if (spell.system?.prepared === 2) continue;
         if (['innate', 'atwill', 'pact'].includes(method)) continue;
         if (cachedFor) continue;
-        if (prepared === 1 && sourceClass === classIdentifier) preparedCount++;
+        if (isPrepared && sourceClass === classIdentifier) preparedCount++;
       }
     } else log(1, 'calculatePreparationStats: Unknown structure for spellLevels', spellLevels);
     let baseMaxPrepared = 0;
