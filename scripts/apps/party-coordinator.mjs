@@ -125,7 +125,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
       }
       if (!event.target.closest('#member-card-context-menu')) this._hideMemberCardContextMenu();
     };
-    document.addEventListener('click', this._globalClickHandler); /** @todo: Why do we need a global click handler? */
+    document.addEventListener('click', this._globalClickHandler);
     log(3, 'Rendering.');
   }
 
