@@ -116,7 +116,6 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
    * Process a spell document into standardized format for comparison display.
    * @param {Object} spell - The spell document to process
    * @returns {ProcessedSpell} Processed spell data for comparison display
-   * @todo range issues when using touch or self.
    * @private
    */
   _processSpellForComparison(spell) {

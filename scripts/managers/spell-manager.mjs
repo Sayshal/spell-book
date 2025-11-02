@@ -226,7 +226,7 @@ export class SpellManager {
           spellChanges.hasChanges = true;
         }
       }
-      let actualPreparationMode = MODULE.PREPARATION_MODES.SPELL;
+      let actualPreparationMode = MODULE.SPELL_MODE.SPELL;
       if (spellLevel > 0) actualPreparationMode = preparationMode || defaultPreparationMode;
       if (isPrepared) {
         preparedSpellKeys.push(classSpellKey);
@@ -291,7 +291,7 @@ export class SpellManager {
         i.type === 'spell' &&
         (i._stats?.compendiumSource === uuid || i.uuid === uuid) &&
         (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass) &&
-        i.system?.method === MODULE.PREPARATION_MODES.RITUAL
+        i.system?.method === MODULE.SPELL_MODE.RITUAL
     );
     if (existingRitualSpell) {
       log(3, `Ritual spell already exists on actor.`, { actorName: this.actor.name, uuid, sourceClass });
@@ -300,7 +300,7 @@ export class SpellManager {
     const sourceSpell = await fromUuid(uuid);
     if (sourceSpell) {
       const newSpellData = await game.items.fromCompendium(sourceSpell);
-      newSpellData.system.method = MODULE.PREPARATION_MODES.RITUAL;
+      newSpellData.system.method = MODULE.SPELL_MODE.RITUAL;
       newSpellData.system.prepared = 0;
       newSpellData.system.sourceClass = sourceClass;
       newSpellData.flags[MODULE.ID] = newSpellData.flags[MODULE.ID] || {};
@@ -321,8 +321,8 @@ export class SpellManager {
   _getClassPreparationMode(classIdentifier) {
     log(3, `Getting class preparation mode.`, { actorName: this.actor.name, classIdentifier });
     const spellcastingConfig = this.app?._state?.getSpellcastingConfigForClass?.(classIdentifier) ?? DataUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
-    if (spellcastingConfig?.type === MODULE.PREPARATION_MODES.PACT) return MODULE.PREPARATION_MODES.PACT;
-    return MODULE.PREPARATION_MODES.SPELL;
+    if (spellcastingConfig?.type === MODULE.SPELL_MODE.PACT) return MODULE.SPELL_MODE.PACT;
+    return MODULE.SPELL_MODE.SPELL;
   }
 
   /**
@@ -343,11 +343,11 @@ export class SpellManager {
       if (spellSourceClass && spellSourceClass !== sourceClass) return false;
       const isAlwaysPrepared = i.system.prepared === 2;
       const isGranted = !!i.flags?.dnd5e?.cachedFor;
-      const isInnateOrAtWill = [MODULE.PREPARATION_MODES.INNATE, MODULE.PREPARATION_MODES.AT_WILL].includes(i.system.method);
+      const isInnateOrAtWill = [MODULE.SPELL_MODE.INNATE, MODULE.SPELL_MODE.AT_WILL].includes(i.system.method);
       return !isAlwaysPrepared && !isGranted && !isInnateOrAtWill;
     });
-    const existingPreparedSpell = matchingSpells.find((spell) => spell.system.method !== MODULE.PREPARATION_MODES.RITUAL && spell.system.prepared === 1);
-    const existingRitualSpell = matchingSpells.find((spell) => spell.system.method === MODULE.PREPARATION_MODES.RITUAL);
+    const existingPreparedSpell = matchingSpells.find((spell) => spell.system.method !== MODULE.SPELL_MODE.RITUAL && spell.system.prepared === 1);
+    const existingRitualSpell = matchingSpells.find((spell) => spell.system.method === MODULE.SPELL_MODE.RITUAL);
     const classRules = RuleSet.getClassRules(this.actor, sourceClass);
     const isAlwaysRitualCasting = classRules.ritualCasting === MODULE.RITUAL_CASTING_MODES.ALWAYS;
     if (existingPreparedSpell) {
@@ -359,7 +359,7 @@ export class SpellManager {
       }
       return;
     }
-    if (existingRitualSpell && isAlwaysRitualCasting && preparationMode === MODULE.PREPARATION_MODES.SPELL) {
+    if (existingRitualSpell && isAlwaysRitualCasting && preparationMode === MODULE.SPELL_MODE.SPELL) {
       const sourceSpell = await fromUuid(uuid);
       if (sourceSpell) {
         const newSpellData = await game.items.fromCompendium(sourceSpell);
@@ -427,19 +427,19 @@ export class SpellManager {
       if (spellSourceClass !== sourceClass) return false;
       const isAlwaysPrepared = i.system.prepared === 2;
       const isGranted = !!i.flags?.dnd5e?.cachedFor;
-      const isInnateOrAtWill = [MODULE.PREPARATION_MODES.INNATE, MODULE.PREPARATION_MODES.AT_WILL].includes(i.system.method);
+      const isInnateOrAtWill = [MODULE.SPELL_MODE.INNATE, MODULE.SPELL_MODE.AT_WILL].includes(i.system.method);
       return !isAlwaysPrepared && !isGranted && !isInnateOrAtWill;
     });
     if (matchingSpells.length === 0) return;
-    let targetSpell = matchingSpells.find((spell) => spell.system.prepared === 1 && spell.system.method !== MODULE.PREPARATION_MODES.RITUAL);
+    let targetSpell = matchingSpells.find((spell) => spell.system.prepared === 1 && spell.system.method !== MODULE.SPELL_MODE.RITUAL);
     if (!targetSpell) targetSpell = matchingSpells.find((spell) => spell.system.prepared === 1);
     if (!targetSpell) return;
     const isRitualSpell = this._isRitualSpell(targetSpell);
     const classRules = RuleSet.getClassRules(this.actor, sourceClass);
     const ritualCastingEnabled = classRules.ritualCasting === MODULE.RITUAL_CASTING_MODES.ALWAYS;
-    const existingRitualSpell = matchingSpells.find((spell) => spell.system?.method === MODULE.PREPARATION_MODES.RITUAL && spell.id !== targetSpell.id);
+    const existingRitualSpell = matchingSpells.find((spell) => spell.system?.method === MODULE.SPELL_MODE.RITUAL && spell.id !== targetSpell.id);
     if (isRitualSpell && ritualCastingEnabled && targetSpell.system.level > 0) {
-      if (targetSpell.system.method === MODULE.PREPARATION_MODES.RITUAL) {
+      if (targetSpell.system.method === MODULE.SPELL_MODE.RITUAL) {
         log(3, `Target spell is ritual mode, keeping it.`, { actorName: this.actor.name, spellName: targetSpell.name });
         return;
       } else if (existingRitualSpell) {
@@ -591,7 +591,7 @@ export class SpellManager {
   async _cleanupUnpreparedSpells() {
     const shouldCleanup = game.settings.get(MODULE.ID, SETTINGS.AUTO_DELETE_UNPREPARED_SPELLS);
     if (!shouldCleanup) return;
-    const unpreparedSpells = this.actor.items.filter((item) => item.type === 'spell' && item.system.method === MODULE.PREPARATION_MODES.SPELL && item.system.prepared === 0);
+    const unpreparedSpells = this.actor.items.filter((item) => item.type === 'spell' && item.system.method === MODULE.SPELL_MODE.SPELL && item.system.prepared === 0);
     if (unpreparedSpells.length === 0) return;
     log(3, `Auto-cleanup: Removing ${unpreparedSpells.length} unprepared spell(s)`, { actorName: this.actor.name });
     const spellIds = unpreparedSpells.map((spell) => spell.id);

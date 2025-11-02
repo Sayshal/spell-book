@@ -427,7 +427,7 @@ export class RuleSet {
         if (itemClass !== classIdentifier) return false;
         const isGranted = !!item.flags?.dnd5e?.cachedFor;
         const isAlwaysPrepared = item.system?.prepared === 2;
-        const isSpecialMode = ['innate', 'atwill'].includes(item.system?.method);
+        const isSpecialMode = [MODULE.SPELL_MODE.INNATE, MODULE.SPELL_MODE.AT_WILL].includes(item.system?.method);
         return !isGranted && !isAlwaysPrepared && !isSpecialMode;
       })
       .map((item) => item.id);

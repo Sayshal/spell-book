@@ -2203,9 +2203,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const classSpellKey = `${sourceClass}:${uuid}`;
       const classData = this._state.classSpellData[sourceClass];
       const classItem = classData?.classItem;
-      const isPactCaster = classItem?.system?.spellcasting?.type === 'pact';
-      let preparationMode = 'spell';
-      if (isPactCaster && spellLevel > 0) preparationMode = 'pact';
+      const isPactCaster = classItem?.system?.spellcasting?.type === MODULE.SPELL_MODE.PACT;
+      let preparationMode = MODULE.SPELL_MODE.SPELL;
+      if (isPactCaster && spellLevel > 0) preparationMode = MODULE.SPELL_MODE.PACT;
       spellDataByClass[sourceClass][classSpellKey] = { uuid, name, wasPrepared, isPrepared, isRitual, sourceClass, spellItem, spellLevel, classSpellKey, preparationMode };
     }
     this._state.clearFavoriteSessionState();

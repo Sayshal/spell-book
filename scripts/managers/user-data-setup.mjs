@@ -43,7 +43,7 @@ export class UserDataSetup {
     let setupCount = 0;
     log(3, `Ensuring user tables exist for ${game.users.length}`);
     for (const user of game.users) {
-      if (user.isGM) continue; /** @todo should this be continue or break? */
+      if (user.isGM) continue;
       const created = await manager._ensureUserTable(user.id);
       if (created) setupCount++;
     }

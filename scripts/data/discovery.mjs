@@ -225,7 +225,7 @@ export function calculateMaxSpellLevel(classItem, actor) {
   const spellcastingType = spellcastingConfig.type;
   const classKey = foundry.utils.getProperty(classItem, 'identifier') || classItem.name?.slugify() || 'class';
   const classLevels = DataUtils.getSpellcastingLevelsForClass(actor, classIdentifier);
-  if (spellcastingType === 'spell') {
+  if (spellcastingType === MODULE.SPELL_MODE.SPELL) {
     const progression = { spell: 0, [classKey]: classLevels };
     const spellSlotTable = CONFIG.DND5E.spellcasting.spell.table;
     if (!spellSlotTable || !spellSlotTable.length) return 0;
@@ -235,19 +235,19 @@ export function calculateMaxSpellLevel(classItem, actor) {
     const spells = Object.fromEntries(spellLevels.map((l) => [`spell${l}`, { level: l }]));
     const spellcastingSource = DataUtils.getSpellcastingSourceItem(actor, classIdentifier);
     actor.constructor.computeClassProgression(progression, spellcastingSource, { spellcasting: spellcastingConfig });
-    actor.constructor.prepareSpellcastingSlots(spells, 'spell', progression, { actor });
+    actor.constructor.prepareSpellcastingSlots(spells, MODULE.SPELL_MODE.SPELL, progression, { actor });
     return Object.values(spells).reduce((maxLevel, spellData) => {
       const max = spellData.max;
       const level = spellData.level;
       if (!max) return maxLevel;
       return Math.max(maxLevel, level || -1);
     }, 0);
-  } else if (spellcastingType === 'pact') {
+  } else if (spellcastingType === MODULE.SPELL_MODE.PACT) {
     const spells = { pact: {} };
     const progression = { pact: 0, [classKey]: classLevels };
     const spellcastingSource = DataUtils.getSpellcastingSourceItem(actor, classIdentifier);
     actor.constructor.computeClassProgression(progression, spellcastingSource, { spellcasting: spellcastingConfig });
-    actor.constructor.prepareSpellcastingSlots(spells, 'pact', progression, { actor });
+    actor.constructor.prepareSpellcastingSlots(spells, MODULE.SPELL_MODE.PACT, progression, { actor });
     const pactLevel = spells.pact?.level || 0;
     return pactLevel;
   }

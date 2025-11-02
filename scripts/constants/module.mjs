@@ -9,8 +9,6 @@
  * @author Tyler
  */
 
-import { log } from '../logger.mjs';
-
 /**
  * Spellcasting focus option configuration.
  *
@@ -65,7 +63,7 @@ import { log } from '../logger.mjs';
  * @property {RuleSetsConfig} RULE_SETS - Available spellcasting rule set options
  * @property {SwapModesConfig} SWAP_MODES - Spell and cantrip swap timing options
  * @property {RitualCastingModesConfig} RITUAL_CASTING_MODES - Ritual casting behavior options
- * @property {PreparationModesConfig} PREPARATION_MODES - Spell preparation mode options
+ * @property {PreparationModesConfig} SPELL_MODE - Spell preparation mode options
  */
 
 /**
@@ -434,7 +432,7 @@ export const MODULE = {
    * @todo Check if we can replace hardcoded strings with this constant.
    * @type {PreparationModesConfig}
    */
-  PREPARATION_MODES: {
+  SPELL_MODE: {
     /** @type {string} Standard prepared spellcasting */
     SPELL: 'spell',
 
@@ -455,16 +453,6 @@ export const MODULE = {
 
     /** @type {string} Granted by another item/feature */
     GRANTED: 'granted'
-  },
-
-  /**
-   * Array of special preparation modes that bypass normal preparation rules.
-   * @todo Check if we can replace hardcoded strings with this constant.
-   * @type {string[]}
-   */
-  get SPECIAL_PREPARATION_MODES() {
-    log(3, 'Fetching special preparation modes.');
-    return [this.PREPARATION_MODES.INNATE, this.PREPARATION_MODES.PACT, this.PREPARATION_MODES.AT_WILL, this.PREPARATION_MODES.RITUAL];
   }
 };
 

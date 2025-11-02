@@ -287,7 +287,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
       [
         { value: 'none', labelKey: 'SPELLBOOK.Settings.RitualCasting.None' },
         { value: 'prepared', labelKey: 'SPELLBOOK.Settings.RitualCasting.Prepared' },
-        { value: 'always', labelKey: 'SPELLBOOK.Settings.RitualCasting.Always' }
+        { value: MODULE.SPELL_MODE.ALWAYS, labelKey: 'SPELLBOOK.Settings.RitualCasting.Always' }
       ],
       ritualCastingValue,
       'SPELLBOOK.Settings.RitualCasting.Label',

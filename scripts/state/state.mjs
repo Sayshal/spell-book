@@ -378,8 +378,8 @@ export class State {
    * @returns {string} The preparation mode ('spell', 'pact', etc.)
    */
   getClassPreparationMode(classItem) {
-    let prepMode = 'spell';
-    if (classItem.system.spellcasting?.type === 'pact') prepMode = 'pact';
+    let prepMode = MODULE.SPELL_MODE.SPELL;
+    if (classItem.system.spellcasting?.type === MODULE.SPELL_MODE.PACT) prepMode = MODULE.SPELL_MODE.PACT;
     log(3, 'Preparation mode determined', { className: classItem.name, prepMode });
     return prepMode;
   }
@@ -602,14 +602,14 @@ export class State {
             spellData.aggregatedModes.hasAlwaysPrepared = true;
             if (isCurrentClass && (!spellData.system.prepared || spellData.system.prepared < 2)) spellData.system.prepared = 2;
           }
-          if (ownedSpell.system.method === MODULE.PREPARATION_MODES.INNATE) spellData.aggregatedModes.hasInnate = true;
-          if (ownedSpell.system.method === MODULE.PREPARATION_MODES.AT_WILL) spellData.aggregatedModes.hasAtWill = true;
-          if (ownedSpell.system.method === MODULE.PREPARATION_MODES.RITUAL) spellData.aggregatedModes.hasRitual = true;
-          if (ownedSpell.system.method === MODULE.PREPARATION_MODES.PACT) {
+          if (ownedSpell.system.method === MODULE.SPELL_MODE.INNATE) spellData.aggregatedModes.hasInnate = true;
+          if (ownedSpell.system.method === MODULE.SPELL_MODE.AT_WILL) spellData.aggregatedModes.hasAtWill = true;
+          if (ownedSpell.system.method === MODULE.SPELL_MODE.RITUAL) spellData.aggregatedModes.hasRitual = true;
+          if (ownedSpell.system.method === MODULE.SPELL_MODE.PACT) {
             spellData.aggregatedModes.hasPact = true;
             if (isCurrentClass && ownedSpell.system.prepared === 1) spellData.aggregatedModes.isPreparedForCheckbox = true;
           }
-          if (ownedSpell.system.method === MODULE.PREPARATION_MODES.SPELL && ownedSpell.system.prepared === 1) {
+          if (ownedSpell.system.method === MODULE.SPELL_MODE.SPELL && ownedSpell.system.prepared === 1) {
             spellData.aggregatedModes.hasPrepared = true;
             if (isCurrentClass) spellData.aggregatedModes.isPreparedForCheckbox = true;
           }
@@ -631,7 +631,7 @@ export class State {
         spellData.preparation = spellData.preparation || {};
         spellData.preparation.preparedByOtherClass = preparedByOtherClass;
       }
-      if (spell.system?.method !== 'ritual' && spell.system?.components?.ritual) spellData.canCastAsRitual = true;
+      if (spell.system?.method !== MODULE.SPELL_MODE.RITUAL && spell.system?.components?.ritual) spellData.canCastAsRitual = true;
       if (this.app.spellManager) spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, classIdentifier, batchData);
       spellData.filterData = UIUtils.extractSpellFilterData(spell);
       spellData.enrichedIcon = UIUtils.createSpellIconLink(spell);
@@ -712,7 +712,7 @@ export class State {
   async processAndOrganizeSpellsForClass(identifier, spellItems, classItem) {
     for (const spell of spellItems) {
       const preparationMode = spell.system.method;
-      const isSpecialMode = ['innate', 'pact', 'atwill', 'always'].includes(preparationMode);
+      const isSpecialMode = [MODULE.SPELL_MODE.INNATE, MODULE.SPELL_MODE.PACT, MODULE.SPELL_MODE.AT_WILL, MODULE.SPELL_MODE.ALWAYS].includes(preparationMode);
       const isGranted = !!spell.flags?.dnd5e?.cachedFor;
       if (!isSpecialMode && !isGranted) {
         spell.sourceClass = identifier;
@@ -762,7 +762,7 @@ export class State {
           const cachedFor = spell.flags?.dnd5e?.cachedFor;
           const isPrepared = spell.preparation?.prepared;
           if (spell.system?.prepared === 2) continue;
-          if (['innate', 'atwill', 'pact'].includes(method)) continue;
+          if ([MODULE.SPELL_MODE.INNATE, MODULE.SPELL_MODE.AT_WILL, MODULE.SPELL_MODE.PACT].includes(method)) continue;
           if (cachedFor) continue;
           if (isPrepared && sourceClass === classIdentifier) preparedCount++;
         }
@@ -783,7 +783,7 @@ export class State {
         const cachedFor = spell.flags?.dnd5e?.cachedFor;
         const isPrepared = spell.preparation?.prepared;
         if (spell.system?.prepared === 2) continue;
-        if (['innate', 'atwill', 'pact'].includes(method)) continue;
+        if ([MODULE.SPELL_MODE.INNATE, MODULE.SPELL_MODE.AT_WILL, MODULE.SPELL_MODE.PACT].includes(method)) continue;
         if (cachedFor) continue;
         if (isPrepared && sourceClass === classIdentifier) preparedCount++;
       }
@@ -991,7 +991,7 @@ export class State {
     const maxSpellLevel = DataUtils.calculateMaxSpellLevel(classItem, this.actor);
     this.scrollSpells = await DataUtils.ScrollProcessor.scanForScrollSpells(this.actor);
     const grantedSpells = this.actor.items
-      .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.method && ['pact', 'innate', 'atwill'].includes(i.system.method))))
+      .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.method && [MODULE.SPELL_MODE.PACT, MODULE.SPELL_MODE.INNATE, MODULE.SPELL_MODE.AT_WILL].includes(i.system.method))))
       .flatMap((i) => {
         const uuids = [];
         if (i?._stats?.compendiumSource) uuids.push(i._stats.compendiumSource);
@@ -1216,7 +1216,7 @@ export class State {
     await this._cleanupDisabledRitualSpells();
     for (const [classIdentifier, classData] of Object.entries(this.spellcastingClasses)) {
       const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
-      if (classRules.ritualCasting === 'always') {
+      if (classRules.ritualCasting === MODULE.SPELL_MODE.ALWAYS) {
         log(3, 'Processing ritual spells for class', { classIdentifier });
         const wizardManager = this.app.wizardManagers.get(classIdentifier);
         const isWizard = wizardManager?.isWizard;
@@ -1236,11 +1236,11 @@ export class State {
     const spellIdsToRemove = [];
     for (const classIdentifier of Object.keys(this.spellcastingClasses)) {
       const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
-      if (classRules.ritualCasting !== 'always') {
+      if (classRules.ritualCasting !== MODULE.SPELL_MODE.ALWAYS) {
         const moduleRitualSpells = this.actor.items.filter(
           (item) =>
             item.type === 'spell' &&
-            item.system?.method === 'ritual' &&
+            item.system?.method === MODULE.SPELL_MODE.RITUAL &&
             (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier) &&
             item.flags?.[MODULE.ID]?.isModuleRitual === true
         );
@@ -1271,20 +1271,13 @@ export class State {
       log(2, 'No wizard manager found for adding ritual spells', { classIdentifier });
       return;
     }
+    if (!spellDataByClass[classIdentifier]) return;
     const spellbookSpells = await wizardManager.getSpellbookSpells();
-    const isRitualSpell = (spell) => {
-      if (spell.system?.properties && spell.system.properties.has) return spell.system.properties.has('ritual');
-      if (spell.system?.properties && Array.isArray(spell.system.properties)) return spell.system.properties.some((prop) => prop.value === 'ritual');
-      return spell.system?.components?.ritual || false;
-    };
     for (const spellUuid of spellbookSpells) {
       const sourceSpell = await fromUuid(spellUuid);
-      if (!sourceSpell || !isRitualSpell(sourceSpell) || sourceSpell.system.level === 0) continue;
-      if (!spellDataByClass[classIdentifier]) continue;
+      if (!sourceSpell || !sourceSpell.system.properties.has('ritual') || sourceSpell.system.level === 0) continue;
       const classSpellKey = `${classIdentifier}:${spellUuid}`;
-      if (spellDataByClass[classIdentifier][classSpellKey]) {
-        spellDataByClass[classIdentifier][classSpellKey].isRitual = true;
-      }
+      spellDataByClass[classIdentifier][classSpellKey].isRitual = true;
     }
     log(3, 'Wizard ritual spells added', { classIdentifier });
   }
@@ -1295,28 +1288,18 @@ export class State {
    * @param {SpellcastingClassData} classData - The class data from spellcastingClasses
    * @param {Object} spellDataByClass - The spell data grouped by class
    * @returns {Promise<void>}
-   * @todo Simplify this logic here.
    * @private
    */
   async _addClassRitualSpells(classIdentifier, classData, spellDataByClass) {
-    const className = classData.name.toLowerCase();
-    const classUuid = classData.uuid;
-    const spellList = await DataUtils.getClassSpellList(className, classUuid, this.actor);
-    if (!spellList || !spellList.size) return;
+    if (!spellDataByClass[classIdentifier]) return;
+    const spellList = await DataUtils.getClassSpellList(classData.name.toLowerCase(), classData.uuid, this.actor);
+    if (!spellList?.size) return;
     const spellItems = await DataUtils.fetchSpellDocuments(spellList, 9);
-    if (!spellItems || !spellItems.length) return;
-    const isRitualSpell = (spell) => {
-      if (spell.system?.properties && spell.system.properties.has) return spell.system.properties.has('ritual');
-      if (spell.system?.properties && Array.isArray(spell.system.properties)) return spell.system.properties.some((prop) => prop.value === 'ritual');
-      return spell.system?.components?.ritual || false;
-    };
+    if (!spellItems?.length) return;
     for (const spell of spellItems) {
-      const spellUuid = spell.compendiumUuid || spell.uuid;
-      const hasRitual = isRitualSpell(spell);
-      if (!hasRitual || spell.system?.level === 0) continue;
-      if (!spellDataByClass[classIdentifier]) continue;
-      const classSpellKey = `${classIdentifier}:${spellUuid}`;
-      if (spellDataByClass[classIdentifier][classSpellKey]) spellDataByClass[classIdentifier][classSpellKey].isRitual = true;
+      if (!spell.system.properties.has('ritual') || spell.system?.level === 0) continue;
+      const classSpellKey = `${classIdentifier}:${spell.compendiumUuid || spell.uuid}`;
+      spellDataByClass[classIdentifier][classSpellKey].isRitual = true;
     }
     log(3, 'Class ritual spells added', { classIdentifier });
   }
