@@ -177,7 +177,8 @@ export class CustomUI {
           const saveAbility = foundry.utils.getProperty(spell, 'system.save.ability');
           if (saveAbility) {
             const saveLabel = foundry.utils.getProperty(CONFIG.DND5E, `abilities.${saveAbility}.label`) || saveAbility;
-            metadata.push(`${saveLabel} Save`);
+            const saveText = game.i18n.localize('DND5E.SavingThrowShort');
+            metadata.push(`${saveLabel} ${saveText}`);
           }
           break;
         }
@@ -255,7 +256,8 @@ export class CustomUI {
           const saveAbility = foundry.utils.getProperty(spell, 'system.save.ability');
           if (saveAbility) {
             const saveLabel = foundry.utils.getProperty(CONFIG.DND5E, `abilities.${saveAbility}.label`) || saveAbility;
-            metadata.push(`${saveLabel} Save`); /** @todo' Localize? */
+            const saveText = game.i18n.localize('DND5E.SavingThrowShort');
+            metadata.push(`${saveLabel} ${saveText}`);
           }
           break;
         }

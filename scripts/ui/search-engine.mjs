@@ -95,6 +95,9 @@ export class SearchEngine {
     /** @type {number|null} - Timestamp of last WordTree build for cache invalidation */
     this.treeLastBuilt = null;
 
+    /** @type {number|null} - Number of spells when tree was last built for cache invalidation */
+    this.treeLastSpellCount = null;
+
     log(3, 'SearchEngine constructed.', { actor: this.actor.name, searchPrefix: this.searchPrefix });
   }
 
@@ -148,12 +151,15 @@ export class SearchEngine {
 
   /**
    * Ensure the spell name tree is built and current.
-   * Rebuilds if not yet built or if spell data has changed.
-   * @todo: Add cache invalidation logic based on spell data changes
    * @returns {boolean} Whether tree is ready for use
    */
   ensureSpellNameTree() {
-    if (!this.spellNameTree || !this.treeLastBuilt) this.buildSpellNameTree();
+    const spells = this.app._state?.getCurrentSpellList() || [];
+    const currentCount = spells.length;
+    if (!this.spellNameTree || !this.treeLastBuilt || this.treeLastSpellCount !== currentCount) {
+      this.buildSpellNameTree();
+      this.treeLastSpellCount = currentCount;
+    }
     return !!this.spellNameTree;
   }
 
@@ -917,6 +923,7 @@ export class SearchEngine {
   invalidateSpellNameTree() {
     this.spellNameTree = null;
     this.treeLastBuilt = null;
+    this.treeLastSpellCount = null;
   }
 
   /**

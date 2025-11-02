@@ -632,7 +632,7 @@ export class State {
         spellData.preparation.preparedByOtherClass = preparedByOtherClass;
       }
       if (spell.system?.method !== 'ritual' && spell.system?.components?.ritual) spellData.canCastAsRitual = true;
-      if (this.app.spellManager) spellData.preparation = this.app.spellManager.getSpellPreparationStatusFromBatch(spellData, classIdentifier, batchData);
+      if (this.app.spellManager) spellData.preparation = this.app.spellManager.getSpellPreparationStatus(spellData, classIdentifier, batchData);
       spellData.filterData = UIUtils.extractSpellFilterData(spell);
       spellData.enrichedIcon = UIUtils.createSpellIconLink(spell);
       const enhancedSpell = DataUtils.UserData.enhanceSpellWithUserData(spellData, targetUserId, actorId);
@@ -852,6 +852,7 @@ export class State {
       this.className = this.classSpellData[identifier].className || '';
       this.spellPreparation = this.classSpellData[identifier].spellPreparation || { current: 0, maximum: 0 };
       log(3, 'Active class set', { identifier, className: this.className, spellLevelCount: this.spellLevels.length });
+      if (this.app.searchEngine) this.app.searchEngine.invalidateSpellNameTree();
     } else log(2, 'Attempted to set active class that does not exist in classSpellData', { identifier });
   }
 
@@ -1187,6 +1188,7 @@ export class State {
       await this.loadClassSpellData(classIdentifier, classItem);
     }
     this.updateGlobalPreparationCount();
+    if (this.app.searchEngine) this.app.searchEngine.invalidateSpellNameTree();
   }
 
   /**

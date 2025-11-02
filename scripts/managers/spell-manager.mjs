@@ -91,63 +91,6 @@ export class SpellManager {
   }
 
   /**
-   * Get the preparation status for a given spell.
-   * @param {Object} spell - The spell to check
-   * @param {string} [classIdentifier=null] - The specific class context
-   * @returns {SpellPreparationStatus} Preparation status information
-   */
-  getSpellPreparationStatus(spell, classIdentifier = null) {
-    log(3, `Getting spell preparation status.`, { actorName: this.actor.name, spellName: spell.name, classIdentifier });
-    if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
-    const spellUuid = spell.compendiumUuid || spell.uuid;
-    let actualSpell = this.actor.items.find(
-      (i) => i.type === 'spell' && (i._stats?.compendiumSource === spellUuid || i.uuid === spellUuid) && (i.system?.sourceClass === classIdentifier || i.sourceClass === classIdentifier)
-    );
-    if (!actualSpell) {
-      const unassignedSpell = this.actor.items.find((i) => i.type === 'spell' && (i._stats?.compendiumSource === spellUuid || i.uuid === spellUuid) && !i.system?.sourceClass && !i.sourceClass);
-      if (unassignedSpell && classIdentifier) {
-        const isAlwaysPrepared = unassignedSpell.system.prepared === 2;
-        const isGranted = !!unassignedSpell.flags?.dnd5e?.cachedFor;
-        const isSpecialMode = MODULE.SPECIAL_PREPARATION_MODES.includes(unassignedSpell.system.method);
-        if (!isAlwaysPrepared && !isGranted && !isSpecialMode) {
-          unassignedSpell.sourceClass = classIdentifier;
-          if (unassignedSpell.system) unassignedSpell.system.sourceClass = classIdentifier;
-        }
-        log(3, `Found unassigned spell, assigning to class.`, { actorName: this.actor.name, spellName: spell.name, classIdentifier });
-        actualSpell = unassignedSpell;
-      }
-    }
-    if (actualSpell) {
-      const status = this._getOwnedSpellPreparationStatus(actualSpell);
-      const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
-      const classPreparedSpells = preparedByClass[classIdentifier] || [];
-      const spellKey = this._createClassSpellKey(spellUuid, classIdentifier);
-      if (classPreparedSpells.includes(spellKey)) status.prepared = true;
-      return status;
-    }
-    const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
-    const classPreparedSpells = preparedByClass[classIdentifier] || [];
-    const spellKey = this._createClassSpellKey(spellUuid, classIdentifier);
-    const isPreparedForClass = classPreparedSpells.includes(spellKey);
-    const status = { prepared: isPreparedForClass, disabled: false, disabledReason: '' };
-    if (spell.system?.level === 0 && classIdentifier) {
-      const maxCantrips = this.cantripManager._getMaxCantripsForClass(classIdentifier);
-      const currentCount = this.cantripManager.getCurrentCount(classIdentifier);
-      const isAtMax = currentCount >= maxCantrips;
-      if (isAtMax && !isPreparedForClass) {
-        const settings = this.getSettings(classIdentifier);
-        const { behavior } = settings;
-        if (behavior === MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) {
-          status.disabled = true;
-          status.disabledReason = 'SPELLBOOK.Cantrips.MaximumReached';
-        }
-      }
-    }
-    log(3, `Preparation status determined.`, { actorName: this.actor.name, spellName: spell.name, prepared: status.prepared });
-    return status;
-  }
-
-  /**
    * Prepare batch data for efficient spell processing.
    * @param {string} classIdentifier - The class identifier to prepare data for
    * @returns {Object} Batch data containing Maps and cached values for O(1) lookups
@@ -194,7 +137,7 @@ export class SpellManager {
    * @param {Object} batchData - Pre-fetched batch data from prepareBatchData()
    * @returns {SpellPreparationStatus} Preparation status information
    */
-  getSpellPreparationStatusFromBatch(spell, classIdentifier, batchData) {
+  getSpellPreparationStatus(spell, classIdentifier, batchData) {
     if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
     const spellUuid = spell.compendiumUuid || spell.uuid;
     if (spell.aggregatedModes) {
@@ -211,30 +154,6 @@ export class SpellManager {
         }
       }
       return status;
-    }
-    const ownedVersions = batchData.ownedSpellsMap.get(spellUuid);
-    if (ownedVersions) {
-      const classVersion = ownedVersions.find((v) => v.sourceClass === classIdentifier);
-      if (classVersion) {
-        const status = this._getOwnedSpellPreparationStatus(classVersion.item);
-        const spellKey = this._createClassSpellKey(spellUuid, classIdentifier);
-        const isPreparedForClass = batchData.classPreparedSpells.includes(spellKey);
-        if (isPreparedForClass) status.prepared = true;
-        return status;
-      }
-      const anyVersion = ownedVersions[0];
-      if (anyVersion) return this._getOwnedSpellPreparationStatus(anyVersion.item);
-    }
-    const unassignedSpell = batchData.unassignedSpellsMap.get(spellUuid);
-    if (unassignedSpell && classIdentifier) {
-      const isAlwaysPrepared = unassignedSpell.system.prepared === 2;
-      const isGranted = !!unassignedSpell.flags?.dnd5e?.cachedFor;
-      const isSpecialMode = MODULE.SPECIAL_PREPARATION_MODES.includes(unassignedSpell.system.method);
-      if (!isAlwaysPrepared && !isGranted && !isSpecialMode) {
-        unassignedSpell.sourceClass = classIdentifier;
-        if (unassignedSpell.system) unassignedSpell.system.sourceClass = classIdentifier;
-      }
-      return this._getOwnedSpellPreparationStatus(unassignedSpell);
     }
     const spellKey = this._createClassSpellKey(spellUuid, classIdentifier);
     const isPreparedForClass = batchData.classPreparedSpells.includes(spellKey);
@@ -271,25 +190,6 @@ export class SpellManager {
   _parseClassSpellKey(key) {
     const [classIdentifier, ...uuidParts] = key.split(':');
     return { classIdentifier, spellUuid: uuidParts.join(':') };
-  }
-
-  /**
-   * Get preparation status for a spell that's owned by the actor.
-   * @private
-   * @param {Item5e} spell - The spell item
-   * @returns {SpellPreparationStatus} Preparation status information
-   * @todo actuallyPrepared doesn't seem correct here?
-   */
-  _getOwnedSpellPreparationStatus(spell) {
-    log(3, `Getting owned spell preparation status.`, { actorName: this.actor.name, spellName: spell.name });
-    const alwaysPrepared = spell.system.prepared === 2;
-    const isInnateCasting = spell.system.method === MODULE.PREPARATION_MODES.INNATE;
-    const isAtWill = spell.system.method === MODULE.PREPARATION_MODES.AT_WILL;
-    const manuallyPrepared = spell.system.prepared === 1;
-    const actuallyPrepared = alwaysPrepared || isInnateCasting || isAtWill || manuallyPrepared;
-    const result = { prepared: actuallyPrepared, disabled: false, disabledReason: '' };
-    log(3, `Owned spell status determined.`, { actorName: this.actor.name, spellName: spell.name, prepared: result.prepared });
-    return result;
   }
 
   /**
