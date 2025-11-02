@@ -900,6 +900,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!this._state._initialized) await this._state.initialize();
     if (!this._state._classesDetected) this._state.detectSpellcastingClasses();
     if (!this._classColorsApplied || this._classesChanged) await this._prepareClassStylingData();
+    await this._syncJournalToActorState();
     this._preInitialized = true;
     log(3, 'Pre-initialization complete.');
   }
@@ -924,29 +925,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     }
     return false;
-  }
-
-  /**
-   * Apply collapsed state to any existing level headers.
-   *
-   * @private
-   */
-  _applyCollapsedStateToExistingHeaders() {
-    const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
-    this.element.querySelectorAll('.spell-level').forEach((levelElement) => {
-      const level = levelElement.dataset.level;
-      const isCollapsed = collapsedLevels.includes(level);
-      const header = levelElement.querySelector('.spell-level-heading');
-      const spellList = levelElement.querySelector('.spell-list');
-      const collapseIcon = header?.querySelector('.collapse-indicator');
-      if (header) {
-        header.setAttribute('aria-expanded', !isCollapsed);
-        if (isCollapsed) header.classList.add('collapsed');
-        else header.classList.remove('collapsed');
-      }
-      if (spellList) spellList.style.display = isCollapsed ? 'none' : '';
-      if (collapseIcon) collapseIcon.className = `fas fa-caret-${isCollapsed ? 'right' : 'down'} collapse-indicator`;
-    });
   }
 
   /**
