@@ -1019,35 +1019,7 @@ export class State {
       const inFullWizardList = fullWizardSpellList && isSpellInCollection(spell, fullWizardSpellList);
       return isNonCantrip && inFullWizardList;
     });
-    const copiedSpellsFlag = `${FLAGS.WIZARD_COPIED_SPELLS}_${classIdentifier}`;
-    const copiedSpellsMetadata = this.actor.getFlag(MODULE.ID, copiedSpellsFlag) || [];
-    const scrollLearnedEntries = copiedSpellsMetadata.filter((metadata) => metadata.fromScroll === true);
-    const scrollLearnedUuids = scrollLearnedEntries.map((metadata) => metadata.spellUuid);
-    let scrollLearnedSpells = [];
-    if (scrollLearnedUuids.length > 0) {
-      log(3, `Fetching ${scrollLearnedUuids.length} scroll-learned spells for ${classIdentifier} (max level: ${maxSpellLevel})`);
-      scrollLearnedSpells = await DataUtils.fetchSpellDocuments(new Set(scrollLearnedUuids), maxSpellLevel);
-      log(
-        3,
-        `Fetched ${scrollLearnedSpells.length} scroll-learned spell documents:`,
-        scrollLearnedSpells.map((s) => s.name)
-      );
-      for (const spell of scrollLearnedSpells) {
-        const spellUuids = getSpellUuids(spell);
-        for (const entry of scrollLearnedEntries) {
-          if (spellUuids.includes(entry.spellUuid)) {
-            spell.learnedFromScroll = true;
-            spell.scrollLearningMetadata = {
-              dateCopied: entry.dateCopied,
-              cost: entry.cost,
-              timeSpent: entry.timeSpent
-            };
-            log(3, `Matched scroll-learned spell: ${spell.name}`);
-            break;
-          }
-        }
-      }
-    }
+    const scrollLearnedSpells = await this._getScrollLearnedSpellsNotInClassList(classIdentifier, personalSpellbook, fullWizardSpellList, maxSpellLevel);
     const allWizardbookSpells = [...classSpellsOnly, ...scrollLearnedSpells];
     log(3, `Total wizardbook spells for ${classIdentifier}: ${allWizardbookSpells.length} (${classSpellsOnly.length} class + ${scrollLearnedSpells.length} scroll)`);
     const wizardLevelsGrouped = await this._organizeWizardSpellsForLearning(allWizardbookSpells, classIdentifier, personalSpellbook);
@@ -1352,26 +1324,22 @@ export class State {
    * @param {string} classIdentifier - The class identifier
    * @param {Array<string>} personalSpellbook - UUIDs of spells in personal spellbook
    * @param {Set<string>} classSpellListUuids - UUIDs of spells in the class list
+   * @param {number} maxSpellLevel - Maximum spell level to fetch
    * @returns {Promise<Array<Item5e>>} Array of scroll-learned spell documents
-   * @todo This was never wired in anywhere.
    * @private
    */
-  async _getScrollLearnedSpellsNotInClassList(classIdentifier, personalSpellbook, classSpellListUuids) {
+  async _getScrollLearnedSpellsNotInClassList(classIdentifier, personalSpellbook, classSpellListUuids, maxSpellLevel) {
     const copiedSpellsFlag = `${FLAGS.WIZARD_COPIED_SPELLS}_${classIdentifier}`;
     const copiedSpells = this.actor.getFlag(MODULE.ID, copiedSpellsFlag) || [];
     const scrollLearnedUuids = copiedSpells.map((metadata) => metadata.spellUuid).filter((uuid) => personalSpellbook.includes(uuid) && !classSpellListUuids.has(uuid));
     if (scrollLearnedUuids.length === 0) return [];
     log(3, 'Found scroll-learned spells not in class list', { classIdentifier, count: scrollLearnedUuids.length });
-    const spellDocuments = await DataUtils.fetchSpellDocuments(new Set(scrollLearnedUuids));
+    const spellDocuments = await DataUtils.fetchSpellDocuments(new Set(scrollLearnedUuids), maxSpellLevel);
     for (const spell of spellDocuments) {
       const metadata = copiedSpells.find((m) => m.spellUuid === spell.uuid);
       if (metadata) {
         spell.learnedFromScroll = true;
-        spell.scrollLearningMetadata = {
-          dateCopied: metadata.dateCopied,
-          cost: metadata.cost,
-          timeSpent: metadata.timeSpent
-        };
+        spell.scrollLearningMetadata = { dateCopied: metadata.dateCopied, cost: metadata.cost, timeSpent: metadata.timeSpent };
       }
     }
     log(3, 'Scroll-learned spells retrieved', { classIdentifier, count: spellDocuments.length });

@@ -1,6 +1,5 @@
 /**
  * Chat Message Button Handlers
- * @todo Refactor to use Foundry's TypeDataModel system for chat messages
  */
 
 import { MODULE, SETTINGS } from '../constants/_module.mjs';
