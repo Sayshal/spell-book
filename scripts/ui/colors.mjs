@@ -12,6 +12,74 @@
 const THEME_BACKGROUNDS = { light: '#f4f4f4', dark: '#1b1d24' };
 
 /**
+ * Extract dominant color from a class item's image
+ * @param {Object} classItem - The class item with an img property
+ * @returns {Promise<string>} Hex color string adjusted for contrast
+ */
+export async function getClassColorForWizardTab(classItem) {
+  const img = classItem?.img;
+  const theme = game.settings.get('core', 'uiConfig').colorScheme.applications;
+  const background = THEME_BACKGROUNDS[theme] || THEME_BACKGROUNDS.light || '#f4f4f4';
+  const fallbackColor = '#8B4513';
+  let color = fallbackColor;
+  if (img && img !== 'icons/svg/mystery-man.svg') {
+    const extractedColor = await new Promise((resolve) => {
+      const image = new Image();
+      image.crossOrigin = 'anonymous';
+      const timeout = setTimeout(() => {
+        resolve(fallbackColor);
+      }, 5000);
+      image.onload = () => {
+        clearTimeout(timeout);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const size = 50;
+        canvas.width = size;
+        canvas.height = size;
+        ctx.drawImage(image, 0, 0, size, size);
+        const imageData = ctx.getImageData(0, 0, size, size).data;
+        const colorMap = new Map();
+        for (let i = 0; i < imageData.length; i += 16) {
+          const r = imageData[i];
+          const g = imageData[i + 1];
+          const b = imageData[i + 2];
+          const alpha = imageData[i + 3];
+          if (alpha < 128 || (r > 240 && g > 240 && b > 240)) continue;
+          const rGrouped = Math.floor(r / 32) * 32;
+          const gGrouped = Math.floor(g / 32) * 32;
+          const bGrouped = Math.floor(b / 32) * 32;
+          const key = `${rGrouped},${gGrouped},${bGrouped}`;
+          colorMap.set(key, (colorMap.get(key) || 0) + 1);
+        }
+        let dominantColor = null;
+        let maxCount = 0;
+        for (const [colorKey, count] of colorMap.entries()) {
+          if (count > maxCount) {
+            maxCount = count;
+            dominantColor = colorKey;
+          }
+        }
+        if (dominantColor) {
+          const [r, g, b] = dominantColor.split(',').map(Number);
+          const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+          if (hex.match(/^#[\dA-Fa-f]{6}$/)) resolve(hex);
+          else resolve(fallbackColor);
+        } else resolve(fallbackColor);
+      };
+      image.onerror = () => {
+        clearTimeout(timeout);
+        resolve(fallbackColor);
+      };
+      image.src = img;
+    });
+    if (extractedColor && typeof extractedColor === 'string' && extractedColor.match(/^#[\dA-Fa-f]{6}$/)) color = _adjustColorForContrast(extractedColor, background, 4.5);
+    else color = _adjustColorForContrast(fallbackColor, background, 4.5);
+  } else color = _adjustColorForContrast(fallbackColor, background, 4.5);
+  if (!color || typeof color !== 'string' || !color.match(/^#[\dA-Fa-f]{6}$/)) color = fallbackColor;
+  return color;
+}
+
+/**
  * Apply class-specific colors to CSS with WCAG contrast compliance
  * @param {Object} spellcastingClasses - Object mapping class identifiers to class data
  * @param {string} spellcastingClasses[].img - Path to class icon image

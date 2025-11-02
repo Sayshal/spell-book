@@ -1527,9 +1527,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this.wizardManagers.size > 0) {
       for (const [identifier, wizardManager] of this.wizardManagers) {
         if (wizardManager.isWizard) {
-          const classData = this._state.spellcastingClasses[identifier];
-          if (classData?.item) {
-            const color = await UIUtils.getClassColorForWizardTab(classData.item);
+          const classSpellData = this._state.classSpellData[identifier];
+          if (classSpellData?.classItem) {
+            const color = await UIUtils.getClassColorForWizardTab(classSpellData.classItem);
             this._classStylingCache.set(identifier, color);
           }
         }
