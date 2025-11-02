@@ -471,7 +471,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /* -------------------------------------------- */
-  /*  Action Handlers (Alphabetical)              */
+  /*  Action Handlers                             */
   /* -------------------------------------------- */
 
   /**
