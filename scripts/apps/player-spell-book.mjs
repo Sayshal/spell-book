@@ -194,9 +194,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     /** @type {Map<string, string>} Cached class styling data */
     this._classStylingCache = null;
 
-    /** @type {boolean} Whether preparation listeners have been set up */
-    this._preparationListenersSetup = false;
-
     log(3, 'PlayerSpellBook constructed.');
   }
 
@@ -701,7 +698,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this._preInitialized = false;
     this._classColorsApplied = false;
     this._classStylingCache = null;
-    this._preparationListenersSetup = false;
   }
 
   /** @inheritdoc */
@@ -733,10 +729,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   async _setupDeferredUI() {
     log(3, 'Setting up deferred UI.');
     this.ui.setupFilterListeners();
-    if (!this._preparationListenersSetup) {
-      this.setupPreparationListeners();
-      this._preparationListenersSetup = true;
-    }
     this.ui.applyCollapsedLevels();
     this.ui.setupCantripUI();
     this.ui.updateSpellCounts();
@@ -1077,10 +1069,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (this._formStateCache) this._formStateCache.clear();
     await game.settings.set(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION, this.position);
     SpellBook.DEFAULT_OPTIONS.position = this.position;
-    if (this._preparationListener) {
-      document.removeEventListener('change', this._preparationListener);
-      this._preparationListener = null;
-    }
     if (this._isLongRest) this.actor.unsetFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);
     if (this._flagChangeHook) Hooks.off('updateActor', this._flagChangeHook);
     if (this._loadoutClickHandler) document.removeEventListener('click', this._loadoutClickHandler);
@@ -1089,24 +1077,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (isPartyMode) await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, false);
     if (this.ui?.search) this.ui.search.cleanup();
     super._onClose(options);
-  }
-
-  /**
-   * Set up event listeners for spell preparation checkboxes and filter checkboxes.
-   * @private
-   */
-  setupPreparationListeners() {
-    log(3, 'Setting up prep listeners...');
-    if (this._preparationListener) document.removeEventListener('change', this._preparationListener);
-    this._preparationListener = async (event) => {
-      const target = event.target;
-      if (target.matches('dnd5e-checkbox[data-uuid]')) await this._handlePreparationChange(event);
-      else if (target.matches('dnd5e-checkbox[name^="filter-"]')) {
-        this.filterHelper.invalidateFilterCache();
-        this.filterHelper.applyFilters();
-      }
-    };
-    document.addEventListener('change', this._preparationListener);
   }
 
   /** @inheritdoc */
@@ -1494,38 +1464,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const existingMenu = document.getElementById('party-context-menu');
     if (existingMenu) existingMenu.remove();
     this._activePartyContextMenu = null;
-  }
-
-  /**
-   * Handle preparation checkbox change with optimized UI updates.
-   * @param {Event} event - The change event
-   * @todo Is this required anymore? Since we have submitOnChange true? Meaning our formHandler executes on every change to our form.
-   * @returns {Promise<void>}
-   * @private
-   */
-  async _handlePreparationChange(event) {
-    log(3, 'Handling preparation change.');
-    try {
-      if (this._handlingPreparation) return;
-      this._handlingPreparation = true;
-      const checkbox = event.target;
-      const uuid = checkbox.dataset.uuid;
-      const sourceClass = checkbox.dataset.sourceClass;
-      const spellItem = checkbox.closest('.spell-item');
-      const spellLevel = spellItem?.dataset.spellLevel;
-      const wasPrepared = checkbox.dataset.wasPrepared === 'true';
-      const isChecked = checkbox.checked;
-      if (spellLevel === '0') await this._handleCantripPreparationChange(event, uuid, spellItem);
-      else {
-        await this._handleSpellPreparationChange(event, uuid, spellItem, sourceClass, wasPrepared, isChecked);
-        this.ui.updateSpellPreparationTracking();
-        this.ui.updateSpellCounts();
-      }
-    } catch (error) {
-      log(1, 'Error changing preparations:', error);
-    } finally {
-      this._handlingPreparation = false;
-    }
   }
 
   /**
@@ -2124,17 +2062,33 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle form submission by updating internal state cache.
-   * @param {Event} _event - The form submission event
+   * Handle form submission by updating internal state cache and processing preparation/filter changes.
+   * @param {Event} event - The form submission event
    * @param {HTMLElement} form - The form element
    * @param {Object} _formData - The form data
    * @returns {Promise<void>}
    * @static
    */
-  static async formHandler(_event, form, _formData) {
-    const targetElement = form || this.element;
-    if (!targetElement) return;
-    const allInputs = targetElement.querySelectorAll('input, select, textarea, dnd5e-checkbox');
+  static async formHandler(event, form, _formData) {
+    log(3, 'Form handler executing.');
+    if (event?.target?.matches('dnd5e-checkbox[data-uuid]')) {
+      const uuid = event.target.dataset.uuid;
+      const sourceClass = event.target.dataset.sourceClass;
+      const spellItem = event.target.closest('.spell-item');
+      const spellLevel = spellItem?.dataset.spellLevel;
+      const wasPrepared = event.target.dataset.wasPrepared === 'true';
+      const isChecked = event.target.checked;
+      if (spellLevel === '0') await this._handleCantripPreparationChange(event, uuid, spellItem);
+      else {
+        await this._handleSpellPreparationChange(event, uuid, spellItem, sourceClass, wasPrepared, isChecked);
+        this.ui.updateSpellPreparationTracking();
+        this.ui.updateSpellCounts();
+      }
+    } else if (event?.target?.matches('dnd5e-checkbox[name^="filter-"]')) {
+      this.filterHelper.invalidateFilterCache();
+      this.filterHelper.applyFilters();
+    }
+    const allInputs = form.querySelectorAll('input, select, textarea, dnd5e-checkbox');
     allInputs.forEach((input) => {
       const inputKey = this._getInputCacheKey(input);
       if (!inputKey) return;
