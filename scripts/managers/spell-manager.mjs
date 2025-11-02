@@ -591,7 +591,13 @@ export class SpellManager {
   async _cleanupUnpreparedSpells() {
     const shouldCleanup = game.settings.get(MODULE.ID, SETTINGS.AUTO_DELETE_UNPREPARED_SPELLS);
     if (!shouldCleanup) return;
-    const unpreparedSpells = this.actor.items.filter((item) => item.type === 'spell' && item.system.method === MODULE.SPELL_MODE.SPELL && item.system.prepared === 0);
+    const unpreparedSpells = this.actor.items.filter((item) => {
+      if (item.type !== 'spell') return false;
+      if (item.system.method !== MODULE.SPELL_MODE.SPELL) return false;
+      if (item.system.prepared !== 0) return false;
+      if (item.flags?.dnd5e?.cachedFor) return false;
+      return true;
+    });
     if (unpreparedSpells.length === 0) return;
     log(3, `Auto-cleanup: Removing ${unpreparedSpells.length} unprepared spell(s)`, { actorName: this.actor.name });
     const spellIds = unpreparedSpells.map((spell) => spell.id);

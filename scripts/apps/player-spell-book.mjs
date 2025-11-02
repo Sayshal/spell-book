@@ -2106,7 +2106,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @this SpellBook
    * @param {PointerEvent} _event - The originating click event.
    * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
-   * @todo Investigate bug: Non-prepared Revivify spells are slowly being removed from actors
    */
   static async #save(_event, _target) {
     log(3, 'Handling save.', { _event, _target });
