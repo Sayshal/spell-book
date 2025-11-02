@@ -297,7 +297,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @inheritdoc */
   async _preparePartContext(partId, context, options) {
-    /** @todo: Some of our context doesn't end up in templates - is it required? */
     context = await super._preparePartContext(partId, context, options);
     if (context.tabs?.[partId]) context.tab = context.tabs[partId];
     const classMatch = partId.match(/^([^T]+)Tab$/);
@@ -308,36 +307,21 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         context.className = this._state.classSpellData[classIdentifier].className;
         const rawSpellLevels = this._state.classSpellData[classIdentifier].spellLevels;
         context.spellLevels = await this._processSpellLevelsForContext(rawSpellLevels);
-        context.spellPreparation = this._state.classSpellData[classIdentifier].spellPreparation;
         context.globalPrepared = this._state.spellPreparation;
-        const classNotice = this._prepareClassValidationNotice(classIdentifier, context.className);
-        context.hasClassNotice = !!classNotice;
-        context.classNotice = classNotice;
+        context.classNotice = this._prepareClassValidationNotice(classIdentifier, context.className);
       }
     }
-    const wizardMatch = partId.match(/^wizardbook-(.+)$/);
-    if (wizardMatch) {
-      const classIdentifier = wizardMatch[1];
+    if (partId.startsWith('wizardbook-')) {
+      const classIdentifier = partId.slice(11);
       context.classIdentifier = classIdentifier;
       context.className = this._state.classSpellData[classIdentifier]?.className || classIdentifier;
-      const wizardManager = this.wizardManagers.get(classIdentifier);
-      context.isWizard = wizardManager?.isWizard || false;
-      context.isForceWizard = DataUtils.getWizardData(this.actor)[classIdentifier]?.isForceWizard ?? false;
-      const wizardTabData = this._state.tabData?.[partId];
-      if (wizardTabData) {
-        const rawSpellLevels = wizardTabData.spellLevels || [];
-        context.spellLevels = await this._processSpellLevelsForContext(rawSpellLevels);
-        context.spellPreparation = wizardTabData.spellPreparation;
-        context.wizardTotalSpellbookCount = wizardTabData.wizardTotalSpellbookCount || 0;
-        context.wizardFreeSpellbookCount = wizardTabData.wizardFreeSpellbookCount || 0;
-        context.wizardRemainingFreeSpells = wizardTabData.wizardRemainingFreeSpells || 0;
-        context.wizardHasFreeSpells = wizardTabData.wizardHasFreeSpells || false;
-        context.wizardMaxSpellbookCount = wizardTabData.wizardMaxSpellbookCount || 0;
-        context.wizardIsAtMax = wizardTabData.wizardIsAtMax || false;
-      } else {
-        context.spellLevels = [];
-        context.spellPreparation = { current: 0, maximum: 0 };
-      }
+      const wizardTabData = this._state.tabData[partId];
+      const rawSpellLevels = wizardTabData.spellLevels || [];
+      context.spellLevels = await this._processSpellLevelsForContext(rawSpellLevels);
+      context.wizardTotalSpellbookCount = wizardTabData.wizardTotalSpellbookCount || 0;
+      context.wizardRemainingFreeSpells = wizardTabData.wizardRemainingFreeSpells || 0;
+      context.wizardHasFreeSpells = wizardTabData.wizardHasFreeSpells || false;
+      context.wizardMaxSpellbookCount = wizardTabData.wizardMaxSpellbookCount || 0;
     }
     log(3, 'PSB Part context created:', { partId, context, options });
     return context;
@@ -1322,18 +1306,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Apply filters to spells.
-   * @todo I don't think we need to updateCantripCounter or updateSpellPreparationTracking in an apply filter logic loop?
-   * @private
-   */
-  async _applyFilters() {
-    if (!this.element) return;
-    this.filterHelper.applyFilters();
-    this.ui.updateSpellPreparationTracking();
-    this.ui.updateCantripCounter();
-  }
-
-  /**
    * Set up context menu for loadout button.
    * @private
    */
@@ -1763,7 +1735,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       });
       game.user.setFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS, []);
       this.filterHelper.invalidateFilterCache();
-      this._applyFilters();
+      this.filterHelper.applyFilters();
       this.ui.updateSpellPreparationTracking();
       this.ui.updateCantripCounter();
       event.preventDefault();
@@ -1788,7 +1760,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         });
         game.user.setFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS, []);
         this.filterHelper.invalidateFilterCache();
-        this._applyFilters();
+        this.filterHelper.applyFilters();
         this.ui.updateSpellPreparationTracking();
         this.ui.updateCantripCounter();
       }, 0);
@@ -1905,7 +1877,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
               if (heading) heading.setAttribute('aria-expanded', 'false');
             }
           });
-          this._applyFilters();
+          this.filterHelper.applyFilters();
         }, 50);
       }
     }

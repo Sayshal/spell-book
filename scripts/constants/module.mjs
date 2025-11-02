@@ -429,7 +429,6 @@ export const MODULE = {
 
   /**
    * Spell preparation modes.
-   * @todo Check if we can replace hardcoded strings with this constant.
    * @type {PreparationModesConfig}
    */
   SPELL_MODE: {
