@@ -94,7 +94,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Compute analytics data for the current view mode.
-   * @returns {Promise<AnalyticsData>} Complete analytics data structure
+   * @returns {Promise<Object>} Complete analytics data structure
    * @private
    */
   async _computeAnalytics() {
@@ -126,7 +126,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Compute personal analytics for a specific user.
-   * @param {AnalyticsData} analytics - Analytics object to populate
+   * @param {Object} analytics - Analytics object to populate
    * @param {string} userId - User ID to compute analytics for
    * @returns {Promise<void>}
    * @private
@@ -167,7 +167,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Compute GM analytics across all users.
-   * @param {AnalyticsData} analytics - Analytics object to populate
+   * @param {Object} analytics - Analytics object to populate
    * @returns {Promise<void>}
    * @private
    */
@@ -208,7 +208,11 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
   /**
    * Get all spell data for a user with per-actor aggregation.
    * @param {string} userId - User ID to retrieve data for
-   * @returns {Promise<Object<string, SpellData>>} Aggregated user spell data by spell UUID
+   * @returns {Promise<Object<string, {
+   *   notes: string,
+   *   favorited: boolean,
+   *   usageStats: { count: number, lastUsed: string|null, contextUsage: { combat: number, exploration: number } }
+   * }>>} Aggregated user spell data by spell UUID
    * @private
    */
   async _getAllUserSpellData(userId) {
@@ -249,7 +253,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Get empty analytics structure for initialization.
-   * @returns {AnalyticsData} Empty analytics data structure
+   * @returns {Object} Empty analytics data structure
    * @private
    */
   _getEmptyAnalytics() {

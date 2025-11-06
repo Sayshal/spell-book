@@ -114,7 +114,7 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Process a spell document into standardized format for comparison display.
    * @param {Object} spell - The spell document to process
-   * @returns {ProcessedSpell} Processed spell data for comparison display
+   * @returns {Object} Processed spell data for comparison display
    * @private
    */
   _processSpellForComparison(spell) {
@@ -139,7 +139,7 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Extract damage information from a spell for comparison purposes.
    * @param {Object} spell - The spell document to analyze
-   * @returns {DamageInfo} Damage information object
+   * @returns {Object} Damage information object
    * @private
    */
   _extractDamageInfo(spell) {
@@ -178,8 +178,23 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Build comparison table data structure from processed spells.
-   * @param {ProcessedSpell[]} spells - Array of processed spell objects
-   * @returns {ComparisonTableData} Complete comparison table data structure
+   * @param {Array<{
+   *   level: number,
+   *   school: string,
+   *   castingTime: string,
+   *   range: string,
+   *   duration: string,
+   *   components: string,
+   *   damage: { formula: string, maxDice: number }
+   * }>} spells - Array of processed spell objects
+   * @returns {{
+   *   properties: Array<{
+   *     name: string,
+   *     key: string,
+   *     values: Array<{ value: string | number, highlight: boolean }>
+   *   }>,
+   *   maxDamage: number
+   * }} Complete comparison table data structure
    * @private
    */
   _buildComparisonTable(spells) {

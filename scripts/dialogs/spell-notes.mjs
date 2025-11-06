@@ -47,7 +47,7 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
    * @todo Resolve parameters
    * @param {Object} [options={}] - Application options including spell and actor data
    * @param {string} options.spellUuid - UUID of the spell to edit notes for
-   * @param {Actor} [options.actor] - Associated actor for note ownership
+   * @param {Object} [options.actor] - Associated actor for note ownership
    */
   constructor(options = {}) {
     super(options);

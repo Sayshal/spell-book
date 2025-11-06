@@ -81,8 +81,8 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
   /**
    * Prepare UI elements with generated checkbox form controls.
    * @param {string} type - Setting type ('player' or 'gm')
-   * @param {PlayerSettings|GMSettings} settings - Current settings object
-   * @returns {UIElementConfig[]} Array of UI element configurations with checkboxes
+   * @param {Object} settings - Current settings object
+   * @returns {Array<{ key: string, label: string, description: string, checkboxHtml: string }>} Array of UI element configurations with checkboxes
    * @private
    */
   _prepareUIElementsWithCheckboxes(type, settings) {
@@ -98,8 +98,8 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
   /**
    * Prepare metadata elements with generated checkbox form controls.
    * @param {string} type - Setting type ('player' or 'gm')
-   * @param {PlayerSettings|GMSettings} settings - Current settings object
-   * @returns {MetadataElementConfig[]} Array of metadata element configurations with checkboxes
+   * @param {Object} settings - Current settings object
+   * @returns {Array<{ key: string, label: string, description: string, checkboxHtml: string }>} Array of metadata element configurations with checkboxes
    * @private
    */
   _prepareMetadataElementsWithCheckboxes(type, settings) {
@@ -222,7 +222,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
 
   /**
    * Retrieve current player UI customization settings from world settings.
-   * @returns {PlayerSettings} Object containing all player UI settings
+   * @returns {Object} Object containing all player UI settings
    * @private
    */
   _getPlayerSettings() {
@@ -247,7 +247,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
 
   /**
    * Retrieve current GM UI customization settings from world settings.
-   * @returns {GMSettings} Object containing all GM UI settings
+   * @returns {Object} Object containing all GM UI settings
    * @private
    */
   _getGMSettings() {
@@ -270,7 +270,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
   /**
    * Get UI elements configuration for a specific user type.
    * @param {string} type - User type ('player' or 'gm')
-   * @returns {UIElementConfig[]} Array of UI element configurations
+   * @returns {Array<{ key: string, label: string, description: string }>} Array of UI element configurations
    * @private
    */
   _getUIElementsConfig(type) {
@@ -311,7 +311,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
 
   /**
    * Get metadata elements configuration for spell detail display.
-   * @returns {MetadataElementConfig[]} Array of metadata element configurations
+   * @returns {Array<{ key: string, label: string, description: string }>} Array of metadata element configurations
    * @private
    */
   _getMetadataElementsConfig() {

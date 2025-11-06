@@ -50,8 +50,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Create a new filter configuration instance.
-   * @todo Resolve parameters
-   * @param {Application} parentApp - The parent application that opened this configuration
+   * @param {Object} parentApp - The parent application instance that opened this configuration
    * @param {Object} [options={}] - Additional application options
    */
   constructor(parentApp, options = {}) {
@@ -101,7 +100,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Get the current valid filter configuration.
-   * @returns {Array<FilterConfigItem>} The current filter configuration or default if invalid
+   * @returns {Array<Object>} The current filter configuration or default if invalid
    * @static
    */
   static getValidConfiguration() {
@@ -331,9 +330,9 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Process sortable and non-sortable filters from form data.
-   * @param {Array<FilterConfigItem>} filterConfig - The filter configuration
+   * @param {Array<Object>} filterConfig - The filter configuration
    * @param {Object} formData - Form data from submission
-   * @returns {FilterGroups} Sorted filter groups
+   * @returns {{sortableFilters: Object[], nonSortableFilters: Object[]}} Sorted filter groups
    * @static
    */
   static processSortableFilters(filterConfig, formData) {
@@ -353,9 +352,9 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Update filter ordering based on DOM structure.
-   * @param {Array<FilterConfigItem>} sortableFilters - Filters that can be sorted
+   * @param {Array<Object>} sortableFilters - Filters that can be sorted
    * @param {HTMLFormElement} form - The form element
-   * @returns {Array<FilterConfigItem>} Updated sortable filters with correct order
+   * @returns {Array<Object>} Updated sortable filters with correct order
    * @static
    */
   static updateFilterOrder(sortableFilters, form) {

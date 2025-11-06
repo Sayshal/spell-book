@@ -30,7 +30,7 @@ export class RuleSet {
 
   /**
    * Apply a rule set to an actor, populating class-specific defaults.
-   * @param {Actor5e} actor - The actor to configure
+   * @param {Object} actor - The actor to configure
    * @param {string} ruleSet - The rule set to apply ('legacy' or 'modern')
    * @returns {void}
    * @static
@@ -53,7 +53,7 @@ export class RuleSet {
 
   /**
    * Get the effective rule set for an actor.
-   * @param {Actor5e} actor - The actor to check
+   * @param {Object} actor - The actor to check
    * @returns {string} The effective rule set ('legacy' or 'modern')
    * @static
    */
@@ -68,9 +68,9 @@ export class RuleSet {
 
   /**
    * Get class-specific rules for an actor, with fallback to defaults.
-   * @param {Actor5e} actor - The actor to check
+   * @param {Object} actor - The actor to check
    * @param {string} classIdentifier - The class identifier
-   * @returns {ClassRules} The class rules object
+   * @returns {Object} The class rules object
    * @static
    */
   static getClassRules(actor, classIdentifier) {
@@ -98,9 +98,18 @@ export class RuleSet {
 
   /**
    * Update class rules for a specific class on an actor.
-   * @param {Actor5e} actor - The actor to update
+   * @param {Object} actor - The actor to update
    * @param {string} classIdentifier - The class identifier
-   * @param {Partial<ClassRules>} newRules - The new rules to apply
+   * @param {Partial<{
+   *   spellPreparationBonus: number,
+   *   cantripPreparationBonus: number,
+   *   showCantrips: boolean,
+   *   forceWizardMode: boolean,
+   *   spellLearningCostMultiplier: number,
+   *   spellLearningTimeMultiplier: number,
+   *   startingSpells: number,
+   *   spellsPerLevel: number
+   * }>} newRules - The new rules to apply
    * @returns {Promise<boolean>} True if rules were updated, false if cancelled
    * @static
    */
@@ -135,7 +144,7 @@ export class RuleSet {
 
   /**
    * Initialize class rules for any newly detected spellcasting classes.
-   * @param {Actor5e} actor - The actor to check
+   * @param {Object} actor - The actor to check
    * @returns {void}
    * @static
    */
@@ -161,8 +170,8 @@ export class RuleSet {
   /**
    * Detect spellcasting classes on an actor.
    * @private
-   * @param {Actor5e} actor - The actor to check
-   * @returns {Object<string, SpellcastingClassData>} Map of class identifiers to class data
+   * @param {Object} actor - The actor to check
+   * @returns {Object<string, Object>} Map of class identifiers to class data
    * @static
    */
   static _detectSpellcastingClasses(actor) {
@@ -188,7 +197,7 @@ export class RuleSet {
    * @private
    * @param {string} classIdentifier - The class identifier
    * @param {string} ruleSet - The rule set to use ('legacy' or 'modern')
-   * @returns {ClassRules} Default rules for the class
+   * @returns {Object} Default rules for the class
    * @static
    */
   static _getClassDefaults(classIdentifier, ruleSet) {
@@ -215,7 +224,7 @@ export class RuleSet {
    * Apply legacy rule set defaults for a class.
    * @private
    * @param {string} classIdentifier - The class identifier
-   * @param {ClassRules} defaults - The defaults object to modify
+   * @param {Object} defaults - The defaults object to modify
    * @returns {void}
    * @static
    */
@@ -266,7 +275,7 @@ export class RuleSet {
    * Apply modern rule set defaults for a class.
    * @private
    * @param {string} classIdentifier - The class identifier
-   * @param {ClassRules} defaults - The defaults object to modify
+   * @param {Object} defaults - The defaults object to modify
    * @returns {void}
    * @static
    */
@@ -317,10 +326,10 @@ export class RuleSet {
   /**
    * Get spells that will be affected by changing a custom spell list.
    * @private
-   * @param {Actor5e} actor - The actor to check
+   * @param {Object} actor - The actor to check
    * @param {string} classIdentifier - The class identifier
    * @param {string|Array<string>|null} newSpellListUuid - UUID(s) of the new spell list(s)
-   * @returns {Promise<AffectedSpellData[]>} Array of affected spell data
+   * @returns {Promise<Object[]>} Array of affected spell data
    * @static
    */
   static async _getAffectedSpellsByListChange(actor, classIdentifier, newSpellListUuid) {
@@ -367,9 +376,9 @@ export class RuleSet {
   /**
    * Show confirmation dialog for spell list change.
    * @private
-   * @param {Actor5e} actor - The actor
+   * @param {Object} actor - The actor
    * @param {string} classIdentifier - The class identifier
-   * @param {AffectedSpellData[]} affectedSpells - Array of spells that will be unprepared
+   * @param {Object[]} affectedSpells - Array of spells that will be unprepared
    * @returns {Promise<boolean>} Whether the user confirmed the change
    * @static
    */
@@ -398,9 +407,9 @@ export class RuleSet {
   /**
    * Unprepare spells that are no longer available in the new spell list.
    * @private
-   * @param {Actor5e} actor - The actor
+   * @param {Object} actor - The actor
    * @param {string} classIdentifier - The class identifier
-   * @param {AffectedSpellData[]} affectedSpells - Array of spells to unprepare
+   * @param {Object[]} affectedSpells - Array of spells to unprepare
    * @returns {Promise<void>}
    * @static
    */

@@ -48,7 +48,7 @@ export class CustomUI {
 
   /**
    * Check if a UI element should be shown for SpellBook player interface.
-   * @param {PlayerUIElement} element - The element to check visibility for
+   * @param {Array<String>} element - The element to check visibility for
    * @returns {boolean} Whether the element should be displayed in player interface
    * @static
    */
@@ -62,7 +62,7 @@ export class CustomUI {
 
   /**
    * Check if a UI element should be shown for GMSpellListManager interface.
-   * @param {GMUIElement} element - The element to check visibility for
+   * @param {Array<String>} element - The element to check visibility for
    * @returns {boolean} Whether the element should be displayed in GM interface
    * @static
    */
@@ -103,7 +103,7 @@ export class CustomUI {
 
   /**
    * Check if spell has a specific property.
-   * @param {SpellMetadata} spell - The spell object to check
+   * @param {Object} spell - The spell object to check
    * @param {string} property - The property identifier to check for
    * @returns {boolean} Whether the spell has the specified property
    * @static
@@ -121,7 +121,7 @@ export class CustomUI {
 
   /**
    * Build custom metadata subtitle for SpellBook player interface.
-   * @param {SpellMetadata} spell - The spell object with processed data
+   * @param {Object} spell - The spell object with processed data
    * @param {Set<string>} [enabledElements] - Set of enabled element names. If not provided, will check settings for each element.
    * @param actor Current actor
    * @returns {string} Formatted metadata string for player display
@@ -201,7 +201,7 @@ export class CustomUI {
 
   /**
    * Build custom metadata subtitle for GMSpellListManager interface.
-   * @param {SpellMetadata} spell - The spell object with processed data
+   * @param {Object} spell - The spell object with processed data
    * @param {Set<string>} [enabledElements] - Set of enabled element names. If not provided, will check settings for each element.
    * @returns {string} Formatted metadata string for GM display
    * @static

@@ -8,7 +8,7 @@ import { MODULE, SETTINGS } from './constants/_module.mjs';
 
 /**
  * Simple logging function with module ID prefix and colored styling.
- * @param {LogLevel} level - Log level (1=error, 2=warning, 3=verbose)
+ * @param {Number} level - Log level (1=error, 2=warning, 3=verbose)
  * @param {...*} args - Content to log to console (any number of arguments)
  */
 export function log(level, ...args) {

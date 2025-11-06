@@ -38,7 +38,7 @@ export class DescriptionInjector {
 
   /**
    * Handle setting change for spell description injection mode.
-   * @param {InjectionMode} newValue - The new injection setting value
+   * @param {Object} newValue - The new injection setting value
    * @returns {Promise<void>}
    * @static
    */
@@ -76,7 +76,7 @@ export class DescriptionInjector {
 
   /**
    * Handle item creation and inject notes if applicable.
-   * @param {Item5e} item - The created item
+   * @param {Object} item - The created item
    * @param {Object} _options - Creation options (unused)
    * @param {string} _userId - ID of the user who created the item (unused)
    * @returns {Promise<void>}
@@ -90,7 +90,7 @@ export class DescriptionInjector {
 
   /**
    * Handle item updates with recursion prevention for spell description changes.
-   * @param {Item5e} item - The updated item
+   * @param {Object} item - The updated item
    * @param {Object} changes - The changes made to the item
    * @param {Object} options - Update options, may contain spellBookModuleUpdate flag
    * @param {string} _userId - ID of the user who updated the item (unused)
@@ -108,7 +108,7 @@ export class DescriptionInjector {
 
   /**
    * Update spell description with notes injection based on current settings.
-   * @param {Item5e} spellItem - The spell item to update
+   * @param {Object} spellItem - The spell item to update
    * @returns {Promise<void>}
    * @static
    */
@@ -156,9 +156,9 @@ export class DescriptionInjector {
 
   /**
    * Add notes to spell description based on injection mode.
-   * @param {Item5e} spellItem - The spell item to update
+   * @param {Object} spellItem - The spell item to update
    * @param {string} notesHtml - The formatted HTML notes to inject
-   * @param {InjectionMode} injectionMode - Where to inject notes ('before' or 'after')
+   * @param {Object} injectionMode - Where to inject notes ('before' or 'after')
    * @param {string} currentDescription - The current spell description content
    * @returns {Promise<void>}
    * @static
@@ -173,9 +173,9 @@ export class DescriptionInjector {
 
   /**
    * Replace existing notes in spell description with updated content.
-   * @param {Item5e} spellItem - The spell item to update
+   * @param {Object} spellItem - The spell item to update
    * @param {string} notesHtml - The new formatted HTML notes
-   * @param {InjectionMode} injectionMode - Where to place notes ('before' or 'after')
+   * @param {Object} injectionMode - Where to place notes ('before' or 'after')
    * @returns {Promise<void>}
    * @static
    */
@@ -191,7 +191,7 @@ export class DescriptionInjector {
 
   /**
    * Remove notes from spell description completely.
-   * @param {Item5e} spellItem - The spell item to clean up
+   * @param {Object} spellItem - The spell item to clean up
    * @returns {Promise<void>}
    * @static
    */

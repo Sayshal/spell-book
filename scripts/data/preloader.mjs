@@ -128,7 +128,7 @@ async function preloadForPlayer(showNotification = false) {
 
 /**
  * Collect all relevant spell UUIDs and spell levels for a player actor.
- * @param {Actor5e} actor - The player's actor to collect spells for
+ * @param {Object} actor - The player's actor to collect spells for
  * @returns {Promise<{spellUuids: Set<string>, spellLevels: Set<number>}>} Spell UUIDs and levels relevant to this actor
  * @private
  */
@@ -153,7 +153,7 @@ async function collectPlayerSpellUuids(actor) {
 
 /**
  * Get spell UUIDs and levels from spell lists assigned to actor's classes.
- * @param {Actor5e} actor - The actor to check for class spell lists
+ * @param {Object} actor - The actor to check for class spell lists
  * @returns {Promise<Array<{uuid: string, level?: number}>>} Array of spell data from class lists
  * @private
  */
@@ -183,7 +183,7 @@ async function getSpellsFromActorSpellLists(actor) {
 
 /**
  * Get spell UUIDs and levels from actor's wizard spellbooks.
- * @param {Actor5e} actor - The actor to check for wizard spellbooks
+ * @param {Object} actor - The actor to check for wizard spellbooks
  * @returns {Promise<Array<{uuid: string, level?: number}>>} Array of spell data from wizard spellbooks
  * @private
  */
@@ -218,7 +218,7 @@ async function getActorSpellbookSpells(actor) {
 
 /**
  * Get preloaded spell data if valid.
- * @returns {PreloadedSpellData|null} Preloaded data or null if invalid
+ * @returns {Object|null} Preloaded data or null if invalid
  */
 export function getPreloadedData() {
   const preloadedData = globalThis.SPELLBOOK?.preloadedData;
@@ -230,14 +230,14 @@ export function getPreloadedData() {
 
 /**
  * Cache preloaded data to global scope.
- * @param {Array<SpellListMetadata>} spellLists - Array of spell list objects
- * @param {Collection<EnrichedSpellData>} enrichedSpells - Collection of enriched spell objects
+ * @param {Array<Object>} spellLists - Array of spell list objects
+ * @param {Collection<string, Object>} enrichedSpells - Collection of enriched spell objects
  * @param {string} mode - The preload mode used ('gm-setup', 'gm-party', 'player', 'no-character')
  * @private
  */
 function cachePreloadedData(spellLists, enrichedSpells, mode) {
   // Store Collection directly for better performance
-  const spellsCollection = enrichedSpells instanceof Collection ? enrichedSpells : new Collection(enrichedSpells.map(s => [s.uuid || s._id, s]));
+  const spellsCollection = enrichedSpells instanceof Collection ? enrichedSpells : new Collection(enrichedSpells.map((s) => [s.uuid || s._id, s]));
   globalThis.SPELLBOOK.preloadedData = { spellLists, enrichedSpells: spellsCollection, timestamp: Date.now(), version: game.modules.get(MODULE.ID).version, mode };
 }
 
@@ -259,7 +259,7 @@ export function invalidateSpellListCache() {
 
 /**
  * Check if a journal page should trigger cache invalidation.
- * @param {JournalEntryPage} page - The journal page to check
+ * @param {Object} page - The journal page to check
  * @returns {boolean} True if this page affects spell lists and should invalidate cache
  */
 export function shouldInvalidateCacheForPage(page) {
@@ -276,7 +276,7 @@ export function shouldInvalidateCacheForPage(page) {
 /**
  * Enrich spells with icon links for UI display using custom implementation.
  * @param {Collection<Object>|Array<Object>} spells - Collection or array of spell objects to enrich
- * @returns {Promise<Collection<EnrichedSpellData>>} Collection of spells with enriched icons
+ * @returns {Promise<Collection<string, Object>>} Collection of spells with enriched icons
  * @private
  */
 async function enrichSpellsWithIcons(spells) {

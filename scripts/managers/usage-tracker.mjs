@@ -49,7 +49,7 @@ export class UsageTracker {
 
   /**
    * Get singleton instance of the spell usage tracker.
-   * @returns {UsageTracker} The singleton instance
+   * @returns {Object} The singleton instance
    * @static
    */
   static getInstance() {
@@ -73,7 +73,7 @@ export class UsageTracker {
   /**
    * Handle activity consumption events for spell usage tracking.
    * @private
-   * @param {Activity} activity - The activity being consumed
+   * @param {Object} activity - The activity being consumed
    * @param {Object} _usageConfig - Usage configuration data (unused)
    * @param {Object} _messageConfig - Message configuration data (unused)
    * @param {Object} _updates - Document updates object (unused)
@@ -107,7 +107,7 @@ export class UsageTracker {
   /**
    * Detect usage context based on combat state.
    * @private
-   * @param {Actor} actor - The casting actor
+   * @param {Object} actor - The casting actor
    * @returns {string} Either 'combat' or 'exploration'
    */
   _detectUsageContext(actor) {
@@ -125,7 +125,7 @@ export class UsageTracker {
    * @private
    * @param {string} spellUuid - Canonical spell UUID
    * @param {string} context - Either 'combat' or 'exploration'
-   * @param {Actor} actor - The casting actor
+   * @param {Object} actor - The casting actor
    * @returns {Promise<void>}
    */
   async _recordSpellUsage(spellUuid, context, actor) {

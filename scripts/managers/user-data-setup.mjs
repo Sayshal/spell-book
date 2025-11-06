@@ -65,8 +65,8 @@ export class UserDataSetup {
   /**
    * Ensure folder exists in the pack.
    * @private
-   * @param {CompendiumCollection} pack - The spells pack
-   * @returns {Promise<Folder>} Promise that resolves to the existing or newly created folder
+   * @param {Collection<string, Object>} pack - The spells pack
+   * @returns {Promise<Object>} Promise that resolves to the existing or newly created folder
    */
   async _ensureFolder(pack) {
     log(3, 'Ensuring folder exists.', { folderName: this.folderName });
@@ -78,8 +78,8 @@ export class UserDataSetup {
   /**
    * Ensure journal exists in the folder.
    * @private
-   * @param {CompendiumCollection} pack - The spells pack
-   * @returns {Promise<JournalEntry>} Promise that resolves to the existing or newly created journal entry
+   * @param {Collection<string, Object>} pack - The spells pack
+   * @returns {Promise<Object>} Promise that resolves to the existing or newly created journal entry
    */
   async _ensureJournal(pack) {
     log(3, 'Ensuring journal exists.', { journalName: this.journalName });
@@ -174,7 +174,7 @@ export class UserDataSetup {
   /**
    * Create introductory title page for user data journal.
    * @private
-   * @param {JournalEntry} journal - The user data journal
+   * @param {Object} journal - The user data journal
    * @returns {Promise<void>}
    */
   async _createIntroductoryPage(journal) {

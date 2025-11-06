@@ -31,7 +31,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Create a new SpellBook application.
    * @todo Resolve parameters
-   * @param {Actor} actor - The actor whose spells to display
+   * @param {Object} actor - The actor whose spells to display
    * @param {Object} [options={}] - Application options
    */
   constructor(actor, options = {}) {
@@ -132,7 +132,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Get the primary wizard manager for backward compatibility.
-   * @returns {WizardBook|null} The primary wizard manager instance or null if none found
+   * @returns {Object|null} The primary wizard manager instance or null if none found
    */
   get wizardManager() {
     log(3, 'Retrieving wizardmanger.', { managers: this.wizardManagers });

@@ -28,7 +28,7 @@ export class Filters {
   /**
    * Create a new filter helper.
    * @todo Resolve parameter
-   * @param {SpellBook} app - The parent application instance
+   * @param {Object} app - The parent application instance
    */
   constructor(app) {
     this.app = app;
@@ -58,7 +58,7 @@ export class Filters {
 
   /**
    * Get the current filter state from the UI (with caching).
-   * @returns {FilterState} The current filter state
+   * @returns {Object} The current filter state
    */
   getFilterState() {
     const now = Date.now();
@@ -136,8 +136,8 @@ export class Filters {
    * @param {Array<Object>} availableSpells - Array of available spells to filter
    * @param {Set<string>} selectedSpellUUIDs - Set of selected spell UUIDs to exclude
    * @param {Function} isSpellInSelectedList - Function to check if spell is in selected list
-   * @param {FilterState} [filterState] - Optional filter state to use instead of reading from DOM
-   * @returns {FilterResult} Filtered spells with count information
+   * @param {Object} [filterState] - Optional filter state to use instead of reading from DOM
+   * @returns {Object} Filtered spells with count information
    */
   filterAvailableSpells(availableSpells, selectedSpellUUIDs, isSpellInSelectedList, filterState = null) {
     const filters = filterState || this.getFilterState();
@@ -168,7 +168,7 @@ export class Filters {
   /**
    * Filter spells by source.
    * @param {Array<Object>} spells - Spells to filter
-   * @param {FilterState} filterState - Current filter state
+   * @param {Object} filterState - Current filter state
    * @returns {Array<Object>} Filtered spells matching source criteria
    * @private
    */
@@ -193,7 +193,7 @@ export class Filters {
   /**
    * Filter spells by spell source (spell.system.source.label).
    * @param {Array<Object>} spells - Spells to filter
-   * @param {FilterState} filterState - Current filter state
+   * @param {Object} filterState - Current filter state
    * @returns {Array<Object>} Filtered spells matching spell source criteria
    * @private
    */
@@ -217,7 +217,7 @@ export class Filters {
   /**
    * Filter spells by basic properties (name, level, school, casting time).
    * @param {Array<Object>} spells - Spells to filter
-   * @param {FilterState} filterState - Current filter state
+   * @param {Object} filterState - Current filter state
    * @returns {Array<Object>} Filtered spells matching basic property criteria
    * @private
    */
@@ -293,7 +293,7 @@ export class Filters {
   /**
    * Filter spells by range.
    * @param {Array<Object>} spells - Spells to filter
-   * @param {FilterState} filterState - Current filter state
+   * @param {Object} filterState - Current filter state
    * @returns {Array<Object>} Filtered spells within specified range
    * @private
    */
@@ -319,7 +319,7 @@ export class Filters {
   /**
    * Filter spells by damage types and conditions.
    * @param {Array<Object>} spells - Spells to filter
-   * @param {FilterState} filterState - Current filter state
+   * @param {Object} filterState - Current filter state
    * @returns {Array<Object>} Filtered spells matching damage/condition criteria
    * @private
    */
@@ -341,7 +341,7 @@ export class Filters {
   /**
    * Filter spells by special properties (saves, concentration, ritual).
    * @param {Array<Object>} spells - Spells to filter
-   * @param {FilterState} filterState - Current filter state
+   * @param {Object} filterState - Current filter state
    * @returns {Array<Object>} Filtered spells matching special property criteria
    * @private
    */
@@ -374,6 +374,7 @@ export class Filters {
 
   /**
    * Apply filters to the spell list.
+   * @todo levelVisibilityMap is always empty when _updateLevelVisibilityStats is called?
    * @returns {void}
    */
   applyFilters() {
@@ -400,7 +401,7 @@ export class Filters {
   /**
    * Extract spell data from DOM element for filtering.
    * @param {HTMLElement} item - The spell item element
-   * @returns {ExtractedSpellData} Extracted spell data for filtering
+   * @returns {Object} Extracted spell data for filtering
    * @private
    */
   _extractSpellDataFromElement(item) {
@@ -430,8 +431,8 @@ export class Filters {
 
   /**
    * Update level visibility statistics.
-   * @param {Map<string, LevelVisibilityStats>} levelVisibilityMap - Map to track level statistics
-   * @param {ExtractedSpellData} spellData - Spell data
+   * @param {Map<string, Object>} levelVisibilityMap - Map to track level statistics
+   * @param {Object} spellData - Spell data
    * @param {HTMLElement} item - Spell item element
    * @private
    */
@@ -462,8 +463,8 @@ export class Filters {
 
   /**
    * Check if a spell matches the current filters.
-   * @param {FilterState} filters - The current filter state
-   * @param {ExtractedSpellData} spell - The spell to check
+   * @param {Object} filters - The current filter state
+   * @param {Object} spell - The spell to check
    * @returns {boolean} Whether the spell should be visible
    * @private
    */
@@ -531,7 +532,7 @@ export class Filters {
 
   /**
    * Update level container visibility and counts.
-   * @param {Map<string, LevelVisibilityStats>} levelVisibilityMap - Map of level visibility data
+   * @param {Map<string, Object>} levelVisibilityMap - Map of level visibility data
    * @private
    */
   _updateLevelContainers(levelVisibilityMap) {
@@ -617,7 +618,7 @@ function _getBaseFilterOptions(filterId) {
  * Prepare filter options based on filter type and current state.
  * @param {string} filterId - The filter identifier (level, school, etc.)
  * @param {Object} filterState - Current filter state with selected values
- * @returns {Array<FilterOption>} Options for the dropdown control
+ * @returns {Array<{ value: string; label: string; }>} Options for the dropdown control
  */
 export function getOptionsForFilter(filterId, filterState) {
   if (filterId === 'castingTime') {
@@ -639,7 +640,7 @@ export function getOptionsForFilter(filterId, filterState) {
 /**
  * Get casting time options with proper sorting and formatting.
  * @param {Object} filterState - Current filter state for selection tracking
- * @returns {Array<FilterOption>} Sorted casting time options
+ * @returns {Array<{ value: string; label: string; }>} Sorted casting time options
  * @private
  */
 export function getCastingTimeOptions(filterState) {
@@ -697,9 +698,9 @@ export function ensureFilterIntegrity(filterConfig) {
 
 /**
  * Prepare filter data for the UI.
- * @param {Actor} actor - The actor instance
+ * @param {Object} actor - The actor instance
  * @param {UIUtils.Filters} filterHelper - The filter helper instance
- * @returns {Array<FilterConfig>} The prepared filters
+ * @returns {Array<{ id: string, type: string, name: string, label: string, enabled: boolean, unit?: string, elementHtml: string }>} The prepared filter objects ready for UI rendering
  */
 export function prepareFilters(actor, filterHelper) {
   let filterConfigData = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);

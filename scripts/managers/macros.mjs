@@ -40,13 +40,13 @@ export class Macros {
   /**
    * Ensure a specific macro exists in the compendium and is current.
    * @todo Resolve parameters
-   * @param {CompendiumCollection} pack - The macro compendium pack
-   * @param {MacroConfiguration} macroConfig - Macro configuration object
-   * @returns {Promise<Macro|null>} Promise that resolves to the existing or newly created macro, or null if creation failed
+   * @param {Collection<string, Macro>} pack - The macro compendium pack
+   * @param {object} macro - Macro configuration object
+   * @returns {Promise<Object|null>} Promise that resolves to the existing or newly created Macro document, or null if not found/creation failed
    * @static
    */
-  static async ensureCompendiumMacroExists(pack, macroConfig) {
-    const { flagKey, version, name, command, img = 'icons/svg/dice-target.svg', type = 'script' } = macroConfig;
+  static async ensureCompendiumMacroExists(pack, macro) {
+    const { flagKey, version, name, command, img = 'icons/svg/dice-target.svg', type = 'script' } = macro;
     log(3, 'Ensuring compendium macro exists.', { name, version, flagKey });
     const packDocuments = await pack.getDocuments();
     const existingMacro = packDocuments.find((macro) => macro.getFlag(MODULE.ID, flagKey) !== undefined);
@@ -85,7 +85,7 @@ export class Macros {
 
   /**
    * Get all macros managed by this module from the compendium.
-   * @returns {Promise<Array<Macro>>} Promise that resolves to an array of module-managed macros
+   * @returns {Promise<Array<Object>>} Promise that resolves to an array of module-managed macros
    * @static
    */
   static async getManagedMacros() {

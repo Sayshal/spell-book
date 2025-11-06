@@ -36,7 +36,7 @@ export class UserData {
 
   /**
    * Get the user spell data journal from the user data pack.
-   * @returns {Promise<JournalEntry|null>} Promise that resolves to the user spell data journal or null if not found
+   * @returns {Promise<Object|null>} Promise that resolves to the user spell data journal or null if not found
    * @static
    * @private
    */
@@ -49,7 +49,7 @@ export class UserData {
   /**
    * Get user page from journal for spell data storage.
    * @param {string} userId - User ID to get page for
-   * @returns {Promise<JournalEntryPage|null>} The user's page or null if not found
+   * @returns {Promise<Object|null>} The user's page or null if not found
    * @static
    * @private
    */
@@ -62,7 +62,7 @@ export class UserData {
   /**
    * Parse spell data from HTML tables with per-actor structure support.
    * @param {string} htmlContent - The page HTML content to parse
-   * @returns {Object<string, UserSpellData>} Parsed spell data object keyed by spell UUID
+   * @returns {Object<string, Object>} Parsed spell data object keyed by spell UUID
    * @static
    * @private
    */
@@ -122,7 +122,7 @@ export class UserData {
 
   /**
    * Generate HTML tables from spell data for journal storage.
-   * @param {Object<string, UserSpellData>} spellData - The spell data to convert to HTML
+   * @param {Object<string, Object>} spellData - The spell data to convert to HTML
    * @param {string} userName - Name of the user for display headers
    * @param {string} userId - User ID for the data context
    * @returns {Promise<string>} Generated HTML tables content ready for journal storage
@@ -197,7 +197,7 @@ export class UserData {
    * @param {string|Object} spellOrUuid - Spell UUID or spell object to get data for
    * @param {string} [userId=null] - User ID (defaults to current user)
    * @param {string} [actorId=null] - Actor ID for actor-specific data
-   * @returns {Promise<UserSpellData|null>} User data object or null if unavailable
+   * @returns {Promise<Object|null>} User data object or null if unavailable
    * @static
    */
   static async getUserDataForSpell(spellOrUuid, userId = null, actorId = null) {
@@ -275,7 +275,7 @@ export class UserData {
    * @param {Object} spell - Spell object to enhance with user data
    * @param {string} [userId=null] - User ID (defaults to current user)
    * @param {string} [actorId=null] - Actor ID for actor-specific data
-   * @returns {EnhancedSpellData} Enhanced spell object with user data properties added
+   * @returns {Object} Enhanced spell object with user data properties added
    * @static
    */
   static enhanceSpellWithUserData(spell, userId = null, actorId = null) {
@@ -408,7 +408,7 @@ export class UserData {
   /**
    * Sync actor favorites to journal storage.
    * Compares actor favorite spells with journal favorites and updates journal to match actor.
-   * @param {Actor} actor - The actor to sync favorites for
+   * @param {Object} actor - The actor to sync favorites for
    * @returns {Promise<Array<{uuid: string, newState: boolean}>>} Array of changed spells with their new favorite states
    * @static
    */

@@ -11,7 +11,7 @@
 
 /**
  * Create a checkbox input using D&D 5e styling.
- * @param {CheckboxConfig} config - Configuration options for the checkbox
+ * @param {Object} config - Configuration options for the checkbox
  * @returns {HTMLElement} The created checkbox element (or label wrapper if label provided)
  */
 export function createCheckbox(config) {
@@ -32,7 +32,7 @@ export function createCheckbox(config) {
 
 /**
  * Create a number input using D&D 5e styling.
- * @param {NumberInputConfig} config - Configuration options for the number input
+ * @param {Object} config - Configuration options for the number input
  * @returns {HTMLElement} The created number input element
  */
 export function createNumberInput(config) {
@@ -43,7 +43,7 @@ export function createNumberInput(config) {
 
 /**
  * Create a text input using D&D 5e styling.
- * @param {TextInputConfig} config - Configuration options for the text input
+ * @param {Object} config - Configuration options for the text input
  * @returns {HTMLElement} The created text input element
  */
 export function createTextInput(config) {
@@ -54,7 +54,7 @@ export function createTextInput(config) {
 
 /**
  * Create a select dropdown using D&D 5e styling.
- * @param {SelectConfig} config - Configuration options for the select dropdown
+ * @param {Object} config - Configuration options for the select dropdown
  * @returns {HTMLElement} The created select element
  */
 export function createSelect(config) {
@@ -76,8 +76,8 @@ export function createSelect(config) {
 
 /**
  * Create a multi-select element using Foundry's native multi-select functionality.
- * @param {Array<MultiSelectOption>} options - Array of option configurations
- * @param {MultiSelectConfig} config - Multi-select configuration
+ * @param {Array<Object>} options - Array of option configurations
+ * @param {Object} config - Multi-select configuration
  * @returns {HTMLElement} The created multi-select element
  */
 export function createMultiSelect(options, config) {
@@ -99,9 +99,9 @@ export function createMultiSelect(options, config) {
 
 /**
  * Create a multi-select element with pre-grouped options.
- * @param {Array<MultiSelectOption>} groupedOptions - Options with group properties
+ * @param {Array<Object>} groupedOptions - Options with group properties
  * @param {Array<string>} groups - Ordered array of group labels
- * @param {MultiSelectConfig} config - Multi-select configuration
+ * @param {Object} config - Multi-select configuration
  * @returns {HTMLElement} The created multi-select element
  */
 export function createGroupedMultiSelect(groupedOptions, groups, config) {
@@ -110,7 +110,7 @@ export function createGroupedMultiSelect(groupedOptions, groups, config) {
 
 /**
  * Create a counter group with increment/decrement buttons and number input.
- * @param {CounterGroupConfig} config - Counter group configuration
+ * @param {Object} config - Counter group configuration
  * @returns {string} HTML string for the complete counter group
  */
 export function createCounterGroup(config) {
@@ -146,9 +146,9 @@ export function createCounterGroup(config) {
 
 /**
  * Create options array with localized labels and automatic selection.
- * @param {Array<LocalizedOptionConfig>} optionConfigs - Array of option configurations
+ * @param {Array<Object>} optionConfigs - Array of option configurations
  * @param {string} selectedValue - Currently selected value
- * @returns {Array<SelectOption>} Array of options with localized labels and selected state
+ * @returns {Array<Object>} Array of options with localized labels and selected state
  */
 export function createLocalizedOptions(optionConfigs, selectedValue) {
   return optionConfigs.map((config) => ({ value: config.value, label: game.i18n.localize(config.labelKey), selected: selectedValue === config.value }));
@@ -157,7 +157,7 @@ export function createLocalizedOptions(optionConfigs, selectedValue) {
 /**
  * Create a select dropdown with localized options.
  * @param {string} name - Name attribute for the select
- * @param {Array<LocalizedOptionConfig>} optionConfigs - Option configurations
+ * @param {Array<Object>} optionConfigs - Option configurations
  * @param {string} selectedValue - Currently selected value
  * @param {string} ariaLabelKey - Localization key for aria-label
  * @param {string} [id] - Optional ID for the select element
@@ -172,7 +172,7 @@ export function createLocalizedSelect(name, optionConfigs, selectedValue, ariaLa
 
 /**
  * Create a button with optional icon and localized label.
- * @param {ButtonConfig} config - Button configuration options
+ * @param {Object} config - Button configuration options
  * @returns {HTMLElement} The created button element
  */
 export function createButton(config) {

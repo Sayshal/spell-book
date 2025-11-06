@@ -1369,7 +1369,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * Uses the class folder cache for early exit optimization when the class doesn't exist.
    * @param {string} identifier - The class identifier to search for
    * @param {string} topLevelFolderName - The top-level folder name to search in
-   * @returns {Promise<Item|null>} The found class item or null
+   * @returns {Promise<Object|null>} The found class item or null
    * @private
    */
   async _findClassInTopLevelFolder(identifier, topLevelFolderName) {

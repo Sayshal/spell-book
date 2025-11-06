@@ -6,7 +6,7 @@ import { MODULE, SETTINGS } from '../constants/_module.mjs';
 
 /**
  * Handle chat message creation and wire up button event listeners
- * @param {ChatMessage} message - The created chat message
+ * @param {Object} message - The created chat message
  * @param {object} _options - Creation options
  * @param {string} _userId - ID of the creating user
  */
@@ -29,7 +29,7 @@ export async function createChatMessage(message, _options, _userId) {
 /**
  * Handle migration report button interactions
  * @param {HTMLElement} element - The message DOM element
- * @param {ChatMessage} message - The chat message document
+ * @param {Object} message - The chat message document
  */
 function handleMigrationReportButtons(element, message) {
   const suppressButton = element.querySelector('.suppress-migration-warnings');

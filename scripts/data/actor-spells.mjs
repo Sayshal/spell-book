@@ -17,7 +17,7 @@ import * as DataUtils from './_module.mjs';
  * Fast spell document fetching.
  * @param {Set<string>} spellUuids - Set of spell UUIDs to fetch
  * @param {number} maxSpellLevel - Maximum spell level to include in results
- * @returns {Promise<Array<SpellDocument>>} Array of spell documents
+ * @returns {Promise<Array<Object>>} Array of spell documents
  */
 export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
   log(3, 'Fetching spell documents!', { spellUuids, maxSpellLevel });
@@ -135,8 +135,8 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
 
 /**
  * Organize spells by level for display in GM interface.
- * @param {Array<SpellDocument>} spellItems - Array of spell documents to organize
- * @returns {Array<LevelGroup>} Array of level objects with organized spells
+ * @param {Array<Object>} spellItems - Array of spell documents to organize
+ * @returns {Array<Object>} Array of level objects with organized spells
  */
 export function organizeSpellsByLevel(spellItems) {
   log(3, 'Organizing spells by level!', { spellItems });

@@ -66,10 +66,10 @@ const SPELL_LIST_TYPE_CONFIG = [
 
 /**
  * Migrate a journal to its appropriate folder based on flags.
- * @param {JournalEntry} journal - Journal to migrate
- * @param {Folder} customFolder - Custom spell lists folder
- * @param {Folder} mergedFolder - Merged spell lists folder
- * @param {Folder} modifiedFolder - Modified spell lists folder
+ * @param {Object} journal - Journal to migrate
+ * @param {Object} customFolder - Custom spell lists folder
+ * @param {Object} mergedFolder - Merged spell lists folder
+ * @param {Object} modifiedFolder - Modified spell lists folder
  * @returns {Promise<Object>} Migration result with success status and type
  */
 async function migrateJournalToFolder(journal, customFolder, mergedFolder, modifiedFolder) {

@@ -28,9 +28,9 @@ export function registerTidy5eIntegration() {
 
 /**
  * Handle Tidy5e classic sheet rendering.
- * @param {Application} _sheet - The Tidy5e sheet application instance
+ * @param {Object} _sheet - The Tidy5e sheet application instance
  * @param {HTMLElement} element - The sheet HTML element
- * @param {Tidy5eSheetData} data - The sheet data object containing actor information
+ * @param {Object} data - The sheet data object containing actor information
  * @returns {void}
  */
 function onTidy5eRender(_sheet, element, data) {
@@ -63,9 +63,9 @@ function onTidy5eRender(_sheet, element, data) {
 
 /**
  * Handle Tidy5e Quadrone (new) sheet rendering.
- * @param {Application} _sheet - The Tidy5e sheet application instance
+ * @param {Object} _sheet - The Tidy5e sheet application instance
  * @param {HTMLElement} element - The sheet HTML element
- * @param {Tidy5eSheetData} data - The sheet data object containing actor information
+ * @param {Object} data - The sheet data object containing actor information
  * @returns {void}
  */
 function onTidy5eQuadroneRender(_sheet, element, data) {
@@ -98,7 +98,7 @@ function onTidy5eQuadroneRender(_sheet, element, data) {
 
 /**
  * Check if Tidy5e Spell Book button can be added.
- * @param {Actor5e} actor - The actor to check for spellcasting capabilities
+ * @param {Object} actor - The actor to check for spellcasting capabilities
  * @param {HTMLElement} element - The sheet HTML element
  * @returns {boolean} True if the button can be added to this Tidy5e sheet
  */
@@ -119,7 +119,7 @@ function canAddTidySpellbookButton(actor, element) {
 
 /**
  * Create Tidy5e Spell Book button element for classic sheets.
- * @param {Actor5e} actor - The actor this button will open a spell book for
+ * @param {Object} actor - The actor this button will open a spell book for
  * @returns {HTMLElement} The created button element for Tidy5e classic sheets
  */
 function createTidySpellbookButton(actor) {
@@ -136,7 +136,7 @@ function createTidySpellbookButton(actor) {
 
 /**
  * Create Tidy5e Spell Book button element for Quadrone sheets.
- * @param {Actor5e} actor - The actor this button will open a spell book for
+ * @param {Object} actor - The actor this button will open a spell book for
  * @returns {HTMLElement} The created button element for Tidy5e Quadrone sheets
  */
 function createTidySpellbookButtonQuadrone(actor) {
@@ -153,7 +153,7 @@ function createTidySpellbookButtonQuadrone(actor) {
 /**
  * Open Spell Book application for Tidy5e integration.
  * @param {Event} event - The click event
- * @param {Actor5e} actor - The actor whose spell book should be opened
+ * @param {Object} actor - The actor whose spell book should be opened
  * @returns {Promise<void>}
  */
 async function openSpellbook(event, actor) {

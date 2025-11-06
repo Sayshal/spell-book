@@ -82,7 +82,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
    * @this Troubleshooter
    * @param {PointerEvent} event - The originating click event.
    * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
-   * @returns {Promise<ExportResult>} Export result information
+   * @returns {Promise<Object>} Export result information
    */
   static async #export(event, _target) {
     log(3, 'Handling report export.', { event, _target });

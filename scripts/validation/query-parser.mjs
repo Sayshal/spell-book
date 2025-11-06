@@ -17,7 +17,7 @@ import * as DataUtils from '../data/_module.mjs';
 export class QueryParser {
   /**
    * Create a new QueryParser instance with field definitions for parsing search queries.
-   * @param {FieldDefinitionsType} fieldDefinitions - The field definitions to use for parsing
+   * @param {Object} fieldDefinitions - The field definitions to use for parsing
    */
   constructor(fieldDefinitions) {
     this.fieldDefinitions = fieldDefinitions;
@@ -26,7 +26,7 @@ export class QueryParser {
   /**
    * Parse advanced search query into executable query object.
    * @param {string} query - The query string (without ^ trigger character)
-   * @returns {ParsedQueryObject|null} Parsed query object or null if invalid
+   * @returns {Object|null} Parsed query object or null if invalid
    */
   parseQuery(query) {
     if (!query || !query.trim()) return null;
@@ -40,7 +40,7 @@ export class QueryParser {
    * Parse query into field conditions using AND logic.
    * @private
    * @param {string} query - The query string to parse
-   * @returns {Array<ParsedFieldCondition>} Array of parsed field condition objects
+   * @returns {Array<Object>} Array of parsed field condition objects
    */
   _parseConditions(query) {
     const conditions = [];
@@ -59,7 +59,7 @@ export class QueryParser {
    * @private
    * @param {string} expression - The field:value expression to parse
    * @todo [5.2.X] Use foundry.utils.formatIdentifier() when available in public API
-   * @returns {ParsedFieldCondition|null} Parsed field condition or null if invalid
+   * @returns {Object|null} Parsed field condition or null if invalid
    */
   _parseFieldExpression(expression) {
     const colonIndex = expression.indexOf(':');

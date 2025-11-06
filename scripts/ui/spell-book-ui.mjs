@@ -26,7 +26,7 @@ export class SpellBookUI {
   /**
    * Create a new UI helper.
    * @todo Resolve parameter
-   * @param {class} app - The parent application instance
+   * @param {Object} app - The parent application instance
    */
   constructor(app) {
     this.app = app;
@@ -184,7 +184,7 @@ export class SpellBookUI {
 
   /**
    * Update the footer preparation display with granular at-max styling.
-   * @param {PreparationDisplayData} globalPrepared - Global preparation counts
+   * @param {{ current: number, maximum: number }} globalPrepared - Global preparation counts
    * @returns {void}
    * @private
    */
@@ -362,7 +362,7 @@ export class SpellBookUI {
    * Update cantrip counter display using cached max values.
    * @param {HTMLElement} [cantripLevel] - The cantrip level container
    * @param {boolean} [skipLockSetup=false] - Whether to skip calling setupCantripLocks
-   * @returns {CantripCounterState} Counter state with current and max values
+   * @returns {Object} Counter state with current and max values
    */
   updateCantripCounter(cantripLevel, skipLockSetup = false) {
     if (!this.element) return { current: 0, max: 0 };
@@ -798,7 +798,16 @@ export function setGroupCheckboxes(checkboxes, checked, skipDisabled = true) {
 
 /**
  * Calculate optimal position for a dialog/tooltip relative to a trigger element.
- * @param {PositioningConfig} config - Positioning configuration options
+ * @param {{
+ *   triggerElement: HTMLElement,
+ *   dialogWidth: number,
+ *   dialogHeight: number,
+ *   minMargin?: number,
+ *   minTop?: number,
+ *   maxBottomOffset?: number,
+ *   offset?: number,
+ *   preferredSide?: 'left' | 'right' | 'top' | 'bottom'
+ * }} config - Positioning configuration options
  * @returns {{left: number, top: number}} Calculated position coordinates in pixels
  */
 export function calculateOptimalPosition(config) {

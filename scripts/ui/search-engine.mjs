@@ -21,7 +21,7 @@ export class SearchEngine {
   /**
    * Create a new advanced search manager instance.
    * @todo Resolve parameter
-   * @param {SpellBook} app - The parent application instance
+   * @param {Object} app - The parent application instance
    */
   constructor(app) {
     this.actor = app.actor;
@@ -76,7 +76,7 @@ export class SearchEngine {
   /**
    * Parse and cache query to avoid redundant parsing operations.
    * @param {string} query - Query string without the ^ prefix
-   * @returns {ParsedQuery|null} Parsed query object or null if parsing failed
+   * @returns {string|null} Parsed query object or null if parsing failed
    */
   parseAndCacheQuery(query) {
     if (this.queryCache.has(query)) return this.queryCache.get(query);
@@ -88,7 +88,6 @@ export class SearchEngine {
 
   /**
    * Build or rebuild the WordTree index for efficient fuzzy spell name matching.
-   * Uses Foundry's WordTree utility for case-insensitive prefix-based lookups.
    * @returns {void}
    */
   buildSpellNameTree() {
@@ -519,7 +518,7 @@ export class SearchEngine {
   /**
    * Check if a value appears to be incomplete while typing.
    * @param {string} queryWithoutTrigger - Query without ^ prefix
-   * @returns {IncompleteValueMatch|null} Object with field and value if incomplete, null otherwise
+   * @returns {Object|null} Object with field and value if incomplete, null otherwise
    */
   isIncompleteValue(queryWithoutTrigger) {
     const parts = queryWithoutTrigger.split(/\s+and\s+/i);
@@ -647,7 +646,7 @@ export class SearchEngine {
 
   /**
    * Apply advanced query results to current filter state.
-   * @param {ParsedQuery} parsedQuery - The parsed query object with filters
+   * @param {String} parsedQuery - The parsed query string with filters
    * @returns {void}
    */
   applyAdvancedQueryToFilters(parsedQuery) {
@@ -679,7 +678,7 @@ export class SearchEngine {
   /**
    * Parse a range value string into minimum and maximum components.
    * @param {string} rangeValue - Range value like "0-30", "30", "*-30", "30-*"
-   * @returns {RangeParseResult} Array containing [min, max] values
+   * @returns {[number|null, number|null]} Array containing [min, max] values; null if unspecified or invalid
    */
   parseRangeValue(rangeValue) {
     if (!rangeValue) return [null, null];

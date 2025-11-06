@@ -33,7 +33,7 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Create a new Synergy Analysis Dialog.
    * @todo Resolve parameters
-   * @param {SynergyAnalysis} synergyData - The synergy analysis data to display
+   * @param {Object} synergyData - The synergy analysis data to display
    * @param {Object} [options={}] - Additional application options
    */
   constructor(synergyData, options = {}) {
@@ -53,7 +53,7 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Prepare component tooltips with spell lists.
-   * @param {SynergyAnalysis} synergy - The synergy analysis data
+   * @param {Object} synergy - The synergy analysis data
    * @returns {Object} Object containing tooltip strings for each component type (verbal, somatic, material, materialCost)
    * @private
    */

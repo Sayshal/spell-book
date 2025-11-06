@@ -14,9 +14,9 @@ import { log } from '../logger.mjs';
 
 /**
  * Get spellcasting configuration for a class, checking both main class and subclass.
- * @param {Actor5e} actor - The actor to check for spellcasting configuration
+ * @param {Object} actor - The actor to check for spellcasting configuration
  * @param {string} classIdentifier - The class identifier to look up
- * @returns {SpellcastingConfiguration|null} Spellcasting configuration or null if none found
+ * @returns {Object|null} Spellcasting configuration or null if none found
  */
 export function getSpellcastingConfigForClass(actor, classIdentifier) {
   log(3, 'Getting spellcasting config for class.', { actor, classIdentifier });
@@ -31,9 +31,9 @@ export function getSpellcastingConfigForClass(actor, classIdentifier) {
 
 /**
  * Get scale values for a class, checking both main class and subclass.
- * @param {Actor5e} actor - The actor to check for scale values
+ * @param {Object} actor - The actor to check for scale values
  * @param {string} classIdentifier - The class identifier to look up
- * @returns {Object<string, ScaleValueEntry>|null} Merged scale values or null if none found
+ * @returns {Object<string, string>|null} Merged scale values or null if none found
  */
 export function getScaleValuesForClass(actor, classIdentifier) {
   log(3, 'Getting scale values for class', { actor, classIdentifier });
@@ -49,9 +49,9 @@ export function getScaleValuesForClass(actor, classIdentifier) {
 
 /**
  * Get the item that provides spellcasting for a class (main class or subclass).
- * @param {Actor5e} actor - The actor to check for spellcasting source
+ * @param {Object} actor - The actor to check for spellcasting source
  * @param {string} classIdentifier - The class identifier to look up
- * @returns {Item5e|null} The item providing spellcasting or null if none found
+ * @returns {Object|null} The item providing spellcasting or null if none found
  */
 export function getSpellcastingSourceItem(actor, classIdentifier) {
   log(3, 'Getting spellcasting source items.', { actor, classIdentifier });
@@ -69,7 +69,7 @@ export function getSpellcastingSourceItem(actor, classIdentifier) {
 
 /**
  * Get effective class levels for spellcasting progression.
- * @param {Actor5e} actor - The actor to check for class levels
+ * @param {Object} actor - The actor to check for class levels
  * @param {string} classIdentifier - The class identifier to look up
  * @returns {number} Class levels for spellcasting calculations
  */
@@ -82,7 +82,7 @@ export function getSpellcastingLevelsForClass(actor, classIdentifier) {
 
 /**
  * Get wizard status data for all wizard-enabled spellcasting classes on an actor.
- * @param {Actor5e} actor - The actor to analyze
+ * @param {Object} actor - The actor to analyze
  * @returns {Object<string, {isNaturalWizard: boolean, isForceWizard: boolean, classData: Object}>} Wizard Data Object
  */
 export function getWizardData(actor) {
@@ -122,7 +122,7 @@ const targetUserIdCache = new Map();
 
 /**
  * Get the target user ID for spell data operations (cached).
- * @param {Actor5e} actor - The actor to determine ownership for
+ * @param {Object} actor - The actor to determine ownership for
  * @returns {string} The user ID to use for spell data operations
  */
 export function getTargetUserId(actor) {
@@ -166,7 +166,7 @@ export async function unlockModuleCompendium() {
 
 /**
  * Create Actor Spellbooks folder in the module compendium pack.
- * @param {CompendiumCollection} pack - The module's spells compendium pack
+ * @param {Collection<string, Object>} pack - The module's spells compendium pack
  * @returns {Promise<void>}
  */
 export async function createActorSpellbooksFolder(pack) {

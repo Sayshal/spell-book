@@ -47,9 +47,9 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Create a new Focus Settings dialog instance.
    * @todo Resolve parameters
-   * @param {Actor} groupActor - The group actor containing focus selections
-   * @param {Actor} [targetActor=null] - Specific actor to configure focus for (null for GM mode)
-   * @param {PartyCoordinator} [parentApp=null] - The parent PartyCoordinator app instance
+   * @param {Object} groupActor - The group actor containing focus selections
+   * @param {Object} [targetActor=null] - Specific actor to configure focus for (null for GM mode)
+   * @param {Object} [parentApp=null] - The parent PartyCoordinator app instance
    * @param {Object} [options={}] - Additional application options
    */
   constructor(groupActor, targetActor = null, parentApp = null, options = {}) {
@@ -297,7 +297,7 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Save focus option configurations to world settings (GM only).
    * @param {Object} formData - The processed form data containing focus definitions
-   * @param {Actor} groupActor - The group actor to update with assignments
+   * @param {Object} groupActor - The group actor to update with assignments
    * @returns {Promise<void>}
    * @private
    * @static
@@ -357,7 +357,7 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Save user focus selection to the group actor.
    * @param {Object} formData - The form data containing selection information
-   * @param {Actor} groupActor - The group actor to update
+   * @param {Object} groupActor - The group actor to update
    * @returns {Promise<void>}
    * @private
    * @static

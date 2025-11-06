@@ -54,8 +54,8 @@ export class Cantrips {
   /**
    * Create a new Cantrips instance.
    * @todo Resolve parameters
-   * @param {Actor5e} actor - The actor to manage cantrips for
-   * @param {SpellManager} spellManager - The associated SpellManager instance
+   * @param {Object} actor - The actor to manage cantrips for
+   * @param {Object} spellManager - The associated SpellManager instance
    */
   constructor(actor, spellManager) {
     this.actor = actor;
@@ -218,7 +218,7 @@ export class Cantrips {
 
   /**
    * Validate cantrip preparation based on current rules and limits.
-   * @param {Item5e} spell - The cantrip being validated
+   * @param {Object} spell - The cantrip being validated
    * @param {boolean} isChecked - Whether attempting to prepare (true) or unprepare (false)
    * @param {boolean} isLevelUp - Whether this is during level-up
    * @param {boolean} isLongRest - Whether this is during long rest
@@ -303,7 +303,7 @@ export class Cantrips {
 
   /**
    * Track changes to cantrips for swap management.
-   * @param {Item5e} spell - The spell being modified
+   * @param {Object} spell - The spell being modified
    * @param {boolean} isChecked - Whether the spell is being prepared (true) or unprepared (false)
    * @param {boolean} isLevelUp - Whether this is during level-up
    * @param {boolean} isLongRest - Whether this is during a long rest
@@ -406,7 +406,20 @@ export class Cantrips {
 
   /**
    * Send GM notification with all spell changes and over-limit warnings.
-   * @param {NotificationData} notificationData - Combined notification data
+   * @param {{
+   *   actorName: string,
+   *   classChanges: {
+   *     [classIdentifier: string]: {
+   *       className: string,
+   *       cantripChanges: { added: any[], removed: any[] },
+   *       spellChanges: { added: any[], removed: any[] },
+   *       overLimits: {
+   *         cantrips: { isOver: boolean, current: number, max: number },
+   *         spells: { isOver: boolean, current: number, max: number }
+   *       }
+   *     }
+   *   }
+   * }} notificationData - Combined notification data
    * @returns {Promise<void>}
    */
   async sendNotification(notificationData) {

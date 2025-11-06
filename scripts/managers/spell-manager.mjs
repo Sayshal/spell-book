@@ -22,8 +22,8 @@ export class SpellManager {
   /**
    * Create a new SpellManager for an actor.
    * @todo Resolve parameters
-   * @param {Actor5e} actor - The actor to manage spells for
-   * @param {SpellBook} app - The parent spell book application (optional)
+   * @param {Object} actor - The actor to manage spells for
+   * @param {Object} app - The parent spell book application (optional)
    */
   constructor(actor, app = null) {
     log(3, `Creating SpellManager.`, { actorName: actor.name, actorId: actor.id });
@@ -129,7 +129,7 @@ export class SpellManager {
    * @param {Object} spell - The spell to check
    * @param {string} classIdentifier - The specific class context
    * @param {Object} batchData - Pre-fetched batch data from prepareBatchData()
-   * @returns {SpellPreparationStatus} Preparation status information
+   * @returns {Object} Preparation status information
    */
   getSpellPreparationStatus(spell, classIdentifier, batchData) {
     if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
@@ -179,7 +179,7 @@ export class SpellManager {
   /**
    * Parse a class-spell key back into components.
    * @param {string} key - The class-spell key
-   * @returns {ClassSpellKeyParsed} Object with classIdentifier and spellUuid
+   * @returns {Object} Object with classIdentifier and spellUuid
    */
   _parseClassSpellKey(key) {
     const [classIdentifier, ...uuidParts] = key.split(':');
@@ -189,8 +189,19 @@ export class SpellManager {
   /**
    * Save prepared spells for a specific class.
    * @param {string} classIdentifier - The class identifier
-   * @param {Object<string, SpellInfo>} classSpellData - Object with spell data keyed by classSpellKey
-   * @returns {Promise<ClassSpellSaveResult|null>} Result object with cantrip and spell changes
+   * @param {Object<string, {
+   *   uuid: string,
+   *   isPrepared: boolean,
+   *   wasPrepared: boolean,
+   *   spellLevel: number,
+   *   preparationMode?: string,
+   *   name: string,
+   *   isRitual?: boolean
+   * }>} classSpellData - Object with spell data keyed by classSpellKey
+   * @returns {Promise<{
+   *   cantripChanges: { added: string[], removed: string[], hasChanges: boolean },
+   *   spellChanges: { added: string[], removed: string[], hasChanges: boolean }
+   * } | null>} Result object with cantrip and spell changes
    */
   async saveClassSpecificPreparedSpells(classIdentifier, classSpellData) {
     log(3, `Saving class-specific prepared spells.`, { actorName: this.actor.name, actorId: this.actor.id, classIdentifier, spellCount: Object.keys(classSpellData).length });
@@ -517,7 +528,7 @@ export class SpellManager {
 
   /**
    * Determine if a spell can be changed based on class rules and current state.
-   * @param {Item5e} spell - The spell being modified
+   * @param {Object} spell - The spell being modified
    * @param {boolean} isChecked - Whether the spell is being checked (true) or unchecked (false)
    * @param {boolean} wasPrepared - Whether the spell was previously prepared
    * @param {boolean} isLevelUp - Whether this is during level-up
@@ -525,7 +536,7 @@ export class SpellManager {
    * @param {string} classIdentifier - The class identifier
    * @param {number} currentPrepared - Current number of prepared spells for this class
    * @param {number} maxPrepared - Maximum allowed prepared spells for this class
-   * @returns {SpellChangeValidation} Status object with allowed and message properties
+   * @returns {Object} Status object with allowed and message properties
    */
   canChangeSpellStatus(spell, isChecked, wasPrepared, isLevelUp, isLongRest, classIdentifier, currentPrepared, maxPrepared) {
     log(3, 'Can status be changed.', { actorName: this.actor.name, spellName: spell.name, isChecked, wasPrepared, isLevelUp, isLongRest, classIdentifier, currentPrepared, maxPrepared });

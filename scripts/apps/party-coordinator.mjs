@@ -41,10 +41,9 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Create a new Party Spell Manager application.
-   * @todo Resolve parameters
-   * @param {Array<Actor>} [partyActors=[]] - Array of party member actors
-   * @param {Actor} [viewingActor=null] - The actor who opened this view
-   * @param {Actor} [groupActor=null] - The group actor if opened from group sheet
+   * @param {Array<Object>} [partyActors=[]] - Array of party member actors
+   * @param {Object} [viewingActor=null] - The actor who opened this view
+   * @param {Object} [groupActor=null] - The group actor if opened from group sheet
    * @param {Object} [options={}] - Additional application options
    */
   constructor(partyActors = [], viewingActor = null, groupActor = null, options = {}) {
@@ -54,7 +53,6 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
     this.groupActor = groupActor;
     this._comparisonData = null;
     this._filteredActorId = null;
-
     log(3, 'PartyCoordinator constructed.');
   }
 
@@ -129,7 +127,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Get available focus options for dropdown selection.
-   * @returns {FocusOption[]} Array of formatted focus options
+   * @returns {Array<{value: string, label: string}>} Array of formatted focus options
    */
   getAvailableFocusOptions() {
     const focuses = PartyMode.getAvailableFocuses();
@@ -141,7 +139,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Get spell level groups for display organization.
    * @param {Object<string, Object>} spellsByLevel - Spells organized by level
-   * @returns {Array<SpellLevelGroup>} Array of spell level group objects
+   * @returns {Array<{level: number, levelName: string, spells: Object[]}>} Array of spell level group objects
    */
   getSpellLevelGroups(spellsByLevel) {
     const levelsMapped = Object.keys(spellsByLevel)
@@ -298,7 +296,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Show context menu for member card.
    * @param {Event} event - The right-click event
-   * @param {Actor} actor - The actor associated with the card
+   * @param {Object} actor - The actor associated with the card
    * @private
    */
   async _showMemberCardContextMenu(event, actor) {

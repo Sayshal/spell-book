@@ -45,8 +45,8 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Create a new Spell Loadout dialog instance.
    * @todo Resolve parameters
-   * @param {Actor} actor - The actor whose loadouts to manage
-   * @param {SpellBook} spellbook - The parent Spell Book application reference
+   * @param {Object} actor - The actor whose loadouts to manage
+   * @param {Object} spellbook - The parent Spell Book application reference
    * @param {string} classIdentifier - The current class identifier for loadout scope
    * @param {Object} [options={}] - Additional application options
    */

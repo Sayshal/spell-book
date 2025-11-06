@@ -21,7 +21,7 @@ import * as UIUtils from './_module.mjs';
  * @param {Map<string, any>|null} [classFolderCache=null] - Cache of class folders keyed by pack:identifier
  * @param {Array<Object>|null} [availableSpellLists=null] - Array of available spell list metadata objects
  * @param {Set<string>} [enabledElements] - Set of enabled element names. If not provided, will check settings for each element.
- * @returns {ProcessedSpellList} Processed spell list with display data
+ * @returns {Object} Processed spell list with display data
  */
 export function processSpellListForDisplay(spellList, classFolderCache = null, availableSpellLists = null, enabledElements = null) {
   log(3, 'Processing spell list for display.', { spellListName: spellList.document?.name, isCustom: !!spellList.document?.flags?.[MODULE.ID]?.isCustom });
@@ -55,7 +55,7 @@ export function processSpellListForDisplay(spellList, classFolderCache = null, a
  * Process spell item for display in the GM interface.
  * @param {Object} spell - The spell to process
  * @param {Set<string>} [enabledElements] - Set of enabled element names. If not provided, will check settings for each element.
- * @returns {ProcessedSpellItem} Processed spell with display data
+ * @returns {Object} Processed spell with display data
  */
 export function processSpellItemForDisplay(spell, enabledElements = null) {
   const processed = foundry.utils.deepClone(spell);
@@ -181,7 +181,7 @@ export function getLocalizedPreparationMode(mode) {
 /**
  * Extracts additional spell data for filtering.
  * @param {Object} spell - The spell document
- * @returns {SpellFilterData} Additional data for filtering
+ * @returns {Object} Additional data for filtering
  */
 export function extractSpellFilterData(spell) {
   if (!spell) return {};
@@ -201,7 +201,7 @@ export function extractSpellFilterData(spell) {
 /**
  * Extract casting time information from spell.
  * @param {Object} spell - The spell document
- * @returns {CastingTimeData} Casting time data structure
+ * @returns {Object} Casting time data structure
  */
 export function extractCastingTime(spell) {
   return { value: spell.system?.activation?.value || '', type: spell.system?.activation?.type || '', label: spell.labels?.activation || '' };
@@ -210,7 +210,7 @@ export function extractCastingTime(spell) {
 /**
  * Extract range information from spell.
  * @param {Object} spell - The spell document
- * @returns {RangeData} Range data structure
+ * @returns {Object} Range data structure
  */
 export function extractRange(spell) {
   return { units: spell.system?.range?.units || '', label: spell.labels?.range || '' };
@@ -262,12 +262,11 @@ export function checkIsConcentration(spell) {
 /**
  * Extract material component information from spell.
  * @param {Object} spell - The spell document
- * @returns {MaterialComponentData} Material component data structure
+ * @returns {Object} Material component data structure
  */
 export function extractMaterialComponents(spell) {
   const materials = spell.system?.materials || {};
-  const result = { consumed: materials.consumed, cost: materials.cost || 0, value: materials.value || '', hasConsumedMaterials: !!materials.consumed };
-  return result;
+  return { consumed: materials.consumed, cost: materials.cost || 0, value: materials.value || '', hasConsumedMaterials: !!materials.consumed };
 }
 
 /**
@@ -378,7 +377,7 @@ export function getSpellDataAttributes(spell) {
 /**
  * Get the preparation tags for a spell.
  * @param {Object} spell - The spell object
- * @param {Actor} actor - The actor (needed for granted item lookups and class data)
+ * @param {Object} actor - The actor (needed for granted item lookups and class data)
  * @returns {Array} Array of tag objects with cssClass, text, and tooltip properties
  */
 export function getSpellPreparationTags(spell, actor) {

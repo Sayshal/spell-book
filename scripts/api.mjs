@@ -21,7 +21,7 @@ import { MODULE } from './constants/_module.mjs';
 
 /**
  * Creates and registers the module's API on the global scope.
- * @returns {SpellBookAPI|null} The API object, or null if creation failed
+ * @returns {Object|null} The API object, or null if creation failed
  */
 export function createAPI() {
   const api = {

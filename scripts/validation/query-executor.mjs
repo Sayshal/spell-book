@@ -124,9 +124,9 @@ export class QueryExecutor {
 
   /**
    * Execute parsed query against spells collection.
-   * @param {ParsedQuery} queryObject - Parsed query object from QueryParser
-   * @param {Array<SpellData>} spells - Array of spell data to filter
-   * @returns {Array<SpellData>} Filtered spells that match all query conditions
+   * @param {Object} queryObject - Parsed query object from QueryParser
+   * @param {Array<Object>} spells - Array of spell data to filter
+   * @returns {Array<Object>} Filtered spells that match all query conditions
    */
   executeQuery(queryObject, spells) {
     if (!queryObject || !spells || queryObject.type !== 'conjunction') return spells;
@@ -137,7 +137,7 @@ export class QueryExecutor {
   /**
    * Convert query conditions to filter descriptions.
    * @private
-   * @param {Array<FieldCondition>} conditions - Query conditions to convert
+   * @param {Array<Object>} conditions - Query conditions to convert
    * @returns {Array<Object>} Array of filter descriptions for dnd5e.Filter.performCheck
    */
   _convertConditions(conditions) {

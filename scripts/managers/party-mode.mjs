@@ -25,8 +25,8 @@ export class PartyMode {
   /**
    * Create a new party spell manager instance.
    * @todo Resolve parameter
-   * @param {Array<Actor>} [partyActors=[]] - Array of party member actors
-   * @param {Actor} [viewingActor=null] - The actor who opened this view
+   * @param {Array<Object>} [partyActors=[]] - Array of party member actors
+   * @param {Object} [viewingActor=null] - The actor who opened this view
    */
   constructor(partyActors = [], viewingActor = null) {
     log(3, 'Creating PartyMode instance.', { actorCount: partyActors.length, viewingActor: viewingActor?.name });
@@ -37,7 +37,7 @@ export class PartyMode {
 
   /**
    * Check if an actor is a spellcaster.
-   * @param {Actor} actor - The actor to check
+   * @param {Object} actor - The actor to check
    * @returns {boolean} True if actor can cast spells
    */
   isSpellcaster(actor) {
@@ -61,8 +61,25 @@ export class PartyMode {
 
   /**
    * Get spell data for a specific actor.
-   * @param {Actor} actor - The actor to analyze
-   * @returns {Promise<ActorSpellData|null>} Actor spell data or null if no permission
+   * @param {Object} actor - The actor to analyze
+   * @returns {Promise<{
+   *   id: string,
+   *   name: string,
+   *   hasPermission: boolean,
+   *   token: string,
+   *   spellcasters: Array<{
+   *     classId: string,
+   *     className: string,
+   *     enhancedClassName: string,
+   *     icon: string,
+   *     knownSpells: Object[],
+   *     preparedSpells: Object[],
+   *     totalKnown: number,
+   *     totalPrepared: number
+   *   }>,
+   *   totalSpellsKnown: number,
+   *   totalSpellsPrepared: number
+   * } | null>} Actor spell data or null if no permission
    */
   async getActorSpellData(actor) {
     log(3, 'Getting actor spell data.', { actorName: actor.name });
@@ -86,14 +103,19 @@ export class PartyMode {
         actorData.totalSpellsPrepared += classSpells.prepared.length;
       }
     }
+
     return actorData;
   }
 
   /**
    * Get spells for a specific class on an actor.
-   * @param {Actor} actor - The actor
+   * @param {Object} actor - The actor
    * @param {string} classId - The class identifier
-   * @returns {Promise<ClassSpellCache|null>} Class spell data or null on error
+   * @todo Does this need to by async?
+   * @returns {Promise<{
+   *   known: Array<{ uuid: string, sourceUuid: string, name: string, level: number, enrichedIcon: HTMLElement, prepared: boolean }>,
+   *   prepared: Array<{ uuid: string, sourceUuid: string, name: string, level: number, enrichedIcon: HTMLElement, prepared: boolean }>
+   * } | null>} Class spell data or null on error
    */
   async getClassSpells(actor, classId) {
     log(3, 'Getting class spells.', { actorName: actor.name, classId });
@@ -134,7 +156,7 @@ export class PartyMode {
 
   /**
    * Get enhanced class name including subclass information.
-   * @param {Actor} actor - The actor
+   * @param {Object} actor - The actor
    * @param {string} classId - The class identifier
    * @param {Object} classData - The class data from spellcastingClasses
    * @returns {string} Enhanced class name with subclass
@@ -150,7 +172,7 @@ export class PartyMode {
 
   /**
    * Check if current user has view permission for actor.
-   * @param {Actor} actor - The actor to check
+   * @param {Object} actor - The actor to check
    * @returns {boolean} True if user can view actor details
    */
   hasViewPermission(actor) {
@@ -159,7 +181,7 @@ export class PartyMode {
 
   /**
    * Get actor's spellcasting focus setting from individual actor flags.
-   * @param {Actor} actor - The actor to check
+   * @param {Object} actor - The actor to check
    * @returns {string} The actor's spellcasting focus name, or fallback localization key
    */
   getActorSpellcastingFocus(actor) {
@@ -168,7 +190,7 @@ export class PartyMode {
 
   /**
    * Organize spells by level for comparison matrix display.
-   * @param {PartyComparisonData} comparisonData - The comparison data to organize
+   * @param {Object} comparisonData - The comparison data to organize
    * @returns {void}
    */
   organizeSpellsByLevel(comparisonData) {
@@ -199,7 +221,7 @@ export class PartyMode {
 
   /**
    * Get spell synergy analysis for the party.
-   * @returns {Promise<SynergyAnalysis>} Complete synergy analysis data including damage distribution, concentration metrics, and recommendations
+   * @returns {Promise<Object>} Complete synergy analysis data including damage distribution, concentration metrics, and recommendations
    */
   async getSpellSynergyAnalysis() {
     log(3, 'Getting spell synergy analysis.');
@@ -279,7 +301,7 @@ export class PartyMode {
 
   /**
    * Analyze spells for a single actor.
-   * @param {Actor} actor - The actor whose spells are being analyzed
+   * @param {Object} actor - The actor whose spells are being analyzed
    * @param {Object} analysis - The analysis data structure being populated
    * @param {Object} collectors - The data collection objects tracking counts and sets
    * @returns {Promise<void>}
@@ -302,8 +324,8 @@ export class PartyMode {
 
   /**
    * Analyze a single prepared spell.
-   * @param {SpellData} spell - The spell data object being analyzed
-   * @param {Actor} actor - The actor who has this spell prepared
+   * @param {Object} spell - The spell data object being analyzed
+   * @param {Object} actor - The actor who has this spell prepared
    * @param {Object} analysis - The analysis data structure being populated
    * @param {Object} collectors - The data collection objects tracking counts and sets
    * @param {Object} actorStats - Actor-specific statistics being accumulated
@@ -327,7 +349,7 @@ export class PartyMode {
 
   /**
    * Extract spell data from a spell document.
-   * @param {Item} spellDoc - The spell document to extract data from
+   * @param {Object} spellDoc - The spell document to extract data from
    * @returns {Object} Extracted spell properties including concentration, ritual, damage types, components, range, and casting time
    * @private
    */
@@ -359,7 +381,7 @@ export class PartyMode {
 
   /**
    * Track duplicate spells across party members.
-   * @param {Item} spellDoc - The spell document being tracked
+   * @param {Object} spellDoc - The spell document being tracked
    * @param {string} actorName - The name of the actor who has this spell
    * @param {Object} collectors - The data collection objects tracking spell occurrences
    * @returns {void}
@@ -374,7 +396,7 @@ export class PartyMode {
   /**
    * Update concentration analysis data.
    * @param {Object} spellData - The extracted spell data from _extractSpellData
-   * @param {Item} spellDoc - The spell document
+   * @param {Object} spellDoc - The spell document
    * @param {string} actorName - The name of the actor
    * @param {Object} analysis - The analysis data structure being populated
    * @param {Object} collectors - The data collection objects tracking concentration counts
@@ -394,7 +416,7 @@ export class PartyMode {
   /**
    * Update ritual analysis data.
    * @param {Object} spellData - The extracted spell data from _extractSpellData
-   * @param {Item} spellDoc - The spell document
+   * @param {Object} spellDoc - The spell document
    * @param {string} actorName - The name of the actor
    * @param {Object} analysis - The analysis data structure being populated
    * @param {Object} collectors - The data collection objects tracking ritual counts
@@ -414,7 +436,7 @@ export class PartyMode {
   /**
    * Update damage type analysis data.
    * @param {Object} spellData - The extracted spell data from _extractSpellData
-   * @param {Item} spellDoc - The spell document
+   * @param {Object} spellDoc - The spell document
    * @param {string} actorName - The name of the actor
    * @param {Object} analysis - The analysis data structure being populated
    * @param {Object} collectors - The data collection objects tracking damage type counts
@@ -433,7 +455,7 @@ export class PartyMode {
 
   /**
    * Update school analysis data.
-   * @param {Item} spellDoc - The spell document
+   * @param {Object} spellDoc - The spell document
    * @param {string} actorName - The name of the actor
    * @param {Object} analysis - The analysis data structure being populated
    * @param {Object} collectors - The data collection objects tracking school counts
@@ -452,7 +474,7 @@ export class PartyMode {
   /**
    * Update component analysis data.
    * @param {Object} spellData - The extracted spell data from _extractSpellData
-   * @param {Item} spellDoc - The spell document
+   * @param {Object} spellDoc - The spell document
    * @param {string} actorName - The name of the actor
    * @param {Object} analysis - The analysis data structure being populated
    * @param {Object} collectors - The data collection objects tracking component counts
@@ -483,7 +505,7 @@ export class PartyMode {
   /**
    * Update miscellaneous analysis data.
    * @param {Object} spellData - The extracted spell data from _extractSpellData
-   * @param {Item} spellDoc - The spell document
+   * @param {Object} spellDoc - The spell document
    * @param {Object} collectors - The data collection objects tracking levels, saves, ranges, and durations
    * @returns {void}
    * @private
@@ -504,7 +526,7 @@ export class PartyMode {
 
   /**
    * Analyze actor-specific statistics.
-   * @param {Actor} actor - The actor being analyzed
+   * @param {Object} actor - The actor being analyzed
    * @param {Object} actorStats - Actor-specific statistics collected during spell analysis
    * @param {Object} analysis - The analysis data structure being populated with actor-specific warnings
    * @returns {void}
@@ -743,8 +765,8 @@ export class PartyMode {
 
   /**
    * Get party actors from the primary party setting or fallback.
-   * @param {Actor} [groupActor=null] - Optional specific group actor to use instead of primary party
-   * @returns {Actor[]} Array of party member actors
+   * @param {Object} [groupActor=null] - Optional specific group actor to use instead of primary party
+   * @returns {Object[]} Array of party member actors
    * @static
    */
   static getPartyActors(groupActor = null) {
@@ -771,7 +793,7 @@ export class PartyMode {
 
   /**
    * Get party users associated with a group actor.
-   * @param {Actor} groupActor - The group actor to analyze
+   * @param {Object} groupActor - The group actor to analyze
    * @returns {Array<Object>} Array of user objects with ID, name, and actor information
    * @static
    */
@@ -789,8 +811,8 @@ export class PartyMode {
 
   /**
    * Find the group actor(s) that contain the specified actor.
-   * @param {Actor} actor - The actor to find groups for
-   * @returns {Actor[]} Array of group actors containing this actor
+   * @param {Object} actor - The actor to find groups for
+   * @returns {Object[]} Array of group actors containing this actor
    * @static
    */
   static findGroupsForActor(actor) {
@@ -806,8 +828,8 @@ export class PartyMode {
 
   /**
    * Get the primary group for an actor.
-   * @param {Actor} actor - The actor to find the primary group for
-   * @returns {Actor|null} The primary group actor or null
+   * @param {Object} actor - The actor to find the primary group for
+   * @returns {Object|null} The primary group actor or null
    * @static
    */
   static getPrimaryGroupForActor(actor) {
@@ -842,7 +864,8 @@ export class PartyMode {
 
   /**
    * Get available spellcasting focus options with full details.
-   * @returns {FocusOption[]} Array of focus option objects with complete data
+   * @todo This is returning [Object object]
+   * @returns {Array<{ id: string, name: string, icon: string, description: string }>} Array of focus option objects with complete data
    * @static
    */
   static getAvailableFocusOptions() {
@@ -854,9 +877,9 @@ export class PartyMode {
 
   /**
    * Get user's selected focus for the specified group.
-   * @param {Actor} groupActor - The group actor storing focus selections
+   * @param {Object} groupActor - The group actor storing focus selections
    * @param {string} userId - The user ID to look up
-   * @returns {FocusOption|null} The selected focus object with id, name, icon, and description, or null if no focus selected
+   * @returns {Object|null} The selected focus object with id, name, icon, and description, or null if no focus selected
    */
   getUserSelectedFocus(groupActor, userId) {
     log(3, 'Getting user selected focus.', { userId });
@@ -871,7 +894,7 @@ export class PartyMode {
 
   /**
    * Set user's selected focus for the specified group.
-   * @param {Actor} groupActor - The group actor to update
+   * @param {Object} groupActor - The group actor to update
    * @param {string} userId - The user ID to set focus for
    * @param {string|null} focusId - The focus ID to set, or null to clear
    * @returns {Promise<boolean>} Success status of the operation
@@ -890,7 +913,7 @@ export class PartyMode {
 
   /**
    * Check if an actor has a specific spell prepared.
-   * @param {Actor} actor - The actor to check
+   * @param {Object} actor - The actor to check
    * @param {string} spellUuid - The spell UUID
    * @returns {boolean} True if actor has spell prepared
    * @static

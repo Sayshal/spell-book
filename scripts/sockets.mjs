@@ -46,7 +46,7 @@ export class SocketHandler {
 
   /**
    * Set a user's spellcasting focus in the group actor.
-   * @param {Actor} groupActor - The group actor to update
+   * @param {Object} groupActor - The group actor to update
    * @param {string} userId - The user ID
    * @param {string|null} focusId - The focus ID to set (or null to clear)
    * @returns {Promise<{success: boolean, error?: string}>} - Success status
@@ -72,7 +72,7 @@ export class SocketHandler {
 
   /**
    * Set an actor's spellcasting focus flag.
-   * @param {Actor} actor - The actor to update
+   * @param {Object} actor - The actor to update
    * @param {string} focus - The focus name to set
    * @returns {Promise<{success: boolean, error?: string}>} - Success status
    */
