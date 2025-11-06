@@ -27,7 +27,6 @@ let _indexedPacksCache = null;
  */
 export async function findCompendiumSpellLists(includeHidden = true) {
   log(3, 'Finding compendium spell lists.');
-  /** @type {Array<SpellListMetadata>} */
   const spellLists = [];
   const allJournalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
   const journalPacks = allJournalPacks.filter((p) => {
@@ -78,7 +77,6 @@ export async function findCompendiumSpellLists(includeHidden = true) {
  */
 export function prepareSpellSources(availableSpells) {
   log(3, 'Preparing spell sources.', { availableSpells });
-  /** @type {Map<string, SpellSourceOption>} */
   const sourceMap = new Map();
   sourceMap.set('all', { id: 'all', label: game.i18n.localize('SPELLMANAGER.Filters.AllSources') });
   availableSpells.forEach((spell) => {
@@ -322,7 +320,6 @@ export async function removeCustomSpellList(duplicateUuid) {
 export async function fetchAllCompendiumSpells() {
   const maxLevel = Math.max(...Object.keys(CONFIG.DND5E.spellLevels).map(Number));
   log(3, 'Fetching all compendium spells.');
-  /** @type {Array<FormattedSpellData>} */
   const spells = [];
   const allItemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
   const itemPacks = allItemPacks.filter((p) => {
@@ -348,7 +345,6 @@ export async function fetchAllCompendiumSpells() {
  */
 async function fetchSpellsFromPack(pack, maxLevel) {
   log(3, 'Fetching spells from pack', { pack, maxLevel });
-  /** @type {Array<FormattedSpellData>} */
   const packSpells = [];
   const index = await pack.getIndex({
     fields: [
@@ -484,7 +480,6 @@ export async function createNewSpellList(name, identifier, type) {
  */
 export function prepareCastingTimeOptions(availableSpells, filterState) {
   log(3, 'Prepare casting time options.', { availableSpells, filterState });
-  /** @type {Map<string, CastingTimeData>} */
   const uniqueActivationTypes = new Map();
   for (const spell of availableSpells) {
     const type = spell.system?.activation?.type;
@@ -557,7 +552,6 @@ export function prepareConditionOptions(filterState) {
  * @returns {Promise<Object<string, ClassIdentifierData>>} Object mapping class identifiers to metadata
  */
 export async function findClassIdentifiers() {
-  /** @type {Object<string, ClassIdentifierData>} */
   const identifiers = {};
   const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
   for (const pack of itemPacks) {
@@ -696,7 +690,6 @@ export async function shouldShowInSettings(pack) {
  */
 export function prepareSpellSourceOptions(availableSpells) {
   log(3, 'Preparing spell source options.', { availableSpells });
-  /** @type {Map<string, SpellSourceOption>} */
   const sourceMap = new Map();
   sourceMap.set('all', { id: 'all', label: game.i18n.localize('SPELLMANAGER.Filters.AllSpellSources') });
   const noSourceLabel = game.i18n.localize('SPELLMANAGER.Filters.NoSource');

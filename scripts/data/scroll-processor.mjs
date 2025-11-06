@@ -21,11 +21,11 @@ import * as DataUtils from './_module.mjs';
 export class ScrollProcessor {
   /**
    * Scan actor inventory for spell scrolls and extract learnable spells.
+   * @todo Resolve parameters
    * @param {Actor5e} actor - The actor to scan for spell scrolls
    * @returns {Promise<Array<ScrollSpellData>>} Array of scroll spell data objects
    */
   static async scanForScrollSpells(actor) {
-    /** @type {Array<ScrollSpellData>} */
     const scrollSpells = [];
     if (!Object.keys(DataUtils.getWizardData(actor)).length) return scrollSpells;
     const scrollItems = actor.items.filter((item) => item.type === 'consumable' && item.system?.type?.value === 'scroll');
@@ -39,6 +39,7 @@ export class ScrollProcessor {
 
   /**
    * Extract spell data from a scroll item.
+   * @todo Resolve parameters
    * @param {Item5e} scroll - The scroll item to extract spell data from
    * @param {Actor5e} actor - The actor who owns the scroll
    * @returns {Promise<ScrollSpellData|null>} Processed spell data or null if no valid spell found
@@ -91,8 +92,6 @@ export class ScrollProcessor {
     if (!spell || spell.type !== 'spell') return null;
     if (spell.system.level > maxSpellLevel && spell.system.level > 0) return null;
     const filterData = UIUtils.extractSpellFilterData(spell);
-
-    /** @type {ScrollSpellData} */
     let processedResult = {
       scrollItem: scroll,
       spell: spell,

@@ -19,8 +19,6 @@ import { log } from '../logger.mjs';
 import * as m from '../migrations/_module.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
-
-/** @type {MigrationConfiguration[]} Array of all module migration configurations */
 const MIGRATIONS = Object.values(m);
 
 /**

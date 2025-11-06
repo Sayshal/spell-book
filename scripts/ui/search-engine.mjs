@@ -20,84 +20,35 @@ import * as ValidationUtils from '../validation/_module.mjs';
 export class SearchEngine {
   /**
    * Create a new advanced search manager instance.
+   * @todo Resolve parameter
    * @param {SpellBook} app - The parent application instance
    */
   constructor(app) {
-    /** @type {Actor5e} - The actor associated with this search manager */
     this.actor = app.actor;
-
-    /** @type {SpellBook} - The parent spell book application */
     this.app = app;
-
-    /** @type {HTMLButtonElement|null} - Clear button element for search input */
     this.clearButtonElement = null;
-
-    /** @type {ValidationUtils.SearchFields} - Field definitions for advanced search syntax */
     this.fieldDefinitions = new ValidationUtils.SearchFields();
-
-    /** @type {number|null} - Timeout ID for focus event debouncing */
     this.focusDebounceTimeout = null;
-
-    /** @type {boolean} - Whether the current query uses advanced search syntax */
     this.isAdvancedQuery = false;
-
-    /** @type {boolean} - Whether the search dropdown is currently visible */
     this.isDropdownVisible = false;
-
-    /** @type {boolean} - Whether the search manager has been initialized */
     this.isInitialized = false;
-
-    /** @type {boolean} - Whether a focus event is currently being processed */
     this.isProcessingFocusEvent = false;
-
-    /** @type {boolean} - Whether a search operation is currently in progress */
     this.isProcessingSearch = false;
-
-    /** @type {boolean} - Whether a suggestion selection is being processed */
     this.isProcessingSuggestion = false;
-
-    /** @type {string|null} - Last query used to generate dropdown content */
     this.lastDropdownQuery = null;
-
-    /** @type {string|null} - Last processed query string for duplicate prevention */
     this.lastProcessedQuery = null;
-
-    /** @type {number|null} - Timestamp of last processed query */
     this.lastProcessedTime = null;
-
-    /** @type {ParsedQuery|null} - Currently parsed advanced query object */
     this.parsedQuery = null;
-
-    /** @type {Map<string, ParsedQuery|null>} - Cache for parsed queries to avoid reprocessing */
     this.queryCache = new Map();
-
-    /** @type {ValidationUtils.QueryExecutor} - Query executor for advanced search operations */
     this.queryExecutor = new ValidationUtils.QueryExecutor();
-
-    /** @type {ValidationUtils.QueryParser} - Parser for advanced search syntax */
     this.queryParser = new ValidationUtils.QueryParser(this.fieldDefinitions);
-
-    /** @type {HTMLInputElement|null} - Main search input element */
     this.searchInputElement = null;
-
-    /** @type {number|null} - Timeout ID for search input debouncing */
     this.searchTimeout = null;
-
-    /** @type {number} - Index of currently selected suggestion in dropdown (-1 for none) */
     this.selectedSuggestionIndex = -1;
-
-    /** @type {string} - Prefix character that triggers advanced search mode */
     this.searchPrefix = game.settings.get(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX);
-
-    /** @type {foundry.utils.WordTree|null} - WordTree for efficient fuzzy spell name matching */
     this.spellNameTree = null;
-
-    /** @type {number|null} - Timestamp of last WordTree build for cache invalidation */
     this.treeLastBuilt = null;
-
-    /** @type {number|null} - Number of spells when tree was last built for cache invalidation */
     this.treeLastSpellCount = null;
-
     log(3, 'SearchEngine constructed.', { actor: this.actor.name, searchPrefix: this.searchPrefix });
   }
 

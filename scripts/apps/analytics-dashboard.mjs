@@ -50,19 +50,10 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
    */
   constructor(options = {}) {
     super(options);
-
-    /** @type {string} Current view mode ('personal' or 'gm') */
     this.viewMode = options.viewMode || 'personal';
-
-    /** @type {string} Selected user ID for analytics */
     this.selectedUserId = options.userId || game.user.id;
-
-    /** @type {Object|null} Cached analytics data */
     this.analytics = null;
-
-    /** @type {number|null} Timestamp of last data refresh */
     this.lastRefresh = null;
-
     log(3, 'AnalyticsDashboard constructed.');
   }
 

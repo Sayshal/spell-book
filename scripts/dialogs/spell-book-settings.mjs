@@ -53,19 +53,15 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
 
   /**
    * Create a new Spell Book settings dialog instance.
+   * @todo Resolve parameters
    * @param {Actor5e} actor - The actor to configure settings for
    * @param {Object} [options={}] - Additional application options
    */
   constructor(actor, options = {}) {
     super(options);
     log(3, 'SpellBookSettings constructor.', { actor, options });
-
-    /** @type {Actor5e} The actor being configured */
     this.actor = actor;
-
-    /** @type {SpellManager} Spell management utility for this actor */
     this.spellManager = new SpellManager(actor);
-
     this.parentApp = options.parentApp;
   }
 

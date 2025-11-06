@@ -30,74 +30,33 @@ const { renderTemplate } = foundry.applications.handlebars;
 export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Create a new SpellBook application.
+   * @todo Resolve parameters
    * @param {Actor} actor - The actor whose spells to display
    * @param {Object} [options={}] - Application options
    */
   constructor(actor, options = {}) {
     super(options);
-
-    /** @type {Actor} The actor whose spells are being managed */
     this.actor = actor;
-
-    /** @type {Actor|null} The primary group actor for this actor */
     this.group = PartyMode.getPrimaryGroupForActor(actor);
-
-    /** @type {SpellManager} Main spell management instance */
     this.spellManager = new SpellManager(actor, this);
-
-    /** @type {State} State manager for the application */
     this._state = new State(this);
-
-    /** @type {Map<string, WizardBook>} Wizard managers by class identifier */
     this.wizardManagers = new Map();
-
-    // Initialize wizard managers for all wizard-enabled classes
     const wizardClasses = this._state.getWizardEnabledClasses();
     for (const { identifier } of wizardClasses) this.wizardManagers.set(identifier, new WizardBook(actor, identifier));
-
-    /** @type {UIUtils.SpellBookUI} UI helper for interface management */
     this.ui = new UIUtils.SpellBookUI(this);
-
-    /** @type {UIUtils.Filters} Filter helper for spell filtering */
     this.filterHelper = new UIUtils.Filters(this);
-
-    /** @type {Set<string>} Cached enabled UI elements for player interface */
     this.enabledElements = UIUtils.CustomUI.getEnabledPlayerElements();
-
-    /** @type {Map} Ritual managers by class (currently unused) */
     this.ritualManagers = new Map();
-
-    /** @type {Array} Spell levels data */
     this.spellLevels = [];
-
-    /** @type {string} Current class name */
     this.className = '';
-
-    /** @type {Object} Current spell preparation counts */
     this.spellPreparation = { current: 0, maximum: 0 };
-
-    /** @type {Set<string>} Newly checked cantrips in this session */
     this._newlyCheckedCantrips = new Set();
-
-    /** @type {boolean} Whether a long rest was completed */
     this._isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED) || false;
-
-    /** @type {Map<string, any>} Internal form state cache for unsaved changes */
     this._formStateCache = new Map();
-
-    /** @type {boolean} Whether cantrip UI has been initialized */
     this._cantripUIInitialized = false;
-
-    /** @type {boolean} Whether class colors have been applied */
     this._classColorsApplied = false;
-
-    /** @type {boolean} Whether classes have changed since last render */
     this._classesChanged = false;
-
-    /** @type {Map<string, string>} Wizard book images by class identifier */
     this._wizardBookImages = new Map();
-
-    // Set up flag change listener for real-time updates
     this._flagChangeHook = Hooks.on('updateActor', (updatedActor, changes) => {
       if (updatedActor.id !== this.actor.id) return;
       if (changes.flags?.[MODULE.ID]) {
@@ -111,22 +70,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       }
     });
-
-    /** @type {boolean} Whether spell data is currently being loaded */
     this._isLoadingSpellData = false;
-
-    /** @type {Set<string>} Set of spell UUIDs for comparison */
     this.comparisonSpells = new Set();
-
-    /** @type {SpellComparison|null} Active comparison dialog */
     this.comparisonDialog = null;
-
-    /** @type {boolean} Whether expensive pre-initialization is complete */
     this._preInitialized = false;
-
-    /** @type {Map<string, string>} Cached class styling data */
     this._classStylingCache = null;
-
     log(3, 'PlayerSpellBook constructed.');
   }
 

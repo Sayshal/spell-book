@@ -50,17 +50,14 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Create a new filter configuration instance.
+   * @todo Resolve parameters
    * @param {Application} parentApp - The parent application that opened this configuration
    * @param {Object} [options={}] - Additional application options
    */
   constructor(parentApp, options = {}) {
     super(options);
-
-    /** @type {Application} The parent application instance */
     this.parentApp = parentApp;
-
     this.initializeConfig();
-
     log(3, 'PlayerFilterConfiguration constructed.');
   }
 

@@ -27,19 +27,13 @@ const FILTER_OPTIONS_CACHE = new Map();
 export class Filters {
   /**
    * Create a new filter helper.
+   * @todo Resolve parameter
    * @param {SpellBook} app - The parent application instance
    */
   constructor(app) {
-    /** @type {class} - The parent spell book application */
     this.app = app;
-
-    /** @type {FilterState|null} - Cached filter state to avoid repeated DOM queries */
     this._cachedFilterState = null;
-
-    /** @type {number} - Timestamp of last filter state update for cache invalidation */
     this._lastFilterUpdate = 0;
-
-    /** @type {string} - Prefix character that triggers advanced search mode */
     this.searchPrefix = game.settings.get(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX);
     log(3, 'Filters constructed.');
   }

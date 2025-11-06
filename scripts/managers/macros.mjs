@@ -18,7 +18,6 @@ import { MODULE } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import * as m from '../macros/_module.mjs';
 
-/** @type {MacroConfiguration[]} Array of all module macro configurations */
 const MACROS = Object.values(m);
 
 /**
@@ -40,6 +39,7 @@ export class Macros {
 
   /**
    * Ensure a specific macro exists in the compendium and is current.
+   * @todo Resolve parameters
    * @param {CompendiumCollection} pack - The macro compendium pack
    * @param {MacroConfiguration} macroConfig - Macro configuration object
    * @returns {Promise<Macro|null>} Promise that resolves to the existing or newly created macro, or null if creation failed

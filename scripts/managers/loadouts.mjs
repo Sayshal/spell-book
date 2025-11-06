@@ -23,21 +23,15 @@ import { log } from '../logger.mjs';
 export class Loadouts {
   /**
    * Create a new Spell Loadout Manager instance.
+   * @todo Resolve parameters
    * @param {Actor} actor - The actor whose loadouts to manage
    * @param {SpellBook} [spellbook=null] - Optional Spell Book reference for UI integration
    */
   constructor(actor, spellbook = null) {
     log(3, 'Creating Loadouts instance.', { actorId: actor.id, hasSpellbook: !!spellbook });
-    /** @type {Actor} The actor whose loadouts are being managed */
     this.actor = actor;
-
-    /** @type {SpellBook|null} Optional SpellBook reference for UI operations */
     this.spellbook = spellbook;
-
-    /** @type {Object<string, SpellLoadout>|null} Cached loadouts data */
     this._loadoutsCache = null;
-
-    /** @type {number} Timestamp of last cache refresh for invalidation */
     this._lastCacheTime = 0;
   }
 

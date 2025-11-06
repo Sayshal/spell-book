@@ -21,21 +21,15 @@ import { Cantrips, RuleSet } from './_module.mjs';
 export class SpellManager {
   /**
    * Create a new SpellManager for an actor.
+   * @todo Resolve parameters
    * @param {Actor5e} actor - The actor to manage spells for
    * @param {SpellBook} app - The parent spell book application (optional)
    */
   constructor(actor, app = null) {
     log(3, `Creating SpellManager.`, { actorName: actor.name, actorId: actor.id });
-    /** @type {Actor5e} The actor being managed */
     this.actor = actor;
-
-    /** @type {SpellBook|null} The parent spell book application */
     this.app = app;
-
-    /** @type {Map<string, ActorSpellSettings>} Cached settings by class identifier */
     this._settingsCache = new Map();
-
-    /** @type {Cantrips} Integrated cantrip management system */
     this.cantripManager = new Cantrips(actor, this);
     log(3, `SpellManager created.`, { actorName: actor.name, actorId: actor.id });
   }

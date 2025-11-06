@@ -41,7 +41,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Create a new Party Spell Manager application.
-   *
+   * @todo Resolve parameters
    * @param {Array<Actor>} [partyActors=[]] - Array of party member actors
    * @param {Actor} [viewingActor=null] - The actor who opened this view
    * @param {Actor} [groupActor=null] - The group actor if opened from group sheet
@@ -49,20 +49,10 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   constructor(partyActors = [], viewingActor = null, groupActor = null, options = {}) {
     super(options);
-
-    /** @type {PartyMode} Manager for party spell data processing */
     this.partyManager = new PartyMode(partyActors, viewingActor);
-
-    /** @type {Actor|null} The actor who opened this view */
     this.viewingActor = viewingActor;
-
-    /** @type {Actor|null} The group actor if opened from group sheet */
     this.groupActor = groupActor;
-
-    /** @type {PartySpellComparison|null} Cached spell comparison data */
     this._comparisonData = null;
-
-    /** @type {string|null} Currently filtered actor ID for spell display */
     this._filteredActorId = null;
 
     log(3, 'PartyCoordinator constructed.');

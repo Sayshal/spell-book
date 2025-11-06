@@ -20,7 +20,6 @@ export class QueryParser {
    * @param {FieldDefinitionsType} fieldDefinitions - The field definitions to use for parsing
    */
   constructor(fieldDefinitions) {
-    /** @type {FieldDefinitionsType} */
     this.fieldDefinitions = fieldDefinitions;
   }
 

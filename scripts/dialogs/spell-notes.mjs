@@ -44,6 +44,7 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Create a new Spell Notes dialog instance.
+   * @todo Resolve parameters
    * @param {Object} [options={}] - Application options including spell and actor data
    * @param {string} options.spellUuid - UUID of the spell to edit notes for
    * @param {Actor} [options.actor] - Associated actor for note ownership
@@ -51,20 +52,10 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(options = {}) {
     super(options);
     log(3, 'SpellNotes constructed.', { options });
-
-    /** @type {string} Canonical UUID of the spell being edited */
     this.spellUuid = UIUtils.getCanonicalSpellUuid(options.spellUuid);
-
-    /** @type {string} Display name of the spell */
     this.spellName = fromUuidSync(this.spellUuid).name;
-
-    /** @type {Actor|null} Associated actor for ownership determination */
     this.actor = options.actor;
-
-    /** @type {string} Current notes content */
     this.currentNotes = '';
-
-    /** @type {number} Maximum allowed character length for notes */
     this.maxLength = game.settings.get(MODULE.ID, SETTINGS.SPELL_NOTES_LENGTH) || 240;
   }
 

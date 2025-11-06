@@ -22,78 +22,33 @@ import * as UIUtils from '../ui/_module.mjs';
 export class State {
   /**
    * Create a new State manager for a Spell Book application.
+   * @todo Resolve parameter
    * @param {SpellBook} app - Spell Book application instance
    */
   constructor(app) {
     log(3, 'Constructing State manager', { actorName: app.actor?.name, actorId: app.actor?.id });
-
-    /** @type {SpellBook} The parent Spell Book application */
     this.app = app;
-
-    /** @type {Actor5e} The actor this state manager is for */
     this.actor = app.actor;
-
-    /** @type {Map<string, boolean>} Cache for class detection results */
     this._classDetectionCache = new Map();
-
-    /** @type {boolean} Whether spellcasting classes have been detected */
     this._classesDetected = false;
-
-    /** @type {boolean} Whether the state manager has been initialized */
     this._initialized = false;
-
-    /** @type {Map<string, PreparationStats>} Cache for preparation statistics */
     this._preparationStatsCache = new Map();
-
-    /** @type {Array<WizardClassData>|null} Cache for wizard-enabled classes */
     this._wizardClassesCache = null;
-
-    /** @type {Map<string, Object>} Cache for spellcasting configurations per class */
     this._spellcastingConfigCache = new Map();
-
-    /** @type {Map<string, Object>} Cache for spellcasting source items per class */
     this._spellcastingSourceCache = new Map();
-
-    /** @type {Map<string, number>} Cache for spellcasting levels per class */
     this._spellcastingLevelsCache = new Map();
-
-    /** @type {string|null} Currently active class identifier */
     this.activeClass = null;
-
-    /** @type {string} Display name of the currently active class */
     this.className = '';
-
-    /** @type {Object<string, string>} Preparation modes by class identifier */
     this.classPrepModes = {};
-
-    /** @type {Object<string, RitualRules>} Ritual casting rules by class identifier */
     this.classRitualRules = {};
-
-    /** @type {Object<string, ClassSpellData>} Spell data organized by class identifier */
     this.classSpellData = {};
-
-    /** @type {Object<string, SwapRules>} Spell swapping rules by class identifier */
     this.classSwapRules = {};
-
-    /** @type {boolean} Whether actor has completed a long rest */
     this.isLongRest = false;
-
-    /** @type {Array<EnhancedSpell>} Available scroll spells for learning */
     this.scrollSpells = [];
-
-    /** @type {Object<string, SpellcastingClassData>} Detected spellcasting classes */
     this.spellcastingClasses = {};
-
-    /** @type {Array<SpellLevel>} Spell levels for the currently active class */
     this.spellLevels = [];
-
-    /** @type {PreparationStats} Global preparation statistics across all classes */
     this.spellPreparation = { current: 0, maximum: 0 };
-
-    /** @type {Object<string, Object>} Tab-specific data for wizard classes */
     this.tabData = {};
-
-    /** @type {Map<string, Array<string>>|null} Cache for wizard spellbook contents */
     this.wizardbookCache = null;
   }
 

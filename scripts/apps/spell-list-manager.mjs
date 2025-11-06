@@ -81,47 +81,19 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   constructor(options) {
     super(options);
-
-    /** @type {boolean} Whether the application is currently loading data */
     this.isLoading = true;
-
-    /** @type {Array<SpellListMeta>} Available spell lists for management */
     this.availableSpellLists = [];
-
-    /** @type {SelectedSpellList|null} Currently selected spell list */
     this.selectedSpellList = null;
-
-    /** @type {Array<Object>} All available spells for filtering and selection */
     this.availableSpells = [];
-
-    /** @type {boolean} Whether the application is in editing mode */
     this.isEditing = false;
-
-    /** @type {PendingChanges} Tracking for pending add/remove operations */
     this.pendingChanges = { added: new Set(), removed: new Set() };
-
-    /** @type {Set<string>} Spells selected for adding in multi-select mode */
     this.selectedSpellsToAdd = new Set();
-
-    /** @type {Set<string>} Spells selected for removal in multi-select mode */
     this.selectedSpellsToRemove = new Set();
-
-    /** @type {boolean} Whether multi-select mode is active */
     this.selectionMode = false;
-
-    /** @type {Object} Last selected indices for range selection */
     this.lastSelectedIndex = { add: -1, remove: -1 };
-
-    /** @type {boolean} Whether a select-all operation is in progress */
     this.isSelectingAll = false;
-
-    /** @type {Set<string>} Set of spell UUIDs for comparison */
     this.comparisonSpells = new Set();
-
-    /** @type {SpellComparison|null} Active comparison dialog */
     this.comparisonDialog = null;
-
-    /** @type {FilterState} Current filter state for spell filtering */
     this.filterState = {
       name: '',
       level: '',
@@ -139,19 +111,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       prepared: false,
       ritual: false
     };
-
-    /** @type {UIUtils.Filters} Filter helper for spell filtering */
     this.filterHelper = new UIUtils.Filters(this);
-
-    /** @type {Set<string>} Cached enabled UI elements for GM interface */
     this.enabledElements = UIUtils.CustomUI.getEnabledGMElements();
-
-    /** @type {boolean} Whether checkboxes are currently being updated programmatically */
     this.isUpdatingCheckboxes = false;
-
-    /** @type {boolean} Whether pre-initialization has completed */
     this._preInitialized = false;
-
     log(3, 'SpellListManager constructed.');
   }
 

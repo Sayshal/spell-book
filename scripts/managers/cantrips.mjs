@@ -53,38 +53,20 @@ class CantripValidationResult extends DataModel {
 export class Cantrips {
   /**
    * Create a new Cantrips instance.
+   * @todo Resolve parameters
    * @param {Actor5e} actor - The actor to manage cantrips for
    * @param {SpellManager} spellManager - The associated SpellManager instance
    */
   constructor(actor, spellManager) {
-    /** @type {Actor5e} The actor being managed */
     this.actor = actor;
-
-    /** @type {SpellManager} The associated spell manager */
     this.spellManager = spellManager;
-
-    /** @type {boolean} Whether this actor has wizard levels */
     this.isWizard = !!Object.keys(DataUtils.getWizardData(actor)).length;
-
-    /** @type {Map<string, number>} Cached maximum cantrips by class identifier */
     this._maxCantripsByClass = new Map();
-
-    /** @type {number} Cached total maximum cantrips across all classes */
     this._totalMaxCantrips = 0;
-
-    /** @type {Map<string, number>} Cached current cantrip counts by class identifier */
     this._currentCountByClass = new Map();
-
-    /** @type {number|null} Cached total current cantrip count across all classes */
     this._totalCurrentCount = null;
-
-    /** @type {boolean} Whether the cache has been initialized */
     this._cacheInitialized = false;
-
-    /** @type {boolean|null} Cached level-up check result */
     this._cachedLevelUpCheck = null;
-
-    // Initialize cache on construction
     this._initializeCache();
     log(3, 'Cantrips instance created.', { actorId: actor.id, isWizard: this.isWizard });
   }

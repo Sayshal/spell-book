@@ -25,21 +25,14 @@ const { formatNumber } = dnd5e.utils;
 export class SpellBookUI {
   /**
    * Create a new UI helper.
-   * @param {SpellBook} app - The parent application instance
+   * @todo Resolve parameter
+   * @param {class} app - The parent application instance
    */
   constructor(app) {
-    /** @type {SpellBook} - The parent spell book application */
     this.app = app;
-
-    /** @type {number} - Counter to track color application lifecycle */
     this._colorApplicationCount = 0;
-
-    /** @type {UIUtils.SearchEngine} - Advanced search functionality manager */
     this.search = new UIUtils.SearchEngine(app);
-
-    /** @type {boolean} - Flag to track cantrip UI initialization state */
     this._cantripUIInitialized = false;
-
     log(3, 'SpellBookUI initialized.', { actor: app.actor?.name });
   }
 

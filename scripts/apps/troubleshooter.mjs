@@ -64,11 +64,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
   static generateTextReport() {
     log(3, 'Generating text report.');
     const reportLines = [];
-
-    /** @type {function(string): void} Function to add a line to the report */
     const addLine = (text) => reportLines.push(text);
-
-    /** @type {function(string): void} Function to add a section header */
     const addHeader = (text) => {
       addLine('');
       addLine(`/////////////// ${text} ///////////////`);

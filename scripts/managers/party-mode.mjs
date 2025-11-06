@@ -24,18 +24,14 @@ import * as UIUtils from '../ui/_module.mjs';
 export class PartyMode {
   /**
    * Create a new party spell manager instance.
+   * @todo Resolve parameter
    * @param {Array<Actor>} [partyActors=[]] - Array of party member actors
    * @param {Actor} [viewingActor=null] - The actor who opened this view
    */
   constructor(partyActors = [], viewingActor = null) {
     log(3, 'Creating PartyMode instance.', { actorCount: partyActors.length, viewingActor: viewingActor?.name });
-    /** @type {Actor[]} Array of spellcasting actors in the party */
     this.partyActors = partyActors.filter((actor) => this.isSpellcaster(actor));
-
-    /** @type {Actor|null} The actor whose SpellBook opened this manager */
     this.viewingActor = viewingActor;
-
-    /** @type {foundry.utils.IterableWeakMap<Actor, Map<string, ClassSpellCache>>} Cache for spell data by actor, with GC-friendly weak references */
     this._spellDataCache = new foundry.utils.IterableWeakMap();
   }
 
@@ -907,6 +903,7 @@ export class PartyMode {
     const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     for (const classSpells of Object.values(preparedByClass)) {
       for (const spellKey of classSpells) {
+        // eslint-disable-next-line no-unused-vars
         const [classIdentifier, ...uuidParts] = spellKey.split(':');
         const parsedSpellUuid = uuidParts.join(':');
         if (parsedSpellUuid === spellUuid) return true;

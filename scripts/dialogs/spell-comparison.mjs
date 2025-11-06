@@ -34,13 +34,12 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Create a new spell comparison dialog instance.
+   * @todo Resolve parameters
    * @param {Object} parentApp - Parent Spell Book application instance
    * @param {Object} [options={}] - Additional application options
    */
   constructor(parentApp, options = {}) {
     super(options);
-
-    /** @type {Object} Reference to the parent Spell Book application */
     this.parentApp = parentApp;
     log(3, 'SpellComparison constructed.', { parentApp, options });
   }

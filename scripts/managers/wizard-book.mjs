@@ -30,34 +30,19 @@ export class WizardBook {
 
   /**
    * Create a new WizardBook for an actor and specific class.
+   * @todo Resolve parameters
    * @param {Actor5e} actor - The actor to manage wizard spellbook for
    * @param {string} [classIdentifier='wizard'] - The class identifier (e.g., 'wizard', 'cleric')
    */
   constructor(actor, classIdentifier = 'wizard') {
     log(3, 'Creating WizardBook.', { actor: actor.name, classIdentifier });
-
-    /** @type {Actor5e} The actor being managed */
     this.actor = actor;
-
-    /** @type {string} The class identifier for this spellbook */
     this.classIdentifier = classIdentifier;
-
-    /** @type {Item5e|null} The wizard-enabled class item */
     this.classItem = this._findWizardClass();
-
-    /** @type {boolean} Whether this class is wizard-enabled */
     this.isWizard = this.classItem !== null;
-
-    /** @type {string[]|null} Cached array of spellbook spell UUIDs */
     this._spellbookCache = null;
-
-    /** @type {number|null} Cached maximum spells allowed */
     this._maxSpellsCache = null;
-
-    /** @type {number|null} Cached total free spells available */
     this._freeSpellsCache = null;
-
-    // Initialize flags and cache if this is a wizard-enabled class
     if (this.isWizard) {
       this._initializeFlags();
       this._initializeCache();

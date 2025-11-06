@@ -22,12 +22,8 @@ export class SearchFields {
    * Create a new SearchFields instance and initialize field mappings and validators.
    */
   constructor() {
-    /** @type {Map<string, string>} Map of uppercase field aliases to field IDs */
     this.fieldMap = new Map();
-
-    /** @type {Map<string, FieldValidator>} Map of field IDs to validation functions */
     this.valueValidators = new Map();
-
     this._initializeFields();
   }
 

@@ -32,14 +32,13 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Create a new Synergy Analysis Dialog.
+   * @todo Resolve parameters
    * @param {SynergyAnalysis} synergyData - The synergy analysis data to display
    * @param {Object} [options={}] - Additional application options
    */
   constructor(synergyData, options = {}) {
     super(options);
     log(3, 'SynergyAnalysis constructed.', { synergyData, options });
-
-    /** @type {SynergyAnalysis} The synergy analysis data */
     this.synergyData = synergyData;
   }
 

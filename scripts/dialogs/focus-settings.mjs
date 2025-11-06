@@ -46,6 +46,7 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Create a new Focus Settings dialog instance.
+   * @todo Resolve parameters
    * @param {Actor} groupActor - The group actor containing focus selections
    * @param {Actor} [targetActor=null] - Specific actor to configure focus for (null for GM mode)
    * @param {PartyCoordinator} [parentApp=null] - The parent PartyCoordinator app instance
@@ -54,17 +55,9 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(groupActor, targetActor = null, parentApp = null, options = {}) {
     super(options);
     log(3, 'Constructing FocusSettings dialog.', { groupActorId: groupActor?.id, targetActorId: targetActor?.id, hasParent: !!parentApp });
-
-    /** @type {Actor} The group actor storing focus selections */
     this.groupActor = groupActor;
-
-    /** @type {Actor|null} The target actor for focus selection */
     this.targetActor = targetActor;
-
-    /** @type {PartyCoordinator|null} The parent app to refresh after changes */
     this.parentApp = parentApp;
-
-    /** @type {boolean} Whether dialog is in GM management mode */
     this.isGMMode = game.user.isGM && !targetActor;
   }
 

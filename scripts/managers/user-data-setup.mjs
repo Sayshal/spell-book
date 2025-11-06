@@ -23,10 +23,7 @@ export class UserDataSetup {
    * Create a new User Spell Data Manager instance.
    */
   constructor() {
-    /** @type {string|null} Localized name for the main journal entry */
     this.journalName = null;
-
-    /** @type {string|null} Localized name for the organization folder */
     this.folderName = null;
   }
 

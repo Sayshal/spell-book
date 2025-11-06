@@ -22,7 +22,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
  * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */
 export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
-  /** @type {ApplicationOptions} */
+  /** @inheritdoc */
   static DEFAULT_OPTIONS = {
     id: 'spell-loadout-dialog',
     tag: 'form',
@@ -37,13 +37,14 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
     position: { width: 600, height: 'auto' }
   };
 
-  /** @override */
+  /** @inheritdoc */
   static PARTS = {
     form: { template: TEMPLATES.DIALOGS.SPELL_LOADOUT }
   };
 
   /**
    * Create a new Spell Loadout dialog instance.
+   * @todo Resolve parameters
    * @param {Actor} actor - The actor whose loadouts to manage
    * @param {SpellBook} spellbook - The parent Spell Book application reference
    * @param {string} classIdentifier - The current class identifier for loadout scope
@@ -52,18 +53,12 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(actor, spellbook, classIdentifier, options = {}) {
     super(options);
     log(3, 'Constructing LoadoutSelector dialog.', { actorId: actor?.id, classIdentifier });
-
-    /** @type {SpellBook} Reference to the parent spell book application */
     this.spellbook = spellbook;
-
-    /** @type {string} The class identifier for scoping loadouts */
     this.classIdentifier = classIdentifier;
-
-    /** @type {Loadouts} Manager for loadout operations */
     this.loadoutManager = new Loadouts(actor, spellbook);
   }
 
-  /** @override */
+  /** @inheritdoc */
   get title() {
     log(3, 'Getting loadout selector title.', { classIdentifier: this.classIdentifier });
     const className = this.spellbook._state.classSpellData[this.classIdentifier]?.className || this.classIdentifier;
@@ -100,7 +95,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
     return context;
   }
 
-  /** @override */
+  /** @inheritdoc */
   async _onRender(context, options) {
     log(3, 'Rendering loadout selector dialog.', { context, options });
     await super._onRender(context, options);
@@ -313,7 +308,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  /** @override */
+  /** @inheritdoc */
   _onClose() {
     log(3, 'Closing loadout selector dialog.');
     UIUtils.removeTooltip('spell-preview-tooltip');
