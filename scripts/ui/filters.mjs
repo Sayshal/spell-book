@@ -10,8 +10,9 @@
  * @author Tyler
  */
 
-import { MODULE, SETTINGS } from '../constants/_module.mjs';
+import { MODULE, SETTINGS, FLAGS } from '../constants/_module.mjs';
 import * as DataUtils from '../data/_module.mjs';
+import * as ValidationUtils from '../validation/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -685,4 +686,127 @@ function convertRangeToStandardUnit(units, value) {
   const defaultUnit = dnd5e.utils.defaultUnits('length');
   if (defaultUnit === 'm') return Math.round(dnd5e.utils.convertLength(inFeet, 'ft', 'm'));
   return inFeet;
+}
+
+/**
+ * Ensure filter configuration integrity using foundry.utils.mergeObject.
+ * @param {Array} filterConfig - Current filter configuration
+ * @returns {Array} Updated filter configuration
+ */
+export function ensureFilterIntegrity(filterConfig) {
+  log(3, 'Ensuring filter config integrity.');
+  const userFilters = new Map(filterConfig.map((f) => [f.id, f]));
+  const validDefaultIds = new Set(MODULE.DEFAULT_FILTER_CONFIG.map((f) => f.id));
+  const result = MODULE.DEFAULT_FILTER_CONFIG.map((defaultFilter) => userFilters.get(defaultFilter.id) ?? foundry.utils.deepClone(defaultFilter));
+  return result.concat(filterConfig.filter((f) => !validDefaultIds.has(f.id) && userFilters.has(f.id)));
+}
+
+/**
+ * Prepare filter data for the UI.
+ * @param {Actor} actor - The actor instance
+ * @param {UIUtils.Filters} filterHelper - The filter helper instance
+ * @returns {Array<FilterConfig>} The prepared filters
+ */
+export function prepareFilters(actor, filterHelper) {
+  let filterConfigData = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);
+  if (!filterConfigData || !filterConfigData.version) {
+    filterConfigData = { version: MODULE.DEFAULT_FILTER_CONFIG_VERSION, filters: foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG) };
+  }
+  let filterConfig = filterConfigData?.filters || [];
+  if (filterConfig.length === 0) filterConfig = foundry.utils.deepClone(MODULE.DEFAULT_FILTER_CONFIG);
+  else {
+    const currentVersion = MODULE.DEFAULT_FILTER_CONFIG_VERSION;
+    const storedVersion = filterConfigData.version || '0.0.0';
+    if (foundry.utils.isNewerVersion(currentVersion, storedVersion)) {
+      filterConfig = DataUtils.migrateFilterData(filterConfig);
+      const updatedConfigData = { version: currentVersion, filters: filterConfig };
+      game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, updatedConfigData);
+    } else filterConfig = ensureFilterIntegrity(filterConfig);
+  }
+  const sortedFilters = filterConfig.sort((a, b) => a.order - b.order);
+  const filterState = filterHelper.getFilterState();
+  const result = sortedFilters
+    .map((filter) => {
+      let filterEnabled = filter.enabled;
+      if (filter.id === 'favorited') {
+        const favoritesUIEnabled = game.settings.get(MODULE.ID, SETTINGS.PLAYER_UI_FAVORITES);
+        filterEnabled = filter.enabled && favoritesUIEnabled;
+      }
+      if (filter.id === 'preparedByParty') {
+        const isPartyModeEnabled = actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
+        filterEnabled = filter.enabled && isPartyModeEnabled;
+      }
+      const result = {
+        id: filter.id,
+        type: filter.type,
+        name: `filter-${filter.id}`,
+        label: game.i18n.localize(filter.label),
+        enabled: filterEnabled
+      };
+      let element;
+      switch (filter.type) {
+        case 'search':
+          element = ValidationUtils.createTextInput({
+            name: `filter-${filter.id}`,
+            value: filterState[filter.id] || '',
+            placeholder: `${game.i18n.localize(filter.label)}...`,
+            ariaLabel: game.i18n.localize(filter.label),
+            cssClass: 'advanced-search-input'
+          });
+          break;
+        case 'dropdown':
+          const options = getOptionsForFilter(filter.id, filterState);
+          element = ValidationUtils.createSelect({
+            name: `filter-${filter.id}`,
+            options: options,
+            ariaLabel: game.i18n.localize(filter.label)
+          });
+          break;
+        case 'checkbox':
+          element = ValidationUtils.createCheckbox({
+            name: `filter-${filter.id}`,
+            checked: filterState[filter.id] || false,
+            label: game.i18n.localize(filter.label),
+            ariaLabel: game.i18n.localize(filter.label)
+          });
+          break;
+        case 'range': {
+          log(3, 'Creating range filter element:', { filterId: filter.id, filterState });
+          const container = document.createElement('div');
+          container.className = 'range-inputs';
+          container.setAttribute('role', 'group');
+          container.setAttribute('aria-labelledby', `${filter.id}-label`);
+          const minInput = ValidationUtils.createNumberInput({
+            name: 'filter-min-range',
+            value: filterState.minRange || '',
+            placeholder: game.i18n.localize('SPELLBOOK.Filters.RangeMin'),
+            ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RangeMinLabel')
+          });
+          const separator = document.createElement('div');
+          separator.className = 'range-separator';
+          separator.setAttribute('aria-hidden', 'true');
+          separator.innerHTML = '<dnd5e-icon src="systems/dnd5e/icons/svg/range-connector.svg"></dnd5e-icon>';
+          const maxInput = ValidationUtils.createNumberInput({
+            name: 'filter-max-range',
+            value: filterState.maxRange || '',
+            placeholder: game.i18n.localize('SPELLBOOK.Filters.RangeMax'),
+            ariaLabel: game.i18n.localize('SPELLBOOK.Filters.RangeMaxLabel')
+          });
+          container.appendChild(minInput);
+          container.appendChild(separator);
+          container.appendChild(maxInput);
+          element = container;
+          result.unit = dnd5e.utils.defaultUnits('length') === 'm' ? 'meters' : 'feet';
+          break;
+        }
+        default:
+          return null;
+      }
+      if (!element) return null;
+      result.elementHtml = ValidationUtils.elementToHtml(element);
+      return result;
+    })
+    .filter(Boolean);
+  log(3, 'Preparing filters:', { result });
+  return result;
 }

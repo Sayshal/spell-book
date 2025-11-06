@@ -840,6 +840,7 @@ export class PartyMode {
     log(3, 'Getting available focuses.');
     const settingData = game.settings.get(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS);
     const focusData = Array.isArray(settingData) ? settingData[0] : settingData;
+    log(1, 'Getting available focuses:', { settingData, focusData });
     return foundry.utils.getProperty(focusData, 'focuses') || [];
   }
 
@@ -889,5 +890,28 @@ export class PartyMode {
     const result = await socketHandler.setUserSelectedFocus(groupActor, userId, focusId);
     if (!result.success) log(2, 'Failed to set user selected focus.', { userId, focusId });
     return result.success;
+  }
+
+  /**
+   * Check if an actor has a specific spell prepared.
+   * @param {Actor} actor - The actor to check
+   * @param {string} spellUuid - The spell UUID
+   * @returns {boolean} True if actor has spell prepared
+   * @static
+   */
+  static actorHasSpell(actor, spellUuid) {
+    log(3, 'Confirming if actor has the spell prepared.', { actor, spellUuid });
+    if (!actor.testUserPermission(game.user, 'OBSERVER')) return false;
+    const preparedSpells = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS) || [];
+    if (preparedSpells.includes(spellUuid)) return true;
+    const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
+    for (const classSpells of Object.values(preparedByClass)) {
+      for (const spellKey of classSpells) {
+        const [classIdentifier, ...uuidParts] = spellKey.split(':');
+        const parsedSpellUuid = uuidParts.join(':');
+        if (parsedSpellUuid === spellUuid) return true;
+      }
+    }
+    return false;
   }
 }

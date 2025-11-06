@@ -431,4 +431,24 @@ export class WizardBook {
     }
     return MODULE.WIZARD_SPELL_SOURCE.FREE;
   }
+
+  /**
+   * Get the appropriate localization key for a learned spell based on its source.
+   * @param {string} source - The learning source (free, copied, scroll)
+   * @returns {string} Localization key
+   * @static
+   */
+  static getLearnedLabelKey(source) {
+    log(3, 'Getting learned label key!', { source });
+    switch (source) {
+      case MODULE.WIZARD_SPELL_SOURCE.FREE:
+        return 'SPELLBOOK.Wizard.LearnedFree';
+      case MODULE.WIZARD_SPELL_SOURCE.COPIED:
+        return 'SPELLBOOK.Wizard.LearnedPurchased';
+      case MODULE.WIZARD_SPELL_SOURCE.SCROLL:
+        return 'SPELLBOOK.Wizard.LearnedFromScroll';
+      default:
+        return 'SPELLBOOK.Wizard.LearnedFree';
+    }
+  }
 }

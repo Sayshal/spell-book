@@ -11,6 +11,7 @@
  */
 
 import { FLAGS, MODULE } from '../constants/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 import { RuleSet } from '../managers/_module.mjs';
 import * as UIUtils from './_module.mjs';
@@ -593,6 +594,175 @@ export class SpellBookUI {
           item.classList.remove('spell-locked', 'max-prepared');
         }
       }
+    }
+  }
+
+  /**
+   * Apply favorite states with actor state validation.
+   * @param {NodeList} buttons - The buttons to update
+   * @returns {Promise<void>}
+   */
+  async applyFavoriteStatesToButtons(buttons) {
+    const targetUserId = DataUtils.getTargetUserId(this.app.actor);
+    let updatedCount = 0;
+    for (const button of buttons) {
+      const spellUuid = button.dataset.uuid;
+      if (!spellUuid) continue;
+      let isFavorited = this.app._state.getFavoriteSessionState(spellUuid);
+      if (isFavorited === null) {
+        const userData = await DataUtils.UserData.getUserDataForSpell(spellUuid, targetUserId, this.app.actor.id);
+        const journalFavorited = userData?.favorited || false;
+        const isOnActor = this.app.actor.items.some((item) => item.type === 'spell' && (item._stats?.compendiumSource === spellUuid || item.uuid === spellUuid));
+        if (isOnActor && journalFavorited) isFavorited = true;
+        else if (isOnActor && !journalFavorited) isFavorited = false;
+        else if (!isOnActor) isFavorited = journalFavorited;
+      }
+      const icon = button.querySelector('i');
+      const currentlyFavorited = button.classList.contains('favorited');
+      if (currentlyFavorited !== isFavorited) {
+        if (isFavorited) {
+          button.classList.add('favorited');
+          if (icon) {
+            icon.classList.remove('far');
+            icon.classList.add('fas');
+          }
+          button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
+          button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
+        } else {
+          button.classList.remove('favorited');
+          if (icon) {
+            icon.classList.remove('fas');
+            icon.classList.add('far');
+          }
+          button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
+          button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
+        }
+        updatedCount++;
+      }
+    }
+    if (updatedCount > 0) log(3, `Applied favorite states: ${updatedCount} buttons updated`);
+  }
+
+  /**
+   * Immediately apply favorite changes to UI without waiting for next render.
+   * @param {Array<{uuid: string, newState: boolean}>} changedSpells - Array of changed spell states
+   * @returns {void}
+   */
+  applyImmediateFavoriteChanges(changedSpells) {
+    for (const { uuid, newState } of changedSpells) {
+      const button = this.element.querySelector(`.spell-favorite-toggle[data-uuid="${uuid}"]`);
+      if (!button) continue;
+      const icon = button.querySelector('i');
+      if (newState) {
+        button.classList.add('favorited');
+        icon.classList.remove('far');
+        icon.classList.add('fas');
+        button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
+        button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
+      } else {
+        button.classList.remove('favorited');
+        icon.classList.remove('fas');
+        icon.classList.add('far');
+        button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
+        button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
+      }
+    }
+    if (changedSpells.length > 0) log(3, `Applied immediate UI changes for ${changedSpells.length} favorite buttons`);
+  }
+
+  /**
+   * Apply pre-calculated class styling to the DOM.
+   * @returns {Promise<void>}
+   */
+  async applyPreCalculatedClassStyling() {
+    log(3, 'Applying pre-calculated class stylings.');
+    if (!this.app._classStylingCache || this.app._classStylingCache.size === 0) {
+      await this.applyClassStyling();
+      return;
+    }
+    if (this.app.wizardManagers.size > 0) {
+      for (const [identifier, wizardManager] of this.app.wizardManagers) {
+        if (wizardManager.isWizard) {
+          const color = this.app._classStylingCache.get(identifier);
+          if (color) {
+            const wizardTab = this.element.querySelector(`[data-tab="wizardbook-${identifier}"]`);
+            if (wizardTab) wizardTab.style.setProperty('--wizard-book-color', color);
+          }
+        }
+      }
+    }
+    await this.applyClassStyling();
+  }
+
+  /**
+   * Prepare class styling data for wizard tabs.
+   * @async
+   */
+  async prepareClassStylingData() {
+    if (!this.app._classStylingCache) this.app._classStylingCache = new Map();
+    if (this.app.wizardManagers.size > 0) {
+      for (const [identifier, wizardManager] of this.app.wizardManagers) {
+        if (wizardManager.isWizard) {
+          const classSpellData = this.app._state.classSpellData[identifier];
+          if (classSpellData?.classItem) {
+            const color = await UIUtils.getClassColorForWizardTab(classSpellData.classItem);
+            this.app._classStylingCache.set(identifier, color);
+          }
+        }
+      }
+    }
+    log(3, 'PSB Class Styling Data created', { stylingCache: this.app._classStylingCache });
+  }
+
+  /**
+   * Setup non-critical UI elements after the window is visible.
+   * @returns {Promise<void>}
+   */
+  async setupDeferredUI() {
+    log(3, 'Setting up deferred UI.');
+    this.setupFilterListeners();
+    this.applyCollapsedLevels();
+    this.setupCantripUI();
+    this.updateSpellCounts();
+    this.updateSpellPreparationTracking();
+    if (!this.app._classColorsApplied || this.app._classesChanged) {
+      await this.applyPreCalculatedClassStyling();
+      this.app._classColorsApplied = true;
+      this.app._classesChanged = false;
+    }
+    this.setupAdvancedSearch();
+    const favoriteButtons = this.app.element.querySelectorAll('.spell-favorite-toggle[data-uuid]');
+    if (favoriteButtons.length > 0) {
+      await this.applyFavoriteStatesToButtons(favoriteButtons);
+      favoriteButtons.forEach((button) => button.setAttribute('data-favorites-applied', 'true'));
+    }
+  }
+
+  /**
+   * Update favorite button state immediately.
+   * @param {HTMLElement} button - The favorite button element
+   * @param {boolean} isFavorited - Whether the spell is favorited
+   * @static
+   */
+  static updateFavoriteButtonState(button, isFavorited) {
+    log(3, 'Updating favorite button state.', { button, isFavorited });
+    const icon = button.querySelector('i');
+    if (isFavorited) {
+      button.classList.add('favorited');
+      if (icon) {
+        icon.classList.remove('far');
+        icon.classList.add('fas');
+      }
+      button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
+      button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites'));
+    } else {
+      button.classList.remove('favorited');
+      if (icon) {
+        icon.classList.remove('fas');
+        icon.classList.add('far');
+      }
+      button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
+      button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.AddToFavorites'));
     }
   }
 }

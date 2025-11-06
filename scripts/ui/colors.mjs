@@ -251,3 +251,37 @@ function _adjustColorForContrast(color, background, targetRatio = 4.5) {
   const finalRgb = _hslToRgb(hsl.h, hsl.s, adjustedLightness);
   return `#${((1 << 24) + (finalRgb.r << 16) + (finalRgb.g << 8) + finalRgb.b).toString(16).slice(1)}`;
 }
+
+/**
+ * Inject CSS custom properties for wizard book tab colors.
+ * @param {Map<string, string>} classStylingCache - Map of class identifier to color hex strings
+ * @returns {void}
+ */
+export function injectWizardBookColorCSS(classStylingCache) {
+  if (!classStylingCache || classStylingCache.size === 0) return;
+  const styleId = 'spell-book-wizard-colors';
+  let styleElement = document.getElementById(styleId);
+  if (!styleElement) {
+    styleElement = document.createElement('style');
+    styleElement.id = styleId;
+    document.head.appendChild(styleElement);
+  }
+  let css = '';
+  for (const [identifier, color] of classStylingCache) {
+    const colorObj = foundry.utils.Color.fromString(color);
+    if (colorObj.valid) {
+      const r = Math.round(colorObj.r * 255);
+      const g = Math.round(colorObj.g * 255);
+      const b = Math.round(colorObj.b * 255);
+      const [h] = colorObj.hsl;
+      css += `
+        .tabs.tabs-right > .item[data-tab="wizardbook-${identifier}"] {
+          --wizard-book-color: ${color};
+          --wizard-book-color-rgb: ${r}, ${g}, ${b};
+          --wizard-book-color-hue: ${h * 360}deg;
+        }
+      `;
+    }
+  }
+  styleElement.textContent = css;
+}

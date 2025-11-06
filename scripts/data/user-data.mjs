@@ -12,6 +12,7 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import { UserDataSetup } from '../managers/_module.mjs';
+import * as DataUtils from './_module.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
 
@@ -69,8 +70,6 @@ export class UserData {
     log(3, 'Parsing spell data from HTML.');
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlContent, 'text/html');
-
-    /** @type {Object<string, UserSpellData>} */
     const spellData = {};
     const notesTable = doc.querySelector('table[data-table-type="spell-notes"]');
     if (notesTable) {
@@ -146,13 +145,8 @@ export class UserData {
     const isGM = user?.isGM;
     if (isGM) return await renderTemplate(TEMPLATES.COMPONENTS.USER_SPELL_DATA_TABLES, { isGM: true, userId, userName });
     const userActors = game.actors.filter((actor) => actor.type === 'character' && (actor.ownership[userId] === 3 || user?.character?.id === actor.id));
-
-    /** @type {Array<ActorTableData>} */
     const processedActors = userActors.map((actor) => {
-      /** @type {Array<TableRowData>} */
       const favoriteSpells = [];
-
-      /** @type {Array<TableRowData>} */
       const usageSpells = [];
       for (const [uuid, data] of Object.entries(spellData)) {
         const actorData = data.actorData?.[actor.id];
@@ -171,7 +165,6 @@ export class UserData {
       }
       return { id: actor.id, name: actor.name, favoriteSpells, usageSpells };
     });
-    /** @type {Array<TableRowData>} */
     const notesSpells = [];
     for (const [uuid, data] of Object.entries(spellData)) {
       if (data.notes && data.notes.trim()) {
@@ -410,5 +403,37 @@ export class UserData {
       if (game.user.isGM) pageData.ownership[game.user.id] = 3;
       await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
     }
+  }
+
+  /**
+   * Sync actor favorites to journal storage.
+   * Compares actor favorite spells with journal favorites and updates journal to match actor.
+   * @param {Actor} actor - The actor to sync favorites for
+   * @returns {Promise<Array<{uuid: string, newState: boolean}>>} Array of changed spells with their new favorite states
+   * @static
+   */
+  static async syncActorFavoritesToJournal(actor) {
+    log(3, 'Syncing journal to actor state.');
+    const actorFavorites = actor.system.favorites || [];
+    const actorFavoriteSpellIds = new Set(actorFavorites.filter((fav) => fav.type === 'item' && fav.id.startsWith('.Item.')).map((fav) => fav.id.replace('.Item.', '')));
+    const actorSpells = actor.items.filter((item) => item.type === 'spell');
+    const targetUserId = DataUtils.getTargetUserId(actor);
+    const changedSpells = [];
+    for (const spell of actorSpells) {
+      const spellUuid = spell._stats?.compendiumSource || spell.uuid;
+      if (!spellUuid) continue;
+      const isFavoritedInActor = actorFavoriteSpellIds.has(spell.id);
+      const userData = await this.getUserDataForSpell(spellUuid, targetUserId, actor.id);
+      const isFavoritedInJournal = userData?.favorited || false;
+      if (isFavoritedInJournal && !isFavoritedInActor) {
+        await this.setSpellFavorite(spellUuid, false);
+        changedSpells.push({ uuid: spellUuid, newState: false });
+      }
+      if (!isFavoritedInJournal && isFavoritedInActor) {
+        await this.setSpellFavorite(spellUuid, true);
+        changedSpells.push({ uuid: spellUuid, newState: true });
+      }
+    }
+    return changedSpells;
   }
 }

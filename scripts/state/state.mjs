@@ -1194,6 +1194,23 @@ export class State {
   }
 
   /**
+   * Update wizard tab data after learning a spell.
+   * @param {string} classIdentifier - The class identifier
+   * @param {boolean} isFree - Whether the spell was learned for free
+   */
+  updateWizardBook(classIdentifier, isFree) {
+    log(3, 'Updating wizardbook tab data after learning a spell.');
+    const wizardTabId = `wizardbook-${classIdentifier}`;
+    if (this.tabData && this.tabData[wizardTabId]) {
+      this.tabData[wizardTabId].wizardTotalSpellbookCount = (this.tabData[wizardTabId].wizardTotalSpellbookCount || 0) + 1;
+      if (isFree) {
+        this.tabData[wizardTabId].wizardRemainingFreeSpells = Math.max(0, (this.tabData[wizardTabId].wizardRemainingFreeSpells || 0) - 1);
+        this.tabData[wizardTabId].wizardHasFreeSpells = this.tabData[wizardTabId].wizardRemainingFreeSpells > 0;
+      }
+    }
+  }
+
+  /**
    * Handle post-processing after spell save operations.
    * @param {Actor} actor - The actor
    * @returns {Promise<void>}

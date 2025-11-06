@@ -348,3 +348,67 @@ export function createSpellIconLink(spell) {
     .trim();
   return result;
 }
+
+/**
+ * Get data attributes for a spell item.
+ * @param {Object} spell - The spell object
+ * @returns {string} HTML-ready data attributes
+ */
+export function getSpellDataAttributes(spell) {
+  const attributes = [
+    `data-spell-uuid="${spell.compendiumUuid}"`,
+    `data-spell-level="${spell.system.level || 0}"`,
+    `data-spell-school="${spell.system?.school || ''}"`,
+    `data-casting-time-type="${spell.filterData?.castingTime?.type || ''}"`,
+    `data-casting-time-value="${spell.filterData?.castingTime?.value || ''}"`,
+    `data-range-units="${spell.filterData?.range?.units || ''}"`,
+    `data-range-value="${spell.system?.range?.value || ''}"`,
+    `data-damage-types="${spell.filterData?.damageTypes || ''}"`,
+    `data-ritual="${spell.filterData?.isRitual || false}"`,
+    `data-favorited="${spell.filterData?.favorited || false}"`,
+    `data-concentration="${spell.filterData?.concentration || false}"`,
+    `data-requires-save="${spell.filterData?.requiresSave || false}"`,
+    `data-conditions="${spell.filterData?.conditions || ''}"`,
+    `data-material-components="${spell.filterData?.materialComponents?.hasConsumedMaterials || false}"`
+  ];
+  if (spell.sourceClass) attributes.push(`data-source-class="${spell.sourceClass}"`);
+  return attributes.join(' ');
+}
+
+/**
+ * Get the preparation tags for a spell.
+ * @param {Object} spell - The spell object
+ * @param {Actor} actor - The actor (needed for granted item lookups and class data)
+ * @returns {Array} Array of tag objects with cssClass, text, and tooltip properties
+ */
+export function getSpellPreparationTags(spell, actor) {
+  log(3, 'Getting spell tag(s)', { spellName: spell.name, flags: spell.flags, system: spell.system, preparation: spell.preparation, aggregatedModes: spell.aggregatedModes });
+  const tags = [];
+  const sourceClass = spell.system?.sourceClass || spell.sourceClass;
+  const modes = spell.aggregatedModes;
+  if (modes?.hasPrepared) tags.push({ cssClass: 'prepared', text: game.i18n.localize('SPELLBOOK.Preparation.Prepared'), tooltip: game.i18n.localize('SPELLBOOK.Preparation.PreparedTooltip') });
+  if (modes?.hasPact) tags.push({ cssClass: 'pact', text: game.i18n.localize('SPELLBOOK.Preparation.Pact'), tooltip: game.i18n.localize('SPELLBOOK.SpellSource.PactMagic') });
+  if (modes?.hasAlwaysPrepared) {
+    let tooltip = game.i18n.localize('SPELLBOOK.Preparation.AlwaysTooltip');
+    if (sourceClass && actor?.spellcastingClasses?.[sourceClass]) {
+      const spellcastingData = actor.spellcastingClasses[sourceClass];
+      const classItem = actor.items.get(spellcastingData.id);
+      if (classItem?.type === 'subclass') tooltip = classItem.name;
+      else if (classItem?.type === 'class') {
+        const subclass = actor.items.find((i) => i.type === 'subclass' && i.system?.classIdentifier === sourceClass);
+        tooltip = subclass?.name || classItem.name;
+      }
+    }
+    tags.push({ cssClass: 'always-prepared', text: game.i18n.localize('SPELLBOOK.Preparation.Always'), tooltip: tooltip });
+  }
+  if (modes?.hasGranted) {
+    const cachedFor = spell.flags?.dnd5e?.cachedFor;
+    const itemId = foundry.utils.parseUuid(cachedFor, { relative: actor }).embedded[1];
+    const grantingItem = actor?.items.get(itemId);
+    tags.push({ cssClass: 'granted', text: game.i18n.localize('SPELLBOOK.SpellSource.Granted'), tooltip: grantingItem?.name || '' });
+  }
+  if (modes?.hasInnate) tags.push({ cssClass: 'innate', text: game.i18n.localize('SPELLBOOK.Preparation.Innate'), tooltip: game.i18n.localize('SPELLBOOK.Preparation.InnateTooltip') });
+  if (modes?.hasRitual) tags.push({ cssClass: 'ritual', text: game.i18n.localize('SPELLBOOK.Preparation.Ritual'), tooltip: game.i18n.localize('SPELLBOOK.Preparation.RitualTooltip') });
+  if (modes?.hasAtWill) tags.push({ cssClass: 'atwill', text: game.i18n.localize('SPELLBOOK.Preparation.AtWill'), tooltip: game.i18n.localize('SPELLBOOK.Preparation.AtWillTooltip') });
+  return tags;
+}

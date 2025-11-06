@@ -190,3 +190,17 @@ export async function preloadTemplates(obj = TEMPLATES, paths = []) {
   }
   if (obj === TEMPLATES) return foundry?.applications?.handlebars?.loadTemplates(paths);
 }
+
+/**
+ * Migrate filter configuration from old version to new version.
+ * @param {Array} oldConfig - The old filter configuration
+ * @returns {Array} The migrated configuration
+ */
+export function migrateFilterData(oldConfig) {
+  log(3, 'Migrating filter config.');
+  const userPreferences = new Map(oldConfig.map((f) => [f.id, { enabled: f.enabled, order: f.order }]));
+  return MODULE.DEFAULT_FILTER_CONFIG.map((defaultFilter) => {
+    const userPref = userPreferences.get(defaultFilter.id);
+    return userPref ? { ...defaultFilter, enabled: userPref.enabled, order: userPref.order ?? defaultFilter.order } : foundry.utils.deepClone(defaultFilter);
+  });
+}
