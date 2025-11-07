@@ -1206,7 +1206,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Register class-specific parts for all spellcasting classes and wizard tabs.
-   * @todo Investigate what the system does for dynamic part creation - there may be a better/official pattern for ApplicationV2
    * @private
    */
   #loadDynamicTabs() {
@@ -1236,7 +1235,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Set up the content wrapper element to allow hiding sidebar in collapsed mode.
-   * @todo Investigate replacing this DOM manipulation with better CSS/construction approach
    * @private
    */
   #setupContentWrapper() {
