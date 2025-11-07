@@ -21,7 +21,6 @@ import * as DataUtils from './_module.mjs';
 export class ScrollProcessor {
   /**
    * Scan actor inventory for spell scrolls and extract learnable spells.
-   * @todo Resolve parameters
    * @param {Object} actor - The actor to scan for spell scrolls
    * @returns {Promise<Array<Object>>} Array of scroll spell data objects
    */
@@ -39,7 +38,6 @@ export class ScrollProcessor {
 
   /**
    * Extract spell data from a scroll item.
-   * @todo Resolve parameters
    * @param {Object} scroll - The scroll item to extract spell data from
    * @param {Object} actor - The actor who owns the scroll
    * @returns {Promise<Object|null>} Processed spell data or null if no valid spell found

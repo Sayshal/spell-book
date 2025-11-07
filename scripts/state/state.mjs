@@ -22,7 +22,6 @@ import * as UIUtils from '../ui/_module.mjs';
 export class State {
   /**
    * Create a new State manager for a Spell Book application.
-   * @todo Resolve parameter
    * @param {Object} app - Spell Book application instance
    */
   constructor(app) {

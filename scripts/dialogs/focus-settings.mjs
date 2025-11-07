@@ -46,7 +46,6 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Create a new Focus Settings dialog instance.
-   * @todo Resolve parameters
    * @param {Object} groupActor - The group actor containing focus selections
    * @param {Object} [targetActor=null] - Specific actor to configure focus for (null for GM mode)
    * @param {Object} [parentApp=null] - The parent PartyCoordinator app instance

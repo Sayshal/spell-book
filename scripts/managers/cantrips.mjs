@@ -53,7 +53,6 @@ class CantripValidationResult extends DataModel {
 export class Cantrips {
   /**
    * Create a new Cantrips instance.
-   * @todo Resolve parameters
    * @param {Object} actor - The actor to manage cantrips for
    * @param {Object} spellManager - The associated SpellManager instance
    */

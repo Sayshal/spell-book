@@ -53,7 +53,6 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
 
   /**
    * Create a new Spell Book settings dialog instance.
-   * @todo Resolve parameters
    * @param {Object} actor - The actor to configure settings for
    * @param {Object} [options={}] - Additional application options
    */

@@ -30,7 +30,6 @@ export class WizardBook {
 
   /**
    * Create a new WizardBook for an actor and specific class.
-   * @todo Resolve parameters
    * @param {Object} actor - The actor to manage wizard spellbook for
    * @param {string} [classIdentifier='wizard'] - The class identifier (e.g., 'wizard', 'cleric')
    */

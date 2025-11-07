@@ -25,7 +25,6 @@ const { formatNumber } = dnd5e.utils;
 export class SpellBookUI {
   /**
    * Create a new UI helper.
-   * @todo Resolve parameter
    * @param {Object} app - The parent application instance
    */
   constructor(app) {

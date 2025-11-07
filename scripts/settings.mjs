@@ -464,7 +464,7 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.FocusOptions.Hint',
     scope: 'world',
     config: false,
-    type: new foundry.data.fields.ArrayField(new foundry.data.fields.StringField(), { initial: MODULE.DEFAULT_FOCUSES })
+    type: new foundry.data.fields.ObjectField({ initial: { focuses: MODULE.DEFAULT_FOCUSES } })
   });
 
   /** Token limit for party mode display */

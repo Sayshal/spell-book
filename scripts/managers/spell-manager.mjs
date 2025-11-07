@@ -21,7 +21,6 @@ import { Cantrips, RuleSet } from './_module.mjs';
 export class SpellManager {
   /**
    * Create a new SpellManager for an actor.
-   * @todo Resolve parameters
    * @param {Object} actor - The actor to manage spells for
    * @param {Object} app - The parent spell book application (optional)
    */

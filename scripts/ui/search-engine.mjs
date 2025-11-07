@@ -20,7 +20,6 @@ import * as ValidationUtils from '../validation/_module.mjs';
 export class SearchEngine {
   /**
    * Create a new advanced search manager instance.
-   * @todo Resolve parameter
    * @param {Object} app - The parent application instance
    */
   constructor(app) {

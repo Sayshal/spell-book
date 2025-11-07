@@ -25,12 +25,10 @@ const { renderTemplate } = foundry.applications.handlebars;
 
 /**
  * Player-facing Spell Book application for managing prepared spells.
- * @todo reorganize code by flow state.
  */
 export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Create a new SpellBook application.
-   * @todo Resolve parameters
    * @param {Object} actor - The actor whose spells to display
    * @param {Object} [options={}] - Application options
    */

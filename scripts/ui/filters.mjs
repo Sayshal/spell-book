@@ -27,7 +27,6 @@ const FILTER_OPTIONS_CACHE = new Map();
 export class Filters {
   /**
    * Create a new filter helper.
-   * @todo Resolve parameter
    * @param {Object} app - The parent application instance
    */
   constructor(app) {

@@ -39,7 +39,6 @@ export class Macros {
 
   /**
    * Ensure a specific macro exists in the compendium and is current.
-   * @todo Resolve parameters
    * @param {Collection<string, Macro>} pack - The macro compendium pack
    * @param {object} macro - Macro configuration object
    * @returns {Promise<Object|null>} Promise that resolves to the existing or newly created Macro document, or null if not found/creation failed

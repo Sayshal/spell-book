@@ -23,7 +23,6 @@ import { log } from '../logger.mjs';
 export class Loadouts {
   /**
    * Create a new Spell Loadout Manager instance.
-   * @todo Resolve parameters
    * @param {Object} actor - The actor whose loadouts to manage
    * @param {Object} [spellbook=null] - Optional Spell Book reference for UI integration
    */

@@ -44,7 +44,6 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Create a new Spell Notes dialog instance.
-   * @todo Resolve parameters
    * @param {Object} [options={}] - Application options including spell and actor data
    * @param {string} options.spellUuid - UUID of the spell to edit notes for
    * @param {Object} [options.actor] - Associated actor for note ownership

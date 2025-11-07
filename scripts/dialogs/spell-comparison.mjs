@@ -34,7 +34,6 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Create a new spell comparison dialog instance.
-   * @todo Resolve parameters
    * @param {Object} parentApp - Parent Spell Book application instance
    * @param {Object} [options={}] - Additional application options
    */
