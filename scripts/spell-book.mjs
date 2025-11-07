@@ -17,6 +17,7 @@ import { registerDnD5eIntegration, registerTidy5eIntegration } from './integrati
 import { initializeLogger, log } from './logger.mjs';
 import { Macros, Migrations, UsageTracker, UserDataSetup } from './managers/_module.mjs';
 import { registerSettings } from './settings.mjs';
+import { registerSpellBookTours } from './tours/_module.mjs';
 import * as UIUtils from './ui/_module.mjs';
 import { createChatMessage } from './ui/_module.mjs';
 import { SocketHandler } from './sockets.mjs';
@@ -53,6 +54,7 @@ Hooks.once('ready', async function () {
   await UsageTracker.initialize();
   await DataUtils.preloadData(true);
   if (game.user.isGM) await DataUtils.registerCustomSpellLists();
+  await registerSpellBookTours();
   log(3, 'Module ready.');
 });
 

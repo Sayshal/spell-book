@@ -1,0 +1,115 @@
+{
+  "title": "SPELLBOOK.Tours.PartySpells.Title",
+  "description": "SPELLBOOK.Tours.PartySpells.Description",
+  "canBeResumed": true,
+  "display": true,
+  "steps": [
+    {
+      "id": "welcome",
+      "selector": "",
+      "title": "SPELLBOOK.Tours.PartySpells.Welcome.Title",
+      "content": "SPELLBOOK.Tours.PartySpells.Welcome.Content"
+    },
+    {
+      "id": "party-mode-button",
+      "selector": "button[data-action='openPartyManager']",
+      "title": "SPELLBOOK.Tours.PartySpells.Button.Title",
+      "content": "SPELLBOOK.Tours.PartySpells.Button.Content",
+      "openSpellBook": "demo",
+      "tooltipDirection": "UP"
+    },
+    {
+      "id": "party-coordinator",
+      "selector": ".party-coordinator",
+      "title": "SPELLBOOK.Tours.PartySpells.Coordinator.Title",
+      "content": "SPELLBOOK.Tours.PartySpells.Coordinator.Content",
+      "openPartySpells": true,
+      "tooltipDirection": "DOWN"
+    },
+    {
+      "id": "spell-coverage",
+      "selector": ".spell-coverage-overview",
+      "title": "SPELLBOOK.Tours.PartySpells.Coverage.Title",
+      "content": "SPELLBOOK.Tours.PartySpells.Coverage.Content",
+      "tooltipDirection": "DOWN"
+    },
+    {
+      "id": "redundancy-detection",
+      "selector": ".redundancy-analysis",
+      "title": "SPELLBOOK.Tours.PartySpells.Redundancy.Title",
+      "content": "SPELLBOOK.Tours.PartySpells.Redundancy.Content",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "id": "spell-gaps",
+      "selector": ".spell-gaps-panel",
+      "title": "SPELLBOOK.Tours.PartySpells.Gaps.Title",
+      "content": "SPELLBOOK.Tours.PartySpells.Gaps.Content",
+      "tooltipDirection": "LEFT"
+    },
+    {
+      "id": "party-icons",
+      "selector": ".party-icon-display",
+      "title": "SPELLBOOK.Tours.PartySpells.Icons.Title",
+      "content": "SPELLBOOK.Tours.PartySpells.Icons.Content",
+      "tooltipDirection": "DOWN"
+    },
+    {
+      "id": "focus-system",
+      "selector": ".focus-selection",
+      "title": "SPELLBOOK.Tours.PartySpells.Focus.Title",
+      "content": "SPELLBOOK.Tours.PartySpells.Focus.Content",
+      "tooltipDirection": "DOWN"
+    },
+    {
+      "id": "synergy-recommendations",
+      "selector": ".synergy-panel",
+      "title": "SPELLBOOK.Tours.PartySpells.Synergy.Title",
+      "content": "SPELLBOOK.Tours.PartySpells.Synergy.Content",
+      "tooltipDirection": "UP"
+    },
+    {
+      "id": "practical-tips",
+      "selector": "",
+      "title": "SPELLBOOK.Tours.PartySpells.Tips.Title",
+      "content": "SPELLBOOK.Tours.PartySpells.Tips.Content"
+    }
+  ],
+  "suggestedNextTours": [
+    "spell-book.wizard-spellbook"
+  ],
+  "localization": {
+    "SPELLBOOK.Tours.PartySpells.Title": "Party Spell Coordination",
+    "SPELLBOOK.Tours.PartySpells.Description": "Learn how to coordinate spell preparation across your entire party for optimal coverage",
+
+    "SPELLBOOK.Tours.PartySpells.Welcome.Title": "Welcome to Party Coordination",
+    "SPELLBOOK.Tours.PartySpells.Welcome.Content": "Party spell coordination helps your group work together to prepare the most effective spell loadout. This feature:\n\n• Shows which spells each party member has prepared\n• Identifies redundant spell preparation\n• Highlights coverage gaps in your party\n• Suggests spell synergies and combos\n\nThis tour will show you how to use party coordination to optimize your group's magical capabilities!",
+
+    "SPELLBOOK.Tours.PartySpells.Button.Title": "Opening Party Mode",
+    "SPELLBOOK.Tours.PartySpells.Button.Content": "This button opens the Party Coordinator (only visible when your character is in a party or group).\n\n**Left Click**: Opens the full party coordination interface\n**Right Click**: Quick menu to toggle party mode display\n\nWhen party mode is active, you'll see small character tokens next to spells that other party members have prepared.",
+
+    "SPELLBOOK.Tours.PartySpells.Coordinator.Title": "Party Coordinator Interface",
+    "SPELLBOOK.Tours.PartySpells.Coordinator.Content": "The Party Coordinator shows an overview of all spellcasters in your group:\n\n• Each party member's prepared spells\n• Total spell coverage by level and school\n• Redundancy warnings for duplicate preparations\n• Gap analysis showing missing spell types\n\nThe interface updates in real-time as party members prepare or change spells.",
+
+    "SPELLBOOK.Tours.PartySpells.Coverage.Title": "Spell Coverage Overview",
+    "SPELLBOOK.Tours.PartySpells.Coverage.Content": "This section visualizes your party's spell coverage:\n\n• **Schools of Magic**: See which schools are well-represented\n• **Spell Levels**: Identify levels where coverage is weak\n• **Spell Categories**: Damage, healing, control, utility, etc.\n• **Coverage Score**: Overall rating of party spell diversity\n\nGreen indicates good coverage, yellow shows moderate, and red highlights gaps that might leave your party vulnerable.",
+
+    "SPELLBOOK.Tours.PartySpells.Redundancy.Title": "Redundancy Detection",
+    "SPELLBOOK.Tours.PartySpells.Redundancy.Content": "SpellBook automatically detects when multiple party members prepare the same spell:\n\n• **High Redundancy**: 3+ party members with the same spell (might be excessive)\n• **Moderate Redundancy**: 2 party members (sometimes useful for backup)\n• **Suggestions**: Alternative spells that could replace redundant preparations\n\nSome redundancy is good (multiple healers preparing Cure Wounds), but too much reduces your party's versatility.",
+
+    "SPELLBOOK.Tours.PartySpells.Gaps.Title": "Coverage Gap Analysis",
+    "SPELLBOOK.Tours.PartySpells.Gaps.Content": "This panel highlights important spell categories your party is missing:\n\n• **Critical Gaps**: Essential spells no one has prepared (healing, detection, dispelling)\n• **Tactical Gaps**: Useful spells that would expand options (control, buffing, summoning)\n• **Suggested Spells**: Specific recommendations to fill gaps\n\nClick on a suggested spell to see which party members can prepare it.",
+
+    "SPELLBOOK.Tours.PartySpells.Icons.Title": "Party Icon Display",
+    "SPELLBOOK.Tours.PartySpells.Icons.Content": "When party mode is active in your SpellBook, small character tokens appear next to spells:\n\n• Shows which party members also have this spell prepared\n• Tokens are color-coded by player color for easy identification\n• Hover over a token to see the character's name\n• Limited to a configurable number of icons to avoid clutter\n\nThis gives you instant visibility into spell overlap while you're preparing your own spells!",
+
+    "SPELLBOOK.Tours.PartySpells.Focus.Title": "Spellcasting Focus System",
+    "SPELLBOOK.Tours.PartySpells.Focus.Content": "The Focus system helps parties coordinate magical roles:\n\n• Each player declares their spellcasting focus (damage, healing, control, etc.)\n• SpellBook suggests spells matching your chosen focus\n• Party view shows the distribution of focuses\n• Helps avoid \"too many healers\" or \"no crowd control\" situations\n\nYou can change your focus at any time. The GM can customize available focus options in module settings.",
+
+    "SPELLBOOK.Tours.PartySpells.Synergy.Title": "Spell Synergy Recommendations",
+    "SPELLBOOK.Tours.PartySpells.Synergy.Content": "SpellBook identifies powerful spell combinations across your party:\n\n• **Combo Setups**: Spells that work well together (Web + Fireball, Faerie Fire + Attack Rolls)\n• **Buff Stacking**: Compatible buff spells that can be layered\n• **Debuff Chains**: Debuffs that synergize for increased effectiveness\n• **Tactical Pairs**: Spells that enable powerful strategies\n\nWhen you see a synergy recommendation, coordinate with your party to ensure both spells are prepared!",
+
+    "SPELLBOOK.Tours.PartySpells.Tips.Title": "Party Coordination Tips",
+    "SPELLBOOK.Tours.PartySpells.Tips.Content": "Make the most of party coordination:\n\n• **Communicate**: Share this interface with your party during prep sessions\n• **Diversify**: Aim for variety unless you have a specific strategy\n• **Plan ahead**: Consider upcoming challenges when preparing\n• **Be flexible**: Don't over-optimize; spontaneous play is fun too\n• **Essential coverage**: Always ensure someone can heal and dispel magic\n• **Ritual spells**: Wizards should prepare ritual spells so others don't have to\n\nParty coordination is a tool, not a requirement. Use it as much or as little as your group prefers!"
+  }
+}
