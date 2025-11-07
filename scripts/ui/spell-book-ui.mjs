@@ -641,6 +641,7 @@ export class SpellBookUI {
    * @returns {void}
    */
   applyImmediateFavoriteChanges(changedSpells) {
+    if (!this.element) return;
     for (const { uuid, newState } of changedSpells) {
       const button = this.element.querySelector(`.spell-favorite-toggle[data-uuid="${uuid}"]`);
       if (!button) continue;

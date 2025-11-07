@@ -14,7 +14,7 @@
  */
 
 import { MODULE } from '../constants/_module.mjs';
-import { SpellBook } from '../apps/player-spell-book.mjs';
+import { SpellBook, SpellListManager, SpellBookSettings, PartyCoordinator, PartyMode } from '../apps/_module.mjs';
 import { log } from '../logger.mjs';
 
 export default class SpellBookTour extends foundry.nue.Tour {
@@ -36,78 +36,39 @@ export default class SpellBookTour extends foundry.nue.Tour {
    */
   previousTab = null;
 
-  /* -------------------------------------------- */
-
   /** @override */
   get canStart() {
-    // Ensure we're in a world (not setup screen) and have game loaded
     if (game.view !== 'game') return false;
     if (!game.ready) return false;
     return true;
   }
 
-  /* -------------------------------------------- */
-
   /** @override */
   async start() {
-    // Find a suitable actor for the demo
-    this.demoActor = this.#findDemoActor();
-
+    this.demoActor = await this.#findDemoActor();
     if (!this.demoActor && this.#requiresActor()) {
       ui.notifications.warn(game.i18n.localize('SPELLBOOK.Tours.NoSuitableActor'));
       return;
     }
-
     return super.start();
   }
 
-  /* -------------------------------------------- */
-
   /** @override */
   async _preStep() {
-    await super._preStep();
     const step = this.currentStep;
-
     log(3, `SpellBookTour | Processing pre-step: ${step.id}`, { step });
-
-    // Handle opening SpellBook application
-    if (step.openSpellBook) {
-      await this.#openSpellBook(step.openSpellBook);
-    }
-
-    // Handle opening Spell List Manager
-    if (step.openSpellListManager) {
-      await this.#openSpellListManager();
-    }
-
-    // Handle party spells dialog
-    if (step.openPartySpells) {
-      await this.#openPartySpells();
-    }
-
-    // Handle spell book settings
-    if (step.openSpellBookSettings) {
-      await this.#openSpellBookSettings();
-    }
-
-    // Handle tab activation within SpellBook
-    if (step.spellBookTab && this.focusedApp instanceof SpellBook) {
-      await this.#activateSpellBookTab(step.spellBookTab);
-    }
-
-    // Small delay to ensure UI is ready
-    if (step.openSpellBook || step.spellBookTab || step.openSpellListManager) {
-      await new Promise(resolve => setTimeout(resolve, 300));
-    }
+    if (step.openSpellBook) await this.#openSpellBook(step.openSpellBook);
+    if (step.openSpellListManager) await this.#openSpellListManager();
+    if (step.openPartySpells) await this.#openPartySpells();
+    if (step.openSpellBookSettings) await this.#openSpellBookSettings();
+    if (step.spellBookTab && this.focusedApp instanceof SpellBook) await this.#activateSpellBookTab(step.spellBookTab);
+    if (step.openSpellBook || step.spellBookTab || step.openSpellListManager) await new Promise((resolve) => setTimeout(resolve, 300));
+    await super._preStep();
   }
-
-  /* -------------------------------------------- */
 
   /** @override */
   async _postStep() {
     await super._postStep();
-
-    // Optionally close apps when specific steps are complete
     const step = this.currentStep;
     if (step?.closeAfterStep && this.focusedApp) {
       await this.focusedApp.close();
@@ -115,47 +76,25 @@ export default class SpellBookTour extends foundry.nue.Tour {
     }
   }
 
-  /* -------------------------------------------- */
-
   /** @override */
   async complete() {
-    // Clean up any open applications
-    if (this.focusedApp && !this.focusedApp.id.includes('settings')) {
-      // Don't auto-close to let users explore
-      // await this.focusedApp.close();
-    }
-
     this.focusedApp = null;
     this.demoActor = null;
-
     return super.complete();
   }
 
-  /* -------------------------------------------- */
-
   /** @override */
   async exit() {
-    // Clean up focused app if needed
     this.focusedApp = null;
     this.demoActor = null;
-
     return super.exit();
   }
 
-  /* -------------------------------------------- */
-
   /** @override */
   _getTargetElement(selector) {
-    // First try standard DOM query
     let element = document.querySelector(selector);
     if (element) return element;
-
-    // Try within focused application if it exists
-    if (this.focusedApp?.element) {
-      element = this.focusedApp.element[0]?.querySelector(selector)
-                || this.focusedApp.element.querySelector?.(selector);
-    }
-
+    if (this.focusedApp?.element) element = this.focusedApp.element[0]?.querySelector(selector) || this.focusedApp.element.querySelector?.(selector);
     return element;
   }
 
@@ -165,26 +104,66 @@ export default class SpellBookTour extends foundry.nue.Tour {
 
   /**
    * Find a suitable actor for tour demonstrations.
-   * Prefers player characters that the user owns.
-   * @returns {Actor|null} A suitable actor or null
+   * Prefers user's owned actors with spells, falls back to importing Akra.
+   * @returns {Promise<Actor|null>} A suitable actor or null
    * @private
    */
-  #findDemoActor() {
-    // First try user's assigned character
+  async #findDemoActor() {
     if (game.user.character) {
       const hasSpells = Object.keys(game.user.character.spellcastingClasses || {}).length > 0;
-      if (hasSpells) return game.user.character;
+      if (hasSpells) {
+        log(3, 'SpellBookTour | Using user assigned character');
+        return game.user.character;
+      }
     }
-
-    // Try to find any actor the user owns with spellcasting
-    const ownedActors = game.actors.filter(a => a.isOwner && a.type === 'character');
+    const ownedActors = game.actors.filter((a) => a.isOwner && a.type === 'character');
     for (const actor of ownedActors) {
       const hasSpells = Object.keys(actor.spellcastingClasses || {}).length > 0;
-      if (hasSpells) return actor;
+      if (hasSpells) {
+        log(3, `SpellBookTour | Using owned actor: ${actor.name}`);
+        return actor;
+      }
     }
+    return await this.#importAkraFallback();
+  }
 
-    // Fallback to any owned actor
-    return ownedActors[0] || null;
+  /**
+   * Import Akra from the dnd5e.heroes compendium as a fallback demo actor.
+   * @returns {Promise<Actor|null>} Akra the demo actor or null
+   * @private
+   */
+  async #importAkraFallback() {
+    let akra = game.actors.find((a) => a.name === 'Akra' && a.type === 'character');
+    if (akra) {
+      log(3, 'SpellBookTour | Found existing Akra actor');
+      return akra;
+    }
+    try {
+      const pack = game.packs.get('dnd5e.heroes');
+      if (!pack) {
+        log(2, 'SpellBookTour | dnd5e.heroes compendium not found');
+        return null;
+      }
+      const index = await pack.getIndex();
+      const akraEntry = index.find((e) => e.name === 'Akra (Dragonborn Cleric)');
+      if (!akraEntry) {
+        log(2, 'SpellBookTour | Akra not found in dnd5e.heroes compendium');
+        return null;
+      }
+      log(3, 'SpellBookTour | Importing Akra from compendium as fallback');
+      akra = await game.actors.importFromCompendium(pack, akraEntry._id, { name: 'Akra' });
+      const unpreparedSpells = akra.items.filter((item) => item.type === 'spell' && item.system.prepared === 0);
+      if (unpreparedSpells.length > 0) {
+        const idsToDelete = unpreparedSpells.map((s) => s.id);
+        await akra.deleteEmbeddedDocuments('Item', idsToDelete);
+        log(3, `SpellBookTour | Deleted ${unpreparedSpells.length} unprepared spells from Akra`);
+      }
+      log(2, 'SpellBookTour | Successfully imported and prepared Akra for tour');
+      return akra;
+    } catch (error) {
+      log(1, 'SpellBookTour | Error importing Akra:', error);
+      return null;
+    }
   }
 
   /* -------------------------------------------- */
@@ -195,12 +174,7 @@ export default class SpellBookTour extends foundry.nue.Tour {
    * @private
    */
   #requiresActor() {
-    // Check if any step requires opening spell book
-    return this.config.steps.some(step =>
-      step.openSpellBook ||
-      step.openSpellBookSettings ||
-      step.openPartySpells
-    );
+    return this.config.steps.some((step) => step.openSpellBook || step.openSpellBookSettings || step.openPartySpells);
   }
 
   /* -------------------------------------------- */
@@ -213,51 +187,40 @@ export default class SpellBookTour extends foundry.nue.Tour {
    */
   async #openSpellBook(config) {
     let actor = null;
-
-    // Handle different config types
     if (typeof config === 'string') {
-      if (config === 'first' || config === 'demo') {
-        actor = this.demoActor;
-      } else {
-        actor = game.actors.get(config);
-      }
+      if (config === 'first' || config === 'demo') actor = this.demoActor;
+      else actor = game.actors.get(config);
     } else if (config?.actorId) {
       actor = game.actors.get(config.actorId);
-    } else {
-      actor = this.demoActor;
-    }
-
+    } else actor = this.demoActor;
     if (!actor) {
       log(2, 'SpellBookTour | Could not find suitable actor for spell book demo');
       return null;
     }
-
-    // Check if SpellBook is already open for this actor
-    const existingApp = Object.values(ui.windows).find(app =>
-      app instanceof SpellBook && app.actor?.id === actor.id
-    );
-
+    log(3, `SpellBookTour | Opening SpellBook for actor: ${actor.name} (${actor.id})`);
+    const existingApp = Array.from(foundry.applications.instances.values()).find((app) => app instanceof SpellBook && app.actor?.id === actor.id);
     if (existingApp) {
       this.focusedApp = existingApp;
       existingApp.bringToFront();
       log(3, 'SpellBookTour | Using existing SpellBook instance');
       return existingApp;
     }
-
-    // Create and render new SpellBook
     try {
+      log(3, 'SpellBookTour | Creating new SpellBook instance');
       const spellBook = new SpellBook(actor);
-      await spellBook.render(true);
+      log(3, 'SpellBookTour | Pre-initializing SpellBook');
+      await spellBook._preInitialize();
+      log(3, 'SpellBookTour | Rendering SpellBook');
+      spellBook.render(true);
       this.focusedApp = spellBook;
-      log(3, 'SpellBookTour | Opened new SpellBook instance');
+      log(3, 'SpellBookTour | Successfully opened new SpellBook instance');
       return spellBook;
     } catch (error) {
       log(1, 'SpellBookTour | Error opening SpellBook:', error);
+      console.error(error);
       return null;
     }
   }
-
-  /* -------------------------------------------- */
 
   /**
    * Open the Spell List Manager application.
@@ -266,31 +229,20 @@ export default class SpellBookTour extends foundry.nue.Tour {
    */
   async #openSpellListManager() {
     try {
-      // Dynamically import to avoid circular dependencies
-      const { SpellListManager } = await import('../apps/_module.mjs');
-
-      // Check if already open
-      const existingApp = Object.values(ui.windows).find(app =>
-        app.constructor.name === 'SpellListManager'
-      );
-
+      const existingApp = Array.from(foundry.applications.instances.values()).find((app) => app instanceof SpellListManager);
       if (existingApp) {
         existingApp.bringToFront();
         this.focusedApp = existingApp;
         return;
       }
-
-      // Open new instance
       const manager = new SpellListManager();
-      await manager.render(true);
+      manager.render(true);
       this.focusedApp = manager;
       log(3, 'SpellBookTour | Opened Spell List Manager');
     } catch (error) {
       log(2, 'SpellBookTour | Could not open Spell List Manager:', error);
     }
   }
-
-  /* -------------------------------------------- */
 
   /**
    * Open the Party Spells coordinator.
@@ -299,33 +251,25 @@ export default class SpellBookTour extends foundry.nue.Tour {
    */
   async #openPartySpells() {
     if (!this.demoActor) return;
-
     try {
-      const { PartyCoordinator } = await import('../apps/_module.mjs');
-      const { PartyMode } = await import('../managers/_module.mjs');
-
       const primaryGroup = PartyMode.getPrimaryGroupForActor(this.demoActor);
       if (!primaryGroup) {
         log(2, 'SpellBookTour | No party group found for actor');
         return;
       }
-
       const partyActors = PartyMode.getPartyActors(primaryGroup);
       if (partyActors.length === 0) {
         log(2, 'SpellBookTour | No party actors found');
         return;
       }
-
       const coordinator = new PartyCoordinator(partyActors, this.demoActor, primaryGroup);
-      await coordinator.render(true);
+      coordinator.render(true);
       this.focusedApp = coordinator;
       log(3, 'SpellBookTour | Opened Party Coordinator');
     } catch (error) {
       log(2, 'SpellBookTour | Could not open Party Coordinator:', error);
     }
   }
-
-  /* -------------------------------------------- */
 
   /**
    * Open the SpellBook settings dialog.
@@ -334,21 +278,14 @@ export default class SpellBookTour extends foundry.nue.Tour {
    */
   async #openSpellBookSettings() {
     if (!this.demoActor) return;
-
     try {
-      const { SpellBookSettings } = await import('../dialogs/_module.mjs');
-
-      const settings = new SpellBookSettings(this.demoActor, {
-        parentApp: this.focusedApp
-      });
-      await settings.render(true);
+      const settings = new SpellBookSettings(this.demoActor, { parentApp: this.focusedApp });
+      settings.render(true);
       log(3, 'SpellBookTour | Opened SpellBook Settings');
     } catch (error) {
       log(2, 'SpellBookTour | Could not open SpellBook Settings:', error);
     }
   }
-
-  /* -------------------------------------------- */
 
   /**
    * Activate a specific tab within the SpellBook application.
@@ -360,12 +297,8 @@ export default class SpellBookTour extends foundry.nue.Tour {
       log(2, 'SpellBookTour | Cannot activate tab - SpellBook not open');
       return;
     }
-
     try {
-      // Store previous tab for potential restoration
       this.previousTab = this.focusedApp.tabGroups?.['spellbook-tabs'];
-
-      // Change to the specified tab
       await this.focusedApp.changeTab(tabId, 'spellbook-tabs');
       log(3, `SpellBookTour | Activated tab: ${tabId}`);
     } catch (error) {
