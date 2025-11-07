@@ -59,10 +59,6 @@ export default class SpellBookTour extends foundry.nue.Tour {
   async _preStep() {
     const step = this.currentStep;
     log(1, `SpellBookTour | Processing pre-step: ${step.id}`, { step });
-
-    // Clean up any existing tooltips before the step
-    this.#destroyAllTooltips();
-
     await super._preStep();
     if (step.openSpellBook) await this.#openSpellBook(step.openSpellBook);
     if (step.openSpellListManager) this.#openSpellListManager();
@@ -83,9 +79,6 @@ export default class SpellBookTour extends foundry.nue.Tour {
 
   /** @override */
   async complete() {
-    // Clean up tooltip protection and destroy any stuck tooltips
-    this.#destroyAllTooltips();
-
     this.focusedApp = null;
     this.demoActor = null;
     return super.complete();
@@ -93,9 +86,6 @@ export default class SpellBookTour extends foundry.nue.Tour {
 
   /** @override */
   async exit() {
-    // Clean up tooltip protection and destroy any stuck tooltips
-    this.#destroyAllTooltips();
-
     this.focusedApp = null;
     this.demoActor = null;
     return super.exit();
@@ -107,38 +97,6 @@ export default class SpellBookTour extends foundry.nue.Tour {
     if (element) return element;
     if (this.focusedApp?.element) element = this.focusedApp.element[0]?.querySelector(selector) || this.focusedApp.element.querySelector?.(selector);
     return element;
-  }
-
-  /** @override */
-  async _renderStep() {
-    await super._renderStep();
-
-    // Prevent TooltipManager from hiding the tour tooltip
-    const tooltip = document.querySelector('#tooltip');
-    if (tooltip) {
-      // Force tooltip to stay visible
-      tooltip.style.opacity = '1';
-      tooltip.style.visibility = 'visible';
-
-      // Add event listener to prevent TooltipManager from hiding it
-      const preventHide = (e) => {
-        tooltip.style.opacity = '1';
-        tooltip.style.visibility = 'visible';
-      };
-
-      // Store the handler so we can remove it later
-      if (!this._tooltipProtector) {
-        this._tooltipProtector = preventHide;
-        // Watch for style changes that would hide the tooltip
-        const observer = new MutationObserver(() => {
-          if (tooltip.style.opacity === '0' || tooltip.style.visibility === 'hidden') {
-            preventHide();
-          }
-        });
-        observer.observe(tooltip, { attributes: true, attributeFilter: ['style'] });
-        this._tooltipObserver = observer;
-      }
-    }
   }
 
   /* -------------------------------------------- */
@@ -245,7 +203,7 @@ export default class SpellBookTour extends foundry.nue.Tour {
     if (existingApp) {
       this.focusedApp = existingApp;
       existingApp.bringToFront();
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 200));
       log(3, 'SpellBookTour | Using existing SpellBook instance');
       return existingApp;
     }
@@ -256,7 +214,7 @@ export default class SpellBookTour extends foundry.nue.Tour {
       await spellBook._preInitialize();
       log(3, 'SpellBookTour | Rendering SpellBook');
       spellBook.render(true);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 200));
       this.focusedApp = spellBook;
       log(3, 'SpellBookTour | Successfully opened new SpellBook instance');
       return spellBook;
@@ -349,30 +307,5 @@ export default class SpellBookTour extends foundry.nue.Tour {
     } catch (error) {
       log(2, 'SpellBookTour | Error activating tab:', error);
     }
-  }
-
-  /**
-   * Destroy all active tooltips to prevent stuck tooltips from mutation observer.
-   * @private
-   */
-  #destroyAllTooltips() {
-    // // Disconnect existing mutation observer if present
-    // if (this._tooltipObserver) {
-    //   this._tooltipObserver.disconnect();
-    //   this._tooltipObserver = null;
-    //   this._tooltipProtector = null;
-    // }
-    // // Hide and clear any active tooltips
-    // const tooltip = document.querySelector('#tooltip');
-    // if (tooltip) {
-    //   tooltip.style.opacity = '0';
-    //   tooltip.style.visibility = 'hidden';
-    //   tooltip.innerHTML = '';
-    // }
-    // // Also clear any tooltip manager state if available
-    // if (game.tooltip) {
-    //   game.tooltip.deactivate();
-    // }
-    // log(3, 'SpellBookTour | Destroyed all tooltips');
   }
 }
