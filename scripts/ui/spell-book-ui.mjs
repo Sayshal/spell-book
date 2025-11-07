@@ -723,36 +723,6 @@ export class SpellBookUI {
       this.app._classColorsApplied = true;
       this.app._classesChanged = false;
     }
-    /** @todo Investigate better AppV2 solution for context menu event listeners */
-    log(3, 'Setting up loadout context menu.');
-    const loadoutButton = this.app.element.querySelector('[data-action="openLoadoutDialog"]');
-    if (loadoutButton) {
-      loadoutButton.addEventListener('contextmenu', async (event) => {
-        event.preventDefault();
-        await this.app._showLoadoutContextMenu(event);
-      });
-      this.app._loadoutClickHandler = (event) => {
-        if (!event.target.closest('#spell-loadout-context-menu')) {
-          this.app._hideLoadoutContextMenu();
-          document.removeEventListener('click', this.app._loadoutClickHandler);
-        }
-      };
-    }
-    /** @todo Investigate better AppV2 solution for context menu event listeners */
-    log(3, 'Setting up partymode context menu.');
-    const partyButton = this.app.element.querySelector('[data-action="openPartyManager"]');
-    if (partyButton) {
-      partyButton.addEventListener('contextmenu', async (event) => {
-        event.preventDefault();
-        await this.app._showPartyContextMenu(event);
-      });
-      this.app._partyClickHandler = (event) => {
-        if (!event.target.closest('#party-context-menu')) {
-          this.app._hidePartyContextMenu();
-          document.removeEventListener('click', this.app._partyClickHandler);
-        }
-      };
-    }
     this.setupAdvancedSearch();
     const favoriteButtons = this.app.element.querySelectorAll('.spell-favorite-toggle[data-uuid]');
     if (favoriteButtons.length > 0) {

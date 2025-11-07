@@ -95,8 +95,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       openAnalytics: this.#openAnalytics,
       openCustomization: this.#openCustomization,
       openFilterConfig: this.#openFilterConfig,
-      openLoadoutDialog: this.#openLoadouts,
-      openPartyManager: this.#openPartyMode,
+      openLoadoutDialog: { handler: this.#openLoadouts, buttons: [0, 2] },
+      openPartyManager: { handler: this.#openPartyMode, buttons: [0, 2] },
       openSettings: this.#openSettings,
       reset: this.#reset,
       save: this.#save,
@@ -412,8 +412,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     SpellBook.DEFAULT_OPTIONS.position = this.position;
     if (this._isLongRest) this.actor.unsetFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);
     if (this._flagChangeHook) Hooks.off('updateActor', this._flagChangeHook);
-    if (this._loadoutClickHandler) document.removeEventListener('click', this._loadoutClickHandler);
-    if (this._partyClickHandler) document.removeEventListener('click', this._partyClickHandler);
+    this._hideContextMenu();
     const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
     if (isPartyMode) await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, false);
     if (this.ui?.search) this.ui.search.cleanup();
@@ -693,13 +692,18 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle opening loadout dialog.
+   * Handle opening loadout dialog or context menu.
    * @this SpellBook
-   * @param {PointerEvent} _event - The originating click event.
-   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
+   * @param {PointerEvent} event - The originating click or contextmenu event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async #openLoadouts(_event, _target) {
-    log(3, 'Handling loadout dialog.', { _event, _target });
+  static async #openLoadouts(event, target) {
+    log(3, 'Handling loadout action.', { event, target, type: event.type });
+    if (event.type === 'contextmenu') {
+      event.preventDefault();
+      await this._showLoadoutContextMenu(event, target);
+      return;
+    }
     const activeTab = this.tabGroups['spellbook-tabs'];
     const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
     const classIdentifier = activeTabContent?.dataset.classIdentifier || this._state.activeClass;
@@ -708,13 +712,18 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Handle opening party manager.
+   * Handle opening party manager or context menu.
    * @this SpellBook
-   * @param {PointerEvent} _event - The originating click event.
-   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
+   * @param {PointerEvent} event - The originating click or contextmenu event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static async #openPartyMode(_event, _target) {
-    log(3, 'Handling opening party manager.', { _event, _target });
+  static async #openPartyMode(event, target) {
+    log(3, 'Handling party action.', { event, target, type: event.type });
+    if (event.type === 'contextmenu') {
+      event.preventDefault();
+      await this._showPartyContextMenu(event, target);
+      return;
+    }
     const primaryGroup = PartyMode.getPrimaryGroupForActor(this.actor);
     if (!primaryGroup) return;
     const partyActors = PartyMode.getPartyActors(primaryGroup);
@@ -1248,17 +1257,18 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /* -------------------------------------------- */
-  /*  Context Menu Setup                          */
+  /*  Context Menu System                         */
   /* -------------------------------------------- */
 
   /**
    * Show context menu with available loadouts.
-   * @param {Event} event - The right-click event
+   * @param {PointerEvent} event - The contextmenu event
+   * @param {HTMLElement} target - The button element
    * @private
    */
-  async _showLoadoutContextMenu(event) {
+  async _showLoadoutContextMenu(event, target) {
     log(3, 'Showing loadout context menu.');
-    this._hideLoadoutContextMenu();
+    this._hideContextMenu();
     const activeTab = this.tabGroups['spellbook-tabs'];
     const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
     const classIdentifier = activeTabContent?.dataset.classIdentifier || this._state.activeClass;
@@ -1266,145 +1276,142 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const loadoutManager = new Loadouts(this.actor, this);
     const availableLoadouts = loadoutManager.getAvailableLoadouts(classIdentifier);
     if (availableLoadouts.length === 0) return;
-    const contextMenu = document.createElement('div');
-    contextMenu.id = 'spell-loadout-context-menu';
-    contextMenu.className = 'spell-loadout-context-menu';
-    const menuItems = availableLoadouts
-      .map((loadout) => {
-        const spellCount = loadout.spellConfiguration?.length || 0;
-        return `
-        <div class="context-menu-item" data-loadout-id="${loadout.id}">
-          <i class="fas fa-magic item-icon"></i>
-          <span class="item-text">${loadout.name} (${spellCount})</span>
-        </div>
-      `;
-      })
-      .join('');
-    contextMenu.innerHTML = menuItems;
-    document.body.appendChild(contextMenu);
-    this._positionLoadoutContextMenu(event, contextMenu);
-    setTimeout(() => document.addEventListener('click', this._loadoutClickHandler), 0);
-    contextMenu.addEventListener('click', async (clickEvent) => {
-      const item = clickEvent.target.closest('.context-menu-item');
-      if (!item || item.classList.contains('separator')) return;
-      if (item.dataset.action === 'manage') {
-        const dialog = new LoadoutSelector(this.actor, this, classIdentifier);
-        dialog.render(true);
-      } else if (item.dataset.loadoutId) {
-        await loadoutManager.applyLoadout(item.dataset.loadoutId, classIdentifier);
+    const items = availableLoadouts.map((loadout) => ({
+      id: loadout.id,
+      icon: 'fas fa-magic',
+      label: `${loadout.name} (${loadout.spellConfiguration?.length || 0})`,
+      action: async () => {
+        await loadoutManager.applyLoadout(loadout.id, classIdentifier);
+        this._hideContextMenu();
       }
-      this._hideLoadoutContextMenu();
-    });
-    this._activeContextMenu = contextMenu;
+    }));
+    const menu = this._createContextMenu('loadout', items);
+    this._positionContextMenu(menu, event, target, 'left');
+    this._setupContextMenuClickHandler();
   }
 
   /**
-   * Show context menu for party button.
-   * @param {Event} event - The right-click event
+   * Show context menu for party mode toggle.
+   * @param {PointerEvent} event - The contextmenu event
+   * @param {HTMLElement} target - The button element
    * @private
    */
-  async _showPartyContextMenu(event) {
-    log(3, 'Showing partymode context menu.');
-    this._hidePartyContextMenu();
+  async _showPartyContextMenu(event, target) {
+    log(3, 'Showing party context menu.');
+    this._hideContextMenu();
     const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
-    const contextMenu = document.createElement('div');
-    contextMenu.id = 'party-context-menu';
-    contextMenu.className = 'party-mode-context-menu';
-    contextMenu.innerHTML = `
-      <div class="context-menu-item" data-action="${isPartyMode ? 'disable' : 'enable'}-party-mode">
-        <i class="fas ${isPartyMode ? 'fa-eye-slash' : 'fa-users'}" aria-hidden="true"></i>
-        <span>${game.i18n.localize(isPartyMode ? 'SPELLBOOK.Party.DisablePartyMode' : 'SPELLBOOK.Party.EnablePartyMode')}</span>
-      </div>
-    `;
-    document.body.appendChild(contextMenu);
-    this._positionPartyContextMenu(event, contextMenu);
-    setTimeout(() => document.addEventListener('click', this._partyClickHandler), 0);
-    contextMenu.addEventListener('click', async (clickEvent) => {
-      const item = clickEvent.target.closest('.context-menu-item');
-      if (!item) return;
-      const action = item.dataset.action;
-      switch (action) {
-        case 'enable-party-mode':
-        case 'disable-party-mode': {
-          log(3, 'Handling partymode toggle.');
+    const items = [
+      {
+        id: 'toggle-party-mode',
+        icon: `fas ${isPartyMode ? 'fa-eye-slash' : 'fa-users'}`,
+        label: game.i18n.localize(isPartyMode ? 'SPELLBOOK.Party.DisablePartyMode' : 'SPELLBOOK.Party.EnablePartyMode'),
+        action: async () => {
           const primaryGroup = PartyMode.getPrimaryGroupForActor(this.actor);
           if (primaryGroup) {
             await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, !isPartyMode);
             await this.render();
           }
-          break;
+          this._hideContextMenu();
         }
       }
-      this._hidePartyContextMenu();
+    ];
+    const menu = this._createContextMenu('party', items);
+    this._positionContextMenu(menu, event, target, 'above');
+    this._setupContextMenuClickHandler();
+  }
+
+  /**
+   * Create a context menu element.
+   * @param {string} type - Menu type identifier
+   * @param {Array<{id: string, icon: string, label: string, action: Function}>} items - Menu items
+   * @returns {HTMLElement} The menu element
+   * @private
+   */
+  _createContextMenu(type, items) {
+    const menu = document.createElement('div');
+    menu.id = `spell-book-context-menu-${type}`;
+    menu.className = 'spell-book-context-menu';
+    menu.dataset.menuType = type;
+    menu.innerHTML = items
+      .map(
+        (item) => `
+      <div class="context-menu-item" data-item-id="${item.id}">
+        <i class="${item.icon} item-icon" aria-hidden="true"></i>
+        <span class="item-text">${item.label}</span>
+      </div>
+    `
+      )
+      .join('');
+    menu.addEventListener('click', async (e) => {
+      const itemEl = e.target.closest('.context-menu-item');
+      if (!itemEl) return;
+      const itemId = itemEl.dataset.itemId;
+      const item = items.find((i) => i.id === itemId);
+      if (item?.action) await item.action();
     });
-    this._activePartyContextMenu = contextMenu;
+    document.body.appendChild(menu);
+    return menu;
   }
 
   /**
-   * Hide loadout context menu.
+   * Position a context menu.
+   * @param {HTMLElement} menu - The menu element
+   * @param {PointerEvent} _event - The triggering event
+   * @param {HTMLElement} target - The button element
+   * @param {'left'|'above'} strategy - Positioning strategy
    * @private
    */
-  _hideLoadoutContextMenu() {
-    const existingMenu = document.getElementById('spell-loadout-context-menu');
-    if (existingMenu) existingMenu.remove();
-    this._activeContextMenu = null;
-  }
-
-  /**
-   * Hide party context menu.
-   * @private
-   */
-  _hidePartyContextMenu() {
-    const existingMenu = document.getElementById('party-context-menu');
-    if (existingMenu) existingMenu.remove();
-    this._activePartyContextMenu = null;
-  }
-
-  /**
-   * Position loadout context menu at the left edge of the application.
-   * @param {Event} event - The click event
-   * @param {HTMLElement} menu - The context menu element
-   * @private
-   */
-  _positionLoadoutContextMenu(event, menu) {
-    log(3, 'Positioning loadout context menu.');
-    const button = event.currentTarget;
+  _positionContextMenu(menu, _event, target, strategy) {
+    const targetRect = target.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
     const appRect = this.element.getBoundingClientRect();
-    const buttonRect = button.getBoundingClientRect();
-    const menuRect = menu.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
-    const finalX = appRect.left - menuRect.width;
-    let finalY = buttonRect.top;
-    if (finalY + menuRect.height > viewportHeight) {
-      const aboveY = buttonRect.bottom - menuRect.height;
-      if (aboveY >= 10) finalY = aboveY;
-      else finalY = viewportHeight - menuRect.height - 10;
+    const viewportWidth = window.innerWidth;
+    let left, top;
+    if (strategy === 'left') {
+      left = Math.max(10, appRect.left - menuRect.width);
+      top = targetRect.top;
+      if (top + menuRect.height > viewportHeight) {
+        top = Math.max(10, viewportHeight - menuRect.height - 10);
+      }
+    } else if (strategy === 'above') {
+      left = targetRect.left;
+      top = targetRect.top - menuRect.height - 5;
+      if (top < 10) top = targetRect.bottom + 5;
+      if (left + menuRect.width > viewportWidth - 10) {
+        left = targetRect.right - menuRect.width;
+      }
     }
-    if (finalY < 10) finalY = 10;
-    const minX = 10;
-    const adjustedX = Math.max(finalX, minX);
-    menu.style.left = `${adjustedX}px`;
-    menu.style.top = `${finalY}px`;
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
   }
 
   /**
-   * Position party context menu near the button.
-   * @param {Event} event - The click event
-   * @param {HTMLElement} menu - The context menu element
+   * Setup click-outside handler to close menu.
    * @private
    */
-  _positionPartyContextMenu(event, menu) {
-    log(3, 'Positioning party context menu.');
-    const button = event.currentTarget;
-    const buttonRect = button.getBoundingClientRect();
-    const menuRect = menu.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    let finalX = buttonRect.left;
-    let finalY = buttonRect.top - menuRect.height - 5;
-    if (finalY < 10) finalY = buttonRect.bottom + 5;
-    if (finalX + menuRect.width > viewportWidth - 10) finalX = buttonRect.right - menuRect.width;
-    if (finalX < 10) finalX = 10;
-    menu.style.left = `${finalX}px`;
-    menu.style.top = `${finalY}px`;
+  _setupContextMenuClickHandler() {
+    if (!this._contextMenuClickHandler) {
+      this._contextMenuClickHandler = (e) => {
+        if (!e.target.closest('.spell-book-context-menu')) {
+          this._hideContextMenu();
+        }
+      };
+    }
+    setTimeout(() => {
+      document.addEventListener('click', this._contextMenuClickHandler);
+    }, 0);
+  }
+
+  /**
+   * Hide any active context menu.
+   * @private
+   */
+  _hideContextMenu() {
+    const existingMenu = document.querySelector('.spell-book-context-menu');
+    if (existingMenu) existingMenu.remove();
+    if (this._contextMenuClickHandler) {
+      document.removeEventListener('click', this._contextMenuClickHandler);
+    }
   }
 }

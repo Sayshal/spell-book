@@ -6239,38 +6239,6 @@
   }
 
   /* ----------------------------------------- */
-  /*  Party Mode Visualization                 */
-  /* ----------------------------------------- */
-  .party-mode-context-menu {
-    z-index: var(--spell-book-z-index-tooltip);
-    position: absolute;
-    min-width: 11.25rem;
-    border: 0.063rem solid var(--spell-book-border-dark);
-    border-radius: var(--spell-book-radius-md);
-    background: var(--spell-book-bg-primary);
-    box-shadow: var(--spell-book-shadow-heavy);
-
-    .context-menu-item {
-      gap: var(--spell-book-spacing-sm);
-      display: flex;
-      align-items: center;
-      padding: var(--spell-book-spacing-sm) var(--spell-book-spacing-md);
-      color: var(--spell-book-text-primary);
-      cursor: pointer;
-      transition: var(--spell-book-transition-fast);
-
-      &:hover {
-        background: var(--spell-book-bg-secondary);
-      }
-
-      i {
-        width: 1rem;
-        text-align: center;
-      }
-    }
-  }
-
-  /* ----------------------------------------- */
   /*  Focus Settings Dialog                    */
   /* ----------------------------------------- */
   .focus-settings-dialog {
@@ -6873,11 +6841,10 @@
 /* ----------------------------------------- */
 /*  Context Menus                            */
 /* ----------------------------------------- */
-.spell-loadout-context-menu,
-.party-mode-context-menu,
+.spell-book-context-menu,
 .member-card-context-menu {
   z-index: var(--spell-book-z-index-context);
-  position: absolute;
+  position: fixed;
   max-width: 18.75rem;
   border-radius: var(--spell-book-radius-md);
   color: var(--spell-book-text-primary);

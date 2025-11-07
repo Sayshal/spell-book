@@ -241,7 +241,7 @@
   "SPELLBOOK.Party.NoPrimaryPartySet": "No primary party set. Please configure a primary party group actor in D&D 5e system settings.",
   "SPELLBOOK.Party.NoViewPermission": "Insufficient permissions to view details",
   "SPELLBOOK.Party.OpenActor": "Open Actor Sheet",
-  "SPELLBOOK.Party.OpenPartyManager": "Open Party Spell Manager",
+  "SPELLBOOK.Party.OpenPartyManager": "Open Party Spell Manager (right click to enable Party Mode)",
   "SPELLBOOK.Party.OpenPartySpellPool": "Open Party Spell Pool",
   "SPELLBOOK.Party.Party": "Party",
   "SPELLBOOK.Party.Prepared": "Prepared",
