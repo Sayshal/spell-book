@@ -24,7 +24,6 @@ import * as UIUtils from '../ui/_module.mjs';
 export class PartyMode {
   /**
    * Create a new party spell manager instance.
-   * @todo Resolve parameter
    * @param {Array<Object>} [partyActors=[]] - Array of party member actors
    * @param {Object} [viewingActor=null] - The actor who opened this view
    */
@@ -46,13 +45,13 @@ export class PartyMode {
 
   /**
    * Get party spell comparison data.
-   * @returns {Promise<Object>} Party spell comparison data
+   * @returns {Object} Party spell comparison data
    */
-  async getPartySpellComparison() {
+  getPartySpellComparison() {
     log(3, 'Getting party spell comparison.');
-    const comparisonData = { actors: [], spellsByLevel: {}, synergy: await this.getSpellSynergyAnalysis() };
+    const comparisonData = { actors: [], spellsByLevel: {}, synergy: this.getSpellSynergyAnalysis() };
     for (const actor of this.partyActors) {
-      const actorData = await this.getActorSpellData(actor);
+      const actorData = this.getActorSpellData(actor);
       if (actorData) comparisonData.actors.push(actorData);
     }
     this.organizeSpellsByLevel(comparisonData);
@@ -62,7 +61,7 @@ export class PartyMode {
   /**
    * Get spell data for a specific actor.
    * @param {Object} actor - The actor to analyze
-   * @returns {Promise<{
+   * @returns {{
    *   id: string,
    *   name: string,
    *   hasPermission: boolean,
@@ -79,14 +78,14 @@ export class PartyMode {
    *   }>,
    *   totalSpellsKnown: number,
    *   totalSpellsPrepared: number
-   * } | null>} Actor spell data or null if no permission
+   * } | null} Actor spell data or null if no permission
    */
-  async getActorSpellData(actor) {
+  getActorSpellData(actor) {
     log(3, 'Getting actor spell data.', { actorName: actor.name });
     if (!this.hasViewPermission(actor)) return { id: actor.id, name: actor.name, hasPermission: false, token: actor.img, spellcasters: [], totalSpellsKnown: 0, totalSpellsPrepared: 0 };
     const actorData = { id: actor.id, name: actor.name, hasPermission: true, token: actor.img, spellcasters: [], totalSpellsKnown: 0, totalSpellsPrepared: 0 };
     for (const [classId, classData] of Object.entries(actor.spellcastingClasses || {})) {
-      const classSpells = await this.getClassSpells(actor, classId);
+      const classSpells = this.getClassSpells(actor, classId);
       if (classSpells) {
         const enhancedClassName = this.getEnhancedClassName(actor, classId, classData);
         actorData.spellcasters.push({
@@ -111,13 +110,12 @@ export class PartyMode {
    * Get spells for a specific class on an actor.
    * @param {Object} actor - The actor
    * @param {string} classId - The class identifier
-   * @todo Does this need to by async?
-   * @returns {Promise<{
+   * @returns {{
    *   known: Array<{ uuid: string, sourceUuid: string, name: string, level: number, enrichedIcon: HTMLElement, prepared: boolean }>,
    *   prepared: Array<{ uuid: string, sourceUuid: string, name: string, level: number, enrichedIcon: HTMLElement, prepared: boolean }>
-   * } | null>} Class spell data or null on error
+   * } | null} Class spell data or null on error
    */
-  async getClassSpells(actor, classId) {
+  getClassSpells(actor, classId) {
     log(3, 'Getting class spells.', { actorName: actor.name, classId });
     let actorCache = this._spellDataCache.get(actor);
     if (actorCache?.has(classId)) return actorCache.get(classId);
@@ -221,15 +219,15 @@ export class PartyMode {
 
   /**
    * Get spell synergy analysis for the party.
-   * @returns {Promise<Object>} Complete synergy analysis data including damage distribution, concentration metrics, and recommendations
+   * @returns {Object} Complete synergy analysis data including damage distribution, concentration metrics, and recommendations
    */
-  async getSpellSynergyAnalysis() {
+  getSpellSynergyAnalysis() {
     log(3, 'Getting spell synergy analysis.');
     const analysis = this._initializeAnalysisStructure();
     const collectors = this._initializeDataCollectors();
     for (const actor of this.partyActors) {
       if (!this.hasViewPermission(actor)) continue;
-      await this._analyzeActorSpells(actor, analysis, collectors);
+      this._analyzeActorSpells(actor, analysis, collectors);
     }
     this._processCollectedData(analysis, collectors);
     this.generateEnhancedRecommendations(analysis);
@@ -304,19 +302,19 @@ export class PartyMode {
    * @param {Object} actor - The actor whose spells are being analyzed
    * @param {Object} analysis - The analysis data structure being populated
    * @param {Object} collectors - The data collection objects tracking counts and sets
-   * @returns {Promise<void>}
+   * @returns {void}
    * @private
    */
-  async _analyzeActorSpells(actor, analysis, collectors) {
+  _analyzeActorSpells(actor, analysis, collectors) {
     const focus = this.getActorSpellcastingFocus(actor);
     this._trackFocus(focus, actor.name, analysis, collectors);
     const actorStats = { concentrationCount: 0, ritualCount: 0, damageTypes: new Set() };
     for (const [classId] of Object.entries(actor.spellcastingClasses || {})) {
-      const classSpells = await this.getClassSpells(actor, classId);
+      const classSpells = this.getClassSpells(actor, classId);
       if (!classSpells) continue;
       for (const spell of classSpells.known) {
         collectors.allSpells.add(spell.uuid);
-        if (spell.prepared) await this._analyzeSpell(spell, actor, analysis, collectors, actorStats);
+        if (spell.prepared) this._analyzeSpell(spell, actor, analysis, collectors, actorStats);
       }
     }
     this._analyzeActorStats(actor, actorStats, analysis);
@@ -329,10 +327,10 @@ export class PartyMode {
    * @param {Object} analysis - The analysis data structure being populated
    * @param {Object} collectors - The data collection objects tracking counts and sets
    * @param {Object} actorStats - Actor-specific statistics being accumulated
-   * @returns {Promise<void>}
+   * @returns {void}
    * @private
    */
-  async _analyzeSpell(spell, actor, analysis, collectors, actorStats) {
+  _analyzeSpell(spell, actor, analysis, collectors, actorStats) {
     collectors.allPreparedSpells.add(spell.uuid);
     const spellDoc = fromUuidSync(spell.uuid);
     if (!spellDoc) return;
@@ -858,13 +856,11 @@ export class PartyMode {
     log(3, 'Getting available focuses.');
     const settingData = game.settings.get(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS);
     const focusData = Array.isArray(settingData) ? settingData[0] : settingData;
-    log(1, 'Getting available focuses:', { settingData, focusData });
     return foundry.utils.getProperty(focusData, 'focuses') || [];
   }
 
   /**
    * Get available spellcasting focus options with full details.
-   * @todo This is returning [Object object]
    * @returns {Array<{ id: string, name: string, icon: string, description: string }>} Array of focus option objects with complete data
    * @static
    */

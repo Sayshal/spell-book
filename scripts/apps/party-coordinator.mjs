@@ -64,7 +64,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
   /** @inheritdoc */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    if (!this._comparisonData) this._comparisonData = await this.partyManager.getPartySpellComparison();
+    if (!this._comparisonData) this._comparisonData = this.partyManager.getPartySpellComparison();
     context.comparison = this._comparisonData;
     context.availableFocuses = this.getAvailableFocusOptions();
     context.canEditFocus = game.user.isGM || (this.viewingActor && this.viewingActor.isOwner);
