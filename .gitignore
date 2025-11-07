@@ -1,5 +1,4 @@
 /storage
 /packs
+/todos
 *.lock
-optimizations.md
-SPELL_PROCESSOR_CONSOLIDATION.md
