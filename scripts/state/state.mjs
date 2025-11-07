@@ -1028,50 +1028,6 @@ export class State {
   }
 
   /**
-   * Enrich wizard tab spells with additional wizard-specific data.
-   * @todo this is never called?
-   * @param {Array<>} spellLevelsGrouped - Grouped spell levels array
-   * @param {Array<string>} personalSpellbook - The personal spellbook spell UUIDs
-   * @param {boolean} [isWizardBook=false] - Whether this is for the wizard spellbook tab
-   * @param {boolean} [isAtMaxSpells=false] - Whether maximum spells are reached
-   * @returns {void}
-   */
-  enrichWizardBookSpells(spellLevelsGrouped, personalSpellbook, isWizardBook = false, isAtMaxSpells = false) {
-    for (const levelData of spellLevelsGrouped) {
-      for (const spell of levelData.spells) {
-        spell.isWizardClass = true;
-        spell.inWizardSpellbook = personalSpellbook.includes(spell.compendiumUuid || spell.spellUuid);
-        if (this.app && this.app.comparisonSpells) {
-          const comparisonMax = game.settings.get(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX);
-          if (this.app.comparisonSpells.size < comparisonMax) {
-            spell.showCompareLink = true;
-            spell.isInComparison = this.app.comparisonSpells.has(spell.compendiumUuid || spell.spellUuid);
-          }
-        }
-        if (isWizardBook) {
-          spell.canAddToSpellbook = !spell.inWizardSpellbook && spell.system.level > 0;
-          spell.isAtMaxSpells = isAtMaxSpells;
-          if (spell.learnedFromScroll && spell.scrollLearningMetadata) {
-            spell.wasLearnedFromScroll = true;
-            spell.scrollLearningInfo = spell.scrollLearningMetadata;
-            spell.canLearnFromScroll = false;
-            spell.canAddToSpellbook = false;
-          }
-          if (spell.isFromScroll) {
-            spell.canLearnFromScroll = !spell.inWizardSpellbook;
-            spell.scrollMetadata = {
-              scrollId: spell.scrollId,
-              scrollName: spell.scrollName
-            };
-          }
-        }
-        if (!spell.enrichedIcon) spell.enrichedIcon = UIUtils.createSpellIconLink(spell);
-      }
-    }
-    log(3, 'Wizard book spells enriched', { levelCount: spellLevelsGrouped.length, isWizardBook, isAtMaxSpells });
-  }
-
-  /**
    * Wait for all wizard data to be fully loaded and available.
    * @returns {Promise<void>}
    */
