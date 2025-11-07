@@ -40,10 +40,24 @@
       "tooltipDirection": "RIGHT"
     },
     {
-      "id": "spell-slots",
-      "selector": ".class-preparation-data",
-      "title": "SPELLBOOK.Tours.Basics.SpellSlots.Title",
-      "content": "SPELLBOOK.Tours.Basics.SpellSlots.Content",
+      "id": "spell-tag-prepared",
+      "selector": ".tag.prepared",
+      "title": "SPELLBOOK.Tours.Basics.SpellTagPrepared.Title",
+      "content": "SPELLBOOK.Tours.Basics.SpellTagPrepared.Content",
+      "tooltipDirection": "UP"
+    },
+    {
+      "id": "spell-tag-always-prepared",
+      "selector": ".tag.always-prepared",
+      "title": "SPELLBOOK.Tours.Basics.SpellTagAlwaysPrepared.Title",
+      "content": "SPELLBOOK.Tours.Basics.SpellTagAlwaysPrepared.Content",
+      "tooltipDirection": "UP"
+    },
+    {
+      "id": "spell-prep-tracking",
+      "selector": ".spell-prep-tracking",
+      "title": "SPELLBOOK.Tours.Basics.PrepTracking.Title",
+      "content": "SPELLBOOK.Tours.Basics.PrepTracking.Content",
       "tooltipDirection": "UP"
     },
     {
@@ -51,27 +65,48 @@
       "selector": ".spell-filters",
       "title": "SPELLBOOK.Tours.Basics.Filters.Title",
       "content": "SPELLBOOK.Tours.Basics.Filters.Content",
-      "tooltipDirection": "DOWN"
-    },
-    {
-      "id": "sidebar-controls",
-      "selector": ".sidebar",
-      "title": "SPELLBOOK.Tours.Basics.Sidebar.Title",
-      "content": "SPELLBOOK.Tours.Basics.Sidebar.Content",
       "tooltipDirection": "LEFT"
     },
     {
-      "id": "settings-button",
-      "selector": "button[data-action='openSettings']",
-      "title": "SPELLBOOK.Tours.Basics.Settings.Title",
-      "content": "SPELLBOOK.Tours.Basics.Settings.Content",
+      "id": "filter-customization",
+      "selector": "button[data-action='openFilterConfig']",
+      "title": "SPELLBOOK.Tours.Basics.FilterCustomization.Title",
+      "content": "SPELLBOOK.Tours.Basics.FilterCustomization.Content",
       "tooltipDirection": "LEFT"
     },
     {
-      "id": "footer-buttons",
-      "selector": "footer.window-footer",
-      "title": "SPELLBOOK.Tours.Basics.Footer.Title",
-      "content": "SPELLBOOK.Tours.Basics.Footer.Content",
+      "id": "customization-menu",
+      "selector": "button[data-action='openCustomization']",
+      "title": "SPELLBOOK.Tours.Basics.CustomizationMenu.Title",
+      "content": "SPELLBOOK.Tours.Basics.CustomizationMenu.Content",
+      "tooltipDirection": "LEFT"
+    },
+    {
+      "id": "footer-save-button",
+      "selector": "button.submit-button[data-action='save']",
+      "title": "SPELLBOOK.Tours.Basics.FooterSave.Title",
+      "content": "SPELLBOOK.Tours.Basics.FooterSave.Content",
+      "tooltipDirection": "UP"
+    },
+    {
+      "id": "footer-reset-button",
+      "selector": "button.reset-button[data-action='reset']",
+      "title": "SPELLBOOK.Tours.Basics.FooterReset.Title",
+      "content": "SPELLBOOK.Tours.Basics.FooterReset.Content",
+      "tooltipDirection": "UP"
+    },
+    {
+      "id": "footer-analytics-button",
+      "selector": "button.analytics-button[data-action='openAnalytics']",
+      "title": "SPELLBOOK.Tours.Basics.FooterAnalytics.Title",
+      "content": "SPELLBOOK.Tours.Basics.FooterAnalytics.Content",
+      "tooltipDirection": "UP"
+    },
+    {
+      "id": "footer-loadouts-button",
+      "selector": "button.loadout-button[data-action='openLoadoutDialog']",
+      "title": "SPELLBOOK.Tours.Basics.FooterLoadouts.Title",
+      "content": "SPELLBOOK.Tours.Basics.FooterLoadouts.Content",
       "tooltipDirection": "UP"
     },
     {
@@ -86,39 +121,54 @@
   ],
   "localization": {
     "SPELLBOOK.Tours.Basics.Title": "SpellBook Basics",
-    "SPELLBOOK.Tours.Basics.Description": "Learn the fundamentals of using SpellBook for comprehensive spell management",
+    "SPELLBOOK.Tours.Basics.Description": "Learn the fundamentals of using SpellBook for spell management",
 
     "SPELLBOOK.Tours.Basics.Welcome.Title": "Welcome to SpellBook!",
-    "SPELLBOOK.Tours.Basics.Welcome.Content": "SpellBook is a comprehensive spell management system for Foundry VTT. This tour will guide you through the core features of the SpellBook interface.\n\nUse the arrow buttons or keyboard arrows to navigate through the tour. You can exit at any time by clicking the X button.",
+    "SPELLBOOK.Tours.Basics.Welcome.Content": "SpellBook is a full-service spell management system for spellcasters. This tour will guide you through the core features of the SpellBook interface.\nUse the arrow buttons or keyboard arrows to navigate through the tour. You can exit at any time by clicking the X button.",
 
     "SPELLBOOK.Tours.Basics.Opening.Title": "The SpellBook Interface",
-    "SPELLBOOK.Tours.Basics.Opening.Content": "This is the main SpellBook interface. Here you can view all your character's spells, prepare them for use, and manage your spell slots.\n\nThe interface is organized by spell levels and provides quick access to all spell-related features.",
+    "SPELLBOOK.Tours.Basics.Opening.Content": "This is the main SpellBook interface. Here you can view all your character's spells, prepare them for use, and manage your spell slots.\nThe interface is organized by spell levels and provides quick access to all spell-related features.",
 
     "SPELLBOOK.Tours.Basics.ClassTabs.Title": "Class Tabs",
-    "SPELLBOOK.Tours.Basics.ClassTabs.Content": "If your character has multiple spellcasting classes, you'll see tabs on the right side. Each tab shows the spells available to that specific class.\n\nClick a tab to switch between your different spellcasting classes. This is especially useful for multiclass characters!",
+    "SPELLBOOK.Tours.Basics.ClassTabs.Content": "If your character has multiple spellcasting classes, you'll see tabs on the right side. Each tab shows the spells available to that specific class.\nClick a tab to switch between your different spellcasting classes, allowing you to prepare spells per-class.",
 
     "SPELLBOOK.Tours.Basics.SpellLevels.Title": "Spell Levels",
-    "SPELLBOOK.Tours.Basics.SpellLevels.Content": "Spells are organized by level, from cantrips (level 0) up to 9th-level spells. Each level section shows:\n\n• The number of prepared spells at that level\n• All available spells you can prepare\n• Spell details and metadata\n\nClick the arrow icon to collapse or expand a spell level section.",
+    "SPELLBOOK.Tours.Basics.SpellLevels.Content": "Spells are organized by level. Each level section shows:\n• The number of prepared spells per level\n• All available spells you can prepare\n• Spell details and metadata\nThe arrow to the left of each spell header allows you to collapse the entire section.",
 
     "SPELLBOOK.Tours.Basics.Preparation.Title": "Preparing Spells",
-    "SPELLBOOK.Tours.Basics.Preparation.Content": "Use these checkboxes to prepare or unprepare spells. Prepared spells are ready to cast and appear on your character sheet.\n\nSome classes (like Wizards) must prepare spells from a larger list of known spells. Others (like Sorcerers) always have all their known spells prepared.\n\nChanges are tracked live but not saved until you click the Save button.",
+    "SPELLBOOK.Tours.Basics.Preparation.Content": "Use these checkboxes to prepare or unprepare spells. Prepared spells are ready to cast and appear on your character sheet.\nChanges are tracked live but not saved until you click the Save button.",
 
-    "SPELLBOOK.Tours.Basics.SpellSlots.Title": "Spell Slot Tracking",
-    "SPELLBOOK.Tours.Basics.SpellSlots.Content": "This area shows your spell slot usage and preparation limits:\n\n• Current/Maximum prepared spells for each class\n• Available spell slots per level\n• Class-specific preparation rules\n\nSpellBook automatically calculates your limits based on your class and level.",
+    "SPELLBOOK.Tours.Basics.PrepTracking.Title": "Spell Preparation Tracking",
+    "SPELLBOOK.Tours.Basics.PrepTracking.Content": "This area shows your spell preparation limits:\n• Current/Maximum prepared spells for each class\n• Global preparation limit across all classes\nSpellBook automatically calculates your preparation limits based on your class and level. Note that this tracks preparation limits, not spell slots.",
 
     "SPELLBOOK.Tours.Basics.Filters.Title": "Spell Filters",
-    "SPELLBOOK.Tours.Basics.Filters.Content": "Use filters to quickly find spells:\n\n• Search by name\n• Filter by school, level, or casting time\n• Show only prepared or ritual spells\n• Advanced search operators for power users\n\nFilters update instantly as you type or make selections. Click the gear icon to customize which filters are visible.",
+    "SPELLBOOK.Tours.Basics.Filters.Content": "Use filters to quickly find spells:\n• Search by name\n• Filter by school, level, or casting time\n• Show only prepared or ritual spells\n• Advanced search operators for power users\nFilters update instantly as you type or make selections.",
 
-    "SPELLBOOK.Tours.Basics.Sidebar.Title": "Quick Actions Sidebar",
-    "SPELLBOOK.Tours.Basics.Sidebar.Content": "The sidebar provides quick access to powerful features:\n\n• Spell Comparison - Compare multiple spells side-by-side\n• Favorites - Mark frequently used spells\n• Notes - Add personal notes to spells\n• Spell Analytics - View usage statistics\n• Loadouts - Save and load preparation sets\n\nYou can collapse the sidebar using the arrow button to maximize spell viewing space.",
+    "SPELLBOOK.Tours.Basics.FilterCustomization.Title": "Customize Filters",
+    "SPELLBOOK.Tours.Basics.FilterCustomization.Content": "Click the gear icon to customize which filters are visible. You can show or hide specific filter options to streamline your workflow and reduce clutter in the filter bar.",
 
-    "SPELLBOOK.Tours.Basics.Settings.Title": "SpellBook Settings",
-    "SPELLBOOK.Tours.Basics.Settings.Content": "Click the gear icon to open character-specific SpellBook settings:\n\n• Configure spell list assignments\n• Set preparation rules and enforcement\n• Customize cantrip swapping behavior\n• Configure ritual casting options\n• Set up multiclass spellcasting\n\nThese settings are per-character, allowing different configurations for each of your actors.",
+    "SPELLBOOK.Tours.Basics.SpellTagPrepared.Title": "Prepared Spell Tags",
+    "SPELLBOOK.Tours.Basics.SpellTagPrepared.Content": "These tags indicate spells that you have manually prepared. Prepared spells count against your preparation limit and can be unprepared by unchecking the preparation checkbox.",
 
-    "SPELLBOOK.Tours.Basics.Footer.Title": "Save and Actions",
-    "SPELLBOOK.Tours.Basics.Footer.Content": "The footer contains important action buttons:\n\n• **Save** - Commits all preparation changes to your character\n• **Reset** - Reverts changes back to last save (hold Shift for full reset)\n• **Analytics** - Opens spell usage dashboard\n• **Loadouts** - Quick-save and load preparation sets\n\nRemember to save your changes before closing SpellBook!",
+    "SPELLBOOK.Tours.Basics.SpellTagAlwaysPrepared.Title": "Other Spell Tags",
+    "SPELLBOOK.Tours.Basics.SpellTagAlwaysPrepared.Content": "These tags indicate spells that don't count towards your preparation limits. Usually granted by an item, a subclass, feature, or background, etc. This includes At-will, Innate, Always Prepared, and Granted spells.",
+
+    "SPELLBOOK.Tours.Basics.FooterSave.Title": "Footer Button: Save",
+    "SPELLBOOK.Tours.Basics.FooterSave.Content": "Click the Save button to commit all preparation changes to your character. Until you save, all changes are tracked locally and can be reverted.\nRemember to save before closing SpellBook!",
+
+    "SPELLBOOK.Tours.Basics.FooterReset.Title": "Footer Button: Reset",
+    "SPELLBOOK.Tours.Basics.FooterReset.Content": "The Reset button reverts all unsaved preparation changes back to the last saved state.\nHold Shift while clicking to perform a full reset, which clears all preparations and returns to a clean slate.",
+
+    "SPELLBOOK.Tours.Basics.FooterAnalytics.Title": "Footer Button: Stats",
+    "SPELLBOOK.Tours.Basics.FooterAnalytics.Content": "Open the spell usage analytics dashboard to track:\n• Most frequently cast spells\n• Spell slot usage patterns\n• Preparation history\n• Casting statistics over time\nUse this data to optimize your spell selections and preparation strategies.",
+
+    "SPELLBOOK.Tours.Basics.FooterLoadouts.Title": "Footer Button: Loadouts",
+    "SPELLBOOK.Tours.Basics.FooterLoadouts.Content": "Manage your spell preparation loadouts to quickly switch between different spell configurations.\n• Save your current preparations as a loadout\n• Load previously saved configurations\n• Right-click for quick-select menu\nPerfect for switching between combat, exploration, and social scenarios.",
+
+    "SPELLBOOK.Tours.Basics.CustomizationMenu.Title": "Customization Menu",
+    "SPELLBOOK.Tours.Basics.CustomizationMenu.Content": "Open the customization menu to personalize your SpellBook experience:\n• Configure spell list display options\n• Customize spell card appearance\n• Set up quick-cast options\n• Manage spell grouping and sorting preferences\nThese customizations are saved per-character.",
 
     "SPELLBOOK.Tours.Basics.NextSteps.Title": "You're Ready to Go!",
-    "SPELLBOOK.Tours.Basics.NextSteps.Content": "You now know the basics of SpellBook! Here are some recommended next steps:\n\n• Try preparing some spells and clicking Save\n• Experiment with filters to find specific spells\n• Check out the Spell List Manager tour to learn about custom spell lists\n• Explore the Analytics dashboard to track spell usage\n\nFor more advanced features, take the other available tours in the Tour Management window."
+    "SPELLBOOK.Tours.Basics.NextSteps.Content": "You now know the basics of SpellBook! Here are some recommended next steps:\n• Try preparing some spells and clicking Save\n• Experiment with filters to find specific spells\n• Check out the Spell List Manager tour to learn about custom spell lists\n• Explore the Analytics dashboard to track spell usage\nFor more advanced features, take the other available tours in the Tour Management window."
   }
 }
