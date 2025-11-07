@@ -373,7 +373,6 @@ export class Filters {
 
   /**
    * Apply filters to the spell list.
-   * @todo levelVisibilityMap is always empty when _updateLevelVisibilityStats is called?
    * @returns {void}
    */
   applyFilters() {
