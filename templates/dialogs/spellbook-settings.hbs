@@ -32,7 +32,7 @@
     <legend>{{localize 'SPELLBOOK.Settings.GlobalRules'}}</legend>
 
     <!-- Rule Set Override Setting -->
-    <div class="setting-row">
+    <div class="setting-row setting-row-rule-set">
       <i class="fas fa-question-circle setting-tooltip"
         data-tooltip="{{localize 'SPELLBOOK.Settings.RuleSetOverride.Hint'}}"></i>
       <label for="rule-set-override">{{localize 'SPELLBOOK.Settings.RuleSetOverride.Label'}}</label>
@@ -40,7 +40,7 @@
     </div>
 
     <!-- Enforcement Behavior Setting -->
-    <div class="setting-row">
+    <div class="setting-row setting-row-enforcement-behavior">
       <i class="fas fa-question-circle setting-tooltip"
         data-tooltip="{{localize 'SPELLBOOK.Settings.EnforcementBehavior.Hint'}}"></i>
       <label for="enforcement-behavior">{{localize 'SPELLBOOK.Settings.EnforcementBehavior.Label'}}</label>
@@ -91,7 +91,7 @@
             <!-- Class Settings List -->
             <div class="class-settings-list">
               <!-- Show Cantrips Setting -->
-              <div class="setting-row{{#if classData.rules._noScaleValue}} disabled{{/if}}">
+              <div class="setting-row setting-row-show-cantrips{{#if classData.rules._noScaleValue}} disabled{{/if}}">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.ShowCantrips.Hint'}}"></i>
                 <label
@@ -103,7 +103,7 @@
               </div>
 
               <!-- Force Wizard Mode Setting -->
-              <div class="setting-row">
+              <div class="setting-row setting-row-force-wizard-mode">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.ForceWizardMode.Hint'}}"></i>
                 <label
@@ -112,7 +112,7 @@
               </div>
 
               <!-- Cantrip Swapping Setting -->
-              <div class="setting-row{{#unless classData.rules.showCantrips}} disabled{{/unless}}">
+              <div class="setting-row setting-row-cantrip-swapping{{#unless classData.rules.showCantrips}} disabled{{/unless}}">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.CantripSwapping.Hint'}}"></i>
                 <label
@@ -121,7 +121,7 @@
               </div>
 
               <!-- Spell Swapping Setting -->
-              <div class="setting-row">
+              <div class="setting-row setting-row-spell-swapping">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.SpellSwapping.Hint'}}"></i>
                 <label
@@ -130,7 +130,7 @@
               </div>
 
               <!-- Ritual Casting Setting -->
-              <div class="setting-row">
+              <div class="setting-row setting-row-ritual-casting">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.RitualCasting.Hint'}}"></i>
                 <label
@@ -139,7 +139,7 @@
               </div>
 
               <!-- Custom Spell Lists Setting (now supports multiple) -->
-              <div class="setting-row">
+              <div class="setting-row setting-row-custom-spell-lists">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.CustomSpellLists.Hint'}}"></i>
                 <label
@@ -148,7 +148,7 @@
               </div>
 
               <!-- Spell Preparation Bonus Setting -->
-              <div class="setting-row">
+              <div class="setting-row setting-row-spell-prep-bonus">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.SpellPreparationBonus.Hint'}}"></i>
                 <label
@@ -157,7 +157,7 @@
               </div>
 
               <!-- Cantrip Preparation Bonus Setting -->
-              <div class="setting-row{{#unless classData.rules.showCantrips}} disabled{{/unless}}">
+              <div class="setting-row setting-row-cantrip-prep-bonus{{#unless classData.rules.showCantrips}} disabled{{/unless}}">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.CantripPreparationBonus.Hint'}}"></i>
                 <label
@@ -167,7 +167,7 @@
 
               <!-- Spell Learning Cost Multiplier (Wizard-enabled classes only) -->
               {{#if classData.isWizard}}
-                <div class="setting-row">
+                <div class="setting-row setting-row-spell-learning-cost">
                   <i class="fas fa-question-circle setting-tooltip"
                     data-tooltip="{{localize 'SPELLBOOK.Settings.SpellLearningCostMultiplier.Hint'}}"></i>
                   <label
@@ -176,7 +176,7 @@
                 </div>
 
                 <!-- Spell Learning Time Multiplier (Wizard-enabled classes only) -->
-                <div class="setting-row">
+                <div class="setting-row setting-row-spell-learning-time">
                   <i class="fas fa-question-circle setting-tooltip"
                     data-tooltip="{{localize 'SPELLBOOK.Settings.SpellLearningTimeMultiplier.Hint'}}"></i>
                   <label
@@ -185,7 +185,7 @@
                 </div>
 
                 <!-- Starting Spells (Wizard-enabled classes only) -->
-                <div class="setting-row">
+                <div class="setting-row setting-row-starting-spells">
                   <i class="fas fa-question-circle setting-tooltip"
                     data-tooltip="{{localize 'SPELLBOOK.Settings.StartingSpells.Hint'}}"></i>
                   <label
@@ -194,7 +194,7 @@
                 </div>
 
                 <!-- Spells Per Level (Wizard-enabled classes only) -->
-                <div class="setting-row">
+                <div class="setting-row setting-row-spells-per-level">
                   <i class="fas fa-question-circle setting-tooltip"
                     data-tooltip="{{localize 'SPELLBOOK.Settings.SpellsPerLevel.Hint'}}"></i>
                   <label
