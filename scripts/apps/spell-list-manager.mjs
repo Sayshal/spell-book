@@ -27,7 +27,7 @@ const { renderTemplate } = foundry.applications.handlebars;
 export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
   static DEFAULT_OPTIONS = {
-    id: `gm-spell-list-manager-${MODULE.ID}`,
+    id: `spell-list-manager-${MODULE.ID}`,
     tag: 'div',
     actions: {
       addSpell: this.#addSpell,
@@ -56,7 +56,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       toggleSidebar: this.#toggleSidebar,
       toggleSpellHeader: this.#toggleSpellHeader
     },
-    classes: ['gm-spell-list-manager'],
+    classes: ['spell-list-manager'],
     window: { icon: 'fas fa-bars-progress', resizable: true, minimizable: true },
     position: { width: Math.max(1100, window.innerWidth - 650), height: Math.max(600, window.innerHeight - 200) }
   };

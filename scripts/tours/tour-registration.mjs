@@ -19,9 +19,9 @@ export async function registerSpellBookTours() {
   try {
     game.tours.register('spell-book', 'basics', await SpellBookTour.fromJSON('modules/spell-book/tours/spellbook-basics.json'));
     game.tours.register('spell-book', 'spell-list-manager', await SpellBookTour.fromJSON('modules/spell-book/tours/spell-list-manager.json'));
-    game.tours.register('spell-book', 'party-spells', SpellBookTour.fromJSON('modules/spell-book/tours/party-spells.json'));
+    game.tours.register('spell-book', 'party-spells', await SpellBookTour.fromJSON('modules/spell-book/tours/party-spells.json'));
     game.tours.register('spell-book', 'wizard-spellbook', await SpellBookTour.fromJSON('modules/spell-book/tours/wizard-spellbook.json'));
-    game.tours.register('spell-book', 'multiclass-setup', await SpellBookTour.fromJSON('modules/spell-book/tours/multiclass-setup.json'));
+    game.tours.register('spell-book', 'spellbook-settings', await SpellBookTour.fromJSON('modules/spell-book/tours/spellbook-settings.json'));
   } catch (err) {
     log(1, 'SpellBook Tours | Critical error during tour registration:', err);
   }

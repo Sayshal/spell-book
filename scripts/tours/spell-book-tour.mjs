@@ -42,6 +42,42 @@ export default class SpellBookTour extends foundry.nue.Tour {
   get canStart() {
     if (game.view !== 'game') return false;
     if (!game.ready) return false;
+
+    // Tour-specific eligibility checks
+    const tourId = this.id || this.config?.id;
+
+    // Party-spells tour requires at least one actor in a party
+    if (tourId === 'party-spells') {
+      // Check user's character first for quick validation
+      if (game.user.character) {
+        const inParty = PartyMode.getPrimaryGroupForActor(game.user.character) !== null;
+        if (inParty) return true;
+      }
+      // Fall back to checking all owned actors
+      const hasPartyActor = game.actors.some(actor => {
+        if (!actor.isOwner || actor.type !== 'character') return false;
+        return PartyMode.getPrimaryGroupForActor(actor) !== null;
+      });
+      if (!hasPartyActor) return false;
+    }
+
+    // Wizard-spellbook tour requires at least one wizard actor
+    if (tourId === 'wizard-spellbook') {
+      // Check user's character first for quick validation
+      if (game.user.character) {
+        const spellcastingClasses = game.user.character.spellcastingClasses || {};
+        const isWizard = Object.keys(spellcastingClasses).some(key => key.toLowerCase().includes('wizard'));
+        if (isWizard) return true;
+      }
+      // Fall back to checking all owned actors
+      const hasWizard = game.actors.some(actor => {
+        if (!actor.isOwner || actor.type !== 'character') return false;
+        const spellcastingClasses = actor.spellcastingClasses || {};
+        return Object.keys(spellcastingClasses).some(key => key.toLowerCase().includes('wizard'));
+      });
+      if (!hasWizard) return false;
+    }
+
     return true;
   }
 
@@ -52,18 +88,41 @@ export default class SpellBookTour extends foundry.nue.Tour {
       ui.notifications.warn(game.i18n.localize('SPELLBOOK.Tours.NoSuitableActor'));
       return;
     }
+
+    // Tour-specific guards
+    const tourId = this.id || this.config?.id;
+
+    // Party-spells tour requires actor to be in a party
+    if (tourId === 'party-spells' && this.demoActor) {
+      const primaryGroup = PartyMode.getPrimaryGroupForActor(this.demoActor);
+      if (!primaryGroup) {
+        ui.notifications.warn(game.i18n.localize('SPELLBOOK.Tours.RequiresParty'));
+        return;
+      }
+    }
+
+    // Wizard-spellbook tour requires actor to be a wizard
+    if (tourId === 'wizard-spellbook' && this.demoActor) {
+      const spellcastingClasses = this.demoActor.spellcastingClasses || {};
+      const isWizard = Object.keys(spellcastingClasses).some(key => key.toLowerCase().includes('wizard'));
+      if (!isWizard) {
+        ui.notifications.warn(game.i18n.localize('SPELLBOOK.Tours.RequiresWizard'));
+        return;
+      }
+    }
+
     return super.start();
   }
 
   /** @override */
   async _preStep() {
     const step = this.currentStep;
-    log(1, `SpellBookTour | Processing pre-step: ${step.id}`, { step });
+    log(3, `SpellBookTour | Processing pre-step: ${step.id}`, { step });
     await super._preStep();
     if (step.openSpellBook) await this.#openSpellBook(step.openSpellBook);
     if (step.openSpellListManager) this.#openSpellListManager();
     if (step.openPartySpells) this.#openPartySpells();
-    if (step.openSpellBookSettings) this.#openSpellBookSettings();
+    if (step.openSpellBookSettings) await this.#openSpellBookSettings();
     if (step.spellBookTab && this.focusedApp instanceof SpellBook) await this.#activateSpellBookTab(step.spellBookTab);
   }
 
@@ -97,6 +156,17 @@ export default class SpellBookTour extends foundry.nue.Tour {
     if (element) return element;
     if (this.focusedApp?.element) element = this.focusedApp.element[0]?.querySelector(selector) || this.focusedApp.element.querySelector?.(selector);
     return element;
+  }
+
+  /** @override */
+  async _renderStep() {
+    await super._renderStep();
+
+    // Add custom class to identify spell-book tours for scoped styling
+    const tooltip = document.querySelector('#tooltip');
+    if (tooltip) tooltip.classList.add('spell-book-tour');
+    if (this.fadeElement) this.fadeElement.classList.add('spell-book-tour');
+    if (this.overlayElement) this.overlayElement.classList.add('spell-book-tour');
   }
 
   /* -------------------------------------------- */
@@ -203,7 +273,7 @@ export default class SpellBookTour extends foundry.nue.Tour {
     if (existingApp) {
       this.focusedApp = existingApp;
       existingApp.bringToFront();
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 500));
       log(3, 'SpellBookTour | Using existing SpellBook instance');
       return existingApp;
     }
@@ -214,7 +284,7 @@ export default class SpellBookTour extends foundry.nue.Tour {
       await spellBook._preInitialize();
       log(3, 'SpellBookTour | Rendering SpellBook');
       spellBook.render(true);
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 500));
       this.focusedApp = spellBook;
       log(3, 'SpellBookTour | Successfully opened new SpellBook instance');
       return spellBook;
@@ -276,14 +346,15 @@ export default class SpellBookTour extends foundry.nue.Tour {
 
   /**
    * Open the SpellBook settings dialog.
-   * @returns {void}
+   * @returns {Promise<void>}
    * @private
    */
-  #openSpellBookSettings() {
+  async #openSpellBookSettings() {
     if (!this.demoActor) return;
     try {
       const settings = new SpellBookSettings(this.demoActor, { parentApp: this.focusedApp });
       settings.render(true);
+      await new Promise((resolve) => setTimeout(resolve, 500));
       log(3, 'SpellBookTour | Opened SpellBook Settings');
     } catch (error) {
       log(2, 'SpellBookTour | Could not open SpellBook Settings:', error);

@@ -1,0 +1,125 @@
+{
+  "title": "SPELLBOOK.Tours.Settings.Title",
+  "description": "SPELLBOOK.Tours.Settings.Description",
+  "canBeResumed": true,
+  "display": true,
+  "steps": [
+    {
+      "id": "welcome",
+      "selector": "",
+      "title": "SPELLBOOK.Tours.Settings.Welcome.Title",
+      "content": "SPELLBOOK.Tours.Settings.Welcome.Content"
+    },
+    {
+      "id": "opening-settings",
+      "selector": "button[data-action='openSettings']",
+      "title": "SPELLBOOK.Tours.Settings.OpeningSettings.Title",
+      "content": "SPELLBOOK.Tours.Settings.OpeningSettings.Content",
+      "openSpellBook": "demo",
+      "tooltipDirection": "LEFT"
+    },
+    {
+      "id": "settings-dialog",
+      "selector": ".spellbook-settings-form",
+      "title": "SPELLBOOK.Tours.Settings.SettingsDialog.Title",
+      "content": "SPELLBOOK.Tours.Settings.SettingsDialog.Content",
+      "openSpellBookSettings": true,
+      "tooltipDirection": "DOWN"
+    },
+    {
+      "id": "global-rules",
+      "selector": ".rule-set-fieldset",
+      "title": "SPELLBOOK.Tours.Settings.GlobalRules.Title",
+      "content": "SPELLBOOK.Tours.Settings.GlobalRules.Content",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "id": "enforcement-behavior",
+      "selector": "#enforcement-behavior",
+      "title": "SPELLBOOK.Tours.Settings.Enforcement.Title",
+      "content": "SPELLBOOK.Tours.Settings.Enforcement.Content",
+      "tooltipDirection": "LEFT"
+    },
+    {
+      "id": "rule-set",
+      "selector": "#rule-set-override",
+      "title": "SPELLBOOK.Tours.Settings.RuleSet.Title",
+      "content": "SPELLBOOK.Tours.Settings.RuleSet.Content",
+      "tooltipDirection": "UP"
+    },
+    {
+      "id": "class-sections",
+      "selector": ".class-settings-section",
+      "title": "SPELLBOOK.Tours.Settings.ClassSections.Title",
+      "content": "SPELLBOOK.Tours.Settings.ClassSections.Content",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "id": "spell-list-assignment",
+      "selector": ".class-settings-section",
+      "title": "SPELLBOOK.Tours.Settings.SpellLists.Title",
+      "content": "SPELLBOOK.Tours.Settings.SpellLists.Content",
+      "tooltipDirection": "LEFT"
+    },
+    {
+      "id": "preparation-bonuses",
+      "selector": ".class-settings-section",
+      "title": "SPELLBOOK.Tours.Settings.PreparationBonus.Title",
+      "content": "SPELLBOOK.Tours.Settings.PreparationBonus.Content",
+      "tooltipDirection": "DOWN"
+    },
+    {
+      "id": "wizard-settings",
+      "selector": ".class-settings-section",
+      "title": "SPELLBOOK.Tours.Settings.WizardSettings.Title",
+      "content": "SPELLBOOK.Tours.Settings.WizardSettings.Content",
+      "tooltipDirection": "UP"
+    },
+    {
+      "id": "best-practices",
+      "selector": "",
+      "title": "SPELLBOOK.Tours.Settings.BestPractices.Title",
+      "content": "SPELLBOOK.Tours.Settings.BestPractices.Content"
+    }
+  ],
+  "suggestedNextTours": [
+    "spell-book.basics"
+  ],
+  "localization": {
+    "SPELLBOOK.Tours.Settings.Title": "SpellBook Settings & Customization",
+    "SPELLBOOK.Tours.Settings.Description": "Learn how to customize SpellBook settings for your players.",
+
+    "SPELLBOOK.Tours.Settings.Welcome.Title": "SpellBook Settings",
+    "SPELLBOOK.Tours.Settings.Welcome.Content": "SpellBook offers extensive customization options to tailor spellcasting rules to your campaign. \nThis tour will guide you through all the key settings to help you configure SpellBook for your table!",
+
+    "SPELLBOOK.Tours.Settings.OpeningSettings.Title": "Opening SpellBook Settings",
+    "SPELLBOOK.Tours.Settings.OpeningSettings.Content": "Click the wand icon in any character's SpellBook to open their settings.",
+
+    "SPELLBOOK.Tours.Settings.SettingsDialog.Title": "The Settings Interface",
+    "SPELLBOOK.Tours.Settings.SettingsDialog.Content": "The SpellBook Settings dialog is organized into clear sections. Global Settings apply to all classes on this character. Class Sections provide one for each spellcasting class the character has. Advanced Options handle edge cases and special features.\nEach section can be expanded or collapsed independently. Changes are saved when you click the Save Settings button at the bottom.",
+
+    "SPELLBOOK.Tours.Settings.GlobalRules.Title": "Global Rules Section",
+    "SPELLBOOK.Tours.Settings.GlobalRules.Content": "Global rules apply to all of a character's spellcasting classes. Enforcement Behavior controls how strictly to enforce spell limits. Rule Set determines which edition's rules to follow (2014 vs 2024). Default Settings can be overridden per-class if needed.\nThese settings provide consistency across multiclass characters while still allowing per-class exceptions.",
+
+    "SPELLBOOK.Tours.Settings.Enforcement.Title": "Enforcement Behavior",
+    "SPELLBOOK.Tours.Settings.Enforcement.Content": "Control how SpellBook enforces spellcasting rules. Enforced means players cannot exceed spell limits (strict mode). Allow and Notify GM means players can exceed limits, but GM is notified. Unenforced means no limits enforced, full player freedom.\nRecommendations: New groups should use Enforced to learn the rules. Experienced groups should use Allow and Notify GM for flexibility. Homebrew campaigns should use Unenforced for maximum freedom. GMs are never restricted regardless of this setting.",
+
+    "SPELLBOOK.Tours.Settings.RuleSet.Title": "Spellcasting Rule Set",
+    "SPELLBOOK.Tours.Settings.RuleSet.Content": "Choose which D&D edition's spellcasting rules to follow. Legacy Rules (2014) means cantrips cannot be changed once learned, stricter preparation rules apply, and traditional spell swapping on long rest. Modern Rules (2024) means cantrips can be swapped on level up or long rest, more flexible spell preparation, and updated multiclass interactions.\nMost campaigns use Legacy Rules unless specifically playing with 2024 rules.",
+
+    "SPELLBOOK.Tours.Settings.ClassSections.Title": "Per-Class Configuration",
+    "SPELLBOOK.Tours.Settings.ClassSections.Content": "Each spellcasting class gets its own configuration section. Cleric Section lets you configure Cleric-specific rules. Wizard Section handles spellbook learning costs and free spells. Warlock Section manages pact magic and invocations. And so on for each class.\nClick the class name to expand its settings. Each class operates independently following its own rules while sharing the global settings as defaults.",
+
+    "SPELLBOOK.Tours.Settings.SpellLists.Title": "Assigning Spell Lists",
+    "SPELLBOOK.Tours.Settings.SpellLists.Content": "Each class needs a spell list assigned. Auto (Recommended) means SpellBook uses the official class list. Official Lists lets you manually select from standard lists. Custom Lists uses homebrew lists from Spell List Manager. Merged Lists combines multiple lists together.\nUse Cases: Leave on Auto for standard games. Use custom lists for homebrew classes or expanded spell access. Merge lists for special subclass features (Divine Soul Sorcerer, etc.). Custom lists can be created in the Spell List Manager application.",
+
+    "SPELLBOOK.Tours.Settings.PreparationBonus.Title": "Preparation Bonuses",
+    "SPELLBOOK.Tours.Settings.PreparationBonus.Content": "Modify the number of spells a character can prepare. Spell Preparation Bonus lets you add or subtract prepared spell slots. Cantrip Preparation Bonus lets you add or subtract cantrip slots. Values can be positive (more spells) or negative (fewer spells).\nCommon Uses: Feat bonuses (e.g., Magic Initiate adds spells), magic item effects (Staff of Power grants extra prepared spells), campaign-specific house rules, and balancing homebrew subclasses. Bonuses are applied on top of the base calculation (ability modifier plus class level).",
+
+    "SPELLBOOK.Tours.Settings.WizardSettings.Title": "Wizard-Specific Settings",
+    "SPELLBOOK.Tours.Settings.WizardSettings.Content": "Wizards have unique settings for their spellbook mechanics. Starting Spells controls how many spells a level 1 wizard starts with (default: 6). Spells Per Level sets free spells gained each level (default: 2). Learning Cost sets gold per spell level to copy spells (default: 50 gp). Learning Time sets minutes per spell level to copy spells (default: 120 minutes). Force Wizard Mode treats other classes as wizards with spellbooks.\nUse Cases: Adjust costs for low-magic or high-magic campaigns, create custom spellbook classes (Artificer, etc.), and balance wizards in homebrew settings.",
+
+    "SPELLBOOK.Tours.Settings.BestPractices.Title": "Settings Best Practices",
+    "SPELLBOOK.Tours.Settings.BestPractices.Content": "Tips for configuring SpellBook effectively. Start Simple by using default settings and only customize as needed. Communicate Changes by telling players about any non-standard rules. Document Homebrew by keeping notes on custom spell lists and bonuses. Test Changes by trying new settings in a test world first. Export Settings by using the Troubleshooter to backup configurations. Per-Character means remembering settings are character-specific, not global. Stay Consistent by keeping similar characters using similar settings.\nMost tables will only need to adjust enforcement behavior and occasional preparation bonuses. Don't over-customize!"
+  }
+}

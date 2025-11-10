@@ -65,21 +65,21 @@
       "selector": ".spell-filters",
       "title": "SPELLBOOK.Tours.Basics.Filters.Title",
       "content": "SPELLBOOK.Tours.Basics.Filters.Content",
-      "tooltipDirection": "LEFT"
+      "tooltipDirection": "RIGHT"
     },
     {
       "id": "filter-customization",
       "selector": "button[data-action='openFilterConfig']",
       "title": "SPELLBOOK.Tours.Basics.FilterCustomization.Title",
       "content": "SPELLBOOK.Tours.Basics.FilterCustomization.Content",
-      "tooltipDirection": "LEFT"
+      "tooltipDirection": "RIGHT"
     },
     {
       "id": "customization-menu",
       "selector": "button[data-action='openCustomization']",
       "title": "SPELLBOOK.Tours.Basics.CustomizationMenu.Title",
       "content": "SPELLBOOK.Tours.Basics.CustomizationMenu.Content",
-      "tooltipDirection": "LEFT"
+      "tooltipDirection": "RIGHT"
     },
     {
       "id": "footer-save-button",
@@ -117,7 +117,7 @@
     }
   ],
   "suggestedNextTours": [
-    "spell-book.spell-list-manager"
+    "spell-book.party-spells"
   ],
   "localization": {
     "SPELLBOOK.Tours.Basics.Title": "SpellBook Basics",
@@ -133,16 +133,16 @@
     "SPELLBOOK.Tours.Basics.ClassTabs.Content": "If your character has multiple spellcasting classes, you'll see tabs on the right side. Each tab shows the spells available to that specific class.\nClick a tab to switch between your different spellcasting classes, allowing you to prepare spells per-class.",
 
     "SPELLBOOK.Tours.Basics.SpellLevels.Title": "Spell Levels",
-    "SPELLBOOK.Tours.Basics.SpellLevels.Content": "Spells are organized by level. Each level section shows:\n• The number of prepared spells per level\n• All available spells you can prepare\n• Spell details and metadata\nThe arrow to the left of each spell header allows you to collapse the entire section.",
+    "SPELLBOOK.Tours.Basics.SpellLevels.Content": "Spells are organized by level. Each level section shows the number of prepared spells per level, all available spells you can prepare, and spell details and metadata.\nThe arrow to the left of each spell header allows you to collapse the entire section.",
 
     "SPELLBOOK.Tours.Basics.Preparation.Title": "Preparing Spells",
     "SPELLBOOK.Tours.Basics.Preparation.Content": "Use these checkboxes to prepare or unprepare spells. Prepared spells are ready to cast and appear on your character sheet.\nChanges are tracked live but not saved until you click the Save button.",
 
     "SPELLBOOK.Tours.Basics.PrepTracking.Title": "Spell Preparation Tracking",
-    "SPELLBOOK.Tours.Basics.PrepTracking.Content": "This area shows your spell preparation limits:\n• Current/Maximum prepared spells for each class\n• Global preparation limit across all classes\nSpellBook automatically calculates your preparation limits based on your class and level. Note that this tracks preparation limits, not spell slots.",
+    "SPELLBOOK.Tours.Basics.PrepTracking.Content": "This area shows your spell preparation limits: Current/Maximum prepared spells for each class and global preparation limit across all classes.\nSpellBook automatically calculates your preparation limits based on your class and level. Note that this tracks preparation limits, not spell slots.",
 
     "SPELLBOOK.Tours.Basics.Filters.Title": "Spell Filters",
-    "SPELLBOOK.Tours.Basics.Filters.Content": "Use filters to quickly find spells:\n• Search by name\n• Filter by school, level, or casting time\n• Show only prepared or ritual spells\n• Advanced search operators for power users\nFilters update instantly as you type or make selections.",
+    "SPELLBOOK.Tours.Basics.Filters.Content": "Use filters to quickly find spells. Search by name, filter by school, level, and more, show only prepared or ritual spells, and use advanced search operators for power users.",
 
     "SPELLBOOK.Tours.Basics.FilterCustomization.Title": "Customize Filters",
     "SPELLBOOK.Tours.Basics.FilterCustomization.Content": "Click the gear icon to customize which filters are visible. You can show or hide specific filter options to streamline your workflow and reduce clutter in the filter bar.",
@@ -160,15 +160,15 @@
     "SPELLBOOK.Tours.Basics.FooterReset.Content": "The Reset button reverts all unsaved preparation changes back to the last saved state.\nHold Shift while clicking to perform a full reset, which clears all preparations and returns to a clean slate.",
 
     "SPELLBOOK.Tours.Basics.FooterAnalytics.Title": "Footer Button: Stats",
-    "SPELLBOOK.Tours.Basics.FooterAnalytics.Content": "Open the spell usage analytics dashboard to track:\n• Most frequently cast spells\n• Spell slot usage patterns\n• Preparation history\n• Casting statistics over time\nUse this data to optimize your spell selections and preparation strategies.",
+    "SPELLBOOK.Tours.Basics.FooterAnalytics.Content": "Open the spell usage analytics dashboard to track most frequently cast spells, spell slot usage patterns, preparation history, and casting statistics over time.\nUse this data to optimize your spell selections and preparation strategies.",
 
     "SPELLBOOK.Tours.Basics.FooterLoadouts.Title": "Footer Button: Loadouts",
-    "SPELLBOOK.Tours.Basics.FooterLoadouts.Content": "Manage your spell preparation loadouts to quickly switch between different spell configurations.\n• Save your current preparations as a loadout\n• Load previously saved configurations\n• Right-click for quick-select menu\nPerfect for switching between combat, exploration, and social scenarios.",
+    "SPELLBOOK.Tours.Basics.FooterLoadouts.Content": "Manage your spell preparation loadouts to quickly switch between different spell configurations. Save your current preparations as a loadout, load previously saved configurations, and right-click for quick-select menu.\nPerfect for switching between combat, exploration, and social scenarios.",
 
     "SPELLBOOK.Tours.Basics.CustomizationMenu.Title": "Customization Menu",
-    "SPELLBOOK.Tours.Basics.CustomizationMenu.Content": "Open the customization menu to personalize your SpellBook experience:\n• Configure spell list display options\n• Customize spell card appearance\n• Set up quick-cast options\n• Manage spell grouping and sorting preferences\nThese customizations are saved per-character.",
+    "SPELLBOOK.Tours.Basics.CustomizationMenu.Content": "Open the customization menu to personalize your SpellBook experience. Configure spell list display options, customize spell card appearance, set up quick-cast options, and manage spell grouping and sorting preferences.\nThese customizations are saved per-character.",
 
     "SPELLBOOK.Tours.Basics.NextSteps.Title": "You're Ready to Go!",
-    "SPELLBOOK.Tours.Basics.NextSteps.Content": "You now know the basics of SpellBook! Here are some recommended next steps:\n• Try preparing some spells and clicking Save\n• Experiment with filters to find specific spells\n• Check out the Spell List Manager tour to learn about custom spell lists\n• Explore the Analytics dashboard to track spell usage\nFor more advanced features, take the other available tours in the Tour Management window."
+    "SPELLBOOK.Tours.Basics.NextSteps.Content": "You now know the basics of SpellBook! Here are some recommended next steps. Try preparing some spells and clicking Save. Experiment with filters to find specific spells. Check out the Spell List Manager tour to learn about custom spell lists. Explore the Analytics dashboard to track spell usage.\nFor more advanced features, take the other available tours in the Tour Management window."
   }
 }
