@@ -1,9 +1,5 @@
 /**
  * Tour Registration and Management Functions
- *
- * Handles registration of Spell Book tours with Foundry's tour system,
- * welcome prompts, and tour UI integration.
- *
  * @module Tours/Registration
  * @author Tyler
  */

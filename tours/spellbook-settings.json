@@ -1,166 +1,115 @@
 {
   "title": "SPELLBOOK.Tours.Settings.Title",
   "description": "SPELLBOOK.Tours.Settings.Description",
-  "canBeResumed": true,
+  "canBeResumed": false,
   "display": true,
+  "restricted": true,
   "steps": [
     {
       "id": "welcome",
       "selector": "button[data-action='openSettings']",
-      "title": "SPELLBOOK.Tours.Settings.Welcome.Title",
-      "content": "SPELLBOOK.Tours.Settings.Welcome.Content",
+      "title": "SPELLBOOK.Tours.Settings.0.Title",
+      "content": "SPELLBOOK.Tours.Settings.0.Content",
       "openSpellBook": "demo",
       "tooltipDirection": "RIGHT"
     },
     {
       "id": "settings-dialog",
       "selector": ".spellbook-settings-form",
-      "title": "SPELLBOOK.Tours.Settings.SettingsDialog.Title",
-      "content": "SPELLBOOK.Tours.Settings.SettingsDialog.Content",
+      "title": "SPELLBOOK.Tours.Settings.1.Title",
+      "content": "SPELLBOOK.Tours.Settings.1.Content",
       "openSpellBookSettings": true,
       "tooltipDirection": "RIGHT"
     },
     {
       "id": "global-rules",
       "selector": ".rule-set-fieldset",
-      "title": "SPELLBOOK.Tours.Settings.GlobalRules.Title",
-      "content": "SPELLBOOK.Tours.Settings.GlobalRules.Content",
+      "title": "SPELLBOOK.Tours.Settings.2.Title",
+      "content": "SPELLBOOK.Tours.Settings.2.Content",
       "tooltipDirection": "RIGHT"
     },
     {
       "id": "rule-set",
       "selector": ".setting-row-rule-set",
-      "title": "SPELLBOOK.Tours.Settings.RuleSet.Title",
-      "content": "SPELLBOOK.Tours.Settings.RuleSet.Content",
+      "title": "SPELLBOOK.Tours.Settings.3.Title",
+      "content": "SPELLBOOK.Tours.Settings.3.Content",
       "tooltipDirection": "RIGHT"
     },
     {
       "id": "enforcement-behavior",
       "selector": ".setting-row-enforcement-behavior",
-      "title": "SPELLBOOK.Tours.Settings.Enforcement.Title",
-      "content": "SPELLBOOK.Tours.Settings.Enforcement.Content",
+      "title": "SPELLBOOK.Tours.Settings.4.Title",
+      "content": "SPELLBOOK.Tours.Settings.4.Content",
       "tooltipDirection": "RIGHT"
     },
     {
       "id": "class-sections",
       "selector": ".class-settings-section",
-      "title": "SPELLBOOK.Tours.Settings.ClassSections.Title",
-      "content": "SPELLBOOK.Tours.Settings.ClassSections.Content",
+      "title": "SPELLBOOK.Tours.Settings.5.Title",
+      "content": "SPELLBOOK.Tours.Settings.5.Content",
       "tooltipDirection": "RIGHT"
     },
     {
       "id": "show-cantrips",
       "selector": ".setting-row-show-cantrips",
-      "title": "SPELLBOOK.Tours.Settings.ShowCantrips.Title",
-      "content": "SPELLBOOK.Tours.Settings.ShowCantrips.Content",
+      "title": "SPELLBOOK.Tours.Settings.6.Title",
+      "content": "SPELLBOOK.Tours.Settings.6.Content",
       "tooltipDirection": "RIGHT"
     },
     {
       "id": "force-wizard-mode",
       "selector": ".setting-row-force-wizard-mode",
-      "title": "SPELLBOOK.Tours.Settings.ForceWizardMode.Title",
-      "content": "SPELLBOOK.Tours.Settings.ForceWizardMode.Content",
+      "title": "SPELLBOOK.Tours.Settings.7.Title",
+      "content": "SPELLBOOK.Tours.Settings.7.Content",
       "tooltipDirection": "RIGHT"
     },
     {
       "id": "cantrip-swapping",
       "selector": ".setting-row-cantrip-swapping",
-      "title": "SPELLBOOK.Tours.Settings.CantripSwapping.Title",
-      "content": "SPELLBOOK.Tours.Settings.CantripSwapping.Content",
+      "title": "SPELLBOOK.Tours.Settings.8.Title",
+      "content": "SPELLBOOK.Tours.Settings.8.Content",
       "tooltipDirection": "RIGHT"
     },
     {
       "id": "spell-swapping",
       "selector": ".setting-row-spell-swapping",
-      "title": "SPELLBOOK.Tours.Settings.SpellSwapping.Title",
-      "content": "SPELLBOOK.Tours.Settings.SpellSwapping.Content",
+      "title": "SPELLBOOK.Tours.Settings.9.Title",
+      "content": "SPELLBOOK.Tours.Settings.9.Content",
       "tooltipDirection": "RIGHT"
     },
     {
       "id": "ritual-casting",
       "selector": ".setting-row-ritual-casting",
-      "title": "SPELLBOOK.Tours.Settings.RitualCasting.Title",
-      "content": "SPELLBOOK.Tours.Settings.RitualCasting.Content",
+      "title": "SPELLBOOK.Tours.Settings.10.Title",
+      "content": "SPELLBOOK.Tours.Settings.10.Content",
       "tooltipDirection": "RIGHT"
     },
     {
       "id": "spell-list-assignment",
       "selector": ".setting-row-custom-spell-lists",
-      "title": "SPELLBOOK.Tours.Settings.SpellLists.Title",
-      "content": "SPELLBOOK.Tours.Settings.SpellLists.Content",
+      "title": "SPELLBOOK.Tours.Settings.11.Title",
+      "content": "SPELLBOOK.Tours.Settings.11.Content",
       "tooltipDirection": "RIGHT"
     },
     {
       "id": "preparation-bonuses",
       "selector": ".setting-row-spell-prep-bonus",
-      "title": "SPELLBOOK.Tours.Settings.PreparationBonus.Title",
-      "content": "SPELLBOOK.Tours.Settings.PreparationBonus.Content",
+      "title": "SPELLBOOK.Tours.Settings.12.Title",
+      "content": "SPELLBOOK.Tours.Settings.12.Content",
       "tooltipDirection": "RIGHT"
     },
     {
       "id": "wizard-settings",
       "selector": ".class-settings-section",
-      "title": "SPELLBOOK.Tours.Settings.WizardSettings.Title",
-      "content": "SPELLBOOK.Tours.Settings.WizardSettings.Content",
+      "title": "SPELLBOOK.Tours.Settings.13.Title",
+      "content": "SPELLBOOK.Tours.Settings.13.Content",
       "tooltipDirection": "RIGHT"
     },
     {
       "id": "best-practices",
       "selector": "",
-      "title": "SPELLBOOK.Tours.Settings.BestPractices.Title",
-      "content": "SPELLBOOK.Tours.Settings.BestPractices.Content"
+      "title": "SPELLBOOK.Tours.Settings.14.Title",
+      "content": "SPELLBOOK.Tours.Settings.14.Content"
     }
-  ],
-  "suggestedNextTours": [
-    "spell-book.basics"
-  ],
-  "localization": {
-    "SPELLBOOK.Tours.Settings.Title": "SpellBook Settings & Customization",
-    "SPELLBOOK.Tours.Settings.Description": "Learn how to customize SpellBook settings for your players.",
-
-    "SPELLBOOK.Tours.Settings.Welcome.Title": "SpellBook Settings",
-    "SPELLBOOK.Tours.Settings.Welcome.Content": "SpellBook offers extensive customization options to tailor spellcasting rules to your campaign. This tour will guide you through all the key settings to help you configure SpellBook for your table.\nClick the wand icon in any character's SpellBook to open their settings.",
-
-    "SPELLBOOK.Tours.Settings.SettingsDialog.Title": "The Settings Interface",
-    "SPELLBOOK.Tours.Settings.SettingsDialog.Content": "The SpellBook settings dialog is organized into two sections. Global Settings apply to all classes on this character. Class Sections provide one for each spellcasting class the character has.\nChanges are saved when you click the Save Settings button at the bottom.",
-
-    "SPELLBOOK.Tours.Settings.GlobalRules.Title": "Global Rules Section",
-    "SPELLBOOK.Tours.Settings.GlobalRules.Content": "Global rules default to the rules set in the module settings, but can be overriden per actor.",
-
-    "SPELLBOOK.Tours.Settings.Enforcement.Title": "Enforcement Behavior",
-    "SPELLBOOK.Tours.Settings.Enforcement.Content": "Control how SpellBook enforces preparation limits: Unenforced allows players to prepare infinitely. Allow+Notify notifies the GM if a player prepares over their set limits. Enforced will lock down the SpellBook UI when cantrips and levelled spells are at preparation max.",
-
-    "SPELLBOOK.Tours.Settings.RuleSet.Title": "Spellcasting Rule Set",
-    "SPELLBOOK.Tours.Settings.RuleSet.Content": "Choose which D&D edition's spellcasting rules to follow. Legacy Rules (2014) means cantrips cannot be changed once learned, stricter preparation rules apply, and traditional spell swapping on long rest. Modern Rules (2024) means cantrips can be swapped on level up or long rest, and more flexible spell preparation, and updated multiclass interactions.\nThis setting should match your D&D5e Rules setting.",
-
-    "SPELLBOOK.Tours.Settings.ClassSections.Title": "Per-Class Configuration",
-    "SPELLBOOK.Tours.Settings.ClassSections.Content": "Each spellcasting class gets its own configuration section. Each class has the same set of options available, but Wizards have additional configuration covered later.",
-
-    "SPELLBOOK.Tours.Settings.ShowCantrips.Title": "Show Cantrips",
-    "SPELLBOOK.Tours.Settings.ShowCantrips.Content": "This setting controls whether cantrips are displayed and managed in SpellBook for this class. Automatically disabled by default for classes that don't typically have cantrips.",
-
-    "SPELLBOOK.Tours.Settings.ForceWizardMode.Title": "Force Wizard Mode",
-    "SPELLBOOK.Tours.Settings.ForceWizardMode.Content": "This advanced setting treats the selected class as a wizard with a spellbook. When enabled, the class gains a spellbook tab, can learn spells by copying them (with gold and time costs), and gains free spells on level up.\nUseful for homebrew classes that use wizard-style spellbook mechanics (like some Artificer variants) or for campaigns where all casters use spellbooks.",
-
-    "SPELLBOOK.Tours.Settings.CantripSwapping.Title": "Cantrip Swapping",
-    "SPELLBOOK.Tours.Settings.CantripSwapping.Content": "Controls when cantrips can be swapped: Never means cantrips are permanent once learned (2014 rules). On Level Up means cantrips can only be changed when the character levels up. On Long Rest means cantrips can be changed during any long rest (2024 rules).",
-
-    "SPELLBOOK.Tours.Settings.SpellSwapping.Title": "Spell Swapping",
-    "SPELLBOOK.Tours.Settings.SpellSwapping.Content": "Controls when prepared or known spells can be changed. Never means spells cannot be swapped once learned (for classes like Bard or Sorcerer). On Level Up means spells can only be changed when leveling up. On Long Rest means spells can be changed during long rests (for classes like Clerics or Druids).",
-
-    "SPELLBOOK.Tours.Settings.RitualCasting.Title": "Ritual Casting",
-    "SPELLBOOK.Tours.Settings.RitualCasting.Content": "Determines which spells can be cast as rituals. Only Prepared means only currently prepared ritual spells can be cast as rituals. All Known means any ritual spell the character knows can be cast as a ritual, even if not prepared (like Wizards). Never means the class cannot cast ritual spells.",
-
-    "SPELLBOOK.Tours.Settings.SpellLists.Title": "Custom Spell Lists",
-    "SPELLBOOK.Tours.Settings.SpellLists.Content": "Each class needs a spell list assigned. No selection here will get SpellBook to try find the official class list. For best results, it is advised you select the specific spell list your player should pull from. You can add as many lists as you want, allowing you to enhance characters with subclasses, features, etc. that grant additional spells.",
-
-    "SPELLBOOK.Tours.Settings.PreparationBonus.Title": "Preparation Bonuses",
-    "SPELLBOOK.Tours.Settings.PreparationBonus.Content": "Modify the number of spells a character can prepare. Spell Preparation Bonus lets you add or subtract prepared spell maximums. Cantrip Preparation Bonus lets you add or subtract cantrip maximums.",
-
-    "SPELLBOOK.Tours.Settings.WizardSettings.Title": "Wizard-Specific",
-    "SPELLBOOK.Tours.Settings.WizardSettings.Content": "Wizards have unique settings for their spellbook mechanics. Starting Spells controls how many spells a level 1 wizard starts with (default: 6). Spells Per Level sets free spells gained each level (default: 2). Learning Cost sets gold per spell level to copy spells (default: 50 gp). Learning Time sets minutes per spell level to copy spells (default: 120 minutes). These settings are hidden unless a wizard class is detected.",
-
-    "SPELLBOOK.Tours.Settings.BestPractices.Title": "Settings Best Practices",
-    "SPELLBOOK.Tours.Settings.BestPractices.Content": "Enforcement should be left on Allow + Notify unless enforced is required. This allows players to get familiar with the UI while still informing the GM of mistakes. Setting a custom spell list will make sure they are learning spells from the correct sources."
-  }
+  ]
 }

@@ -1,22 +1,22 @@
 {
   "title": "SPELLBOOK.Tours.SpellListManager.Title",
   "description": "SPELLBOOK.Tours.SpellListManager.Description",
-  "canBeResumed": true,
+  "canBeResumed": false,
   "display": true,
   "restricted": true,
   "steps": [
     {
       "id": "welcome",
       "selector": "",
-      "title": "SPELLBOOK.Tours.SpellListManager.Welcome.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.Welcome.Content",
+      "title": "SPELLBOOK.Tours.SpellListManager.0.Title",
+      "content": "SPELLBOOK.Tours.SpellListManager.0.Content",
       "restricted": true
     },
     {
       "id": "opening-manager",
       "selector": ".spell-list-manager",
-      "title": "SPELLBOOK.Tours.SpellListManager.Opening.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.Opening.Content",
+      "title": "SPELLBOOK.Tours.SpellListManager.1.Title",
+      "content": "SPELLBOOK.Tours.SpellListManager.1.Content",
       "openSpellListManager": true,
       "tooltipDirection": "DOWN",
       "restricted": true
@@ -24,113 +24,73 @@
     {
       "id": "spell-lists",
       "selector": ".spell-list-registry",
-      "title": "SPELLBOOK.Tours.SpellListManager.Lists.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.Lists.Content",
+      "title": "SPELLBOOK.Tours.SpellListManager.2.Title",
+      "content": "SPELLBOOK.Tours.SpellListManager.2.Content",
       "tooltipDirection": "RIGHT",
       "restricted": true
     },
     {
       "id": "list-types",
       "selector": ".list-type-indicator",
-      "title": "SPELLBOOK.Tours.SpellListManager.Types.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.Types.Content",
+      "title": "SPELLBOOK.Tours.SpellListManager.3.Title",
+      "content": "SPELLBOOK.Tours.SpellListManager.3.Content",
       "tooltipDirection": "RIGHT",
       "restricted": true
     },
     {
       "id": "creating-list",
       "selector": "button[data-action='createList']",
-      "title": "SPELLBOOK.Tours.SpellListManager.Creating.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.Creating.Content",
+      "title": "SPELLBOOK.Tours.SpellListManager.4.Title",
+      "content": "SPELLBOOK.Tours.SpellListManager.4.Content",
       "tooltipDirection": "LEFT",
       "restricted": true
     },
     {
       "id": "available-spells",
       "selector": ".available-spells-panel",
-      "title": "SPELLBOOK.Tours.SpellListManager.AvailableSpells.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.AvailableSpells.Content",
+      "title": "SPELLBOOK.Tours.SpellListManager.5.Title",
+      "content": "SPELLBOOK.Tours.SpellListManager.5.Content",
       "tooltipDirection": "LEFT",
       "restricted": true
     },
     {
       "id": "adding-spells",
       "selector": ".spell-search-controls",
-      "title": "SPELLBOOK.Tours.SpellListManager.AddingSpells.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.AddingSpells.Content",
+      "title": "SPELLBOOK.Tours.SpellListManager.6.Title",
+      "content": "SPELLBOOK.Tours.SpellListManager.6.Content",
       "tooltipDirection": "DOWN",
       "restricted": true
     },
     {
       "id": "compendium-selection",
       "selector": "button[data-action='selectCompendiums']",
-      "title": "SPELLBOOK.Tours.SpellListManager.Compendiums.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.Compendiums.Content",
+      "title": "SPELLBOOK.Tours.SpellListManager.7.Title",
+      "content": "SPELLBOOK.Tours.SpellListManager.7.Content",
       "tooltipDirection": "DOWN",
       "restricted": true
     },
     {
       "id": "assigning-lists",
       "selector": ".list-assignment-controls",
-      "title": "SPELLBOOK.Tours.SpellListManager.Assigning.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.Assigning.Content",
+      "title": "SPELLBOOK.Tours.SpellListManager.8.Title",
+      "content": "SPELLBOOK.Tours.SpellListManager.8.Content",
       "tooltipDirection": "UP",
       "restricted": true
     },
     {
       "id": "merging-lists",
       "selector": "button[data-action='mergeLists']",
-      "title": "SPELLBOOK.Tours.SpellListManager.Merging.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.Merging.Content",
+      "title": "SPELLBOOK.Tours.SpellListManager.9.Title",
+      "content": "SPELLBOOK.Tours.SpellListManager.9.Content",
       "tooltipDirection": "UP",
       "restricted": true
     },
     {
       "id": "best-practices",
       "selector": "",
-      "title": "SPELLBOOK.Tours.SpellListManager.BestPractices.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.BestPractices.Content",
+      "title": "SPELLBOOK.Tours.SpellListManager.10.Title",
+      "content": "SPELLBOOK.Tours.SpellListManager.10.Content",
       "restricted": true
     }
-  ],
-  "suggestedNextTours": [
-    "spell-book.multiclass-setup"
-  ],
-  "localization": {
-    "SPELLBOOK.Tours.SpellListManager.Title": "Spell List Manager",
-    "SPELLBOOK.Tours.SpellListManager.Description": "Learn how to create and manage custom spell lists for classes and subclasses",
-
-    "SPELLBOOK.Tours.SpellListManager.Welcome.Title": "Welcome to Spell List Manager",
-    "SPELLBOOK.Tours.SpellListManager.Welcome.Content": "The Spell List Manager is a powerful GM tool for creating custom spell lists. This is perfect for homebrew classes and subclasses, house-ruled spell access, campaign-specific spell restrictions, and creating curated spell selections.\nThis tour will show you how to create, manage, and assign custom spell lists to your players' characters.",
-
-    "SPELLBOOK.Tours.SpellListManager.Opening.Title": "The List Manager Interface",
-    "SPELLBOOK.Tours.SpellListManager.Opening.Content": "This is the Spell List Manager. The interface is divided into sections: Left Panel shows your existing spell lists (class, subclass, and custom). Center Panel contains the spell list editor and details. Right Panel displays available spells to add.\nYou can access this tool from the Foundry sidebar under the Spell Book module settings.",
-
-    "SPELLBOOK.Tours.SpellListManager.Lists.Title": "Spell List Registry",
-    "SPELLBOOK.Tours.SpellListManager.Lists.Content": "Here you'll see all registered spell lists in your game. System Lists are official class and subclass lists from dnd5e. Custom Lists are those you've created for homebrew content. Module Lists are added by other modules.\nClick on a list to view and edit its spells. The search bar helps you find specific lists quickly.",
-
-    "SPELLBOOK.Tours.SpellListManager.Types.Title": "List Types",
-    "SPELLBOOK.Tours.SpellListManager.Types.Content": "Spell lists come in three types. Class Lists are primary spell lists for base classes (e.g., Wizard, Cleric). Subclass Lists provide additional spells granted by subclasses (e.g., Arcane Trickster). Custom Lists are your homebrew lists for any purpose.\nEach type has a color-coded indicator for easy identification. System lists are locked but can be cloned for modification.",
-
-    "SPELLBOOK.Tours.SpellListManager.Creating.Title": "Creating New Lists",
-    "SPELLBOOK.Tours.SpellListManager.Creating.Content": "Click this button to create a new custom spell list. You'll be prompted to name your list (e.g., \"Blood Magic\", \"Frost Sorcerer\"), choose the list type (Class or Subclass), select a parent class if applicable, and add a description (optional).\nOnce created, you can start adding spells from available compendiums.",
-
-    "SPELLBOOK.Tours.SpellListManager.AvailableSpells.Title": "Available Spells Panel",
-    "SPELLBOOK.Tours.SpellListManager.AvailableSpells.Content": "This panel shows all spells available to add to your list. Spells come from dnd5e system compendiums, module-provided spell compendiums, and custom compendiums you've created.\nSpells are organized by level and can be filtered using the search controls. Click a spell to add it to your custom list.",
-
-    "SPELLBOOK.Tours.SpellListManager.AddingSpells.Title": "Search and Filter Spells",
-    "SPELLBOOK.Tours.SpellListManager.AddingSpells.Content": "Use these powerful search tools to find spells. Text Search lets you search by spell name. Level Filter shows only specific spell levels. School Filter filters by school of magic. Source Filter filters by compendium or source book.\nYou can select multiple spells at once and add them in bulk to your custom list.",
-
-    "SPELLBOOK.Tours.SpellListManager.Compendiums.Title": "Compendium Selection",
-    "SPELLBOOK.Tours.SpellListManager.Compendiums.Content": "Click here to choose which compendiums to search for spells. Enable official dnd5e spell compendiums, add third-party module spell collections, and include your custom spell compendiums.\nSpellBook automatically indexes selected compendiums for fast searching. You can enable or disable compendiums at any time.",
-
-    "SPELLBOOK.Tours.SpellListManager.Assigning.Title": "Assigning Lists to Characters",
-    "SPELLBOOK.Tours.SpellListManager.Assigning.Content": "Once you've created a custom spell list, you need to assign it to characters. Open a character's SpellBook, click the Settings (gear) icon, find the class you want to modify, and select your custom list from the dropdown.\nThe character will immediately have access to spells from your custom list. You can assign different lists to different characters!",
-
-    "SPELLBOOK.Tours.SpellListManager.Merging.Title": "Merging Spell Lists",
-    "SPELLBOOK.Tours.SpellListManager.Merging.Content": "The merge feature lets you combine multiple lists. Merge a subclass list with its parent class, combine multiple custom lists into one, or create variant class lists with additional spells.\nMerging creates a new list without modifying the originals. This is perfect for creating comprehensive spell lists for multiclass characters or unique campaign variants.",
-
-    "SPELLBOOK.Tours.SpellListManager.BestPractices.Title": "Best Practices",
-    "SPELLBOOK.Tours.SpellListManager.BestPractices.Content": "Tips for effective spell list management. Name clearly using descriptive names like \"Artificer (Revised)\" or \"Nature Domain (Homebrew)\". Document changes by adding descriptions explaining what's different from official lists. Test thoroughly by trying out custom lists with test characters first. Back up by exporting custom lists before major system updates. Share wisely by considering publishing well-tested homebrew lists to the community.\nFor more details, check the Spell List Manager documentation in the wiki!"
-  }
+  ]
 }

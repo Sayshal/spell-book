@@ -1,125 +1,59 @@
 {
   "title": "SPELLBOOK.Tours.WizardSpellbook.Title",
   "description": "SPELLBOOK.Tours.WizardSpellbook.Description",
-  "canBeResumed": true,
+  "canBeResumed": false,
   "display": true,
   "steps": [
     {
       "id": "welcome",
       "selector": "",
-      "title": "SPELLBOOK.Tours.WizardSpellbook.Welcome.Title",
-      "content": "SPELLBOOK.Tours.WizardSpellbook.Welcome.Content"
+      "title": "SPELLBOOK.Tours.WizardSpellbook.0.Title",
+      "content": "SPELLBOOK.Tours.WizardSpellbook.0.Content"
     },
     {
       "id": "wizard-tab",
       "selector": "nav.tabs.tabs-right a[data-tab^='wizardbook-']",
-      "title": "SPELLBOOK.Tours.WizardSpellbook.Tab.Title",
-      "content": "SPELLBOOK.Tours.WizardSpellbook.Tab.Content",
+      "title": "SPELLBOOK.Tours.WizardSpellbook.1.Title",
+      "content": "SPELLBOOK.Tours.WizardSpellbook.1.Content",
       "openSpellBook": "demo",
-      "spellBookTab": "wizardbook",
-      "tooltipDirection": "LEFT"
-    },
-    {
-      "id": "known-vs-prepared",
-      "selector": ".wizard-spellbook-container",
-      "title": "SPELLBOOK.Tours.WizardSpellbook.KnownVsPrepared.Title",
-      "content": "SPELLBOOK.Tours.WizardSpellbook.KnownVsPrepared.Content",
       "tooltipDirection": "RIGHT"
     },
     {
-      "id": "spellbook-counter",
-      "selector": ".wizard-spellbook-stats",
-      "title": "SPELLBOOK.Tours.WizardSpellbook.Counter.Title",
-      "content": "SPELLBOOK.Tours.WizardSpellbook.Counter.Content",
-      "tooltipDirection": "DOWN"
+      "id": "the-library",
+      "selector": ".wizardbook.tab.active",
+      "title": "SPELLBOOK.Tours.WizardSpellbook.2.Title",
+      "content": "SPELLBOOK.Tours.WizardSpellbook.2.Content",
+      "spellBookTab": "wizardbook",
+      "tooltipDirection": "RIGHT"
     },
     {
       "id": "learning-spells",
       "selector": ".spell-item button[data-action='learnSpell']",
-      "title": "SPELLBOOK.Tours.WizardSpellbook.Learning.Title",
-      "content": "SPELLBOOK.Tours.WizardSpellbook.Learning.Content",
+      "title": "SPELLBOOK.Tours.WizardSpellbook.3.Title",
+      "content": "SPELLBOOK.Tours.WizardSpellbook.3.Content",
       "tooltipDirection": "LEFT"
     },
     {
-      "id": "spell-costs",
-      "selector": ".spell-learning-info",
-      "title": "SPELLBOOK.Tours.WizardSpellbook.Costs.Title",
-      "content": "SPELLBOOK.Tours.WizardSpellbook.Costs.Content",
-      "tooltipDirection": "UP"
-    },
-    {
       "id": "free-spells",
-      "selector": ".wizard-free-spells-indicator",
-      "title": "SPELLBOOK.Tours.WizardSpellbook.FreeSpells.Title",
-      "content": "SPELLBOOK.Tours.WizardSpellbook.FreeSpells.Content",
-      "tooltipDirection": "DOWN"
+      "selector": ".spell-book-tracking",
+      "title": "SPELLBOOK.Tours.WizardSpellbook.4.Title",
+      "content": "SPELLBOOK.Tours.WizardSpellbook.4.Content",
+      "tooltipDirection": "UP"
     },
     {
       "id": "scroll-learning",
-      "selector": ".spell-item[data-from-scroll='true']",
-      "title": "SPELLBOOK.Tours.WizardSpellbook.Scrolls.Title",
-      "content": "SPELLBOOK.Tours.WizardSpellbook.Scrolls.Content",
-      "tooltipDirection": "RIGHT"
-    },
-    {
-      "id": "spell-schools",
-      "selector": ".spell-filters select[name='filter-school']",
-      "title": "SPELLBOOK.Tours.WizardSpellbook.Schools.Title",
-      "content": "SPELLBOOK.Tours.WizardSpellbook.Schools.Content",
-      "tooltipDirection": "DOWN"
+      "selector": "",
+      "title": "SPELLBOOK.Tours.WizardSpellbook.5.Title",
+      "content": "SPELLBOOK.Tours.WizardSpellbook.5.Content",
+      "tooltipDirection": "CENTER"
     },
     {
       "id": "preparing-from-book",
-      "selector": ".wizard-preparation-controls",
-      "title": "SPELLBOOK.Tours.WizardSpellbook.PreparingFromBook.Title",
-      "content": "SPELLBOOK.Tours.WizardSpellbook.PreparingFromBook.Content",
-      "tooltipDirection": "UP"
-    },
-    {
-      "id": "wizard-strategies",
       "selector": "",
-      "title": "SPELLBOOK.Tours.WizardSpellbook.Strategies.Title",
-      "content": "SPELLBOOK.Tours.WizardSpellbook.Strategies.Content"
+      "title": "SPELLBOOK.Tours.WizardSpellbook.6.Title",
+      "content": "SPELLBOOK.Tours.WizardSpellbook.6.Content",
+      "spellBookTab": "Tab",
+      "tooltipDirection": "DOWN"
     }
-  ],
-  "suggestedNextTours": [
-    "spell-book.spellbook-settings"
-  ],
-  "localization": {
-    "SPELLBOOK.Tours.WizardSpellbook.Title": "Wizard Spellbook Management",
-    "SPELLBOOK.Tours.WizardSpellbook.Description": "Master wizard-specific features including spell learning, copying from scrolls, and spellbook management.\n\nRequires: Character must be a wizard",
-
-    "SPELLBOOK.Tours.WizardSpellbook.Welcome.Title": "Welcome, Wizard!",
-    "SPELLBOOK.Tours.WizardSpellbook.Welcome.Content": "Wizards have unique spellcasting mechanics that SpellBook handles automatically. You maintain a spellbook of known spells, learn new spells when you level up, copy spells from scrolls and other spellbooks, prepare a subset of known spells each day, and track gold and time costs for spell copying.\nThis tour will guide you through all wizard-specific features in SpellBook!",
-
-    "SPELLBOOK.Tours.WizardSpellbook.Tab.Title": "The Wizard Spellbook Tab",
-    "SPELLBOOK.Tours.WizardSpellbook.Tab.Content": "Wizards get a special Wizard Spellbook tab in addition to their class spell tab. Class Tab shows spells you've prepared and can cast. Wizard Spellbook Tab shows ALL spells in your spellbook (prepared or not).\nThe spellbook icon differentiates this tab from your regular spell list. This is where you'll learn new spells and manage your growing collection!",
-
-    "SPELLBOOK.Tours.WizardSpellbook.KnownVsPrepared.Title": "Known vs. Prepared Spells",
-    "SPELLBOOK.Tours.WizardSpellbook.KnownVsPrepared.Content": "Understanding the wizard spell system. Known Spells (Spellbook) include all spells you've learned and written in your spellbook, are visible in the Wizard Spellbook tab, and can grow to hundreds of spells over your career. Prepared Spells are a subset of known spells you've prepared for the day, are limited to Intelligence modifier plus Wizard level, and are visible in your Class tab with checkboxes.\nThink of your spellbook as a library, and prepared spells as the books you're carrying today.",
-
-    "SPELLBOOK.Tours.WizardSpellbook.Counter.Title": "Spellbook Statistics",
-    "SPELLBOOK.Tours.WizardSpellbook.Counter.Content": "This tracker shows your spellbook status. Total Spells shows the current number of spells in your spellbook. Free Spells Remaining shows how many more spells you can learn from leveling. Maximum Capacity shows the theoretical limit (usually unlimited).\nWhen you level up, you automatically get 2 free spell slots to add spells to your spellbook. Any additional spells must be learned through copying.",
-
-    "SPELLBOOK.Tours.WizardSpellbook.Learning.Title": "Learning New Spells",
-    "SPELLBOOK.Tours.WizardSpellbook.Learning.Content": "Click the Learn Spell button on any spell to add it to your spellbook. Free Learning (from leveling) is available when you have free spell slots from leveling, has no gold cost or time required, and typically gives 2 spells per level. Paid Learning (copying) costs 50 gp per spell level, takes 2 hours per spell level, and can be used anytime if you have gold.\nSpellBook automatically deducts gold from your character sheet (if you have module settings enabled).",
-
-    "SPELLBOOK.Tours.WizardSpellbook.Costs.Title": "Spell Copying Costs",
-    "SPELLBOOK.Tours.WizardSpellbook.Costs.Content": "When copying spells, the costs are calculated as follows. Gold Cost is 50 gp times spell level (1st level: 50 gp, 2nd level: 100 gp, 3rd level: 150 gp, and so on up to 9th level at 450 gp). Time Cost is 2 hours times spell level, which represents deciphering magical notation, writing it in your own spellbook, and practicing the spell's components.\nCantrips (0-level) are free but still require time to transcribe.",
-
-    "SPELLBOOK.Tours.WizardSpellbook.FreeSpells.Title": "Free Spell Indicators",
-    "SPELLBOOK.Tours.WizardSpellbook.FreeSpells.Content": "SpellBook tracks which spells were learned for free. Level-Up Spells are spells learned when you leveled (shows as Free). Initial Spells are starting spells from 1st level (shows as Initial). Copied Spells are spells you paid gold to learn (shows as Copied). Scroll Spells are spells learned from scrolls (shows as Scroll).\nThis helps you track your spellbook's history and ensures you're using your free spells appropriately. Wizards get strategic advantages by choosing their free spells wisely!",
-
-    "SPELLBOOK.Tours.WizardSpellbook.Scrolls.Title": "Learning from Scrolls",
-    "SPELLBOOK.Tours.WizardSpellbook.Scrolls.Content": "When you have spell scrolls in your inventory, special buttons appear. Scrolls are automatically detected in your character's items. Click Learn from Scroll to add the spell to your spellbook. The scroll is consumed (if settings allow). Gold cost is still required (represents material components). Learning from scrolls still counts as copied, not free.\nFinding scrolls is a great way for wizards to expand their spellbook beyond their class spell list!",
-
-    "SPELLBOOK.Tours.WizardSpellbook.Schools.Title": "Spell School Filtering",
-    "SPELLBOOK.Tours.WizardSpellbook.Schools.Content": "Wizard spell schools are especially important. Wizard Subclass Schools means some wizard subclasses specialize in specific schools. Savant Features means some features reduce gold and time costs for your specialized school. Prohibited Schools means some subclasses prohibit certain schools.\nUse the school filter to quickly find spells in your specialized school, or to avoid prohibited schools. SpellBook respects school-based cost reductions automatically!",
-
-    "SPELLBOOK.Tours.WizardSpellbook.PreparingFromBook.Title": "Preparing Spells from Your Spellbook",
-    "SPELLBOOK.Tours.WizardSpellbook.PreparingFromBook.Content": "To prepare spells for the day, follow these steps. Go to your Class Tab (not the Spellbook tab). Check the boxes next to spells you want to prepare. Stay within your preparation limit (Int mod plus Wizard level). Click Save to commit your preparation.\nYou can only prepare spells that are already in your spellbook (in the Wizard Spellbook tab). After a long rest, you can change your prepared spells by selecting different spells from your spellbook.",
-
-    "SPELLBOOK.Tours.WizardSpellbook.Strategies.Title": "Wizard Strategy Tips",
-    "SPELLBOOK.Tours.WizardSpellbook.Strategies.Content": "Maximize your wizard's potential. Use free spells wisely by choosing expensive high-level spells when leveling. Collect scrolls because scrolls are cheaper than transcribing from spellbooks. Diversify early and build a broad spellbook at low levels. Ritual spells should be learned so you don't have to prepare them. School focus means if you specialize, learn those spells via copying (cheaper). Campaign prep means learning spells that match your campaign's themes. Trade with wizards by offering to copy from each other's spellbooks.\nA wizard's spellbook is their greatest treasure. Build it wisely, and you'll be prepared for any situation!"
-  }
+  ]
 }
