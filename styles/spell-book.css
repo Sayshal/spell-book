@@ -13,7 +13,7 @@
   --spell-book-bg-disabled: rgb(0 0 0 / 3.1%);
   --spell-book-bg-item-active: rgb(0 0 0 / 15.3%);
   --spell-book-bg-item-hover: rgb(0 0 0 / 10.2%);
-  --spell-book-bg-item: rgb(0 0 0 / 5.1%);
+  --spell-book-bg-item: rgb(0 0 0 / 2%);
   --spell-book-bg-option-active: rgb(255 255 255 / 15.3%);
   --spell-book-bg-option-hover: rgb(255 255 255 / 10.2%);
   --spell-book-bg-option: rgb(255 255 255 / 5.1%);
@@ -184,7 +184,7 @@
   --spell-book-bg-disabled: rgb(0 0 0 / 2%);
   --spell-book-bg-item-active: rgb(0 0 0 / 8.2%);
   --spell-book-bg-item-hover: rgb(0 0 0 / 5.1%);
-  --spell-book-bg-item: rgb(0 0 0 / 3.1%);
+  --spell-book-bg-item: rgb(0 0 0 / 2%);
   --spell-book-bg-option-active: rgb(0 0 0 / 8.2%);
   --spell-book-bg-option-hover: rgb(0 0 0 / 5.1%);
   --spell-book-bg-option: rgb(0 0 0 / 3.1%);
@@ -979,10 +979,6 @@
     overflow: hidden;
     background: var(--spell-book-bg-item);
 
-    &.owned-spell {
-      background-color: rgb(0 0 0 / 2%);
-    }
-
     &.prepared-spell {
       background-color: var(--spell-book-bg-prepared);
     }
@@ -1102,6 +1098,48 @@
         object-fit: cover;
         transition: var(--spell-book-transition-fast);
       }
+
+      .tag {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        width: 1rem;
+        height: 1rem;
+        border-radius: 50%;
+        margin-left: 0.1rem;
+        color: rgb(0 0 0 / 100%);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-align: center;
+
+        &.always-prepared {
+          background-color: var(--spell-book-tag-always);
+        }
+
+        &.granted {
+          background-color: var(--spell-book-tag-granted);
+        }
+
+        &.pact {
+          background-color: var(--spell-book-tag-pact);
+        }
+
+        &.innate {
+          background-color: var(--spell-book-tag-innate);
+        }
+
+        &.ritual {
+          background-color: var(--spell-book-tag-ritual);
+        }
+
+        &.atwill {
+          background-color: var(--spell-book-tag-atwill);
+        }
+
+        &.prepared {
+          background-color: var(--spell-book-tag-prepared);
+        }
+      }
     }
 
     .subtitle {
@@ -1181,46 +1219,6 @@
     color: rgb(0 0 0 / 100%);
     font-weight: 600;
     font-size: 0.75rem;
-  }
-
-  .tag {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    margin-left: 0.35rem;
-    padding: 0 0.35rem;
-    border-radius: var(--spell-book-radius-xl);
-    color: rgb(0 0 0 / 100%);
-    font-weight: 600;
-    font-size: 0.75rem;
-
-    &.always-prepared {
-      background-color: var(--spell-book-tag-always);
-    }
-
-    &.granted {
-      background-color: var(--spell-book-tag-granted);
-    }
-
-    &.pact {
-      background-color: var(--spell-book-tag-pact);
-    }
-
-    &.innate {
-      background-color: var(--spell-book-tag-innate);
-    }
-
-    &.ritual {
-      background-color: var(--spell-book-tag-ritual);
-    }
-
-    &.atwill {
-      background-color: var(--spell-book-tag-atwill);
-    }
-
-    &.prepared {
-      background-color: var(--spell-book-tag-prepared);
-    }
   }
 
   .spell-details {
@@ -2072,7 +2070,7 @@
 /* ========================================= */
 /*  Spell List Manager COMPONENTS         */
 /* ========================================= */
-.gm-spell-list-manager {
+.spell-list-manager {
   /* ----------------------------------------- */
   /*  Manager Application Structure            */
   /* ----------------------------------------- */
@@ -2090,7 +2088,7 @@
     border-bottom: none;
   }
 
-  .gm-spell-list-manager-container {
+  .spell-list-manager-container {
     inset: 0;
     position: absolute;
     overflow: hidden;
@@ -3110,11 +3108,12 @@
 
   .spell-filters {
     display: flex;
-    flex: 0 0 auto;
+    flex: 1;
     flex-direction: column;
-    margin-bottom: var(--spell-book-spacing-md);
     padding: var(--spell-book-spacing-lg);
+    padding-bottom: 0;
     border-radius: var(--spell-book-radius-md);
+    min-height: 0;
 
     label {
       color: var(--spell-book-text-primary);
@@ -3135,14 +3134,6 @@
     max-height: calc(100vh - 31.25rem);
     margin-bottom: 0.3rem;
     overflow-y: auto;
-  }
-
-  .filter-count-display {
-    padding: var(--spell-book-spacing-md);
-    border-top: var(--spell-book-radius-sm) solid var(--spell-book-border-light);
-    color: var(--spell-book-text-tertiary);
-    font-size: var(--spell-book-font-lg);
-    text-align: center;
   }
 
   .filter-search {
@@ -3622,11 +3613,36 @@
         font-weight: bold;
         text-shadow: 0.0625rem 0.0625rem 0.125rem rgba(0 0 0 / 70%);
         transition: var(--spell-book-transition-normal);
+        container-type: inline-size;
 
         .context-label {
           padding: 0 0.25rem;
           font-size: 0.875rem;
           white-space: nowrap;
+        }
+      }
+
+      @container (max-width: 5rem) {
+        .context-label {
+          font-size: 0.65rem;
+        }
+      }
+
+      @container (min-width: 5.01rem) and (max-width: 10rem) {
+        .context-label {
+          font-size: 0.7rem;
+        }
+      }
+
+      @container (min-width: 10.01rem) and (max-width: 20rem) {
+        .context-label {
+          font-size: 0.75rem;
+        }
+      }
+
+      @container (min-width: 20.01rem) and (max-width: 30rem) {
+        .context-label {
+          font-size: 0.8rem;
         }
       }
 
@@ -6223,38 +6239,6 @@
   }
 
   /* ----------------------------------------- */
-  /*  Party Mode Visualization                 */
-  /* ----------------------------------------- */
-  .party-mode-context-menu {
-    z-index: var(--spell-book-z-index-tooltip);
-    position: absolute;
-    min-width: 11.25rem;
-    border: 0.063rem solid var(--spell-book-border-dark);
-    border-radius: var(--spell-book-radius-md);
-    background: var(--spell-book-bg-primary);
-    box-shadow: var(--spell-book-shadow-heavy);
-
-    .context-menu-item {
-      gap: var(--spell-book-spacing-sm);
-      display: flex;
-      align-items: center;
-      padding: var(--spell-book-spacing-sm) var(--spell-book-spacing-md);
-      color: var(--spell-book-text-primary);
-      cursor: pointer;
-      transition: var(--spell-book-transition-fast);
-
-      &:hover {
-        background: var(--spell-book-bg-secondary);
-      }
-
-      i {
-        width: 1rem;
-        text-align: center;
-      }
-    }
-  }
-
-  /* ----------------------------------------- */
   /*  Focus Settings Dialog                    */
   /* ----------------------------------------- */
   .focus-settings-dialog {
@@ -6857,11 +6841,10 @@
 /* ----------------------------------------- */
 /*  Context Menus                            */
 /* ----------------------------------------- */
-.spell-loadout-context-menu,
-.party-mode-context-menu,
+.spell-book-context-menu,
 .member-card-context-menu {
   z-index: var(--spell-book-z-index-context);
-  position: absolute;
+  position: fixed;
   max-width: 18.75rem;
   border-radius: var(--spell-book-radius-md);
   color: var(--spell-book-text-primary);
@@ -7081,7 +7064,7 @@
     --spell-book-manager-spells-sidebar-width: 18.75rem;
   }
 
-  .gm-spell-list-manager {
+  .spell-list-manager {
     .filter-grid {
       grid-template-columns: repeat(2, 1fr);
       grid-template-rows: repeat(5, auto);
@@ -7102,7 +7085,7 @@
     --spell-book-manager-spells-sidebar-width: 15.625rem;
   }
 
-  .gm-spell-list-manager {
+  .spell-list-manager {
     .filter-grid {
       grid-template-columns: 1fr;
       grid-template-rows: auto;
@@ -7155,4 +7138,24 @@
       flex-direction: column;
     }
   }
+}
+
+/* ----------------------------------------- */
+/*  Tour Customization                       */
+/* ----------------------------------------- */
+
+/* Add prominent border around highlighted tour elements */
+.tour-fadeout.spell-book-tour {
+  border-radius: 0.25rem;
+  box-shadow:
+    0 0 0 624.938rem rgb(0 0 0 / 85%),
+    0 0 1.25rem rgb(255 100 0 / 40%) inset,
+    0 0 1.875rem rgb(255 100 0 / 30%);
+  outline: 0.188rem solid rgb(255 100 0 / 100%);
+  outline-offset: -0.125rem;
+}
+
+/* Ensure tour tooltips for spell-book have proper z-index */
+#tooltip.spell-book-tour {
+  z-index: 10000;
 }

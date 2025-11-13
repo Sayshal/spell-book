@@ -7,7 +7,7 @@ Thanks for your interest in contributing to Spell Book. This document provides g
 ### Prerequisites
 
 - Foundry VTT core version v13 or higher
-- D&D5e system version 5.1.2 or higher
+- D&D5e system version 5.1.10 or higher
 - A code editor (VS Code recommended)
 
 ### Development Setup

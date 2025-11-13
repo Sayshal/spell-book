@@ -1,44 +1,3 @@
-{{!--
-/**
- * Spell Book Troubleshooter Interface Template
- *
- * PURPOSE:
- * Diagnostic and troubleshooting interface for the Spell Book module providing
- * system information export, settings management, and support access. Enables
- * users and administrators to generate diagnostic reports,
- * manage configuration data, and access community support resources for
- * problem resolution and technical assistance.
- *
- * CONTEXT REQUIREMENTS:
- * @param {string} output - Pre-generated diagnostic output text for display
- * @param {number} ownedActorCount - Count of actors owned by current user (GM context)
- * @param {string} ownedActorNames - Comma-separated list of owned actor names
- * @param {boolean} includeActors - Whether actor data should be included in export
- *
- * ACCESSIBILITY FEATURES:
- * - Semantic form elements with proper labeling and associations
- * - Textarea with descriptive aria-label for diagnostic output
- * - Button elements with aria-label attributes
- * - Icons marked as decorative with aria-hidden="true"
- * - Checkbox input with associated label for screen readers
- * - Hint text providing context for actor data options
- *
- * CUSTOMIZATION POINTS:
- * - Actor export option displays conditionally based on owned actor count
- * - Diagnostic output area supports variable content length
- * - Button actions support different export and import workflows
- * - Support links adapt to different community platforms
- * - Checkbox state toggles actor data inclusion in exports
- *
- * INTEGRATION:
- * - Connects to SpellBookTroubleshooter application for diagnostic functionality
- * - Uses module localization keys from SPELLBOOK.Settings.Troubleshooter namespace
- * - Supports file export/import operations for configuration management
- * - Integrates with external support platforms (Discord, GitHub)
- * - Provides clipboard operations for easy data sharing
- */
---}}
-
 <div class="spell-book-troubleshooter-container">
   <!-- Troubleshooter Instructions and Notes -->
   <p class="notes">{{localize "SPELLBOOK.Settings.Troubleshooter.Notes"}}</p>
@@ -48,7 +7,7 @@
     <div class="actor-export-option">
       <!-- Actor Data Inclusion Checkbox -->
       <label>
-        <input type="checkbox" data-action="toggleIncludeActors" {{#if includeActors}}checked{{/if}}>
+        <input type="checkbox" data-action="includeActors" {{#if includeActors}}checked{{/if}}>
         <span>{{localize "SPELLBOOK.Settings.Troubleshooter.IncludeActorData"}}</span>
       </label>
 
@@ -73,14 +32,14 @@
     </button>
 
     <!-- Diagnostic Report Export Operation -->
-    <button type="button" data-action="exportReport"
+    <button type="button" data-action="export"
       aria-label="{{localize "SPELLBOOK.Settings.Troubleshooter.SaveToFile"}}">
       <i class="fa-solid fa-download" aria-hidden="true"></i>
       <span>{{localize "SPELLBOOK.Settings.Troubleshooter.SaveToFile"}}</span>
     </button>
 
     <!-- Clipboard Copy Operation -->
-    <button type="button" data-action="copyToClipboard"
+    <button type="button" data-action="copy"
       aria-label="{{localize "SPELLBOOK.Settings.Troubleshooter.CopyToClipboard"}}">
       <i class="fa-solid fa-copy" aria-hidden="true"></i>
       <span>{{localize "SPELLBOOK.Settings.Troubleshooter.CopyToClipboard"}}</span>

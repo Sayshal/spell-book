@@ -18,7 +18,7 @@ try {
   }
 
   const viewMode = game.user.isGM ? 'gm' : 'personal';
-  SPELLBOOK.openAnalyticsDashboard({
+  SPELLBOOK.openAnalytics({
     viewMode: viewMode,
     userId: game.user.id
   });

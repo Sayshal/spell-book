@@ -1,0 +1,715 @@
+/**
+ * Compendium Management and Spell List Operations
+ *
+ * Handles compendium pack operations, spell list discovery, and spell source
+ * management. This module provides utilities for working with spell data across
+ * multiple compendium sources and managing spell list documents within packs.
+ *
+ * @module DataUtils/CompendiumProcessor
+ * @author Tyler
+ */
+
+import { MODULE, SETTINGS } from '../constants/_module.mjs';
+import { log } from '../logger.mjs';
+import * as UIUtils from '../ui/_module.mjs';
+import * as DataUtils from './_module.mjs';
+
+/**
+ * Cache for pack indexing status to avoid repeated settings reads.
+ * @type {Map<string, boolean>|null}
+ */
+let _indexedPacksCache = null;
+
+/**
+ * Scan compendiums for spell lists with optional visibility filtering.
+ * @param {boolean} [includeHidden=true] - Whether to include hidden spell lists in results
+ * @returns {Promise<Array<Object>>} Array of spell list objects with metadata
+ */
+export async function findCompendiumSpellLists(includeHidden = true) {
+  log(3, 'Finding compendium spell lists.');
+  const spellLists = [];
+  const allJournalPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
+  const journalPacks = allJournalPacks.filter((p) => {
+    return shouldIndexCompendium(p);
+  });
+  await processPacks(journalPacks, spellLists);
+  await processCustomPack(spellLists);
+  if (!includeHidden && !game.user.isGM) {
+    const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS);
+    const filteredLists = spellLists.filter((list) => !hiddenLists.includes(list.uuid));
+    spellLists.length = 0;
+    spellLists.push(...filteredLists);
+  }
+  const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS);
+  for (const list of spellLists) {
+    const document = await fromUuid(list.uuid);
+    if (document.system?.identifier && !list.identifier) list.identifier = document.system.identifier;
+    const duplicateUuid = customMappings[list.uuid];
+    if (duplicateUuid) {
+      const duplicateDoc = await fromUuid(duplicateUuid);
+      if (duplicateDoc) list.name = duplicateDoc.name;
+    }
+    if (document?.flags?.[MODULE.ID]?.actorId) {
+      list.isActorOwned = true;
+      list.actorId = document.flags[MODULE.ID].actorId;
+      const actor = game.actors.get(list.actorId);
+      if (actor) list.actorName = actor.name;
+    } else if (document?.folder) {
+      const folderName = document.folder.name.toLowerCase();
+      if (folderName.includes('actor') || folderName.includes('character')) {
+        list.isActorOwned = true;
+        const possibleActor = game.actors.find((a) => folderName.includes(a.name.toLowerCase()));
+        if (possibleActor) {
+          list.actorName = possibleActor.name;
+          list.actorId = possibleActor.id;
+        }
+      }
+    }
+  }
+  log(3, `Found ${spellLists.length} total spell lists (${spellLists.filter((l) => l.isActorOwned).length} actor-owned)`);
+  return spellLists;
+}
+
+/**
+ * Prepare spell sources for filtering dropdown.
+ * @param {Array<Object>} availableSpells - The available spells array
+ * @returns {Array<Map>} Array of source options for dropdown
+ */
+export function prepareSpellSources(availableSpells) {
+  log(3, 'Preparing spell sources.', { availableSpells });
+  const sourceMap = new Map();
+  sourceMap.set('all', { id: 'all', label: game.i18n.localize('SPELLMANAGER.Filters.AllSources') });
+  availableSpells.forEach((spell) => {
+    if (spell.sourceId) {
+      const sourceId = spell.sourceId;
+      if (!sourceMap.has(sourceId)) sourceMap.set(sourceId, { id: sourceId, label: sourceId });
+    }
+  });
+  const sources = Array.from(sourceMap.values()).sort((a, b) => {
+    if (a.id === 'all') return -1;
+    if (b.id === 'all') return 1;
+    return a.label.localeCompare(b.label);
+  });
+  return sources;
+}
+
+/**
+ * Process a single journal pack for spell lists.
+ * @param {Collection<string, Object>} pack - The pack to process
+ * @param {Array<Object>} spellLists - Array to store results in
+ * @param {boolean} [isCustomPack=false] - Whether this is the custom spell lists pack
+ * @private
+ */
+async function processPackForSpellLists(pack, spellLists, isCustomPack = false) {
+  log(3, `Processing ${isCustomPack ? 'custom' : 'standard'} journal pack.`, { pack, spellLists });
+  let topLevelFolder;
+  if (!isCustomPack && pack.folder) {
+    if (pack.folder.depth !== 1) topLevelFolder = pack.folder.getParentFolders().at(-1).name;
+    else topLevelFolder = pack.folder.name;
+  }
+  const indexFields = isCustomPack ? undefined : { fields: ['name', 'pages.type'] };
+  const index = await pack.getIndex(indexFields);
+  for (const journalData of index) {
+    if (!isCustomPack) {
+      const hasSpellPages = journalData.pages?.some((page) => page.type === 'spells');
+      if (!hasSpellPages) continue;
+    }
+    const journal = await pack.getDocument(journalData._id);
+    for (const page of journal.pages) {
+      if (page.type !== 'spells') continue;
+      if (isCustomPack) {
+        const flags = page.flags?.[MODULE.ID] || {};
+        if (flags.isDuplicate || flags.originalUuid) continue;
+        const isMerged = !!flags.isMerged;
+        const isCustom = !isMerged;
+        spellLists.push({
+          uuid: page.uuid,
+          name: page.name,
+          journal: journal.name,
+          pack: pack.metadata.label,
+          packageName: pack.metadata.packageName,
+          system: page.system,
+          spellCount: page.system.spells?.size,
+          identifier: page.system.identifier,
+          isCustom: isCustom,
+          isMerged: isMerged,
+          document: page
+        });
+      } else {
+        if (page.system?.type === 'other') continue;
+        spellLists.push({
+          uuid: page.uuid,
+          name: page.name,
+          journal: journal.name,
+          pack: topLevelFolder || pack.metadata.label,
+          packageName: pack.metadata.packageName,
+          system: page.system,
+          spellCount: page.system.spells?.size,
+          identifier: page.system.identifier,
+          document: page
+        });
+      }
+    }
+  }
+}
+
+/**
+ * Process journal packs for spell lists.
+ * @param {Array<Collection<string, Object>>} journalPacks - Array of journal packs to process
+ * @param {Array<Object>} spellLists - Array to store results in
+ * @private
+ */
+async function processPacks(journalPacks, spellLists) {
+  for (const pack of journalPacks) {
+    if (pack.metadata.id === MODULE.PACK.SPELLS) continue;
+    await processPackForSpellLists(pack, spellLists, false);
+  }
+}
+
+/**
+ * Process custom spell lists pack.
+ * @param {Array<Object>} spellLists - Array to store results in
+ * @private
+ */
+async function processCustomPack(spellLists) {
+  const customPack = game.packs.get(MODULE.PACK.SPELLS);
+  if (!customPack) return;
+  await processPackForSpellLists(customPack, spellLists, true);
+}
+
+/**
+ * Compare versions of original and custom spell lists to detect updates.
+ * @param {string} originalUuid - UUID of the original spell list
+ * @param {string} customUuid - UUID of the custom spell list
+ * @returns {Promise<Object>} Comparison results with change analysis
+ */
+export async function compareListVersions(originalUuid, customUuid) {
+  log(3, 'Comparing list versions:', { originalUuid, customUuid });
+  const original = await fromUuid(originalUuid);
+  const custom = await fromUuid(customUuid);
+  if (!original || !custom) return { canCompare: false, reason: !original ? 'Original not found' : 'Custom not found' };
+  const originalModTime = original._stats?.modifiedTime || 0;
+  const customModTime = custom._stats?.modifiedTime || 0;
+  const originalVersion = original._stats?.systemVersion || '';
+  const customVersion = custom._stats?.systemVersion || '';
+  const savedOriginalModTime = custom.flags?.[MODULE.ID]?.originalModTime || 0;
+  const savedOriginalVersion = custom.flags?.[MODULE.ID]?.originalVersion || '';
+  const hasOriginalChanged = originalModTime > savedOriginalModTime || originalVersion !== savedOriginalVersion;
+  const originalSpells = original.system.spells || new Set();
+  const customSpells = custom.system.spells || new Set();
+  const added = [...customSpells].filter((uuid) => !originalSpells.has(uuid));
+  const removed = [...originalSpells].filter((uuid) => !customSpells.has(uuid));
+  return {
+    canCompare: true,
+    hasOriginalChanged,
+    added: added.length,
+    removed: removed.length,
+    originalSpellCount: originalSpells.size,
+    customSpellCount: customSpells.size,
+    originalModTime,
+    customModTime,
+    originalVersion,
+    customVersion,
+    savedOriginalModTime,
+    savedOriginalVersion
+  };
+}
+
+/**
+ * Get mappings between original and custom spell lists.
+ * @returns {Promise<Object<string, string>>} Object mapping original UUIDs to custom UUIDs
+ */
+export async function getValidCustomListMappings() {
+  log(3, 'Getting valid custom list mappings.');
+  const mappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS);
+  const validMappings = {};
+  for (const [originalUuid, customUuid] of Object.entries(mappings)) {
+    const customDoc = await fromUuid(customUuid);
+    if (customDoc) validMappings[originalUuid] = customUuid;
+  }
+  if (Object.keys(validMappings).length !== Object.keys(mappings).length) await game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, validMappings);
+  return validMappings;
+}
+
+/**
+ * Duplicate a spell list to the custom pack.
+ * @param {Object} originalSpellList - The original spell list document to duplicate
+ * @returns {Promise<Object>} The duplicated spell list page
+ */
+export async function duplicateSpellList(originalSpellList) {
+  log(3, 'Duplicating spell list.', { originalSpellList });
+  const customPack = game.packs.get(MODULE.PACK.SPELLS);
+  const existingDuplicate = await findDuplicateSpellList(originalSpellList.uuid);
+  if (existingDuplicate) return existingDuplicate;
+  const pageData = foundry.utils.deepClone(originalSpellList.toObject());
+  pageData.flags = pageData.flags || {};
+  pageData.flags[MODULE.ID] = {
+    originalUuid: originalSpellList.uuid,
+    originalName: originalSpellList.name,
+    originalModTime: originalSpellList._stats?.modifiedTime || 0,
+    originalVersion: originalSpellList._stats?.systemVersion || game.system.version,
+    isDuplicate: true
+  };
+  const modifiedFolder = await getOrCreateSpellListFolder('modified');
+  const journalName = `${originalSpellList.parent.name} - ${originalSpellList.name}`;
+  const journalData = { name: journalName, folder: modifiedFolder?.id, pages: [{ name: originalSpellList.name, type: 'spells', flags: pageData.flags, system: pageData.system }] };
+  const journal = await JournalEntry.create(journalData, { pack: customPack.collection });
+  const page = journal.pages.contents[0];
+  await updateSpellListMapping(originalSpellList.uuid, page.uuid);
+  return page;
+}
+
+/**
+ * Find a duplicate spell list in the custom pack.
+ * @param {string} originalUuid - UUID of the original spell list to find duplicate for
+ * @returns {Promise<Object|null>} The duplicate page or null if not found
+ */
+export async function findDuplicateSpellList(originalUuid) {
+  log(3, 'Checking for existing duplicate spell list.', { originalUuid });
+  const customPack = game.packs.get(MODULE.PACK.SPELLS);
+  if (!customPack) return null;
+  const journals = await customPack.getDocuments();
+  for (const journal of journals) {
+    for (const page of journal.pages) {
+      const flags = page.flags?.[MODULE.ID] || {};
+      if (flags.originalUuid === originalUuid) return page;
+    }
+  }
+  return null;
+}
+
+/**
+ * Update the spell list mapping settings.
+ * @param {string} originalUuid - UUID of the original spell list
+ * @param {string} duplicateUuid - UUID of the duplicate spell list
+ * @returns {Promise<void>}
+ * @private
+ */
+async function updateSpellListMapping(originalUuid, duplicateUuid) {
+  log(3, 'Updating spell list mapping.', { originalUuid, duplicateUuid });
+  const mappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS);
+  mappings[originalUuid] = duplicateUuid;
+  await game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, mappings);
+}
+
+/**
+ * Remove a custom spell list and its mapping.
+ * @param {string} duplicateUuid - UUID of the duplicate spell list to remove
+ * @returns {Promise<boolean>} Whether removal was successful
+ */
+export async function removeCustomSpellList(duplicateUuid) {
+  log(3, 'Removing custom spell list.');
+  const duplicatePage = await fromUuid(duplicateUuid);
+  if (!duplicatePage) return false;
+  const journal = duplicatePage.parent;
+  if (!journal) return false;
+  const originalUuid = duplicatePage.flags?.[MODULE.ID]?.originalUuid;
+  if (originalUuid) {
+    const mappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
+    delete mappings[originalUuid];
+    await game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, mappings);
+  }
+  await journal.delete();
+  return true;
+}
+
+/**
+ * Fetch all compendium spells with level filtering.
+ * @returns {Promise<Array<Object>>} Array of formatted spell items
+ */
+export async function fetchAllCompendiumSpells() {
+  const maxLevel = Math.max(...Object.keys(CONFIG.DND5E.spellLevels).map(Number));
+  log(3, 'Fetching all compendium spells.');
+  const spells = [];
+  const allItemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
+  const itemPacks = allItemPacks.filter((p) => {
+    return shouldIndexCompendium(p);
+  });
+  for (const pack of itemPacks) {
+    const packSpells = await fetchSpellsFromPack(pack, maxLevel);
+    spells.push(...packSpells);
+  }
+  spells.sort((a, b) => {
+    if (a.level !== b.level) return a.level - b.level;
+    return a.name.localeCompare(b.name);
+  });
+  return spells;
+}
+
+/**
+ * Fetch spells from a specific pack with level filtering.
+ * @param {Collection<string, Object>} pack - The pack to fetch spells from
+ * @param {number} maxLevel - Maximum spell level to include
+ * @returns {Promise<Array<Object>>} Array of formatted spell items
+ * @private
+ */
+async function fetchSpellsFromPack(pack, maxLevel) {
+  log(3, 'Fetching spells from pack', { pack, maxLevel });
+  const packSpells = [];
+  const index = await pack.getIndex({
+    fields: [
+      'type',
+      'labels.activation',
+      'labels.components',
+      'labels.damages',
+      'labels.range',
+      'labels.school',
+      'system.activation.type',
+      'system.activation.value',
+      'system.activities',
+      'system.components.ritual',
+      'system.description.value',
+      'system.duration.concentration',
+      'system.level',
+      'system.materials.consumed',
+      'system.materials.cost',
+      'system.materials.value',
+      'system.properties',
+      'system.range.units',
+      'system.range.value',
+      'system.school',
+      'system.source.book',
+      'system.source.custom'
+    ]
+  });
+  const spellEntries = index.filter((e) => e.type === 'spell' && (!maxLevel || e.system?.level <= maxLevel));
+  for (const entry of spellEntries) {
+    if (!entry.labels) {
+      entry.labels = {};
+      if (entry.system?.level !== undefined) entry.labels.level = CONFIG.DND5E.spellLevels[entry.system.level];
+      if (entry.system?.school) entry.labels.school = DataUtils.getConfigLabel(CONFIG.DND5E.spellSchools, entry.system.school);
+      if (entry.system?.activation?.type) {
+        const type = entry.system.activation.type;
+        const value = entry.system.activation.value || 1;
+        const typeLabel = CONFIG.DND5E.abilityActivationTypes[type];
+        entry.labels.activation = value === 1 || value === null ? typeLabel : `${value} ${typeLabel}s`;
+      }
+      if (entry.system?.range) {
+        const range = entry.system.range;
+        if (range.units === 'self') entry.labels.range = game.i18n.localize('DND5E.DistSelf');
+        else if (range.units === 'touch') entry.labels.range = game.i18n.localize('DND5E.DistTouch');
+        else if (range.units === 'spec') entry.labels.range = game.i18n.localize('DND5E.Special');
+        else if (range.value && range.units) {
+          const unitLabel = CONFIG.DND5E?.movementUnits?.[range.units]?.label || range.units;
+          entry.labels.range = `${range.value} ${unitLabel}`;
+        }
+      }
+      if (entry.system?.properties?.length) {
+        const components = [];
+        const componentMap = { vocal: 'V', somatic: 'S', material: 'M', concentration: 'C', ritual: 'R' };
+        for (const prop of entry.system.properties) if (componentMap[prop]) components.push(componentMap[prop]);
+        if (components.length > 0) entry.labels.components = { vsm: components.join(', ') };
+      }
+      if (entry.system?.materials?.consumed) {
+        const materials = entry.system.materials;
+        if (materials.cost && materials.cost > 0) entry.labels.materials = game.i18n.format('SPELLBOOK.MaterialComponents.Cost', { cost: materials.cost });
+        else if (materials.value) entry.labels.materials = materials.value;
+        else entry.labels.materials = game.i18n.localize('SPELLBOOK.MaterialComponents.UnknownCost');
+      }
+    }
+    const spell = formatSpellEntry(entry, pack);
+    packSpells.push(spell);
+  }
+  return packSpells;
+}
+
+/**
+ * Format a spell index entry into a standardized spell object.
+ * @param {Object} entry - The spell index entry from compendium
+ * @param {Collection<string, Object>} pack - The source pack for folder information
+ * @returns {Object} Formatted spell object ready for UI use
+ * @private
+ */
+function formatSpellEntry(entry, pack) {
+  let topLevelFolder = pack.metadata.label;
+  if (pack.folder) {
+    if (pack.folder.depth !== 1) topLevelFolder = pack.folder.getParentFolders().at(-1).name;
+    else topLevelFolder = pack.folder.name;
+  }
+  const spell = {
+    uuid: foundry.utils.parseUuid(entry.uuid).uuid,
+    name: entry.name,
+    img: entry.img,
+    level: entry.system?.level,
+    school: entry.system?.school,
+    sourceId: topLevelFolder,
+    packName: topLevelFolder,
+    system: entry.system,
+    labels: entry.labels
+  };
+  spell.filterData = UIUtils.extractSpellFilterData(spell);
+  return spell;
+}
+
+/**
+ * Create a new spell list in the custom pack.
+ * @param {string} name - The name of the spell list
+ * @param {string} identifier - The identifier (typically class name)
+ * @param {string} type - The type of spell list ('class', 'subclass', or 'other')
+ * @returns {Promise<Object>} The created spell list page
+ */
+export async function createNewSpellList(name, identifier, type) {
+  log(3, 'Creating new spell list.', { name, identifier, type });
+  const customFolder = await getOrCreateSpellListFolder('custom');
+  const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
+  const journalData = {
+    name: name,
+    folder: customFolder?.id,
+    ownership: ownership,
+    pages: [
+      {
+        name: name,
+        type: 'spells',
+        ownership: ownership,
+        flags: { [MODULE.ID]: { isCustom: true, isNewList: true, isDuplicate: false, creationDate: Date.now() } },
+        system: { identifier: identifier.toLowerCase(), type: type, description: game.i18n.format('SPELLMANAGER.CreateList.CustomDescription', { identifier }), spells: [] }
+      }
+    ]
+  };
+  const journal = await JournalEntry.create(journalData, { pack: MODULE.PACK.SPELLS });
+  const page = journal.pages.contents[0];
+  await dnd5e.registry.spellLists.register(page.uuid);
+  return page;
+}
+
+/**
+ * Prepare dropdown options for casting time filter.
+ * @param {Array<Object>} availableSpells - The available spells array
+ * @param {Object} filterState - Current filter state for selection
+ * @returns {Array<Object>} Array of options for the dropdown
+ */
+export function prepareCastingTimeOptions(availableSpells, filterState) {
+  log(3, 'Prepare casting time options.', { availableSpells, filterState });
+  const uniqueActivationTypes = new Map();
+  for (const spell of availableSpells) {
+    const type = spell.system?.activation?.type;
+    const value = spell.system?.activation?.value || 1;
+    if (type) uniqueActivationTypes.set(`${type}:${value}`, { type, value });
+  }
+  const typeOrder = { action: 1, bonus: 2, reaction: 3, minute: 4, hour: 5, day: 6, legendary: 7, mythic: 8, lair: 9, crew: 10, special: 11, none: 12 };
+  const sortableTypes = Array.from(uniqueActivationTypes.entries())
+    .map(([key, data]) => ({ key, type: data.type, value: data.value }))
+    .sort((a, b) => {
+      const typePriorityA = typeOrder[a.type] || 999;
+      const typePriorityB = typeOrder[b.type] || 999;
+      return typePriorityA !== typePriorityB ? typePriorityA - typePriorityB : a.value - b.value;
+    });
+  const options = [{ value: '', label: game.i18n.localize('SPELLBOOK.Filters.All'), selected: !filterState.castingTime }];
+  for (const entry of sortableTypes) {
+    const typeLabel = CONFIG.DND5E.abilityActivationTypes[entry.type] || entry.type;
+    const label = entry.value === 1 ? typeLabel : `${entry.value} ${typeLabel}${entry.value !== 1 ? 's' : ''}`;
+    options.push({ value: entry.key, label, selected: filterState.castingTime === entry.key });
+  }
+  return options;
+}
+
+/**
+ * Prepare dropdown options for damage type filter.
+ * @param {Object} filterState - Current filter state for selection
+ * @returns {Array<Object>} Array of options for the dropdown
+ */
+export function prepareDamageTypeOptions(filterState) {
+  log(3, 'Prepare damage types options.', { filterState });
+  const options = [{ value: '', label: game.i18n.localize('SPELLBOOK.Filters.All'), selected: !filterState.damageType }];
+  const damageTypes = { ...CONFIG.DND5E.damageTypes, healing: { label: game.i18n.localize('DND5E.Healing') } };
+  Object.entries(damageTypes)
+    .sort((a, b) => {
+      const labelA = a[0] === 'healing' ? damageTypes.healing.label : DataUtils.getConfigLabel(CONFIG.DND5E.damageTypes, a[0]);
+      const labelB = b[0] === 'healing' ? damageTypes.healing.label : DataUtils.getConfigLabel(CONFIG.DND5E.damageTypes, b[0]);
+      return labelA.localeCompare(labelB);
+    })
+    .forEach(([key, _damageType]) => {
+      const label = key === 'healing' ? damageTypes.healing.label : DataUtils.getConfigLabel(CONFIG.DND5E.damageTypes, key);
+      options.push({ value: key, label, selected: filterState.damageType === key });
+    });
+  return options;
+}
+
+/**
+ * Prepare dropdown options for condition filter.
+ * @param {Object} filterState - Current filter state for selection
+ * @returns {Array<Object>} Array of options for the dropdown
+ */
+export function prepareConditionOptions(filterState) {
+  log(3, 'Prepare condition options.', { filterState });
+  const options = [{ value: '', label: game.i18n.localize('SPELLBOOK.Filters.All'), selected: !filterState.condition }];
+  Object.entries(CONFIG.DND5E.conditionTypes)
+    .filter(([_key, condition]) => !condition.pseudo)
+    .sort((a, b) => {
+      const labelA = DataUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, a[0]);
+      const labelB = DataUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, b[0]);
+      return labelA.localeCompare(labelB);
+    })
+    .forEach(([key, _condition]) => {
+      const label = DataUtils.getConfigLabel(CONFIG.DND5E.conditionTypes, key);
+      options.push({ value: key, label, selected: filterState.condition === key });
+    });
+  return options;
+}
+
+/**
+ * Find all class identifiers from class items in compendiums.
+ * @returns {Promise<Object<string, Object>>} Object mapping class identifiers to metadata
+ */
+export async function findClassIdentifiers() {
+  const identifiers = {};
+  const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
+  for (const pack of itemPacks) {
+    const index = await pack.getIndex({ fields: ['type', 'system.identifier', 'name'] });
+    const classItems = index.filter((e) => e.type === 'class');
+    const packDisplayName = pack.metadata.label;
+    for (const cls of classItems) {
+      const identifier = cls.system?.identifier?.toLowerCase();
+      if (identifier) identifiers[identifier] = { name: cls.name, source: packDisplayName || 'Unknown', fullDisplay: `${cls.name} [${packDisplayName}]`, id: identifier };
+    }
+  }
+  log(3, 'Finding class identifiers.', { identifiers });
+  return identifiers;
+}
+
+/**
+ * Create a merged spell list from multiple existing spell lists.
+ * @param {Array<string>} spellListUuids - Array of UUIDs of spell lists to merge
+ * @param {string} mergedListName - Name for the merged list
+ * @returns {Promise<Object>} The created merged spell list page
+ */
+export async function createMergedSpellList(spellListUuids, mergedListName) {
+  log(3, 'Creating merged spell list.', { spellListUuids, mergedListName });
+  if (!Array.isArray(spellListUuids) || spellListUuids.length < 2) throw new Error('At least two spell lists are required to merge');
+  const spellLists = [];
+  for (const uuid of spellListUuids) {
+    const list = await fromUuid(uuid);
+    if (!list) throw new Error(`Unable to load spell list: ${uuid}`);
+    spellLists.push(list);
+  }
+  const mergedSpells = new Set();
+  for (const list of spellLists) {
+    const spells = list.system.spells || [];
+    spells.forEach((spell) => mergedSpells.add(spell));
+  }
+  const identifier = spellLists[0].system?.identifier || 'merged';
+  const listNames = spellLists.map((list) => list.name).join(', ');
+  const description = game.i18n.format('SPELLMANAGER.CreateList.MultiMergedDescription', { listNames: listNames, count: spellLists.length });
+  const mergedFolder = await getOrCreateSpellListFolder('merged');
+  const journalData = {
+    name: mergedListName,
+    folder: mergedFolder?.id,
+    pages: [
+      {
+        name: mergedListName,
+        type: 'spells',
+        flags: { [MODULE.ID]: { isCustom: true, isMerged: true, isDuplicate: false, creationDate: Date.now(), sourceListUuids: spellListUuids } },
+        system: { identifier: identifier.toLowerCase(), description: description, spells: Array.from(mergedSpells) }
+      }
+    ]
+  };
+  const journal = await JournalEntry.create(journalData, { pack: MODULE.PACK.SPELLS });
+  return journal.pages.contents[0];
+}
+
+/**
+ * Get or create a folder in the custom spell lists pack.
+ * @param {string} folderType - The type of folder to create ('custom', 'merged', or 'modified')
+ * @returns {Promise<Object|null>} The folder document or null if creation failed
+ */
+export async function getOrCreateSpellListFolder(folderType) {
+  let localizationKey;
+  if (folderType === 'custom') localizationKey = 'SPELLMANAGER.Folders.CustomSpellListsFolder';
+  if (folderType === 'merged') localizationKey = 'SPELLMANAGER.Folders.MergedSpellListsFolder';
+  if (folderType === 'modified') localizationKey = 'SPELLMANAGER.Folders.ModifiedSpellListsFolder';
+  const folderName = game.i18n.localize(localizationKey);
+  log(3, 'Getting (or creating) Spell List Folder', { folderName });
+  const customPack = game.packs.get(MODULE.PACK.SPELLS);
+  const existingFolder = customPack.folders.find((f) => f.name === folderName);
+  if (existingFolder) return existingFolder;
+  const folderData = { name: folderName, type: 'JournalEntry', folder: null };
+  const folder = await Folder.create(folderData, { pack: customPack.collection });
+  return folder;
+}
+
+/**
+ * Initialize the pack index cache by reading settings once and storing results.
+ */
+export function initializePackIndexCache() {
+  log(3, 'Initializing pack index cache');
+  const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
+  _indexedPacksCache = new Map();
+  for (const pack of game.packs) {
+    let isIndexed = true;
+    if (settings && typeof settings === 'object' && Object.keys(settings).length > 0) isIndexed = pack.collection in settings ? settings[pack.collection] === true : false;
+    _indexedPacksCache.set(pack.collection, isIndexed);
+  }
+  log(3, `Pack index cache initialized with ${_indexedPacksCache.size} packs`);
+}
+
+/**
+ * Invalidate the pack index cache, forcing it to rebuild on next access.
+ * Call this when indexed compendium settings change.
+ */
+export function invalidatePackIndexCache() {
+  log(3, 'Invalidating pack index cache');
+  _indexedPacksCache = null;
+}
+
+/**
+ * Check if a compendium should be indexed for spell operations.
+ * @param {Collection<string, Object>} pack - The pack to check
+ * @returns {boolean} Whether the pack should be indexed
+ */
+export function shouldIndexCompendium(pack) {
+  if (_indexedPacksCache === null) initializePackIndexCache();
+  const isIndexed = _indexedPacksCache.get(pack.collection);
+  return isIndexed ?? true;
+}
+
+/**
+ * Check if a compendium should be shown in settings for potential indexing.
+ * @param {Collection<string, Object>} pack - The pack to check
+ * @returns {Promise<boolean>} Whether the pack should be available in settings
+ */
+export async function shouldShowInSettings(pack) {
+  log(3, 'Checking if pack should display in settings menu.', { pack });
+  const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
+  if (settings && pack.collection in settings) return true;
+  if (pack.metadata.type === 'Item') {
+    const index = await pack.getIndex({ fields: ['type'] });
+    const hasSpells = index.some((entry) => entry.type === 'spell');
+    return hasSpells;
+  } else if (pack.metadata.type === 'JournalEntry') {
+    const index = await pack.getIndex({ fields: ['pages.type'] });
+    const hasSpellPages = index.some((entry) => entry.pages?.some((page) => page.type === 'spells'));
+    return hasSpellPages;
+  }
+  return false;
+}
+
+/**
+ * Prepare spell source options from spell.system.source.label.
+ * @param {Array<Object>} availableSpells - The available spells array
+ * @returns {Array<Object>} Array of spell source options for dropdown
+ */
+export function prepareSpellSourceOptions(availableSpells) {
+  log(3, 'Preparing spell source options.', { availableSpells });
+  const sourceMap = new Map();
+  sourceMap.set('all', { id: 'all', label: game.i18n.localize('SPELLMANAGER.Filters.AllSpellSources') });
+  const noSourceLabel = game.i18n.localize('SPELLMANAGER.Filters.NoSource');
+  availableSpells.forEach((spell) => {
+    const spellSourceData = spell.filterData?.spellSource || spell.system?.source?.custom || spell.system?.source?.book;
+    const spellSourceId = spell.filterData?.spellSourceId;
+    let sourceLabel = spellSourceData;
+    let sourceId = spellSourceId;
+    if (!sourceLabel || sourceLabel.trim() === '') {
+      sourceLabel = noSourceLabel;
+      sourceId = 'no-source';
+    } else if (!sourceId) {
+      sourceId = sourceLabel;
+    }
+    if (!sourceMap.has(sourceId)) sourceMap.set(sourceId, { id: sourceId, label: sourceLabel === noSourceLabel ? noSourceLabel : sourceLabel });
+  });
+  const sources = Array.from(sourceMap.values()).sort((a, b) => {
+    if (a.id === 'all') return -1;
+    if (b.id === 'all') return 1;
+    return a.label.localeCompare(b.label);
+  });
+  return sources;
+}

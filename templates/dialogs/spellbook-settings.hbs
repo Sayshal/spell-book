@@ -1,65 +1,3 @@
-{{!--
-/**
- * Spellbook Settings Dialog Template
- *
- * PURPOSE:
- * Configuration dialog for spell book behavior including global rule overrides,
- * per-class spell management settings, and spellcasting rules customization.
- * Provides detailed configuration interface for all spell book module behaviors
- * with validation and status indicators.
- *
- * CONTEXT REQUIREMENTS:
- * @param {boolean} hasNotices - Whether any validation notices should be displayed
- * @param {Array<Object>} spellcastingClasses - Array of character's spellcasting classes
- * @param {string} spellcastingClasses[].identifier - Unique class identifier
- * @param {string} spellcastingClasses[].name - Class display name
- * @param {string} spellcastingClasses[].img - Class icon image path (optional)
- * @param {boolean} spellcastingClasses[].isWizard - Whether class is wizard-enabled
- * @param {Object} spellcastingClasses[].rules - Class rule configuration
- * @param {boolean} spellcastingClasses[].rules._noScaleValue - Whether class lacks scale values
- * @param {boolean} spellcastingClasses[].rules.showCantrips - Whether to show cantrips
- * @param {number} spellcastingClasses[].rules.spellPreparationBonus - Spell prep bonus
- * @param {number} spellcastingClasses[].rules.cantripPreparationBonus - Cantrip prep bonus
- * @param {number} spellcastingClasses[].rules.spellLearningCostMultiplier - Gold per spell level
- * @param {number} spellcastingClasses[].rules.spellLearningTimeMultiplier - Hours per spell level
- * @param {boolean} spellcastingClasses[].hasCustomSpellList - Whether using custom spell list
- * @param {string} spellcastingClasses[].customSpellListName - Custom list name
- * @param {Object} spellcastingClasses[].stats - Current class statistics
- * @param {number} spellcastingClasses[].stats.currentCantrips - Current cantrip count
- * @param {number} spellcastingClasses[].stats.maxCantrips - Maximum cantrips allowed
- * @param {Object} spellcastingClasses[].formElements - Pre-rendered form elements
- * @param {Object} globalSettings - Global settings form elements
- * @param {string} globalSettings.ruleSetSelectHtml - Rule set selection dropdown
- * @param {string} globalSettings.enforcementSelectHtml - Enforcement behavior dropdown
- * @param {Object} submitButton - Submit button configuration
- * @param {string} submitButton.submitButtonHtml - Submit button HTML
- *
- * ACCESSIBILITY FEATURES:
- * - Semantic fieldset/legend structure for grouped settings
- * - Notice sections with appropriate alert styling
- * - Tooltip icons with descriptive data-tooltip attributes
- * - Form labels properly associated with their controls
- * - Setting rows with conditional disabled states
- * - Clear visual hierarchy with headings and sections
- *
- * CUSTOMIZATION POINTS:
- * - Global rule overrides affect all spellcasting behavior
- * - Per-class settings allow fine-grained control
- * - Validation notices highlight configuration issues
- * - Custom spell list integration with visual indicators
- * - Bonus display with clear positive/negative/zero formatting
- * - Conditional field enabling based on related settings
- * - Wizard-specific spell learning cost and time configuration
- *
- * INTEGRATION:
- * - Used for spell book configuration dialog
- * - Connects to spell validation and rule enforcement systems
- * - Uses module localization keys from SPELLBOOK.Settings namespace
- * - Supports D&D 5e spellcasting rule customization
- * - Integrates wizard spell learning mechanics configuration
- */
---}}
-
 <div class="spellbook-settings-form">
   <!-- Notice Area - Validation warnings and information -->
   {{#if hasNotices}}
@@ -94,7 +32,7 @@
     <legend>{{localize 'SPELLBOOK.Settings.GlobalRules'}}</legend>
 
     <!-- Rule Set Override Setting -->
-    <div class="setting-row">
+    <div class="setting-row setting-row-rule-set">
       <i class="fas fa-question-circle setting-tooltip"
         data-tooltip="{{localize 'SPELLBOOK.Settings.RuleSetOverride.Hint'}}"></i>
       <label for="rule-set-override">{{localize 'SPELLBOOK.Settings.RuleSetOverride.Label'}}</label>
@@ -102,7 +40,7 @@
     </div>
 
     <!-- Enforcement Behavior Setting -->
-    <div class="setting-row">
+    <div class="setting-row setting-row-enforcement-behavior">
       <i class="fas fa-question-circle setting-tooltip"
         data-tooltip="{{localize 'SPELLBOOK.Settings.EnforcementBehavior.Hint'}}"></i>
       <label for="enforcement-behavior">{{localize 'SPELLBOOK.Settings.EnforcementBehavior.Label'}}</label>
@@ -153,7 +91,7 @@
             <!-- Class Settings List -->
             <div class="class-settings-list">
               <!-- Show Cantrips Setting -->
-              <div class="setting-row{{#if classData.rules._noScaleValue}} disabled{{/if}}">
+              <div class="setting-row setting-row-show-cantrips{{#if classData.rules._noScaleValue}} disabled{{/if}}">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.ShowCantrips.Hint'}}"></i>
                 <label
@@ -165,7 +103,7 @@
               </div>
 
               <!-- Force Wizard Mode Setting -->
-              <div class="setting-row">
+              <div class="setting-row setting-row-force-wizard-mode">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.ForceWizardMode.Hint'}}"></i>
                 <label
@@ -174,7 +112,7 @@
               </div>
 
               <!-- Cantrip Swapping Setting -->
-              <div class="setting-row{{#unless classData.rules.showCantrips}} disabled{{/unless}}">
+              <div class="setting-row setting-row-cantrip-swapping{{#unless classData.rules.showCantrips}} disabled{{/unless}}">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.CantripSwapping.Hint'}}"></i>
                 <label
@@ -183,7 +121,7 @@
               </div>
 
               <!-- Spell Swapping Setting -->
-              <div class="setting-row">
+              <div class="setting-row setting-row-spell-swapping">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.SpellSwapping.Hint'}}"></i>
                 <label
@@ -192,7 +130,7 @@
               </div>
 
               <!-- Ritual Casting Setting -->
-              <div class="setting-row">
+              <div class="setting-row setting-row-ritual-casting">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.RitualCasting.Hint'}}"></i>
                 <label
@@ -201,7 +139,7 @@
               </div>
 
               <!-- Custom Spell Lists Setting (now supports multiple) -->
-              <div class="setting-row">
+              <div class="setting-row setting-row-custom-spell-lists">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.CustomSpellLists.Hint'}}"></i>
                 <label
@@ -210,7 +148,7 @@
               </div>
 
               <!-- Spell Preparation Bonus Setting -->
-              <div class="setting-row">
+              <div class="setting-row setting-row-spell-prep-bonus">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.SpellPreparationBonus.Hint'}}"></i>
                 <label
@@ -219,7 +157,7 @@
               </div>
 
               <!-- Cantrip Preparation Bonus Setting -->
-              <div class="setting-row{{#unless classData.rules.showCantrips}} disabled{{/unless}}">
+              <div class="setting-row setting-row-cantrip-prep-bonus{{#unless classData.rules.showCantrips}} disabled{{/unless}}">
                 <i class="fas fa-question-circle setting-tooltip"
                   data-tooltip="{{localize 'SPELLBOOK.Settings.CantripPreparationBonus.Hint'}}"></i>
                 <label
@@ -229,7 +167,7 @@
 
               <!-- Spell Learning Cost Multiplier (Wizard-enabled classes only) -->
               {{#if classData.isWizard}}
-                <div class="setting-row">
+                <div class="setting-row setting-row-spell-learning-cost">
                   <i class="fas fa-question-circle setting-tooltip"
                     data-tooltip="{{localize 'SPELLBOOK.Settings.SpellLearningCostMultiplier.Hint'}}"></i>
                   <label
@@ -238,7 +176,7 @@
                 </div>
 
                 <!-- Spell Learning Time Multiplier (Wizard-enabled classes only) -->
-                <div class="setting-row">
+                <div class="setting-row setting-row-spell-learning-time">
                   <i class="fas fa-question-circle setting-tooltip"
                     data-tooltip="{{localize 'SPELLBOOK.Settings.SpellLearningTimeMultiplier.Hint'}}"></i>
                   <label
@@ -247,7 +185,7 @@
                 </div>
 
                 <!-- Starting Spells (Wizard-enabled classes only) -->
-                <div class="setting-row">
+                <div class="setting-row setting-row-starting-spells">
                   <i class="fas fa-question-circle setting-tooltip"
                     data-tooltip="{{localize 'SPELLBOOK.Settings.StartingSpells.Hint'}}"></i>
                   <label
@@ -256,7 +194,7 @@
                 </div>
 
                 <!-- Spells Per Level (Wizard-enabled classes only) -->
-                <div class="setting-row">
+                <div class="setting-row setting-row-spells-per-level">
                   <i class="fas fa-question-circle setting-tooltip"
                     data-tooltip="{{localize 'SPELLBOOK.Settings.SpellsPerLevel.Hint'}}"></i>
                   <label

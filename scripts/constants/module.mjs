@@ -63,6 +63,7 @@
  * @property {RuleSetsConfig} RULE_SETS - Available spellcasting rule set options
  * @property {SwapModesConfig} SWAP_MODES - Spell and cantrip swap timing options
  * @property {RitualCastingModesConfig} RITUAL_CASTING_MODES - Ritual casting behavior options
+ * @property {PreparationModesConfig} SPELL_MODE - Spell preparation mode options
  */
 
 /**
@@ -170,6 +171,20 @@
  * @property {string} NONE - No ritual casting allowed
  * @property {string} PREPARED - Can only ritual cast prepared spells
  * @property {string} ALWAYS - Can ritual cast any known ritual spell
+ */
+
+/**
+ * Spell preparation mode options.
+ * References system constants (CONFIG.DND5E.spellPreparationModes) plus custom modes.
+ *
+ * @typedef {Object} PreparationModesConfig
+ * @property {string} SPELL - Standard prepared spellcasting
+ * @property {string} RITUAL - Ritual casting mode
+ * @property {string} INNATE - Innate spellcasting
+ * @property {string} PACT - Pact magic spellcasting
+ * @property {string} AT_WILL - At-will casting
+ * @property {string} ALWAYS - Always prepared spells (system.prepared === 2)
+ * @property {string} GRANTED - Granted by another item/feature
  */
 
 /**
@@ -341,7 +356,18 @@ export const MODULE = {
   WIZARD_DEFAULTS: {
     RITUAL_CASTING: true,
     SPELLS_PER_LEVEL: 2,
-    STARTING_SPELLS: 6
+    STARTING_SPELLS: 6,
+    SPELL_LEARNING_COST_MULTIPLIER: 50,
+    SPELL_LEARNING_TIME_MULTIPLIER: 120
+  },
+
+  /**
+   * Default preparation bonus values for spellcasting classes.
+   * @type {Object}
+   */
+  PREPARATION_DEFAULTS: {
+    SPELL_PREPARATION_BONUS: 0,
+    CANTRIP_PREPARATION_BONUS: 0
   },
 
   /**
@@ -399,6 +425,33 @@ export const MODULE = {
     NONE: 'none',
     PREPARED: 'prepared',
     ALWAYS: 'always'
+  },
+
+  /**
+   * Spell preparation modes.
+   * @type {PreparationModesConfig}
+   */
+  SPELL_MODE: {
+    /** @type {string} Standard prepared spellcasting */
+    SPELL: 'spell',
+
+    /** @type {string} Ritual casting mode */
+    RITUAL: 'ritual',
+
+    /** @type {string} Innate spellcasting */
+    INNATE: 'innate',
+
+    /** @type {string} Pact magic spellcasting */
+    PACT: 'pact',
+
+    /** @type {string} At-will casting */
+    AT_WILL: 'atwill',
+
+    /** @type {string} Always prepared spells */
+    ALWAYS: 'always',
+
+    /** @type {string} Granted by another item/feature */
+    GRANTED: 'granted'
   }
 };
 

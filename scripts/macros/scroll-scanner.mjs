@@ -36,8 +36,7 @@ function scrollScannerScript() {
 
       await showScrollsDialog(scrolls);
     } catch (error) {
-      SPELLBOOK.log(1, 'Error finding scrolls in compendiums:', error);
-      ui.notifications.clear();
+      SPELLBOOK.ui.notifications.clear();
       ui.notifications.error(`Error: ${error.message}`);
     }
   }
@@ -96,8 +95,7 @@ function scrollScannerScript() {
     }).then((result) => {
       if (result === 'copy') {
         const scrollList = scrolls.map((s) => `${s.name} (${s.uuid}) - ${s.source}`).join('\n');
-        SPELLBOOK.log(3, `Scrolls found in compendiums:\n${scrollList}`);
-        ui.notifications.info('Scroll list copied to console (F12)');
+        SPELLBOOK.ui.notifications.info('Scroll list copied to console (F12)');
       }
     });
   }

@@ -1,0 +1,156 @@
+/**
+ * Spell Notes Editor Dialog
+ *
+ * Personal spell notes editing interface for adding user-specific annotations
+ * and tactical information to spells. Provides rich text editing capabilities
+ * and integration with the spell user data system.
+ *
+ * @module Dialogs/SpellNotes
+ * @author Tyler
+ */
+
+import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
+import { log } from '../logger.mjs';
+import * as UIUtils from '../ui/_module.mjs';
+
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+
+/**
+ * Dialog application for editing spell notes.
+ * @extends {HandlebarsApplicationMixin(ApplicationV2)}
+ */
+export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
+  /** @inheritdoc */
+  static DEFAULT_OPTIONS = {
+    id: 'spell-notes-dialog',
+    tag: 'form',
+    window: { icon: 'far fa-sticky-note', resizable: true, minimizable: true, positioned: true },
+    form: {
+      handler: SpellNotes.formHandler,
+      closeOnSubmit: true
+    },
+    position: { width: 400, height: 'auto' },
+    classes: ['spell-book', 'spell-notes-dialog']
+  };
+
+  /** @inheritdoc */
+  static PARTS = { form: { template: TEMPLATES.DIALOGS.SPELL_NOTES } };
+
+  /** @inheritdoc */
+  get title() {
+    return game.i18n.format('SPELLBOOK.UI.EditNotesTitle', { spell: this.spellName });
+  }
+
+  /**
+   * Create a new Spell Notes dialog instance.
+   * @param {Object} [options={}] - Application options including spell and actor data
+   * @param {string} options.spellUuid - UUID of the spell to edit notes for
+   * @param {Object} [options.actor] - Associated actor for note ownership
+   */
+  constructor(options = {}) {
+    super(options);
+    log(3, 'SpellNotes constructed.', { options });
+    this.spellUuid = UIUtils.getCanonicalSpellUuid(options.spellUuid);
+    this.spellName = fromUuidSync(this.spellUuid).name;
+    this.actor = options.actor;
+    this.currentNotes = '';
+    this.maxLength = game.settings.get(MODULE.ID, SETTINGS.SPELL_NOTES_LENGTH) || 240;
+  }
+
+  /** @inheritdoc */
+  async _prepareContext(options) {
+    const context = await super._prepareContext(options);
+    const targetUserId = DataUtils.getTargetUserId(this.actor);
+    const userData = await DataUtils.UserData.getUserDataForSpell(this.spellUuid, targetUserId, this.actor?.id);
+    this.currentNotes = userData?.notes || '';
+    context.spellUuid = this.spellUuid;
+    context.spellName = this.spellName;
+    context.notes = this.currentNotes;
+    context.maxLength = this.maxLength;
+    context.rows = Math.max(3, Math.min(8, Math.ceil(this.currentNotes.length / 50)));
+    context.charactersRemaining = this.maxLength - this.currentNotes.length;
+    context.actorId = this.actor?.id;
+    log(3, 'Context prepared.', { options, context });
+    return context;
+  }
+
+  /** @inheritdoc */
+  _onRender(context, options) {
+    log(3, 'Rendering.', { context, options });
+    super._onRender(context, options);
+    const textarea = this.element.querySelector('textarea[name="notes"]');
+    const counter = this.element.querySelector('.character-counter');
+    const saveButton = this.element.querySelector('button.save-notes');
+    if (textarea && counter && saveButton) {
+      const updateFormState = () => {
+        const remaining = this.maxLength - textarea.value.length;
+        const hasContent = textarea.value.trim().length > 0;
+        counter.textContent = remaining;
+        counter.classList.toggle('warning', remaining < 20);
+        counter.classList.toggle('error', remaining < 0);
+        saveButton.disabled = !hasContent || remaining < 0;
+      };
+      textarea.addEventListener('input', updateFormState);
+      updateFormState();
+      textarea.focus();
+      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    }
+    this._positionNearIcon();
+  }
+
+  /**
+   * Position dialog near the notes icon that opened it.
+   * @private
+   */
+  _positionNearIcon() {
+    const icon = document.querySelector(`[data-uuid="${this.spellUuid}"][data-action="editNote"]`);
+    if (!icon) return;
+    const dialogRect = this.element.getBoundingClientRect();
+    const position = UIUtils.calculateOptimalPosition({
+      triggerElement: icon,
+      dialogWidth: dialogRect.width,
+      dialogHeight: dialogRect.height,
+      minMargin: 20,
+      minTop: 50,
+      maxBottomOffset: 100,
+      offset: 10,
+      preferredSide: 'right'
+    });
+    this.setPosition(position);
+    log(3, 'Positioned near icon.', { position });
+  }
+
+  /** @inheritdoc */
+  static async formHandler(_event, _form, formData) {
+    const notes = formData.object.notes || '';
+    const spellUuid = formData.object.spellUuid;
+    const actorId = formData.object.actorId;
+    const canonicalUuid = UIUtils.getCanonicalSpellUuid(spellUuid);
+    try {
+      const actor = actorId ? game.actors.get(actorId) : null;
+      const targetUserId = DataUtils.getTargetUserId(actor);
+      await DataUtils.UserData.setSpellNotes(canonicalUuid, notes, targetUserId);
+      const cacheKey = `${targetUserId}:${canonicalUuid}`;
+      if (DataUtils.UserData?.cache) DataUtils.UserData.cache.delete(cacheKey);
+      const spellbookApp = Array.from(foundry.applications.instances.values()).find((app) => app.constructor.name === 'SpellBook');
+      if (spellbookApp) {
+        await spellbookApp._state.refreshSpellEnhancements();
+        spellbookApp.render(false);
+      }
+      const hasNotes = !!(notes && notes.trim());
+      const notesIcons = document.querySelectorAll(`[data-uuid="${canonicalUuid}"][data-action="editNote"]`);
+      notesIcons.forEach((icon) => {
+        const newIconClass = hasNotes ? 'fas fa-sticky-note' : 'far fa-sticky-note';
+        const newTooltip = hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes');
+        icon.className = `${newIconClass} spell-notes-icon`;
+        icon.setAttribute('data-tooltip', newTooltip);
+        icon.setAttribute('aria-label', newTooltip);
+      });
+      await UIUtils.DescriptionInjector.handleNotesChange(canonicalUuid);
+      log(3, 'Form submission handled.', { canonicalUuid, notes, formData: formData.object });
+    } catch (error) {
+      log(1, 'Error handling form submission.', { error });
+    }
+  }
+}

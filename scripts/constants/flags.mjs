@@ -101,20 +101,8 @@
  */
 
 /**
- * Deprecated flags that should be removed during migration.
- * Each entry includes the flag name, reason for deprecation, and optional migration info.
- *
- * @type {DeprecatedFlag[]}
- */
-export const DEPRECATED_FLAGS = [];
-
-/**
  * Standardized flag keys used throughout the module for consistent data storage.
  * These keys are used with Foundry's actor.getFlag() and actor.setFlag() methods.
- *
- * All flag operations should use these constants rather than hardcoded strings
- * to ensure consistency and enable easier refactoring.
- *
  * @type {FlagKeys}
  */
 export const FLAGS = {

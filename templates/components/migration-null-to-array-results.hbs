@@ -1,21 +1,3 @@
-{{!--
-/**
- * Null CustomSpellList to Array Migration Results Component Template
- *
- * PURPOSE:
- * Component for displaying detailed null-to-array migration results
- * within the main migration report. Shows actors that were updated to convert
- * null customSpellList values to empty arrays for consistency.
- *
- * CONTEXT REQUIREMENTS:
- * @param {Object} nullToArrayResults - Null-to-array migration results
- * @param {number} nullToArrayResults.processed - Number of actors processed
- * @param {number} nullToArrayResults.updated - Number of actors updated
- * @param {Array<Object>} nullToArrayResults.migratedActors - Array of migrated actor data
- * @param {Array<string>} nullToArrayResults.errors - Array of error messages
- */
---}}
-
 {{#if nullToArrayResults.updated}}
   <div class="null-to-array-migration-results">
     <p>

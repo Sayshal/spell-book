@@ -1,44 +1,3 @@
-{{!--
-/**
- * Spell List Manager Footer Template
- *
- * PURPOSE:
- * Application footer for the spell list manager providing primary action controls,
- * utility access, and editing workflow management. Contains UI customization access,
- * help documentation, application controls, and editing state management
- * including bulk selection operations and workflow controls.
- *
- * CONTEXT REQUIREMENTS:
- * @param {boolean} isEditing - Whether spell list manager is currently in editing mode
- * @param {boolean} selectionMode - Whether bulk selection mode is currently active
- * @param {number} selectedToAddCount - Count of spells selected for addition
- * @param {number} selectedToRemoveCount - Count of spells selected for removal
- * @param {number} totalSelectedCount - Total count of selected spells (add + remove)
- *
- * ACCESSIBILITY FEATURES:
- * - Footer element with contentinfo role for page structure
- * - Button elements with aria-label attributes
- * - Icons marked as decorative with aria-hidden="true"
- * - Selection summary with dynamic count information
- * - Disabled state management for bulk operations
- * - Logical grouping of related controls in footer sections
- *
- * CUSTOMIZATION POINTS:
- * - Footer sections adapt based on editing and selection modes
- * - Button states change dynamically based on selection counts
- * - Selection mode toggles between individual and bulk operations
- * - Control visibility controlled through editing state
- * - Action buttons support different workflow phases
- *
- * INTEGRATION:
- * - Connects to SpellListManager application for workflow management
- * - Uses module localization keys from SPELLMANAGER and SPELLBOOK namespaces
- * - Supports UI customization dialog integration
- * - Links to analytics dashboard and help documentation
- * - Manages bulk selection and editing workflow states
- */
---}}
-
 <div class="manager-footer" role="contentinfo">
 	<div class="footer-content">
 		<!-- Left Footer Section - Utility and customization controls -->
@@ -51,13 +10,13 @@
 				{{localize "SPELLBOOK.Settings.DetailsCustomization.MenuLabel"}}
 			</button>
 			<!-- Analytics Dashboard Access -->
-			<button type="button" class="analytics-btn" data-action="openAnalyticsDashboard"
+			<button type="button" class="analytics-btn" data-action="openAnalytics"
 				data-tooltip="{{localize 'SPELLBOOK.Analytics.OpenDashboardTooltip'}}">
 				<i class="fas fa-chart-bar"></i> {{localize "SPELLBOOK.Analytics.OpenDashboard"}}
 			</button>
 
 			<!-- Help Documentation Access -->
-			<button type="button" class="help-button" data-action="showDocumentation"
+			<button type="button" class="help-button" data-action="showDocs"
 				aria-label="{{localize 'SPELLMANAGER.Buttons.Help'}}">
 				<i class="fas fa-question-circle" aria-hidden="true"></i>
 				{{localize "SPELLMANAGER.Buttons.Help"}}

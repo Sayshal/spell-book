@@ -1,47 +1,18 @@
 /**
  * Spell Book Module Settings Registration
- *
- * Registers and manages all configurable settings for the Spell Book module,
- * including game mechanics, UI preferences, analytics, and party coordination
- * features. Provides centralized configuration management with proper validation,
- * defaults, and migration support.
- *
- * Settings are organized into logical groups:
- * - Menus & Classes: Dialog and application launchers
- * - Core Functionality: Basic module operations and spell data
- * - UI & UX: User interface preferences and layout
- * - Spell Behavior: Spellcasting rules and enforcement
- * - Notes & Annotations: Personal notes and descriptions
- * - UI Customization: Display element preferences
- * - Party Spell Tracking: Multi-character coordination
- * - Technical: Internal configurations and caching
- * - Troubleshooting: Debugging and diagnostic tools
- *
  * @module Settings
  * @author Tyler
  */
 
-import { SpellBookTroubleshooter, SpellListManager } from './apps/_module.mjs';
+import { Troubleshooter } from './apps/_module.mjs';
 import { MODULE, SETTINGS } from './constants/_module.mjs';
-import { CompendiumSelectionDialog, SpellDetailsCustomization } from './dialogs/_module.mjs';
+import { CompendiumSelection, DetailsCustomization } from './dialogs/_module.mjs';
 import { log } from './logger.mjs';
-import * as UIHelpers from './ui/_module.mjs';
-import * as DataHelpers from './data/_module.mjs';
+import * as UIUtils from './ui/_module.mjs';
+import * as DataUtils from './data/_module.mjs';
 
 /**
  * Register all module settings with Foundry VTT.
- *
- * This function registers the complete configuration interface for the Spell Book module.
- * Settings are organized into logical groups and include validation, change handlers,
- * and appropriate scopes (world vs client) for each configuration option.
- *
- * The registration process includes:
- * - Menu items for launching configuration dialogs
- * - Core functionality settings for spell data and behavior
- * - User interface customization options
- * - Technical settings for performance and debugging
- * - Validation and error handling for setting changes
- *
  * @returns {void}
  */
 export function registerSettings() {
@@ -56,7 +27,7 @@ export function registerSettings() {
     label: 'SPELLBOOK.Settings.CompendiumSelectionButton',
     icon: 'fas fa-books',
     scope: 'world',
-    type: CompendiumSelectionDialog,
+    type: CompendiumSelection,
     restricted: true
   });
 
@@ -70,18 +41,10 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.IndexedCompendiumsHint',
     scope: 'world',
     config: false,
-    type: Object,
-    default: {},
+    type: new foundry.data.fields.ObjectField(),
     onChange: (value) => {
-      try {
-        if (typeof value !== 'object' || value === null) {
-          log(2, 'Invalid indexed compendiums format, resetting to default');
-          game.settings.set(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS, {});
-        }
-        if (window.spellBookCompendiumCache) window.spellBookCompendiumCache.clear();
-      } catch (error) {
-        log(1, 'Error validating indexed compendiums setting:', error);
-      }
+      if (typeof value !== 'object' || value === null) game.settings.set(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS, {});
+      DataUtils.invalidatePackIndexCache();
     }
   });
 
@@ -91,8 +54,7 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.EnableSpellUsageTracking.Hint',
     scope: 'world',
     config: true,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   /** Custom spell list mappings for class-specific spell lists */
@@ -101,17 +63,9 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.CustomSpellMappings.Hint',
     scope: 'world',
     config: false,
-    type: Object,
-    default: {},
+    type: new foundry.data.fields.ObjectField(),
     onChange: (value) => {
-      try {
-        if (typeof value !== 'object' || value === null) {
-          log(2, 'Invalid custom spell mappings format, resetting to default');
-          game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, {});
-        }
-      } catch (error) {
-        log(1, 'Error validating custom spell mappings:', error);
-      }
+      if (typeof value !== 'object' || value === null) game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, {});
     }
   });
 
@@ -121,8 +75,7 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.SetupMode.Hint',
     scope: 'world',
     config: true,
-    type: Boolean,
-    default: false,
+    type: new foundry.data.fields.BooleanField({ initial: false }),
     requiresReload: true
   });
 
@@ -133,8 +86,7 @@ export function registerSettings() {
       hint: 'SPELLBOOK.Settings.CPRCompatibility.Hint',
       scope: 'world',
       config: true,
-      type: Boolean,
-      default: false
+      type: new foundry.data.fields.BooleanField({ initial: false })
     });
   }
 
@@ -143,8 +95,7 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.AutoDeleteUnpreparedSpells.Hint',
     scope: 'user',
     config: true,
-    type: Boolean,
-    default: false
+    type: new foundry.data.fields.BooleanField({ initial: false })
   });
 
   // ========================================//
@@ -157,8 +108,7 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.SpellBookPosition.Hint',
     scope: 'client',
     config: false,
-    type: Object,
-    default: {}
+    type: new foundry.data.fields.ObjectField()
   });
 
   /** Position sidebar controls at bottom of interface */
@@ -167,8 +117,7 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.SidebarControlsBottom.Hint',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: false
+    type: new foundry.data.fields.BooleanField({ initial: false })
   });
 
   /** Maximum number of spells allowed in comparison view */
@@ -177,9 +126,7 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.SpellComparisonMax.Hint',
     scope: 'world',
     config: true,
-    type: Number,
-    default: 3,
-    range: { min: 2, max: 7, step: 1 }
+    type: new foundry.data.fields.NumberField({ min: 2, max: 7, step: 1, initial: 3, nullable: false })
   });
 
   /** Wizard book icon color customization */
@@ -193,8 +140,7 @@ export function registerSettings() {
       blank: true,
       initial: null,
       label: 'SPELLBOOK.Settings.DetailsCustomization.WizardBookIconColor'
-    }),
-    default: null
+    })
   });
 
   /** Advanced search prefix character configuration */
@@ -203,25 +149,9 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.AdvancedSearchPrefix.Hint',
     scope: 'client',
     config: true,
-    type: String,
-    default: '^',
+    type: new foundry.data.fields.StringField({ initial: '^' }),
     onChange: (value) => {
-      try {
-        if (value.length !== 1) {
-          log(2, 'Advanced search prefix must be exactly 1 character, resetting to default');
-          game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
-          return;
-        }
-        if (/[\dA-Za-z]/.test(value)) {
-          log(2, 'Advanced search prefix cannot be a letter or number, resetting to default');
-          game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
-          return;
-        }
-        log(3, `Advanced search prefix changed to "${value}"`);
-      } catch (error) {
-        log(1, 'Error validating advanced search prefix:', error);
-        game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
-      }
+      if (value.length !== 1 || /[\dA-Za-z]/.test(value)) game.settings.set(MODULE.ID, SETTINGS.ADVANCED_SEARCH_PREFIX, '^');
     }
   });
 
@@ -235,12 +165,13 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.SpellcastingRuleSet.Hint',
     scope: 'world',
     config: true,
-    type: String,
-    choices: {
-      [MODULE.RULE_SETS.LEGACY]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Legacy',
-      [MODULE.RULE_SETS.MODERN]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Modern'
-    },
-    default: MODULE.RULE_SETS.LEGACY
+    type: new foundry.data.fields.StringField({
+      choices: {
+        [MODULE.RULE_SETS.LEGACY]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Legacy',
+        [MODULE.RULE_SETS.MODERN]: 'SPELLBOOK.Settings.SpellcastingRuleSet.Modern'
+      },
+      initial: MODULE.RULE_SETS.LEGACY
+    })
   });
 
   /** Default enforcement behavior for spell preparation rules */
@@ -249,13 +180,14 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.DefaultEnforcementBehavior.Hint',
     scope: 'world',
     config: true,
-    type: String,
-    choices: {
-      [MODULE.ENFORCEMENT_BEHAVIOR.UNENFORCED]: 'SPELLBOOK.Cantrips.BehaviorUnenforced',
-      [MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM]: 'SPELLBOOK.Cantrips.BehaviorNotifyGM',
-      [MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED]: 'SPELLBOOK.Cantrips.BehaviorEnforced'
-    },
-    default: MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM
+    type: new foundry.data.fields.StringField({
+      choices: {
+        [MODULE.ENFORCEMENT_BEHAVIOR.UNENFORCED]: 'SPELLBOOK.Cantrips.BehaviorUnenforced',
+        [MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM]: 'SPELLBOOK.Cantrips.BehaviorNotifyGM',
+        [MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED]: 'SPELLBOOK.Cantrips.BehaviorEnforced'
+      },
+      initial: MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM
+    })
   });
 
   /** Whether to consume scrolls when learning spells from them */
@@ -264,8 +196,7 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.ConsumeScrollsWhenLearning.Hint',
     scope: 'world',
     config: true,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   /** Whether to deduct gold cost when learning spells */
@@ -274,8 +205,7 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.DeductSpellLearningCost.Hint',
     scope: 'world',
     config: true,
-    type: Boolean,
-    default: false
+    type: new foundry.data.fields.BooleanField({ initial: false })
   });
 
   /** Disable long rest spell swap prompts */
@@ -284,8 +214,7 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.DisableLongRestSwapPrompt.Hint',
     scope: 'client',
     config: true,
-    type: Boolean,
-    default: false
+    type: new foundry.data.fields.BooleanField({ initial: false })
   });
 
   /** Cantrip scaling value configuration for damage calculations */
@@ -294,8 +223,7 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.CantripScaleValues.Hint',
     scope: 'world',
     config: true,
-    type: String,
-    default: 'cantrips-known, cantrips'
+    type: new foundry.data.fields.StringField({ initial: 'cantrips-known, cantrips' })
   });
 
   /** Registry-enabled spell lists for D&D 5e SpellListRegistry integration */
@@ -304,11 +232,9 @@ export function registerSettings() {
     hint: game.i18n.localize('SPELLBOOK.Settings.RegistryEnabledLists.Hint'),
     scope: 'world',
     config: false,
-    type: Array,
-    default: [],
-    onChange: async (value) => {
-      log(3, `Registry enabled lists updated: ${value.length} lists`);
-      if (game.user.isGM) await DataHelpers.registerCustomSpellLists();
+    type: new foundry.data.fields.ArrayField(new foundry.data.fields.StringField()),
+    onChange: async () => {
+      await DataUtils.registerCustomSpellLists();
     }
   });
 
@@ -322,15 +248,16 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.InjectNotesIntoDescriptions.Hint',
     scope: 'client',
     config: true,
-    type: String,
-    choices: {
-      off: 'SPELLBOOK.Settings.InjectNotesIntoDescriptions.Off',
-      before: 'SPELLBOOK.Settings.InjectNotesIntoDescriptions.Before',
-      after: 'SPELLBOOK.Settings.InjectNotesIntoDescriptions.After'
-    },
-    default: 'off',
+    type: new foundry.data.fields.StringField({
+      choices: {
+        off: 'SPELLBOOK.Settings.InjectNotesIntoDescriptions.Off',
+        before: 'SPELLBOOK.Settings.InjectNotesIntoDescriptions.Before',
+        after: 'SPELLBOOK.Settings.InjectNotesIntoDescriptions.After'
+      },
+      initial: 'off'
+    }),
     onChange: async (value) => {
-      await UIHelpers.SpellDescriptionInjection.handleSettingChange(value);
+      await UIUtils.DescriptionInjector.handleSettingChange(value);
     }
   });
 
@@ -340,13 +267,7 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.NotesMaxLength.Hint',
     scope: 'world',
     config: true,
-    type: Number,
-    default: 240,
-    range: {
-      min: 10,
-      max: 1000,
-      step: 10
-    }
+    type: new foundry.data.fields.NumberField({ min: 10, max: 1000, step: 10, initial: 240, nullable: false })
   });
 
   // ========================================//
@@ -359,7 +280,7 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.DetailsCustomization.MenuHint',
     icon: 'fa-solid fa-palette',
     label: 'SPELLBOOK.Settings.DetailsCustomization.MenuLabel',
-    type: SpellDetailsCustomization,
+    type: DetailsCustomization,
     restricted: false
   });
 
@@ -368,104 +289,91 @@ export function registerSettings() {
     name: 'SPELLBOOK.Settings.DetailsCustomization.Favorites',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_COMPARE, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.Compare',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_NOTES, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.Notes',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_SPELL_LEVEL, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.SpellLevel',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_COMPONENTS, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.Components',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_SCHOOL, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.School',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_CASTING_TIME, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.CastingTime',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_RANGE, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.Range',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_DAMAGE_TYPES, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.DamageTypes',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_CONDITIONS, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.Conditions',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_SAVE, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.Save',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_CONCENTRATION, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.Concentration',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.PLAYER_UI_MATERIAL_COMPONENTS, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.MaterialComponents',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   /** GM UI element visibility settings */
@@ -473,88 +381,77 @@ export function registerSettings() {
     name: 'SPELLBOOK.Settings.DetailsCustomization.Compare',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.GM_UI_SPELL_LEVEL, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.SpellLevel',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.GM_UI_COMPONENTS, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.Components',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.GM_UI_SCHOOL, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.School',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.GM_UI_CASTING_TIME, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.CastingTime',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.GM_UI_RANGE, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.Range',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.GM_UI_DAMAGE_TYPES, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.DamageTypes',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.GM_UI_CONDITIONS, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.Conditions',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.GM_UI_SAVE, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.Save',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.GM_UI_CONCENTRATION, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.Concentration',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   game.settings.register(MODULE.ID, SETTINGS.GM_UI_MATERIAL_COMPONENTS, {
     name: 'SPELLBOOK.Settings.DetailsCustomization.MaterialComponents',
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: true
+    type: new foundry.data.fields.BooleanField({ initial: true })
   });
 
   // ========================================//
@@ -567,8 +464,7 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.FocusOptions.Hint',
     scope: 'world',
     config: false,
-    type: Array,
-    default: MODULE.DEFAULT_FOCUSES
+    type: new foundry.data.fields.ObjectField({ initial: { focuses: MODULE.DEFAULT_FOCUSES } })
   });
 
   /** Token limit for party mode display */
@@ -577,9 +473,7 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.PartyModeTokenLimit.Hint',
     scope: 'client',
     config: true,
-    type: Number,
-    default: 4,
-    range: { min: 2, max: 8, step: 1 }
+    type: new foundry.data.fields.NumberField({ min: 2, max: 8, step: 1, initial: 4, nullable: false })
   });
 
   // ========================================//
@@ -592,22 +486,10 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.FilterConfiguration.Hint',
     scope: 'client',
     config: false,
-    type: Object,
-    default: {
-      version: MODULE.DEFAULT_FILTER_CONFIG_VERSION,
-      filters: MODULE.DEFAULT_FILTER_CONFIG
-    },
+    type: new foundry.data.fields.ObjectField({ initial: { version: MODULE.DEFAULT_FILTER_CONFIG_VERSION, filters: MODULE.DEFAULT_FILTER_CONFIG } }),
     onChange: (value) => {
-      try {
-        if (!value || !Array.isArray(value.filters)) {
-          log(2, 'Invalid filter configuration format, resetting to default');
-          game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, {
-            version: MODULE.DEFAULT_FILTER_CONFIG_VERSION,
-            filters: MODULE.DEFAULT_FILTER_CONFIG
-          });
-        }
-      } catch (error) {
-        log(1, 'Error validating filter configuration:', error);
+      if (!value || !Array.isArray(value.filters)) {
+        game.settings.set(MODULE.ID, SETTINGS.FILTER_CONFIGURATION, { version: MODULE.DEFAULT_FILTER_CONFIG_VERSION, filters: MODULE.DEFAULT_FILTER_CONFIG });
       }
     }
   });
@@ -618,17 +500,9 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.HiddenSpellLists.Hint',
     scope: 'world',
     config: false,
-    type: Array,
-    default: [],
+    type: new foundry.data.fields.ArrayField(new foundry.data.fields.StringField()),
     onChange: (value) => {
-      try {
-        if (!Array.isArray(value)) {
-          log(2, 'Invalid hidden spell lists format, resetting to default');
-          game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, []);
-        }
-      } catch (error) {
-        log(1, 'Error validating hidden spell lists setting:', error);
-      }
+      if (!Array.isArray(value)) game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, []);
     }
   });
 
@@ -638,8 +512,7 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.SuppressMigrationWarnings.Hint',
     scope: 'world',
     config: true,
-    type: Boolean,
-    default: false
+    type: new foundry.data.fields.BooleanField({ initial: false })
   });
 
   // ========================================//
@@ -653,7 +526,7 @@ export function registerSettings() {
     label: 'SPELLBOOK.Settings.Troubleshooter.GenerateReport',
     icon: 'fas fa-bug',
     scope: 'world',
-    type: SpellBookTroubleshooter,
+    type: Troubleshooter,
     restricted: true
   });
 
@@ -661,8 +534,7 @@ export function registerSettings() {
   game.settings.register(MODULE.ID, SETTINGS.TROUBLESHOOTER_INCLUDE_ACTORS, {
     scope: 'client',
     config: false,
-    type: Boolean,
-    default: false
+    type: new foundry.data.fields.BooleanField({ initial: false })
   });
 
   /** Logging level configuration for debug output */
@@ -671,17 +543,18 @@ export function registerSettings() {
     hint: 'SPELLBOOK.Settings.Logger.Hint',
     scope: 'client',
     config: true,
-    type: String,
-    choices: {
-      0: 'SPELLBOOK.Settings.Logger.Choices.Off',
-      1: 'SPELLBOOK.Settings.Logger.Choices.Errors',
-      2: 'SPELLBOOK.Settings.Logger.Choices.Warnings',
-      3: 'SPELLBOOK.Settings.Logger.Choices.Verbose'
-    },
-    default: 2,
+    type: new foundry.data.fields.StringField({
+      choices: {
+        0: 'SPELLBOOK.Settings.Logger.Choices.Off',
+        1: 'SPELLBOOK.Settings.Logger.Choices.Errors',
+        2: 'SPELLBOOK.Settings.Logger.Choices.Warnings',
+        3: 'SPELLBOOK.Settings.Logger.Choices.Verbose'
+      },
+      initial: 2
+    }),
     onChange: (value) => {
       MODULE.LOG_LEVEL = parseInt(value);
-      log(3, `Logging level changed to ${MODULE.LOG_LEVEL}`);
     }
   });
+  log(3, 'Module settings registered.');
 }

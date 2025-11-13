@@ -6,88 +6,28 @@
  * and spell slot calculations. This module handles the complex interactions
  * between actors, their classes, and their spell collections.
  *
- * Key features:
- * - Spellcasting class detection and analysis
- * - Spell preparation status tracking
- * - Spell slot calculation and management
- * - Class-specific spell list integration
- * - Wizard spellbook support
- * - Multi-class spellcaster handling
- *
- * @module DataHelpers/ActorSpells
+ * @module DataUtils/ActorSpells
  * @author Tyler
  */
 
 import { log } from '../logger.mjs';
-import * as UIHelpers from './_module.mjs';
+import * as DataUtils from './_module.mjs';
 
 /**
- * @typedef {Object} SpellDocument
- * @property {string} uuid - Unique identifier for the spell
- * @property {string} name - Display name of the spell
- * @property {string} img - Image path for the spell icon
- * @property {string} type - Document type (should be 'spell')
- * @property {SpellSystemData} system - System-specific spell data
- * @property {Object} labels - Computed labels for display
- * @property {Object} flags - Document flags and metadata
- * @property {string} [compendiumUuid] - UUID of the source compendium document
- */
-
-/**
- * @typedef {Object} SpellSystemData
- * @property {number} level - Spell level (0-9, where 0 is cantrip)
- * @property {string} school - School of magic identifier
- * @property {Object} preparation - Spell preparation configuration
- * @property {Object} activation - Spell activation requirements
- * @property {Object} range - Spell range information
- * @property {Object} duration - Spell duration data
- * @property {Array} properties - Array of spell property flags
- * @property {Object} materials - Material component requirements
- * @property {Map} activities - Map of spell activities
- * @property {Object} description - Spell description content
- * @property {Object} components - Spell component requirements
- */
-
-/**
- * @typedef {Object} CompendiumGroupData
- * @property {string} uuid - Full UUID of the spell
- * @property {string} id - Document ID within the compendium
- */
-
-/**
- * @typedef {Object} SpellFetchError
- * @property {string} uuid - UUID that failed to fetch
- * @property {string} reason - Human-readable error reason
- */
-
-/**
- * @typedef {Object} LevelGroup
- * @property {number} level - Numeric spell level
- * @property {string} levelName - Localized display name for the level
- * @property {Array<SpellDocument>} spells - Array of spells at this level
- */
-
-/**
- * Fast spell document fetching using getIndex instead of getDocument.
- * Optimizes performance by using compendium indexes and batching operations
- * rather than individual document fetches.
- *
+ * Fast spell document fetching.
  * @param {Set<string>} spellUuids - Set of spell UUIDs to fetch
  * @param {number} maxSpellLevel - Maximum spell level to include in results
- * @returns {Promise<Array<SpellDocument>>} Array of spell documents
+ * @returns {Promise<Array<Object>>} Array of spell documents
  */
 export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
-  const preloadedData = UIHelpers.getPreloadedData();
-  if (preloadedData && preloadedData.enrichedSpells.length > 0) {
+  log(3, 'Fetching spell documents!', { spellUuids, maxSpellLevel });
+  const preloadedData = DataUtils.getPreloadedData();
+  if (preloadedData && preloadedData.enrichedSpells.size > 0) {
     const matchingSpells = preloadedData.enrichedSpells.filter((spell) => spellUuids.has(spell.uuid) && spell.system?.level <= maxSpellLevel);
     if (matchingSpells.length === spellUuids.size) return matchingSpells;
   }
-
-  /** @type {Map<string, Array<CompendiumGroupData>>} */
   const compendiumGroups = new Map();
-
-  /** @type {Array<string>} */
-  const nonCompendiumUuids = [];
+  const worldUuids = [];
   for (const uuid of spellUuids) {
     const parsed = foundry.utils.parseUuid(uuid);
     if (parsed.collection && parsed.id) {
@@ -95,20 +35,12 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
       if (!compendiumGroups.has(packId)) compendiumGroups.set(packId, []);
       compendiumGroups.get(packId).push({ uuid, id: parsed.id });
     } else {
-      nonCompendiumUuids.push(uuid);
+      worldUuids.push(uuid);
     }
   }
-
-  /** @type {Array<SpellDocument>} */
   const spellItems = [];
-
-  /** @type {Array<SpellFetchError>} */
   const errors = [];
-
-  /** @type {Array<SpellDocument>} */
   const filteredOut = [];
-  log(3, `Fetching spell documents: ${spellUuids.size} spells, max level ${maxSpellLevel}`);
-  log(3, `Grouped into ${compendiumGroups.size} compendiums + ${nonCompendiumUuids.length} non-compendium UUIDs`);
   for (const [packId, uuidData] of compendiumGroups) {
     const pack = game.packs.get(packId);
     if (!pack) {
@@ -145,8 +77,6 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
         'system.source.custom'
       ]
     });
-
-    /** @type {Map<string, Object>} */
     const spellMap = new Map();
     for (const entry of index) if (entry.type === 'spell') spellMap.set(entry._id, entry);
     for (const { uuid, id } of uuidData) {
@@ -159,23 +89,25 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
         errors.push({ uuid, reason: 'Not a valid spell document' });
         continue;
       }
-      const sourceUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || foundry.utils.parseUuid(uuid).uuid;
+      const sourceUuid = spell._stats?.compendiumSource || foundry.utils.parseUuid(uuid).uuid;
       spell.compendiumUuid = sourceUuid;
       if (spell.system?.level <= maxSpellLevel) spellItems.push(spell);
       else filteredOut.push(spell);
     }
   }
-  if (nonCompendiumUuids.length > 0) {
-    const fallbackPromises = nonCompendiumUuids.map(async (uuid) => {
-      try {
-        const spell = await fromUuid(uuid);
-        return { uuid, spell, success: true };
-      } catch (error) {
-        return { uuid, error, success: false };
-      }
-    });
-    const fallbackResults = await Promise.all(fallbackPromises);
-    for (const result of fallbackResults) {
+  if (worldUuids.length > 0) {
+    const semaphore = new foundry.utils.Semaphore(5);
+    const fallbackResults = [];
+    for (const uuid of worldUuids) {
+      fallbackResults.push(
+        semaphore.add(async () => {
+          const spell = await fromUuid(uuid);
+          return { uuid, spell, success: true };
+        })
+      );
+    }
+    const resolvedResults = await Promise.all(fallbackResults);
+    for (const result of resolvedResults) {
       if (!result.success) {
         errors.push({ uuid: result.uuid, reason: result.error?.message || 'Unknown error' });
         continue;
@@ -189,7 +121,7 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
         errors.push({ uuid, reason: 'Not a valid spell document' });
         continue;
       }
-      const sourceUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || foundry.utils.parseUuid(uuid).uuid;
+      const sourceUuid = spell._stats?.compendiumSource || foundry.utils.parseUuid(uuid).uuid;
       spell.compendiumUuid = sourceUuid;
       if (spell.system?.level <= maxSpellLevel) spellItems.push(spell);
       else filteredOut.push(spell);
@@ -197,22 +129,18 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
   }
   if (errors.length > 0) log(2, `Failed to fetch ${errors.length} spells out of ${spellUuids.size}`, { errors });
   if (filteredOut.length > 0) log(3, `Filtered out ${filteredOut.length} spells above level ${maxSpellLevel}`);
-  log(3, `Successfully fetched ${spellItems.length}/${spellUuids.size} spells`);
+  log(3, `Successfully fetched ${spellItems.length}/${spellUuids.size} spells`, { spellItems, filteredOut, spellUuids });
   return spellItems;
 }
 
 /**
  * Organize spells by level for display in GM interface.
- * Groups spells into level-based arrays and sorts them alphabetically
- * within each level for consistent presentation.
- *
- * @param {Array<SpellDocument>} spellItems - Array of spell documents to organize
- * @returns {Array<LevelGroup>} Array of level objects with organized spells
+ * @param {Array<Object>} spellItems - Array of spell documents to organize
+ * @returns {Array<Object>} Array of level objects with organized spells
  */
 export function organizeSpellsByLevel(spellItems) {
+  log(3, 'Organizing spells by level!', { spellItems });
   if (!spellItems || !Array.isArray(spellItems)) return [];
-
-  /** @type {Object<number, Array<SpellDocument>>} */
   const spellsByLevel = {};
   for (const spell of spellItems) {
     if (spell?.system?.level === undefined) continue;
@@ -220,16 +148,9 @@ export function organizeSpellsByLevel(spellItems) {
     if (!spellsByLevel[level]) spellsByLevel[level] = [];
     spellsByLevel[level].push(spell);
   }
-  for (const level in spellsByLevel) {
-    if (level in spellsByLevel) spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  /** @type {Array<LevelGroup>} */
+  for (const level in spellsByLevel) if (level in spellsByLevel) spellsByLevel[level].sort((a, b) => a.name.localeCompare(b.name));
   const levelArray = [];
   const sortedLevels = Object.keys(spellsByLevel).sort((a, b) => Number(a) - Number(b));
-  for (const level of sortedLevels) {
-    const levelName = CONFIG.DND5E.spellLevels[level] || `Level ${level}`;
-    levelArray.push({ level: Number(level), levelName: levelName, spells: spellsByLevel[level] });
-  }
+  for (const level of sortedLevels) levelArray.push({ level: Number(level), levelName: CONFIG.DND5E.spellLevels[level], spells: spellsByLevel[level] });
   return levelArray;
 }

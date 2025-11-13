@@ -1,0 +1,119 @@
+{
+  "canBeResumed": false,
+  "description": "SPELLBOOK.Tours.Basics.Description",
+  "display": true,
+  "steps": [
+    {
+      "content": "SPELLBOOK.Tours.Basics.00.Content",
+      "id": "welcome",
+      "selector": "",
+      "title": "SPELLBOOK.Tours.Basics.00.Title"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Basics.01.Content",
+      "id": "opening-spellbook",
+      "openSpellBook": "demo",
+      "selector": ".spell-book",
+      "title": "SPELLBOOK.Tours.Basics.01.Title",
+      "tooltipDirection": "DOWN"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Basics.02.Content",
+      "id": "class-tabs",
+      "selector": "nav.tabs.tabs-right",
+      "title": "SPELLBOOK.Tours.Basics.02.Title",
+      "tooltipDirection": "LEFT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Basics.03.Content",
+      "id": "spell-levels",
+      "selector": ".spell-level[data-level='0']",
+      "title": "SPELLBOOK.Tours.Basics.03.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Basics.04.Content",
+      "id": "spell-preparation",
+      "selector": "dnd5e-checkbox[data-uuid]",
+      "title": "SPELLBOOK.Tours.Basics.04.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Basics.05.Content",
+      "id": "spell-tag-prepared",
+      "selector": ".tag.prepared",
+      "title": "SPELLBOOK.Tours.Basics.05.Title",
+      "tooltipDirection": "UP"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Basics.06.Content",
+      "id": "spell-tag-always-prepared",
+      "selector": ".tag.always-prepared",
+      "title": "SPELLBOOK.Tours.Basics.06.Title",
+      "tooltipDirection": "UP"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Basics.07.Content",
+      "id": "spell-prep-tracking",
+      "selector": ".spell-prep-tracking",
+      "title": "SPELLBOOK.Tours.Basics.07.Title",
+      "tooltipDirection": "UP"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Basics.08.Content",
+      "id": "filters",
+      "selector": ".spell-filters",
+      "title": "SPELLBOOK.Tours.Basics.08.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Basics.09.Content",
+      "id": "filter-customization",
+      "selector": "button[data-action='openFilterConfig']",
+      "title": "SPELLBOOK.Tours.Basics.09.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Basics.10.Content",
+      "id": "customization-menu",
+      "selector": "button[data-action='openCustomization']",
+      "title": "SPELLBOOK.Tours.Basics.10.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Basics.11.Content",
+      "id": "footer-save-button",
+      "selector": "button.submit-button[data-action='save']",
+      "title": "SPELLBOOK.Tours.Basics.11.Title",
+      "tooltipDirection": "UP"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Basics.12.Content",
+      "id": "footer-reset-button",
+      "selector": "button.reset-button[data-action='reset']",
+      "title": "SPELLBOOK.Tours.Basics.12.Title",
+      "tooltipDirection": "UP"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Basics.13.Content",
+      "id": "footer-analytics-button",
+      "selector": "button.analytics-button[data-action='openAnalytics']",
+      "title": "SPELLBOOK.Tours.Basics.13.Title",
+      "tooltipDirection": "UP"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Basics.14.Content",
+      "id": "footer-loadouts-button",
+      "selector": "button.loadout-button[data-action='openLoadoutDialog']",
+      "title": "SPELLBOOK.Tours.Basics.14.Title",
+      "tooltipDirection": "UP"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Basics.15.Content",
+      "id": "next-steps",
+      "selector": "",
+      "title": "SPELLBOOK.Tours.Basics.15.Title"
+    }
+  ],
+  "title": "SPELLBOOK.Tours.Basics.Title"
+}

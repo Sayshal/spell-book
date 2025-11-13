@@ -1,63 +1,3 @@
-{{!--
-/**
- * Spell List Manager Available Spells Panel Template
- *
- * PURPOSE:
- * Sidebar interface for browsing and filtering available spells that can be added
- * to spell lists. Provides filtering capabilities, search functionality,
- * and spell selection controls for spell list management. Supports both individual
- * spell addition and bulk selection modes for efficient list editing.
- *
- * CONTEXT REQUIREMENTS:
- * @param {boolean} isEditing - Whether spell list manager is in editing mode
- * @param {boolean} selectionMode - Whether bulk selection mode is active
- * @param {Object} filterFormElements - Pre-rendered filter form elements
- * @param {string} filterFormElements.searchInputHtml - Search input HTML element
- * @param {string} filterFormElements.levelSelectHtml - Spell level select HTML
- * @param {string} filterFormElements.schoolSelectHtml - Spell school select HTML
- * @param {string} filterFormElements.castingTimeSelectHtml - Casting time select HTML
- * @param {string} filterFormElements.damageTypeSelectHtml - Damage type select HTML
- * @param {string} filterFormElements.conditionSelectHtml - Condition select HTML
- * @param {string} filterFormElements.requiresSaveSelectHtml - Saving throw select HTML
- * @param {string} filterFormElements.concentrationSelectHtml - Concentration select HTML
- * @param {string} filterFormElements.materialComponentsSelectHtml - Material components select HTML
- * @param {string} filterFormElements.ritualCheckboxHtml - Ritual checkbox HTML
- * @param {string} filterFormElements.minRangeInputHtml - Minimum range input HTML
- * @param {string} filterFormElements.maxRangeInputHtml - Maximum range input HTML
- * @param {string} filterFormElements.sourceSelectHtml - Source compendium select HTML
- * @param {string} selectAllAddCheckboxHtml - Select all for addition checkbox HTML
- * @param {Object} filteredSpells - Filtered spell collection data
- * @param {Array<Object>} filteredSpells.spells - Array of filtered spell objects
- * @param {number} filteredSpells.totalFiltered - Total count of filtered spells
- * @param {Object} selectedSpellsToAdd - Map of spells selected for addition
- * @param {Object} settings - Application settings for unit display
- * @param {boolean} settings.useMetricUnits - Whether to display metric units
- *
- * ACCESSIBILITY FEATURES:
- * - Complementary sidebar role with descriptive aria-label
- * - Search region role for filter section with proper labeling
- * - Form elements with associated labels for screen reader navigation
- * - List structures with role="list" and role="listitem" for spell items
- * - Status region with aria-live for dynamic filter count updates
- * - Button elements with aria-label attributes
- * - Range filter inputs grouped with aria-labelledby association
- *
- * CUSTOMIZATION POINTS:
- * - Filter elements render dynamically based on form configuration
- * - Spell selection mode toggles between individual and bulk operations
- * - Unit display adapts based on metric/imperial preference settings
- * - Filter visibility and availability controlled through editing state
- * - Spell comparison functionality integrates with comparison system
- *
- * INTEGRATION:
- * - Connects to SpellListManager application for spell browsing and filtering
- * - Uses module localization keys from SPELLMANAGER and SPELLBOOK namespaces
- * - Supports shared components for empty state and loading indicators
- * - Integrates with spell comparison dialog functionality
- * - Works with bulk selection and individual spell addition workflows
- */
---}}
-
 <div class="available-spells-sidebar" role="complementary"
 	aria-label="{{localize 'SPELLMANAGER.Columns.AvailableSpells'}}">
 
@@ -217,12 +157,6 @@
 								</li>
 							{{/each}}
 						</ul>
-					</div>
-
-					<!-- Filter Results Count Display -->
-					<div class="filter-count-display" role="status" aria-live="polite">
-						<span
-							class="filter-count">{{localize "SPELLMANAGER.Filters.FilteredSpellCount" count=filteredSpells.totalFiltered}}</span>
 					</div>
 				{{else}}
 					<!-- No Matching Spells State -->

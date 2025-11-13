@@ -1,29 +1,3 @@
-{{!--
-/**
- * Spell Item Component Template
- *
- * PURPOSE:
- * Individual spell item component for displaying spell details with preparation
- * controls in standard spellcasting class tabs. Provides comprehensive spell
- * information including icons, tags, metadata, and preparation checkboxes for
- * non-wizard spellcasting classes.
- *
- * ACCESSIBILITY FEATURES:
- * - Semantic list item structure for screen readers
- * - Button elements with proper aria-label attributes
- * - Tooltip data attributes for additional context
- * - Action buttons with descriptive labels and ARIA attributes
- * - Accessible icon markup with aria-hidden for decorative elements
- *
- * INTEGRATION:
- * - Used within spell-level component via partial rendering
- * - Supports player spell book standard spellcasting tabs
- * - Integrates with spell preparation, favorites, and notes systems
- * - Connects to spell comparison and party coordination features
- * - Works with filter and search systems via data attributes
- */
---}}
-
 <li class="{{spell.cssClasses}}" {{{spell.dataAttributes}}}>
   <div class="spell-name">
     {{{spell.enrichedIcon}}}
@@ -40,12 +14,13 @@
           </button>
         {{/if}}
 
-        {{!-- Spell Tag --}}
-        {{#if spell.tag}}
-          <span class="tag {{spell.tag.cssClass}}" {{#if spell.tag.tooltip}}data-tooltip="{{spell.tag.tooltip}}"
-            {{/if}}>
-            {{spell.tag.text}}
-          </span>
+        {{!-- Spell Tags --}}
+        {{#if spell.tags}}
+          {{#each spell.tags as |tag|}}
+            <span class="tag {{tag.cssClass}}" {{#if tag.tooltip}}data-tooltip="{{tag.tooltip}}" {{/if}}>
+              {{tag.text}}
+            </span>
+          {{/each}}
         {{/if}}
 
         {{!-- Party Member Icons --}}
@@ -73,7 +48,7 @@
           {{!-- Notes Icon --}}
           {{#if spell.notesIcon.enabled}}
             <i class="{{spell.notesIcon.iconClass}} spell-notes-icon" data-uuid="{{spell.notesIcon.uuid}}"
-              data-action="editNotes" data-tooltip="{{spell.notesIcon.tooltip}}"
+              data-action="editNote" data-tooltip="{{spell.notesIcon.tooltip}}"
               aria-label="{{spell.notesIcon.tooltip}}"></i>
           {{/if}}
 

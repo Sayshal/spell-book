@@ -1,0 +1,115 @@
+{
+  "canBeResumed": false,
+  "description": "SPELLBOOK.Tours.Settings.Description",
+  "display": true,
+  "restricted": true,
+  "steps": [
+    {
+      "content": "SPELLBOOK.Tours.Settings.00.Content",
+      "id": "welcome",
+      "openSpellBook": "demo",
+      "selector": "button[data-action='openSettings']",
+      "title": "SPELLBOOK.Tours.Settings.00.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Settings.01.Content",
+      "id": "settings-dialog",
+      "openSpellBookSettings": true,
+      "selector": ".spellbook-settings-form",
+      "title": "SPELLBOOK.Tours.Settings.01.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Settings.02.Content",
+      "id": "global-rules",
+      "selector": ".rule-set-fieldset",
+      "title": "SPELLBOOK.Tours.Settings.02.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Settings.03.Content",
+      "id": "rule-set",
+      "selector": ".setting-row-rule-set",
+      "title": "SPELLBOOK.Tours.Settings.03.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Settings.04.Content",
+      "id": "enforcement-behavior",
+      "selector": ".setting-row-enforcement-behavior",
+      "title": "SPELLBOOK.Tours.Settings.04.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Settings.05.Content",
+      "id": "class-sections",
+      "selector": ".class-settings-section",
+      "title": "SPELLBOOK.Tours.Settings.05.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Settings.06.Content",
+      "id": "show-cantrips",
+      "selector": ".setting-row-show-cantrips",
+      "title": "SPELLBOOK.Tours.Settings.06.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Settings.07.Content",
+      "id": "force-wizard-mode",
+      "selector": ".setting-row-force-wizard-mode",
+      "title": "SPELLBOOK.Tours.Settings.07.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Settings.08.Content",
+      "id": "cantrip-swapping",
+      "selector": ".setting-row-cantrip-swapping",
+      "title": "SPELLBOOK.Tours.Settings.08.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Settings.09.Content",
+      "id": "spell-swapping",
+      "selector": ".setting-row-spell-swapping",
+      "title": "SPELLBOOK.Tours.Settings.09.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Settings.10.Content",
+      "id": "ritual-casting",
+      "selector": ".setting-row-ritual-casting",
+      "title": "SPELLBOOK.Tours.Settings.10.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Settings.11.Content",
+      "id": "spell-list-assignment",
+      "selector": ".setting-row-custom-spell-lists",
+      "title": "SPELLBOOK.Tours.Settings.11.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Settings.12.Content",
+      "id": "preparation-bonuses",
+      "selector": ".setting-row-spell-prep-bonus",
+      "title": "SPELLBOOK.Tours.Settings.12.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Settings.13.Content",
+      "id": "wizard-settings",
+      "selector": ".class-settings-section",
+      "title": "SPELLBOOK.Tours.Settings.13.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.Settings.14.Content",
+      "id": "best-practices",
+      "selector": "",
+      "title": "SPELLBOOK.Tours.Settings.14.Title"
+    }
+  ],
+  "title": "SPELLBOOK.Tours.Settings.Title"
+}
