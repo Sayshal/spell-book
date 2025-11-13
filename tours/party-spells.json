@@ -1,65 +1,65 @@
 {
-  "title": "SPELLBOOK.Tours.PartySpells.Title",
-  "description": "SPELLBOOK.Tours.PartySpells.Description",
   "canBeResumed": false,
+  "description": "SPELLBOOK.Tours.PartySpells.Description",
   "display": true,
   "steps": [
     {
+      "content": "SPELLBOOK.Tours.PartySpells.00.Content",
       "id": "welcome",
       "selector": "",
-      "title": "SPELLBOOK.Tours.PartySpells.0.Title",
-      "content": "SPELLBOOK.Tours.PartySpells.0.Content"
+      "title": "SPELLBOOK.Tours.PartySpells.00.Title"
     },
     {
+      "content": "SPELLBOOK.Tours.PartySpells.01.Content",
       "id": "party-mode-button",
-      "selector": "button[data-action='openPartyManager']",
-      "title": "SPELLBOOK.Tours.PartySpells.1.Title",
-      "content": "SPELLBOOK.Tours.PartySpells.1.Content",
       "openSpellBook": "demo",
+      "selector": "button[data-action='openPartyManager']",
+      "title": "SPELLBOOK.Tours.PartySpells.01.Title",
       "tooltipDirection": "UP"
     },
     {
+      "content": "SPELLBOOK.Tours.PartySpells.02.Content",
       "id": "party-coordinator",
-      "selector": ".party-spell-manager-content",
-      "title": "SPELLBOOK.Tours.PartySpells.2.Title",
-      "content": "SPELLBOOK.Tours.PartySpells.2.Content",
       "openPartySpells": true,
+      "selector": ".party-spell-manager-content",
+      "title": "SPELLBOOK.Tours.PartySpells.02.Title",
       "tooltipDirection": "LEFT"
     },
     {
+      "content": "SPELLBOOK.Tours.PartySpells.03.Content",
       "id": "spell-coverage",
       "selector": ".spell-comparison",
-      "title": "SPELLBOOK.Tours.PartySpells.3.Title",
-      "content": "SPELLBOOK.Tours.PartySpells.3.Content",
+      "title": "SPELLBOOK.Tours.PartySpells.03.Title",
       "tooltipDirection": "RIGHT"
     },
     {
+      "content": "SPELLBOOK.Tours.PartySpells.04.Content",
       "id": "focus-gear-icon",
       "selector": "[data-action='openFocus']",
-      "title": "SPELLBOOK.Tours.PartySpells.4.Title",
-      "content": "SPELLBOOK.Tours.PartySpells.4.Content",
+      "title": "SPELLBOOK.Tours.PartySpells.04.Title",
       "tooltipDirection": "DOWN"
     },
     {
+      "content": "SPELLBOOK.Tours.PartySpells.05.Content",
       "id": "focus-selection",
-      "selector": ".focus-selection",
-      "title": "SPELLBOOK.Tours.PartySpells.5.Title",
-      "content": "SPELLBOOK.Tours.PartySpells.5.Content",
       "openFocusMenu": true,
+      "selector": ".focus-selection",
+      "title": "SPELLBOOK.Tours.PartySpells.05.Title",
       "tooltipDirection": "DOWN"
     },
     {
+      "content": "SPELLBOOK.Tours.PartySpells.06.Content",
       "id": "synergy-recommendations",
       "selector": ".synergy-panel",
-      "title": "SPELLBOOK.Tours.PartySpells.6.Title",
-      "content": "SPELLBOOK.Tours.PartySpells.6.Content",
+      "title": "SPELLBOOK.Tours.PartySpells.06.Title",
       "tooltipDirection": "UP"
     },
     {
+      "content": "SPELLBOOK.Tours.PartySpells.07.Content",
       "id": "practical-tips",
       "selector": "",
-      "title": "SPELLBOOK.Tours.PartySpells.7.Title",
-      "content": "SPELLBOOK.Tours.PartySpells.7.Content"
+      "title": "SPELLBOOK.Tours.PartySpells.07.Title"
     }
-  ]
+  ],
+  "title": "SPELLBOOK.Tours.PartySpells.Title"
 }

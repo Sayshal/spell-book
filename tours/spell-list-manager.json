@@ -5,85 +5,85 @@
   "restricted": true,
   "steps": [
     {
-      "content": "SPELLBOOK.Tours.SpellListManager.0.Content",
+      "content": "SPELLBOOK.Tours.SpellListManager.00.Content",
       "id": "welcome",
       "restricted": true,
       "selector": "",
-      "title": "SPELLBOOK.Tours.SpellListManager.0.Title"
+      "title": "SPELLBOOK.Tours.SpellListManager.00.Title"
     },
     {
-      "content": "SPELLBOOK.Tours.SpellListManager.1.Content",
+      "content": "SPELLBOOK.Tours.SpellListManager.01.Content",
       "id": "opening-manager",
       "openSpellListManager": true,
       "restricted": true,
       "selector": "",
-      "title": "SPELLBOOK.Tours.SpellListManager.1.Title"
+      "title": "SPELLBOOK.Tours.SpellListManager.01.Title"
     },
     {
-      "content": "SPELLBOOK.Tours.SpellListManager.2.Content",
+      "content": "SPELLBOOK.Tours.SpellListManager.02.Content",
       "id": "spell-lists-sidebar",
       "restricted": true,
       "selector": ".spell-lists-sidebar.card",
-      "title": "SPELLBOOK.Tours.SpellListManager.2.Title",
+      "title": "SPELLBOOK.Tours.SpellListManager.02.Title",
       "tooltipDirection": "RIGHT"
     },
     {
-      "content": "SPELLBOOK.Tours.SpellListManager.3.Content",
+      "content": "SPELLBOOK.Tours.SpellListManager.03.Content",
       "id": "creating-list",
       "restricted": true,
       "selector": ".create-new-button",
-      "title": "SPELLBOOK.Tours.SpellListManager.3.Title",
+      "title": "SPELLBOOK.Tours.SpellListManager.03.Title",
       "tooltipDirection": "DOWN"
     },
     {
-      "content": "SPELLBOOK.Tours.SpellListManager.4.Content",
+      "content": "SPELLBOOK.Tours.SpellListManager.04.Content",
       "id": "merging-lists",
       "restricted": true,
       "selector": ".merge-lists-button",
-      "title": "SPELLBOOK.Tours.SpellListManager.4.Title",
+      "title": "SPELLBOOK.Tours.SpellListManager.04.Title",
       "tooltipDirection": "DOWN"
     },
     {
-      "content": "SPELLBOOK.Tours.SpellListManager.5.Content",
+      "content": "SPELLBOOK.Tours.SpellListManager.05.Content",
       "expandSpellListFolders": true,
       "id": "selecting-list",
       "restricted": true,
       "selectSpellList": true,
       "selector": ".list-folder.standard-lists-folder .spell-list-item",
-      "title": "SPELLBOOK.Tours.SpellListManager.5.Title",
+      "title": "SPELLBOOK.Tours.SpellListManager.05.Title",
       "tooltipDirection": "DOWN"
     },
     {
-      "content": "SPELLBOOK.Tours.SpellListManager.6.Content",
+      "content": "SPELLBOOK.Tours.SpellListManager.06.Content",
       "id": "spell-list-display",
       "restricted": true,
       "selector": ".selected-list-content",
-      "title": "SPELLBOOK.Tours.SpellListManager.6.Title",
+      "title": "SPELLBOOK.Tours.SpellListManager.06.Title",
       "tooltipDirection": "LEFT"
     },
     {
-      "content": "SPELLBOOK.Tours.SpellListManager.7.Content",
+      "content": "SPELLBOOK.Tours.SpellListManager.07.Content",
       "id": "view-mode-buttons",
       "restricted": true,
       "selector": ".header-buttons",
-      "title": "SPELLBOOK.Tours.SpellListManager.7.Title",
+      "title": "SPELLBOOK.Tours.SpellListManager.07.Title",
       "tooltipDirection": "DOWN"
     },
     {
-      "content": "SPELLBOOK.Tours.SpellListManager.8.Content",
+      "content": "SPELLBOOK.Tours.SpellListManager.08.Content",
       "id": "entering-edit-mode",
       "restricted": true,
       "selector": ".edit-button",
-      "title": "SPELLBOOK.Tours.SpellListManager.8.Title",
+      "title": "SPELLBOOK.Tours.SpellListManager.08.Title",
       "tooltipDirection": "DOWN"
     },
     {
       "clickEditButton": true,
-      "content": "SPELLBOOK.Tours.SpellListManager.9.Content",
+      "content": "SPELLBOOK.Tours.SpellListManager.09.Content",
       "id": "edit-mode-controls",
       "restricted": true,
       "selector": ".custom-list-controls",
-      "title": "SPELLBOOK.Tours.SpellListManager.9.Title",
+      "title": "SPELLBOOK.Tours.SpellListManager.09.Title",
       "tooltipDirection": "DOWN"
     },
     {
@@ -128,17 +128,17 @@
     },
     {
       "content": "SPELLBOOK.Tours.SpellListManager.15.Content",
-      "id": "footer-utilities",
+      "id": "footer-stats",
       "restricted": true,
-      "selector": ".footer-left",
+      "selector": ".footer-center",
       "title": "SPELLBOOK.Tours.SpellListManager.15.Title",
       "tooltipDirection": "UP"
     },
     {
       "content": "SPELLBOOK.Tours.SpellListManager.16.Content",
-      "id": "footer-stats",
+      "id": "footer-utilities",
       "restricted": true,
-      "selector": ".footer-center",
+      "selector": ".footer-left",
       "title": "SPELLBOOK.Tours.SpellListManager.16.Title",
       "tooltipDirection": "UP"
     },

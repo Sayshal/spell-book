@@ -1,59 +1,59 @@
 {
-  "title": "SPELLBOOK.Tours.WizardSpellbook.Title",
-  "description": "SPELLBOOK.Tours.WizardSpellbook.Description",
   "canBeResumed": false,
+  "description": "SPELLBOOK.Tours.WizardSpellbook.Description",
   "display": true,
   "steps": [
     {
+      "content": "SPELLBOOK.Tours.WizardSpellbook.00.Content",
       "id": "welcome",
       "selector": "",
-      "title": "SPELLBOOK.Tours.WizardSpellbook.0.Title",
-      "content": "SPELLBOOK.Tours.WizardSpellbook.0.Content"
+      "title": "SPELLBOOK.Tours.WizardSpellbook.00.Title"
     },
     {
+      "content": "SPELLBOOK.Tours.WizardSpellbook.01.Content",
       "id": "wizard-tab",
-      "selector": "nav.tabs.tabs-right a[data-tab^='wizardbook-']",
-      "title": "SPELLBOOK.Tours.WizardSpellbook.1.Title",
-      "content": "SPELLBOOK.Tours.WizardSpellbook.1.Content",
       "openSpellBook": "demo",
+      "selector": "nav.tabs.tabs-right a[data-tab^='wizardbook-']",
+      "title": "SPELLBOOK.Tours.WizardSpellbook.01.Title",
       "tooltipDirection": "RIGHT"
     },
     {
+      "content": "SPELLBOOK.Tours.WizardSpellbook.02.Content",
       "id": "the-library",
       "selector": ".wizardbook.tab.active",
-      "title": "SPELLBOOK.Tours.WizardSpellbook.2.Title",
-      "content": "SPELLBOOK.Tours.WizardSpellbook.2.Content",
       "spellBookTab": "wizardbook",
+      "title": "SPELLBOOK.Tours.WizardSpellbook.02.Title",
       "tooltipDirection": "RIGHT"
     },
     {
+      "content": "SPELLBOOK.Tours.WizardSpellbook.03.Content",
       "id": "learning-spells",
       "selector": ".spell-item button[data-action='learnSpell']",
-      "title": "SPELLBOOK.Tours.WizardSpellbook.3.Title",
-      "content": "SPELLBOOK.Tours.WizardSpellbook.3.Content",
+      "title": "SPELLBOOK.Tours.WizardSpellbook.03.Title",
       "tooltipDirection": "LEFT"
     },
     {
+      "content": "SPELLBOOK.Tours.WizardSpellbook.04.Content",
       "id": "free-spells",
       "selector": ".spell-book-tracking",
-      "title": "SPELLBOOK.Tours.WizardSpellbook.4.Title",
-      "content": "SPELLBOOK.Tours.WizardSpellbook.4.Content",
+      "title": "SPELLBOOK.Tours.WizardSpellbook.04.Title",
       "tooltipDirection": "UP"
     },
     {
+      "content": "SPELLBOOK.Tours.WizardSpellbook.05.Content",
       "id": "scroll-learning",
       "selector": "",
-      "title": "SPELLBOOK.Tours.WizardSpellbook.5.Title",
-      "content": "SPELLBOOK.Tours.WizardSpellbook.5.Content",
+      "title": "SPELLBOOK.Tours.WizardSpellbook.05.Title",
       "tooltipDirection": "CENTER"
     },
     {
+      "content": "SPELLBOOK.Tours.WizardSpellbook.06.Content",
       "id": "preparing-from-book",
       "selector": "",
-      "title": "SPELLBOOK.Tours.WizardSpellbook.6.Title",
-      "content": "SPELLBOOK.Tours.WizardSpellbook.6.Content",
       "spellBookTab": "Tab",
+      "title": "SPELLBOOK.Tours.WizardSpellbook.06.Title",
       "tooltipDirection": "DOWN"
     }
-  ]
+  ],
+  "title": "SPELLBOOK.Tours.WizardSpellbook.Title"
 }
