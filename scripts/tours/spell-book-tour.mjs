@@ -91,11 +91,14 @@ export default class SpellBookTour extends foundry.nue.Tour {
     log(3, `SpellBookTour | Processing pre-step: ${step.id}`, { step });
     await super._preStep();
     if (step.openSpellBook) await this.#openSpellBook(step.openSpellBook);
-    if (step.openSpellListManager) this.#openSpellListManager();
+    if (step.openSpellListManager) await this.#openSpellListManager();
     if (step.openPartySpells) await this.#openPartySpells();
     if (step.openSpellBookSettings) await this.#openSpellBookSettings();
     if (step.openFocusMenu) await this.#openFocusMenu();
     if (step.spellBookTab && this.focusedApp instanceof SpellBook) await this.#activateSpellBookTab(step.spellBookTab);
+    if (step.expandSpellListFolders && this.focusedApp instanceof SpellListManager) await this.#expandSpellListFolders();
+    if (step.selectSpellList && this.focusedApp instanceof SpellListManager) await this.#selectSpellList();
+    if (step.clickEditButton && this.focusedApp instanceof SpellListManager) await this.#clickEditButton();
   }
 
   /** @override */
@@ -253,15 +256,17 @@ export default class SpellBookTour extends foundry.nue.Tour {
    * @returns {Promise<void>}
    * @private
    */
-  #openSpellListManager() {
+  async #openSpellListManager() {
     const existingApp = Array.from(foundry.applications.instances.values()).find((app) => app instanceof SpellListManager);
     if (existingApp) {
       existingApp.bringToFront();
       this.focusedApp = existingApp;
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       return;
     }
     const manager = new SpellListManager();
     manager.render(true);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     this.focusedApp = manager;
     log(3, 'SpellBookTour | Opened Spell List Manager');
   }
@@ -345,5 +350,70 @@ export default class SpellBookTour extends foundry.nue.Tour {
     log(3, `SpellBookTour | Switching to tab: ${fullTabId}`);
     await this.focusedApp.changeTab(fullTabId, 'spellbook-tabs');
     log(3, `SpellBookTour | Successfully activated tab: ${fullTabId}`);
+  }
+
+  /**
+   * Expand all folders in the Spell List Manager to ensure all lists are visible.
+   * @returns {Promise<void>}
+   * @private
+   */
+  async #expandSpellListFolders() {
+    if (!(this.focusedApp instanceof SpellListManager)) {
+      log(2, 'SpellBookTour | Cannot expand folders - Spell List Manager not open');
+      return;
+    }
+    const collapsedFolders = this.focusedApp.element.querySelectorAll('.list-folder.collapsed .folder-header');
+    if (collapsedFolders.length === 0) {
+      log(3, 'SpellBookTour | All folders already expanded');
+      return;
+    }
+    collapsedFolders.forEach((header) => header.click());
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    log(3, `SpellBookTour | Expanded ${collapsedFolders.length} folders`);
+  }
+
+  /**
+   * Select a spell list from the standard lists folder.
+   * @returns {Promise<void>}
+   * @private
+   */
+  async #selectSpellList() {
+    if (!(this.focusedApp instanceof SpellListManager)) {
+      log(2, 'SpellBookTour | Cannot select list - Spell List Manager not open');
+      return;
+    }
+    const standardListsFolder = this.focusedApp.element.querySelector('.list-folder.standard-lists-folder .spell-list-items.folder-content');
+    if (!standardListsFolder) {
+      log(2, 'SpellBookTour | Could not find standard lists folder', { element: this.focusedApp.element });
+      return;
+    }
+    const spellListItem = standardListsFolder.querySelector('.spell-list-item [data-action="selectList"]');
+    if (!spellListItem) {
+      log(2, 'SpellBookTour | Could not find spell list item to select');
+      return;
+    }
+    spellListItem.click();
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    log(3, 'SpellBookTour | Selected spell list');
+  }
+
+  /**
+   * Click the edit button to enter edit mode for a spell list.
+   * @returns {Promise<void>}
+   * @private
+   */
+  async #clickEditButton() {
+    if (!(this.focusedApp instanceof SpellListManager)) {
+      log(2, 'SpellBookTour | Cannot click edit button - Spell List Manager not open');
+      return;
+    }
+    const editButton = this.focusedApp.element.querySelector('.edit-button[data-action="editList"]');
+    if (!editButton) {
+      log(2, 'SpellBookTour | Could not find edit button');
+      return;
+    }
+    editButton.click();
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    log(3, 'SpellBookTour | Clicked edit button');
   }
 }

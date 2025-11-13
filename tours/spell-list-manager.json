@@ -1,96 +1,154 @@
 {
-  "title": "SPELLBOOK.Tours.SpellListManager.Title",
-  "description": "SPELLBOOK.Tours.SpellListManager.Description",
   "canBeResumed": false,
+  "description": "SPELLBOOK.Tours.SpellListManager.Description",
   "display": true,
   "restricted": true,
   "steps": [
     {
-      "id": "welcome",
-      "selector": "",
-      "title": "SPELLBOOK.Tours.SpellListManager.0.Title",
       "content": "SPELLBOOK.Tours.SpellListManager.0.Content",
-      "restricted": true
-    },
-    {
-      "id": "opening-manager",
-      "selector": ".spell-list-manager",
-      "title": "SPELLBOOK.Tours.SpellListManager.1.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.1.Content",
-      "openSpellListManager": true,
-      "tooltipDirection": "DOWN",
-      "restricted": true
-    },
-    {
-      "id": "spell-lists",
-      "selector": ".spell-list-registry",
-      "title": "SPELLBOOK.Tours.SpellListManager.2.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.2.Content",
-      "tooltipDirection": "RIGHT",
-      "restricted": true
-    },
-    {
-      "id": "list-types",
-      "selector": ".list-type-indicator",
-      "title": "SPELLBOOK.Tours.SpellListManager.3.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.3.Content",
-      "tooltipDirection": "RIGHT",
-      "restricted": true
-    },
-    {
-      "id": "creating-list",
-      "selector": "button[data-action='createList']",
-      "title": "SPELLBOOK.Tours.SpellListManager.4.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.4.Content",
-      "tooltipDirection": "LEFT",
-      "restricted": true
-    },
-    {
-      "id": "available-spells",
-      "selector": ".available-spells-panel",
-      "title": "SPELLBOOK.Tours.SpellListManager.5.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.5.Content",
-      "tooltipDirection": "LEFT",
-      "restricted": true
-    },
-    {
-      "id": "adding-spells",
-      "selector": ".spell-search-controls",
-      "title": "SPELLBOOK.Tours.SpellListManager.6.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.6.Content",
-      "tooltipDirection": "DOWN",
-      "restricted": true
-    },
-    {
-      "id": "compendium-selection",
-      "selector": "button[data-action='selectCompendiums']",
-      "title": "SPELLBOOK.Tours.SpellListManager.7.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.7.Content",
-      "tooltipDirection": "DOWN",
-      "restricted": true
-    },
-    {
-      "id": "assigning-lists",
-      "selector": ".list-assignment-controls",
-      "title": "SPELLBOOK.Tours.SpellListManager.8.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.8.Content",
-      "tooltipDirection": "UP",
-      "restricted": true
-    },
-    {
-      "id": "merging-lists",
-      "selector": "button[data-action='mergeLists']",
-      "title": "SPELLBOOK.Tours.SpellListManager.9.Title",
-      "content": "SPELLBOOK.Tours.SpellListManager.9.Content",
-      "tooltipDirection": "UP",
-      "restricted": true
-    },
-    {
-      "id": "best-practices",
+      "id": "welcome",
+      "restricted": true,
       "selector": "",
-      "title": "SPELLBOOK.Tours.SpellListManager.10.Title",
+      "title": "SPELLBOOK.Tours.SpellListManager.0.Title"
+    },
+    {
+      "content": "SPELLBOOK.Tours.SpellListManager.1.Content",
+      "id": "opening-manager",
+      "openSpellListManager": true,
+      "restricted": true,
+      "selector": "",
+      "title": "SPELLBOOK.Tours.SpellListManager.1.Title"
+    },
+    {
+      "content": "SPELLBOOK.Tours.SpellListManager.2.Content",
+      "id": "spell-lists-sidebar",
+      "restricted": true,
+      "selector": ".spell-lists-sidebar.card",
+      "title": "SPELLBOOK.Tours.SpellListManager.2.Title",
+      "tooltipDirection": "RIGHT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.SpellListManager.3.Content",
+      "id": "creating-list",
+      "restricted": true,
+      "selector": ".create-new-button",
+      "title": "SPELLBOOK.Tours.SpellListManager.3.Title",
+      "tooltipDirection": "DOWN"
+    },
+    {
+      "content": "SPELLBOOK.Tours.SpellListManager.4.Content",
+      "id": "merging-lists",
+      "restricted": true,
+      "selector": ".merge-lists-button",
+      "title": "SPELLBOOK.Tours.SpellListManager.4.Title",
+      "tooltipDirection": "DOWN"
+    },
+    {
+      "content": "SPELLBOOK.Tours.SpellListManager.5.Content",
+      "expandSpellListFolders": true,
+      "id": "selecting-list",
+      "restricted": true,
+      "selectSpellList": true,
+      "selector": ".list-folder.standard-lists-folder .spell-list-item",
+      "title": "SPELLBOOK.Tours.SpellListManager.5.Title",
+      "tooltipDirection": "DOWN"
+    },
+    {
+      "content": "SPELLBOOK.Tours.SpellListManager.6.Content",
+      "id": "spell-list-display",
+      "restricted": true,
+      "selector": ".selected-list-content",
+      "title": "SPELLBOOK.Tours.SpellListManager.6.Title",
+      "tooltipDirection": "LEFT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.SpellListManager.7.Content",
+      "id": "view-mode-buttons",
+      "restricted": true,
+      "selector": ".header-buttons",
+      "title": "SPELLBOOK.Tours.SpellListManager.7.Title",
+      "tooltipDirection": "DOWN"
+    },
+    {
+      "content": "SPELLBOOK.Tours.SpellListManager.8.Content",
+      "id": "entering-edit-mode",
+      "restricted": true,
+      "selector": ".edit-button",
+      "title": "SPELLBOOK.Tours.SpellListManager.8.Title",
+      "tooltipDirection": "DOWN"
+    },
+    {
+      "clickEditButton": true,
+      "content": "SPELLBOOK.Tours.SpellListManager.9.Content",
+      "id": "edit-mode-controls",
+      "restricted": true,
+      "selector": ".custom-list-controls",
+      "title": "SPELLBOOK.Tours.SpellListManager.9.Title",
+      "tooltipDirection": "DOWN"
+    },
+    {
       "content": "SPELLBOOK.Tours.SpellListManager.10.Content",
-      "restricted": true
+      "id": "editing-spells",
+      "restricted": true,
+      "selector": ".remove-spell",
+      "title": "SPELLBOOK.Tours.SpellListManager.10.Title",
+      "tooltipDirection": "LEFT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.SpellListManager.11.Content",
+      "id": "available-spells",
+      "restricted": true,
+      "selector": ".available-spells-sidebar",
+      "title": "SPELLBOOK.Tours.SpellListManager.11.Title",
+      "tooltipDirection": "LEFT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.SpellListManager.12.Content",
+      "id": "spell-filters",
+      "restricted": true,
+      "selector": ".spell-filters",
+      "title": "SPELLBOOK.Tours.SpellListManager.12.Title",
+      "tooltipDirection": "DOWN"
+    },
+    {
+      "content": "SPELLBOOK.Tours.SpellListManager.13.Content",
+      "id": "adding-removing-spells",
+      "restricted": true,
+      "selector": ".add-spell",
+      "title": "SPELLBOOK.Tours.SpellListManager.13.Title",
+      "tooltipDirection": "LEFT"
+    },
+    {
+      "content": "SPELLBOOK.Tours.SpellListManager.14.Content",
+      "id": "selection-mode",
+      "restricted": true,
+      "selector": ".footer-right",
+      "title": "SPELLBOOK.Tours.SpellListManager.14.Title",
+      "tooltipDirection": "UP"
+    },
+    {
+      "content": "SPELLBOOK.Tours.SpellListManager.15.Content",
+      "id": "footer-utilities",
+      "restricted": true,
+      "selector": ".footer-left",
+      "title": "SPELLBOOK.Tours.SpellListManager.15.Title",
+      "tooltipDirection": "UP"
+    },
+    {
+      "content": "SPELLBOOK.Tours.SpellListManager.16.Content",
+      "id": "footer-stats",
+      "restricted": true,
+      "selector": ".footer-center",
+      "title": "SPELLBOOK.Tours.SpellListManager.16.Title",
+      "tooltipDirection": "UP"
+    },
+    {
+      "content": "SPELLBOOK.Tours.SpellListManager.17.Content",
+      "id": "best-practices",
+      "restricted": true,
+      "selector": "",
+      "title": "SPELLBOOK.Tours.SpellListManager.17.Title"
     }
-  ]
+  ],
+  "title": "SPELLBOOK.Tours.SpellListManager.Title"
 }
