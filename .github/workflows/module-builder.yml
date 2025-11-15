@@ -80,6 +80,7 @@ jobs:
             scripts/ \
             styles/ \
             templates/ \
+            tours/ \
             assets/ \
             LICENSE \
             module.json \
