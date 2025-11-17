@@ -9,6 +9,7 @@
 
     <!-- Class Validation Notice -->
     {{#if classNotice}}
+    {{log 'DEBUG'}}
       <div class="class-notice {{classNotice.type}}" role="alert">
         <i class="{{classNotice.icon}}" aria-hidden="true"></i>
         <div class="notice-content">

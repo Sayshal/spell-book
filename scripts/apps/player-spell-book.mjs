@@ -1003,22 +1003,15 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   #prepareClassValidationNotice(classIdentifier, className) {
-    log(3, 'Preparing class validation notice.', { classIdentifier, className });
-    const classItem = this.actor.items.find((item) => item.type === 'class' && (item.system?.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier));
-    if (!classItem) {
-      log(2, `Class item not found for identifier: ${classIdentifier}`);
-      return null;
-    }
+    const classItem = this.actor.items.find((i) => i.type === 'class' && (i.system?.identifier?.toLowerCase() === classIdentifier || i.name.toLowerCase() === classIdentifier));
+    if (!classItem) return null;
     const compendiumSource = classItem._stats?.compendiumSource;
     const isFromCompendium = !!(compendiumSource && compendiumSource.startsWith('Compendium.'));
     const isDnDBeyondClass = !!classItem?.flags?.ddbimporter;
-    log(3, 'Class validation check:', { classIdentifier, compendiumSource, isFromCompendium, isDnDBeyondClass });
     if (!isFromCompendium && !isDnDBeyondClass) {
       const customSpellListSetting = this.actor.getFlag(MODULE.ID, `classRules.${classIdentifier}.customSpellList`);
-      const hasCustomSpellList = !!(customSpellListSetting && customSpellListSetting !== 'auto');
-      log(3, 'Custom spell list check:', { customSpellListSetting, hasCustomSpellList });
+      const hasCustomSpellList = customSpellListSetting && customSpellListSetting !== 'auto' && (Array.isArray(customSpellListSetting) ? customSpellListSetting.length > 0 : true);
       if (!hasCustomSpellList) {
-        log(2, `Showing validation notice for ${className} (not from compendium, no custom spell list)`);
         return {
           type: 'warning',
           icon: 'fas fa-exclamation-triangle',
