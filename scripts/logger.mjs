@@ -79,17 +79,13 @@ export function getGlobalConsoleHistory() {
  * @returns {void}
  */
 export function interceptConsole() {
-  // Wrap each console method
   ['log', 'error', 'warn', 'debug', 'info'].forEach((methodName) => {
     console[methodName] = function (...args) {
-      // Store in global console history
       globalConsoleHistory.push({
         timestamp: new Date().toISOString(),
         type: methodName,
         content: args
       });
-
-      // Call original console method
       originalConsoleMethods[methodName].apply(console, args);
     };
   });
