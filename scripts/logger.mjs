@@ -31,6 +31,7 @@ const originalConsoleMethods = {
 export function log(level, ...args) {
   const configuredLogLevel = MODULE.LOG_LEVEL;
   if (configuredLogLevel > 0 && level <= configuredLogLevel) {
+    // Determine log type based on level
     let logType;
     switch (level) {
       case 1:
@@ -78,13 +79,17 @@ export function getGlobalConsoleHistory() {
  * @returns {void}
  */
 export function interceptConsole() {
+  // Wrap each console method
   ['log', 'error', 'warn', 'debug', 'info'].forEach((methodName) => {
     console[methodName] = function (...args) {
+      // Store in global console history
       globalConsoleHistory.push({
         timestamp: new Date().toISOString(),
         type: methodName,
         content: args
       });
+
+      // Call original console method
       originalConsoleMethods[methodName].apply(console, args);
     };
   });

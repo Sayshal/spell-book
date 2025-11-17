@@ -402,6 +402,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
       addLine('');
       addLine('All console logs (from entire application):');
       for (const logEntry of consoleLogs) {
+        // Convert ISO timestamp to local time format (HH:MM:SS.mmm)
         const formatTimestamp = (isoString) => {
           const date = new Date(isoString);
           const hours = String(date.getHours()).padStart(2, '0');
@@ -411,11 +412,23 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
           return `${hours}:${minutes}:${seconds}.${milliseconds}`;
         };
         const timestamp = formatTimestamp(logEntry.timestamp || new Date().toISOString());
+
+        // Filter out console formatting strings and process content
         const processedContent = logEntry.content
           .map((item, index) => {
             if (typeof item === 'string') {
-              if (index === 0 && item.includes('%c')) return item.replace(/%c/g, '');
-              if (item.startsWith('color:') || item.includes('font-weight:') || item.includes('text-transform:') || item.includes('letter-spacing:') || item.includes('text-shadow:')) return null;
+              // For the first item, strip out %c markers but keep the text
+              if (index === 0 && item.includes('%c')) {
+                return item.replace(/%c/g, '');
+              }
+              // Check if this is a CSS style string and mark for removal
+              if (item.startsWith('color:') ||
+                  item.includes('font-weight:') ||
+                  item.includes('text-transform:') ||
+                  item.includes('letter-spacing:') ||
+                  item.includes('text-shadow:')) {
+                return null; // Mark for removal
+              }
               return item;
             }
             if (Array.isArray(item)) return `Array(${item.length})`;
@@ -425,7 +438,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
             }
             return String(item);
           })
-          .filter((item) => item !== null)
+          .filter(item => item !== null)
           .join(' ');
         addLine(`${timestamp} [${(logEntry.type || 'log').toUpperCase()}] ${processedContent}`);
       }
