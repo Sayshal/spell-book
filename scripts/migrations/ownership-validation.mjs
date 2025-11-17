@@ -179,7 +179,7 @@ async function validateActorSpellbookOwnership() {
         if (!flags?.isActorSpellbook || !flags?.actorId) continue;
         results.checked++;
         const actorId = flags.actorId;
-        const classIdentifier = flags.classIdentifier || 'unknown';
+        const classIdentifier = flags.classIdentifier || game.i18n.localize('Unknown');
         const actor = game.actors.get(actorId);
         if (!actor) continue;
         const actorOwnership = actor.ownership || {};

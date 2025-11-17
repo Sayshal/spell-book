@@ -11,7 +11,7 @@
  */
 
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
-import { log } from '../logger.mjs';
+import { log, getGlobalConsoleHistory } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -392,18 +392,45 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static _addSpellBookLogData(addLine, addHeader) {
     log(3, 'Adding complete console log data.');
-    if (window.console_logs.length) {
+    const consoleLogs = getGlobalConsoleHistory();
+    if (consoleLogs?.length) {
       addHeader('Complete Console Log Data');
       const logLevel = MODULE.LOG_LEVEL || 0;
       const logLevelName = logLevel === 0 ? 'Disabled' : logLevel === 1 ? 'Errors' : logLevel === 2 ? 'Warnings' : 'Verbose';
       addLine(`Spell Book Log Level: ${logLevel} (${logLevelName})`);
-      addLine(`Total console logs captured: ${window.console_logs.length}`);
+      addLine(`Total console logs captured: ${consoleLogs.length}`);
       addLine('');
-      addLine('All console logs:');
-      for (const logEntry of window.console_logs) {
+      addLine('All console logs (from entire application):');
+      for (const logEntry of consoleLogs) {
+        // Convert ISO timestamp to local time format (HH:MM:SS.mmm)
+        const formatTimestamp = (isoString) => {
+          const date = new Date(isoString);
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          const seconds = String(date.getSeconds()).padStart(2, '0');
+          const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
+          return `${hours}:${minutes}:${seconds}.${milliseconds}`;
+        };
+        const timestamp = formatTimestamp(logEntry.timestamp || new Date().toISOString());
+
+        // Filter out console formatting strings and process content
         const processedContent = logEntry.content
-          .map((item) => {
-            if (typeof item === 'string') return item;
+          .map((item, index) => {
+            if (typeof item === 'string') {
+              // For the first item, strip out %c markers but keep the text
+              if (index === 0 && item.includes('%c')) {
+                return item.replace(/%c/g, '');
+              }
+              // Check if this is a CSS style string and mark for removal
+              if (item.startsWith('color:') ||
+                  item.includes('font-weight:') ||
+                  item.includes('text-transform:') ||
+                  item.includes('letter-spacing:') ||
+                  item.includes('text-shadow:')) {
+                return null; // Mark for removal
+              }
+              return item;
+            }
             if (Array.isArray(item)) return `Array(${item.length})`;
             if (typeof item === 'object' && item !== null) {
               const keys = Object.keys(item);
@@ -411,8 +438,9 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
             }
             return String(item);
           })
+          .filter(item => item !== null)
           .join(' ');
-        addLine(`${logEntry.timestamp || 'unknown'} [${(logEntry.type || 'log').toUpperCase()}] ${processedContent}`);
+        addLine(`${timestamp} [${(logEntry.type || 'log').toUpperCase()}] ${processedContent}`);
       }
     } else {
       addHeader('Complete Console Log Data');

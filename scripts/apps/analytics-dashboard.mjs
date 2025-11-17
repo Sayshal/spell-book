@@ -147,7 +147,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
         analytics.mostUsedSpells.push(usageData);
         if (userData.usageStats.lastUsed && Date.now() - userData.usageStats.lastUsed < 30 * 24 * 60 * 60 * 1000) analytics.recentActivity.push(usageData);
       }
-      const school = spell.system?.school || 'unknown';
+      const school = spell.system?.school || game.i18n.localize('Unknown');
       const level = spell.system?.level || 0;
       analytics.spellsBySchool.set(school, (analytics.spellsBySchool.get(school) || 0) + (userData.usageStats?.count || 0));
       analytics.spellsByLevel.set(level, (analytics.spellsByLevel.get(level) || 0) + (userData.usageStats?.count || 0));

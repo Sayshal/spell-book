@@ -11,28 +11,14 @@
   "compatibility": {
     "maximum": "13.999",
     "minimum": "13",
-    "verified": "13.350"
+    "verified": "13.351"
   },
   "description": "Enhanced spell management for DnD5e. Easily view, prepare, and customize spell lists.",
   "download": "",
   "esmodules": [
     "scripts/spell-book.mjs"
   ],
-  "flags": {
-    "hotReload": {
-      "extensions": [
-        "css",
-        "html",
-        "hbs",
-        "json"
-      ],
-      "paths": [
-        "styles",
-        "lang",
-        "templates"
-      ]
-    }
-  },
+  "flags": {},
   "id": "spell-book",
   "languages": [
     {
@@ -124,7 +110,7 @@
         "compatibility": {
           "maximum": "5.9.9",
           "minimum": "5.1.2",
-          "verified": "5.1.10"
+          "verified": "5.2.0"
         },
         "id": "dnd5e",
         "type": "system"

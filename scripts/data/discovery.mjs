@@ -119,11 +119,15 @@ export async function getClassSpellList(className, classUuid, actor) {
  */
 function getFolderNameFromPack(source) {
   log(3, 'Getting folder name from pack.', { source });
+  if (!source) {
+    log(3, 'No compendium source provided (item not from compendium)');
+    return game.i18n.localize('Unknown');
+  }
   let currentFolder = foundry.utils.parseUuid(source)?.collection?.folder;
   while (currentFolder && currentFolder.depth > 1) currentFolder = currentFolder.folder;
   if (currentFolder && currentFolder.depth === 1) return currentFolder.name;
   else log(1, `Could not find top level folder, final depth: ${currentFolder?.depth}`);
-  return 'Unknown';
+  return game.i18n.localize('Unknown');
 }
 
 /**
