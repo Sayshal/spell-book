@@ -35,7 +35,7 @@ function spellsNotInListsScript() {
               spellsNotInLists.push({
                 name: spell.name,
                 uuid: spellUuid,
-                source: spell.pack || 'Unknown'
+                source: spell.pack || game.i18n.localize('Unknown')
               });
             }
           } catch (error) {

@@ -272,12 +272,22 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       context.classIdentifier = classIdentifier;
       context.className = this._state.classSpellData[classIdentifier]?.className || classIdentifier;
       const wizardTabData = this._state.tabData[partId];
-      const rawSpellLevels = wizardTabData.spellLevels || [];
-      context.spellLevels = await this.#processSpellsByLevel(rawSpellLevels);
-      context.wizardTotalSpellbookCount = wizardTabData.wizardTotalSpellbookCount || 0;
-      context.wizardRemainingFreeSpells = wizardTabData.wizardRemainingFreeSpells || 0;
-      context.wizardHasFreeSpells = wizardTabData.wizardHasFreeSpells || false;
-      context.wizardMaxSpellbookCount = wizardTabData.wizardMaxSpellbookCount || 0;
+      if (!wizardTabData) {
+        log(1, `Wizard tab data missing for ${classIdentifier}, using empty defaults`);
+        context.spellLevels = [];
+        context.wizardTotalSpellbookCount = 0;
+        context.wizardRemainingFreeSpells = 0;
+        context.wizardHasFreeSpells = false;
+        context.wizardMaxSpellbookCount = 0;
+      } else {
+        const rawSpellLevels = wizardTabData.spellLevels || [];
+        context.spellLevels = await this.#processSpellsByLevel(rawSpellLevels);
+        context.wizardTotalSpellbookCount = wizardTabData.wizardTotalSpellbookCount || 0;
+        context.wizardRemainingFreeSpells = wizardTabData.wizardRemainingFreeSpells || 0;
+        context.wizardHasFreeSpells = wizardTabData.wizardHasFreeSpells || false;
+        context.wizardMaxSpellbookCount = wizardTabData.wizardMaxSpellbookCount || 0;
+      }
+      context.classNotice = this.#prepareClassValidationNotice(classIdentifier, context.className);
     }
     log(3, 'PSB Part context created:', { partId, context, options });
     return context;
@@ -831,7 +841,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const wasPrepared = checkbox.dataset.wasPrepared === 'true';
       const isPrepared = checkbox.checked;
       const isRitual = checkbox.dataset.ritual === 'true';
-      const sourceClass = checkbox.dataset.sourceClass || 'unknown';
+      const sourceClass = checkbox.dataset.sourceClass || game.i18n.localize('Unknown');
       const spellItem = checkbox.closest('.spell-item');
       const spellLevel = spellItem?.dataset.spellLevel ? parseInt(spellItem.dataset.spellLevel) : 0;
       if (!spellDataByClass[sourceClass]) spellDataByClass[sourceClass] = {};
@@ -978,7 +988,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (input.disabled || input.readonly) return null;
     if (input.name) return `name:${input.name}`;
     if ((input.type === 'checkbox' || input.matches('dnd5e-checkbox')) && input.dataset.uuid) {
-      const sourceClass = input.dataset.sourceClass || 'unknown';
+      const sourceClass = input.dataset.sourceClass || game.i18n.localize('Unknown');
       return `checkbox:${sourceClass}:${input.dataset.uuid}`;
     }
     if (input.id) return `id:${input.id}`;
@@ -993,14 +1003,22 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   #prepareClassValidationNotice(classIdentifier, className) {
-    log(3, 'Preparing class validation notice.');
+    log(3, 'Preparing class validation notice.', { classIdentifier, className });
     const classItem = this.actor.items.find((item) => item.type === 'class' && (item.system?.identifier?.toLowerCase() === classIdentifier || item.name.toLowerCase() === classIdentifier));
-    const isFromCompendium = !!(classItem._stats?.compendiumSource && classItem._stats.compendiumSource.startsWith('Compendium.'));
+    if (!classItem) {
+      log(2, `Class item not found for identifier: ${classIdentifier}`);
+      return null;
+    }
+    const compendiumSource = classItem._stats?.compendiumSource;
+    const isFromCompendium = !!(compendiumSource && compendiumSource.startsWith('Compendium.'));
     const isDnDBeyondClass = !!classItem?.flags?.ddbimporter;
+    log(3, 'Class validation check:', { classIdentifier, compendiumSource, isFromCompendium, isDnDBeyondClass });
     if (!isFromCompendium && !isDnDBeyondClass) {
       const customSpellListSetting = this.actor.getFlag(MODULE.ID, `classRules.${classIdentifier}.customSpellList`);
       const hasCustomSpellList = !!(customSpellListSetting && customSpellListSetting !== 'auto');
+      log(3, 'Custom spell list check:', { customSpellListSetting, hasCustomSpellList });
       if (!hasCustomSpellList) {
+        log(2, `Showing validation notice for ${className} (not from compendium, no custom spell list)`);
         return {
           type: 'warning',
           icon: 'fas fa-exclamation-triangle',

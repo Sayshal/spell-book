@@ -560,7 +560,7 @@ export async function findClassIdentifiers() {
     const packDisplayName = pack.metadata.label;
     for (const cls of classItems) {
       const identifier = cls.system?.identifier?.toLowerCase();
-      if (identifier) identifiers[identifier] = { name: cls.name, source: packDisplayName || 'Unknown', fullDisplay: `${cls.name} [${packDisplayName}]`, id: identifier };
+      if (identifier) identifiers[identifier] = { name: cls.name, source: packDisplayName || game.i18n.localize('Unknown'), fullDisplay: `${cls.name} [${packDisplayName}]`, id: identifier };
     }
   }
   log(3, 'Finding class identifiers.', { identifiers });
