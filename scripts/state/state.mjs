@@ -530,6 +530,9 @@ export class State {
       const level = spell.system.level;
       const spellUuid = spell.uuid || spell.compendiumUuid;
       const normalizedUuid = UIUtils.getCanonicalSpellUuid(spellUuid);
+      const spellId = spell.id || spell.compendiumUuid || spell.uuid;
+      if (processedSpellIds.has(spellId)) continue;
+      processedSpellIds.add(spellId);
       if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
       const spellData = foundry.utils.deepClone(spell);
       const ownedVersions = batchData.ownedSpellsMap?.get(normalizedUuid);
@@ -594,7 +597,6 @@ export class State {
       const enhancedSpell = DataUtils.UserData.enhanceSpellWithUserData(spellData, targetUserId, actorId);
       Object.assign(spellData, enhancedSpell);
       spellsByLevel[level].spells.push(spellData);
-      processedSpellIds.add(spell.id || spell.compendiumUuid || spell.uuid);
     }
     for (const level in spellsByLevel) if (level in spellsByLevel) spellsByLevel[level].spells.sort((a, b) => a.name.localeCompare(b.name));
     const sortedLevels = Object.entries(spellsByLevel)
@@ -865,14 +867,12 @@ export class State {
     let spellItems = [];
     if (preloadedData && preloadedData.enrichedSpells.size > 0) {
       log(3, `Using preloaded spell data for ${classIdentifier} wizard spells`);
-      // Build a map of preloaded spells that are within the level cap
       const preloadedUuidsMap = new Map();
       for (const spell of preloadedData.enrichedSpells.values()) {
         if (spell.system.level <= effectiveMaxLevel) {
           preloadedUuidsMap.set(spell.uuid, spell);
         }
       }
-      // Collect preloaded spells and identify actually missing ones
       const preloadedSpells = [];
       const actuallyMissingSpells = [];
       for (const uuid of allUuids) {
@@ -921,6 +921,10 @@ export class State {
     const shouldHideCantrips = this._shouldHideCantrips(classIdentifier);
     const wizardManager = this.app.wizardManagers.get(classIdentifier);
     if (!wizardManager) return;
+    const normalizeUuid = (uuid) => {
+      if (!uuid) return uuid;
+      return foundry.utils.parseUuid(uuid).uuid;
+    };
     const getSpellUuids = (spell) => {
       const uuids = [];
       if (spell?.compendiumUuid) uuids.push(spell.compendiumUuid);
@@ -928,15 +932,20 @@ export class State {
       if (spell?.uuid) uuids.push(spell.uuid);
       if (spell?._stats?.compendiumSource) uuids.push(spell._stats.compendiumSource);
       if (spell?.flags?.core?.sourceId) uuids.push(spell.flags.core.sourceId);
-      return uuids;
+      return uuids.map(normalizeUuid);
     };
     const isSpellInCollection = (spell, collection) => {
       const spellUuids = getSpellUuids(spell);
-      return spellUuids.some((uuid) => {
-        if (Array.isArray(collection)) return collection.includes(uuid);
-        else if (collection && collection.has) return collection.has(uuid);
+      const found = spellUuids.some((uuid) => {
+        if (Array.isArray(collection)) {
+          return collection.some((collectionUuid) => normalizeUuid(collectionUuid) === uuid);
+        } else if (collection && collection.has) {
+          for (const collectionUuid of collection) if (normalizeUuid(collectionUuid) === uuid) return true;
+          return false;
+        }
         return false;
       });
+      return found;
     };
     const totalFreeSpells = wizardManager.getTotalFreeSpells();
     const usedFreeSpells = await wizardManager.getUsedFreeSpells();

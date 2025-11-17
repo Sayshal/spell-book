@@ -130,7 +130,7 @@ export class SpellBookUI {
       const eventType = input.type === 'checkbox' ? 'change' : 'input';
       input.addEventListener(eventType, () => {
         this.app.filterHelper.invalidateFilterCache();
-        this.app._applyFilters();
+        this.app.filterHelper.applyFilters();
       });
     });
   }

@@ -457,8 +457,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const spellLevel = spellItem?.dataset.spellLevel;
       const wasPrepared = event.target.dataset.wasPrepared === 'true';
       const isChecked = event.target.checked;
-
-      // Handle cantrip preparation change
       if (spellLevel === '0') {
         log(3, 'Handling cantrip preparation change.', { event, uuid, spellItem });
         const checkbox = event.target;
@@ -483,9 +481,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         else if (!isChecked && this._newlyCheckedCantrips.has(uuid)) this._newlyCheckedCantrips.delete(uuid);
         if (spellItem) spellItem.classList.toggle('prepared-spell', isChecked);
         this.ui.setupCantripLocks();
-      }
-      // Handle regular spell preparation change
-      else {
+      } else {
         log(3, 'Handling spell preparation change.', { event, uuid, spellItem, sourceClass, wasPrepared, isChecked });
         const checkbox = event.target;
         const activeTab = this.tabGroups['spellbook-tabs'];
@@ -1039,13 +1035,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const level = String(levelData.level);
       const spells = levelData.spells || [];
       const isCollapsed = collapsedLevels.includes(level);
-
-      // Process spells for this level (inlined from #processSpellsByLevel)
       log(3, 'Beginning spells for level processing:', { spells });
       const processedSpells = [];
-
       for (const spell of spells) {
-        // Build spell for display (inlined from #buildSpellForDisplay)
         const processedSpell = foundry.utils.deepClone(spell);
         if (!spell.compendiumUuid) spell.compendiumUuid = spell.uuid;
         const classes = ['spell-item'];
@@ -1058,7 +1050,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         processedSpell.dataAttributes = UIUtils.getSpellDataAttributes(spell);
         if (!spell.tags) spell.tags = UIUtils.getSpellPreparationTags(spell, this.actor);
         processedSpell.tags = spell.tags;
-
         const ariaLabel = spell.preparation.prepared
           ? game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name })
           : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
@@ -1098,11 +1089,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
             }
           }
         }
-
         if (spell.preparation?.preparedByOtherClass) checkbox.dataset.crossClass = 'true';
         if (spell.preparation?.disabled && spell.preparation?.disabledReason) checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
         processedSpell.preparationCheckboxHtml = ValidationUtils.elementToHtml(checkbox);
-
         if (spell.sourceClass && this._state.wizardbookCache) {
           const classSpellbook = this._state.wizardbookCache.get(spell.sourceClass);
           processedSpell.inWizardSpellbook = classSpellbook ? classSpellbook.includes(spell.compendiumUuid) : false;
@@ -1112,8 +1101,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           processedSpell.showCompareLink = true;
           processedSpell.isInComparison = this.comparisonSpells.has(spell.compendiumUuid);
         }
-
-        // Build spell metadata and UI elements
         const spellUuid = processedSpell.uuid || processedSpell.compendiumUuid;
         const comparisonIcon = {
           enabled: enabledElements.has('compare') && processedSpell.showCompareLink,
@@ -1157,8 +1144,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           learningSource: learningSource,
           learningSourceLabel: learningSourceLabel
         };
-
-        // Prepare party icons data
         const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
         let partyIcons = { enabled: false, icons: [] };
         if (isPartyMode) {
@@ -1179,7 +1164,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           }
           partyIcons = { enabled: icons.length > 0, icons: icons };
         }
-
         const formattedDetails = UIUtils.CustomUI.buildPlayerMetadata(processedSpell, enabledElements, this.actor);
         let materialComponentsTooltip = '';
         const hasMaterialComponents = processedSpell.filterData?.materialComponents?.hasConsumedMaterials === true;
@@ -1187,7 +1171,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           const lastIconIndex = formattedDetails.lastIndexOf('</i>');
           materialComponentsTooltip = lastIconIndex !== -1 ? formattedDetails.substring(lastIconIndex + 4).trim() : formattedDetails;
         }
-
         const finalSpell = {
           ...processedSpell,
           name: processedSpell.name,

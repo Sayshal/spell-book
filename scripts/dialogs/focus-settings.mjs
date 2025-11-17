@@ -76,10 +76,7 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!focusData?.focuses || focusData.focuses.length === 0) {
       log(3, 'No focus data found, using defaults.');
       focusData = { focuses: MODULE.DEFAULT_FOCUSES };
-      // Only save defaults if GM
-      if (game.user.isGM) {
-        await game.settings.set(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS, focusData);
-      }
+      if (game.user.isGM) await game.settings.set(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS, focusData);
     }
     context.availableFocuses = focusData.focuses;
     context.isGMMode = this.isGMMode;
