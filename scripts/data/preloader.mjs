@@ -88,7 +88,6 @@ async function preloadForGMPartyMode(showNotification = false) {
   }
   const allSpells = await DataUtils.fetchAllCompendiumSpells();
   const filters = [{ k: 'uuid', v: Array.from(allSpellUuids), o: 'in' }];
-  // Filter by spell levels just like preloadForPlayer does
   if (allSpellLevels.size > 0) filters.push({ k: 'system.level', v: Array.from(allSpellLevels), o: 'in' });
   const relevantSpells = allSpells.filter((spell) => dnd5e.Filter.performCheck(spell, filters));
   const enrichedSpells = await enrichSpellsWithIcons(relevantSpells);
@@ -236,7 +235,6 @@ export function getPreloadedData() {
  * @private
  */
 function cachePreloadedData(spellLists, enrichedSpells, mode) {
-  // Store Collection directly for better performance
   const spellsCollection = enrichedSpells instanceof Collection ? enrichedSpells : new Collection(enrichedSpells.map((s) => [s.uuid || s._id, s]));
   globalThis.SPELLBOOK.preloadedData = { spellLists, enrichedSpells: spellsCollection, timestamp: Date.now(), version: game.modules.get(MODULE.ID).version, mode };
 }
