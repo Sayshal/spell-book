@@ -7,21 +7,10 @@
 import { MODULE, SETTINGS } from './constants/_module.mjs';
 
 /**
- * Array to store ALL console logs from the entire application.
- * @type {Array<{timestamp: string, type: string, content: Array}>}
+ * Array to store SpellBook logs only.
+ * @type {Array<{timestamp: string, type: string, level: number, content: Array}>}
  */
-const globalConsoleHistory = [];
-
-/**
- * Store original console methods before we override them.
- */
-const originalConsoleMethods = {
-  log: console.log,
-  error: console.error,
-  warn: console.warn,
-  debug: console.debug,
-  info: console.info
-};
+const spellBookLogHistory = [];
 
 /**
  * Simple logging function with module ID prefix and colored styling.
@@ -29,9 +18,10 @@ const originalConsoleMethods = {
  * @param {...*} args - Content to log to console (any number of arguments)
  */
 export function log(level, ...args) {
+  spellBookLogHistory.push({timestamp: new Date().toISOString(),type: level === 1 ? 'error' : level === 2 ? 'warn' : 'debug',level,content: args});
+  if (spellBookLogHistory.length > 2000) spellBookLogHistory.shift();
   const configuredLogLevel = MODULE.LOG_LEVEL;
   if (configuredLogLevel > 0 && level <= configuredLogLevel) {
-    // Determine log type based on level
     let logType;
     switch (level) {
       case 1:
@@ -66,27 +56,9 @@ export function initializeLogger() {
 }
 
 /**
- * Get the complete global console history.
- * @returns {Array<{timestamp: string, type: string, content: Array}>}
+ * Get the SpellBook log history (SpellBook logs only, not all console logs).
+ * @returns {Array<{timestamp: string, type: string, level: number, content: Array}>}
  */
-export function getGlobalConsoleHistory() {
-  return globalConsoleHistory;
-}
-
-/**
- * Intercept all console methods to capture complete console output.
- * This captures ALL console logs from the entire application, not just SpellBook.
- * @returns {void}
- */
-export function interceptConsole() {
-  ['log', 'error', 'warn', 'debug', 'info'].forEach((methodName) => {
-    console[methodName] = function (...args) {
-      globalConsoleHistory.push({
-        timestamp: new Date().toISOString(),
-        type: methodName,
-        content: args
-      });
-      originalConsoleMethods[methodName].apply(console, args);
-    };
-  });
+export function getSpellBookLogHistory() {
+  return spellBookLogHistory;
 }
