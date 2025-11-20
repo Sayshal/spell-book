@@ -14,7 +14,7 @@ import { MODULE, SETTINGS } from './constants/_module.mjs';
 import * as DataUtils from './data/_module.mjs';
 import { unlockModuleCompendium, preloadTemplates } from './data/generic-utils.mjs';
 import { registerDnD5eIntegration, registerTidy5eIntegration } from './integrations/_module.mjs';
-import { initializeLogger, interceptConsole, log } from './logger.mjs';
+import { initializeLogger, log } from './logger.mjs';
 import { Macros, Migrations, UsageTracker, UserDataSetup } from './managers/_module.mjs';
 import { registerSettings } from './settings.mjs';
 import { registerSpellBookTours } from './tours/_module.mjs';
@@ -26,7 +26,6 @@ Hooks.once('init', async function () {
   CONFIG.DND5E.spellListTypes['actor-spellbook'] = game.i18n.localize('SPELLBOOK.Registry.ActorSpellBooksGroup');
   registerSettings();
   initializeLogger();
-  interceptConsole();
   registerDnD5eIntegration();
   if (game.modules.get('tidy5e-sheet')?.active) registerTidy5eIntegration();
   await preloadTemplates();

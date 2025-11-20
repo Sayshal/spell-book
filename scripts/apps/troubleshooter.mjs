@@ -11,7 +11,7 @@
  */
 
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
-import { log, getGlobalConsoleHistory } from '../logger.mjs';
+import { log, getSpellBookLogHistory } from '../logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -383,7 +383,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Add complete console log data to the troubleshooting report.
+   * Add Spell Book log data to the troubleshooting report.
    * @param {function(string): void} addLine - Function to add a line to the report
    * @param {function(string): void} addHeader - Function to add a section header
    * @returns {void}
@@ -391,17 +391,15 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
    * @private
    */
   static _addSpellBookLogData(addLine, addHeader) {
-    log(3, 'Adding complete console log data.');
-    const consoleLogs = getGlobalConsoleHistory();
-    if (consoleLogs?.length) {
-      addHeader('Complete Console Log Data');
-      const logLevel = MODULE.LOG_LEVEL || 0;
-      const logLevelName = logLevel === 0 ? 'Disabled' : logLevel === 1 ? 'Errors' : logLevel === 2 ? 'Warnings' : 'Verbose';
-      addLine(`Spell Book Log Level: ${logLevel} (${logLevelName})`);
-      addLine(`Total console logs captured: ${consoleLogs.length}`);
-      addLine('');
-      addLine('All console logs (from entire application):');
-      for (const logEntry of consoleLogs) {
+    log(3, 'Adding Spell Book log data.');
+    const spellBookLogs = getSpellBookLogHistory();
+    addHeader('Spell Book Logs');
+    const logLevel = MODULE.LOG_LEVEL || 0;
+    const logLevelName = logLevel === 0 ? 'Disabled' : logLevel === 1 ? 'Errors' : logLevel === 2 ? 'Warnings' : 'Verbose';
+    addLine(`Current Log Level: ${logLevel} (${logLevelName})`);
+    addLine('');
+    if (spellBookLogs.length > 0) {
+      for (const logEntry of spellBookLogs) {
         const formatTimestamp = (isoString) => {
           const date = new Date(isoString);
           const hours = String(date.getHours()).padStart(2, '0');
@@ -430,8 +428,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
         addLine(`${timestamp} [${(logEntry.type || 'log').toUpperCase()}] ${processedContent}`);
       }
     } else {
-      addHeader('Complete Console Log Data');
-      addLine('No console logs found.');
+      addLine('No SpellBook logs found.');
     }
   }
 }
