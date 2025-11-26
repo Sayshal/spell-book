@@ -10,8 +10,8 @@
  * @author Tyler
  */
 
-import { SpellBook } from '../apps/_module.mjs';
-import { SpellManager } from '../managers/_module.mjs';
+import { SpellBook, PartyCoordinator } from '../apps/_module.mjs';
+import { SpellManager, PartyMode } from '../managers/_module.mjs';
 import { ASSETS, MODULE, FLAGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 
@@ -24,6 +24,7 @@ export function registerTidy5eIntegration() {
   Hooks.on('tidy5e-sheet.renderActorSheet', onTidy5eRender);
   Hooks.on('renderTidy5eCharacterSheet', onTidy5eRender);
   Hooks.on('renderTidy5eCharacterSheetQuadrone', onTidy5eQuadroneRender);
+  Hooks.on('renderTidy5eGroupSheetQuadrone', onTidy5eGroupSheetRender);
 }
 
 /**
@@ -148,6 +149,76 @@ function createTidySpellbookButtonQuadrone(actor) {
   button.innerHTML = `<img src="${ASSETS.MODULE_ICON}" alt=${game.i18n.localize('SPELLBOOK.LongRest.SwapConfirm')} class="spell-book-icon">`;
   button.addEventListener('click', (event) => openSpellbook(event, actor));
   return button;
+}
+
+/**
+ * Handle Tidy5e Group Sheet Quadrone rendering.
+ * @param {Object} _sheet - The Tidy5e sheet application instance
+ * @param {HTMLElement} element - The sheet HTML element
+ * @param {Object} data - The sheet data object containing actor information
+ * @returns {void}
+ */
+function onTidy5eGroupSheetRender(_sheet, element, data) {
+  log(3, 'Tidy5e Group Sheet Quadrone rendering.', { groupActorId: data.actor?.id });
+  const groupActor = data.actor;
+  if (!groupActor || groupActor.type !== 'group') return;
+  const partyActors = PartyMode.getPartyActors(groupActor);
+  const spellcasters = partyActors.filter((actor) => actor && Object.keys(actor?.spellcastingClasses || {}).length > 0);
+  if (spellcasters.length === 0) return;
+  const headerActionsContainer = element.querySelector('[data-tidy-sheet-part="sheet-header-actions-container"]');
+  if (!headerActionsContainer) return;
+  if (headerActionsContainer.querySelector('.party-coordinator-button')) return;
+  const button = createTidy5ePartyCoordinatorButton(groupActor, partyActors);
+  headerActionsContainer.appendChild(button);
+  log(3, 'Party Coordinator button added to Tidy5e Group Sheet.', { groupActorId: groupActor.id });
+}
+
+/**
+ * Create Tidy5e Party Coordinator button element for group sheets.
+ * @param {Object} groupActor - The group actor
+ * @param {Array<Object>} partyActors - Array of party member actors
+ * @returns {HTMLElement} The created button element for Tidy5e group sheets
+ */
+function createTidy5ePartyCoordinatorButton(groupActor, partyActors) {
+  log(3, 'Creating Tidy5e Party Coordinator button.', { groupActorId: groupActor.id });
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'button button-gold flexshrink party-coordinator-button';
+  button.setAttribute('data-tooltip', game.i18n.localize('SPELLBOOK.Party.OpenPartySpellPool'));
+  button.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.Party.OpenPartySpellPool'));
+  button.innerHTML = `<img src="${ASSETS.MODULE_ICON}" alt="${game.i18n.localize('SPELLBOOK.Party.OpenPartySpellPool')}" class="spell-book-icon">`;
+  button.addEventListener('click', (event) => openPartyCoordinator(event, groupActor, partyActors));
+  return button;
+}
+
+/**
+ * Open Party Coordinator application for Tidy5e group sheet integration.
+ * @param {Event} event - The click event
+ * @param {Object} groupActor - The group actor
+ * @param {Array<Object>} partyActors - Array of party member actors
+ * @returns {Promise<void>}
+ */
+async function openPartyCoordinator(event, groupActor, partyActors) {
+  log(3, 'Tidy5e Party Coordinator button clicked.', { groupActorId: groupActor.id });
+  event.preventDefault();
+  const button = event.currentTarget;
+  const icon = button.querySelector('img.spell-book-icon');
+  if (icon) {
+    icon.classList.add('fa-spin');
+    button.disabled = true;
+  }
+  try {
+    const coordinator = new PartyCoordinator(partyActors, null, groupActor);
+    coordinator.render(true);
+    log(3, 'Party Coordinator rendered successfully from Tidy5e Group Sheet.', { groupActorId: groupActor.id });
+  } catch (error) {
+    log(1, 'Error opening Party Coordinator from Tidy5e Group Sheet.', { groupActorId: groupActor.id, error });
+  } finally {
+    if (icon) {
+      icon.classList.remove('fa-spin');
+      button.disabled = false;
+    }
+  }
 }
 
 /**
