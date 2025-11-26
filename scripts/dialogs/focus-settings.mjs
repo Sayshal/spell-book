@@ -278,14 +278,14 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
     const action = formData.object?.action || formData.action;
     if (game.user.isGM && action === 'save-focuses') {
       log(3, 'Saving focus options (GM).');
-      await this._saveFocusOptions(formData.object || formData, this.groupActor);
+      await FocusSettings._saveFocusOptions(formData.object || formData, this.groupActor);
       if (this.parentApp) {
         this.parentApp._comparisonData = null;
         this.parentApp.render();
       }
     } else if (action === 'select-focus') {
       log(3, 'Saving user focus selection.');
-      await this._saveUserSelection(formData.object || formData, this.groupActor);
+      await FocusSettings._saveUserSelection(formData.object || formData, this.groupActor);
       if (this.parentApp) {
         this.parentApp._comparisonData = null;
         this.parentApp.render();
@@ -303,35 +303,37 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static async _saveFocusOptions(formData, groupActor) {
     log(3, 'Saving focus options to settings.', { hasGroupActor: !!groupActor });
-    const expanded = foundry.utils.expandObject(formData);
     const focuses = [];
-    if (expanded.focus) {
-      const maxIndex = Math.max(
-        ...Object.keys(expanded.focus.name).map(Number),
-        ...Object.keys(expanded.focus.icon).map(Number),
-        ...Object.keys(expanded.focus.description).map(Number),
-        ...Object.keys(expanded.focus.id).map(Number),
-        -1
-      );
-      for (let i = 0; i <= maxIndex; i++) {
-        const name = expanded.focus.name?.[i];
-        const icon = expanded.focus.icon?.[i];
-        const description = expanded.focus.description?.[i];
-        const id = expanded.focus.id?.[i];
-        if (name && name.trim()) focuses.push({ id, name: name.trim(), icon, description: description.trim() });
-      }
+    const focusIndices = new Set();
+    for (const key of Object.keys(formData)) {
+      const match = key.match(/^focus-(?:name|icon|description|id)-(\d+)$/);
+      if (match) focusIndices.add(parseInt(match[1]));
+    }
+    for (const index of Array.from(focusIndices).sort((a, b) => a - b)) {
+      const name = formData[`focus-name-${index}`];
+      const icon = formData[`focus-icon-${index}`];
+      const description = formData[`focus-description-${index}`];
+      const id = formData[`focus-id-${index}`];
+      if (name && name.trim()) focuses.push({ id,name: name.trim(),icon,description: description?.trim() || '' });
     }
     log(3, 'Processed focus options.', { focusCount: focuses.length });
     await game.settings.set(MODULE.ID, SETTINGS.AVAILABLE_FOCUS_OPTIONS, { focuses: focuses });
     if (groupActor) {
       try {
         const socketHandler = game.modules.get(MODULE.ID)?.socketHandler;
-        if (expanded.member?.focus) {
-          for (const [userId, value] of Object.entries(expanded.member.focus)) {
+        const memberAssignments = {};
+        for (const key of Object.keys(formData)) {
+          const match = key.match(/^member-focus-(.+)$/);
+          if (match) {
+            const userId = match[1];
+            const value = formData[key];
             const focusId = value && value !== '' && value !== 'null' && value !== 'undefined' ? value : null;
-            log(3, 'Setting user focus via socket.', { userId, focusId });
-            await socketHandler.setUserSelectedFocus(groupActor, userId, focusId);
+            memberAssignments[userId] = focusId;
           }
+        }
+        for (const [userId, focusId] of Object.entries(memberAssignments)) {
+          log(3, 'Setting user focus via socket.', { userId, focusId });
+          await socketHandler.setUserSelectedFocus(groupActor, userId, focusId);
         }
         const partyUsers = PartyMode.getPartyUsers(groupActor);
         const currentSelections = groupActor.getFlag(MODULE.ID, FLAGS.SELECTED_FOCUS) || {};
