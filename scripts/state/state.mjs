@@ -551,19 +551,26 @@ export class State {
           const ownedSpell = version.item;
           const isCurrentClass = version.sourceClass === classIdentifier;
           if (ownedSpell.flags?.dnd5e?.cachedFor) {
-            spellData.aggregatedModes.hasGranted = true;
-            if (!spellData.flags?.dnd5e?.cachedFor) {
-              if (!spellData.flags) spellData.flags = {};
-              foundry.utils.mergeObject(spellData.flags, ownedSpell.flags, { inplace: true });
+            const cachedFor = ownedSpell.flags.dnd5e.cachedFor;
+            const itemId = foundry.utils.parseUuid(cachedFor, { relative: this.actor }).embedded?.[1];
+            const grantingItem = this.actor?.items.get(itemId);
+            const isItemActive = DataUtils.isGrantingItemActive(grantingItem);
+            if (isItemActive) {
+              spellData.aggregatedModes.hasGranted = true;
+              if (!spellData.flags?.dnd5e?.cachedFor) {
+                if (!spellData.flags) spellData.flags = {};
+                foundry.utils.mergeObject(spellData.flags, ownedSpell.flags, { inplace: true });
+              }
             }
           }
           if (ownedSpell.system.prepared === 2) {
             spellData.aggregatedModes.hasAlwaysPrepared = true;
             if (isCurrentClass && (!spellData.system.prepared || spellData.system.prepared < 2)) spellData.system.prepared = 2;
           }
-          if (ownedSpell.system.method === MODULE.SPELL_MODE.INNATE) spellData.aggregatedModes.hasInnate = true;
-          if (ownedSpell.system.method === MODULE.SPELL_MODE.AT_WILL) spellData.aggregatedModes.hasAtWill = true;
-          if (ownedSpell.system.method === MODULE.SPELL_MODE.RITUAL) spellData.aggregatedModes.hasRitual = true;
+          const isStoredSpell = DataUtils.isCPRROSS(ownedSpell);
+          if (!isStoredSpell && ownedSpell.system.method === MODULE.SPELL_MODE.INNATE) spellData.aggregatedModes.hasInnate = true;
+          if (!isStoredSpell && ownedSpell.system.method === MODULE.SPELL_MODE.AT_WILL) spellData.aggregatedModes.hasAtWill = true;
+          if (!isStoredSpell && ownedSpell.system.method === MODULE.SPELL_MODE.RITUAL) spellData.aggregatedModes.hasRitual = true;
           if (ownedSpell.system.method === MODULE.SPELL_MODE.PACT) {
             spellData.aggregatedModes.hasPact = true;
             if (isCurrentClass && ownedSpell.system.prepared === 1) spellData.aggregatedModes.isPreparedForCheckbox = true;
@@ -1361,7 +1368,7 @@ export class State {
   getCurrentSpellList() {
     if (!this.activeClass || !this.classSpellData[this.activeClass]) return [];
     const spellLevels = this.classSpellData[this.activeClass].spellLevels;
-    log(1, 'Current spell list retrieved', { activeClass: this.activeClass, levelCount: spellLevels.length, spellLevels });
+    log(3, 'Current spell list retrieved', { activeClass: this.activeClass, levelCount: spellLevels.length, spellLevels });
     return spellLevels;
   }
 }

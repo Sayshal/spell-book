@@ -192,6 +192,37 @@ export async function preloadTemplates(obj = TEMPLATES, paths = []) {
 }
 
 /**
+ * Check if an item that grants spells is actually active (equipped and attuned if needed).
+ * @param {Object} item - The item to check
+ * @returns {boolean} True if the item is equipped and attuned (if attunement required), false otherwise
+ */
+export function isGrantingItemActive(item) {
+  if (!item) return false;
+  const isEquipped = item.system?.equipped ?? false;
+  if (!isEquipped) {
+    log(3, `Granting item ${item.name} is not equipped.`, { item });
+    return false;
+  }
+  const requiresAttunement = item.system?.attunement === 'required';
+  const isAttuned = item.system?.attuned ?? false;
+  if (requiresAttunement && !isAttuned) {
+    log(3, `Granting item ${item.name} requires attunement but is not attuned.`, { item });
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Check if a spell is stored in a Ring of Spell Storing (CPR compatibility).
+ * These spells should not be treated as at-will/innate for preparation counting purposes.
+ * @param {Object} spell - The spell to check
+ * @returns {boolean} True if the spell is stored in a Ring of Spell Storing
+ */
+export function isCPRROSS(spell) {
+  return spell?.flags?.['chris-premades']?.ross?.isStored === true;
+}
+
+/**
  * Migrate filter configuration from old version to new version.
  * @param {Array} oldConfig - The old filter configuration
  * @returns {Array} The migrated configuration
