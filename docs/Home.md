@@ -19,21 +19,21 @@ Welcome to the documentation for **Spell Book**, the ultimate D&D 5e spell manag
 
 ## Applications
 
-### SpellBook Interface
+### Spell Book Interface
 
-- **[SpellBook Interface Overview](SpellBook-Interface-Overview)** - Complete guide to the main player interface including multiclass tabs, filtering system, scroll scanner, spell comparison, loadouts, notes, and settings
+- **[Spell Book Interface Overview](SpellBook-Interface-Overview)** - Complete guide to the main player interface including multiclass tabs, filtering system, scroll scanner, spell comparison, loadouts, notes, and settings
 
 ### GM Tools
 
-- **[SpellListManager Interface Overview](SpellListManager-Interface-Overview)** - GM spell management tool with spell list navigation, management panels, and dialog integration
+- **[Spell List Manager Interface Overview](SpellListManager-Interface-Overview)** - GM spell management tool with spell list navigation, management panels, and dialog integration
 
 ### Party Coordination
 
-- **[PartySpells Interface Overview](PartySpells-Interface-Overview)** - Multi-player spell coordination with Group Actor sheet integration, focus settings, and party synergy analysis
+- **[Party Spells Interface Overview](PartySpells-Interface-Overview)** - Multi-player spell coordination with Group Actor sheet integration, focus settings, and party synergy analysis
 
 ### Analytics and Diagnostics
 
-- **[SpellAnalyticsDashboard Interface Overview](SpellAnalyticsDashboard-Interface-Overview)** - Usage tracking and analysis with data visualization and reporting
+- **[Spell Analytics Dashboard Interface Overview](SpellAnalyticsDashboard-Interface-Overview)** - Usage tracking and analysis with data visualization and reporting
 - **[SpellBook Troubleshooter](SpellBook-Troubleshooter)** - Diagnostic tools and problem resolution
 
 ## Advanced Features
