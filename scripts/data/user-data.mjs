@@ -56,6 +56,7 @@ export class UserData {
   static async _getUserPage(userId) {
     log(3, 'Getting journal page for:', { userId });
     const journal = await this._getJournal();
+    if (!journal) return null;
     return journal.pages.find((page) => page.flags?.[MODULE.ID]?.userId === userId);
   }
 
@@ -386,6 +387,10 @@ export class UserData {
   static async _ensureUserDataInfrastructure(userId) {
     log(3, 'Ensure user data infrastructure.', { userId });
     let journal = await this._getJournal();
+    if (!journal) {
+      log(2, 'User data journal not found. GM must initialize spell book first.');
+      return;
+    }
     const manager = new UserDataSetup();
     const existingPage = await this._getUserPage(userId);
     if (!existingPage) {
