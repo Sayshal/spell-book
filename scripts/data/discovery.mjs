@@ -216,6 +216,7 @@ async function findCustomSpellListByIdentifier(identifier) {
 
 /**
  * Calculate maximum spell level available to a specific class.
+ * Supports standard spell progressions, pact magic, and custom progressions.
  * @param {Object} classItem - The class item with spellcasting configuration
  * @param {Object} [actor] - The actor for additional context and calculations
  * @returns {number} Maximum spell level (0 for cantrips only, -1 for no spellcasting)
@@ -229,33 +230,34 @@ export function calculateMaxSpellLevel(classItem, actor) {
   const spellcastingType = spellcastingConfig.type;
   const classKey = foundry.utils.getProperty(classItem, 'identifier') || classItem.name?.slugify() || 'class';
   const classLevels = DataUtils.getSpellcastingLevelsForClass(actor, classIdentifier);
-  if (spellcastingType === MODULE.SPELL_MODE.SPELL) {
-    const progression = { spell: 0, [classKey]: classLevels };
-    const spellSlotTable = CONFIG.DND5E.spellcasting.spell.table;
-    if (!spellSlotTable || !spellSlotTable.length) return 0;
+
+  // Look up spellcasting model from config (supports custom progressions)
+  const spellcastingModel = CONFIG.DND5E.spellcasting[spellcastingType];
+  if (!spellcastingModel?.table?.length) return 0;
+
+  const spellSlotTable = spellcastingModel.table;
+  const progression = { [spellcastingType]: 0, [classKey]: classLevels };
+  const spellcastingSource = DataUtils.getSpellcastingSourceItem(actor, classIdentifier);
+  actor.constructor.computeClassProgression(progression, spellcastingSource, { spellcasting: spellcastingConfig });
+
+  // Pact-like progressions (single slot level) vs standard progressions (multiple levels)
+  if (typeof spellSlotTable[0] === 'object' && !Array.isArray(spellSlotTable[0])) {
+    // Pact-style: table entries are objects with level property
+    const spells = { [spellcastingType]: {} };
+    actor.constructor.prepareSpellcastingSlots(spells, spellcastingType, progression, { actor });
+    return spells[spellcastingType]?.level || 0;
+  } else {
+    // Standard style: table entries are arrays of slot counts per level
     const maxPossibleSpellLevel = spellSlotTable[spellSlotTable.length - 1].length;
     const spellLevels = [];
     for (let i = 1; i <= maxPossibleSpellLevel; i++) spellLevels.push(i);
-    const spells = Object.fromEntries(spellLevels.map((l) => [`spell${l}`, { level: l }]));
-    const spellcastingSource = DataUtils.getSpellcastingSourceItem(actor, classIdentifier);
-    actor.constructor.computeClassProgression(progression, spellcastingSource, { spellcasting: spellcastingConfig });
-    actor.constructor.prepareSpellcastingSlots(spells, MODULE.SPELL_MODE.SPELL, progression, { actor });
+    const spells = Object.fromEntries(spellLevels.map((l) => [`${spellcastingType}${l}`, { level: l }]));
+    actor.constructor.prepareSpellcastingSlots(spells, spellcastingType, progression, { actor });
     return Object.values(spells).reduce((maxLevel, spellData) => {
-      const max = spellData.max;
-      const level = spellData.level;
-      if (!max) return maxLevel;
-      return Math.max(maxLevel, level || -1);
+      if (!spellData.max) return maxLevel;
+      return Math.max(maxLevel, spellData.level || -1);
     }, 0);
-  } else if (spellcastingType === MODULE.SPELL_MODE.PACT) {
-    const spells = { pact: {} };
-    const progression = { pact: 0, [classKey]: classLevels };
-    const spellcastingSource = DataUtils.getSpellcastingSourceItem(actor, classIdentifier);
-    actor.constructor.computeClassProgression(progression, spellcastingSource, { spellcasting: spellcastingConfig });
-    actor.constructor.prepareSpellcastingSlots(spells, MODULE.SPELL_MODE.PACT, progression, { actor });
-    const pactLevel = spells.pact?.level || 0;
-    return pactLevel;
   }
-  return 0;
 }
 
 /**

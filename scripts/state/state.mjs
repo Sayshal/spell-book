@@ -1223,7 +1223,9 @@ export class State {
       const sourceSpell = await fromUuid(spellUuid);
       if (!sourceSpell || !sourceSpell.system.properties.has('ritual') || sourceSpell.system.level === 0) continue;
       const classSpellKey = `${classIdentifier}:${spellUuid}`;
-      spellDataByClass[classIdentifier][classSpellKey].isRitual = true;
+      if (spellDataByClass[classIdentifier][classSpellKey]) {
+        spellDataByClass[classIdentifier][classSpellKey].isRitual = true;
+      }
     }
     log(3, 'Wizard ritual spells added', { classIdentifier });
   }
@@ -1245,7 +1247,9 @@ export class State {
     for (const spell of spellItems) {
       if (!spell.system.properties.has('ritual') || spell.system?.level === 0) continue;
       const classSpellKey = `${classIdentifier}:${spell.compendiumUuid || spell.uuid}`;
-      spellDataByClass[classIdentifier][classSpellKey].isRitual = true;
+      if (spellDataByClass[classIdentifier][classSpellKey]) {
+        spellDataByClass[classIdentifier][classSpellKey].isRitual = true;
+      }
     }
     log(3, 'Class ritual spells added', { classIdentifier });
   }

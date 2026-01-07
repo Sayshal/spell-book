@@ -64,9 +64,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   /** @inheritdoc */
   static PARTS = {
     main: { template: TEMPLATES.SPELL_LIST_MANAGER.MAIN },
-    sidebar: { template: TEMPLATES.SPELL_LIST_MANAGER.SPELL_LISTS },
-    content: { template: TEMPLATES.SPELL_LIST_MANAGER.LIST_CONTENT },
-    availableSpells: { template: TEMPLATES.SPELL_LIST_MANAGER.AVAILABLE_SPELLS },
+    sidebar: { template: TEMPLATES.SPELL_LIST_MANAGER.SPELL_LISTS, scrollable: ['.lists-container'] },
+    content: { template: TEMPLATES.SPELL_LIST_MANAGER.LIST_CONTENT, scrollable: [''] },
+    availableSpells: { template: TEMPLATES.SPELL_LIST_MANAGER.AVAILABLE_SPELLS, scrollable: ['.available-spells-wrapper'] },
     footer: { template: TEMPLATES.SPELL_LIST_MANAGER.FOOTER }
   };
 
