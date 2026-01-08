@@ -66,6 +66,7 @@ jobs:
       run: |
         zip -r ${{ env.ZIP_NAME }} \
           lang/ \
+          assets/ \
           scripts/ \
           styles/ \
           templates/ \
