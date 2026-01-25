@@ -5,15 +5,38 @@
  * managing both data-level filtering for spell lists and DOM-level filtering for displayed
  * spells. It includes advanced search integration, caching mechanisms, and sophisticated
  * matching algorithms for various spell properties.
- *
  * @module UIUtils/SpellbookFilters
  * @author Tyler
  */
 
-import { MODULE, SETTINGS, FLAGS } from '../constants/_module.mjs';
+import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
 import * as DataUtils from '../data/_module.mjs';
-import * as ValidationUtils from '../validation/_module.mjs';
 import { log } from '../logger.mjs';
+import * as ValidationUtils from '../validation/_module.mjs';
+
+/**
+ * Default filter state used as fallback when DOM is unavailable.
+ * @type {object}
+ */
+export const DEFAULT_FILTER_STATE = Object.freeze({
+  name: '',
+  level: '',
+  school: '',
+  castingTime: '',
+  minRange: '',
+  maxRange: '',
+  damageType: '',
+  condition: '',
+  requiresSave: '',
+  prepared: false,
+  ritual: false,
+  favorited: false,
+  concentration: '',
+  materialComponents: '',
+  preparedByParty: false,
+  source: '',
+  spellSource: ''
+});
 
 /**
  * Cached filter options (without selected state)
@@ -27,7 +50,7 @@ const FILTER_OPTIONS_CACHE = new Map();
 export class Filters {
   /**
    * Create a new filter helper.
-   * @param {Object} app - The parent application instance
+   * @param {object} app - The parent application instance
    */
   constructor(app) {
     this.app = app;
@@ -57,7 +80,7 @@ export class Filters {
 
   /**
    * Get the current filter state from the UI (with caching).
-   * @returns {Object} The current filter state
+   * @returns {object} The current filter state
    */
   getFilterState() {
     const now = Date.now();
@@ -66,23 +89,7 @@ export class Filters {
       return this._cachedFilterState;
     }
     if (!this.element) {
-      return {
-        name: '',
-        level: '',
-        school: '',
-        castingTime: '',
-        minRange: '',
-        maxRange: '',
-        damageType: '',
-        condition: '',
-        requiresSave: '',
-        prepared: false,
-        ritual: false,
-        favorited: false,
-        concentration: '',
-        materialComponents: '',
-        preparedByParty: false
-      };
+      return { ...DEFAULT_FILTER_STATE };
     }
     this._cachedFilterState = {
       name: this.element.querySelector('[name="filter-name"]')?.value || '',
@@ -132,11 +139,11 @@ export class Filters {
 
   /**
    * Filter available spells based on current filter state.
-   * @param {Array<Object>} availableSpells - Array of available spells to filter
+   * @param {Array<object>} availableSpells - Array of available spells to filter
    * @param {Set<string>} selectedSpellUUIDs - Set of selected spell UUIDs to exclude
    * @param {Function} isSpellInSelectedList - Function to check if spell is in selected list
-   * @param {Object} [filterState] - Optional filter state to use instead of reading from DOM
-   * @returns {Object} Filtered spells with count information
+   * @param {object} [filterState] - Optional filter state to use instead of reading from DOM
+   * @returns {object} Filtered spells with count information
    */
   filterAvailableSpells(availableSpells, selectedSpellUUIDs, isSpellInSelectedList, filterState = null) {
     const filters = filterState || this.getFilterState();
@@ -154,10 +161,10 @@ export class Filters {
 
   /**
    * Filter out spells already in the selected list.
-   * @param {Array<Object>} spells - Spells to filter
+   * @param {Array<object>} spells - Spells to filter
    * @param {Set<string>} selectedSpellUUIDs - UUIDs in selected list
    * @param {Function} isSpellInSelectedList - Function to check if spell is in list
-   * @returns {Array<Object>} Filtered spells excluding those in selected list
+   * @returns {Array<object>} Filtered spells excluding those in selected list
    * @private
    */
   _filterBySelectedList(spells, selectedSpellUUIDs, isSpellInSelectedList) {
@@ -166,9 +173,9 @@ export class Filters {
 
   /**
    * Filter spells by source.
-   * @param {Array<Object>} spells - Spells to filter
-   * @param {Object} filterState - Current filter state
-   * @returns {Array<Object>} Filtered spells matching source criteria
+   * @param {Array<object>} spells - Spells to filter
+   * @param {object} filterState - Current filter state
+   * @returns {Array<object>} Filtered spells matching source criteria
    * @private
    */
   _filterBySource(spells, filterState) {
@@ -191,9 +198,9 @@ export class Filters {
 
   /**
    * Filter spells by spell source (spell.system.source.label).
-   * @param {Array<Object>} spells - Spells to filter
-   * @param {Object} filterState - Current filter state
-   * @returns {Array<Object>} Filtered spells matching spell source criteria
+   * @param {Array<object>} spells - Spells to filter
+   * @param {object} filterState - Current filter state
+   * @returns {Array<object>} Filtered spells matching spell source criteria
    * @private
    */
   _filterBySpellSource(spells, filterState) {
@@ -215,9 +222,9 @@ export class Filters {
 
   /**
    * Filter spells by basic properties (name, level, school, casting time).
-   * @param {Array<Object>} spells - Spells to filter
-   * @param {Object} filterState - Current filter state
-   * @returns {Array<Object>} Filtered spells matching basic property criteria
+   * @param {Array<object>} spells - Spells to filter
+   * @param {object} filterState - Current filter state
+   * @returns {Array<object>} Filtered spells matching basic property criteria
    * @private
    */
   _filterByBasicProperties(spells, filterState) {
@@ -241,9 +248,9 @@ export class Filters {
 
   /**
    * Enhanced name filtering with fuzzy search and advanced syntax.
-   * @param {Array<Object>} spells - Spells to filter
+   * @param {Array<object>} spells - Spells to filter
    * @param {string} searchQuery - Search query string
-   * @returns {Array<Object>} Filtered spells matching name criteria
+   * @returns {Array<object>} Filtered spells matching name criteria
    * @private
    */
   _filterByEnhancedName(spells, searchQuery) {
@@ -291,9 +298,9 @@ export class Filters {
 
   /**
    * Filter spells by range.
-   * @param {Array<Object>} spells - Spells to filter
-   * @param {Object} filterState - Current filter state
-   * @returns {Array<Object>} Filtered spells within specified range
+   * @param {Array<object>} spells - Spells to filter
+   * @param {object} filterState - Current filter state
+   * @returns {Array<object>} Filtered spells within specified range
    * @private
    */
   _filterByRange(spells, filterState) {
@@ -317,9 +324,9 @@ export class Filters {
 
   /**
    * Filter spells by damage types and conditions.
-   * @param {Array<Object>} spells - Spells to filter
-   * @param {Object} filterState - Current filter state
-   * @returns {Array<Object>} Filtered spells matching damage/condition criteria
+   * @param {Array<object>} spells - Spells to filter
+   * @param {object} filterState - Current filter state
+   * @returns {Array<object>} Filtered spells matching damage/condition criteria
    * @private
    */
   _filterByDamageAndConditions(spells, filterState) {
@@ -339,9 +346,9 @@ export class Filters {
 
   /**
    * Filter spells by special properties (saves, concentration, ritual).
-   * @param {Array<Object>} spells - Spells to filter
-   * @param {Object} filterState - Current filter state
-   * @returns {Array<Object>} Filtered spells matching special property criteria
+   * @param {Array<object>} spells - Spells to filter
+   * @param {object} filterState - Current filter state
+   * @returns {Array<object>} Filtered spells matching special property criteria
    * @private
    */
   _filterBySpecialProperties(spells, filterState) {
@@ -399,7 +406,7 @@ export class Filters {
   /**
    * Extract spell data from DOM element for filtering.
    * @param {HTMLElement} item - The spell item element
-   * @returns {Object} Extracted spell data for filtering
+   * @returns {object} Extracted spell data for filtering
    * @private
    */
   _extractSpellDataFromElement(item) {
@@ -429,8 +436,8 @@ export class Filters {
 
   /**
    * Update level visibility statistics.
-   * @param {Map<string, Object>} levelVisibilityMap - Map to track level statistics
-   * @param {Object} spellData - Spell data
+   * @param {Map<string, object>} levelVisibilityMap - Map to track level statistics
+   * @param {object} spellData - Spell data
    * @param {HTMLElement} item - Spell item element
    * @private
    */
@@ -461,8 +468,8 @@ export class Filters {
 
   /**
    * Check if a spell matches the current filters.
-   * @param {Object} filters - The current filter state
-   * @param {Object} spell - The spell to check
+   * @param {object} filters - The current filter state
+   * @param {object} spell - The spell to check
    * @returns {boolean} Whether the spell should be visible
    * @private
    */
@@ -530,7 +537,7 @@ export class Filters {
 
   /**
    * Update level container visibility and counts.
-   * @param {Map<string, Object>} levelVisibilityMap - Map of level visibility data
+   * @param {Map<string, object>} levelVisibilityMap - Map of level visibility data
    * @private
    */
   _updateLevelContainers(levelVisibilityMap) {
@@ -615,7 +622,7 @@ function _getBaseFilterOptions(filterId) {
 /**
  * Prepare filter options based on filter type and current state.
  * @param {string} filterId - The filter identifier (level, school, etc.)
- * @param {Object} filterState - Current filter state with selected values
+ * @param {object} filterState - Current filter state with selected values
  * @returns {Array<{ value: string; label: string; }>} Options for the dropdown control
  */
 export function getOptionsForFilter(filterId, filterState) {
@@ -637,7 +644,7 @@ export function getOptionsForFilter(filterId, filterState) {
 
 /**
  * Get casting time options with proper sorting and formatting.
- * @param {Object} filterState - Current filter state for selection tracking
+ * @param {object} filterState - Current filter state for selection tracking
  * @returns {Array<{ value: string; label: string; }>} Sorted casting time options
  * @private
  */
@@ -696,9 +703,9 @@ export function ensureFilterIntegrity(filterConfig) {
 
 /**
  * Prepare filter data for the UI.
- * @param {Object} actor - The actor instance
- * @param {UIUtils.Filters} filterHelper - The filter helper instance
- * @returns {Array<{ id: string, type: string, name: string, label: string, enabled: boolean, unit?: string, elementHtml: string }>} The prepared filter objects ready for UI rendering
+ * @param {object} actor - The actor instance
+ * @param {Filters} filterHelper - The filter helper instance
+ * @returns {Array<object>} The prepared filter objects ready for UI rendering
  */
 export function prepareFilters(actor, filterHelper) {
   let filterConfigData = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);

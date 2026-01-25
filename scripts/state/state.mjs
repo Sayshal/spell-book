@@ -5,7 +5,6 @@
  * all aspects of spell data loading, organization, caching, and state management including
  * spellcasting class detection, spell preparation tracking, wizard spellbook management,
  * and ritual casting functionality.
- *
  * @module State/State
  * @author Tyler
  */
@@ -22,7 +21,7 @@ import * as UIUtils from '../ui/_module.mjs';
 export class State {
   /**
    * Create a new State manager for a Spell Book application.
-   * @param {Object} app - Spell Book application instance
+   * @param {object} app - Spell Book application instance
    */
   constructor(app) {
     log(3, 'Constructing State manager', { actorName: app.actor?.name, actorId: app.actor?.id });
@@ -53,7 +52,7 @@ export class State {
 
   /**
    * Get wizard-enabled classes with caching.
-   * @returns {Array<Object>} Array of wizard-enabled class data objects
+   * @returns {Array<object>} Array of wizard-enabled class data objects
    */
   getWizardEnabledClasses() {
     if (this._wizardClassesCache === null) {
@@ -80,7 +79,7 @@ export class State {
   /**
    * Get spellcasting config for a class with caching.
    * @param {string} classIdentifier - Class identifier
-   * @returns {Object|null} Spellcasting configuration or null
+   * @returns {object | null} Spellcasting configuration or null
    */
   getSpellcastingConfigForClass(classIdentifier) {
     if (!this._spellcastingConfigCache.has(classIdentifier)) {
@@ -94,7 +93,7 @@ export class State {
   /**
    * Get spellcasting source item for a class with caching.
    * @param {string} classIdentifier - Class identifier
-   * @returns {Object|null} Source item or null
+   * @returns {object | null} Source item or null
    */
   getSpellcastingSourceItem(classIdentifier) {
     if (!this._spellcastingSourceCache.has(classIdentifier)) {
@@ -327,7 +326,7 @@ export class State {
 
   /**
    * Determine the preparation mode for a given class.
-   * @param {Object} classItem - The class item to analyze
+   * @param {object} classItem - The class item to analyze
    * @todo: Consider using dnd5e.utils.formatIdentifier() when it becomes available
    * @returns {string} The preparation mode ('spell', 'pact', etc.)
    */
@@ -340,8 +339,8 @@ export class State {
 
   /**
    * Determine ritual casting rules for a given class.
-   * @param {Object} classItem - The class item to analyze
-   * @returns {Object} Ritual casting rules for the class
+   * @param {object} classItem - The class item to analyze
+   * @returns {object} Ritual casting rules for the class
    */
   getClassRitualRules(classItem) {
     const rules = { canCastRituals: false, mustPrepare: false, fromSpellbook: false };
@@ -360,9 +359,9 @@ export class State {
 
   /**
    * Determine spell swapping rules for a given class.
-   * @param {Object} classItem - The class item to analyze
+   * @param {object} classItem - The class item to analyze
    * @todo: Consider using dnd5e.utils.formatIdentifier() when it becomes available
-   * @returns {Object} Spell swapping rules for the class
+   * @returns {object} Spell swapping rules for the class
    */
   getClassSwapRules(classItem) {
     const identifier = classItem.system?.identifier;
@@ -426,7 +425,7 @@ export class State {
   /**
    * Load spell data for a specific regular (non-wizard) class.
    * @param {string} identifier - Identifier of the class
-   * @param {Object} classItem - The class item
+   * @param {object} classItem - The class item
    * @returns {Promise<void>}
    */
   async loadClassSpellData(identifier, classItem) {
@@ -474,9 +473,9 @@ export class State {
 
   /**
    * Takes an array of spell items and organizes them by spell level, enriching
-   * @param {Array<Object>} spellItems - Array of spell documents
+   * @param {Array<object>} spellItems - Array of spell documents
    * @param {string} classIdentifier - The class identifier
-   * @returns {Promise<Object>} Object of level objects, each containing its spells
+   * @returns {Promise<object>} Object of level objects, each containing its spells
    * @private
    */
   async _organizeSpellsByLevelForClass(spellItems, classIdentifier) {
@@ -606,10 +605,10 @@ export class State {
 
   /**
    * Organize spells specifically for wizard spellbook learning tab.
-   * @param {Array<Object>} spellItems - Array of class spell list items ONLY
+   * @param {Array<object>} spellItems - Array of class spell list items ONLY
    * @param {string} classIdentifier - The class identifier
    * @param {Array<string>} personalSpellbook - Spells already learned by wizard
-   * @returns {Promise<Object>} Object of level objects for wizard spellbook
+   * @returns {Promise<object>} Object of level objects for wizard spellbook
    * @private
    */
   async _organizeWizardSpellsForLearning(spellItems, classIdentifier, personalSpellbook) {
@@ -651,8 +650,8 @@ export class State {
   /**
    * Process and organize spells for a specific class with preparation statistics.
    * @param {string} identifier - Identifier of the class
-   * @param {Array<Object>} spellItems - Array of spell items
-   * @param {Object} classItem - The class item
+   * @param {Array<object>} spellItems - Array of spell items
+   * @param {object} classItem - The class item
    * @returns {Promise<void>}
    */
   async processAndOrganizeSpellsForClass(identifier, spellItems, classItem) {
@@ -677,8 +676,8 @@ export class State {
    * Calculate preparation statistics for a specific class.
    * @param {string} classIdentifier - The class identifier
    * @param {Array} spellLevels - Array of level objects with grouped spells or flat spell array
-   * @param {Object} classItem - The spellcasting class item
-   * @returns {Object} Preparation stats object with current and maximum counts
+   * @param {object} classItem - The spellcasting class item
+   * @returns {object} Preparation stats object with current and maximum counts
    */
   calculatePreparationStats(classIdentifier, spellLevels, classItem) {
     if (!spellLevels || !Array.isArray(spellLevels)) {
@@ -834,7 +833,7 @@ export class State {
 
   /**
    * Load wizard spell data for a specific wizard-enabled class.
-   * @param {Object} classItem - The class item
+   * @param {object} classItem - The class item
    * @param {string} classIdentifier - The class identifier
    * @returns {Promise<void>}
    */
@@ -897,8 +896,8 @@ export class State {
 
   /**
    * Process wizard spells for a specific class into preparation and spellbook tabs.
-   * @param {Array<Object>} allSpellItems - All fetched spell items
-   * @param {Object} classItem - The class item
+   * @param {Array<object>} allSpellItems - All fetched spell items
+   * @param {object} classItem - The class item
    * @param {Array<string>} personalSpellbook - The personal spellbook spell UUIDs
    * @param {string} classIdentifier - The class identifier
    * @returns {Promise<void>}
@@ -1039,7 +1038,7 @@ export class State {
   /**
    * Get tab data for a specific class.
    * @param {string} identifier - The class identifier
-   * @returns {Object|null} Tab data for the class, or null if not found
+   * @returns {object | null} Tab data for the class, or null if not found
    */
   getClassTabData(identifier) {
     if (this.classSpellData[identifier]) {
@@ -1107,7 +1106,7 @@ export class State {
 
   /**
    * Handle post-processing after spell save operations.
-   * @param {Object} actor - The actor
+   * @param {object} actor - The actor
    * @returns {Promise<void>}
    */
   async handlePostProcessing(actor) {
@@ -1123,7 +1122,7 @@ export class State {
 
   /**
    * Add missing ritual spells for all classes with ritual casting enabled.
-   * @param {Object} spellDataByClass - The spell data grouped by class
+   * @param {object} spellDataByClass - The spell data grouped by class
    * @returns {Promise<void>}
    */
   async addMissingRitualSpells(spellDataByClass) {
@@ -1175,7 +1174,7 @@ export class State {
   /**
    * Add missing wizard ritual spells using wizard spellbook.
    * @param {string} classIdentifier - The class identifier (should be 'wizard')
-   * @param {Object} spellDataByClass - The spell data grouped by class
+   * @param {object} spellDataByClass - The spell data grouped by class
    * @returns {Promise<void>}
    * @private
    */
@@ -1189,7 +1188,7 @@ export class State {
     const spellbookSpells = await wizardManager.getSpellbookSpells();
     for (const spellUuid of spellbookSpells) {
       const sourceSpell = await fromUuid(spellUuid);
-      if (!sourceSpell || !sourceSpell.system.properties.has('ritual') || sourceSpell.system.level === 0) continue;
+      if (!sourceSpell || !UIUtils.hasSpellProperty(sourceSpell, 'ritual') || sourceSpell.system.level === 0) continue;
       const classSpellKey = `${classIdentifier}:${spellUuid}`;
       if (spellDataByClass[classIdentifier][classSpellKey]) {
         spellDataByClass[classIdentifier][classSpellKey].isRitual = true;
@@ -1201,8 +1200,8 @@ export class State {
   /**
    * Add missing ritual spells for non-wizard classes using class spell lists.
    * @param {string} classIdentifier - The class identifier
-   * @param {Object} classData - The class data from spellcastingClasses
-   * @param {Object} spellDataByClass - The spell data grouped by class
+   * @param {object} classData - The class data from spellcastingClasses
+   * @param {object} spellDataByClass - The spell data grouped by class
    * @returns {Promise<void>}
    * @private
    */
@@ -1213,7 +1212,7 @@ export class State {
     const spellItems = await DataUtils.fetchSpellDocuments(spellList, 9);
     if (!spellItems?.length) return;
     for (const spell of spellItems) {
-      if (!spell.system.properties.has('ritual') || spell.system?.level === 0) continue;
+      if (!UIUtils.hasSpellProperty(spell, 'ritual') || spell.system?.level === 0) continue;
       const classSpellKey = `${classIdentifier}:${spell.compendiumUuid || spell.uuid}`;
       if (spellDataByClass[classIdentifier][classSpellKey]) {
         spellDataByClass[classIdentifier][classSpellKey].isRitual = true;
@@ -1228,7 +1227,7 @@ export class State {
    * @param {Array<string>} personalSpellbook - UUIDs of spells in personal spellbook
    * @param {Set<string>} classSpellListUuids - UUIDs of spells in the class list
    * @param {number} maxSpellLevel - Maximum spell level to fetch
-   * @returns {Promise<Array<Object>>} Array of scroll-learned spell documents
+   * @returns {Promise<Array<object>>} Array of scroll-learned spell documents
    * @private
    */
   async _getScrollLearnedSpellsNotInClassList(classIdentifier, personalSpellbook, classSpellListUuids, maxSpellLevel) {
@@ -1251,8 +1250,8 @@ export class State {
 
   /**
    * Send GM notifications if needed for rule violations.
-   * @param {Object} spellDataByClass - The spell data grouped by class
-   * @param {Object} allChangesByClass - All spell and cantrip changes by class
+   * @param {object} spellDataByClass - The spell data grouped by class
+   * @param {object} allChangesByClass - All spell and cantrip changes by class
    * @returns {Promise<void>}
    */
   async sendGMNotifications(spellDataByClass, allChangesByClass) {
@@ -1338,7 +1337,7 @@ export class State {
 
   /**
    * Get the current spell list for the active class.
-   * @returns {Array<Object>} Array of spells for the currently active class
+   * @returns {Array<object>} Array of spells for the currently active class
    */
   getCurrentSpellList() {
     if (!this.activeClass || !this.classSpellData[this.activeClass]) return [];
