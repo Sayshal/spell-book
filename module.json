@@ -10,7 +10,7 @@
   "changelog": "https://github.com/Sayshal/spell-book/releases",
   "compatibility": {
     "maximum": "13.999",
-    "minimum": "13",
+    "minimum": "13.351",
     "verified": "13.351"
   },
   "description": "Enhanced spell management for DnD5e. Easily view, prepare, and customize spell lists.",
