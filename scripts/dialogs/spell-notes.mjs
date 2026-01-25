@@ -51,7 +51,7 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
   constructor(options = {}) {
     super(options);
     log(3, 'SpellNotes constructed.', { options });
-    this.spellUuid = UIUtils.getCanonicalSpellUuid(options.spellUuid);
+    this.spellUuid = DataUtils.getCanonicalSpellUuid(options.spellUuid);
     this.spellName = fromUuidSync(this.spellUuid).name;
     this.actor = options.actor;
     this.currentNotes = '';
@@ -126,7 +126,7 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
     const notes = formData.object.notes || '';
     const spellUuid = formData.object.spellUuid;
     const actorId = formData.object.actorId;
-    const canonicalUuid = UIUtils.getCanonicalSpellUuid(spellUuid);
+    const canonicalUuid = DataUtils.getCanonicalSpellUuid(spellUuid);
     try {
       const actor = actorId ? game.actors.get(actorId) : null;
       const targetUserId = DataUtils.getTargetUserId(actor);

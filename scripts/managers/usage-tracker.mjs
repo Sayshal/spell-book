@@ -90,7 +90,7 @@ export class UsageTracker {
     if (!actor) return;
     if (actor.type !== 'character') return;
     log(3, `Processing spell usage for tracking.`, { actorName: actor.name, spellName: spell.name });
-    const canonicalUuid = foundry.utils.getProperty(spell, '_stats.compendiumSource') || foundry.utils.getProperty(spell, 'flags.core.sourceId') || spell.uuid;
+    const canonicalUuid = DataUtils.getCanonicalSpellUuid(spell);
     const trackingKey = `${canonicalUuid}-${Date.now()}`;
     if (this.activeTracking.has(trackingKey)) return;
     this.activeTracking.set(trackingKey, true);

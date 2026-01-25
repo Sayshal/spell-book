@@ -75,7 +75,7 @@ export async function processFavoritesFromForm(_form, actor) {
   const actorSpells = actor.items.filter((item) => item.type === 'spell');
   const favoritesToAdd = [];
   for (const spell of actorSpells) {
-    const canonicalUuid = getCanonicalSpellUuid(spell.uuid);
+    const canonicalUuid = DataUtils.getCanonicalSpellUuid(spell.uuid);
     const userData = await DataUtils.UserData.getUserDataForSpell(canonicalUuid, targetUserId, actor.id);
     const isFavoritedInJournal = userData?.favorited || false;
     if (isFavoritedInJournal) favoritesToAdd.push(spell);
@@ -121,27 +121,3 @@ export function findActorSpellByUuid(spellUuid, actor) {
   return spell || null;
 }
 
-/**
- * Get canonical UUID for spell favorites (prefers compendium UUID).
- * @param {string|Object} spellOrUuid - Spell object or UUID string
- * @returns {string} Canonical UUID for favorites storage
- */
-export function getCanonicalSpellUuid(spellOrUuid) {
-  if (typeof spellOrUuid === 'string' && spellOrUuid.includes('.Item.')) return spellOrUuid;
-  let result;
-  if (typeof spellOrUuid === 'string') {
-    const parsedUuid = foundry.utils.parseUuid(spellOrUuid);
-    if (parsedUuid.collection?.collection) result = spellOrUuid;
-    else {
-      const spell = fromUuidSync(spellOrUuid);
-      if (spell?._stats?.compendiumSource) result = spell._stats.compendiumSource;
-      else result = spellOrUuid;
-    }
-  } else {
-    if (spellOrUuid?.compendiumUuid) result = spellOrUuid.compendiumUuid;
-    else if (spellOrUuid?._stats?.compendiumSource) result = spellOrUuid._stats.compendiumSource;
-    else result = spellOrUuid?.uuid || '';
-  }
-  log(3, 'Got canonical spell UUID.', { input: typeof spellOrUuid === 'string' ? spellOrUuid : spellOrUuid?.name, result });
-  return result;
-}

@@ -96,7 +96,7 @@ export class SpellManager {
     const unassignedSpellsMap = new Map();
     for (const item of this.actor.items) {
       if (item.type !== 'spell') continue;
-      const spellUuid = item._stats?.compendiumSource || item.uuid;
+      const spellUuid = DataUtils.getCanonicalSpellUuid(item);
       const sourceClass = item.system?.sourceClass || item.sourceClass;
       if (!ownedSpellsMap.has(spellUuid)) ownedSpellsMap.set(spellUuid, []);
       ownedSpellsMap.get(spellUuid).push({ item, sourceClass, prepared: item.system.prepared, method: item.system.method });

@@ -223,6 +223,44 @@ export function isCPRROSS(spell) {
 }
 
 /**
+ * Get the canonical UUID for a spell (prefers compendium source).
+ * Resolves actor-embedded spells to their compendium source when available.
+ * @param {string|Object} spellOrUuid - Spell document or UUID string
+ * @returns {string|null} Canonical UUID or null if invalid input
+ */
+export function getCanonicalSpellUuid(spellOrUuid) {
+  if (!spellOrUuid) return null;
+  const uuid = typeof spellOrUuid === 'string' ? spellOrUuid : spellOrUuid?.uuid;
+  if (!uuid) return null;
+  if (typeof spellOrUuid === 'object') {
+    if (spellOrUuid.compendiumUuid) return spellOrUuid.compendiumUuid;
+    if (spellOrUuid._stats?.compendiumSource) return spellOrUuid._stats.compendiumSource;
+    if (spellOrUuid.flags?.core?.sourceId) return spellOrUuid.flags.core.sourceId;
+    return spellOrUuid.uuid || null;
+  }
+  const parsed = foundry.utils.parseUuid(uuid);
+  if (parsed.collection?.collection) return uuid;
+  const doc = fromUuidSync(uuid);
+  return doc?._stats?.compendiumSource || doc?.flags?.core?.sourceId || uuid;
+}
+
+/**
+ * Get all possible UUIDs associated with a spell for matching purposes.
+ * @param {Object} spell - Spell document or spell-like object
+ * @returns {string[]} Array of unique UUIDs (normalized)
+ */
+export function getAllSpellUuids(spell) {
+  if (!spell) return [];
+  const uuids = new Set();
+  if (spell.compendiumUuid) uuids.add(spell.compendiumUuid);
+  if (spell.spellUuid) uuids.add(spell.spellUuid);
+  if (spell.uuid) uuids.add(spell.uuid);
+  if (spell._stats?.compendiumSource) uuids.add(spell._stats.compendiumSource);
+  if (spell.flags?.core?.sourceId) uuids.add(spell.flags.core.sourceId);
+  return [...uuids].filter(Boolean).map((u) => foundry.utils.parseUuid(u).uuid);
+}
+
+/**
  * Migrate filter configuration from old version to new version.
  * @param {Array} oldConfig - The old filter configuration
  * @returns {Array} The migrated configuration

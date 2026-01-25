@@ -735,9 +735,8 @@ export class SpellBookUI {
    * Update favorite button state immediately.
    * @param {HTMLElement} button - The favorite button element
    * @param {boolean} isFavorited - Whether the spell is favorited
-   * @static
    */
-  static updateFavoriteButtonState(button, isFavorited) {
+  updateFavoriteButtonState(button, isFavorited) {
     log(3, 'Updating favorite button state.', { button, isFavorited });
     const icon = button.querySelector('i');
     if (isFavorited) {

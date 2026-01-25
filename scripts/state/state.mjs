@@ -487,31 +487,12 @@ export class State {
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const batchData = this.app.spellManager.prepareBatchData(classIdentifier);
     let parsedSpellData = null;
-    if (SPELLBOOK?.preloadedData?.enrichedSpells) {
-      parsedSpellData = {};
-      // eslint-disable-next-line no-unused-vars
-      for (const [key, enrichedSpell] of SPELLBOOK.preloadedData.enrichedSpells.entries()) {
-        const uuid = enrichedSpell.uuid;
-        if (!uuid) continue;
-        parsedSpellData[uuid] = {
-          notes: enrichedSpell.notes || enrichedSpell.filterData?.notes || '',
-          favorited: enrichedSpell.filterData?.favorited || enrichedSpell.favorited || false,
-          usageStats: enrichedSpell.usageStats || null,
-          actorData: enrichedSpell.actorData || {}
-        };
-      }
-    } else {
-      await DataUtils.UserData._ensureUserDataInfrastructure(targetUserId);
-      const userPage = await DataUtils.UserData._getUserPage(targetUserId);
-      if (userPage) parsedSpellData = DataUtils.UserData._parseSpellDataFromHTML(userPage.text.content);
-    }
+    await DataUtils.UserData._ensureUserDataInfrastructure(targetUserId);
+    const userPage = await DataUtils.UserData._getUserPage(targetUserId);
+    if (userPage) parsedSpellData = DataUtils.UserData._parseSpellDataFromHTML(userPage.text.content);
     const allSpellsToCache = spellItems.map((s) => s.uuid || s.compendiumUuid).filter(Boolean);
     for (const spellUuid of allSpellsToCache) {
-      let canonicalUuid = spellUuid;
-      if (foundry.utils.parseUuid(spellUuid).primaryType === 'Actor') {
-        const spellDoc = fromUuidSync(spellUuid);
-        if (spellDoc?._stats?.compendiumSource || spellDoc?.flags?.core?.sourceId) canonicalUuid = spellDoc._stats?.compendiumSource || spellDoc.flags.core.sourceId;
-      }
+      const canonicalUuid = DataUtils.getCanonicalSpellUuid(spellUuid) || spellUuid;
       const quickCacheKey = actorId ? `${targetUserId}:${actorId}:${canonicalUuid}` : `${targetUserId}:${canonicalUuid}`;
       const originalCacheKey = actorId ? `${targetUserId}:${actorId}:${spellUuid}` : `${targetUserId}:${spellUuid}`;
       if (DataUtils.UserData.cache.has(quickCacheKey) || DataUtils.UserData.cache.has(originalCacheKey)) continue;
@@ -529,7 +510,7 @@ export class State {
       if (spell?.system?.level === undefined) continue;
       const level = spell.system.level;
       const spellUuid = spell.uuid || spell.compendiumUuid;
-      const normalizedUuid = UIUtils.getCanonicalSpellUuid(spellUuid);
+      const normalizedUuid = DataUtils.getCanonicalSpellUuid(spellUuid);
       const spellId = spell.id || spell.compendiumUuid || spell.uuid;
       if (processedSpellIds.has(spellId)) continue;
       processedSpellIds.add(spellId);
@@ -928,31 +909,18 @@ export class State {
     const shouldHideCantrips = this._shouldHideCantrips(classIdentifier);
     const wizardManager = this.app.wizardManagers.get(classIdentifier);
     if (!wizardManager) return;
-    const normalizeUuid = (uuid) => {
-      if (!uuid) return uuid;
-      return foundry.utils.parseUuid(uuid).uuid;
-    };
-    const getSpellUuids = (spell) => {
-      const uuids = [];
-      if (spell?.compendiumUuid) uuids.push(spell.compendiumUuid);
-      if (spell?.spellUuid) uuids.push(spell.spellUuid);
-      if (spell?.uuid) uuids.push(spell.uuid);
-      if (spell?._stats?.compendiumSource) uuids.push(spell._stats.compendiumSource);
-      if (spell?.flags?.core?.sourceId) uuids.push(spell.flags.core.sourceId);
-      return uuids.map(normalizeUuid);
-    };
     const isSpellInCollection = (spell, collection) => {
-      const spellUuids = getSpellUuids(spell);
-      const found = spellUuids.some((uuid) => {
+      const spellUuids = DataUtils.getAllSpellUuids(spell);
+      return spellUuids.some((uuid) => {
         if (Array.isArray(collection)) {
-          return collection.some((collectionUuid) => normalizeUuid(collectionUuid) === uuid);
-        } else if (collection && collection.has) {
-          for (const collectionUuid of collection) if (normalizeUuid(collectionUuid) === uuid) return true;
-          return false;
+          return collection.some((collectionUuid) => foundry.utils.parseUuid(collectionUuid).uuid === uuid);
+        } else if (collection?.has) {
+          for (const collectionUuid of collection) {
+            if (foundry.utils.parseUuid(collectionUuid).uuid === uuid) return true;
+          }
         }
         return false;
       });
-      return found;
     };
     const totalFreeSpells = wizardManager.getTotalFreeSpells();
     const usedFreeSpells = await wizardManager.getUsedFreeSpells();
@@ -1354,11 +1322,14 @@ export class State {
     if (DataUtils.UserData?.cache) for (const key of DataUtils.UserData.cache.keys()) if (key.startsWith(`${targetUserId}:`)) DataUtils.UserData.cache.delete(key);
     for (const classData of Object.values(this.classSpellData)) {
       if (classData.spellLevels) {
-        const userDataPromises = classData.spellLevels.map((spell) => DataUtils.UserData.getUserDataForSpell(spell.uuid || spell.compendiumUuid, targetUserId, this.app.actor?.id));
-        await Promise.all(userDataPromises);
-        for (const spell of classData.spellLevels) {
-          const enhancedSpell = DataUtils.UserData.enhanceSpellWithUserData(spell, targetUserId, this.app.actor?.id);
-          Object.assign(spell, enhancedSpell);
+        for (const levelData of classData.spellLevels) {
+          if (!levelData.spells) continue;
+          const userDataPromises = levelData.spells.map((spell) => DataUtils.UserData.getUserDataForSpell(spell.uuid || spell.compendiumUuid, targetUserId, this.app.actor?.id));
+          await Promise.all(userDataPromises);
+          for (const spell of levelData.spells) {
+            const enhancedSpell = DataUtils.UserData.enhanceSpellWithUserData(spell, targetUserId, this.app.actor?.id);
+            Object.assign(spell, enhancedSpell);
+          }
         }
       }
     }

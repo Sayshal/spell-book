@@ -114,7 +114,7 @@ export class DescriptionInjector {
    */
   static async updateSpellDescription(spellItem) {
     if (!spellItem || spellItem.type !== 'spell') return;
-    const canonicalUuid = UIUtils.getCanonicalSpellUuid(spellItem.uuid);
+    const canonicalUuid = DataUtils.getCanonicalSpellUuid(spellItem.uuid);
     const actor = spellItem.parent;
     const targetUserId = DataUtils.getTargetUserId(actor);
     const injectionMode = game.settings.get(MODULE.ID, 'injectNotesIntoDescriptions');
@@ -213,12 +213,12 @@ export class DescriptionInjector {
    * @static
    */
   static async handleNotesChange(spellUuid) {
-    const canonicalUuid = UIUtils.getCanonicalSpellUuid(spellUuid);
+    const canonicalUuid = DataUtils.getCanonicalSpellUuid(spellUuid);
     log(3, 'Handling notes change for spell.', { spellUuid, canonicalUuid });
     for (const actor of game.actors) {
       const matchingSpells = actor.items.filter((item) => {
         if (item.type !== 'spell') return false;
-        const itemCanonicalUuid = UIUtils.getCanonicalSpellUuid(item.uuid);
+        const itemCanonicalUuid = DataUtils.getCanonicalSpellUuid(item.uuid);
         return itemCanonicalUuid === canonicalUuid;
       });
       for (const spell of matchingSpells) await this.updateSpellDescription(spell);
