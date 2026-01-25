@@ -67,6 +67,19 @@ export class RuleSet {
   }
 
   /**
+   * Get a single class rule property with a default fallback.
+   * @param {Object} actor - The actor to check
+   * @param {string} classIdentifier - The class identifier
+   * @param {string} property - The rule property to retrieve
+   * @param {*} [defaultValue=null] - Default value if property is undefined
+   * @returns {*} The rule property value or default
+   * @static
+   */
+  static getClassRule(actor, classIdentifier, property, defaultValue = null) {
+    return this.getClassRules(actor, classIdentifier)?.[property] ?? defaultValue;
+  }
+
+  /**
    * Get class-specific rules for an actor, with fallback to defaults.
    * @param {Object} actor - The actor to check
    * @param {string} classIdentifier - The class identifier

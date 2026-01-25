@@ -153,9 +153,8 @@ export class Cantrips {
       }
     }
     if (baseCantrips === 0) return 0;
-    const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
-    if (classRules && classRules.showCantrips === false) return 0;
-    const preparationBonus = classRules?.cantripPreparationBonus || 0;
+    if (RuleSet.getClassRule(this.actor, classIdentifier, 'showCantrips', true) === false) return 0;
+    const preparationBonus = RuleSet.getClassRule(this.actor, classIdentifier, 'cantripPreparationBonus', 0);
     const totalMaxCantrips = Math.max(0, baseCantrips + preparationBonus);
     log(3, 'Calculated max cantrips for class.', { actorId: this.actor.id, classIdentifier, baseCantrips, preparationBonus, totalMaxCantrips });
     return totalMaxCantrips;

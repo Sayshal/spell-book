@@ -200,8 +200,7 @@ export class WizardBook {
     log(3, 'Calculating copying cost.', { spellId: spell?.id, spellLevel: spell?.system?.level });
     const isFree = await this.isSpellFree(spell);
     if (isFree) return { cost: 0, isFree: true };
-    const classRules = RuleSet.getClassRules(this.actor, this.classIdentifier);
-    const costMultiplier = classRules?.spellLearningCostMultiplier ?? 50;
+    const costMultiplier = RuleSet.getClassRule(this.actor, this.classIdentifier, 'spellLearningCostMultiplier', 50);
     const cost = spell.system.level === 0 ? 0 : spell.system.level * costMultiplier;
     return { cost, isFree: false };
   }
@@ -213,8 +212,7 @@ export class WizardBook {
    */
   getCopyingTime(spell) {
     log(3, 'Calculating copying time.', { spellId: spell?.id, spellLevel: spell?.system?.level });
-    const classRules = RuleSet.getClassRules(this.actor, this.classIdentifier);
-    const timeMultiplier = classRules?.spellLearningTimeMultiplier ?? 120;
+    const timeMultiplier = RuleSet.getClassRule(this.actor, this.classIdentifier, 'spellLearningTimeMultiplier', 120);
     const totalMinutes = spell.system.level === 0 ? 1 : spell.system.level * timeMultiplier;
     return dnd5e.utils.formatTime(totalMinutes, 'minute');
   }
@@ -338,9 +336,8 @@ export class WizardBook {
     if (this._maxSpellsCache !== null) return this._maxSpellsCache;
     if (!this.isWizard) return 0;
     const wizardLevel = this.classItem.system.levels || 1;
-    const classRules = RuleSet.getClassRules(this.actor, this.classIdentifier);
-    const startingSpells = classRules?.startingSpells ?? MODULE.WIZARD_DEFAULTS.STARTING_SPELLS;
-    const spellsPerLevel = classRules?.spellsPerLevel ?? MODULE.WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
+    const startingSpells = RuleSet.getClassRule(this.actor, this.classIdentifier, 'startingSpells', MODULE.WIZARD_DEFAULTS.STARTING_SPELLS);
+    const spellsPerLevel = RuleSet.getClassRule(this.actor, this.classIdentifier, 'spellsPerLevel', MODULE.WIZARD_DEFAULTS.SPELLS_PER_LEVEL);
     const maxSpells = startingSpells + Math.max(0, wizardLevel - 1) * spellsPerLevel;
     this._maxSpellsCache = maxSpells;
     log(3, `Maximum wizard spells: ${maxSpells} (level ${wizardLevel})`);
@@ -355,9 +352,8 @@ export class WizardBook {
     if (this._freeSpellsCache !== null) return this._freeSpellsCache;
     if (!this.isWizard) return 0;
     const wizardLevel = this.classItem.system.levels || 1;
-    const classRules = RuleSet.getClassRules(this.actor, this.classIdentifier);
-    const startingSpells = classRules?.startingSpells ?? MODULE.WIZARD_DEFAULTS.STARTING_SPELLS;
-    const spellsPerLevel = classRules?.spellsPerLevel ?? MODULE.WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
+    const startingSpells = RuleSet.getClassRule(this.actor, this.classIdentifier, 'startingSpells', MODULE.WIZARD_DEFAULTS.STARTING_SPELLS);
+    const spellsPerLevel = RuleSet.getClassRule(this.actor, this.classIdentifier, 'spellsPerLevel', MODULE.WIZARD_DEFAULTS.SPELLS_PER_LEVEL);
     const freeSpells = startingSpells + Math.max(0, wizardLevel - 1) * spellsPerLevel;
     this._freeSpellsCache = freeSpells;
     return freeSpells;

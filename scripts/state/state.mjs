@@ -737,8 +737,7 @@ export class State {
     const spellcastingConfig = this.getSpellcastingConfigForClass(classIdentifier);
     if (spellcastingConfig?.preparation?.max) baseMaxPrepared = spellcastingConfig.preparation.max;
     else baseMaxPrepared = classItem?.system?.spellcasting?.preparation?.max || 0;
-    const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
-    const preparationBonus = classRules?.spellPreparationBonus || 0;
+    const preparationBonus = RuleSet.getClassRule(this.actor, classIdentifier, 'spellPreparationBonus', 0);
     const maxPrepared = baseMaxPrepared + preparationBonus;
     const result = { current: preparedCount, maximum: maxPrepared };
     const cacheKey = `${classIdentifier}-${totalSpellCount}-${effectiveLevels}`;
@@ -809,8 +808,7 @@ export class State {
     const cantripLevelUp = this.app.spellManager.cantripManager.checkForLevelUp();
     if (cantripLevelUp) {
       const hasLevelUpSwapping = Object.keys(this.spellcastingClasses).some((classId) => {
-        const classRules = RuleSet.getClassRules(this.actor, classId);
-        return classRules.cantripSwapping === 'levelUp';
+        return RuleSet.getClassRule(this.actor, classId, 'cantripSwapping', 'none') === 'levelUp';
       });
       if (hasLevelUpSwapping) ui.notifications.info(game.i18n.localize('SPELLBOOK.Cantrips.LevelUpModern'));
     } else log(3, 'No cantrip level-up detected');
@@ -1128,8 +1126,7 @@ export class State {
   async addMissingRitualSpells(spellDataByClass) {
     await this._cleanupDisabledRitualSpells();
     for (const [classIdentifier, classData] of Object.entries(this.spellcastingClasses)) {
-      const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
-      if (classRules.ritualCasting === MODULE.SPELL_MODE.ALWAYS) {
+      if (RuleSet.getClassRule(this.actor, classIdentifier, 'ritualCasting', MODULE.RITUAL_CASTING_MODES.NONE) === MODULE.SPELL_MODE.ALWAYS) {
         log(3, 'Processing ritual spells for class', { classIdentifier });
         const wizardManager = this.app.wizardManagers.get(classIdentifier);
         const isWizard = wizardManager?.isWizard;
@@ -1148,8 +1145,7 @@ export class State {
   async _cleanupDisabledRitualSpells() {
     const spellIdsToRemove = [];
     for (const classIdentifier of Object.keys(this.spellcastingClasses)) {
-      const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
-      if (classRules.ritualCasting !== MODULE.SPELL_MODE.ALWAYS) {
+      if (RuleSet.getClassRule(this.actor, classIdentifier, 'ritualCasting', MODULE.RITUAL_CASTING_MODES.NONE) !== MODULE.SPELL_MODE.ALWAYS) {
         const moduleRitualSpells = this.actor.items.filter(
           (item) =>
             item.type === 'spell' &&
