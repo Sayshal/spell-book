@@ -233,21 +233,24 @@ export function calculateMaxSpellLevel(classItem, actor) {
 
   // Look up spellcasting model from config (supports custom progressions)
   const spellcastingModel = CONFIG.DND5E.spellcasting[spellcastingType];
-  if (!spellcastingModel?.table?.length) return 0;
+  if (!spellcastingModel?.table) return 0;
 
   const spellSlotTable = spellcastingModel.table;
+  const tableSize = Array.isArray(spellSlotTable) ? spellSlotTable.length : Object.keys(spellSlotTable).length;
+  if (!tableSize) return 0;
+
   const progression = { [spellcastingType]: 0, [classKey]: classLevels };
   const spellcastingSource = DataUtils.getSpellcastingSourceItem(actor, classIdentifier);
   actor.constructor.computeClassProgression(progression, spellcastingSource, { spellcasting: spellcastingConfig });
 
-  // Pact-like progressions (single slot level) vs standard progressions (multiple levels)
-  if (typeof spellSlotTable[0] === 'object' && !Array.isArray(spellSlotTable[0])) {
-    // Pact-style: table entries are objects with level property
+  // Use dnd5e's isSingleLevel to detect pact-style vs standard progressions
+  if (spellcastingModel.isSingleLevel) {
+    // Pact-style: single slot level (e.g., warlock)
     const spells = { [spellcastingType]: {} };
     actor.constructor.prepareSpellcastingSlots(spells, spellcastingType, progression, { actor });
     return spells[spellcastingType]?.level || 0;
   } else {
-    // Standard style: table entries are arrays of slot counts per level
+    // Standard style: multiple spell levels (e.g., wizard, cleric)
     const maxPossibleSpellLevel = spellSlotTable[spellSlotTable.length - 1].length;
     const spellLevels = [];
     for (let i = 1; i <= maxPossibleSpellLevel; i++) spellLevels.push(i);
