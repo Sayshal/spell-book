@@ -515,6 +515,15 @@ export function registerSettings() {
     type: new foundry.data.fields.BooleanField({ initial: false })
   });
 
+  /** Suppress preload notification on game ready */
+  game.settings.register(MODULE.ID, SETTINGS.SUPPRESS_PRELOAD_NOTIFICATION, {
+    name: 'SPELLBOOK.Settings.SuppressPreloadNotification.Name',
+    hint: 'SPELLBOOK.Settings.SuppressPreloadNotification.Hint',
+    scope: 'world',
+    config: true,
+    type: new foundry.data.fields.BooleanField({ initial: false })
+  });
+
   // ========================================//
   //  Troubleshooting                        //
   // ========================================//

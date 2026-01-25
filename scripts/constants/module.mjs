@@ -606,6 +606,9 @@ export const SETTINGS = {
 
   SUPPRESS_MIGRATION_WARNINGS: 'suppressMigrationWarnings',
 
+  /** @type {string} Suppress preload notifications on game ready */
+  SUPPRESS_PRELOAD_NOTIFICATION: 'suppressPreloadNotification',
+
   /** @type {string} Include actor data in troubleshooter reports */
   TROUBLESHOOTER_INCLUDE_ACTORS: 'troubleshooterIncludeActors',
 

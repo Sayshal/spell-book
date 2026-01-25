@@ -14,11 +14,12 @@ function spellSlotTrackerScript() {
     ui.notifications.info(`${actor.name} has no spellcasting ability.`);
     return;
   }
-  let message = `<h3>${actor.name} - Spell Slots</h3><table><tr><th>Level</th><th>Used</th><th>Max</th></tr>`;
+  let message = `<h3>${actor.name} - Spell Slots</h3><table><tr><th>Level</th><th>Used</th><th>Remaining</th></tr>`;
   for (let i = 1; i <= 9; i++) {
     const slot = spellcasting[`spell${i}`];
     if (slot && slot.max > 0) {
-      message += `<tr><td>${i}</td><td>${slot.value}</td><td>${slot.max}</td></tr>`;
+      const used = slot.max - slot.value;
+      message += `<tr><td>${i}</td><td>${used}/${slot.max}</td><td>${slot.value}</td></tr>`;
     }
   }
   message += '</table>';
@@ -30,7 +31,7 @@ function spellSlotTrackerScript() {
 }
 export const spellSlotTracker = {
   flagKey: 'spellSlotTracker',
-  version: '1.0.1',
+  version: '1.0.2',
   name: 'Spell Book - Slot Tracker',
   img: 'icons/magic/symbols/runes-star-pentagon-magenta.webp',
   type: 'script',

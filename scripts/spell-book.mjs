@@ -52,7 +52,8 @@ Hooks.once('ready', async function () {
   await Macros.initializeMacros();
   await UserDataSetup.initializeUserSpellData();
   await UsageTracker.initialize();
-  await DataUtils.preloadData(true);
+  const suppressPreload = game.settings.get(MODULE.ID, SETTINGS.SUPPRESS_PRELOAD_NOTIFICATION);
+  await DataUtils.preloadData(!suppressPreload);
   if (game.user.isGM) await DataUtils.registerCustomSpellLists();
   await registerSpellBookTours();
   log(3, 'Module ready.');

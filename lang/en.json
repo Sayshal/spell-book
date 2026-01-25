@@ -507,6 +507,8 @@
   "SPELLBOOK.Settings.SuppressMigrationWarnings.Enabled": "Migration warnings suppressed. You will no longer receive migration notification messages.",
   "SPELLBOOK.Settings.SuppressMigrationWarnings.Hint": "When enabled, migration warnings will not be shown in chat after the initial setup. Enable this if migrations are running repeatedly and you don't need the notifications.",
   "SPELLBOOK.Settings.SuppressMigrationWarnings.Name": "Suppress Migration Warnings",
+  "SPELLBOOK.Settings.SuppressPreloadNotification.Hint": "When enabled, the 'Spell Book ready' notification will not be shown when the game loads.",
+  "SPELLBOOK.Settings.SuppressPreloadNotification.Name": "Suppress Ready Notification",
   "SPELLBOOK.Settings.Title": "Spell Book Settings for {name}",
   "SPELLBOOK.Settings.Troubleshooter.ActorDataHint": "This will export {count} actor(s) you own: {names}",
   "SPELLBOOK.Settings.Troubleshooter.CopyToClipboard": "Copy to Clipboard",
