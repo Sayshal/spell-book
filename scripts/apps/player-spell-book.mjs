@@ -5,7 +5,6 @@
  * capabilities. This application serves as the central hub for all spell-related
  * activities including preparation management, filter configuration, analytics access, and
  * party coordination features.
- *
  * @module Applications/SpellBook
  * @author Tyler
  */
@@ -29,8 +28,8 @@ const { renderTemplate } = foundry.applications.handlebars;
 export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Create a new SpellBook application.
-   * @param {Object} actor - The actor whose spells to display
-   * @param {Object} [options={}] - Application options
+   * @param {object} actor - The actor whose spells to display
+   * @param {object} [options] - Application options
    */
   constructor(actor, options = {}) {
     super(options);
@@ -130,7 +129,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Get the primary wizard manager for backward compatibility.
-   * @returns {Object|null} The primary wizard manager instance or null if none found
+   * @returns {object | null} The primary wizard manager instance or null if none found
    */
   get wizardManager() {
     log(3, 'Retrieving wizardmanger.', { managers: this.wizardManagers });
@@ -444,7 +443,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Handle form submission by updating internal state cache and processing preparation/filter changes.
    * @param {Event} event - The form submission event
    * @param {HTMLElement} form - The form element
-   * @param {Object} _formData - The form data
+   * @param {object} _formData - The form data
    * @returns {Promise<void>}
    * @static
    */
@@ -995,7 +994,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Check if a specific class needs a validation notice.
    * @param {string} classIdentifier - The class identifier
    * @param {string} className - The class name
-   * @returns {Object|null} Notice object or null
+   * @returns {object | null} Notice object or null
    * @private
    */
   #prepareClassValidationNotice(classIdentifier, className) {
@@ -1021,8 +1020,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Process spell levels for context preparation.
-   * @param {Array<Object>} spellLevels - Raw spell level data
-   * @returns {Promise<Array<Object>>} Processed spell levels ready for template
+   * @param {Array<object>} spellLevels - Raw spell level data
+   * @returns {Promise<Array<object>>} Processed spell levels ready for template
    * @private
    */
   async #processSpellsByLevel(spellLevels) {
@@ -1130,7 +1129,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           const wizardManager = this.wizardManagers.get(processedSpell.sourceClass);
           if (wizardManager) {
             const spellUuid = processedSpell.spellUuid || processedSpell.compendiumUuid;
-            learningSource = await wizardManager.getSpellLearningSource(spellUuid);
+            learningSource = wizardManager.getSpellLearningSource(spellUuid);
             learningSourceLabel = game.i18n.localize(WizardBook.getLearnedLabelKey(learningSource));
           }
         }

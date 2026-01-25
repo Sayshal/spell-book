@@ -6,7 +6,6 @@
  * class provides wizard spellbook management that integrates with
  * Foundry's journal system to create persistent, shareable spellbooks for wizard
  * characters and wizard-enabled classes.
- *
  * @module Managers/WizardBook
  * @author Tyler
  */
@@ -30,8 +29,8 @@ export class WizardBook {
 
   /**
    * Create a new WizardBook for an actor and specific class.
-   * @param {Object} actor - The actor to manage wizard spellbook for
-   * @param {string} [classIdentifier='wizard'] - The class identifier (e.g., 'wizard', 'cleric')
+   * @param {object} actor - The actor to manage wizard spellbook for
+   * @param {string} [classIdentifier] - The class identifier (e.g., 'wizard', 'cleric')
    */
   constructor(actor, classIdentifier = 'wizard') {
     log(3, 'Creating WizardBook.', { actor: actor.name, classIdentifier });
@@ -73,7 +72,7 @@ export class WizardBook {
   /**
    * Find the actor's wizard-enabled class for this identifier.
    * @private
-   * @returns {Object|null} The wizard-enabled class item or null
+   * @returns {object | null} The wizard-enabled class item or null
    */
   _findWizardClass() {
     log(3, 'Finding wizard-enabled class.', { classIdentifier: this.classIdentifier, actorId: this.actor?.id });
@@ -88,7 +87,7 @@ export class WizardBook {
   /**
    * Initialize wizard flags on the actor for this class.
    * @private
-   * @returns {Promise<Object>} Update data applied, if any
+   * @returns {Promise<object>} Update data applied, if any
    */
   async _initializeFlags() {
     log(3, 'Initializing wizard flags.', { actorId: this.actor.id, classIdentifier: this.classIdentifier });
@@ -131,7 +130,7 @@ export class WizardBook {
    * @param {string} spellUuid - UUID of the spell to copy
    * @param {number} cost - Cost in base currency to copy the spell
    * @param {number} time - Time in hours to copy the spell
-   * @param {boolean} [isFree=false] - Whether this is a free spell
+   * @param {boolean} [isFree] - Whether this is a free spell
    * @returns {Promise<boolean>} Success state
    */
   async copySpell(spellUuid, cost, time, isFree = false) {
@@ -193,8 +192,8 @@ export class WizardBook {
 
   /**
    * Calculate cost to copy a spell, accounting for free spells.
-   * @param {Object} spell - The spell to copy
-   * @returns {Promise<Object>} Cost in gold pieces and if it's free
+   * @param {object} spell - The spell to copy
+   * @returns {Promise<object>} Cost in gold pieces and if it's free
    */
   async getCopyingCost(spell) {
     log(3, 'Calculating copying cost.', { spellId: spell?.id, spellLevel: spell?.system?.level });
@@ -207,7 +206,7 @@ export class WizardBook {
 
   /**
    * Calculate and format time to copy a spell.
-   * @param {Object} spell - The spell to copy
+   * @param {object} spell - The spell to copy
    * @returns {string} Formatted time string (e.g., "2 hours", "1 hour, 30 minutes")
    */
   getCopyingTime(spell) {
@@ -221,7 +220,7 @@ export class WizardBook {
    * Add a spell to the wizard's spellbook.
    * @param {string} spellUuid - UUID of the spell to add
    * @param {string} source - Source of the spell (levelUp, copied, initial)
-   * @param {Object} metadata - Additional metadata for the spell
+   * @param {object} metadata - Additional metadata for the spell
    * @returns {Promise<boolean>} Success state
    */
   async addSpellToSpellbook(spellUuid, source, metadata) {
@@ -244,7 +243,7 @@ export class WizardBook {
 
   /**
    * Find the actor's spellbook journal for this class.
-   * @returns {Promise<Object|null>} The actor's spellbook journal or null if not found
+   * @returns {Promise<object | null>} The actor's spellbook journal or null if not found
    */
   async findSpellbookJournal() {
     log(3, 'Finding spellbook journal.', { actorId: this.actor.id, classIdentifier: this.classIdentifier });
@@ -262,7 +261,7 @@ export class WizardBook {
 
   /**
    * Create a new spellbook journal for the actor and class.
-   * @returns {Promise<Object>} The created journal
+   * @returns {Promise<object>} The created journal
    */
   async createSpellbookJournal() {
     log(3, 'Creating spellbook journal.', { actorId: this.actor.id, classIdentifier: this.classIdentifier });
@@ -297,7 +296,7 @@ export class WizardBook {
 
   /**
    * Get or create the actor's spellbook journal for this class.
-   * @returns {Promise<Object|null>} The actor's spellbook journal
+   * @returns {Promise<object | null>} The actor's spellbook journal
    */
   async getOrCreateSpellbookJournal() {
     log(3, 'Getting or creating spellbook journal.', { actorId: this.actor.id, classIdentifier: this.classIdentifier });
@@ -319,7 +318,7 @@ export class WizardBook {
 
   /**
    * Get the Actor Spellbooks folder from the custom spellbooks pack.
-   * @returns {Object|null} The folder or null if not found
+   * @returns {object | null} The folder or null if not found
    */
   getSpellbooksFolder() {
     const customPack = game.packs.get(MODULE.PACK.SPELLS);
@@ -385,7 +384,7 @@ export class WizardBook {
 
   /**
    * Check if a spell would be free to copy.
-   * @param {Object} spell - The spell to check
+   * @param {object} spell - The spell to check
    * @returns {Promise<boolean>} Whether the spell would be free
    */
   async isSpellFree(spell) {
@@ -398,9 +397,9 @@ export class WizardBook {
   /**
    * Get the learning source for a spell in the spellbook.
    * @param {string} spellUuid - UUID of the spell to check
-   * @returns {Promise<string>} Source type: 'free', 'copied', 'scroll', or 'free' as default
+   * @returns {string} Source type: 'free', 'copied', 'scroll', or 'free' as default
    */
-  async getSpellLearningSource(spellUuid) {
+  getSpellLearningSource(spellUuid) {
     log(3, 'Getting spell learning source.', { spellUuid, classIdentifier: this.classIdentifier });
     const copiedSpellsFlag = `${FLAGS.WIZARD_COPIED_SPELLS}_${this.classIdentifier}`;
     const copiedSpells = this.actor.getFlag(MODULE.ID, copiedSpellsFlag) || [];

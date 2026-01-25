@@ -168,7 +168,6 @@ export class State {
 
   /**
    * Detect and initialize all spellcasting classes for the actor.
-   * @todo: Consider using dnd5e.utils.formatIdentifier() when it becomes available
    * @returns {void}
    */
   detectSpellcastingClasses() {
@@ -193,7 +192,7 @@ export class State {
             spellcastingSource = subclassItem;
           } else continue;
         }
-        const identifier = classItem.system.identifier?.toLowerCase() || classItem.name.toLowerCase();
+        const identifier = classItem.identifier;
         currentClassIds.push(identifier);
         this.spellcastingClasses[identifier] = {
           name: classItem.name,
@@ -327,7 +326,6 @@ export class State {
   /**
    * Determine the preparation mode for a given class.
    * @param {object} classItem - The class item to analyze
-   * @todo: Consider using dnd5e.utils.formatIdentifier() when it becomes available
    * @returns {string} The preparation mode ('spell', 'pact', etc.)
    */
   getClassPreparationMode(classItem) {
@@ -360,11 +358,10 @@ export class State {
   /**
    * Determine spell swapping rules for a given class.
    * @param {object} classItem - The class item to analyze
-   * @todo: Consider using dnd5e.utils.formatIdentifier() when it becomes available
    * @returns {object} Spell swapping rules for the class
    */
   getClassSwapRules(classItem) {
-    const identifier = classItem.system?.identifier;
+    const identifier = classItem.identifier;
     const rules = { canSwapCantrips: false, cantripSwapMode: 'none', canSwapSpells: false, spellSwapMode: 'none' };
     const classRules = RuleSet.getClassRules(this.actor, identifier);
     rules.canSwapCantrips = classRules.cantripSwapping !== 'none';
@@ -629,7 +626,7 @@ export class State {
       spellData.isWizardClass = true;
       spellData.inWizardSpellbook = personalSpellbook.includes(spellUuid);
       spellData.canAddToSpellbook = !spellData.inWizardSpellbook && level > 0;
-      if (spellData.inWizardSpellbook && wizardManager) spellData.learningSource = await wizardManager.getSpellLearningSource(spellUuid);
+      if (spellData.inWizardSpellbook && wizardManager) spellData.learningSource = wizardManager.getSpellLearningSource(spellUuid);
       spellData.preparation = { prepared: false, disabled: true, disabledReason: '', _isWizardLearning: true };
       spellData.filterData = UIUtils.extractSpellFilterData(spell);
       spellData.enrichedIcon = UIUtils.createSpellIconLink(spell);

@@ -5,7 +5,6 @@
  * Spell Book module. This class serves as the central coordination point for all
  * spell-related operations including preparation tracking, spell status determination,
  * class-specific spell management, and integration with various spell casting systems.
- *
  * @module Managers/SpellManager
  * @author Tyler
  */
@@ -21,8 +20,8 @@ import { Cantrips, RuleSet } from './_module.mjs';
 export class SpellManager {
   /**
    * Create a new SpellManager for an actor.
-   * @param {Object} actor - The actor to manage spells for
-   * @param {Object} app - The parent spell book application (optional)
+   * @param {object} actor - The actor to manage spells for
+   * @param {object} app - The parent spell book application (optional)
    */
   constructor(actor, app = null) {
     log(3, `Creating SpellManager.`, { actorName: actor.name, actorId: actor.id });
@@ -44,7 +43,7 @@ export class SpellManager {
   /**
    * Get cantrip and spell settings for the actor.
    * @param {string} classIdentifier - Class identifier for class-specific rules (required)
-   * @returns {ActorSpellSettings} Actor's spell settings
+   * @returns {object} Actor's spell settings
    */
   getSettings(classIdentifier) {
     if (this._settingsCache.has(classIdentifier)) return this._settingsCache.get(classIdentifier);
@@ -86,7 +85,7 @@ export class SpellManager {
   /**
    * Prepare batch data for efficient spell processing.
    * @param {string} classIdentifier - The class identifier to prepare data for
-   * @returns {Object} Batch data containing Maps and cached values for O(1) lookups
+   * @returns {object} Batch data containing Maps and cached values for O(1) lookups
    */
   prepareBatchData(classIdentifier) {
     log(3, 'Preparing batch data for spell processing', { actorName: this.actor.name, classIdentifier });
@@ -125,10 +124,10 @@ export class SpellManager {
 
   /**
    * Get spell preparation status using pre-fetched batch data.
-   * @param {Object} spell - The spell to check
+   * @param {object} spell - The spell to check
    * @param {string} classIdentifier - The specific class context
-   * @param {Object} batchData - Pre-fetched batch data from prepareBatchData()
-   * @returns {Object} Preparation status information
+   * @param {object} batchData - Pre-fetched batch data from prepareBatchData()
+   * @returns {object} Preparation status information
    */
   getSpellPreparationStatus(spell, classIdentifier, batchData) {
     if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
@@ -178,7 +177,7 @@ export class SpellManager {
   /**
    * Parse a class-spell key back into components.
    * @param {string} key - The class-spell key
-   * @returns {Object} Object with classIdentifier and spellUuid
+   * @returns {object} Object with classIdentifier and spellUuid
    */
   _parseClassSpellKey(key) {
     const [classIdentifier, ...uuidParts] = key.split(':');
@@ -188,15 +187,7 @@ export class SpellManager {
   /**
    * Save prepared spells for a specific class.
    * @param {string} classIdentifier - The class identifier
-   * @param {Object<string, {
-   *   uuid: string,
-   *   isPrepared: boolean,
-   *   wasPrepared: boolean,
-   *   spellLevel: number,
-   *   preparationMode?: string,
-   *   name: string,
-   *   isRitual?: boolean
-   * }>} classSpellData - Object with spell data keyed by classSpellKey
+   * @param {object} classSpellData - Object with spell data keyed by classSpellKey
    * @returns {Promise<{
    *   cantripChanges: { added: string[], removed: string[], hasChanges: boolean },
    *   spellChanges: { added: string[], removed: string[], hasChanges: boolean }
@@ -285,7 +276,7 @@ export class SpellManager {
    * @private
    * @param {string} uuid - Spell UUID
    * @param {string} sourceClass - Source class identifier
-   * @param {Object[]} spellsToCreate - Array to add creation data to
+   * @param {object[]} spellsToCreate - Array to add creation data to
    * @returns {Promise<void>}
    */
   async _ensureRitualSpellOnActor(uuid, sourceClass, spellsToCreate) {
@@ -335,8 +326,8 @@ export class SpellManager {
    * @param {string} uuid - Spell UUID
    * @param {string} sourceClass - Source class identifier
    * @param {string} preparationMode - Preparation mode for this class
-   * @param {Object[]} spellsToCreate - Array to add creation data to
-   * @param {Object[]} spellsToUpdate - Array to add update data to
+   * @param {object[]} spellsToCreate - Array to add creation data to
+   * @param {object[]} spellsToUpdate - Array to add update data to
    * @returns {Promise<void>}
    */
   async _ensureSpellOnActor(uuid, sourceClass, preparationMode, spellsToCreate, spellsToUpdate) {
@@ -462,7 +453,7 @@ export class SpellManager {
 
   /**
    * Check if a spell can be cast as a ritual.
-   * @param {Object} spell - The spell item
+   * @param {object} spell - The spell item
    * @returns {boolean} Whether the spell has ritual capability
    * @private
    */
@@ -484,7 +475,7 @@ export class SpellManager {
     const cleanedSpells = [];
     for (const classSpellKey of preparedByClass[classIdentifier]) {
       const parsed = this._parseClassSpellKey(classSpellKey);
-      const spell = await fromUuid(parsed.spellUuid);
+      const spell = fromUuidSync(parsed.spellUuid);
       if (spell && spell.system.level !== 0) cleanedSpells.push(classSpellKey);
     }
     if (cleanedSpells.length !== preparedByClass[classIdentifier].length) {
@@ -527,7 +518,7 @@ export class SpellManager {
 
   /**
    * Determine if a spell can be changed based on class rules and current state.
-   * @param {Object} spell - The spell being modified
+   * @param {object} spell - The spell being modified
    * @param {boolean} isChecked - Whether the spell is being checked (true) or unchecked (false)
    * @param {boolean} wasPrepared - Whether the spell was previously prepared
    * @param {boolean} isLevelUp - Whether this is during level-up
@@ -535,7 +526,7 @@ export class SpellManager {
    * @param {string} classIdentifier - The class identifier
    * @param {number} currentPrepared - Current number of prepared spells for this class
    * @param {number} maxPrepared - Maximum allowed prepared spells for this class
-   * @returns {Object} Status object with allowed and message properties
+   * @returns {object} Status object with allowed and message properties
    */
   canChangeSpellStatus(spell, isChecked, wasPrepared, isLevelUp, isLongRest, classIdentifier, currentPrepared, maxPrepared) {
     log(3, 'Can status be changed.', { actorName: this.actor.name, spellName: spell.name, isChecked, wasPrepared, isLevelUp, isLongRest, classIdentifier, currentPrepared, maxPrepared });
@@ -623,7 +614,7 @@ export class SpellManager {
 
   /**
    * Attempt to automatically determine the correct source class for a prepared spell.
-   * @param {Object} spell - The spell to analyze
+   * @param {object} spell - The spell to analyze
    * @returns {string|null} The determined source class identifier, or null if couldn't be determined
    */
   attemptToFixSourceClass(spell) {
@@ -644,7 +635,7 @@ export class SpellManager {
 
   /**
    * Prepare class-specific preparation data for footer display.
-   * @returns {Array<Object>} Array of class preparation data
+   * @returns {Array<object>} Array of class preparation data
    */
   prepareClassPreparationData() {
     log(3, 'Preparing class preparation data (for footer).');
