@@ -273,3 +273,18 @@ export function migrateFilterData(oldConfig) {
     return userPref ? { ...defaultFilter, enabled: userPref.enabled, order: userPref.order ?? defaultFilter.order } : foundry.utils.deepClone(defaultFilter);
   });
 }
+
+/**
+ * Create a shallow clone of a spell suitable for modification without affecting the original.
+ * More efficient than deepClone for render-path operations where only top-level properties
+ * and immediate system/flags properties are modified.
+ * @param {Object} spell - The spell object to clone
+ * @returns {Object} A shallow clone with separately cloned system and flags
+ */
+export function shallowCloneSpell(spell) {
+  if (!spell) return spell;
+  const clone = { ...spell };
+  if (spell.system) clone.system = { ...spell.system };
+  if (spell.flags) clone.flags = foundry.utils.deepClone(spell.flags);
+  return clone;
+}

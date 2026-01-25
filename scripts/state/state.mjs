@@ -511,7 +511,7 @@ export class State {
       if (processedSpellIds.has(spellId)) continue;
       processedSpellIds.add(spellId);
       if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
-      const spellData = foundry.utils.deepClone(spell);
+      const spellData = DataUtils.shallowCloneSpell(spell);
       const ownedVersions = batchData.ownedSpellsMap?.get(normalizedUuid);
       if (ownedVersions) {
         spellData.aggregatedModes = {
@@ -620,7 +620,7 @@ export class State {
       const level = spell.system.level;
       if (processedSpellUuids.has(spellUuid) || level === 0) continue;
       if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
-      const spellData = foundry.utils.deepClone(spell);
+      const spellData = DataUtils.shallowCloneSpell(spell);
       spellData.compendiumUuid = spellUuid;
       spellData.sourceClass = classIdentifier;
       spellData.isWizardClass = true;

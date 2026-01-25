@@ -1037,7 +1037,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       log(3, 'Beginning spells for level processing:', { spells });
       const processedSpells = [];
       for (const spell of spells) {
-        const processedSpell = foundry.utils.deepClone(spell);
+        const processedSpell = DataUtils.shallowCloneSpell(spell);
         if (!spell.compendiumUuid) spell.compendiumUuid = spell.uuid;
         const classes = ['spell-item'];
         if (spell.preparation?.prepared) classes.push('prepared-spell');
