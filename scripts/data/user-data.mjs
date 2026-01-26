@@ -303,6 +303,15 @@ export class UserData {
     const explorationCol = game.i18n.localize('SPELLBOOK.UserData.ExplorationColumn');
     const totalCol = game.i18n.localize('SPELLBOOK.UserData.TotalColumn');
     const lastUsedCol = game.i18n.localize('SPELLBOOK.UserData.LastUsedColumn');
+    const unknownSpell = game.i18n.localize('SPELLBOOK.UI.UnknownSpell');
+    const spellNameCache = new Map();
+    const getSpellName = (uuid) => {
+      if (!spellNameCache.has(uuid)) {
+        const spell = fromUuidSync(uuid);
+        spellNameCache.set(uuid, spell?.name || unknownSpell);
+      }
+      return spellNameCache.get(uuid);
+    };
     const user = game.users.get(userId);
     const userActors = game.actors.filter((actor) => actor.type === 'character' && (actor.ownership[userId] === 3 || user?.character?.id === actor.id));
     const processedActors = userActors.map((actor) => {
@@ -310,29 +319,17 @@ export class UserData {
       const usageSpells = [];
       for (const [uuid, data] of Object.entries(spellData)) {
         const actorData = data.actorData?.[actor.id];
-        if (actorData?.favorited) {
-          const spell = fromUuidSync(uuid);
-          const spellName = spell?.name || game.i18n.localize('SPELLBOOK.UI.UnknownSpell');
-          favoriteSpells.push({ uuid, name: spellName });
-        }
+        if (actorData?.favorited) favoriteSpells.push({ uuid, name: getSpellName(uuid) });
         if (actorData?.usageStats && actorData.usageStats.count > 0) {
-          const spell = fromUuidSync(uuid);
-          const spellName = spell?.name || game.i18n.localize('SPELLBOOK.UI.UnknownSpell');
           const stats = actorData.usageStats;
           const lastUsedDate = stats.lastUsed ? foundry.utils.timeSince(stats.lastUsed) : '-';
-          usageSpells.push({ uuid, name: spellName, stats, lastUsedDate });
+          usageSpells.push({ uuid, name: getSpellName(uuid), stats, lastUsedDate });
         }
       }
       return { id: actor.id, name: actor.name, favoriteSpells, usageSpells };
     });
     const notesSpells = [];
-    for (const [uuid, data] of Object.entries(spellData)) {
-      if (data.notes && data.notes.trim()) {
-        const spell = fromUuidSync(uuid);
-        const spellName = spell?.name || game.i18n.localize('SPELLBOOK.UI.UnknownSpell');
-        notesSpells.push({ uuid, name: spellName, notes: data.notes });
-      }
-    }
+    for (const [uuid, data] of Object.entries(spellData)) if (data.notes && data.notes.trim()) notesSpells.push({ uuid, name: getSpellName(uuid), notes: data.notes });
     return await renderTemplate(TEMPLATES.COMPONENTS.USER_SPELL_DATA_TABLES, {
       isGM: false,
       userId,
@@ -420,9 +417,10 @@ export class UserData {
     if (success) {
       // Update per-spell cache
       const cacheKey = actorId ? `${targetUserId}:${actorId}:${canonicalUuid}` : `${targetUserId}:${canonicalUuid}`;
-      const result = actorId && spellData[canonicalUuid].actorData[actorId]
-        ? { ...spellData[canonicalUuid].actorData[actorId], notes: spellData[canonicalUuid].notes }
-        : { notes: spellData[canonicalUuid].notes || '', favorited: false, usageStats: null };
+      const result =
+        actorId && spellData[canonicalUuid].actorData[actorId]
+          ? { ...spellData[canonicalUuid].actorData[actorId], notes: spellData[canonicalUuid].notes }
+          : { notes: spellData[canonicalUuid].notes || '', favorited: false, usageStats: null };
       this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
     }
     return success;
@@ -603,11 +601,7 @@ export class UserData {
 
     // Get actor's current favorite spell IDs
     const actorFavorites = actor.system.favorites || [];
-    const actorFavoriteSpellIds = new Set(
-      actorFavorites
-        .filter((fav) => fav.type === 'item' && fav.id.startsWith('.Item.'))
-        .map((fav) => fav.id.replace('.Item.', ''))
-    );
+    const actorFavoriteSpellIds = new Set(actorFavorites.filter((fav) => fav.type === 'item' && fav.id.startsWith('.Item.')).map((fav) => fav.id.replace('.Item.', '')));
 
     // Get all spell data once (batch read)
     await this._ensureUserDataInfrastructure(targetUserId);
