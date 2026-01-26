@@ -130,35 +130,27 @@ export class SpellManager {
    */
   getSpellPreparationStatus(spell, classIdentifier, batchData) {
     if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
-    const spellUuid = spell.compendiumUuid || spell.uuid;
     if (spell.aggregatedModes) {
       const status = { prepared: spell.aggregatedModes.isPreparedForCheckbox, disabled: false, disabledReason: '' };
-      if (spell.system?.level === 0 && batchData.cantripLimits) {
-        const { max, current } = batchData.cantripLimits;
-        const isAtMax = current >= max;
-        if (isAtMax && !status.prepared) {
-          const { behavior } = batchData.cantripSettings;
-          if (behavior === MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) {
-            status.disabled = true;
-            status.disabledReason = 'SPELLBOOK.Cantrips.MaximumReached';
-          }
-        }
+      if (spell.system?.level !== 0 || status.prepared || !batchData.cantripLimits) return status;
+      const { max, current } = batchData.cantripLimits;
+      if (current < max) return status;
+      if (batchData.cantripSettings?.behavior === MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) {
+        status.disabled = true;
+        status.disabledReason = 'SPELLBOOK.Cantrips.MaximumReached';
       }
       return status;
     }
+    const spellUuid = spell.compendiumUuid || spell.uuid;
     const spellKey = this._createClassSpellKey(spellUuid, classIdentifier);
     const isPreparedForClass = batchData.classPreparedSpells.includes(spellKey);
     const status = { prepared: isPreparedForClass, disabled: false, disabledReason: '' };
-    if (spell.system?.level === 0 && batchData.cantripLimits) {
-      const { max, current } = batchData.cantripLimits;
-      const isAtMax = current >= max;
-      if (isAtMax && !isPreparedForClass) {
-        const { behavior } = batchData.cantripSettings;
-        if (behavior === MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) {
-          status.disabled = true;
-          status.disabledReason = 'SPELLBOOK.Cantrips.MaximumReached';
-        }
-      }
+    if (spell.system?.level !== 0 || isPreparedForClass || !batchData.cantripLimits) return status;
+    const { max, current } = batchData.cantripLimits;
+    if (current < max) return status;
+    if (batchData.cantripSettings?.behavior === MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) {
+      status.disabled = true;
+      status.disabledReason = 'SPELLBOOK.Cantrips.MaximumReached';
     }
     return status;
   }
@@ -281,10 +273,7 @@ export class SpellManager {
   async _ensureRitualSpellOnActor(uuid, sourceClass, spellsToCreate) {
     log(3, `Ensuring ritual spell on actor.`, { actorName: this.actor.name, uuid, sourceClass });
     const existingRitualSpell = this.actor.itemTypes.spell.find(
-      (s) =>
-        (s._stats?.compendiumSource === uuid || s.uuid === uuid) &&
-        (s.system.sourceClass === sourceClass || s.sourceClass === sourceClass) &&
-        s.system?.method === MODULE.SPELL_MODE.RITUAL
+      (s) => (s._stats?.compendiumSource === uuid || s.uuid === uuid) && (s.system.sourceClass === sourceClass || s.sourceClass === sourceClass) && s.system?.method === MODULE.SPELL_MODE.RITUAL
     );
     if (existingRitualSpell) {
       log(3, `Ritual spell already exists on actor.`, { actorName: this.actor.name, uuid, sourceClass });
@@ -496,9 +485,7 @@ export class SpellManager {
       for (const spellKey of spellKeys) {
         const parsed = this._parseClassSpellKey(spellKey);
         const actualSpell = this.actor.itemTypes.spell.find(
-          (s) =>
-            (s._stats?.compendiumSource === parsed.spellUuid || s.uuid === parsed.spellUuid) &&
-            (s.system?.sourceClass === classIdentifier || s.sourceClass === classIdentifier)
+          (s) => (s._stats?.compendiumSource === parsed.spellUuid || s.uuid === parsed.spellUuid) && (s.system?.sourceClass === classIdentifier || s.sourceClass === classIdentifier)
         );
         if (actualSpell) cleanedKeys.push(spellKey);
         else hasChanges = true;
@@ -616,5 +603,4 @@ export class SpellManager {
     }
     return null;
   }
-
 }
