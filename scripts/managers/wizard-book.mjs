@@ -29,6 +29,7 @@ export class WizardBook {
 
   /**
    * Create a new WizardBook for an actor and specific class.
+   * Use WizardBook.create() for async initialization when possible.
    * @param {object} actor - The actor to manage wizard spellbook for
    * @param {string} [classIdentifier] - The class identifier (e.g., 'wizard', 'cleric')
    */
@@ -41,18 +42,30 @@ export class WizardBook {
     this._spellbookCache = null;
     this._maxSpellsCache = null;
     this._freeSpellsCache = null;
-    if (this.isWizard) {
-      this._initializeFlags();
-      this._initializeCache();
-    }
+    this._flagsInitialized = false;
+    if (this.isWizard) this._initializeCache();
+  }
+
+  /**
+   * Factory method for async initialization of WizardBook.
+   * Preferred over constructor when called from async context.
+   * @param {object} actor - The actor to manage wizard spellbook for
+   * @param {string} [classIdentifier] - The class identifier (e.g., 'wizard', 'cleric')
+   * @returns {Promise<WizardBook>} Fully initialized WizardBook instance
+   * @static
+   */
+  static async create(actor, classIdentifier = 'wizard') {
+    const instance = new WizardBook(actor, classIdentifier);
+    if (instance.isWizard) await instance._ensureFlagsInitialized();
+    return instance;
   }
 
   /**
    * Initialize cache with pre-calculated values.
    * @private
-   * @returns {Promise<void>}
+   * @returns {void}
    */
-  async _initializeCache() {
+  _initializeCache() {
     log(3, 'Initializing WizardBook cache.', { classIdentifier: this.classIdentifier });
     this._maxSpellsCache = this.getMaxSpellsAllowed();
     this._freeSpellsCache = this.getTotalFreeSpells();
@@ -85,18 +98,20 @@ export class WizardBook {
   }
 
   /**
-   * Initialize wizard flags on the actor for this class.
+   * Ensure wizard flags are initialized on the actor for this class.
+   * Called lazily before flag operations to avoid constructor async issues.
    * @private
-   * @returns {Promise<object>} Update data applied, if any
+   * @returns {Promise<void>}
    */
-  async _initializeFlags() {
-    log(3, 'Initializing wizard flags.', { actorId: this.actor.id, classIdentifier: this.classIdentifier });
-    const updateData = {};
+  async _ensureFlagsInitialized() {
+    if (this._flagsInitialized) return;
+    log(3, 'Ensuring wizard flags initialized.', { actorId: this.actor.id, classIdentifier: this.classIdentifier });
     const flags = this.actor.flags?.[MODULE.ID] || {};
     const copiedSpellsFlag = `${FLAGS.WIZARD_COPIED_SPELLS}_${this.classIdentifier}`;
-    if (!flags[copiedSpellsFlag]) updateData[`flags.${MODULE.ID}.${copiedSpellsFlag}`] = [];
-    if (Object.keys(updateData).length > 0) await this.actor.update(updateData);
-    return updateData;
+    if (!flags[copiedSpellsFlag]) {
+      await this.actor.update({ [`flags.${MODULE.ID}.${copiedSpellsFlag}`]: [] });
+    }
+    this._flagsInitialized = true;
   }
 
   /**
@@ -225,6 +240,7 @@ export class WizardBook {
    */
   async addSpellToSpellbook(spellUuid, source, metadata) {
     log(3, 'Adding spell to spellbook.', { spellUuid, source, classIdentifier: this.classIdentifier });
+    await this._ensureFlagsInitialized();
     const journal = await this.getOrCreateSpellbookJournal();
     const journalPage = journal.pages.find((p) => p.type === 'spells');
     const spells = journalPage.system.spells || new Set();

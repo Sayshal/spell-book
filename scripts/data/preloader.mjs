@@ -190,7 +190,7 @@ async function getActorSpellbookSpells(actor) {
   const spellData = [];
   const wizardData = DataUtils.getWizardData(actor);
   for (const identifier of Object.keys(wizardData)) {
-    const wizardManager = new WizardBook(actor, identifier);
+    const wizardManager = await WizardBook.create(actor, identifier);
     try {
       if (wizardManager.isWizard) {
         const spellbookJournal = await wizardManager.findSpellbookJournal();
