@@ -14,3 +14,5 @@ export * from './filters.mjs';
 export * from './formatting.mjs';
 export * from './search-engine.mjs';
 export * from './spell-book-ui.mjs';
+export * from './context-menu.mjs';
+export * from './spell-processor.mjs';

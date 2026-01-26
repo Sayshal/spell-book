@@ -13,10 +13,9 @@ import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module
 import * as DataUtils from '../data/_module.mjs';
 import { SpellComparison, DetailsCustomization, LoadoutSelector, SpellNotes, SpellBookSettings } from '../dialogs/_module.mjs';
 import { log } from '../logger.mjs';
-import { Loadouts, SpellManager, WizardBook, PartyMode } from '../managers/_module.mjs';
+import { SpellManager, WizardBook, PartyMode } from '../managers/_module.mjs';
 import { State } from '../state/_module.mjs';
 import * as UIUtils from '../ui/_module.mjs';
-import * as ValidationUtils from '../validation/_module.mjs';
 import { PlayerFilterConfiguration, AnalyticsDashboard, PartyCoordinator } from './_module.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -41,6 +40,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const wizardClasses = this._state.getWizardEnabledClasses();
     for (const { identifier } of wizardClasses) this.wizardManagers.set(identifier, new WizardBook(actor, identifier));
     this.ui = new UIUtils.SpellBookUI(this);
+    this._contextMenu = new UIUtils.SpellBookContextMenu(this);
+    this._spellProcessor = new UIUtils.SpellProcessor(this);
     this.filterHelper = new UIUtils.Filters(this);
     this.enabledElements = UIUtils.CustomUI.getEnabledPlayerElements();
     this.ritualManagers = new Map();
@@ -261,7 +262,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         context.classIdentifier = classIdentifier;
         context.className = this._state.classSpellData[classIdentifier].className;
         const rawSpellLevels = this._state.classSpellData[classIdentifier].spellLevels;
-        context.spellLevels = await this.#processSpellsByLevel(rawSpellLevels);
+        context.spellLevels = await this._spellProcessor.processSpellsByLevel(rawSpellLevels);
         context.globalPrepared = this._state.spellPreparation;
         context.classNotice = this.#prepareClassValidationNotice(classIdentifier, context.className);
       }
@@ -280,7 +281,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         context.wizardMaxSpellbookCount = 0;
       } else {
         const rawSpellLevels = wizardTabData.spellLevels || [];
-        context.spellLevels = await this.#processSpellsByLevel(rawSpellLevels);
+        context.spellLevels = await this._spellProcessor.processSpellsByLevel(rawSpellLevels);
         context.wizardTotalSpellbookCount = wizardTabData.wizardTotalSpellbookCount || 0;
         context.wizardRemainingFreeSpells = wizardTabData.wizardRemainingFreeSpells || 0;
         context.wizardHasFreeSpells = wizardTabData.wizardHasFreeSpells || false;
@@ -419,7 +420,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     SpellBook.DEFAULT_OPTIONS.position = this.position;
     if (this._isLongRest) this.actor.unsetFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);
     if (this._flagChangeHook) Hooks.off('updateActor', this._flagChangeHook);
-    this._hideContextMenu();
+    this._contextMenu.hide();
     const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
     if (isPartyMode) await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, false);
     if (this.ui?.search) this.ui.search.cleanup();
@@ -704,7 +705,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     log(3, 'Handling loadout action.', { event, target, type: event.type });
     if (event.type === 'contextmenu') {
       event.preventDefault();
-      await this._showLoadoutContextMenu(event, target);
+      await this._contextMenu.showLoadoutMenu(event, target);
       return;
     }
     const activeTab = this.tabGroups['spellbook-tabs'];
@@ -724,7 +725,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     log(3, 'Handling party action.', { event, target, type: event.type });
     if (event.type === 'contextmenu') {
       event.preventDefault();
-      await this._showPartyContextMenu(event, target);
+      await this._contextMenu.showPartyMenu(event, target);
       return;
     }
     const primaryGroup = PartyMode.getPrimaryGroupForActor(this.actor);
@@ -1015,185 +1016,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Process spell levels for context preparation.
-   * @param {Array<object>} spellLevels - Raw spell level data
-   * @returns {Promise<Array<object>>} Processed spell levels ready for template
-   * @private
-   */
-  async #processSpellsByLevel(spellLevels) {
-    log(3, 'Processing spell levels for context:', { spellLevels });
-    const collapsedLevels = DataUtils.CollapsedStateManager.get(FLAGS.COLLAPSED_LEVELS);
-    const enabledElements = this.enabledElements;
-    const processedLevels = [];
-
-    for (const levelData of spellLevels) {
-      const level = String(levelData.level);
-      const spells = levelData.spells || [];
-      const isCollapsed = collapsedLevels.includes(level);
-      log(3, 'Beginning spells for level processing:', { spells });
-      const processedSpells = [];
-      for (const spell of spells) {
-        const processedSpell = DataUtils.shallowCloneSpell(spell);
-        if (!spell.compendiumUuid) spell.compendiumUuid = spell.uuid;
-        const classes = ['spell-item'];
-        if (spell.preparation?.prepared) classes.push('prepared-spell');
-        if (this._state.wizardbookCache && spell.sourceClass) {
-          const classSpellbook = this._state.wizardbookCache.get(spell.sourceClass);
-          if (classSpellbook?.includes(spell.compendiumUuid)) classes.push('in-wizard-spellbook');
-        }
-        processedSpell.cssClasses = classes.join(' ');
-        processedSpell.dataAttributes = UIUtils.getSpellDataAttributes(spell);
-        if (!spell.tags) spell.tags = UIUtils.getSpellPreparationTags(spell, this.actor);
-        processedSpell.tags = spell.tags;
-        const ariaLabel = spell.preparation.prepared
-          ? game.i18n.format('SPELLBOOK.Preparation.Unprepare', { name: spell.name })
-          : game.i18n.format('SPELLBOOK.Preparation.Prepare', { name: spell.name });
-        const checkbox = ValidationUtils.createCheckbox({
-          name: `spell-${spell.system.identifier}`,
-          checked: spell.preparation.prepared,
-          disabled: spell.preparation.disabled,
-          ariaLabel: ariaLabel
-        });
-        checkbox.id = `prep-${spell.system.identifier}`;
-        checkbox.dataset.uuid = spell.compendiumUuid;
-        checkbox.dataset.name = spell.name;
-        checkbox.dataset.ritual = spell.filterData?.isRitual || false;
-        checkbox.dataset.wasPrepared = spell.preparation.prepared;
-
-        let sourceClass = null;
-        if (spell.system?.sourceClass) sourceClass = spell.system.sourceClass;
-        else if (spell.sourceClass) sourceClass = spell.sourceClass;
-        else if (spell.preparation?.preparedByOtherClass) sourceClass = spell.preparation.preparedByOtherClass;
-
-        if (sourceClass) checkbox.dataset.sourceClass = sourceClass;
-        else {
-          log(3, `Checking if ${spell.name} should have source class set.`, { spell });
-          const shouldHaveSourceClass = spell.preparation?.prepared && spell.system?.prepared !== 2 && !spell.flags?.dnd5e?.cachedFor;
-          if (shouldHaveSourceClass) {
-            const fixedSourceClass = this.spellManager.attemptToFixSourceClass(spell);
-            if (fixedSourceClass) {
-              checkbox.dataset.sourceClass = fixedSourceClass;
-              if (!this._sourceClassFixQueue) this._sourceClassFixQueue = [];
-              this._sourceClassFixQueue.push({ spellId: spell._id, spellName: spell.name, sourceClass: fixedSourceClass });
-            } else {
-              log(2, `No source class found for prepared spell: ${spell.name}`, {
-                spell,
-                preparation: spell.preparation,
-                spellcastingClasses: Object.keys(this.actor.spellcastingClasses || {})
-              });
-            }
-          }
-        }
-        if (spell.preparation?.preparedByOtherClass) checkbox.dataset.crossClass = 'true';
-        if (spell.preparation?.disabled && spell.preparation?.disabledReason) checkbox.dataset.tooltip = game.i18n.localize(spell.preparation.disabledReason);
-        processedSpell.preparationCheckboxHtml = ValidationUtils.elementToHtml(checkbox);
-        if (spell.sourceClass && this._state.wizardbookCache) {
-          const classSpellbook = this._state.wizardbookCache.get(spell.sourceClass);
-          processedSpell.inWizardSpellbook = classSpellbook ? classSpellbook.includes(spell.compendiumUuid) : false;
-        } else processedSpell.inWizardSpellbook = false;
-
-        if (this.comparisonSpells.size < game.settings.get(MODULE.ID, SETTINGS.SPELL_COMPARISON_MAX)) {
-          processedSpell.showCompareLink = true;
-          processedSpell.isInComparison = this.comparisonSpells.has(spell.compendiumUuid);
-        }
-        const spellUuid = processedSpell.uuid || processedSpell.compendiumUuid;
-        const comparisonIcon = {
-          enabled: enabledElements.has('compare') && processedSpell.showCompareLink,
-          active: processedSpell.isInComparison,
-          uuid: processedSpell.compendiumUuid,
-          tooltip: game.i18n.localize('SPELLBOOK.Comparison.Compare'),
-          ariaLabel: game.i18n.format('SPELLBOOK.Comparison.CompareSpell', { name: processedSpell.name })
-        };
-        const favoriteButton = {
-          enabled: enabledElements.has('favorites') && spellUuid,
-          favorited: processedSpell.favorited,
-          uuid: spellUuid,
-          tooltip: processedSpell.favorited ? game.i18n.localize('SPELLBOOK.UI.RemoveFromFavorites') : game.i18n.localize('SPELLBOOK.UI.AddToFavorites'),
-          iconClass: processedSpell.favorited ? 'fas' : 'far'
-        };
-        const notesIcon = {
-          enabled: enabledElements.has('notes') && spellUuid,
-          hasNotes: processedSpell.hasNotes,
-          uuid: spellUuid,
-          tooltip: processedSpell.hasNotes ? game.i18n.localize('SPELLBOOK.UI.HasNotes') : game.i18n.localize('SPELLBOOK.UI.AddNotes'),
-          iconClass: processedSpell.hasNotes ? 'fas fa-sticky-note' : 'far fa-sticky-note'
-        };
-
-        let learningSource = null;
-        let learningSourceLabel = null;
-        if (processedSpell.inWizardSpellbook && processedSpell.sourceClass) {
-          const wizardManager = this.wizardManagers.get(processedSpell.sourceClass);
-          if (wizardManager) {
-            const spellUuid = processedSpell.spellUuid || processedSpell.compendiumUuid;
-            learningSource = wizardManager.getSpellLearningSource(spellUuid);
-            learningSourceLabel = game.i18n.localize(WizardBook.getLearnedLabelKey(learningSource));
-          }
-        }
-        const wizardAction = {
-          isFromScroll: processedSpell.isFromScroll,
-          inSpellbook: processedSpell.inWizardSpellbook,
-          canLearn: processedSpell.system?.level > 0 && !processedSpell.inWizardSpellbook && !processedSpell.isFromScroll,
-          uuid: processedSpell.spellUuid || processedSpell.compendiumUuid,
-          scrollId: processedSpell.scrollId,
-          ariaLabel: game.i18n.format('SPELLBOOK.Scrolls.LearnFromScroll', { name: processedSpell.name }),
-          learningSource: learningSource,
-          learningSourceLabel: learningSourceLabel
-        };
-        const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
-        let partyIcons = { enabled: false, icons: [] };
-        if (isPartyMode) {
-          const partyActors = PartyMode.getPartyActors();
-          const tokenLimit = game.settings.get(MODULE.ID, SETTINGS.PARTY_MODE_TOKEN_LIMIT);
-          const spellUuid = processedSpell.sourceUuid || processedSpell.compendiumUuid || processedSpell.uuid;
-          const icons = [];
-          let iconCount = 0;
-          for (const actor of partyActors) {
-            if (iconCount >= tokenLimit) break;
-            if (actor.id === this.actor.id) continue;
-            if (PartyMode.actorHasSpell(actor, spellUuid)) {
-              const associatedUser = game.users.find((user) => user.character?.id === actor.id);
-              const userColor = associatedUser?.color?.css || game.user.color.css || 'transparent';
-              icons.push({ src: actor.img, name: actor.name, actorId: actor.id, userColor: userColor });
-              iconCount++;
-            }
-          }
-          partyIcons = { enabled: icons.length > 0, icons: icons };
-        }
-        const formattedDetails = UIUtils.CustomUI.buildPlayerMetadata(processedSpell, enabledElements, this.actor);
-        let materialComponentsTooltip = '';
-        const hasMaterialComponents = processedSpell.filterData?.materialComponents?.hasConsumedMaterials === true;
-        if (hasMaterialComponents && formattedDetails) {
-          const lastIconIndex = formattedDetails.lastIndexOf('</i>');
-          materialComponentsTooltip = lastIconIndex !== -1 ? formattedDetails.substring(lastIconIndex + 4).trim() : formattedDetails;
-        }
-        const finalSpell = {
-          ...processedSpell,
-          name: processedSpell.name,
-          cssClasses: processedSpell.cssClasses || 'spell-item',
-          comparisonIcon,
-          favoriteButton,
-          notesIcon,
-          wizardAction,
-          partyIcons,
-          formattedDetails,
-          materialComponentsTooltip,
-          preparationCheckboxHtml: processedSpell.preparationCheckboxHtml
-        };
-        processedSpells.push(finalSpell);
-      }
-
-      await this.spellManager.applySourceClassFixes();
-      log(3, 'Finishing spells for level processing:', { spells, processedSpells });
-
-      let preparedCount = 0;
-      if (level !== '0') preparedCount = spells.filter((spell) => spell.preparation?.prepared).length;
-      const cantripCounter = { enabled: level === '0', current: 0, maximum: 0 };
-      processedLevels.push({ level, levelName: levelData.name, spells: processedSpells, isCollapsed, preparedCount, cantripCounter });
-    }
-    return processedLevels;
-  }
-
-  /**
    * Register class-specific parts for all spellcasting classes and wizard tabs.
    * @private
    */
@@ -1238,165 +1060,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         elementsToWrap.forEach((el) => wrapper.appendChild(el));
         if (tabsNav && tabsNav.parentNode === wrapper) this.element.querySelector('.window-content').appendChild(tabsNav);
       }
-    }
-  }
-
-  /* -------------------------------------------- */
-  /*  Context Menu System                         */
-  /* -------------------------------------------- */
-
-  /**
-   * Show context menu with available loadouts.
-   * @param {PointerEvent} event - The contextmenu event
-   * @param {HTMLElement} target - The button element
-   * @private
-   */
-  async _showLoadoutContextMenu(event, target) {
-    log(3, 'Showing loadout context menu.');
-    this._hideContextMenu();
-    const activeTab = this.tabGroups['spellbook-tabs'];
-    const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
-    const classIdentifier = activeTabContent?.dataset.classIdentifier || this._state.activeClass;
-    if (!classIdentifier) return;
-    const loadoutManager = new Loadouts(this.actor, this);
-    const availableLoadouts = loadoutManager.getAvailableLoadouts(classIdentifier);
-    if (availableLoadouts.length === 0) return;
-    const items = availableLoadouts.map((loadout) => ({
-      id: loadout.id,
-      icon: 'fas fa-magic',
-      label: `${loadout.name} (${loadout.spellConfiguration?.length || 0})`,
-      action: async () => {
-        await loadoutManager.applyLoadout(loadout.id, classIdentifier);
-        this._hideContextMenu();
-      }
-    }));
-    const menu = this._createContextMenu('loadout', items);
-    this._positionContextMenu(menu, event, target, 'left');
-    this._setupContextMenuClickHandler();
-  }
-
-  /**
-   * Show context menu for party mode toggle.
-   * @param {PointerEvent} event - The contextmenu event
-   * @param {HTMLElement} target - The button element
-   * @private
-   */
-  async _showPartyContextMenu(event, target) {
-    log(3, 'Showing party context menu.');
-    this._hideContextMenu();
-    const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
-    const items = [
-      {
-        id: 'toggle-party-mode',
-        icon: `fas ${isPartyMode ? 'fa-eye-slash' : 'fa-users'}`,
-        label: game.i18n.localize(isPartyMode ? 'SPELLBOOK.Party.DisablePartyMode' : 'SPELLBOOK.Party.EnablePartyMode'),
-        action: async () => {
-          const primaryGroup = PartyMode.getPrimaryGroupForActor(this.actor);
-          if (primaryGroup) {
-            await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, !isPartyMode);
-            await this.render();
-          }
-          this._hideContextMenu();
-        }
-      }
-    ];
-    const menu = this._createContextMenu('party', items);
-    this._positionContextMenu(menu, event, target, 'above');
-    this._setupContextMenuClickHandler();
-  }
-
-  /**
-   * Create a context menu element.
-   * @param {string} type - Menu type identifier
-   * @param {Array<{id: string, icon: string, label: string, action: Function}>} items - Menu items
-   * @returns {HTMLElement} The menu element
-   * @private
-   */
-  _createContextMenu(type, items) {
-    const menu = document.createElement('div');
-    menu.id = `spell-book-context-menu-${type}`;
-    menu.className = 'spell-book-context-menu';
-    menu.dataset.menuType = type;
-    menu.innerHTML = items
-      .map(
-        (item) => `
-      <div class="context-menu-item" data-item-id="${item.id}">
-        <i class="${item.icon} item-icon" aria-hidden="true"></i>
-        <span class="item-text">${item.label}</span>
-      </div>
-    `
-      )
-      .join('');
-    menu.addEventListener('click', async (e) => {
-      const itemEl = e.target.closest('.context-menu-item');
-      if (!itemEl) return;
-      const itemId = itemEl.dataset.itemId;
-      const item = items.find((i) => i.id === itemId);
-      if (item?.action) await item.action();
-    });
-    document.body.appendChild(menu);
-    return menu;
-  }
-
-  /**
-   * Position a context menu.
-   * @param {HTMLElement} menu - The menu element
-   * @param {PointerEvent} _event - The triggering event
-   * @param {HTMLElement} target - The button element
-   * @param {'left'|'above'} strategy - Positioning strategy
-   * @private
-   */
-  _positionContextMenu(menu, _event, target, strategy) {
-    const targetRect = target.getBoundingClientRect();
-    const menuRect = menu.getBoundingClientRect();
-    const appRect = this.element.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    const viewportWidth = window.innerWidth;
-    let left, top;
-    if (strategy === 'left') {
-      left = Math.max(10, appRect.left - menuRect.width);
-      top = targetRect.top;
-      if (top + menuRect.height > viewportHeight) {
-        top = Math.max(10, viewportHeight - menuRect.height - 10);
-      }
-    } else if (strategy === 'above') {
-      left = targetRect.left;
-      top = targetRect.top - menuRect.height - 5;
-      if (top < 10) top = targetRect.bottom + 5;
-      if (left + menuRect.width > viewportWidth - 10) {
-        left = targetRect.right - menuRect.width;
-      }
-    }
-    menu.style.left = `${left}px`;
-    menu.style.top = `${top}px`;
-  }
-
-  /**
-   * Setup click-outside handler to close menu.
-   * @private
-   */
-  _setupContextMenuClickHandler() {
-    if (!this._contextMenuClickHandler) {
-      this._contextMenuClickHandler = (e) => {
-        if (!e.target.closest('.spell-book-context-menu')) {
-          this._hideContextMenu();
-        }
-      };
-    }
-    setTimeout(() => {
-      document.addEventListener('click', this._contextMenuClickHandler);
-    }, 0);
-  }
-
-  /**
-   * Hide any active context menu.
-   * @private
-   */
-  _hideContextMenu() {
-    const existingMenu = document.querySelector('.spell-book-context-menu');
-    if (existingMenu) existingMenu.remove();
-    if (this._contextMenuClickHandler) {
-      document.removeEventListener('click', this._contextMenuClickHandler);
     }
   }
 }
