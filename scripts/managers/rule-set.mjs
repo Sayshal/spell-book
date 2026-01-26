@@ -5,7 +5,6 @@
  * for actors in the Spell Book module. This class provides a centralized system for
  * applying legacy or modern spellcasting rules, managing per-class configurations,
  * and handling spell list changes with proper validation and cleanup.
- *
  * @module Managers/RuleSet
  * @author Tyler
  */
@@ -22,7 +21,7 @@ const { renderTemplate } = foundry.applications.handlebars;
 export class RuleSet {
   /**
    * Cache for class rules by actor. Uses WeakMap for automatic cleanup when actors are deleted.
-   * @type {WeakMap<Actor5e, Map<string, ClassRules>>}
+   * @type {WeakMap<object, Map<string, object>>}
    * @private
    * @static
    */
@@ -30,7 +29,7 @@ export class RuleSet {
 
   /**
    * Apply a rule set to an actor, populating class-specific defaults.
-   * @param {Object} actor - The actor to configure
+   * @param {object} actor - The actor to configure
    * @param {string} ruleSet - The rule set to apply ('legacy' or 'modern')
    * @returns {void}
    * @static
@@ -53,7 +52,7 @@ export class RuleSet {
 
   /**
    * Get the effective rule set for an actor.
-   * @param {Object} actor - The actor to check
+   * @param {object} actor - The actor to check
    * @returns {string} The effective rule set ('legacy' or 'modern')
    * @static
    */
@@ -68,10 +67,10 @@ export class RuleSet {
 
   /**
    * Get a single class rule property with a default fallback.
-   * @param {Object} actor - The actor to check
+   * @param {object} actor - The actor to check
    * @param {string} classIdentifier - The class identifier
    * @param {string} property - The rule property to retrieve
-   * @param {*} [defaultValue=null] - Default value if property is undefined
+   * @param {*} [defaultValue] - Default value if property is undefined
    * @returns {*} The rule property value or default
    * @static
    */
@@ -81,9 +80,9 @@ export class RuleSet {
 
   /**
    * Get class-specific rules for an actor, with fallback to defaults.
-   * @param {Object} actor - The actor to check
+   * @param {object} actor - The actor to check
    * @param {string} classIdentifier - The class identifier
-   * @returns {Object} The class rules object
+   * @returns {object} The class rules object
    * @static
    */
   static getClassRules(actor, classIdentifier) {
@@ -111,18 +110,9 @@ export class RuleSet {
 
   /**
    * Update class rules for a specific class on an actor.
-   * @param {Object} actor - The actor to update
+   * @param {object} actor - The actor to update
    * @param {string} classIdentifier - The class identifier
-   * @param {Partial<{
-   *   spellPreparationBonus: number,
-   *   cantripPreparationBonus: number,
-   *   showCantrips: boolean,
-   *   forceWizardMode: boolean,
-   *   spellLearningCostMultiplier: number,
-   *   spellLearningTimeMultiplier: number,
-   *   startingSpells: number,
-   *   spellsPerLevel: number
-   * }>} newRules - The new rules to apply
+   * @param {object} newRules - The new rules to apply
    * @returns {Promise<boolean>} True if rules were updated, false if cancelled
    * @static
    */
@@ -157,7 +147,7 @@ export class RuleSet {
 
   /**
    * Initialize class rules for any newly detected spellcasting classes.
-   * @param {Object} actor - The actor to check
+   * @param {object} actor - The actor to check
    * @returns {void}
    * @static
    */
@@ -183,7 +173,7 @@ export class RuleSet {
   /**
    * Detect spellcasting classes on an actor.
    * @private
-   * @param {Object} actor - The actor to check
+   * @param {object} actor - The actor to check
    * @returns {Object<string, Object>} Map of class identifiers to class data
    * @static
    */
@@ -210,7 +200,7 @@ export class RuleSet {
    * @private
    * @param {string} classIdentifier - The class identifier
    * @param {string} ruleSet - The rule set to use ('legacy' or 'modern')
-   * @returns {Object} Default rules for the class
+   * @returns {object} Default rules for the class
    * @static
    */
   static _getClassDefaults(classIdentifier, ruleSet) {
@@ -237,7 +227,7 @@ export class RuleSet {
    * Apply legacy rule set defaults for a class.
    * @private
    * @param {string} classIdentifier - The class identifier
-   * @param {Object} defaults - The defaults object to modify
+   * @param {object} defaults - The defaults object to modify
    * @returns {void}
    * @static
    */
@@ -288,7 +278,7 @@ export class RuleSet {
    * Apply modern rule set defaults for a class.
    * @private
    * @param {string} classIdentifier - The class identifier
-   * @param {Object} defaults - The defaults object to modify
+   * @param {object} defaults - The defaults object to modify
    * @returns {void}
    * @static
    */
@@ -339,10 +329,10 @@ export class RuleSet {
   /**
    * Get spells that will be affected by changing a custom spell list.
    * @private
-   * @param {Object} actor - The actor to check
+   * @param {object} actor - The actor to check
    * @param {string} classIdentifier - The class identifier
    * @param {string|Array<string>|null} newSpellListUuid - UUID(s) of the new spell list(s)
-   * @returns {Promise<Object[]>} Array of affected spell data
+   * @returns {Promise<object[]>} Array of affected spell data
    * @static
    */
   static async _getAffectedSpellsByListChange(actor, classIdentifier, newSpellListUuid) {
@@ -389,9 +379,9 @@ export class RuleSet {
   /**
    * Show confirmation dialog for spell list change.
    * @private
-   * @param {Object} actor - The actor
+   * @param {object} actor - The actor
    * @param {string} classIdentifier - The class identifier
-   * @param {Object[]} affectedSpells - Array of spells that will be unprepared
+   * @param {object[]} affectedSpells - Array of spells that will be unprepared
    * @returns {Promise<boolean>} Whether the user confirmed the change
    * @static
    */
@@ -420,9 +410,9 @@ export class RuleSet {
   /**
    * Unprepare spells that are no longer available in the new spell list.
    * @private
-   * @param {Object} actor - The actor
+   * @param {object} actor - The actor
    * @param {string} classIdentifier - The class identifier
-   * @param {Object[]} affectedSpells - Array of spells to unprepare
+   * @param {object[]} affectedSpells - Array of spells to unprepare
    * @returns {Promise<void>}
    * @static
    */

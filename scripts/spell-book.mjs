@@ -3,7 +3,6 @@
  *
  * Primary initialization file for the Spell Book module. This module orchestrates
  * the complete startup sequence through three Foundry lifecycle hooks.
- *
  * @module SpellBook
  * @author Tyler
  */

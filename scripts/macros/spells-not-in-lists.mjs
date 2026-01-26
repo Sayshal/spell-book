@@ -1,4 +1,8 @@
+/**
+ * Spells not in lists macro script - finds spells not included in any spell list.
+ */
 function spellsNotInListsScript() {
+  /** Finds all spells that aren't included in any spell list. */
   async function findSpellsNotInLists() {
     ui.notifications.info('Scanning for spells not in spell lists...', { permanent: true });
     try {
@@ -51,6 +55,10 @@ function spellsNotInListsScript() {
       ui.notifications.error(`Error: ${error.message}`);
     }
   }
+  /**
+   * Shows a dialog with spells not found in any list.
+   * @param {Array<object>} spells - Array of spell objects
+   */
   async function showSpellsNotInListsDialog(spells) {
     ui.notifications.clear();
     if (spells.length === 0) {

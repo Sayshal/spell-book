@@ -4,7 +4,6 @@
  * Handles compendium pack operations, spell list discovery, and spell source
  * management. This module provides utilities for working with spell data across
  * multiple compendium sources and managing spell list documents within packs.
- *
  * @module DataUtils/CompendiumProcessor
  * @author Tyler
  */
@@ -22,8 +21,8 @@ let _indexedPacksCache = null;
 
 /**
  * Scan compendiums for spell lists with optional visibility filtering.
- * @param {boolean} [includeHidden=true] - Whether to include hidden spell lists in results
- * @returns {Promise<Array<Object>>} Array of spell list objects with metadata
+ * @param {boolean} [includeHidden] - Whether to include hidden spell lists in results
+ * @returns {Promise<Array<object>>} Array of spell list objects with metadata
  */
 export async function findCompendiumSpellLists(includeHidden = true) {
   log(3, 'Finding compendium spell lists.');
@@ -72,7 +71,7 @@ export async function findCompendiumSpellLists(includeHidden = true) {
 
 /**
  * Prepare spell sources for filtering dropdown.
- * @param {Array<Object>} availableSpells - The available spells array
+ * @param {Array<object>} availableSpells - The available spells array
  * @returns {Array<Map>} Array of source options for dropdown
  */
 export function prepareSpellSources(availableSpells) {
@@ -95,9 +94,9 @@ export function prepareSpellSources(availableSpells) {
 
 /**
  * Process a single journal pack for spell lists.
- * @param {Collection<string, Object>} pack - The pack to process
- * @param {Array<Object>} spellLists - Array to store results in
- * @param {boolean} [isCustomPack=false] - Whether this is the custom spell lists pack
+ * @param {object} pack - The pack to process
+ * @param {Array<object>} spellLists - Array to store results in
+ * @param {boolean} [isCustomPack] - Whether this is the custom spell lists pack
  * @private
  */
 async function processPackForSpellLists(pack, spellLists, isCustomPack = false) {
@@ -155,8 +154,8 @@ async function processPackForSpellLists(pack, spellLists, isCustomPack = false) 
 
 /**
  * Process journal packs for spell lists.
- * @param {Array<Collection<string, Object>>} journalPacks - Array of journal packs to process
- * @param {Array<Object>} spellLists - Array to store results in
+ * @param {Array<object>} journalPacks - Array of journal packs to process
+ * @param {Array<object>} spellLists - Array to store results in
  * @private
  */
 async function processPacks(journalPacks, spellLists) {
@@ -168,7 +167,7 @@ async function processPacks(journalPacks, spellLists) {
 
 /**
  * Process custom spell lists pack.
- * @param {Array<Object>} spellLists - Array to store results in
+ * @param {Array<object>} spellLists - Array to store results in
  * @private
  */
 async function processCustomPack(spellLists) {
@@ -181,7 +180,7 @@ async function processCustomPack(spellLists) {
  * Compare versions of original and custom spell lists to detect updates.
  * @param {string} originalUuid - UUID of the original spell list
  * @param {string} customUuid - UUID of the custom spell list
- * @returns {Promise<Object>} Comparison results with change analysis
+ * @returns {Promise<object>} Comparison results with change analysis
  */
 export async function compareListVersions(originalUuid, customUuid) {
   log(3, 'Comparing list versions:', { originalUuid, customUuid });
@@ -233,8 +232,8 @@ export async function getValidCustomListMappings() {
 
 /**
  * Duplicate a spell list to the custom pack.
- * @param {Object} originalSpellList - The original spell list document to duplicate
- * @returns {Promise<Object>} The duplicated spell list page
+ * @param {object} originalSpellList - The original spell list document to duplicate
+ * @returns {Promise<object>} The duplicated spell list page
  */
 export async function duplicateSpellList(originalSpellList) {
   log(3, 'Duplicating spell list.', { originalSpellList });
@@ -262,7 +261,7 @@ export async function duplicateSpellList(originalSpellList) {
 /**
  * Find a duplicate spell list in the custom pack.
  * @param {string} originalUuid - UUID of the original spell list to find duplicate for
- * @returns {Promise<Object|null>} The duplicate page or null if not found
+ * @returns {Promise<object | null>} The duplicate page or null if not found
  */
 export async function findDuplicateSpellList(originalUuid) {
   log(3, 'Checking for existing duplicate spell list.', { originalUuid });
@@ -315,7 +314,7 @@ export async function removeCustomSpellList(duplicateUuid) {
 
 /**
  * Fetch all compendium spells with level filtering.
- * @returns {Promise<Array<Object>>} Array of formatted spell items
+ * @returns {Promise<Array<object>>} Array of formatted spell items
  */
 export async function fetchAllCompendiumSpells() {
   const maxLevel = Math.max(...Object.keys(CONFIG.DND5E.spellLevels).map(Number));
@@ -338,9 +337,9 @@ export async function fetchAllCompendiumSpells() {
 
 /**
  * Fetch spells from a specific pack with level filtering.
- * @param {Collection<string, Object>} pack - The pack to fetch spells from
+ * @param {object} pack - The pack to fetch spells from
  * @param {number} maxLevel - Maximum spell level to include
- * @returns {Promise<Array<Object>>} Array of formatted spell items
+ * @returns {Promise<Array<object>>} Array of formatted spell items
  * @private
  */
 async function fetchSpellsFromPack(pack, maxLevel) {
@@ -415,9 +414,9 @@ async function fetchSpellsFromPack(pack, maxLevel) {
 
 /**
  * Format a spell index entry into a standardized spell object.
- * @param {Object} entry - The spell index entry from compendium
- * @param {Collection<string, Object>} pack - The source pack for folder information
- * @returns {Object} Formatted spell object ready for UI use
+ * @param {object} entry - The spell index entry from compendium
+ * @param {object} pack - The source pack for folder information
+ * @returns {object} Formatted spell object ready for UI use
  * @private
  */
 function formatSpellEntry(entry, pack) {
@@ -446,7 +445,7 @@ function formatSpellEntry(entry, pack) {
  * @param {string} name - The name of the spell list
  * @param {string} identifier - The identifier (typically class name)
  * @param {string} type - The type of spell list ('class', 'subclass', or 'other')
- * @returns {Promise<Object>} The created spell list page
+ * @returns {Promise<object>} The created spell list page
  */
 export async function createNewSpellList(name, identifier, type) {
   log(3, 'Creating new spell list.', { name, identifier, type });
@@ -474,9 +473,9 @@ export async function createNewSpellList(name, identifier, type) {
 
 /**
  * Prepare dropdown options for casting time filter.
- * @param {Array<Object>} availableSpells - The available spells array
- * @param {Object} filterState - Current filter state for selection
- * @returns {Array<Object>} Array of options for the dropdown
+ * @param {Array<object>} availableSpells - The available spells array
+ * @param {object} filterState - Current filter state for selection
+ * @returns {Array<object>} Array of options for the dropdown
  */
 export function prepareCastingTimeOptions(availableSpells, filterState) {
   log(3, 'Prepare casting time options.', { availableSpells, filterState });
@@ -505,8 +504,8 @@ export function prepareCastingTimeOptions(availableSpells, filterState) {
 
 /**
  * Prepare dropdown options for damage type filter.
- * @param {Object} filterState - Current filter state for selection
- * @returns {Array<Object>} Array of options for the dropdown
+ * @param {object} filterState - Current filter state for selection
+ * @returns {Array<object>} Array of options for the dropdown
  */
 export function prepareDamageTypeOptions(filterState) {
   log(3, 'Prepare damage types options.', { filterState });
@@ -527,8 +526,8 @@ export function prepareDamageTypeOptions(filterState) {
 
 /**
  * Prepare dropdown options for condition filter.
- * @param {Object} filterState - Current filter state for selection
- * @returns {Array<Object>} Array of options for the dropdown
+ * @param {object} filterState - Current filter state for selection
+ * @returns {Array<object>} Array of options for the dropdown
  */
 export function prepareConditionOptions(filterState) {
   log(3, 'Prepare condition options.', { filterState });
@@ -571,7 +570,7 @@ export async function findClassIdentifiers() {
  * Create a merged spell list from multiple existing spell lists.
  * @param {Array<string>} spellListUuids - Array of UUIDs of spell lists to merge
  * @param {string} mergedListName - Name for the merged list
- * @returns {Promise<Object>} The created merged spell list page
+ * @returns {Promise<object>} The created merged spell list page
  */
 export async function createMergedSpellList(spellListUuids, mergedListName) {
   log(3, 'Creating merged spell list.', { spellListUuids, mergedListName });
@@ -610,7 +609,7 @@ export async function createMergedSpellList(spellListUuids, mergedListName) {
 /**
  * Get or create a folder in the custom spell lists pack.
  * @param {string} folderType - The type of folder to create ('custom', 'merged', or 'modified')
- * @returns {Promise<Object|null>} The folder document or null if creation failed
+ * @returns {Promise<object | null>} The folder document or null if creation failed
  */
 export async function getOrCreateSpellListFolder(folderType) {
   let localizationKey;
@@ -653,7 +652,7 @@ export function invalidatePackIndexCache() {
 
 /**
  * Check if a compendium should be indexed for spell operations.
- * @param {Collection<string, Object>} pack - The pack to check
+ * @param {object} pack - The pack to check
  * @returns {boolean} Whether the pack should be indexed
  */
 export function shouldIndexCompendium(pack) {
@@ -664,7 +663,7 @@ export function shouldIndexCompendium(pack) {
 
 /**
  * Check if a compendium should be shown in settings for potential indexing.
- * @param {Collection<string, Object>} pack - The pack to check
+ * @param {object} pack - The pack to check
  * @returns {Promise<boolean>} Whether the pack should be available in settings
  */
 export async function shouldShowInSettings(pack) {
@@ -685,8 +684,8 @@ export async function shouldShowInSettings(pack) {
 
 /**
  * Prepare spell source options from spell.system.source.label.
- * @param {Array<Object>} availableSpells - The available spells array
- * @returns {Array<Object>} Array of spell source options for dropdown
+ * @param {Array<object>} availableSpells - The available spells array
+ * @returns {Array<object>} Array of spell source options for dropdown
  */
 export function prepareSpellSourceOptions(availableSpells) {
   log(3, 'Preparing spell source options.', { availableSpells });

@@ -4,7 +4,6 @@
  * Main configuration dialog for actor-specific spell book behavior and preferences.
  * Provides settings management for individual character spellbooks
  * including display options, preparation modes, and integration preferences.
- *
  * @module Dialogs/SpellBookSettings
  * @author Tyler
  */
@@ -19,7 +18,6 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
  * Enhanced dialog application for configuring Spell Book settings with per-class rules.
- * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */
 export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
@@ -53,8 +51,8 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
 
   /**
    * Create a new Spell Book settings dialog instance.
-   * @param {Object} actor - The actor to configure settings for
-   * @param {Object} [options={}] - Additional application options
+   * @param {object} actor - The actor to configure settings for
+   * @param {object} [options] - Additional application options
    */
   constructor(actor, options = {}) {
     super(options);
@@ -144,25 +142,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
 
   /**
    * Prepare all per-class settings data.
-   * @returns {Promise<Array<{
-   *   name: string,
-   *   identifier: string,
-   *   img: string,
-   *   rules: Object,
-   *   isWizard: boolean,
-   *   stats: {
-   *     currentCantrips: number,
-   *     maxCantrips: number,
-   *     classLevel: number,
-   *     basePreparationMax: number
-   *   },
-   *   hasCustomSpellList: boolean,
-   *   customSpellListName: string | null,
-   *   customSpellListNames: string[],
-   *   customSpellListCount: number,
-   *   formElements: Object,
-   *   spellcastingSource: Object
-   * }>>} Array of processed class settings data
+   * @returns {Promise<Array<object>>} Array of processed class settings data
    * @private
    */
   async _prepareClassSettings() {
@@ -273,7 +253,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
    *   _noScaleValue: any
    * }} formRules - Current form rule values
    * @param {Array<{value: string, label: string, type: string}>} availableSpellLists - Available spell list options with type info
-   * @returns {Object} Object containing all form element HTML for the class
+   * @returns {object} Object containing all form element HTML for the class
    * @private
    */
   _prepareClassFormElements(identifier, formRules, availableSpellLists) {
@@ -650,7 +630,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
 
   /**
    * Prepare submit button configuration with localized content.
-   * @returns {Object} Submit button configuration object
+   * @returns {object} Submit button configuration object
    * @private
    */
   _prepareSubmitButton() {
@@ -854,8 +834,8 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
 
   /**
    * Handle cantrip visibility changes - cleanup when disabled, restore when enabled.
-   * @param {Object} actor - The actor whose cantrips to manage
-   * @param {Object} changes - Object mapping class IDs to change types
+   * @param {object} actor - The actor whose cantrips to manage
+   * @param {object} changes - Object mapping class IDs to change types
    * @returns {Promise<void>}
    * @static
    * @private

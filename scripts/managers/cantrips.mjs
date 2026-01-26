@@ -4,7 +4,6 @@
  * Manages cantrip-specific functionality including preparation limits, swap mechanics,
  * level-up detection, and long rest processing. This class serves as the single source
  * of truth for all cantrip calculations and state management within the Spell Book module.
- *
  * @module Managers/Cantrips
  * @author Tyler
  */
@@ -53,8 +52,8 @@ class CantripValidationResult extends DataModel {
 export class Cantrips {
   /**
    * Create a new Cantrips instance.
-   * @param {Object} actor - The actor to manage cantrips for
-   * @param {Object} spellManager - The associated SpellManager instance
+   * @param {object} actor - The actor to manage cantrips for
+   * @param {object} spellManager - The associated SpellManager instance
    */
   constructor(actor, spellManager) {
     this.actor = actor;
@@ -162,7 +161,7 @@ export class Cantrips {
 
   /**
    * Get the current count of prepared cantrips for a specific class.
-   * @param {string|null} [classIdentifier=null] - The class identifier, or null for all classes
+   * @param {string|null} [classIdentifier] - The class identifier, or null for all classes
    * @returns {number} Currently prepared cantrips count
    */
   getCurrentCount(classIdentifier = null) {
@@ -216,11 +215,11 @@ export class Cantrips {
 
   /**
    * Validate cantrip preparation based on current rules and limits.
-   * @param {Object} spell - The cantrip being validated
+   * @param {object} spell - The cantrip being validated
    * @param {boolean} isChecked - Whether attempting to prepare (true) or unprepare (false)
    * @param {boolean} isLevelUp - Whether this is during level-up
    * @param {boolean} isLongRest - Whether this is during long rest
-   * @param {number|null} [uiCantripCount=null] - Current UI cantrip count for optimization
+   * @param {number|null} [uiCantripCount] - Current UI cantrip count for optimization
    * @param {string} classIdentifier - The class identifier
    * @returns {CantripValidationResult} Validation result with allowed status and error message
    */
@@ -301,7 +300,7 @@ export class Cantrips {
 
   /**
    * Track changes to cantrips for swap management.
-   * @param {Object} spell - The spell being modified
+   * @param {object} spell - The spell being modified
    * @param {boolean} isChecked - Whether the spell is being prepared (true) or unprepared (false)
    * @param {boolean} isLevelUp - Whether this is during level-up
    * @param {boolean} isLongRest - Whether this is during a long rest
@@ -404,20 +403,7 @@ export class Cantrips {
 
   /**
    * Send GM notification with all spell changes and over-limit warnings.
-   * @param {{
-   *   actorName: string,
-   *   classChanges: {
-   *     [classIdentifier: string]: {
-   *       className: string,
-   *       cantripChanges: { added: any[], removed: any[] },
-   *       spellChanges: { added: any[], removed: any[] },
-   *       overLimits: {
-   *         cantrips: { isOver: boolean, current: number, max: number },
-   *         spells: { isOver: boolean, current: number, max: number }
-   *       }
-   *     }
-   *   }
-   * }} notificationData - Combined notification data
+   * @param {object} notificationData - Combined notification data
    * @returns {Promise<void>}
    */
   async sendNotification(notificationData) {

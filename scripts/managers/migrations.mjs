@@ -9,7 +9,6 @@
  * The manager operates on migration configurations defined in the migrations module,
  * ensuring all required migrations are executed in sequence and results are properly
  * logged and reported to the user.
- *
  * @module Managers/Migrations
  * @author Tyler
  */
@@ -60,7 +59,7 @@ export class Migrations {
 
   /**
    * Log migration results to console and chat.
-   * @param {Object} results - Object containing all migration results keyed by migration key
+   * @param {object} results - Object containing all migration results keyed by migration key
    * @returns {Promise<void>}
    * @static
    */
@@ -96,7 +95,7 @@ export class Migrations {
 
   /**
    * Build chat message content for migration results.
-   * @param {Object} results - Object containing all migration results
+   * @param {object} results - Object containing all migration results
    * @returns {Promise<string>} Rendered HTML content
    * @static
    */

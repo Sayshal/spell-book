@@ -5,7 +5,6 @@
  * system. This module manages the relationship between search aliases and internal field
  * identifiers, validates search values against field constraints, and provides
  * autocomplete suggestions for search terms.
- *
  * @module ValidationUtils/SearchFields
  * @author Tyler
  */

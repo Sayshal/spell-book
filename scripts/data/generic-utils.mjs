@@ -4,7 +4,6 @@
  * Provides general-purpose utility functions for data manipulation, validation,
  * and processing used throughout the Spell Book module. This module contains
  * reusable functions that don't belong to specific functional areas.
- *
  * @module DataUtils/GenericUtils
  * @author Tyler
  */
@@ -14,9 +13,9 @@ import { log } from '../logger.mjs';
 
 /**
  * Get spellcasting configuration for a class, checking both main class and subclass.
- * @param {Object} actor - The actor to check for spellcasting configuration
+ * @param {object} actor - The actor to check for spellcasting configuration
  * @param {string} classIdentifier - The class identifier to look up
- * @returns {Object|null} Spellcasting configuration or null if none found
+ * @returns {object | null} Spellcasting configuration or null if none found
  */
 export function getSpellcastingConfigForClass(actor, classIdentifier) {
   log(3, 'Getting spellcasting config for class.', { actor, classIdentifier });
@@ -31,7 +30,7 @@ export function getSpellcastingConfigForClass(actor, classIdentifier) {
 
 /**
  * Get scale values for a class, checking both main class and subclass.
- * @param {Object} actor - The actor to check for scale values
+ * @param {object} actor - The actor to check for scale values
  * @param {string} classIdentifier - The class identifier to look up
  * @returns {Object<string, string>|null} Merged scale values or null if none found
  */
@@ -49,9 +48,9 @@ export function getScaleValuesForClass(actor, classIdentifier) {
 
 /**
  * Get the item that provides spellcasting for a class (main class or subclass).
- * @param {Object} actor - The actor to check for spellcasting source
+ * @param {object} actor - The actor to check for spellcasting source
  * @param {string} classIdentifier - The class identifier to look up
- * @returns {Object|null} The item providing spellcasting or null if none found
+ * @returns {object | null} The item providing spellcasting or null if none found
  */
 export function getSpellcastingSourceItem(actor, classIdentifier) {
   log(3, 'Getting spellcasting source items.', { actor, classIdentifier });
@@ -69,7 +68,7 @@ export function getSpellcastingSourceItem(actor, classIdentifier) {
 
 /**
  * Get effective class levels for spellcasting progression.
- * @param {Object} actor - The actor to check for class levels
+ * @param {object} actor - The actor to check for class levels
  * @param {string} classIdentifier - The class identifier to look up
  * @returns {number} Class levels for spellcasting calculations
  */
@@ -82,8 +81,8 @@ export function getSpellcastingLevelsForClass(actor, classIdentifier) {
 
 /**
  * Get wizard status data for all wizard-enabled spellcasting classes on an actor.
- * @param {Object} actor - The actor to analyze
- * @returns {Object<string, {isNaturalWizard: boolean, isForceWizard: boolean, classData: Object}>} Wizard Data Object
+ * @param {object} actor - The actor to analyze
+ * @returns {Object<string, {isNaturalWizard: boolean, isForceWizard: boolean, classData: object}>} Wizard Data Object
  */
 export function getWizardData(actor) {
   const wizardData = {};
@@ -101,7 +100,7 @@ export function getWizardData(actor) {
 
 /**
  * Get the appropriate label/name from a CONFIG object.
- * @param {Object} configObject - The CONFIG object (e.g., CONFIG.DND5E.spellSchools)
+ * @param {object} configObject - The CONFIG object (e.g., CONFIG.DND5E.spellSchools)
  * @param {string} key - The key to look up in the configuration object
  * @returns {string} The label/name or empty string if not found
  */
@@ -122,7 +121,7 @@ const targetUserIdCache = new Map();
 
 /**
  * Get the target user ID for spell data operations (cached).
- * @param {Object} actor - The actor to determine ownership for
+ * @param {object} actor - The actor to determine ownership for
  * @returns {string} The user ID to use for spell data operations
  */
 export function getTargetUserId(actor) {
@@ -166,7 +165,7 @@ export async function unlockModuleCompendium() {
 
 /**
  * Create Actor Spellbooks folder in the module compendium pack.
- * @param {Collection<string, Object>} pack - The module's spells compendium pack
+ * @param {object} pack - The module's spells compendium pack
  * @returns {Promise<void>}
  */
 export async function createActorSpellbooksFolder(pack) {
@@ -178,8 +177,8 @@ export async function createActorSpellbooksFolder(pack) {
 /**
  * Preload all Handlebars templates used by the module.
  * Recursively walks the TEMPLATES object to collect all .hbs paths and load them.
- * @param obj - TEMPLATES object for iteration
- * @param paths - Paths to run through loadTemplates for registration
+ * @param {object} obj - TEMPLATES object for iteration
+ * @param {Array<string>} paths - Paths to run through loadTemplates for registration
  * @returns {Promise<void>} Promise that resolves when all templates are loaded
  */
 export async function preloadTemplates(obj = TEMPLATES, paths = []) {
@@ -193,7 +192,7 @@ export async function preloadTemplates(obj = TEMPLATES, paths = []) {
 
 /**
  * Check if an item that grants spells is actually active (equipped and attuned if needed).
- * @param {Object} item - The item to check
+ * @param {object} item - The item to check
  * @returns {boolean} True if the item is equipped and attuned (if attunement required), false otherwise
  */
 export function isGrantingItemActive(item) {
@@ -215,7 +214,7 @@ export function isGrantingItemActive(item) {
 /**
  * Check if a spell is stored in a Ring of Spell Storing (CPR compatibility).
  * These spells should not be treated as at-will/innate for preparation counting purposes.
- * @param {Object} spell - The spell to check
+ * @param {object} spell - The spell to check
  * @returns {boolean} True if the spell is stored in a Ring of Spell Storing
  */
 export function isCPRROSS(spell) {
@@ -225,7 +224,7 @@ export function isCPRROSS(spell) {
 /**
  * Get the canonical UUID for a spell (prefers compendium source).
  * Resolves actor-embedded spells to their compendium source when available.
- * @param {string|Object} spellOrUuid - Spell document or UUID string
+ * @param {string | object} spellOrUuid - Spell document or UUID string
  * @returns {string|null} Canonical UUID or null if invalid input
  */
 export function getCanonicalSpellUuid(spellOrUuid) {
@@ -246,7 +245,7 @@ export function getCanonicalSpellUuid(spellOrUuid) {
 
 /**
  * Get all possible UUIDs associated with a spell for matching purposes.
- * @param {Object} spell - Spell document or spell-like object
+ * @param {object} spell - Spell document or spell-like object
  * @returns {string[]} Array of unique UUIDs (normalized)
  */
 export function getAllSpellUuids(spell) {
@@ -278,8 +277,8 @@ export function migrateFilterData(oldConfig) {
  * Create a shallow clone of a spell suitable for modification without affecting the original.
  * More efficient than deepClone for render-path operations where only top-level properties
  * and immediate system/flags properties are modified.
- * @param {Object} spell - The spell object to clone
- * @returns {Object} A shallow clone with separately cloned system and flags
+ * @param {object} spell - The spell object to clone
+ * @returns {object} A shallow clone with separately cloned system and flags
  */
 export function shallowCloneSpell(spell) {
   if (!spell) return spell;

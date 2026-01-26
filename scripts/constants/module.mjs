@@ -4,15 +4,13 @@
  * This module contains all central configuration constants including module identification,
  * settings keys, default configurations, enums, and asset paths. It serves as the
  * authoritative source for all module-wide constants and default values.
- *
  * @module Constants/Module
  * @author Tyler
  */
 
 /**
  * Spellcasting focus option configuration.
- *
- * @typedef {Object} FocusOption
+ * @typedef {object} FocusOption
  * @property {string} id - Unique identifier for the focus option (e.g., 'focus-damage', 'focus-healer')
  * @property {string} name - Display name of the focus option (e.g., 'Offensive Mage', 'Support')
  * @property {string} icon - File path to the focus option icon image (e.g., 'icons/magic/fire/explosion-fireball-large-orange.webp')
@@ -21,15 +19,13 @@
 
 /**
  * Focus selections mapping stored in group actor flags.
- *
- * @typedef {Object} FocusSelections
+ * @typedef {object} FocusSelections
  * @property {Object<string, string>} selections - Maps user IDs to selected focus option IDs
  */
 
 /**
  * Party member data with focus assignment information.
- *
- * @typedef {Object} PartyMember
+ * @typedef {object} PartyMember
  * @property {string} id - User ID
  * @property {string} name - User display name
  * @property {string|null} actorName - Associated actor name (if available)
@@ -38,8 +34,7 @@
 
 /**
  * Group actor focus data structure for dual-flag system.
- *
- * @typedef {Object} GroupFocusData
+ * @typedef {object} GroupFocusData
  * @property {Object<string, string>} userSelections - Maps user IDs to focus IDs in group flags
  * @property {Object<string, string>} actorFlags - Maps actor IDs to focus names in individual flags
  */
@@ -47,8 +42,7 @@
 /**
  * Module identification and configuration constants.
  * Contains all core module settings, identifiers, and default configurations.
- *
- * @typedef {Object} ModuleConfig
+ * @typedef {object} ModuleConfig
  * @property {string} ID - The module identifier for Foundry VTT
  * @property {string} NAME - Human-readable module name
  * @property {PackConfig} PACK - Compendium pack configurations
@@ -68,8 +62,7 @@
 
 /**
  * Compendium pack configuration for module data storage.
- *
- * @typedef {Object} PackConfig
+ * @typedef {object} PackConfig
  * @property {string} SPELLS - Custom spell lists compendium identifier
  * @property {string} MACROS - Spell book macros compendium identifier
  * @property {string} USERDATA - User spell data compendium identifier
@@ -77,8 +70,7 @@
 
 /**
  * Individual filter configuration item for spell browser filtering.
- *
- * @typedef {Object} FilterConfigItem
+ * @typedef {object} FilterConfigItem
  * @property {string} id - Unique filter identifier
  * @property {FilterType} type - Type of filter control
  * @property {boolean} enabled - Whether filter is enabled by default
@@ -90,24 +82,21 @@
 
 /**
  * Valid filter types for spell filtering interface.
- *
  * @typedef {"search" | "dropdown" | "range" | "checkbox"} FilterType
  */
 
 /**
  * Party spell coordination configuration with focus system.
- *
- * @typedef {Object} PartySpellConfig
+ * @typedef {object} PartySpellConfig
  * @property {FocusOption[]} DEFAULT_FOCUSES - Default spellcasting focus options for party coordination
- * @property {Object} DUAL_FLAG_SYSTEM - Configuration for dual-flag focus storage system
+ * @property {object} DUAL_FLAG_SYSTEM - Configuration for dual-flag focus storage system
  * @property {string} DUAL_FLAG_SYSTEM.GROUP_FLAG - Flag key for group actor focus selections
  * @property {string} DUAL_FLAG_SYSTEM.ACTOR_FLAG - Flag key for individual actor focus storage
  */
 
 /**
  * Spell change enforcement behavior configuration.
- *
- * @typedef {Object} EnforcementBehaviorConfig
+ * @typedef {object} EnforcementBehaviorConfig
  * @property {string} ENFORCED - Strictly enforce spell preparation rules
  * @property {string} NOTIFY_GM - Warn GM about rule violations but allow changes
  * @property {string} UNENFORCED - No enforcement of spell preparation rules
@@ -115,8 +104,7 @@
 
 /**
  * Default wizard spellcasting configuration values.
- *
- * @typedef {Object} WizardDefaultsConfig
+ * @typedef {object} WizardDefaultsConfig
  * @property {boolean} RITUAL_CASTING - Default ritual casting enabled state
  * @property {number} SPELLS_PER_LEVEL - Default spells gained per wizard level
  * @property {number} STARTING_SPELLS - Default starting spells for new wizards
@@ -124,8 +112,7 @@
 
 /**
  * Wizard spell source type identifiers for tracking spell origins.
- *
- * @typedef {Object} WizardSpellSourceConfig
+ * @typedef {object} WizardSpellSourceConfig
  * @property {string} COPIED - Spells copied from scrolls or other spellbooks
  * @property {string} FREE - Free spells gained through level advancement
  * @property {string} INITIAL - Initial spells at character creation
@@ -134,8 +121,7 @@
 
 /**
  * Spellcasting class identifier constants for consistent class recognition.
- *
- * @typedef {Object} ClassIdentifiersConfig
+ * @typedef {object} ClassIdentifiersConfig
  * @property {string} ARTIFICER - Artificer class identifier
  * @property {string} BARD - Bard class identifier
  * @property {string} CLERIC - Cleric class identifier
@@ -149,16 +135,14 @@
 
 /**
  * Available spellcasting rule set options.
- *
- * @typedef {Object} RuleSetsConfig
+ * @typedef {object} RuleSetsConfig
  * @property {string} LEGACY - Legacy spellcasting rules for backward compatibility
  * @property {string} MODERN - Modern spellcasting rules with enhanced features
  */
 
 /**
  * Spell and cantrip swap timing mode options.
- *
- * @typedef {Object} SwapModesConfig
+ * @typedef {object} SwapModesConfig
  * @property {string} NONE - No swapping allowed
  * @property {string} LEVEL_UP - Swapping allowed only on level up
  * @property {string} LONG_REST - Swapping allowed on long rest
@@ -166,8 +150,7 @@
 
 /**
  * Ritual casting behavior mode options.
- *
- * @typedef {Object} RitualCastingModesConfig
+ * @typedef {object} RitualCastingModesConfig
  * @property {string} NONE - No ritual casting allowed
  * @property {string} PREPARED - Can only ritual cast prepared spells
  * @property {string} ALWAYS - Can ritual cast any known ritual spell
@@ -176,8 +159,7 @@
 /**
  * Spell preparation mode options.
  * References system constants (CONFIG.DND5E.spellPreparationModes) plus custom modes.
- *
- * @typedef {Object} PreparationModesConfig
+ * @typedef {object} PreparationModesConfig
  * @property {string} SPELL - Standard prepared spellcasting
  * @property {string} RITUAL - Ritual casting mode
  * @property {string} INNATE - Innate spellcasting
@@ -190,8 +172,7 @@
 /**
  * Settings keys used by the module for Foundry VTT game settings.
  * Each key corresponds to a registered setting that can be configured by users.
- *
- * @typedef {Object} SettingsKeys
+ * @typedef {object} SettingsKeys
  * @property {string} ADVANCED_SEARCH_PREFIX - Prefix character for advanced search syntax
  * @property {string} AVAILABLE_FOCUS_OPTIONS - Available spellcasting focus options for party mode (stores FocusOption[] in nested object)
  * @property {string} CANTRIP_SCALE_VALUES - Scale values for cantrip damage calculations
@@ -247,31 +228,28 @@
  * Dual Flag System for Focus Coordination:
  *
  * 1. **Group Actor Flags (Primary)**: FLAGS.SELECTED_FOCUS
- *    - Stores user ID to focus ID mappings
- *    - Used for party coordination and management
- *    - Structure: { "userId1": "focus-damage", "userId2": "focus-healer" }
+ * - Stores user ID to focus ID mappings
+ * - Used for party coordination and management
+ * - Structure: { "userId1": "focus-damage", "userId2": "focus-healer" }
  *
  * 2. **Individual Actor Flags (Sync)**: FLAGS.SPELLCASTING_FOCUS
- *    - Stores focus names (not IDs) for backward compatibility
- *    - Synchronized automatically when group selections change
- *    - Structure: "Offensive Mage" (human-readable name)
- *
- * @typedef {Object} FocusFlagKeys
+ * - Stores focus names (not IDs) for backward compatibility
+ * - Synchronized automatically when group selections change
+ * - Structure: "Offensive Mage" (human-readable name)
+ * @typedef {object} FocusFlagKeys
  * @property {string} SELECTED_FOCUS - Group actor flag storing user-to-focus mappings
  * @property {string} SPELLCASTING_FOCUS - Individual actor flag for backward compatibility
  */
 
 /**
  * Asset file paths used by the module for icons and graphics.
- *
- * @typedef {Object} AssetPaths
+ * @typedef {object} AssetPaths
  * @property {string} MODULE_ICON - Path to module icon image
  */
 
 /**
  * Core module identification and configuration constants.
  * Contains all module-wide settings, identifiers, and default configurations.
- *
  * @type {ModuleConfig}
  */
 export const MODULE = {
@@ -296,7 +274,6 @@ export const MODULE = {
   /**
    * Default filter configuration for spell book interface.
    * Defines available filters, their types, display order, and search capabilities.
-   *
    * @type {FilterConfigItem[]}
    */
   DEFAULT_FILTER_CONFIG: [
@@ -322,9 +299,7 @@ export const MODULE = {
    * Provides 10 predefined spellcasting focus types that cover the most
    * common magical roles in D&D 5e parties. Each focus includes a unique
    * ID, display name, thematic icon, and strategic description.
-   *
    * @type {FocusOption[]}
-   *
    */
   DEFAULT_FOCUSES: [
     { id: 'focus-arcanist', name: 'Arcanist', icon: 'icons/magic/symbols/elements-air-earth-fire-water.webp', description: 'Versatile; handle multiple roles moderately well.' },
@@ -363,7 +338,7 @@ export const MODULE = {
 
   /**
    * Default preparation bonus values for spellcasting classes.
-   * @type {Object}
+   * @type {object}
    */
   PREPARATION_DEFAULTS: {
     SPELL_PREPARATION_BONUS: 0,
@@ -458,7 +433,6 @@ export const MODULE = {
 /**
  * Settings keys used by the module for Foundry VTT game settings.
  * Each key corresponds to a registered setting that can be configured by users.
- *
  * @type {SettingsKeys}
  */
 export const SETTINGS = {
@@ -619,7 +593,6 @@ export const SETTINGS = {
 /**
  * Static asset file paths used by the module for icons and graphics.
  * All paths are relative to the module's root directory.
- *
  * @type {AssetPaths}
  */
 export const ASSETS = {

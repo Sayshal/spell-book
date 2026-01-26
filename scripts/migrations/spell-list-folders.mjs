@@ -10,14 +10,14 @@ import { log } from '../logger.mjs';
 
 /**
  * Migrate spell list journals to appropriate folders.
- * @returns {Promise<Object>} Migration results
+ * @returns {Promise<object>} Migration results
  * @property {number} processed - Number of journals migrated
  * @property {Array<string>} errors - Array of error messages
  * @property {number} customMoved - Number of custom spell lists moved
  * @property {number} mergedMoved - Number of merged spell lists moved
  * @property {number} modifiedMoved - Number of modified spell lists moved
  * @property {Array<string>} foldersCreated - Array of folder names created
- * @property {Array<Object>} migratedJournals - Array of migrated journal information
+ * @property {Array<object>} migratedJournals - Array of migrated journal information
  */
 async function migrateSpellListFolders() {
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
@@ -66,11 +66,11 @@ const SPELL_LIST_TYPE_CONFIG = [
 
 /**
  * Migrate a journal to its appropriate folder based on flags.
- * @param {Object} journal - Journal to migrate
- * @param {Object} customFolder - Custom spell lists folder
- * @param {Object} mergedFolder - Merged spell lists folder
- * @param {Object} modifiedFolder - Modified spell lists folder
- * @returns {Promise<Object>} Migration result with success status and type
+ * @param {object} journal - Journal to migrate
+ * @param {object} customFolder - Custom spell lists folder
+ * @param {object} mergedFolder - Merged spell lists folder
+ * @param {object} modifiedFolder - Modified spell lists folder
+ * @returns {Promise<object>} Migration result with success status and type
  */
 async function migrateJournalToFolder(journal, customFolder, mergedFolder, modifiedFolder) {
   if (!journal || journal.pages.size === 0) return { success: false };

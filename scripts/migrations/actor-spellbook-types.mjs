@@ -9,10 +9,10 @@ import { log } from '../logger.mjs';
 
 /**
  * Migrate actor spellbooks to have type 'actor-spellbook'.
- * @returns {Promise<Object>} Migration results
+ * @returns {Promise<object>} Migration results
  * @property {number} processed - Number of pages updated
  * @property {Array<string>} errors - Array of error messages
- * @property {Array<Object>} updatedPages - Array of updated page information
+ * @property {Array<object>} updatedPages - Array of updated page information
  */
 async function migrateActorSpellbookTypes() {
   const results = { processed: 0, updated: 0, errors: [], updatedPages: [] };

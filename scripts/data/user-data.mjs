@@ -4,7 +4,6 @@
  * Provides journal-based storage for user-specific spell data including notes,
  * favorites, and usage statistics. This module handles data persistence, caching,
  * and HTML table generation for user spell analytics and personalization features.
- *
  * @module DataUtils/SpellUserData
  * @author Tyler
  */
@@ -23,7 +22,7 @@ const { renderTemplate } = foundry.applications.handlebars;
 export class UserData {
   /**
    * Maps cache keys to user data objects to avoid repeated parsing.
-   * @type {Map<string, UserSpellData|null>}
+   * @type {Map<string, object|null>}
    * @static
    */
   static cache = new Map();
@@ -37,7 +36,7 @@ export class UserData {
 
   /**
    * Get the user spell data journal from the user data pack.
-   * @returns {Promise<Object|null>} Promise that resolves to the user spell data journal or null if not found
+   * @returns {Promise<object | null>} Promise that resolves to the user spell data journal or null if not found
    * @static
    * @private
    */
@@ -50,7 +49,7 @@ export class UserData {
   /**
    * Get user page from journal for spell data storage.
    * @param {string} userId - User ID to get page for
-   * @returns {Promise<Object|null>} The user's page or null if not found
+   * @returns {Promise<object | null>} The user's page or null if not found
    * @static
    * @private
    */
@@ -144,7 +143,6 @@ export class UserData {
     const totalCol = game.i18n.localize('SPELLBOOK.UserData.TotalColumn');
     const lastUsedCol = game.i18n.localize('SPELLBOOK.UserData.LastUsedColumn');
     const user = game.users.get(userId);
-    const isGM = user?.isGM;
     const userActors = game.actors.filter((actor) => actor.type === 'character' && (actor.ownership[userId] === 3 || user?.character?.id === actor.id));
     const processedActors = userActors.map((actor) => {
       const favoriteSpells = [];
@@ -195,10 +193,10 @@ export class UserData {
 
   /**
    * Get user data for a specific spell, creating missing infrastructure as needed.
-   * @param {string|Object} spellOrUuid - Spell UUID or spell object to get data for
-   * @param {string} [userId=null] - User ID (defaults to current user)
-   * @param {string} [actorId=null] - Actor ID for actor-specific data
-   * @returns {Promise<Object|null>} User data object or null if unavailable
+   * @param {string | object} spellOrUuid - Spell UUID or spell object to get data for
+   * @param {string} [userId] - User ID (defaults to current user)
+   * @param {string} [actorId] - Actor ID for actor-specific data
+   * @returns {Promise<object | null>} User data object or null if unavailable
    * @static
    */
   static async getUserDataForSpell(spellOrUuid, userId = null, actorId = null) {
@@ -229,10 +227,10 @@ export class UserData {
 
   /**
    * Set user data for a spell with automatic infrastructure management.
-   * @param {string|Object} spellOrUuid - Spell UUID or spell object to set data for
-   * @param {Object} data - Data to set (notes, favorited, usageStats)
-   * @param {string} [userId=null] - User ID (defaults to current user)
-   * @param {string} [actorId=null] - Actor ID for actor-specific data
+   * @param {string | object} spellOrUuid - Spell UUID or spell object to set data for
+   * @param {object} data - Data to set (notes, favorited, usageStats)
+   * @param {string} [userId] - User ID (defaults to current user)
+   * @param {string} [actorId] - Actor ID for actor-specific data
    * @returns {Promise<boolean>} Success status of the update operation
    * @static
    */
@@ -264,10 +262,10 @@ export class UserData {
 
   /**
    * Enhance spell with user data for UI display.
-   * @param {Object} spell - Spell object to enhance with user data
-   * @param {string} [userId=null] - User ID (defaults to current user)
-   * @param {string} [actorId=null] - Actor ID for actor-specific data
-   * @returns {Object} Enhanced spell object with user data properties added
+   * @param {object} spell - Spell object to enhance with user data
+   * @param {string} [userId] - User ID (defaults to current user)
+   * @param {string} [actorId] - Actor ID for actor-specific data
+   * @returns {object} Enhanced spell object with user data properties added
    * @static
    */
   static enhanceSpellWithUserData(spell, userId = null, actorId = null) {
@@ -291,10 +289,10 @@ export class UserData {
 
   /**
    * Set spell favorite status for a specific actor.
-   * @param {string|Object} spellOrUuid - Spell UUID or spell object
+   * @param {string | object} spellOrUuid - Spell UUID or spell object
    * @param {boolean} favorited - New favorite status to set
-   * @param {string} [userId=null] - User ID (defaults to current user)
-   * @param {string} [actorId=null] - Actor ID (defaults to user's character)
+   * @param {string} [userId] - User ID (defaults to current user)
+   * @param {string} [actorId] - Actor ID (defaults to user's character)
    * @returns {Promise<boolean>} Success status of the operation
    * @static
    */
@@ -327,9 +325,9 @@ export class UserData {
 
   /**
    * Set spell notes with length validation.
-   * @param {string|Object} spellOrUuid - Spell UUID or spell object
+   * @param {string | object} spellOrUuid - Spell UUID or spell object
    * @param {string} notes - Notes text to set
-   * @param {string} [userId=null] - User ID (defaults to current user)
+   * @param {string} [userId] - User ID (defaults to current user)
    * @returns {Promise<boolean>} Success status of the operation
    * @static
    */
@@ -391,7 +389,7 @@ export class UserData {
   /**
    * Sync actor favorites to journal storage.
    * Compares actor favorite spells with journal favorites and updates journal to match actor.
-   * @param {Object} actor - The actor to sync favorites for
+   * @param {object} actor - The actor to sync favorites for
    * @returns {Promise<Array<{uuid: string, newState: boolean}>>} Array of changed spells with their new favorite states
    * @static
    */
@@ -399,7 +397,7 @@ export class UserData {
     log(3, 'Syncing journal to actor state.');
     const actorFavorites = actor.system.favorites || [];
     const actorFavoriteSpellIds = new Set(actorFavorites.filter((fav) => fav.type === 'item' && fav.id.startsWith('.Item.')).map((fav) => fav.id.replace('.Item.', '')));
-    const actorSpells = actor.items.filter((item) => item.type === 'spell');
+    const actorSpells = actor.itemTypes.spell;
     const targetUserId = DataUtils.getTargetUserId(actor);
     const changedSpells = [];
     for (const spell of actorSpells) {

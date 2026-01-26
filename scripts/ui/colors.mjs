@@ -4,7 +4,6 @@
  * This module provides color manipulation and accessibility utilities for the Spell Book,
  * with a focus on WCAG 2.0 contrast compliance. It leverages Foundry VTT's core Color
  * utilities while providing specialized functionality for:
- *
  * @module ui/colors
  * @author Tyler
  */
@@ -13,7 +12,7 @@ const THEME_BACKGROUNDS = { light: '#f4f4f4', dark: '#1b1d24' };
 
 /**
  * Extract dominant color from a class item's image
- * @param {Object} classItem - The class item with an img property
+ * @param {object} classItem - The class item with an img property
  * @returns {Promise<string>} Hex color string adjusted for contrast
  */
 export async function getClassColorForWizardTab(classItem) {
@@ -81,7 +80,7 @@ export async function getClassColorForWizardTab(classItem) {
 
 /**
  * Apply class-specific colors to CSS with WCAG contrast compliance
- * @param {Object} spellcastingClasses - Object mapping class identifiers to class data
+ * @param {object} spellcastingClasses - Object mapping class identifiers to class data
  * @param {string} spellcastingClasses[].img - Path to class icon image
  * @returns {Promise<void>}
  */
@@ -218,7 +217,7 @@ function _calculateContrastRatio(color1, color2) {
  * Adjust color lightness to meet WCAG contrast ratio requirement
  * @param {string} color - Hex color to adjust
  * @param {string} background - Background hex color to test against
- * @param {number} [targetRatio=4.5] - Target contrast ratio (4.5 for WCAG AA, 7 for AAA)
+ * @param {number} [targetRatio] - Target contrast ratio (4.5 for WCAG AA, 7 for AAA)
  * @returns {string} Adjusted hex color that meets contrast requirement
  * @private
  */

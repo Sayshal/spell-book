@@ -60,24 +60,7 @@ export class PartyMode {
   /**
    * Get spell data for a specific actor.
    * @param {object} actor - The actor to analyze
-   * @returns {{
-   *   id: string,
-   *   name: string,
-   *   hasPermission: boolean,
-   *   token: string,
-   *   spellcasters: Array<{
-   *     classId: string,
-   *     className: string,
-   *     enhancedClassName: string,
-   *     icon: string,
-   *     knownSpells: Object[],
-   *     preparedSpells: Object[],
-   *     totalKnown: number,
-   *     totalPrepared: number
-   *   }>,
-   *   totalSpellsKnown: number,
-   *   totalSpellsPrepared: number
-   * } | null} Actor spell data or null if no permission
+   * @returns {object | null} Actor spell data or null if no permission
    */
   getActorSpellData(actor) {
     log(3, 'Getting actor spell data.', { actorName: actor.name });

@@ -4,7 +4,6 @@
  * Configuration dialog for managing party spellcasting coordination and focus
  * assignments. Allows players to set their spellcasting priorities and roles
  * within a party context for optimized spell preparation and coordination.
- *
  * @module Dialogs/FocusSettings
  * @author Tyler
  */
@@ -18,7 +17,6 @@ const { renderTemplate } = foundry.applications.handlebars;
 
 /**
  * Dialog application for managing spellcasting focus settings.
- * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */
 export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
@@ -46,10 +44,10 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Create a new Focus Settings dialog instance.
-   * @param {Object} groupActor - The group actor containing focus selections
-   * @param {Object} [targetActor=null] - Specific actor to configure focus for (null for GM mode)
-   * @param {Object} [parentApp=null] - The parent PartyCoordinator app instance
-   * @param {Object} [options={}] - Additional application options
+   * @param {object} groupActor - The group actor containing focus selections
+   * @param {object} [targetActor] - Specific actor to configure focus for (null for GM mode)
+   * @param {object} [parentApp] - The parent PartyCoordinator app instance
+   * @param {object} [options] - Additional application options
    */
   constructor(groupActor, targetActor = null, parentApp = null, options = {}) {
     super(options);
@@ -295,8 +293,8 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Save focus option configurations to world settings (GM only).
-   * @param {Object} formData - The processed form data containing focus definitions
-   * @param {Object} groupActor - The group actor to update with assignments
+   * @param {object} formData - The processed form data containing focus definitions
+   * @param {object} groupActor - The group actor to update with assignments
    * @returns {Promise<void>}
    * @private
    * @static
@@ -357,8 +355,8 @@ export class FocusSettings extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Save user focus selection to the group actor.
-   * @param {Object} formData - The form data containing selection information
-   * @param {Object} groupActor - The group actor to update
+   * @param {object} formData - The form data containing selection information
+   * @param {object} groupActor - The group actor to update
    * @returns {Promise<void>}
    * @private
    * @static

@@ -5,7 +5,6 @@
  * extracting learnable spells, and handling the wizard spell learning process.
  * This module supports the complete workflow from scroll detection to spell
  * acquisition with proper cost calculation and validation.
- *
  * @module DataUtils/ScrollProcessor
  * @author Tyler
  */
@@ -21,8 +20,8 @@ import * as DataUtils from './_module.mjs';
 export class ScrollProcessor {
   /**
    * Scan actor inventory for spell scrolls and extract learnable spells.
-   * @param {Object} actor - The actor to scan for spell scrolls
-   * @returns {Promise<Array<Object>>} Array of scroll spell data objects
+   * @param {object} actor - The actor to scan for spell scrolls
+   * @returns {Promise<Array<object>>} Array of scroll spell data objects
    */
   static async scanForScrollSpells(actor) {
     const scrollSpells = [];
@@ -38,9 +37,9 @@ export class ScrollProcessor {
 
   /**
    * Extract spell data from a scroll item.
-   * @param {Object} scroll - The scroll item to extract spell data from
-   * @param {Object} actor - The actor who owns the scroll
-   * @returns {Promise<Object|null>} Processed spell data or null if no valid spell found
+   * @param {object} scroll - The scroll item to extract spell data from
+   * @param {object} actor - The actor who owns the scroll
+   * @returns {Promise<object | null>} Processed spell data or null if no valid spell found
    * @private
    */
   static async _extractSpellFromScroll(scroll, actor) {
@@ -78,10 +77,10 @@ export class ScrollProcessor {
 
   /**
    * Process a spell UUID from a scroll and create spell data.
-   * @param {Object} scroll - The scroll item containing the spell
+   * @param {object} scroll - The scroll item containing the spell
    * @param {string} spellUuid - The UUID of the spell to process
    * @param {number} maxSpellLevel - Maximum spell level the actor can cast
-   * @returns {Promise<Object|null>} Processed spell data or null if invalid
+   * @returns {Promise<object | null>} Processed spell data or null if invalid
    * @private
    */
   static async _processScrollSpell(scroll, spellUuid, maxSpellLevel) {
@@ -120,9 +119,9 @@ export class ScrollProcessor {
 
   /**
    * Learn a spell from a scroll and optionally consume it.
-   * @param {Object} actor - The actor learning the spell
-   * @param {Object} scrollSpellData - The scroll spell data to learn from
-   * @param {Object} wizardManager - The wizard manager instance
+   * @param {object} actor - The actor learning the spell
+   * @param {object} scrollSpellData - The scroll spell data to learn from
+   * @param {object} wizardManager - The wizard manager instance
    * @returns {Promise<boolean>} Whether the learning process was successful
    */
   static async learnSpellFromScroll(actor, scrollSpellData, wizardManager) {
@@ -160,7 +159,7 @@ export class ScrollProcessor {
 
   /**
    * Show dialog for learning spell from scroll.
-   * @param {Object} spell - The spell to learn from the scroll
+   * @param {object} spell - The spell to learn from the scroll
    * @param {number} cost - Gold cost to learn the spell
    * @param {string} time - Formatted time string required to learn the spell
    * @param {boolean} isFree - Whether the spell learning is free
@@ -192,7 +191,7 @@ export class ScrollProcessor {
 
   /**
    * Check if actor can afford the spell learning cost without actually deducting.
-   * @param {Object} actor - The actor to check
+   * @param {object} actor - The actor to check
    * @param {number} cost - Cost in gold pieces
    * @returns {boolean} Whether the actor can afford the cost
    * @private
@@ -204,7 +203,7 @@ export class ScrollProcessor {
 
   /**
    * Deduct spell learning cost from actor's currency using the DND5e system's currency manager.
-   * @param {Object} actor - The actor to deduct currency from
+   * @param {object} actor - The actor to deduct currency from
    * @param {number} cost - Cost in gold pieces
    * @returns {Promise<void>}
    * @private

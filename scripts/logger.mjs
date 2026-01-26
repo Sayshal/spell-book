@@ -14,7 +14,7 @@ const spellBookLogHistory = [];
 
 /**
  * Simple logging function with module ID prefix and colored styling.
- * @param {Number} level - Log level (1=error, 2=warning, 3=verbose)
+ * @param {number} level - Log level (1=error, 2=warning, 3=verbose)
  * @param {...*} args - Content to log to console (any number of arguments)
  */
 export function log(level, ...args) {
@@ -22,19 +22,15 @@ export function log(level, ...args) {
   if (spellBookLogHistory.length > 2000) spellBookLogHistory.shift();
   const configuredLogLevel = MODULE.LOG_LEVEL;
   if (configuredLogLevel > 0 && level <= configuredLogLevel) {
-    let logType;
     switch (level) {
       case 1:
-        logType = 'error';
         console.error(`%c${MODULE.ID}%c |`, 'color: #ef4444; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 0 0 1px #000;', 'color: #9ca3af;', ...args);
         break;
       case 2:
-        logType = 'warn';
         console.warn(`%c${MODULE.ID}%c |`, 'color: #fb923c; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 0 0 1px #000;', 'color: #9ca3af;', ...args);
         break;
       case 3:
       default:
-        logType = 'debug';
         console.debug(`%c${MODULE.ID}%c |`, 'color: #a78bfa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 0 0 1px #000;', 'color: #9ca3af;', ...args);
         break;
     }
@@ -57,7 +53,7 @@ export function initializeLogger() {
 
 /**
  * Get the SpellBook log history (SpellBook logs only, not all console logs).
- * @returns {Array<{timestamp: string, type: string, level: number, content: Array}>}
+ * @returns {Array<object>} Array of log entries with timestamp, type, level, and content
  */
 export function getSpellBookLogHistory() {
   return spellBookLogHistory;

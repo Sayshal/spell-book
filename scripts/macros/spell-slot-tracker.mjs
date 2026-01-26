@@ -1,3 +1,6 @@
+/**
+ * Spell slot tracker macro script - displays spell slot usage for selected token.
+ */
 function spellSlotTrackerScript() {
   const selectedToken = canvas.tokens.controlled[0];
   if (!selectedToken) {

@@ -924,15 +924,15 @@ export class State {
     const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
     const maxSpellLevel = DataUtils.calculateMaxSpellLevel(classItem, this.actor);
     this.scrollSpells = await DataUtils.ScrollProcessor.scanForScrollSpells(this.actor);
-    const grantedSpells = this.actor.items
-      .filter((i) => i.type === 'spell' && (i.flags?.dnd5e?.cachedFor || (i.system?.method && [MODULE.SPELL_MODE.PACT, MODULE.SPELL_MODE.INNATE, MODULE.SPELL_MODE.AT_WILL].includes(i.system.method))))
-      .flatMap((i) => {
+    const grantedSpells = this.actor.itemTypes.spell
+      .filter((s) => s.flags?.dnd5e?.cachedFor || (s.system?.method && [MODULE.SPELL_MODE.PACT, MODULE.SPELL_MODE.INNATE, MODULE.SPELL_MODE.AT_WILL].includes(s.system.method)))
+      .flatMap((s) => {
         const uuids = [];
-        if (i?._stats?.compendiumSource) uuids.push(i._stats.compendiumSource);
-        if (i?.flags?.core?.sourceId) uuids.push(i.flags.core.sourceId);
-        if (i?.uuid) uuids.push(i.uuid);
-        if (i?.compendiumUuid) uuids.push(i.compendiumUuid);
-        if (i?.spellUuid) uuids.push(i.spellUuid);
+        if (s?._stats?.compendiumSource) uuids.push(s._stats.compendiumSource);
+        if (s?.flags?.core?.sourceId) uuids.push(s.flags.core.sourceId);
+        if (s?.uuid) uuids.push(s.uuid);
+        if (s?.compendiumUuid) uuids.push(s.compendiumUuid);
+        if (s?.spellUuid) uuids.push(s.spellUuid);
         return uuids;
       })
       .filter(Boolean);
@@ -1143,12 +1143,11 @@ export class State {
     const spellIdsToRemove = [];
     for (const classIdentifier of Object.keys(this.spellcastingClasses)) {
       if (RuleSet.getClassRule(this.actor, classIdentifier, 'ritualCasting', MODULE.RITUAL_CASTING_MODES.NONE) !== MODULE.SPELL_MODE.ALWAYS) {
-        const moduleRitualSpells = this.actor.items.filter(
-          (item) =>
-            item.type === 'spell' &&
-            item.system?.method === MODULE.SPELL_MODE.RITUAL &&
-            (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier) &&
-            item.flags?.[MODULE.ID]?.isModuleRitual === true
+        const moduleRitualSpells = this.actor.itemTypes.spell.filter(
+          (s) =>
+            s.system?.method === MODULE.SPELL_MODE.RITUAL &&
+            (s.system?.sourceClass === classIdentifier || s.sourceClass === classIdentifier) &&
+            s.flags?.[MODULE.ID]?.isModuleRitual === true
         );
         if (moduleRitualSpells.length > 0) {
           log(3, 'Found ritual spells to remove for class', { classIdentifier, count: moduleRitualSpells.length });

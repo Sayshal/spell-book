@@ -4,7 +4,6 @@
  * Side-by-side spell analysis and comparison interface for detailed spell
  * evaluation. Provides spell data comparison including statistics,
  * effects, and tactical analysis for informed spellcasting decisions.
- *
  * @module Dialogs/SpellComparison
  * @author Tyler
  */
@@ -17,7 +16,6 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
  * Dialog application for comparing multiple spells side-by-side.
- * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */
 export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
@@ -34,8 +32,8 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Create a new spell comparison dialog instance.
-   * @param {Object} parentApp - Parent Spell Book application instance
-   * @param {Object} [options={}] - Additional application options
+   * @param {object} parentApp - Parent Spell Book application instance
+   * @param {object} [options] - Additional application options
    */
   constructor(parentApp, options = {}) {
     super(options);
@@ -112,8 +110,8 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Process a spell document into standardized format for comparison display.
-   * @param {Object} spell - The spell document to process
-   * @returns {Object} Processed spell data for comparison display
+   * @param {object} spell - The spell document to process
+   * @returns {object} Processed spell data for comparison display
    * @private
    */
   _processSpellForComparison(spell) {
@@ -137,8 +135,8 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Extract damage information from a spell for comparison purposes.
-   * @param {Object} spell - The spell document to analyze
-   * @returns {Object} Damage information object
+   * @param {object} spell - The spell document to analyze
+   * @returns {object} Damage information object
    * @private
    */
   _extractDamageInfo(spell) {

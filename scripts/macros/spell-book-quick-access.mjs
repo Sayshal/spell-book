@@ -1,3 +1,6 @@
+/**
+ * Quick access macro script - opens Spell Book for selected token.
+ */
 function spellBookQuickAccessScript() {
   const selectedToken = canvas.tokens.controlled[0];
   if (!selectedToken) {

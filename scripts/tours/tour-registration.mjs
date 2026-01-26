@@ -72,8 +72,10 @@ export async function promptWelcomeTour() {
 
 /**
  * Add tour button to SpellBook interface.
+ * @param {object} _app - The application instance (unused)
+ * @param {HTMLElement} html - The rendered HTML element
  */
-export function addTourButton(app, html) {
+export function addTourButton(_app, html) {
   if (html.querySelector('.spell-book-tour-button')) return;
   const windowHeader = html.querySelector('.window-header .window-controls');
   if (!windowHeader) return;

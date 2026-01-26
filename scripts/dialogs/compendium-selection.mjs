@@ -5,7 +5,6 @@
  * in spell indexing and searching operations. Organizes compendiums by source
  * and provides bulk selection controls for easier management with performance
  * optimization through selective loading.
- *
  * @module Dialogs/CompendiumSelection
  * @author Tyler
  */
@@ -18,7 +17,6 @@ const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applicat
 
 /**
  * Dialog application for selecting which compendiums to index for spell searching.
- * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */
 export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
@@ -35,7 +33,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
 
   /**
    * Check if a compendium pack contains content relevant for spell indexing.
-   * @param {Collection<string, Object>} pack - The compendium pack to analyze
+   * @param {object} pack - The compendium pack to analyze
    * @returns {Promise<boolean>} Whether the pack contains spell-relevant content
    * @static
    */
@@ -53,7 +51,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
 
   /**
    * Retrieve and organize all available compendiums by their top-level folder structure.
-   * @returns {Promise<Object>} Organized compendium data structure
+   * @returns {Promise<object>} Organized compendium data structure
    * @private
    */
   async _getAvailableCompendiums() {
@@ -75,7 +73,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
 
   /**
    * Determine the appropriate organization name for a compendium pack.
-   * @param {Collection<string, Object>} pack - The compendium pack to analyze
+   * @param {object} pack - The compendium pack to analyze
    * @returns {string} The organization name to display
    * @private
    */
@@ -88,7 +86,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
 
   /**
    * Extract the top-level folder name from a pack's folder hierarchy.
-   * @param {Collection<string, Object>} pack - The pack to analyze
+   * @param {object} pack - The pack to analyze
    * @returns {string|null} Top-level folder name or null if no folder structure
    * @private
    */
@@ -141,16 +139,9 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
 
   /**
    * Process categorized packs and create form elements for each category.
-   * @param {Array<Object>} categorizedPacks - The raw categorized pack data
+   * @param {Array<object>} categorizedPacks - The raw categorized pack data
    * @param {Set<string>} enabledCompendiums - Set of currently enabled compendium IDs
-   * @returns {Array<{
-   *   name: string,
-   *   packs: Array<Object>,
-   *   enabledCount: number,
-   *   totalCount: number,
-   *   disabled: boolean,
-   *   categorySelectAllCheckboxHtml: string
-   * }>} Array of processed categories with form elements
+   * @returns {Array<object>} Array of processed categories with form elements
    * @private
    */
   _prepareCategories(categorizedPacks, enabledCompendiums) {
@@ -172,18 +163,10 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
 
   /**
    * Process individual packs within a category and create their form elements.
-   * @param {Array<{ id: string, packageName: string, [key: string]: any }>} packs - Array of packs in the category
+   * @param {Array<object>} packs - Array of packs in the category
    * @param {Set<string>} enabledCompendiums - Set of enabled compendium IDs
    * @param {string} categoryName - Name of the parent category
-   * @returns {Array<{
-   *   id: string,
-   *   packageName: string,
-   *   enabled: boolean,
-   *   disabled: boolean,
-   *   organizationName: string,
-   *   checkboxHtml: string,
-   *   [key: string]: any
-   * }>} Array of processed packs with form elements
+   * @returns {Array<object>} Array of processed packs with form elements
    * @private
    */
   _preparePacksInCategory(packs, enabledCompendiums, categoryName) {
@@ -198,7 +181,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
 
   /**
    * Calculate statistics for a category of packs.
-   * @param {Array<{ enabled: boolean, disabled: boolean, [key: string]: any }>} packsInCategory - The processed packs in the category
+   * @param {Array<object>} packsInCategory - The processed packs in the category
    * @returns {{ enabledCount: number, totalCount: number, allPacksDisabled: boolean }} Statistics about the category
    * @private
    */
@@ -212,7 +195,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
 
   /**
    * Create a checkbox form element for an individual compendium pack.
-   * @param {{ id: string, enabled: boolean, disabled: boolean, organizationName: string, label?: string, [key: string]: any }} packData - The processed pack data
+   * @param {object} packData - The processed pack data
    * @returns {HTMLElement} The created checkbox element
    * @private
    */
@@ -253,7 +236,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
 
   /**
    * Calculate summary statistics across all categories.
-   * @param {Array<{ totalCount: number, enabledCount: number, [key: string]: any }>} categories - Array of processed categories
+   * @param {Array<object>} categories - Array of processed categories
    * @returns {{ totalPacks: number, enabledPacks: number, allSelected: boolean }} Summary statistics for all categories
    * @private
    */
@@ -410,7 +393,7 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    * Form submission handler for saving compendium selection configuration.
    * @param {Event} _event - The form submission event (unused)
    * @param {HTMLElement} form - The form element containing selection data
-   * @param {Object} _formData - The form data object (unused)
+   * @param {object} _formData - The form data object (unused)
    * @returns {Promise<void>}
    * @static
    */

@@ -4,7 +4,6 @@
  * Executes parsed search queries against spell data collections. This module leverages
  * the DND5e system's built-in filtering capabilities for robust, maintainable query
  * execution with minimal custom logic.
- *
  * @module ValidationUtils/QueryExecutor
  * @author Tyler
  */
@@ -21,37 +20,37 @@ export class QueryExecutor {
   FIELD_MAPPERS = {
     /**
      * Name search using case-insensitive contains.
-     * @param value - Query value
+     * @param {string} value - Query value
      */
     name: (value) => ({ k: 'name', v: value, o: 'icontains' }),
 
     /**
      * Exact level match.
-     * @param value - Query value
+     * @param {string} value - Query value
      */
     level: (value) => ({ k: 'level', v: parseInt(value) }),
 
     /**
      * School comparison.
-     * @param value - Query value
+     * @param {string} value - Query value
      */
     school: (value) => ({ k: 'school', v: value.toLowerCase(), o: 'icontains' }),
 
     /**
      * Damage type checking - checks if spell has any of the specified damage types.
-     * @param value - Query value
+     * @param {string} value - Query value
      */
     damageType: (value) => ({ k: 'filterData.damageTypes', v: value.split(',').map((t) => t.trim().toLowerCase()), o: 'hasany' }),
 
     /**
      * Condition checking - checks if spell inflicts any of the specified conditions.
-     * @param value - Query value
+     * @param {string} value - Query value
      */
     condition: (value) => ({ k: 'filterData.conditions', v: value.split(',').map((c) => c.trim().toLowerCase()), o: 'hasany' }),
 
     /**
      * Casting time - splits "type:value" format into two separate checks.
-     * @param value - Query value
+     * @param {string} value - Query value
      */
     castingTime: (value) => {
       const [type, val = '1'] = value.split(':');
@@ -65,7 +64,7 @@ export class QueryExecutor {
      * Range - handles both numeric values and unit types.
      * Numeric: exact match on system.range.value
      * Text: contains match on system.range.units
-     * @param value - Query value
+     * @param {string} value - Query value
      */
     range: (value) => {
       const numValue = parseInt(value);
@@ -75,7 +74,7 @@ export class QueryExecutor {
 
     /**
      * Concentration requirement - checks multiple possible property locations.
-     * @param value - Query value
+     * @param {string} value - Query value
      */
     concentration: (value) => ({
       o: 'OR',
@@ -87,7 +86,7 @@ export class QueryExecutor {
 
     /**
      * Ritual capability - checks multiple possible property locations.
-     * @param value - Query value
+     * @param {string} value - Query value
      */
     ritual: (value) => ({
       o: 'OR',
@@ -99,7 +98,7 @@ export class QueryExecutor {
 
     /**
      * Prepared status - checks both system.preparation.prepared and top-level prepared.
-     * @param value - Query value
+     * @param {string} value - Query value
      */
     prepared: (value) => ({
       o: 'OR',
@@ -111,22 +110,22 @@ export class QueryExecutor {
 
     /**
      * Save requirement - checks filterData flag.
-     * @param value - Query value
+     * @param {string} value - Query value
      */
     requiresSave: (value) => ({ k: 'filterData.requiresSave', v: value === 'true' }),
 
     /**
      * Material components - checks if components are consumed.
-     * @param value - Query value
+     * @param {string} value - Query value
      */
     materialComponents: (value) => ({ k: 'filterData.materialComponents.consumed', v: value.toLowerCase() === 'consumed' })
   };
 
   /**
    * Execute parsed query against spells collection.
-   * @param {Object} queryObject - Parsed query object from QueryParser
-   * @param {Array<Object>} spells - Array of spell data to filter
-   * @returns {Array<Object>} Filtered spells that match all query conditions
+   * @param {object} queryObject - Parsed query object from QueryParser
+   * @param {Array<object>} spells - Array of spell data to filter
+   * @returns {Array<object>} Filtered spells that match all query conditions
    */
   executeQuery(queryObject, spells) {
     if (!queryObject || !spells || queryObject.type !== 'conjunction') return spells;
@@ -137,8 +136,8 @@ export class QueryExecutor {
   /**
    * Convert query conditions to filter descriptions.
    * @private
-   * @param {Array<Object>} conditions - Query conditions to convert
-   * @returns {Array<Object>} Array of filter descriptions for dnd5e.Filter.performCheck
+   * @param {Array<object>} conditions - Query conditions to convert
+   * @returns {Array<object>} Array of filter descriptions for dnd5e.Filter.performCheck
    */
   _convertConditions(conditions) {
     const filters = [];

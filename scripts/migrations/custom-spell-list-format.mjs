@@ -9,10 +9,10 @@ import { log } from '../logger.mjs';
 
 /**
  * Migrate custom spell list format from string to array.
- * @returns {Promise<Object>} Migration results
+ * @returns {Promise<object>} Migration results
  * @property {number} processed - Number of actors processed
  * @property {number} updated - Number of actors updated with new format
- * @property {Array<Object>} migratedActors - Array of migrated actor information
+ * @property {Array<object>} migratedActors - Array of migrated actor information
  * @property {Array<string>} errors - Array of error messages
  */
 async function migrateCustomSpellListFormat() {

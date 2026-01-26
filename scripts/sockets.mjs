@@ -46,10 +46,10 @@ export class SocketHandler {
 
   /**
    * Set a user's spellcasting focus in the group actor.
-   * @param {Object} groupActor - The group actor to update
+   * @param {object} groupActor - The group actor to update
    * @param {string} userId - The user ID
    * @param {string|null} focusId - The focus ID to set (or null to clear)
-   * @returns {Promise<{success: boolean, error?: string}>} - Success status
+   * @returns {Promise<{success: boolean, error: string|undefined}>} - Success status
    */
   async setUserSelectedFocus(groupActor, userId, focusId) {
     if (game.user.isGM) return await this.#handleSetUserFocus({ groupActorId: groupActor.id, userId, focusId });
@@ -72,9 +72,9 @@ export class SocketHandler {
 
   /**
    * Set an actor's spellcasting focus flag.
-   * @param {Object} actor - The actor to update
+   * @param {object} actor - The actor to update
    * @param {string} focus - The focus name to set
-   * @returns {Promise<{success: boolean, error?: string}>} - Success status
+   * @returns {Promise<{success: boolean, error: string|undefined}>} - Success status
    */
   async setActorSpellcastingFocus(actor, focus) {
     if (actor.isOwner) return await this.#handleSetActorFocus({ actorId: actor.id, focus });
@@ -101,7 +101,7 @@ export class SocketHandler {
    * @param {string} config.groupActorId - The ID of the group actor to update
    * @param {string} config.userId - The user ID whose focus selection is being set
    * @param {string|null} config.focusId - The focus ID to set, or null to clear the selection
-   * @returns {Promise<{success: boolean, error?: string}>} Result object indicating success or failure
+   * @returns {Promise<{success: boolean, error: string|undefined}>} Result object indicating success or failure
    */
   async #handleSetUserFocus({ groupActorId, userId, focusId }) {
     const groupActor = game.actors.get(groupActorId);
@@ -119,7 +119,7 @@ export class SocketHandler {
    * @param {object} config - Configuration object
    * @param {string} config.actorId - The ID of the actor to update
    * @param {string} config.focus - The spellcasting focus name to set on the actor
-   * @returns {Promise<{success: boolean, error?: string}>} Result object indicating success or failure
+   * @returns {Promise<{success: boolean, error: string|undefined}>} Result object indicating success or failure
    */
   async #handleSetActorFocus({ actorId, focus }) {
     const actor = game.actors.get(actorId);

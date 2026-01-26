@@ -4,7 +4,6 @@
  * This module provides management of spell favorites within the Spell Book
  * module, handling synchronization between the journal-based user data system and
  * Foundry VTT's native actor favorites system.
- *
  * @module UIUtils/SpellFavorites
  * @author Tyler
  */
@@ -15,7 +14,7 @@ import { log } from '../logger.mjs';
 /**
  * Add spell to actor.system.favorites.
  * @param {string} spellUuid - The spell UUID (compendium or actor)
- * @param {Object} actor - The actor to update
+ * @param {object} actor - The actor to update
  * @returns {Promise<boolean>} Success status of the operation
  */
 export async function addSpellToActorFavorites(spellUuid, actor) {
@@ -34,7 +33,7 @@ export async function addSpellToActorFavorites(spellUuid, actor) {
 /**
  * Remove spell from actor.system.favorites.
  * @param {string} spellUuid - The spell UUID to remove from favorites
- * @param {Object} actor - The actor to update
+ * @param {object} actor - The actor to update
  * @returns {Promise<boolean>} Success status of the operation
  */
 export async function removeSpellFromActorFavorites(spellUuid, actor) {
@@ -52,8 +51,8 @@ export async function removeSpellFromActorFavorites(spellUuid, actor) {
 
 /**
  * Sync favorites on spell preparation save.
- * @param {Object} actor - The actor whose favorites should be synchronized
- * @param {Object} spellData - Spell preparation data containing spell UUIDs
+ * @param {object} actor - The actor whose favorites should be synchronized
+ * @param {object} spellData - Spell preparation data containing spell UUIDs
  * @returns {Promise<void>}
  */
 export async function syncFavoritesOnSave(actor, spellData) {
@@ -67,12 +66,12 @@ export async function syncFavoritesOnSave(actor, spellData) {
 /**
  * Process favorites from form state and update actor.system.favorites to match journal.
  * @param {HTMLFormElement} _form - The form element (unused but kept for API consistency)
- * @param {Object} actor - The actor to update
+ * @param {object} actor - The actor to update
  * @returns {Promise<void>}
  */
 export async function processFavoritesFromForm(_form, actor) {
   const targetUserId = DataUtils.getTargetUserId(actor);
-  const actorSpells = actor.items.filter((item) => item.type === 'spell');
+  const actorSpells = actor.itemTypes.spell;
   const favoritesToAdd = [];
   for (const spell of actorSpells) {
     const canonicalUuid = DataUtils.getCanonicalSpellUuid(spell.uuid);
@@ -99,8 +98,8 @@ export async function processFavoritesFromForm(_form, actor) {
 /**
  * Find actor spell by UUID with enhanced UUID matching.
  * @param {string} spellUuid - The spell UUID to find
- * @param {Object} actor - The actor to search
- * @returns {Object|null} The actor's spell item or null if not found
+ * @param {object} actor - The actor to search
+ * @returns {object | null} The actor's spell item or null if not found
  */
 export function findActorSpellByUuid(spellUuid, actor) {
   let spell = actor.items.get(spellUuid);

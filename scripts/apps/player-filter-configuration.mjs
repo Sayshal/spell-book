@@ -6,7 +6,6 @@
  * drag-and-drop functionality, and reset to default configurations. It provides
  * both visual and programmatic validation to ensure filter configurations remain
  * functional and user-friendly.
- *
  * @module Applications/PlayerFilterConfiguration
  * @author Tyler
  */
@@ -44,14 +43,14 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Current filter configuration array.
-   * @type {Array<FilterConfigItem>}
+   * @type {Array<object>}
    */
   config = [];
 
   /**
    * Create a new filter configuration instance.
-   * @param {Object} parentApp - The parent application instance that opened this configuration
-   * @param {Object} [options={}] - Additional application options
+   * @param {object} parentApp - The parent application instance that opened this configuration
+   * @param {object} [options] - Additional application options
    */
   constructor(parentApp, options = {}) {
     super(options);
@@ -100,7 +99,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Get the current valid filter configuration.
-   * @returns {Array<Object>} The current filter configuration or default if invalid
+   * @returns {Array<object>} The current filter configuration or default if invalid
    * @static
    */
   static getValidConfiguration() {
@@ -112,7 +111,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Prepare filter configuration form data with constructed elements.
-   * @returns {Array<Object>} Array of filter configuration objects with form elements
+   * @returns {Array<object>} Array of filter configuration objects with form elements
    * @private
    */
   _prepareFilterConfigFormData() {
@@ -131,7 +130,7 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Prepare form buttons configuration.
-   * @returns {Array<Object>} Array of button configurations
+   * @returns {Array<object>} Array of button configurations
    * @private
    */
   _prepareFormButtons() {
@@ -330,9 +329,9 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Process sortable and non-sortable filters from form data.
-   * @param {Array<Object>} filterConfig - The filter configuration
-   * @param {Object} formData - Form data from submission
-   * @returns {{sortableFilters: Object[], nonSortableFilters: Object[]}} Sorted filter groups
+   * @param {Array<object>} filterConfig - The filter configuration
+   * @param {object} formData - Form data from submission
+   * @returns {{sortableFilters: object[], nonSortableFilters: object[]}} Sorted filter groups
    * @static
    */
   static processSortableFilters(filterConfig, formData) {
@@ -352,9 +351,9 @@ export class PlayerFilterConfiguration extends HandlebarsApplicationMixin(Applic
 
   /**
    * Update filter ordering based on DOM structure.
-   * @param {Array<Object>} sortableFilters - Filters that can be sorted
+   * @param {Array<object>} sortableFilters - Filters that can be sorted
    * @param {HTMLFormElement} form - The form element
-   * @returns {Array<Object>} Updated sortable filters with correct order
+   * @returns {Array<object>} Updated sortable filters with correct order
    * @static
    */
   static updateFilterOrder(sortableFilters, form) {

@@ -5,7 +5,6 @@
  * with Spell Book module issues. This GM-only application captures relevant system
  * information, module settings, filtered console logs, and optionally exports owned
  * actor data for debugging support.
- *
  * @module Applications/Troubleshooter
  * @author Tyler
  */
@@ -82,7 +81,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
    * @this Troubleshooter
    * @param {PointerEvent} event - The originating click event.
    * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
-   * @returns {Promise<Object>} Export result information
+   * @returns {Promise<object>} Export result information
    */
   static async #export(event, _target) {
     log(3, 'Handling report export.', { event, _target });
@@ -207,7 +206,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Extract settings data from troubleshooter file content.
    * @param {string} fileContent - The troubleshooter file content
-   * @returns {Object|null} The settings data or null if not found
+   * @returns {object | null} The settings data or null if not found
    * @static
    * @private
    */
@@ -226,7 +225,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Import settings data into the game with validation and error handling.
-   * @param {Object} settingsData - The settings data to import
+   * @param {object} settingsData - The settings data to import
    * @returns {Promise<void>}
    * @static
    * @private

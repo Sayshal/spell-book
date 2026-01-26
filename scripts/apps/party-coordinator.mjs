@@ -4,7 +4,6 @@
  * A party management interface for coordinating spells across multiple
  * party members. This application provides spell comparison, focus assignment, synergy
  * analysis, and collaborative spell planning capabilities for groups of spellcasters.
- *
  * @module Applications/PartyCoordinator
  * @author Tyler
  */
@@ -41,10 +40,10 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Create a new Party Spell Manager application.
-   * @param {Array<Object>} [partyActors=[]] - Array of party member actors
-   * @param {Object} [viewingActor=null] - The actor who opened this view
-   * @param {Object} [groupActor=null] - The group actor if opened from group sheet
-   * @param {Object} [options={}] - Additional application options
+   * @param {Array<object>} [partyActors] - Array of party member actors
+   * @param {object} [viewingActor] - The actor who opened this view
+   * @param {object} [groupActor] - The group actor if opened from group sheet
+   * @param {object} [options] - Additional application options
    */
   constructor(partyActors = [], viewingActor = null, groupActor = null, options = {}) {
     super(options);
@@ -139,7 +138,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Get spell level groups for display organization.
    * @param {Object<string, Object>} spellsByLevel - Spells organized by level
-   * @returns {Array<{level: number, levelName: string, spells: Object[]}>} Array of spell level group objects
+   * @returns {Array<{level: number, levelName: string, spells: object[]}>} Array of spell level group objects
    */
   getSpellLevelGroups(spellsByLevel) {
     const levelsMapped = Object.keys(spellsByLevel)
@@ -296,7 +295,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Show context menu for member card.
    * @param {Event} event - The right-click event
-   * @param {Object} actor - The actor associated with the card
+   * @param {object} actor - The actor associated with the card
    * @private
    */
   async _showMemberCardContextMenu(event, actor) {

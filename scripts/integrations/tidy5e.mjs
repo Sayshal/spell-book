@@ -5,7 +5,6 @@
  * classic and Quadrone (new) sheet variants. This module handles UI button
  * injection for accessing the Spell Book application directly from Tidy5e
  * character sheets.
- *
  * @module Integrations/Tidy5e
  * @author Tyler
  */
@@ -29,9 +28,9 @@ export function registerTidy5eIntegration() {
 
 /**
  * Handle Tidy5e classic sheet rendering.
- * @param {Object} _sheet - The Tidy5e sheet application instance
+ * @param {object} _sheet - The Tidy5e sheet application instance
  * @param {HTMLElement} element - The sheet HTML element
- * @param {Object} data - The sheet data object containing actor information
+ * @param {object} data - The sheet data object containing actor information
  * @returns {void}
  */
 function onTidy5eRender(_sheet, element, data) {
@@ -64,9 +63,9 @@ function onTidy5eRender(_sheet, element, data) {
 
 /**
  * Handle Tidy5e Quadrone (new) sheet rendering.
- * @param {Object} _sheet - The Tidy5e sheet application instance
+ * @param {object} _sheet - The Tidy5e sheet application instance
  * @param {HTMLElement} element - The sheet HTML element
- * @param {Object} data - The sheet data object containing actor information
+ * @param {object} data - The sheet data object containing actor information
  * @returns {void}
  */
 function onTidy5eQuadroneRender(_sheet, element, data) {
@@ -99,7 +98,7 @@ function onTidy5eQuadroneRender(_sheet, element, data) {
 
 /**
  * Check if Tidy5e Spell Book button can be added.
- * @param {Object} actor - The actor to check for spellcasting capabilities
+ * @param {object} actor - The actor to check for spellcasting capabilities
  * @param {HTMLElement} element - The sheet HTML element
  * @returns {boolean} True if the button can be added to this Tidy5e sheet
  */
@@ -120,7 +119,7 @@ function canAddTidySpellbookButton(actor, element) {
 
 /**
  * Create Tidy5e Spell Book button element for classic sheets.
- * @param {Object} actor - The actor this button will open a spell book for
+ * @param {object} actor - The actor this button will open a spell book for
  * @returns {HTMLElement} The created button element for Tidy5e classic sheets
  */
 function createTidySpellbookButton(actor) {
@@ -137,7 +136,7 @@ function createTidySpellbookButton(actor) {
 
 /**
  * Create Tidy5e Spell Book button element for Quadrone sheets.
- * @param {Object} actor - The actor this button will open a spell book for
+ * @param {object} actor - The actor this button will open a spell book for
  * @returns {HTMLElement} The created button element for Tidy5e Quadrone sheets
  */
 function createTidySpellbookButtonQuadrone(actor) {
@@ -153,9 +152,9 @@ function createTidySpellbookButtonQuadrone(actor) {
 
 /**
  * Handle Tidy5e Group Sheet Quadrone rendering.
- * @param {Object} _sheet - The Tidy5e sheet application instance
+ * @param {object} _sheet - The Tidy5e sheet application instance
  * @param {HTMLElement} element - The sheet HTML element
- * @param {Object} data - The sheet data object containing actor information
+ * @param {object} data - The sheet data object containing actor information
  * @returns {void}
  */
 function onTidy5eGroupSheetRender(_sheet, element, data) {
@@ -175,8 +174,8 @@ function onTidy5eGroupSheetRender(_sheet, element, data) {
 
 /**
  * Create Tidy5e Party Coordinator button element for group sheets.
- * @param {Object} groupActor - The group actor
- * @param {Array<Object>} partyActors - Array of party member actors
+ * @param {object} groupActor - The group actor
+ * @param {Array<object>} partyActors - Array of party member actors
  * @returns {HTMLElement} The created button element for Tidy5e group sheets
  */
 function createTidy5ePartyCoordinatorButton(groupActor, partyActors) {
@@ -194,8 +193,8 @@ function createTidy5ePartyCoordinatorButton(groupActor, partyActors) {
 /**
  * Open Party Coordinator application for Tidy5e group sheet integration.
  * @param {Event} event - The click event
- * @param {Object} groupActor - The group actor
- * @param {Array<Object>} partyActors - Array of party member actors
+ * @param {object} groupActor - The group actor
+ * @param {Array<object>} partyActors - Array of party member actors
  * @returns {Promise<void>}
  */
 async function openPartyCoordinator(event, groupActor, partyActors) {
@@ -224,7 +223,7 @@ async function openPartyCoordinator(event, groupActor, partyActors) {
 /**
  * Open Spell Book application for Tidy5e integration.
  * @param {Event} event - The click event
- * @param {Object} actor - The actor whose spell book should be opened
+ * @param {object} actor - The actor whose spell book should be opened
  * @returns {Promise<void>}
  */
 async function openSpellbook(event, actor) {

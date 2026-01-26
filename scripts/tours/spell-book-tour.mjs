@@ -4,22 +4,24 @@
  * @author Tyler
  */
 
-import { MODULE } from '../constants/_module.mjs';
 import { SpellBook, SpellListManager, PartyCoordinator } from '../apps/_module.mjs';
 import { PartyMode } from '../managers/_module.mjs';
 import { SpellBookSettings } from '../dialogs/_module.mjs';
 import { log } from '../logger.mjs';
 
+/**
+ * Custom tour implementation for the Spell Book module.
+ */
 export default class SpellBookTour extends foundry.nue.Tour {
   /**
    * Currently opened application for this tour step.
-   * @type {Object|null}
+   * @type {object | null}
    */
   focusedApp = null;
 
   /**
    * Actor being used for this tour demonstration.
-   * @type {Object|null}
+   * @type {object | null}
    */
   demoActor = null;
 
@@ -145,7 +147,7 @@ export default class SpellBookTour extends foundry.nue.Tour {
   /**
    * Find a suitable actor for tour demonstrations.
    * Prefers user's owned actors with spells, falls back to importing Akra.
-   * @returns {Promise<Actor|null>} A suitable actor or null
+   * @returns {Promise<object|null>} A suitable actor or null
    * @private
    */
   async #findDemoActor() {
@@ -169,7 +171,7 @@ export default class SpellBookTour extends foundry.nue.Tour {
 
   /**
    * Import Akra from the dnd5e.heroes compendium as a fallback demo actor.
-   * @returns {Promise<Actor|null>} Akra the demo actor or null
+   * @returns {Promise<object|null>} Akra the demo actor or null
    * @private
    */
   async #importAkraFallback() {

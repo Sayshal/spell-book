@@ -4,7 +4,6 @@
  * Personal spell notes editing interface for adding user-specific annotations
  * and tactical information to spells. Provides rich text editing capabilities
  * and integration with the spell user data system.
- *
  * @module Dialogs/SpellNotes
  * @author Tyler
  */
@@ -18,7 +17,6 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
  * Dialog application for editing spell notes.
- * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */
 export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
@@ -44,9 +42,9 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Create a new Spell Notes dialog instance.
-   * @param {Object} [options={}] - Application options including spell and actor data
+   * @param {object} [options] - Application options including spell and actor data
    * @param {string} options.spellUuid - UUID of the spell to edit notes for
-   * @param {Object} [options.actor] - Associated actor for note ownership
+   * @param {object} [options.actor] - Associated actor for note ownership
    */
   constructor(options = {}) {
     super(options);

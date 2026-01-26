@@ -8,7 +8,7 @@ const { DialogV2 } = foundry.applications.api;
 
 /**
  * Display a confirmation dialog with customizable options.
- * @param {Object} options - Dialog configuration options
+ * @param {object} options - Dialog configuration options
  * @param {string} [options.title] - The dialog title text
  * @param {string} [options.content] - The dialog message content
  * @param {string} [options.confirmLabel] - Text label for the confirm button

@@ -5,7 +5,6 @@
  * group actors, rest mechanics, and journal directory enhancements. This module handles
  * UI button injection, long rest processing, spell swap mechanics, and party spell
  * coordination features.
- *
  * @module Integrations/DnD5e
  * @author Tyler
  */
@@ -31,9 +30,9 @@ export function registerDnD5eIntegration() {
 
 /**
  * Add Spell Book button to D&D 5e character sheet.
- * @param {Object} _app - The character sheet application instance
+ * @param {object} _app - The character sheet application instance
  * @param {HTMLElement} html - The character sheet HTML element
- * @param {Object} data - The sheet data object containing actor information
+ * @param {object} data - The sheet data object containing actor information
  * @returns {void}
  */
 function addSpellbookButton(_app, html, data) {
@@ -54,7 +53,7 @@ function addSpellbookButton(_app, html, data) {
 
 /**
  * Check if Spell Book button can be added to character sheet.
- * @param {Object} actor - The actor to check for spellcasting capabilities
+ * @param {object} actor - The actor to check for spellcasting capabilities
  * @param {HTMLElement} html - The character sheet HTML element
  * @returns {boolean} True if the button can be added to this sheet
  */
@@ -74,7 +73,7 @@ function canAddSpellbookButton(actor, html) {
 
 /**
  * Create Spell Book button element for character sheets.
- * @param {Object} actor - The actor this button will open a spell book for
+ * @param {object} actor - The actor this button will open a spell book for
  * @returns {HTMLElement} The created button element
  */
 function createSpellBookButton(actor) {
@@ -90,7 +89,7 @@ function createSpellBookButton(actor) {
 
 /**
  * Handle Spell Book button click event.
- * @param {Object} actor - The actor whose spell book should be opened
+ * @param {object} actor - The actor whose spell book should be opened
  * @param {Event} event - The click event
  * @returns {Promise<void>}
  */
@@ -143,9 +142,9 @@ async function onSpellBookButtonClick(actor, event) {
 
 /**
  * Handle group actor sheet rendering for party spell management.
- * @param {Object} _sheet - The group actor sheet
+ * @param {object} _sheet - The group actor sheet
  * @param {HTMLElement} element - The sheet HTML element
- * @param {Object} data - The sheet data
+ * @param {object} data - The sheet data
  * @returns {void}
  */
 function onGroupActorRender(_sheet, element, data) {
@@ -173,8 +172,8 @@ function onGroupActorRender(_sheet, element, data) {
 
 /**
  * Check if party spell button can be added to group actor sheet.
- * @param {Object} actor - The group actor
- * @param {Object} data - The sheet data
+ * @param {object} actor - The group actor
+ * @param {object} data - The sheet data
  * @returns {boolean} True if button should be added
  */
 function canAddPartySpellButton(actor, data) {
@@ -191,8 +190,8 @@ function canAddPartySpellButton(actor, data) {
 
 /**
  * Create party spell button element for group actor sheets.
- * @param {Object} groupActor - The group actor
- * @param {Object} data - The sheet data
+ * @param {object} groupActor - The group actor
+ * @param {object} data - The sheet data
  * @returns {HTMLElement} The button element
  */
 function createPartySpellButton(groupActor, data) {
@@ -211,8 +210,8 @@ function createPartySpellButton(groupActor, data) {
 /**
  * Open party spell manager for group coordination.
  * @param {Event} event - The click event
- * @param {Object} groupActor - The group actor
- * @param {Object} data - The sheet data
+ * @param {object} groupActor - The group actor
+ * @param {object} data - The sheet data
  * @returns {void}
  */
 function openPartySpellManager(event, groupActor, data) {
@@ -231,21 +230,9 @@ function openPartySpellManager(event, groupActor, data) {
 
 /**
  * Handle long rest completion for spell swap mechanics.
- * @param {Object} actor - The actor who completed the long rest
- * @param {{
- *   type: string,
- *   clone: Actor5e,
- *   deltas: {
- *     hitPoints: number,
- *     hitDice: number
- *   },
- *   message?: ChatMessage5e,
- *   newDay: boolean,
- *   rolls: Roll[],
- *   updateData: object,
- *   updateItems: object[]
- * }} result - The rest result data containing completion status
- * @param {Object} _config - The rest configuration options
+ * @param {object} actor - The actor who completed the long rest
+ * @param {object} result - The rest result data containing completion status
+ * @param {object} _config - The rest configuration options
  * @returns {Promise<void>}
  */
 async function handleRestCompleted(actor, result, _config) {
@@ -287,7 +274,7 @@ async function handleRestCompleted(actor, result, _config) {
 
 /**
  * Handle the long rest swap prompt for applicable classes.
- * @param {Object} actor - The actor who completed the long rest
+ * @param {object} actor - The actor who completed the long rest
  * @param {{ cantripSwapping: Array<{ identifier: string, name: string }>, spellSwapping: Array<{ identifier: string, name: string }> }} longRestClasses - Object containing classes needing rest swaps
  * @returns {Promise<void>}
  */
@@ -333,7 +320,7 @@ async function showLongRestSwapDialog(longRestClasses) {
 
 /**
  * Add Spell Book management buttons to journal sidebar footer.
- * @param {Object} app - The journal sidebar application
+ * @param {object} app - The journal sidebar application
  * @returns {void}
  */
 function addJournalSpellBookButton(app) {

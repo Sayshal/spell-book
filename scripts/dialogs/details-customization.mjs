@@ -4,7 +4,6 @@
  * Configuration interface for customizing spell detail display and behavior.
  * Allows users to configure which spell information is shown, how it's formatted,
  * and how spell details integrate with character sheets and other interfaces.
- *
  * @module Dialogs/DetailsCustomization
  * @author Tyler
  */
@@ -18,7 +17,6 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
  * Dialog application for customizing spell detail display settings and preferences.
- * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */
 export class DetailsCustomization extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
@@ -81,7 +79,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
   /**
    * Prepare UI elements with generated checkbox form controls.
    * @param {string} type - Setting type ('player' or 'gm')
-   * @param {Object} settings - Current settings object
+   * @param {object} settings - Current settings object
    * @returns {Array<{ key: string, label: string, description: string, checkboxHtml: string }>} Array of UI element configurations with checkboxes
    * @private
    */
@@ -98,7 +96,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
   /**
    * Prepare metadata elements with generated checkbox form controls.
    * @param {string} type - Setting type ('player' or 'gm')
-   * @param {Object} settings - Current settings object
+   * @param {object} settings - Current settings object
    * @returns {Array<{ key: string, label: string, description: string, checkboxHtml: string }>} Array of metadata element configurations with checkboxes
    * @private
    */
@@ -222,7 +220,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
 
   /**
    * Retrieve current player UI customization settings from world settings.
-   * @returns {Object} Object containing all player UI settings
+   * @returns {object} Object containing all player UI settings
    * @private
    */
   _getPlayerSettings() {
@@ -247,7 +245,7 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
 
   /**
    * Retrieve current GM UI customization settings from world settings.
-   * @returns {Object} Object containing all GM UI settings
+   * @returns {object} Object containing all GM UI settings
    * @private
    */
   _getGMSettings() {

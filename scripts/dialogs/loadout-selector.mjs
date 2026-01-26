@@ -4,7 +4,6 @@
  * Interface for saving, loading, and managing spell preparation configurations.
  * Provides loadout management capabilities for quickly switching between
  * different spell preparation setups and tactical configurations.
- *
  * @module Dialogs/LoadoutSelector
  * @author Tyler
  */
@@ -19,7 +18,6 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /**
  * Dialog application for managing spell loadouts.
- * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */
 export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @inheritdoc */
@@ -44,10 +42,10 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Create a new Spell Loadout dialog instance.
-   * @param {Object} actor - The actor whose loadouts to manage
-   * @param {Object} spellbook - The parent Spell Book application reference
+   * @param {object} actor - The actor whose loadouts to manage
+   * @param {object} spellbook - The parent Spell Book application reference
    * @param {string} classIdentifier - The current class identifier for loadout scope
-   * @param {Object} [options={}] - Additional application options
+   * @param {object} [options] - Additional application options
    */
   constructor(actor, spellbook, classIdentifier, options = {}) {
     super(options);

@@ -9,7 +9,6 @@
  * Loadouts are stored as actor flags and include metadata such as creation timestamps,
  * descriptions, and class associations. The manager handles both UI state updates
  * and underlying data synchronization when applying loadouts.
- *
  * @module Managers/Loadouts
  * @author Tyler
  */
@@ -23,8 +22,8 @@ import { log } from '../logger.mjs';
 export class Loadouts {
   /**
    * Create a new Spell Loadout Manager instance.
-   * @param {Object} actor - The actor whose loadouts to manage
-   * @param {Object} [spellbook=null] - Optional Spell Book reference for UI integration
+   * @param {object} actor - The actor whose loadouts to manage
+   * @param {object} [spellbook] - Optional Spell Book reference for UI integration
    */
   constructor(actor, spellbook = null) {
     log(3, 'Creating Loadouts instance.', { actorId: actor.id, hasSpellbook: !!spellbook });
@@ -36,8 +35,8 @@ export class Loadouts {
 
   /**
    * Get all loadouts for the actor, with caching for performance.
-   * @param {string} [classIdentifier=null] - The class identifier to filter by, or null for all loadouts
-   * @returns {{ id: string, name: string, classIdentifier?: string, spells: Array<{ uuid: string, name: string, level: number, prepared: boolean, [key: string]: any }> }[]} Array of loadout objects
+   * @param {string} [classIdentifier] - The class identifier to filter by, or null for all loadouts
+   * @returns {Array<object>} Array of loadout objects
    */
   getAvailableLoadouts(classIdentifier = null) {
     log(3, 'Getting available loadouts.', { actorId: this.actor.id, classIdentifier });
@@ -62,7 +61,7 @@ export class Loadouts {
    * @param {string} name - The loadout name (required, will be trimmed)
    * @param {string} description - The loadout description (optional, will be trimmed)
    * @param {string[]} spellConfiguration - The spell preparation configuration (array of UUIDs)
-   * @param {string} [classIdentifier=null] - Optional class identifier for class-specific loadouts
+   * @param {string} [classIdentifier] - Optional class identifier for class-specific loadouts
    * @returns {Promise<boolean>} Success status
    */
   async saveLoadout(name, description, spellConfiguration, classIdentifier = null) {
@@ -84,7 +83,7 @@ export class Loadouts {
   /**
    * Load a loadout by its unique identifier.
    * @param {string} loadoutId - The unique loadout identifier
-   * @returns {{ id: string, name: string, classIdentifier?: string, spells: Array<{ uuid: string, name: string, level: number, prepared: boolean,[key: string]: any}> }|null} A loadout object or null
+   * @returns {object|null} A loadout object or null
    */
   loadLoadout(loadoutId) {
     log(3, 'Loading loadout.', { actorId: this.actor.id, loadoutId });

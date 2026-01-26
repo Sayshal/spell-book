@@ -9,11 +9,11 @@ import { log } from '../logger.mjs';
 
 /**
  * Migrate pack sorting and folder sorting for Spell Book packs.
- * @returns {Promise<Object>} Migration results
+ * @returns {Promise<object>} Migration results
  * @property {number} processed - Total items processed
  * @property {number} foldersUpdated - Number of folders updated
  * @property {number} packsUpdated - Number of packs updated
- * @property {Array<Object>} errors - Array of error objects with type and details
+ * @property {Array<object>} errors - Array of error objects with type and details
  */
 async function migratePackSorting() {
   const results = { processed: 0, updated: 0, foldersUpdated: 0, packsUpdated: 0, errors: [] };
