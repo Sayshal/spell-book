@@ -25,10 +25,11 @@ export class ScrollProcessor {
    */
   static async scanForScrollSpells(actor) {
     const scrollSpells = [];
-    if (!Object.keys(DataUtils.getWizardData(actor)).length) return scrollSpells;
+    const wizardData = DataUtils.getWizardData(actor);
+    if (!Object.keys(wizardData).length) return scrollSpells;
     const scrollItems = actor.items.filter((item) => item.type === 'consumable' && item.system?.type?.value === 'scroll');
     for (const scroll of scrollItems) {
-      const spellData = await this._extractSpellFromScroll(scroll, actor);
+      const spellData = await this._extractSpellFromScroll(scroll, actor, wizardData);
       if (spellData) scrollSpells.push(spellData);
     }
     log(3, `Checking ${actor.name} for spell scrolls.`, { scrollItems, scrollSpells });
@@ -39,12 +40,12 @@ export class ScrollProcessor {
    * Extract spell data from a scroll item.
    * @param {object} scroll - The scroll item to extract spell data from
    * @param {object} actor - The actor who owns the scroll
+   * @param {object} wizardData - Pre-fetched wizard data for the actor
    * @returns {Promise<object | null>} Processed spell data or null if no valid spell found
    * @private
    */
-  static async _extractSpellFromScroll(scroll, actor) {
+  static async _extractSpellFromScroll(scroll, actor, wizardData) {
     log(3, `Extracting ${scroll.name} from ${actor.name}'s inventory.`, { scroll, actor });
-    const wizardData = DataUtils.getWizardData(actor);
     const entries = Object.entries(wizardData);
     if (!entries.length) return null;
     const wizardClass =

@@ -139,8 +139,9 @@ async function collectPlayerSpellUuids(actor) {
     spellUuids.add(uuid);
     if (level !== undefined) spellLevels.add(level);
   });
-  if (Object.keys(DataUtils.getWizardData(actor)).length) {
-    const spellbookSpells = await getActorSpellbookSpells(actor);
+  const wizardData = DataUtils.getWizardData(actor);
+  if (Object.keys(wizardData).length) {
+    const spellbookSpells = await getActorSpellbookSpells(actor, wizardData);
     spellbookSpells.forEach(({ uuid, level }) => {
       spellUuids.add(uuid);
       if (level !== undefined) spellLevels.add(level);
@@ -182,13 +183,13 @@ async function getSpellsFromActorSpellLists(actor) {
 /**
  * Get spell UUIDs and levels from actor's wizard spellbooks.
  * @param {object} actor - The actor to check for wizard spellbooks
+ * @param {object} wizardData - Pre-fetched wizard data for the actor
  * @returns {Promise<Array<object>>} Array of spell data from wizard spellbooks
  * @private
  */
-async function getActorSpellbookSpells(actor) {
+async function getActorSpellbookSpells(actor, wizardData) {
   log(3, 'Getting actor spellbook spells for:', { character: actor.name, actor });
   const spellData = [];
-  const wizardData = DataUtils.getWizardData(actor);
   for (const identifier of Object.keys(wizardData)) {
     const wizardManager = await WizardBook.create(actor, identifier);
     try {
