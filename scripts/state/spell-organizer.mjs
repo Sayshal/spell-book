@@ -213,11 +213,10 @@ export class SpellOrganizer {
         return false;
       });
     };
-    const totalFreeSpells = wizardManager.getTotalFreeSpells();
-    const usedFreeSpells = await wizardManager.getUsedFreeSpells();
-    const remainingFreeSpells = Math.max(0, totalFreeSpells - usedFreeSpells);
-    const totalSpells = personalSpellbook.length;
     const maxSpellsAllowed = wizardManager.getMaxSpellsAllowed();
+    const usedFreeSpells = await wizardManager.getUsedFreeSpells();
+    const remainingFreeSpells = Math.max(0, maxSpellsAllowed - usedFreeSpells);
+    const totalSpells = personalSpellbook.length;
     const isAtMaxSpells = personalSpellbook.length >= maxSpellsAllowed;
     const maxSpellLevel = DataUtils.calculateMaxSpellLevel(classItem, this.actor);
     state.scrollSpells = await DataUtils.ScrollProcessor.scanForScrollSpells(this.actor);

@@ -41,7 +41,6 @@ export class WizardBook {
     this.isWizard = this.classItem !== null;
     this._spellbookCache = null;
     this._maxSpellsCache = null;
-    this._freeSpellsCache = null;
     this._flagsInitialized = false;
     if (this.isWizard) this._initializeCache();
   }
@@ -68,7 +67,6 @@ export class WizardBook {
   _initializeCache() {
     log(3, 'Initializing WizardBook cache.', { classIdentifier: this.classIdentifier });
     this._maxSpellsCache = this.getMaxSpellsAllowed();
-    this._freeSpellsCache = this.getTotalFreeSpells();
   }
 
   /**
@@ -79,7 +77,6 @@ export class WizardBook {
     log(3, 'Invalidating WizardBook cache.', { classIdentifier: this.classIdentifier });
     this._spellbookCache = null;
     this._maxSpellsCache = null;
-    this._freeSpellsCache = null;
   }
 
   /**
@@ -360,21 +357,6 @@ export class WizardBook {
   }
 
   /**
-   * Get the number of free spells the wizard should have at current level (cached).
-   * @returns {number} The number of free spells
-   */
-  getTotalFreeSpells() {
-    if (this._freeSpellsCache !== null) return this._freeSpellsCache;
-    if (!this.isWizard) return 0;
-    const wizardLevel = this.classItem.system.levels || 1;
-    const startingSpells = RuleSet.getClassRule(this.actor, this.classIdentifier, 'startingSpells', MODULE.WIZARD_DEFAULTS.STARTING_SPELLS);
-    const spellsPerLevel = RuleSet.getClassRule(this.actor, this.classIdentifier, 'spellsPerLevel', MODULE.WIZARD_DEFAULTS.SPELLS_PER_LEVEL);
-    const freeSpells = startingSpells + Math.max(0, wizardLevel - 1) * spellsPerLevel;
-    this._freeSpellsCache = freeSpells;
-    return freeSpells;
-  }
-
-  /**
    * Get the number of free spells the wizard has already used.
    * @returns {Promise<number>} The number of free spells used
    */
@@ -393,7 +375,7 @@ export class WizardBook {
    * @returns {Promise<number>} The number of free spells remaining
    */
   async getRemainingFreeSpells() {
-    const totalFree = this.getTotalFreeSpells();
+    const totalFree = this.getMaxSpellsAllowed();
     const usedFree = await this.getUsedFreeSpells();
     return Math.max(0, totalFree - usedFree);
   }
