@@ -30,6 +30,7 @@ export class State {
     log(3, 'Constructing State manager', { actorName: app.actor?.name, actorId: app.actor?.id });
     this.app = app;
     this.actor = app.actor;
+    this._spellManager = null;
     this._classDetectionCache = new Map();
     this._classesDetected = false;
     this._initialized = false;
@@ -55,6 +56,15 @@ export class State {
     this._classDetector = new SpellcastingClassDetector(this.actor, this.app);
     this._spellOrganizer = new SpellOrganizer(this.actor, this.app);
     this._dataLoader = new SpellDataLoader(this.actor, this.app);
+  }
+
+  /**
+   * Set the spell manager reference for this state.
+   * @param {object} spellManager - The SpellManager instance
+   */
+  setSpellManager(spellManager) {
+    this._spellManager = spellManager;
+    log(3, 'SpellManager set on State', { hasManager: !!spellManager });
   }
 
   /**
@@ -144,7 +154,7 @@ export class State {
     log(3, 'Starting Spell Book state initialization');
     this.isLongRest = !this.actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED);
     if (!this._classesDetected) this.detectSpellcastingClasses();
-    await this.app.spellManager.cleanupStalePreparationFlags();
+    await this._spellManager.cleanupStalePreparationFlags();
     await this.loadSpellData();
     const wizardClasses = this.getWizardEnabledClasses();
     if (wizardClasses.length > 0) {
@@ -393,7 +403,7 @@ export class State {
    * @returns {void}
    */
   handleCantripLevelUp() {
-    const cantripLevelUp = this.app.spellManager.cantripManager.checkForLevelUp();
+    const cantripLevelUp = this._spellManager.cantripManager.checkForLevelUp();
     if (cantripLevelUp) {
       const hasLevelUpSwapping = Object.keys(this.spellcastingClasses).some((classId) => {
         return RuleSet.getClassRule(this.actor, classId, 'cantripSwapping', 'none') === 'levelUp';
@@ -534,10 +544,10 @@ export class State {
    */
   async handlePostProcessing(actor) {
     log(3, 'Handling post-processing', { actorName: actor.name, isLongRest: this.isLongRest });
-    if (this.app.spellManager.cantripManager.canBeLeveledUp()) await this.app.spellManager.cantripManager.completeCantripsLevelUp();
+    if (this._spellManager.cantripManager.canBeLeveledUp()) await this._spellManager.cantripManager.completeCantripsLevelUp();
     if (this.isLongRest) {
       log(3, 'Resetting long rest state and swap tracking');
-      await this.app.spellManager.cantripManager.resetSwapTracking();
+      await this._spellManager.cantripManager.resetSwapTracking();
       actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, false);
       this.isLongRest = false;
     }
@@ -582,7 +592,7 @@ export class State {
       const changes = allChangesByClass[classIdentifier] || { cantripChanges: { added: [], removed: [] }, spellChanges: { added: [], removed: [] } };
       const cantripCount = Object.values(classSpellData).filter((spell) => spell.isPrepared && spell.spellLevel === 0).length;
       const spellCount = Object.values(classSpellData).filter((spell) => spell.isPrepared && spell.spellLevel > 0).length;
-      const maxCantrips = this.app.spellManager.cantripManager._getMaxCantripsForClass(classIdentifier);
+      const maxCantrips = this._spellManager.cantripManager._getMaxCantripsForClass(classIdentifier);
       const maxSpells = classData.spellPreparation?.maximum || 0;
       notificationData.classChanges[classIdentifier] = {
         className,
@@ -595,7 +605,7 @@ export class State {
       };
     }
     log(3, 'Sending GM notifications', { actorName: this.actor.name, classCount: Object.keys(notificationData.classChanges).length });
-    await this.app.spellManager.cantripManager.sendNotification(notificationData);
+    await this._spellManager.cantripManager.sendNotification(notificationData);
   }
 
   /**

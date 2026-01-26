@@ -34,8 +34,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     super(options);
     this.actor = actor;
     this.group = PartyMode.getPrimaryGroupForActor(actor);
-    this.spellManager = new SpellManager(actor, this);
     this._state = new State(this);
+    this.spellManager = new SpellManager(actor, this._state);
+    this._state.setSpellManager(this.spellManager);
     this.wizardManagers = new Map();
     const wizardClasses = this._state.getWizardEnabledClasses();
     for (const { identifier } of wizardClasses) this.wizardManagers.set(identifier, new WizardBook(actor, identifier));
@@ -230,7 +231,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     context.activeTab = this.tabGroups['spellbook-tabs'];
     context.tabs = this._prepareTabs('spellbook-tabs');
     context.globalPrepared = this._state.spellPreparation;
-    context.classPreparationData = this.spellManager.prepareClassPreparationData();
+    context.classPreparationData = this.#prepareClassPreparationData();
     context.isWizard = !this.wizardManager?.isWizard;
     context.hasMultipleTabs = Object.keys(context.tabs).length > 1;
     context.filters = UIUtils.prepareFilters(this.actor, this.filterHelper);
@@ -954,6 +955,45 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
   /*  Helper & Factory Methods                    */
   /* -------------------------------------------- */
+
+  /**
+   * Apply all queued source class fixes to the actor in a single batch update.
+   * @returns {Promise<void>}
+   */
+  async applySourceClassFixes() {
+    if (!this._sourceClassFixQueue?.length) return;
+    log(3, `Applying ${this._sourceClassFixQueue.length} source class fix${this._sourceClassFixQueue.length !== 1 ? 'es' : ''}.`);
+    const updates = this._sourceClassFixQueue.map((fix) => ({ _id: fix.spellId, 'system.sourceClass': fix.sourceClass }));
+    this._sourceClassFixQueue = [];
+    await this.actor.updateEmbeddedDocuments('Item', updates);
+    log(3, `Successfully fixed source class for ${updates.length} spell${updates.length !== 1 ? 's' : ''}.`);
+  }
+
+  /**
+   * Prepare class-specific preparation data for footer display.
+   * @returns {Array<object>} Array of class preparation data
+   * @private
+   */
+  #prepareClassPreparationData() {
+    log(3, 'Preparing class preparation data (for footer).');
+    if (!this._state?.classSpellData) return [];
+    const activeTab = this.tabGroups?.['spellbook-tabs'];
+    const classPreparationData = [];
+    const activeClassMatch = activeTab?.match(/^([^T]+)Tab$/);
+    const activeClassIdentifier = activeClassMatch ? activeClassMatch[1] : null;
+    for (const [identifier, classData] of Object.entries(this._state.classSpellData)) {
+      const isActive = identifier === activeClassIdentifier;
+      classPreparationData.push({
+        identifier: identifier,
+        className: classData.className,
+        current: classData.spellPreparation?.current || 0,
+        maximum: classData.spellPreparation?.maximum || 0,
+        isActive: isActive
+      });
+    }
+    classPreparationData.sort((a, b) => a.className.localeCompare(b.className));
+    return classPreparationData;
+  }
 
   /**
    * @returns {Promise<void>}

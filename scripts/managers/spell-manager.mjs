@@ -21,12 +21,12 @@ export class SpellManager {
   /**
    * Create a new SpellManager for an actor.
    * @param {object} actor - The actor to manage spells for
-   * @param {object} app - The parent spell book application (optional)
+   * @param {object} state - The State manager instance (optional)
    */
-  constructor(actor, app = null) {
+  constructor(actor, state = null) {
     log(3, `Creating SpellManager.`, { actorName: actor.name, actorId: actor.id });
     this.actor = actor;
-    this.app = app;
+    this._state = state;
     this._settingsCache = new Map();
     this.cantripManager = new Cantrips(actor, this);
     log(3, `SpellManager created.`, { actorName: actor.name, actorId: actor.id });
@@ -313,7 +313,7 @@ export class SpellManager {
    */
   _getClassPreparationMode(classIdentifier) {
     log(3, `Getting class preparation mode.`, { actorName: this.actor.name, classIdentifier });
-    const spellcastingConfig = this.app?._state?.getSpellcastingConfigForClass?.(classIdentifier) ?? DataUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
+    const spellcastingConfig = this._state?.getSpellcastingConfigForClass?.(classIdentifier) ?? DataUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
     if (spellcastingConfig?.type === MODULE.SPELL_MODE.PACT) return MODULE.SPELL_MODE.PACT;
     return MODULE.SPELL_MODE.SPELL;
   }
@@ -595,61 +595,26 @@ export class SpellManager {
   }
 
   /**
-   * Apply all queued source class fixes to the actor in a single batch update.
-   * @returns {Promise<void>}
-   */
-  async applySourceClassFixes() {
-    if (!this.app?._sourceClassFixQueue?.length) return;
-    log(3, `Applying ${this.app._sourceClassFixQueue.length} source class fix${this.app._sourceClassFixQueue.length !== 1 ? 'es' : ''}.`);
-    const updates = this.app._sourceClassFixQueue.map((fix) => ({ _id: fix.spellId, 'system.sourceClass': fix.sourceClass }));
-    this.app._sourceClassFixQueue = [];
-    await this.actor.updateEmbeddedDocuments('Item', updates);
-    log(3, `Successfully fixed source class for ${updates.length} spell${updates.length !== 1 ? 's' : ''}.`);
-  }
-
-  /**
    * Attempt to automatically determine the correct source class for a prepared spell.
    * @param {object} spell - The spell to analyze
+   * @param {object} classSpellData - Optional class spell data for lookup (passed from caller)
    * @returns {string|null} The determined source class identifier, or null if couldn't be determined
    */
-  attemptToFixSourceClass(spell) {
+  attemptToFixSourceClass(spell, classSpellData = null) {
     log(3, `Detecting source class for ${spell.name}.`, { spell });
     const spellcastingClasses = this.actor.spellcastingClasses || {};
     const classIdentifiers = Object.keys(spellcastingClasses);
     if (classIdentifiers.length === 0) return null;
     if (classIdentifiers.length === 1) return classIdentifiers[0];
-    if (this.app?._state?.classSpellData) {
+    const dataToSearch = classSpellData || this._state?.classSpellData;
+    if (dataToSearch) {
       const spellUuid = spell.compendiumUuid || spell.uuid;
       for (const classIdentifier of classIdentifiers) {
-        const classData = this.app._state.classSpellData[classIdentifier];
+        const classData = dataToSearch[classIdentifier];
         if (classData?.spells?.some((s) => s.compendiumUuid === spellUuid || s.uuid === spellUuid)) return classIdentifier;
       }
     }
     return null;
   }
 
-  /**
-   * Prepare class-specific preparation data for footer display.
-   * @returns {Array<object>} Array of class preparation data
-   */
-  prepareClassPreparationData() {
-    log(3, 'Preparing class preparation data (for footer).');
-    if (!this.app?._state?.classSpellData) return [];
-    const activeTab = this.app.tabGroups?.['spellbook-tabs'];
-    const classPreparationData = [];
-    const activeClassMatch = activeTab?.match(/^([^T]+)Tab$/);
-    const activeClassIdentifier = activeClassMatch ? activeClassMatch[1] : null;
-    for (const [identifier, classData] of Object.entries(this.app._state.classSpellData)) {
-      const isActive = identifier === activeClassIdentifier;
-      classPreparationData.push({
-        identifier: identifier,
-        className: classData.className,
-        current: classData.spellPreparation?.current || 0,
-        maximum: classData.spellPreparation?.maximum || 0,
-        isActive: isActive
-      });
-    }
-    classPreparationData.sort((a, b) => a.className.localeCompare(b.className));
-    return classPreparationData;
-  }
 }

@@ -54,7 +54,7 @@ export class SpellProcessor {
         const processedSpell = await this._processSpell(spell, enabledElements);
         processedSpells.push(processedSpell);
       }
-      await this.app.spellManager.applySourceClassFixes();
+      await this.app.applySourceClassFixes();
       log(3, 'Finishing spells for level processing:', { spells, processedSpells });
       let preparedCount = 0;
       if (level !== '0') preparedCount = spells.filter((spell) => spell.preparation?.prepared).length;
@@ -147,7 +147,7 @@ export class SpellProcessor {
       log(3, `Checking if ${spell.name} should have source class set.`, { spell });
       const shouldHaveSourceClass = spell.preparation?.prepared && spell.system?.prepared !== 2 && !spell.flags?.dnd5e?.cachedFor;
       if (shouldHaveSourceClass) {
-        const fixedSourceClass = this.app.spellManager.attemptToFixSourceClass(spell);
+        const fixedSourceClass = this.app.spellManager.attemptToFixSourceClass(spell, this.app._state?.classSpellData);
         if (fixedSourceClass) {
           checkbox.dataset.sourceClass = fixedSourceClass;
           if (!this.app._sourceClassFixQueue) this.app._sourceClassFixQueue = [];
