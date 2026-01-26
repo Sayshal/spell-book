@@ -22,6 +22,12 @@ const DATA_VERSION = '3.1';
 /** Cache TTL in milliseconds (5 seconds). */
 const CACHE_TTL = 5000;
 
+/** Maximum entries in per-spell cache before cleanup. */
+const MAX_SPELL_CACHE_SIZE = 500;
+
+/** Maximum entries in user data cache before cleanup. */
+const MAX_USER_CACHE_SIZE = 20;
+
 /**
  * Encode a UUID for use as an object key (dots cause issues with Foundry flag storage).
  * @param {string} uuid - The UUID to encode
@@ -57,37 +63,98 @@ function createEmptyActorData() {
 }
 
 /**
- * Journal-based spell user data storage system.
+ * Journal-based spell user data storage system (singleton service).
  */
 export class UserData {
-  /**
-   * Maps cache keys to user data objects with TTL tracking.
-   * @type {Map<string, {data: object|null, timestamp: number}>}
-   * @static
-   */
-  static cache = new Map();
+  /** @type {UserData|null} Singleton instance */
+  static _instance = null;
 
   /**
-   * Maps user IDs to their full spell data for batch operations.
-   * @type {Map<string, {data: object, timestamp: number}>}
-   * @static
+   * Per-spell cache: maps cache keys to user data objects with TTL tracking.
+   * @type {Map<string, {data: object|null, timestamp: number}>}
    */
-  static _spellDataCache = new Map();
+  cache = new Map();
+
+  /**
+   * User data cache: maps user IDs to their full spell data for batch operations.
+   * @type {Map<string, {data: object, timestamp: number}>}
+   */
+  _spellDataCache = new Map();
 
   /**
    * Standard name for the user spell data journal.
    * @type {string}
+   */
+  journalName = 'User Spell Data';
+
+  /**
+   * Private constructor - use getInstance() or static methods.
+   * @private
+   */
+  constructor() {
+    if (UserData._instance) {
+      throw new Error('UserData is a singleton. Use UserData.getInstance() or static methods.');
+    }
+  }
+
+  /**
+   * Get the singleton instance, creating it if necessary.
+   * @returns {UserData} The singleton instance
    * @static
    */
-  static journalName = 'User Spell Data';
+  static getInstance() {
+    if (!UserData._instance) {
+      UserData._instance = new UserData();
+    }
+    return UserData._instance;
+  }
+
+  /**
+   * Clean up expired entries and enforce size limits on caches.
+   * @private
+   */
+  _cleanupCaches() {
+    const now = Date.now();
+
+    // Clean expired entries from per-spell cache
+    for (const [key, entry] of this.cache.entries()) {
+      if (now - entry.timestamp > CACHE_TTL) {
+        this.cache.delete(key);
+      }
+    }
+
+    // Enforce size limit on per-spell cache (remove oldest entries)
+    if (this.cache.size > MAX_SPELL_CACHE_SIZE) {
+      const entries = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
+      const toRemove = entries.slice(0, this.cache.size - MAX_SPELL_CACHE_SIZE);
+      for (const [key] of toRemove) {
+        this.cache.delete(key);
+      }
+    }
+
+    // Clean expired entries from user data cache
+    for (const [key, entry] of this._spellDataCache.entries()) {
+      if (now - entry.timestamp > CACHE_TTL) {
+        this._spellDataCache.delete(key);
+      }
+    }
+
+    // Enforce size limit on user data cache
+    if (this._spellDataCache.size > MAX_USER_CACHE_SIZE) {
+      const entries = [...this._spellDataCache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
+      const toRemove = entries.slice(0, this._spellDataCache.size - MAX_USER_CACHE_SIZE);
+      for (const [key] of toRemove) {
+        this._spellDataCache.delete(key);
+      }
+    }
+  }
 
   /**
    * Get the user spell data journal from the user data pack.
    * @returns {Promise<object | null>} Promise that resolves to the user spell data journal or null if not found
-   * @static
    * @private
    */
-  static async _getJournal() {
+  async _getJournal() {
     log(3, 'Getting journal for user spell data.');
     const documents = await game.packs.get(MODULE.PACK.USERDATA).getDocuments();
     return documents.find((doc) => doc.name === this.journalName && doc.flags?.[MODULE.ID]?.isUserSpellDataJournal);
@@ -97,10 +164,9 @@ export class UserData {
    * Get user page from journal for spell data storage.
    * @param {string} userId - User ID to get page for
    * @returns {Promise<object | null>} The user's page or null if not found
-   * @static
    * @private
    */
-  static async _getUserPage(userId) {
+  async _getUserPage(userId) {
     log(3, 'Getting journal page for:', { userId });
     const journal = await this._getJournal();
     if (!journal) return null;
@@ -111,10 +177,9 @@ export class UserData {
    * Get spell data from page flags with caching and auto-migration.
    * @param {string} userId - User ID to get data for
    * @returns {Promise<object>} Spell data object keyed by spell UUID (decoded)
-   * @static
    * @private
    */
-  static async _getSpellData(userId) {
+  async _getSpellData(userId) {
     // Check cache first
     const cached = this._spellDataCache.get(userId);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
@@ -135,6 +200,7 @@ export class UserData {
         decodedData[decodeUuidKey(encodedKey)] = value;
       }
       this._spellDataCache.set(userId, { data: decodedData, timestamp: Date.now() });
+      this._cleanupCaches();
       return decodedData;
     }
 
@@ -144,6 +210,7 @@ export class UserData {
       const parsedData = this._parseSpellDataFromHTML(htmlContent);
       await this._migrateToFlags(page, parsedData, userId);
       this._spellDataCache.set(userId, { data: parsedData, timestamp: Date.now() });
+      this._cleanupCaches();
       return parsedData;
     }
 
@@ -155,10 +222,9 @@ export class UserData {
    * @param {string} userId - User ID to save data for
    * @param {object} spellData - Complete spell data object (with decoded UUID keys)
    * @returns {Promise<boolean>} Success status
-   * @static
    * @private
    */
-  static async _setSpellData(userId, spellData) {
+  async _setSpellData(userId, spellData) {
     const page = await this._getUserPage(userId);
     if (!page) return false;
 
@@ -184,6 +250,7 @@ export class UserData {
 
     // Update cache with decoded data
     this._spellDataCache.set(userId, { data: spellData, timestamp: Date.now() });
+    this._cleanupCaches();
 
     return true;
   }
@@ -194,10 +261,9 @@ export class UserData {
    * @param {object} spellData - Parsed spell data from HTML
    * @param {string} userId - User ID for the page
    * @returns {Promise<void>}
-   * @static
    * @private
    */
-  static async _migrateToFlags(page, spellData, userId) {
+  async _migrateToFlags(page, spellData, userId) {
     log(2, 'Migrating user spell data from HTML to flags', { userId });
     await page.update({
       [`flags.${MODULE.ID}.${FLAGS.USER_SPELL_DATA}`]: spellData,
@@ -209,9 +275,8 @@ export class UserData {
   /**
    * Invalidate cache for a user (call after external changes).
    * @param {string} userId - User ID to invalidate cache for
-   * @static
    */
-  static invalidateCache(userId) {
+  _invalidateCache(userId) {
     this._spellDataCache.delete(userId);
     // Clear all per-spell cache entries for this user
     for (const key of this.cache.keys()) {
@@ -225,10 +290,9 @@ export class UserData {
    * Parse spell data from HTML tables with per-actor structure support.
    * @param {string} htmlContent - The page HTML content to parse
    * @returns {Object<string, Object>} Parsed spell data object keyed by spell UUID
-   * @static
    * @private
    */
-  static _parseSpellDataFromHTML(htmlContent) {
+  _parseSpellDataFromHTML(htmlContent) {
     log(3, 'Parsing spell data from HTML.');
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlContent, 'text/html');
@@ -288,10 +352,9 @@ export class UserData {
    * @param {string} userName - Name of the user for display headers
    * @param {string} userId - User ID for the data context
    * @returns {Promise<string>} Generated HTML tables content ready for journal storage
-   * @static
    * @private
    */
-  static async _generateTablesHTML(spellData, userName, userId) {
+  async _generateTablesHTML(spellData, userName, userId) {
     log(3, 'Generating HTML tables.', { spellData, userName, userId });
     const notesTitle = game.i18n.localize('SPELLBOOK.UserData.SpellNotes');
     const spellCol = game.i18n.localize('SPELLBOOK.UserData.SpellColumn');
@@ -350,6 +413,117 @@ export class UserData {
   }
 
   /**
+   * Ensure user data infrastructure exists (journal, page, etc.).
+   * @param {string} userId - User ID to ensure data infrastructure for
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _ensureUserDataInfrastructure(userId) {
+    log(3, 'Ensure user data infrastructure.', { userId });
+    let journal = await this._getJournal();
+    if (!journal) {
+      log(2, 'User data journal not found. GM must initialize spell book first.');
+      return;
+    }
+    const manager = new UserDataSetup();
+    const existingPage = await this._getUserPage(userId);
+    if (!existingPage) {
+      const user = game.users.get(userId);
+      if (!user) return;
+      const pageData = {
+        name: user.name,
+        type: 'text',
+        title: { show: true, level: 1 },
+        text: { format: 1, content: await manager._generateEmptyTablesHTML(user.name, userId) },
+        ownership: { default: 0, [userId]: 3 },
+        flags: { [MODULE.ID]: { userId: userId, userName: user.name, isUserSpellData: true, created: Date.now(), lastUpdated: Date.now(), dataVersion: '2.0' } },
+        sort: 99999
+      };
+      if (game.user.isGM) pageData.ownership[game.user.id] = 3;
+      await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
+    }
+  }
+
+  // ==================== STATIC API (delegates to singleton) ====================
+
+  /**
+   * Static cache accessor for backwards compatibility.
+   * @type {Map<string, {data: object|null, timestamp: number}>}
+   * @static
+   */
+  static get cache() {
+    return UserData.getInstance().cache;
+  }
+
+  /**
+   * Static _spellDataCache accessor for backwards compatibility.
+   * @type {Map<string, {data: object, timestamp: number}>}
+   * @static
+   */
+  static get _spellDataCache() {
+    return UserData.getInstance()._spellDataCache;
+  }
+
+  /**
+   * Static journalName accessor for backwards compatibility.
+   * @type {string}
+   * @static
+   */
+  static get journalName() {
+    return UserData.getInstance().journalName;
+  }
+
+  /**
+   * Get user page from journal (static delegate).
+   * @param {string} userId - User ID to get page for
+   * @returns {Promise<object | null>} The user's page or null if not found
+   * @static
+   */
+  static async _getUserPage(userId) {
+    return UserData.getInstance()._getUserPage(userId);
+  }
+
+  /**
+   * Get spell data from page flags (static delegate).
+   * @param {string} userId - User ID to get data for
+   * @returns {Promise<object>} Spell data object
+   * @static
+   */
+  static async _getSpellData(userId) {
+    return UserData.getInstance()._getSpellData(userId);
+  }
+
+  /**
+   * Parse spell data from HTML (static delegate).
+   * @param {string} htmlContent - The page HTML content to parse
+   * @returns {Object<string, Object>} Parsed spell data object
+   * @static
+   */
+  static _parseSpellDataFromHTML(htmlContent) {
+    return UserData.getInstance()._parseSpellDataFromHTML(htmlContent);
+  }
+
+  /**
+   * Invalidate cache for a user (static delegate).
+   * @param {string} userId - User ID to invalidate cache for
+   * @static
+   */
+  static invalidateCache(userId) {
+    UserData.getInstance()._invalidateCache(userId);
+  }
+
+  /**
+   * Clear all caches (for lifecycle management).
+   * @static
+   */
+  static clearAllCaches() {
+    const instance = UserData.getInstance();
+    instance.cache.clear();
+    instance._spellDataCache.clear();
+    log(3, 'All UserData caches cleared');
+  }
+
+  /**
    * Get user data for a specific spell, creating missing infrastructure as needed.
    * @param {string | object} spellOrUuid - Spell UUID or spell object to get data for
    * @param {string} [userId] - User ID (defaults to current user)
@@ -358,19 +532,20 @@ export class UserData {
    * @static
    */
   static async getUserDataForSpell(spellOrUuid, userId = null, actorId = null) {
+    const instance = UserData.getInstance();
     const canonicalUuid = getCanonicalSpellUuid(spellOrUuid);
     if (!canonicalUuid) return null;
     const targetUserId = userId || game.user.id;
     const cacheKey = actorId ? `${targetUserId}:${actorId}:${canonicalUuid}` : `${targetUserId}:${canonicalUuid}`;
 
     // Check per-spell cache with TTL
-    const cached = this.cache.get(cacheKey);
+    const cached = instance.cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
       return cached.data;
     }
 
-    await this._ensureUserDataInfrastructure(targetUserId);
-    const spellData = await this._getSpellData(targetUserId);
+    await instance._ensureUserDataInfrastructure(targetUserId);
+    const spellData = await instance._getSpellData(targetUserId);
     const userData = spellData[canonicalUuid];
 
     let result;
@@ -378,7 +553,8 @@ export class UserData {
     else if (actorId && userData.actorData?.[actorId]) result = { ...userData.actorData[actorId], notes: userData.notes };
     else result = { notes: userData.notes || '', favorited: false, usageStats: null };
 
-    this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
+    instance.cache.set(cacheKey, { data: result, timestamp: Date.now() });
+    instance._cleanupCaches();
     return result;
   }
 
@@ -392,6 +568,7 @@ export class UserData {
    * @static
    */
   static async setUserDataForSpell(spellOrUuid, data, userId = null, actorId = null) {
+    const instance = UserData.getInstance();
     log(3, 'Setting user data for spell', { spellOrUuid, data, userId, actorId });
     const canonicalUuid = getCanonicalSpellUuid(spellOrUuid);
     if (!canonicalUuid) return false;
@@ -399,8 +576,8 @@ export class UserData {
     const user = game.users.get(targetUserId);
     if (!user) return false;
 
-    await this._ensureUserDataInfrastructure(targetUserId);
-    const spellData = await this._getSpellData(targetUserId);
+    await instance._ensureUserDataInfrastructure(targetUserId);
+    const spellData = await instance._getSpellData(targetUserId);
 
     if (!spellData[canonicalUuid]) spellData[canonicalUuid] = createEmptySpellData();
     if (actorId) {
@@ -413,7 +590,7 @@ export class UserData {
       spellData[canonicalUuid].notes = data.notes;
     }
 
-    const success = await this._setSpellData(targetUserId, spellData);
+    const success = await instance._setSpellData(targetUserId, spellData);
     if (success) {
       // Update per-spell cache
       const cacheKey = actorId ? `${targetUserId}:${actorId}:${canonicalUuid}` : `${targetUserId}:${canonicalUuid}`;
@@ -421,7 +598,7 @@ export class UserData {
         actorId && spellData[canonicalUuid].actorData[actorId]
           ? { ...spellData[canonicalUuid].actorData[actorId], notes: spellData[canonicalUuid].notes }
           : { notes: spellData[canonicalUuid].notes || '', favorited: false, usageStats: null };
-      this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
+      instance.cache.set(cacheKey, { data: result, timestamp: Date.now() });
     }
     return success;
   }
@@ -435,6 +612,7 @@ export class UserData {
    * @static
    */
   static enhanceSpellWithUserData(spell, userId = null, actorId = null) {
+    const instance = UserData.getInstance();
     const canonicalUuid = getCanonicalSpellUuid(spell);
     if (!canonicalUuid) return spell;
     const targetUserId = userId || game.user.id;
@@ -444,17 +622,17 @@ export class UserData {
     // Get cached data, checking TTL
     let userData = null;
     if (actorCacheKey) {
-      const cached = this.cache.get(actorCacheKey);
+      const cached = instance.cache.get(actorCacheKey);
       if (cached && Date.now() - cached.timestamp < CACHE_TTL) userData = cached.data;
     }
     if (!userData) {
-      const cached = this.cache.get(globalCacheKey);
+      const cached = instance.cache.get(globalCacheKey);
       if (cached && Date.now() - cached.timestamp < CACHE_TTL) userData = cached.data;
     }
 
     // Fallback: check _spellDataCache directly if per-spell cache missed
     if (!userData) {
-      const spellDataCached = this._spellDataCache.get(targetUserId);
+      const spellDataCached = instance._spellDataCache.get(targetUserId);
       if (spellDataCached && Date.now() - spellDataCached.timestamp < CACHE_TTL) {
         const spellEntry = spellDataCached.data[canonicalUuid];
         if (spellEntry) {
@@ -489,6 +667,7 @@ export class UserData {
    * @static
    */
   static async setSpellFavorite(spellOrUuid, favorited, userId = null, actorId = null) {
+    const instance = UserData.getInstance();
     log(3, 'Setting spell as favorite.', { spellOrUuid, favorited, userId, actorId });
     const canonicalUuid = getCanonicalSpellUuid(spellOrUuid);
     if (!canonicalUuid) return false;
@@ -497,8 +676,8 @@ export class UserData {
     const user = game.users.get(targetUserId);
     if (!user) return false;
 
-    await this._ensureUserDataInfrastructure(targetUserId);
-    const spellData = await this._getSpellData(targetUserId);
+    await instance._ensureUserDataInfrastructure(targetUserId);
+    const spellData = await instance._getSpellData(targetUserId);
 
     if (!spellData[canonicalUuid]) spellData[canonicalUuid] = createEmptySpellData();
     if (targetActorId) {
@@ -508,13 +687,13 @@ export class UserData {
       spellData[canonicalUuid].actorData[targetActorId].favorited = favorited;
     }
 
-    const success = await this._setSpellData(targetUserId, spellData);
+    const success = await instance._setSpellData(targetUserId, spellData);
     if (success) {
       const cacheKey = targetActorId ? `${targetUserId}:${targetActorId}:${canonicalUuid}` : `${targetUserId}:${canonicalUuid}`;
       const result = targetActorId
         ? { ...spellData[canonicalUuid].actorData[targetActorId], notes: spellData[canonicalUuid].notes }
         : { notes: spellData[canonicalUuid].notes || '', favorited: false, usageStats: null };
-      this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
+      instance.cache.set(cacheKey, { data: result, timestamp: Date.now() });
     }
     return success;
   }
@@ -528,6 +707,7 @@ export class UserData {
    * @static
    */
   static async setSpellNotes(spellOrUuid, notes, userId = null) {
+    const instance = UserData.getInstance();
     log(3, 'Setting spell notes.', { spellOrUuid, notes, userId });
     const maxLength = game.settings.get(MODULE.ID, SETTINGS.SPELL_NOTES_LENGTH) || 240;
     const trimmedNotes = notes ? foundry.utils.cleanHTML(notes.substring(0, maxLength)) : '';
@@ -537,17 +717,17 @@ export class UserData {
     const user = game.users.get(targetUserId);
     if (!user) return false;
 
-    await this._ensureUserDataInfrastructure(targetUserId);
-    const spellData = await this._getSpellData(targetUserId);
+    await instance._ensureUserDataInfrastructure(targetUserId);
+    const spellData = await instance._getSpellData(targetUserId);
 
     if (!spellData[canonicalUuid]) spellData[canonicalUuid] = createEmptySpellData();
     spellData[canonicalUuid].notes = trimmedNotes;
 
-    const success = await this._setSpellData(targetUserId, spellData);
+    const success = await instance._setSpellData(targetUserId, spellData);
     if (success) {
       // Store flattened format to match what getUserDataForSpell/enhanceSpellWithUserData expects
       const cacheKey = `${targetUserId}:${canonicalUuid}`;
-      this.cache.set(cacheKey, {
+      instance.cache.set(cacheKey, {
         data: { notes: spellData[canonicalUuid].notes, favorited: false, usageStats: null },
         timestamp: Date.now()
       });
@@ -556,36 +736,13 @@ export class UserData {
   }
 
   /**
-   * Ensure user data infrastructure exists (journal, page, etc.).
+   * Ensure user data infrastructure exists (static delegate).
    * @param {string} userId - User ID to ensure data infrastructure for
    * @returns {Promise<void>}
    * @static
-   * @private
    */
   static async _ensureUserDataInfrastructure(userId) {
-    log(3, 'Ensure user data infrastructure.', { userId });
-    let journal = await this._getJournal();
-    if (!journal) {
-      log(2, 'User data journal not found. GM must initialize spell book first.');
-      return;
-    }
-    const manager = new UserDataSetup();
-    const existingPage = await this._getUserPage(userId);
-    if (!existingPage) {
-      const user = game.users.get(userId);
-      if (!user) return;
-      const pageData = {
-        name: user.name,
-        type: 'text',
-        title: { show: true, level: 1 },
-        text: { format: 1, content: await manager._generateEmptyTablesHTML(user.name, userId) },
-        ownership: { default: 0, [userId]: 3 },
-        flags: { [MODULE.ID]: { userId: userId, userName: user.name, isUserSpellData: true, created: Date.now(), lastUpdated: Date.now(), dataVersion: '2.0' } },
-        sort: 99999
-      };
-      if (game.user.isGM) pageData.ownership[game.user.id] = 3;
-      await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
-    }
+    return UserData.getInstance()._ensureUserDataInfrastructure(userId);
   }
 
   /**
@@ -596,6 +753,7 @@ export class UserData {
    * @static
    */
   static async syncActorFavoritesToJournal(actor) {
+    const instance = UserData.getInstance();
     log(3, 'Syncing journal to actor state.');
     const targetUserId = DataUtils.getTargetUserId(actor);
 
@@ -604,8 +762,8 @@ export class UserData {
     const actorFavoriteSpellIds = new Set(actorFavorites.filter((fav) => fav.type === 'item' && fav.id.startsWith('.Item.')).map((fav) => fav.id.replace('.Item.', '')));
 
     // Get all spell data once (batch read)
-    await this._ensureUserDataInfrastructure(targetUserId);
-    const spellData = await this._getSpellData(targetUserId);
+    await instance._ensureUserDataInfrastructure(targetUserId);
+    const spellData = await instance._getSpellData(targetUserId);
     const actorSpells = actor.itemTypes.spell;
 
     // Collect all changes without writing
@@ -634,7 +792,7 @@ export class UserData {
 
     // Single batch write if there were changes
     if (hasChanges) {
-      await this._setSpellData(targetUserId, spellData);
+      await instance._setSpellData(targetUserId, spellData);
 
       // Update per-spell caches for changed spells
       for (const change of changedSpells) {
@@ -643,7 +801,7 @@ export class UserData {
           ...spellData[change.uuid].actorData[actor.id],
           notes: spellData[change.uuid].notes
         };
-        this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
+        instance.cache.set(cacheKey, { data: result, timestamp: Date.now() });
       }
     }
 
