@@ -482,25 +482,25 @@ export class State {
     const actorId = this.actor?.id;
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const batchData = this.app.spellManager.prepareBatchData(classIdentifier);
-    let parsedSpellData = null;
+    // Pre-load user spell data into cache using new flag-based storage
     await DataUtils.UserData._ensureUserDataInfrastructure(targetUserId);
-    const userPage = await DataUtils.UserData._getUserPage(targetUserId);
-    if (userPage) parsedSpellData = DataUtils.UserData._parseSpellDataFromHTML(userPage.text.content);
+    const spellData = await DataUtils.UserData._getSpellData(targetUserId);
     const allSpellsToCache = spellItems.map((s) => s.uuid || s.compendiumUuid).filter(Boolean);
+    const now = Date.now();
     for (const spellUuid of allSpellsToCache) {
       const canonicalUuid = DataUtils.getCanonicalSpellUuid(spellUuid) || spellUuid;
       const quickCacheKey = actorId ? `${targetUserId}:${actorId}:${canonicalUuid}` : `${targetUserId}:${canonicalUuid}`;
       const originalCacheKey = actorId ? `${targetUserId}:${actorId}:${spellUuid}` : `${targetUserId}:${spellUuid}`;
       if (DataUtils.UserData.cache.has(quickCacheKey) || DataUtils.UserData.cache.has(originalCacheKey)) continue;
-      let userData = parsedSpellData?.[canonicalUuid];
-      if (!userData && canonicalUuid !== spellUuid) userData = parsedSpellData?.[spellUuid];
+      let userData = spellData?.[canonicalUuid];
+      if (!userData && canonicalUuid !== spellUuid) userData = spellData?.[spellUuid];
       const result = !userData
         ? { notes: '', favorited: false, usageStats: null }
         : actorId && userData.actorData?.[actorId]
           ? { ...userData.actorData[actorId], notes: userData.notes }
           : { notes: userData.notes || '', favorited: false, usageStats: null };
-      DataUtils.UserData.cache.set(quickCacheKey, result);
-      if (canonicalUuid !== spellUuid) DataUtils.UserData.cache.set(originalCacheKey, result);
+      DataUtils.UserData.cache.set(quickCacheKey, { data: result, timestamp: now });
+      if (canonicalUuid !== spellUuid) DataUtils.UserData.cache.set(originalCacheKey, { data: result, timestamp: now });
     }
     for (const spell of spellItems) {
       if (spell?.system?.level === undefined) continue;

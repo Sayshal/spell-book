@@ -163,5 +163,10 @@ export const FLAGS = {
   WIZARD_COPIED_SPELLS: 'wizardCopiedSpells',
 
   /** @type {string} Flag for wizard ritual casting preferences */
-  WIZARD_RITUAL_CASTING: 'wizardRitualCasting'
+  WIZARD_RITUAL_CASTING: 'wizardRitualCasting',
+
+  // ========== Journal Page Flags ==========
+
+  /** @type {string} Flag for storing structured user spell data on journal pages */
+  USER_SPELL_DATA: 'userSpellData'
 };
