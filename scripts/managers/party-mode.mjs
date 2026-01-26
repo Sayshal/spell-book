@@ -902,10 +902,8 @@ export class PartyMode {
     const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     for (const classSpells of Object.values(preparedByClass)) {
       for (const spellKey of classSpells) {
-        // eslint-disable-next-line no-unused-vars
-        const [classIdentifier, ...uuidParts] = spellKey.split(':');
-        const parsedSpellUuid = uuidParts.join(':');
-        if (parsedSpellUuid === spellUuid) return true;
+        const [, ...uuidParts] = spellKey.split(':');
+        if (uuidParts.join(':') === spellUuid) return true;
       }
     }
     return false;

@@ -158,8 +158,7 @@ export class SpellOrganizer {
     for (const level in spellsByLevel) if (level in spellsByLevel) spellsByLevel[level].spells.sort((a, b) => a.name.localeCompare(b.name));
     const sortedLevels = Object.entries(spellsByLevel)
       .sort(([a], [b]) => Number(a) - Number(b))
-      // eslint-disable-next-line no-unused-vars
-      .map(([level, data]) => data);
+      .map(([, data]) => data);
     log(3, `Organized ${sortedLevels.length} spell levels for wizard spellbook (${classIdentifier})`);
     return sortedLevels;
   }
