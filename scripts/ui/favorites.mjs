@@ -104,14 +104,13 @@ export async function processFavoritesFromForm(_form, actor) {
 export function findActorSpellByUuid(spellUuid, actor) {
   let spell = actor.items.get(spellUuid);
   if (spell && spell.type === 'spell') return spell;
-  spell = actor.items.find((item) => {
-    if (item.type !== 'spell') return false;
-    if (item._stats?.compendiumSource === spellUuid) return true;
-    if (item.uuid === spellUuid) return true;
+  spell = actor.itemTypes.spell.find((s) => {
+    if (s._stats?.compendiumSource === spellUuid) return true;
+    if (s.uuid === spellUuid) return true;
     const parsedUuid = foundry.utils.parseUuid(spellUuid);
     if (parsedUuid.collection) {
       const sourceSpell = fromUuidSync(spellUuid);
-      if (sourceSpell && sourceSpell.name === item.name) return true;
+      if (sourceSpell && sourceSpell.name === s.name) return true;
     }
     return false;
   });

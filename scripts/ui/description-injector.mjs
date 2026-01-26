@@ -214,9 +214,8 @@ export class DescriptionInjector {
     const canonicalUuid = DataUtils.getCanonicalSpellUuid(spellUuid);
     log(3, 'Handling notes change for spell.', { spellUuid, canonicalUuid });
     for (const actor of game.actors) {
-      const matchingSpells = actor.items.filter((item) => {
-        if (item.type !== 'spell') return false;
-        const itemCanonicalUuid = DataUtils.getCanonicalSpellUuid(item.uuid);
+      const matchingSpells = actor.itemTypes.spell.filter((spell) => {
+        const itemCanonicalUuid = DataUtils.getCanonicalSpellUuid(spell.uuid);
         return itemCanonicalUuid === canonicalUuid;
       });
       for (const spell of matchingSpells) await this.updateSpellDescription(spell);

@@ -104,8 +104,8 @@ export class PartyMode {
     try {
       const knownSpells = [];
       const preparedSpells = [];
-      const classSpells = actor.items.filter(
-        (item) => item.type === 'spell' && (foundry.utils.getProperty(item, 'system.sourceClass') === classId || foundry.utils.getProperty(item, 'sourceClass') === classId)
+      const classSpells = actor.itemTypes.spell.filter(
+        (spell) => foundry.utils.getProperty(spell, 'system.sourceClass') === classId || foundry.utils.getProperty(spell, 'sourceClass') === classId
       );
       for (const spell of classSpells) {
         const sourceUuid = foundry.utils.getProperty(spell, '_stats.compendiumSource') || foundry.utils.getProperty(spell, 'flags.core.sourceId') || spell.uuid;
