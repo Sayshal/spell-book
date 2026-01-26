@@ -12,6 +12,7 @@
 import { SpellBook, PartyCoordinator } from '../apps/_module.mjs';
 import { SpellManager, PartyMode } from '../managers/_module.mjs';
 import { ASSETS, MODULE, FLAGS } from '../constants/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -103,7 +104,7 @@ function onTidy5eQuadroneRender(_sheet, element, data) {
  * @returns {boolean} True if the button can be added to this Tidy5e sheet
  */
 function canAddTidySpellbookButton(actor, element) {
-  const canCast = Object.keys(actor?.spellcastingClasses || {}).length > 0;
+  const canCast = DataUtils.hasSpellcastingClasses(actor);
   if (!canCast) {
     log(3, 'Cannot add Tidy5e spellbook button: actor has no spellcasting classes.', { actorId: actor?.id });
     return false;
@@ -162,7 +163,7 @@ function onTidy5eGroupSheetRender(_sheet, element, data) {
   const groupActor = data.actor;
   if (!groupActor || groupActor.type !== 'group') return;
   const partyActors = PartyMode.getPartyActors(groupActor);
-  const spellcasters = partyActors.filter((actor) => actor && Object.keys(actor?.spellcastingClasses || {}).length > 0);
+  const spellcasters = partyActors.filter((actor) => DataUtils.hasSpellcastingClasses(actor));
   if (spellcasters.length === 0) return;
   const headerActionsContainer = element.querySelector('[data-tidy-sheet-part="sheet-header-actions-container"]');
   if (!headerActionsContainer) return;

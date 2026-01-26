@@ -208,7 +208,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     let showPartyButton = false;
     if (primaryGroup) {
       const creatures = primaryGroup.system?.creatures || [];
-      const spellcasters = creatures.filter((actor) => actor && Object.keys(actor?.spellcastingClasses || {}).length > 0);
+      const spellcasters = creatures.filter((actor) => DataUtils.hasSpellcastingClasses(actor));
       showPartyButton = spellcasters.length > 0;
     }
     if (showPartyButton) {

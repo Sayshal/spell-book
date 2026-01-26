@@ -14,6 +14,7 @@
  */
 
 import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 import * as UIUtils from '../ui/_module.mjs';
 
@@ -39,7 +40,7 @@ export class PartyMode {
    * @returns {boolean} True if actor can cast spells
    */
   isSpellcaster(actor) {
-    return Object.keys(foundry.utils.getProperty(actor, 'spellcastingClasses') || {}).length > 0;
+    return DataUtils.hasSpellcastingClasses(actor);
   }
 
   /**
@@ -750,14 +751,14 @@ export class PartyMode {
     log(3, 'Getting party actors.', { groupActorName: groupActor?.name });
     if (groupActor && groupActor.type === 'group') {
       const creatures = foundry.utils.getProperty(groupActor, 'system.creatures') || [];
-      return creatures.filter((actor) => actor && Object.keys(foundry.utils.getProperty(actor, 'spellcastingClasses') || {}).length > 0);
+      return creatures.filter((actor) => DataUtils.hasSpellcastingClasses(actor));
     }
     try {
       const primaryPartyData = game.settings.get('dnd5e', 'primaryParty');
       const primaryPartyActor = foundry.utils.getProperty(primaryPartyData, 'actor');
       if (primaryPartyActor && primaryPartyActor.type === 'group') {
         const creatures = foundry.utils.getProperty(primaryPartyActor, 'system.creatures') || [];
-        const spellcasters = creatures.filter((actor) => actor && Object.keys(foundry.utils.getProperty(actor, 'spellcastingClasses') || {}).length > 0);
+        const spellcasters = creatures.filter((actor) => DataUtils.hasSpellcastingClasses(actor));
         if (spellcasters.length > 0) return spellcasters;
       }
     } catch (error) {

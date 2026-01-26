@@ -11,6 +11,7 @@
 
 import { PartyCoordinator, AnalyticsDashboard, SpellBook, SpellListManager } from '../apps/_module.mjs';
 import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 import { SpellManager } from '../managers/_module.mjs';
 
@@ -58,7 +59,7 @@ function addSpellbookButton(_app, html, data) {
  * @returns {boolean} True if the button can be added to this sheet
  */
 function canAddSpellbookButton(actor, html) {
-  const canCast = Object.keys(actor?.spellcastingClasses || {}).length > 0;
+  const canCast = DataUtils.hasSpellcastingClasses(actor);
   if (!canCast) {
     log(3, 'Cannot add spellbook button: actor has no spellcasting classes.', { actorId: actor?.id });
     return false;
@@ -182,7 +183,7 @@ function canAddPartySpellButton(actor, data) {
     return false;
   }
   const creatures = data.actor.system?.creatures || [];
-  const spellcasters = creatures.filter((memberActor) => memberActor && Object.keys(memberActor?.spellcastingClasses || {}).length > 0);
+  const spellcasters = creatures.filter((memberActor) => DataUtils.hasSpellcastingClasses(memberActor));
   const canAdd = spellcasters.length > 0;
   log(3, 'Checking if party spell button can be added.', { actorId: actor.id, spellcasterCount: spellcasters.length, canAdd });
   return canAdd;
@@ -218,7 +219,7 @@ function openPartySpellManager(event, groupActor, data) {
   log(3, 'Opening party spell manager.', { actorId: groupActor.id });
   event.preventDefault();
   const creatures = data.actor.system?.creatures || [];
-  const partyActors = creatures.filter((memberActor) => memberActor && Object.keys(memberActor?.spellcastingClasses || {}).length > 0);
+  const partyActors = creatures.filter((memberActor) => DataUtils.hasSpellcastingClasses(memberActor));
   if (partyActors.length === 0) {
     log(3, 'No spellcasters in party.', { actorId: groupActor.id });
     return;

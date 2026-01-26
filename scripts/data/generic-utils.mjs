@@ -99,6 +99,15 @@ export function getWizardData(actor) {
 }
 
 /**
+ * Check if an actor has any spellcasting classes.
+ * @param {object} actor - The actor to check
+ * @returns {boolean} True if actor has spellcasting classes
+ */
+export function hasSpellcastingClasses(actor) {
+  return actor?.spellcastingClasses && Object.keys(actor.spellcastingClasses).length > 0;
+}
+
+/**
  * Get the appropriate label/name from a CONFIG object.
  * @param {object} configObject - The CONFIG object (e.g., CONFIG.DND5E.spellSchools)
  * @param {string} key - The key to look up in the configuration object
