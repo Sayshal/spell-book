@@ -275,7 +275,8 @@ export class PartyMode {
       components: { verbal: 0, somatic: 0, material: 0, materialCost: 0 },
       concentrationCount: 0,
       ritualCount: 0,
-      preparedSpellsByName: new Map()
+      preparedSpellsByName: new Map(),
+      spellNameToUuid: new Map()
     };
   }
 
@@ -369,7 +370,10 @@ export class PartyMode {
    */
   _trackDuplicateSpell(spellDoc, actorName, collectors) {
     const spellName = spellDoc.name;
-    if (!collectors.preparedSpellsByName.has(spellName)) collectors.preparedSpellsByName.set(spellName, []);
+    if (!collectors.preparedSpellsByName.has(spellName)) {
+      collectors.preparedSpellsByName.set(spellName, []);
+      collectors.spellNameToUuid.set(spellName, spellDoc.uuid);
+    }
     collectors.preparedSpellsByName.get(spellName).push(actorName);
   }
 
@@ -658,14 +662,8 @@ export class PartyMode {
     const duplicateSpells = [];
     for (const [spellName, actors] of collectors.preparedSpellsByName) {
       if (actors.length > 1) {
-        let spellDoc = null;
-        for (const uuid of collectors.allSpells) {
-          const testDoc = fromUuidSync(uuid);
-          if (testDoc && testDoc.name === spellName) {
-            spellDoc = testDoc;
-            break;
-          }
-        }
+        const uuid = collectors.spellNameToUuid.get(spellName);
+        const spellDoc = uuid ? fromUuidSync(uuid) : null;
         const enrichedIcon = spellDoc ? UIUtils.createSpellIconLink(spellDoc) : '';
         duplicateSpells.push({
           name: spellName,
