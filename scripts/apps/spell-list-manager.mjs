@@ -497,7 +497,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   applyCollapsedLevels() {
     log(3, 'Remembering collapsed levels.');
-    const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS) || [];
+    const collapsedLevels = DataUtils.CollapsedStateManager.get(FLAGS.GM_COLLAPSED_LEVELS);
     for (const levelId of collapsedLevels) {
       const levelContainer = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
       if (levelContainer) {
@@ -520,7 +520,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   applyCollapsedFolders() {
     log(3, 'Remembering collapsed folders.');
-    const collapsedFolders = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_FOLDERS) || [];
+    const collapsedFolders = DataUtils.CollapsedStateManager.get(FLAGS.COLLAPSED_FOLDERS);
     for (const folderId of collapsedFolders) {
       const folderContainer = this.element.querySelector(`.list-folder[data-folder-id="${folderId}"]`);
       if (folderContainer) {
@@ -1642,17 +1642,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @param {PointerEvent} _event - The originating click event.
    * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static #toggleSpellHeader(_event, target) {
+  static async #toggleSpellHeader(_event, target) {
     log(3, 'Handling toggle spell level.', { _event, target });
     const levelContainer = target.closest('.spell-level');
     if (!levelContainer || !levelContainer.classList.contains('spell-level')) return;
     const levelId = levelContainer.dataset.level;
-    levelContainer.classList.toggle('collapsed');
-    const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS) || [];
-    const isCollapsed = levelContainer.classList.contains('collapsed');
-    if (isCollapsed && !collapsedLevels.includes(levelId)) collapsedLevels.push(levelId);
-    else if (!isCollapsed && collapsedLevels.includes(levelId)) collapsedLevels.splice(collapsedLevels.indexOf(levelId), 1);
-    game.user.setFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS, collapsedLevels);
+    const isCollapsed = await DataUtils.CollapsedStateManager.toggle(FLAGS.GM_COLLAPSED_LEVELS, levelId);
+    levelContainer.classList.toggle('collapsed', isCollapsed);
     const header = levelContainer.querySelector('.spell-level-heading');
     const spellList = levelContainer.querySelector('.spell-list');
     const collapseIcon = header?.querySelector('.collapse-indicator');
@@ -1671,18 +1667,14 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @param {PointerEvent} _event - The originating click event.
    * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static #toggleFolder(_event, target) {
+  static async #toggleFolder(_event, target) {
     log(3, 'Handling toggle folder.', { _event, target });
     const folderContainer = target.closest('.list-folder');
     if (!folderContainer) return;
     const folderId = folderContainer.dataset.folderId;
     if (!folderId) return;
-    folderContainer.classList.toggle('collapsed');
-    const collapsedFolders = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_FOLDERS) || [];
-    const isCollapsed = folderContainer.classList.contains('collapsed');
-    if (isCollapsed && !collapsedFolders.includes(folderId)) collapsedFolders.push(folderId);
-    else if (!isCollapsed && collapsedFolders.includes(folderId)) collapsedFolders.splice(collapsedFolders.indexOf(folderId), 1);
-    game.user.setFlag(MODULE.ID, FLAGS.COLLAPSED_FOLDERS, collapsedFolders);
+    const isCollapsed = await DataUtils.CollapsedStateManager.toggle(FLAGS.COLLAPSED_FOLDERS, folderId);
+    folderContainer.classList.toggle('collapsed', isCollapsed);
     const header = folderContainer.querySelector('.folder-header');
     const content = folderContainer.querySelector('.folder-content');
     const collapseIcon = header?.querySelector('.collapse-indicator');

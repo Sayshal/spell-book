@@ -8,7 +8,8 @@
  * @author Tyler
  */
 
-import { MODULE, TEMPLATES } from '../constants/_module.mjs';
+import { FLAGS, TEMPLATES } from '../constants/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { PartyMode } from '../managers/_module.mjs';
 import { FocusSettings, SynergyAnalysis } from '../dialogs/_module.mjs';
 import { log } from '../logger.mjs';
@@ -185,22 +186,19 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @param {PointerEvent} _event - The originating click event.
    * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static #toggleSpellHeader(_event, target) {
+  static async #toggleSpellHeader(_event, target) {
     const levelContainer = target.closest('.spell-level-group');
     if (!levelContainer) return;
     const levelId = levelContainer.dataset.spellLevel;
-    const isCollapsed = levelContainer.classList.toggle('collapsed');
-    const collapsedLevels = game.user.getFlag(MODULE.ID, 'partyCollapsedLevels') || [];
-    if (isCollapsed && !collapsedLevels.includes(levelId)) collapsedLevels.push(levelId);
-    else if (!isCollapsed && collapsedLevels.includes(levelId)) collapsedLevels.splice(collapsedLevels.indexOf(levelId), 1);
-    game.user.setFlag(MODULE.ID, 'partyCollapsedLevels', collapsedLevels);
+    const isCollapsed = await DataUtils.CollapsedStateManager.toggle(FLAGS.PARTY_COLLAPSED_LEVELS, levelId);
+    levelContainer.classList.toggle('collapsed', isCollapsed);
     const header = levelContainer.querySelector('.level-header');
     const spellList = levelContainer.querySelector('.spells-grid');
     const collapseIcon = header?.querySelector('.collapse-indicator');
     if (header) header.setAttribute('aria-expanded', !isCollapsed);
     if (spellList) spellList.style.display = isCollapsed ? 'none' : '';
     if (collapseIcon) collapseIcon.className = `fas fa-caret-${isCollapsed ? 'right' : 'down'} collapse-indicator`;
-    log(3, 'Toggle Spell Level called.', { levelContainer, isCollapsed, collapsedLevels });
+    log(3, 'Toggle Spell Level called.', { levelContainer, isCollapsed });
   }
 
   /**
@@ -369,7 +367,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   _restoreCollapsedLevels() {
     log(3, 'Restore Collapsed Levels called.');
-    const collapsedLevels = game.user.getFlag(MODULE.ID, 'partyCollapsedLevels') || [];
+    const collapsedLevels = DataUtils.CollapsedStateManager.get(FLAGS.PARTY_COLLAPSED_LEVELS);
     collapsedLevels.forEach((levelId) => {
       const levelContainer = this.element.querySelector(`.spell-level-group[data-spell-level="${levelId}"]`);
       if (levelContainer) {

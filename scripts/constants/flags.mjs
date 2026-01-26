@@ -120,6 +120,9 @@ export const FLAGS = {
   /** @type {string} Flag indicating if long rest swap dialog was completed */
   LONG_REST_COMPLETED: 'longRestCompleted',
 
+  /** @type {string} Flag for storing party coordinator collapsed spell level state */
+  PARTY_COLLAPSED_LEVELS: 'partyCollapsedLevels',
+
   /** @type {string} Flag for enabling party spell coordination mode */
   PARTY_MODE_ENABLED: 'partyModeEnabled',
 

@@ -776,13 +776,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           this._state.updateFavoriteSessionState(spellUuid, false);
         }
       });
-      const collapsedLevels = this.element.querySelectorAll('.spell-level.collapsed');
-      collapsedLevels.forEach((level) => {
+      const collapsedLevelsElements = this.element.querySelectorAll('.spell-level.collapsed');
+      collapsedLevelsElements.forEach((level) => {
         level.classList.remove('collapsed');
         const heading = level.querySelector('.spell-level-heading');
         if (heading) heading.setAttribute('aria-expanded', 'true');
       });
-      game.user.setFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS, []);
+      DataUtils.CollapsedStateManager.clear(FLAGS.COLLAPSED_LEVELS);
       this.filterHelper.invalidateFilterCache();
       this.filterHelper.applyFilters();
       this.ui.updateSpellPreparationTracking();
@@ -801,13 +801,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           const checkbox = item.querySelector('dnd5e-checkbox');
           if (checkbox && !checkbox.checked) item.classList.remove('prepared-spell');
         });
-        const collapsedLevels = this.element.querySelectorAll('.spell-level.collapsed');
-        collapsedLevels.forEach((level) => {
+        const collapsedLevelsElements = this.element.querySelectorAll('.spell-level.collapsed');
+        collapsedLevelsElements.forEach((level) => {
           level.classList.remove('collapsed');
           const heading = level.querySelector('.spell-level-heading');
           if (heading) heading.setAttribute('aria-expanded', 'true');
         });
-        game.user.setFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS, []);
+        DataUtils.CollapsedStateManager.clear(FLAGS.COLLAPSED_LEVELS);
         this.filterHelper.invalidateFilterCache();
         this.filterHelper.applyFilters();
         this.ui.updateSpellPreparationTracking();
@@ -931,17 +931,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {PointerEvent} _event - The originating click event.
    * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static #toggleSpellHeader(_event, target) {
+  static async #toggleSpellHeader(_event, target) {
     log(3, 'Handling spell level toggling.', { _event, target });
     const levelContainer = target.parentElement;
     if (!levelContainer || !levelContainer.classList.contains('spell-level')) return;
     const levelId = levelContainer.dataset.level;
-    levelContainer.classList.toggle('collapsed');
-    const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
-    const isCollapsed = levelContainer.classList.contains('collapsed');
-    if (isCollapsed && !collapsedLevels.includes(levelId)) collapsedLevels.push(levelId);
-    else if (!isCollapsed && collapsedLevels.includes(levelId)) collapsedLevels.splice(collapsedLevels.indexOf(levelId), 1);
-    game.user.setFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS, collapsedLevels);
+    const isCollapsed = await DataUtils.CollapsedStateManager.toggle(FLAGS.COLLAPSED_LEVELS, levelId);
+    levelContainer.classList.toggle('collapsed', isCollapsed);
     const header = levelContainer.querySelector('.spell-level-heading');
     const spellList = levelContainer.querySelector('.spell-list');
     const collapseIcon = header?.querySelector('.collapse-indicator');
@@ -1026,7 +1022,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   async #processSpellsByLevel(spellLevels) {
     log(3, 'Processing spell levels for context:', { spellLevels });
-    const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
+    const collapsedLevels = DataUtils.CollapsedStateManager.get(FLAGS.COLLAPSED_LEVELS);
     const enabledElements = this.enabledElements;
     const processedLevels = [];
 

@@ -287,3 +287,52 @@ export function shallowCloneSpell(spell) {
   if (spell.flags) clone.flags = foundry.utils.deepClone(spell.flags);
   return clone;
 }
+
+/**
+ * Utility class for managing collapsed state stored in user flags.
+ * Provides consistent get/toggle/clear operations for collapsible UI elements.
+ */
+export class CollapsedStateManager {
+  /**
+   * Get the array of collapsed identifiers from user flags.
+   * @param {string} flagName - The flag name (e.g., FLAGS.COLLAPSED_LEVELS)
+   * @returns {string[]} Array of collapsed identifiers
+   */
+  static get(flagName) {
+    return game.user.getFlag(MODULE.ID, flagName) || [];
+  }
+
+  /**
+   * Check if a specific identifier is in the collapsed state.
+   * @param {string} flagName - The flag name
+   * @param {string} identifier - The identifier to check
+   * @returns {boolean} True if the identifier is collapsed
+   */
+  static isCollapsed(flagName, identifier) {
+    return this.get(flagName).includes(identifier);
+  }
+
+  /**
+   * Toggle the collapsed state for an identifier.
+   * @param {string} flagName - The flag name
+   * @param {string} identifier - The identifier to toggle
+   * @returns {Promise<boolean>} Resolves to true if now collapsed, false if expanded
+   */
+  static async toggle(flagName, identifier) {
+    const current = this.get(flagName);
+    const index = current.indexOf(identifier);
+    const isCollapsing = index === -1;
+    const updated = isCollapsing ? [...current, identifier] : current.filter((id) => id !== identifier);
+    await game.user.setFlag(MODULE.ID, flagName, updated);
+    return isCollapsing;
+  }
+
+  /**
+   * Clear all collapsed states (reset to empty array).
+   * @param {string} flagName - The flag name
+   * @returns {Promise<void>}
+   */
+  static async clear(flagName) {
+    await game.user.setFlag(MODULE.ID, flagName, []);
+  }
+}

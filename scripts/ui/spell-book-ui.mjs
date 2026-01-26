@@ -307,7 +307,7 @@ export class SpellBookUI {
    * @returns {void}
    */
   applyCollapsedLevels() {
-    const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
+    const collapsedLevels = DataUtils.CollapsedStateManager.get(FLAGS.COLLAPSED_LEVELS);
     log(3, 'Applying collapsed levels.', { collapsedCount: collapsedLevels.length });
     for (const levelId of collapsedLevels) {
       const levelContainer = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
