@@ -1842,6 +1842,10 @@
     width: fit-content;
     min-width: unset;
   }
+
+  .spell-book-analytics-button.tracking-disabled {
+    opacity: 0.6;
+  }
 }
 
 /* ----------------------------------------- */

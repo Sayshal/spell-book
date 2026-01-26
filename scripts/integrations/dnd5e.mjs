@@ -351,10 +351,6 @@ function createJournalButtonsContainer() {
   log(3, 'Creating journal buttons container.');
   const container = document.createElement('div');
   container.classList.add('spell-book-buttons-container');
-  container.style.display = 'flex';
-  container.style.gap = '0.5rem';
-  container.style.justifyContent = 'center';
-  container.style.alignItems = 'center';
   const managerButton = createJournalManagerButton();
   const analyticsButton = createJournalAnalyticsButton();
   container.appendChild(managerButton);
@@ -402,7 +398,7 @@ function createJournalAnalyticsButton() {
     const newSetting = !currentSetting;
     try {
       await game.settings.set(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING, newSetting);
-      analyticsButton.style.opacity = newSetting ? '1' : '0.6';
+      analyticsButton.classList.toggle('tracking-disabled', !newSetting);
       analyticsButton.title = newSetting ? game.i18n.localize('SPELLBOOK.Analytics.TrackingEnabled') : game.i18n.localize('SPELLBOOK.Analytics.TrackingDisabled');
       log(3, 'Spell usage tracking toggled.', { newSetting });
     } catch (error) {
@@ -410,7 +406,7 @@ function createJournalAnalyticsButton() {
     }
   });
   const trackingEnabled = game.settings.get(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING);
-  analyticsButton.style.opacity = trackingEnabled ? '1' : '0.6';
+  analyticsButton.classList.toggle('tracking-disabled', !trackingEnabled);
   analyticsButton.title = trackingEnabled ? game.i18n.localize('SPELLBOOK.Analytics.TrackingEnabled') : game.i18n.localize('SPELLBOOK.Analytics.TrackingDisabled');
   return analyticsButton;
 }
