@@ -104,6 +104,7 @@ export class SpellOrganizer {
       spellDataClone.enrichedIcon = UIUtils.createSpellIconLink(spell);
       const enhancedSpell = DataUtils.UserData.enhanceSpellWithUserData(spellDataClone, targetUserId, actorId);
       Object.assign(spellDataClone, enhancedSpell);
+      if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level] || `Level ${level}`, spells: [] };
       spellsByLevel[level].spells.push(spellDataClone);
     }
     for (const level in spellsByLevel) if (level in spellsByLevel) spellsByLevel[level].spells.sort((a, b) => a.name.localeCompare(b.name));
@@ -288,7 +289,7 @@ export class SpellOrganizer {
         spellLevels: filteredWizardLevelsGrouped,
         spellPreparation: prepStats,
         wizardTotalSpellbookCount: totalSpells,
-        wizardFreeSpellbookCount: totalFreeSpells,
+        wizardFreeSpellbookCount: usedFreeSpells,
         wizardRemainingFreeSpells: remainingFreeSpells,
         wizardHasFreeSpells: remainingFreeSpells > 0,
         wizardMaxSpellbookCount: maxSpellsAllowed,

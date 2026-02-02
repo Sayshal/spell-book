@@ -9,7 +9,7 @@
  * @author Tyler
  */
 
-import { PartyCoordinator, AnalyticsDashboard, SpellBook, SpellListManager } from '../apps/_module.mjs';
+import { AnalyticsDashboard, PartyCoordinator, SpellBook, SpellListManager } from '../apps/_module.mjs';
 import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
@@ -132,7 +132,7 @@ async function onSpellBookButtonClick(actor, event) {
     spellBook.render(true);
     log(3, 'Spellbook rendered successfully.', { actorId: actor.id });
   } catch (error) {
-    log(1, 'Error opening spellbook.', { actorId: actor.id, error });
+    log(1, error);
   } finally {
     if (icon) {
       icon.classList.remove('fa-spin');

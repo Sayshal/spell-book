@@ -275,7 +275,10 @@ export class Cantrips {
         return new CantripValidationResult({ allowed: false, message: 'SPELLBOOK.Cantrips.OnlyOneSwap' });
       }
       if (isChecked && !trackingData.hasUnlearned && !trackingData.originalChecked.includes(spellUuid)) {
-        return new CantripValidationResult({ allowed: false, message: 'SPELLBOOK.Cantrips.MustUnlearnFirst' });
+        const maxCantrips = this._getMaxCantripsForClass(classIdentifier);
+        if (trackingData.originalChecked.length >= maxCantrips) {
+          return new CantripValidationResult({ allowed: false, message: 'SPELLBOOK.Cantrips.MustUnlearnFirst' });
+        }
       }
     }
     log(3, 'Cantrip status change allowed.', { actorId: this.actor.id, spellId: spell.id });
