@@ -13,7 +13,7 @@
  * @author Tyler
  */
 
-import { FLAGS, MODULE } from '../constants/_module.mjs';
+import { FLAGS, LOADOUT_CACHE_TTL, MODULE } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 
 /**
@@ -40,9 +40,8 @@ export class Loadouts {
    */
   getAvailableLoadouts(classIdentifier = null) {
     log(3, 'Getting available loadouts.', { actorId: this.actor.id, classIdentifier });
-    const cacheTimeout = 30000;
     const now = Date.now();
-    if (!this._loadoutsCache || now - this._lastCacheTime > cacheTimeout) {
+    if (!this._loadoutsCache || now - this._lastCacheTime > LOADOUT_CACHE_TTL) {
       this._loadoutsCache = this.actor.getFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS) || {};
       this._lastCacheTime = now;
       log(3, 'Loadouts cache refreshed.', { actorId: this.actor.id, loadoutCount: Object.keys(this._loadoutsCache).length });

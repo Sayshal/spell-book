@@ -8,7 +8,7 @@
  * @author Tyler
  */
 
-import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
+import { DEBOUNCE_DELAY, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import * as DataUtils from '../data/_module.mjs';
 import { DetailsCustomization, SpellComparison } from '../dialogs/_module.mjs';
 import { log } from '../logger.mjs';
@@ -730,7 +730,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
             this._dropdownFilterTimer = setTimeout(() => {
               if (property === 'level' || property === 'source' || property === 'spellSource') this.render(false, { parts: ['availableSpells'] });
               else this.applyFilters();
-            }, 150);
+            }, DEBOUNCE_DELAY);
           }
         });
       }

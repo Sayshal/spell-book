@@ -9,7 +9,7 @@
  * @author Tyler
  */
 
-import { FLAGS, MODULE } from '../constants/_module.mjs';
+import { DEBOUNCE_DELAY, FLAGS, MODULE } from '../constants/_module.mjs';
 import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 import { RuleSet } from '../managers/_module.mjs';
@@ -104,7 +104,7 @@ export class SpellBookUI {
           originalInput.value = event.target.value;
           originalInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
-      }, 150);
+      }, DEBOUNCE_DELAY);
       searchInput.addEventListener('input', debouncedInputHandler);
       if (this.search) this.search.setupCollapsedFooterSearch(searchInput);
     }
