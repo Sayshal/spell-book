@@ -88,7 +88,7 @@ function spellsNotInListsScript() {
         <p><em>Copy this list to identify spells that might need to be added to spell lists.</em></p>
       </div>
     `;
-    await foundry.applications.api.DialogV2.wait({
+    const result = await foundry.applications.api.DialogV2.wait({
       content: content,
       classes: ['dnd5e2'],
       window: { icon: 'fas fa-search', resizable: true, minimizable: false, positioned: true, title: 'Spells Not In Spell Lists' },
@@ -99,13 +99,12 @@ function spellsNotInListsScript() {
       ],
       default: 'close',
       rejectClose: false
-    }).then((result) => {
-      if (result === 'copy') {
-        const spellNames = spells.map((s) => `${s.name} (${s.uuid})`).join('\n');
-        SPELLBOOK.log(3, `Spells not in lists:\n${spellNames}`);
-        ui.notifications.info('Spell list copied to console (F12)');
-      }
     });
+    if (result === 'copy') {
+      const spellNames = spells.map((s) => `${s.name} (${s.uuid})`).join('\n');
+      SPELLBOOK.log(3, `Spells not in lists:\n${spellNames}`);
+      ui.notifications.info('Spell list copied to console (F12)');
+    }
   }
   findSpellsNotInLists();
 }

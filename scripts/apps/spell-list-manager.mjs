@@ -689,13 +689,12 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
           if (wasFiltered !== isFiltered) {
             const currentInput = this.element.querySelector('input[name="spell-search"]');
             const cursorPosition = currentInput?.selectionStart;
-            this.render(false, { parts: ['availableSpells'] }).then(() => {
-              const newInput = this.element.querySelector('input[name="spell-search"]');
-              if (newInput && cursorPosition !== undefined) {
-                newInput.focus();
-                newInput.setSelectionRange(cursorPosition, cursorPosition);
-              }
-            });
+            this.render(false, { parts: ['availableSpells'] });
+            const newInput = this.element.querySelector('input[name="spell-search"]');
+            if (newInput && cursorPosition !== undefined) {
+              newInput.focus();
+              newInput.setSelectionRange(cursorPosition, cursorPosition);
+            }
           } else this.applyFilters();
         }, 200);
       });
