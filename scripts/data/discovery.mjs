@@ -5,7 +5,6 @@
  * across multiple sources including compendiums, spell lists, and actor
  * collections. This module handles the complex task of spell resolution
  * and availability determination.
- *
  * @module DataUtils/Discovery
  * @author Tyler
  */
@@ -19,7 +18,7 @@ import * as DataUtils from './_module.mjs';
  * Get spell list for a specific class.
  * @param {string} className - The name of the class to find spell list for
  * @param {string} [classUuid] - UUID of the class item for additional context
- * @param {Object} [actor] - The actor for custom spell list lookup
+ * @param {object} [actor] - The actor for custom spell list lookup
  * @returns {Promise<Set<string>>} Set of spell UUIDs from the class spell list
  */
 export async function getClassSpellList(className, classUuid, actor) {
@@ -135,7 +134,6 @@ function getFolderNameFromPack(source) {
  * Searches all journal entry packs for spell list pages matching
  * the specified type and identifier for spell list discovery.
  * Only searches packs that are enabled in compendium settings.
- *
  * @param {string} type - Type of spell list ('class' or 'subclass')
  * @param {string} identifier - Identifier to search for in spell lists
  * @param {Object<string, string>} customMappings - Custom spell list mappings
@@ -157,7 +155,7 @@ async function findSpellListByIdentifier(type, identifier, customMappings) {
 
 /**
  * Search a specific pack for spell list matching type and identifier.
- * @param {Collection<string, Object>} pack - Pack to search for spell lists
+ * @param {object} pack - Pack to search for spell lists
  * @param {string} type - Type of spell list ('class' or 'subclass')
  * @param {string} identifier - Class identifier to match against
  * @param {Object<string, string>} customMappings - Custom spell list mappings
@@ -217,8 +215,8 @@ async function findCustomSpellListByIdentifier(identifier) {
 /**
  * Calculate maximum spell level available to a specific class.
  * Supports standard spell progressions, pact magic, and custom progressions.
- * @param {Object} classItem - The class item with spellcasting configuration
- * @param {Object} [actor] - The actor for additional context and calculations
+ * @param {object} classItem - The class item with spellcasting configuration
+ * @param {object} [actor] - The actor for additional context and calculations
  * @returns {number} Maximum spell level (0 for cantrips only, -1 for no spellcasting)
  */
 export function calculateMaxSpellLevel(classItem, actor) {
@@ -268,7 +266,6 @@ export function calculateMaxSpellLevel(classItem, actor) {
  * Searches for spell lists within packs that match the specified
  * top-level folder name and class identifier for source-specific matching.
  * Only searches packs that are enabled in compendium settings.
- *
  * @param {string} topLevelFolderName - Top-level folder name to match
  * @param {string} identifier - Class identifier to match
  * @param {Object<string, string>} customMappings - Custom spell list mappings
@@ -294,7 +291,7 @@ async function getSpellListFromFolder(topLevelFolderName, identifier, customMapp
 /**
  * Merge multiple spell sets into a single combined set.
  * @param {Array<Set<string>>} spellSets - Array of spell sets to merge
- * @param {Array<string>} [sourceNames=[]] - Array of source names for logging
+ * @param {Array<string>} [sourceNames] - Array of source names for logging
  * @returns {Set<string>} Combined set of spell UUIDs
  * @private
  */

@@ -5,7 +5,6 @@
  * spell data including notes, favorites, and usage statistics. This class provides
  * a persistent storage solution using Foundry's compendium system to store user
  * data that persists across game sessions and world migrations.
- *
  * @module Managers/UserDataSetup
  * @author Tyler
  */
@@ -65,8 +64,8 @@ export class UserDataSetup {
   /**
    * Ensure folder exists in the pack.
    * @private
-   * @param {Collection<string, Object>} pack - The spells pack
-   * @returns {Promise<Object>} Promise that resolves to the existing or newly created folder
+   * @param {object} pack - The spells pack
+   * @returns {Promise<object>} Promise that resolves to the existing or newly created folder
    */
   async _ensureFolder(pack) {
     log(3, 'Ensuring folder exists.', { folderName: this.folderName });
@@ -78,8 +77,8 @@ export class UserDataSetup {
   /**
    * Ensure journal exists in the folder.
    * @private
-   * @param {Collection<string, Object>} pack - The spells pack
-   * @returns {Promise<Object>} Promise that resolves to the existing or newly created journal entry
+   * @param {object} pack - The spells pack
+   * @returns {Promise<object>} Promise that resolves to the existing or newly created journal entry
    */
   async _ensureJournal(pack) {
     log(3, 'Ensuring journal exists.', { journalName: this.journalName });
@@ -174,7 +173,7 @@ export class UserDataSetup {
   /**
    * Create introductory title page for user data journal.
    * @private
-   * @param {Object} journal - The user data journal
+   * @param {object} journal - The user data journal
    * @returns {Promise<void>}
    */
   async _createIntroductoryPage(journal) {

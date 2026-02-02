@@ -1,19 +1,42 @@
 /**
- * Spell Book Filtering System
+ * Spell Book Filtering System - UI Controller
  *
- * This module provides filtering capabilities for the Spell Book application,
- * managing both data-level filtering for spell lists and DOM-level filtering for displayed
- * spells. It includes advanced search integration, caching mechanisms, and sophisticated
- * matching algorithms for various spell properties.
- *
+ * This module provides the UI controller for spell filtering in the Spell Book application.
+ * Manages filter state caching, DOM manipulation for filter UI, and coordinates with
+ * SpellFilterService for actual filtering logic.
  * @module UIUtils/SpellbookFilters
  * @author Tyler
  */
 
-import { MODULE, SETTINGS, FLAGS } from '../constants/_module.mjs';
+import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
 import * as DataUtils from '../data/_module.mjs';
-import * as ValidationUtils from '../validation/_module.mjs';
 import { log } from '../logger.mjs';
+import * as ValidationUtils from '../validation/_module.mjs';
+import { SpellFilterService, convertRangeToStandardUnit } from './spell-filter-service.mjs';
+
+/**
+ * Default filter state used as fallback when DOM is unavailable.
+ * @type {object}
+ */
+export const DEFAULT_FILTER_STATE = Object.freeze({
+  name: '',
+  level: '',
+  school: '',
+  castingTime: '',
+  minRange: '',
+  maxRange: '',
+  damageType: '',
+  condition: '',
+  requiresSave: '',
+  prepared: false,
+  ritual: false,
+  favorited: false,
+  concentration: '',
+  materialComponents: '',
+  preparedByParty: false,
+  source: '',
+  spellSource: ''
+});
 
 /**
  * Cached filter options (without selected state)
@@ -27,7 +50,7 @@ const FILTER_OPTIONS_CACHE = new Map();
 export class Filters {
   /**
    * Create a new filter helper.
-   * @param {Object} app - The parent application instance
+   * @param {object} app - The parent application instance
    */
   constructor(app) {
     this.app = app;
@@ -57,7 +80,7 @@ export class Filters {
 
   /**
    * Get the current filter state from the UI (with caching).
-   * @returns {Object} The current filter state
+   * @returns {object} The current filter state
    */
   getFilterState() {
     const now = Date.now();
@@ -66,23 +89,7 @@ export class Filters {
       return this._cachedFilterState;
     }
     if (!this.element) {
-      return {
-        name: '',
-        level: '',
-        school: '',
-        castingTime: '',
-        minRange: '',
-        maxRange: '',
-        damageType: '',
-        condition: '',
-        requiresSave: '',
-        prepared: false,
-        ritual: false,
-        favorited: false,
-        concentration: '',
-        materialComponents: '',
-        preparedByParty: false
-      };
+      return { ...DEFAULT_FILTER_STATE };
     }
     this._cachedFilterState = {
       name: this.element.querySelector('[name="filter-name"]')?.value || '',
@@ -132,243 +139,15 @@ export class Filters {
 
   /**
    * Filter available spells based on current filter state.
-   * @param {Array<Object>} availableSpells - Array of available spells to filter
+   * @param {Array<object>} availableSpells - Array of available spells to filter
    * @param {Set<string>} selectedSpellUUIDs - Set of selected spell UUIDs to exclude
    * @param {Function} isSpellInSelectedList - Function to check if spell is in selected list
-   * @param {Object} [filterState] - Optional filter state to use instead of reading from DOM
-   * @returns {Object} Filtered spells with count information
+   * @param {object} [filterState] - Optional filter state to use instead of reading from DOM
+   * @returns {object} Filtered spells with count information
    */
   filterAvailableSpells(availableSpells, selectedSpellUUIDs, isSpellInSelectedList, filterState = null) {
     const filters = filterState || this.getFilterState();
-    let remainingSpells = [...availableSpells];
-    remainingSpells = this._filterBySelectedList(remainingSpells, selectedSpellUUIDs, isSpellInSelectedList);
-    remainingSpells = this._filterBySource(remainingSpells, filters);
-    remainingSpells = this._filterBySpellSource(remainingSpells, filters);
-    remainingSpells = this._filterByBasicProperties(remainingSpells, filters);
-    remainingSpells = this._filterByRange(remainingSpells, filters);
-    remainingSpells = this._filterByDamageAndConditions(remainingSpells, filters);
-    remainingSpells = this._filterBySpecialProperties(remainingSpells, filters);
-    log(3, 'Available spells filtered.', { filteredCount: remainingSpells.length });
-    return { spells: remainingSpells, totalFiltered: remainingSpells.length };
-  }
-
-  /**
-   * Filter out spells already in the selected list.
-   * @param {Array<Object>} spells - Spells to filter
-   * @param {Set<string>} selectedSpellUUIDs - UUIDs in selected list
-   * @param {Function} isSpellInSelectedList - Function to check if spell is in list
-   * @returns {Array<Object>} Filtered spells excluding those in selected list
-   * @private
-   */
-  _filterBySelectedList(spells, selectedSpellUUIDs, isSpellInSelectedList) {
-    return spells.filter((spell) => !isSpellInSelectedList(spell, selectedSpellUUIDs));
-  }
-
-  /**
-   * Filter spells by source.
-   * @param {Array<Object>} spells - Spells to filter
-   * @param {Object} filterState - Current filter state
-   * @returns {Array<Object>} Filtered spells matching source criteria
-   * @private
-   */
-  _filterBySource(spells, filterState) {
-    const { source } = filterState;
-    if (!source || source.trim() === '' || source === 'all') return spells;
-    const beforeCount = spells.length;
-    const filtered = spells.filter((spell) => {
-      const spellSource = (spell.sourceId || '').split('.')[0];
-      const packName = spell.packName || '';
-      return spellSource.includes(source) || spellSource === source || packName.toLowerCase().includes(source.toLowerCase());
-    });
-    if (filtered.length === 0 && beforeCount > 0) {
-      filterState.source = 'all';
-      log(3, 'Source filter returned no results, resetting to all.', { source });
-      return spells;
-    }
-    log(3, 'Filtered by source.', { source, beforeCount, afterCount: filtered.length });
-    return filtered;
-  }
-
-  /**
-   * Filter spells by spell source (spell.system.source.label).
-   * @param {Array<Object>} spells - Spells to filter
-   * @param {Object} filterState - Current filter state
-   * @returns {Array<Object>} Filtered spells matching spell source criteria
-   * @private
-   */
-  _filterBySpellSource(spells, filterState) {
-    const { spellSource } = filterState;
-    if (!spellSource || spellSource.trim() === '' || spellSource === 'all') return spells;
-    const beforeCount = spells.length;
-    const filtered = spells.filter((spell) => {
-      const spellSourceId = spell.filterData?.spellSourceId;
-      return spellSourceId === spellSource;
-    });
-    if (filtered.length === 0 && beforeCount > 0) {
-      filterState.spellSource = 'all';
-      log(3, 'Spell source filter returned no results, resetting to all.', { spellSource });
-      return spells;
-    }
-    log(3, 'Filtered by spell source.', { spellSource, beforeCount, afterCount: filtered.length });
-    return filtered;
-  }
-
-  /**
-   * Filter spells by basic properties (name, level, school, casting time).
-   * @param {Array<Object>} spells - Spells to filter
-   * @param {Object} filterState - Current filter state
-   * @returns {Array<Object>} Filtered spells matching basic property criteria
-   * @private
-   */
-  _filterByBasicProperties(spells, filterState) {
-    const { name, level, school, castingTime } = filterState;
-    let filtered = spells;
-    if (name && name.trim()) filtered = this._filterByEnhancedName(filtered, name);
-    if (level) filtered = filtered.filter((spell) => dnd5e.Filter.performCheck(spell, { k: 'level', v: parseInt(level), o: 'exact' }));
-    if (school) filtered = filtered.filter((spell) => dnd5e.Filter.performCheck(spell, { k: 'school', v: school, o: 'exact' }));
-    if (castingTime) {
-      const [filterType, filterValue] = castingTime.split(':');
-      filtered = filtered.filter((spell) => {
-        const castingTimeTypeMatch = dnd5e.Filter.performCheck(spell, { k: 'filterData.castingTime.type', v: filterType, o: 'exact' });
-        if (!castingTimeTypeMatch) return dnd5e.Filter.performCheck(spell, { k: 'system.activation.type', v: filterType, o: 'exact' });
-        const spellCastingValue = String(spell.filterData?.castingTime?.value || spell.system?.activation?.value || '1');
-        return castingTimeTypeMatch && spellCastingValue === filterValue;
-      });
-    }
-    log(3, 'Filtered by basic properties.', { name, level, school, castingTime, resultCount: filtered.length });
-    return filtered;
-  }
-
-  /**
-   * Enhanced name filtering with fuzzy search and advanced syntax.
-   * @param {Array<Object>} spells - Spells to filter
-   * @param {string} searchQuery - Search query string
-   * @returns {Array<Object>} Filtered spells matching name criteria
-   * @private
-   */
-  _filterByEnhancedName(spells, searchQuery) {
-    if (!searchQuery || !searchQuery.trim()) return spells;
-    const query = searchQuery.trim();
-    if (query.startsWith(this.searchPrefix)) {
-      const search = this.app.ui?.search;
-      if (search && search.isCurrentQueryAdvanced()) {
-        const filtered = search.executeAdvancedQuery(spells);
-        log(3, 'Filtered by advanced search.', { query, resultCount: filtered.length });
-        return filtered;
-      } else return [];
-    }
-    const exactPhraseMatch = query.match(/^["'](.+?)["']$/);
-    if (exactPhraseMatch) {
-      const phrase = exactPhraseMatch[1].toLowerCase();
-      const filtered = spells.filter((spell) => {
-        const spellName = spell.name ? spell.name.toLowerCase() : '';
-        const matches = spellName.includes(phrase);
-        if (matches) return matches;
-      });
-      log(3, 'Filtered by exact phrase.', { phrase, resultCount: filtered.length });
-      return filtered;
-    }
-    const queryWords = query
-      .toLowerCase()
-      .split(/\s+/)
-      .filter((word) => word.length > 0);
-    const filtered = spells.filter((spell) => {
-      const spellName = spell.name ? spell.name.toLowerCase() : '';
-      const exactMatch = spellName === query.toLowerCase();
-      if (exactMatch) return true;
-      const startsWithQuery = spellName.startsWith(query.toLowerCase());
-      if (startsWithQuery) return true;
-      const containsQuery = spellName.includes(query.toLowerCase());
-      if (containsQuery) return true;
-      const allWordsMatch = queryWords.every((word) => spellName.includes(word));
-      if (allWordsMatch) return true;
-      const anyWordMatches = queryWords.some((word) => spellName.includes(word));
-      return anyWordMatches;
-    });
-    log(3, 'Filtered by enhanced name.', { query, resultCount: filtered.length });
-    return filtered;
-  }
-
-  /**
-   * Filter spells by range.
-   * @param {Array<Object>} spells - Spells to filter
-   * @param {Object} filterState - Current filter state
-   * @returns {Array<Object>} Filtered spells within specified range
-   * @private
-   */
-  _filterByRange(spells, filterState) {
-    const { minRange, maxRange } = filterState;
-    if (!minRange && !maxRange) return spells;
-    const filtered = spells.filter((spell) => {
-      if (!(spell.filterData?.range?.units || spell.system?.range?.units)) return true;
-      const rangeUnits = spell.filterData?.range?.units || spell.system?.range?.units || '';
-      const rangeValue = parseInt(spell.system?.range?.value || 0);
-      const standardizedRange = convertRangeToStandardUnit(rangeUnits, rangeValue);
-      const filters = [];
-      if (minRange) filters.push({ k: '', v: parseInt(minRange), o: 'gte' });
-      if (maxRange) filters.push({ k: '', v: parseInt(maxRange), o: 'lte' });
-      const minRangeVal = minRange ? parseInt(minRange) : 0;
-      const maxRangeVal = maxRange ? parseInt(maxRange) : Infinity;
-      return standardizedRange >= minRangeVal && standardizedRange <= maxRangeVal;
-    });
-    log(3, 'Filtered by range.', { minRange, maxRange, resultCount: filtered.length });
-    return filtered;
-  }
-
-  /**
-   * Filter spells by damage types and conditions.
-   * @param {Array<Object>} spells - Spells to filter
-   * @param {Object} filterState - Current filter state
-   * @returns {Array<Object>} Filtered spells matching damage/condition criteria
-   * @private
-   */
-  _filterByDamageAndConditions(spells, filterState) {
-    const { damageType, condition } = filterState;
-    let filtered = spells;
-    if (damageType) {
-      filtered = filtered.filter((spell) => {
-        const spellDamageTypes = Array.isArray(spell.filterData?.damageTypes) ? spell.filterData.damageTypes : [];
-        if (spellDamageTypes.length === 0) return false;
-        return dnd5e.Filter.performCheck(spell, { k: 'filterData.damageTypes', v: damageType, o: 'has' });
-      });
-    }
-    if (condition) filtered = filtered.filter((spell) => dnd5e.Filter.performCheck(spell, { k: 'filterData.conditions', v: condition, o: 'has' }));
-    log(3, 'Filtered by damage and conditions.', { damageType, condition, resultCount: filtered.length });
-    return filtered;
-  }
-
-  /**
-   * Filter spells by special properties (saves, concentration, ritual).
-   * @param {Array<Object>} spells - Spells to filter
-   * @param {Object} filterState - Current filter state
-   * @returns {Array<Object>} Filtered spells matching special property criteria
-   * @private
-   */
-  _filterBySpecialProperties(spells, filterState) {
-    const { requiresSave, concentration, ritual, favorited, materialComponents } = filterState;
-    let filtered = spells;
-    if (requiresSave) {
-      const expectedValue = requiresSave === 'true';
-      filtered = filtered.filter((spell) => dnd5e.Filter.performCheck(spell, { k: 'filterData.requiresSave', v: expectedValue, o: 'exact' }));
-    }
-    if (concentration) {
-      const expectedValue = concentration === 'true';
-      filtered = filtered.filter((spell) => {
-        const requiresConcentration = !!spell.filterData?.concentration;
-        return requiresConcentration === expectedValue;
-      });
-    }
-    if (materialComponents) {
-      const expectedValue = materialComponents === 'consumed';
-      filtered = filtered.filter((spell) => {
-        const hasMaterialComponents = spell.filterData?.materialComponents?.hasConsumedMaterials || false;
-        return hasMaterialComponents === expectedValue;
-      });
-    }
-    if (favorited) filtered = filtered.filter((spell) => dnd5e.Filter.performCheck(spell, { k: 'favorited', v: true, o: 'exact' }));
-    if (ritual) filtered = filtered.filter((spell) => dnd5e.Filter.performCheck(spell, { k: 'filterData.isRitual', v: true, o: 'exact' }));
-    log(3, 'Filtered by special properties.', { requiresSave, concentration, ritual, favorited, materialComponents, resultCount: filtered.length });
-    return filtered;
+    return SpellFilterService.filterSpells(availableSpells, filters, { selectedSpellUUIDs, isSpellInSelectedList, searchPrefix: this.searchPrefix, searchEngine: this.app.ui?.search });
   }
 
   /**
@@ -399,7 +178,7 @@ export class Filters {
   /**
    * Extract spell data from DOM element for filtering.
    * @param {HTMLElement} item - The spell item element
-   * @returns {Object} Extracted spell data for filtering
+   * @returns {object} Extracted spell data for filtering
    * @private
    */
   _extractSpellDataFromElement(item) {
@@ -429,8 +208,8 @@ export class Filters {
 
   /**
    * Update level visibility statistics.
-   * @param {Map<string, Object>} levelVisibilityMap - Map to track level statistics
-   * @param {Object} spellData - Spell data
+   * @param {Map<string, object>} levelVisibilityMap - Map to track level statistics
+   * @param {object} spellData - Spell data
    * @param {HTMLElement} item - Spell item element
    * @private
    */
@@ -461,8 +240,8 @@ export class Filters {
 
   /**
    * Check if a spell matches the current filters.
-   * @param {Object} filters - The current filter state
-   * @param {Object} spell - The spell to check
+   * @param {object} filters - The current filter state
+   * @param {object} spell - The spell to check
    * @returns {boolean} Whether the spell should be visible
    * @private
    */
@@ -512,25 +291,12 @@ export class Filters {
    * @private
    */
   _checkEnhancedNameMatch(searchQuery, spellName) {
-    if (!searchQuery || !searchQuery.trim()) return true;
-    if (!spellName) return false;
-    const query = searchQuery.trim();
-    const spellNameLower = spellName.toLowerCase().trim();
-    const exactPhraseMatch = query.match(/^["'](.+?)["']$/);
-    if (exactPhraseMatch) return spellNameLower === exactPhraseMatch[1].toLowerCase().trim();
-    const queryWords = query
-      .toLowerCase()
-      .split(/\s+/)
-      .filter((word) => word.length > 0);
-    if (queryWords.length === 1) return spellNameLower.includes(queryWords[0]);
-    const allWordsMatch = queryWords.every((word) => spellNameLower.includes(word));
-    const phraseMatch = spellNameLower.includes(query.toLowerCase());
-    return allWordsMatch || phraseMatch;
+    return SpellFilterService.checkEnhancedNameMatch(searchQuery, spellName);
   }
 
   /**
    * Update level container visibility and counts.
-   * @param {Map<string, Object>} levelVisibilityMap - Map of level visibility data
+   * @param {Map<string, object>} levelVisibilityMap - Map of level visibility data
    * @private
    */
   _updateLevelContainers(levelVisibilityMap) {
@@ -615,7 +381,7 @@ function _getBaseFilterOptions(filterId) {
 /**
  * Prepare filter options based on filter type and current state.
  * @param {string} filterId - The filter identifier (level, school, etc.)
- * @param {Object} filterState - Current filter state with selected values
+ * @param {object} filterState - Current filter state with selected values
  * @returns {Array<{ value: string; label: string; }>} Options for the dropdown control
  */
 export function getOptionsForFilter(filterId, filterState) {
@@ -637,7 +403,7 @@ export function getOptionsForFilter(filterId, filterState) {
 
 /**
  * Get casting time options with proper sorting and formatting.
- * @param {Object} filterState - Current filter state for selection tracking
+ * @param {object} filterState - Current filter state for selection tracking
  * @returns {Array<{ value: string; label: string; }>} Sorted casting time options
  * @private
  */
@@ -667,21 +433,6 @@ export function getCastingTimeOptions(filterState) {
 }
 
 /**
- * Convert a spell range to standard units (feet or meters based on D&D 5e system settings).
- * @param {string} units - The range units (ft, mi, spec, etc.)
- * @param {number} value - The range value to convert
- * @returns {number} The converted range value in standard units
- */
-function convertRangeToStandardUnit(units, value) {
-  if (!units || !value) return 0;
-  if (units === 'spec') return 0;
-  const inFeet = units === 'ft' ? value : units === 'mi' ? value * 5280 : value;
-  const defaultUnit = dnd5e.utils.defaultUnits('length');
-  if (defaultUnit === 'm') return Math.round(dnd5e.utils.convertLength(inFeet, 'ft', 'm'));
-  return inFeet;
-}
-
-/**
  * Ensure filter configuration integrity using foundry.utils.mergeObject.
  * @param {Array} filterConfig - Current filter configuration
  * @returns {Array} Updated filter configuration
@@ -696,9 +447,9 @@ export function ensureFilterIntegrity(filterConfig) {
 
 /**
  * Prepare filter data for the UI.
- * @param {Object} actor - The actor instance
- * @param {UIUtils.Filters} filterHelper - The filter helper instance
- * @returns {Array<{ id: string, type: string, name: string, label: string, enabled: boolean, unit?: string, elementHtml: string }>} The prepared filter objects ready for UI rendering
+ * @param {object} actor - The actor instance
+ * @param {Filters} filterHelper - The filter helper instance
+ * @returns {Array<object>} The prepared filter objects ready for UI rendering
  */
 export function prepareFilters(actor, filterHelper) {
   let filterConfigData = game.settings.get(MODULE.ID, SETTINGS.FILTER_CONFIGURATION);

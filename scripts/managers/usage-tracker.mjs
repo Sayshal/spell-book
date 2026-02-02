@@ -5,7 +5,6 @@
  * analytics data for spell usage patterns, frequency analysis, and context-aware
  * statistics. This singleton class integrates with Foundry's hook system to
  * automatically capture spell usage events and store detailed usage statistics.
- *
  * @module Managers/UsageTracker
  * @author Tyler
  */
@@ -49,7 +48,7 @@ export class UsageTracker {
 
   /**
    * Get singleton instance of the spell usage tracker.
-   * @returns {Object} The singleton instance
+   * @returns {object} The singleton instance
    * @static
    */
   static getInstance() {
@@ -73,10 +72,10 @@ export class UsageTracker {
   /**
    * Handle activity consumption events for spell usage tracking.
    * @private
-   * @param {Object} activity - The activity being consumed
-   * @param {Object} _usageConfig - Usage configuration data (unused)
-   * @param {Object} _messageConfig - Message configuration data (unused)
-   * @param {Object} _updates - Document updates object (unused)
+   * @param {object} activity - The activity being consumed
+   * @param {object} _usageConfig - Usage configuration data (unused)
+   * @param {object} _messageConfig - Message configuration data (unused)
+   * @param {object} _updates - Document updates object (unused)
    * @returns {Promise<void>}
    */
   async _handleActivityConsumption(activity, _usageConfig, _messageConfig, _updates) {
@@ -90,7 +89,7 @@ export class UsageTracker {
     if (!actor) return;
     if (actor.type !== 'character') return;
     log(3, `Processing spell usage for tracking.`, { actorName: actor.name, spellName: spell.name });
-    const canonicalUuid = foundry.utils.getProperty(spell, '_stats.compendiumSource') || foundry.utils.getProperty(spell, 'flags.core.sourceId') || spell.uuid;
+    const canonicalUuid = DataUtils.getCanonicalSpellUuid(spell);
     const trackingKey = `${canonicalUuid}-${Date.now()}`;
     if (this.activeTracking.has(trackingKey)) return;
     this.activeTracking.set(trackingKey, true);
@@ -107,7 +106,7 @@ export class UsageTracker {
   /**
    * Detect usage context based on combat state.
    * @private
-   * @param {Object} actor - The casting actor
+   * @param {object} actor - The casting actor
    * @returns {string} Either 'combat' or 'exploration'
    */
   _detectUsageContext(actor) {
@@ -125,7 +124,7 @@ export class UsageTracker {
    * @private
    * @param {string} spellUuid - Canonical spell UUID
    * @param {string} context - Either 'combat' or 'exploration'
-   * @param {Object} actor - The casting actor
+   * @param {object} actor - The casting actor
    * @returns {Promise<void>}
    */
   async _recordSpellUsage(spellUuid, context, actor) {

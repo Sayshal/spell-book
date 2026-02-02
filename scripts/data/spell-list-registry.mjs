@@ -3,7 +3,6 @@
  *
  * Provides integration with the D&D 5e system's SpellListRegistry API.
  * Handles opt-in registration of custom spell lists.
- *
  * @module DataUtils/Registry
  * @author Tyler
  */
@@ -13,7 +12,7 @@ import { log } from '../logger.mjs';
 
 /**
  * Register custom spell lists with the D&D 5e SpellListRegistry.
- * @returns {Promise<Object>} Registration result statistics
+ * @returns {Promise<object>} Registration result statistics
  */
 export async function registerCustomSpellLists() {
   const result = { total: 0, registered: 0, skipped: 0, failed: 0, errors: [] };

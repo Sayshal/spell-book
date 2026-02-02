@@ -5,7 +5,6 @@
  * for display purposes within the Spell Book module. It handles transformation of raw
  * spell data into display-ready formats, extraction of filterable metadata, and creation
  * of formatted presentation elements.
- *
  * @module UIUtils/SpellFormatting
  * @author Tyler
  */
@@ -17,11 +16,11 @@ import * as UIUtils from './_module.mjs';
 
 /**
  * Process spell list data for display.
- * @param {Object} spellList - The spell list to process
- * @param {Map<string, any>|null} [classFolderCache=null] - Cache of class folders keyed by pack:identifier
- * @param {Array<Object>|null} [availableSpellLists=null] - Array of available spell list metadata objects
+ * @param {object} spellList - The spell list to process
+ * @param {Map<string, any>|null} [classFolderCache] - Cache of class folders keyed by pack:identifier
+ * @param {Array<object> | null} [availableSpellLists] - Array of available spell list metadata objects
  * @param {Set<string>} [enabledElements] - Set of enabled element names. If not provided, will check settings for each element.
- * @returns {Object} Processed spell list with display data
+ * @returns {object} Processed spell list with display data
  */
 export function processSpellListForDisplay(spellList, classFolderCache = null, availableSpellLists = null, enabledElements = null) {
   log(3, 'Processing spell list for display.', { spellListName: spellList.document?.name, isCustom: !!spellList.document?.flags?.[MODULE.ID]?.isCustom });
@@ -53,9 +52,9 @@ export function processSpellListForDisplay(spellList, classFolderCache = null, a
 
 /**
  * Process spell item for display in the GM interface.
- * @param {Object} spell - The spell to process
+ * @param {object} spell - The spell to process
  * @param {Set<string>} [enabledElements] - Set of enabled element names. If not provided, will check settings for each element.
- * @returns {Object} Processed spell with display data
+ * @returns {object} Processed spell with display data
  */
 export function processSpellItemForDisplay(spell, enabledElements = null) {
   const processed = foundry.utils.deepClone(spell);
@@ -67,71 +66,54 @@ export function processSpellItemForDisplay(spell, enabledElements = null) {
 }
 
 /**
- * Format spell components for display.
- * @param {Object} spell - The spell object
+ * Format spell components for display. Uses spell.labels computed by dnd5e (for documents)
+ * or compendium-processor (for index data).
+ * @param {object} spell - The spell object
  * @returns {string} Formatted components string (e.g., "V, S, M")
  */
 export function formatSpellComponents(spell) {
+  // dnd5e documents provide labels.components.all with { abbr } objects
   if (spell.labels?.components?.all) {
-    const components = [];
-    for (const c of spell.labels.components.all) components.push(c.abbr);
-    return components.join(', ');
+    return spell.labels.components.all.map((c) => c.abbr).join(', ');
   }
-  if (spell.labels?.components?.vsm) return spell.labels.components.vsm;
-  if (spell.system?.properties?.length) {
-    const components = [];
-    const componentMap = { vocal: 'V', somatic: 'S', material: 'M', concentration: 'C', ritual: 'R' };
-    for (const prop of spell.system.properties) if (componentMap[prop]) components.push(componentMap[prop]);
-    return components.join(', ');
-  }
-  return '';
+  // compendium-processor index data provides labels.components.vsm as string
+  return spell.labels?.components?.vsm || '';
 }
 
 /**
- * Format spell activation for display.
- * @param {Object} spell - The spell object
+ * Format spell activation for display. Uses spell.labels computed by dnd5e (for documents)
+ * or compendium-processor (for index data).
+ * @param {object} spell - The spell object
  * @returns {string} Formatted activation string (e.g., "1 Action", "2 Bonus Actions")
  */
 export function formatSpellActivation(spell) {
-  if (spell.labels?.activation) return spell.labels.activation;
-  if (spell.system?.activation?.type) {
-    const type = spell.system.activation.type;
-    const value = spell.system.activation.value || 1;
-    const typeLabel = CONFIG.DND5E.abilityActivationTypes[type];
-    if (value === 1 || value === null) return typeLabel;
-    return `${value} ${typeLabel}s`;
-  }
-  return '';
+  return spell.labels?.activation || '';
 }
 
 /**
- * Format spell school for display.
- * @param {Object} spell - The spell object
+ * Format spell school for display. Uses spell.labels computed by dnd5e (for documents)
+ * or compendium-processor (for index data).
+ * @param {object} spell - The spell object
  * @returns {string} Formatted school string (e.g., "Evocation", "Divination")
  */
 export function formatSpellSchool(spell) {
-  if (spell.labels?.school) return spell.labels.school;
-  if (spell.system?.school) return DataUtils.getConfigLabel(CONFIG.DND5E.spellSchools, spell.system.school) || spell.system.school;
-  return '';
+  return spell.labels?.school || '';
 }
 
 /**
- * Format spell level for display.
- * @param {Object} spell - The spell object containing level information
+ * Format spell level for display. Uses spell.labels computed by dnd5e (for documents)
+ * or compendium-processor (for index data).
+ * @param {object} spell - The spell object containing level information
  * @returns {string} Formatted spell level string (e.g., "Cantrip", "1st Level")
  */
 export function formatSpellLevel(spell) {
-  if (spell.labels?.level) return spell.labels.level;
-  if (spell.system?.level === undefined) return '';
-  const level = spell.system.level;
-  if (level === 0) return game.i18n.localize('DND5E.SpellCantrip');
-  return CONFIG.DND5E?.spellLevels?.[level] || `${level}`;
+  return spell.labels?.level || '';
 }
 
 /**
  * Format spell range for display.
- * @param {Object} spell - The spell object containing range information
- * @param actor Current actor
+ * @param {object} spell - The spell object containing range information
+ * @param {object} actor - Current actor
  * @returns {string} Formatted range string (e.g., "Touch", "30 feet", "Self")
  */
 export function formatSpellRange(spell, actor) {
@@ -150,20 +132,13 @@ export function formatSpellRange(spell, actor) {
 }
 
 /**
- * Format material components for display when consumed.
- * @param {Object} spell - The spell object
+ * Format material components for display when consumed. Uses spell.labels computed by dnd5e (for documents)
+ * or compendium-processor (for index data).
+ * @param {object} spell - The spell object
  * @returns {string} Formatted material components string with cost information
  */
 export function formatMaterialComponents(spell) {
-  if (spell.labels?.materials) return spell.labels.materials;
-  const materials = spell.system?.materials;
-  let result = '';
-  if (materials && materials.consumed) {
-    if (materials.cost && materials.cost > 0) result = game.i18n.format('SPELLBOOK.MaterialComponents.Cost', { cost: materials.cost });
-    else if (materials.value) result = materials.value;
-    else result = game.i18n.localize('SPELLBOOK.MaterialComponents.UnknownCost');
-  }
-  return result;
+  return spell.labels?.materials || '';
 }
 
 /**
@@ -180,8 +155,8 @@ export function getLocalizedPreparationMode(mode) {
 
 /**
  * Extracts additional spell data for filtering.
- * @param {Object} spell - The spell document
- * @returns {Object} Additional data for filtering
+ * @param {object} spell - The spell document
+ * @returns {object} Additional data for filtering
  */
 export function extractSpellFilterData(spell) {
   if (!spell) return {};
@@ -200,8 +175,8 @@ export function extractSpellFilterData(spell) {
 
 /**
  * Extract casting time information from spell.
- * @param {Object} spell - The spell document
- * @returns {Object} Casting time data structure
+ * @param {object} spell - The spell document
+ * @returns {object} Casting time data structure
  */
 export function extractCastingTime(spell) {
   return { value: spell.system?.activation?.value || '', type: spell.system?.activation?.type || '', label: spell.labels?.activation || '' };
@@ -209,8 +184,8 @@ export function extractCastingTime(spell) {
 
 /**
  * Extract range information from spell.
- * @param {Object} spell - The spell document
- * @returns {Object} Range data structure
+ * @param {object} spell - The spell document
+ * @returns {object} Range data structure
  */
 export function extractRange(spell) {
   return { units: spell.system?.range?.units || '', label: spell.labels?.range || '' };
@@ -218,7 +193,7 @@ export function extractRange(spell) {
 
 /**
  * Extract damage types from spell.
- * @param {Object} spell - The spell document
+ * @param {object} spell - The spell document
  * @returns {Array<string>} Array of damage type identifiers
  */
 export function extractDamageTypes(spell) {
@@ -242,27 +217,39 @@ export function extractDamageTypes(spell) {
 }
 
 /**
+ * Check if a spell has a specific property. Handles both Set (document) and Array (index data).
+ * @param {object} spell - The spell document or index data
+ * @param {string} property - The property to check (e.g., 'ritual', 'concentration', 'vocal')
+ * @returns {boolean} Whether the spell has the property
+ */
+export function hasSpellProperty(spell, property) {
+  const props = spell?.system?.properties;
+  if (!props) return false;
+  return props.has?.(property) ?? props.includes?.(property) ?? false;
+}
+
+/**
  * Check if spell is a ritual.
- * @param {Object} spell - The spell document
+ * @param {object} spell - The spell document or index data
  * @returns {boolean} Whether the spell is a ritual
  */
 export function checkIsRitual(spell) {
-  return spell.system?.properties?.has?.('ritual') ?? false;
+  return hasSpellProperty(spell, 'ritual');
 }
 
 /**
  * Check if spell requires concentration.
- * @param {Object} spell - The spell document
+ * @param {object} spell - The spell document or index data
  * @returns {boolean} Whether the spell requires concentration
  */
 export function checkIsConcentration(spell) {
-  return spell.system?.properties?.has?.('concentration') ?? false;
+  return hasSpellProperty(spell, 'concentration');
 }
 
 /**
  * Extract material component information from spell.
- * @param {Object} spell - The spell document
- * @returns {Object} Material component data structure
+ * @param {object} spell - The spell document
+ * @returns {object} Material component data structure
  */
 export function extractMaterialComponents(spell) {
   const materials = spell.system?.materials || {};
@@ -271,7 +258,7 @@ export function extractMaterialComponents(spell) {
 
 /**
  * Check if a spell requires a saving throw.
- * @param {Object} spell - The spell document
+ * @param {object} spell - The spell document
  * @returns {boolean} Whether the spell requires a save
  */
 export function checkSpellRequiresSave(spell) {
@@ -293,7 +280,7 @@ export function checkSpellRequiresSave(spell) {
 
 /**
  * Extract conditions that might be applied by a spell.
- * @param {Object} spell - The spell document
+ * @param {object} spell - The spell document
  * @returns {Array<string>} Array of condition identifiers
  */
 export function extractSpellConditions(spell) {
@@ -312,8 +299,8 @@ export function extractSpellConditions(spell) {
 
 /**
  * Extract spell source information from spell data.
- * @param {Object} spell - The spell object to extract source from
- * @returns {Object} Spell source data with label and normalized ID
+ * @param {object} spell - The spell object to extract source from
+ * @returns {object} Spell source data with label and normalized ID
  */
 function extractSpellSource(spell) {
   let spellSource = spell.system?.source?.custom || spell.system?.source?.book;
@@ -324,7 +311,7 @@ function extractSpellSource(spell) {
 
 /**
  * Create a spell icon link.
- * @param {Object} spell - The spell data object
+ * @param {object} spell - The spell data object
  * @returns {string} HTML string with icon link
  */
 export function createSpellIconLink(spell) {
@@ -350,7 +337,7 @@ export function createSpellIconLink(spell) {
 
 /**
  * Get data attributes for a spell item.
- * @param {Object} spell - The spell object
+ * @param {object} spell - The spell object
  * @returns {string} HTML-ready data attributes
  */
 export function getSpellDataAttributes(spell) {
@@ -376,8 +363,8 @@ export function getSpellDataAttributes(spell) {
 
 /**
  * Get the preparation tags for a spell.
- * @param {Object} spell - The spell object
- * @param {Object} actor - The actor (needed for granted item lookups and class data)
+ * @param {object} spell - The spell object
+ * @param {object} actor - The actor (needed for granted item lookups and class data)
  * @returns {Array} Array of tag objects with cssClass, text, and tooltip properties
  */
 export function getSpellPreparationTags(spell, actor) {

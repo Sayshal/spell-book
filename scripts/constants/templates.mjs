@@ -4,7 +4,6 @@
  * This module defines all template paths used with Foundry's renderTemplate() function
  * to render application interfaces, dialogs, and reusable components. All paths are
  * organized by functional area and include type definitions.
- *
  * @module Constants/Templates
  * @author Tyler
  */
@@ -12,8 +11,7 @@
 /**
  * Complete template path configuration for the Spell Book module.
  * Organized by functional area for easy navigation and maintenance.
- *
- * @typedef {Object} TemplateConfig
+ * @typedef {object} TemplateConfig
  * @property {AnalyticsTemplates} ANALYTICS - Template paths for analytics dashboard and reports
  * @property {ComponentTemplates} COMPONENTS - Reusable component template paths for UI elements
  * @property {DialogTemplates} DIALOGS - Dialog application template paths for user interactions
@@ -25,16 +23,14 @@
 
 /**
  * Analytics dashboard template paths for spell usage tracking and reporting.
- *
- * @typedef {Object} AnalyticsTemplates
+ * @typedef {object} AnalyticsTemplates
  * @property {string} DASHBOARD - Main analytics dashboard template for viewing spell usage statistics
  */
 
 /**
  * Reusable component template paths for common UI elements.
  * These templates are used across multiple applications for consistency.
- *
- * @typedef {Object} ComponentTemplates
+ * @typedef {object} ComponentTemplates
  * @property {string} CANTRIP_NOTIFICATION - GM notification template for cantrip changes
  * @property {string} EMPTY - Empty state component template for when no data is available
  * @property {string} ERROR - Error message component template for displaying errors
@@ -58,8 +54,7 @@
 /**
  * Dialog application template paths for user interaction dialogs.
  * Covers all modal dialogs and configuration interfaces.
- *
- * @typedef {Object} DialogTemplates
+ * @typedef {object} DialogTemplates
  * @property {string} ANALYTICS_IMPORT_SUMMARY - Analytics data import summary dialog
  * @property {string} COMPENDIUM_SELECTION - Compendium selection dialog template
  * @property {string} CREATE_SPELL_LIST - Create new spell list dialog template
@@ -83,8 +78,7 @@
 
 /**
  * Spell List Manager application template paths for GM spell list management.
- *
- * @typedef {Object} SpellListManagerTemplates
+ * @typedef {object} SpellListManagerTemplates
  * @property {string} AVAILABLE_SPELLS - Available spells panel template showing spells to add
  * @property {string} FOOTER - Application footer template with action buttons
  * @property {string} LIST_CONTENT - Selected list content panel template showing current spells
@@ -94,8 +88,7 @@
 
 /**
  * Player Spell Book application template paths for the main player interface.
- *
- * @typedef {Object} PlayerSpellBookTemplates
+ * @typedef {object} PlayerSpellBookTemplates
  * @property {string} CONTAINER - Main spell container template for spell display
  * @property {string} FOOTER - Application footer template with preparation controls
  * @property {string} SIDEBAR - Application sidebar template with filters and navigation
@@ -106,15 +99,13 @@
 
 /**
  * Troubleshooter application template paths for debugging and diagnostics.
- *
- * @typedef {Object} TroubleshooterTemplates
+ * @typedef {object} TroubleshooterTemplates
  * @property {string} MAIN - Main troubleshooter interface template for system diagnostics
  */
 
 /**
  * Party spell coordination template paths for multi-character spell management.
- *
- * @typedef {Object} PartySpellManagerTemplates
+ * @typedef {object} PartySpellManagerTemplates
  * @property {string} MAIN - Main party spell manager template for coordination interface
  * @property {string} SYNERGY_ANALYSIS - Spell synergy analysis template for party optimization
  */
@@ -131,7 +122,6 @@
  * - Templates are grouped by functional area for easy maintenance
  * - Each template has a descriptive comment explaining its purpose
  * - Path constants follow a consistent naming convention
- *
  * @type {TemplateConfig}
  */
 export const TEMPLATES = {

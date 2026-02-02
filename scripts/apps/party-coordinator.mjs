@@ -4,12 +4,12 @@
  * A party management interface for coordinating spells across multiple
  * party members. This application provides spell comparison, focus assignment, synergy
  * analysis, and collaborative spell planning capabilities for groups of spellcasters.
- *
  * @module Applications/PartyCoordinator
  * @author Tyler
  */
 
-import { MODULE, TEMPLATES } from '../constants/_module.mjs';
+import { FLAGS, TEMPLATES } from '../constants/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { PartyMode } from '../managers/_module.mjs';
 import { FocusSettings, SynergyAnalysis } from '../dialogs/_module.mjs';
 import { log } from '../logger.mjs';
@@ -41,10 +41,10 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Create a new Party Spell Manager application.
-   * @param {Array<Object>} [partyActors=[]] - Array of party member actors
-   * @param {Object} [viewingActor=null] - The actor who opened this view
-   * @param {Object} [groupActor=null] - The group actor if opened from group sheet
-   * @param {Object} [options={}] - Additional application options
+   * @param {Array<object>} [partyActors] - Array of party member actors
+   * @param {object} [viewingActor] - The actor who opened this view
+   * @param {object} [groupActor] - The group actor if opened from group sheet
+   * @param {object} [options] - Additional application options
    */
   constructor(partyActors = [], viewingActor = null, groupActor = null, options = {}) {
     super(options);
@@ -139,7 +139,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Get spell level groups for display organization.
    * @param {Object<string, Object>} spellsByLevel - Spells organized by level
-   * @returns {Array<{level: number, levelName: string, spells: Object[]}>} Array of spell level group objects
+   * @returns {Array<{level: number, levelName: string, spells: object[]}>} Array of spell level group objects
    */
   getSpellLevelGroups(spellsByLevel) {
     const levelsMapped = Object.keys(spellsByLevel)
@@ -186,22 +186,19 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @param {PointerEvent} _event - The originating click event.
    * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static #toggleSpellHeader(_event, target) {
+  static async #toggleSpellHeader(_event, target) {
     const levelContainer = target.closest('.spell-level-group');
     if (!levelContainer) return;
     const levelId = levelContainer.dataset.spellLevel;
-    const isCollapsed = levelContainer.classList.toggle('collapsed');
-    const collapsedLevels = game.user.getFlag(MODULE.ID, 'partyCollapsedLevels') || [];
-    if (isCollapsed && !collapsedLevels.includes(levelId)) collapsedLevels.push(levelId);
-    else if (!isCollapsed && collapsedLevels.includes(levelId)) collapsedLevels.splice(collapsedLevels.indexOf(levelId), 1);
-    game.user.setFlag(MODULE.ID, 'partyCollapsedLevels', collapsedLevels);
+    const isCollapsed = await DataUtils.CollapsedStateManager.toggle(FLAGS.PARTY_COLLAPSED_LEVELS, levelId);
+    levelContainer.classList.toggle('collapsed', isCollapsed);
     const header = levelContainer.querySelector('.level-header');
     const spellList = levelContainer.querySelector('.spells-grid');
     const collapseIcon = header?.querySelector('.collapse-indicator');
     if (header) header.setAttribute('aria-expanded', !isCollapsed);
     if (spellList) spellList.style.display = isCollapsed ? 'none' : '';
     if (collapseIcon) collapseIcon.className = `fas fa-caret-${isCollapsed ? 'right' : 'down'} collapse-indicator`;
-    log(3, 'Toggle Spell Level called.', { levelContainer, isCollapsed, collapsedLevels });
+    log(3, 'Toggle Spell Level called.', { levelContainer, isCollapsed });
   }
 
   /**
@@ -296,7 +293,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Show context menu for member card.
    * @param {Event} event - The right-click event
-   * @param {Object} actor - The actor associated with the card
+   * @param {object} actor - The actor associated with the card
    * @private
    */
   async _showMemberCardContextMenu(event, actor) {
@@ -370,7 +367,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   _restoreCollapsedLevels() {
     log(3, 'Restore Collapsed Levels called.');
-    const collapsedLevels = game.user.getFlag(MODULE.ID, 'partyCollapsedLevels') || [];
+    const collapsedLevels = DataUtils.CollapsedStateManager.get(FLAGS.PARTY_COLLAPSED_LEVELS);
     collapsedLevels.forEach((levelId) => {
       const levelContainer = this.element.querySelector(`.spell-level-group[data-spell-level="${levelId}"]`);
       if (levelContainer) {

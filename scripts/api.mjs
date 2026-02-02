@@ -4,7 +4,6 @@
  * Provides external access to module functionality through a unified API interface.
  * This module creates and registers the global SPELLBOOK API object that allows
  * other modules and macros to interact with Spell Book features programmatically.
- *
  * @module API
  * @author Tyler
  */
@@ -21,7 +20,7 @@ import { MODULE } from './constants/_module.mjs';
 
 /**
  * Creates and registers the module's API on the global scope.
- * @returns {Object|null} The API object, or null if creation failed
+ * @returns {object | null} The API object, or null if creation failed
  */
 export function createAPI() {
   const api = {

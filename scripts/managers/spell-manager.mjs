@@ -5,7 +5,6 @@
  * Spell Book module. This class serves as the central coordination point for all
  * spell-related operations including preparation tracking, spell status determination,
  * class-specific spell management, and integration with various spell casting systems.
- *
  * @module Managers/SpellManager
  * @author Tyler
  */
@@ -21,13 +20,13 @@ import { Cantrips, RuleSet } from './_module.mjs';
 export class SpellManager {
   /**
    * Create a new SpellManager for an actor.
-   * @param {Object} actor - The actor to manage spells for
-   * @param {Object} app - The parent spell book application (optional)
+   * @param {object} actor - The actor to manage spells for
+   * @param {object} state - The State manager instance (optional)
    */
-  constructor(actor, app = null) {
+  constructor(actor, state = null) {
     log(3, `Creating SpellManager.`, { actorName: actor.name, actorId: actor.id });
     this.actor = actor;
-    this.app = app;
+    this._state = state;
     this._settingsCache = new Map();
     this.cantripManager = new Cantrips(actor, this);
     log(3, `SpellManager created.`, { actorName: actor.name, actorId: actor.id });
@@ -44,7 +43,7 @@ export class SpellManager {
   /**
    * Get cantrip and spell settings for the actor.
    * @param {string} classIdentifier - Class identifier for class-specific rules (required)
-   * @returns {ActorSpellSettings} Actor's spell settings
+   * @returns {object} Actor's spell settings
    */
   getSettings(classIdentifier) {
     if (this._settingsCache.has(classIdentifier)) return this._settingsCache.get(classIdentifier);
@@ -86,7 +85,7 @@ export class SpellManager {
   /**
    * Prepare batch data for efficient spell processing.
    * @param {string} classIdentifier - The class identifier to prepare data for
-   * @returns {Object} Batch data containing Maps and cached values for O(1) lookups
+   * @returns {object} Batch data containing Maps and cached values for O(1) lookups
    */
   prepareBatchData(classIdentifier) {
     log(3, 'Preparing batch data for spell processing', { actorName: this.actor.name, classIdentifier });
@@ -94,9 +93,8 @@ export class SpellManager {
     const classPreparedSpells = preparedByClass[classIdentifier] || [];
     const ownedSpellsMap = new Map();
     const unassignedSpellsMap = new Map();
-    for (const item of this.actor.items) {
-      if (item.type !== 'spell') continue;
-      const spellUuid = item._stats?.compendiumSource || item.uuid;
+    for (const item of this.actor.itemTypes.spell) {
+      const spellUuid = DataUtils.getCanonicalSpellUuid(item);
       const sourceClass = item.system?.sourceClass || item.sourceClass;
       if (!ownedSpellsMap.has(spellUuid)) ownedSpellsMap.set(spellUuid, []);
       ownedSpellsMap.get(spellUuid).push({ item, sourceClass, prepared: item.system.prepared, method: item.system.method });
@@ -125,42 +123,34 @@ export class SpellManager {
 
   /**
    * Get spell preparation status using pre-fetched batch data.
-   * @param {Object} spell - The spell to check
+   * @param {object} spell - The spell to check
    * @param {string} classIdentifier - The specific class context
-   * @param {Object} batchData - Pre-fetched batch data from prepareBatchData()
-   * @returns {Object} Preparation status information
+   * @param {object} batchData - Pre-fetched batch data from prepareBatchData()
+   * @returns {object} Preparation status information
    */
   getSpellPreparationStatus(spell, classIdentifier, batchData) {
     if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
-    const spellUuid = spell.compendiumUuid || spell.uuid;
     if (spell.aggregatedModes) {
       const status = { prepared: spell.aggregatedModes.isPreparedForCheckbox, disabled: false, disabledReason: '' };
-      if (spell.system?.level === 0 && batchData.cantripLimits) {
-        const { max, current } = batchData.cantripLimits;
-        const isAtMax = current >= max;
-        if (isAtMax && !status.prepared) {
-          const { behavior } = batchData.cantripSettings;
-          if (behavior === MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) {
-            status.disabled = true;
-            status.disabledReason = 'SPELLBOOK.Cantrips.MaximumReached';
-          }
-        }
+      if (spell.system?.level !== 0 || status.prepared || !batchData.cantripLimits) return status;
+      const { max, current } = batchData.cantripLimits;
+      if (current < max) return status;
+      if (batchData.cantripSettings?.behavior === MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) {
+        status.disabled = true;
+        status.disabledReason = 'SPELLBOOK.Cantrips.MaximumReached';
       }
       return status;
     }
+    const spellUuid = spell.compendiumUuid || spell.uuid;
     const spellKey = this._createClassSpellKey(spellUuid, classIdentifier);
     const isPreparedForClass = batchData.classPreparedSpells.includes(spellKey);
     const status = { prepared: isPreparedForClass, disabled: false, disabledReason: '' };
-    if (spell.system?.level === 0 && batchData.cantripLimits) {
-      const { max, current } = batchData.cantripLimits;
-      const isAtMax = current >= max;
-      if (isAtMax && !isPreparedForClass) {
-        const { behavior } = batchData.cantripSettings;
-        if (behavior === MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) {
-          status.disabled = true;
-          status.disabledReason = 'SPELLBOOK.Cantrips.MaximumReached';
-        }
-      }
+    if (spell.system?.level !== 0 || isPreparedForClass || !batchData.cantripLimits) return status;
+    const { max, current } = batchData.cantripLimits;
+    if (current < max) return status;
+    if (batchData.cantripSettings?.behavior === MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) {
+      status.disabled = true;
+      status.disabledReason = 'SPELLBOOK.Cantrips.MaximumReached';
     }
     return status;
   }
@@ -178,7 +168,7 @@ export class SpellManager {
   /**
    * Parse a class-spell key back into components.
    * @param {string} key - The class-spell key
-   * @returns {Object} Object with classIdentifier and spellUuid
+   * @returns {object} Object with classIdentifier and spellUuid
    */
   _parseClassSpellKey(key) {
     const [classIdentifier, ...uuidParts] = key.split(':');
@@ -188,15 +178,7 @@ export class SpellManager {
   /**
    * Save prepared spells for a specific class.
    * @param {string} classIdentifier - The class identifier
-   * @param {Object<string, {
-   *   uuid: string,
-   *   isPrepared: boolean,
-   *   wasPrepared: boolean,
-   *   spellLevel: number,
-   *   preparationMode?: string,
-   *   name: string,
-   *   isRitual?: boolean
-   * }>} classSpellData - Object with spell data keyed by classSpellKey
+   * @param {object} classSpellData - Object with spell data keyed by classSpellKey
    * @returns {Promise<{
    *   cantripChanges: { added: string[], removed: string[], hasChanges: boolean },
    *   spellChanges: { added: string[], removed: string[], hasChanges: boolean }
@@ -285,17 +267,13 @@ export class SpellManager {
    * @private
    * @param {string} uuid - Spell UUID
    * @param {string} sourceClass - Source class identifier
-   * @param {Object[]} spellsToCreate - Array to add creation data to
+   * @param {object[]} spellsToCreate - Array to add creation data to
    * @returns {Promise<void>}
    */
   async _ensureRitualSpellOnActor(uuid, sourceClass, spellsToCreate) {
     log(3, `Ensuring ritual spell on actor.`, { actorName: this.actor.name, uuid, sourceClass });
-    const existingRitualSpell = this.actor.items.find(
-      (i) =>
-        i.type === 'spell' &&
-        (i._stats?.compendiumSource === uuid || i.uuid === uuid) &&
-        (i.system.sourceClass === sourceClass || i.sourceClass === sourceClass) &&
-        i.system?.method === MODULE.SPELL_MODE.RITUAL
+    const existingRitualSpell = this.actor.itemTypes.spell.find(
+      (s) => (s._stats?.compendiumSource === uuid || s.uuid === uuid) && (s.system.sourceClass === sourceClass || s.sourceClass === sourceClass) && s.system?.method === MODULE.SPELL_MODE.RITUAL
     );
     if (existingRitualSpell) {
       log(3, `Ritual spell already exists on actor.`, { actorName: this.actor.name, uuid, sourceClass });
@@ -324,7 +302,7 @@ export class SpellManager {
    */
   _getClassPreparationMode(classIdentifier) {
     log(3, `Getting class preparation mode.`, { actorName: this.actor.name, classIdentifier });
-    const spellcastingConfig = this.app?._state?.getSpellcastingConfigForClass?.(classIdentifier) ?? DataUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
+    const spellcastingConfig = this._state?.getSpellcastingConfigForClass?.(classIdentifier) ?? DataUtils.getSpellcastingConfigForClass(this.actor, classIdentifier);
     if (spellcastingConfig?.type === MODULE.SPELL_MODE.PACT) return MODULE.SPELL_MODE.PACT;
     return MODULE.SPELL_MODE.SPELL;
   }
@@ -335,13 +313,13 @@ export class SpellManager {
    * @param {string} uuid - Spell UUID
    * @param {string} sourceClass - Source class identifier
    * @param {string} preparationMode - Preparation mode for this class
-   * @param {Object[]} spellsToCreate - Array to add creation data to
-   * @param {Object[]} spellsToUpdate - Array to add update data to
+   * @param {object[]} spellsToCreate - Array to add creation data to
+   * @param {object[]} spellsToUpdate - Array to add update data to
    * @returns {Promise<void>}
    */
   async _ensureSpellOnActor(uuid, sourceClass, preparationMode, spellsToCreate, spellsToUpdate) {
     log(3, `Ensuring spell on actor.`, { actorName: this.actor.name, uuid, sourceClass, preparationMode });
-    const allMatchingSpells = this.actor.items.filter((i) => i.type === 'spell' && (i._stats?.compendiumSource === uuid || i.uuid === uuid));
+    const allMatchingSpells = this.actor.itemTypes.spell.filter((s) => s._stats?.compendiumSource === uuid || s.uuid === uuid);
     const matchingSpells = allMatchingSpells.filter((i) => {
       const spellSourceClass = i.system?.sourceClass || i.sourceClass;
       if (spellSourceClass && spellSourceClass !== sourceClass) return false;
@@ -424,14 +402,13 @@ export class SpellManager {
    */
   async _handleUnpreparingSpell(uuid, sourceClass, spellIdsToRemove) {
     log(3, `Handling unpreparing spell.`, { actorName: this.actor.name, uuid, sourceClass });
-    const matchingSpells = this.actor.items.filter((i) => {
-      if (i.type !== 'spell') return false;
-      if (i._stats?.compendiumSource !== uuid && i.uuid !== uuid) return false;
-      const spellSourceClass = i.system?.sourceClass || i.sourceClass;
+    const matchingSpells = this.actor.itemTypes.spell.filter((s) => {
+      if (s._stats?.compendiumSource !== uuid && s.uuid !== uuid) return false;
+      const spellSourceClass = s.system?.sourceClass || s.sourceClass;
       if (spellSourceClass !== sourceClass) return false;
-      const isAlwaysPrepared = i.system.prepared === 2;
-      const isGranted = !!i.flags?.dnd5e?.cachedFor;
-      const isInnateOrAtWill = [MODULE.SPELL_MODE.INNATE, MODULE.SPELL_MODE.AT_WILL].includes(i.system.method);
+      const isAlwaysPrepared = s.system.prepared === 2;
+      const isGranted = !!s.flags?.dnd5e?.cachedFor;
+      const isInnateOrAtWill = [MODULE.SPELL_MODE.INNATE, MODULE.SPELL_MODE.AT_WILL].includes(s.system.method);
       return !isAlwaysPrepared && !isGranted && !isInnateOrAtWill;
     });
     if (matchingSpells.length === 0) return;
@@ -462,7 +439,7 @@ export class SpellManager {
 
   /**
    * Check if a spell can be cast as a ritual.
-   * @param {Object} spell - The spell item
+   * @param {object} spell - The spell item
    * @returns {boolean} Whether the spell has ritual capability
    * @private
    */
@@ -484,7 +461,7 @@ export class SpellManager {
     const cleanedSpells = [];
     for (const classSpellKey of preparedByClass[classIdentifier]) {
       const parsed = this._parseClassSpellKey(classSpellKey);
-      const spell = await fromUuid(parsed.spellUuid);
+      const spell = fromUuidSync(parsed.spellUuid);
       if (spell && spell.system.level !== 0) cleanedSpells.push(classSpellKey);
     }
     if (cleanedSpells.length !== preparedByClass[classIdentifier].length) {
@@ -507,11 +484,8 @@ export class SpellManager {
       const cleanedKeys = [];
       for (const spellKey of spellKeys) {
         const parsed = this._parseClassSpellKey(spellKey);
-        const actualSpell = this.actor.items.find(
-          (item) =>
-            item.type === 'spell' &&
-            (item._stats?.compendiumSource === parsed.spellUuid || item.uuid === parsed.spellUuid) &&
-            (item.system?.sourceClass === classIdentifier || item.sourceClass === classIdentifier)
+        const actualSpell = this.actor.itemTypes.spell.find(
+          (s) => (s._stats?.compendiumSource === parsed.spellUuid || s.uuid === parsed.spellUuid) && (s.system?.sourceClass === classIdentifier || s.sourceClass === classIdentifier)
         );
         if (actualSpell) cleanedKeys.push(spellKey);
         else hasChanges = true;
@@ -527,7 +501,7 @@ export class SpellManager {
 
   /**
    * Determine if a spell can be changed based on class rules and current state.
-   * @param {Object} spell - The spell being modified
+   * @param {object} spell - The spell being modified
    * @param {boolean} isChecked - Whether the spell is being checked (true) or unchecked (false)
    * @param {boolean} wasPrepared - Whether the spell was previously prepared
    * @param {boolean} isLevelUp - Whether this is during level-up
@@ -535,7 +509,7 @@ export class SpellManager {
    * @param {string} classIdentifier - The class identifier
    * @param {number} currentPrepared - Current number of prepared spells for this class
    * @param {number} maxPrepared - Maximum allowed prepared spells for this class
-   * @returns {Object} Status object with allowed and message properties
+   * @returns {object} Status object with allowed and message properties
    */
   canChangeSpellStatus(spell, isChecked, wasPrepared, isLevelUp, isLongRest, classIdentifier, currentPrepared, maxPrepared) {
     log(3, 'Can status be changed.', { actorName: this.actor.name, spellName: spell.name, isChecked, wasPrepared, isLevelUp, isLongRest, classIdentifier, currentPrepared, maxPrepared });
@@ -595,11 +569,10 @@ export class SpellManager {
   async _cleanupUnpreparedSpells() {
     const shouldCleanup = game.settings.get(MODULE.ID, SETTINGS.AUTO_DELETE_UNPREPARED_SPELLS);
     if (!shouldCleanup) return;
-    const unpreparedSpells = this.actor.items.filter((item) => {
-      if (item.type !== 'spell') return false;
-      if (item.system.method !== MODULE.SPELL_MODE.SPELL) return false;
-      if (item.system.prepared !== 0) return false;
-      if (item.flags?.dnd5e?.cachedFor) return false;
+    const unpreparedSpells = this.actor.itemTypes.spell.filter((s) => {
+      if (s.system.method !== MODULE.SPELL_MODE.SPELL) return false;
+      if (s.system.prepared !== 0) return false;
+      if (s.flags?.dnd5e?.cachedFor) return false;
       return true;
     });
     if (unpreparedSpells.length === 0) return;
@@ -609,61 +582,25 @@ export class SpellManager {
   }
 
   /**
-   * Apply all queued source class fixes to the actor in a single batch update.
-   * @returns {Promise<void>}
-   */
-  async applySourceClassFixes() {
-    if (!this.app?._sourceClassFixQueue?.length) return;
-    log(3, `Applying ${this.app._sourceClassFixQueue.length} source class fix${this.app._sourceClassFixQueue.length !== 1 ? 'es' : ''}.`);
-    const updates = this.app._sourceClassFixQueue.map((fix) => ({ _id: fix.spellId, 'system.sourceClass': fix.sourceClass }));
-    this.app._sourceClassFixQueue = [];
-    await this.actor.updateEmbeddedDocuments('Item', updates);
-    log(3, `Successfully fixed source class for ${updates.length} spell${updates.length !== 1 ? 's' : ''}.`);
-  }
-
-  /**
    * Attempt to automatically determine the correct source class for a prepared spell.
-   * @param {Object} spell - The spell to analyze
+   * @param {object} spell - The spell to analyze
+   * @param {object} classSpellData - Optional class spell data for lookup (passed from caller)
    * @returns {string|null} The determined source class identifier, or null if couldn't be determined
    */
-  attemptToFixSourceClass(spell) {
+  attemptToFixSourceClass(spell, classSpellData = null) {
     log(3, `Detecting source class for ${spell.name}.`, { spell });
     const spellcastingClasses = this.actor.spellcastingClasses || {};
     const classIdentifiers = Object.keys(spellcastingClasses);
     if (classIdentifiers.length === 0) return null;
     if (classIdentifiers.length === 1) return classIdentifiers[0];
-    if (this.app?._state?.classSpellData) {
+    const dataToSearch = classSpellData || this._state?.classSpellData;
+    if (dataToSearch) {
       const spellUuid = spell.compendiumUuid || spell.uuid;
       for (const classIdentifier of classIdentifiers) {
-        const classData = this.app._state.classSpellData[classIdentifier];
+        const classData = dataToSearch[classIdentifier];
         if (classData?.spells?.some((s) => s.compendiumUuid === spellUuid || s.uuid === spellUuid)) return classIdentifier;
       }
     }
     return null;
-  }
-
-  /**
-   * Prepare class-specific preparation data for footer display.
-   * @returns {Array<Object>} Array of class preparation data
-   */
-  prepareClassPreparationData() {
-    log(3, 'Preparing class preparation data (for footer).');
-    if (!this.app?._state?.classSpellData) return [];
-    const activeTab = this.app.tabGroups?.['spellbook-tabs'];
-    const classPreparationData = [];
-    const activeClassMatch = activeTab?.match(/^([^T]+)Tab$/);
-    const activeClassIdentifier = activeClassMatch ? activeClassMatch[1] : null;
-    for (const [identifier, classData] of Object.entries(this.app._state.classSpellData)) {
-      const isActive = identifier === activeClassIdentifier;
-      classPreparationData.push({
-        identifier: identifier,
-        className: classData.className,
-        current: classData.spellPreparation?.current || 0,
-        maximum: classData.spellPreparation?.maximum || 0,
-        isActive: isActive
-      });
-    }
-    classPreparationData.sort((a, b) => a.className.localeCompare(b.className));
-    return classPreparationData;
   }
 }

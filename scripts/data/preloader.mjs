@@ -4,7 +4,6 @@
  * Manages preloading and caching of spell data for performance optimization.
  * This module handles bulk spell loading, cache management, and provides
  * optimized access to frequently used spell data across the application.
- *
  * @module DataUtils/SpellDataPreloader
  * @author Tyler
  */
@@ -19,7 +18,7 @@ const { Collection, duplicate } = foundry.utils;
 
 /**
  * Preload spell data based on user role and settings.
- * @param {boolean} [showNotification=false] - Whether to show success notification
+ * @param {boolean} [showNotification] - Whether to show success notification
  * @returns {Promise<void>}
  */
 export async function preloadData(showNotification = false) {
@@ -37,7 +36,7 @@ export async function preloadData(showNotification = false) {
 
 /**
  * Preload all spell data for GM setup mode.
- * @param {boolean} [showNotification=false] - Whether to show success notification
+ * @param {boolean} [showNotification] - Whether to show success notification
  * @returns {Promise<void>}
  * @private
  */
@@ -57,7 +56,7 @@ async function preloadForGM(showNotification = false) {
 /**
  * Preload spell data for GM in party mode (non-setup).
  * Loads spells for all player characters in party actors.
- * @param {boolean} [showNotification=false] - Whether to show success notification
+ * @param {boolean} [showNotification] - Whether to show success notification
  * @returns {Promise<void>}
  * @private
  */
@@ -100,7 +99,7 @@ async function preloadForGMPartyMode(showNotification = false) {
 
 /**
  * Preload relevant spell data for player characters.
- * @param {boolean} [showNotification=false] - Whether to show success notification
+ * @param {boolean} [showNotification] - Whether to show success notification
  * @returns {Promise<void>}
  * @private
  */
@@ -127,7 +126,7 @@ async function preloadForPlayer(showNotification = false) {
 
 /**
  * Collect all relevant spell UUIDs and spell levels for a player actor.
- * @param {Object} actor - The player's actor to collect spells for
+ * @param {object} actor - The player's actor to collect spells for
  * @returns {Promise<{spellUuids: Set<string>, spellLevels: Set<number>}>} Spell UUIDs and levels relevant to this actor
  * @private
  */
@@ -140,8 +139,9 @@ async function collectPlayerSpellUuids(actor) {
     spellUuids.add(uuid);
     if (level !== undefined) spellLevels.add(level);
   });
-  if (Object.keys(DataUtils.getWizardData(actor)).length) {
-    const spellbookSpells = await getActorSpellbookSpells(actor);
+  const wizardData = DataUtils.getWizardData(actor);
+  if (Object.keys(wizardData).length) {
+    const spellbookSpells = await getActorSpellbookSpells(actor, wizardData);
     spellbookSpells.forEach(({ uuid, level }) => {
       spellUuids.add(uuid);
       if (level !== undefined) spellLevels.add(level);
@@ -152,8 +152,8 @@ async function collectPlayerSpellUuids(actor) {
 
 /**
  * Get spell UUIDs and levels from spell lists assigned to actor's classes.
- * @param {Object} actor - The actor to check for class spell lists
- * @returns {Promise<Array<{uuid: string, level?: number}>>} Array of spell data from class lists
+ * @param {object} actor - The actor to check for class spell lists
+ * @returns {Promise<Array<object>>} Array of spell data from class lists
  * @private
  */
 async function getSpellsFromActorSpellLists(actor) {
@@ -182,16 +182,16 @@ async function getSpellsFromActorSpellLists(actor) {
 
 /**
  * Get spell UUIDs and levels from actor's wizard spellbooks.
- * @param {Object} actor - The actor to check for wizard spellbooks
- * @returns {Promise<Array<{uuid: string, level?: number}>>} Array of spell data from wizard spellbooks
+ * @param {object} actor - The actor to check for wizard spellbooks
+ * @param {object} wizardData - Pre-fetched wizard data for the actor
+ * @returns {Promise<Array<object>>} Array of spell data from wizard spellbooks
  * @private
  */
-async function getActorSpellbookSpells(actor) {
+async function getActorSpellbookSpells(actor, wizardData) {
   log(3, 'Getting actor spellbook spells for:', { character: actor.name, actor });
   const spellData = [];
-  const wizardData = DataUtils.getWizardData(actor);
   for (const identifier of Object.keys(wizardData)) {
-    const wizardManager = new WizardBook(actor, identifier);
+    const wizardManager = await WizardBook.create(actor, identifier);
     try {
       if (wizardManager.isWizard) {
         const spellbookJournal = await wizardManager.findSpellbookJournal();
@@ -217,7 +217,7 @@ async function getActorSpellbookSpells(actor) {
 
 /**
  * Get preloaded spell data if valid.
- * @returns {Object|null} Preloaded data or null if invalid
+ * @returns {object | null} Preloaded data or null if invalid
  */
 export function getPreloadedData() {
   const preloadedData = globalThis.SPELLBOOK?.preloadedData;
@@ -229,8 +229,8 @@ export function getPreloadedData() {
 
 /**
  * Cache preloaded data to global scope.
- * @param {Array<Object>} spellLists - Array of spell list objects
- * @param {Collection<string, Object>} enrichedSpells - Collection of enriched spell objects
+ * @param {Array<object>} spellLists - Array of spell list objects
+ * @param {object} enrichedSpells - Collection of enriched spell objects
  * @param {string} mode - The preload mode used ('gm-setup', 'gm-party', 'player', 'no-character')
  * @private
  */
@@ -257,7 +257,7 @@ export function invalidateSpellListCache() {
 
 /**
  * Check if a journal page should trigger cache invalidation.
- * @param {Object} page - The journal page to check
+ * @param {object} page - The journal page to check
  * @returns {boolean} True if this page affects spell lists and should invalidate cache
  */
 export function shouldInvalidateCacheForPage(page) {
@@ -273,8 +273,8 @@ export function shouldInvalidateCacheForPage(page) {
 
 /**
  * Enrich spells with icon links for UI display using custom implementation.
- * @param {Collection<Object>|Array<Object>} spells - Collection or array of spell objects to enrich
- * @returns {Promise<Collection<string, Object>>} Collection of spells with enriched icons
+ * @param {object | Array<object>} spells - Collection or array of spell objects to enrich
+ * @returns {Promise<object>} Collection of spells with enriched icons
  * @private
  */
 async function enrichSpellsWithIcons(spells) {

@@ -5,12 +5,11 @@
  * autocomplete, field-based search syntax, and search history management. It handles
  * both standard fuzzy name matching and advanced query parsing with support for
  * complex field-based searches.
- *
  * @module UIUtils/SearchEngine
  * @author Tyler
  */
 
-import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
+import { DEBOUNCE_DELAY, FLAGS, MAX_RECENT_SEARCHES, MIN_QUERY_LENGTH_FOR_SUGGESTIONS, MIN_SEARCH_VALUE_LENGTH, MODULE, SEARCH_DEBOUNCE_DELAY, SETTINGS } from '../constants/_module.mjs';
 import { log } from '../logger.mjs';
 import * as ValidationUtils from '../validation/_module.mjs';
 
@@ -20,7 +19,7 @@ import * as ValidationUtils from '../validation/_module.mjs';
 export class SearchEngine {
   /**
    * Create a new advanced search manager instance.
-   * @param {Object} app - The parent application instance
+   * @param {object} app - The parent application instance
    */
   constructor(app) {
     this.actor = app.actor;
@@ -200,14 +199,14 @@ export class SearchEngine {
         await new Promise((resolve) => setTimeout(resolve, 50));
         this.updateDropdownContent(query);
         if (this.isAdvancedQueryComplete(query)) log(3, 'Advanced query appears complete, but waiting for Enter key');
-      }, 150);
+      }, DEBOUNCE_DELAY);
     } else {
       this.searchTimeout = setTimeout(async () => {
         if (!this.app._state._initialized) await this.app._state.initialize();
         await new Promise((resolve) => setTimeout(resolve, 50));
         this.updateDropdownContent(query);
         this.performSearch(query);
-      }, 800);
+      }, SEARCH_DEBOUNCE_DELAY);
     }
     if (!this.isDropdownVisible) this.showDropdown();
   }
@@ -288,7 +287,7 @@ export class SearchEngine {
     if (this.isProcessingSuggestion) return;
     setTimeout(() => {
       if (!document.querySelector('.search-dropdown:hover') && !this.isProcessingSuggestion) this.hideDropdown();
-    }, 150);
+    }, DEBOUNCE_DELAY);
   }
 
   /**
@@ -517,7 +516,7 @@ export class SearchEngine {
   /**
    * Check if a value appears to be incomplete while typing.
    * @param {string} queryWithoutTrigger - Query without ^ prefix
-   * @returns {Object|null} Object with field and value if incomplete, null otherwise
+   * @returns {object | null} Object with field and value if incomplete, null otherwise
    */
   isIncompleteValue(queryWithoutTrigger) {
     const parts = queryWithoutTrigger.split(/\s+and\s+/i);
@@ -544,7 +543,7 @@ export class SearchEngine {
       const validValues = ['TRUE', 'FALSE', 'YES', 'NO'];
       if (!validValues.includes(upperValue)) return validValues.some((valid) => valid.startsWith(upperValue));
     }
-    return value.length < 2;
+    return value.length < MIN_SEARCH_VALUE_LENGTH;
   }
 
   /**
@@ -554,7 +553,7 @@ export class SearchEngine {
    */
   _generateStandardQueryContent(query) {
     let content = '';
-    if (!query || query.length < 3) content += this._generateRecentSearches();
+    if (!query || query.length < MIN_QUERY_LENGTH_FOR_SUGGESTIONS) content += this._generateRecentSearches();
     else content += this._generateFuzzyMatches(query);
     return content;
   }
@@ -645,7 +644,7 @@ export class SearchEngine {
 
   /**
    * Apply advanced query results to current filter state.
-   * @param {String} parsedQuery - The parsed query string with filters
+   * @param {string} parsedQuery - The parsed query string with filters
    * @returns {void}
    */
   applyAdvancedQueryToFilters(parsedQuery) {
@@ -677,7 +676,7 @@ export class SearchEngine {
   /**
    * Parse a range value string into minimum and maximum components.
    * @param {string} rangeValue - Range value like "0-30", "30", "*-30", "30-*"
-   * @returns {[number|null, number|null]} Array containing [min, max] values; null if unspecified or invalid
+   * @returns {Array<number|null>} Array containing [min, max] values; null if unspecified or invalid
    */
   parseRangeValue(rangeValue) {
     if (!rangeValue) return [null, null];
@@ -789,8 +788,8 @@ export class SearchEngine {
 
   /**
    * Execute advanced query against a collection of spells.
-   * @param {Array<Object>} spells - Array of spell objects to filter
-   * @returns {Array<Object>} Filtered array of spells matching the query
+   * @param {Array<object>} spells - Array of spell objects to filter
+   * @returns {Array<object>} Filtered array of spells matching the query
    */
   executeAdvancedQuery(spells) {
     if (!this.isCurrentQueryAdvanced() || !this.parsedQuery) return spells;
@@ -850,7 +849,7 @@ export class SearchEngine {
     const existingIndex = recentSearches.indexOf(trimmedQuery);
     if (existingIndex !== -1) recentSearches.splice(existingIndex, 1);
     recentSearches.unshift(trimmedQuery);
-    const limitedSearches = recentSearches.slice(0, 8);
+    const limitedSearches = recentSearches.slice(0, MAX_RECENT_SEARCHES);
     this.actor.setFlag(MODULE.ID, FLAGS.RECENT_SEARCHES, limitedSearches);
   }
 

@@ -5,12 +5,11 @@
  * handling interface state, user interactions, dynamic content updates, and visual
  * enhancements. It serves as the central coordinator for all UI-related functionality
  * including layout management, search integration, and spell interaction controls.
- *
  * @module UIUtils/SpellBookUI
  * @author Tyler
  */
 
-import { FLAGS, MODULE } from '../constants/_module.mjs';
+import { DEBOUNCE_DELAY, FLAGS, MODULE } from '../constants/_module.mjs';
 import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 import { RuleSet } from '../managers/_module.mjs';
@@ -25,7 +24,7 @@ const { formatNumber } = dnd5e.utils;
 export class SpellBookUI {
   /**
    * Create a new UI helper.
-   * @param {Object} app - The parent application instance
+   * @param {object} app - The parent application instance
    */
   constructor(app) {
     this.app = app;
@@ -105,7 +104,7 @@ export class SpellBookUI {
           originalInput.value = event.target.value;
           originalInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
-      }, 150);
+      }, DEBOUNCE_DELAY);
       searchInput.addEventListener('input', debouncedInputHandler);
       if (this.search) this.search.setupCollapsedFooterSearch(searchInput);
     }
@@ -308,7 +307,7 @@ export class SpellBookUI {
    * @returns {void}
    */
   applyCollapsedLevels() {
-    const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_LEVELS) || [];
+    const collapsedLevels = DataUtils.CollapsedStateManager.get(FLAGS.COLLAPSED_LEVELS);
     log(3, 'Applying collapsed levels.', { collapsedCount: collapsedLevels.length });
     for (const levelId of collapsedLevels) {
       const levelContainer = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
@@ -360,8 +359,8 @@ export class SpellBookUI {
   /**
    * Update cantrip counter display using cached max values.
    * @param {HTMLElement} [cantripLevel] - The cantrip level container
-   * @param {boolean} [skipLockSetup=false] - Whether to skip calling setupCantripLocks
-   * @returns {Object} Counter state with current and max values
+   * @param {boolean} [skipLockSetup] - Whether to skip calling setupCantripLocks
+   * @returns {object} Counter state with current and max values
    */
   updateCantripCounter(cantripLevel, skipLockSetup = false) {
     if (!this.element) return { current: 0, max: 0 };
@@ -411,7 +410,7 @@ export class SpellBookUI {
 
   /**
    * Set up cantrip lock states based on selection rules using cached max values.
-   * @param {boolean} [applyRuleLocks=false] - Whether to apply rule-based locks (vs count-only)
+   * @param {boolean} [applyRuleLocks] - Whether to apply rule-based locks (vs count-only)
    * @returns {void}
    */
   setupCantripLocks(applyRuleLocks = false) {
@@ -461,7 +460,7 @@ export class SpellBookUI {
    * @param {HTMLElement} item - The spell item element
    * @param {HTMLElement} checkbox - The checkbox element
    * @param {string} classIdentifier - The class identifier
-   * @param {Object} settings - The class-specific settings
+   * @param {object} settings - The class-specific settings
    * @returns {void}
    * @private
    */
@@ -735,9 +734,8 @@ export class SpellBookUI {
    * Update favorite button state immediately.
    * @param {HTMLElement} button - The favorite button element
    * @param {boolean} isFavorited - Whether the spell is favorited
-   * @static
    */
-  static updateFavoriteButtonState(button, isFavorited) {
+  updateFavoriteButtonState(button, isFavorited) {
     log(3, 'Updating favorite button state.', { button, isFavorited });
     const icon = button.querySelector('i');
     if (isFavorited) {
@@ -786,7 +784,7 @@ export function updateSelectAllState(selectAllCheckbox, childCheckboxes) {
  * Set all checkboxes in a group to a specific checked state.
  * @param {NodeList|Array<HTMLElement>} checkboxes - Checkboxes to update
  * @param {boolean} checked - Whether to check or uncheck the checkboxes
- * @param {boolean} [skipDisabled=true] - Whether to skip disabled checkboxes
+ * @param {boolean} [skipDisabled] - Whether to skip disabled checkboxes
  */
 export function setGroupCheckboxes(checkboxes, checked, skipDisabled = true) {
   log(3, 'Setting group checkboxes.', { count: checkboxes.length, checked, skipDisabled });
@@ -798,17 +796,8 @@ export function setGroupCheckboxes(checkboxes, checked, skipDisabled = true) {
 
 /**
  * Calculate optimal position for a dialog/tooltip relative to a trigger element.
- * @param {{
- *   triggerElement: HTMLElement,
- *   dialogWidth: number,
- *   dialogHeight: number,
- *   minMargin?: number,
- *   minTop?: number,
- *   maxBottomOffset?: number,
- *   offset?: number,
- *   preferredSide?: 'left' | 'right' | 'top' | 'bottom'
- * }} config - Positioning configuration options
- * @returns {{left: number, top: number}} Calculated position coordinates in pixels
+ * @param {object} config - Positioning configuration options
+ * @returns {object} Calculated position coordinates in pixels
  */
 export function calculateOptimalPosition(config) {
   const { triggerElement, dialogWidth, dialogHeight, minMargin = 20, minTop = 50, maxBottomOffset = 100, offset = 10, preferredSide = 'right' } = config;
@@ -834,7 +823,7 @@ export function calculateOptimalPosition(config) {
  * Position a tooltip near mouse cursor with viewport boundary checking.
  * @param {MouseEvent} event - The mouse event containing cursor position
  * @param {HTMLElement} tooltip - The tooltip element to position
- * @param {number} [offset=15] - Offset from cursor in pixels
+ * @param {number} [offset] - Offset from cursor in pixels
  */
 function positionTooltipAtCursor(event, tooltip, offset = 15) {
   const rect = tooltip.getBoundingClientRect();
@@ -851,7 +840,7 @@ function positionTooltipAtCursor(event, tooltip, offset = 15) {
 /**
  * Get or create a tooltip element.
  * @param {string} id - Unique ID for the tooltip
- * @param {string} [className='tooltip'] - CSS class for the tooltip
+ * @param {string} [className] - CSS class for the tooltip
  * @returns {HTMLElement} The tooltip element
  */
 function getOrCreateTooltip(id, className = 'tooltip') {
@@ -872,8 +861,8 @@ function getOrCreateTooltip(id, className = 'tooltip') {
  * Show tooltip with content and optional positioning.
  * @param {string} tooltipId - Unique tooltip ID
  * @param {string|HTMLElement} content - Content to display in the tooltip
- * @param {MouseEvent} [event=null] - Optional mouse event for cursor positioning
- * @param {string} [className='tooltip'] - CSS class for the tooltip
+ * @param {MouseEvent} [event] - Optional mouse event for cursor positioning
+ * @param {string} [className] - CSS class for the tooltip
  * @returns {HTMLElement} The tooltip element
  */
 export function showTooltip(tooltipId, content, event = null, className = 'tooltip') {
@@ -911,7 +900,7 @@ export function removeTooltip(tooltipId) {
  * Update tooltip position at cursor.
  * @param {string} tooltipId - Unique tooltip ID to reposition
  * @param {MouseEvent} event - Mouse event with cursor position
- * @param {number} [offset=15] - Offset from cursor in pixels
+ * @param {number} [offset] - Offset from cursor in pixels
  */
 export function updateTooltipPosition(tooltipId, event, offset = 15) {
   const tooltip = document.getElementById(tooltipId);

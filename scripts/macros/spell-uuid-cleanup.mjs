@@ -1,4 +1,8 @@
+/**
+ * Spell UUID cleanup macro script - removes invalid spell UUIDs from spell lists.
+ */
 function spellUuidCleanupScript() {
+  /** Cleans up invalid spell UUIDs from custom spell lists. */
   async function cleanupInvalidSpellUuids() {
     if (!game.user.isGM) {
       ui.notifications.warn('This macro can only be run by a GM.');

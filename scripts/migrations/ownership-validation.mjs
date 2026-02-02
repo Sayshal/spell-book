@@ -9,8 +9,7 @@ import { log } from '../logger.mjs';
 
 /**
  * Validate and fix ownership levels for all Spell Book documents.
- *
- * @returns {Promise<Object>} Validation results
+ * @returns {Promise<object>} Validation results
  * @property {number} processed - Total number of documents fixed
  * @property {Array<string>} errors - Array of error messages
  * @property {number} userDataFixed - Number of user data documents fixed
@@ -18,7 +17,7 @@ import { log } from '../logger.mjs';
  * @property {number} actorSpellbooksFixed - Number of actor spellbook documents fixed
  * @property {number} packsFixed - Number of compendium packs fixed
  * @property {Array<string>} details - Array of detailed fix descriptions
- * @property {Array<Object>} fixedDocuments - Array of fixed document information
+ * @property {Array<object>} fixedDocuments - Array of fixed document information
  */
 async function validateOwnershipLevels() {
   const results = { processed: 0, updated: 0, errors: [], userDataFixed: 0, spellListsFixed: 0, actorSpellbooksFixed: 0, packsFixed: 0, details: [], fixedDocuments: [] };
@@ -60,8 +59,7 @@ async function validateOwnershipLevels() {
 
 /**
  * Validate and fix user data journal and page ownership.
- *
- * @returns {Promise<Object>} Validation results for user data
+ * @returns {Promise<object>} Validation results for user data
  */
 async function validateUserDataOwnership() {
   const results = { checked: 0, fixed: 0, errors: [], details: [], fixedDocuments: [] };
@@ -114,7 +112,7 @@ async function validateUserDataOwnership() {
 
 /**
  * Validate and fix spell list journal ownership.
- * @returns {Promise<Object>} Validation results for spell lists
+ * @returns {Promise<object>} Validation results for spell lists
  */
 async function validateSpellListOwnership() {
   const results = { checked: 0, fixed: 0, errors: [], details: [], fixedDocuments: [] };
@@ -154,7 +152,7 @@ async function validateSpellListOwnership() {
 
 /**
  * Validate and fix actor Spell Book journal and page ownership.
- * @returns {Promise<Object>} Validation results for actor spellbooks
+ * @returns {Promise<object>} Validation results for actor spellbooks
  */
 async function validateActorSpellbookOwnership() {
   const results = { checked: 0, fixed: 0, errors: [], details: [], fixedDocuments: [] };
@@ -241,7 +239,7 @@ async function validateActorSpellbookOwnership() {
 
 /**
  * Validate and fix compendium pack ownership and visibility.
- * @returns {Promise<Object>} Validation results for packs
+ * @returns {Promise<object>} Validation results for packs
  */
 async function validatePackOwnership() {
   const results = { checked: 0, fixed: 0, errors: [], details: [], fixedDocuments: [] };

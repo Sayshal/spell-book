@@ -4,7 +4,6 @@
  * A dedicated application for displaying party spell synergy analysis with
  * interactive visualizations including pie charts, damage distribution,
  * and strategic recommendations.
- *
  * @module Dialogs/SynergyAnalysis
  * @author Tyler
  */
@@ -32,8 +31,8 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Create a new Synergy Analysis Dialog.
-   * @param {Object} synergyData - The synergy analysis data to display
-   * @param {Object} [options={}] - Additional application options
+   * @param {object} synergyData - The synergy analysis data to display
+   * @param {object} [options] - Additional application options
    */
   constructor(synergyData, options = {}) {
     super(options);
@@ -52,8 +51,8 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Prepare component tooltips with spell lists.
-   * @param {Object} synergy - The synergy analysis data
-   * @returns {Object} Object containing tooltip strings for each component type (verbal, somatic, material, materialCost)
+   * @param {object} synergy - The synergy analysis data
+   * @returns {object} Object containing tooltip strings for each component type (verbal, somatic, material, materialCost)
    * @private
    */
   _prepareComponentTooltips(synergy) {

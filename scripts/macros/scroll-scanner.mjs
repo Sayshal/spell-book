@@ -1,4 +1,8 @@
+/**
+ * Scroll scanner macro script - finds all scrolls across compendiums.
+ */
 function scrollScannerScript() {
+  /** Scans all compendiums for scroll items. */
   async function findScrollsInCompendiums() {
     ui.notifications.info('Scanning for scrolls in compendiums...', { permanent: true });
 
@@ -41,6 +45,10 @@ function scrollScannerScript() {
     }
   }
 
+  /**
+   * Shows a dialog with found scrolls.
+   * @param {Array<object>} scrolls - Array of scroll objects
+   */
   async function showScrollsDialog(scrolls) {
     ui.notifications.clear();
 
@@ -75,7 +83,7 @@ function scrollScannerScript() {
       </div>
     `;
 
-    await foundry.applications.api.DialogV2.wait({
+    const result = await foundry.applications.api.DialogV2.wait({
       content: content,
       classes: ['dnd5e2'],
       window: {
@@ -92,12 +100,12 @@ function scrollScannerScript() {
       ],
       default: 'close',
       rejectClose: false
-    }).then((result) => {
-      if (result === 'copy') {
-        const scrollList = scrolls.map((s) => `${s.name} (${s.uuid}) - ${s.source}`).join('\n');
-        SPELLBOOK.ui.notifications.info('Scroll list copied to console (F12)');
-      }
     });
+    if (result === 'copy') {
+      const scrollList = scrolls.map((s) => `${s.name} (${s.uuid}) - ${s.source}`).join('\n');
+      console.log(scrollList);
+      SPELLBOOK.ui.notifications.info('Scroll list copied to console (F12)');
+    }
   }
 
   findScrollsInCompendiums();

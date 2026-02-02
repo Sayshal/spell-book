@@ -9,7 +9,6 @@
  * The manager operates on macro configurations defined in the macros module,
  * ensuring all required macros exist in the compendium with current versions
  * and removing any macros that are no longer defined.
- *
  * @module Managers/Macros
  * @author Tyler
  */
@@ -39,9 +38,9 @@ export class Macros {
 
   /**
    * Ensure a specific macro exists in the compendium and is current.
-   * @param {Collection<string, Macro>} pack - The macro compendium pack
+   * @param {object} pack - The macro compendium pack
    * @param {object} macro - Macro configuration object
-   * @returns {Promise<Object|null>} Promise that resolves to the existing or newly created Macro document, or null if not found/creation failed
+   * @returns {Promise<object | null>} Promise that resolves to the existing or newly created Macro document, or null if not found/creation failed
    * @static
    */
   static async ensureCompendiumMacroExists(pack, macro) {
@@ -84,7 +83,7 @@ export class Macros {
 
   /**
    * Get all macros managed by this module from the compendium.
-   * @returns {Promise<Array<Object>>} Promise that resolves to an array of module-managed macros
+   * @returns {Promise<Array<object>>} Promise that resolves to an array of module-managed macros
    * @static
    */
   static async getManagedMacros() {

@@ -1,5 +1,9 @@
+/**
+ * Flag purge macro script - removes all Spell Book module data from actors.
+ */
 function flagPurgeScript() {
   const MODULE_ID = 'spell-book';
+  /** Shows the flag purge dialog for actor selection. */
   async function showFlagPurgeDialog() {
     const eligibleActors = game.actors
       .filter((actor) => {

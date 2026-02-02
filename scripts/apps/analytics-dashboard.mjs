@@ -5,7 +5,6 @@
  * and user behavior analysis. This application provides both personal and GM-level views
  * of spell usage patterns, favorites, notes, and contextual usage breakdowns across
  * combat and exploration scenarios.
- *
  * @module Applications/AnalyticsDashboard
  * @author Tyler
  */
@@ -44,7 +43,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Create a new Analytics Dashboard application.
-   * @param {Object} [options={}] - Application options
+   * @param {object} [options] - Application options
    * @param {string} [options.viewMode] - View mode ('personal' or 'gm')
    * @param {string} [options.userId] - User ID for personal view
    */
@@ -94,7 +93,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Compute analytics data for the current view mode.
-   * @returns {Promise<Object>} Complete analytics data structure
+   * @returns {Promise<object>} Complete analytics data structure
    * @private
    */
   async _computeAnalytics() {
@@ -126,7 +125,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Compute personal analytics for a specific user.
-   * @param {Object} analytics - Analytics object to populate
+   * @param {object} analytics - Analytics object to populate
    * @param {string} userId - User ID to compute analytics for
    * @returns {Promise<void>}
    * @private
@@ -167,7 +166,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Compute GM analytics across all users.
-   * @param {Object} analytics - Analytics object to populate
+   * @param {object} analytics - Analytics object to populate
    * @returns {Promise<void>}
    * @private
    */
@@ -253,7 +252,7 @@ export class AnalyticsDashboard extends HandlebarsApplicationMixin(ApplicationV2
 
   /**
    * Get empty analytics structure for initialization.
-   * @returns {Object} Empty analytics data structure
+   * @returns {object} Empty analytics data structure
    * @private
    */
   _getEmptyAnalytics() {

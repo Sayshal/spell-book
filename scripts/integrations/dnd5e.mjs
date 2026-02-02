@@ -5,13 +5,13 @@
  * group actors, rest mechanics, and journal directory enhancements. This module handles
  * UI button injection, long rest processing, spell swap mechanics, and party spell
  * coordination features.
- *
  * @module Integrations/DnD5e
  * @author Tyler
  */
 
-import { PartyCoordinator, AnalyticsDashboard, SpellBook, SpellListManager } from '../apps/_module.mjs';
+import { AnalyticsDashboard, PartyCoordinator, SpellBook, SpellListManager } from '../apps/_module.mjs';
 import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 import { SpellManager } from '../managers/_module.mjs';
 
@@ -31,9 +31,9 @@ export function registerDnD5eIntegration() {
 
 /**
  * Add Spell Book button to D&D 5e character sheet.
- * @param {Object} _app - The character sheet application instance
+ * @param {object} _app - The character sheet application instance
  * @param {HTMLElement} html - The character sheet HTML element
- * @param {Object} data - The sheet data object containing actor information
+ * @param {object} data - The sheet data object containing actor information
  * @returns {void}
  */
 function addSpellbookButton(_app, html, data) {
@@ -54,12 +54,12 @@ function addSpellbookButton(_app, html, data) {
 
 /**
  * Check if Spell Book button can be added to character sheet.
- * @param {Object} actor - The actor to check for spellcasting capabilities
+ * @param {object} actor - The actor to check for spellcasting capabilities
  * @param {HTMLElement} html - The character sheet HTML element
  * @returns {boolean} True if the button can be added to this sheet
  */
 function canAddSpellbookButton(actor, html) {
-  const canCast = Object.keys(actor?.spellcastingClasses || {}).length > 0;
+  const canCast = DataUtils.hasSpellcastingClasses(actor);
   if (!canCast) {
     log(3, 'Cannot add spellbook button: actor has no spellcasting classes.', { actorId: actor?.id });
     return false;
@@ -74,7 +74,7 @@ function canAddSpellbookButton(actor, html) {
 
 /**
  * Create Spell Book button element for character sheets.
- * @param {Object} actor - The actor this button will open a spell book for
+ * @param {object} actor - The actor this button will open a spell book for
  * @returns {HTMLElement} The created button element
  */
 function createSpellBookButton(actor) {
@@ -90,7 +90,7 @@ function createSpellBookButton(actor) {
 
 /**
  * Handle Spell Book button click event.
- * @param {Object} actor - The actor whose spell book should be opened
+ * @param {object} actor - The actor whose spell book should be opened
  * @param {Event} event - The click event
  * @returns {Promise<void>}
  */
@@ -132,7 +132,7 @@ async function onSpellBookButtonClick(actor, event) {
     spellBook.render(true);
     log(3, 'Spellbook rendered successfully.', { actorId: actor.id });
   } catch (error) {
-    log(1, 'Error opening spellbook.', { actorId: actor.id, error });
+    log(1, error);
   } finally {
     if (icon) {
       icon.classList.remove('fa-spin');
@@ -143,9 +143,9 @@ async function onSpellBookButtonClick(actor, event) {
 
 /**
  * Handle group actor sheet rendering for party spell management.
- * @param {Object} _sheet - The group actor sheet
+ * @param {object} _sheet - The group actor sheet
  * @param {HTMLElement} element - The sheet HTML element
- * @param {Object} data - The sheet data
+ * @param {object} data - The sheet data
  * @returns {void}
  */
 function onGroupActorRender(_sheet, element, data) {
@@ -173,8 +173,8 @@ function onGroupActorRender(_sheet, element, data) {
 
 /**
  * Check if party spell button can be added to group actor sheet.
- * @param {Object} actor - The group actor
- * @param {Object} data - The sheet data
+ * @param {object} actor - The group actor
+ * @param {object} data - The sheet data
  * @returns {boolean} True if button should be added
  */
 function canAddPartySpellButton(actor, data) {
@@ -183,7 +183,7 @@ function canAddPartySpellButton(actor, data) {
     return false;
   }
   const creatures = data.actor.system?.creatures || [];
-  const spellcasters = creatures.filter((memberActor) => memberActor && Object.keys(memberActor?.spellcastingClasses || {}).length > 0);
+  const spellcasters = creatures.filter((memberActor) => DataUtils.hasSpellcastingClasses(memberActor));
   const canAdd = spellcasters.length > 0;
   log(3, 'Checking if party spell button can be added.', { actorId: actor.id, spellcasterCount: spellcasters.length, canAdd });
   return canAdd;
@@ -191,8 +191,8 @@ function canAddPartySpellButton(actor, data) {
 
 /**
  * Create party spell button element for group actor sheets.
- * @param {Object} groupActor - The group actor
- * @param {Object} data - The sheet data
+ * @param {object} groupActor - The group actor
+ * @param {object} data - The sheet data
  * @returns {HTMLElement} The button element
  */
 function createPartySpellButton(groupActor, data) {
@@ -211,15 +211,15 @@ function createPartySpellButton(groupActor, data) {
 /**
  * Open party spell manager for group coordination.
  * @param {Event} event - The click event
- * @param {Object} groupActor - The group actor
- * @param {Object} data - The sheet data
+ * @param {object} groupActor - The group actor
+ * @param {object} data - The sheet data
  * @returns {void}
  */
 function openPartySpellManager(event, groupActor, data) {
   log(3, 'Opening party spell manager.', { actorId: groupActor.id });
   event.preventDefault();
   const creatures = data.actor.system?.creatures || [];
-  const partyActors = creatures.filter((memberActor) => memberActor && Object.keys(memberActor?.spellcastingClasses || {}).length > 0);
+  const partyActors = creatures.filter((memberActor) => DataUtils.hasSpellcastingClasses(memberActor));
   if (partyActors.length === 0) {
     log(3, 'No spellcasters in party.', { actorId: groupActor.id });
     return;
@@ -231,21 +231,9 @@ function openPartySpellManager(event, groupActor, data) {
 
 /**
  * Handle long rest completion for spell swap mechanics.
- * @param {Object} actor - The actor who completed the long rest
- * @param {{
- *   type: string,
- *   clone: Actor5e,
- *   deltas: {
- *     hitPoints: number,
- *     hitDice: number
- *   },
- *   message?: ChatMessage5e,
- *   newDay: boolean,
- *   rolls: Roll[],
- *   updateData: object,
- *   updateItems: object[]
- * }} result - The rest result data containing completion status
- * @param {Object} _config - The rest configuration options
+ * @param {object} actor - The actor who completed the long rest
+ * @param {object} result - The rest result data containing completion status
+ * @param {object} _config - The rest configuration options
  * @returns {Promise<void>}
  */
 async function handleRestCompleted(actor, result, _config) {
@@ -287,7 +275,7 @@ async function handleRestCompleted(actor, result, _config) {
 
 /**
  * Handle the long rest swap prompt for applicable classes.
- * @param {Object} actor - The actor who completed the long rest
+ * @param {object} actor - The actor who completed the long rest
  * @param {{ cantripSwapping: Array<{ identifier: string, name: string }>, spellSwapping: Array<{ identifier: string, name: string }> }} longRestClasses - Object containing classes needing rest swaps
  * @returns {Promise<void>}
  */
@@ -333,7 +321,7 @@ async function showLongRestSwapDialog(longRestClasses) {
 
 /**
  * Add Spell Book management buttons to journal sidebar footer.
- * @param {Object} app - The journal sidebar application
+ * @param {object} app - The journal sidebar application
  * @returns {void}
  */
 function addJournalSpellBookButton(app) {
@@ -364,10 +352,6 @@ function createJournalButtonsContainer() {
   log(3, 'Creating journal buttons container.');
   const container = document.createElement('div');
   container.classList.add('spell-book-buttons-container');
-  container.style.display = 'flex';
-  container.style.gap = '0.5rem';
-  container.style.justifyContent = 'center';
-  container.style.alignItems = 'center';
   const managerButton = createJournalManagerButton();
   const analyticsButton = createJournalAnalyticsButton();
   container.appendChild(managerButton);
@@ -415,7 +399,7 @@ function createJournalAnalyticsButton() {
     const newSetting = !currentSetting;
     try {
       await game.settings.set(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING, newSetting);
-      analyticsButton.style.opacity = newSetting ? '1' : '0.6';
+      analyticsButton.classList.toggle('tracking-disabled', !newSetting);
       analyticsButton.title = newSetting ? game.i18n.localize('SPELLBOOK.Analytics.TrackingEnabled') : game.i18n.localize('SPELLBOOK.Analytics.TrackingDisabled');
       log(3, 'Spell usage tracking toggled.', { newSetting });
     } catch (error) {
@@ -423,7 +407,7 @@ function createJournalAnalyticsButton() {
     }
   });
   const trackingEnabled = game.settings.get(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING);
-  analyticsButton.style.opacity = trackingEnabled ? '1' : '0.6';
+  analyticsButton.classList.toggle('tracking-disabled', !trackingEnabled);
   analyticsButton.title = trackingEnabled ? game.i18n.localize('SPELLBOOK.Analytics.TrackingEnabled') : game.i18n.localize('SPELLBOOK.Analytics.TrackingDisabled');
   return analyticsButton;
 }

@@ -4,7 +4,6 @@
  * This module defines all flag keys used for storing data on actor documents,
  * along with type definitions for the data structures stored
  * in those flags. It also tracks deprecated flags for migration purposes.
- *
  * @module Constants/Flags
  * @author Tyler
  */
@@ -12,8 +11,7 @@
 /**
  * Definition of a deprecated flag for migration tracking.
  * Used to identify flags that should be removed during system updates.
- *
- * @typedef {Object} DeprecatedFlag
+ * @typedef {object} DeprecatedFlag
  * @property {string} key - The flag name that is deprecated
  * @property {string} reason - Human-readable reason for deprecation
  * @property {string} [removedInVersion] - Optional version in which it was removed
@@ -23,8 +21,7 @@
 /**
  * Complete set of actor flag keys used for data storage and state tracking.
  * These keys are used with Foundry's actor.getFlag() and actor.setFlag() methods.
- *
- * @typedef {Object} FlagKeys
+ * @typedef {object} FlagKeys
  * @property {string} CANTRIP_SWAP_TRACKING - Flag for tracking cantrip swap state during level-up/long rest
  * @property {string} CLASS_RULES - Flag for storing per-class spellcasting rule overrides
  * @property {string} COLLAPSED_FOLDERS - Flag for storing collapsed folder state in UI
@@ -51,8 +48,7 @@
 /**
  * Swap tracking data structure for cantrips and spells.
  * Used to track changes during level-up and long rest sessions.
- *
- * @typedef {Object} SwapTrackingData
+ * @typedef {object} SwapTrackingData
  * @property {boolean} hasUnlearned - Whether a spell/cantrip was unlearned this session
  * @property {string|null} unlearned - UUID of the unlearned spell/cantrip
  * @property {boolean} hasLearned - Whether a spell/cantrip was learned this session
@@ -63,8 +59,7 @@
 /**
  * Class-specific rules configuration stored in actor flags.
  * Allows overriding default spellcasting behavior per class.
- *
- * @typedef {Object} ClassRulesData
+ * @typedef {object} ClassRulesData
  * @property {string} [cantripSwapping] - When cantrips can be swapped ('none'|'levelUp'|'longRest')
  * @property {string} [spellSwapping] - When spells can be swapped ('none'|'levelUp'|'longRest')
  * @property {string} [ritualCasting] - Ritual casting mode ('none'|'prepared'|'always')
@@ -78,11 +73,10 @@
 /**
  * Spell loadout configuration data for saving and loading spell preparations.
  * Allows players to save multiple spell configurations for quick switching.
- *
- * @typedef {Object} SpellLoadoutData
+ * @typedef {object} SpellLoadoutData
  * @property {string} name - Human-readable name for the loadout
  * @property {string} description - Optional description of the loadout
- * @property {Object.<string, string[]>} spellsByClass - Prepared spells organized by class identifier
+ * @property {Object<string, string[]>} spellsByClass - Prepared spells organized by class identifier
  * @property {number} createdAt - Timestamp when loadout was created
  * @property {number} [lastUsed] - Timestamp when loadout was last applied
  * @property {string} [version] - Loadout format version for migration tracking
@@ -91,8 +85,7 @@
 /**
  * Party spell focus data for coordination between party members.
  * Used in party mode to coordinate spellcasting roles and preferences.
- *
- * @typedef {Object} PartyFocusData
+ * @typedef {object} PartyFocusData
  * @property {string} actorId - Actor ID of the party member
  * @property {string} focus - Selected spellcasting focus role
  * @property {string[]} [preferredSpells] - List of preferred spell UUIDs for this focus
@@ -126,6 +119,9 @@ export const FLAGS = {
 
   /** @type {string} Flag indicating if long rest swap dialog was completed */
   LONG_REST_COMPLETED: 'longRestCompleted',
+
+  /** @type {string} Flag for storing party coordinator collapsed spell level state */
+  PARTY_COLLAPSED_LEVELS: 'partyCollapsedLevels',
 
   /** @type {string} Flag for enabling party spell coordination mode */
   PARTY_MODE_ENABLED: 'partyModeEnabled',
@@ -167,5 +163,10 @@ export const FLAGS = {
   WIZARD_COPIED_SPELLS: 'wizardCopiedSpells',
 
   /** @type {string} Flag for wizard ritual casting preferences */
-  WIZARD_RITUAL_CASTING: 'wizardRitualCasting'
+  WIZARD_RITUAL_CASTING: 'wizardRitualCasting',
+
+  // ========== Journal Page Flags ==========
+
+  /** @type {string} Flag for storing structured user spell data on journal pages */
+  USER_SPELL_DATA: 'userSpellData'
 };

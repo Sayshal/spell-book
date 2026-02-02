@@ -4,14 +4,13 @@
  * A GM-facing application for viewing, editing, and creating spell lists
  * with advanced multi-select functionality for bulk operations. This application serves
  * as the central hub for managing all spell list content within the system.
- *
  * @module Applications/SpellListManager
  * @author Tyler
  */
 
-import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
+import { DEBOUNCE_DELAY, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import * as DataUtils from '../data/_module.mjs';
-import { SpellComparison, DetailsCustomization } from '../dialogs/_module.mjs';
+import { DetailsCustomization, SpellComparison } from '../dialogs/_module.mjs';
 import { log } from '../logger.mjs';
 import * as UIUtils from '../ui/_module.mjs';
 import * as ValidationUtils from '../validation/_module.mjs';
@@ -77,7 +76,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Initialize the GM Spell List Manager.
-   * @param {Object} [options={}] - Application options
+   * @param {object} [options] - Application options
    */
   constructor(options) {
     super(options);
@@ -94,23 +93,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     this.isSelectingAll = false;
     this.comparisonSpells = new Set();
     this.comparisonDialog = null;
-    this.filterState = {
-      name: '',
-      level: '',
-      school: '',
-      source: '',
-      spellSource: 'all',
-      castingTime: '',
-      minRange: '',
-      maxRange: '',
-      damageType: '',
-      condition: '',
-      requiresSave: '',
-      concentration: '',
-      materialComponents: '',
-      prepared: false,
-      ritual: false
-    };
+    this.filterState = { ...UIUtils.DEFAULT_FILTER_STATE };
     this.filterHelper = new UIUtils.Filters(this);
     this.enabledElements = UIUtils.CustomUI.getEnabledGMElements();
     this.isUpdatingCheckboxes = false;
@@ -230,7 +213,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Organize spell lists into categories for the context.
-   * @param {Object} context - The context object to modify
+   * @param {object} context - The context object to modify
    * @private
    */
   _organizeSpellListsContext(context) {
@@ -267,7 +250,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Prepare filter-related context data.
-   * @param {Object} context - The context object to modify
+   * @param {object} context - The context object to modify
    * @private
    */
   _prepareFilterContext(context) {
@@ -302,7 +285,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Add editing-specific context data.
-   * @param {Object} context - Context object to modify
+   * @param {object} context - Context object to modify
    * @returns {Promise<void>}
    * @private
    */
@@ -423,7 +406,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Determine appropriate source filter based on spell list.
-   * @param {Object} spellList - The spell list document
+   * @param {object} spellList - The spell list document
    */
   determineSourceFilter(spellList) {
     log(3, 'Determining spell source.', { spellList });
@@ -451,7 +434,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Filter available spells using the filter helper.
-   * @returns {Object} Filtered spells with count
+   * @returns {object} Filtered spells with count
    * @private
    */
   _filterAvailableSpells() {
@@ -464,7 +447,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Check if a spell is in the currently selected list.
-   * @param {Object} spell - The spell to check
+   * @param {object} spell - The spell to check
    * @param {Set<string>} selectedSpellUUIDs - Set of UUIDs in the selected list
    * @returns {boolean} Whether the spell is in the selected list
    */
@@ -514,7 +497,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   applyCollapsedLevels() {
     log(3, 'Remembering collapsed levels.');
-    const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS) || [];
+    const collapsedLevels = DataUtils.CollapsedStateManager.get(FLAGS.GM_COLLAPSED_LEVELS);
     for (const levelId of collapsedLevels) {
       const levelContainer = this.element.querySelector(`.spell-level[data-level="${levelId}"]`);
       if (levelContainer) {
@@ -537,7 +520,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   applyCollapsedFolders() {
     log(3, 'Remembering collapsed folders.');
-    const collapsedFolders = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_FOLDERS) || [];
+    const collapsedFolders = DataUtils.CollapsedStateManager.get(FLAGS.COLLAPSED_FOLDERS);
     for (const folderId of collapsedFolders) {
       const folderContainer = this.element.querySelector(`.list-folder[data-folder-id="${folderId}"]`);
       if (folderContainer) {
@@ -665,7 +648,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Get visible filtered spells for selection operations.
-   * @returns {Array<Object>} Array of visible spell objects
+   * @returns {Array<object>} Array of visible spell objects
    * @private
    */
   _getVisibleSpells() {
@@ -706,13 +689,12 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
           if (wasFiltered !== isFiltered) {
             const currentInput = this.element.querySelector('input[name="spell-search"]');
             const cursorPosition = currentInput?.selectionStart;
-            this.render(false, { parts: ['availableSpells'] }).then(() => {
-              const newInput = this.element.querySelector('input[name="spell-search"]');
-              if (newInput && cursorPosition !== undefined) {
-                newInput.focus();
-                newInput.setSelectionRange(cursorPosition, cursorPosition);
-              }
-            });
+            this.render(false, { parts: ['availableSpells'] });
+            const newInput = this.element.querySelector('input[name="spell-search"]');
+            if (newInput && cursorPosition !== undefined) {
+              newInput.focus();
+              newInput.setSelectionRange(cursorPosition, cursorPosition);
+            }
           } else this.applyFilters();
         }, 200);
       });
@@ -747,7 +729,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
             this._dropdownFilterTimer = setTimeout(() => {
               if (property === 'level' || property === 'source' || property === 'spellSource') this.render(false, { parts: ['availableSpells'] });
               else this.applyFilters();
-            }, 150);
+            }, DEBOUNCE_DELAY);
           }
         });
       }
@@ -807,23 +789,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   _resetAllFilters() {
     log(3, 'Resetting all filters.');
-    this.filterState = {
-      name: '',
-      level: '',
-      school: '',
-      source: '',
-      spellSource: 'all',
-      castingTime: '',
-      minRange: '',
-      maxRange: '',
-      damageType: '',
-      condition: '',
-      requiresSave: '',
-      concentration: '',
-      materialComponents: '',
-      prepared: false,
-      ritual: false
-    };
+    this.filterState = { ...UIUtils.DEFAULT_FILTER_STATE };
     this.filterHelper.resetFilterControls();
     this.render(false, { parts: ['availableSpells'] });
   }
@@ -834,7 +800,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @param {Array} castingTimeOptions - Pre-computed casting time options
    * @param {Array} damageTypeOptions - Pre-computed damage type options
    * @param {Array} conditionOptions - Pre-computed condition options
-   * @returns {Object} Object containing all filter form element HTML
+   * @returns {object} Object containing all filter form element HTML
    * @private
    */
   _prepareFilterElements(spellSources, castingTimeOptions, damageTypeOptions, conditionOptions) {
@@ -997,8 +963,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Prepare form data for the create spell list dialog.
-   * @param {Array<Object>} identifierOptions - Available class identifier options
-   * @returns {Object} Object containing form element HTML
+   * @param {Array<object>} identifierOptions - Available class identifier options
+   * @returns {object} Object containing form element HTML
    * @private
    */
   _prepareCreateListFormData(identifierOptions) {
@@ -1049,7 +1015,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Prepare form data for the merge spell lists dialog.
-   * @returns {Object} Object containing form element HTML
+   * @returns {object} Object containing form element HTML
    * @private
    */
   _prepareMergeListFormData() {
@@ -1117,8 +1083,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Show the create list dialog and return result.
-   * @param {Array<Object>} identifierOptions - Class identifier options
-   * @returns {Promise<Object>} Dialog result and form data
+   * @param {Array<object>} identifierOptions - Class identifier options
+   * @returns {Promise<object>} Dialog result and form data
    * @private
    */
   async _showCreateListDialog(identifierOptions) {
@@ -1193,7 +1159,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Show the merge lists dialog and return result.
-   * @returns {Promise<Object>} Dialog result and form data
+   * @returns {Promise<object>} Dialog result and form data
    * @private
    */
   async _showMergeListsDialog() {
@@ -1369,7 +1335,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * Uses the class folder cache for early exit optimization when the class doesn't exist.
    * @param {string} identifier - The class identifier to search for
    * @param {string} topLevelFolderName - The top-level folder name to search in
-   * @returns {Promise<Object|null>} The found class item or null
+   * @returns {Promise<object | null>} The found class item or null
    * @private
    */
   async _findClassInTopLevelFolder(identifier, topLevelFolderName) {
@@ -1427,7 +1393,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Create a new spell list.
-   * @param formData - Necessary data to build the temporary form.
+   * @param {object} formData - Necessary data to build the temporary form.
    * @returns {Promise<void>}
    * @private
    */
@@ -1445,7 +1411,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * Create merged spell list.
    * @param {string[]} spellListUuids - Array of UUIDs of the spell lists to merge
    * @param {string} mergedListName - Name for the merged list
-   * @param {boolean} [hideSourceLists=false] - Whether to hide source lists after merge
+   * @param {boolean} [hideSourceLists] - Whether to hide source lists after merge
    * @returns {Promise<void>}
    * @private
    */
@@ -1675,17 +1641,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @param {PointerEvent} _event - The originating click event.
    * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static #toggleSpellHeader(_event, target) {
+  static async #toggleSpellHeader(_event, target) {
     log(3, 'Handling toggle spell level.', { _event, target });
     const levelContainer = target.closest('.spell-level');
     if (!levelContainer || !levelContainer.classList.contains('spell-level')) return;
     const levelId = levelContainer.dataset.level;
-    levelContainer.classList.toggle('collapsed');
-    const collapsedLevels = game.user.getFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS) || [];
-    const isCollapsed = levelContainer.classList.contains('collapsed');
-    if (isCollapsed && !collapsedLevels.includes(levelId)) collapsedLevels.push(levelId);
-    else if (!isCollapsed && collapsedLevels.includes(levelId)) collapsedLevels.splice(collapsedLevels.indexOf(levelId), 1);
-    game.user.setFlag(MODULE.ID, FLAGS.GM_COLLAPSED_LEVELS, collapsedLevels);
+    const isCollapsed = await DataUtils.CollapsedStateManager.toggle(FLAGS.GM_COLLAPSED_LEVELS, levelId);
+    levelContainer.classList.toggle('collapsed', isCollapsed);
     const header = levelContainer.querySelector('.spell-level-heading');
     const spellList = levelContainer.querySelector('.spell-list');
     const collapseIcon = header?.querySelector('.collapse-indicator');
@@ -1704,18 +1666,14 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @param {PointerEvent} _event - The originating click event.
    * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
    */
-  static #toggleFolder(_event, target) {
+  static async #toggleFolder(_event, target) {
     log(3, 'Handling toggle folder.', { _event, target });
     const folderContainer = target.closest('.list-folder');
     if (!folderContainer) return;
     const folderId = folderContainer.dataset.folderId;
     if (!folderId) return;
-    folderContainer.classList.toggle('collapsed');
-    const collapsedFolders = game.user.getFlag(MODULE.ID, FLAGS.COLLAPSED_FOLDERS) || [];
-    const isCollapsed = folderContainer.classList.contains('collapsed');
-    if (isCollapsed && !collapsedFolders.includes(folderId)) collapsedFolders.push(folderId);
-    else if (!isCollapsed && collapsedFolders.includes(folderId)) collapsedFolders.splice(collapsedFolders.indexOf(folderId), 1);
-    game.user.setFlag(MODULE.ID, FLAGS.COLLAPSED_FOLDERS, collapsedFolders);
+    const isCollapsed = await DataUtils.CollapsedStateManager.toggle(FLAGS.COLLAPSED_FOLDERS, folderId);
+    folderContainer.classList.toggle('collapsed', isCollapsed);
     const header = folderContainer.querySelector('.folder-header');
     const content = folderContainer.querySelector('.folder-content');
     const collapseIcon = header?.querySelector('.collapse-indicator');
@@ -1804,7 +1762,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Show the rename dialog and return result.
    * @param {string} currentName - Current name of the spell list
-   * @returns {Promise<Object>} Dialog result and form data
+   * @returns {Promise<object>} Dialog result and form data
    * @private
    */
   async _showRenameDialog(currentName) {
@@ -2313,9 +2271,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Create a spell selection checkbox with proper data attributes.
-   * @param {Object} spell - The spell object
+   * @param {object} spell - The spell object
    * @param {string} type - 'add' or 'remove'
-   * @param {boolean} [isChecked=false] - Whether the checkbox should be checked
+   * @param {boolean} [isChecked] - Whether the checkbox should be checked
    * @returns {string} HTML string for the checkbox
    * @private
    */
