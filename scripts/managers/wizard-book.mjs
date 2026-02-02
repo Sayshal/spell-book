@@ -239,7 +239,8 @@ export class WizardBook {
     log(3, 'Adding spell to spellbook.', { spellUuid, source, classIdentifier: this.classIdentifier });
     await this._ensureFlagsInitialized();
     const journal = await this.getOrCreateSpellbookJournal();
-    const journalPage = journal.pages.find((p) => p.type === 'spells');
+    const journalPage = journal?.pages?.find((p) => p.type === 'spells');
+    if (!journalPage) return false;
     const spells = journalPage.system.spells || new Set();
     spells.add(spellUuid);
     await journalPage.update({ 'system.spells': spells });

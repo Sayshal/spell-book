@@ -233,7 +233,7 @@ export async function getValidCustomListMappings() {
 /**
  * Duplicate a spell list to the custom pack.
  * @param {object} originalSpellList - The original spell list document to duplicate
- * @returns {Promise<object>} The duplicated spell list page
+ * @returns {Promise<object | null>} The duplicated spell list page or null if creation failed
  */
 export async function duplicateSpellList(originalSpellList) {
   log(3, 'Duplicating spell list.', { originalSpellList });
@@ -253,7 +253,8 @@ export async function duplicateSpellList(originalSpellList) {
   const journalName = `${originalSpellList.parent.name} - ${originalSpellList.name}`;
   const journalData = { name: journalName, folder: modifiedFolder?.id, pages: [{ name: originalSpellList.name, type: 'spells', flags: pageData.flags, system: pageData.system }] };
   const journal = await JournalEntry.create(journalData, { pack: customPack.collection });
-  const page = journal.pages.contents[0];
+  const page = journal?.pages?.contents[0];
+  if (!page) return null;
   await updateSpellListMapping(originalSpellList.uuid, page.uuid);
   return page;
 }
@@ -445,7 +446,7 @@ function formatSpellEntry(entry, pack) {
  * @param {string} name - The name of the spell list
  * @param {string} identifier - The identifier (typically class name)
  * @param {string} type - The type of spell list ('class', 'subclass', or 'other')
- * @returns {Promise<object>} The created spell list page
+ * @returns {Promise<object | null>} The created spell list page or null if creation failed
  */
 export async function createNewSpellList(name, identifier, type) {
   log(3, 'Creating new spell list.', { name, identifier, type });
@@ -466,7 +467,8 @@ export async function createNewSpellList(name, identifier, type) {
     ]
   };
   const journal = await JournalEntry.create(journalData, { pack: MODULE.PACK.SPELLS });
-  const page = journal.pages.contents[0];
+  const page = journal?.pages?.contents[0];
+  if (!page) return null;
   await dnd5e.registry.spellLists.register(page.uuid);
   return page;
 }
@@ -570,7 +572,7 @@ export async function findClassIdentifiers() {
  * Create a merged spell list from multiple existing spell lists.
  * @param {Array<string>} spellListUuids - Array of UUIDs of spell lists to merge
  * @param {string} mergedListName - Name for the merged list
- * @returns {Promise<object>} The created merged spell list page
+ * @returns {Promise<object | null>} The created merged spell list page or null if creation failed
  */
 export async function createMergedSpellList(spellListUuids, mergedListName) {
   log(3, 'Creating merged spell list.', { spellListUuids, mergedListName });
@@ -603,7 +605,7 @@ export async function createMergedSpellList(spellListUuids, mergedListName) {
     ]
   };
   const journal = await JournalEntry.create(journalData, { pack: MODULE.PACK.SPELLS });
-  return journal.pages.contents[0];
+  return journal?.pages?.contents[0] ?? null;
 }
 
 /**
