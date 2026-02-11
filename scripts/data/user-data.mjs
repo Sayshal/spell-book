@@ -1,9 +1,9 @@
 /**
  * User Spell Data Storage and Management
  *
- * Provides journal-based storage for user-specific spell data including notes,
- * favorites, and usage statistics. This module handles data persistence, caching,
- * and HTML table generation for user spell analytics and personalization features.
+ * Provides journal-based storage for user-specific spell data including notes
+ * and favorites. This module handles data persistence, caching,
+ * and HTML table generation for user spell personalization features.
  * @module DataUtils/SpellUserData
  * @author Tyler
  */
@@ -59,7 +59,7 @@ function createEmptySpellData() {
  * @returns {object} Empty actor data object
  */
 function createEmptyActorData() {
-  return { favorited: false, usageStats: { count: 0, lastUsed: null, contextUsage: { combat: 0, exploration: 0 } } };
+  return { favorited: false };
 }
 
 /**
@@ -318,29 +318,8 @@ export class UserData {
         const favoritedCell = row.querySelector('td:nth-child(2)');
         const favorited = favoritedCell && favoritedCell.textContent.trim().toLowerCase() === 'yes';
         if (!spellData[uuid]) spellData[uuid] = { notes: '', actorData: {} };
-        if (!spellData[uuid].actorData[actorId]) spellData[uuid].actorData[actorId] = { favorited: false, usageStats: { count: 0, lastUsed: null, contextUsage: { combat: 0, exploration: 0 } } };
+        if (!spellData[uuid].actorData[actorId]) spellData[uuid].actorData[actorId] = { favorited: false };
         spellData[uuid].actorData[actorId].favorited = favorited;
-      });
-    });
-    const usageTables = doc.querySelectorAll('table[data-table-type="spell-usage"]');
-    usageTables.forEach((table) => {
-      const actorId = table.dataset.actorId;
-      if (!actorId) return;
-      const rows = table.querySelectorAll('tbody tr[data-spell-uuid]');
-      rows.forEach((row) => {
-        const uuid = row.dataset.spellUuid;
-        const combatCell = row.querySelector('td:nth-child(2)');
-        const explorationCell = row.querySelector('td:nth-child(3)');
-        const totalCell = row.querySelector('td:nth-child(4)');
-        const lastUsedCell = row.querySelector('td:nth-child(5)');
-        const combatCount = combatCell ? parseInt(combatCell.textContent.trim()) || 0 : 0;
-        const explorationCount = explorationCell ? parseInt(explorationCell.textContent.trim()) || 0 : 0;
-        const totalCount = totalCell ? parseInt(totalCell.textContent.trim()) || 0 : 0;
-        const lastUsedText = lastUsedCell ? lastUsedCell.textContent.trim() : null;
-        const lastUsed = lastUsedText && lastUsedText !== '-' ? new Date(lastUsedText).getTime() : null;
-        if (!spellData[uuid]) spellData[uuid] = { notes: '', actorData: {} };
-        if (!spellData[uuid].actorData[actorId]) spellData[uuid].actorData[actorId] = { favorited: false, usageStats: { count: 0, lastUsed: null, contextUsage: { combat: 0, exploration: 0 } } };
-        spellData[uuid].actorData[actorId].usageStats = { count: totalCount, lastUsed: lastUsed, contextUsage: { combat: combatCount, exploration: explorationCount } };
       });
     });
     return spellData;
@@ -360,12 +339,7 @@ export class UserData {
     const spellCol = game.i18n.localize('SPELLBOOK.UserData.SpellColumn');
     const notesCol = game.i18n.localize('SPELLBOOK.UserData.NotesColumn');
     const favoritesTitle = game.i18n.localize('SPELLBOOK.UserData.FavoritesTitle');
-    const usageTitle = game.i18n.localize('SPELLBOOK.UserData.UsageTitle');
     const favoritedCol = game.i18n.localize('SPELLBOOK.UserData.FavoritedColumn');
-    const combatCol = game.i18n.localize('SPELLBOOK.UserData.CombatColumn');
-    const explorationCol = game.i18n.localize('SPELLBOOK.UserData.ExplorationColumn');
-    const totalCol = game.i18n.localize('SPELLBOOK.UserData.TotalColumn');
-    const lastUsedCol = game.i18n.localize('SPELLBOOK.UserData.LastUsedColumn');
     const unknownSpell = game.i18n.localize('SPELLBOOK.UI.UnknownSpell');
     const spellNameCache = new Map();
     const getSpellName = (uuid) => {
@@ -379,17 +353,11 @@ export class UserData {
     const userActors = game.actors.filter((actor) => actor.type === 'character' && (actor.ownership[userId] === 3 || user?.character?.id === actor.id));
     const processedActors = userActors.map((actor) => {
       const favoriteSpells = [];
-      const usageSpells = [];
       for (const [uuid, data] of Object.entries(spellData)) {
         const actorData = data.actorData?.[actor.id];
         if (actorData?.favorited) favoriteSpells.push({ uuid, name: getSpellName(uuid) });
-        if (actorData?.usageStats && actorData.usageStats.count > 0) {
-          const stats = actorData.usageStats;
-          const lastUsedDate = stats.lastUsed ? foundry.utils.timeSince(stats.lastUsed) : '-';
-          usageSpells.push({ uuid, name: getSpellName(uuid), stats, lastUsedDate });
-        }
       }
-      return { id: actor.id, name: actor.name, favoriteSpells, usageSpells };
+      return { id: actor.id, name: actor.name, favoriteSpells };
     });
     const notesSpells = [];
     for (const [uuid, data] of Object.entries(spellData)) if (data.notes && data.notes.trim()) notesSpells.push({ uuid, name: getSpellName(uuid), notes: data.notes });
@@ -403,12 +371,7 @@ export class UserData {
       spellCol,
       notesCol,
       favoritesTitle,
-      usageTitle,
-      favoritedCol,
-      combatCol,
-      explorationCol,
-      totalCol,
-      lastUsedCol
+      favoritedCol
     });
   }
 
@@ -549,9 +512,9 @@ export class UserData {
     const userData = spellData[canonicalUuid];
 
     let result;
-    if (!userData) result = { notes: '', favorited: false, usageStats: null };
+    if (!userData) result = { notes: '', favorited: false };
     else if (actorId && userData.actorData?.[actorId]) result = { ...userData.actorData[actorId], notes: userData.notes };
-    else result = { notes: userData.notes || '', favorited: false, usageStats: null };
+    else result = { notes: userData.notes || '', favorited: false };
 
     instance.cache.set(cacheKey, { data: result, timestamp: Date.now() });
     instance._cleanupCaches();
@@ -561,7 +524,7 @@ export class UserData {
   /**
    * Set user data for a spell with automatic infrastructure management.
    * @param {string | object} spellOrUuid - Spell UUID or spell object to set data for
-   * @param {object} data - Data to set (notes, favorited, usageStats)
+   * @param {object} data - Data to set (notes, favorited)
    * @param {string} [userId] - User ID (defaults to current user)
    * @param {string} [actorId] - Actor ID for actor-specific data
    * @returns {Promise<boolean>} Success status of the update operation
@@ -585,7 +548,6 @@ export class UserData {
         spellData[canonicalUuid].actorData[actorId] = createEmptyActorData();
       }
       if (data.favorited !== undefined) spellData[canonicalUuid].actorData[actorId].favorited = data.favorited;
-      if (data.usageStats !== undefined) spellData[canonicalUuid].actorData[actorId].usageStats = data.usageStats;
     } else if (data.notes !== undefined) {
       spellData[canonicalUuid].notes = data.notes;
     }
@@ -597,7 +559,7 @@ export class UserData {
       const result =
         actorId && spellData[canonicalUuid].actorData[actorId]
           ? { ...spellData[canonicalUuid].actorData[actorId], notes: spellData[canonicalUuid].notes }
-          : { notes: spellData[canonicalUuid].notes || '', favorited: false, usageStats: null };
+          : { notes: spellData[canonicalUuid].notes || '', favorited: false };
       instance.cache.set(cacheKey, { data: result, timestamp: Date.now() });
     }
     return success;
@@ -640,21 +602,17 @@ export class UserData {
           if (actorId && spellEntry.actorData?.[actorId]) {
             userData = { ...spellEntry.actorData[actorId], notes: spellEntry.notes };
           } else {
-            userData = { notes: spellEntry.notes || '', favorited: false, usageStats: null };
+            userData = { notes: spellEntry.notes || '', favorited: false };
           }
         }
       }
     }
 
     let favorited = false;
-    let usageCount = 0;
-    let lastUsed = null;
     if (userData) {
       favorited = userData.favorited;
-      usageCount = userData.usageStats?.count || 0;
-      lastUsed = userData.usageStats?.lastUsed || null;
     }
-    return { ...spell, userData, favorited, hasNotes: !!(userData?.notes && userData.notes.trim()), usageCount, lastUsed };
+    return { ...spell, userData, favorited, hasNotes: !!(userData?.notes && userData.notes.trim()) };
   }
 
   /**
@@ -692,7 +650,7 @@ export class UserData {
       const cacheKey = targetActorId ? `${targetUserId}:${targetActorId}:${canonicalUuid}` : `${targetUserId}:${canonicalUuid}`;
       const result = targetActorId
         ? { ...spellData[canonicalUuid].actorData[targetActorId], notes: spellData[canonicalUuid].notes }
-        : { notes: spellData[canonicalUuid].notes || '', favorited: false, usageStats: null };
+        : { notes: spellData[canonicalUuid].notes || '', favorited: false };
       instance.cache.set(cacheKey, { data: result, timestamp: Date.now() });
     }
     return success;
@@ -728,7 +686,7 @@ export class UserData {
       // Store flattened format to match what getUserDataForSpell/enhanceSpellWithUserData expects
       const cacheKey = `${targetUserId}:${canonicalUuid}`;
       instance.cache.set(cacheKey, {
-        data: { notes: spellData[canonicalUuid].notes, favorited: false, usageStats: null },
+        data: { notes: spellData[canonicalUuid].notes, favorited: false },
         timestamp: Date.now()
       });
     }

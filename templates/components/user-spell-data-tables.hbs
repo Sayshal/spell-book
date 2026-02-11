@@ -55,30 +55,6 @@
         </tbody>
       </table>
 
-      <!-- Spell Usage Statistics Table with Data -->
-      <h2>{{../usageTitle}}</h2>
-      <table class="spell-book-data" data-table-type="spell-usage" data-actor-id="{{actor.id}}">
-        <thead>
-          <tr>
-            <th>{{../spellCol}}</th>
-            <th>{{../combatCol}}</th>
-            <th>{{../explorationCol}}</th>
-            <th>{{../totalCol}}</th>
-            <th>{{../lastUsedCol}}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {{#each actor.usageSpells as |spell|}}
-            <tr data-spell-uuid="{{spell.uuid}}">
-              <td>{{spell.name}}</td>
-              <td>{{spell.stats.contextUsage.combat}}</td>
-              <td>{{spell.stats.contextUsage.exploration}}</td>
-              <td>{{spell.stats.count}}</td>
-              <td>{{spell.lastUsedDate}}</td>
-            </tr>
-          {{/each}}
-        </tbody>
-      </table>
     </div>
   {{/each}}
 

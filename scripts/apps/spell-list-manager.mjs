@@ -14,8 +14,6 @@ import { DetailsCustomization, SpellComparison } from '../dialogs/_module.mjs';
 import { log } from '../logger.mjs';
 import * as UIUtils from '../ui/_module.mjs';
 import * as ValidationUtils from '../validation/_module.mjs';
-import { AnalyticsDashboard } from './_module.mjs';
-
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const { renderTemplate } = foundry.applications.handlebars;
 
@@ -39,7 +37,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       hideList: this.#hideList,
       mergeLists: this.#mergeLists,
       openActor: this.#openActorSheet,
-      openAnalytics: this.#openAnalytics,
       openClass: this.#openClass,
       openCustomization: this.#openCustomization,
       registerList: this.#registerList,
@@ -2061,17 +2058,6 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, newHiddenLists);
     }
     this.render(false, { parts: ['sidebar', 'footer'] });
-  }
-
-  /**
-   * Handle open analytics dashboard.
-   * @this SpellListManager
-   * @param {PointerEvent} _event - The originating click event.
-   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
-   */
-  static async #openAnalytics(_event, _target) {
-    log(3, 'Opening Analytics Dashboard');
-    new AnalyticsDashboard({ viewMode: 'gm' }).render({ force: true });
   }
 
   /**

@@ -9,7 +9,7 @@
  * @author Tyler
  */
 
-import { AnalyticsDashboard, PartyCoordinator, SpellBook, SpellListManager } from '../apps/_module.mjs';
+import { PartyCoordinator, SpellBook, SpellListManager } from '../apps/_module.mjs';
 import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
@@ -353,9 +353,7 @@ function createJournalButtonsContainer() {
   const container = document.createElement('div');
   container.classList.add('spell-book-buttons-container');
   const managerButton = createJournalManagerButton();
-  const analyticsButton = createJournalAnalyticsButton();
   container.appendChild(managerButton);
-  container.appendChild(analyticsButton);
   return container;
 }
 
@@ -377,37 +375,3 @@ function createJournalManagerButton() {
   return managerButton;
 }
 
-/**
- * Create the analytics dashboard button for journal sidebar.
- * @returns {HTMLElement} Button element for opening analytics dashboard
- */
-function createJournalAnalyticsButton() {
-  log(3, 'Creating journal analytics button.');
-  const analyticsButton = document.createElement('button');
-  analyticsButton.classList.add('spell-book-analytics-button');
-  analyticsButton.innerHTML = `<i class="fas fa-chart-bar"></i> ${game.i18n.localize('SPELLBOOK.Analytics.OpenDashboard')}`;
-  const dashboard = new AnalyticsDashboard({ viewMode: 'gm', userId: game.user.id });
-  analyticsButton.addEventListener('click', () => {
-    log(3, 'Analytics button clicked.');
-    dashboard.render(true);
-  });
-  analyticsButton.addEventListener('contextmenu', async (event) => {
-    log(3, 'Analytics button right-clicked, toggling tracking.');
-    event.preventDefault();
-    event.stopPropagation();
-    const currentSetting = game.settings.get(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING);
-    const newSetting = !currentSetting;
-    try {
-      await game.settings.set(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING, newSetting);
-      analyticsButton.classList.toggle('tracking-disabled', !newSetting);
-      analyticsButton.title = newSetting ? game.i18n.localize('SPELLBOOK.Analytics.TrackingEnabled') : game.i18n.localize('SPELLBOOK.Analytics.TrackingDisabled');
-      log(3, 'Spell usage tracking toggled.', { newSetting });
-    } catch (error) {
-      log(1, 'Error toggling spell usage tracking.', { error });
-    }
-  });
-  const trackingEnabled = game.settings.get(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING);
-  analyticsButton.classList.toggle('tracking-disabled', !trackingEnabled);
-  analyticsButton.title = trackingEnabled ? game.i18n.localize('SPELLBOOK.Analytics.TrackingEnabled') : game.i18n.localize('SPELLBOOK.Analytics.TrackingDisabled');
-  return analyticsButton;
-}

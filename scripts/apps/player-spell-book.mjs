@@ -3,7 +3,7 @@
  *
  * The primary user-facing interface for managing spells, spell preparation, and spellcasting
  * capabilities. This application serves as the central hub for all spell-related
- * activities including preparation management, filter configuration, analytics access, and
+ * activities including preparation management, filter configuration, and
  * party coordination features.
  * @module Applications/SpellBook
  * @author Tyler
@@ -16,7 +16,7 @@ import { log } from '../logger.mjs';
 import { SpellManager, WizardBook, PartyMode } from '../managers/_module.mjs';
 import { State } from '../state/_module.mjs';
 import * as UIUtils from '../ui/_module.mjs';
-import { PlayerFilterConfiguration, AnalyticsDashboard, PartyCoordinator } from './_module.mjs';
+import { PlayerFilterConfiguration, PartyCoordinator } from './_module.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const { renderTemplate } = foundry.applications.handlebars;
@@ -91,7 +91,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       editNote: this.#editNote,
       learnSpell: this.#learnSpell,
       learnSpellFromScroll: this.#learnSpellFromScroll,
-      openAnalytics: this.#openAnalytics,
       openCustomization: this.#openCustomization,
       openFilterConfig: this.#openFilterConfig,
       openLoadoutDialog: { handler: this.#openLoadouts, buttons: [0, 2] },
@@ -186,14 +185,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         label: 'SPELLBOOK.UI.Reset',
         tooltip: 'SPELLBOOK.UI.ResetTooltip',
         cssClass: 'reset-button'
-      },
-      {
-        type: 'button',
-        action: 'openAnalytics',
-        icon: 'fas fa-chart-bar',
-        label: 'SPELLBOOK.Analytics.OpenDashboard',
-        tooltip: 'SPELLBOOK.Analytics.OpenDashboardTooltip',
-        cssClass: 'analytics-button'
       },
       {
         type: 'button',
@@ -661,17 +652,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       await this._state.refreshClassSpellData(classIdentifier);
       this.render(false);
     }
-  }
-
-  /**
-   * Handle opening analytics dashboard.
-   * @this SpellBook
-   * @param {PointerEvent} _event - The originating click event.
-   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
-   */
-  static async #openAnalytics(_event, _target) {
-    log(3, 'Handling analytics dashboard opening.', { _event, _target });
-    new AnalyticsDashboard().render({ force: true });
   }
 
   /**

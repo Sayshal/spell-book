@@ -11,6 +11,5 @@ export { Migrations } from './migrations.mjs';
 export { PartyMode } from './party-mode.mjs';
 export { RuleSet } from './rule-set.mjs';
 export { SpellManager } from './spell-manager.mjs';
-export { UsageTracker } from './usage-tracker.mjs';
 export { UserDataSetup } from './user-data-setup.mjs';
 export { WizardBook } from './wizard-book.mjs';
