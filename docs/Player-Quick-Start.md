@@ -12,8 +12,6 @@ The module will automatically detect and organize spells that belong to your cha
 
 ## Opening Your Spell Book
 
-![spellbook-open-methods.gif](https://github.com/Sayshal/spell-book/blob/main/github_media/spellbook-open-methods.gif)
-
 You can open your Spell Book through:
 
 - The **Spell Book button** on your character sheet
@@ -31,37 +29,35 @@ When you open your Spell Book, you'll see:
 - **Checkboxes** next to each spell for preparation
 - **Footer information** showing your preparation limits and current count
 
-![spellbook-main-interface.png](https://github.com/Sayshal/spell-book/blob/main/github_media/spellbook-main-interface.png)
+![Main interface showing a single-class character](https://raw.githubusercontent.com/Sayshal/spell-book/main/github_media/01_SINGLECLASSCHAR.png)
 
 ### Preparing Spells
 
-1. **Select your class tab** - Each class prepares spells independently
+1. **Select your class tab** — Each class prepares spells independently
 2. **Check the boxes** next to spells you want to prepare
-3. **Monitor the footer** - It shows your current prepared count vs. your limit
-4. **Cantrips are separate** - They have their own selection rules and limits
+3. **Monitor the footer** — It shows your current prepared count vs. your limit
+4. **Cantrips are separate** — They have their own selection rules and limits
 
 ### Understanding Spell Tags
 
 Spells display various tags to indicate their status:
 
-- **Prepared** - Currently prepared and ready to cast
-- **Granted** - Automatically prepared by class feature or item
-- **At Will** - Can be cast without using spell slots
-- **Pact** - Uses pact magic slots (Warlock)
-- **Ritual** - Can be cast as a ritual
-- **Innate** - Innate spellcasting ability
+- **Prepared** — Currently prepared and ready to cast
+- **Granted** — Automatically prepared by class feature or item
+- **At Will** — Can be cast without using spell slots
+- **Pact** — Uses pact magic slots (Warlock)
+- **Ritual** — Can be cast as a ritual
+- **Innate** — Innate spellcasting ability
 
 ### Checkbox States
 
-- ☐ **Empty checkbox** - Spell not prepared, click to prepare
-- ☑ **Checked checkbox** - Spell prepared, click to unprepare
-- 🔒 **Locked checkbox** - Spell always prepared (granted by class/item)
+- ☐ **Empty checkbox** — Spell not prepared, click to prepare
+- ☑ **Checked checkbox** — Spell prepared, click to unprepare
+- 🔒 **Locked checkbox** — Spell always prepared (granted by class/item)
 
 ## Reading the Footer
 
 The footer provides crucial information about your spell preparation:
-
-![spellbook-footer.png](https://github.com/Sayshal/spell-book/blob/main/github_media/spellbook-footer.png)
 
 - **Preparation Count**: Shows "X / Y Prepared" for each class
 - **Cantrip Count**: Displays separately from leveled spells
@@ -72,12 +68,12 @@ The footer provides crucial information about your spell preparation:
 
 If you have multiple spellcasting classes, Spell Book makes management simple:
 
-![spellbook-multiclass-tabs.png](https://github.com/Sayshal/spell-book/blob/main/github_media/spellbook-multiclass-tabs.png)
+![Multiclass character with multiple class tabs](https://raw.githubusercontent.com/Sayshal/spell-book/main/github_media/03_MULTICLASS.png)
 
 - **Separate tabs** for each spellcasting class (shown with class icons)
-- **Independent preparation** - Each class maintains its own prepared spells
-- **Shared spell slots** - The system automatically calculates multiclass slots
-- **Clear organization** - Never mix up which spells belong to which class
+- **Independent preparation** — Each class maintains its own prepared spells
+- **Shared spell slots** — The system automatically calculates multiclass slots
+- **Clear organization** — Never mix up which spells belong to which class
 
 ### Tab Navigation
 
@@ -89,17 +85,15 @@ If you have multiple spellcasting classes, Spell Book makes management simple:
 
 Wizards have a special **Spellbook tab** for managing their learned spells:
 
-![spellbook-wizard-tab.png](https://github.com/Sayshal/spell-book/blob/main/github_media/spellbook-wizard-tab.png)
-
-The wizard spellbook tab features a special icon: ![icon.png](https://github.com/Sayshal/spell-book/blob/main/github_media/icon.png)
+![Wizard spellbook tab](https://raw.githubusercontent.com/Sayshal/spell-book/main/github_media/02_WIZARDBOOK.png)
 
 ### Learning New Spells
 
 1. **Navigate to your Spellbook tab** (look for the tinted book icon)
-2. **Find spells to learn** - They'll have a "Learn Spell" button
-3. **Check the footer** - It shows how many spells you know and if you have free spells remaining
-4. **Learn the spell** - Click the button and confirm the cost (if any)
-5. **Already Learned** - Once learned, spells show this tag instead of the button
+2. **Find spells to learn** — They'll have a "Learn Spell" button
+3. **Check the footer** — It shows how many spells you know and if you have free spells remaining
+4. **Learn the spell** — Click the button and confirm the cost (if any)
+5. **Already Learned** — Once learned, spells show this tag instead of the button
 
 ### Free Spells vs. Purchased Spells
 
@@ -113,7 +107,7 @@ The wizard spellbook tab features a special icon: ![icon.png](https://github.com
 
 Use the sidebar filters to quickly find spells:
 
-![spellbook-filters.png](https://github.com/Sayshal/spell-book/blob/main/github_media/spellbook-filters.png)
+![Filter panel with school, level, and source options](https://raw.githubusercontent.com/Sayshal/spell-book/main/github_media/06_FILTERS.png)
 
 - **School**: Filter by spell school (Evocation, Illusion, etc.)
 - **Level**: Show only specific spell levels
@@ -148,13 +142,13 @@ Right-click any spell to access quick actions:
 
 Access your personal settings through the **wand icon** in the Spell Book:
 
-![spellbook-settings-icon.png](https://github.com/Sayshal/spell-book/blob/main/github_media/spellbook-settings-icon.png)
+![Spell settings dialog](https://raw.githubusercontent.com/Sayshal/spell-book/main/github_media/04_SPELLSETTINGS.png)
 
 Key settings to review:
 
-- **UI Customization** - Choose what spell information to display
-- **Filter Configuration** - Show/hide specific filters
-- **Auto-Delete Unprepared** - Automatically clean up your sheet
+- **UI Customization** — Choose what spell information to display
+- **Filter Configuration** — Show/hide specific filters
+- **Auto-Delete Unprepared** — Automatically clean up your sheet
 
 ## Tips for Success
 

@@ -35,7 +35,7 @@ After enabling the module, GMs should complete these essential setup steps:
    - Module-specific compendiums are automatically selected
    - Click **Save Selection** (world will reload to index compendiums)
 
-[https://github.com/Sayshal/spell-book/blob/main/github_media/CompendiumSelectionDialog.png]
+[https://raw.githubusercontent.com/Sayshal/spell-book/main/github_media/CompendiumSelectionDialog.png]
 
 2. **Review Module Settings**
    - Choose your **Spellcasting Rule Set** (Legacy 2014 or Modern 2024)
@@ -85,12 +85,6 @@ These settings affect all players in your world and can only be modified by GMs.
 - Automatically deduct gold when wizards copy spells
 - Cost per level configurable per class
 - Default: Disabled
-
-**Enable Spell Usage Analytics**
-
-- Track spell casting frequency and patterns
-- Powers the Analytics Dashboard
-- Default: Enabled
 
 ### Interface Options
 
@@ -167,7 +161,7 @@ These settings are personal preferences that each user can configure individuall
 
 Access detailed display settings via **Game Settings** → **Spell Details Customization**
 
-[https://github.com/Sayshal/spell-book/blob/main/github_media/UICustomization.png]
+[https://raw.githubusercontent.com/Sayshal/spell-book/main/github_media/UICustomization.png]
 
 This dialog allows you to control which spell information appears in:
 

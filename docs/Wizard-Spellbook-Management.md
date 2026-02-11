@@ -1,29 +1,32 @@
-:loudspeaker: NOTE: Under construction - may be incomplete! :loudspeaker:
-
 # Wizard Spellbook Management
 
-## Wizard-Specific Features
+---
 
-### Spell Learning
+## Spell Learning
 
 - Learning spells from scrolls
 - Spell copying mechanics
 - Cost and time calculations
 
-### Spellbook Management
+---
+
+## Spellbook Management
 
 - Wizard spellbook interface
 - Known vs. prepared spell distinction
 - Spell acquisition tracking
 
-### Advanced Features
+---
+
+## Advanced Features
 
 - Scroll scanner integration
 - Free spell learning tracking
 - Cantrip swap mechanics
 
+---
+
 ## Integration
 
 - Long rest spell learning
 - Party coordination for wizards
-- Analytics for wizard spell usage
