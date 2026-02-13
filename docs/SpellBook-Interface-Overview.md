@@ -20,12 +20,21 @@ The Spell Book uses a dynamic tab system for each spellcasting class a character
 
 ### Available Filters
 
+- Name (text search)
 - Spell level
 - Spell school
 - Casting time
+- Range
 - Damage type
-- Ritual spells
+- Condition
+- Requires save
+- Concentration
+- Material components
+- Ritual
 - Prepared status
+- Favorited
+- Prepared by party
+- Source
 
 Filters can be combined to narrow results dynamically.
 
@@ -39,13 +48,25 @@ Players can customize the filter interface via the **Configure Display** menu (p
 
 ---
 
+## Favorites
+
+Toggle any spell as a favorite via the context menu or the favorite action. Favorites sync with `actor.system.favorites` and persist in journal storage. Use the **Favorited** filter to view only favorited spells.
+
+---
+
+## Sidebar
+
+The sidebar can be collapsed to maximize spell list space. Collapse state is persisted per user via flags.
+
+---
+
 ## Footer
 
 The Spell Book footer displays:
 
 - **Prepared Spell Count** — How many spells you have prepared per class out of your total
 - **Save** — Saves all spell preparation changes
-- **Reset** — Resets recent changes (Shift+click clears all prepared spells)
+- **Reset** — Clears active filters and collapsed levels. **Shift+click** performs a full reset (prepared spells, filters, favorites, collapsed levels)
 - **Manage Loadouts** — Opens the menu to create, equip, modify, and delete spell loadouts (right-click for quick selection)
 - **Party Manager** — Opens the [Party Spells Interface](PartySpells-Interface-Overview)
 
@@ -53,12 +74,23 @@ The Spell Book footer displays:
 
 ## Advanced Search
 
-The search bar supports:
+The search bar supports partial name matching and combined search and filter usage.
 
-- Partial name matching
-- Combined search and filter usage
+### Field-Based Search
 
-The prefix character for advanced search mode is configurable in client settings (default: `^`).
+Type the prefix character (default: `^`) to enter advanced search mode. Field-based syntax allows targeted queries:
+
+- `^level:1` — All 1st-level spells
+- `^school:evocation` — All evocation spells
+- `^level:1 AND school:evocation` — 1st-level evocation spells
+- `^concentration:true` — All concentration spells
+- `^ritual:true AND level:1` — 1st-level ritual spells
+
+The prefix character is configurable in client settings.
+
+### Cantrip Counter
+
+Each spell level heading displays the count of prepared spells at that level. For cantrips, the counter also shows the class-specific cantrip limit when applicable.
 
 ---
 
@@ -97,7 +129,7 @@ Scroll consumption behavior (automatic vs. approval-based) is controlled by GM s
 
 ### Spell Comparison
 
-Compare multiple spells side by side. Key information displayed includes damage type, casting level, and spell school. Useful when choosing prepared spells or evaluating similar options.
+Compare multiple spells side by side. Attributes compared include: UUID, name, image, level, school, casting time, range, duration, components, and damage formulas (with max dice calculations). Useful when choosing prepared spells or evaluating similar options.
 
 ### Spell Details Customization
 
@@ -107,17 +139,25 @@ Control how spell information is displayed. Show or hide specific spell details 
 
 Save and swap prepared spell configurations:
 
-- Save commonly used spell setups
-- Quickly swap between loadouts
+- Save commonly used spell setups with descriptive names
+- Quickly swap between loadouts via the footer button
+- Right-click the loadout button for quick selection context menu
+- Loadouts can be class-specific
 - Useful for prepared casters or situational encounters
 
 ### Spell Notes
 
-Add personal annotations to spells. Notes are private to the player and persist across sessions.
+Add personal annotations to spells:
+
+- Notes are private to the player and persist across sessions
+- Maximum length is configurable by the GM (default: 240 characters)
+- Notes can optionally be injected into spell descriptions (before or after) via the Spell Notes Injection setting
 
 ### Settings Dialog (Wand Menu)
 
-The Wand Menu opens character-specific Spell Book settings. From this dialog, the GM can:
+GM-only access — opens per-actor spell settings (enforcement, cantrip rules, spell lists, preparation bonuses, wizard mode, etc.). The wand icon is only visible to GMs.
+
+From this dialog, the GM can:
 
 - Force-enable wizard spell learning for any character
 - Set rules on when spells can be swapped

@@ -25,7 +25,7 @@ Opens the Spell Book interface for the currently selected token.
 1. Select a token on the canvas
 2. Run the macro from your hotbar
 
-The macro checks that the token has an associated actor with spells before opening. If no token is selected, a warning notification is shown.
+The macro checks that the token has an associated actor with spells before opening. If no token is selected, a warning notification is shown. On success, displays a notification: "Opening Spell Book for {actor name}".
 
 ---
 
@@ -37,7 +37,7 @@ Posts the selected token's spell slot usage to chat as a formatted table.
 1. Select a token on the canvas
 2. Run the macro from your hotbar
 
-The chat message displays each spell level's used and remaining slots. Only levels with at least one slot are shown.
+The chat message displays an HTML table with **Level**, **Used**, and **Remaining** columns. Only levels with at least one slot are shown.
 
 ---
 
@@ -60,17 +60,17 @@ Identifies spells across all compendiums that are not included in any spell list
 **How to use:**
 1. Run the macro from your hotbar
 2. Wait for the scan to complete
-3. Review the results dialog showing spell names and sources
+3. Review the results dialog showing a table with **Spell Name** and **Source** columns
 4. Optionally click **Copy to Console** to log the full list
 
 ---
 
 ## Flag Purge
 
-Removes all Spell Book module flags and items from selected actor(s).
+Removes all Spell Book module flags and any items containing module flags from selected actor(s).
 
 > [!CAUTION]
-> This is a destructive operation that cannot be undone. All Spell Book data (flags and items) will be permanently deleted from the selected actor(s).
+> This is a destructive operation that cannot be undone. All Spell Book module flags and items with spell-book flags will be permanently deleted from the selected actor(s).
 
 **How to use:**
 1. Run the macro from your hotbar (GM only)
@@ -94,4 +94,4 @@ Validates all spell UUIDs in custom spell lists and removes entries that fail to
 3. Read the warning dialog carefully
 4. Click **Proceed with Cleanup** to confirm
 
-The macro processes all journal packs owned by Spell Book, checks every spell UUID, and removes invalid entries. Results are logged to the console with detailed per-list breakdowns.
+The macro processes all journal packs owned by Spell Book, validates each spell UUID via `fromUuid()` and confirms the resolved document has `type === 'spell'`. Invalid entries are removed. Results are logged to the console with detailed per-list breakdowns.

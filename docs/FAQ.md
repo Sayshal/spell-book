@@ -29,9 +29,9 @@ There are several ways:
 
 You've reached your preparation limit for that class. The footer shows your current count vs. maximum (e.g., "5 / 8 Prepared"). Your limit is calculated from your class level and spellcasting ability modifier. If the number seems wrong, check that your ability scores and class levels are set correctly on your character sheet.
 
-### What does the lock icon on a spell mean?
+### What does a locked/disabled spell checkbox mean?
 
-Locked spells are **always prepared** — they're granted by your class, subclass, or an item (e.g., domain spells for Clerics, oath spells for Paladins). You cannot unprepare them, and they don't count against your preparation limit.
+Locked spells are **always prepared** — they're granted by your class, subclass, or an item (e.g., domain spells for Clerics, oath spells for Paladins). They are excluded from the preparation system entirely: you cannot unprepare them, and they do not count against your preparation limit. In the interface, they appear as disabled checkboxes with a tooltip.
 
 ### How does multiclass preparation work?
 
@@ -70,11 +70,34 @@ The spell may not be in the module's bundled list, or it may come from a third-p
 
 ### How do free spells work?
 
-Wizards receive free spells when leveling up (the exact number is configurable by the GM). The footer tracks how many free spells remain. Once free spells are used, learning additional spells costs gold.
+Wizards have a total free spell capacity calculated from their class level: `startingSpells + max(0, wizardLevel - 1) x spellsPerLevel` (defaults: 6 starting + 2 per level after 1st). Cantrips are always free regardless of capacity. The footer tracks how many free spells remain. Once free spells are used, learning additional spells costs gold.
 
 ### Can Wizards learn spells from scrolls?
 
 Yes. When a Wizard learns a spell that exists as a scroll item, the gold cost is applied based on the spell's level. The GM configures the gold cost formula in module settings.
+
+### What are the enforcement modes?
+
+Spell Book supports three enforcement modes for spell preparation limits:
+
+- **Unenforced** — No restrictions, no notifications
+- **Notify GM** — Players can prepare freely, but GMs receive whispered notifications about over-limit preparations
+- **Enforced** — Strict limits with locked checkboxes preventing over-preparation
+
+Set the default mode in world settings. Per-actor overrides are available via the wand menu.
+
+### What are Legacy and Modern rule sets?
+
+Two rule sets control class-specific behavior:
+
+- **Legacy (2014)** — Traditional D&D 5e rules with no cantrip swapping
+- **Modern (2024)** — Updated rules allowing cantrip swapping on level-up or long rest (class-dependent)
+
+Each class has its own defaults for spell swapping, cantrip swapping, and ritual casting. See [Ruleset Types and What They Mean](Ruleset-Types-and-Meanings) for the full class-specific defaults table.
+
+### Can loadouts be class-specific?
+
+Yes. Loadouts can be saved and applied per class, allowing different preparation sets for each spellcasting class on a multiclass character.
 
 ---
 

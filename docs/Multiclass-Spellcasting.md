@@ -43,3 +43,59 @@ Spell Book only allows preparation of spells assigned to a specific class. A wiz
 - Subclass-granted spells are displayed alongside base class spell lists
 - The system handles always-prepared, granted, and optional subclass spells
 - Domain spells, Circle spells, and similar features are automatically included in preparation calculations
+
+---
+
+## Cantrip Handling
+
+### Preparation Limits
+
+Each class has its own cantrip limit derived from system scale values. Cantrip counters appear in the spell level headings showing current count vs. limit.
+
+### Cantrip Swapping
+
+- Cantrip swapping rules are configured per class
+- One-for-one swap restriction: only one cantrip can be swapped per event
+- Wizard-only long rest cantrip swapping (Modern rules)
+- Enforcement modes (Unenforced, Notify GM, Enforced) apply to cantrips independently
+
+---
+
+## Ritual Casting
+
+Ritual casting rules vary by class:
+
+- **Wizard** — Can ritual-cast any ritual spell from spellbook without preparation
+- **Cleric, Druid, Bard** — Must have the ritual spell prepared
+- **Other classes** — No ritual casting support by default
+
+Ritual casting mode is configurable per class via the per-actor settings.
+
+---
+
+## Wizard Two-Tab System
+
+Wizard characters (or any class with wizard mode enabled) receive two tabs:
+
+1. **Preparation tab** — Standard spell preparation with checkboxes
+2. **Spellbook learning tab** — Browse and learn new spells, manage scroll learning
+
+Each tab maintains its own separate state tracking.
+
+---
+
+## Granted and Always-Prepared Spells
+
+- Spells granted by class features, subclass, or items are detected via `flags.dnd5e.cachedFor` and `system.prepared === 2`
+- These spells are marked with an **A** pill and cannot be unprepared
+- Granted spells do not count against preparation limits
+
+---
+
+## Stale Data Cleanup
+
+When a spellcasting class is removed from a character, the module automatically cleans up:
+
+- Prepared spell lists for the removed class
+- Module flags associated with that class
+- Wizard spellbook data (if the removed class had wizard mode)

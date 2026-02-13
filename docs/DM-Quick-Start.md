@@ -32,12 +32,15 @@ In **Game Settings**, Spell Book adds several GM-facing settings. You do not nee
 
 - **Spell Comparison Maximum** — Default: 3
 - **Cantrip Scale Values** — Default: `cantrips-known, cantrips`
+- **Advanced Search Prefix** — Character that triggers advanced search mode. Default: `^`
+- **Party Mode Token Limit** — Maximum tokens displayed in party spell view (2-8). Default: 4
 
 ### Advanced Settings
 
 - **Suppress Migration Warnings** — Default: Disabled
 - **Cauldron of Plentiful Resources Compatibility** — Default: Disabled (only enable if using CPR)
 - **Auto-Delete Unprepared Spells** — Default: Disabled
+- **Spell Notes Length** — Maximum character limit for player spell notes (10-1000). Default: 240
 
 Full settings reference: [Installation and Settings](Installation-and-Settings)
 
@@ -60,3 +63,11 @@ Full settings reference: [Installation and Settings](Installation-and-Settings)
 - **Deduct Spell Learning Costs** — Off
 - **Disable Long Rest Swap Prompt** — Off
 - **Suppress Migration Warnings** — Off
+
+---
+
+## See Also
+
+- [SpellBook Troubleshooter](SpellBook-Troubleshooter) — Generate diagnostic reports for support
+- [Spell Details Customization](Installation-and-Settings#ui-customization) — Configure which spell details display for players and GMs
+- [Hidden Spell Lists](SpellListManager-Interface-Overview) — Manage hidden lists in the Spell List Manager

@@ -52,6 +52,10 @@
 
 ## Guides and References
 
+### Spell Systems
+
+- **[Spell Preparation System](Spell-Preparation-System)** — Preparation rules, enforcement modes, cantrip handling, ritual casting, and rule sets
+
 ### Configuration Guides
 
 - **[How to modify an existing spell list](Modifying-Existing-Spell-Lists)** — Step-by-step spell list editing

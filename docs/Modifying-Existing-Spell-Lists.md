@@ -13,16 +13,18 @@ Adjust spell availability without rebuilding lists from scratch. Useful for camp
 2. Locate the spell list in the left sidebar
 3. Left-click the list to load it into the center panel
 
-Lists are grouped into three categories:
+Lists are grouped into five categories:
 
 | Category | Description | Editable |
 |---|---|---|
-| Player Spell Book | Lists tied to individual characters (learned spells) | Generally not |
+| Actor Spellbooks | Lists tied to individual characters (learned spells) | Generally not |
 | Custom Spell Lists | GM-created lists | Yes |
-| Spell Lists | System-provided or module-added lists | Read-only (auto-copied) |
+| Merged Spell Lists | Lists created by combining two or more source lists | Yes |
+| Standard Spell Lists | System-provided or module-added lists | Read-only (auto-copied) |
+| Hidden Spell Lists | Lists hidden from the main view | Depends on type |
 
 > [!NOTE]
-> When modifying a system-provided list, Spell Book automatically creates a custom copy. Module updates will not reset your changes.
+> System lists cannot be edited directly — clicking **Edit** automatically creates an editable copy. Custom and merged lists enter edit mode directly. Module updates will not reset your custom copies.
 
 ---
 
@@ -46,7 +48,7 @@ Removing a spell from a list does not delete it from the system or player invent
 
 ### Bulk Editing
 
-Use **Selection Mode** and filtering together for large-scale changes:
+Enable **Selection Mode** to replace individual +/- buttons with checkboxes. This adds **Select All** controls and enables batch operations:
 
 - Adding all spells of a specific level
 - Removing a group of spells based on school or theme

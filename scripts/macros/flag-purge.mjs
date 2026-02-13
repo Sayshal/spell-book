@@ -21,7 +21,7 @@ function flagPurgeScript() {
     });
     const content = `
       <div class="flag-purge-dialog">
-        <p><strong>Warning:</strong> This will permanently delete all Spell Book module flags and items from the selected actor(s).</p>
+        <p><strong>Warning:</strong> This will permanently delete all Spell Book module flags and any items containing module flags from the selected actor(s).</p>
         <div class="form-group">
           <label for="actor-select">Select Actor:</label>
           <select id="actor-select" name="actorId">${actorOptions}</select>
@@ -61,7 +61,7 @@ function flagPurgeScript() {
             await actor.unsetFlag(MODULE_ID, flagKey);
           }
         }
-        const itemIds = actor.items.map((item) => item.id);
+        const itemIds = actor.items.filter((item) => item.flags?.[MODULE_ID]).map((item) => item.id);
         if (itemIds.length > 0) await actor.deleteEmbeddedDocuments('Item', itemIds);
         purgedCount++;
         SPELLBOOK.log(3, `Purged flags and items for actor: ${actor.name}`);
@@ -75,7 +75,7 @@ function flagPurgeScript() {
 }
 export const flagPurge = {
   flagKey: 'flagPurge',
-  version: '1.0.1',
+  version: '1.0.2',
   name: 'Spell Book - Flag Purge',
   img: 'icons/sundries/flags/banner-standard-tattered-red.webp',
   type: 'script',

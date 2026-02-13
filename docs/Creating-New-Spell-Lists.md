@@ -98,6 +98,8 @@ Merge multiple existing lists into a single custom list:
 
 The resulting list is fully editable and independent of its sources.
 
+The merge dialog includes a **Hide Source Lists** option that automatically hides the source lists after the merge is created, keeping the navigation sidebar clean.
+
 > [!NOTE]
 > Custom spell lists do not automatically update when source lists change. Revisit custom lists after system or module updates.
 
@@ -126,6 +128,12 @@ Spell Book supports several oversight styles:
 - Explicit approval prompts
 
 Common use cases: learning from scrolls, gaining spells during downtime, unlocking subclass spells.
+
+---
+
+## Registry Integration
+
+Custom spell lists can integrate with the D&D 5e `SpellListRegistry` system. When enabled, custom lists are registered via `registerCustomSpellLists()` so they participate in the system's native spell list resolution. This is managed automatically by the module's `Registry Enabled Lists` setting.
 
 ---
 

@@ -53,7 +53,7 @@ Spells display various tags to indicate their status:
 
 - ☐ **Empty checkbox** — Spell not prepared, click to prepare
 - ☑ **Checked checkbox** — Spell prepared, click to unprepare
-- 🔒 **Locked checkbox** — Spell always prepared (granted by class/item)
+- **Disabled checkbox** — Spell always prepared (granted by class/item). Shown as a disabled checkbox with a tooltip explaining why it cannot be changed
 
 ## Reading the Footer
 
@@ -89,7 +89,7 @@ Wizards have a special **Spellbook tab** for managing their learned spells:
 
 ### Learning New Spells
 
-1. **Navigate to your Spellbook tab** (look for the tinted book icon)
+1. **Navigate to your Spellbook tab** (look for the Spell Book icon)
 2. **Find spells to learn** — They'll have a "Learn Spell" button
 3. **Check the footer** — It shows how many spells you know and if you have free spells remaining
 4. **Learn the spell** — Click the button and confirm the cost (if any)
@@ -118,8 +118,17 @@ Use the sidebar filters to quickly find spells:
 ### Search Function
 
 - Type in the **search box** to find spells by name
-- Use **advanced search** with special operators (ask your GM about the prefix character)
+- Use **advanced search** by typing the prefix character (default: `^`) followed by field-based queries (e.g., `^level:1 AND school:evocation`). See [SpellBook Interface Overview](SpellBook-Interface-Overview) for full syntax details
 - Search works across all spell properties
+
+## Favorites
+
+Mark frequently used spells as favorites for quick access. Toggle a spell's favorite status from the context menu. Use the **Favorited** filter to show only your favorites. Favorites sync with your character's system favorites.
+
+## Resetting the Interface
+
+- **Click Reset** — Clears active filters and collapsed spell levels
+- **Shift+Click Reset** — Full reset: clears prepared spells, filters, favorites, and collapsed levels
 
 ## Quick Actions
 
@@ -148,7 +157,6 @@ Key settings to review:
 
 - **UI Customization** — Choose what spell information to display
 - **Filter Configuration** — Show/hide specific filters
-- **Auto-Delete Unprepared** — Automatically clean up your sheet
 
 ## Tips for Success
 

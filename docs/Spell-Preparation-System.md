@@ -1,24 +1,25 @@
 # Spell Preparation System
 
-Manages how spellcasting characters prepare and cast spells. Enforces class-specific rules, tracks spell slot usage, and supports multiclass, granted, and always-prepared spells.
+Manages how spellcasting characters prepare and cast spells. Enforces class-specific rules, tracks preparation limits, and supports multiclass, granted, and always-prepared spells.
 
 ---
 
 ## Core Mechanics
 
-### Preparation Rules
+### Preparation Limits
 
-Each class has unique preparation rules:
+Preparation limits are determined by the **dnd5e system** based on each class's spellcasting ability modifier and class level. Spell Book reads and enforces these limits — it does not calculate them independently.
 
-- **Clerics and Druids** — Wisdom modifier + class level
-- **Paladins** — Charisma modifier + half class level (rounded down)
-- **Wizards** — Intelligence modifier + wizard level
+### Rule Sets
 
-The system automatically calculates preparation limits based on class, subclass, and relevant modifiers. Spells that exceed limits are visually indicated and cannot be prepared until other spells are removed.
+Spell Book supports two rule sets that control swapping and cantrip behavior:
 
-### Spell Slot Management
+| Rule Set | Description |
+|---|---|
+| **Legacy (2014)** | Traditional D&D 5e rules. No cantrip swapping. |
+| **Modern (2024)** | Updated rules allowing cantrip swapping on level-up or long rest (class-dependent). |
 
-The system tracks all available spell slots including levels, usage, and remaining capacity. Prepared spells can only be cast if sufficient slots are available.
+Each class can have its own default rule set. See [Ruleset Types and What They Mean](Ruleset-Types-and-Meanings) for the full class-specific defaults table.
 
 ---
 
@@ -43,6 +44,38 @@ After a long rest, characters may swap prepared spells according to class rules.
 
 ---
 
+## Cantrip Rules
+
+### Cantrip Limits
+
+Each class has a cantrip preparation limit derived from system scale values. Cantrip counts are displayed in the level heading alongside the limit.
+
+### Cantrip Swapping
+
+Cantrip swapping rules depend on the rule set and class configuration:
+
+- **One-for-one swapping** — Only one cantrip can be swapped per event (level-up or long rest)
+- **Wizard-only long rest swap** — Only Wizards can swap cantrips on long rest (Modern rules)
+- Swap behavior is configurable per class via the per-actor settings
+
+### Preparation Bonuses
+
+GMs can set per-class `spellPreparationBonus` and `cantripPreparationBonus` values to grant additional preparation slots beyond the system calculation.
+
+---
+
+## Ritual Casting
+
+Three ritual casting modes are available per class:
+
+| Mode | Behavior |
+|---|---|
+| **None** | No ritual casting support |
+| **Prepared** | Can only ritual-cast spells that are currently prepared |
+| **Always** | Can ritual-cast any ritual spell on the class spell list (e.g., Wizard) |
+
+---
+
 ## Always-Prepared Spells
 
 Some spells are always prepared due to class features, subclass grants, or racial traits:
@@ -61,18 +94,12 @@ Multiclass characters maintain separate preparation tabs per class. Preparation 
 
 ## Rule Enforcement
 
-### Preparation Validation
-
-The system validates prepared spells to prevent errors:
-
-- Checks class-specific limits
-- Confirms spell slot sufficiency
-- Enforces rules for always-prepared and granted spells
-
 ### Enforcement Modes
 
 - **Unenforced** — No restrictions on preparation
-- **Notify GM** — Alerts the GM but allows flexibility
-- **Enforced** — Prevents invalid preparations entirely
+- **Notify GM** — Two layers of notification:
+  1. **During editing**: `ui.notifications.info` warns the current user when they exceed their preparation limit
+  2. **On save**: A whispered `ChatMessage` is sent to all GMs with a full spell update report — additions, removals, and over-limit warnings per class
+- **Enforced** — Prevents invalid preparations entirely with locked checkboxes
 
 See [Ruleset Types and What They Mean](Ruleset-Types-and-Meanings) for details.
