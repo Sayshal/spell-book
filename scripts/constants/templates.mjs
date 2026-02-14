@@ -12,19 +12,12 @@
  * Complete template path configuration for the Spell Book module.
  * Organized by functional area for easy navigation and maintenance.
  * @typedef {object} TemplateConfig
- * @property {AnalyticsTemplates} ANALYTICS - Template paths for analytics dashboard and reports
  * @property {ComponentTemplates} COMPONENTS - Reusable component template paths for UI elements
  * @property {DialogTemplates} DIALOGS - Dialog application template paths for user interactions
  * @property {SpellListManagerTemplates} SPELL_LIST_MANAGER - Spell List Manager application templates
  * @property {PlayerSpellBookTemplates} PLAYER_SPELL_BOOK - Player Spell Book application templates
  * @property {TroubleshooterTemplates} TROUBLESHOOTER - Troubleshooter application templates
  * @property {PartySpellManagerTemplates} PARTY_SPELL_MANAGER - Party spell coordination templates
- */
-
-/**
- * Analytics dashboard template paths for spell usage tracking and reporting.
- * @typedef {object} AnalyticsTemplates
- * @property {string} DASHBOARD - Main analytics dashboard template for viewing spell usage statistics
  */
 
 /**
@@ -46,16 +39,15 @@
  * @property {string} SPELL_ITEM - Standard spell item component for regular class tabs
  * @property {string} SPELL_ITEM_WIZARD - Wizard spell item component for wizard spellbook tabs
  * @property {string} SPELL_LEVEL - Spell level grouping component template
- * @property {string} USER_DATA_INTRO - User data introduction template for analytics
+ * @property {string} USER_DATA_INTRO - User data introduction template
  * @property {string} USER_SPELL_DATA_EMPTY - Empty user spell data template
- * @property {string} USER_SPELL_DATA_TABLES - User spell data tables template for analytics
+ * @property {string} USER_SPELL_DATA_TABLES - User spell data tables template
  */
 
 /**
  * Dialog application template paths for user interaction dialogs.
  * Covers all modal dialogs and configuration interfaces.
  * @typedef {object} DialogTemplates
- * @property {string} ANALYTICS_IMPORT_SUMMARY - Analytics data import summary dialog
  * @property {string} COMPENDIUM_SELECTION - Compendium selection dialog template
  * @property {string} CREATE_SPELL_LIST - Create new spell list dialog template
  * @property {string} FILTER_CONFIG - Filter configuration dialog template
@@ -126,15 +118,6 @@
  */
 export const TEMPLATES = {
   /**
-   * Analytics dashboard and reporting templates.
-   * @type {AnalyticsTemplates}
-   */
-  ANALYTICS: {
-    /** Main analytics dashboard for viewing spell usage statistics and trends */
-    DASHBOARD: 'modules/spell-book/templates/analytics/dashboard.hbs'
-  },
-
-  /**
    * Reusable component templates for common UI elements.
    * @type {ComponentTemplates}
    */
@@ -184,13 +167,13 @@ export const TEMPLATES = {
     /** Spell level grouping component for organizing spells by level */
     SPELL_LEVEL: 'modules/spell-book/templates/components/spell-level.hbs',
 
-    /** User data introduction component for analytics features */
+    /** User data introduction component for user spell data */
     USER_DATA_INTRO: 'modules/spell-book/templates/components/user-data-intro.hbs',
 
     /** Empty state component for when no user spell data is available */
     USER_SPELL_DATA_EMPTY: 'modules/spell-book/templates/components/user-spell-data-empty.hbs',
 
-    /** Data tables component for displaying user spell analytics */
+    /** Data tables component for displaying user spell data */
     USER_SPELL_DATA_TABLES: 'modules/spell-book/templates/components/user-spell-data-tables.hbs'
   },
 
@@ -199,9 +182,6 @@ export const TEMPLATES = {
    * @type {DialogTemplates}
    */
   DIALOGS: {
-    /** Analytics import summary dialog showing imported data statistics */
-    ANALYTICS_IMPORT_SUMMARY: 'modules/spell-book/templates/dialogs/analytics-import-summary.hbs',
-
     /** Compendium selection dialog for choosing spell sources */
     COMPENDIUM_SELECTION: 'modules/spell-book/templates/dialogs/compendium-selection.hbs',
 

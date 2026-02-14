@@ -1,111 +1,102 @@
-:loudspeaker: NOTE: Under construction - may be incomplete! :loudspeaker:
-
 # Modifying Existing Spell Lists
 
-Modifying existing spell lists allows GMs to adjust spell availability without rebuilding lists from the ground up. This is useful for campaign-specific balance changes, narrative restrictions, subclass expansions, or system tweaks.
+Adjust spell availability without rebuilding lists from scratch. Useful for campaign-specific balance changes, narrative restrictions, subclass expansions, or system tweaks.
 
-This page explains how to safely modify system, custom, and merged spell lists using the Spell List Manager.
+> [!TIP]
+> For a detailed breakdown of the interface, see [Spell List Manager Interface Overview](SpellListManager-Interface-Overview).
 
-> For a detailed breakdown of the Spell List Manager interface, see [Spell List Manager - Interface Overview](SpellListManager-Interface-Overview)
+---
 
-## Step-by-Step Spell List Editing
+## Accessing Existing Lists
 
-### Accessing Existing Lists
-To begin modifying a spell list:
+1. Open the **Spell List Manager** from the **Compendium** tab
+2. Locate the spell list in the left sidebar
+3. Left-click the list to load it into the center panel
 
-1. Open the Spell List Manager from the Compendium tab.
-2. Locate the desired spell list in the Spell List Navigation sidebar.
-3. Left-click the list to load it into the center panel.
+Lists are grouped into five categories:
 
-Spell lists are grouped into three categories:
-1. Player Spell Book - Lists tied directly to individual characters. These reflect learned spells rather than class availability and should generally not be edited directly.
-2. Custom Spell Lists- Fully editable spell lists created by the GM. These are the safest and most common targets for modification.
-3. Spell Lists - System-provided spell lists or lists added by modules. These may be read-only or intended as reference sources.
+| Category | Description | Editable |
+|---|---|---|
+| Actor Spellbooks | Lists tied to individual characters (learned spells) | Generally not |
+| Custom Spell Lists | GM-created lists | Yes |
+| Merged Spell Lists | Lists created by combining two or more source lists | Yes |
+| Standard Spell Lists | System-provided or module-added lists | Read-only (auto-copied) |
+| Hidden Spell Lists | Lists hidden from the main view | Depends on type |
 
-> Note: When modifying a system provided list, Spell Book will automatically make a custom copy for you to edit. Ensuing module updates don't reset your work.
+> [!NOTE]
+> System lists cannot be edited directly — clicking **Edit** automatically creates an editable copy. Custom and merged lists enter edit mode directly. Module updates will not reset your custom copies.
 
-### Making Modifications
+---
 
-Once a spell list is selected:
-1. Click Edit in the center panel to enable editing.
-2. Use the right-hand panel to browse and filter spells.
+## Making Modifications
 
-#### Adding Spells
-- Click the plus (+) icon next to a spell to add it to the list.
-- Enable Selection Mode to add multiple spells at once.
-- Newly added spells appear immediately in the center panel.
+1. Select a spell list and click **Edit** in the center panel
+2. Use the right panel to browse and filter spells
 
-#### Removing Spells
-- Remove spells directly from the spell list in the center panel.
-- Changes take effect immediately once edit mode is active.
+### Adding Spells
 
-Removing a spell from a spell list does not delete the spell from the system or player inventories; it only restricts availability through that list.
+- Click the **+** icon next to a spell to add it
+- Enable **Selection Mode** to add multiple spells at once
+- Newly added spells appear immediately in the center panel
 
-#### Bulk edit operations
-Bulk editing is recommended when making large-scale changes.
+### Removing Spells
 
-Common workflows include:
+- Remove spells directly from the list in the center panel
+- Changes take effect immediately in edit mode
+
+Removing a spell from a list does not delete it from the system or player inventories — it only restricts availability through that list.
+
+### Bulk Editing
+
+Enable **Selection Mode** to replace individual +/- buttons with checkboxes. This adds **Select All** controls and enables batch operations:
+
 - Adding all spells of a specific level
 - Removing a group of spells based on school or theme
 - Rebuilding a list after system updates
 
-Use Selection Mode and filtering tools together to efficiently manage large spell sets.
+---
 
-### Advanced Modifications
+## Advanced Modifications
 
-#### Conditional Spell Additions
-Some campaigns require spells to be conditionally available based on narrative, faction, or progression milestones.
+### Conditional Spell Additions
 
-Recommended approaches:
+For campaigns requiring conditional spell availability (narrative, faction, or progression-based):
+
 - Maintain multiple spell lists representing different conditions
 - Assign or remove lists as conditions are met
 - Avoid toggling individual spells mid-session
 
-This keeps spell access predictable and auditable.
-
-#### Class-Specific Modifications
+### Class-Specific Modifications
 
 When modifying a class spell list:
-- Create a custom version of the base list
-- Apply additions or removals to the custom list
-- Assign the modified list to affected characters
+
+1. Create a custom version of the base list
+2. Apply additions or removals to the custom list
+3. Assign the modified list to affected characters
 
 This avoids unintended side effects for other classes or NPCs.
 
-#### Subclass integration
-Subclass spell access is best handled using additive spell lists.
+### Subclass Integration
 
-Example workflow:
-- Keep the base class spell list unchanged
-- Create a subclass-specific spell list
-- Assign both lists to the character
+Handle subclass spell access with additive lists:
 
-This approach allows:
-- Clean separation of features
-- Easy reassignment if subclasses change
-- Clear documentation for players
+1. Keep the base class spell list unchanged
+2. Create a subclass-specific spell list
+3. Assign both lists to the character
 
-## Best Practices
+This provides clean separation of features and easy reassignment if subclasses change.
 
-### Backup Considerations
-Before making significant changes:
-- Duplicate or merge the original spell list into a new custom list
-- Use naming conventions to preserve version history
+---
 
-This allows easy rollback if issues arise.
+## Before Modifying
 
-### Testing modified lists
+- Duplicate or merge the original list into a new custom list before making significant changes
+- Use naming conventions to preserve version history (e.g., `Wizard - Core v2`)
+
+### Testing
+
 After modification:
-- Assign the list to a test character
-- Verify visible, learnable, and prepared spells
-- Confirm spell book behavior matches expectations
 
-Testing before a session prevents player disruption.
-
-### Documenting changes for players
-When modifying spell lists:
-- Clearly communicate changes to affected players
-- Document restrictions, additions, or removals
-- Consider listing changes in session notes or campaign documentation
-
-Transparent documentation reduces confusion and reinforces trust.
+1. Assign the list to a test character
+2. Verify visible, learnable, and prepared spells
+3. Confirm Spell Book behavior matches expectations

@@ -1,165 +1,180 @@
-:loudspeaker: NOTE: Under construction - may be incomplete! :loudspeaker:
-
 # SpellBook Interface Overview
-The Spell Book interface is the primary tool players use to view, manage, and interact with their character’s spells. It is designed to support multiclass characters, advanced filtering, spell comparison, and personalized spell management.
 
-This page provides an overview of the Spell Book interface components and how they are used during play.
+The main player interface for viewing, managing, and interacting with spells. Supports multiclass characters, advanced filtering, spell comparison, and personalized spell management.
 
-## Interface Components
+---
 
-### Multiclass Tab System and UI Overview
+## Multiclass Tab System
 
-The Spell Book uses a dynamic tab system to represent each spellcasting class a character possesses.
+The Spell Book uses a dynamic tab system for each spellcasting class a character has.
+
 - A separate tab is generated for each spellcasting class
-- Tabs appear automatically based on the character’s class data
-- Multiclass characters can switch between class tabs without leaving the Spell Book
+- Tabs appear automatically based on the character's class data
+- Multiclass characters switch between class tabs without leaving the interface
+- Each tab displays spells available to prepare and learn for that class
+- Tabs are color-coded with matching preparation pills for readability
 
-Each class tab displays, the spells available to prepare and learn for that class.
+---
 
-To improve readability:
-- Each class tab is color-coded
-- Visual pills, that are color coded, indicate prepared spells
-
-
-### Filtering System and Filter Configuration
-The Spell Book includes a powerful filtering system to help manage large spell lists.
+## Filtering System
 
 ### Available Filters
-Some Common filters include:
+
+- Name (text search)
 - Spell level
 - Spell school
 - Casting time
+- Range
 - Damage type
-- Ritual spells
+- Condition
+- Requires save
+- Concentration
+- Material components
+- Ritual
 - Prepared status
+- Favorited
+- Prepared by party
+- Source
 
 Filters can be combined to narrow results dynamically.
 
 ### Filter Configuration
-Players can customize the filter interface to match their play style. Using the Configure display menu under the Paint Pallet icon.
-- Filters can be hidden, shown, or rearranged
-- Unused filters can be removed to reduce clutter
-- Configuration changes are saved per user
 
-This customization allows the Spell Book to scale from simple to advanced usage.
+Players can customize the filter interface via the **Configure Display** menu (paint palette icon):
 
-### Footer Icons
-The footer of the Spell Book interface holds some important information.
-- Prepared Spell Count - Shows how many spells you have prepared, seperated by class, out of your total amount of spells to prepare.
-- Save 💾 - Saves all spell preperation changes
-- Reset ⟲ - Resets recent changes. (Shift + clicking this icon will clear all prepared spells)
-- Analytics 📊 - Opens your statistics page for spell casting
-- Manage Load Outs 🧰 - Opens the menu to create, equip, modify, and delete spell load outs (Right clicking offers a quick selection of created loadouts)
-- Party Manager 👥- Opens party spell interface. Learn more about that window here: [Party Spells Interface Overview](PartySpells-Interface-Overview)
+- Show, hide, or rearrange filters
+- Remove unused filters to reduce clutter
+- Configuration is saved per user
 
-### Advanced Search Functionality and Complex Queries
+---
 
-The search bar supports:
-- Partial name matching
-- Combined search and filter usage
+## Favorites
 
-Advanced search makes it easy to locate specific spells, even in very large spell books.
+Toggle any spell as a favorite via the context menu or the favorite action. Favorites sync with `actor.system.favorites` and persist in journal storage. Use the **Favorited** filter to view only favorited spells.
 
-### Scroll Scanner
-The Scroll Scanner automatically detects spell scrolls in a character’s inventory.
+---
 
-Detected scrolls are listed within the Spell Book
+## Sidebar
+
+The sidebar can be collapsed to maximize spell list space. Collapse state is persisted per user via flags.
+
+---
+
+## Footer
+
+The Spell Book footer displays:
+
+- **Prepared Spell Count** — How many spells you have prepared per class out of your total
+- **Save** — Saves all spell preparation changes
+- **Reset** — Clears active filters and collapsed levels. **Shift+click** performs a full reset (prepared spells, filters, favorites, collapsed levels)
+- **Manage Loadouts** — Opens the menu to create, equip, modify, and delete spell loadouts (right-click for quick selection)
+- **Party Manager** — Opens the [Party Spells Interface](PartySpells-Interface-Overview)
+
+---
+
+## Advanced Search
+
+The search bar supports partial name matching and combined search and filter usage.
+
+### Field-Based Search
+
+Type the prefix character (default: `^`) to enter advanced search mode. Field-based syntax allows targeted queries:
+
+- `^level:1` — All 1st-level spells
+- `^school:evocation` — All evocation spells
+- `^level:1 AND school:evocation` — 1st-level evocation spells
+- `^concentration:true` — All concentration spells
+- `^ritual:true AND level:1` — 1st-level ritual spells
+
+The prefix character is configurable in client settings.
+
+### Cantrip Counter
+
+Each spell level heading displays the count of prepared spells at that level. For cantrips, the counter also shows the class-specific cantrip limit when applicable.
+
+---
+
+## Scroll Scanner
+
+The Scroll Scanner detects spell scrolls in a character's inventory.
+
 - Scrolls are categorized by spell level and class compatibility
 - Detected scrolls can be consumed to learn new spells through the Wizard Spell Learning tab
 
+Players can review available scrolls, identify learnable spells, and track scroll inventory directly from the Spell Book.
 
-### Managing Detected Spell Scrolls
-Players can:
-- Review available scrolls
-- Identify which spells can be learned
-- Track scrolls available to use directly from the Spell Book
+### Wizard Integration
 
-### Integration with Wizard Spell Learning
-Wizard characters have an additional UI tab alongside the multiclassing tabs on the right side, where they can learn spells.
+Wizard characters have an additional tab alongside multiclass tabs for learning spells.
 
 Within the Spell Learning tab, wizards can:
-- View all spells available to them through their assigned spell lists
+
+- View all spells available through their assigned spell lists
 - Learn new spells directly from those lists
 - Pay the appropriate learning cost when acquiring a spell
 
-Learning costs and enforcement behavior are determined by GM Spell Book settings and may include:
-- Gold or resource costs
-- GM approval prompts
-- Notifications to the GM
-Once learned, spells are automatically added to the wizard’s spell book and become available for preparation and casting.
+Learning costs and enforcement behavior are determined by GM settings and may include gold costs, GM approval prompts, or GM notifications.
 
-The Spell Learning tab also integrates with the **Scroll Scanner**.
+When spell scrolls are detected in a wizard's inventory:
 
-When spell scrolls are detected in a wizard’s inventory:
 - Eligible scrolls appear in the Spell Learning tab
 - Incompatible, duplicate, or already-known spells are visually flagged
 - Scrolls can be consumed to learn spells directly from this interface
 
-Scroll consumption behavior (automatic vs approval-based) is controlled by GM settings.
+Scroll consumption behavior (automatic vs. approval-based) is controlled by GM settings.
 
+---
 
-## Dialog Systems
-The Spell Book includes several dialogs that support detailed spell interaction and customization.
-#### Spell Comparison Dialog
-The Spell Comparison dialog allows players to compare multiple spells side by side.
+## Dialogs
 
-Features include:
-- Simultaneous comparison of multiple spells
-- Key information such as damage type, casting level, and school
+### Spell Comparison
 
-This dialog is useful when choosing prepared spells or evaluating similar options.
+Compare multiple spells side by side. Attributes compared include: UUID, name, image, level, school, casting time, range, duration, components, and damage formulas (with max dice calculations). Useful when choosing prepared spells or evaluating similar options.
 
+### Spell Details Customization
 
-#### Spell Details Customization Dialog
+Control how spell information is displayed. Show or hide specific spell details and customize visible fields. Changes affect only the player's interface and do not modify spell data.
 
-The Spell Details Customization dialog allows players to control how spell information is displayed.
+### Spell Loadouts
 
-Players can:
-- Show or hide specific spell details
-- Customize visible fields for clarity
-- Manage personal display preferences
+Save and swap prepared spell configurations:
 
-These changes affect only the player’s interface and do not modify spell data.
+- Save commonly used spell setups with descriptive names
+- Quickly swap between loadouts via the footer button
+- Right-click the loadout button for quick selection context menu
+- Loadouts can be class-specific
+- Useful for prepared casters or situational encounters
 
-#### Spell Loadout Dialog
+### Spell Notes
 
-The Spell Loadout dialog provides quick management of prepared or equipped spells.
-- Save commonly used spell configurations
-- Quickly swap between loadouts
-- Ideal for prepared casters or situational encounters
+Add personal annotations to spells:
 
-Loadouts help reduce repetitive preparation between sessions.
+- Notes are private to the player and persist across sessions
+- Maximum length is configurable by the GM (default: 240 characters)
+- Notes can optionally be injected into spell descriptions (before or after) via the Spell Notes Injection setting
 
-- Saving and loading spell setups
+### Settings Dialog (Wand Menu)
 
-#### Spell Notes Dialog
+GM-only access — opens per-actor spell settings (enforcement, cantrip rules, spell lists, preparation bonuses, wizard mode, etc.). The wand icon is only visible to GMs.
 
-The Spell Notes dialog allows players to add personal annotations to spells.
+From this dialog, the GM can:
 
-Use cases include:
-- Tactical reminders
-- Roleplay flavor
-- Tracking house rules or interpretations
-
-Notes are private to the player and persist across sessions.
-
-#### Settings Dialog (Wand Menu) Overview
-
-The Wand Menu opens the player-specific Spell Book settings.
-
-From this dialog, the DM can:
-
-- Force allow wizard spell learning for any character
+- Force-enable wizard spell learning for any character
 - Set rules on when spells can be swapped
-- Adjust rules on ritual casting
-- Set Custom Spell Lists
-- Adjust Player Preperation Bonuses
+- Adjust ritual casting rules
+- Set custom spell lists
+- Adjust player preparation bonuses
 
-These settings are character specific.
+These settings are per-character.
+
+---
 
 ## Opening SpellBook
-The Spell Book can be opened in two ways:
-- The book icon on the spell page of a character sheet
-- Via a [Macros](Macros)
 
-> Spell Book is fully compatible with Tidy5e
+The Spell Book can be opened via:
+
+- The book icon on the spell page of a character sheet
+- A [Macro](Macros) from the hotbar
+
+> [!TIP]
+> Spell Book is fully compatible with Tidy5e.

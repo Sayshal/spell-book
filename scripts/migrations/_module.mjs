@@ -10,3 +10,4 @@ export { customSpellListNullToArray } from './custom-spell-list-null-to-array.mj
 export { ownershipValidation } from './ownership-validation.mjs';
 export { packSorting } from './pack-sorting.mjs';
 export { spellListFolders } from './spell-list-folders.mjs';
+export { stripUsageData } from './strip-usage-data.mjs';

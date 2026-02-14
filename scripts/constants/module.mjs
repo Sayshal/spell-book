@@ -181,7 +181,6 @@
  * @property {string} CUSTOM_SPELL_MAPPINGS - Custom spell list mappings for classes
  * @property {string} DEFAULT_ENFORCEMENT_BEHAVIOR - Default enforcement behavior for new actors
  * @property {string} DISABLE_LONG_REST_SWAP_PROMPT - Disable long rest spell swap prompts
- * @property {string} ENABLE_SPELL_USAGE_TRACKING - Enable spell usage analytics tracking
  * @property {string} FILTER_CONFIGURATION - User filter configuration for spell browser
  * @property {string} GM_UI_CASTING_TIME - Show casting time in GM spell details
  * @property {string} GM_UI_COMPARE - Show compare button in GM spell details
@@ -464,9 +463,6 @@ export const SETTINGS = {
 
   /** @type {string} Disable long rest spell swap prompts */
   DISABLE_LONG_REST_SWAP_PROMPT: 'disableLongRestSwapPrompt',
-
-  /** @type {string} Enable spell usage analytics tracking */
-  ENABLE_SPELL_USAGE_TRACKING: 'enableSpellUsageTracking',
 
   /** @type {string} User filter configuration for spell browser */
   FILTER_CONFIGURATION: 'filterConfiguration',

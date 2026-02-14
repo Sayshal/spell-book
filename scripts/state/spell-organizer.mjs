@@ -69,10 +69,10 @@ export class SpellOrganizer {
       let userData = spellData?.[canonicalUuid];
       if (!userData && canonicalUuid !== spellUuid) userData = spellData?.[spellUuid];
       const result = !userData
-        ? { notes: '', favorited: false, usageStats: null }
+        ? { notes: '', favorited: false }
         : actorId && userData.actorData?.[actorId]
           ? { ...userData.actorData[actorId], notes: userData.notes }
-          : { notes: userData.notes || '', favorited: false, usageStats: null };
+          : { notes: userData.notes || '', favorited: false };
       DataUtils.UserData.cache.set(quickCacheKey, { data: result, timestamp: now });
       if (canonicalUuid !== spellUuid) DataUtils.UserData.cache.set(originalCacheKey, { data: result, timestamp: now });
     }

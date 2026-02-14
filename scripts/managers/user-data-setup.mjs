@@ -2,7 +2,7 @@
  * Journal-Based User Spell Data Storage Management
  *
  * Manages the creation and maintenance of journal-based storage for user-specific
- * spell data including notes, favorites, and usage statistics. This class provides
+ * spell data including notes and favorites. This class provides
  * a persistent storage solution using Foundry's compendium system to store user
  * data that persists across game sessions and world migrations.
  * @module Managers/UserDataSetup
@@ -113,12 +113,7 @@ export class UserDataSetup {
     const spellCol = game.i18n.localize('SPELLBOOK.UserData.SpellColumn');
     const notesCol = game.i18n.localize('SPELLBOOK.UserData.NotesColumn');
     const favoritesTitle = game.i18n.localize('SPELLBOOK.UserData.FavoritesTitle');
-    const usageTitle = game.i18n.localize('SPELLBOOK.UserData.UsageTitle');
     const favoritedCol = game.i18n.localize('SPELLBOOK.UserData.FavoritedColumn');
-    const combatCol = game.i18n.localize('SPELLBOOK.UserData.CombatColumn');
-    const explorationCol = game.i18n.localize('SPELLBOOK.UserData.ExplorationColumn');
-    const totalCol = game.i18n.localize('SPELLBOOK.UserData.TotalColumn');
-    const lastUsedCol = game.i18n.localize('SPELLBOOK.UserData.LastUsedColumn');
     const user = game.users.get(userId);
     const isGM = user?.isGM;
     if (isGM) return await renderTemplate(TEMPLATES.COMPONENTS.USER_SPELL_DATA_EMPTY, { isGM: true, userId, userName });
@@ -133,12 +128,7 @@ export class UserDataSetup {
       spellCol,
       notesCol,
       favoritesTitle,
-      usageTitle,
-      favoritedCol,
-      combatCol,
-      explorationCol,
-      totalCol,
-      lastUsedCol
+      favoritedCol
     });
   }
 

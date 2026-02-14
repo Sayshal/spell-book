@@ -1,73 +1,105 @@
-:loudspeaker: NOTE: Under construction - may be incomplete! :loudspeaker:
-
 # Spell Preparation System
-The Spell Preparation System manages how spellcasting characters prepare and cast spells. This system ensures that characters follow class-specific rules, maintains accurate spell slot usage, and supports multiclass, granted, and always-prepared spells.
 
-This page covers both core mechanics and advanced features, including GM oversight and validation.
+Manages how spellcasting characters prepare and cast spells. Enforces class-specific rules, tracks preparation limits, and supports multiclass, granted, and always-prepared spells.
+
+---
 
 ## Core Mechanics
 
-### Preparation Rules
+### Preparation Limits
 
-The Spell Preparation system enforces the rules for each class:
+Preparation limits are determined by the **dnd5e system** based on each class's spellcasting ability modifier and class level. Spell Book reads and enforces these limits — it does not calculate them independently.
 
-- Class-Specific Mechanics:
-    Each class has unique preparation rules. For example:
-    - Clerics & Druids: Prepare a number of spells equal to `Wisdom modifier + class level`
-    - Paladins: Prepare a number of spells equal to`Charisma modifier + half class level (rounded down)`
-    - Wizards: Prepare a number of spells equal to `Intelligence modifier + wizard level`
+### Rule Sets
 
-- Spell Slot Management:
-    The system tracks all available spell slots, including levels, usage, and remaining capacity. Prepared spells can only be cast if sufficient slots are available.
+Spell Book supports two rule sets that control swapping and cantrip behavior:
 
-- Preparation Limits and Calculations:
-    The system automatically calculates preparation limits based on class, subclass, and relevant modifiers. Spells that exceed limits are visually indicated and cannot be prepared until other spells are removed.
+| Rule Set | Description |
+|---|---|
+| **Legacy (2014)** | Traditional D&D 5e rules. No cantrip swapping. |
+| **Modern (2024)** | Updated rules allowing cantrip swapping on level-up or long rest (class-dependent). |
 
-### Preparation Process
+Each class can have its own default rule set. See [Ruleset Types and What They Mean](Ruleset-Types-and-Meanings) for the full class-specific defaults table.
 
-#### How to prepare spells
-1. Open the character’s Spell Book.
-2. Navigate to the class-specific preparation tab (if needed).
-3. Select the spells you wish to prepare using checkboxes.
-4. Press the save icon in the bottom right to save your new prepared spells.
+---
 
-####  Changing prepared spells
-To swap prepared spells:
-1. Uncheck the spells you wish to remove
-2. Check the new spell to add
+## Preparation Process
+
+### Preparing Spells
+
+1. Open the character's Spell Book
+2. Navigate to the class-specific preparation tab (if multiclass)
+3. Select spells using checkboxes
+4. Press **Save** in the footer to save your prepared spells
+
+### Changing Prepared Spells
+
+1. Uncheck the spells you want to remove
+2. Check the new spells to add
 3. Save your changes
 
-#### Long rest spell swapping
-After a long rest, characters may swap prepared spells according to class rules.
+### Long Rest Swapping
 
-A Visual prompts will appear to offer the player to open spell book, to manage spell changes.
+After a long rest, characters may swap prepared spells according to class rules. A prompt appears offering the player to open Spell Book to manage spell changes.
 
-## Advanced Features
+---
 
-### Multiclass Preparation Rules
-Multiclass characters maintain separate preparation tabs per class.
+## Cantrip Rules
 
-Preparation limits are calculated independently for each class unless specified by rules.
+### Cantrip Limits
 
-### Always-prepared Spells
+Each class has a cantrip preparation limit derived from system scale values. Cantrip counts are displayed in the level heading alongside the limit.
+
+### Cantrip Swapping
+
+Cantrip swapping rules depend on the rule set and class configuration:
+
+- **One-for-one swapping** — Only one cantrip can be swapped per event (level-up or long rest)
+- **Wizard-only long rest swap** — Only Wizards can swap cantrips on long rest (Modern rules)
+- Swap behavior is configurable per class via the per-actor settings
+
+### Preparation Bonuses
+
+GMs can set per-class `spellPreparationBonus` and `cantripPreparationBonus` values to grant additional preparation slots beyond the system calculation.
+
+---
+
+## Ritual Casting
+
+Three ritual casting modes are available per class:
+
+| Mode | Behavior |
+|---|---|
+| **None** | No ritual casting support |
+| **Prepared** | Can only ritual-cast spells that are currently prepared |
+| **Always** | Can ritual-cast any ritual spell on the class spell list (e.g., Wizard) |
+
+---
+
+## Always-Prepared Spells
+
 Some spells are always prepared due to class features, subclass grants, or racial traits:
-- Displayed with a pill labled 'A'
+
+- Displayed with a pill labeled **A**
 - Cannot be removed from prepared spells
+- Do not count against preparation limits
+
+---
+
+## Multiclass Preparation
+
+Multiclass characters maintain separate preparation tabs per class. Preparation limits are calculated independently for each class.
+
+---
 
 ## Rule Enforcement
 
-### Preparation validation
-The system validates prepared spells to prevent errors:
-- Checks class-specific limits
-- Confirms spell slot sufficiency
-- Enforces special rules for always-prepared and granted spells
+### Enforcement Modes
 
-### Error handling and notifications
-- Exceeding preparation limits triggers visual alerts
-- DM can configure notify-only or preventive enforcement
+- **Unenforced** — No restrictions on preparation
+- **Notify GM** — Two layers of notification:
+  1. **During editing**: `ui.notifications.info` warns the current user when they exceed their preparation limit
+  2. **On save**: A whispered `ChatMessage` is sent to all GMs with a full spell update report — additions, removals, and over-limit warnings per class
+- **Enforced** — Prevents invalid preparations entirely with locked checkboxes
 
-### DM Oversight Options
-DMs can control how preparation rules are enforced:
-- Enable full enforcement (prevents invalid preparations)
-- Enable notify-only mode (alerts players and DM but allows flexibility)
-- Review and approve player preparations before session start
+See [Ruleset Types and What They Mean](Ruleset-Types-and-Meanings) for details.

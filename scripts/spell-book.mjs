@@ -14,7 +14,7 @@ import * as DataUtils from './data/_module.mjs';
 import { unlockModuleCompendium, preloadTemplates } from './data/generic-utils.mjs';
 import { registerDnD5eIntegration, registerTidy5eIntegration } from './integrations/_module.mjs';
 import { initializeLogger, log } from './logger.mjs';
-import { Macros, Migrations, UsageTracker, UserDataSetup } from './managers/_module.mjs';
+import { Macros, Migrations, UserDataSetup } from './managers/_module.mjs';
 import { registerSettings } from './settings.mjs';
 import { registerSpellBookTours } from './tours/_module.mjs';
 import * as UIUtils from './ui/_module.mjs';
@@ -50,7 +50,6 @@ Hooks.once('ready', async function () {
   await unlockModuleCompendium();
   await Macros.initializeMacros();
   await UserDataSetup.initializeUserSpellData();
-  await UsageTracker.initialize();
   const suppressPreload = game.settings.get(MODULE.ID, SETTINGS.SUPPRESS_PRELOAD_NOTIFICATION);
   await DataUtils.preloadData(!suppressPreload);
   if (game.user.isGM) await DataUtils.registerCustomSpellLists();

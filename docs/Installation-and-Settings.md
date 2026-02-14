@@ -35,7 +35,7 @@ After enabling the module, GMs should complete these essential setup steps:
    - Module-specific compendiums are automatically selected
    - Click **Save Selection** (world will reload to index compendiums)
 
-[https://github.com/Sayshal/spell-book/blob/main/github_media/CompendiumSelectionDialog.png]
+[https://raw.githubusercontent.com/Sayshal/spell-book/main/github_media/CompendiumSelectionDialog.png]
 
 2. **Review Module Settings**
    - Choose your **Spellcasting Rule Set** (Legacy 2014 or Modern 2024)
@@ -86,12 +86,6 @@ These settings affect all players in your world and can only be modified by GMs.
 - Cost per level configurable per class
 - Default: Disabled
 
-**Enable Spell Usage Analytics**
-
-- Track spell casting frequency and patterns
-- Powers the Analytics Dashboard
-- Default: Enabled
-
 ### Interface Options
 
 **Enable Journal Button**
@@ -116,10 +110,21 @@ These settings affect all players in your world and can only be modified by GMs.
 - Hide warnings about data migrations
 - Default: Disabled
 
+**Suppress Preload Notification**
+
+- Hide the preload notification displayed on game ready
+- Default: Disabled
+
 **Registry Enabled Lists** (Hidden)
 
 - Managed automatically by the module
 - Controls D&D 5e SpellListRegistry integration
+
+**Cauldron of Plentiful Resources Compatibility** (Conditional)
+
+- Only appears when the Cauldron of Plentiful Resources module is active
+- Enables compatibility features for CPR item handling
+- Default: Disabled
 
 ## Client Settings (Per User)
 
@@ -130,7 +135,7 @@ These settings are personal preferences that each user can configure individuall
 **Logging Level**
 
 - Controls debug output verbosity
-- Options: Off, Errors Only, Warnings, Verbose
+- Options: Off, Errors, Warnings, Verbose
 - Default: Warnings
 
 **Disable Long Rest Swap Prompt**
@@ -152,6 +157,11 @@ These settings are personal preferences that each user can configure individuall
     - **After**: Insert notes after spell description
 - Default: Off
 
+**Spell Notes Maximum Length**
+
+- Maximum character length for personal spell notes (10-1000)
+- Default: 240
+
 **Advanced Search Prefix**
 
 - Character that triggers advanced search mode
@@ -167,7 +177,9 @@ These settings are personal preferences that each user can configure individuall
 
 Access detailed display settings via **Game Settings** → **Spell Details Customization**
 
-[https://github.com/Sayshal/spell-book/blob/main/github_media/UICustomization.png]
+[https://raw.githubusercontent.com/Sayshal/spell-book/main/github_media/UICustomization.png]
+
+These settings are **per-client** (each user configures their own display preferences).
 
 This dialog allows you to control which spell information appears in:
 

@@ -48,15 +48,6 @@ export function registerSettings() {
     }
   });
 
-  /** Enable/disable spell usage analytics tracking */
-  game.settings.register(MODULE.ID, SETTINGS.ENABLE_SPELL_USAGE_TRACKING, {
-    name: 'SPELLBOOK.Settings.EnableSpellUsageTracking.Name',
-    hint: 'SPELLBOOK.Settings.EnableSpellUsageTracking.Hint',
-    scope: 'world',
-    config: true,
-    type: new foundry.data.fields.BooleanField({ initial: true })
-  });
-
   /** Custom spell list mappings for class-specific spell lists */
   game.settings.register(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, {
     name: 'SPELLBOOK.Settings.CustomSpellMappings.Name',

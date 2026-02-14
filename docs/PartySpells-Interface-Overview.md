@@ -1,40 +1,79 @@
-:loudspeaker: NOTE: Under construction - may be incomplete! :loudspeaker:
-
 # PartySpells Interface Overview
-The Party Spell Interface is a specialized window in the Spell Book module that allows players and GMs to view, and coordinate spells across all party members. This feature is designed to enhance party synergy, optimize spellcasting roles, and reduce redundant preparations in multiclass or multi-caster parties.
 
-## Party Coordination Features
+A specialized window for viewing and coordinating spells across all party members. Helps optimize spellcasting roles and reduce redundant preparations in multi-caster parties.
 
-### Group Actor Sheet Integration
+---
 
-The Party Spell Interface is fully integrated with Group Actor Sheets.
+## Accessing Party Spells
 
-- Accessing Party Spells:
-    - Open the interface using the Book Icon from the Group Actor Sheet tab to view all party members’ prepared and equipped spells.
-Spells are displayed per level with notes indicating who has it prepared.
+Open the Party Spell Interface using the Spell Book icon on the **Group Actor Sheet** tab, or via the **Party Manager** button in the SpellBook footer.
 
-- Integration with Party Management Tools:
-    - The interface works seamlessly with other party management modules, allowing:
-        - Real-time updates of spell preparation 
-        - Synchronization of spells across players in the party
-        - Selection of spell casting focuses, to wordlessly communicate your preperation intentions
+---
 
-### Focus Settings Dialog
+## Member Cards
 
-The Focus Settings Dialog allows players and GMs to configure spellcasting focus distribution across the party.
+Each party member is displayed as a card showing their name, class, and assigned focus.
 
-#### Configuring Focus Distribution
-Allows for assign roles or priorities to spellcasters, such as healers, damage dealers, or buffers.
-Users can assign their own focus, or the GM can assign one to them.
+- **Click** a member card to filter the spell list to that member's prepared spells
+- **Hover** over a member card to highlight their prepared spells in the list
+- **Right-click** a member card to open a context menu with **Open Actor**
 
-GM Users can also add additional custom Focus Options.
+---
 
+## Spell Display
 
-### Party Synergy Analysis
+Spells are organized by level with collapsible sections.
 
-The interface includes automated tools to analyze party spell setup.
+- Each spell shows which party members have it prepared
+- Spell levels can be collapsed/expanded with persisted state
+- Use the **Refresh** button to manually update spell data from all party members
 
-Optimization:
-- Generates list of duplicate prepared spells, to suggest changes
-- Shows what damage types are being used and which are under represented in the current selection of prepared spells
-- Highlights gaps in healing, spell schools, and preperation by spell level.
+---
+
+## Focus Settings
+
+The Focus Settings dialog configures spellcasting focus distribution across the party.
+
+### Default Focuses
+
+The module ships with 10 default focuses: Arcanist, Buffer, Crowd Controller, Offensive Mage, Protector, Support, Brawler Mage, Elementalist, Summoner, and Utility.
+
+### Customization
+
+- GMs can create additional custom focus options
+- GMs can assign focuses to any party member
+- Players can only set their own focus — they cannot manage focus definitions or assign others
+
+---
+
+## Party Synergy Analysis
+
+Detailed analysis of party spell composition across multiple dimensions:
+
+### Coverage Analysis
+
+- **Concentration percentage** — What percentage of prepared spells require concentration (warns if >60%)
+- **Ritual count** — How many ritual spells the party has access to (warns if low)
+- **Damage type diversity** — Which damage types are represented and which are missing (warns if limited)
+
+### Component Analysis
+
+- Verbal, Somatic, and Material component distribution across prepared spells
+
+### Distribution Breakdowns
+
+- **Range analysis** — Distribution of spell ranges across the party
+- **Duration analysis** — Breakdown of spell durations
+- **Saving throw distribution** — Which saves the party's spells target
+- **Spell school distribution** — Coverage across all eight spell schools
+- **Spell level distribution** — How prepared spells are spread across levels
+- **Focus distribution** — How party members are distributed across focuses
+
+### Warnings
+
+The analysis generates specific warnings when:
+
+- Concentration spells exceed 60% of total prepared spells
+- Ritual spell coverage is low
+- Damage type variety is limited
+- Focus assignments are unbalanced
