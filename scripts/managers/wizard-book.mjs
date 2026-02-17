@@ -256,6 +256,32 @@ export class WizardBook {
   }
 
   /**
+   * Remove a spell from the wizard's spellbook.
+   * @param {string} spellUuid - UUID of the spell to remove
+   * @returns {Promise<boolean>} Success state
+   */
+  async removeSpellFromSpellbook(spellUuid) {
+    log(3, 'Removing spell from spellbook.', { spellUuid, classIdentifier: this.classIdentifier });
+    await this._ensureFlagsInitialized();
+    const journal = await this.findSpellbookJournal();
+    if (!journal) return false;
+    const journalPage = journal.pages?.find((p) => p.type === 'spells');
+    if (!journalPage) return false;
+    const spells = journalPage.system.spells || new Set();
+    if (!spells.has(spellUuid)) return false;
+    spells.delete(spellUuid);
+    await journalPage.update({ 'system.spells': spells });
+    const copiedSpellsFlag = `${FLAGS.WIZARD_COPIED_SPELLS}_${this.classIdentifier}`;
+    const copiedSpells = this.actor.getFlag(MODULE.ID, copiedSpellsFlag) || [];
+    const filteredSpells = copiedSpells.filter((s) => s.spellUuid !== spellUuid);
+    if (filteredSpells.length !== copiedSpells.length) {
+      await this.actor.setFlag(MODULE.ID, copiedSpellsFlag, filteredSpells);
+    }
+    this.invalidateCache();
+    return true;
+  }
+
+  /**
    * Find the actor's spellbook journal for this class.
    * @returns {Promise<object | null>} The actor's spellbook journal or null if not found
    */

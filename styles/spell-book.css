@@ -1748,6 +1748,34 @@
       }
     }
 
+    .in-spellbook-wrapper {
+      position: relative;
+      cursor: pointer;
+
+      .unlearn-spell-tag {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.4rem;
+        border-radius: var(--spell-book-radius-md);
+        background-color: var(--color-level-error, #c62828);
+        color: rgb(255 255 255 / 100%);
+        font-size: 0.8em;
+        white-space: nowrap;
+      }
+
+      &:hover {
+        .in-spellbook-tag {
+          display: none;
+        }
+
+        .unlearn-spell-tag {
+          display: flex;
+        }
+      }
+    }
+
     .copy-spell-btn {
       min-width: 5.45rem;
       width: 5.45rem;

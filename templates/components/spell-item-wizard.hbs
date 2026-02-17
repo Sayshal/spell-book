@@ -62,31 +62,37 @@
         <i class="fas fa-scroll"></i> {{localize "SPELLBOOK.Wizard.LearnSpell"}}
       </button>
     {{else if spell.wizardAction.inSpellbook}}
-      {{!-- Already in Spellbook Status with Learning Source --}}
-      <span
-        class="in-spellbook-tag{{#if spell.wizardAction.learningSource}} learned-{{spell.wizardAction.learningSource}}{{/if}}"
-        aria-label="{{localize 'SPELLBOOK.Wizard.InSpellbook'}}">
-        {{!-- Learning Source Icon --}}
-        {{#if spell.wizardAction.learningSource}}
-          {{#if (eq spell.wizardAction.learningSource "scroll")}}
-            <i class="fa-solid fa-scroll" aria-hidden="true"></i>
-          {{else if (eq spell.wizardAction.learningSource "gold")}}
-            <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
-          {{else if (eq spell.wizardAction.learningSource "levelup")}}
-            <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
+      {{!-- Learned tag that transforms to Unlearn button on hover --}}
+      <div class="in-spellbook-wrapper" data-action="unlearnSpell" data-uuid="{{spell.wizardAction.uuid}}">
+        <span
+          class="in-spellbook-tag{{#if spell.wizardAction.learningSource}} learned-{{spell.wizardAction.learningSource}}{{/if}}"
+          aria-label="{{localize 'SPELLBOOK.Wizard.InSpellbook'}}">
+          {{!-- Learning Source Icon --}}
+          {{#if spell.wizardAction.learningSource}}
+            {{#if (eq spell.wizardAction.learningSource "scroll")}}
+              <i class="fa-solid fa-scroll" aria-hidden="true"></i>
+            {{else if (eq spell.wizardAction.learningSource "gold")}}
+              <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
+            {{else if (eq spell.wizardAction.learningSource "levelup")}}
+              <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
+            {{else}}
+              <i class="fa-solid fa-book" aria-hidden="true"></i>
+            {{/if}}
           {{else}}
             <i class="fa-solid fa-book" aria-hidden="true"></i>
           {{/if}}
-        {{else}}
-          <i class="fa-solid fa-book" aria-hidden="true"></i>
-        {{/if}}
-        {{!-- Learning Source Label --}}
-        {{#if spell.wizardAction.learningSourceLabel}}
-          {{spell.wizardAction.learningSourceLabel}}
-        {{else}}
-          {{localize "SPELLBOOK.Wizard.InSpellbook"}}
-        {{/if}}
-      </span>
+          {{!-- Learning Source Label --}}
+          {{#if spell.wizardAction.learningSourceLabel}}
+            {{spell.wizardAction.learningSourceLabel}}
+          {{else}}
+            {{localize "SPELLBOOK.Wizard.InSpellbook"}}
+          {{/if}}
+        </span>
+        <span class="unlearn-spell-tag" aria-label="{{localize 'SPELLBOOK.Wizard.UnlearnSpell'}}">
+          <i class="fa-solid fa-eraser" aria-hidden="true"></i>
+          {{localize "SPELLBOOK.Wizard.UnlearnSpell"}}
+        </span>
+      </div>
     {{else if spell.wizardAction.canLearn}}
       {{!-- Learn Spell Button (Standard) --}}
       <button class="copy-spell-btn" data-action="learnSpell" data-uuid="{{spell.wizardAction.uuid}}" type="button"

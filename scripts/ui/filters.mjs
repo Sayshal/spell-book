@@ -34,6 +34,7 @@ export const DEFAULT_FILTER_STATE = Object.freeze({
   concentration: '',
   materialComponents: '',
   preparedByParty: false,
+  target: '',
   source: '',
   spellSource: ''
 });
@@ -106,6 +107,7 @@ export class Filters {
       favorited: this.element.querySelector('[name="filter-favorited"]')?.checked || false,
       concentration: this.element.querySelector('[name="filter-concentration"]')?.value || '',
       materialComponents: this.element.querySelector('[name="filter-materialComponents"]')?.value || '',
+      target: this.element.querySelector('[name="filter-target"]')?.value || '',
       preparedByParty: this.element.querySelector('[name="filter-preparedByParty"]')?.checked || false,
       source: this.element.querySelector('[name="spell-compendium-source"]')?.value || '',
       spellSource: this.element.querySelector('[name="spell-source"]')?.value || ''
@@ -202,6 +204,8 @@ export class Filters {
       conditions: (item.dataset.conditions || '').split(',').filter(Boolean),
       hasMaterialComponents: item.dataset.materialComponents === 'true',
       isFavorited: item.dataset.favorited === 'true',
+      targetAffectsType: item.dataset.targetAffectsType || '',
+      targetTemplateType: item.dataset.targetTemplateType || '',
       hasPartyIcons: hasPartyIcons
     };
   }
@@ -276,6 +280,7 @@ export class Filters {
       const consumed = filters.materialComponents === 'consumed';
       if (spell.hasMaterialComponents !== consumed) return false;
     }
+    if (filters.target && spell.targetAffectsType !== filters.target && spell.targetTemplateType !== filters.target) return false;
     if (filters.ritual && !spell.isRitual) return false;
     if (filters.prepared && !spell.isPrepared) return false;
     if (filters.favorited && !spell.isFavorited) return false;
@@ -363,6 +368,24 @@ function _getBaseFilterOptions(filterId) {
           options.push({ value: key, label });
         });
       break;
+    case 'target': {
+      const allTargets = [];
+      if (CONFIG.DND5E.individualTargetTypes) {
+        for (const [key, config] of Object.entries(CONFIG.DND5E.individualTargetTypes)) {
+          const label = config.label || DataUtils.getConfigLabel(CONFIG.DND5E.individualTargetTypes, key) || key;
+          allTargets.push({ value: key, label });
+        }
+      }
+      if (CONFIG.DND5E.areaTargetTypes) {
+        for (const [key, config] of Object.entries(CONFIG.DND5E.areaTargetTypes)) {
+          const baseLabel = config.label || DataUtils.getConfigLabel(CONFIG.DND5E.areaTargetTypes, key) || key;
+          allTargets.push({ value: key, label: `${baseLabel} (Area)` });
+        }
+      }
+      allTargets.sort((a, b) => a.label.localeCompare(b.label));
+      options.push(...allTargets);
+      break;
+    }
     case 'requiresSave':
     case 'concentration':
       options.push({ value: 'true', label: game.i18n.localize('SPELLBOOK.Filters.True') }, { value: 'false', label: game.i18n.localize('SPELLBOOK.Filters.False') });

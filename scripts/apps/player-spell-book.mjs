@@ -100,7 +100,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       save: this.#save,
       toggleFavorite: this.#toggleFavorite,
       toggleSidebar: this.#toggleSidebar,
-      toggleSpellHeader: this.#toggleSpellHeader
+      toggleSpellHeader: this.#toggleSpellHeader,
+      unlearnSpell: this.#unlearnSpell
     },
     classes: ['spell-book', 'vertical-tabs'],
     window: { icon: 'spell-book-module-icon', resizable: true, minimizable: true, positioned: true },
@@ -930,6 +931,54 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     if (spellList) spellList.style.display = isCollapsed ? 'none' : '';
     if (collapseIcon) collapseIcon.className = `fas fa-caret-${isCollapsed ? 'right' : 'down'} collapse-indicator`;
+  }
+
+  /**
+   * Handle unlearning a wizard spell.
+   * @this SpellBook
+   * @param {PointerEvent} _event - The originating click event.
+   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
+   */
+  static async #unlearnSpell(_event, target) {
+    log(3, 'Handling spell unlearning.', { _event, target });
+    const spellUuid = target.dataset.uuid;
+    if (!spellUuid) return;
+    const activeTab = this.tabGroups['spellbook-tabs'];
+    const wizardMatch = activeTab.match(/^wizardbook-(.+)$/);
+    const classIdentifier = wizardMatch ? wizardMatch[1] : 'wizard';
+    const wizardManager = this.wizardManagers.get(classIdentifier);
+    if (!wizardManager) return;
+    const spell = await fromUuid(spellUuid);
+    if (!spell) return;
+    const source = wizardManager.getSpellLearningSource(spellUuid);
+    const wasPaid = source === MODULE.WIZARD_SPELL_SOURCE.COPIED || source === MODULE.WIZARD_SPELL_SOURCE.SCROLL;
+    const content = await renderTemplate(TEMPLATES.DIALOGS.WIZARD_UNLEARN_SPELL, { spell, wasPaid });
+    const result = await DialogV2.wait({
+      window: { title: game.i18n.format('SPELLBOOK.Wizard.UnlearnSpellTitle', { name: spell.name }) },
+      content: content,
+      buttons: [
+        { icon: 'fas fa-eraser', label: game.i18n.localize('SPELLBOOK.Wizard.UnlearnSpellConfirm'), action: 'confirm', className: 'dialog-button' },
+        { icon: 'fas fa-times', label: game.i18n.localize('SPELLBOOK.UI.Cancel'), action: 'cancel', className: 'dialog-button' }
+      ],
+      default: 'confirm',
+      rejectClose: false
+    });
+    if (result === 'confirm') {
+      const success = await wizardManager.removeSpellFromSpellbook(spellUuid);
+      if (success) {
+        if (this._state.wizardbookCache) {
+          const cached = this._state.wizardbookCache.get(classIdentifier) || [];
+          this._state.wizardbookCache.set(classIdentifier, cached.filter((uuid) => uuid !== spellUuid));
+        }
+        await this._state.refreshClassSpellData(classIdentifier);
+        ui.notifications.info(game.i18n.format('SPELLBOOK.Wizard.UnlearnSpellSuccess', { name: spell.name }));
+        this.render(false);
+        setTimeout(() => {
+          if (activeTab && this.tabGroups['spellbook-tabs'] !== activeTab) this.changeTab(activeTab, 'spellbook-tabs');
+          this.filterHelper.applyFilters();
+        }, 50);
+      }
+    }
   }
 
   /* -------------------------------------------- */

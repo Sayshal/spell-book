@@ -48,6 +48,7 @@ export class SpellFilterService {
     remainingSpells = this._filterBySpellSource(remainingSpells, filterState);
     remainingSpells = this._filterByBasicProperties(remainingSpells, filterState, searchPrefix, searchEngine);
     remainingSpells = this._filterByRange(remainingSpells, filterState);
+    remainingSpells = this._filterByTarget(remainingSpells, filterState);
     remainingSpells = this._filterByDamageAndConditions(remainingSpells, filterState);
     remainingSpells = this._filterBySpecialProperties(remainingSpells, filterState);
     log(3, 'SpellFilterService: spells filtered.', { filteredCount: remainingSpells.length });
@@ -227,6 +228,25 @@ export class SpellFilterService {
       return standardizedRange >= minRangeVal && standardizedRange <= maxRangeVal;
     });
     log(3, 'SpellFilterService: Filtered by range.', { minRange, maxRange, resultCount: filtered.length });
+    return filtered;
+  }
+
+  /**
+   * Filter spells by target type (individual or area template).
+   * @param {Array<object>} spells - Spells to filter
+   * @param {object} filterState - Current filter state
+   * @returns {Array<object>} Filtered spells matching target criteria
+   * @private
+   */
+  static _filterByTarget(spells, filterState) {
+    const { target } = filterState;
+    if (!target) return spells;
+    const filtered = spells.filter((spell) => {
+      const affectsType = spell.filterData?.target?.affectsType || spell.system?.target?.affects?.type || '';
+      const templateType = spell.filterData?.target?.templateType || spell.system?.target?.template?.type || '';
+      return affectsType === target || templateType === target;
+    });
+    log(3, 'SpellFilterService: Filtered by target.', { target, resultCount: filtered.length });
     return filtered;
   }
 

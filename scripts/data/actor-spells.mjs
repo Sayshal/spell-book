@@ -73,7 +73,8 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
         'system.range.value',
         'system.school',
         'system.source.book',
-        'system.source.custom'
+        'system.source.custom',
+        'system.target'
       ]
     });
     const spellMap = new Map();

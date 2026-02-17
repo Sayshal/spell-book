@@ -169,7 +169,8 @@ export function extractSpellFilterData(spell) {
   const requiresSave = checkSpellRequiresSave(spell);
   const conditions = extractSpellConditions(spell);
   const source = extractSpellSource(spell);
-  const result = { castingTime, range, damageTypes, isRitual, concentration, materialComponents, requiresSave, conditions, favorited: false, spellSource: source.label, spellSourceId: source.id };
+  const target = extractTarget(spell);
+  const result = { castingTime, range, damageTypes, isRitual, concentration, materialComponents, requiresSave, conditions, target, favorited: false, spellSource: source.label, spellSourceId: source.id };
   return result;
 }
 
@@ -201,13 +202,23 @@ export function extractDamageTypes(spell) {
   if (spell.labels?.damages?.length) for (const damage of spell.labels.damages) if (damage.damageType && !damageTypes.includes(damage.damageType)) damageTypes.push(damage.damageType);
   if (spell.system?.activities) {
     for (const activity of Object.values(spell.system.activities)) {
+      // Damage activities: activity.damage.parts[]
       if (activity.damage?.parts?.length) {
         for (const part of activity.damage.parts) {
-          if (part.types && Array.isArray(part.types) && part.types.length) {
-            for (const type of part.types) {
+          const types = part.types;
+          if (types && (types.size || types.length)) {
+            for (const type of types) {
               if (!damageTypes.includes(type)) damageTypes.push(type);
-              else if (part[1] && !damageTypes.includes(part[1])) damageTypes.push(part[1]);
             }
+          }
+        }
+      }
+      // Heal activities: activity.healing (single DamageField)
+      if (activity.healing?.types) {
+        const types = activity.healing.types;
+        if (types.size || types.length) {
+          for (const type of types) {
+            if (!damageTypes.includes(type)) damageTypes.push(type);
           }
         }
       }
@@ -310,6 +321,18 @@ function extractSpellSource(spell) {
 }
 
 /**
+ * Extract target information from spell.
+ * @param {object} spell - The spell document
+ * @returns {object} Target data with affectsType and templateType
+ */
+export function extractTarget(spell) {
+  return {
+    affectsType: spell.system?.target?.affects?.type || '',
+    templateType: spell.system?.target?.template?.type || ''
+  };
+}
+
+/**
  * Create a spell icon link.
  * @param {object} spell - The spell data object
  * @returns {string} HTML string with icon link
@@ -355,7 +378,9 @@ export function getSpellDataAttributes(spell) {
     `data-concentration="${spell.filterData?.concentration || false}"`,
     `data-requires-save="${spell.filterData?.requiresSave || false}"`,
     `data-conditions="${spell.filterData?.conditions || ''}"`,
-    `data-material-components="${spell.filterData?.materialComponents?.hasConsumedMaterials || false}"`
+    `data-material-components="${spell.filterData?.materialComponents?.hasConsumedMaterials || false}"`,
+    `data-target-affects-type="${spell.filterData?.target?.affectsType || ''}"`,
+    `data-target-template-type="${spell.filterData?.target?.templateType || ''}"`
   ];
   if (spell.sourceClass) attributes.push(`data-source-class="${spell.sourceClass}"`);
   return attributes.join(' ');

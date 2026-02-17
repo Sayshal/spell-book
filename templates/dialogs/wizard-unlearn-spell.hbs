@@ -1,0 +1,6 @@
+<form class="wizard-unlearn-form">
+  <p>{{localize 'SPELLBOOK.Wizard.UnlearnSpellWarning' name=spell.name}}</p>
+  {{#if wasPaid}}
+    <p class="hint"><em>{{localize 'SPELLBOOK.Wizard.UnlearnSpellNoRefund'}}</em></p>
+  {{/if}}
+</form>

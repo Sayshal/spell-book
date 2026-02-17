@@ -236,7 +236,10 @@ export const TEMPLATES = {
     SPELLBOOK_SETTINGS: 'modules/spell-book/templates/dialogs/spellbook-settings.hbs',
 
     /** Wizard learn spell dialog for adding spells to wizard spellbook */
-    WIZARD_LEARN_SPELL: 'modules/spell-book/templates/dialogs/wizard-learn-spell.hbs'
+    WIZARD_LEARN_SPELL: 'modules/spell-book/templates/dialogs/wizard-learn-spell.hbs',
+
+    /** Wizard unlearn spell dialog for removing spells from wizard spellbook */
+    WIZARD_UNLEARN_SPELL: 'modules/spell-book/templates/dialogs/wizard-unlearn-spell.hbs'
   },
 
   /**

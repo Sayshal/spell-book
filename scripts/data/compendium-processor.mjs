@@ -369,7 +369,8 @@ async function fetchSpellsFromPack(pack, maxLevel) {
       'system.range.value',
       'system.school',
       'system.source.book',
-      'system.source.custom'
+      'system.source.custom',
+      'system.target'
     ]
   });
   const spellEntries = index.filter((e) => e.type === 'spell' && (!maxLevel || e.system?.level <= maxLevel));

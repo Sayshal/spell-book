@@ -268,7 +268,7 @@ export const MODULE = {
    * Current version of the default filter configuration.
    * Increment this when making changes to DEFAULT_FILTER_CONFIG.
    */
-  DEFAULT_FILTER_CONFIG_VERSION: '1.0.0',
+  DEFAULT_FILTER_CONFIG_VERSION: '1.1.0',
 
   /**
    * Default filter configuration for spell book interface.
@@ -280,6 +280,7 @@ export const MODULE = {
     { id: 'level', type: 'dropdown', enabled: true, order: 20, label: 'SPELLBOOK.Filters.Level', sortable: true, searchAliases: ['LEVEL', 'LVL'] },
     { id: 'school', type: 'dropdown', enabled: true, order: 30, label: 'SPELLBOOK.Filters.School', sortable: true, searchAliases: ['SCHOOL'] },
     { id: 'castingTime', type: 'dropdown', enabled: true, order: 40, label: 'SPELLBOOK.Filters.CastingTime', sortable: true, searchAliases: ['CASTTIME', 'CASTING'] },
+    { id: 'target', type: 'dropdown', enabled: true, order: 45, label: 'SPELLBOOK.Filters.Target', sortable: true, searchAliases: ['TARGET'] },
     { id: 'range', type: 'range', enabled: true, order: 50, label: 'SPELLBOOK.Filters.Range', sortable: true, searchAliases: ['RANGE'] },
     { id: 'damageType', type: 'dropdown', enabled: true, order: 60, label: 'SPELLBOOK.Filters.DamageType', sortable: true, searchAliases: ['DAMAGE', 'DMG'] },
     { id: 'condition', type: 'dropdown', enabled: true, order: 70, label: 'SPELLBOOK.Filters.Condition', sortable: true, searchAliases: ['CONDITION'] },
