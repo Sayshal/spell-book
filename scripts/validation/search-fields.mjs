@@ -115,6 +115,16 @@ export class SearchFields {
           return ['CONSUMED', 'NOTCONSUMED'].includes(val);
         });
         break;
+      case 'target':
+        this.valueValidators.set(fieldId, (value) => {
+          const match = value.match(/^(\d+)?(.+)$/);
+          if (!match || !match[2]) return false;
+          const type = match[2].toUpperCase();
+          const individualTypes = Object.keys(CONFIG.DND5E.individualTargetTypes || {}).map((k) => k.toUpperCase());
+          const areaTypes = Object.keys(CONFIG.DND5E.areaTargetTypes || {}).map((k) => k.toUpperCase());
+          return individualTypes.includes(type) || areaTypes.includes(type);
+        });
+        break;
       case 'range':
         this.valueValidators.set(fieldId, (value) => {
           if (value.includes('-')) {
@@ -222,13 +232,18 @@ export class SearchFields {
         case 'favorited':
         case 'ritual':
           return ['TRUE', 'FALSE', 'YES', 'NO'];
+        case 'target':
+          return [
+            ...Object.keys(CONFIG.DND5E.individualTargetTypes || {}).map((k) => k.toUpperCase()),
+            ...Object.keys(CONFIG.DND5E.areaTargetTypes || {}).map((k) => k.toUpperCase())
+          ];
         case 'materialComponents':
           return ['CONSUMED', 'NOTCONSUMED'];
         default:
           return [];
       }
     })();
-    if (['level', 'school', 'castingTime', 'damageType', 'condition', 'range'].includes(fieldId)) return ['ALL', ...baseValues];
+    if (['level', 'school', 'castingTime', 'damageType', 'condition', 'range', 'target'].includes(fieldId)) return ['ALL', ...baseValues];
     return baseValues;
   }
 }

@@ -118,7 +118,39 @@ export class QueryExecutor {
      * Material components - checks if components are consumed.
      * @param {string} value - Query value
      */
-    materialComponents: (value) => ({ k: 'filterData.materialComponents.consumed', v: value.toLowerCase() === 'consumed' })
+    materialComponents: (value) => ({ k: 'filterData.materialComponents.consumed', v: value.toLowerCase() === 'consumed' }),
+
+    /**
+     * Target type with optional count prefix (e.g. "creature", "3creature", "cone").
+     * @param {string} value - Query value
+     */
+    target: (value) => {
+      const match = value.match(/^(\d+)?(.+)$/);
+      if (!match) return null;
+      const count = match[1] || null;
+      const type = match[2].toLowerCase();
+      const filters = [
+        {
+          o: 'OR',
+          v: [
+            { k: 'filterData.target.affectsType', v: type },
+            { k: 'filterData.target.templateType', v: type },
+            { k: 'system.target.affects.type', v: type },
+            { k: 'system.target.template.type', v: type }
+          ]
+        }
+      ];
+      if (count) {
+        filters.push({
+          o: 'OR',
+          v: [
+            { k: 'system.target.affects.count', v: count },
+            { k: 'system.target.template.count', v: count }
+          ]
+        });
+      }
+      return filters;
+    }
   };
 
   /**
