@@ -1350,12 +1350,16 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         else packTopLevelFolder = pack.folder.name;
       }
       if (packTopLevelFolder !== topLevelFolderName) continue;
-      const index = await pack.getIndex({ fields: ['type', 'system.identifier'] });
-      const entry = index.find((e) => (e.type === 'class' || e.type === 'subclass') && e.system?.identifier?.toLowerCase() === identifier.toLowerCase());
-      if (entry) {
-        const classItem = await pack.getDocument(entry._id);
-        log(3, `Found class ${classItem.name} in pack ${pack.metadata.label} (folder: ${packTopLevelFolder})`);
-        return classItem;
+      try {
+        const index = await pack.getIndex({ fields: ['type', 'system.identifier'] });
+        const entry = index.find((e) => (e.type === 'class' || e.type === 'subclass') && e.system?.identifier?.toLowerCase() === identifier.toLowerCase());
+        if (entry) {
+          const classItem = await pack.getDocument(entry._id);
+          log(3, `Found class ${classItem.name} in pack ${pack.metadata.label} (folder: ${packTopLevelFolder})`);
+          return classItem;
+        }
+      } catch (err) {
+        log(2, `Error indexing pack "${pack.collection}": ${err.message}`);
       }
     }
     return null;
@@ -1376,12 +1380,16 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         else packTopLevelFolder = pack.folder.name;
       }
       if (!packTopLevelFolder) continue;
-      const index = await pack.getIndex({ fields: ['type', 'system.identifier'] });
-      const classItems = index.filter((e) => (e.type === 'class' || e.type === 'subclass') && e.system?.identifier);
-      for (const cls of classItems) {
-        const identifier = cls.system.identifier.toLowerCase();
-        const key = `${packTopLevelFolder}:${identifier}`;
-        cache.set(key, true);
+      try {
+        const index = await pack.getIndex({ fields: ['type', 'system.identifier'] });
+        const classItems = index.filter((e) => (e.type === 'class' || e.type === 'subclass') && e.system?.identifier);
+        for (const cls of classItems) {
+          const identifier = cls.system.identifier.toLowerCase();
+          const key = `${packTopLevelFolder}:${identifier}`;
+          cache.set(key, true);
+        }
+      } catch (err) {
+        log(2, `Error indexing pack "${pack.collection}" for class cache: ${err.message}`);
       }
     }
     log(3, 'Building cache of class-folder identifier pairs.', { cache });

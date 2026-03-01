@@ -20,6 +20,44 @@ import * as DataUtils from './_module.mjs';
 let _indexedPacksCache = null;
 
 /**
+ * Get journal documents from a pack with Babele compatibility.
+ * When Babele is active, requesting `pages.*` index fields triggers its converter
+ * on partial page data, causing crashes. This helper detects Babele and uses
+ * `pack.getDocuments()` as a single batch call instead.
+ * Without Babele, uses the optimized index with `pages.type` pre-filtering.
+ * @param {object} pack - The compendium pack to fetch journals from
+ * @returns {Promise<Array<object>>} Array of journal documents
+ */
+export async function getJournalDocumentsFromPack(pack) {
+  if (game.modules.get('babele')?.active) {
+    try {
+      return await pack.getDocuments();
+    } catch (err) {
+      log(2, `Error loading documents from pack "${pack.collection}": ${err.message}`);
+      return [];
+    }
+  }
+  try {
+    const index = await pack.getIndex({ fields: ['name', 'pages.type'] });
+    const journals = [];
+    for (const journalData of index) {
+      const hasSpellPages = journalData.pages?.some((page) => page.type === 'spells');
+      if (!hasSpellPages) continue;
+      try {
+        const journal = await pack.getDocument(journalData._id);
+        journals.push(journal);
+      } catch (err) {
+        log(2, `Error loading journal "${journalData.name}" from pack "${pack.collection}": ${err.message}`);
+      }
+    }
+    return journals;
+  } catch (err) {
+    log(2, `Error indexing pack "${pack.collection}": ${err.message}`);
+    return [];
+  }
+}
+
+/**
  * Scan compendiums for spell lists with optional visibility filtering.
  * @param {boolean} [includeHidden] - Whether to include hidden spell lists in results
  * @returns {Promise<Array<object>>} Array of spell list objects with metadata
@@ -106,14 +144,8 @@ async function processPackForSpellLists(pack, spellLists, isCustomPack = false) 
     if (pack.folder.depth !== 1) topLevelFolder = pack.folder.getParentFolders().at(-1).name;
     else topLevelFolder = pack.folder.name;
   }
-  const indexFields = isCustomPack ? undefined : { fields: ['name', 'pages.type'] };
-  const index = await pack.getIndex(indexFields);
-  for (const journalData of index) {
-    if (!isCustomPack) {
-      const hasSpellPages = journalData.pages?.some((page) => page.type === 'spells');
-      if (!hasSpellPages) continue;
-    }
-    const journal = await pack.getDocument(journalData._id);
+  const journals = isCustomPack ? await pack.getDocuments() : await getJournalDocumentsFromPack(pack);
+  for (const journal of journals) {
     for (const page of journal.pages) {
       if (page.type !== 'spells') continue;
       if (isCustomPack) {
@@ -268,7 +300,13 @@ export async function findDuplicateSpellList(originalUuid) {
   log(3, 'Checking for existing duplicate spell list.', { originalUuid });
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
   if (!customPack) return null;
-  const journals = await customPack.getDocuments();
+  let journals;
+  try {
+    journals = await customPack.getDocuments();
+  } catch (err) {
+    log(2, `Error loading documents from custom pack: ${err.message}`);
+    return null;
+  }
   for (const journal of journals) {
     for (const page of journal.pages) {
       const flags = page.flags?.[MODULE.ID] || {};
@@ -346,7 +384,9 @@ export async function fetchAllCompendiumSpells() {
 async function fetchSpellsFromPack(pack, maxLevel) {
   log(3, 'Fetching spells from pack', { pack, maxLevel });
   const packSpells = [];
-  const index = await pack.getIndex({
+  let index;
+  try {
+    index = await pack.getIndex({
     fields: [
       'type',
       'labels.activation',
@@ -372,7 +412,11 @@ async function fetchSpellsFromPack(pack, maxLevel) {
       'system.source.custom',
       'system.target'
     ]
-  });
+    });
+  } catch (err) {
+    log(2, `Error indexing spell pack "${pack.collection}": ${err.message}`);
+    return packSpells;
+  }
   const spellEntries = index.filter((e) => e.type === 'spell' && (!maxLevel || e.system?.level <= maxLevel));
   for (const entry of spellEntries) {
     if (!entry.labels) {
@@ -557,7 +601,13 @@ export async function findClassIdentifiers() {
   const identifiers = {};
   const itemPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'Item');
   for (const pack of itemPacks) {
-    const index = await pack.getIndex({ fields: ['type', 'system.identifier', 'name'] });
+    let index;
+    try {
+      index = await pack.getIndex({ fields: ['type', 'system.identifier', 'name'] });
+    } catch (err) {
+      log(2, `Error indexing pack "${pack.collection}" for class identifiers: ${err.message}`);
+      continue;
+    }
     const classItems = index.filter((e) => e.type === 'class');
     const packDisplayName = pack.metadata.label;
     for (const cls of classItems) {
@@ -673,14 +723,17 @@ export async function shouldShowInSettings(pack) {
   log(3, 'Checking if pack should display in settings menu.', { pack });
   const settings = game.settings.get(MODULE.ID, SETTINGS.INDEXED_COMPENDIUMS);
   if (settings && pack.collection in settings) return true;
-  if (pack.metadata.type === 'Item') {
-    const index = await pack.getIndex({ fields: ['type'] });
-    const hasSpells = index.some((entry) => entry.type === 'spell');
-    return hasSpells;
-  } else if (pack.metadata.type === 'JournalEntry') {
-    const index = await pack.getIndex({ fields: ['pages.type'] });
-    const hasSpellPages = index.some((entry) => entry.pages?.some((page) => page.type === 'spells'));
-    return hasSpellPages;
+  try {
+    if (pack.metadata.type === 'Item') {
+      const index = await pack.getIndex({ fields: ['type'] });
+      return index.some((entry) => entry.type === 'spell');
+    } else if (pack.metadata.type === 'JournalEntry') {
+      const journals = await getJournalDocumentsFromPack(pack);
+      return journals.some((journal) => journal.pages.some((page) => page.type === 'spells'));
+    }
+  } catch (err) {
+    log(2, `Error checking pack "${pack.collection}" for settings display: ${err.message}`);
+    return false;
   }
   return false;
 }

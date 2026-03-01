@@ -46,7 +46,9 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
       for (const { uuid } of uuidData) errors.push({ uuid, reason: `Compendium ${packId} not found` });
       continue;
     }
-    const index = await pack.getIndex({
+    let index;
+    try {
+      index = await pack.getIndex({
       fields: [
         'img',
         'name',
@@ -76,7 +78,12 @@ export async function fetchSpellDocuments(spellUuids, maxSpellLevel) {
         'system.source.custom',
         'system.target'
       ]
-    });
+      });
+    } catch (err) {
+      log(2, `Error indexing pack "${packId}": ${err.message}`);
+      for (const { uuid } of uuidData) errors.push({ uuid, reason: `Failed to index compendium ${packId}` });
+      continue;
+    }
     const spellMap = new Map();
     for (const entry of index) if (entry.type === 'spell') spellMap.set(entry._id, entry);
     for (const { uuid, id } of uuidData) {

@@ -164,11 +164,8 @@ async function findSpellListByIdentifier(type, identifier, customMappings) {
  */
 async function searchPackForSpellList(pack, type, identifier, customMappings) {
   log(3, 'Searching pack for spell lists.', { pack, type, identifier, customMappings });
-  const index = await pack.getIndex({ fields: ['name', 'pages.type'] });
-  for (const journalData of index) {
-    const hasSpellPages = journalData.pages?.some((page) => page.type === 'spells');
-    if (!hasSpellPages) continue;
-    const journal = await pack.getDocument(journalData._id);
+  const journals = await DataUtils.getJournalDocumentsFromPack(pack);
+  for (const journal of journals) {
     for (const page of journal.pages) {
       if (page.type !== 'spells') continue;
       if (!page.system?.identifier || !page.system?.spells) continue;
@@ -196,11 +193,8 @@ async function findCustomSpellListByIdentifier(identifier) {
   log(3, 'Finding custom spell list by identifier.', { identifier });
   const customPack = game.packs.get(MODULE.PACK.SPELLS);
   if (!customPack) return null;
-  const index = await customPack.getIndex({ fields: ['name', 'pages.type'] });
-  for (const journalData of index) {
-    const hasSpellPages = journalData.pages?.some((page) => page.type === 'spells');
-    if (!hasSpellPages) continue;
-    const journal = await customPack.getDocument(journalData._id);
+  const journals = await DataUtils.getJournalDocumentsFromPack(customPack);
+  for (const journal of journals) {
     for (const page of journal.pages) {
       if (page.type !== 'spells') continue;
       const flags = page.flags?.[MODULE.ID] || {};

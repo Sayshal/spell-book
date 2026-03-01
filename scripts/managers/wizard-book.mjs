@@ -288,13 +288,17 @@ export class WizardBook {
   async findSpellbookJournal() {
     log(3, 'Finding spellbook journal.', { actorId: this.actor.id, classIdentifier: this.classIdentifier });
     const customPack = game.packs.get(MODULE.PACK.SPELLS);
-    const index = await customPack.getIndex({ fields: ['flags'] });
-    for (const entry of index) {
-      const flags = entry.flags?.[MODULE.ID];
-      if (flags?.actorId === this.actor.id && flags?.classIdentifier === this.classIdentifier) {
-        const document = await customPack.getDocument(entry._id);
-        return document;
+    try {
+      const index = await customPack.getIndex({ fields: ['flags'] });
+      for (const entry of index) {
+        const flags = entry.flags?.[MODULE.ID];
+        if (flags?.actorId === this.actor.id && flags?.classIdentifier === this.classIdentifier) {
+          const document = await customPack.getDocument(entry._id);
+          return document;
+        }
       }
+    } catch (err) {
+      log(2, `Error finding spellbook journal: ${err.message}`);
     }
     return null;
   }

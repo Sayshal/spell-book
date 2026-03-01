@@ -10,6 +10,7 @@
  */
 
 import { MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
+import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
 import * as ValidationUtils from '../validation/_module.mjs';
 
@@ -39,12 +40,16 @@ export class CompendiumSelection extends HandlebarsApplicationMixin(ApplicationV
    */
   static async _isPackRelevantForSpells(pack) {
     log(3, `Checking if ${pack.name} is relevant for SpellBook.`);
-    if (pack.metadata.type === 'Item') {
-      const index = await pack.getIndex({ fields: ['type'] });
-      return index.some((entry) => entry.type === 'spell');
-    } else if (pack.metadata.type === 'JournalEntry') {
-      const index = await pack.getIndex({ fields: ['pages'] });
-      return index.some((entry) => entry.pages?.some((page) => page.type === 'spells'));
+    try {
+      if (pack.metadata.type === 'Item') {
+        const index = await pack.getIndex({ fields: ['type'] });
+        return index.some((entry) => entry.type === 'spell');
+      } else if (pack.metadata.type === 'JournalEntry') {
+        const journals = await DataUtils.getJournalDocumentsFromPack(pack);
+        return journals.some((journal) => journal.pages.some((page) => page.type === 'spells'));
+      }
+    } catch (err) {
+      log(2, `Error checking pack "${pack.collection}" for spell relevance: ${err.message}`);
     }
     return false;
   }

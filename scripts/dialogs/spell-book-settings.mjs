@@ -551,11 +551,8 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
           if (pack.folder.depth !== 1) topLevelFolderName = pack.folder.getParentFolders().at(-1).name;
           else topLevelFolderName = pack.folder.name;
         }
-        const index = await pack.getIndex({ fields: ['name', 'pages.type'] });
-        for (const journalData of index) {
-          const hasSpellPages = journalData.pages?.some((page) => page.type === 'spells');
-          if (!hasSpellPages) continue;
-          const journal = await pack.getDocument(journalData._id);
+        const journals = await DataUtils.getJournalDocumentsFromPack(pack);
+        for (const journal of journals) {
           for (const page of journal.pages) {
             if (page.type !== 'spells' || page.system?.type === 'other') continue;
             if (hiddenLists.includes(page.uuid)) continue;
