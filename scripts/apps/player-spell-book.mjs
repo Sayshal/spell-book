@@ -807,7 +807,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
    */
   static async #save(_event, _target) {
+    if (this._isSaving) return;
+    this._isSaving = true;
     log(3, 'Handling save.', { _event, _target });
+    try {
     const actor = this.actor;
     if (!actor) return;
     const form = this.element.querySelector('form') || this.element;
@@ -853,6 +856,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (game.modules.get('chris-premades')?.active && game.settings.get(MODULE.ID, SETTINGS.CPR_COMPATIBILITY)) await chrisPremades.utils.actorUtils.updateAll(actor);
     ui.notifications.info('SPELLBOOK.UI.ChangesSaved', { localize: true });
     this.close();
+    } finally {
+      this._isSaving = false;
+    }
   }
 
   /**
