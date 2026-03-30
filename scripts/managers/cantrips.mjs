@@ -145,8 +145,7 @@ export class Cantrips {
       for (const key of cantripScaleKeys) {
         const cantripValue = scaleValues[key]?.value;
         if (cantripValue !== undefined) {
-          baseCantrips = cantripValue;
-
+          baseCantrips = Number(cantripValue);
           break;
         }
       }

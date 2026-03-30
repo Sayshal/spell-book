@@ -707,6 +707,15 @@ export class SpellBookUI {
   }
 
   /**
+   * Update the spell origin filter based on the active class's configured spell lists.
+   */
+  updateSpellOriginFilter() {
+    const activeClass = this.app._state?.activeClass;
+    const classData = activeClass ? this.app._state.classSpellData?.[activeClass] : null;
+    this.app.filterHelper?.updateSpellOriginFilter(classData?.spellListNames || null);
+  }
+
+  /**
    * Setup non-critical UI elements after the window is visible.
    * @returns {Promise<void>}
    */
@@ -715,6 +724,7 @@ export class SpellBookUI {
     this.setupFilterListeners();
     this.applyCollapsedLevels();
     this.setupCantripUI();
+    this.updateSpellOriginFilter();
     this.updateSpellCounts();
     this.updateSpellPreparationTracking();
     if (!this.app._classColorsApplied || this.app._classesChanged) {

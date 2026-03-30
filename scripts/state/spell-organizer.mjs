@@ -10,6 +10,7 @@
 import { FLAGS, MODULE, SETTINGS } from '../constants/_module.mjs';
 import * as DataUtils from '../data/_module.mjs';
 import { log } from '../logger.mjs';
+import { RuleSet } from '../managers/_module.mjs';
 import * as UIUtils from '../ui/_module.mjs';
 
 /**
@@ -53,6 +54,7 @@ export class SpellOrganizer {
   async organizeSpellsByLevelForClass(spellItems, classIdentifier) {
     const spellsByLevel = {};
     const processedSpellIds = new Set();
+    const spellListSourceMap = await this._buildSpellListSourceMap(classIdentifier);
     const targetUserId = DataUtils.getTargetUserId(this.actor);
     const actorId = this.actor?.id;
     const preparedByClass = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
@@ -101,6 +103,10 @@ export class SpellOrganizer {
       if (spell.system?.method !== MODULE.SPELL_MODE.RITUAL && spell.system?.components?.ritual) spellDataClone.canCastAsRitual = true;
       if (this._spellManager) spellDataClone.preparation = this._spellManager.getSpellPreparationStatus(spellDataClone, classIdentifier, batchData);
       spellDataClone.filterData = UIUtils.extractSpellFilterData(spell);
+      if (spellListSourceMap) {
+        const spellUuid = spell.uuid || spell.compendiumUuid;
+        spellDataClone.filterData.spellListName = spellListSourceMap.get(spellUuid) || '';
+      }
       spellDataClone.enrichedIcon = UIUtils.createSpellIconLink(spell);
       const enhancedSpell = DataUtils.UserData.enhanceSpellWithUserData(spellDataClone, targetUserId, actorId);
       Object.assign(spellDataClone, enhancedSpell);
@@ -185,7 +191,8 @@ export class SpellOrganizer {
     const spellLevels = await this.organizeSpellsByLevelForClass(spellItems, identifier);
     const allSpells = spellLevels.flatMap((level) => level.spells);
     const prepStats = state.calculatePreparationStats(identifier, allSpells, classItem);
-    state.classSpellData[identifier] = { spellLevels, className: classItem.name, spellPreparation: prepStats, classItem, identifier };
+    state.classSpellData[identifier] = { spellLevels, className: classItem.name, spellPreparation: prepStats, classItem, identifier, spellListNames: this._lastSpellListNames || null };
+    this._lastSpellListNames = null;
     if (state._shouldHideCantrips(identifier)) state.classSpellData[identifier].spellLevels = spellLevels.filter((levelData) => levelData.level !== '0' && levelData.level !== 0);
     log(3, 'Spells processed and organized', { identifier, levelCount: state.classSpellData[identifier].spellLevels.length, prepStats });
   }
@@ -366,5 +373,33 @@ export class SpellOrganizer {
       if (preparedSpells.includes(otherClassKey)) return otherClass;
     }
     return null;
+  }
+
+  /**
+   * Build a map of spell UUID to source list name for classes with multiple custom spell lists.
+   * @param {string} classIdentifier - The class identifier
+   * @returns {Promise<Map<string, string>|null>} Map of spell UUID → list name, or null if < 2 lists
+   * @private
+   */
+  async _buildSpellListSourceMap(classIdentifier) {
+    const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
+    if (!classRules?.customSpellList) return null;
+    const uuids = Array.isArray(classRules.customSpellList) ? classRules.customSpellList : [classRules.customSpellList];
+    const validUuids = uuids.filter((u) => u && typeof u === 'string');
+    if (validUuids.length < 2) return null;
+    const sourceMap = new Map();
+    const listNames = [];
+    for (const uuid of validUuids) {
+      const list = await fromUuid(uuid);
+      if (!list?.system?.spells || list.system.spells.size === 0) continue;
+      const listName = list.name || 'Unknown List';
+      listNames.push(listName);
+      for (const spellUuid of list.system.spells) if (!sourceMap.has(spellUuid)) sourceMap.set(spellUuid, listName);
+    }
+    if (listNames.length < 2) return null;
+    listNames.sort((a, b) => a.localeCompare(b));
+    this._lastSpellListNames = listNames;
+    log(3, `Built spell list source map for ${classIdentifier}`, { listCount: listNames.length, spellCount: sourceMap.size });
+    return sourceMap;
   }
 }

@@ -268,7 +268,7 @@ export const MODULE = {
    * Current version of the default filter configuration.
    * Increment this when making changes to DEFAULT_FILTER_CONFIG.
    */
-  DEFAULT_FILTER_CONFIG_VERSION: '1.1.0',
+  DEFAULT_FILTER_CONFIG_VERSION: '1.2.0',
 
   /**
    * Default filter configuration for spell book interface.
@@ -287,6 +287,7 @@ export const MODULE = {
     { id: 'requiresSave', type: 'dropdown', enabled: true, order: 80, label: 'SPELLBOOK.Filters.RequiresSave', sortable: true, searchAliases: ['SAVE', 'REQUIRESSAVE'] },
     { id: 'concentration', type: 'dropdown', enabled: true, order: 90, label: 'SPELLBOOK.Filters.RequiresConcentration', sortable: true, searchAliases: ['CON', 'CONCENTRATION'] },
     { id: 'materialComponents', type: 'dropdown', enabled: true, order: 100, label: 'SPELLBOOK.Filters.Materials.Title', sortable: true, searchAliases: ['MATERIALS', 'COMPONENTS'] },
+    { id: 'spellOrigin', type: 'dropdown', enabled: false, order: 105, label: 'SPELLBOOK.Filters.SpellOrigin', sortable: true, searchAliases: ['ORIGIN', 'SOURCE', 'LIST'] },
     { id: 'prepared', type: 'checkbox', enabled: true, order: 2000, label: 'SPELLBOOK.Filters.PreparedOnly', sortable: false, searchAliases: ['PREPARED'] },
     { id: 'ritual', type: 'checkbox', enabled: true, order: 3000, label: 'SPELLBOOK.Filters.RitualOnly', sortable: false, searchAliases: ['RITUAL'] },
     { id: 'favorited', type: 'checkbox', enabled: true, order: 4000, label: 'SPELLBOOK.Filters.FavoritedOnly', sortable: false, searchAliases: ['FAVORITED', 'FAVE', 'FAV'] },

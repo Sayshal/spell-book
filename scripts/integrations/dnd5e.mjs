@@ -293,6 +293,7 @@ async function handleLongRestSwapPrompt(actor, longRestClasses) {
   log(3, 'Long rest dialog result.', { actorId: actor.id, dialogResult });
   if (dialogResult === 'confirm') {
     const spellBook = new SpellBook(actor);
+    await spellBook._preInitialize();
     spellBook.render(true);
     log(3, 'Spellbook opened from long rest prompt.', { actorId: actor.id });
   }

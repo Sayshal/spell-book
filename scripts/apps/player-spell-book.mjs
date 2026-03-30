@@ -430,6 +430,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.ui.updateSpellCounts();
     this.ui.updateSpellPreparationTracking();
     this.ui.setupCantripUI();
+    this.ui.updateSpellOriginFilter();
     this.render(false, { parts: ['footer'] });
   }
 

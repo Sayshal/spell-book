@@ -383,6 +383,7 @@ export function getSpellDataAttributes(spell) {
     `data-target-template-type="${spell.filterData?.target?.templateType || ''}"`
   ];
   if (spell.sourceClass) attributes.push(`data-source-class="${spell.sourceClass}"`);
+  if (spell.filterData?.spellListName) attributes.push(`data-spell-list="${spell.filterData.spellListName}"`);
   return attributes.join(' ');
 }
 

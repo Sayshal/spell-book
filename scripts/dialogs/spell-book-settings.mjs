@@ -411,7 +411,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
         for (const key of cantripScaleKeys) {
           const cantripValue = scaleValues[key]?.value;
           if (cantripValue !== undefined) {
-            baseMaxCantrips = cantripValue;
+            baseMaxCantrips = Number(cantripValue);
             break;
           }
         }
@@ -686,7 +686,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
         for (const key of cantripScaleKeys) {
           const cantripValue = scaleValues[key]?.value;
           if (cantripValue !== undefined) {
-            baseMaxCantrips = cantripValue;
+            baseMaxCantrips = Number(cantripValue);
             break;
           }
         }

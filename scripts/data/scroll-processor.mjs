@@ -73,7 +73,40 @@ export class ScrollProcessor {
         }
       }
     }
+    const spellLevel = scroll.flags?.dnd5e?.spellLevel;
+    if (spellLevel) {
+      const spellUuid = await this._findSpellByScrollName(scroll.name, spellLevel.base);
+      if (spellUuid) {
+        const result = await this._processScrollSpell(scroll, spellUuid, maxSpellLevel);
+        if (result) return result;
+      }
+    }
     return null;
+  }
+
+  /**
+   * Find a spell UUID by parsing the scroll name and searching compendiums.
+   * @param {string} scrollName - The scroll item name (e.g., "Spell Scroll: Fireball")
+   * @param {number} baseLevel - The spell's base level from flags.dnd5e.spellLevel.base
+   * @returns {Promise<string|null>} The spell's compendium UUID or null if not found
+   * @private
+   */
+  static async _findSpellByScrollName(scrollName, baseLevel) {
+    const separatorIndex = scrollName.indexOf(': ');
+    if (separatorIndex === -1) return null;
+    const spellName = scrollName.slice(separatorIndex + 2).trim();
+    if (!spellName) return null;
+    log(3, `Searching compendiums for spell "${spellName}" (level ${baseLevel}).`);
+    let nameOnlyMatch = null;
+    for (const pack of game.packs.filter((p) => p.metadata.type === 'Item')) {
+      const index = await pack.getIndex({ fields: ['system.level'] });
+      for (const entry of index) {
+        if (entry.type !== 'spell' || entry.name !== spellName) continue;
+        if (entry.system?.level === baseLevel) return entry.uuid;
+        nameOnlyMatch ??= entry.uuid;
+      }
+    }
+    return nameOnlyMatch;
   }
 
   /**

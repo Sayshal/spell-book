@@ -109,6 +109,7 @@ export class Filters {
       materialComponents: this.element.querySelector('[name="filter-materialComponents"]')?.value || '',
       target: this.element.querySelector('[name="filter-target"]')?.value || '',
       preparedByParty: this.element.querySelector('[name="filter-preparedByParty"]')?.checked || false,
+      spellOrigin: this.element.querySelector('[name="filter-spellOrigin"]')?.value || '',
       source: this.element.querySelector('[name="spell-compendium-source"]')?.value || '',
       spellSource: this.element.querySelector('[name="spell-source"]')?.value || ''
     };
@@ -137,6 +138,35 @@ export class Filters {
     });
     this.invalidateFilterCache();
     log(3, 'Filter controls reset complete.');
+  }
+
+  /**
+   * Update the spell origin filter visibility and options based on active class.
+   * @param {string[]|null} spellListNames - Names of configured spell lists, or null to hide
+   */
+  updateSpellOriginFilter(spellListNames) {
+    if (!this.element) return;
+    const filterItem = this.element.querySelector('[data-filter-id="spellOrigin"]');
+    if (!filterItem) return;
+    const hasMultipleLists = spellListNames && spellListNames.length > 1;
+    filterItem.style.display = hasMultipleLists ? '' : 'none';
+    if (!hasMultipleLists) return;
+    const select = filterItem.querySelector('[name="filter-spellOrigin"]');
+    if (!select) return;
+    const currentValue = select.value;
+    select.innerHTML = '';
+    const allOption = document.createElement('option');
+    allOption.value = '';
+    allOption.textContent = game.i18n.localize('SPELLBOOK.Filters.All');
+    select.appendChild(allOption);
+    for (const name of spellListNames) {
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      if (name === currentValue) option.selected = true;
+      select.appendChild(option);
+    }
+    this.invalidateFilterCache();
   }
 
   /**
@@ -206,6 +236,7 @@ export class Filters {
       isFavorited: item.dataset.favorited === 'true',
       targetAffectsType: item.dataset.targetAffectsType || '',
       targetTemplateType: item.dataset.targetTemplateType || '',
+      spellListName: item.dataset.spellList || '',
       hasPartyIcons: hasPartyIcons
     };
   }
@@ -281,6 +312,7 @@ export class Filters {
       if (spell.hasMaterialComponents !== consumed) return false;
     }
     if (filters.target && spell.targetAffectsType !== filters.target && spell.targetTemplateType !== filters.target) return false;
+    if (filters.spellOrigin && spell.spellListName !== filters.spellOrigin) return false;
     if (filters.ritual && !spell.isRitual) return false;
     if (filters.prepared && !spell.isPrepared) return false;
     if (filters.favorited && !spell.isFavorited) return false;
