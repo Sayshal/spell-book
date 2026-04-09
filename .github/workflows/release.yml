@@ -120,22 +120,28 @@ jobs:
     # Release to Foundry Package API
     - name: Release Foundry Package
       run: |
-        cat << EOF > payload.json
-        {
-          "id": "${{ env.MODULE_ID }}",
-          "release": {
-            "version": "${{ env.VERSION }}",
-            "manifest": "${{ env.RELEASE_MANIFEST_URL }}",
-            "download": "${{ env.RELEASE_DOWNLOAD_URL }}",
-            "notes": "${{ env.REPO_URL }}/releases/tag/${{ env.TAG_NAME }}",
-            "compatibility": {
-              "minimum": "${{ steps.module.outputs.compat_min }}",
-              "verified": "${{ steps.module.outputs.compat_verified }}",
-              "maximum": "${{ steps.module.outputs.compat_max }}"
+        jq -n \
+          --arg id "${{ env.MODULE_ID }}" \
+          --arg version "${{ env.VERSION }}" \
+          --arg manifest "${{ env.RELEASE_MANIFEST_URL }}" \
+          --arg download "${{ env.RELEASE_DOWNLOAD_URL }}" \
+          --arg notes "${{ env.REPO_URL }}/releases/tag/${{ env.TAG_NAME }}" \
+          --arg compat_min "${{ steps.module.outputs.compat_min }}" \
+          --arg compat_verified "${{ steps.module.outputs.compat_verified }}" \
+          --arg compat_max "${{ steps.module.outputs.compat_max }}" \
+          '{
+            id: $id,
+            release: {
+              version: $version,
+              manifest: $manifest,
+              download: $download,
+              notes: $notes,
+              compatibility: (
+                {minimum: $compat_min, verified: $compat_verified}
+                + (if $compat_max == "" or $compat_max == "null" then {} else {maximum: $compat_max} end)
+              )
             }
-          }
-        }
-        EOF
+          }' > payload.json
 
         cat payload.json
 
@@ -161,6 +167,7 @@ jobs:
           --arg download_url "${{ env.RELEASE_DOWNLOAD_URL }}" \
           --arg release_notes "$RELEASE_NOTES" \
           --arg compat_min "${{ steps.module.outputs.compat_min }}" \
+          --arg compat_verified "${{ steps.module.outputs.compat_verified }}" \
           --arg compat_max "${{ steps.module.outputs.compat_max }}" \
           '{
             content: "<@&1384920094597185556> <@&1384922261408190505>",
@@ -168,7 +175,7 @@ jobs:
               title: $title,
               description: $release_notes,
               fields: [
-                {name: "Core Compatibility", value: ($compat_min + " - " + $compat_max), inline: true},
+                {name: "Core Compatibility", value: ($compat_min + " - " + (if $compat_max == "" or $compat_max == "null" then $compat_verified else $compat_max end)), inline: true},
                 {name: "Foundry Package", value: $foundry_url, inline: false}
               ]
             }]
