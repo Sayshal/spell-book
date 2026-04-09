@@ -95,10 +95,10 @@ export class SpellManager {
     const unassignedSpellsMap = new Map();
     for (const item of this.actor.itemTypes.spell) {
       const spellUuid = DataUtils.getCanonicalSpellUuid(item);
-      const sourceClass = item.system?.sourceClass || item.sourceClass;
+      const itemClassIdentifier = DataUtils.getSpellClassIdentifier(item);
       if (!ownedSpellsMap.has(spellUuid)) ownedSpellsMap.set(spellUuid, []);
-      ownedSpellsMap.get(spellUuid).push({ item, sourceClass, prepared: item.system.prepared, method: item.system.method });
-      if (!sourceClass) unassignedSpellsMap.set(spellUuid, item);
+      ownedSpellsMap.get(spellUuid).push({ item, classIdentifier: itemClassIdentifier, prepared: item.system.prepared, method: item.system.method });
+      if (!itemClassIdentifier) unassignedSpellsMap.set(spellUuid, item);
     }
     const preparedByOtherClassMap = new Map();
     for (const [otherClass, preparedSpells] of Object.entries(preparedByClass)) {
@@ -129,7 +129,7 @@ export class SpellManager {
    * @returns {object} Preparation status information
    */
   getSpellPreparationStatus(spell, classIdentifier, batchData) {
-    if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
+    if (!classIdentifier) classIdentifier = DataUtils.getSpellClassIdentifier(spell);
     if (spell.aggregatedModes) {
       const status = { prepared: spell.aggregatedModes.isPreparedForCheckbox, disabled: false, disabledReason: '' };
       if (spell.system?.level !== 0 || status.prepared || !batchData.cantripLimits) return status;
@@ -266,17 +266,17 @@ export class SpellManager {
    * Ensure a ritual spell exists on the actor in ritual mode.
    * @private
    * @param {string} uuid - Spell UUID
-   * @param {string} sourceClass - Source class identifier
+   * @param {string} classIdentifier - Owning class identifier
    * @param {object[]} spellsToCreate - Array to add creation data to
    * @returns {Promise<void>}
    */
-  async _ensureRitualSpellOnActor(uuid, sourceClass, spellsToCreate) {
-    log(3, `Ensuring ritual spell on actor.`, { actorName: this.actor.name, uuid, sourceClass });
+  async _ensureRitualSpellOnActor(uuid, classIdentifier, spellsToCreate) {
+    log(3, `Ensuring ritual spell on actor.`, { actorName: this.actor.name, uuid, classIdentifier });
     const existingRitualSpell = this.actor.itemTypes.spell.find(
-      (s) => (s._stats?.compendiumSource === uuid || s.uuid === uuid) && (s.system.sourceClass === sourceClass || s.sourceClass === sourceClass) && s.system?.method === MODULE.SPELL_MODE.RITUAL
+      (s) => (s._stats?.compendiumSource === uuid || s.uuid === uuid) && DataUtils.getSpellClassIdentifier(s) === classIdentifier && s.system?.method === MODULE.SPELL_MODE.RITUAL
     );
     if (existingRitualSpell) {
-      log(3, `Ritual spell already exists on actor.`, { actorName: this.actor.name, uuid, sourceClass });
+      log(3, `Ritual spell already exists on actor.`, { actorName: this.actor.name, uuid, classIdentifier });
       return;
     }
     const sourceSpell = await fromUuid(uuid);
@@ -284,13 +284,13 @@ export class SpellManager {
       const newSpellData = await game.items.fromCompendium(sourceSpell);
       newSpellData.system.method = MODULE.SPELL_MODE.RITUAL;
       newSpellData.system.prepared = 0;
-      newSpellData.system.sourceClass = sourceClass;
+      newSpellData.system.sourceItem = DataUtils.buildClassSourceItem(classIdentifier);
       newSpellData.flags[MODULE.ID] = newSpellData.flags[MODULE.ID] || {};
       newSpellData.flags[MODULE.ID].isModuleRitual = true;
       spellsToCreate.push(newSpellData);
-      log(3, `Ritual spell queued for creation.`, { actorName: this.actor.name, spellName: sourceSpell.name, sourceClass });
+      log(3, `Ritual spell queued for creation.`, { actorName: this.actor.name, spellName: sourceSpell.name, classIdentifier });
     } else {
-      log(2, `Could not find source spell for ritual.`, { actorName: this.actor.name, uuid, sourceClass });
+      log(2, `Could not find source spell for ritual.`, { actorName: this.actor.name, uuid, classIdentifier });
     }
   }
 
@@ -311,18 +311,19 @@ export class SpellManager {
    * Ensure a spell exists on the actor with proper class attribution.
    * @private
    * @param {string} uuid - Spell UUID
-   * @param {string} sourceClass - Source class identifier
+   * @param {string} classIdentifier - Owning class identifier
    * @param {string} preparationMode - Preparation mode for this class
    * @param {object[]} spellsToCreate - Array to add creation data to
    * @param {object[]} spellsToUpdate - Array to add update data to
    * @returns {Promise<void>}
    */
-  async _ensureSpellOnActor(uuid, sourceClass, preparationMode, spellsToCreate, spellsToUpdate) {
-    log(3, `Ensuring spell on actor.`, { actorName: this.actor.name, uuid, sourceClass, preparationMode });
+  async _ensureSpellOnActor(uuid, classIdentifier, preparationMode, spellsToCreate, spellsToUpdate) {
+    log(3, `Ensuring spell on actor.`, { actorName: this.actor.name, uuid, classIdentifier, preparationMode });
+    const sourceItem = DataUtils.buildClassSourceItem(classIdentifier);
     const allMatchingSpells = this.actor.itemTypes.spell.filter((s) => s._stats?.compendiumSource === uuid || s.uuid === uuid);
     const matchingSpells = allMatchingSpells.filter((i) => {
-      const spellSourceClass = i.system?.sourceClass || i.sourceClass;
-      if (spellSourceClass && spellSourceClass !== sourceClass) return false;
+      const spellClassIdentifier = DataUtils.getSpellClassIdentifier(i);
+      if (spellClassIdentifier && spellClassIdentifier !== classIdentifier) return false;
       const isAlwaysPrepared = i.system.prepared === 2;
       const isGranted = !!i.flags?.dnd5e?.cachedFor;
       const isInnateOrAtWill = [MODULE.SPELL_MODE.INNATE, MODULE.SPELL_MODE.AT_WILL].includes(i.system.method);
@@ -330,14 +331,14 @@ export class SpellManager {
     });
     const existingPreparedSpell = matchingSpells.find((spell) => spell.system.method !== MODULE.SPELL_MODE.RITUAL && spell.system.prepared === 1);
     const existingRitualSpell = matchingSpells.find((spell) => spell.system.method === MODULE.SPELL_MODE.RITUAL);
-    const classRules = RuleSet.getClassRules(this.actor, sourceClass);
+    const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
     const isAlwaysRitualCasting = classRules.ritualCasting === MODULE.RITUAL_CASTING_MODES.ALWAYS;
     if (existingPreparedSpell) {
-      if (existingPreparedSpell.system.method !== preparationMode || existingPreparedSpell.system.prepared !== 1 || existingPreparedSpell.system.sourceClass !== sourceClass) {
+      if (existingPreparedSpell.system.method !== preparationMode || existingPreparedSpell.system.prepared !== 1 || existingPreparedSpell.system.sourceItem !== sourceItem) {
         const updateData = { _id: existingPreparedSpell.id, 'system.method': preparationMode, 'system.prepared': 1 };
-        if (existingPreparedSpell.system.sourceClass !== sourceClass) updateData['system.sourceClass'] = sourceClass;
+        if (existingPreparedSpell.system.sourceItem !== sourceItem) updateData['system.sourceItem'] = sourceItem;
         spellsToUpdate.push(updateData);
-        log(3, `Existing prepared spell queued for update.`, { actorName: this.actor.name, spellId: existingPreparedSpell.id, sourceClass });
+        log(3, `Existing prepared spell queued for update.`, { actorName: this.actor.name, spellId: existingPreparedSpell.id, classIdentifier });
       }
       return;
     }
@@ -347,19 +348,19 @@ export class SpellManager {
         const newSpellData = await game.items.fromCompendium(sourceSpell);
         newSpellData.system.method = preparationMode;
         newSpellData.system.prepared = 1;
-        newSpellData.system.sourceClass = sourceClass;
+        newSpellData.system.sourceItem = sourceItem;
         spellsToCreate.push(newSpellData);
-        log(3, `New prepared spell queued for creation (ritual spell exists).`, { actorName: this.actor.name, spellName: sourceSpell.name, sourceClass });
+        log(3, `New prepared spell queued for creation (ritual spell exists).`, { actorName: this.actor.name, spellName: sourceSpell.name, classIdentifier });
       }
       return;
     }
-    const unassignedSpell = allMatchingSpells.find((spell) => !spell.system?.sourceClass && !spell.sourceClass);
+    const unassignedSpell = allMatchingSpells.find((spell) => !DataUtils.getSpellClassIdentifier(spell));
     const existingSpell = unassignedSpell || matchingSpells[0];
     if (existingSpell) {
       const updateData = { _id: existingSpell.id, 'system.method': preparationMode, 'system.prepared': 1 };
-      if (existingSpell.system.sourceClass !== sourceClass) updateData['system.sourceClass'] = sourceClass;
+      if (existingSpell.system.sourceItem !== sourceItem) updateData['system.sourceItem'] = sourceItem;
       spellsToUpdate.push(updateData);
-      log(3, `Existing spell queued for update.`, { actorName: this.actor.name, spellId: existingSpell.id, sourceClass });
+      log(3, `Existing spell queued for update.`, { actorName: this.actor.name, spellId: existingSpell.id, classIdentifier });
       return;
     }
     const sourceSpell = await fromUuid(uuid);
@@ -367,11 +368,11 @@ export class SpellManager {
       const newSpellData = await game.items.fromCompendium(sourceSpell);
       newSpellData.system.method = preparationMode;
       newSpellData.system.prepared = 1;
-      newSpellData.system.sourceClass = sourceClass;
+      newSpellData.system.sourceItem = sourceItem;
       spellsToCreate.push(newSpellData);
-      log(3, `New spell queued for creation.`, { actorName: this.actor.name, spellName: sourceSpell.name, sourceClass });
+      log(3, `New spell queued for creation.`, { actorName: this.actor.name, spellName: sourceSpell.name, classIdentifier });
     } else {
-      log(2, `Could not find source spell.`, { actorName: this.actor.name, uuid, sourceClass });
+      log(2, `Could not find source spell.`, { actorName: this.actor.name, uuid, classIdentifier });
     }
   }
 
@@ -396,16 +397,15 @@ export class SpellManager {
    * Handle unpreparing a spell for a specific class.
    * @private
    * @param {string} uuid - Spell UUID
-   * @param {string} sourceClass - Source class identifier
+   * @param {string} classIdentifier - Owning class identifier
    * @param {string[]} spellIdsToRemove - Array to add removal IDs to
    * @returns {Promise<void>}
    */
-  async _handleUnpreparingSpell(uuid, sourceClass, spellIdsToRemove) {
-    log(3, `Handling unpreparing spell.`, { actorName: this.actor.name, uuid, sourceClass });
+  async _handleUnpreparingSpell(uuid, classIdentifier, spellIdsToRemove) {
+    log(3, `Handling unpreparing spell.`, { actorName: this.actor.name, uuid, classIdentifier });
     const matchingSpells = this.actor.itemTypes.spell.filter((s) => {
       if (s._stats?.compendiumSource !== uuid && s.uuid !== uuid) return false;
-      const spellSourceClass = s.system?.sourceClass || s.sourceClass;
-      if (spellSourceClass !== sourceClass) return false;
+      if (DataUtils.getSpellClassIdentifier(s) !== classIdentifier) return false;
       const isAlwaysPrepared = s.system.prepared === 2;
       const isGranted = !!s.flags?.dnd5e?.cachedFor;
       const isInnateOrAtWill = [MODULE.SPELL_MODE.INNATE, MODULE.SPELL_MODE.AT_WILL].includes(s.system.method);
@@ -416,7 +416,7 @@ export class SpellManager {
     if (!targetSpell) targetSpell = matchingSpells.find((spell) => spell.system.prepared === 1);
     if (!targetSpell) return;
     const isRitualSpell = this._isRitualSpell(targetSpell);
-    const classRules = RuleSet.getClassRules(this.actor, sourceClass);
+    const classRules = RuleSet.getClassRules(this.actor, classIdentifier);
     const ritualCastingEnabled = classRules.ritualCasting === MODULE.RITUAL_CASTING_MODES.ALWAYS;
     const existingRitualSpell = matchingSpells.find((spell) => spell.system?.method === MODULE.SPELL_MODE.RITUAL && spell.id !== targetSpell.id);
     if (isRitualSpell && ritualCastingEnabled && targetSpell.system.level > 0) {
@@ -485,7 +485,7 @@ export class SpellManager {
       for (const spellKey of spellKeys) {
         const parsed = this._parseClassSpellKey(spellKey);
         const actualSpell = this.actor.itemTypes.spell.find(
-          (s) => (s._stats?.compendiumSource === parsed.spellUuid || s.uuid === parsed.spellUuid) && (s.system?.sourceClass === classIdentifier || s.sourceClass === classIdentifier)
+          (s) => (s._stats?.compendiumSource === parsed.spellUuid || s.uuid === parsed.spellUuid) && DataUtils.getSpellClassIdentifier(s) === classIdentifier
         );
         if (actualSpell) cleanedKeys.push(spellKey);
         else hasChanges = true;
@@ -517,7 +517,7 @@ export class SpellManager {
       log(3, `Spell is cantrip, allowing change.`, { actorName: this.actor.name, spellName: spell.name });
       return { allowed: true };
     }
-    if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
+    if (!classIdentifier) classIdentifier = DataUtils.getSpellClassIdentifier(spell);
     if (!classIdentifier) {
       log(3, `No class identifier, allowing change.`, { actorName: this.actor.name, spellName: spell.name });
       return { allowed: true };
@@ -582,13 +582,13 @@ export class SpellManager {
   }
 
   /**
-   * Attempt to automatically determine the correct source class for a prepared spell.
+   * Attempt to automatically determine the owning class identifier for a prepared spell.
    * @param {object} spell - The spell to analyze
    * @param {object} classSpellData - Optional class spell data for lookup (passed from caller)
-   * @returns {string|null} The determined source class identifier, or null if couldn't be determined
+   * @returns {string|null} The determined class identifier (e.g., "wizard"), or null if couldn't be determined
    */
-  attemptToFixSourceClass(spell, classSpellData = null) {
-    log(3, `Detecting source class for ${spell.name}.`, { spell });
+  attemptToDetectClassIdentifier(spell, classSpellData = null) {
+    log(3, `Detecting owning class for ${spell.name}.`, { spell });
     const spellcastingClasses = this.actor.spellcastingClasses || {};
     const classIdentifiers = Object.keys(spellcastingClasses);
     if (classIdentifiers.length === 0) return null;

@@ -161,8 +161,8 @@ export class SpellBookUI {
       const spellItem = checkbox.closest('.spell-item');
       if (!spellItem) return;
       const spellLevel = spellItem.dataset.spellLevel;
-      const spellSourceClass = checkbox.dataset.sourceClass;
-      if (spellLevel === '0' || (spellSourceClass && spellSourceClass !== classIdentifier)) return;
+      const spellClassIdentifier = checkbox.dataset.classIdentifier;
+      if (spellLevel === '0' || (spellClassIdentifier && spellClassIdentifier !== classIdentifier)) return;
       if (spellItem.querySelector('.tag.always-prepared')) return;
       if (spellItem.querySelector('.tag.granted')) return;
       if (spellItem.querySelector('.tag.innate')) return;
@@ -226,8 +226,8 @@ export class SpellBookUI {
       const spellItem = checkbox.closest('.spell-item');
       if (!spellItem) return;
       const spellLevel = spellItem.dataset.spellLevel;
-      const spellSourceClass = checkbox.dataset.sourceClass;
-      if (spellLevel === '0' || (spellSourceClass && spellSourceClass !== classIdentifier)) return;
+      const spellClassIdentifier = checkbox.dataset.classIdentifier;
+      if (spellLevel === '0' || (spellClassIdentifier && spellClassIdentifier !== classIdentifier)) return;
       if (spellItem.querySelector('.tag.always-prepared') || spellItem.querySelector('.tag.granted') || spellItem.querySelector('.tag.innate') || spellItem.querySelector('.tag.atwill')) return;
       if (isClassAtMax && !checkbox.checked) {
         checkbox.disabled = true;
@@ -384,8 +384,8 @@ export class SpellBookUI {
       if (item.querySelector('.tag.always-prepared') || item.querySelector('.tag.atwill') || item.querySelector('.tag.innate') || item.querySelector('.tag.granted')) return;
       const checkbox = item.querySelector('dnd5e-checkbox');
       if (!checkbox) return;
-      const spellSourceClass = checkbox.dataset.sourceClass;
-      if (spellSourceClass && spellSourceClass !== classIdentifier) return;
+      const spellClassIdentifier = checkbox.dataset.classIdentifier;
+      if (spellClassIdentifier && spellClassIdentifier !== classIdentifier) return;
       if (checkbox.checked) currentCount++;
     });
     this.app._uiCantripCount = currentCount;
@@ -432,8 +432,8 @@ export class SpellBookUI {
     for (const item of cantripItems) {
       const checkbox = item.querySelector('dnd5e-checkbox');
       if (!checkbox) continue;
-      const spellSourceClass = checkbox.dataset.sourceClass;
-      if (spellSourceClass && spellSourceClass !== classIdentifier) continue;
+      const spellClassIdentifier = checkbox.dataset.classIdentifier;
+      if (spellClassIdentifier && spellClassIdentifier !== classIdentifier) continue;
       const isAlwaysPrepared = item.querySelector('.tag.always-prepared');
       const isGranted = item.querySelector('.tag.granted');
       const isInnate = item.querySelector('.tag.innate');
@@ -543,13 +543,13 @@ export class SpellBookUI {
       if (spellLevel === '0') continue;
       const checkbox = item.querySelector('dnd5e-checkbox');
       if (!checkbox) continue;
-      const spellSourceClass = checkbox.dataset.sourceClass;
+      const spellClassIdentifier = checkbox.dataset.classIdentifier;
       const isAlwaysPrepared = item.querySelector('.tag.always-prepared');
       const isGranted = item.querySelector('.tag.granted');
       const isInnate = item.querySelector('.tag.innate');
       const isAtWill = item.querySelector('.tag.atwill');
       if (isAlwaysPrepared || isGranted || isInnate || isAtWill) continue;
-      if (spellSourceClass && spellSourceClass !== classIdentifier) continue;
+      if (spellClassIdentifier && spellClassIdentifier !== classIdentifier) continue;
       const isChecked = checkbox.checked;
       const wasPrepared = checkbox.dataset.wasPrepared === 'true';
       checkbox.disabled = false;
@@ -558,7 +558,7 @@ export class SpellBookUI {
       if (settings.behavior !== MODULE.ENFORCEMENT_BEHAVIOR.ENFORCED) continue;
       const spellUuid = checkbox.dataset.uuid;
       const spellName = checkbox.dataset.name || game.i18n.localize('SPELLBOOK.UI.UnknownSpell');
-      const spell = { name: spellName, system: { level: parseInt(spellLevel) || 1 }, sourceClass: spellSourceClass, uuid: spellUuid };
+      const spell = { name: spellName, system: { level: parseInt(spellLevel) || 1 }, _classContext: spellClassIdentifier, uuid: spellUuid };
       const canChange = this.app.spellManager.canChangeSpellStatus(spell, isChecked, wasPrepared, isLevelUp, isLongRest, classIdentifier, currentPrepared, maxPrepared);
       if (!canChange.allowed) {
         checkbox.disabled = true;

@@ -93,9 +93,7 @@ export class SpellOrganizer {
         for (const version of ownedVersions) this._processOwnedVersion(spellDataClone, version, classIdentifier);
       }
       const preparedByOtherClass = this._findPreparedByOtherClass(preparedByClass, classIdentifier, spellUuid);
-      spellDataClone.sourceClass = classIdentifier;
-      spellDataClone.system = spellDataClone.system || {};
-      spellDataClone.system.sourceClass = classIdentifier;
+      spellDataClone._classContext = classIdentifier;
       if (preparedByOtherClass) {
         spellDataClone.preparation = spellDataClone.preparation || {};
         spellDataClone.preparation.preparedByOtherClass = preparedByOtherClass;
@@ -148,7 +146,7 @@ export class SpellOrganizer {
       if (!spellsByLevel[level]) spellsByLevel[level] = { level: level, name: CONFIG.DND5E.spellLevels[level], spells: [] };
       const spellData = DataUtils.shallowCloneSpell(spell);
       spellData.compendiumUuid = spellUuid;
-      spellData.sourceClass = classIdentifier;
+      spellData._classContext = classIdentifier;
       spellData.isWizardClass = true;
       spellData.inWizardSpellbook = personalSpellbook.includes(spellUuid);
       spellData.canAddToSpellbook = !spellData.inWizardSpellbook && level > 0;
@@ -179,15 +177,6 @@ export class SpellOrganizer {
    * @returns {Promise<void>}
    */
   async processAndOrganizeSpellsForClass(identifier, spellItems, classItem, state) {
-    for (const spell of spellItems) {
-      const preparationMode = spell.system.method;
-      const isSpecialMode = [MODULE.SPELL_MODE.INNATE, MODULE.SPELL_MODE.PACT, MODULE.SPELL_MODE.AT_WILL, MODULE.SPELL_MODE.ALWAYS].includes(preparationMode);
-      const isGranted = !!spell.flags?.dnd5e?.cachedFor;
-      if (!isSpecialMode && !isGranted) {
-        spell.sourceClass = identifier;
-        if (spell.system && !spell.system.sourceClass) spell.system.sourceClass = identifier;
-      }
-    }
     const spellLevels = await this.organizeSpellsByLevelForClass(spellItems, identifier);
     const allSpells = spellLevels.flatMap((level) => level.spells);
     const prepStats = state.calculatePreparationStats(identifier, allSpells, classItem);
@@ -246,7 +235,6 @@ export class SpellOrganizer {
       const inGrantedSpells = isSpellInCollection(spell, grantedSpells);
       return (!shouldHideCantrips && isCantrip) || (isNonCantrip && (inPersonalSpellbook || inGrantedSpells));
     });
-    for (const spell of prepTabSpells) spell.sourceClass = classIdentifier;
     const prepLevelsGrouped = await this.organizeSpellsByLevelForClass(prepTabSpells, classIdentifier);
     let finalPrepLevels = prepLevelsGrouped;
     if (shouldHideCantrips) finalPrepLevels = prepLevelsGrouped.filter((levelData) => levelData.level !== '0' && levelData.level !== 0);
@@ -262,7 +250,7 @@ export class SpellOrganizer {
     const wizardLevelsGrouped = await this.organizeWizardSpellsForLearning(allWizardbookSpells, classIdentifier, personalSpellbook);
     const scrollSpellsForLevel = [];
     for (const scrollSpell of state.scrollSpells) {
-      scrollSpell.sourceClass = classIdentifier;
+      scrollSpell._classContext = classIdentifier;
       scrollSpell.isWizardClass = true;
       scrollSpell.inWizardSpellbook = personalSpellbook.includes(scrollSpell.compendiumUuid || scrollSpell.spellUuid);
       scrollSpell.canLearnFromScroll = !scrollSpell.inWizardSpellbook;
@@ -326,7 +314,7 @@ export class SpellOrganizer {
    */
   _processOwnedVersion(spellData, version, classIdentifier) {
     const ownedSpell = version.item;
-    const isCurrentClass = version.sourceClass === classIdentifier;
+    const isCurrentClass = version.classIdentifier === classIdentifier;
     if (ownedSpell.flags?.dnd5e?.cachedFor) {
       const cachedFor = ownedSpell.flags.dnd5e.cachedFor;
       const itemId = foundry.utils.parseUuid(cachedFor, { relative: this.actor }).embedded?.[1];

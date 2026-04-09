@@ -54,7 +54,7 @@ export class SpellProcessor {
         const processedSpell = await this._processSpell(spell, enabledElements);
         processedSpells.push(processedSpell);
       }
-      await this.app.applySourceClassFixes();
+      await this.app.applySourceItemFixes();
       log(3, 'Finishing spells for level processing:', { spells, processedSpells });
       let preparedCount = 0;
       if (level !== '0') preparedCount = spells.filter((spell) => spell.preparation?.prepared).length;
@@ -74,10 +74,11 @@ export class SpellProcessor {
   async _processSpell(spell, enabledElements) {
     const processedSpell = DataUtils.shallowCloneSpell(spell);
     if (!spell.compendiumUuid) spell.compendiumUuid = spell.uuid;
+    const spellClassIdentifier = DataUtils.getSpellClassIdentifier(spell);
     const classes = ['spell-item'];
     if (spell.preparation?.prepared) classes.push('prepared-spell');
-    if (this.app._state.wizardbookCache && spell.sourceClass) {
-      const classSpellbook = this.app._state.wizardbookCache.get(spell.sourceClass);
+    if (this.app._state.wizardbookCache && spellClassIdentifier) {
+      const classSpellbook = this.app._state.wizardbookCache.get(spellClassIdentifier);
       if (classSpellbook?.includes(spell.compendiumUuid)) classes.push('in-wizard-spellbook');
     }
     processedSpell.cssClasses = classes.join(' ');
@@ -85,8 +86,8 @@ export class SpellProcessor {
     if (!spell.tags) spell.tags = UIUtils.getSpellPreparationTags(spell, this.actor);
     processedSpell.tags = spell.tags;
     processedSpell.preparationCheckboxHtml = this._buildPreparationCheckbox(spell);
-    if (spell.sourceClass && this.app._state.wizardbookCache) {
-      const classSpellbook = this.app._state.wizardbookCache.get(spell.sourceClass);
+    if (spellClassIdentifier && this.app._state.wizardbookCache) {
+      const classSpellbook = this.app._state.wizardbookCache.get(spellClassIdentifier);
       processedSpell.inWizardSpellbook = classSpellbook ? classSpellbook.includes(spell.compendiumUuid) : false;
     } else {
       processedSpell.inWizardSpellbook = false;
@@ -137,23 +138,20 @@ export class SpellProcessor {
     checkbox.dataset.name = spell.name;
     checkbox.dataset.ritual = spell.filterData?.isRitual || false;
     checkbox.dataset.wasPrepared = spell.preparation.prepared;
-    let sourceClass = null;
-    if (spell.system?.sourceClass) sourceClass = spell.system.sourceClass;
-    else if (spell.sourceClass) sourceClass = spell.sourceClass;
-    else if (spell.preparation?.preparedByOtherClass) sourceClass = spell.preparation.preparedByOtherClass;
-    if (sourceClass) {
-      checkbox.dataset.sourceClass = sourceClass;
+    let classIdentifier = DataUtils.getSpellClassIdentifier(spell) || spell.preparation?.preparedByOtherClass || '';
+    if (classIdentifier) {
+      checkbox.dataset.classIdentifier = classIdentifier;
     } else {
-      log(3, `Checking if ${spell.name} should have source class set.`, { spell });
-      const shouldHaveSourceClass = spell.preparation?.prepared && spell.system?.prepared !== 2 && !spell.flags?.dnd5e?.cachedFor;
-      if (shouldHaveSourceClass) {
-        const fixedSourceClass = this.app.spellManager.attemptToFixSourceClass(spell, this.app._state?.classSpellData);
-        if (fixedSourceClass) {
-          checkbox.dataset.sourceClass = fixedSourceClass;
-          if (!this.app._sourceClassFixQueue) this.app._sourceClassFixQueue = [];
-          this.app._sourceClassFixQueue.push({ spellId: spell._id, spellName: spell.name, sourceClass: fixedSourceClass });
+      log(3, `Checking if ${spell.name} should have a class identifier set.`, { spell });
+      const shouldHaveClass = spell.preparation?.prepared && spell.system?.prepared !== 2 && !spell.flags?.dnd5e?.cachedFor;
+      if (shouldHaveClass) {
+        const detectedClass = this.app.spellManager.attemptToDetectClassIdentifier(spell, this.app._state?.classSpellData);
+        if (detectedClass) {
+          checkbox.dataset.classIdentifier = detectedClass;
+          if (!this.app._sourceItemFixQueue) this.app._sourceItemFixQueue = [];
+          this.app._sourceItemFixQueue.push({ spellId: spell._id, spellName: spell.name, classIdentifier: detectedClass });
         } else {
-          log(2, `No source class found for prepared spell: ${spell.name}`, {
+          log(2, `No owning class found for prepared spell: ${spell.name}`, {
             spell,
             preparation: spell.preparation,
             spellcastingClasses: Object.keys(this.actor.spellcastingClasses || {})
@@ -228,8 +226,9 @@ export class SpellProcessor {
   _buildWizardAction(processedSpell) {
     let learningSource = null;
     let learningSourceLabel = null;
-    if (processedSpell.inWizardSpellbook && processedSpell.sourceClass) {
-      const wizardManager = this.app.wizardManagers.get(processedSpell.sourceClass);
+    const processedClassIdentifier = DataUtils.getSpellClassIdentifier(processedSpell);
+    if (processedSpell.inWizardSpellbook && processedClassIdentifier) {
+      const wizardManager = this.app.wizardManagers.get(processedClassIdentifier);
       if (wizardManager) {
         const spellUuid = processedSpell.spellUuid || processedSpell.compendiumUuid;
         learningSource = wizardManager.getSpellLearningSource(spellUuid);

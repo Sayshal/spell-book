@@ -108,6 +108,42 @@ export function hasSpellcastingClasses(actor) {
 }
 
 /**
+ * Build a typed sourceItem identifier for a class.
+ * @param {string} classId - The class identifier (e.g., "wizard")
+ * @returns {string} Typed identifier (e.g., "class:wizard"), or empty string if classId is falsy
+ */
+export function buildClassSourceItem(classId) {
+  return classId ? `class:${classId}` : '';
+}
+
+/**
+ * Get the unwrapped class identifier for a spell.
+ * @param {object} spell - Spell document or plain clone
+ * @returns {string} The class identifier (e.g., "wizard"), or empty string if unresolvable
+ */
+export function getSpellClassIdentifier(spell) {
+  if (!spell) return '';
+  if (typeof spell.system?.classIdentifier === 'string' && spell.system.classIdentifier) return spell.system.classIdentifier;
+  if (typeof spell._classContext === 'string' && spell._classContext) return spell._classContext;
+  return '';
+}
+
+/**
+ * Resolve a spell's sourceItem to the actual class/subclass Item5e on the actor.
+ * @param {object} spell - Spell document or plain clone
+ * @param {object} [actor] - Optional actor (defaults to spell.parent?.actor)
+ * @returns {object | null} The class or subclass Item5e, or null if unresolvable
+ */
+export function getSpellSourceDocument(spell, actor = null) {
+  const resolvedActor = actor ?? spell?.parent?.actor ?? spell?.actor ?? null;
+  if (!resolvedActor?.identifiedItems) return null;
+  const sourceItem = spell?.system?.sourceItem;
+  if (sourceItem) return resolvedActor.identifiedItems.get(sourceItem)?.first() ?? null;
+  if (spell?._classContext) return resolvedActor.identifiedItems.get(buildClassSourceItem(spell._classContext))?.first() ?? null;
+  return null;
+}
+
+/**
  * Get the appropriate label/name from a CONFIG object.
  * @param {object} configObject - The CONFIG object (e.g., CONFIG.DND5E.spellSchools)
  * @param {string} key - The key to look up in the configuration object

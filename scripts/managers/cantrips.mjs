@@ -175,7 +175,7 @@ export class Cantrips {
     }
     if (this._currentCountByClass.has(classIdentifier)) return this._currentCountByClass.get(classIdentifier);
     const count = this.actor.items.reduce((count, i) => {
-      return count + (i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1 && (i.system.sourceClass === classIdentifier || i.sourceClass === classIdentifier) ? 1 : 0);
+      return count + (i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1 && DataUtils.getSpellClassIdentifier(i) === classIdentifier ? 1 : 0);
     }, 0);
     this._currentCountByClass.set(classIdentifier, count);
     log(3, 'Getting current cantrip count for class.', { actorId: this.actor.id, classIdentifier, count });
@@ -225,10 +225,8 @@ export class Cantrips {
   canChangeCantripStatus(spell, isChecked, isLevelUp, isLongRest, uiCantripCount, classIdentifier) {
     log(3, 'Validating cantrip status change.', { actorId: this.actor.id, spellId: spell.id, isChecked, isLevelUp, isLongRest, classIdentifier });
     if (spell.system.level !== 0) return new CantripValidationResult({ allowed: true });
-    if (!classIdentifier) classIdentifier = spell.sourceClass || spell.system?.sourceClass;
-    if (!classIdentifier) {
-      return new CantripValidationResult({ allowed: true });
-    }
+    if (!classIdentifier) classIdentifier = DataUtils.getSpellClassIdentifier(spell);
+    if (!classIdentifier) return new CantripValidationResult({ allowed: true });
     const settings = this.spellManager.getSettings(classIdentifier);
     if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.UNENFORCED || settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM) {
       if (settings.behavior === MODULE.ENFORCEMENT_BEHAVIOR.NOTIFY_GM && isChecked) {
@@ -313,10 +311,8 @@ export class Cantrips {
     log(3, 'Tracking cantrip change.', { actorId: this.actor.id, spellId: spell.id, isChecked, isLevelUp, isLongRest, classIdentifier });
     if (spell.system.level !== 0) return;
     if (!classIdentifier) {
-      classIdentifier = spell.sourceClass || spell.system?.sourceClass;
-      if (!classIdentifier) {
-        return;
-      }
+      classIdentifier = DataUtils.getSpellClassIdentifier(spell);
+      if (!classIdentifier) return;
     }
     const settings = this.spellManager.getSettings(classIdentifier);
     const cantripSwapping = settings.cantripSwapping || 'none';
@@ -329,7 +325,7 @@ export class Cantrips {
     let tracking = trackingData ? new CantripSwapTrackingData(trackingData) : null;
     if (!tracking) {
       const preparedCantrips = this.actor.items
-        .filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1 && (i.sourceClass === classIdentifier || i.system.sourceClass === classIdentifier))
+        .filter((i) => i.type === 'spell' && i.system.level === 0 && i.system.prepared === 1 && DataUtils.getSpellClassIdentifier(i) === classIdentifier)
         .map((i) => i.uuid);
       tracking = new CantripSwapTrackingData({ originalChecked: preparedCantrips });
       this.actor.setFlag(MODULE.ID, flagName, tracking.toObject());

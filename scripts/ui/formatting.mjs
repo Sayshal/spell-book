@@ -170,7 +170,20 @@ export function extractSpellFilterData(spell) {
   const conditions = extractSpellConditions(spell);
   const source = extractSpellSource(spell);
   const target = extractTarget(spell);
-  const result = { castingTime, range, damageTypes, isRitual, concentration, materialComponents, requiresSave, conditions, target, favorited: false, spellSource: source.label, spellSourceId: source.id };
+  const result = {
+    castingTime,
+    range,
+    damageTypes,
+    isRitual,
+    concentration,
+    materialComponents,
+    requiresSave,
+    conditions,
+    target,
+    favorited: false,
+    spellSource: source.label,
+    spellSourceId: source.id
+  };
   return result;
 }
 
@@ -382,7 +395,6 @@ export function getSpellDataAttributes(spell) {
     `data-target-affects-type="${spell.filterData?.target?.affectsType || ''}"`,
     `data-target-template-type="${spell.filterData?.target?.templateType || ''}"`
   ];
-  if (spell.sourceClass) attributes.push(`data-source-class="${spell.sourceClass}"`);
   if (spell.filterData?.spellListName) attributes.push(`data-spell-list="${spell.filterData.spellListName}"`);
   return attributes.join(' ');
 }
@@ -396,20 +408,17 @@ export function getSpellDataAttributes(spell) {
 export function getSpellPreparationTags(spell, actor) {
   log(3, 'Getting spell tag(s)', { spellName: spell.name, flags: spell.flags, system: spell.system, preparation: spell.preparation, aggregatedModes: spell.aggregatedModes });
   const tags = [];
-  const sourceClass = spell.system?.sourceClass || spell.sourceClass;
   const modes = spell.aggregatedModes;
   if (modes?.hasPrepared) tags.push({ cssClass: 'prepared', text: game.i18n.localize('SPELLBOOK.Preparation.Prepared'), tooltip: game.i18n.localize('SPELLBOOK.Preparation.PreparedTooltip') });
   if (modes?.hasPact) tags.push({ cssClass: 'pact', text: game.i18n.localize('SPELLBOOK.Preparation.Pact'), tooltip: game.i18n.localize('SPELLBOOK.SpellSource.PactMagic') });
   if (modes?.hasAlwaysPrepared) {
     let tooltip = game.i18n.localize('SPELLBOOK.Preparation.AlwaysTooltip');
-    if (sourceClass && actor?.spellcastingClasses?.[sourceClass]) {
-      const spellcastingData = actor.spellcastingClasses[sourceClass];
-      const classItem = actor.items.get(spellcastingData.id);
-      if (classItem?.type === 'subclass') tooltip = classItem.name;
-      else if (classItem?.type === 'class') {
-        const subclass = actor.items.find((i) => i.type === 'subclass' && i.system?.classIdentifier === sourceClass);
-        tooltip = subclass?.name || classItem.name;
-      }
+    const sourceDoc = DataUtils.getSpellSourceDocument(spell, actor);
+    if (sourceDoc?.type === 'subclass') tooltip = sourceDoc.name;
+    else if (sourceDoc?.type === 'class') {
+      const classIdentifier = DataUtils.getSpellClassIdentifier(spell);
+      const subclass = actor?.items.find((i) => i.type === 'subclass' && i.system?.classIdentifier === classIdentifier);
+      tooltip = subclass?.name || sourceDoc.name;
     }
     tags.push({ cssClass: 'always-prepared', text: game.i18n.localize('SPELLBOOK.Preparation.Always'), tooltip: tooltip });
   }

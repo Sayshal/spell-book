@@ -843,10 +843,7 @@ export class SpellBookSettings extends HandlebarsApplicationMixin(ApplicationV2)
     for (const [classId, changeType] of Object.entries(changes)) {
       if (changeType === 'disabled') {
         const cantripsToRemove = actor.items
-          .filter(
-            (item) =>
-              item.type === 'spell' && item.system.level === 0 && (item.system.sourceClass === classId || item.sourceClass === classId) && item.system.prepared !== 2 && !item.flags?.dnd5e?.cachedFor
-          )
+          .filter((item) => item.type === 'spell' && item.system.level === 0 && DataUtils.getSpellClassIdentifier(item) === classId && item.system.prepared !== 2 && !item.flags?.dnd5e?.cachedFor)
           .map((item) => item.id);
         if (cantripsToRemove.length > 0) await actor.deleteEmbeddedDocuments('Item', cantripsToRemove);
         await spellManager.cleanupCantripsForClass(classId);

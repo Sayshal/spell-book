@@ -105,9 +105,7 @@ export class PartyMode {
     try {
       const knownSpells = [];
       const preparedSpells = [];
-      const classSpells = actor.itemTypes.spell.filter(
-        (spell) => foundry.utils.getProperty(spell, 'system.sourceClass') === classId || foundry.utils.getProperty(spell, 'sourceClass') === classId
-      );
+      const classSpells = actor.itemTypes.spell.filter((spell) => DataUtils.getSpellClassIdentifier(spell) === classId);
       for (const spell of classSpells) {
         const sourceUuid = foundry.utils.getProperty(spell, '_stats.compendiumSource') || foundry.utils.getProperty(spell, 'flags.core.sourceId') || spell.uuid;
         const enrichedIcon = UIUtils.createSpellIconLink({ ...spell, compendiumUuid: sourceUuid });

@@ -152,7 +152,7 @@ export class Loadouts {
       const preparedSpells = [];
       const formElement = this.spellbook.element;
       if (!formElement) throw new Error('Spell Book element not found');
-      const checkboxes = formElement.querySelectorAll(`dnd5e-checkbox[data-uuid][data-source-class="${classIdentifier}"]`);
+      const checkboxes = formElement.querySelectorAll(`dnd5e-checkbox[data-uuid][data-class-identifier="${classIdentifier}"]`);
       checkboxes.forEach((checkbox) => {
         const uuid = checkbox.dataset.uuid;
         const isPrepared = checkbox.checked;
@@ -186,7 +186,7 @@ export class Loadouts {
     if (!this.spellbook) throw new Error('No Spell Book reference available');
     const formElement = this.spellbook.element;
     if (!formElement) throw new Error('Spell Book element not found');
-    const allCheckboxes = formElement.querySelectorAll(`dnd5e-checkbox[data-uuid][data-source-class="${classIdentifier}"]`);
+    const allCheckboxes = formElement.querySelectorAll(`dnd5e-checkbox[data-uuid][data-class-identifier="${classIdentifier}"]`);
     allCheckboxes.forEach((checkbox) => {
       if (!checkbox.disabled) {
         checkbox.checked = false;
@@ -195,7 +195,7 @@ export class Loadouts {
       }
     });
     spellConfiguration.forEach((uuid) => {
-      const checkbox = formElement.querySelector(`dnd5e-checkbox[data-uuid="${uuid}"][data-source-class="${classIdentifier}"]`);
+      const checkbox = formElement.querySelector(`dnd5e-checkbox[data-uuid="${uuid}"][data-class-identifier="${classIdentifier}"]`);
       if (checkbox && !checkbox.disabled) {
         checkbox.checked = true;
         const spellItem = checkbox.closest('.spell-item');

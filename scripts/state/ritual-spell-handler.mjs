@@ -74,7 +74,7 @@ export class RitualSpellHandler {
     for (const classIdentifier of Object.keys(this._spellcastingClasses)) {
       if (RuleSet.getClassRule(this.actor, classIdentifier, 'ritualCasting', MODULE.RITUAL_CASTING_MODES.NONE) !== MODULE.SPELL_MODE.ALWAYS) {
         const moduleRitualSpells = this.actor.itemTypes.spell.filter(
-          (s) => s.system?.method === MODULE.SPELL_MODE.RITUAL && (s.system?.sourceClass === classIdentifier || s.sourceClass === classIdentifier) && s.flags?.[MODULE.ID]?.isModuleRitual === true
+          (s) => s.system?.method === MODULE.SPELL_MODE.RITUAL && DataUtils.getSpellClassIdentifier(s) === classIdentifier && s.flags?.[MODULE.ID]?.isModuleRitual === true
         );
         if (moduleRitualSpells.length > 0) {
           log(3, 'Found ritual spells to remove for class', { classIdentifier, count: moduleRitualSpells.length });

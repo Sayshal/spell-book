@@ -11,12 +11,12 @@
 
 import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
 import * as DataUtils from '../data/_module.mjs';
-import { SpellComparison, DetailsCustomization, LoadoutSelector, SpellNotes, SpellBookSettings } from '../dialogs/_module.mjs';
+import { DetailsCustomization, LoadoutSelector, SpellBookSettings, SpellComparison, SpellNotes } from '../dialogs/_module.mjs';
 import { log } from '../logger.mjs';
-import { SpellManager, WizardBook, PartyMode } from '../managers/_module.mjs';
+import { PartyMode, SpellManager, WizardBook } from '../managers/_module.mjs';
 import { State } from '../state/_module.mjs';
 import * as UIUtils from '../ui/_module.mjs';
-import { PlayerFilterConfiguration, PartyCoordinator } from './_module.mjs';
+import { PartyCoordinator, PlayerFilterConfiguration } from './_module.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const { renderTemplate } = foundry.applications.handlebars;
@@ -446,7 +446,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     log(3, 'Form handler executing.');
     if (event?.target?.matches('dnd5e-checkbox[data-uuid]')) {
       const uuid = event.target.dataset.uuid;
-      const sourceClass = event.target.dataset.sourceClass;
+      const checkboxClassIdentifier = event.target.dataset.classIdentifier;
       const spellItem = event.target.closest('.spell-item');
       const spellLevel = spellItem?.dataset.spellLevel;
       const wasPrepared = event.target.dataset.wasPrepared === 'true';
@@ -458,7 +458,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const isLongRest = this._isLongRest;
         const activeTab = this.tabGroups['spellbook-tabs'];
         const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
-        const classIdentifier = activeTabContent?.dataset.classIdentifier || sourceClass || this._state.activeClass;
+        const classIdentifier = activeTabContent?.dataset.classIdentifier || checkboxClassIdentifier || this._state.activeClass;
         const sourceSpell = await fromUuid(uuid);
         if (!sourceSpell) return;
         if (isChecked) {
@@ -476,11 +476,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         if (spellItem) spellItem.classList.toggle('prepared-spell', isChecked);
         this.ui.setupCantripLocks();
       } else {
-        log(3, 'Handling spell preparation change.', { event, uuid, spellItem, sourceClass, wasPrepared, isChecked });
+        log(3, 'Handling spell preparation change.', { event, uuid, spellItem, checkboxClassIdentifier, wasPrepared, isChecked });
         const checkbox = event.target;
         const activeTab = this.tabGroups['spellbook-tabs'];
         const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
-        const classIdentifier = activeTabContent?.dataset.classIdentifier || sourceClass || this._state.activeClass;
+        const classIdentifier = activeTabContent?.dataset.classIdentifier || checkboxClassIdentifier || this._state.activeClass;
         if (!classIdentifier) return;
         const sourceSpell = await fromUuid(uuid);
         if (!sourceSpell) return;
@@ -811,51 +811,51 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this._isSaving = true;
     log(3, 'Handling save.', { _event, _target });
     try {
-    const actor = this.actor;
-    if (!actor) return;
-    const form = this.element.querySelector('form') || this.element;
-    const existingPreparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
-    const spellDataByClass = {};
-    const checkboxes = form.querySelectorAll('dnd5e-checkbox[data-uuid]');
-    for (const checkbox of checkboxes) {
-      const uuid = checkbox.dataset.uuid;
-      const name = checkbox.dataset.name;
-      const wasPrepared = checkbox.dataset.wasPrepared === 'true';
-      const isPrepared = checkbox.checked;
-      const isRitual = checkbox.dataset.ritual === 'true';
-      const sourceClass = checkbox.dataset.sourceClass || game.i18n.localize('Unknown');
-      const spellItem = checkbox.closest('.spell-item');
-      const spellLevel = spellItem?.dataset.spellLevel ? parseInt(spellItem.dataset.spellLevel) : 0;
-      if (!spellDataByClass[sourceClass]) spellDataByClass[sourceClass] = {};
-      const classSpellKey = `${sourceClass}:${uuid}`;
-      const classData = this._state.classSpellData[sourceClass];
-      const classItem = classData?.classItem;
-      const isPactCaster = classItem?.system?.spellcasting?.type === MODULE.SPELL_MODE.PACT;
-      let preparationMode = MODULE.SPELL_MODE.SPELL;
-      if (isPactCaster && spellLevel > 0) preparationMode = MODULE.SPELL_MODE.PACT;
-      spellDataByClass[sourceClass][classSpellKey] = { uuid, name, wasPrepared, isPrepared, isRitual, sourceClass, spellItem, spellLevel, classSpellKey, preparationMode };
-    }
-    this._state.clearFavoriteSessionState();
-    await this._state.addMissingRitualSpells(spellDataByClass);
-    const allChangesByClass = {};
-    for (const [classIdentifier, classSpellData] of Object.entries(spellDataByClass)) {
-      const saveResult = await this.spellManager.saveClassSpecificPreparedSpells(classIdentifier, classSpellData);
-      if (saveResult) {
-        allChangesByClass[classIdentifier] = { cantripChanges: saveResult.cantripChanges || { added: [], removed: [] }, spellChanges: saveResult.spellChanges || { added: [], removed: [] } };
+      const actor = this.actor;
+      if (!actor) return;
+      const form = this.element.querySelector('form') || this.element;
+      const existingPreparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
+      const spellDataByClass = {};
+      const checkboxes = form.querySelectorAll('dnd5e-checkbox[data-uuid]');
+      for (const checkbox of checkboxes) {
+        const uuid = checkbox.dataset.uuid;
+        const name = checkbox.dataset.name;
+        const wasPrepared = checkbox.dataset.wasPrepared === 'true';
+        const isPrepared = checkbox.checked;
+        const isRitual = checkbox.dataset.ritual === 'true';
+        const classIdentifier = checkbox.dataset.classIdentifier || game.i18n.localize('Unknown');
+        const spellItem = checkbox.closest('.spell-item');
+        const spellLevel = spellItem?.dataset.spellLevel ? parseInt(spellItem.dataset.spellLevel) : 0;
+        if (!spellDataByClass[classIdentifier]) spellDataByClass[classIdentifier] = {};
+        const classSpellKey = `${classIdentifier}:${uuid}`;
+        const classData = this._state.classSpellData[classIdentifier];
+        const classItem = classData?.classItem;
+        const isPactCaster = classItem?.system?.spellcasting?.type === MODULE.SPELL_MODE.PACT;
+        let preparationMode = MODULE.SPELL_MODE.SPELL;
+        if (isPactCaster && spellLevel > 0) preparationMode = MODULE.SPELL_MODE.PACT;
+        spellDataByClass[classIdentifier][classSpellKey] = { uuid, name, wasPrepared, isPrepared, isRitual, classIdentifier, spellItem, spellLevel, classSpellKey, preparationMode };
       }
-      const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
-      for (const [classIdentifier, preparedSpells] of Object.entries(existingPreparedByClass)) if (!spellDataByClass[classIdentifier]) preparedByClass[classIdentifier] = preparedSpells;
-      await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
-    }
-    await this._state.sendGMNotifications(spellDataByClass, allChangesByClass);
-    await this._state.handlePostProcessing(actor);
-    this._newlyCheckedCantrips.clear();
-    await UIUtils.processFavoritesFromForm(form, actor);
-    this._formStateCache.clear();
-    if (actor.sheet.rendered) actor.sheet.render(true);
-    if (game.modules.get('chris-premades')?.active && game.settings.get(MODULE.ID, SETTINGS.CPR_COMPATIBILITY)) await chrisPremades.utils.actorUtils.updateAll(actor);
-    ui.notifications.info('SPELLBOOK.UI.ChangesSaved', { localize: true });
-    this.close();
+      this._state.clearFavoriteSessionState();
+      await this._state.addMissingRitualSpells(spellDataByClass);
+      const allChangesByClass = {};
+      for (const [classIdentifier, classSpellData] of Object.entries(spellDataByClass)) {
+        const saveResult = await this.spellManager.saveClassSpecificPreparedSpells(classIdentifier, classSpellData);
+        if (saveResult) {
+          allChangesByClass[classIdentifier] = { cantripChanges: saveResult.cantripChanges || { added: [], removed: [] }, spellChanges: saveResult.spellChanges || { added: [], removed: [] } };
+        }
+        const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
+        for (const [classIdentifier, preparedSpells] of Object.entries(existingPreparedByClass)) if (!spellDataByClass[classIdentifier]) preparedByClass[classIdentifier] = preparedSpells;
+        await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
+      }
+      await this._state.sendGMNotifications(spellDataByClass, allChangesByClass);
+      await this._state.handlePostProcessing(actor);
+      this._newlyCheckedCantrips.clear();
+      await UIUtils.processFavoritesFromForm(form, actor);
+      this._formStateCache.clear();
+      if (actor.sheet.rendered) actor.sheet.render(true);
+      if (game.modules.get('chris-premades')?.active && game.settings.get(MODULE.ID, SETTINGS.CPR_COMPATIBILITY)) await chrisPremades.utils.actorUtils.updateAll(actor);
+      ui.notifications.info('SPELLBOOK.UI.ChangesSaved', { localize: true });
+      this.close();
     } finally {
       this._isSaving = false;
     }
@@ -975,7 +975,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (success) {
         if (this._state.wizardbookCache) {
           const cached = this._state.wizardbookCache.get(classIdentifier) || [];
-          this._state.wizardbookCache.set(classIdentifier, cached.filter((uuid) => uuid !== spellUuid));
+          this._state.wizardbookCache.set(
+            classIdentifier,
+            cached.filter((uuid) => uuid !== spellUuid)
+          );
         }
         await this._state.refreshClassSpellData(classIdentifier);
         ui.notifications.info(game.i18n.format('SPELLBOOK.Wizard.UnlearnSpellSuccess', { name: spell.name }));
@@ -993,16 +996,21 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
 
   /**
-   * Apply all queued source class fixes to the actor in a single batch update.
+   * Apply all queued sourceItem fixes to the actor in a single batch update.
    * @returns {Promise<void>}
    */
-  async applySourceClassFixes() {
-    if (!this._sourceClassFixQueue?.length) return;
-    log(3, `Applying ${this._sourceClassFixQueue.length} source class fix${this._sourceClassFixQueue.length !== 1 ? 'es' : ''}.`);
-    const updates = this._sourceClassFixQueue.map((fix) => ({ _id: fix.spellId, 'system.sourceClass': fix.sourceClass }));
-    this._sourceClassFixQueue = [];
+  async applySourceItemFixes() {
+    if (!this._sourceItemFixQueue?.length) return;
+    log(3, `Applying ${this._sourceItemFixQueue.length} sourceItem fix${this._sourceItemFixQueue.length !== 1 ? 'es' : ''}.`);
+    const updates = this._sourceItemFixQueue.map((fix) => ({
+      _id: fix.spellId,
+      'system.sourceItem': DataUtils.buildClassSourceItem(fix.classIdentifier),
+      // Defensive cleanup of legacy field. Remove in spell-book 2.0.0 / Foundry v14.
+      'system.-=sourceClass': null
+    }));
+    this._sourceItemFixQueue = [];
     await this.actor.updateEmbeddedDocuments('Item', updates);
-    log(3, `Successfully fixed source class for ${updates.length} spell${updates.length !== 1 ? 's' : ''}.`);
+    log(3, `Successfully fixed sourceItem for ${updates.length} spell${updates.length !== 1 ? 's' : ''}.`);
   }
 
   /**
@@ -1056,8 +1064,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (input.disabled || input.readonly) return null;
     if (input.name) return `name:${input.name}`;
     if ((input.type === 'checkbox' || input.matches('dnd5e-checkbox')) && input.dataset.uuid) {
-      const sourceClass = input.dataset.sourceClass || game.i18n.localize('Unknown');
-      return `checkbox:${sourceClass}:${input.dataset.uuid}`;
+      const classIdentifier = input.dataset.classIdentifier;
+      return `checkbox:${classIdentifier}:${input.dataset.uuid}`;
     }
     if (input.id) return `id:${input.id}`;
     return null;

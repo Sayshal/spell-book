@@ -435,8 +435,7 @@ export class RuleSet {
         if (item.type !== 'spell') return false;
         const sourceId = item._stats?.compendiumSource || item.uuid;
         if (!affectedUuids.has(sourceId)) return false;
-        const itemClass = item.system?.sourceClass || item.sourceClass;
-        if (itemClass !== classIdentifier) return false;
+        if (DataUtils.getSpellClassIdentifier(item) !== classIdentifier) return false;
         const isGranted = !!item.flags?.dnd5e?.cachedFor;
         const isAlwaysPrepared = item.system?.prepared === 2;
         const isSpecialMode = [MODULE.SPELL_MODE.INNATE, MODULE.SPELL_MODE.AT_WILL].includes(item.system?.method);
